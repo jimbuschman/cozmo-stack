@@ -201,6 +201,14 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 
 ## Research lane (clone `cozmo-stack-codex`)
 
+**Operator, 2026-10-21:** keep 3–4 independent reading jobs queued at a time.
+Current batch: R-M13-017 first, then R-M11-POSE-HISTORY, R-M8-ACTIONLIST,
+R-M10-CLASSIFIER. Run one request at a time; after publishing its answer, continue
+to the next without waiting for adoption or a build. Each pass reads its own HEAD
+and records it. These are independent reports, not permission to settle records or
+release builder jobs. Manager review and inventory approval still precede builds.
+Prioritize this live queue over overnight builder pre-flight when these jobs are open.
+
 | # | job | status |
 | --- | --- | --- |
 | 1 | [R-M5-047](../research/requests/20261011-m5-047-stack.md) | done (8694b961) |
@@ -227,3 +235,6 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 22 | [R-SMALL-1](../research/requests/20261013-small-reads-1.md) | answered (overnight P2); checked (research/20261013-small-reads-1-check.md): M11-072 to build, M11-073 split (M11-076 to build) |
 | 23 | [R-SMALL-2](../research/requests/20261013-small-reads-2.md) | answered (overnight P3); checked (research/20261013-small-reads-2-check.md): M15-044 to build, M2-022 split (M2-023 to build) |
 | 24 | [R-M13-017](../research/requests/20261021-m13-017-located-charger.md) | open |
+| 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | open |
+| 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | open |
+| 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | open |

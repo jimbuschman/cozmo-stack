@@ -3,8 +3,11 @@
 **Manager review (2026-10-21): APPROVED, with three conditions.** Counts, review states, live/non-live gaps,
 hardware-only and blocked lists, SetOnCharger 0x00511990 (+0x338 read at 0x00511A66/0x00511BA8), SetPoseOnCharger
 0x00516870 and M11-016's 2026-10-14 decision were checked against the manifest and the `.so`.
-1. **One job per prompt.** Start with job 1 (M13-017) only; the later steps are direction, not a queue. Each job is
-   verified (Claude/Opus) before the next starts.
+1. **Research queue update (operator, 2026-10-21):** keep 3–4 independent reading jobs queued.
+   M13-017 first, then M11 pose/history, M8 ActionList/completion, M10 classifier settling passes.
+   These reports run sequentially without waiting for the previous report's adoption or build.
+   Each implementation still requires reviewed evidence and the applicable inventory approval;
+   this does not release held builder jobs. Live requests are in `jobs/QUEUE.md`.
 2. **Hardware in small, early checks, not only at step 7.** Each finished group gets a short targeted robot check.
    First: after M13-017 is built, dock Cozmo, drive him off, and check the platform flag and cliff threshold 50 hold
    until the footprint leaves the charger (M4-019, M13-017).
