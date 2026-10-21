@@ -122,3 +122,28 @@ or transport reader alias analysis. Those reported bounds remain pending review,
 not silently upgraded into a whole-binary no-other-writer proof. Full admission,
 parent/cull and whole M11-051 settlement remain outside this slice; no inventory,
 manifest status, builder release, tests or hardware change.
+
+
+## Follow-up: interpolation scalar selection (HEAD 06b06760)
+
+Reopened HistRobotState::Interpolate instructions0x0053068C..0x00530858 and
+threshold literal0x00530884. Compared current NativeRobotStateHistory.Interpolate.
+The following rows agree with the report and current code:
+
+- strict comparison with bits0x3EFFFEB0 selects before, otherwise after;
+  unordered/NaN does not satisfy MI and selects after (0x005306A8..6B6);
+- temporary state copy is **0x5C bytes** at0x005306AC/6BE, unlike the **0x5B**
+  exact/output copies in GetRawStateAt. Keep these distinct in any citation cleanup;
+- before frame field overwrites selection at0x005306C2/C4; head/lift and wheel
+  blends use separate subtract, multiply, add at0x005306CA..6FA/738..766;
+- cliff storage first fills eight bytes with FFFFFFFF at0x005306EE, then only
+  channel0 is replaced. Signed delta, unsigned before value, f32 multiply/add,
+  roundf, unsigned conversion, low-half store0x005306FE..734 match current code;
+- translation scales relative components then adds before components in f32
+  (0x00530790..7BE); Z angles go through Radians multiply/add7EA/7F4 and parent
+  comes from before at0x00530804. The current code has the same composition.
+
+Bounded verdict: no scalar-selection/blend correction found. This does not
+reverify Radians normalization, quaternion construction, libm edge semantics,
+PoseBase internals or root-fault behavior. Existing explicit M1-034 guard remains;
+no new policy or whole M11-052 settlement. No tests run in this slice.
