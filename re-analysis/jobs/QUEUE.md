@@ -247,6 +247,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
 | 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answered c334871d; pending independent review/adoption |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | answered 166a2e6a; pending independent review/adoption |
-| 33 | [R-M8-PROFILE](../research/requests/20261021-m8-action-motion-profile-lifetime.md) | open |
+| 33 | [R-M8-PROFILE](../research/requests/20261021-m8-action-motion-profile-lifetime.md) | answered 5e1b0a13; pending independent review/adoption |
 | 34 | [R-M11-HISTORY-INDEX](../research/requests/20261021-m11-computed-history-index.md) | open |
 | 35 | [R-M10-OBSTACLE-ALIAS](../research/requests/20261021-m10-obstacle-flag-alias.md) | open |
+| 36 | [R-M11-POSE-CONFIG](../research/requests/20261021-m11-pose-change-configuration.md) | open |
