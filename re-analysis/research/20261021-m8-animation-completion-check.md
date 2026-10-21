@@ -119,3 +119,40 @@ copies; those call paths still need review. Current production remains uint,
 so these are recovered requirements, not implemented fidelity. No tests run,
 new builder release or manifest change. Remaining: constructor default variants,
 watcher/deque lifetime, compound store/proxy, name producers and API delivery.
+
+## Follow-up: watcher cache sample and deferred ownership (2e0a1114)
+
+Partial independent PASS for the sampled value's lifetime, 2026-10-21.
+Current M8-015 remains IMPLEMENTATION_GAP with title/evidence above; re-read
+its adopted OV18 destructor/ActionEnding/deque evidence before this check.
+
+Native base destructor installs IActionRunner vptr at54109A before calling
+ActionEnding541238, and clears completion cache only later at541272. The base
+vtable symbol102147C plus header8 and getter slotC contains52B0A7 (Thumb).
+Getter52B0A6..B0AE copies runner+1C through veneer8CB09C: the ARM body loads
+FFBDE5A0 and adds PC8CB0AC, targeting PLT4A964C (const union assignment).
+Thus the destructor-time getter samples the prepared base cache, not the
+already-destructed derived action string. This does not certify every earlier
+destructor side effect or an unprepared action's default variant.
+
+ActionEnding541BB4..1C04 captures tag/type/result, invokes union getter541BF0,
+then obtains descendant results541BFA and pushes a const record541C04. Deque
+push541FA0..1FF6 calls record-copy5437D6 at1FEA before incrementing size. That
+record helper copies the union at5437F8. Combined with the independently
+checked tag1 copy helper, deferred animation payload remains owned after the
+action and temporary report are destroyed. Allocator/deque growth internals
+are not an observable-layout requirement and were not newly extracted.
+
+Current ActionWatcher.ActionEnding selects PreparedCompletionUnion for
+ActionRunner, samples it before GetSubActionResults, and enqueues the record.
+WatcherEnding calls it after stop/unlock work. These selected-value/order steps
+agree, but uint still cannot carry the recovered name. This comparison does
+NOT approve the entire watcher tree algorithm: current EnsureNode/attachment
+occurs before the sample, while this native slice only reaches later tree work
+after enqueue. Whether that earlier bookkeeping changes descendant results is
+still outside this bounded payload check; retain the lifecycle review boundary.
+
+No new correction, builder release, test run or fidelity change. Remaining
+completion obligations: default variants, compound store/proxy, full concrete
+name producers and public delivery, plus separate watcher-tree effects. The
+whole report remains only partially reviewed.
