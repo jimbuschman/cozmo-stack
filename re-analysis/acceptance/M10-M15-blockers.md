@@ -1,5 +1,15 @@
 # M10–M15 and M7/M8 acceptance: what stands in the way (2026-10-20)
 
+**Review update (Codex, operator-authorized, 2026-10-21):** contact charger contract
+checked against native instructions in `research/20261021-m13-017-located-charger-check.md`.
+One behavioral correction: A9 light trigger0x25 is selected by **new** state Known,
+not old state. Current Lights already agrees. Every-true contact observation and
+missing Sensors join confirmed. Next: integrate corrected contact evidence into
+an explicit owning inventory record and obtain the applicable inventory approval.
+No builder release, manifest settlement or hardware run; the report's exhaustive
+mount caller census remains outside this bounded check. Ongoing monitoring now
+includes active independent research reviews, not only queue upkeep.
+
 **Queue handoff (2026-10-21):** the four initial research answers are published
 (8626fcfd, c419483d, e0c71224, 9d1efe80), all pending independent review/adoption.
 The charger report corrects the initial rising-edge shorthand: observation runs

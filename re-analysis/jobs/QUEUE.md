@@ -235,7 +235,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 21 | [R-QUADTREE](../research/requests/20261013-quadtree-rest.md) | answered (7ba29fbf); checked (research/20261013-quadtree-rest-check.md) |
 | 22 | [R-SMALL-1](../research/requests/20261013-small-reads-1.md) | answered (overnight P2); checked (research/20261013-small-reads-1-check.md): M11-072 to build, M11-073 split (M11-076 to build) |
 | 23 | [R-SMALL-2](../research/requests/20261013-small-reads-2.md) | answered (overnight P3); checked (research/20261013-small-reads-2-check.md): M15-044 to build, M2-022 split (M2-023 to build) |
-| 24 | [R-M13-017](../research/requests/20261021-m13-017-located-charger.md) | answered 8626fcfd; pending independent review/adoption; contact observation is every true state, not only rising |
+| 24 | [R-M13-017](../research/requests/20261021-m13-017-located-charger.md) | checked with A9 correction (new state chooses light trigger), research/20261021-m13-017-located-charger-check.md; contact inventory integration/approval pending; D1 exhaustive caller census not verified |
 | 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; pending independent review/adoption |
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; pending independent review/adoption |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; pending independent review/adoption; reported constants/cancel/detach defects are not yet adopted |
