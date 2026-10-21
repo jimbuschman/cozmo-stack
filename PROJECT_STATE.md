@@ -40,6 +40,8 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **2026-10-21, operator release:** B-M13-9 is open for the checked every-contact-true charger observation (new M13-040). M13 inventory integrates A1-A11/P1-P4 and corrected new-state light rule; +0x34A terminology corrected to platform. No production built or record settled by this release. Independent builder review then operator hardware remain ahead; M1-M5 stay ACCEPTED.
+
 - **M5 run 4 (`acceptance/hardware/20261020-211745-M5-HW-87b83f`, 2026-10-20): hardware run PASSES** (judgement in its
   README). All sourced checks MATCH; LAYERS regraded MATCH after the lifecycle rule was limited to the animation stream
   (backpack-light 0x03/0x11 had followed the End). SLEEP known gap; LIVE_IDLE observation.

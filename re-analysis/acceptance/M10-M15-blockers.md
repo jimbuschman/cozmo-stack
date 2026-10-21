@@ -1,5 +1,7 @@
 # M10–M15 and M7/M8 acceptance: what stands in the way (2026-10-20)
 
+**Builder release (2026-10-21):** operator authorized queueing B-M13-9 after the checked-contract handoff. M13-040 now explicitly owns the unbuilt every-contact-true charger observation. Its checked A1-A11/P1-P4 contract (A9 corrected) is integrated into M13 inventory; B-M13-9 is open. Earlier approval-pending notes below are historical. No whole M13-017 settlement, mount build or hardware run is authorized by this job.
+
 **Review update (Codex, operator-authorized, 2026-10-21):** contact charger contract
 checked against native instructions in `research/20261021-m13-017-located-charger-check.md`.
 One behavioral correction: A9 light trigger0x25 is selected by **new** state Known,
@@ -37,8 +39,8 @@ hardware-only and blocked lists, SetOnCharger 0x00511990 (+0x338 read at 0x00511
 3. **Hardware scripts use the plain M5 format** (part list, WATCH NOW/STOP WATCHING, 1–4 answers, OK/PROBLEM/COULD NOT
    CHECK lines, every expectation cited). Change a harness only when a run shows a real defect.
 
-**First job: M13-017, the missing located charger.** The stack never creates it on
-SetOnCharger's rising edge. After contacts drop, the no-charger branch clears the
+**First job: M13-017, the missing located charger.** The stack lacks the observation on
+every contact-true SetOnCharger input. After contacts drop, the no-charger branch clears the
 platform flag and sends cliff threshold 400 before the footprint leaves the platform.
 This caused the false cliff stop in M5 run 3; the cancellation itself was faithful.
 Start from `research/20261020-m5-drive-cliff-stop.md`, `inventory/M13-navigation.md`
@@ -55,7 +57,7 @@ and event order. Do not settle all of M13-017 merely by fixing charger creation.
 
 - **Target:** the eight subsystems reach ACCEPTED under PROJECT_STATE.md's plan.
   M1–M5 stay ACCEPTED; M5's bundle is `hardware/20261020-211745-M5-HW-87b83f`.
-- **Examined:** HEAD `7f69e0b7`; counts below calculated directly from
+- **Counts refreshed:** 2026-10-21 after adding M13-040; calculated directly from
   `fidelity_manifest.json`, grouped by subsystem/status, including non-live records.
   All eight review states are currently INVENTORY_APPROVED.
 - **Labels:** **[F]** current manifest/source-note fact; **[P]** proposed work;
@@ -68,14 +70,14 @@ and event order. Do not settle all of M13-017 merely by fixing charger creation.
 | M10-derived | 17 | 3 | 0 | 0 | 14 | 0 | 0 | 0 |
 | M11-vision | 97 | 14 | 0 | 1 | 75 | 6 | 1 | 0 |
 | M12-manipulation | 49 | 8 | 0 | 1 | 37 | 2 | 1 | 0 |
-| M13-navigation | 39 | 3 | 0 | 0 | 34 | 1 | 1 | 0 |
+| M13-navigation | 40 | 3 | 0 | 0 | 35 | 1 | 1 | 0 |
 | M14-faces | 14 | 1 | 0 | 0 | 11 | 1 | 0 | 1 |
 | M15-freeplay | 71 | 3 | 0 | 1 | 61 | 4 | 1 | 1 |
 | M7-behaviour | 29 | 4 | 0 | 0 | 23 | 2 | 0 | 0 |
 | M8-framework | 27 | 0 | 0 | 1 | 24 | 2 | 0 | 0 |
-| **Total** | **343** | **36** | **0** | **4** | **279** | **18** | **4** | **2** |
+| **Total** | **344** | **36** | **0** | **4** | **280** | **18** | **4** | **2** |
 
-[F] Of the gaps, **278 implementation and 15 recoverable are live_path=true**.
+[F] Of the gaps, **279 implementation and 15 recoverable are live_path=true**.
 Non-live gaps are M13-036/037 (unsupported object tracking), M12-048 (unreachable
 crash candidates), M7-022 (developer test). They need per-record disposition, not
 implementation merely to clear the count. SDK recipients M7-024, M8-018, M11-056

@@ -44,6 +44,8 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
+**Next current-layer job (operator, 2026-10-21): B-M13-9**, the reviewed contact-true charger observation. Its inventory integration is authorized with this release; other HELD rows stay held.
+
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
 re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research lane is not held.
@@ -172,6 +174,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s7 | [B-M5-31](B-M5-31.md) | done8b9bc2d1; Codex bounded review PASS (research/20261020-b-m5-31-check.md);24..31 reviews complete, hardware/diagnostic gaps and successful driving outstanding |
 | 61w3s8 | [B-M5-32](B-M5-32.md) | DONE; baseline published with B-M5-33 in c984cc1f; initial review FAIL F1/F2, both closed by research/20261020-b-m5-33-check.md |
 | 61w3s9 | [B-M5-33](B-M5-33.md) | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-m5-33-check.md); focused 79/79, builder full suite 5968/5968; operator rerun next |
+| 61w3t | [B-M13-9](B-M13-9.md) | open — M13-040 checked contact observation; operator release 2026-10-21; no whole M13-017 settlement |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -239,6 +242,6 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; pending independent review/adoption |
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; pending independent review/adoption |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; pending independent review/adoption; reported constants/cancel/detach defects are not yet adopted |
-| 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | open |
+| 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; pending independent review/adoption |
 | 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | open |
 | 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | open |

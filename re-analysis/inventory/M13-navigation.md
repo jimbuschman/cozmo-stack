@@ -2639,3 +2639,21 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 ## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
 
 | Ownership notes (bodies/wiring moved from M2-020/M2-023) | M13-022 |
+
+
+## Contact observation integration (2026-10-21): M13-040
+
+Operator authorized queueing the builder after the checked-contract handoff. This bounded addition adopts the independent review in `research/20261021-m13-017-located-charger-check.md`, A1-A11/P1-P4 only, including its A9 correction. The earlier extraction is not adopted where it disagrees with that review. M13-040 stays IMPLEMENTATION_GAP. No existing record is settled, no new compatibility decision is made, and M1-M5 acceptance is unchanged.
+
+M13-040 owns the full contact-ingress observation join, including its ordered world and contact effects:
+
+- RobotState sync gate 0x0051293C..942, contact bit12 0x00512AAC/AAE and SetOnCharger call 0x00512AB4; SetOnCharger 0x00511990..0x00511C2D observes on every true input before old-contact gate 0x00511BA8/BB0. Contacts +0x338; platform +0x34A.
+- ChargerDockPose 0x004EA304..0x004EA35A: Z rotation pi bits 0x40490FDB, translation (30,0,0), robot pose parent and ChargerDockPose name. Located family4/type13 first/current-origin query 0x00511A1C..A52, 0x0061EBF2..0x0061EC26; factory and connected identity/unique SetID 0x00511AD6..0x00511B40, 0x004EF468..0x004EF528.
+- Known observation 0x00511B4A -> 0x00506B70..0x00506C48: reparent/root flatten, existing/new branch, SetPoseHelper 0x0050609C, distance -1, confirmer count1/reference/existing timestamp. Actionable cache invalidation 0x004E01E4..226; common SetPose 0x004EF590..646. AddLocatedObject 0x00622AC0..EB0 includes obstacle deletion, insertion stamp 0x00622D24..D30 and notification.
+- Notifications 0x00506F98/FA8/FB8 world/map/state-change; unchanged return 0x00506296..29A; changed nonzero new state map 0x005062B4 and active light recipient. 0x00639840 compares NEW state r3 with1: Known trigger0x25/layer2, other changed trigger1/layer2; unchanged no request.
+- Contact edge/store ordering 0x00511A66..ACC, 0x00511B50..0x00511C14; platform setter 0x00511D44..DCA; existing footprint tick 0x00513CD8..0x00513E2A and M4-019 threshold send 0x0063427E, 0x006342C8..CE, 0x00634364..368.
+- re-analysis/research/20261021-m13-017-located-charger-check.md: independent check of A1-A11/P1-P4 with corrected A9; supplementary mount and exhaustive caller census excluded.
+
+Correction to historical M13-017 descriptions above: +0x34A is platform, not contacts; +0x338 is contacts. BehaviorDriveOffCharger tests platform. Missing charger creation/update is now explicitly recorded in M13-040 and runs on every true contact state, not only the rising edge. M13-017 retains its other unresolved behavior/geometry work. M13-009 docked pose is the opposite direction from this contact-derived charger pose.
+
+Build scope and source-derived regression requirements are in `jobs/B-M13-9.md`. Reuse actual world/pose/identity/map/light owners; preserve addition stamp, caches, timestamp/distance semantics and event order. Shared-owner existence does not settle fidelity. The mount D rows, exhaustive D1 census, other DriveOffCharger gaps and hardware remain outside this approval.
