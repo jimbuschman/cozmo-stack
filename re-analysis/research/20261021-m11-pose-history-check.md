@@ -50,3 +50,39 @@ wording exists in current M11-052, but its native branches were not independentl
 rechecked in this pass. F3 and F5–F9, scalar/tree internals and the broader report's
 whole-record recommendations remain pending. The camera continuation and pose
 serialization caller reads are separate bounded jobs. No hardware claim.
+
+
+## Follow-up: raw query control flow (HEAD 46c8a213)
+
+Partial review extended to GetRawStateAt executable body 0x00531430..0x0053164A,
+independently disassembled from the shipped binary with resolved PLT calls.
+Compared NativeRobotStateHistory.cs GetRawStateAtCore. No tests run.
+
+- Empty/lower-bound/end/earliest-key gates 0x0053143A..474 return1 before output
+  writes. Exact key writes output time, assigns pose, copies **0x5B** state bytes
+  at 0x00531480..49C. This also corrects the current authority's old 0x5C wording.
+- Node+0x24 mismatch 0x005314BA..4C0 precedes flag compare 0x005314CA/4CE.
+  The adopted OV128 evidence identifies this as frame ID, whereas the current
+  authority text still calls it origin ID. This pass checks ordering/offset;
+  it does not independently re-extract the RobotState serializer field layout.
+- Flag1 converts after pose relative to before at 0x00531504; failure follows
+  diagnostic path to 0x06000000. Unsigned deltas convert to f32 separately then
+  divide at 0x00531510..524. Interpolate call 0x00531534 precedes output copy
+  and requested timestamp store at 0x00531558.
+- Flag0 calls HasSameRootAs 0x00531588. Deltas after-t and t-before compare at
+  0x00531598; unsigned >= branches to **before** 0x00531634. Otherwise after
+  is selected. Thus ties choose before. Failed root check also returns0x06000000
+  at 0x0053162E after diagnostics, without output state/time stores.
+
+Current code matches these control/data-selection rows, including unsigned
+fraction inputs and nearest tie-before. No query-branch rewrite is warranted.
+Current M11-052 is IMPLEMENTATION_GAP, titled “RobotStateHistory::GetRawStateAt
+interpolation and HistRobotState::Interpolate”; evidence includes OV128 H3-H8
+which already states the corrected flag/frame/tie contract. Its authority still
+says “two origin ids” and “0x5C bytes”, and its effect describes nearest output
+as erroneous without limiting that statement to flag1. Reconcile that stale
+text before settlement; no frozen field changed here.
+
+This is not a complete Interpolate/pose-tree review: arithmetic, root fault
+handling, assignment internals and live consumers remain under their existing
+records. Earlier F4 finding stands. Whole report approval is still pending.

@@ -174,7 +174,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s7 | [B-M5-31](B-M5-31.md) | done8b9bc2d1; Codex bounded review PASS (research/20261020-b-m5-31-check.md);24..31 reviews complete, hardware/diagnostic gaps and successful driving outstanding |
 | 61w3s8 | [B-M5-32](B-M5-32.md) | DONE; baseline published with B-M5-33 in c984cc1f; initial review FAIL F1/F2, both closed by research/20261020-b-m5-33-check.md |
 | 61w3s9 | [B-M5-33](B-M5-33.md) | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-m5-33-check.md); focused 79/79, builder full suite 5968/5968; operator rerun next |
-| 61w3t | [B-M13-9](B-M13-9.md) | open — M13-040 checked contact observation; operator release 2026-10-21; no whole M13-017 settlement |
+| 61w3t | [B-M13-9](B-M13-9.md) | CLAIMED Codex 2026-10-21 (46d9b932); M13-040 checked contact observation; result pending |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -239,11 +239,12 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 22 | [R-SMALL-1](../research/requests/20261013-small-reads-1.md) | answered (overnight P2); checked (research/20261013-small-reads-1-check.md): M11-072 to build, M11-073 split (M11-076 to build) |
 | 23 | [R-SMALL-2](../research/requests/20261013-small-reads-2.md) | answered (overnight P3); checked (research/20261013-small-reads-2-check.md): M15-044 to build, M2-022 split (M2-023 to build) |
 | 24 | [R-M13-017](../research/requests/20261021-m13-017-located-charger.md) | checked with A9 correction (new state chooses light trigger), research/20261021-m13-017-located-charger-check.md; contact inventory integrated as M13-040 and B-M13-9 released e48d585b; D1 exhaustive caller census not verified |
-| 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; partial F4 check in research/20261021-m11-pose-history-check.md (citation cleanup confirmed); remaining report pending review, no settlement |
+| 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; partial F4 and raw-query control-flow check in research/20261021-m11-pose-history-check.md (citation cleanup; nearest tie-before confirmed); remaining report pending review, no settlement |
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; pending independent review/adoption |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; pending independent review/adoption; reported constants/cancel/detach defects are not yet adopted |
 | 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; pending independent review/adoption |
 | 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; pending independent review/adoption |
-| 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | open |
+| 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
 | 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | open |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | open |
+| 33 | [R-M8-PROFILE](../research/requests/20261021-m8-action-motion-profile-lifetime.md) | open |

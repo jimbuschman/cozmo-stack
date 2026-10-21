@@ -1,6 +1,6 @@
 # M10–M15 and M7/M8 acceptance: what stands in the way (2026-10-20)
 
-**Monitor update (2026-10-21):** B-M13-9 remains open; no builder claim/result has been published as of f395e545. Timeout and typed completion answers are published, pending review. M11 F4 has a partial independent check (`research/20261021-m11-pose-history-check.md`): wrong helper citation confirmed, cleanup only. Remaining M11 report is unreviewed. Three readings are open: frame-pose assembly, supported pose-serialization callers, and one FeedingEat cancellation-survivor candidate. No additional builder release or fidelity change.
+**Monitor update (2026-10-21, 46c8a213):** B-M13-9 is CLAIMED (46d9b932), result pending. Frame-pose assembly, timeout and typed completion answers are pending review. M11 partial check now includes raw-query control flow: current nearest tie-before behavior agrees; stale citation/authority cleanup retained, no whole-record approval. Three readings remain open: pose-serialization callers, FeedingEat survivor, action-owned motion-profile lifetime. No additional builder release or fidelity change.
 
 **Builder release (2026-10-21):** operator authorized queueing B-M13-9 after the checked-contract handoff. M13-040 now explicitly owns the unbuilt every-contact-true charger observation. Its checked A1-A11/P1-P4 contract (A9 corrected) is integrated into M13 inventory; B-M13-9 is open. Earlier approval-pending notes below are historical. No whole M13-017 settlement, mount build or hardware run is authorized by this job.
 
