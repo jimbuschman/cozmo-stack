@@ -72,6 +72,25 @@ while read -r local_ref local_sha remote_ref remote_sha; do
         continue
     fi
 
+    # Harness-only push (operator, 2026-10-20): no stack project references Cozmo.Conformance (only the test project
+    # does), so a push whose code changes are only the harness and the test files that use it runs just those test
+    # classes. Any other code or record change still runs the full suite. Not cached as a full pass.
+    harness_tests=$(grep -l "using Cozmo.Conformance" cozmo-stack/tests/Cozmo.Protocol.Tests/*.cs | sed 's#.*/##; s#\.cs$##')
+    harness_files=$(echo "$harness_tests" | sed 's#^#cozmo-stack/tests/Cozmo.Protocol.Tests/#; s#$#.cs#')
+    other=$(echo "$changed" | grep -E "$needs_tests" | grep -v '^cozmo-stack/src/Cozmo\.Conformance/' | grep -vxF "$harness_files")
+    if [ -n "$harness_tests" ] && [ -z "$other" ]; then
+        filter=$(echo "$harness_tests" | sed 's#^#FullyQualifiedName~#' | paste -sd'|' -)
+        echo "pre-push: fidelity check passed; harness only, so the harness test classes run for $local_sha; log in $log"
+        if ! dotnet test cozmo-stack/Cozmo.sln --filter "$filter" --blame-hang --blame-hang-timeout 5m >> "$log" 2>&1; then
+            grep -E "\[FAIL\]|Failed!|error CS|hang|Blame" "$log" | head -20
+            echo "pre-push: REFUSED. The harness tests failed."
+            exit 1
+        fi
+        grep -E "Passed!" "$log" | tail -1
+        echo "pre-push: gate passed (harness only)."
+        continue
+    fi
+
     echo "pre-push: fidelity check passed; full test suite for $local_sha (about 4 minutes); log in $log"
     # A test that hangs or allocates without end fails the push after 5 minutes and is named in the log, instead of
     # stalling the machine (seen twice on 2026-10-12, with 6-10 GB in testhost).
