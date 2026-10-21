@@ -1,6 +1,6 @@
 # M10–M15 and M7/M8 acceptance: what stands in the way (2026-10-20)
 
-**Monitor update (2026-10-21, 2e0a1114):** no new pushes. B-M10-2 remains completed/bounded PASS; B-M11-18 remains HELD. M8 partial review now checks watcher cache selection and deferred payload copying; compound/default/API and whole watcher-tree effects remain pending. Three research jobs are still open; no duplicate/new reading requests added. No builder release, fidelity, verification or acceptance changes. Earlier release/open notes below are historical.
+**Monitor update (2026-10-21, d2fa68f3):** M8 partial review additionally confirms compound payload capture and asymmetric proxy selection; defaults/name/API and wider lifecycle remain pending. Mood Init/pet-size answers are pending review. Three readings open: carried-detach pose, missing mood-config outcome and existing calibration corpus (read-only bundles, no hardware run). B-M10-2 remains bounded PASS; B-M11-18 remains HELD. No new builder release or fidelity/acceptance changes. Earlier release/open notes below are historical.
 
 **Builder release (2026-10-21):** operator authorized queueing B-M13-9 after the checked-contract handoff. M13-040 now explicitly owns the unbuilt every-contact-true charger observation. Its checked A1-A11/P1-P4 contract (A9 corrected) is integrated into M13 inventory; B-M13-9 is open. Earlier approval-pending notes below are historical. No whole M13-017 settlement, mount build or hardware run is authorized by this job.
 

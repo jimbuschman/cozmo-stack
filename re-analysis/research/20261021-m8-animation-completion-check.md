@@ -156,3 +156,36 @@ No new correction, builder release, test run or fidelity change. Remaining
 completion obligations: default variants, compound store/proxy, full concrete
 name producers and public delivery, plus separate watcher-tree effects. The
 whole report remains only partially reviewed.
+
+## Follow-up: compound payload store and proxy selection (d2fa68f3)
+
+Partial independent PASS for the payload/type capture and selector rules.
+Current M8-017 is IMPLEMENTATION_GAP, “The compound action runtime:
+ICompoundAction, CompoundActionSequential and CompoundActionParallel
+(construction, AddAction naming, update/result tables, retry, completion store,
+teardown), as used by the go-to-sleep sequence and other compounds”. Re-read
+its OV20/21 evidence D1-D4 (54F050..F130,54F270..F3EA, related teardown).
+
+Read native54F050..F0DC and54F20C..F3EE against CompoundActions.cs138..188.
+Store invokes child union getterF072, independent copyF078, reads typeF086 and
+current tagF08C, moves union into map node+14 atF0AE, writes type+3C atF0B4,
+then Preps childF0C0. Proxy match updates parent typeF0CA..F0DA. This agrees
+with current capture-before-Prep sequence; uint storage still omits the name.
+Map insertion internals and subsequent delete/retain tail are not approved by
+this bounded read; the existing external-owner retention MISSING remains.
+
+SetCompletionUnionProxy stores tag/enabled then scans all childrenF228..F24E,
+updating type on each match. A cached entry subsequently overrides typeF256..F264.
+GetCompletionUnion instead invokes the first live matching child's getterF322
+and exits after releasing its temporary shared referenceF32A..F334. With no
+live match it searches the cacheF344 and copies node+14; absent cache warns
+and copies base+1C atF3E4..F3EA. No proxy takes the same base fallback directly.
+Getter has no parent-type store. Current setter/getter agree on these distinct
+selection rules. Previously checked union copy/move requirements apply to the
+captured value; a typed port must retain value and type independently.
+
+No whole compound runtime, callback-reentry, retained-child destruction or
+watcher-tree approval; no new defect in the inspected selector steps. No tests,
+builder release or manifest changes. Remaining completion review: constructor
+default variants, concrete name/retry producers, public delivery and the
+separate lifecycle effects already named. Whole report remains partial.

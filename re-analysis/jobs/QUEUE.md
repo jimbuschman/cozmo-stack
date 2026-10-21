@@ -260,7 +260,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; partial Clear mechanics check research/20261021-m8-actionlist-check.md; remaining report/survivor effects pending |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; F1 constants checked research/20261021-m10-classifier-check.md, B-M10-2 released; cancel/detach and remaining rows pending |
 | 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; T1-T3/T6 value/writers checked in research/20261021-m11-pose-history-check.md; census/alias claims pending; no settlement |
-| 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing, Prep/game sampling, tag1 ownership and watcher-cache/deque payload check research/20261021-m8-animation-completion-check.md; compound/default/API and full watcher-tree rows pending, no release |
+| 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing, Prep/game sampling, tag1 ownership watcher-cache/deque and compound payload selector check research/20261021-m8-animation-completion-check.md; default/name/API and full lifecycle rows pending, no release |
 | 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
 | 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answered c334871d; pending independent review/adoption |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | answered 166a2e6a; pending independent review/adoption |
@@ -283,5 +283,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 49 | [R-M7-MOOD-JOIN](../research/requests/20261021-m7-mood-completion-owner-join.md) | answered 3f5a1337; pending independent review/adoption |
 | 50 | [R-M14-IMAGE-INPUT](../research/requests/20261021-m14-image-coordinate-input.md) | answered b7b32940; pending independent review/adoption |
 | 51 | [R-M12-DETACH-POSE](../research/requests/20261021-m12-detach-pose-join.md) | open |
-| 52 | [R-M7-MOOD-INIT](../research/requests/20261021-m7-mood-init-input.md) | open |
-| 53 | [R-M14-PET-SIZE](../research/requests/20261021-m14-pet-image-size-boundary.md) | open |
+| 52 | [R-M7-MOOD-INIT](../research/requests/20261021-m7-mood-init-input.md) | answered b19ce1bc; pending independent review/adoption |
+| 53 | [R-M14-PET-SIZE](../research/requests/20261021-m14-pet-image-size-boundary.md) | answered d2fa68f3; pending independent review/adoption |
+| 54 | [R-M7-MOOD-MISSING](../research/requests/20261021-m7-missing-mood-config-outcome.md) | open |
+| 55 | [R-M14-CALIBRATION-CORPUS](../research/requests/20261021-m14-existing-calibration-corpus.md) | open |
