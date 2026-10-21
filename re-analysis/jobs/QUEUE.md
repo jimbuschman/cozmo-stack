@@ -206,7 +206,22 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 
 ## Research lane (clone `cozmo-stack-codex`)
 
-**Operator, 2026-10-21:** keep 3–4 independent reading jobs queued at a time.
+**HOLD ON NEW READING (operator, 2026-10-21, 09:30).** Research answers outran review: 20 of jobs 24–50 are
+"pending independent review/adoption" and only two builds came out. Until the backlog is cleared:
+1. **Queue no new research job.** Finish only the rows already `open` (51–53), then stop reading.
+2. **Review the backlog in plan order** (`acceptance/M10-M15-blockers.md`): M13 first (37 R-M13-DRIVEOFF-JOINS, 38
+   R-M11-CHARGER-MAP, then M13-017's remaining rows), then M11 foundations (25, 28, 30, 31, 34, 36, 44), then M8
+   (26, 29, 32, 33, 40, 43, 46), then M10 (27, 35, 45). Leave M7/M12/M14/M15 answers (39, 41, 42, 47–53) unreviewed
+   until their layer's turn.
+3. **A review checks the cited instructions in the `.so` itself** and writes `research/<date>-<job>-check.md`. Mark each
+   review "Codex review; Claude spot-check pending" while Claude is out of usage. A finding needed by a build gets a
+   Claude/Opus check before that build is accepted.
+4. **Build only from a reviewed answer,** one builder job at a time, toward finishing M13-017 first. The next robot check
+   (dock, drive off, cliff threshold stays 50 until the footprint leaves the charger) waits for M13-017.
+5. **Lifting the hold:** when no answer is left pending review in the current layer, return to at most 3–4 open
+   reading jobs, each queued only for the next build it feeds.
+
+**Operator, 2026-10-21 (earlier):** keep 3–4 independent reading jobs queued at a time.
 First batch: R-M13-017, R-M11-POSE-HISTORY, R-M8-ACTIONLIST,
 R-M10-CLASSIFIER (all answered; pending review). Continue with the first open row.
 Run one request at a time; after publishing its answer, continue
