@@ -86,3 +86,39 @@ text before settlement; no frozen field changed here.
 This is not a complete Interpolate/pose-tree review: arithmetic, root fault
 handling, assignment internals and live consumers remain under their existing
 records. Earlier F4 finding stands. Whole report approval is still pending.
+
+
+## Follow-up: F1 timeout value and two named writers (HEAD c334871d)
+
+Independent bounded check of `20261021-m11-history-timeout-input.md` T1-T3/T6.
+Current M11-051 remains IMPLEMENTATION_GAP, title
+“RobotStateHistory::AddRawOdomState gates (drop, consecutive-gap reset, parent
+check, duplicate key)”; evidence names 0x00530CF8..0x00530EC4 AddRawOdomState,
+0x005309D1 CullToWindowSize and the 20260929 batchA4 report. Nothing changed.
+
+- ELF bytes at 0x01051F48 are 000000000088b340: f64 bits40B3880000000000,
+  exactly5000.0. GOT0x0103EA54 relocates to the named ReliableConnection timeout.
+- Read entire Init body 0x0062EFB0 through final bx at0x0062F084. r5=0 at
+  0x0062EFC0 remains unchanged through STRD r5,r3 at0x0062F070. Calls preserve
+  r5 under the ABI. r3 is explicitly constructed40B38800 at0x0062F062/068.
+  Literal0x0062F0C4 + PC0x0062F060 resolves GOT0x0103EA54. Both words are known.
+- Read Configure 0x0062F0C8 through return0x0062F17A. r3=0 at0x0062F0E0
+  survives until STRD r3,r1 at0x0062F172; r1=40B38800 at0x0062F162/16C.
+  Literal0x0062F1B0 + PC0x0062F160 resolves the same GOT. No calls or input
+  loads supply this constant in that body.
+- History literal0x00530FE0 + PC0x00530D44 also resolves that GOT; load through
+  it at0x00530D46/48 reads the double. Reviewed conversion0x00530D4C..D8E:
+  for5000 it adds0.5, rounds via the existing helper and converts to u32.
+  Delta subtraction/comparison0x00530DB2..DB6 admits equality via BLS.
+  Current NativeRobotStateHistory default and comparison agree at this value.
+
+**Verdict:** fixed storage and both named full-value writes are independently
+confirmed. The earlier specifically untraced low-word issue is closed at the
+source-review level. No need to couple the host transport timeout override into
+history based on this finding. It does not establish a new host-input policy.
+
+This check does not repeat T4/T5/T7's branch/materialization/other-library census
+or transport reader alias analysis. Those reported bounds remain pending review,
+not silently upgraded into a whole-binary no-other-writer proof. Full admission,
+parent/cull and whole M11-051 settlement remain outside this slice; no inventory,
+manifest status, builder release, tests or hardware change.

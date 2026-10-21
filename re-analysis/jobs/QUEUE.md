@@ -242,9 +242,10 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; partial F4 and raw-query control-flow check in research/20261021-m11-pose-history-check.md (citation cleanup; nearest tie-before confirmed); remaining report pending review, no settlement |
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; pending independent review/adoption |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; pending independent review/adoption; reported constants/cancel/detach defects are not yet adopted |
-| 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; pending independent review/adoption |
+| 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; T1-T3/T6 value/writers checked in research/20261021-m11-pose-history-check.md; census/alias claims pending; no settlement |
 | 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; pending independent review/adoption |
 | 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
-| 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | open |
+| 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answered c334871d; pending independent review/adoption |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | open |
 | 33 | [R-M8-PROFILE](../research/requests/20261021-m8-action-motion-profile-lifetime.md) | open |
+| 34 | [R-M11-HISTORY-INDEX](../research/requests/20261021-m11-computed-history-index.md) | open |
