@@ -1,0 +1,183 @@
+{
+  "bundle": "20261020-180933-M5-HW-bde6cd",
+  "commit": "1bd606265157ef133337e634ab7ea023536725b8",
+  "createdUtc": "2026-10-20T23:17:44.3298272Z",
+  "argv": [
+    "m5-hw",
+    "--resources",
+    "re-analysis/obb/assets/cozmo_resources",
+    "--allow-drive"
+  ],
+  "hashes": {
+    "result.json": "00a2cb448238bac7a160e41a18578d69546c7c73390042c6fac1a6e628ec308f",
+    "events.jsonl": "35150277c6421bd0bd27e9d7bf08c1e650b0772c1dad815519622dc1b053d608",
+    "SUMMARY.txt": "982cd3e08f7212ceeff74876b938fbf41a5a2992a53fae717bd75595d9bb0323"
+  },
+  "provenance": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/M5Hw.cs",
+      "sha256": "a4de2ba604b80974a388176e255d5c192ff15d1f964dab294b05365cdb0b3385",
+      "savedCopyMatches": true
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs",
+      "sha256": "648fa44b28020e41329f702a42e427c7aead4c6b4e6f8db811e46c1fce249b1c",
+      "savedCopyMatches": true
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/Program.cs",
+      "sha256": "374ed957f368e2bb6a4706836b635c8071e9bee5269dabb95237ec6f572a7abc",
+      "savedCopyMatches": true
+    },
+    {
+      "path": "re-analysis/acceptance/hardware/scripts/m5-hw-1.md",
+      "sha256": "240ba4057b4b7fc08296d01d8613e49df53be64cb51f6a9ff7acc804a43dae62",
+      "savedCopyMatches": true
+    },
+    {
+      "path": "re-analysis/fidelity_manifest.json",
+      "sha256": "67e79ee60514571a45a0b5652d01bbf18798eb7159a943525a6312dca7c58ca9",
+      "savedCopyMatches": true
+    },
+    {
+      "path": "re-analysis/research/20261019-m5-settling-b.md",
+      "sha256": "859a6b53d55ab9263c39a9dd89328563cacec61b91dd58cebc94e343fe2b924c",
+      "savedCopyMatches": true
+    }
+  ],
+  "reportedRunErrors": [],
+  "events": [
+    {
+      "line": 10,
+      "atMs": 3466.9059,
+      "kind": "engine-log",
+      "level": "warning",
+      "name": "AnimationTriggerResponsesContainer::GetResponse",
+      "text": "(tc0000) : Animation requested for unknown response 'NeutralFace'"
+    },
+    {
+      "line": 11,
+      "atMs": 3467.2817,
+      "kind": "engine-log",
+      "level": "error",
+      "name": "AnimationGroupContainer.GetAnimationGroup_Const.InvalidName",
+      "text": "(tc0000) : AnimationGroup requested for unknown animation group ''."
+    },
+    {
+      "line": 12,
+      "atMs": 3467.451,
+      "kind": "engine-log",
+      "level": "error",
+      "name": "AnimationStreamer.Constructor.BadNeutralAnimGroup",
+      "text": "(tc0000) : Neutral animation group  for trigger NeutralFace is empty or null"
+    },
+    {
+      "line": 1466,
+      "atMs": 3811.9637,
+      "kind": "engine-log",
+      "level": "info",
+      "name": "RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary",
+      "text": "Loading 'anim_neutral_eyes_01' from C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources\\assets\\animations\\anim_singlepose_01.bin"
+    },
+    {
+      "line": 2157,
+      "atMs": 3884.0726,
+      "kind": "engine-log",
+      "level": "info",
+      "name": "RobotDataLoader.LoadAnimationGroupFile.LoadingSpecificAnimGroupFromJson",
+      "text": "Loading 'ag_neutral_face' from C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources\\assets\\animationGroups\\face\\ag_neutral_face.json"
+    },
+    {
+      "line": 2208,
+      "atMs": 4285.5491,
+      "kind": "connection-response",
+      "result": "Success"
+    },
+    {
+      "line": 2503,
+      "atMs": 6798.2826,
+      "kind": "check-readiness",
+      "assets": true,
+      "calibrated": true
+    }
+  ],
+  "checks": [
+    {
+      "id": "TAGS",
+      "verdict": "OBSERVED_OUTBOUND_TAG_SEQUENCE",
+      "resultKind": "MATCH"
+    },
+    {
+      "id": "ABORT",
+      "verdict": "OBSERVED_CANCEL_COMMAND",
+      "resultKind": "MATCH",
+      "neutralReference": {
+        "verdict": "INCONCLUSIVE",
+        "missing": "Loaded neutral clip/first face is unavailable; no invented appearance reference"
+      },
+      "observationWindow": {
+        "check": "ABORT",
+        "phase": "CANCEL",
+        "watch": "the eyes on the face screen, the whole head, and the front lifting arms",
+        "expected": "This takes a few seconds. An animation starts, then the program asks it to stop after about three quarters of a second.\nKeep looking at Cozmo until END. The animation's exact expression varies; you do not need to identify it.\nAfterward you will answer FOUR separate questions:\n  1. Did the animation that was playing stop, or did it keep going?\n  2. Did the eyes return to shapes like the picture in neutral-reference.svg? Compare their outlines, not color or thin display lines.\n  3. Did the eyes briefly close and open again? That is a BLINK.\n  4. Did the eye shapes slide left/right or up/down inside the screen? That is an EYE DART, not the whole head moving.\nA later blink or eye dart does not by itself mean the original animation continued. If you cannot distinguish them, choose unclear.",
+        "fromMs": 39842.5692,
+        "outcome": "completed",
+        "toMs": 42619.4354,
+        "freeText": "The eyes are animating the hwole time. they blink and one is bigger then the ohter. mostly hanging around the upper irght of their face. one eye is bigger then the otehr. basically doing that that whole time."
+      }
+    },
+    {
+      "id": "KEEP_ALIVE",
+      "verdict": "INCONCLUSIVE",
+      "resultKind": "INCOMPLETE"
+    },
+    {
+      "id": "LOCKED_HEAD",
+      "verdict": "OBSERVED_LOCKED_HEAD_EVIDENCE",
+      "resultKind": "MATCH"
+    },
+    {
+      "id": "AUDIO",
+      "verdict": "OBSERVED_AUDIO_FRAMING_AND_ADMISSION",
+      "resultKind": "MATCH",
+      "missing": []
+    },
+    {
+      "id": "LAYERS",
+      "verdict": "INCONCLUSIVE",
+      "resultKind": "INCOMPLETE",
+      "missing": "Existing layers did not drain after nonlive InitStream RemoveKeepFaceAlive(99)"
+    },
+    {
+      "id": "LIVE_IDLE",
+      "verdict": "OBSERVED_LIVE_IDLE_MEASUREMENTS",
+      "resultKind": "OBSERVATION",
+      "missing": []
+    },
+    {
+      "id": "PARAMETERS",
+      "verdict": "OBSERVED_BLINK_CALL_TRANSITIONS",
+      "resultKind": "MATCH"
+    },
+    {
+      "id": "DRIVING",
+      "verdict": "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS",
+      "resultKind": "MATCH",
+      "result": "FailedTraversingPath",
+      "successfulTraversalCoverage": false,
+      "traversalJudgement": "NOT_JUDGED: successful traversal belongs to the M12/M13 acceptance, which must observe a successful DriveToPose. Phase requests/API results alone do not certify physical traversal or M12/M13 source completeness. Failed traversal cannot satisfy successful traversal coverage."
+    },
+    {
+      "id": "SLEEP",
+      "verdict": "KNOWN_GAP",
+      "resultKind": "KNOWN_GAP"
+    },
+    {
+      "id": "TEARDOWN",
+      "verdict": "OBSERVED_DISPOSE_DISCARD_INTERVAL",
+      "resultKind": "MATCH"
+    }
+  ],
+  "neutralReferenceFilePresent": false,
+  "scope": "Observed evidence only; native/app path and judgement are in the companion reports."
+}

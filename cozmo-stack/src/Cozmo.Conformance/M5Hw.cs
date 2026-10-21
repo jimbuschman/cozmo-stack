@@ -34,7 +34,7 @@ public static class M5Hw
         new("SLEEP", "Sleep deadline fallback and known action gap", new[]{"M5-038","M1-045","M8-017","M8-020","M8-021"}),
         new("TEARDOWN", "Dispose interval, discarded buffer and transport provenance", new[]{"M5-037","M5-053","M5-055","M5-059","M5-060","M5-022","M4-026","M5-036","M6-042"}),
     };
-    public static readonly string[] RecordIds = Checks.SelectMany(x => x.Records).Distinct().ToArray();
+    public static readonly string[] RecordIds = Checks.SelectMany(x => x.Records).Concat(HarnessStartup.RecordIds).Distinct().ToArray();
     public sealed record SourceRule(string Check, string Record, string Citation, string Comparison);
     public static readonly SourceRule[] SourceRules = {
         new("TAGS", "M5-008", "0x00579FD0..0x00579FD4; 0x0057B2D4..0x0057B2F6; 0x0057C410..0x0057C424", "Fresh outgoing tag allocation starts at 1 and increments; three captured non-idle starts are compared with 1,2,3. Layer starts share the allocator, so this does not establish clip attribution."),
@@ -187,7 +187,7 @@ public static class M5Hw
     }
     public static string? CheckDefinitionProblem()
     {
-        if (Checks.SelectMany(x => x.Records).Except(RecordIds).Any() || RecordIds.Except(Checks.SelectMany(x => x.Records)).Any()) return "check/record mismatch";
+        if (Checks.SelectMany(x => x.Records).Except(RecordIds).Any() || RecordIds.Except(Checks.SelectMany(x => x.Records).Concat(HarnessStartup.RecordIds)).Any()) return "check/record mismatch";
         if (Checks.Any(c => !SourceRules.Any(r => r.Check == c.Id))) return "check has no source/known-gap basis";
         if (SourceRules.Any(r => !Checks.Any(c => c.Id == r.Check && c.Records.Contains(r.Record))
             || string.IsNullOrWhiteSpace(r.Citation) || string.IsNullOrWhiteSpace(r.Comparison))) return "invalid or uncited comparison";
@@ -327,6 +327,7 @@ internal sealed class M5Run
     CozmoRobot? robot; RobotConnectionResponse? response; bool disposed, disposeCompleted, connected; string cache = ""; bool cacheCtor;
     JsonObject neutralReference = new();
     JsonObject? activeObservationWindow;
+    HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup;
     double Now => clock.Elapsed.TotalMilliseconds;
     public M5Run(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, HashSet<string>? only, bool yes, bool drive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.only = only; this.yes = yes; this.drive = drive; clockOrigin = Stopwatch.GetTimestamp() - clock.ElapsedTicks; }
@@ -336,6 +337,8 @@ internal sealed class M5Run
     void Wait(int ms) { if (cancel.Token.WaitHandle.WaitOne(ms)) cancel.Token.ThrowIfCancellationRequested(); }
     bool Poll(Func<bool> predicate, int ms) { double end = Now + ms; while (Now < end) { if (predicate()) return true; Wait(10); } return predicate(); }
     JsonObject Observe(string note) => new() { ["verdict"] = "OBSERVED_CAPTURE", ["verdictRule"] = note };
+    JsonObject[] EngineLogs() => events.Where(e => e["kind"]?.GetValue<string>() == "engine-log").ToArray();
+    string StartupLine() => startup?.Describe() ?? "startup report not completed";
     JsonObject Missing(string note) => new() { ["verdict"] = "INCONCLUSIVE", ["missing"] = note };
     string? ReadLineBounded() { var read = Task.Run(Console.ReadLine); while (!read.IsCompleted) { if (cancel.IsCancellationRequested) return null; Thread.Sleep(50); } return read.GetAwaiter().GetResult(); }
     JsonObject BeginWindow(string check, string phase)
@@ -446,12 +449,21 @@ internal sealed class M5Run
             robot.Animations.Event += s => Event("animation-event", new() { ["text"] = s });
             robot.State.StateUpdated += s => Event("state", new() { ["headRad"] = s.HeadAngle, ["motionHeadRad"] = robot.Motion.HeadAngleRad, ["status"] = s.Status, ["streamBytes"] = robot.Animations.Scheduler.Stream.BytesStreamed, ["streamFrames"] = robot.Animations.Scheduler.Stream.FramesStreamed });
             robot.Message += m => { if (m is AnimationState a) Event("animation-state", new() { ["robotTimestamp"] = a.Timestamp, ["bytesPlayed"] = a.NumAnimBytesPlayed, ["audioPlayed"] = a.NumAudioFramesPlayed, ["tag"] = a.Tag, ["drops"] = a.ClientDropCount, ["enabledAnimTracks"] = a.EnabledAnimTracks, ["streamBytes"] = robot.Animations.Scheduler.Stream.BytesStreamed, ["streamFrames"] = robot.Animations.Scheduler.Stream.FramesStreamed }); };
-            robot.ConnectToRobot(ip);
-            connected = Poll(() => response?.Result == RobotConnectionResult.Success && robot.Engine.Robot is { TimeSynced: true, FirstFullStateHandled: true, ReadyToStream: true }, 15000);
+            // fidelity: M2-021 — ConnectToRobot only after delivered readiness, as CozmoRobot.ConnectAsync does.
+            startupGate = HarnessStartup.ConnectAfterReadiness(robot, () => robot.ConnectToRobot(ip), () => cancel.IsCancellationRequested);
+            Event("startup-gate", startupGate.ToJson()); Console.WriteLine("Startup: " + startupGate.Describe());
+            if (!startupGate.Ready) errors.Enqueue("startup: " + startupGate.Describe());
+            connected = startupGate.Ready && Poll(() => response?.Result == RobotConnectionResult.Success && robot.Engine.Robot is { TimeSynced: true, FirstFullStateHandled: true, ReadyToStream: true }, 15000);
             if (connected) { bool assets = Poll(() => robot.Animations.ClipNames.Count > 0, 15000); bool calibrated = Poll(() => robot.State.CalibrationComplete, 20000); Event("check-readiness", new() { ["assets"] = assets, ["calibrated"] = calibrated }); connected = assets && calibrated; }
+            startup = HarnessStartup.Analyse(EngineLogs(), startupGate,
+                connected ? HarnessStartup.HasCachedNeutralFace(robot) : null,
+                connected ? null : "connection/streaming readiness or calibration did not complete");
+            Event("startup-report", startup.ToJson()); Console.WriteLine("Startup: " + startup.Describe());
+            HarnessStartup.RequireValid(startup);
             if (connected)
             {
                 SaveNeutralReference();
+                if (neutralReference["file"] is null) throw new InvalidOperationException("Startup incomplete: loaded neutral reference could not be written.");
                 if (!yes && neutralReference["file"] is not null)
                 {
                     Console.WriteLine("Before starting: open the neutral-reference.svg file shown above in your browser (you can paste its full path into the address bar).\n"
@@ -465,6 +477,7 @@ internal sealed class M5Run
             {
                 double start = Now; JsonObject result;
                 if (only is not null && !only.Contains(def.Id)) result = Missing("not selected by --only");
+                else if (startupGate is { Ready: false } gate) result = Missing("startup: " + gate.Describe());
                 else if (!connected || robot.Transport.State != LinkState.Connected) result = Missing("connection/readiness unavailable");
                 else if (cancel.IsCancellationRequested) result = Missing("run interrupted");
                 else
@@ -482,7 +495,15 @@ internal sealed class M5Run
                 Console.WriteLine(result["summary"]!.GetValue<string>());
             }
         }
-        catch (Exception e) { errors.Enqueue(e.ToString()); }
+        catch (Exception e)
+        {
+            errors.Enqueue(e.ToString());
+            if (startup is null || results.Count == 0)
+            {
+                startup = HarnessStartup.Analyse(EngineLogs(), startupGate, startup?.NeutralAvailable, interrupted: e.Message);
+                Event("startup-report", startup.ToJson()); Console.WriteLine("Startup: " + startup.Describe());
+            }
+        }
         finally { ClosePendingWindow("Run interrupted before phase completion."); DisposeBounded(); Console.CancelKeyPress -= interrupt; WriteBundle(); }
         Console.WriteLine("M5 observations saved: " + bundle + "\nNo record settled; return this whole folder for review.");
         return errors.Count == 0 && results.Count == 11 && results.All(x => M5Hw.ResultKind(x) is "MATCH" or "OBSERVATION" or "KNOWN_GAP") ? 0 : 1;
@@ -787,12 +808,13 @@ internal sealed class M5Run
             + "MATCH compares captured messages/state with a cited source rule. MISMATCH needs review. INCOMPLETE means setup/evidence was missing.\n"
             + "OBSERVATION and KNOWN_GAP are not engine-behavior passes. Physical answers never settle M5 or certify firmware behavior.\n\n"
             + string.Join("\n\n", results.Select(M5Hw.DescribeResult))
+            + "\n\nStartup: " + StartupLine()
             + "\n\nRun errors:\n" + (errors.IsEmpty ? "None." : string.Join("\n", errors)));
         File.WriteAllLines(Path.Combine(bundle, "frames.jsonl"), frames.Select(f => new JsonObject { ["atMs"] = f.T, ["outbound"] = f.Out, ["rawBase64"] = Convert.ToBase64String(f.Raw), ["error"] = f.Error }.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), Wire().Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload), ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal, ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "diagnostics.jsonl"), Diagnostics().Select(d => { var row = JsonSerializer.SerializeToNode(d.Observation, d.Observation.GetType())!.AsObject(); row["type"] = d.Observation.GetType().Name; row["atMs"] = d.AtMs; return row.ToJsonString(); }));
-        var files = new JsonArray(); foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M5Hw.cs", "cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs", "cozmo-stack/src/Cozmo.Conformance/Program.cs", "re-analysis/acceptance/hardware/scripts/m5-hw-1.md", "re-analysis/fidelity_manifest.json", "re-analysis/research/20261019-m5-settling-b.md" })
+        var files = new JsonArray(); foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M5Hw.cs", "cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs", "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "cozmo-stack/src/Cozmo.Conformance/Program.cs", "re-analysis/acceptance/hardware/scripts/m5-hw-1.md", "re-analysis/fidelity_manifest.json", "re-analysis/research/20261019-m5-settling-b.md" })
         {
             string source = Path.Combine(root, relative); if (!File.Exists(source)) { errors.Enqueue("Missing provenance file " + relative); continue; }
             try { string dest = Path.Combine(bundle, "provenance", relative); Directory.CreateDirectory(Path.GetDirectoryName(dest)!); File.Copy(source, dest, true); files.Add(new JsonObject { ["path"] = relative, ["sha256"] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant() }); } catch (Exception e) { errors.Enqueue("Provenance: " + relative + ": " + e.Message); }
@@ -808,7 +830,7 @@ internal sealed class M5Run
             }
         File.WriteAllText(Path.Combine(bundle, "resource-hashes.json"), resourceHashes.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         string? commit = null; try { var p = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true }); commit = p!.StandardOutput.ReadToEnd().Trim(); p.WaitForExit(); } catch (Exception e) { errors.Enqueue("git: " + e.Message); }
-        var report = new JsonObject { ["testId"] = M5Hw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv), ["resources"] = resources, ["allowDrive"] = drive, ["connected"] = connected, ["checks"] = JsonSerializer.SerializeToNode(results), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["binaries"] = binaries, ["errors"] = JsonSerializer.SerializeToNode(errors), ["acceptance"] = "NOT_JUDGED: operator observations and manager review required; hardware success does not raise provenance" };
+        var report = new JsonObject { ["testId"] = M5Hw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv), ["resources"] = resources, ["allowDrive"] = drive, ["connected"] = connected, ["startup"] = startup?.ToJson() ?? new JsonObject { ["gate"] = startupGate?.ToJson(), ["note"] = "the run ended before the startup window closed" }, ["checks"] = JsonSerializer.SerializeToNode(results), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["binaries"] = binaries, ["errors"] = JsonSerializer.SerializeToNode(errors), ["acceptance"] = "NOT_JUDGED: operator observations and manager review required; hardware success does not raise provenance" };
         File.WriteAllText(Path.Combine(bundle, "result.json"), report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         File.WriteAllText(Path.Combine(bundle, "README.txt"), "M5-HW evidence bundle. result.json contains every check and source records; messages.jsonl deduplicates reliable resends, frames.jsonl retains every datagram; events.jsonl retains startup logs, API events and counters; diagnostics.jsonl retains the read-only engine hook observations (KeepFaceAlive, StreamLayers frames, send gate, budget refresh). Times are host capture times, not device execution times. No acceptance or manifest changes performed. See provenance script for limits.");
     }

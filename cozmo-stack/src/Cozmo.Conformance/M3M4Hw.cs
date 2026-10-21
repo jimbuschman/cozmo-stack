@@ -34,7 +34,7 @@ public static class M3M4Hw
     /// <summary>The HARDWARE_ONLY records; a warning is given if one is no longer HARDWARE_ONLY.</summary>
     public static readonly string[] HardwareOnlyIds = { "M3-008", "M3-016", "M3-036", "M4-013", "M4-021", "M4-024", "M3-050" };
     /// <summary>Every record this run is about. All must exist in re-analysis/fidelity_manifest.json or the run stops before touching the network.</summary>
-    public static readonly string[] RecordIds = HardwareOnlyIds.Concat(new[] { "M3-012", "M3-021", "M3-055", "M3-060", "M4-018", "M4-019", "M4-027", "M4-038", "M4-047", "M4-051" }).ToArray();
+    public static readonly string[] RecordIds = HardwareOnlyIds.Concat(new[] { "M3-012", "M3-021", "M3-055", "M3-060", "M4-018", "M4-019", "M4-027", "M4-038", "M4-047", "M4-051" }).Concat(HarnessStartup.RecordIds).Distinct().ToArray();
 
     public sealed record CheckDef(string Id, string Title, string[] Records, bool Moves, bool NeedsOperator, bool NeedsCube);
 
@@ -114,7 +114,7 @@ public static class M3M4Hw
     /// <summary>Every record id the checks name must be one of <see cref="RecordIds"/>, and every id must be named by a check.</summary>
     public static string? CheckDefinitionProblem()
     {
-        var named = Checks.SelectMany(c => c.Records).ToList();
+        var named = Checks.SelectMany(c => c.Records).Concat(HarnessStartup.RecordIds).ToList();
         var stray = named.Except(RecordIds).ToList();
         if (stray.Count > 0) return "a check names a record outside RecordIds: " + string.Join(", ", stray);
         var unnamed = RecordIds.Except(named).ToList();
@@ -222,6 +222,10 @@ internal sealed partial class M3M4Run
     private double Now() => (DateTime.UtcNow - _t0Utc).TotalMilliseconds;
     private double T(DateTime utc) => (utc - _t0Utc).TotalMilliseconds;
     private void Event(string kind, JsonObject data) => _events.Enqueue((Now(), kind, data));
+    private HarnessStartup.Gate? _startupGate;
+    private HarnessStartup.Report? _startup;
+    private JsonObject[] EngineLogs() => _events.ToArray().Where(e => e.Kind == "engine-log")
+        .Select(e => { var d = (JsonObject)e.Data.DeepClone(); d["atMs"] = Num(e.T); return d; }).ToArray();
     private static JsonNode? Num(double d) => LinkCheck.Num(d);
 
     /// <summary>Sleeps in 5 ms steps so Ctrl+C is honoured; returns false when cancelled.</summary>
@@ -261,6 +265,7 @@ internal sealed partial class M3M4Run
             if (Volatile.Read(ref _written) == 1) return;
             lock (_exceptions) _exceptions.Add($"watchdog: the run exceeded {M3M4Hw.WatchdogMs} ms");
             Interlocked.Exchange(ref _aborting, 1);
+            _startup ??= HarnessStartup.Analyse(EngineLogs(), _startupGate, interrupted: "watchdog before setup completed");
             try { _robot?.Dispose(); } catch { }
             WriteBundle();
             Environment.Exit(3);
@@ -270,13 +275,22 @@ internal sealed partial class M3M4Run
         bool connected = false;
         try
         {
-            _robot = CozmoRobot.Create(engineOptions:EngineStartupResources.Options(_argv));
+            var inputs = EngineStartupResources.Options(_argv);
+            _robot = CozmoRobot.Create(engineOptions: new CozmoEngineOptions {
+                ResourcesPath = inputs.ResourcesPath, NeedsDeviceDirectory = inputs.NeedsDeviceDirectory,
+                BeforeStart = e => EngineEvidence.Subscribe(e, l => _engineLog.Enqueue((Now(), l)), Event) });
             Subscribe(_robot);
             connected = Connect(_robot);
+            _startup = HarnessStartup.Analyse(EngineLogs(), _startupGate,
+                interrupted: connected ? null : "connection/streaming readiness did not complete");
+            Event("startup-report", _startup.ToJson());
+            Console.WriteLine("Startup: " + _startup.Describe());
+            HarnessStartup.RequireValid(_startup);
             foreach (var def in M3M4Hw.RunOrder.Select(id => M3M4Hw.Checks.Single(c => c.Id == id)))
             {
                 if (_only is not null && !_only.Contains(def.Id)) continue;
                 if (_cancelled) { Skip(def, "run interrupted before this check"); continue; }
+                if (_startupGate is { Ready: false } gate) { Skip(def, "startup: " + gate.Describe()); continue; }
                 if (!connected) { Skip(def, "no connection: " + (_response is null ? "no RobotConnectionResponse" : _response.Result.ToString())); continue; }
                 if (_robot.Transport.State != LinkState.Connected) { Skip(def, "the link was lost before this check (see events.jsonl)"); continue; }
                 Console.WriteLine($"\n=== {def.Id}: {def.Title}");
@@ -312,6 +326,11 @@ internal sealed partial class M3M4Run
         catch (Exception e)
         {
             lock (_exceptions) _exceptions.Add(e.ToString());
+            if (_startup is null)
+            {
+                _startup = HarnessStartup.Analyse(EngineLogs(), _startupGate, interrupted: e.Message);
+                Event("startup-report", _startup.ToJson()); Console.WriteLine("Startup: " + _startup.Describe());
+            }
         }
         finally
         {
@@ -319,7 +338,7 @@ internal sealed partial class M3M4Run
             try { StopBounded(); } catch (Exception e) { lock (_exceptions) _exceptions.Add("dispose: " + e); }
         }
         var quiet = M3M4Hw.Checks.Single(c => c.Id == "DISCONNECT_QUIET");
-        if (connected && (_only is null || _only.Contains(quiet.Id)))
+        if (connected && _startup is { PositiveVerdictAllowed: true } && (_only is null || _only.Contains(quiet.Id)))
         {
             try { AddResult(quiet, DisconnectQuietResult(), Now()); }
             catch (Exception e) { lock (_exceptions) _exceptions.Add("DISCONNECT_QUIET: " + e); }
@@ -330,7 +349,7 @@ internal sealed partial class M3M4Run
         foreach (var r in _checkResults) Console.WriteLine($"  {r["verdict"],-34} {r["id"],-13} {string.Join(",", r["records"]!.AsArray().Select(x => x!.GetValue<string>()))}");
         Console.WriteLine($"M3M4-HW: {overall}");
         Console.WriteLine($"bundle: {_bundle}\ncopy that whole folder back; nothing has been committed and no record has been changed.");
-        return overall == "ERROR" ? 1 : 0;
+        return overall == "ERROR" || _startup is not { PositiveVerdictAllowed: true } ? 1 : 0;
     }
 
     private void PrintSetup()
@@ -379,7 +398,6 @@ internal sealed partial class M3M4Run
         robot.Transport.Warning += w => Event("transport-warning", new JsonObject { ["text"] = w });
         robot.Transport.Disconnected += r => Event("transport-disconnected", new JsonObject { ["reason"] = r });
         robot.Transport.Connected += () => Event("transport-connected", new JsonObject());
-        EngineEvidence.Subscribe(robot.Engine, l => _engineLog.Enqueue((Now(), l)), (kind, value) => Event(kind, value));
         robot.Engine.ConnectionResponse += r =>
         {
             _response = r;
@@ -403,8 +421,13 @@ internal sealed partial class M3M4Run
     /// <summary>The ConnectToRobot game message and the engine's ConnectionResponse (the body of CozmoRobot.ConnectAsync), polled for time sync, first full state and ready-to-stream.</summary>
     private bool Connect(CozmoRobot robot)
     {
-        double call = Now();
-        robot.ConnectToRobot(_ip);
+        // fidelity: M2-021 — ConnectToRobot only after delivered readiness, as CozmoRobot.ConnectAsync does.
+        double call = double.NaN;
+        _startupGate = HarnessStartup.ConnectAfterReadiness(robot, () => { call = Now(); robot.ConnectToRobot(_ip); }, () => _cancelled || Volatile.Read(ref _aborting) == 1);
+        Event("startup-gate", _startupGate.ToJson());
+        lock (_robotInfo) _robotInfo["startupGate"] = _startupGate.ToJson();
+        Console.WriteLine("startup: " + _startupGate.Describe());
+        if (!_startupGate.Ready) { lock (_exceptions) _exceptions.Add("startup: " + _startupGate.Describe()); return false; }
         Event("connect-call", new JsonObject());
         bool ok = Poll(() =>
         {
@@ -1059,6 +1082,10 @@ internal sealed partial class M3M4Run
     {
         if (Interlocked.Exchange(ref _written, 1) == 1) return "ERROR";
         Directory.CreateDirectory(_bundle);
+        _startup ??= HarnessStartup.Analyse(EngineLogs(), _startupGate, interrupted: "startup window ended before setup completed");
+        string?[] completed; lock (_checkResults) completed = _checkResults.Select(r => r["id"]?.GetValue<string>()).ToArray();
+        foreach (var def in M3M4Hw.Checks.Where(d => (_only is null || _only.Contains(d.Id)) && !completed.Contains(d.Id)))
+            Skip(def, _startup.PositiveVerdictAllowed ? "run ended before this check" : "startup: " + _startup.Reason);
         var inWindows = _windows.ToArray();
         var framesOut = new StringBuilder();
         foreach (var f in Frames().OrderBy(f => f.T))
@@ -1115,6 +1142,7 @@ internal sealed partial class M3M4Run
             ["operatorLabel"] = _operator,
             ["records"] = new JsonArray(_records.Select(r => (JsonNode)new JsonObject { ["id"] = r["id"]!.DeepClone(), ["status"] = r["status"]!.DeepClone(), ["title"] = r["title"]!.DeepClone(), ["unresolved"] = r["unresolved"]?.DeepClone() }).ToArray()),
             ["robot"] = _robotInfo.DeepClone(),
+            ["startup"] = _startup?.ToJson() ?? new JsonObject { ["gate"] = _startupGate?.ToJson(), ["note"] = "the run ended before the startup window closed" },
             ["checks"] = new JsonArray(checks.Select(c => (JsonNode)c.DeepClone()).ToArray()),
             ["operatorAnswers"] = OperatorAll(),
             ["warnings"] = new JsonArray(_warnings.Select(w => (JsonNode)w).ToArray()),
@@ -1129,7 +1157,7 @@ internal sealed partial class M3M4Run
         {
             if (_repoRoot is not null)
             {
-                foreach (var (src, name) in new[] { (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4Hw.cs"), "M3M4Hw.cs"), (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4HwSettle.cs"), "M3M4HwSettle.cs"), (Path.Combine(_repoRoot, "re-analysis", "acceptance", "hardware", "scripts", "m3m4-hw-2.md"), "m3m4-hw-2.md") })
+                foreach (var (src, name) in new[] { (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4Hw.cs"), "M3M4Hw.cs"), (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "HarnessStartup.cs"), "HarnessStartup.cs"), (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4HwSettle.cs"), "M3M4HwSettle.cs"), (Path.Combine(_repoRoot, "re-analysis", "acceptance", "hardware", "scripts", "m3m4-hw-2.md"), "m3m4-hw-2.md") })
                     if (File.Exists(src)) { File.Copy(src, Path.Combine(_bundle, name), overwrite: true); _extraFiles.Add(name); }
             }
         }
@@ -1163,6 +1191,7 @@ internal sealed partial class M3M4Run
             ["scriptSha256"] = new JsonObject
             {
                 ["cozmo-stack/src/Cozmo.Conformance/M3M4Hw.cs"] = scriptSha,
+                ["cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs"] = _repoRoot is null ? null : Sha(Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "HarnessStartup.cs")),
                 ["cozmo-stack/src/Cozmo.Conformance/M3M4HwSettle.cs"] = _repoRoot is null ? null : Sha(Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4HwSettle.cs")),
                 ["re-analysis/acceptance/hardware/scripts/m3m4-hw-2.md"] = _repoRoot is null ? null : Sha(Path.Combine(_repoRoot, "re-analysis", "acceptance", "hardware", "scripts", "m3m4-hw-2.md")),
             },

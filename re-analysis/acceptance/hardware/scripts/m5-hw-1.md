@@ -12,9 +12,19 @@ From the repository root, with the PC connected to Cozmo's Wi-Fi:
 dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m5-hw --resources re-analysis/obb/assets/cozmo_resources --allow-drive
 ```
 
+`dotnet run` builds the current code before starting; no separate compile command is needed.
+
 Put Cozmo on the **floor**, off the charger, with at least 30 cm clear around him. The head and lift move,
 the face/backpack may change, sound may play, and this command permits wheel motion and a 6 cm drive attempt.
 Allow a few minutes plus reading/answer time. Ctrl+C stops the run and preserves its evidence.
+
+Startup first waits for delivered engine readiness, then connects and checks the cached neutral face and its
+reference picture. The 60-second readiness budget is a host coverage limit, not an engine timing expectation.
+If startup fails, is interrupted, or the cached neutral/reference is missing, the run **stops before the checks or
+observation questions** and saves an incomplete bundle. Its startup summary lists the actual error messages.
+Do not spend time watching an invalid setup. This gate follows M2-021 (`StartupManager.cs:322–341`,
+`ConnectionFlowController.cs:670–673`) and M5-010 (constructor `0x0057A0D4..0x0057A282`, once-per-Robot neutral lookup).
+A missing cached neutral prevents this test's neutral comparison; later explicit clips can still render.
 
 Before each check, the program says **what it tests**, **what it records automatically**, and **your part**.
 For observations, read the preview, get a clear view, then press Enter. Watch from **START** to **END**.

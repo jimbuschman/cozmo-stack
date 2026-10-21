@@ -25,7 +25,7 @@ public class M3M4HwTests
         var warnings = new List<string>();
         var recs = M3M4Hw.LoadRecords(Manifest(), warnings);
         Assert.Equal(new[] { "M3-008", "M3-016", "M3-036", "M4-013", "M4-021", "M4-024", "M3-050" }, M3M4Hw.HardwareOnlyIds);
-        Assert.Equal(new[] { "M3-012", "M3-021", "M3-055", "M3-060", "M4-018", "M4-019", "M4-027", "M4-038", "M4-047", "M4-051" }, M3M4Hw.RecordIds.Skip(7));
+        Assert.Equal(new[] { "M3-012", "M3-021", "M3-055", "M3-060", "M4-018", "M4-019", "M4-027", "M4-038", "M4-047", "M4-051", "M2-021", "M5-010" }, M3M4Hw.RecordIds.Skip(7));
         Assert.Equal(M3M4Hw.RecordIds, recs.Select(r => r["id"]!.GetValue<string>()).ToArray());
         Assert.Empty(warnings);
     }

@@ -93,7 +93,7 @@ public static class ControlCheck
     {
         new("CONNECT", "Connect through the app layer: Success response, firmware logged, time synced, first full state, ready to stream, within 10 s; the pose origins the robot reports, DefaultCameraParams and the NV calibration read recorded",
             new[] { "M1-024", "M1-025", "M1-026", "M1-028", "M1-029", "M1-030", "M1-033", "M1-040", "M1-041", "M1-042",
-                    "M3-019", "M3-021", "M3-022", "M4-020", "M4-021" }),
+                    "M3-019", "M3-021", "M3-022", "M4-020", "M4-021", "M2-021" }),
         new("STATE", "RobotState streams for 5 s at 25..40 Hz by the robot's own timestamps, with a plausible battery voltage and no timeout",
             new[] { "M1-024", "M1-033", "M1-041" }),
         new("HEAD", "Head to +0.3 rad then -0.3 rad, each within 0.05 rad in RobotState within 2 s",
@@ -132,7 +132,7 @@ public static class ControlCheck
     };
 
     /// <summary>Every fidelity record the run's result names. Each must exist in re-analysis/fidelity_manifest.json.</summary>
-    public static readonly string[] CitedRecords = Checks.SelectMany(c => c.Records).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToArray();
+    public static readonly string[] CitedRecords = Checks.SelectMany(c => c.Records).Concat(HarnessStartup.RecordIds).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToArray();
 
     public static int Run(string[] args)
     {
@@ -453,6 +453,10 @@ internal sealed class ControlRun
     private void Phase(string name) { lock (_phases) _phases.Add((name, Now())); Event("phase", new JsonObject { ["name"] = name }); }
     private double Mark(string name) { double t = Now(); lock (_marks) _marks[name] = t; return t; }
     private void Event(string kind, JsonObject data) => _events.Enqueue(new EventRec(Now(), kind, data));
+    private HarnessStartup.Gate? _startupGate;
+    private HarnessStartup.Report? _startup;
+    private JsonObject[] EngineLogs() => _events.ToArray().Where(e => e.Kind == "engine-log")
+        .Select(e => { var d = (JsonObject)e.Data.DeepClone(); d["atMs"] = LinkCheck.Num(e.T); return d; }).ToArray();
 
     private static bool Poll(Func<bool> cond, int timeoutMs)
     {
@@ -523,17 +527,29 @@ internal sealed class ControlRun
             string? resources = _obb is null ? null : ControlCheck.Resources(_obb);
             if (resources is not null && !Directory.Exists(resources)) resources = null;
             var engineOptions = EngineStartupResources.Options(_argv,resources);
-            _robot = CozmoRobot.Create(engineOptions: engineOptions);
+            _robot = CozmoRobot.Create(engineOptions: new CozmoEngineOptions
+            {
+                ResourcesPath = engineOptions.ResourcesPath, NeedsDeviceDirectory = engineOptions.NeedsDeviceDirectory,
+                BeforeStart = e => EngineEvidence.Subscribe(e, l => _engineLog.Enqueue((Now(), l)), Event),
+            });
             lock (_gate)
             {
                 _robotInfo["resourcesPath"] = resources;
                 _robotInfo["blockPoolPath"] = CozmoRobot.DefaultBlockPoolPath;
             }
             Subscribe(_robot);
-            LoadAnimations(_robot);
 
             Phase("CONNECT");
-            await RunCheck(connect, () => { Connect(connect); return Task.CompletedTask; });
+            bool connectCompleted = false;
+            await RunCheck(connect, () => { Connect(connect); connectCompleted = true; return Task.CompletedTask; });
+            // Host setup coverage uses CONNECT's existing prerequisites, independently of optional observations.
+            bool setupComplete = connectCompleted && LinkUp && _robot.Engine.Robot is
+                { TimeSynced: true, FirstFullStateHandled: true, ReadyToStream: true };
+            _startup = HarnessStartup.Analyse(EngineLogs(), _startupGate,
+                interrupted: setupComplete ? null : "CONNECT did not complete its connection/streaming prerequisites; see its captured criteria");
+            Event("startup-report", _startup.ToJson());
+            Console.WriteLine("  Startup: " + _startup.Describe());
+            HarnessStartup.RequireValid(_startup);
 
             // Stop-on-cliff before anything moves (anim_bored_01 has a body keyframe; DRIVE drives), as `drive` and `anim` do.
             if (LinkUp)
@@ -603,6 +619,7 @@ internal sealed class ControlRun
         {
             lock (_exceptions) _exceptions.Add(e.ToString());
             Event("exception", new JsonObject { ["exception"] = e.ToString() });
+            CompleteInterruptedStartup(e.Message);
             try { _robot?.Dispose(); } catch (Exception e2) { lock (_exceptions) _exceptions.Add("during dispose: " + e2); }
         }
 
@@ -630,6 +647,7 @@ internal sealed class ControlRun
     private void Abort(string why, int? exitCode)
     {
         if (Interlocked.Exchange(ref _aborting, 1) == 1) return;
+        CompleteInterruptedStartup(why);
         StopRobotBounded(why);
         if (Volatile.Read(ref _written) == 0) WriteBundleOrReport(crashed: why);
         Console.WriteLine($"control-check: stopped ({why}); bundle {_bundle}");
@@ -694,7 +712,6 @@ internal sealed class ControlRun
         robot.Transport.Warning += w => Event("transport-warning", new JsonObject { ["text"] = w });
         robot.Transport.Disconnected += r => Event("transport-disconnected", new JsonObject { ["reason"] = r });
         robot.Transport.Connected += () => Event("transport-connected", new JsonObject());
-        EngineEvidence.Subscribe(robot.Engine, l => _engineLog.Enqueue((Now(), l)), (kind, value) => Event(kind, value));
         robot.Engine.ConnectionResponse += r =>
         {
             _responseT = Now();
@@ -800,8 +817,26 @@ internal sealed class ControlRun
     private void Connect(CheckRec c)
     {
         var robot = _robot!;
-        double call = Mark("connectCall");
-        robot.ConnectToRobot(_ip);
+        // fidelity: M2-021 — ConnectToRobot only after delivered readiness, as CozmoRobot.ConnectAsync does.
+        double call = double.NaN;
+        _startupGate = HarnessStartup.ConnectAfterReadiness(robot, () =>
+        {
+            // Keep the explicit --obb reload before Robot construction, after the engine's loader has finished.
+            LoadAnimations(robot);
+            if (Volatile.Read(ref _aborting) == 1) throw new OperationCanceledException("run stopped before connection");
+            if (robot.Engine.StartupFailed) throw new InvalidOperationException(robot.Engine.StartupFailureReason);
+            call = Mark("connectCall");
+            robot.ConnectToRobot(_ip);
+        }, () => Volatile.Read(ref _aborting) == 1);
+        Event("startup-gate", _startupGate.ToJson());
+        c.Prerequisites["engineReadyDelivered"] = _startupGate.ToJson();
+        Console.WriteLine("  startup: " + _startupGate.Describe());
+        if (!_startupGate.Ready)
+        {
+            c.SkipReason = "startup incomplete: " + _startupGate.Describe();
+            Mark("connectDone");
+            return;
+        }
         double deadline = call + ControlCheck.ConnectBudgetMs;
         double syncT = double.NaN, firstFullT = double.NaN, readyT = double.NaN;
         while (Now() < deadline)
@@ -855,7 +890,7 @@ internal sealed class ControlRun
             !double.IsNaN(last) && Rel(last) <= ControlCheck.ConnectBudgetMs);
         if (resp is not null && resp.FwVersion != ControlCheck.ShippedFirmware)
             c.Warn($"robot firmware {resp.FwVersion} is not {ControlCheck.ShippedFirmware}, the build the protocol was recovered from (policy M1-040: accepted)");
-        c.Note = "Connected with CozmoRobot.Create, the ConnectToRobot game message and the engine's ConnectionResponse event: the body of CozmoRobot.ConnectAsync, done step by step so the handshake frames are in frames.jsonl.";
+        c.Note = "Connected with CozmoRobot.Create, a wait for delivered engine readiness, the ConnectToRobot game message and the engine's ConnectionResponse event: the body of CozmoRobot.ConnectAsync, done step by step so the handshake frames are in frames.jsonl.";
 
         var fwJson = robot.State.Firmware?.SignatureJson;
         var fwMsg = robot.State.Firmware?.Version;
@@ -2057,9 +2092,24 @@ internal sealed class ControlRun
 
     // ------------------------------------------------------------------ bundle
 
+    private void CompleteInterruptedStartup(string reason)
+    {
+        if (_startup is null)
+        {
+            _startup = HarnessStartup.Analyse(EngineLogs(), _startupGate, interrupted: reason);
+            Event("startup-report", _startup.ToJson());
+            Console.WriteLine("  Startup: " + _startup.Describe());
+        }
+        // Preserve already recorded criteria, including contradictions. Only checks not reached are incomplete.
+        lock (_checks)
+            foreach (var check in _checks.Where(c => double.IsNaN(c.StartMs)))
+                check.SkipReason = "run ended before this check: " + (_startup.Reason ?? reason);
+    }
+
     private string WriteBundle(string? crashed)
     {
         if (Interlocked.Exchange(ref _written, 1) == 1) return "FAIL (bundle already written)";
+        if (_startup is null) CompleteInterruptedStartup(crashed ?? "startup window ended before setup completed");
         Directory.CreateDirectory(_bundle);
         LateObservations();                      // an abnormal exit before DISCONNECT still records them
         var frames = Frames().OrderBy(f => f.T).ToArray();
@@ -2088,13 +2138,14 @@ internal sealed class ControlRun
             : statuses.Length > 0 && statuses.All(s => s == "PASS") ? "PASS"
             : statuses.Any(s => s == "FAIL") ? "FAIL"
             : "INCOMPLETE";
+        if (_startup is { PositiveVerdictAllowed: false } badStartup && overall is "PASS" or "INCOMPLETE") overall = $"INCOMPLETE (startup invalid: {badStartup.Reason})";
         var opts = new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
         var result = new JsonObject
         {
             ["test"] = ControlCheck.TestId,
             ["overall"] = overall,
-            ["overallRule"] = "PASS only if every check is PASS; FAIL if any check is FAIL; INCOMPLETE if none failed but some were SKIPPED (a skipped check is not passed). A check is PASS when every judged criterion passed; a criterion with pass null was not judged (its notJudged says why), does not enter the status and is listed in the check's unjudgedCriteria. humanNote verdicts do not enter it.",
+            ["overallRule"] = "PASS only if every check is PASS and startup is valid; FAIL if any check is FAIL; INCOMPLETE if none failed but some were SKIPPED (a skipped check is not passed), or startup did not reach delivered readiness / completed connection setup or logged BadNeutralAnimGroup (see startup). Recorded failures are preserved. A check is PASS when every judged criterion passed; a criterion with pass null was not judged (its notJudged says why), does not enter the status and is listed in the check's unjudgedCriteria. humanNote verdicts do not enter it.",
             ["tool"] = "cozmo-conformance control-check",
             ["robot"] = new JsonObject
             {
@@ -2104,6 +2155,7 @@ internal sealed class ControlRun
             },
             ["options"] = new JsonObject { ["allowDrive"] = _allowDrive, ["obb"] = _obb, ["noObb"] = _noObb, ["yes"] = _yes },
             ["provenance"] = "hardware verification only: a PASS does not raise the provenance or status of any cited record (AGENTS.md: hardware success does not upgrade provenance). The manager judges the bundle.",
+            ["startup"] = _startup?.ToJson() ?? new JsonObject { ["gate"] = _startupGate?.ToJson(), ["note"] = "the run ended before the startup window closed" },
             ["checks"] = new JsonArray(checkJson),
             ["observations"] = runObservations,
             ["hardwareOnlyUncertainty"] = new JsonArray(ControlCheck.HardwareOnly.Select(h => (JsonNode)new JsonObject { ["id"] = h.Id, ["status"] = status.GetValueOrDefault(h.Id, "?"), ["note"] = h.Note }).ToArray()),
@@ -2200,7 +2252,7 @@ internal sealed class ControlRun
         var sources = new JsonObject();
         foreach (var rel in new[]
         {
-            "Cozmo.Conformance/ControlCheck.cs", "Cozmo.Conformance/LinkCheck.cs", "Cozmo.Conformance/Program.cs",
+            "Cozmo.Conformance/ControlCheck.cs", "Cozmo.Conformance/HarnessStartup.cs", "Cozmo.Conformance/LinkCheck.cs", "Cozmo.Conformance/Program.cs",
             "Cozmo.Robot/CozmoRobot.cs", "Cozmo.Robot/CozmoEngine.cs", "Cozmo.Robot/Motion.cs", "Cozmo.Robot/Sensors.cs",
             "Cozmo.Robot/Display.cs", "Cozmo.Robot/Audio.cs", "Cozmo.Robot/Camera.cs", "Cozmo.Robot/MiniJpeg.cs",
             "Cozmo.Robot/Cubes.cs", "Cozmo.Robot/CubeConnections.cs", "Cozmo.Robot/CubeAccel.cs",
@@ -2261,6 +2313,8 @@ internal sealed class ControlRun
     {
         var sb = new StringBuilder();
         sb.AppendLine($"# CONTROL hardware run: {overall}");
+        sb.AppendLine();
+        sb.AppendLine("Startup: " + _startup?.Describe());
         sb.AppendLine();
         sb.AppendLine($"Robot {_ip}:{RobotAddress.RemotePort(false)}, firmware {robotInfo["fwVersion"]?.ToString() ?? "unknown"}{(robotInfo["firmwareWarning"] is { } fw ? $" ({fw})" : "")}, started {_t0Local:yyyy-MM-dd HH:mm:ss zzz}. Command: `cozmo-conformance {string.Join(' ', _argv)}`.");
         sb.AppendLine();

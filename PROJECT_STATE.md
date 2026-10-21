@@ -40,6 +40,27 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **M5 second hardware run / B-M5-35 (2026-10-20):** operator supplied
+  `20261020-180933-M5-HW-bde6cd`; judged **NOT ACCEPTED** in
+  `research/20261020-m5-hw-2-judgement.md`. Confirmed harness startup defect:
+  M5 connected before resources finished loading, so the once-per-Robot neutral
+  lookup failed at 3467 ms; its group loaded at 3884 ms. The run's summary omitted
+  those startup errors. Previous "ready for operator run" statements below are
+  superseded by this finding. Claude left partial harness edits when usage ended;
+  Codex is completing the existing M5 manager handoff with separate extraction,
+  implementation and verification. B-M5-35 repairs delivered-readiness gating,
+  startup diagnostics and early termination under existing M2-021/M5-010 evidence;
+  no engine retry or fidelity reclassification. Independent affected-diff review
+  PASS; focused 131/131, fidelity 706, offline validate (11 checks/45 records) and
+  preview PASS. Full suite **5993/5993 PASS**, zero failed/skipped, 6 m 6 s,
+  run once before commit; report `research/20261020-b-m5-35-check.md`.
+  Corrected harness ready for operator rerun; M5 remains NOT ACCEPTED.
+  The handoff's "drive succeeded" statement is contradicted by the bundle:
+  `FailedTraversingPath`, successfulTraversalCoverage=false. M12/M13 remains open.
+  The reported early-connect logs in the accepted M3/M4 run need a separate bounded
+  impact check; no acceptance is silently rejudged here. Physical face symptoms
+  and the LAYERS/KEEP_ALIVE incomplete coverage remain unproven beyond this setup bug.
+
 - **M5 decisions before the rerun (operator, 2026-10-20; manager review of Codex's M5 work):**
   - Codex's run-1 judgement and B-M5-24..31 reviewed and adopted (no stack behaviour bug; harness bugs fixed;
     reports `research/20261020-m5-hw-1-judgement.md` and `research/20261020-b-m5-24-check.md`..`-31-check.md`).
