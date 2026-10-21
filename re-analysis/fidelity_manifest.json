@@ -129,10 +129,13 @@
       "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true,
       "review": {
-        "state": "INVENTORY_APPROVED",
+        "state": "ACCEPTED",
         "inventory": "re-analysis/inventory/M5-animation.md",
         "approved": "2026-10-19",
-        "snapshot": "re-analysis/inventory/M5-animation.approved.json"
+        "snapshot": "re-analysis/inventory/M5-animation.approved.json",
+        "accepted": "2026-10-20",
+        "accepted_commit": "ef1fc589",
+        "acceptance_bundle": "re-analysis/acceptance/hardware/20261020-211745-M5-HW-87b83f"
       }
     },
     {
@@ -7270,10 +7273,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "status": "HARDWARE_ONLY",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M5-animation.md",
-      "unresolved": "only the robot can answer it",
+      "unresolved": "Observed 2026-10-20 (operator's robot, firmware 2457, bundle re-analysis/acceptance/hardware/20261020-211745-M5-HW-87b83f, judgement in its README): (1) echoes: the robot sent AnimationStarted (0xCA) for tags 1,2,3 and AnimationEnded (0xCB) for 1,2,3, each after its Start, in order (TAGS; an extra started echo 4 is the later neutral replay); (2) AbortAnimation: after the single 0x8D the robot ended the aborted tag (CB05), its AnimationState tag went to 0 and bytes played stopped advancing at 4210 with 0 drops (ABORT robotCounterTail); (3) Start without End: in the 10 s persistent-face window the robot accepted 306 face frames with no End and kept reporting (KEEP_ALIVE persistentFace); (4) locked-track suppression: with HEAD_TRACK disabled the robot reported enabledAnimTracks 254 (head bit clear) throughout the clip, its reported head angle did not change although 2 head keyframes streamed, and the operator saw no head movement (LOCKED_HEAD). Before: only the robot can answer it",
       "hardware_required": true,
       "live_path": true,
-      "test": ""
+      "test": "",
+      "verification": {
+        "level": "HARDWARE_VERIFIED",
+        "bundles": [
+          "re-analysis/acceptance/hardware/20261020-211745-M5-HW-87b83f"
+        ]
+      }
     },
     {
       "id": "M4-014",

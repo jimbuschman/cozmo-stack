@@ -42,8 +42,13 @@ stands. Nothing new starts outside the current layer.
 
 - **M5 run 4 (`acceptance/hardware/20261020-211745-M5-HW-87b83f`, 2026-10-20): hardware run PASSES** (judgement in its
   README). All sourced checks MATCH; LAYERS regraded MATCH after the lifecycle rule was limited to the animation stream
-  (backpack-light 0x03/0x11 had followed the End). SLEEP known gap; LIVE_IDLE observation. **Next for M5: the records
-  settling pass** (23 IMPLEMENTATION_GAP records, M5-036 HARDWARE_ONLY; `acceptance/M5-blockers.md`). No robot needed.
+  (backpack-light 0x03/0x11 had followed the End). SLEEP known gap; LIVE_IDLE observation.
+- **M5-animation ACCEPTED (manager, 2026-10-20)** on run 4. Every M5 record was already settled on 2026-10-19
+  (53 EXACT_SOURCE, 8 COMPATIBILITY_POLICY, 3 EQUIVALENT_IMPLEMENTATION; `acceptance/M5-blockers.md`'s "23
+  IMPLEMENTATION_GAP" count was stale). M5-036 (HARDWARE_ONLY) is HARDWARE_VERIFIED by run 4: echoes, Abort reaction,
+  Start-without-End stream, locked-head suppression. Missing `// fidelity:` tags added for M5-036/042/057/061.
+  **Next layer: M10–M15 and M7/M8** per "The plan". Known lead for M13: M13-017's located charger on SetOnCharger
+  (it caused run 3's false cliff stop).
 
 - **M5 run 3 (`20261020-200624-M5-HW-97161e`, operator, 2026-10-20 evening): NOT ACCEPTED; no stack defect found.**
   OK: TAGS, ABORT, AUDIO, LOCKED_HEAD, PARAMETERS; SLEEP known gap. The four incomplete parts were harness setup or

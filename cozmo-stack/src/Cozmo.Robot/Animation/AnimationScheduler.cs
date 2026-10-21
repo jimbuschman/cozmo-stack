@@ -994,6 +994,9 @@ public sealed class AnimationScheduler
 
     // ================================================================== Abort (A22..A24)
 
+    // fidelity: M5-036 — what the robot does with AbortAnimation, Start without End, locked tracks and its start/end
+    // echoes is robot-side (HARDWARE_ONLY), observed in acceptance/hardware/20261020-211745-M5-HW-87b83f.
+
     /// <summary>
     /// A22..A24 Abort: with +0xA0 ≠ 0 the AnimationAborted{tag} broadcast (→ AbortAnimation 0x8D, A23); nothing more
     /// when neither +0x38 nor +0x34 is set; otherwise the current FaceAnimation keyframe's frame index reset to 0,
@@ -1098,7 +1101,7 @@ public sealed class AnimationScheduler
 
     // ================================================================== idle stack (A30)
 
-    // fidelity: M5-027
+    // fidelity: M5-027, M5-057 — the host API supplies PushIdleAnimation(ProceduralLive) (app input).
     /// <summary>PushIdleAnimation(T, lock) (A30): pushed; T = Count clears +0x34 and +0x64.</summary>
     public void PushIdleAnimation(AnimationTrigger trigger, string lockName)
     {
@@ -1174,6 +1177,7 @@ public sealed class AnimationScheduler
     /// <summary>One engine Update of the streamer (see the class summary).</summary>
     public int Advance(double nowMs) => Advance(nowMs, (long)(nowMs * 1_000_000.0));
 
+    // fidelity: M5-042 — Update's VizManager::SetText and CozmoContext::SetSdkStatus calls are not reproduced.
     internal int Advance(double nowMs, long nowNs)
     {
         using var clipLog = Eye.UseWarningLog(Log, SourceLog);

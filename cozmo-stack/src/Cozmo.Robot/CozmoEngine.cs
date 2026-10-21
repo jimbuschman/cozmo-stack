@@ -2466,7 +2466,8 @@ public sealed partial class CozmoEngine : IDisposable
         StackDiagnostics.Reported -= _missingSink;
         _runner?.Stop();
         _t.Received -= Rcm.Rcd.ReceiveData;
-        // fidelity: M5-059, M5-064 — quiet members before context; 0x004EC6C0..0x004EC6CC.
+        // fidelity: M5-059, M5-061, M5-064 — quiet members before context; 0x004EC6C0..0x004EC6CC. The excluded
+        // F7/E0/DB/DC..DF subscriptions (never sent by the stack, M5-061) are released here.
         DestroyAnimationTransferMembers();
         // Context +0x34 precedes UiMessageHandler +0x30 (0x004EC6F8..0x004EC710).
         Robots.RemoveRobots();

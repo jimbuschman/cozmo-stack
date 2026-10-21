@@ -1,5 +1,8 @@
 # M5 acceptance: what stands in the way (manager, 2026-10-19)
 
+**Closed 2026-10-20: M5-animation is ACCEPTED** on `hardware/20261020-211745-M5-HW-87b83f` (see PROJECT_STATE.md).
+The record counts below are history; every M5 record was settled on 2026-10-19.
+
 **Latest update (2026-10-20): B-M5-33 independent review PASS.** Implementation `c984cc1f`
 and validation `cb0f657c` publish B-M5-32 plus both harness corrections. See
 `research/20261020-b-m5-33-check.md`: unjoined layer evidence stays INCONCLUSIVE;
