@@ -83,3 +83,39 @@ A to first Prep, repeated Prep does not sample, game construction obtains B
 only after subresults. This is a proposed unit check, not a test run or proof
 of whole watcher delivery. Watcher/destructor cache selection, typed lifetime,
 compound proxy and API delivery remain pending. No builder release.
+
+## Follow-up: animation variant ownership (b7b32940)
+
+Partial independent PASS for tag1 copy/move/clear and game record helpers.
+Current M8-015/M8-020 titles, IMPLEMENTATION_GAP statuses and evidence quoted
+above were re-read unchanged. No whole action lifecycle approval.
+
+Read native75C1A8..C3E0,75C544..C5AE,540BAC..C1A and string-copy helper
+4E02B2..0304. Raw TBB bytes select tag1 arms C1C8, C25A, C2F4, C396 for copy
+ctor, move ctor, copy assignment and move assignment respectively. Other
+variants are not adopted by this check.
+
+Copy ctor/assignment duplicate short-string representation; long strings call
+4E02B2 with source bytes/size. That helper allocates destination storage and
+copies bytes at4E02E6..02FA, then terminates at0300. Copies therefore do not
+retain a pointer into the old union's long string. Assignment self-check C2C0
+precedes destination release. Move ctor/assignment transfer three string words,
+zero the source string (C268/C26C; C3A4/C3A8), then invalidate source tagFF
+(C294/C3D8). Move assignment self-check C34C likewise precedes release.
+ClearCurrent frees only heap-backed tag1 data, then setsFF (C29C..C2B6).
+
+The animation setter writes tag1 after transferring a different variant's
+incoming string; existing tag1 uses C574, which clears old content, invokes
+4E75EC and transfers/zeros the incoming representation. Allocator/shrink helper
+4E75EC itself is NOT newly verified; do not claim exact allocator behavior or
+all self-aliasing inputs from this read. Defined independent string-value
+ownership is supported; managed immutable ownership can preserve that result.
+
+Game-record constructor copies the union through540BCA; move assignment uses
+540C14 after transferring subresult storage. Combined with the preceding
+sampling check, the game report owns its animation payload independently of
+the sampled action/cache. This does not certify watcher deque or compound map
+copies; those call paths still need review. Current production remains uint,
+so these are recovered requirements, not implemented fidelity. No tests run,
+new builder release or manifest change. Remaining: constructor default variants,
+watcher/deque lifetime, compound store/proxy, name producers and API delivery.

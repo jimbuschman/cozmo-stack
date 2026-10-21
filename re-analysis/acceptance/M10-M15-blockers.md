@@ -1,6 +1,6 @@
 # M10–M15 and M7/M8 acceptance: what stands in the way (2026-10-20)
 
-**Monitor update (2026-10-21, 66c3dd9a):** builder has claimed B-M10-2; no completion report yet. M11 partial source review additionally confirms ComputeStateAt exact-vision priority and raw-time-based vision selection, without approving the correction chain or whole history path. B-M11-18 remains HELD for M11-098 approval. Three reading jobs remain open; no new scope added this pass. No fidelity, verification or acceptance changes. Earlier release/open notes below are historical.
+**Monitor update (2026-10-21, b7b32940):** B-M10-2 remains claimed, no result yet. M8 partial review now confirms tag1 string ownership and game record copy/move helpers; watcher/compound/default/API rows remain pending and no typed build is released. Mood-completion and image-input reports are published/pending review. Three readings open: carried-detach pose mutation, mood Init input, and native pet-image size boundary. B-M11-18 remains HELD for inventory approval. No fidelity, verification or acceptance changes. Earlier release/open notes below are historical.
 
 **Builder release (2026-10-21):** operator authorized queueing B-M13-9 after the checked-contract handoff. M13-040 now explicitly owns the unbuilt every-contact-true charger observation. Its checked A1-A11/P1-P4 contract (A9 corrected) is integrated into M13 inventory; B-M13-9 is open. Earlier approval-pending notes below are historical. No whole M13-017 settlement, mount build or hardware run is authorized by this job.
 

@@ -245,7 +245,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; partial Clear mechanics check research/20261021-m8-actionlist-check.md; remaining report/survivor effects pending |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; F1 constants checked research/20261021-m10-classifier-check.md, B-M10-2 released; cancel/detach and remaining rows pending |
 | 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; T1-T3/T6 value/writers checked in research/20261021-m11-pose-history-check.md; census/alias claims pending; no settlement |
-| 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing and Prep/game sampling check research/20261021-m8-animation-completion-check.md; ownership/cache/API rows pending, no release |
+| 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing, Prep/game sampling and tag1 ownership check research/20261021-m8-animation-completion-check.md; watcher/compound/default/API rows pending, no release |
 | 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
 | 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answered c334871d; pending independent review/adoption |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | answered 166a2e6a; pending independent review/adoption |
@@ -265,6 +265,8 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 46 | [R-M8-NAME-INPUT](../research/requests/20261021-m8-animation-name-input-boundary.md) | answered 80a357a2; pending independent review/adoption |
 | 47 | [R-M15-TRACKER-OWNER](../research/requests/20261021-m15-tracker-owner-join.md) | answered b3651f3a; pending independent review/adoption |
 | 48 | [R-M14-IMAGE-TURN](../research/requests/20261021-m14-image-turn-history-join.md) | answered 50138aea; pending independent review/adoption |
-| 49 | [R-M7-MOOD-JOIN](../research/requests/20261021-m7-mood-completion-owner-join.md) | open |
-| 50 | [R-M14-IMAGE-INPUT](../research/requests/20261021-m14-image-coordinate-input.md) | open |
+| 49 | [R-M7-MOOD-JOIN](../research/requests/20261021-m7-mood-completion-owner-join.md) | answered 3f5a1337; pending independent review/adoption |
+| 50 | [R-M14-IMAGE-INPUT](../research/requests/20261021-m14-image-coordinate-input.md) | answered b7b32940; pending independent review/adoption |
 | 51 | [R-M12-DETACH-POSE](../research/requests/20261021-m12-detach-pose-join.md) | open |
+| 52 | [R-M7-MOOD-INIT](../research/requests/20261021-m7-mood-init-input.md) | open |
+| 53 | [R-M14-PET-SIZE](../research/requests/20261021-m14-pet-image-size-boundary.md) | open |
