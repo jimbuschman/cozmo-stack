@@ -82,6 +82,21 @@ While working, run only the focused tests (`--filter "FullyQualifiedName~<Class>
 
 Routine source-derived decisions are yours: make them, record them in PROJECT_STATE's decision notes, and continue. So is housekeeping: stray or untracked files, docs, scratch output, config. Decide it, commit or move it (never delete something you haven't looked at, and never commit secrets), and carry on without asking.
 
+## Pace and independence (operator, 2026-10-21)
+
+On 2026-10-21 one morning produced 30 research answers and 2 builds; 20 answers sat unreviewed, and the Codex review
+of B-M13-9 passed a citation the binary contradicts (0x00622D24 is a VizManager store, not a timestamp). So:
+
+- **Progress is builds verified and records settled, not answers written.** Report those two counts.
+- **Reading follows the plan's order** (`acceptance/M10-M15-blockers.md`) and the next build. Queue a research job only
+  when its answer feeds the next build; at most 3–4 open at a time; none while answers in the current layer await review.
+- **A review raises questions; it does not spawn jobs.** Write new questions under "Open questions" in the check file.
+  Queue one only if it blocks the build in hand.
+- **Your own review is not independent.** A Codex review of a Codex build or extraction is labelled
+  "Codex review; Claude spot-check pending". A record is not settled, and a layer not accepted, on Codex-only checks.
+  Re-read every cited instruction in the `.so` yourself; a citation copied from the extraction is not checked.
+- **Follow `jobs/QUEUE.md` holds.** Pull before you edit the queue, and never queue past a HOLD.
+
 ## Research (Codex)
 
 Codex (ChatGPT) works in the same repo, in its own lane, described in `re-analysis/research/README.md`. For background you need (Wwise, OpenCV, Vorbis, community Cozmo notes) or an independent second extraction, write a request in `re-analysis/research/requests/` using `REQUEST_TEMPLATE.md` and tell the operator it is there. Codex's answers arrive in `re-analysis/research/`.
