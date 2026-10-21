@@ -244,7 +244,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; partial Clear mechanics check research/20261021-m8-actionlist-check.md; remaining report/survivor effects pending |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; pending independent review/adoption; reported constants/cancel/detach defects are not yet adopted |
 | 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; T1-T3/T6 value/writers checked in research/20261021-m11-pose-history-check.md; census/alias claims pending; no settlement |
-| 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing check research/20261021-m8-animation-completion-check.md; ownership/cache/API rows pending, no release |
+| 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing and Prep/game sampling check research/20261021-m8-animation-completion-check.md; ownership/cache/API rows pending, no release |
 | 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
 | 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answered c334871d; pending independent review/adoption |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | answered 166a2e6a; pending independent review/adoption |
@@ -259,6 +259,8 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 41 | [R-M7-SDK-BOUNDARY](../research/requests/20261021-m7-sdk-record-boundary.md) | answered 97bdc60f; pending independent review/adoption |
 | 42 | [R-M12-CACHE-LIFETIME](../research/requests/20261021-m12-predock-cache-lifetime.md) | answered d257817c; pending independent review/adoption |
 | 43 | [R-M8-TEARDOWN-CLOCK](../research/requests/20261021-m8-teardown-timer-readers.md) | answered dc3004dd; pending independent review/adoption |
-| 44 | [R-M11-RETAINED-OWNER](../research/requests/20261021-m11-retained-pose-owner-comparison.md) | open |
-| 45 | [R-M10-OWNER-AVAILABILITY](../research/requests/20261021-m10-consequence-owner-availability.md) | open |
+| 44 | [R-M11-RETAINED-OWNER](../research/requests/20261021-m11-retained-pose-owner-comparison.md) | answered 00a2d322; pending independent review/adoption |
+| 45 | [R-M10-OWNER-AVAILABILITY](../research/requests/20261021-m10-consequence-owner-availability.md) | answered 5f06c9ab; pending independent review/adoption |
 | 46 | [R-M8-NAME-INPUT](../research/requests/20261021-m8-animation-name-input-boundary.md) | open |
+| 47 | [R-M15-TRACKER-OWNER](../research/requests/20261021-m15-tracker-owner-join.md) | open |
+| 48 | [R-M14-IMAGE-TURN](../research/requests/20261021-m14-image-turn-history-join.md) | open |

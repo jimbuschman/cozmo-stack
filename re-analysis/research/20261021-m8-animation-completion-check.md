@@ -50,3 +50,36 @@ cache, compound forwarding, public API lifetime and complete concrete action
 name producers are not independently checked here. No scalar-to-typed migration
 is released by this partial review. Existing broader report remains pending;
 no fidelity, verification, inventory or acceptance state changed.
+
+## Follow-up: Prep versus game sampling (5f06c9ab)
+
+Independent bounded PASS for sampling order, not typed ownership. Read native
+0x00540750..0x005407C0, 0x00540AA8..0x00540B60 and Reset
+0x00540CE8..0x00540D0E against current IActionRunner.cs and ActionWatcher.cs.
+
+Prep tests +0x55 at 0756/075A. The first call invokes vtable+0x0C with output
+runner+0x1C at 07AE..07B6, then stores prepared=1 at 07BA. The repeat branch
+logs/cleans temporary diagnostics and does not invoke that getter. Managed Prep
+at lines432..442 agrees in order, though its cache is still uint.
+
+Game completion construction obtains subresults at 0x00540AD0 and invokes the
+live virtual union getter at 0x00540AE4 into a separate temporary. It does not
+read the Prep cache itself. BuildCompletedAction at ActionWatcher.cs227..235
+preserves this ordering. Calls to record constructor/move helpers at AF4/AFC
+and temporary cleanup at B04/B2A are visible, but deep-copy correctness is not
+adopted without reviewing those helpers and variant operations.
+
+Reset's direct stores affect +0x74, +0x70 and result+0x18; its conditional call
+is UnlockTracks. It does not directly reset +0x55 or +0x1C. Managed Reset
+likewise retains _prepped and _completionUnion. This bounded read does not
+claim a complete alias-write census for every indirect callee.
+
+Current M8-015 remains IMPLEMENTATION_GAP with the same title/evidence quoted
+above (re-read at this revision); its adopted OV18 evidence includes
+0x00540750..0x005407C0. No new native behavior correction found in these sampling
+steps. A future typed migration must preserve first-Prep sample versus later
+live game sample. Suggested independent unit oracle: a changing getter returns
+A to first Prep, repeated Prep does not sample, game construction obtains B
+only after subresults. This is a proposed unit check, not a test run or proof
+of whole watcher delivery. Watcher/destructor cache selection, typed lifetime,
+compound proxy and API delivery remain pending. No builder release.
