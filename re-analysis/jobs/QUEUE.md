@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Next current-layer job (operator, 2026-10-21): B-M13-9**, the reviewed contact-true charger observation. Its inventory integration is authorized with this release; other HELD rows stay held.
+**Next current-layer job: B-M10-2**, six checked classifier constants under approved M10-001 evidence. B-M13-9 is built; B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -176,6 +176,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s9 | [B-M5-33](B-M5-33.md) | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-m5-33-check.md); focused 79/79, builder full suite 5968/5968; operator rerun next |
 | 61w3t | [B-M13-9](B-M13-9.md) | DONE 0138af17 + 3f54bccc; independent bounded PASS research/20261021-b-m13-9-check.md, focused53/53; shared-owner gaps and hardware remain |
 | 61w3u | [B-M11-18](B-M11-18.md) | HELD — proposed M11-098 core inventory addition/approval; bounded source review ready, no implementation authorization yet |
+| 61w3v | [B-M10-2](B-M10-2.md) | open — six exact classifier constants only; reviewed existing M10-001 obligation |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -242,7 +243,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 24 | [R-M13-017](../research/requests/20261021-m13-017-located-charger.md) | checked with A9 correction (new state chooses light trigger), research/20261021-m13-017-located-charger-check.md; contact inventory integrated as M13-040 and B-M13-9 released e48d585b; D1 exhaustive caller census not verified |
 | 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; partial F4 and raw-query control-flow check in research/20261021-m11-pose-history-check.md (citation cleanup; nearest tie-before confirmed); remaining report pending review, no settlement |
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; partial Clear mechanics check research/20261021-m8-actionlist-check.md; remaining report/survivor effects pending |
-| 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; pending independent review/adoption; reported constants/cancel/detach defects are not yet adopted |
+| 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; F1 constants checked research/20261021-m10-classifier-check.md, B-M10-2 released; cancel/detach and remaining rows pending |
 | 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; T1-T3/T6 value/writers checked in research/20261021-m11-pose-history-check.md; census/alias claims pending; no settlement |
 | 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing and Prep/game sampling check research/20261021-m8-animation-completion-check.md; ownership/cache/API rows pending, no release |
 | 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
@@ -261,6 +262,9 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 43 | [R-M8-TEARDOWN-CLOCK](../research/requests/20261021-m8-teardown-timer-readers.md) | answered dc3004dd; pending independent review/adoption |
 | 44 | [R-M11-RETAINED-OWNER](../research/requests/20261021-m11-retained-pose-owner-comparison.md) | answered 00a2d322; pending independent review/adoption |
 | 45 | [R-M10-OWNER-AVAILABILITY](../research/requests/20261021-m10-consequence-owner-availability.md) | answered 5f06c9ab; pending independent review/adoption |
-| 46 | [R-M8-NAME-INPUT](../research/requests/20261021-m8-animation-name-input-boundary.md) | open |
-| 47 | [R-M15-TRACKER-OWNER](../research/requests/20261021-m15-tracker-owner-join.md) | open |
-| 48 | [R-M14-IMAGE-TURN](../research/requests/20261021-m14-image-turn-history-join.md) | open |
+| 46 | [R-M8-NAME-INPUT](../research/requests/20261021-m8-animation-name-input-boundary.md) | answered 80a357a2; pending independent review/adoption |
+| 47 | [R-M15-TRACKER-OWNER](../research/requests/20261021-m15-tracker-owner-join.md) | answered b3651f3a; pending independent review/adoption |
+| 48 | [R-M14-IMAGE-TURN](../research/requests/20261021-m14-image-turn-history-join.md) | answered 50138aea; pending independent review/adoption |
+| 49 | [R-M7-MOOD-JOIN](../research/requests/20261021-m7-mood-completion-owner-join.md) | open |
+| 50 | [R-M14-IMAGE-INPUT](../research/requests/20261021-m14-image-coordinate-input.md) | open |
+| 51 | [R-M12-DETACH-POSE](../research/requests/20261021-m12-detach-pose-join.md) | open |
