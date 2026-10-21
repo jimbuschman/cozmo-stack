@@ -33,6 +33,18 @@ public class M5HwFiniteLayerTests
         Assert.Equal(8, result["wireWindow"]!.AsArray().Count);
     }
 
+    // reach: unit (run 20261020-211745: the backpack-light component's 0x03/0x11 followed the stream End inside the
+    // window; M5-028's lifecycle is the animation stream's own 0x8D..0x9B messages).
+    [Fact]
+    public void OtherComponentsSendsAfterTheEndDoNotBreakTheStreamLifecycle()
+    {
+        var wire = Window().Append(Out(510, 9, 0x03, 0, 0x80)).Append(Out(510, 10, 0x11, 0, 0x80));
+        Assert.Equal("OBSERVED_CONDITIONAL_LAYER_FRAMES", M5HwAnalysis.FiniteLayers(wire, 0, 520, true, Flags())["verdict"]!.GetValue<string>());
+        // A stream message after the End still breaks it.
+        var late = Window().Append(Out(510, 9, 0x8F));
+        Assert.Equal("INCONCLUSIVE", M5HwAnalysis.FiniteLayers(late, 0, 520, true, Flags())["verdict"]!.GetValue<string>());
+    }
+
     // reach: unit (synthetic flags stand in for the missing generation evidence; no scheduler or robot).
     [Fact]
     public void MissingRequiredFaceIsDetectedDespitePlausibleAggregateCounts()

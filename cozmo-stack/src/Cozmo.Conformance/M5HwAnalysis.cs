@@ -625,9 +625,12 @@ public static class M5HwAnalysis
         bool established = activityProblem is null && audioIndices.Length > 0
             && activity?.Count == audioIndices.Length && matched == audioIndices.Length;
         int assignedFaces = frames.Sum(f => f!["faces"]!.GetValue<int>());
+        // M5-028's lifecycle is the animation stream's (0x8D..0x9B); other components' sends in the window, such as the
+        // backpack-light component's 0x03/0x11 (run 20261020-211745), are not part of it.
+        var stream = rows.Where(m => m.Payload[0] is >= 0x8D and <= 0x9B).ToArray();
         bool lifecycle = starts == 1 && ends == 1 && !rows.Any(m => m.Payload[0] == 0x8D)
             && rows.First(m => m.Payload[0] == 0x9B).Payload.Length == 2
-            && rows.Last().Payload[0] == 0x9A && rows.Last().Payload.Length == 1;
+            && stream.Last().Payload[0] == 0x9A && stream.Last().Payload.Length == 1;
         return new JsonObject
         {
             ["verdict"] = activityProblem is not null ? "INCONCLUSIVE" : missingFace > 0 ? "OBSERVED_MISSING_REQUIRED_FACE" : unexpectedFace > 0

@@ -40,6 +40,11 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **M5 run 4 (`acceptance/hardware/20261020-211745-M5-HW-87b83f`, 2026-10-20): hardware run PASSES** (judgement in its
+  README). All sourced checks MATCH; LAYERS regraded MATCH after the lifecycle rule was limited to the animation stream
+  (backpack-light 0x03/0x11 had followed the End). SLEEP known gap; LIVE_IDLE observation. **Next for M5: the records
+  settling pass** (23 IMPLEMENTATION_GAP records, M5-036 HARDWARE_ONLY; `acceptance/M5-blockers.md`). No robot needed.
+
 - **M5 run 3 (`20261020-200624-M5-HW-97161e`, operator, 2026-10-20 evening): NOT ACCEPTED; no stack defect found.**
   OK: TAGS, ABORT, AUDIO, LOCKED_HEAD, PARAMETERS; SLEEP known gap. The four incomplete parts were harness setup or
   grading: KEEP_ALIVE/LAYERS blocked by the engine-faithful lingering LiveIdleTurn eye shift

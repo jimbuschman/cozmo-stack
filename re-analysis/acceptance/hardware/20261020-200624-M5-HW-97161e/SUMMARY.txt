@@ -1,0 +1,38 @@
+M5 animation and face test
+OVERALL: no problems found, but 4 part(s) could not be checked. Send this folder for review.
+
+OK = the stack sent what the original engine sends. PROBLEM = it sent something the engine would not.
+COULD NOT CHECK = setup or evidence missing. KNOWN MISSING PIECE and SAVED FOR REVIEW never pass or fail.
+Your answers are saved as notes; they never decide a result.
+
+TAGS: OK. The stack sent what the original engine sends. [MATCH]
+
+ABORT: OK. The stack sent what the original engine sends. [MATCH]
+
+KEEP_ALIVE: COULD NOT CHECK. Setup or evidence was missing (reason below). This is not a robot or stack failure by itself. [INCOMPLETE]
+  Details: No-animation/no-idle persistent KeepAliveEyeDart prerequisites not observed
+  What you saw (saved, not graded): Eyes blinked: no; Eyes slid inside the screen: unclear; Wheels/body moved: yes; Your notes: idk; Your notes: everything moved very very slightly
+
+LOCKED_HEAD: OK. The stack sent what the original engine sends. [MATCH]
+  What you saw (saved, not graded): Head tilted up/down: no; Your notes: nothng happened
+
+AUDIO: OK. The stack sent what the original engine sends. [MATCH]
+
+LAYERS: COULD NOT CHECK. Setup or evidence was missing (reason below). This is not a robot or stack failure by itself. [INCOMPLETE]
+  Details: Existing layers did not drain after nonlive InitStream RemoveKeepFaceAlive(99)
+
+LIVE_IDLE: SAVED FOR REVIEW. Nothing here can pass or fail. [OBSERVATION]
+
+PARAMETERS: OK. The stack sent what the original engine sends. [MATCH]
+  What you saw (saved, not graded): Blinks counted: 0; Your notes: nothimg happemed
+
+DRIVING: COULD NOT CHECK. Setup or evidence was missing (reason below). This is not a robot or stack failure by itself. [INCOMPLETE]
+
+SLEEP: KNOWN MISSING PIECE. Reported as expected; not a failure of this run. [KNOWN_GAP]
+
+TEARDOWN: COULD NOT CHECK. Setup or evidence was missing (reason below). This is not a robot or stack failure by itself. [INCOMPLETE]
+
+Startup: engine readiness delivered after 604 ms; connect callback completed; 0 error-level engine log(s)
+
+Run errors:
+None.

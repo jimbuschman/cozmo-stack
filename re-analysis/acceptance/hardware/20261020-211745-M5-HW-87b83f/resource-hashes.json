@@ -1,0 +1,1162 @@
+[
+  {
+    "path": "assets\\animations\\anim_bored_01.bin",
+    "sha256": "c7ac4120fa41a55113c4fecbf50b8713a98f12f9e237898951e096f8db74c81e"
+  },
+  {
+    "path": "assets\\animations\\anim_bored_event_01.bin",
+    "sha256": "110ce8c90d5ba7a307a4566793857483313a0eb4ff14e72e73f648668cc6c5bb"
+  },
+  {
+    "path": "assets\\animations\\anim_bored_event_02.bin",
+    "sha256": "7ed5f6efe11af3a6f8ffd33950c8dd9b919fb401b7ecf07f94a18e668559611b"
+  },
+  {
+    "path": "assets\\animations\\anim_bored_event_03.bin",
+    "sha256": "e462192b83352aafa999f38eff45e762a0743b81f6f4dbe842916c572cf54024"
+  },
+  {
+    "path": "assets\\animations\\anim_bored_event_04.bin",
+    "sha256": "e82328eda75b0d8d2d54e9f7eab134880d3e070e6b085295876effb88ce733a7"
+  },
+  {
+    "path": "assets\\animations\\anim_bored_getout_01.bin",
+    "sha256": "dbc24f7b177529647ef1c68c6087f11d67f8ab5ebe8930cc3421d4d5f01238c4"
+  },
+  {
+    "path": "assets\\animations\\anim_bouncer_01.bin",
+    "sha256": "3243942a972a60d097417cffa40d93346420ed3554a23c6dc04724c32768fa3d"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab.bin",
+    "sha256": "133987570112560f9ba2b24b2fdfd7615fe4e3cd8b779225acd8915027b9f4e6"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_123go.bin",
+    "sha256": "829b2e81683bf1352923dc4bfb8ea47a073e8bf31f834a503909e68096a1465e"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_bored.bin",
+    "sha256": "632a19ccbcc0c8ee3bbb168f8b7678c93abb71700789bdd61358dc3f6218fd4d"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_chicken_01.bin",
+    "sha256": "2a8546c1e5e2e58cc207412edaf29d43fc57ba6e798799f24f3f59865375159d"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_cow_01.bin",
+    "sha256": "3bcf52b1c98921ead7318757791abaade3bcb94a01debdbf7728aaae469495f6"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_duck_01.bin",
+    "sha256": "0cdbe5992cbbebb7816f42bf5627034a95aee42112f54bf1218fe5f62c5e6c2c"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_elephant_01.bin",
+    "sha256": "2f80ddf6b7d20b9ac23b3822ea30640592444b8a12437b3b38d3e02981d7ccfa"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_frightenedcozmo_01.bin",
+    "sha256": "818a7699112438e82cb80f12783afea4c76e10cd06fce44179a97726fc24b637"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_frog_01.bin",
+    "sha256": "bd723dbbebbd9cceec39c2a585f70280ca4fa24c4f2d6f7691fe774bce80e11b"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_ghoulish_creeping_01.bin",
+    "sha256": "8ac7dcd60e8f5ce4542782c6b296123223b2142db3a76e6bd23982f54e80be7b"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_kitchen.bin",
+    "sha256": "5e98ce6096b6bef51d6bb1e1000af435b3e698172ab42100ff04639b08779e4c"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_lightshow_idle.bin",
+    "sha256": "92a254d70379175b8429e6a9691e90dea2bc9bebdb9cef4a56fbc83584845b25"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_lion_01.bin",
+    "sha256": "270f17f767a5b2c15ea873490eeec11c4d1943d20234d419a568ea9be5699c84"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_magicfortuneteller_inquistive.bin",
+    "sha256": "774422879ce33ccdf30bae031c569eeb2aad4640db562bd9cddff3850c86535b"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_rattle_snake_01.bin",
+    "sha256": "5bc25a36a546aa3ba087c953da4ea3bdbd78c832e4ed8bbe06ffc8837f3aa561"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_rooster_01.bin",
+    "sha256": "78bc1649a5df37cd1aec86b000fc5db567e0146e12bc77e21fc64d4dc2011efd"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_scarycozmo_01.bin",
+    "sha256": "8b5f05797d36b60023e564b5c7a71c0a4e37160f86db8ce476e767914c7092a8"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_sheep_01.bin",
+    "sha256": "0bc8351a1cee4b59178018305304898ebcf068777250fc46d18dc62457941f89"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_staring_loop.bin",
+    "sha256": "f3988f719f43000b3b6e963aeda96db92dc8024f5ecfa4a660e61d1e23356d10"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_tap.bin",
+    "sha256": "ced7417e9d4e6d8b790485e07fc1c81736f0ca2028657185019cdff207a35b5b"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_tasmanian_devil_01.bin",
+    "sha256": "f9cc7152ffd0e2d36fad6ca675238b556ede64b3752fc6fb14a7323bd1f8eb3e"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_tiger_01.bin",
+    "sha256": "ecec3bd2e5b2f24a56c514f075d1ce0cc653df4509461e514112369167123b39"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_tinyorchestra.bin",
+    "sha256": "2bc704caead81179a0713e5a506dec719ab601980124592368706eb5897ce699"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_tinyorchestra_taka.bin",
+    "sha256": "2d4e5bf6eea764d25f41c60430d51ac7f741e3d504ccb09c4abf26750582acdb"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_vampirebite_01.bin",
+    "sha256": "01895e4bb4e87c23a0670e66c6a23e6ed717d63d2572a8cc4a1fda8184398158"
+  },
+  {
+    "path": "assets\\animations\\anim_codelab_zombiecrawl_01.bin",
+    "sha256": "0aa7259a1ac454102455fa3959ddb2b0fd151a4dd0309c66de524d421f244867"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosays_app_inout.bin",
+    "sha256": "0f36095b65023dd8c0cb3a1f57ea02ece751476a8ea2b09c2b7872ef2c8ebb75"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosays_badword_01.bin",
+    "sha256": "645e011f76bcffecf5cbc4a53bbe66b1e2191fc19537a328f378be4864df582b"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosays_inout_v01.bin",
+    "sha256": "2e50715d6b7c3b3e20e67a51dcaa8edc1959236617365c2f7237a04b046c3eb9"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosays_speakloop_01.bin",
+    "sha256": "a113707a8e5c9abe6d3e7e58051ef596367692fb1de2d5a94c62b96d80a8027c"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosings_100_song_01.bin",
+    "sha256": "ae27c7e41e9ba4987b979551ba5e883969b569d6eb45459f559135d70c28a01f"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosings_120_song_01.bin",
+    "sha256": "87e533e5b8e6f069a97dcd9a5c38fb9b790d48937b8af97662549e9e993eda97"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosings_80_song_01.bin",
+    "sha256": "773f03e5f2d924ab6b1598f38e7b91bd2be7644d166d3e1d63428ffbf7d20b69"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosings_getin_01.bin",
+    "sha256": "480efdf04638521ef6779e9d9a522f4cb77fa205bd16b4e7ac9eea2fc034f86e"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosings_getin_02.bin",
+    "sha256": "c08778b6f5036130c4931c02a520fc1a59173fd91bf11098ae28c5057c17e140"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosings_getin_03.bin",
+    "sha256": "7e156032895932ad1d7b41cfdb79d1dbb8c8d13816b828f555e1011c22ce5077"
+  },
+  {
+    "path": "assets\\animations\\anim_cozmosings_getout_01.bin",
+    "sha256": "a893623648ee46165454722f54865cb8cc3af2239b9ba1441ebd931d437a407e"
+  },
+  {
+    "path": "assets\\animations\\anim_dancing_mambo_02.bin",
+    "sha256": "9ddf32b9784b7c7873d4984a67f5b46de02334adf15493820b35420c955a06f6"
+  },
+  {
+    "path": "assets\\animations\\anim_dizzy_pickup.bin",
+    "sha256": "0bc6065c25568da79eca673abf68ff3bc9fd12bf4d23b6db5c3a1c7b4b46a557"
+  },
+  {
+    "path": "assets\\animations\\anim_dizzy_reaction_hard.bin",
+    "sha256": "be6d48ea7827e284bdd82d6da44cc408d98dc58967aff2315e060145ca5ecaf5"
+  },
+  {
+    "path": "assets\\animations\\anim_dizzy_reaction_medium.bin",
+    "sha256": "b085f827ff14706a6cd86cbe68a127191beae0ed1ad272da4186fe6f7576f8b2"
+  },
+  {
+    "path": "assets\\animations\\anim_dizzy_reaction_soft.bin",
+    "sha256": "9e10ff4960e2eb7e75095949d4630cef3adbd98d9a0cf34ab53656f7d3d8a2d9"
+  },
+  {
+    "path": "assets\\animations\\anim_dizzy_shake.bin",
+    "sha256": "9831996b71f1fbf1650c726dfd37707766ef72b889c2a3af998a84a5558b1992"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_cubedown_02.bin",
+    "sha256": "3abfa6e1dcad447ad942a8ab984087d44828377820c89162353ebc97d72a8d83"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_cubenotfound.bin",
+    "sha256": "f50a68d0d0c0cbb7b2d7f1e0996384940337ff2b95de5d9bc37a72fdbfc791e4"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_cubereact.bin",
+    "sha256": "b5a8f115ec7be33572d12a307d1b785e1bb8c3bb1a40197cb2630abe7f7e1641"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_cubereact_02.bin",
+    "sha256": "0efda56d8e19b9e3975f6aa66c45990db095ce266737540cd7eb7d596df8e7bd"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_cubeshake_lv2.bin",
+    "sha256": "7b3c891b24da29e3419d1c4db485cb8cfd817cfb1b7837cc76d4ce44bd5018e4"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_driving.bin",
+    "sha256": "6bec04ea3604347fdba42b99c98c6814ad457eba9a3d921fc4c460272fc7b5b1"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_eating.bin",
+    "sha256": "df4c7f9a76c5940f3412963d0d72a1e50214d1d5c2f9408d21835cba6606d005"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_eating_lv1.bin",
+    "sha256": "1ce61c02a74efb26964282a67f9fc33cb534c0b20ebc9090a77e21439e235c2f"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_eating_lv1_02.bin",
+    "sha256": "14f0254b0005bc1dd7c52407bea185b45378b996ed4188f833c453c38f285529"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_eating_lv1_03.bin",
+    "sha256": "9668862c7766f9fbde9b930721007cdc3fe6fbece0dde9db956b4b12ec4a0b88"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_getin.bin",
+    "sha256": "ecc5a460218a3a676e5d7444337a370a9b7af12934a6c21cd522b68c96f2cce6"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_getout.bin",
+    "sha256": "0716e96e4ecc5ff8b2397f43089d358ebac11ba38289089f18b163fc1bfbe0a2"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_idles.bin",
+    "sha256": "1ecbe0470bff81de1908fdb7cd1ff2a70d4e52d48c9e8cd7479649131130ebad"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_liftoncube.bin",
+    "sha256": "8cfd4271e1f37999d6905098207958ace95a83280d9f54b4954b1f5edda49052"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_react_stop.bin",
+    "sha256": "f2d0117a85f73026be5f16e0bb77f491482fea84cfdfb9ea555c23d93d7660ed"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_reacttocliff_lv2.bin",
+    "sha256": "525fb33eaa75614ce7ba74607e3251b403803a5439f8f6745f37b500b1f09195"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_requestenergy.bin",
+    "sha256": "ae7c81c1d231260483eebea77d9c04e2f95ab7f812214aa20d5587a5078d569e"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_shortreact_lvl2.bin",
+    "sha256": "26fbbb9f6dfbf10dcd7c516307c2ce2dfb058b9943b308d16f1f2fa1a3dfb8b8"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_stuckonblock_lv2.bin",
+    "sha256": "6991bac939eeec802bed8343e9dab253727c38ef61de969f3e0b83d4cfd4b9a4"
+  },
+  {
+    "path": "assets\\animations\\anim_energy_wakeup.bin",
+    "sha256": "4d09f0d038c37e35e70d442963aadc3c673eb4cb1c4fd44a01c38d6b84d38664"
+  },
+  {
+    "path": "assets\\animations\\anim_explorer_driving_01.bin",
+    "sha256": "7ff13252b10a22fa4901f293ef02eec85297504f3208e08206cb0508fc2de5f7"
+  },
+  {
+    "path": "assets\\animations\\anim_explorer_drvback.bin",
+    "sha256": "696a16cb5d82c2c307e60360934e69819584fca5b9da4dc6e2e56b86cd9e2fe2"
+  },
+  {
+    "path": "assets\\animations\\anim_explorer_huh_01.bin",
+    "sha256": "b7993e2ee38f8e1da7e6e680e29ff17c98f43d6d0f9ce916137527d583dc2bba"
+  },
+  {
+    "path": "assets\\animations\\anim_explorer_idle.bin",
+    "sha256": "8e67d4de59d2b6fb272097a0fda0eba1db47e9f8c2587f695ed73a69ad85a83e"
+  },
+  {
+    "path": "assets\\animations\\anim_explorer_inout.bin",
+    "sha256": "26245fe4afd742a684ec08e3643154b0e40c56bae01fbea99a2bc61d2b5be5fd"
+  },
+  {
+    "path": "assets\\animations\\anim_fistbump_fail_01.bin",
+    "sha256": "cd8be7c9b4512573675e5453955820393c5225a8fa2ce56e687da78c1175269c"
+  },
+  {
+    "path": "assets\\animations\\anim_fistbump_idle_01.bin",
+    "sha256": "d763dd24e613adb71c9830d62708cf832b7e307039b8661c020c470c10c7457d"
+  },
+  {
+    "path": "assets\\animations\\anim_fistbump_requests_01.bin",
+    "sha256": "e5a8572eae19560f4205d48a3633342510d611acea8f9660aa1ef7f357b177c0"
+  },
+  {
+    "path": "assets\\animations\\anim_fistbump_requests_02.bin",
+    "sha256": "67d0674c969428c2d9e90163130364eaea89c52420b86d484f8fe005e934f8da"
+  },
+  {
+    "path": "assets\\animations\\anim_fistbump_success_01.bin",
+    "sha256": "80f452097b2fbce39f229a38af1cb14f7135c05f9e417aa30cddf131b5bd68e2"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_identified.bin",
+    "sha256": "8da2f5ef1212e1ef0020fc864684e18cdfa617206bb0fb81b19c530c476d09fb"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_like_01.bin",
+    "sha256": "9ca9c015e600422d71ca161a0de4d90801a855016570c75b64f7156e5698f457"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_longname_01.bin",
+    "sha256": "28db2c24b452361d0b67a522a0818c488de6a0cc322f52db79205e99c6fa8707"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_sayname_01.bin",
+    "sha256": "41aa066d5d0dfad5dd841b7d3055b051f29d40e037b23392934d33ddc00818fd"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_sayname_02.bin",
+    "sha256": "621b4a48893570be44e971f175420cadf85cc4b534bd703a0108a038f57a818b"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_sayname_03.bin",
+    "sha256": "b234689407499542b54c4cb66bae189a3286f8e0ca08ecd3c25e3d4188a00761"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_unidentified.bin",
+    "sha256": "9d43fd0d037170b9b91af4173219c95c7a36c3f92a6a0e26c501586d6af82878"
+  },
+  {
+    "path": "assets\\animations\\anim_freeplay_reacttoface_wiggle_01.bin",
+    "sha256": "b03f52bffd6c6a87443699c8c3f3f2caae63e53a3d2870eb85f99f0bc61966d4"
+  },
+  {
+    "path": "assets\\animations\\anim_gamesetup_01.bin",
+    "sha256": "b803f474465b3bbfe514dec0af4128b8dcbdcddba14d18da0fc9117396b21dd7"
+  },
+  {
+    "path": "assets\\animations\\anim_gif_01.bin",
+    "sha256": "0432d48ca5e925f20580e7fb62ef4626c206af5ae5a4ed9ea50fdac073ad67a1"
+  },
+  {
+    "path": "assets\\animations\\anim_gotosleep.bin",
+    "sha256": "bbac26430f069bb09de57ac761f08a65db73ad96fefa77bf165382476aed60dc"
+  },
+  {
+    "path": "assets\\animations\\anim_gotosleep_getin_01.bin",
+    "sha256": "9bb0138c0c2bada71d6354f80eb34e27c3a285032bc5d33d036359e06292c165"
+  },
+  {
+    "path": "assets\\animations\\anim_gotosleep_getout_01.bin",
+    "sha256": "07182b2da34ec5e87fcd16829a6c550c83054e84fee8c073b2fa5db7148329e1"
+  },
+  {
+    "path": "assets\\animations\\anim_gotosleep_off_01.bin",
+    "sha256": "03841987ffbec7241cd60c51f5cbeb9a78e79ab68ab2edeac204fe969044f60c"
+  },
+  {
+    "path": "assets\\animations\\anim_gotosleep_sleeping_01.bin",
+    "sha256": "54e4afb00fe5cabd4dc83f4d92c7f5732c86a1f9bff4ae3d9b7e7b569bfea33f"
+  },
+  {
+    "path": "assets\\animations\\anim_greeting_02.bin",
+    "sha256": "a08aba59a292f8397934df95e362da38780db635e822f348ef9014f0aa49398b"
+  },
+  {
+    "path": "assets\\animations\\anim_greeting_happy_03.bin",
+    "sha256": "088f5a28afca319f487b8fa479cad8aa43257c554b61e46056ef0221ca0753fe"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_fakeout.bin",
+    "sha256": "851ac05fe18067a9b90c42c66b31efcdafdc6df36ce07a64f4bde3935e650f3f"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_getout_busted.bin",
+    "sha256": "84f5f8a78baa1ad56cc3a2c8ce437c2a6672e108f09df528c9d1aea9b00b003b"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_getout_playersucess.bin",
+    "sha256": "e188ef92a47220765a6c32e5f3be07509683ba5cd2b5d6c894b697ab09950f3e"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_getout_timeout.bin",
+    "sha256": "f1a6beed7dea1ab4c94a8ad30f25d060d4eb67f1e55caa2932b92aad6fb1989b"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_getout_untouched.bin",
+    "sha256": "7d75016fa4446ddc07511ad5f03698c4502020c525bb9f0c2078ab6657af90a7"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_interruption.bin",
+    "sha256": "0133e47daf25554b50b4cd07f9be327601002ad3098a899fa3f1a98d37352376"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_pulse.bin",
+    "sha256": "0e7d484a42044c1ac657b17024148ef6f173ff885af5438c5c2d922adb118c7d"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_settle.bin",
+    "sha256": "52080f938bc7a672af2c7e47e4b7c62190885efa8df6e6e4baf71277d403988a"
+  },
+  {
+    "path": "assets\\animations\\anim_guarddog_sleep.bin",
+    "sha256": "835423dc00b4e206f2411bf73fbeae894bd63621caa63f3922528d8ea748f523"
+  },
+  {
+    "path": "assets\\animations\\anim_hiccup_02.bin",
+    "sha256": "7860d67abba2f65e239435cf1467c4b88f885f79aafc497a73921ac07fdd40cc"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_driving_01.bin",
+    "sha256": "a66d8f8a43feadf11fa54ed4b4f66123d8d1d1ef0e5449230fe260ce7fc823ad"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_driving_02.bin",
+    "sha256": "2c206897af72bc48c1fcc6540e4ffc5f1aff8e59dcd08a870278f254eabc09d3"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_edgesquint.bin",
+    "sha256": "0f8409e421ee7cbc1fa197fa7e2181981fb5d78473e225b66f208a2207c01d10"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_getin_01.bin",
+    "sha256": "07154290e9d919228d848ad01d63b5afa0c51cdb85e53894e2332e28f2038621"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_lookaround_01.bin",
+    "sha256": "bff3bc11673ab9933999dbd816d6ac90335654e2fd3d29041657e8b1a3d81f9c"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_observe_01.bin",
+    "sha256": "4a32f8f32fee232b4e8e78908e1551886d99822709d1e0c6b633abc9efef1f1a"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_rtnewarea_01.bin",
+    "sha256": "2dc4fdf10784727b12e11e22b484d038189f47566af9ce55fdc48e2ac50c43b9"
+  },
+  {
+    "path": "assets\\animations\\anim_hiking_rtpmarker_01.bin",
+    "sha256": "bed2bfe5f6a0d8adc9c04b24cc04ebd7fa1e21f556b000e6e32be872163fc119"
+  },
+  {
+    "path": "assets\\animations\\anim_keepalive_blink_01.bin",
+    "sha256": "a0599a2ebc0e769e1eba7d8237ac3294c42105846c67c49d15f0328686a8d391"
+  },
+  {
+    "path": "assets\\animations\\anim_keepalive_eyes_01.bin",
+    "sha256": "1464f2605df10a335accf8c6e1dc1dab57dfa3e4f95bc259ac12c6703e7f6564"
+  },
+  {
+    "path": "assets\\animations\\anim_keepalive_eyesonly_01.bin",
+    "sha256": "7031201300022a91bb8e4a64f201ba5c04b6d33a774f045910b82550a7f89ec2"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_fakeout_01.bin",
+    "sha256": "63922858ab4728f67c26e68e3976431112dea42e9542540b4bc10ed78cbeae4e"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_getin_02.bin",
+    "sha256": "9e6934f50df46e94a61c409e1239e04985cec09def7cb76f848c3b4d3dba7ad6"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_getout_01.bin",
+    "sha256": "7d52e4563f1ba156592efc6288ec7a715ab453a8edf40363b61608668e5e3774"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_getready_01.bin",
+    "sha256": "e71a5440f04b591955680aa9aaa1bad91dd9a5d0c9978843f08678837a33795d"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_idle_01.bin",
+    "sha256": "c701934c2c8d95ad9b573e4733a62c696d566a7be613d3471106f8830c2dcb9d"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_losegame_01.bin",
+    "sha256": "7686c9f4b4c33c71b5d1587e4fc3a5fc692b754fc110ff08c8e02606483b8925"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_losehand_01.bin",
+    "sha256": "2aa694382dddc9b42b0fb9429f2c0f4b7bdb810eff7d84de74238f0e63bce71e"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_pounce_01.bin",
+    "sha256": "c151908991f8c4635446371cc5c217c3ae5e5e03e5d9ff5229ff1985f76ace60"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_wingame_01.bin",
+    "sha256": "80ee607d4bdb488f4c98d8b3656f8cecdb475d398725006f08a55aa4b95deefb"
+  },
+  {
+    "path": "assets\\animations\\anim_keepaway_winhand_01.bin",
+    "sha256": "8b1454fe0319a8cd3fc7ba7ce203c0e6c7a6230768445a87fbd964714886f651"
+  },
+  {
+    "path": "assets\\animations\\anim_laser_drive_01.bin",
+    "sha256": "d01a579711212933bf4caa8e56923f456fdfa13e04d3ee9533c9d3c645c6b265"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_altwakeup_01.bin",
+    "sha256": "767621cd6750f68f9179725b3bcb78d88650f7cf09ada36cbfd07090ae11ef62"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_backpackidle.bin",
+    "sha256": "4b1a5a3009121566d2073e8f0e698d938b9c8375da05583f097ebe58b4a22367"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_driving.bin",
+    "sha256": "c9ad42e7f121ec1762e3309bcc84381494ed7c3f7e1b23d9ae7f866552b6ba7a"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_eyeson_01.bin",
+    "sha256": "f1c620db7714a053b2fd548226bf12d878a1271704144d5a4c2b038f28f518b2"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_firsttimewakeup.bin",
+    "sha256": "65949a10f87ac3334f6fe504103e2a8b0c21ca8e8d119ef78e0fb9d6db069ab4"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_firsttimewakeup_hello.bin",
+    "sha256": "f4974cf3a474f9ae121b9b56ec0b81e600ef6fcc0bccea67ac26760ae47dc53a"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_idle_01.bin",
+    "sha256": "555bc9f3ff39fcffacefdd03b9de58f7f04f1a97ff215df4bfd3c340fb4bd670"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_lifteffort_01.bin",
+    "sha256": "1a26da33b49736af3f76db258432bf6533cf7a7470e556178d58a5b0bd0cdf34"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_reacttocube.bin",
+    "sha256": "6590f20dbe636409cf5d9f5b68db7341f5de7286e13da2157331badc65a770ef"
+  },
+  {
+    "path": "assets\\animations\\anim_launch_searchforface.bin",
+    "sha256": "8eb756f0ab7d699b22289a35e7e68a4e6ca583253c9fa2a513296188188a7c71"
+  },
+  {
+    "path": "assets\\animations\\anim_legacy.bin",
+    "sha256": "bd53440a6c17210fff9770c524f1cefd4b5fe58255c6f8e8713716f0686483b9"
+  },
+  {
+    "path": "assets\\animations\\anim_loco_driving_01.bin",
+    "sha256": "a0b736250d74a7568ab24b151a517b96dcca806e5d2d011528fc4037dd2acb1c"
+  },
+  {
+    "path": "assets\\animations\\anim_loco_driving_upset.bin",
+    "sha256": "4f7cdc7aac340a6b5cb2671f7e6ceec8c0575d68cc6bd5a27db2b01d4ed7e704"
+  },
+  {
+    "path": "assets\\animations\\anim_lookinplaceforface_keepalive.bin",
+    "sha256": "15c8a1c3a7aafb02714a019dbac5e08add86c28c2c35dc6c83e740e9e569af55"
+  },
+  {
+    "path": "assets\\animations\\anim_majorfail.bin",
+    "sha256": "98decd4088e8c7a934303041712aa69712ba4594f6e81b7411b009f33433e6df"
+  },
+  {
+    "path": "assets\\animations\\anim_meetcozmo.bin",
+    "sha256": "e7f4457b74d4a131c94b7dd7abe827ec70c05cbb776a754068840565d653868f"
+  },
+  {
+    "path": "assets\\animations\\anim_meetcozmo_lookface_02.bin",
+    "sha256": "e58fa9fa52deed5b3400a359ccc90b9648e235f8c837173caea2d057ba3fd4d7"
+  },
+  {
+    "path": "assets\\animations\\anim_meetcozmo_reenrollment_sayname.bin",
+    "sha256": "a74248d30878541572a9a0536abe0ca64d7f9a911eb4ec1ded542e64c6b5a536"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_failgame_v01.bin",
+    "sha256": "8635b5d6200eab76f8fa498700a76d2b605e8423dd1cbd7b69a9f0d9ce90b63d"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_failhand.bin",
+    "sha256": "baab86c4c8395ea1f86dd9cc94608202c0057f1801ce44de0cd8ce663acf2579"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_getout_01.bin",
+    "sha256": "72eca42c1844edf3ac3aaf8db98674ea49e2275840fceda70a16cb66131c248c"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_idle_01.bin",
+    "sha256": "b602719a60606142d5487abb8a2bc9b5fb02998bd2e24993d65f34147d95beed"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_point_fast.bin",
+    "sha256": "be3c1c72283ffaf933b218f43951a116252aca3ce6f18167d1902dc9d230462a"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_point_player.bin",
+    "sha256": "9be1380fbdbcb83657ebdf7de8c619504cde9035534ee7ba075ffa716b7f01b3"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_point_v02.bin",
+    "sha256": "795bd38c1931f0ce88def3eaef2694f5a3f1d2496763be4bdd6c06e1e6b5ca34"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_reacttopattern.bin",
+    "sha256": "cb05e038d83d6508cfb919306242059fb1b21cffdf0d55b0b5867488761c7c62"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_reacttopattern_standard_v01.bin",
+    "sha256": "484c5fdf12214cfddf99607770926f783e3f0a9028189a055e5770f47a35bbb8"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_reacttopattern_struggle_01.bin",
+    "sha256": "d938f21a81c1eca0343c24464e5fa8043266e2a0431a647f47f34680d2649e20"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_solo_failhand_player.bin",
+    "sha256": "da52a2d5f0fcf57e82b76b57c28edd2256786a067b6e66f68033bba72a35cf9f"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_solo_reacttopattern.bin",
+    "sha256": "6ab2b1cddc3a521fc86a606a18719e113ed78903c0d0bbb0cf19f125628fd65a"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_solo_successgame_player.bin",
+    "sha256": "b3abc3101594b2f7b09f53c20ab3c6f31f15ba7abe8da40874130c9d9bf77e10"
+  },
+  {
+    "path": "assets\\animations\\anim_memorymatch_successhand_v01.bin",
+    "sha256": "9f1aa325ae45c69f3c4346b8e2a402feecbc0e67e85313d24c4eddcf58d96990"
+  },
+  {
+    "path": "assets\\animations\\anim_pause_idle_01.bin",
+    "sha256": "2985a28c386d02bed13f2147d58eccdbdb3da0ef2a634a1d540a70c5756872ae"
+  },
+  {
+    "path": "assets\\animations\\anim_peekaboo_fail_01.bin",
+    "sha256": "dd0ba2a02a969913525b4af7d9cbee559f77d38cf4def4230a958e3de9cf4ebb"
+  },
+  {
+    "path": "assets\\animations\\anim_peekaboo_getin_01.bin",
+    "sha256": "cf5a28fecb190f2383b5f568f9a14d57be98e8b6188cbbb8f1f8bc942cbce730"
+  },
+  {
+    "path": "assets\\animations\\anim_peekaboo_getout_01.bin",
+    "sha256": "a31a620b7426e086cb2797b22ed40b0101e351b769c9c8f2a2818e46a1b58ae3"
+  },
+  {
+    "path": "assets\\animations\\anim_peekaboo_idle_01.bin",
+    "sha256": "46590f2f1c74a1cbf0150781e66fb41360adbfc4fb4c2b458cd749a7c4443f36"
+  },
+  {
+    "path": "assets\\animations\\anim_peekaboo_requests_01.bin",
+    "sha256": "10a01d6b0e52a44e02fd6a5489fc2efc15371fcbc4ea9dc4ac3879df41716d8c"
+  },
+  {
+    "path": "assets\\animations\\anim_peekaboo_success_01.bin",
+    "sha256": "e352ab3784046fe9f74fd5271f71ee5c3a1167790ec3d2424c5d21aa0670ad34"
+  },
+  {
+    "path": "assets\\animations\\anim_petdetection_01.bin",
+    "sha256": "68c1adf217f07cb8a8118f06993e08987f3990ea08c797e6db2d5cfa418971cc"
+  },
+  {
+    "path": "assets\\animations\\anim_petdetection_02.bin",
+    "sha256": "09204f4fb75c9c346de1d0496b32b3d1d7c80c67250cad57bee026ea562ad369"
+  },
+  {
+    "path": "assets\\animations\\anim_petdetection_03.bin",
+    "sha256": "449301f4de1353b53a7474e87596bfacec58d4a99ad586240285a56380e362a4"
+  },
+  {
+    "path": "assets\\animations\\anim_petdetection_04.bin",
+    "sha256": "ce757910834f6cf1926b47e1c0130677b28f4220d5dc841da51aaa5ca0c8f4a8"
+  },
+  {
+    "path": "assets\\animations\\anim_play_03.bin",
+    "sha256": "8b33f842c8b4d452c9cdcbaf07252b9298c61b8dae3045e81163478673da69b3"
+  },
+  {
+    "path": "assets\\animations\\anim_play_04.bin",
+    "sha256": "9f068cb3d94dacd59309a827bc7cf33f3e63d2d0515505d65ef71b62be4ddc7a"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_drive_01.bin",
+    "sha256": "2f42c9196302e1b738f147121bf8a62b02729c95662d214a13d30eaa13eec745"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_fail_01.bin",
+    "sha256": "9aa0ce67e3612d06d7d669ef54d3cae8be1b3014ef3bafe0187bdbfdc1aa63be"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_fail_02.bin",
+    "sha256": "daae41aa208558e95fdd7418fb77f2a227b5b49e15b784f844a04f0210fbad2c"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_lookgetout_01.bin",
+    "sha256": "6449c002529b52978acc5b66b9aeb23ef3ef716805e1005c8247ba0dbf1962c7"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_lookloop_01.bin",
+    "sha256": "64a23d06fb1c0a977d9740ea7833637b33fbaf840b7fba3516085c1ba8ef1e49"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_pounce_01.bin",
+    "sha256": "702bd8e65912bea2bdb4dfbf6f44664060e236891d43242f12e0637f04bd14bc"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_pounce_02.bin",
+    "sha256": "014e150f2ad296f01970cd88e2f11befee3b323c894f61c7a4fa67bbbeb02a11"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_reacttoobj_01_shorter.bin",
+    "sha256": "3f931e86c131d0eef413eca2e29c8082b4219d51ddee66a23fe32e49c55b18e0"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_success_01.bin",
+    "sha256": "2e3131c260dce8ac4851a3f2c68feceebb7acc486658999cdbbbd48760acc3b3"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_success_02.bin",
+    "sha256": "f45a12eb0a9d65d5b36189d1153ff614369d78c516cbf5d52c9a76667214b406"
+  },
+  {
+    "path": "assets\\animations\\anim_pounce_success_fail_variations.bin",
+    "sha256": "84fda9204e586da0015396acf1f842bed8d7221de65458c7b8ccb5c7e1ec56c9"
+  },
+  {
+    "path": "assets\\animations\\anim_pyramid_lookforface.bin",
+    "sha256": "79aaab47838b3a86448cd4573db865ba8abf02af87b6222013998a70f1f4b373"
+  },
+  {
+    "path": "assets\\animations\\anim_pyramid_reactions_01.bin",
+    "sha256": "149d161cb1813d24fc9a34cfc1773373ace1269402297147b0c728640dfca013"
+  },
+  {
+    "path": "assets\\animations\\anim_pyramid_reacttocube_2blocks.bin",
+    "sha256": "315d6287383ee35fb6981398f865a7c9511872ba14fe833ba53f5451bab1b63e"
+  },
+  {
+    "path": "assets\\animations\\anim_pyramid_reacttocube_frustrated.bin",
+    "sha256": "539c9608e4c7e74ce98673a7c9c126a3a70b4515a2df6ed2e3b06e0c4c1847a4"
+  },
+  {
+    "path": "assets\\animations\\anim_pyramid_reacttocube_happy.bin",
+    "sha256": "2ac4b5e8f856730ebe40fe0034515c447b8d5fa943d9b57a4ef7c9c8f1499a74"
+  },
+  {
+    "path": "assets\\animations\\anim_pyramid_thankyou.bin",
+    "sha256": "5d89a4cc1d9f5c4814676c0f22a6febc78824f371faec323bf8edb40f29097ad"
+  },
+  {
+    "path": "assets\\animations\\anim_qa_audio_testing.bin",
+    "sha256": "41ad358484ae6304314bf5479bc1f76e447d9e195cf9b67e062f4efee3fa3496"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_admireblocktower_01.bin",
+    "sha256": "144f92698b144db54e2f1008e83ca6c6a5174a4d2bf59e8cda7c32401ef046b0"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_ask_01.bin",
+    "sha256": "b57ad438b3afdd5544db81af3578500053411f2e178036a3e09b3cc90c263d1f"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_audioblockcrash.bin",
+    "sha256": "ae47ae52d4af0149bd27d83855f839ae9a4b08c7afc328bad49deaf66913c4e7"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_focusedeyes_01.bin",
+    "sha256": "ae7d035cdb51628adcb324be7df6443f08c67b7efe2a79436ba15b8434380c48"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_frustrated.bin",
+    "sha256": "48bd5edf5a0f191d38135a21dafd57adc62587307152aac6d397f92e448f6767"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_happydetermined_01.bin",
+    "sha256": "c0437f042a96492c075b2fc741052261225909720ecf422a8c28ab6d698bc96a"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_lifteffort_01.bin",
+    "sha256": "d6ff1370ed5b6e71853962414f45663058a27ac02eb6eb6189a99d2294c8f637"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_placeblock_01.bin",
+    "sha256": "a7242148ad9238d297b51ba586ec5b330136d020bfef36161b5b306f3c7cb4d2"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_putdown2nd_01.bin",
+    "sha256": "b09633ad56b8ed50abf85e21a09ecea96713a5fc7bfe118238369e9bf8411e87"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_react_01.bin",
+    "sha256": "0d9f4033802d1336a20981e81e5bb21244edea73001146010164bf01a2a7f07d"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_react_short_01.bin",
+    "sha256": "c7e39f2cc8a6a21ea23c84511e4a7d11d3e6d9c3f4998b9632e1f2fa95ae4b03"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_reacttotopple_01.bin",
+    "sha256": "009784695d11ff667da1c5f15fe60318707be5f6a304cfcb7a847b8d501f9f4a"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_stuckonblock_01.bin",
+    "sha256": "3854d06f33e4cd36d8579315da3486a2e12eca3b415169cc164860023ecaa372"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_success_01.bin",
+    "sha256": "2be79805269c95b897fe7f0d8d42c214c41207b4970172cada1018373bdd2032"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttoblock_triestoreach_01.bin",
+    "sha256": "39482ffb77d86cfa661f8224b66debef0758e8023f5eea55276829aac6b1e987"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttocliff_01.bin",
+    "sha256": "77fa3b457ff8219d09bcbfecabede85fb7774e354908f25a00476e761cc0f60d"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttocliff_faceplant_01.bin",
+    "sha256": "e40e73468d3fe9aa83fea73038ac884dc3804554e9aeee8caad5940ace7f3acb"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttocliff_sidestuck_01.bin",
+    "sha256": "565120a2b07801d9605e38d2eeaf47f2314f3ae10be49e0960b73285ddf2bb11"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttocliff_turtleroll_01.bin",
+    "sha256": "63136737e0e838eae28ec3d65955c05bedf44529bc40f1a07c20096d404adfd6"
+  },
+  {
+    "path": "assets\\animations\\anim_reacttocliff_turtleroll_02.bin",
+    "sha256": "b8f9a594380374a52a61a27d5d5201704ec3afe6b86688785ebc4713c2d3beb5"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_fix_01.bin",
+    "sha256": "4505578492137001f2dad25a565a4675c01f454b0e09351d894a618c94739516"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_fix_fail_01.bin",
+    "sha256": "e5dfa00bcd5ac81312e467e80d91a117a942f64a6d6842f98fd7bb8c6986d8f0"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_fix_idles_01.bin",
+    "sha256": "413e888c5b799e1072aae3f3eada74c94f5b238595ffa20617a96a7564d99c70"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_mild_fix_head.bin",
+    "sha256": "06bb8b78b8ed323d9985102ea3beb409666c96019a06cc6081a47a4ec24345c7"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_mild_fix_lift_01.bin",
+    "sha256": "d4d6dceb27cfe108e5fe4001bb3f90950119b45778bda9bf6d69a23e71ee5fcd"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_mild_fix_tread.bin",
+    "sha256": "8f58b4fbed22a976cc986e6539d96fdf2548f1f285284f5853ad0884bf2cfff8"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_react_hit.bin",
+    "sha256": "e84ece8a04b6e77310a940d596d4ba9bb4bc0a84f85c541f0ec3897d790904d8"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_react_stop.bin",
+    "sha256": "0645805d4be29aa61f9bc8e1a9ae7b9646c8021815baf14a23a4e5a785f7ee77"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_reaction_01.bin",
+    "sha256": "71ed6e5db903ce837add23e428df089e50256861c98cb86d7e6842285c2a98ff"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_severe_driveset_01.bin",
+    "sha256": "b7d3bdedc7980525498d927962e3901f4b9c95c7ccd4bc141f889aa1183c2263"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_severe_fix_01.bin",
+    "sha256": "7a9f3b8ced847d24a35fa333d4cc043ef86a8b903d194867990aff73d8c1261d"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_severe_interruptions.bin",
+    "sha256": "d6a9fab9682b4d3f7739f90683540656c031771ddef04a94f6e801fc2e34b0ee"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_severe_state_01.bin",
+    "sha256": "e36c4fa7d6b72862fa67ed3fe61a7dfe71c34eb986a3008e13abd452130fd6e5"
+  },
+  {
+    "path": "assets\\animations\\anim_repair_variations_01.bin",
+    "sha256": "ab3ecd2ec34e9659e15a2640a16f72d4608e37aeb6ca7e924cdebbc4ee133d48"
+  },
+  {
+    "path": "assets\\animations\\anim_rtc_react_01.bin",
+    "sha256": "7e06cdb9c2cf1e4726a69958ebc86ce3e8778eca18a7bbdddc39e6a20b5a8187"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpkeepaway_askforgame_01.bin",
+    "sha256": "84a1e8612d5909749b8fe912aaf1d1096c0b838765c953d2f2ad71420de1fae0"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpkeepaway_ideatoplay_01.bin",
+    "sha256": "b7cfb51f88940afd13890e60373625130f56100b03bffd302ccd3634e84092d5"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpkeepaway_idle_01.bin",
+    "sha256": "390eea8e40a3a78717193ba4d94c229eb8f5483ca88d8537d219df4b273effb2"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpkeepaway_playerreaction_01.bin",
+    "sha256": "c2e7df3f0d2ea7f4a08c57d71bdce7ea63028fd96d9612b037b8bb5a303a5fb6"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpkeepaway_reacttocube_01.bin",
+    "sha256": "f0f1fb53eba6704a7e3f0674700115e06d4837739ba48386333c0db5367114cb"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpmemorymatch_no_01.bin",
+    "sha256": "502e187651aa6073a2e5733837b4a6581dfd5df87dc3ac4b709d97403c4a3fb4"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpmemorymatch_request_01.bin",
+    "sha256": "8a5855280d8308b8885f5b6ca5fae9e8a2a1f9581eb28c59cf6c0c565b5985db"
+  },
+  {
+    "path": "assets\\animations\\anim_rtpmemorymatch_yes_01.bin",
+    "sha256": "3bd51ec5eb29c496847faf6ebee8f18d95cdf46fdbdf52843b8e9c0113c992e0"
+  },
+  {
+    "path": "assets\\animations\\anim_sdk_speak.bin",
+    "sha256": "a54c4fa5bb7e5129d9ab731baddb6f2bba930d3d8e988a734b66fa0a58a2c3dc"
+  },
+  {
+    "path": "assets\\animations\\anim_singlepose_01.bin",
+    "sha256": "f2eabd5cc089c513709e709caef4468378956494d4c6d56eb007893986e06a3e"
+  },
+  {
+    "path": "assets\\animations\\anim_sparking_driving.bin",
+    "sha256": "9fd52bd8d5b3e31ce5653620b3fcef50123f0ecf93d2c9bb6053aa1d5b5d8e00"
+  },
+  {
+    "path": "assets\\animations\\anim_sparking_earnsparks.bin",
+    "sha256": "6e79b7fd42a3ca7e4035452b2571b8ab913fbc0ea48b1fd33f82abe8ae93c61c"
+  },
+  {
+    "path": "assets\\animations\\anim_sparking_idle.bin",
+    "sha256": "dbdcc430d897f89d1b1f8795c54caab072143597bdd13492c2bd64dd2ad3419f"
+  },
+  {
+    "path": "assets\\animations\\anim_sparking_inout.bin",
+    "sha256": "9261493174a85b9ff031a952461dbda524f7c2727107fb98423edebec435638b"
+  },
+  {
+    "path": "assets\\animations\\anim_upgrade_reaction.bin",
+    "sha256": "40bf77772e0c2b2c9574d03e737b0bf6e2389bf4947734a53a6d8b9960642037"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_alrighty.bin",
+    "sha256": "b51c75d126e2edc27bbe7b409186fa71afb7439b5e96838ab31450de43499b23"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_laser_lookdown_01.bin",
+    "sha256": "be6f77bf44f30e4066ab83e429d729e5ee66d6cbad3a86fc0c91f139424e21ad"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_listen.bin",
+    "sha256": "decbaa03986773b1cdd0feb2b6c74315dd73610f9e95768143fafe0ab1a91981"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_reaction_alreadyhere_01.bin",
+    "sha256": "38a716c3b5db3b10a4d0634014113c178a531b66285cdd99ceaa11c720b98d41"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_reaction_nofaceheardyou_01.bin",
+    "sha256": "7b87e88d25aee12942d2826b46a8ab7ceb2a34d5d42a7c3eb6fdcb383021d80d"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_reaction_nofaceheardyou_getout.bin",
+    "sha256": "939d61bf5e62f14d51e400e54390d4cb7b451044e162692c34523e4d81b50a00"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_reaction_whatwasthat.bin",
+    "sha256": "e5b9241ec30e536e78aee7a07313ab3e6010fb5292ee5cc3cf1e76b2ec8a3e1a"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_reaction_yesfaceheardyou_01.bin",
+    "sha256": "53ca150942f6fdaa5060b5cbf3ccd5adf6a50415c87fb8e87cc9a71fff6eb4e6"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_refuse_energy_01.bin",
+    "sha256": "d8b18632390d1c082a5cb6b38e88faec32093ff44b69089d70d3126c823a0277"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_refuse_nosparks_01.bin",
+    "sha256": "5ab97222c27e25b507c0631800d8998be9b6cc147e66c8aa0c00835a304a9273"
+  },
+  {
+    "path": "assets\\animations\\anim_vc_refuse_repair_01.bin",
+    "sha256": "d6e6b985807fd2d4faedacecc9d7e44aece494e0e3129585509ba0cc4b3776ed"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_highenergy_getin_01.bin",
+    "sha256": "eadb8edc286003e896c313e883b7e19b4ee1c7de35288678345c04321c238e59"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_highenergy_getout_01.bin",
+    "sha256": "99ffd3f0a02a44a903a5c8981b90db7dd5680536d2e7e37a6d3e079f11c34d76"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_highenergy_getready_01.bin",
+    "sha256": "a0279728623c6c7452e69dbab2534ddbea314eecb3992e26e72036f524653f4a"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_highenergy_strong_01.bin",
+    "sha256": "8feb0c6f221d329a68ee6bbb22c14d7ef41594f7de35d22161a1c93a52dd7bfe"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_highenergy_trans_01.bin",
+    "sha256": "865a0c433104fcedefff8832ccaf170cfdab6f930a879b876e36eeaa2d84a813"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_highenergy_weak_01.bin",
+    "sha256": "84b6b6359e13c223b929f4e53608fd90e29a54b7ad4ae417f7c1f76024887ffd"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_lowenergy_getin_01.bin",
+    "sha256": "2d48d8dc6dd1e333bacae3070db19489b6e6b13f4ca10416093d098aa4a7d2d7"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_lowenergy_getout_01.bin",
+    "sha256": "320beda98a5eb523b9623d6c460de9d3c943f2403c4894535e22da513f958c4f"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_lowenergy_getready_01.bin",
+    "sha256": "008f678f2a9455f53f24bf19f67dbf53e2819bd898f6f334b72b146b216cf27c"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_lowenergy_strong_01.bin",
+    "sha256": "97de9bc4954c01496650508e131ef810ba8e2f52b6d9b8de5d06685110e090fa"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_lowenergy_trans_01.bin",
+    "sha256": "e942d8ccb72a978c94a0d7ba5e42e18d33e7d2b153a453e98395054e85c9a885"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_lowenergy_weak_01.bin",
+    "sha256": "a3c6fda7143ed61d91b77069ebde9b8eff978c61071de82aaabab5478d021469"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_mediumenergy_getin_01.bin",
+    "sha256": "749a08d53ebeb407298dc2974150d2b928b7c2b3626c7606f23f46003728bd32"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_mediumenergy_getout_01.bin",
+    "sha256": "2328f34d246242663946f52e121f2a815243f34b24a9f32d9c60f8bab45a15e5"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_mediumenergy_getready_01.bin",
+    "sha256": "a2e555f5ab57f5ce62037972023fb730f697c2d58d5b89ac9287a44fc530bb73"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_mediumenergy_strong_01.bin",
+    "sha256": "8a6a400793f724208d856f4ef1d044c4256536e2c04e7bca9b4f9aa1c78d9540"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_mediumenergy_trans_01.bin",
+    "sha256": "69ab4d771e7a5b98791dd476f333ee157736bfc6870aa7340d1832c5fbb4afb7"
+  },
+  {
+    "path": "assets\\animations\\anim_workout_mediumenergy_weak_01.bin",
+    "sha256": "73248a6d8e86877e6bc01547878ec316ea58c0eafe535822ed6fdefccf50cdad"
+  },
+  {
+    "path": "assets\\animations\\id_motiontrack.bin",
+    "sha256": "ce646498277a02eda067ee04435228bc50eebc15e91237c2e839ccfd8339f59d"
+  },
+  {
+    "path": "assets\\animations\\id_poked_giggle.bin",
+    "sha256": "cfa9c7558cb6b7beb11c3c07fab71f16697c0d27abed3af0648a00d7a2fbf165"
+  },
+  {
+    "path": "assets\\animations\\id_pokedreaction_01.bin",
+    "sha256": "502dfe984bf3d58c268c038037b69823c73995284b54c074f6b5289ffea40b30"
+  },
+  {
+    "path": "assets\\animations\\id_react2block_02.bin",
+    "sha256": "9f639f0b0a5adbbee724be28ec61e37238fc245b8af550b601a8586fd1742f50"
+  },
+  {
+    "path": "assets\\animations\\id_rollblock_fail_01.bin",
+    "sha256": "6765c9d5f7f6f81fbe3c7d08d469f99cafdebfa3e88810cebfa4e4a46ac9d984"
+  },
+  {
+    "path": "assets\\animations\\launch.bin",
+    "sha256": "37c49cf1dcd38d4e2f4df0867e762349b5ea8b4368c9e59bbfdc3e7bb0b6d161"
+  },
+  {
+    "path": "assets\\animations\\majorwin.bin",
+    "sha256": "edae213be51e4173c6b704e9b860c8532b0da5820df00c2c6aa9e0c782de0edd"
+  },
+  {
+    "path": "assets\\animations\\mm_newidea.bin",
+    "sha256": "de792c6b0385ed5248fec774d9015af5e63de398cc50eaaa3f3aa242a3123d4b"
+  },
+  {
+    "path": "assets\\animations\\mm_thinking.bin",
+    "sha256": "a1087423435973e1e3db6dfa5ff274ee16050ac05939c2deb20eee3be55ecb17"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_ask2play.bin",
+    "sha256": "9f70a616566179394b481a3b29cde58bea151f708edb8a08a29a2f9c440470aa"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_driving.bin",
+    "sha256": "85a388f09609d43f05e9c3c78b73806117dc2a85f2a9651d2d3b2a73930dc88c"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_game.bin",
+    "sha256": "fd3390d4503e8d0f005836bed28975aa85ad79ad3109a0ad966a91b488291ae6"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_gamereact.bin",
+    "sha256": "d45faeb918fd98678e1f0eafde9566986e2b7b2e61150a4270d9cc3212727615"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_gamereact_02.bin",
+    "sha256": "f5294a24f1c3df30e68a2467e42087c6f94505a0ecceb3526c1278335dd92e44"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_gamereact_03.bin",
+    "sha256": "d71a3fc61ca0618df81b7c4e85264b3565b25f103e37e03bba5d2366facb8fe3"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_handreact.bin",
+    "sha256": "72bd3d7b5c4e542a0960515b3b22a8bdcacfdd5f2e981526a6d7ec4128579d56"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_roundreact.bin",
+    "sha256": "fe80d20d02a16ebb7b4cd9f8753c6a90d0f01f27289b6d630dc6f1abed682c55"
+  },
+  {
+    "path": "assets\\animations\\vs_speedtap_wait.bin",
+    "sha256": "25d311dbd68af8a5d5076c9b8c12e44bbf1ed3dea895b0cc59fe103f5f3001bc"
+  },
+  {
+    "path": "sound\\AudioAssets.zip",
+    "sha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145"
+  }
+]
