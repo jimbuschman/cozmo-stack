@@ -714,6 +714,8 @@ public class RFixBatch2Tests
     /// it set (0x005119AA..0x00511C14), so a robot that has just lost the contacts is still runnable until Robot::Update's platform step (0x00513CD8..0x00513E2A, M4-019) clears +0x34A: here the
     /// robot's footprint still intersects the located charger's quad after the contacts drop, so the engine tick leaves the flag set, and it clears once the footprint is clear of it.
     /// </summary>
+    // reach: unit (real contact ingress/engine tick; geometry fixture, reflected runnable/behavior entry,
+    // simulated driving dependencies from Rig. M13-040 contact observation may update the initial charger pose).
     [Fact]
     public void M13_017_TheBehaviourIsRunnableOnThePlatformFlagNotTheContacts()
     {
@@ -731,7 +733,7 @@ public class RFixBatch2Tests
         rig.OnCharger = false; rig.State(); rig.Tick();                 // the contacts drop; the footprint still intersects the charger: +0x34A stays set
         Assert.False(rig.Robot.Sensors.OnCharger); Assert.True(rig.Robot.Sensors.OnChargerPlatform);
         Assert.True(Runnable(b, ctx));                                  // the contacts-gated behaviour would say false here
-        rig.X = -80; rig.State(); rig.Tick();                           // the footprint (x in [-135.9, -57.9]) is clear of the charger: Robot::Update clears the flag
+        rig.X = -300; rig.State(); rig.Tick();                           // M13-040 reobserves the charger during contact-on; -300 is clear of that actual located footprint.
         Assert.False(rig.Robot.Sensors.OnChargerPlatform);
         Assert.False(Runnable(b, ctx));
     }
@@ -905,36 +907,43 @@ public class RFixBatch2Tests
     /// whose quad the robot's footprint intersects leaves it (0x00513E1A cbnz), and one it does not intersect clears it (0x00513E20). The boundary is the quad geometry: the charger covers x in [0, 96],
     /// the robot's front edge is x + 22.1f (0x41B0CCCC), so a robot at x = -22.0 touches it and one at x = -22.3 does not.
     /// </summary>
+    // reach: unit (direct platform setter and fixed located geometry substitute prior contact/vision history;
+    // the platform decision itself runs through the real engine/VisionSystem tick hook).
     [Fact]
     public void M4_019_TheEngineTickClearsThePlatformFlagByTheEnginesRule()
     {
-        // no located charger: cleared (the contacts are off, so SetOnChargerPlatform(false) gives false)
+        // Source0x00513E26: isolate the no-located-charger branch by setting platform directly with contacts off.
+        // Contact-on now creates a located charger (M13-040); it cannot be used as a no-charger fixture.
         using (var rig = new Rig())
         {
-            rig.OnCharger = true; rig.State();
+            rig.Robot.Sensors.SetOnChargerPlatform(true);
             Assert.True(rig.Robot.Sensors.OnChargerPlatform);
-            rig.OnCharger = false; rig.State(); rig.Tick();
+            rig.Tick();
             Assert.False(rig.Robot.Sensors.OnChargerPlatform);
         }
-        // the boundary: intersecting leaves the flag, clear of it clears
+        // Fixed geometry fixture, no contact observation: charger[0,96], robot front x+22.1.
         foreach (var (x, stays) in new[] { (-22.0, true), (-22.3, false), (50.0, true), (90.0, true) })
         {
             using var signals_rig = SignalTestContext.Install();
             using var rig = new Rig();
             WorldCharger(rig, 0, 0);
             rig.X = (float)x; rig.Y = 0; rig.Angle = 0;
-            rig.OnCharger = true; rig.State();
-            Assert.True(rig.Robot.Sensors.OnChargerPlatform);
-            rig.OnCharger = false; rig.State(); rig.Tick();
+            rig.State();
+            rig.Robot.Sensors.SetOnChargerPlatform(true);
+            rig.Tick();
             Assert.Equal(stays, rig.Robot.Sensors.OnChargerPlatform);
         }
-        // the contacts flag still wins: SetOnChargerPlatform(false) is (arg || +0x338), so a robot on the contacts keeps the platform flag whatever the geometry says
+        // P1: argument||contacts still wins when a separated located footprint requests false.
         using (var rig = new Rig())
         {
-            WorldCharger(rig, 0, 0);
-            rig.X = -300; rig.Y = 0; rig.Angle = 0;
-            rig.OnCharger = true; rig.State(); rig.Tick();
-            Assert.True(rig.Robot.Sensors.OnCharger); Assert.True(rig.Robot.Sensors.OnChargerPlatform);
+            rig.OnCharger = true; rig.State();
+            var charger = rig.Vision.World.FindLocatedObjectHelper(new BlockWorldFilter(), null, true)!;
+            // Rig has connected cubes but none are located here; verify this is the contact-observed charger.
+            Assert.Equal(ObjectType.Charger_Basic, charger.Type);
+            charger.Pose = At(1000, 0, 0); // geometry-only fixture after observation, no new contact packet
+            rig.Tick();
+            Assert.True(rig.Robot.Sensors.OnChargerContacts);
+            Assert.True(rig.Robot.Sensors.OnChargerPlatform);
         }
     }
 
@@ -964,6 +973,8 @@ public class RFixBatch2Tests
     /// M4-019 / M13-017: the whole loop through the live entries. The behaviour keeps redriving while the engine tick leaves the platform flag set (the robot still overlaps the charger) and stops once
     /// the tick clears it: the redrive-forever hazard ends with Robot::Update's own rule.
     /// </summary>
+    // reach: unit (real contact ingress/engine tick; geometry fixture, reflected runnable/behavior entry,
+    // simulated driving dependencies from Rig. M13-040 contact observation may update the initial charger pose).
     [Fact]
     public void M4_019_M13_017_TheBehaviourStopsRedrivingOnceTheEngineTickClearsThePlatformFlag()
     {
@@ -979,7 +990,7 @@ public class RFixBatch2Tests
         rig.OnCharger = false; rig.State(); rig.Tick();                  // contacts gone, the footprint still overlaps: flag set
         Assert.True(rig.Robot.Sensors.OnChargerPlatform);
         Assert.True(b.Update(ctx, 0));                                   // still driving
-        rig.X = -80; rig.State(); rig.Tick();                            // the robot is clear of the charger: the engine tick clears the flag
+        rig.X = -300; rig.State(); rig.Tick();                            // clear of the contact-observed charger: the engine tick clears the flag
         Assert.False(rig.Robot.Sensors.OnChargerPlatform);
 
         double t = 33;
