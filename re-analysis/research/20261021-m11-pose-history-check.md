@@ -189,3 +189,88 @@ serialized-state representation and destruction dependencies remain separate;
 this is not a new whole-path fidelity claim. No tests or hardware run. The
 broader report's correction chain, ownership, frame assembly and remaining
 rows still require review; B-M11-18 remains held for its separate inventory.
+
+## Review-first continuation (B-M13-11 baseline)
+
+**Codex review; Claude spot-check pending.** No record settled or new research
+queued. Manager personally re-opened the following instructions from the .so,
+and compared the current C# implementations; these are bounded checks, not an
+adoption of every historical pose report cited by row25.
+
+- Raw admission0x00530CF8..0x00530F7C and cull0x005309D0..0x00530C38:
+  stale cutoff equality, unsigned timeout gap, sixth-gap raw-only reset,
+  empty-map counter preservation, parent/root test, duplicate return without
+  cull, and prefix culling agree with NativeRobotStateHistory. Auxiliary index
+  production is still separate. Timeout input review is row28.
+- Correction0x005318D8..0x00531AC6: anchor parent is requested only when its
+  frame equals the selected raw frame; the alternative walk accumulates a
+  rising-frame boundary delta before checking the stop frame. Final vision
+  multiplication/parent then output pose/frame/head/lift stores agree. The
+  specific GetParent faults retain existing M1-034 skips. No new broad guard
+  or copy of the entire raw state is justified.
+- Last-frame lookup0x00531E3C..0x00532090: empty raw fails before vision lookup;
+  reverse raw then reverse vision each stops when frame falls below target;
+  success assigns pose and copies0x5B state bytes. Failure logs/sets error and
+  retains output. Current GetLastStateWithFrameID matches these branches.
+- Admission input slices0x00512B5C..0x00512D02 and0x0051307A..0x0051313C:
+  movement precedes admission, treads-change delocalization skips admission,
+  origin lookup precedes incoming pose creation/flattening, z comes from
+  current pose for a matching frame or from the last state of that frame.
+  AddRobotStateToHistory0x00513598..0x005135C0 propagates AddRaw's result.
+  UpdateCurrPoseFromHistory0x005135F8..0x005136F6 was rechecked: flag0 query,
+  frame conversion, SetPose only on success. NativeStateHistoryAdmission
+  matches those bounded branches; full surrounding update/tail remains with
+  its own record. The incorrect M11-064 comment remains queued cleanup.
+- Quaternion Normalize0x00849DB8..0x00849E52, product0x00849EF4..0x00849F8E,
+  float point rotation0x0084ACA6..0x0084ACE2 ->0x00849C1C..0x00849CF8,
+  and transform bodies0x0084B92A..0x0084BB98 agree with the corresponding
+  NativePoseArithmetic operations: separate f64/f32 widths, point quaternion
+  narrowing without renormalization, translation before ordinary composition,
+  and precomposition's observable alias order. Called constructors and libm
+  retain their existing boundaries; this does not freshly settle all065.
+- Radians0x0084C828..0x0084C936 agrees with the current enabled flag,
+  (-pi,pi] range, small-value loops and large-value ceil conversion. No new
+  libm policy is introduced.
+- Copy/assignment0x008458F0..0x00845A2E, node copy0x00845FE4..0x00846044,
+  SetParent0x00844A14..0x00844A7A and conversion0x00845A34..0x00845E04:
+  current Geometry preserves new-node copy, destination-node assignment,
+  same-wrapper special case, shared-parent identity, post-step early exits,
+  and final inverse/compose before parenting. Null assignment and retained
+  owner lifecycle remain explicitly incomplete; row44 handles that boundary.
+
+No behavior correction was released by these comparisons. Remaining review
+boundaries include full post-query image assembly (row30), serialization
+callers (row31), computed indices (row34), retained owners (row44), and the
+less-used math/OpenCV internals the report itself only compared to older
+adopted recipes. Those prior citations are not relabelled freshly checked.
+The existing live query joins do not prove the whole camera, movement response
+or action paths. Continue through the queue's named dependencies in order.
+
+## Row28 timeout census completion
+
+**Codex review; Claude spot-check pending.** T4/T5/T7 independently checked
+in addition to the earlier complete T1-T3/T6 writer/value reads. A fresh
+skip-data Thumb .text LDR-PC/ADD-PC pattern scan reproduced five materializations:
+530D3A/40,62F058/5C,62F154/15C,836076/78,836152/15C, all to GOT103EA54.
+Direct branch scan found Init's call at69D3D6 through PLT4BE10C, no Configure
+call. Reopened caller69D3BA..69D3DA and complete transport predicate836068
+through its return tail: first pointer is loaded into r5, read as f64 at836088,
+then overwritten at8360D6; second r1 pointer is read at836168 and overwritten
+at83616C. Warning stack receives the double value at8361DE, not the address.
+Neither reader publishes the address. Init/Configure's earlier full-body read
+establishes the constant independently of the surrounding app JSON.
+
+ELF independently reports an8-byte symbol1051F48 and ARM_GLOB_DAT103EA54;
+raw bytes000000000088b340. Raw-word searches reproduce1051F48 only atC088,
+1051F4C nowhere,103EA54 only at475D48,Configure Thumb address62F0C9 only
+at29EA8. Other shipped armeabi-v7a libraries have no timeout dynamic-symbol
+match; sources/resources Java/C#/smali exact-name searches have no match.
+The scans retain the report's limits: alternate materialization/ARM-mode
+fragments or arbitrary computed pointers are not disproved by this pattern.
+
+Bounded conclusion: supported named initialization and configuration supply
+f64 5000.0; the previously untraced low word is now established and the five
+named uses do not escape the pointer. No history coupling to host transport
+options is justified. No implementation change needed at the current default.
+Whole051/transport settlement and any host override policy are not granted.
+No frozen evidence changed, no new research, no tests run for this read.

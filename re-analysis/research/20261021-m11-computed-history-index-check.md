@@ -102,3 +102,28 @@ marker assembly, camera identity, borrowed-state consumer census, arbitrary
 counter writers/aliases and native inter-thread race behavior remain unclaimed.
 A shared serialized counter is required for the known engine-owned calls;
 no global absence proof or custom concurrent host API is being promised.
+
+## Review-first manager reread (6a8d507f)
+
+**Codex review; Claude spot-check pending.** Personally reopened531B84..1CAE,
+531CCC..1D90,53214C..2186,53088C..996 and all executable helpers532506..2792
+(literal pools not interpreted as behavior). The earlier bounded core verdict
+stands: returned-time key, stable existing-state pose assignment/0x5B payload,
+new copy0x5C, optional-key default0, shared preincrement, two independent unique
+inserts, distinct failure-output contracts and constructor/Clear nonreset.
+No code correction to the proposed B-M11-18 scope is required.
+
+Reopened654D60..4E8E,654F04..4F8C and654FDA..5012: nonempty marker path asks
+for a key, then checks result/origin/rotation, and only matching camera words
+require IsValidKey. Invalid key takes warning/skip. Full camera/result identity
+and ownership are still not included in the core proposal. In particular the
+historical-camera call uses the result timestamp at654E86, whereas rotation
+uses returned time at654E60; do not collapse those values in a later build.
+
+ELF symbol currHistStateKey_ independently confirmed1059ED0,size4; all three
+literal/GOT uses531C2C/58/7A resolve103EA58 to that symbol. Current M11-044
+title/status/evidence re-read: IMPLEMENTATION_GAP, same title as quoted above;
+evidence includes531785..531C86 and654D92..65507E but does not separately own
+the full auxiliary core. Proposed new M11-098 still requires the explicit
+inventory checkpoint. Operator approval requested for the concrete B-M11-18
+packet; HELD remains in effect until an answer. No new research or settlement.

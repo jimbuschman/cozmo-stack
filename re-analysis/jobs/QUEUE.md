@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work: B-M13-10 is done; B-M13-11 is claimed by the manager local implementer.** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work: B-M13-10 and B-M13-11 are done (Codex bounded reviews; Claude spot-check pending).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -178,7 +178,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3u | [B-M11-18](B-M11-18.md) | HELD — proposed M11-098 core inventory addition/approval; bounded source review ready, no implementation authorization yet |
 | 61w3v | [B-M10-2](B-M10-2.md) | DONE e332207b; bounded PASS research/20261021-b-m10-2-check.md; builder reports focused65/full6019, whole M10 remains open; Claude check PASS research/20261021-b-m13-9-b-m10-2-claude-check.md |
 | 61w3w | [B-M13-10](B-M13-10.md) | DONE 7f42b427; Codex review PASS (Claude spot-check pending), focused53/full6019, no records settled |
-| 61w3x | [B-M13-11](B-M13-11.md) | CLAIMED by manager local implementer; height selector and small-hull prerequisites; no duplicate builder pickup |
+| 61w3x | [B-M13-11](B-M13-11.md) | DONE6a8d507f; focused73/full6036 PASS; Codex review, Claude spot-check pending |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -261,10 +261,10 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; partial F4, raw-query/interpolation and ComputeStateAt pre-correction selection check in research/20261021-m11-pose-history-check.md; remaining report pending review, no settlement |
 | 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; partial Clear mechanics check research/20261021-m8-actionlist-check.md; remaining report/survivor effects pending |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; F1 constants checked research/20261021-m10-classifier-check.md, B-M10-2 released; cancel/detach and remaining rows pending |
-| 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; T1-T3/T6 value/writers checked in research/20261021-m11-pose-history-check.md; census/alias claims pending; no settlement |
+| 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; bounded T1-T7 value/writer/five-use census checked in research/20261021-m11-pose-history-check.md; no universal alias proof or settlement |
 | 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; partial getter/tag1 packing, Prep/game sampling, tag1 ownership watcher-cache/deque and compound payload selector check research/20261021-m8-animation-completion-check.md; default/name/API and full lifecycle rows pending, no release |
-| 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered 46c8a213; pending independent review/adoption |
-| 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answered c334871d; pending independent review/adoption |
+| 30 | [R-M11-FRAME-POSE](../research/requests/20261021-m11-frame-pose-assembly.md) | answered46c8a213; bounded caller/Set/LUT/IMU review in research/20261021-m11-frame-pose-assembly-check.md; full carrier/metadata/owners still open |
+| 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answeredc334871d; bounded converter/call-site review in research/20261021-m11-pose-serialization-callers-check.md; full caller/owner inventory still open |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | answered 166a2e6a; pending independent review/adoption |
 | 33 | [R-M8-PROFILE](../research/requests/20261021-m8-action-motion-profile-lifetime.md) | answered 5e1b0a13; pending independent review/adoption |
 | 34 | [R-M11-HISTORY-INDEX](../research/requests/20261021-m11-computed-history-index.md) | answered bec5a0dc; partial producer check research/20261021-m11-computed-history-index-check.md; readers/lifetime/live consumer pending, no builder release |
