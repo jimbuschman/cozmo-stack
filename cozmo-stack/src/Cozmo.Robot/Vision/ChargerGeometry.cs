@@ -105,6 +105,11 @@ public static class ChargerGeometry
                         new Pose3d(F(MarkerAngleBits), new Vec3(0, 0, 1), new Vec3(F(MarkerXBits), 0, F(MarkerZBits))), F(MarkerWidthBits)) { HeightMm = F(MarkerHeightBits) },
     };
 
+    // fidelity: M13-040 -- GetDockPoseRelativeToRobot 0x004EA304..0x004EA35A, A3.
+    internal static Pose3d DockPoseRelativeToRobot(Pose3d robotPose) => new(
+        Rotation3d.FromAngleAxis(new Radians(BitConverter.UInt32BitsToSingle(0x40490FDB)).Value, new Vec3(0, 0, 1)),
+        new Vec3(30, 0, 0), "ChargerDockPose", robotPose);
+
     /// <summary>The pose of a robot sitting on the charger, in the world (<c>Charger::GetRobotDockedPose</c> 0x004EA1A0): <c>Pose3d(Radians(pi), Z_AXIS, (30, 0, 0), parent = the charger's pose)</c>.</summary>
     // fidelity: M13-009
     public static Pose3d DockedRobotPose(Pose3d chargerPose) =>

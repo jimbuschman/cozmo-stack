@@ -253,6 +253,9 @@ public sealed partial class ObservableObject
     public bool IsLocated => PoseState != PoseState.Unknown;
     /// <summary>Robot timestamp of the frame that last observed the object (obj+0x1C).</summary>
     public uint LastObservedTimestamp { get; internal set; }
+    // fidelity: M13-040 -- AddLocatedObject insertion stamp, obj+0x54, 0x00622D24..D30.
+    internal uint AddedToWorldTimestamp { get; private set; }
+    internal void StampAddedToWorld(uint timestamp) => AddedToWorldTimestamp = timestamp;
 
     /// <summary>
     /// Whether the cube is reporting itself in motion: true between an <c>ObjectMoved</c> and the
@@ -313,6 +316,18 @@ public sealed partial class ObservableObject
         if (fromDistance >= 0) FromDistance = fromDistance;
         PoseNameNode ??= new PoseTreeNameNode("Object");
         PoseNameNode.Name = "Object_" + unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    // fidelity: M13-040 -- actionable SetPose 0x004E01E4..226, common 0x004EF590..646.
+    // Retain the native node and its root parent. The argument is a temporary copy owned by the confirmer.
+    internal void SetContactObservationPose(Pose3d pose)
+    {
+        Cozmo.Robot.Manipulation.CubePreActionPoses.ClearForSetPose(this);
+        _pose.AssignInputValue(pose);
+        SetPose(_pose, -1.0f, PoseState.Known);
+        _pose.Name = "Object_" + unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        using var root = _pose.FindRoot();
+        OriginId = root.Id;
     }
 
     // fidelity: M12-045 -- B4 native in-place pose assignment for carried release.
@@ -2295,6 +2310,9 @@ public sealed partial class BlockWorld
             _located[KeyOf(obj)] = obj;
             _forgotten.Remove(obj.ObjectId);
         }
+        // fidelity: M13-040 -- native addition stamp follows insertion, before diagnostics/broadcast.
+        if (RobotTimestamp is { } timestamp) obj.StampAddedToWorld(timestamp());
+        else Missing("M13-040 AddLocatedObject stamp 0x00622D24..D30: robot timestamp owner is unbound; prior insertion stamp retained");
         var link = EntryFor(obj.ObjectId);
         if (link is not null) obj.Confirmation = link;
         Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.AddLocatedObject",string.Format(System.Globalization.CultureInfo.InvariantCulture,
@@ -3038,6 +3056,49 @@ public sealed partial class BlockWorld
             if (confirmationCount is { } count) entry.Count = count;
         });
         BroadcastObjectPoseChanged(obj, oldPose, prev);
+    }
+
+    // fidelity: M13-040 -- A2-A9, SetOnCharger 0x005119AA..0x00511B4C.
+    internal ObservableObject ObserveChargerFromContacts(Pose3d robotPose)
+    {
+        using var mutation = EnterPoseMutation();
+        using var dock = ChargerGeometry.DockPoseRelativeToRobot(robotPose);
+        var filter = new BlockWorldFilter();
+        filter.AllowedFamilies.Add(ObjectFamily.Charger);
+        filter.AllowedTypes.Add(ObjectType.Charger_Basic);
+        var charger = FindLocatedObjectHelper(filter, null, true);
+        if (charger is null)
+        {
+            charger = CreateActiveObjectByType(ObjectType.Charger_Basic, -1, 0)!;
+            var connected = FindConnectedObjectHelper(filter, null, false);
+            if (connected is not null) charger.ObjectId = connected.ObjectId;
+            else charger.SetID();
+        }
+        AddContactChargerObservation(charger, dock, robotPose);
+        return charger;
+    }
+
+    // fidelity: M13-040 -- Known/new-object branch of AddRobotRelativeObservation 0x00506B70..0x00506C48.
+    private void AddContactChargerObservation(ObservableObject obj, Pose3d pose, Pose3d robotPose)
+    {
+        using var copy = new Pose3d(pose);
+        copy.SetParent(robotPose);
+        using (var root = copy.GetWithRespectToRoot()) copy.Assign(root);
+        bool existing = GetLocatedObjectByIdHelper(obj.ObjectId) is not null;
+        using var oldPose = existing ? new Pose3d(obj.NativePose) : null;
+        var oldState = obj.PoseState;
+        obj.SetContactObservationPose(copy); // Known skips state2's SetLocalizedTo(null); -1 preserves distance.
+        obj.PoseNameNode!.Parent = OriginNode?.Invoke(obj.OriginId);
+        if (existing) BroadcastObjectPoseChanged(obj, oldPose, oldState);
+        else AddLocatedObject(obj); // obstacle deletion, insertion/stamp and null-old-pose Invalid broadcast
+        LogCallbackDeferral.RunGated(_gate, () =>
+        {
+            var entry = EntryForOrCreate(obj.ObjectId);
+            obj.Confirmation = entry;
+            entry.Count = 1;
+            entry.Pose = copy;
+            entry.LastPoseUpdatedTime = obj.LastObservedTimestamp;
+        });
     }
 
     // fidelity: M12-045 -- AddRobotRelativeObservation 0x00506B78..0x00506C48; caller guarantees located object.

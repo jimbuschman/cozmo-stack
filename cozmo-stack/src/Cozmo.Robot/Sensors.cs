@@ -703,10 +703,6 @@ public sealed class CozmoSensors
         var charger = world.FindLocatedObjectHelper(filter, null, true);                   // 0x00513D92
         if (charger is null)
         {
-            // MISSING (reported once): the engine holds the platform flag after the contacts drop until the robot footprint leaves the located charger's quad; this stack never
-            // creates the located charger on SetOnCharger's rising edge (the charger enters the world only when the camera sights it), so on a robot that has not seen its charger this
-            // branch clears the flag as soon as the contacts drop.
-            Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513E26 clears the platform flag when no charger is located: this stack never creates the located charger on SetOnCharger's rising edge, so live the flag clears as soon as the contacts drop where the engine holds it until the robot footprint leaves the charger quad");
             SetOnChargerPlatform(false); return;                                           // 0x00513E26
         }
         if (robotPose is not { } pose)
@@ -733,15 +729,22 @@ public sealed class CozmoSensors
     /// <summary>
     /// SetOnCharger(onContacts) (C8 P3..P5, 0x005119AA..0x00511C14): with the bit set and +0x338 still 0,
     /// SetOnChargerPlatform(true) (and the ChargerEvent); with it clear the platform flag is left alone; then +0x338 :=
-    /// the bit. The located-charger creation and its dock-pose observation (P4 steps 1..4) are M11/M13's.
+    /// the bit. M13-040 observes a Known located charger on every true input before these edges.
     /// </summary>
     /// <summary>The engine's <c>ChargerEvent{onCharger}</c> broadcast (tag 0x39) from <c>SetOnCharger</c>'s edges.</summary>
     // fidelity: M7-021
     public event Action<bool>? ChargerEvent;
     internal event Action<bool>? ChargerEventInternal;
 
+    // fidelity: M13-040 -- every true input observes before the old-contact gate (0x005119AA..0x00511BB0).
     private void SetOnCharger(bool onContacts)
     {
+        if (onContacts && _robot.Engine.Robot is { } robot)
+        {
+            using var source = Vision.Pose3d.UseSourceLog((l,c,k,t) => _robot.Engine.EmitSourceLog(l,c,k,t), _robot.Engine.Das.ForceFlushNow);
+            LogCallbackDeferral.RunGated(robot.PoseTreeGate,
+                () => _robot.LocalizationWorld.ObserveChargerFromContacts(robot.GetCheckedMainPose()));
+        }
         bool rising, falling;
         lock (_gate) { rising = onContacts && !_onChargerContacts; falling = !onContacts && _onChargerContacts; }
         if (rising) SetOnChargerPlatform(true);

@@ -13953,10 +13953,10 @@
       ],
       "effect": "Missing located charger clears platform protection too early after contacts drop; pose, identity and API/world effects must follow source.",
       "provenance": "Independent native-source review 2026-10-21; operator authorized integrating the checked contract and queueing builder B-M13-9.",
-      "unresolved": "Unbuilt live contact-observation join. B-M13-9 builds checked A1-A11/P1-P4 with A9 corrected to NEW state. Shared pose/map/obstacle/light implementation gaps remain visible; existence of helpers is not proof of whole-path fidelity. No mount implementation or exhaustive caller census is claimed. No hardware verification or M13-017 settlement.",
+      "unresolved": "built, awaiting strong verification: B-M13-9 wires synchronized contact-true ingress to the shared BlockWorld charger factory/identity owner, native ChargerDockPose parent/flatten, Known existing/new observation, actionable cache clearing, insertion timestamp and ordered existing world/map/light recipients before contact edges. Received-state regressions in M13ContactChargerTests cover identity, current origin, nontrivial pose, repeated true, distance/timestamp/localization, recipient order and footprint exit. MISSING shared BlockConfigurationManager::SetObjectPoseChanged 0x00624892, M11-074 map height/cache continuations and M12-001/M12-045 cached-pose destructor ownership retain their existing boundaries; no bypass or invented map insertion. Prior scope note (before this build): Unbuilt live contact-observation join. B-M13-9 builds checked A1-A11/P1-P4 with A9 corrected to NEW state. Shared pose/map/obstacle/light implementation gaps remain visible; existence of helpers is not proof of whole-path fidelity. No mount implementation or exhaustive caller census is claimed. No hardware verification or M13-017 settlement.",
       "hardware_required": false,
       "live_path": true,
-      "test": "Planned B-M13-9 received-RobotState and focused charger observation regressions"
+      "test": "M13ContactChargerTests (received RobotState/real world recipients; isolated actionable-cache fixture explicitly labelled)"
     }
   ]
 }
