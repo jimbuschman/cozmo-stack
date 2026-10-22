@@ -180,7 +180,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3w | [B-M13-10](B-M13-10.md) | DONE 7f42b427; Codex review PASS (Claude spot-check pending), focused53/full6019, no records settled; Claude check PASS research/20261022-b-m13-10-b-m13-11-claude-check.md |
 | 61w3x | [B-M13-11](B-M13-11.md) | DONE6a8d507f; focused73/full6036 PASS; Codex review, Claude spot-check pending; Claude check PASS research/20261022-b-m13-10-b-m13-11-claude-check.md |
 | 61w3y | [B-M13-12](B-M13-12.md) | DONE 7a8f79b5; Claude spot-check PASS research/20261022-b-m13-12-claude-check.md, fix queued B-M13-13 |
-| 61w3z | [B-M13-13](B-M13-13.md) | open (next builder job) |
+| 61w3z | [B-M13-13](B-M13-13.md) | DONE d67b73bd; focused/full passed |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
