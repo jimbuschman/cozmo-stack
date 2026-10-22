@@ -40,6 +40,18 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **PAUSED 2026-10-22 (operator) until Claude or Codex usage returns.** Resume here:
+  1. Claude spot-check of B-M13-14 (tests for the drive-off driving-animation binding; `M13DriveOffDrivingAnimationBindingTests.cs`).
+  2. Narrow M13-017: the platform step only queries chargers (family {4}, 0x00513D5C..74) and the robot's own quad, and the
+     charger uses ObservableObject's footprint (already built), so Markerless/Ramp/HumanHead footprints are off its path
+     (`research/20261022-r-m13-017-rest-claude-check.md`). Remaining for M13-017: the drive-off regression through
+     admitted, frame-matched RobotStates, and which shared map/cache pieces have an effect. Extraction by Claude or Codex,
+     not the free model.
+  3. Then the dock-and-drive-off robot check: threshold 50 until the earlier of footprint exit or 50 mm of travel.
+  Free-model findings (2026-10-22): builder usable for small, tightly written jobs; research unreliable for new
+  extraction and for "Contradicted" verdicts (`research/20261022-free-model-reviews-claude-check.md`). Reading hold
+  lifted; row 56 answered but rejected.
+
 - **2026-10-21 configuration recipient review:** held row36 bounded native check recorded in `research/20261021-m11-pose-change-configuration-check.md`. Pending-ID/threshold/reset findings confirmed; root-pose cache correction prepared but not approved or applied. No build released; container and public-state subscriber gaps remain. Codex review; Claude spot-check pending. Totals unchanged:2 builds verified,0 records settled. Next ordered review:row44 retained pose owner. No new research or hardware check.
 
 - **2026-10-21 B-M13-11:** shared row2 height selector and empty/singleton/line minAreaRect branches built in6a8d507f; separate Codex bounded review PASS. Focused73/73, full6036/6036, zero skipped (6m17s), fidelity707 PASS. Codex review; Claude spot-check pending. Session totals:2 builds verified,0 records settled. Backlog review continues; M13-017 not hardware-ready. B-M11-18 new-record inventory approval and bounded M15 row39 hold exception have been asked asynchronously; neither is assumed approved. No new research queued and no robot check written.
