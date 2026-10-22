@@ -18,6 +18,12 @@ You do **one job** in the Cozmo stack, then stop. Read `AGENTS.md` first. The pr
 - Before tracing any engine code: `python re-analysis/tools/known.py <address or function name>`. Read what it lists.
 - Find functions in `re-analysis/decomp/libcozmoEngine/` (index.tsv). It is a guide, not proof: cite the instruction in
   the `.so` (disassemble with `re-analysis/tools/disarm.py` or capstone).
+- **Thumb addresses:** symbol values in the ELF have bit 0 set (0x00545D15 means code starting at 0x00545D14). Never
+  use a symbol value as a function start or end. Function boundaries come from `known.py` or
+  `re-analysis/decomp/libcozmoEngine/index.tsv` (even entry address + size). Before calling a cited range "inside
+  another function", run `known.py` on the range's first address.
+- **Contradicting an earlier answer is a strong claim.** Paste the instructions that show it, and the `known.py` line
+  for the function you say it really is. If you can't, write UNKNOWN instead.
 - Every field or pointer whose meaning you state needs the instruction that **writes** it (usually a constructor).
   If you didn't find the writer, write UNKNOWN. Never infer a field's meaning from how it is used.
 
