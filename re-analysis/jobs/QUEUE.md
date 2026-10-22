@@ -177,8 +177,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3t | [B-M13-9](B-M13-9.md) | DONE 0138af17 + 3f54bccc; independent bounded PASS research/20261021-b-m13-9-check.md, focused53/53; shared-owner gaps and hardware remain; **Claude check FAIL** (false insertion stamp 0x00622D24, a VizManager store), fix B-M13-10 |
 | 61w3u | [B-M11-18](B-M11-18.md) | HELD — proposed M11-098 core inventory addition/approval; bounded source review ready, no implementation authorization yet |
 | 61w3v | [B-M10-2](B-M10-2.md) | DONE e332207b; bounded PASS research/20261021-b-m10-2-check.md; builder reports focused65/full6019, whole M10 remains open; Claude check PASS research/20261021-b-m13-9-b-m10-2-claude-check.md |
-| 61w3w | [B-M13-10](B-M13-10.md) | DONE 7f42b427; Codex review PASS (Claude spot-check pending), focused53/full6019, no records settled |
-| 61w3x | [B-M13-11](B-M13-11.md) | DONE6a8d507f; focused73/full6036 PASS; Codex review, Claude spot-check pending |
+| 61w3w | [B-M13-10](B-M13-10.md) | DONE 7f42b427; Codex review PASS (Claude spot-check pending), focused53/full6019, no records settled; Claude check PASS research/20261022-b-m13-10-b-m13-11-claude-check.md |
+| 61w3x | [B-M13-11](B-M13-11.md) | DONE6a8d507f; focused73/full6036 PASS; Codex review, Claude spot-check pending; Claude check PASS research/20261022-b-m13-10-b-m13-11-claude-check.md |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
