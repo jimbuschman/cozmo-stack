@@ -45,6 +45,17 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
     /// <summary>+0x11C: 96.0f + the config's extra distance, binary32.</summary>
     public float DriveDistanceMm { get; }
     public double DistanceMm => DriveDistanceMm;
+    /// <summary>IBehavior +0x120: set after PushDrivingAnimations (0x005C0B50); tested by StopInternal (0x005C0D90..0x005C0DA4).</summary>
+    public int DrivingAnimationsFlag { get; private set; }
+    public bool DrivingAnimationsPushed => DrivingAnimationsFlag != 0;
+    public int PushedDrivingAnimations => DrivingAnimationsFlag;
+    public bool HasPushedDrivingAnimations => DrivingAnimationsFlag != 0;
+    /// <summary>Seam for the SevereNeeds state (robot+0x264->AI+0x30->component+0x14); writer pending (R-M15-SEVERE-INPUT).</summary>
+    public Func<int>? SevereNeedsState { get; set; }
+    /// <summary>Seam for the robot's AI process input at robot+0x24C PushDrivingAnimations(name, triplet).</summary>
+    public Action<string, byte, byte, byte>? PushDrivingAnimations { get; set; }
+    /// <summary>Seam for RemoveDrivingAnimations (0x008CABCC) invoked from StopInternal when +0x120 is nonzero.</summary>
+    public Action<string>? RemoveDrivingAnimations { get; set; }
     public Phase CurrentPhase { get; private set; }
     /// <summary>Terminal action result retained for conformance and callers that need more than phase entry.</summary>
     public ActionResult? DriveResult { get; private set; }
@@ -67,7 +78,19 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         DriveResult = null;
         LeftChargerOnTreads = false;
         DroveOffAtSec = null;
-        SteppedBehavior.ReportMissing("M5-063 BehaviorDriveOffCharger::InitInternal PushDrivingAnimations caller (M13-017, 0x005C0B34..0x005C0B50): AI process input and triplet arguments not settled; handler is built, caller remains missing");
+        DrivingAnimationsFlag = 0;                                                  // Init clears behavior+0x120 at 0x005C0B30
+        // fidelity: M13-017
+        // Init 0x005C0B34..0x005C0B50: robot+0x264 -> AI+0x30 -> component+0x14 compared to 3 (SevereNeeds state, not handler animation state). When equal to 3, call the driving handler at robot+0x24C with the behavior name and the ROM triplet (0x97,0x93,0x8F), then set +0x120. Otherwise skip.
+        if (SevereNeedsState is null)
+            SteppedBehavior.ReportMissing("M13-017 BehaviorDriveOffCharger::InitInternal SevereNeeds state writer (R-M15-SEVERE-INPUT, row 39): robot+0x264->AI+0x30->component+0x14 has no live owner in this stack; the ==3 gate cannot be evaluated, so PushDrivingAnimations is not called");
+        else if (SevereNeedsState() == 3)
+        {
+            if (PushDrivingAnimations is null)
+                SteppedBehavior.ReportMissing("M13-017 BehaviorDriveOffCharger::InitInternal PushDrivingAnimations join (robot+0x24C, 0x005C0B40..0x005C0B4A): no live AI process input owner is bound; triplet (0x97,0x93,0x8F) is not pushed");
+            else
+                PushDrivingAnimations(Id, 0x97, 0x93, 0x8F);
+            DrivingAnimationsFlag = 1;                                              // +0x120 set only after Push at 0x005C0B50
+        }
         // fidelity: M7-021, M13-017
         // InitInternal 0x005C0B54..0x005C0B8C: robot+0x355 set takes the "WaitForOnTreads" state name (0x005C0B74), else TransitionToDrivingForward.
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads) { SetStateName("WaitForOnTreads"); CurrentPhase = Phase.WaitForOnTreads; }
@@ -113,8 +136,8 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         {
             if (sensors.OffTreadsState != OffTreadsState.OnTreads)                   // robot+0x355 (0x005C0DB6)
             {
+                StopActing();                                                        // IBehavior::StopActing(false, false) 0x005C0DC4, before CancelAction
                 CancelAction();                                                      // the host task behind the action
-                StopActing();                                                        // IBehavior::StopActing(false, false) 0x005C0DC4
                 SetStateName("WaitForOnTreads");                                     // 0x005C0DE0
                 CurrentPhase = Phase.WaitForOnTreads;
                 return;
@@ -130,6 +153,19 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         LeftChargerOnTreads = sensors.OffTreadsState == OffTreadsState.OnTreads;
         CurrentPhase = Phase.Idle;
         Finish();
+    }
+
+    // fidelity: M13-017
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        // StopInternal 0x005C0D90..0x005C0DA4: when +0x120 is nonzero, forward name + handler through 0x008CABCC (RemoveDrivingAnimations); zero returns. It does not clear the flag.
+        if (DrivingAnimationsFlag != 0)
+        {
+            if (RemoveDrivingAnimations is null)
+                SteppedBehavior.ReportMissing("M13-017 BehaviorDriveOffCharger::StopInternal RemoveDrivingAnimations (0x005C0D90..0x005C0DA4, 0x008CABCC/0x004A5818): no live owner bound");
+            else
+                RemoveDrivingAnimations(Id);
+        }
     }
 }
 
