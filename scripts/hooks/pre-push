@@ -24,6 +24,14 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     if [ "$remote_sha" = "$zero" ]; then base=$(git rev-parse --verify -q origin/main || echo ""); else base=$remote_sha; fi
     if [ -n "$base" ]; then changed=$(git diff --name-only "$base" "$local_sha"); else changed=$(git ls-tree -r --name-only "$local_sha"); fi
 
+    # Queue and settling rules (operator, 2026-10-21): research-lane limit, reading hold, Claude check before settling.
+    if [ -n "$base" ] && echo "$changed" | grep -Eq '^re-analysis/(jobs/QUEUE\.md|fidelity_manifest\.json)$'; then
+        if ! python re-analysis/tools/queue_gate.py "$base" "$local_sha"; then
+            echo "pre-push: REFUSED by the queue gate (re-analysis/tools/queue_gate.py)."
+            exit 1
+        fi
+    fi
+
     if [ -n "$changed" ] && ! echo "$changed" | grep -Eq "$needs_tests"; then
         echo "pre-push: no code or fidelity records changed; the test suite is skipped."
         continue

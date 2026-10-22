@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh scripts/session-start.sh 2>/dev/null || true",
+            "timeout": 60,
+            "statusMessage": "Pulling and reading project state..."
+          }
+        ]
+      }
+    ]
+  }
+}

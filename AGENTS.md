@@ -322,6 +322,10 @@ Adopted 2026-09-23. It exists because recovery and implementation were being don
   records (manifest, `FIDELITY_GAPS.md`, inventory), with nothing under `cozmo-stack/` or `re-analysis/tools/`, runs
   only the test classes that read those records (operator, 2026-10-12). A push whose code changes are only the test harness
   (`cozmo-stack/src/Cozmo.Conformance/`) and the test files that use it runs only those test classes (operator, 2026-10-20).
+  The gate also enforces the queue (operator, 2026-10-21; `re-analysis/tools/queue_gate.py`): at most 4 open research
+  rows, no research row added under "HOLD ON NEW READING", and no record settled or subsystem ACCEPTED without a
+  Claude check file `re-analysis/research/*claude-check*.md` naming it. Before tracing engine code, run
+  `python re-analysis/tools/known.py <address|name>` to see what earlier passes established.
 - **Research (Codex / ChatGPT)** works only in `re-analysis/research/`, under the rules in `re-analysis/research/README.md`: no branches, no worktrees, no commits. Background research is authority 6, and a Codex extraction is checked like any extractor report.
 
 No role does both extraction and implementation in the same task.
