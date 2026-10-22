@@ -557,8 +557,10 @@ public static class ShippedBehaviors
     /// workouts and the charger: 24 shipped configs. The workout behaviours are runnable only when
     /// <see cref="Cozmo.Robot.Manipulation.ManipulationSystem.Workouts"/> is loaded from the OBB.
     /// </summary>
-    public static IReadOnlyList<IBehavior> Navigation(Cozmo.Robot.Manipulation.ManipulationSystem m) => new IBehavior[]
+    public static IReadOnlyList<IBehavior> Navigation(Cozmo.Robot.Manipulation.ManipulationSystem m)
     {
+        var list = new IBehavior[]
+        {
         new KnockOverCubesBehavior(m, "KnockOverCubes", minimumStackHeight: 3),
         new KnockOverCubesBehavior(m, "SparksKnockOverCubes", minimumStackHeight: 2),
         new PopAWheelieBehavior(m, "PopAWheelie"),
@@ -585,6 +587,15 @@ public static class ShippedBehaviors
         new MountChargerBehavior(m, "DockingTestSimple"),
         ReactToFrustrationBehavior.Major(m),
     };
+        // fidelity: M13-017, M5-063 - bind DriveOffCharger to the robot's own driving handler directly.
+        foreach (var b in list.OfType<DriveOffChargerBehavior>())
+        {
+            b.PushDrivingAnimations = (name, s, l, e) =>
+                m.Robot.Animations.DrivingAnimations.Push(new DrivingAnimations((AnimationTrigger)s, (AnimationTrigger)l, (AnimationTrigger)e), name);
+            b.RemoveDrivingAnimations = name => m.Robot.Animations.DrivingAnimations.Remove(name);
+        }
+        return list;
+    }
 
     /// <summary>
     /// The M14 face behaviours: 14 shipped configs transcribed on <see cref="Cozmo.Robot.Vision.FaceWorld"/> and

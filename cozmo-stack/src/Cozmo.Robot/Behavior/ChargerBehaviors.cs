@@ -47,9 +47,6 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
     public double DistanceMm => DriveDistanceMm;
     /// <summary>IBehavior +0x120: set after PushDrivingAnimations (0x005C0B50); tested by StopInternal (0x005C0D90..0x005C0DA4).</summary>
     public int DrivingAnimationsFlag { get; private set; }
-    public bool DrivingAnimationsPushed => DrivingAnimationsFlag != 0;
-    public int PushedDrivingAnimations => DrivingAnimationsFlag;
-    public bool HasPushedDrivingAnimations => DrivingAnimationsFlag != 0;
     /// <summary>Seam for the SevereNeeds state (robot+0x264->AI+0x30->component+0x14); writer pending (R-M15-SEVERE-INPUT).</summary>
     public Func<int>? SevereNeedsState { get; set; }
     /// <summary>Seam for the robot's AI process input at robot+0x24C PushDrivingAnimations(name, triplet).</summary>
