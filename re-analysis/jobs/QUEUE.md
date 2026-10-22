@@ -211,7 +211,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 
 ## Research lane (clone `cozmo-stack-codex`)
 
-**HOLD ON NEW READING (operator, 2026-10-21, 09:30).** Research answers outran review: 20 of jobs 24–50 are
+**Reading hold LIFTED 2026-10-22 (manager): the M13/M11/M8/M10 backlog is reviewed. At most 3–4 open research rows, each queued only for the next build. History of the hold, 2026-10-21 09:30:** Research answers outran review: 20 of jobs 24–50 are
 "pending independent review/adoption" and only two builds came out. Until the backlog is cleared:
 1. **Queue no new research job.** Finish only the rows already `open` (51–53), then stop reading.
 2. **Review the backlog in plan order** (`acceptance/M10-M15-blockers.md`): M13 first (37 R-M13-DRIVEOFF-JOINS, 38
@@ -292,3 +292,4 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 53 | [R-M14-PET-SIZE](../research/requests/20261021-m14-pet-image-size-boundary.md) | answered d2fa68f3; pending independent review/adoption |
 | 54 | [R-M7-MOOD-MISSING](../research/requests/20261021-m7-missing-mood-config-outcome.md) | HELD (reading hold 2026-10-21; M7/M14 wait for their layer) |
 | 55 | [R-M14-CALIBRATION-CORPUS](../research/requests/20261021-m14-existing-calibration-corpus.md) | HELD (reading hold 2026-10-21; M7/M14 wait for their layer) |
+| 56 | [R-M13-017-REST](../research/requests/20261022-m13-017-remaining-footprints.md) | open |
