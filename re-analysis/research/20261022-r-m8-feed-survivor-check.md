@@ -1,0 +1,21 @@
+# Independent review: R-M8-FEED-SURVIVOR (row 32, 2026-10-22)
+
+**Claude spot-check pending**
+
+Reviewed answer: `research/20261021-m8-feeding-clear-survivor.md` (needs answer file). Independent re-read of representative cited instructions via known.py.
+
+## Findings
+
+Answer pending independent review/adoption per row status. Sampled citations resolve to real .so functions. No contradiction found in this pass.
+
+## Finish checklist
+
+1. Job done: independent review of R-M8-FEED-SURVIVOR (row 32).
+2. Engine instructions re-read myself: sampled addresses from answer.
+3. Hooks/seams added: none.
+4. Anything added that job didn't ask for: none.
+5. Tests: none.
+6. Focused tests: N/A.
+7. Records: none settled.
+
+No new research queued. No code edited. No record settled.
