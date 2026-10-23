@@ -26,6 +26,8 @@ public sealed class M3M4X16BuilderTests : IDisposable
     }
     private static Pose3d At(double x,double y,double z=0,double yaw=0) => new(Mat3.AboutZ(yaw),new Vec3(x,y,z));
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // Old code: geometry stops before Expand, omitting InsufficientExpansion from the four-entry log order.
+    // Growth/shift remain MISSING: this out-of-root input reaches their existing boundary, not a fabricated insertion.
     [Fact]
     public void LiveCliffUsesConstructorMapSharedIdInputQuadAndRobotNormal()
     {
@@ -33,13 +35,16 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Equal(1u,world.Maps.CurrentOrigin); Assert.NotNull(world.Maps.Current);
         var entries = new ConcurrentQueue<EngineLogEntry>(); var missing = new ConcurrentQueue<string>();
         robot.Engine.LogEntry += entries.Enqueue; robot.Engine.StackLogLine += missing.Enqueue;
-        world.RobotTimestamp = () => 900; world.CurrentRobotPose = () => At(0,0,0);
+        try
+        {
+        using var robotPose = At(0,0,0);
+        world.RobotTimestamp = () => 900; world.CurrentRobotPose = () => robotPose;
         // The reference native counter is shared, never reset by Robot creation: compare adjacent allocations.
         uint preceding = ObjectIdSpace.Set();
         Vec2[]? attempted = null; CliffMapData? data = null;
         world.Maps.Current.CliffInsertForTest = (q,d) => { attempted = q; data = d; };
         // Roll moves the candidate centre in Y; source map uses input, so its quad centre remains (100,200).
-        var input = new Pose3d(Mat3.AboutX(Math.PI/2),new Vec3(100,200,0));
+        using var input = new Pose3d(Mat3.AboutX(Math.PI/2),new Vec3(100,200,0));
         robot.Sensors.CliffHistoricalPoseForTest = _ => (0,input);
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 100, DetectedFlags = 1 });
         var cliff = Assert.Single(world.LocatedObjects);
@@ -51,8 +56,14 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Equal(100,attempted!.Average(p => p.X),3); Assert.Equal(200,attempted.Average(p => p.Y),3);
         Assert.Equal(0,world.PoseChangeCount);
         Assert.DoesNotContain(entries,e => e.Name.Contains("FirstPoseForObject") || e.Name.Contains("MultipleChanges"));
-        Assert.Equal(new[] { "BlockWorld.AddLocatedObject","robot.object_located","RobotImplMessaging.HandleCliffEvent.Detected" },entries.Select(e=>e.Name));
+        Assert.Equal(new[] { "BlockWorld.AddLocatedObject","robot.object_located","QuadTree.Expand.InsufficientExpansion","RobotImplMessaging.HandleCliffEvent.Detected" },entries.Select(e=>e.Name));
         Assert.Contains(missing,s=>s.Contains("M11-048")); Assert.Empty(world.Maps.Current.Regions);
+        }
+        finally
+        {
+            robot.Engine.LogEntry -= entries.Enqueue;
+            robot.Engine.StackLogLine -= missing.Enqueue;
+        }
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
