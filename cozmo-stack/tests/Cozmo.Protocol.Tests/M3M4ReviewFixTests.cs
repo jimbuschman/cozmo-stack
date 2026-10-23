@@ -31,12 +31,13 @@ public sealed class M3M4ReviewFixTests
         {
             Robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions{ResourcesPath=Shipped(),BlockPoolPath="",BeforeStart=e=>e.LogEntry+=Logs.Enqueue});
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.IsReadyDelivered,TimeSpan.FromSeconds(15)));
+            // Setup waits ride the engine tick; under full-suite load on a slower PC 5 s timed out (B-M13-18 runs), so they match the 15 s readiness wait.
             Robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
-            Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==1,TimeSpan.FromSeconds(5)));
+            Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==1,TimeSpan.FromSeconds(15)));
             In(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
-            Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==2,TimeSpan.FromSeconds(5)));
+            Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==2,TimeSpan.FromSeconds(15)));
             Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});
-            Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.RobotValidated==true,TimeSpan.FromSeconds(5)));
+            Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.RobotValidated==true,TimeSpan.FromSeconds(15)));
             Data(new SyncTimeAck());
             Vision=Robot.Vision; Vision.Calibration=CameraCalibration.Nominal(); Vision.Enabled=true; Vision.ModeEnableMask=1<<VisionSystem.DetectingMarkers;
             Robot.Engine.InvokeEngineRequest(()=>{Robot.Engine.Robot!.SendFault=m=>{if(m is CubeLights lights)Wire.Enqueue(lights);return null;};return true;});
