@@ -109,6 +109,32 @@ public sealed partial class MemoryMap
     internal Action<Vec2[],CliffMapData>? CliffInsertForTest;
     internal void InsertCliff(Vec2[] polygon, CliffMapData data)
     { CliffInsertForTest?.Invoke(polygon,data); Tree.Insert(polygon,data,1); }
+    // fidelity: M11-074, M13-017 — concrete vt+8, 0x006817C6..0x006817E0.
+    internal Action<Vec2[],SourceMapData>? ObjectInsertForTest; // observation only
+    internal Action<MemoryMapContentType,uint,SourceMapData>? ObjectBorderForTest; // observation only
+    internal Action<SourceObjectRemoval>? ObjectRemovalForTest; // observation only
+    private bool _hasObjectInsert;
+    internal void InsertObject(Vec2[] polygon,SourceMapData data)
+    {
+        _hasObjectInsert=true;
+        ObjectInsertForTest?.Invoke(polygon,data);
+        if(Tree.OverlapForTest is null)
+            Behavior.SteppedBehavior.ReportMissing("M11-048 object insertion 0x006817D2 -> FastPolygon 0x008416F0 / overlap 0x00688290: generic tree geometry remains unbuilt");
+        Tree.Insert(polygon,data,1);
+    }
+    internal void FillObjectBorder(uint timestamp)
+    {
+        const uint mask=(1u<<3)|(1u<<4)|(1u<<5)|(1u<<6)|(1u<<7)|(1u<<10); // 0x00C87675
+        var data=new SourceMapData(MemoryMapContentType.NotInterestingEdge,timestamp,timestamp);
+        ObjectBorderForTest?.Invoke(MemoryMapContentType.InterestingEdge,mask,data);
+        Behavior.SteppedBehavior.ReportMissing("M11-074/M11-046 FillBorder 0x0067F0BC -> 0x006813B0 -> 0x00689FAC: generic tree border callback/consumer closure is unchecked; legacy polygon border is not substituted");
+        Tree.Dirty=true; // 0x006813FA..FC, after the processor call
+    }
+    internal void RemoveObject(SourceObjectRemoval removal)
+    {
+        ObjectRemovalForTest?.Invoke(removal);
+        Behavior.SteppedBehavior.ReportMissing("M11-074/M11-046 RemoveObservableObject 0x0067F368 -> TransformContent 0x0068140C/0x0068A414: whole-map transform and derived content-3 ObjectID reader are not integrated; checked removal callback is not applied to legacy regions");
+    }
     private readonly List<MemoryMapRegion> _regions = new();
     private readonly object _gate = new();
 
@@ -188,6 +214,8 @@ public sealed partial class MemoryMap
     /// </summary>
     public bool HasCollisionRayWithTypes(Vec2 from, Vec2 to, Func<MemoryMapContentType, bool>? blocks = null)
     {
+        if(_hasObjectInsert)
+            Behavior.SteppedBehavior.ReportMissing("M11-046/M14-007 CanDriveIdealDistanceForward 0x005C24A2 -> HasCollisionRayWithTypes 0x0068176E: native object tree-to-ray query join is unbuilt; legacy-region answer does not certify charger avoidance");
         blocks ??= MemoryMapTypes.BlocksTheRobot;
         lock (_gate)
             foreach (var r in _regions)

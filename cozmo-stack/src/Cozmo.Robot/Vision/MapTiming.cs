@@ -22,9 +22,41 @@ internal readonly record struct SourceMapAging(uint Now, uint CliffThreshold, ui
     }
 }
 
-// fidelity: M11-075, M11-074
-internal sealed partial class SourceMapComponent
+// fidelity: M11-074 — callback instructions 0x006810F2..0x00681172.
+internal readonly record struct SourceObjectRemoval(uint ObjectId,MemoryMapContentType RemovalType,uint Timestamp)
 {
+    // The eventual Transform adapter must read the derived payload's +0x14 ID, never infer one for base data.
+    internal SourceMapData Apply(SourceMapData data,uint? observableObjectId)
+    {
+        if(data.Type!=MemoryMapContentType.ObstacleObservable)return data;
+        if(observableObjectId is null)
+        {SteppedBehavior.ReportMissing("M11-046 removal callback 0x0068110E: derived content-3 ObjectID reader is unbound");return data;}
+        return observableObjectId==ObjectId ? new SourceMapData(RemovalType,Timestamp,Timestamp) : data;
+    }
+}
+
+// fidelity: M11-075, M11-074
+internal sealed partial class SourceMapComponent : IDisposable
+{
+    private readonly Dictionary<uint,Dictionary<uint,(Pose3d Pose,bool Added)>> _objectPoses = new();
+    internal Func<Pose3d?>? RobotPose;
+    internal Func<uint?>? ImageTimestamp;
+    internal (Pose3d Pose,bool Added)? CachedObjectPose(uint id,uint root) =>
+        _objectPoses.TryGetValue(id,out var entries) && entries.TryGetValue(root,out var value) ? value : null;
+    private void CacheObjectPose(uint id,uint root,Pose3d pose,bool added)
+    {
+        if(!_objectPoses.TryGetValue(id,out var entries))_objectPoses.Add(id,entries=new());
+        if(entries.Remove(root,out var previous))previous.Pose.Dispose();
+        entries.Add(root,(new Pose3d(pose),added));
+    }
+    public void Dispose()
+    {
+        foreach(var entries in _objectPoses.Values)foreach(var value in entries.Values)value.Pose.Dispose();
+        _objectPoses.Clear();
+    }
+    // GetRootID 0x00844B0A: null wrapper returns zero; otherwise the same parent walk as FindRoot.
+    private static uint PoseRootId(Pose3d pose)
+    {if(pose.Node is null)return 0;using var root=pose.FindRoot();return root.Id;}
     internal Action<string>? ObjectRouteForTest; // observation only; no replacement map operation
     internal void UpdateObjectPose(ObservableObject obj,Pose3d? oldPose,PoseState oldState)
     {
@@ -41,21 +73,78 @@ internal sealed partial class SourceMapComponent
             // fidelity: M11-088 -- r2 is the old pose; GetRootID precedes Remove's tailcall.
             if(oldPose is null)
             { StackDiagnostics.Write("M1-034 M11-088: skip Remove old-pose null read at 0x0067EC3C; map state retained");return; }
-            if(ReadOldPoseRootId is not {} rootId)
-            {SteppedBehavior.ReportMissing("M11-066 GetRootID 0x00844B0A -> 0x00844B18 called at 0x0067EC3C; no FindRoot substitute or current-origin fallback");return;}
-            uint oldRootId=rootId(oldPose);
+            uint oldRootId=ReadOldPoseRootId?.Invoke(oldPose) ?? PoseRootId(oldPose);
             if(RemoveObservableObject67F2C4 is {} remove)remove(obj,oldRootId);
-            else SteppedBehavior.ReportMissing($"M11-074 RemoveObservableObject 0x0067EC4C -> 0x0067F2C4, old root {oldRootId}; transform recipient is unbound");
+            else RemoveObject(obj,oldRootId);
             return;
         }
         ObjectRouteForTest?.Invoke("cache");
-        SteppedBehavior.ReportMissing("M11-074 UpdateObjectPose cache path 0x0067EB38: per-ObjectID/origin native pose-cache producer and M11-088 virtual+0x5C is built but the valid/valid cache owner remains unbound; no per-family moving-object assumption or re-add guessed");
+        // 0x0067EB58 creates the outer entry even if Add later finds no map.
+        if(!_objectPoses.ContainsKey(obj.ObjectId))_objectPoses.Add(obj.ObjectId,new());
+        uint root=PoseRootId(obj.NativePose);
+        if(CachedObjectPose(obj.ObjectId,root) is {} cached)
+        {
+            if(cached.Added && obj.NativePose.IsSameAs(cached.Pose,5f,BitConverter.UInt32BitsToSingle(0x3E32B8C2)))return;
+            if(obj.ObservableMapSlot5C==1)
+            {
+                ObjectRouteForTest?.Invoke("remove");
+                if(RemoveObservableObject67F2C4 is {} remove)remove(obj,root);else RemoveObject(obj,root);
+            }
+        }
+        AddObject();
         void AddObject()
         {
             ObjectRouteForTest?.Invoke("add");
             if(AddObservableObject67ECFC is {} add)add(obj,obj.NativePose);
-            else AddObjectCheckedHeight(obj,obj.NativePose);
+            else AddObjectToMap(obj,obj.NativePose);
         }
+    }
+    // fidelity: M11-074, M13-040, M13-017 — M5-M8, 0x0067ECFC..0x0067F0CC.
+    private void AddObjectToMap(ObservableObject obj,Pose3d supplied)
+    {
+        var type=MemoryMapTypes.ContentTypeForFamily(obj.Family,true);
+        if(type==MemoryMapContentType.Unknown)return;
+        uint root=PoseRootId(supplied);
+        if(!Maps.TryGetValue(root,out var map))return; // before height or cache; never create a map here
+        if(map is null){StackDiagnostics.Write("M1-034 M11-074: skip null MemoryMap at 0x0067F002; prior state retained");return;}
+        using var relative=RelativeObjectPose(obj,supplied);
+        if(relative is null){InvalidRelativePose();return;}
+        if(CubeGeometry.IsPoseTooHigh(obj,relative,1f,15f,0f))
+        {CacheObjectPose(obj.ObjectId,root,supplied,false);return;}
+        using var flat=supplied.GetWithRespectToRoot();
+        if(!obj.TryObservableBoundingQuad50(flat,0,out var quad))return;
+        if(type==MemoryMapContentType.ObstacleObservable)
+        {
+            SteppedBehavior.ReportMissing("M11-074 MemoryMapData_ObservableObject constructor 0x00684A38 at 0x0067EF00: full derived payload producer is not checked by M7; no base-data substitute for content 3");return;
+        }
+        SourceLog?.Invoke(EngineLogLevel.Warning,null,"MapComponent.AddObservableObject.AddedNonObservableType","AddObservableObject was called to add a non observable object");
+        if(ImageTimestamp is not {} clock)
+        {SteppedBehavior.ReportMissing("M11-074 Robot::GetLastImageTimeStamp 0x00516EC0 called at 0x0067EFCE: owner is unbound");return;}
+        if(clock() is not {} now)return; // unbound host input has already reported its gap
+        var polygon=Cozmo.Robot.Manipulation.PolygonF.ImportQuad2d(Enumerable.Range(0,4)
+            .Select(i=>new Cozmo.Robot.Manipulation.P2f(quad![i].X,quad[i].Y)).ToArray());
+        map.InsertObject(polygon.Select(p=>new Vec2(p.X,p.Y)).ToArray(),new SourceMapData(type,now,now));
+        CacheObjectPose(obj.ObjectId,root,flat,true); // Insert's result is deliberately ignored
+        if(clock() is {} borderTime)map.FillObjectBorder(borderTime);
+    }
+    private Pose3d? RelativeObjectPose(ObservableObject obj,Pose3d supplied)
+    {
+        if(ObjectPoseRelativeToRobot is {} input)return input(obj,supplied);
+        if(RobotPose?.Invoke() is not {} robot)
+        {SteppedBehavior.ReportMissing("M11-074 Robot::GetPose 0x004EA398 called at 0x0067ED98: owner is unbound");return null;}
+        var relative=new Pose3d();
+        if(supplied.TryWithRespectTo(robot,relative))return relative;
+        relative.Dispose();return null;
+    }
+    private void InvalidRelativePose()=>SourceLog?.Invoke(EngineLogLevel.Warning,null,"MapComponent.AddObservableObject.InvalidPose","Could not get object's new pose wrt robot. Won't add to map");
+    private void RemoveObject(ObservableObject obj,uint root)
+    {
+        var type=MemoryMapTypes.ContentTypeForFamily(obj.Family,false);
+        if(type==MemoryMapContentType.Unknown || !Maps.TryGetValue(root,out var map))return;
+        if(map is null){StackDiagnostics.Write("M1-034 M11-074: skip null MemoryMap at 0x0067F368; prior state retained");return;}
+        if(ImageTimestamp is not {} clock)
+        {SteppedBehavior.ReportMissing("M11-074 Robot::GetLastImageTimeStamp 0x00516EC0 called at 0x0067F32C: owner is unbound");return;}
+        if(clock() is {} now)map.RemoveObject(new SourceObjectRemoval(obj.ObjectId,type,now));
     }
     // fidelity: M11-088 -- checked dispatch and height input; M11-074 owns the remaining cache/map recipients.
     internal Action<ObservableObject,Pose3d>? AddObservableObject67ECFC;

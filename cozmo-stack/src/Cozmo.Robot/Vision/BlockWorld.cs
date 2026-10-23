@@ -760,9 +760,27 @@ public sealed partial class BlockWorld
     internal SourceMapComponent Maps { get; private set; } = new();
     internal void ConstructMapComponent()
     {
+        Maps.Dispose();
         Maps = new SourceMapComponent();
+        BindMapInputs();
         // fidelity: M11-075 — no phantom subscriptions with an unproved native lifetime.
         Behavior.SteppedBehavior.ReportMissing("M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed");
+    }
+    // 0x0067ED98 / 0x0067EFCE: borrow the existing live robot-pose and camera-time owners.
+    // Robot::GetPose returns the main pose even when its diagnostic verifies fail.
+    private void BindMapInputs()
+    {
+        Maps.RobotPose=()=>CurrentRobotPose?.Invoke();
+        Maps.ImageTimestamp=()=>
+        {
+            Behavior.SteppedBehavior.ReportMissing("M11-037/M11-044 map stamp input 0x0067EFCE/0x0067F0A6/0x0067F32C -> Robot::GetLastImageTimeStamp 0x00516EC0: existing VisionSystem last-image clock is an unsourced stand-in; its camera getter join remains unchecked");
+            return LastImageTimestamp is {} clock ? clock() : MissingMapImageTimestamp();
+        };
+    }
+    private static uint? MissingMapImageTimestamp()
+    {
+        Behavior.SteppedBehavior.ReportMissing("M11-074 Robot::GetLastImageTimeStamp 0x00516EC0: BlockWorld camera-time owner is unbound");
+        return null;
     }
     internal Func<uint>? RobotTimestamp;
     internal Func<uint, PoseTreeNameNode?>? OriginNode;
@@ -1273,6 +1291,7 @@ public sealed partial class BlockWorld
             _lastImageTimestamp = 0;
             _lastPlayAreaTime = 0; _timeOfLastChange = 0; SelectedObjectId = null;
             _missingMapTimeReported=_missingPoseChangedReported=false;
+            Maps.Dispose();
             Maps = new SourceMapComponent(); // discard removed robot's owner; next Robot constructs its own
 
             _localizedTo = ObservableObject.UnassignedId;
