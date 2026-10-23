@@ -32,14 +32,12 @@ public sealed class ManipulationSystem : IDisposable
         Whiteboard.IsCarryingObject = Docking.Carrying.IsCarryingObjectId;
         Whiteboard.CarriedObjectId = () => Docking.Carrying.CarriedObjectId;
         Whiteboard.CanPickUpObject = Docking.CanPickUpObject;
-        // M11-037 / C3.2: the engine runs BlockConfigurationManager::Update from
-        // BlockWorld::UpdateObservedMarkers (0x62520C). The per-frame hook is wired here (M12); the existing
-        // observation events are kept because the M12 gate (0x616D7C's [this+0x24]/[this+0xc]) is MISSING.
+        // fidelity: M11-037, M11-063, M13-040
+        // 0x00624892 queues IDs only; 0x0062520C consumes them at the frame tail.
+        vision.World.SetObjectPoseChanged = Configurations.SetObjectPoseChanged;
         vision.World.BlockConfigurationManagerUpdate = Configurations.Update;
         vision.World.UnsetCarryingObjects = topOnly => Docking.Carrying.UnsetCarrying(topOnly);
         vision.World.CarriedPrimaryId = () => Docking.Carrying.CarriedObjectId;
-        vision.World.ObjectObserved += _ => Configurations.Update();
-        vision.World.PoseStateChanged += (_, _, _) => Configurations.Update();
 
         // fidelity: M4-003, M4-009, M4-012
         // The M4 control layer's M12 seams. MA12: a lift height of exactly 32 mm while carrying becomes

@@ -1564,7 +1564,7 @@ public sealed partial class BlockWorld
     /// <c>UpdateAllBlockConfigs</c>, <c>PruneFullPyramids</c>, <c>UpdateLastConfigCheckBlockPoses</c> and
     /// <c>NotifyBroadcasterOfConfigurationManagerUpdate</c>. The gate's inputs (the ids <c>SetObjectPoseChanged</c> collects, the
     /// forced flag) are the manager's; this stack's <c>BlockConfigurationManager.Update()</c> is hooked here (M12 sets it) and is
-    /// always a full rebuild.
+    /// gated on pending IDs, force and movement.
     /// </summary>
     // fidelity: M11-037
     public Action? BlockConfigurationManagerUpdate { get; set; }
@@ -2370,7 +2370,7 @@ public sealed partial class BlockWorld
         if(key is not null)Source(EngineLogLevel.Info,"BlockWorld",key,text!);
         if(missing is not null)Missing(missing);
         if (SetObjectPoseChanged is { } set) set(obj.ObjectId,obj.PoseState);
-        else if(!_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892 has no stack counterpart (once per frame)");}
+        else if(!_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892: configuration manager owner has not been attached");}
         // fidelity: M11-074 — 0x00506FA8, after BlockWorld::OnObjectPoseChanged.
         Maps.SourceLog=SourceLog;
         Maps.UpdateObjectPose(obj,oldPose,oldState);

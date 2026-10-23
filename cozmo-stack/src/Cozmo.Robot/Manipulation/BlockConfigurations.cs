@@ -31,7 +31,7 @@ public sealed record PyramidBase(uint LeftBlockId, uint RightBlockId, Vec3 Inter
 public sealed record Pyramid(PyramidBase Base, uint TopBlockId) : BlockConfiguration(BlockConfigurationType.Pyramid, new[] { Base.LeftBlockId, Base.RightBlockId, TopBlockId });
 
 /// <summary>
-/// The engine's <c>BlockConfigurationManager</c> over the world model: on each update it rebuilds the stacks
+/// The engine's <c>BlockConfigurationManager</c> over the world model: after a pending/force movement gate it rebuilds the stacks
 /// (<c>StackOfCubes::BuildTallestStackForObject</c> walking <c>BlockWorld::FindObjectOnTopOrUnderneath</c>, loop
 /// bound 8), the pyramid bases (<c>PyramidBase::BlocksFormPyramidBase</c>) and the pyramids
 /// (<c>Pyramid::BuildAllPyramidsForBlock</c> with <c>PyramidBase::ObjectIsOnTopOfBase</c>), keeps a cache per
@@ -72,9 +72,8 @@ public sealed class BlockConfigurationManager
     private readonly BlockWorld _world;
     private readonly Func<double> _clockSec;
     /// <summary>
-    /// One consistent view of every configuration. <see cref="Update"/> runs on the vision worker (it is
-    /// driven from <c>BlockWorld.ObjectObserved</c> / <c>PoseStateChanged</c>) while behaviours and the
-    /// freeplay loop read from their own threads, so a new view is built off to the side and swapped in whole
+    /// One consistent view of every configuration. The frame-tail update shares FrameGate with pose writers;
+    /// behaviours on other threads read a view built off to the side and swapped in whole
     /// rather than mutated in place.
     /// </summary>
     private sealed record Snapshot(IReadOnlyDictionary<BlockConfigurationType, IReadOnlyList<BlockConfiguration>> Cache,
@@ -133,30 +132,92 @@ public sealed class BlockConfigurationManager
     /// BlockConfigurationManager+0xC (M13-014): set to 1 to force all block configurations to recompute on
     /// the next <see cref="Update"/> (the engine's <c>BlockConfigurationManager::Update</c> 0x00616D7C
     /// returns early when it is 0 and nothing moved, and runs <c>UpdateAllBlockConfigs</c> when it is 1).
-    /// This stack's Update is always a full rebuild, so the flag is set for fidelity and cleared here.
+    /// The flag bypasses the movement comparison and is consumed after notification.
     /// </summary>
     // fidelity: M13-014
     private bool _forceUpdate;
     internal Func<EngineRobot?>? NativeRobot;
     public bool ForceUpdate
     {
-        get => NativeRobot?.Invoke() is {} robot ? robot.BlockConfigurationForceUpdate : _forceUpdate;
-        set { if (NativeRobot?.Invoke() is {} robot) robot.BlockConfigurationForceUpdate = value; else _forceUpdate = value; }
+        get { lock (_world.FrameGate) return NativeRobot?.Invoke() is {} robot ? robot.BlockConfigurationForceUpdate : _forceUpdate; }
+        set { lock (_world.FrameGate) { if (NativeRobot?.Invoke() is {} robot) robot.BlockConfigurationForceUpdate = value; else _forceUpdate = value; } }
     }
 
-    /// <summary>
-    /// Rebuilds every configuration from the located cubes and publishes the result as one snapshot, so a
-    /// reader on another thread never sees stacks from one pass beside pyramids from the next.
-    /// </summary>
+    private readonly SortedSet<uint> _pending = new(Comparer<uint>.Create((a,b) => unchecked((int)a).CompareTo(unchecked((int)b))));
+    private readonly Dictionary<uint, Pose3d> _lastCheckPoses = new();
+    // Read-only diagnostics for the gate/cache regressions, not source state.
+    internal uint[] PendingPoseChanges { get { lock (_updateGate) return _pending.ToArray(); } }
+    internal bool HasLastCheckPose(uint id) { lock (_updateGate) return _lastCheckPoses.ContainsKey(id); }
+    internal int RebuildCount { get; private set; }
+    internal int NotifyCount { get; private set; }
+
+    // fidelity: M11-037, M11-063, M13-040
+    // 0x00616D54..7A: unique insert for every state, erase cached pose only for Invalid (zero).
+    internal void SetObjectPoseChanged(uint id, PoseState state)
+    {
+        lock (_world.FrameGate)
+        lock (_updateGate)
+        {
+            _pending.Add(id);
+            if (state == PoseState.Unknown && _lastCheckPoses.Remove(id, out var old)) old.Dispose();
+        }
+    }
+
+    // 0x00616DDE..EFC. Reuse the shared native-width pose comparison; no Known/family admission gate.
+    private bool DidPendingObjectsMove()
+    {
+        bool moved = false;
+        foreach (var id in _pending)
+        {
+            var obj = _world.GetLocatedObjectByIdHelper(id);
+            if (obj is not null)
+            {
+                if (!_lastCheckPoses.TryGetValue(id, out var cached)) { moved = true; continue; }
+                if (!cached.IsSameAs(obj.NativePose, 5f, BitConverter.UInt32BitsToSingle(0x3F060A92))) return true;
+            }
+            else if (Enum.GetValues<BlockConfigurationType>().Any(t => IsObjectPartOfConfigurationType(id, t))) moved = true;
+        }
+        return moved;
+    }
+
+    // 0x00616F44..0x00617130; family table 0x00C777D0 = {2,1}. Assignment preserves other IDs.
+    private void UpdateLastCheckPoses()
+    {
+        var filter = new BlockWorldFilter();
+        filter.AllowedFamilies.Add((ObjectFamily)2);
+        filter.AllowedFamilies.Add((ObjectFamily)1);
+        foreach (var obj in _world.FindLocatedMatchingObjects(filter))
+        {
+            using var pose = obj.NativePose.GetWithRespectToRoot();
+            if (_lastCheckPoses.TryGetValue(obj.ObjectId, out var old)) old.Assign(pose);
+            else _lastCheckPoses.Add(obj.ObjectId, new Pose3d(pose));
+        }
+    }
+
+    /// <summary>Consume pending/forced work at the BlockWorld frame tail (0x00616D7C..DDC).</summary>
     public void Update()
     {
-        ForceUpdate = false;
-        List<BlockConfiguration> newlySeen;
-        double now;
-        lock (_updateGate) (newlySeen, now) = BuildLocked();
-        // the event goes out after the swap, so a handler that reads the manager sees the new view
+        List<BlockConfiguration> newlySeen = new();
+        double now = 0;
+        lock (_world.FrameGate)
+        lock (_updateGate)
+        {
+            if (!ForceUpdate && _pending.Count == 0) return;
+            if (ForceUpdate || DidPendingObjectsMove())
+            {
+                (newlySeen, now) = BuildLocked(); // configuration update then prune
+                RebuildCount++;
+                UpdateLastCheckPoses();
+                NotifyCount++;
+                NativeRobot?.Invoke()?.BehaviorPublicState.UpdateStackHeight(unchecked((byte)(GetTallestStack()?.StackHeight ?? 0)));
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 NotifyBroadcasterOfConfigurationManagerUpdate 0x0064DCAA..0x0064DD78: native configuration-container/tallest-stack producer and complete subscriber/game-message closure remain unbuilt; existing semantic public-state owner stores byte+6 and dispatches its signal only on change");
+            }
+            // Both the no-movement and successful rebuild branches reset here, after notify.
+            ForceUpdate = false;
+            _pending.Clear();
+        }
+        // Retain the existing host event outside mutation locks; this is not the native public-state signal.
         foreach (var c in newlySeen) ConfigurationSeen?.Invoke(c, now);
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 NotifyBroadcasterOfConfigurationManagerUpdate 0x0064DCAA..0x0064DD78: complete native RobotPublicState owner/fieldwise-copy source is unbuilt; no public-state or game message is fabricated from the host configuration snapshot");
     }
 
     private (List<BlockConfiguration> NewlySeen, double Now) BuildLocked()
