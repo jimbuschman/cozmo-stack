@@ -336,6 +336,12 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.PublicationLocalizedTo = () => unchecked((int)(LocalizationWorld.LocalizedToObjectId ?? uint.MaxValue));
         Engine.PublicationGameStatus = () => (LocalizationWorld.Robot2C4, (sbyte)Sensors.OffTreadsState);
         Engine.RobotComponentsUpdate = UpdateComponents;
+        // fidelity: M11-074
+        Engine.RobotMapUpdate = () => LogCallbackDeferral.RunGated(LocalizationWorld.FrameGate, () =>
+        {
+            if(Engine.Robot is {} native)LocalizationWorld.Maps.UpdateRobotPose(native.MainPose,
+                Sensors.CliffDetectedNow,native.StoredState?.Timestamp ?? 0,LocalizationWorld.MapClearQuad);
+        });
         // fidelity: M4-019
         Engine.ChargerPlatformUpdate = ChargerPlatformStepWithoutWorld;
         Engine.RobotStateHistoryClear = () => StateHistoryCleared?.Invoke();

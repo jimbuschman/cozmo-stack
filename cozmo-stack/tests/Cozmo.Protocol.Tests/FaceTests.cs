@@ -78,37 +78,27 @@ public class FaceTests
     /// or turned 20 degrees from where it last did (the <c>IsSameAs</c> at 0x0067E27C), and as Cliff
     /// instead when something is reporting one (the type byte 2 against the cliff data at 0x0067E3C2).
     /// </summary>
-    // reach: unit (legacy UpdateRobotPose region adapter; native producer join MISSING at 0x0067E224).
-    // Pre-fix B-M13-19 returns false; the authorized fallback keeps this legacy cliff blocking until its tree join exists.
+    // reach: unit (supplies owned parented poses/time; actual native insert/ray; whiteboard origin MISSING at 0x0056AC92).
+    // Old code: largerTurn returns null due to legacy centre suppression; no native type-1 ray hit.
     [Fact]
     public void TheRobotWritesTheGroundItHasBeenOverIntoTheMemoryMap()
     {
-        var map = new MemoryMap();
-        using var initialPose = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
-        using var nearPose = new Pose3d(Mat3.Identity, new Vec3(5, 0, 0));
-        using var movedPose = new Pose3d(Mat3.Identity, new Vec3(9, 0, 0));
-        using var slightTurn = new Pose3d(Mat3.AboutZ(0.3), new Vec3(9, 0, 0));
-        using var largerTurn = new Pose3d(Mat3.AboutZ(0.4), new Vec3(9, 0, 0));
-        using var cliffPose = new Pose3d(Mat3.Identity, new Vec3(60, 0, 0));
-        Assert.NotNull(map.UpdateRobotPose(initialPose));
-        var first = map.Regions[^1];
-        Assert.Equal(MemoryMapContentType.ClearOfCliff, first.Type);
-        Assert.Equal(4, first.Polygon.Length);
-        Assert.Equal(10, first.Polygon.Max(p => p.X) - first.Polygon.Min(p => p.X), 3);
-        Assert.Equal(10, first.Polygon.Max(p => p.Y) - first.Polygon.Min(p => p.Y), 3);
-
-        Assert.Null(map.UpdateRobotPose(nearPose));     // not far enough
-        Assert.Single(map.Regions);
-        Assert.NotNull(map.UpdateRobotPose(movedPose));  // 9 mm is
-        Assert.Null(map.UpdateRobotPose(slightTurn));  // 17 degrees is not
-        // turning far enough on the spot writes nothing either: that ground is already recorded, which is
-        // what the engine's quad tree does with a repeat
-        Assert.Null(map.UpdateRobotPose(largerTurn));
-        Assert.Equal(2, map.Regions.Count);
-
-        var cliff = map.UpdateRobotPose(cliffPose, cliffDetected: true);
-        Assert.Equal(MemoryMapContentType.Cliff, cliff!.Type);
-        Assert.True(map.HasCollisionRayWithTypes(new Vec2(50, 0), new Vec2(70, 0))); // legacy fallback, not native cell evidence
+        var map=new MemoryMap();
+        using var root=new Pose3d("root");
+        using var initialPose=new Pose3d("initial",root);
+        using var nearPose=new Pose3d(Rotation3d.Identity,new Vec3(5,0,0),parent:root);
+        using var movedPose=new Pose3d(Rotation3d.Identity,new Vec3(9,0,0),parent:root);
+        using var largerTurn=new Pose3d(Rotation3d.FromAngleAxis(0.4f,new Vec3(0,0,1)),new Vec3(9,0,0),parent:root);
+        try
+        {
+            Assert.NotNull(map.UpdateRobotPose(initialPose));
+            Assert.Null(map.UpdateRobotPose(nearPose));
+            Assert.NotNull(map.UpdateRobotPose(movedPose));
+            Assert.NotNull(map.UpdateRobotPose(largerTurn));
+            Assert.Empty(map.Regions);
+            Assert.True(map.HasCollisionRayWithTypes(new(-30,0),new(-20,0),t=>t==MemoryMapContentType.ClearOfObstacle));
+        }
+        finally {map.ReleaseRobotPose();}
     }
 
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>

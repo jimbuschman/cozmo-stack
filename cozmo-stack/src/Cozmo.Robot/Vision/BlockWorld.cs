@@ -771,6 +771,7 @@ public sealed partial class BlockWorld
 
 
     // fidelity: M13-032, M13-031
+    internal Action<Cozmo.Robot.Manipulation.WhiteboardClearQuad>? MapClearQuad;
     internal SourceMapComponent Maps { get; private set; } = new();
     internal void ConstructMapComponent()
     {

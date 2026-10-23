@@ -1298,6 +1298,8 @@ public sealed partial class EngineRobot
             // reported once per process (ReportMissing de-duplicates), not once per engine robot
             Behavior.SteppedBehavior.ReportMissing("M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: the real calibration gate is applied; M11-035 has no UpdateAllResults status hook");
         }
+        // fidelity: M11-074 - Robot::Update 0x00513CD4, before the platform step.
+        if(Engine.RobotMapUpdate is {} mapUpdate)Engine.RunIsolated(mapUpdate);
         // fidelity: M4-019
         // 0x00513CD8..0x00513E2A: the charger-platform step (the platform flag's clear) follows UpdateAllResults / SendAbsLocalizationUpdate / MapComponent::UpdateRobotPose
         // and precedes MoodManager::Update (0x00513E84) and so AIComponent::Update; it is owned by the world's owner (the VisionSystem), which sets this hook.
@@ -1765,6 +1767,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// <summary>The engine clock (BaseStationTimer, CD9).</summary>
     public BaseStationTimer Timer { get; } = new();
 
+    internal Action? RobotMapUpdate;
     // ---- the host's hooks (set by CozmoRobot)
     /// <summary>The stack's device handlers for one broadcast robot message, and whether a RobotState is handled (CD23).</summary>
     internal Action<RobotMessage, bool>? DeviceRoute;

@@ -915,6 +915,7 @@ public class CoreReviewTests
     /// </summary>
     [Fact]
     // reach: production — actual treads message dispatch, native delocalization and queued API report.
+    // Old robot-pose writer: selected ClearOfObstacle footprint ray is false; only a legacy patch exists.
     public void CORE008_ATreadsBoundaryDelocalizesAndTakesTheOldFramesCoordinatesOutOfPlay()
     {
         using var rig = new Rig();
@@ -926,10 +927,16 @@ public class CoreReviewTests
         Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
 
         var map = new MemoryMap();
-        map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), false, 1);
-        Assert.NotEmpty(map.Regions);
+        // Map assertion reach: unit (supplied pose/time; whiteboard origin MISSING at 0x0056AC92). Old writer leaves a legacy region and no native type-1 cells.
+        using var mapPose=new Pose3d(Mat3.Identity,Vec3.Zero);
+        try {map.UpdateRobotPose(mapPose,false,1);}
+        finally {map.ReleaseRobotPose();}
+        Assert.True(map.HasCollisionRayWithTypes(new(-30,0),new(-20,0),t=>t==MemoryMapContentType.ClearOfObstacle));
         int delocalized = 0;
-        rig.Vision.RobotDelocalized += _ => { delocalized++; map.Clear(); };
+        Action<uint> onDelocalized=_=>{delocalized++;map.Clear();};
+        rig.Vision.RobotDelocalized+=onDelocalized;
+        try
+        {
 
         rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsPickedUp));
         Assert.Equal(Cozmo.Robot.OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
@@ -942,6 +949,8 @@ public class CoreReviewTests
         var result = drive.RunAsync(default).GetAwaiter().GetResult();
         Assert.Equal(ActionResult.BadObject, result);
         Assert.DoesNotContain(rig.Sent, m => m is ExecutePath);
+        }
+        finally {rig.Vision.RobotDelocalized-=onDelocalized;}
     }
 
     /// <summary>

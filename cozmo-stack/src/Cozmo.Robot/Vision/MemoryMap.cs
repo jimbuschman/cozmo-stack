@@ -153,52 +153,45 @@ public sealed partial class MemoryMap
         lock (_gate) return _regions.Any(r => r.Type == type);
     }
 
-    public void Clear() { lock (_gate) _regions.Clear(); }
+    public void Clear() { lock (_gate) _regions.Clear(); ReleaseRobotPose(); }
 
-    /// <summary>How far the robot must move before it writes itself into the map again: 8 mm on any axis
-    /// (0x41000000) or 0.349066 rad, 20 degrees (0x3EB2B8C2), the thresholds
-    /// <c>MapComponent::UpdateRobotPose</c> 0x0067E23A gives <c>Pose3d::IsSameAs</c>.</summary>
-    public const double RobotPoseMoveMm = 8.0, RobotPoseTurnRad = 0.349066;
-
+    public const double RobotPoseMoveMm = 8.0;
+    public static readonly double RobotPoseTurnRad = BitConverter.UInt32BitsToSingle(0x3EB2B8C2);
     private Pose3d? _lastRobotPose;
+    internal void ReleaseRobotPose() { _lastRobotPose?.Dispose(); _lastRobotPose=null; }
 
-    /// <summary>
-    /// <c>MapComponent::UpdateRobotPose</c> 0x0067E224: the ground the robot itself has been over.
-    ///
-    /// It does nothing while the robot is within 8 mm and 20 degrees of where it last wrote itself
-    /// (<c>IsSameAs</c> at 0x0067E27C). Otherwise it takes the <c>ProxObstacle</c> markerless size halved
-    /// - (5, 5, 25) from the (10, 10, 50) at <c>GetSizeByType</c> - builds the square those half-extents
-    /// describe, puts it at the robot's pose (0x0067E2F6..0x0067E32C), and inserts it: as
-    /// <see cref="MemoryMapContentType.ClearOfCliff"/> when nothing is reporting a cliff (the type byte 2
-    /// written at 0x0067E3C2) and as <see cref="MemoryMapContentType.Cliff"/> when something is, with the
-    /// robot's own X axis as the cliff data's direction (0x0067E342..0x0067E358).
-    ///
-    /// Returns the region it laid down, or null when there was none to lay: the robot had not moved far
-    /// enough, or the ground it is on is recorded already.
-    /// </summary>
-    public MemoryMapRegion? UpdateRobotPose(Pose3d robotPose, bool cliffDetected = false, uint timestamp = 0)
+    // fidelity: M11-074, M8-026, M11-094
+    // 0x0067E224..0x0067E486: two native inserts, notification, then saved-pose assignment.
+    public MemoryMapRegion? UpdateRobotPose(Pose3d robotPose, bool cliffDetected = false, uint timestamp = 0) =>
+        UpdateRobotPose(robotPose,cliffDetected,timestamp,null);
+    internal MemoryMapRegion? UpdateRobotPose(Pose3d robotPose,bool cliffDetected,uint timestamp,
+        Action<Cozmo.Robot.Manipulation.WhiteboardClearQuad>? processClearQuad)
     {
-        if (_lastRobotPose is { } last && last.IsSameAs(robotPose, RobotPoseMoveMm, RobotPoseTurnRad)) return null;
-        _lastRobotPose = robotPose;
-        // the half-extents are (5, 5, 25); the square they describe is 10 by 10
-        var size = MarkerlessObject.SizeByType(ObjectType.ProxObstacle)!.Value;
-        var quad = Rectangle(new Pose3d(Mat3.AboutZ(robotPose.AngleAroundZ), robotPose.Translation with { Z = 0 }),
-                             size.X, size.Y);
-        var type = cliffDetected ? MemoryMapContentType.Cliff : MemoryMapContentType.ClearOfCliff;
-        lock (_gate)
+        using var current=new Pose3d(robotPose);
+        if (_lastRobotPose is { HasParent: true } last &&
+            current.IsSameAs(last,new Vec3(8,8,8),RobotPoseTurnRad,out _)) return null;
+        var size=MarkerlessObject.SizeByType(ObjectType.ProxObstacle)!.Value;
+        float hx=(float)size.X*0.5f, hy=(float)size.Y*0.5f, hz=(float)size.Z*0.5f;
+        var corners=new[]{new Vec3(hx,hy,hz),new Vec3(-hx,hy,hz),new Vec3(hx,-hy,hz),new Vec3(-hx,-hy,hz)};
+        Vec2 XY(Vec3 v)=>new(v.X,v.Y);
+        var points=corners.Select(p=>XY(current.Apply(p))).ToArray();
+        var patch=new[]{points[0],points[1],points[3],points[2]}; // ImportQuad2d, no planner corner sorting
+        SourceMapData data;
+        if(cliffDetected)
         {
-            // The engine's quad tree absorbs a repeat: inserting the same content where that content
-            // already is changes no node. Here the regions are a list, so the same thing is said by not
-            // adding a square whose centre is already inside one of its own type - otherwise a long drive
-            // would leave thousands of overlapping squares behind and slow every query down.
-            var centre = new Vec2(robotPose.Translation.X, robotPose.Translation.Y);
-            foreach (var r in _regions)
-                if (r.Type == type && r.ObjectId is null && SegmentTouchesPolygon(centre, centre, r.Polygon))
-                    return null;
-            var region = new MemoryMapRegion(type, quad, null, timestamp);
-            _regions.Add(region);
-            return region;
+            var axis=current.Quaternion.Rotate(new Vec3(1,0,0));
+            data=new CliffMapData(XY(axis),timestamp);
         }
+        else data=new SourceMapData(MemoryMapContentType.ClearOfCliff,timestamp,timestamp);
+        InsertObject(patch,data);
+        var q=Cozmo.Robot.Manipulation.ObjectFootprint.RobotBoundingQuadXY(current,0);
+        Vec2 Q(int i)=>new(q[i].X,q[i].Y);
+        InsertObject(new[]{Q(0),Q(1),Q(3),Q(2)},new SourceMapData(MemoryMapContentType.ClearOfObstacle,timestamp,timestamp));
+        var full=new Cozmo.Robot.Manipulation.WhiteboardClearQuad(Q(0),Q(1),Q(2),Q(3));
+        if(processClearQuad is {} clear)clear(full);
+        else Behavior.SteppedBehavior.ReportMissing("M8-026 ProcessClearQuad 0x0067E47E: native robot footprint is built; AIWhiteboard owner is unbound");
+        ReleaseRobotPose();_lastRobotPose=new Pose3d(current);
+        return new MemoryMapRegion(data.Type,patch,null,timestamp);
     }
 
     /// <summary>
@@ -215,7 +208,7 @@ public sealed partial class MemoryMap
         for (int i = 0; i < 11; i++)
             if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
         if (Tree.HasCollisionRayWithTypes(from,to,mask)) return true;
-        Behavior.SteppedBehavior.ReportMissing("M11-089 overhead-edge and M8-026 robot-pose square producers still write legacy memory-map regions rather than native tree cells; HasCollisionRayWithTypes retains the legacy SegmentTouchesPolygon fallback until those tree joins are built");
+        Behavior.SteppedBehavior.ReportMissing("M11-089 overhead-edge producers still write legacy memory-map regions rather than native tree cells; HasCollisionRayWithTypes retains the legacy SegmentTouchesPolygon fallback until those tree joins are built");
         lock (_gate)
             foreach (var region in _regions)
                 if ((mask & (1u << (int)region.Type)) != 0 && SegmentTouchesPolygon(from,to,region.Polygon)) return true;
