@@ -187,6 +187,9 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w42 | [B-M13-16](B-M13-16.md) | DONE ec46eceb (status b5371ef0); full 6078/6078; 6 MISSING; Claude check PASS (research/20261023-b-m13-16-claude-check.md) |
 | 61w43 | [B-M13-17](B-M13-17.md) | DONE f6f370bc (status 1b135e7f); full 6084; 3 MISSING; Claude check PASS (research/20261023-b-m13-17-claude-check.md) |
 | 61w44 | [B-M13-19](B-M13-19.md) | DONE 07de2898 + fix-up 6343ddf5 (status d71d4338); full 6099/6099; Claude check PASS (research/20261023-b-m13-19-claude-check.md); ReviewFix 15 s stall open |
+| 61w45 | [B-M13-20](B-M13-20.md) | open (UpdateRobotPose writes onto the native tree) |
+| 61w46 | [B-M13-21](B-M13-21.md) | open, after B-M13-20 (AddVisionOverheadEdges onto the native tree; drop the legacy ray fallback) |
+| 61w47 | [B-M13-22](B-M13-22.md) | open, after B-M13-21 (charger stored pre-action elements) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -301,5 +304,5 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 57 | [R-M11-CONFIG-SUBSCRIBERS](../research/requests/20261023-m11-config-notify-subscribers.md) | answered 5c3e88f2; Claude check PASS (research/20261023-r-m11-config-subscribers-claude-check.md); feeds B-M13-18 |
 | 58 | [R-M13-038-LIFETIME](../research/requests/20261023-m13-038-audio-client-lifetime.md) | answered 528ea827; Claude check PASS (research/20261023-r-m13-038-lifetime-claude-check.md); agrees with the adopted M13-038 result; no new build |
 | 59 | [R-M11-TREE-GEOMETRY](../research/requests/20261023-m11-tree-insert-ray-geometry.md) | answered 8c56752b; Claude check PASS (research/20261023-r-m11-tree-geometry-claude-check.md); feeds B-M13-19 |
-| 60 | [R-M11-MAP-PRODUCERS](../research/requests/20261023-m11-map-legacy-producers.md) | open (feeds moving the legacy overhead-edge and robot-pose map writers onto the native tree) |
-| 61 | [R-M12-CHARGER-PREACTION](../research/requests/20261023-m12-charger-preaction.md) | open (feeds the charger stored pre-action cache; B-M13-17 MISSING) |
+| 60 | [R-M11-MAP-PRODUCERS](../research/requests/20261023-m11-map-legacy-producers.md) | answered 393bc407; Claude check PASS (research/20261023-r-m11-producers-m12-charger-preaction-claude-check.md); feeds B-M13-20, B-M13-21 |
+| 61 | [R-M12-CHARGER-PREACTION](../research/requests/20261023-m12-charger-preaction.md) | answered 475c6ebc; Claude check PASS (same file); feeds B-M13-22 |
