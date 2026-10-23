@@ -72,8 +72,8 @@ public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, 
 /// robot, as regions with a content type.
 ///
 /// The engine stores those regions in a quad tree (<c>QuadTree</c> 0x00684C08, nodes subdividing down to
-/// <c>GetContentPrecisionMM</c>); this keeps the polygons themselves, which answers the same questions
-/// exactly rather than to the tree's precision. What is <b>not</b> here is the content the engine gets from
+/// <c>GetContentPrecisionMM</c>). Native insertion and ray queries use that tree. The legacy polygon list
+/// remains for separately unported producers, transforms and region inspection. What is <b>not</b> here is the content the engine gets from
 /// one place this stack has no source for: the overhead-edge processing that produces
 /// <see cref="MemoryMapContentType.InterestingEdge"/> and <see cref="MemoryMapContentType.NotInterestingEdge"/>
 /// (<c>MapComponent::AddVisionOverheadEdges</c> 0x0067F814, which needs the vision system's ground-plane
@@ -113,13 +113,9 @@ public sealed partial class MemoryMap
     internal Action<Vec2[],SourceMapData>? ObjectInsertForTest; // observation only
     internal Action<MemoryMapContentType,uint,SourceMapData>? ObjectBorderForTest; // observation only
     internal Action<SourceObjectRemoval>? ObjectRemovalForTest; // observation only
-    private bool _hasObjectInsert;
     internal void InsertObject(Vec2[] polygon,SourceMapData data)
     {
-        _hasObjectInsert=true;
         ObjectInsertForTest?.Invoke(polygon,data);
-        if(Tree.OverlapForTest is null)
-            Behavior.SteppedBehavior.ReportMissing("M11-048 object insertion 0x006817D2 -> FastPolygon 0x008416F0 / overlap 0x00688290: generic tree geometry remains unbuilt");
         Tree.Insert(polygon,data,1);
     }
     internal void FillObjectBorder(uint timestamp)
@@ -208,19 +204,16 @@ public sealed partial class MemoryMap
     /// <summary>
     /// <c>MemoryMap::HasCollisionRayWithTypes(from, to, types)</c> 0x0068176E: the types are folded into a
     /// flag mask (<c>EContentTypeToFlag</c> per entry whose bool is set) and handed to the quad tree's ray
-    /// walk. Here the same question is asked of the polygons: does the segment touch a region of one of
-    /// those types. <paramref name="blocks"/> defaults to
+    /// walk. Selected cells answer through native overlap geometry. <paramref name="blocks"/> defaults to
     /// <see cref="MemoryMapTypes.BlocksTheRobot"/>, the mask the face behaviour passes.
     /// </summary>
     public bool HasCollisionRayWithTypes(Vec2 from, Vec2 to, Func<MemoryMapContentType, bool>? blocks = null)
     {
-        if(_hasObjectInsert)
-            Behavior.SteppedBehavior.ReportMissing("M11-046/M14-007 CanDriveIdealDistanceForward 0x005C24A2 -> HasCollisionRayWithTypes 0x0068176E: native object tree-to-ray query join is unbuilt; legacy-region answer does not certify charger avoidance");
         blocks ??= MemoryMapTypes.BlocksTheRobot;
-        lock (_gate)
-            foreach (var r in _regions)
-                if (blocks(r.Type) && SegmentTouchesPolygon(from, to, r.Polygon)) return true;
-        return false;
+        uint mask = 0;
+        for (int i = 0; i < 11; i++)
+            if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
+        return Tree.HasCollisionRayWithTypes(from,to,mask);
     }
 
     // ------------------------------------------------------------------ the overhead edges

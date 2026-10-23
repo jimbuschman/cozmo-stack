@@ -75,6 +75,7 @@ internal sealed class SourceQuadProcessor
 internal sealed class SourceQuadNode(float x, float y, float z, float side, byte depth)
 {
     internal float X = x, Y = y, Z = z, Side = side;
+    internal SourceQuadBounds Bounds = new(x, y, side);
     internal byte Depth = depth;
     internal SourceQuadNode? Parent;
     internal List<SourceQuadNode?> Children = new();
@@ -147,13 +148,13 @@ internal sealed class SourceQuadNode(float x, float y, float z, float side, byte
         };
     }
     private bool CanOverrideAll(SourceNodeContent incoming, int overlap) => overlap == 2 && CanOverride(incoming, overlap) && Children.All(c => c!.CanOverrideAll(incoming, overlap));
-    internal bool InsertRecursive(SourceNodeContent incoming, SourceQuadTree tree, Vec2[] polygon)
+    internal bool InsertRecursive(SourceNodeContent incoming, SourceQuadTree tree, SourceFastPolygon polygon)
     {
         if (ReferenceEquals(Content.Data,incoming.Data)) return false;
         var saved = Content;
-        // Production never supplies this seam: UNKNOWN M11-048, no guessed geometric predicate.
-        if (tree.OverlapForTest is null) { tree.Missing?.Invoke("MISSING: M11-048 GetOverlapType 0x00688290 and FastPolygon Contains; node insertion stopped"); return false; }
-        int overlap = tree.OverlapForTest(this,polygon);
+        int overlap = tree.OverlapForTest is { } substitute
+            ? substitute(this, polygon.Points.Select(p => new Vec2(p.X, p.Y)).ToArray())
+            : polygon.GetOverlapType(this);
         if (overlap == 0) return false;
         Content.Data.Last = incoming.Data.Last;
         if (Children.Count != 0 && CanOverrideAll(incoming,overlap)) { ClearDescendants(tree.Processor); ForceSet(incoming,tree.Processor); }
@@ -176,6 +177,7 @@ internal sealed class SourceQuadNode(float x, float y, float z, float side, byte
 // fidelity: M11-045, M13-030
 internal sealed class SourceQuadTree
 {
+    private readonly object _geometryGate = new();
     internal readonly SourceQuadProcessor Processor = new();
     internal readonly SourceQuadNode Root = new(0,0,1,160,4); // 0x00684C28..48
     internal SourceLogSink? SourceLog;
@@ -186,6 +188,13 @@ internal sealed class SourceQuadTree
     internal Func<Vec2,byte,bool>? UpgradeBodyForTest;
     internal void Insert(Vec2[] polygon, SourceMapData data, int maxShifts)
     {
+        LogCallbackDeferral.RunGated(_geometryGate,()=>InsertCore(polygon,data,maxShifts));
+    }
+    private void InsertCore(Vec2[] polygon, SourceMapData data, int maxShifts)
+    {
+        // MemoryMap::Insert constructs FastPolygon before the tree's NaN/containment gate.
+        var native = new SourceFastPolygon(polygon);
+        if (!native.Valid && OverlapForTest is null) return;
         bool nan = false;
         foreach (var p in polygon) { nan |= float.IsNaN((float)p.X); nan |= float.IsNaN((float)p.Y); }
         if (nan)
@@ -195,17 +204,13 @@ internal sealed class SourceQuadTree
             Missing?.Invoke("MISSING: M11-045 sDumpCallstack(QuadTree::Insert) 0x006850A6 host native callstack unavailable");
             return;
         }
-        // Native FastPolygon constructor is UNKNOWN, M11-048. Raw polygon tests are an explicitly isolated dependency.
-        if (OverlapForTest is null)
-        { Missing?.Invoke("MISSING: M11-048 FastPolygon constructor/Contains and GetOverlapType 0x006817D2/0x00688290; cliff quad not stored as a substitute polygon region"); return; }
-        if (!Contains(polygon))
+        if (!Contains(native))
         {
             if (data.Type == MemoryMapContentType.ObstacleChargerRemoved)
                 SourceLog?.Invoke(EngineLogLevel.Warning,null,"QuadTree.Insert.RemovalPolyNotContained","Poly is not fully contained in root, removal does not cause expansion.");
-            else if (CentroidForTest is { } centroid) Expand(centroid(polygon),maxShifts,()=>Contains(polygon));
-            else Missing?.Invoke("MISSING: M11-048 FastPolygon centroid before Expand 0x00685228; root expansion not guessed");
+            else Expand(CentroidForTest?.Invoke(polygon) ?? new Vec2(native.CenterX,native.CenterY),maxShifts,()=>Contains(native));
         }
-        Dirty |= Root.InsertRecursive(new SourceNodeContent(data),this,polygon);
+        Dirty |= Root.InsertRecursive(new SourceNodeContent(data),this,native);
     }
     internal bool UpgradeRootLevel(Vec2 direction, byte limit)
     {
@@ -213,21 +218,33 @@ internal sealed class SourceQuadTree
         if (UpgradeBodyForTest is null)
         { Missing?.Invoke("MISSING: M11-048 UpgradeRootLevel body 0x006876FA..0x006879C0; root unchanged"); return false; }
         bool upgraded = UpgradeBodyForTest(direction,limit);
+        if (upgraded) Root.Bounds = new(Root.X,Root.Y,Root.Side);
         if (upgraded) SourceLog?.Invoke(EngineLogLevel.Info,"QuadTree","QuadTree.UpdgradeRootLevel",
             string.Format(CultureInfo.InvariantCulture,"Root expanded to level {0}. Allowing {1:F2}m",Root.Depth,(double)(Root.Side*BitConverter.UInt32BitsToSingle(0x3A83126F))));
         return upgraded;
     }
-    private bool Contains(Vec2[] polygon)
+    private bool Contains(SourceFastPolygon polygon)
     {
-        float epsilon = BitConverter.UInt32BitsToSingle(0x3727C5AC);
-        // 0x00686A84..0x00686AF0 reads cached node bounds +0x1C..+0x28, then adds -epsilon/+epsilon
-        // in xmin,xmax,ymin,ymax order. This stack recomputes bounds; bit identity is not established (M11-045).
-        float half = Root.Side*.5f, negativeEpsilon=BitConverter.UInt32BitsToSingle(0xB727C5AC);
-        float xmin = (Root.X-half)+negativeEpsilon, xmax = (Root.X+half)+epsilon;
-        float ymin = (Root.Y-half)+negativeEpsilon, ymax = (Root.Y+half)+epsilon;
-        foreach (var p in polygon)
-            if (!(xmin <= (float)p.X && xmax >= (float)p.X && ymin <= (float)p.Y && ymax >= (float)p.Y)) return false;
+        foreach (var p in polygon.Points)
+            if (!Root.Bounds.Contains(p)) return false;
         return true;
+    }
+    // fidelity: M11-046 — 0x00689D80..0x00689DBA, 0x00689F0A..0x00689F98.
+    internal bool HasCollisionRayWithTypes(Vec2 from, Vec2 to, uint mask)
+    {
+        var polygon = new SourceFastPolygon(new[] { from, to });
+        lock (_geometryGate) return HasCollisionRay(Root,polygon,mask);
+    }
+    private static bool HasCollisionRay(SourceQuadNode node, SourceFastPolygon polygon, uint mask)
+    {
+        bool selected = (mask & (1u << (int)node.Content.Data.Type)) != 0;
+        if (!selected && node.Children.Count == 0) return false;
+        int overlap = polygon.GetOverlapType(node);
+        if (selected) return overlap != 0;
+        if (overlap == 0) return false;
+        foreach (var child in node.Children)
+            if (HasCollisionRay(child!,polygon,mask)) return true;
+        return false;
     }
     internal void Expand(Vec2 centroid, int limit, Func<bool> contains)
     {

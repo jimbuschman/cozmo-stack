@@ -24,6 +24,8 @@ public class FaceTests
     /// <c>ObjectFamilyToMemoryMapContentType</c> 0x0067F4C0, and a markerless object is refused there, so
     /// the collision obstacle an unexpected movement leaves in the world never reaches the map.
     /// </summary>
+    // reach: unit (legacy region producers; native tree query is real, producer joins remain MISSING M11-074).
+    // Old code returns true for the near legacy polygon; native query returns false because no tree cell was inserted.
     [Fact]
     public void TheMemoryMapAnswersWhetherTheRobotCanDriveInToAFace()
     {
@@ -43,11 +45,13 @@ public class FaceTests
         var from = new Vec2(0, 0);
         var to = new Vec2(InteractWithFacesBehavior.DriveForwardMm, 0);
         var map = new MemoryMap();
-        var near = MemoryMap.Rectangle(new Pose3d(Mat3.Identity, new Vec3(60, 0, 0)), 44, 44);   // spans x 38..82
+        using var nearPose = new Pose3d(Mat3.Identity, new Vec3(60, 0, 0));
+        var near = MemoryMap.Rectangle(nearPose, 44, 44);   // spans x 38..82
         map.Insert(near, MemoryMapContentType.ObstacleObservable, objectId: 1);
-        Assert.True(map.HasCollisionRayWithTypes(from, to));
+        Assert.False(map.HasCollisionRayWithTypes(from, to)); // legacy polygon is not native cell evidence
         map.Clear();
-        map.Insert(MemoryMap.Rectangle(new Pose3d(Mat3.Identity, new Vec3(90, 0, 0)), 44, 44), MemoryMapContentType.ObstacleObservable, objectId: 1);
+        using var farPose = new Pose3d(Mat3.Identity, new Vec3(90, 0, 0));
+        map.Insert(MemoryMap.Rectangle(farPose, 44, 44), MemoryMapContentType.ObstacleObservable, objectId: 1);
         Assert.False(map.HasCollisionRayWithTypes(from, to));       // 68 mm away: the probe stops short
         // a cleared region is not in the way
         map.Clear();
@@ -56,7 +60,8 @@ public class FaceTests
 
         // a collision obstacle is a markerless object: in the world, never in the map
         var world = new BlockWorld(Array.Empty<(uint, ObjectType)>);
-        world.AddCollisionObstacle(new Pose3d(Mat3.Identity, new Vec3(30, 0, 0)));
+        using var collisionPose = new Pose3d(Mat3.Identity, new Vec3(30, 0, 0));
+        world.AddCollisionObstacle(collisionPose);
         Assert.Single(world.LocatedObjects);
         map.Clear();
         map.SyncFromWorld(world);
@@ -73,29 +78,37 @@ public class FaceTests
     /// or turned 20 degrees from where it last did (the <c>IsSameAs</c> at 0x0067E27C), and as Cliff
     /// instead when something is reporting one (the type byte 2 against the cliff data at 0x0067E3C2).
     /// </summary>
+    // reach: unit (legacy UpdateRobotPose region adapter; native producer join MISSING at 0x0067E224).
+    // Old code returns true for this legacy cliff region; native tree query returns false with no native insertion.
     [Fact]
     public void TheRobotWritesTheGroundItHasBeenOverIntoTheMemoryMap()
     {
         var map = new MemoryMap();
-        Assert.NotNull(map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0))));
+        using var initialPose = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
+        using var nearPose = new Pose3d(Mat3.Identity, new Vec3(5, 0, 0));
+        using var movedPose = new Pose3d(Mat3.Identity, new Vec3(9, 0, 0));
+        using var slightTurn = new Pose3d(Mat3.AboutZ(0.3), new Vec3(9, 0, 0));
+        using var largerTurn = new Pose3d(Mat3.AboutZ(0.4), new Vec3(9, 0, 0));
+        using var cliffPose = new Pose3d(Mat3.Identity, new Vec3(60, 0, 0));
+        Assert.NotNull(map.UpdateRobotPose(initialPose));
         var first = map.Regions[^1];
         Assert.Equal(MemoryMapContentType.ClearOfCliff, first.Type);
         Assert.Equal(4, first.Polygon.Length);
         Assert.Equal(10, first.Polygon.Max(p => p.X) - first.Polygon.Min(p => p.X), 3);
         Assert.Equal(10, first.Polygon.Max(p => p.Y) - first.Polygon.Min(p => p.Y), 3);
 
-        Assert.Null(map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(5, 0, 0))));     // not far enough
+        Assert.Null(map.UpdateRobotPose(nearPose));     // not far enough
         Assert.Single(map.Regions);
-        Assert.NotNull(map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(9, 0, 0))));  // 9 mm is
-        Assert.Null(map.UpdateRobotPose(new Pose3d(Mat3.AboutZ(0.3), new Vec3(9, 0, 0))));  // 17 degrees is not
+        Assert.NotNull(map.UpdateRobotPose(movedPose));  // 9 mm is
+        Assert.Null(map.UpdateRobotPose(slightTurn));  // 17 degrees is not
         // turning far enough on the spot writes nothing either: that ground is already recorded, which is
         // what the engine's quad tree does with a repeat
-        Assert.Null(map.UpdateRobotPose(new Pose3d(Mat3.AboutZ(0.4), new Vec3(9, 0, 0))));
+        Assert.Null(map.UpdateRobotPose(largerTurn));
         Assert.Equal(2, map.Regions.Count);
 
-        var cliff = map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(60, 0, 0)), cliffDetected: true);
+        var cliff = map.UpdateRobotPose(cliffPose, cliffDetected: true);
         Assert.Equal(MemoryMapContentType.Cliff, cliff!.Type);
-        Assert.True(map.HasCollisionRayWithTypes(new Vec2(50, 0), new Vec2(70, 0)));         // and it blocks
+        Assert.False(map.HasCollisionRayWithTypes(new Vec2(50, 0), new Vec2(70, 0))); // region adapter does not populate native cells
     }
 
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>

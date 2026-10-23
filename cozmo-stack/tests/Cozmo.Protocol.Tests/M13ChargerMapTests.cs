@@ -156,16 +156,16 @@ public sealed class M13ChargerMapTests
         f.Maps.UpdateObjectPose(f.Object,f.ObjectPose,PoseState.Known);Assert.Equal(1,removes);
     }
 
-    // reach: unit (substitutes overlap; generic ray-tree join MISSING at 0x0068176E; no avoidance claim).
-    // Old code: no type4 insert to query. Existing W1 mask already includes4; no old/new query result asserted.
+    // reach: unit (substitutes insert overlap; real native ray-tree query, not production charger geometry).
+    // Old code: false ray result despite the forced type4 root, because only the empty legacy list was queried.
     [Fact]
-    public void ChargerTreeContentHasW1BlockingTypeButDoesNotInventLegacyRayCoverage()
+    public void ChargerTreeContentHasW1BlockingTypeAndNativeRayCoverage()
     {
         using var f=new Fixture();f.Memory.Tree.OverlapForTest=(_,_)=>2;
         f.Add();Assert.Equal(MemoryMapContentType.ObstacleCharger,f.Memory.Tree.Root.Content.Data.Type);
         Assert.True(MemoryMapTypes.BlocksTheRobot(f.Memory.Tree.Root.Content.Data.Type));
         Assert.Empty(f.Memory.Regions);
-        _=f.Memory.HasCollisionRayWithTypes(new Vec2(0,0),new Vec2(40,0)); // reports missing native query join
+        Assert.True(f.Memory.HasCollisionRayWithTypes(new Vec2(0,0),new Vec2(40,0)));
     }
 
     // reach: production (real contact ingress -> confirmer -> world -> native map insert boundary;
