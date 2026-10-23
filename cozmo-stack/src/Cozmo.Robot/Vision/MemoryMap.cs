@@ -204,7 +204,8 @@ public sealed partial class MemoryMap
     /// <summary>
     /// <c>MemoryMap::HasCollisionRayWithTypes(from, to, types)</c> 0x0068176E: the types are folded into a
     /// flag mask (<c>EContentTypeToFlag</c> per entry whose bool is set) and handed to the quad tree's ray
-    /// walk. Selected cells answer through native overlap geometry. <paramref name="blocks"/> defaults to
+    /// walk. Selected cells answer through native overlap geometry; legacy producers also retain their
+    /// segment-touch fallback until their tree joins are built. <paramref name="blocks"/> defaults to
     /// <see cref="MemoryMapTypes.BlocksTheRobot"/>, the mask the face behaviour passes.
     /// </summary>
     public bool HasCollisionRayWithTypes(Vec2 from, Vec2 to, Func<MemoryMapContentType, bool>? blocks = null)
@@ -213,7 +214,12 @@ public sealed partial class MemoryMap
         uint mask = 0;
         for (int i = 0; i < 11; i++)
             if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
-        return Tree.HasCollisionRayWithTypes(from,to,mask);
+        if (Tree.HasCollisionRayWithTypes(from,to,mask)) return true;
+        Behavior.SteppedBehavior.ReportMissing("M11-089 overhead-edge and M8-026 robot-pose square producers still write legacy memory-map regions rather than native tree cells; HasCollisionRayWithTypes retains the legacy SegmentTouchesPolygon fallback until those tree joins are built");
+        lock (_gate)
+            foreach (var region in _regions)
+                if ((mask & (1u << (int)region.Type)) != 0 && SegmentTouchesPolygon(from,to,region.Polygon)) return true;
+        return false;
     }
 
     // ------------------------------------------------------------------ the overhead edges

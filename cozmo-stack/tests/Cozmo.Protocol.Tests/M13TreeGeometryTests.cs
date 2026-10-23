@@ -22,6 +22,21 @@ public sealed class M13TreeGeometryTests
         Assert.True(map.HasCollisionRayWithTypes(vertices[0],vertices[0]));
     }
 
+    // reach: unit (explicit native and legacy region producers; native traversal is unchanged).
+    // Pre-fix B-M13-19 returns false for the selected legacy cliff after the native ray misses.
+    [Fact]
+    public void RayKeepsSelectedLegacyBlockingContentAlongsideNativeCells()
+    {
+        var map = new MemoryMap();
+        map.InsertObject(Box(1,1,2,2),new SourceMapData(MemoryMapContentType.ObstacleCharger,1,1));
+        map.Insert(Box(30,30,40,40),MemoryMapContentType.Cliff);
+        map.Insert(Box(50,50,60,60),MemoryMapContentType.ClearOfCliff);
+        Assert.True(map.HasCollisionRayWithTypes(new(9,8),new(9,9))); // native-only corner cell
+        Assert.True(map.HasCollisionRayWithTypes(new(29,35),new(41,35))); // legacy-only selected cliff
+        Assert.False(map.HasCollisionRayWithTypes(new(29,35),new(41,35),t=>t==MemoryMapContentType.ObstacleCharger));
+        Assert.False(map.HasCollisionRayWithTypes(new(49,55),new(61,55))); // unselected legacy type
+    }
+
     // reach: unit (hand-built node/polygon, then actual map insert/ray; no overlap substitution).
     // Old code: no overlap implementation and no stored cells; AssertInsertionReachesRay yields false.
     // Direct four-code assertions are new native-unit controls, not an alleged defect in the planner's polygon.

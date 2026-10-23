@@ -86,9 +86,12 @@ public sealed class M3M4X19BuilderTests
         // below 0xB4000000. Direct division gives -8.940696716308594e-8 and incorrectly accepts this point.
         Assert.False(new Quadrilateral(a,b,b,c).Contains(p));
     }
+    // reach: unit (same NaN vertices through the native polygon input now required by node containment).
+    // Pre-fix test fails with ArgumentException because Vec2[] cannot bind to SourceFastPolygon.
     [Fact] public void ContainsRejectsUnorderedCoordinates()
     {
         var tree=new SourceQuadTree();var method=typeof(SourceQuadTree).GetMethod("Contains",BindingFlags.NonPublic|BindingFlags.Instance)!;
-        Assert.False((bool)method.Invoke(tree,new object[]{new[]{new Vec2(float.NaN,0)}})!);Assert.False((bool)method.Invoke(tree,new object[]{new[]{new Vec2(0,float.NaN)}})!);
+        Assert.False((bool)method.Invoke(tree,new object[]{new SourceFastPolygon(new[]{new Vec2(float.NaN,0)})})!);
+        Assert.False((bool)method.Invoke(tree,new object[]{new SourceFastPolygon(new[]{new Vec2(0,float.NaN)})})!);
     }
 }

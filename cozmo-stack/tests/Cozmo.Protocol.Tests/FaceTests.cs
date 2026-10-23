@@ -25,7 +25,7 @@ public class FaceTests
     /// the collision obstacle an unexpected movement leaves in the world never reaches the map.
     /// </summary>
     // reach: unit (legacy region producers; native tree query is real, producer joins remain MISSING M11-074).
-    // Old code returns true for the near legacy polygon; native query returns false because no tree cell was inserted.
+    // Pre-fix B-M13-19 returns false; the authorized fallback preserves blocking legacy content until its tree join exists.
     [Fact]
     public void TheMemoryMapAnswersWhetherTheRobotCanDriveInToAFace()
     {
@@ -48,7 +48,7 @@ public class FaceTests
         using var nearPose = new Pose3d(Mat3.Identity, new Vec3(60, 0, 0));
         var near = MemoryMap.Rectangle(nearPose, 44, 44);   // spans x 38..82
         map.Insert(near, MemoryMapContentType.ObstacleObservable, objectId: 1);
-        Assert.False(map.HasCollisionRayWithTypes(from, to)); // legacy polygon is not native cell evidence
+        Assert.True(map.HasCollisionRayWithTypes(from, to)); // legacy fallback, not native cell evidence
         map.Clear();
         using var farPose = new Pose3d(Mat3.Identity, new Vec3(90, 0, 0));
         map.Insert(MemoryMap.Rectangle(farPose, 44, 44), MemoryMapContentType.ObstacleObservable, objectId: 1);
@@ -79,7 +79,7 @@ public class FaceTests
     /// instead when something is reporting one (the type byte 2 against the cliff data at 0x0067E3C2).
     /// </summary>
     // reach: unit (legacy UpdateRobotPose region adapter; native producer join MISSING at 0x0067E224).
-    // Old code returns true for this legacy cliff region; native tree query returns false with no native insertion.
+    // Pre-fix B-M13-19 returns false; the authorized fallback keeps this legacy cliff blocking until its tree join exists.
     [Fact]
     public void TheRobotWritesTheGroundItHasBeenOverIntoTheMemoryMap()
     {
@@ -108,7 +108,7 @@ public class FaceTests
 
         var cliff = map.UpdateRobotPose(cliffPose, cliffDetected: true);
         Assert.Equal(MemoryMapContentType.Cliff, cliff!.Type);
-        Assert.False(map.HasCollisionRayWithTypes(new Vec2(50, 0), new Vec2(70, 0))); // region adapter does not populate native cells
+        Assert.True(map.HasCollisionRayWithTypes(new Vec2(50, 0), new Vec2(70, 0))); // legacy fallback, not native cell evidence
     }
 
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>

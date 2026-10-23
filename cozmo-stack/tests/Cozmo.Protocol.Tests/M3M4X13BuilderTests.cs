@@ -79,27 +79,43 @@ public sealed class M3M4X13BuilderTests : IDisposable
         finally { Directory.Delete(root, true); }
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // Pre-fix assertion fails because the built native geometry no longer emits the old M11-048 MISSING.
     [Fact]
     public void CliffUnknownHistoryStaysVisibleAndKnownBranchesLogBeforeErrorFlag()
     {
         using var robot = TestRobot(); var missing = new List<string>(); var entries = new List<EngineLogEntry>();
         robot.Engine.StackLogLine += missing.Add; robot.Engine.LogEntry += entries.Add;
+        bool cliffInserted = false;
+        robot.LocalizationWorld.Maps.Current!.CliffInsertForTest = (_,_) => cliffInserted = true;
+        bool? atError = null;
+        Action<EngineLogEntry> observeError = e => { if (e.Name == "CliffSensorComponent.ComputeCliffPose.NoHistoricalPose") atError = EngineErrorState.ErrorFlagSet; };
+        try
+        {
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 111, DetectedFlags = 1 });
         Assert.DoesNotContain(missing,s=>s.Contains("M11-097"));
         Assert.Equal(new[]{"CliffSensorComponent.ComputeCliffPose.NoHistoricalPose","RobotImplMessaging.HandleCliffEvent.ComputeCliffPoseFailed"},entries.Select(e=>e.Name));entries.Clear();
-        robot.Sensors.CliffHistoricalPoseForTest = _ => (0, new Pose3d(Mat3.Identity, new Vec3(12.5, -3.25, 0)));
+        using var historicalPose = new Pose3d(Mat3.Identity, new Vec3(12.5, -3.25, 0));
+        robot.Sensors.CliffHistoricalPoseForTest = _ => (0, historicalPose);
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 222, DetectedFlags = 0x0a });
         Assert.Equal("at 12.500,-3.250. DetectedFlags = 0x0A", Assert.Single(entries.Where(e => e.Name == "RobotImplMessaging.HandleCliffEvent.Detected")).Text);
         Assert.Contains(entries, e => e.Name == "BlockWorld.AddLocatedObject");
-        Assert.Contains(missing, s => s.Contains("M11-062")); Assert.Contains(missing, s => s.Contains("M11-048"));
+        Assert.Contains(missing, s => s.Contains("M11-062")); Assert.True(cliffInserted);
         entries.Clear(); robot.Sensors.CliffHistoricalPoseForTest = _ => (2, default);
-        EngineErrorState.ErrorFlagSet = false; bool? atError = null;
-        robot.Engine.LogEntry += e => { if (e.Name == "CliffSensorComponent.ComputeCliffPose.NoHistoricalPose") atError = EngineErrorState.ErrorFlagSet; };
+        EngineErrorState.ErrorFlagSet = false;
+        robot.Engine.LogEntry += observeError;
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 333, DetectedFlags = 1 });
         Assert.Equal(new[] { "CliffSensorComponent.ComputeCliffPose.NoHistoricalPose", "RobotImplMessaging.HandleCliffEvent.ComputeCliffPoseFailed" }, entries.Select(e => e.Name));
         Assert.Equal(false, atError); Assert.True(EngineErrorState.ErrorFlagSet);
         entries.Clear(); Assert.Equal(0, robot.Sensors.ComputeCliffPose(new CliffEvent(), out _));
         Assert.Equal("CliffSensorComponent.ComputeCliffPose.NoCliff", Assert.Single(entries).Name);
+        }
+        finally
+        {
+            robot.Engine.StackLogLine -= missing.Add;
+            robot.Engine.LogEntry -= entries.Add;
+            robot.Engine.LogEntry -= observeError;
+            robot.LocalizationWorld.Maps.Current!.CliffInsertForTest = null;
+        }
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
