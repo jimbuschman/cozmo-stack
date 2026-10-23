@@ -98,6 +98,10 @@ public sealed partial class AIWhiteboard
 
     public AIWhiteboard(BlockWorld world, Func<double> clockSec) { _world = world; _clockSec = clockSec; }
 
+    // fidelity: M11-017 - native +0x4C/+0x50 stores, 0x006803E8/0x006803EC.
+    internal (float Timestamp,float Distance)? OverheadEdgeState {get;private set;}
+    internal void SetOverheadEdgeState(float timestamp,float distance)=>OverheadEdgeState=(timestamp,distance);
+
     public IReadOnlyList<AIBeacon> Beacons => _beacons;
     /// <summary>The first beacon, as <c>GetActiveBeacon</c> 0x0056C404 returns begin rather than back.</summary>
     public AIBeacon? GetActiveBeacon() => _beacons.Count > 0 ? _beacons[0] : null;

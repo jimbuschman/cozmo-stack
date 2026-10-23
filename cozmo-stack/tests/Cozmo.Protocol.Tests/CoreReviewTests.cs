@@ -813,44 +813,30 @@ public class CoreReviewTests
     /// </summary>
     // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
+    // reach: unit (offline pixels/pose and supplied history/whiteboard recipients; real detector/frame dispatch/native inserts).
+    // Old writer: zero native insert observations and zero whiteboard state writes.
     public void CORE007_AFrameWithAGroundEdgeReachesTheMapThroughTheProductionPath()
     {
-        using var robot = CozmoRobot.CreateOffline();
-        robot.Transport.OfflineAcceptConnection();
-        var cal = CameraCalibration.Nominal();
-        var vision = robot.Vision; vision.Calibration = cal;
-        var map = new MemoryMap();
-
-        // the wiring FreeplayStack makes
-        vision.OverheadEdges = new OverheadEdgesDetector();
-        vision.FrameProcessed += r =>
+        using var robot=CozmoRobot.CreateOffline();robot.Transport.OfflineAcceptConnection();
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        var cal=CameraCalibration.Nominal();var vision=robot.Vision;vision.Calibration=cal;
+        vision.OverheadEdges=new OverheadEdgesDetector();
+        Action<VisionFrameResult> onFrame=r=>{if(r.OverheadEdges is {} edges)f.Map.AddVisionOverheadEdges(edges,f.Current);};
+        vision.FrameProcessed+=onFrame;
+        try
         {
-            if (r.OverheadEdges is { } edges) map.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
-        };
-
-        var pd = new VisionPoseData(1000, new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)),
-                                    HeadGeometry.MinHeadAngleRad, 0, false, false);
-        var frame = new GrayImage(cal.Columns, cal.Rows);
-        frame.Fill(150);
-        for (int y = 0; y < cal.Rows; y++)
-            for (int x = 0; x < cal.Columns; x++)
-                if (y > cal.Rows * 3 / 5) frame.Pixels[y * cal.Columns + x] = 30;   // a dark band across the floor
-
-        var result = vision.ProcessImage(frame, 1, 1000, pd);
-
-        Assert.NotNull(result.OverheadEdges);
-        Assert.True(result.OverheadEdges!.GroundPlaneValid);
-        Assert.Contains(result.OverheadEdges.Chains, c => c.IsBorder);
-
-        var regions = map.Regions;
-        Assert.Contains(regions, r => r.Type == MemoryMapContentType.InterestingEdge);
-        Assert.Contains(regions, r => r.Type == MemoryMapContentType.ClearOfObstacle);
-        // the edge is in front of the robot, inside the ROI the detector looks at
-        foreach (var e in regions.Where(r => r.Type == MemoryMapContentType.InterestingEdge))
-            foreach (var p in e.Polygon)
-                Assert.InRange(p.X, GroundPlaneROI.DistMm - 1, GroundPlaneROI.DistMm + GroundPlaneROI.LengthMm + 1);
-        // and it carries the frame's timestamp, not the wall clock
-        Assert.All(regions.Where(r => r.Type == MemoryMapContentType.InterestingEdge), r => Assert.Equal(1000u, r.Timestamp));
+            var pd=new VisionPoseData(1000,f.Historical,HeadGeometry.MinHeadAngleRad,0,false,false);
+            var frame=new GrayImage(cal.Columns,cal.Rows);frame.Fill(150);
+            for(int y=0;y<cal.Rows;y++)for(int x=0;x<cal.Columns;x++)if(y>cal.Rows*3/5)frame.Pixels[y*cal.Columns+x]=30;
+            var result=vision.ProcessImage(frame,1,1000,pd);
+            Assert.NotNull(result.OverheadEdges);Assert.True(result.OverheadEdges!.GroundPlaneValid);
+            Assert.Contains(result.OverheadEdges.Chains,c=>c.IsBorder);
+            Assert.Contains(f.Writes,w=>w.Data.Type==MemoryMapContentType.InterestingEdge);
+            Assert.Contains(f.Writes,w=>w.Data.Type==MemoryMapContentType.ClearOfObstacle);
+            Assert.All(f.Writes,w=>Assert.Equal(1000u,w.Data.Last));
+            Assert.Single(f.States);Assert.Equal(1000f,f.States[0].Time);Assert.Empty(f.Map.Regions);
+        }
+        finally{vision.FrameProcessed-=onFrame;}
     }
 
     /// <summary>
@@ -859,25 +845,26 @@ public class CoreReviewTests
     /// </summary>
     // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
+    // reach: unit (offline pixels/pose and supplied history/whiteboard recipients; real detector/frame dispatch/native inserts).
+    // Old writer: zero native insert observations and zero whiteboard state writes.
     public void CORE007_FlatGroundLeavesNoEdgeInTheMap()
     {
-        using var robot = CozmoRobot.CreateOffline();
-        robot.Transport.OfflineAcceptConnection();
-        var cal = CameraCalibration.Nominal();
-        var vision = robot.Vision; vision.Calibration = cal; vision.OverheadEdges = new OverheadEdgesDetector();
-        var map = new MemoryMap();
-        vision.FrameProcessed += r =>
+        using var robot=CozmoRobot.CreateOffline();robot.Transport.OfflineAcceptConnection();
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        var cal=CameraCalibration.Nominal();var vision=robot.Vision;vision.Calibration=cal;
+        vision.OverheadEdges=new OverheadEdgesDetector();
+        Action<VisionFrameResult> onFrame=r=>{if(r.OverheadEdges is {} edges)f.Map.AddVisionOverheadEdges(edges,f.Current);};
+        vision.FrameProcessed+=onFrame;
+        try
         {
-            if (r.OverheadEdges is { } edges) map.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
-        };
-
-        var pd = new VisionPoseData(1000, new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)),
-                                    HeadGeometry.MinHeadAngleRad, 0, false, false);
-        var frame = new GrayImage(cal.Columns, cal.Rows);
-        frame.Fill(150);
-        vision.ProcessImage(frame, 1, 1000, pd);
-
-        Assert.DoesNotContain(map.Regions, r => r.Type == MemoryMapContentType.InterestingEdge);
+            var pd=new VisionPoseData(1000,f.Historical,HeadGeometry.MinHeadAngleRad,0,false,false);
+            var frame=new GrayImage(cal.Columns,cal.Rows);frame.Fill(150);
+            var result=vision.ProcessImage(frame,1,1000,pd);
+            Assert.NotNull(result.OverheadEdges);Assert.True(result.OverheadEdges!.GroundPlaneValid);
+            Assert.DoesNotContain(f.Writes,w=>w.Data.Type==MemoryMapContentType.InterestingEdge);
+            Assert.Single(f.States);Assert.Equal(1000f,f.States[0].Time);Assert.Empty(f.Map.Regions);
+        }
+        finally{vision.FrameProcessed-=onFrame;}
     }
 
     // ================================================================ CORE-008

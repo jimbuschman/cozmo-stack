@@ -123,7 +123,7 @@ public sealed partial class MemoryMap
         const uint mask=(1u<<3)|(1u<<4)|(1u<<5)|(1u<<6)|(1u<<7)|(1u<<10); // 0x00C87675
         var data=new SourceMapData(MemoryMapContentType.NotInterestingEdge,timestamp,timestamp);
         ObjectBorderForTest?.Invoke(MemoryMapContentType.InterestingEdge,mask,data);
-        Behavior.SteppedBehavior.ReportMissing("M11-074/M11-046 FillBorder 0x0067F0BC -> 0x006813B0 -> 0x00689FAC: generic tree border callback/consumer closure is unchecked; legacy polygon border is not substituted");
+        Behavior.SteppedBehavior.ReportMissing("M11-074/M11-017/M11-046 FillBorder from 0x0067F0BC/0x006803AA -> 0x006813B0 -> 0x00689FAC: generic tree border callback/consumer closure is unbuilt; legacy polygon border is not substituted");
         Tree.Dirty=true; // 0x006813FA..FC, after the processor call
     }
     internal void RemoveObject(SourceObjectRemoval removal)
@@ -208,7 +208,7 @@ public sealed partial class MemoryMap
         for (int i = 0; i < 11; i++)
             if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
         if (Tree.HasCollisionRayWithTypes(from,to,mask)) return true;
-        Behavior.SteppedBehavior.ReportMissing("M11-089 overhead-edge producers still write legacy memory-map regions rather than native tree cells; HasCollisionRayWithTypes retains the legacy SegmentTouchesPolygon fallback until those tree joins are built");
+        Behavior.SteppedBehavior.ReportMissing("M11-046/M11-074 legacy MemoryMap.Insert, FreeplayStack.SyncFromWorld, FillBorder, FlagQuadAsNotInterestingEdges and FlagGroundPlaneRoiInterestingEdgesAsUncertain still own legacy regions; native robot-pose and overhead writers are built, but HasCollisionRayWithTypes retains their remaining selected legacy content through SegmentTouchesPolygon");
         lock (_gate)
             foreach (var region in _regions)
                 if ((mask & (1u << (int)region.Type)) != 0 && SegmentTouchesPolygon(from,to,region.Polygon)) return true;
@@ -232,14 +232,14 @@ public sealed partial class MemoryMap
     /// unit direction with the last must reach 0.766 (0x3F441893 at 0x0067F980), the cosine of forty
     /// degrees.
     /// </summary>
-    public const double OverheadEdgeRunDirectionCos = 0.766;
+    public static readonly double OverheadEdgeRunDirectionCos = BitConverter.UInt32BitsToSingle(0x3F441893);
 
     /// <summary>
     /// The squared length a run must exceed before anything is written for it: the literal 6.00001 the
     /// comparison at 0x0067FA14 uses - the noise length, taken against a squared length as the engine
     /// takes it.
     /// </summary>
-    public const double OverheadEdgeMinRunLengthSq = 6.00001;
+    public static readonly double OverheadEdgeMinRunLengthSq = BitConverter.UInt32BitsToSingle(0x40C00015);
 
     /// <summary>
     /// The type mask of the first ray query (the table at 0x00C8768B): everything but Unknown,
@@ -270,156 +270,11 @@ public sealed partial class MemoryMap
     /// </summary>
     public const double ContentPrecisionMm = 10.0;
 
-    /// <summary>
-    /// <c>MapComponent::AddVisionOverheadEdges</c> 0x0067F814. Every point of the frame is put in world
-    /// coordinates through the robot's pose at the frame's timestamp, and then:
-    ///
-    /// <list type="bullet">
-    /// <item>the segment from the robot to the point is intersected with the segment through the ground
-    /// quad's second and fourth corners - its near edge, the two corners
-    /// <c>GetGroundQuad</c> 0x004F7774 puts second and fourth (<c>kmSegment2WithSegmentIntersection</c>
-    /// at 0x0067FC54). Where they meet, the ray is asked about in two halves rather than one;</item>
-    /// <item>the point is dropped when the map already has something in the way: everything but clear
-    /// ground stops the half between the robot and the near edge (the mask at 0x00C8768B), and the five
-    /// obstacle types stop the rest of it (0x00C876A1), so neither a cliff nor an edge already recorded
-    /// out in the ROI stops a point being used;</item>
-    /// <item>consecutive points accumulate into a run while the run keeps its direction to within forty
-    /// degrees (0x0067FD40). A turn sharper than that, a point the map blocked, or the end of the chain
-    /// closes the run off (0x0067FE6C..0x0067FE92).</item>
-    /// </list>
-    ///
-    /// A closed run whose squared length passes <see cref="OverheadEdgeMinRunLengthSq"/> becomes the
-    /// triangle between the robot and the run's two ends - the engine stores it as a quad with the robot
-    /// twice over (0x0067FA54) - and, if the run came from a border chain, also a segment. Then:
-    ///
-    /// <list type="bullet">
-    /// <item>each triangle goes in as <see cref="MemoryMapContentType.ClearOfObstacle"/>, and its shape
-    /// is decided by the two fifteen-millimetre constants, compared as squared lengths against 225
-    /// (0x0067FF5C and 0x0067FFA8): the full quad when both sides are longer, the triangle when the
-    /// close side is shorter - which it always is, being the robot twice - and a two-point line when the
-    /// far side is shorter too;</item>
-    /// <item>each border segment goes in as a two-point
-    /// <see cref="MemoryMapContentType.InterestingEdge"/> polygon (the type byte 9 at 0x006802AC);</item>
-    /// <item>and finally, if any border segment was inserted, <see cref="FillBorder"/> runs over the
-    /// map: an interesting edge that touches an obstacle - or an edge already written off - becomes
-    /// NotInterestingEdge (<c>FillBorderInternal(9, mask, 10, lastImageTimestamp)</c> at 0x006803AA,
-    /// whose mask is the table at 0x00C87675).</item>
-    /// </list>
-    ///
-    /// Returns the distance from the robot to the closest border point, which is what the engine hands
-    /// the whiteboard (0x006803E8), or null when the frame carried no border points.
-    /// </summary>
-    public double? AddVisionOverheadEdges(OverheadEdgeFrame frame, Pose3d robotPose)
-    {
-        if (!frame.GroundPlaneValid || frame.Chains.Count == 0) return null;
-
-        Vec2 ToWorld(Vec2 p)
-        {
-            var w = robotPose.Apply(new Vec3(p.X, p.Y, 0));
-            return new Vec2(w.X, w.Y);
-        }
-
-        var robot = new Vec2(robotPose.Translation.X, robotPose.Translation.Y);
-        var edgeA = ToWorld(frame.GroundQuad[1]);
-        var edgeB = ToWorld(frame.GroundQuad[3]);
-
-        var runs = new List<(Vec2 Start, Vec2 End, bool Border)>();
-        double? closestSq = null;
-
-        foreach (var chain in frame.Chains)
-        {
-            Vec2 runStart = default, prev = default, dir = default;
-            bool hasRun = false, hasDir = false;
-
-            for (int i = 0; i < chain.Points.Count; i++)
-            {
-                var p = ToWorld(chain.Points[i].Ground);
-                var from = robot;
-                bool blocked = false;
-                if (SegmentIntersection(robot, p, edgeA, edgeB) is { } hit)
-                {
-                    // the ray reaches the point through the near edge of what the camera can see:
-                    // ask about the robot's side of it with the wider mask, and about the rest from there
-                    blocked = HasCollisionRayWithTypes(robot, hit, OverheadEdgeBlocksAll);
-                    from = hit;
-                }
-                blocked = blocked || HasCollisionRayWithTypes(from, p, OverheadEdgeBlocksObstacles);
-
-                if (chain.IsBorder && !blocked)
-                {
-                    double dsq = (p - robot).LengthSq;
-                    if (closestSq is null || dsq < closestSq.Value) closestSq = dsq;
-                }
-
-                if (blocked)
-                {
-                    if (hasRun) Close(runs, runStart, prev, chain.IsBorder);
-                    hasRun = false; hasDir = false;
-                    continue;
-                }
-
-                if (!hasRun) { runStart = p; prev = p; hasRun = true; hasDir = false; continue; }
-
-                var d = p - prev;
-                double len = d.Length;
-                if (len > 0) d = d * (1 / len);
-                if (hasDir && d.X * dir.X + d.Y * dir.Y < OverheadEdgeRunDirectionCos)
-                {
-                    Close(runs, runStart, prev, chain.IsBorder);
-                    runStart = prev;
-                }
-                dir = d; hasDir = true; prev = p;
-                if (i == chain.Points.Count - 1) { Close(runs, runStart, p, chain.IsBorder); hasRun = false; }
-            }
-        }
-
-        // fidelity: M11-089 -- only a bound native prepared-segment producer may feed the checked tree insertion.
-        if(NativePreparedInterestingEdges is {} producer)
-        {
-            var prepared=producer(frame,robotPose);
-            if(prepared is not null)InsertPreparedInterestingEdges(prepared,frame.Timestamp);
-        }
-        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-089 AddVisionOverheadEdges prepared-segment producer 0x0067F814..0x00680286 is unbound; checked type9 insertion is not fed legacy runs");
-        bool anyBorder = false;
-        foreach (var run in runs)
-        {
-            InsertClearRun(robot, run.Start, run.End, frame.Timestamp);
-            if (!run.Border) continue;
-            anyBorder = true;
-            Insert(new[] { run.Start, run.End }, MemoryMapContentType.InterestingEdge, null, frame.Timestamp);
-        }
-
-        if (anyBorder)
-            FillBorder(MemoryMapContentType.InterestingEdge, OverheadEdgeBorderMask,
-                       MemoryMapContentType.NotInterestingEdge, frame.Timestamp);
-
-        return closestSq is null ? null : Math.Sqrt(closestSq.Value);
-
-        static void Close(List<(Vec2, Vec2, bool)> into, Vec2 start, Vec2 end, bool border)
-        {
-            if ((end - start).LengthSq <= OverheadEdgeMinRunLengthSq) return;
-            into.Add((start, end, border));
-        }
-    }
-
-    /// <summary>
-    /// One run's clear area, in the three shapes the engine chooses between at
-    /// 0x0067FF48..0x0068016E. The quad it works on is (runStart, robot, runEnd, robot), so its close
-    /// side - the robot against itself - is always zero and never reaches the fifteen millimetres that
-    /// would keep the quad whole; what is left is the triangle when the run is longer than fifteen and
-    /// the line from the robot to the run's midpoint when it is not.
-    /// </summary>
-    private void InsertClearRun(Vec2 robot, Vec2 start, Vec2 end, uint timestamp)
-    {
-        double farSq = (start - end).LengthSq;
-        if (farSq <= OverheadEdgeFarMaxLenForLineMm * OverheadEdgeFarMaxLenForLineMm)
-        {
-            var mid = new Vec2((start.X + end.X) / 2, (start.Y + end.Y) / 2);
-            Insert(new[] { robot, mid }, MemoryMapContentType.ClearOfObstacle, null, timestamp);
-            return;
-        }
-        Insert(new[] { robot, start, end }, MemoryMapContentType.ClearOfObstacle, null, timestamp);
-    }
+    // fidelity: M11-017, M11-089
+    // The second argument is CURRENT pose, used only by the minimum-distance state write.
+    // Historical geometry must come from the timestamped history owner, never this argument.
+    public double? AddVisionOverheadEdges(OverheadEdgeFrame frame, Pose3d robotPose) =>
+        AddOverheadFromHistory(frame,robotPose);
 
     /// <summary>
     /// <c>MemoryMap::FillBorderInternal(type, mask, borderType, timestamp)</c> (the vtable's +0x4C slot),

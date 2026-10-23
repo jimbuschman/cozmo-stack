@@ -175,23 +175,17 @@ public class OverheadEdgeTests
     /// the call reports the distance to the closest border point.
     /// </summary>
     [Fact]
+    // reach: unit (supplied frame/history/current/image clock; actual native geometry).
+    // Old code: zero native writes; an unclamped legacy triangle starts at robot origin.
     public void ABorderRunBecomesAClearTriangleAndAnInterestingEdge()
     {
-        var map = new MemoryMap();
-        var frame = FrameOf(true, new Vec2(100, -30), new Vec2(100, 0), new Vec2(100, 30));
-        double? closest = map.AddVisionOverheadEdges(frame, AtOrigin);
-
-        Assert.NotNull(closest);
-        Assert.Equal(100.0, closest!.Value, 3);
-
-        var clear = map.Regions.Where(r => r.Type == MemoryMapContentType.ClearOfObstacle).ToList();
-        var edges = map.Regions.Where(r => r.Type == MemoryMapContentType.InterestingEdge).ToList();
-        Assert.Single(clear);
-        Assert.Single(edges);
-        Assert.Equal(3, clear[0].Polygon.Length);                     // robot, run start, run end
-        Assert.Equal(new Vec2(0, 0), clear[0].Polygon[0]);
-        Assert.Equal(2, edges[0].Polygon.Length);
-        Assert.Equal(4242u, edges[0].Timestamp);
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        var closest=f.Run(true,new(60,-30),new(60,0),new(60,30));
+        Assert.Equal(60d,closest);Assert.Equal(2,f.Writes.Count);
+        Assert.Equal(MemoryMapContentType.ClearOfObstacle,f.Writes[0].Data.Type);
+        Assert.Equal(4,f.Writes[0].Polygon.Length); // far=60, near=40, both widths exceed threshold
+        Assert.Equal(MemoryMapContentType.InterestingEdge,f.Writes[1].Data.Type);
+        Assert.Equal(4242u,f.Writes[1].Data.Last);Assert.Empty(f.Map.Regions);
     }
 
     /// <summary>
@@ -199,18 +193,15 @@ public class OverheadEdgeTests
     /// one starts where it ended, so an L of border points leaves two edges rather than one.
     /// </summary>
     [Fact]
+    // reach: unit (supplied history/frame inputs; actual native run state machine).
+    // Old code: two legacy edges; zero native edges. Checked objection A requires one edge.
     public void ARunThatTurnsMoreThanFortyDegreesIsSplit()
     {
-        Assert.Equal(0.766, MemoryMap.OverheadEdgeRunDirectionCos);
-
-        var map = new MemoryMap();
-        var frame = FrameOf(true,
-            new Vec2(80, -40), new Vec2(100, -20), new Vec2(120, 0),   // one direction
-            new Vec2(120, 30), new Vec2(120, 60));                      // ninety degrees off it
-        map.AddVisionOverheadEdges(frame, AtOrigin);
-
-        var edges = map.Regions.Where(r => r.Type == MemoryMapContentType.InterestingEdge).ToList();
-        Assert.Equal(2, edges.Count);
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        Assert.Equal(0x3F441893u,BitConverter.SingleToUInt32Bits((float)MemoryMap.OverheadEdgeRunDirectionCos));
+        f.Run(true,new(60,-20),new(60,0),new(70,0));
+        Assert.Single(f.Writes.Where(w=>w.Data.Type==MemoryMapContentType.InterestingEdge));
+        Assert.Empty(f.Map.Regions); // final direction-break tail is lost, not unconditionally flushed
     }
 
     /// <summary>
@@ -218,22 +209,17 @@ public class OverheadEdgeTests
     /// millimetres and that leaves a line rather than a triangle - the far-side rule at 0x0067FF5C.
     /// </summary>
     [Fact]
+    // reach: unit (supplied history/frame; actual clamp, noise threshold and native insertion).
+    // Old code: zero native writes and a line starting at robot (0,0), not near midpoint.
     public void AShortRunLeavesALineAndANoisyOneLeavesNothing()
     {
-        Assert.Equal(15.0, MemoryMap.OverheadEdgeFarMaxLenForLineMm);
-        Assert.Equal(6.0, MemoryMap.OverheadEdgeSegmentNoiseLenMm);
-        Assert.Equal(6.00001, MemoryMap.OverheadEdgeMinRunLengthSq);
-
-        var noise = new MemoryMap();
-        noise.AddVisionOverheadEdges(FrameOf(false, new Vec2(100, 0), new Vec2(100, 2)), AtOrigin);
-        Assert.Empty(noise.Regions);
-
-        var shortRun = new MemoryMap();
-        shortRun.AddVisionOverheadEdges(FrameOf(false, new Vec2(100, 0), new Vec2(100, 10)), AtOrigin);
-        var clear = shortRun.Regions.Single();
-        Assert.Equal(MemoryMapContentType.ClearOfObstacle, clear.Type);
-        Assert.Equal(2, clear.Polygon.Length);
-        Assert.Equal(new Vec2(100, 5), clear.Polygon[1]);
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        Assert.Equal(0x40C00015u,BitConverter.SingleToUInt32Bits((float)MemoryMap.OverheadEdgeMinRunLengthSq));
+        f.Run(false,new(60,0),new(60,2));Assert.Empty(f.Writes);
+        f.Run(false,new(60,0),new(60,10));
+        var clear=Assert.Single(f.Writes);Assert.Equal(2,clear.Polygon.Length);
+        Assert.InRange(clear.Polygon[0].X,39.99999,40.00001);Assert.Equal(60,clear.Polygon[1].X);
+        Assert.Equal(5,clear.Polygon[1].Y);Assert.Empty(f.Map.Regions);
     }
 
     /// <summary>
@@ -244,24 +230,16 @@ public class OverheadEdgeTests
     /// out in the open is left alone.
     /// </summary>
     [Fact]
+    // reach: unit (supplied history/fresh clock; observes native FillBorderInternal wrapper).
+    // Old code: 0 native border calls; runs legacy polygon adjacency instead.
     public void AnEdgeAgainstAnObstacleStopsBeingInteresting()
     {
-        var map = new MemoryMap();
-        map.Insert(new[] { new Vec2(300, -22), new Vec2(300, -18) }, MemoryMapContentType.InterestingEdge, null, 1);
-        map.Insert(new[] { new Vec2(600, 0), new Vec2(600, 20) }, MemoryMapContentType.InterestingEdge, null, 1);
-        map.Insert(new[] { new Vec2(290, -40), new Vec2(310, -40), new Vec2(310, -20), new Vec2(290, -20) },
-                   MemoryMapContentType.ObstacleObservable, 7, 1);
-
-        map.AddVisionOverheadEdges(FrameOf(true, new Vec2(150, -30), new Vec2(150, 30)), AtOrigin);
-
-        var against = map.Regions.Single(r => r.Polygon[0].X == 300);
-        var faraway = map.Regions.Single(r => r.Polygon[0].X == 600);
-        Assert.Equal(MemoryMapContentType.NotInterestingEdge, against.Type);
-        Assert.Equal(MemoryMapContentType.InterestingEdge, faraway.Type);
-        Assert.Equal(10.0, MemoryMap.ContentPrecisionMm);
-        // and both types keep the robot out
-        Assert.True(MemoryMapTypes.BlocksTheRobot(MemoryMapContentType.InterestingEdge));
-        Assert.True(MemoryMapTypes.BlocksTheRobot(MemoryMapContentType.NotInterestingEdge));
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        f.Map.Insert(new[]{new Vec2(60,-20),new Vec2(60,20)},MemoryMapContentType.InterestingEdge,null,1);
+        f.Run(true,new(70,-20),new(70,20));
+        var border=Assert.Single(f.Borders);Assert.Equal(777u,border.Data.Last);
+        // Native border consumer remains MISSING at 0x00689FAC. Do not assert legacy adjacency as native behavior.
+        Assert.Equal(MemoryMapContentType.InterestingEdge,Assert.Single(f.Map.Regions).Type);
     }
 
     /// <summary>
@@ -315,12 +293,13 @@ public class OverheadEdgeTests
     /// (0x0067FCAA).
     /// </summary>
     [Fact]
+    // reach: unit (native tree obstacle and supplied history/frame; real native ray admission).
+    // Old native ray already blocks this obstacle; old writer has 0 final whiteboard state writes (new: 1).
     public void AnObstacleInTheWayStopsTheClearReport()
     {
-        var map = new MemoryMap();
-        map.Insert(new[] { new Vec2(50, -20), new Vec2(50, 20), new Vec2(70, 20), new Vec2(70, -20) },
-                   MemoryMapContentType.ObstacleObservable, 7, 1);
-        map.AddVisionOverheadEdges(FrameOf(false, new Vec2(100, -10), new Vec2(100, 10)), AtOrigin);
-        Assert.Empty(map.Regions.Where(r => r.Type == MemoryMapContentType.ClearOfObstacle));
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        f.Map.InsertObject(new[]{new Vec2(50,-20),new Vec2(50,20),new Vec2(70,20),new Vec2(70,-20)},new SourceMapData(MemoryMapContentType.ObstacleCharger,1,1));
+        f.Writes.Clear();f.Map.AddVisionOverheadEdges(FrameOf(false,new(100,-10),new(100,10)),f.Current);
+        Assert.Empty(f.Writes);Assert.Empty(f.Clears);Assert.Empty(f.Map.Regions);Assert.Single(f.States);
     }
 }

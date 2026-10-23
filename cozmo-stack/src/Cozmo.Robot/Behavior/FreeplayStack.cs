@@ -310,7 +310,26 @@ public sealed class FreeplayStack : IDisposable
             vision.OverheadEdges ??= new OverheadEdgesDetector();
             void onFrame(VisionFrameResult r)
             {
-                if (r.OverheadEdges is { } edges && ctx.Map is {} map) map.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
+                if(r.OverheadEdges is not { GroundPlaneValid:true } edges || edges.Chains.Count==0)return;
+                LogCallbackDeferral.RunGated(vision.World.FrameGate,()=>
+                {
+                    if(vision.World.Maps.Current is not {} map || robot.Engine.Robot is not {} native)return;
+                    var previous=map.OverheadContext;
+                    map.OverheadContext=new OverheadMapContext
+                    {
+                        History=ts=>OverheadHistorySample.Read(vision.History,ts),
+                        Origin=()=>native.GetNativeOrigin(vision.World.Maps.CurrentOrigin),
+                        ImageTimestamp=()=>
+                        {
+                            SteppedBehavior.ReportMissing("M11-017/M11-037 Robot::GetLastImageTimeStamp 0x00516EC0 at 0x00680396: native camera getter owner is unbuilt; existing VisionSystem raw/processed clock stand-ins are not substituted for the fresh border stamp");
+                            return null;
+                        },
+                        Clear=m is null?null:m.Whiteboard.ProcessClearQuad,
+                        WhiteboardState=m is null?null:m.Whiteboard.SetOverheadEdgeState,
+                    };
+                    try{map.AddVisionOverheadEdges(edges,native.MainPose);}
+                    finally{map.OverheadContext=previous;}
+                });
             }
             vision.FrameProcessed += onFrame;
             stack._unsubscribe.Add(() => vision.FrameProcessed -= onFrame);

@@ -469,16 +469,20 @@ public sealed class Quadrilateral
     /// = no intersection); then 0 &lt;= t &lt;= 1 and 0 &lt;= u &lt;= 1 inclusive (NaN false).
     /// </summary>
     private static bool SegmentsIntersect(Point2f a0, Point2f a1, Point2f b0, Point2f b1)
+        => SegmentIntersection(a0,a1,b0,b1) is not null;
+
+    internal static Point2f? SegmentIntersection(Point2f a0, Point2f a1, Point2f b0, Point2f b1)
     {
         float avx = a1.X - a0.X, avy = a1.Y - a0.Y, bvx = b1.X - b0.X, bvy = b1.Y - b0.Y;      // kmRay2FillWithEndpoints
         float x1 = a0.X, y1 = a0.Y, x2 = x1 + avx, y2 = y1 + avy;                              // 0x008F624E..0x008F627A
         float x3 = b0.X, y3 = b0.Y, x4 = x3 + bvx, y4 = y3 + bvy;
         float denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
         double d = denom;
-        if (d > -0.0001 && d < 0.0001) return false;
+        if (d > -0.0001 && d < 0.0001) return null;
         float t = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
         float u = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
-        return t >= 0f && t <= 1f && u >= 0f && u <= 1f;
+        if(!(t >= 0f && t <= 1f && u >= 0f && u <= 1f))return null;
+        return new Point2f(x1+(x2-x1)*t,y1+(y2-y1)*t);
     }
 }
 
