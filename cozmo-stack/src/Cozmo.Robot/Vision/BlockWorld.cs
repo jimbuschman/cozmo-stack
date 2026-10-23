@@ -309,19 +309,33 @@ public sealed partial class ObservableObject
     /// </summary>
     internal void SetPose(Pose3d pose, double fromDistance, PoseState state)
     {
+        ClearPreActionPosesForSetPose();
+        SetPoseAfterCacheClear(pose, fromDistance, state);
+    }
+
+    private void SetPoseAfterCacheClear(Pose3d pose, double fromDistance, PoseState state)
+    {
         Pose = pose; PoseState = state;
         if (fromDistance >= 0) FromDistance = fromDistance;
         PoseNameNode ??= new PoseTreeNameNode("Object");
         PoseNameNode.Name = "Object_" + unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
+    // fidelity: M12-001, M12-045, M13-040 — 0x004E01E4..0x004E0226, before the base pose write.
+    // Cubes and chargers are the supported ActionableObject implementations. Equal values still clear.
+    private void ClearPreActionPosesForSetPose()
+    {
+        if (CubeGeometry.IsCube(Type) || Type == ObjectType.Charger_Basic)
+            CubePreActionPoses.ClearForSetPose(this);
+    }
+
     // fidelity: M13-040 -- actionable SetPose 0x004E01E4..226, common 0x004EF590..646.
     // Retain the native node and its root parent. The argument is a temporary copy owned by the confirmer.
     internal void SetContactObservationPose(Pose3d pose)
     {
-        Cozmo.Robot.Manipulation.CubePreActionPoses.ClearForSetPose(this);
+        ClearPreActionPosesForSetPose();
         _pose.AssignInputValue(pose);
-        SetPose(_pose, -1.0f, PoseState.Known);
+        SetPoseAfterCacheClear(_pose, -1.0f, PoseState.Known);
         _pose.Name = "Object_" + unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
         using var root = _pose.FindRoot();
         OriginId = root.Id;
@@ -330,9 +344,9 @@ public sealed partial class ObservableObject
     // fidelity: M12-045 -- B4 native in-place pose assignment for carried release.
     internal void SetCarryingObservationPose(Pose3d pose, PoseState state)
     {
-        if(CubeGeometry.IsCube(Type))Cozmo.Robot.Manipulation.CubePreActionPoses.ClearForSetPose(this);
+        ClearPreActionPosesForSetPose();
         _pose.Assign(pose);
-        SetPose(_pose,-1.0,state);
+        SetPoseAfterCacheClear(_pose,-1.0,state);
         _pose.Name="Object_"+unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
         if(CubeGeometry.IsCube(Type))PoseInitialized=1;
     }
@@ -3062,7 +3076,7 @@ public sealed partial class BlockWorld
         LogCallbackDeferral.RunGated(_gate,()=>
         {
             prev = obj.PoseState; oldPose = obj.Pose;
-            obj.Pose = pose; obj.PoseState = state;
+            obj.SetPose(pose, -1.0, state);
             var entry = EntryForOrCreate(obj.ObjectId);
             obj.Confirmation = entry;
             entry.Pose = pose;

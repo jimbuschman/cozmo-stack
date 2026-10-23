@@ -230,6 +230,11 @@ public static class CubePreActionPoses
     // fidelity: M12-001, M12-021
     public static List<StoredElement> GenerateStored(ObservableObject cube, PreActionType type)
     {
+        if (cube.Type == ObjectType.Charger_Basic)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001/M13-040 GetCurrentPreActionPoses virtual generator 0x004DF8BA -> Charger.GeneratePreActionPoses 0x004E9FB0: ChargerGeometry.GeneratePreActionPoses exists, but its stored PreActionPose element/constructor adapter is not bound to this cache. L2 establishes empty-vector regeneration, not the charger element's scalar/parent contract");
+            return new List<StoredElement>();
+        }
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001 PreActionPose ctor integration 0x0050DB14/0x0050DB6C/0x0050DCFC/0x0050DF00: stored/world cache still uses the existing flat marker/object adapter; IsChildOf body called at 0x0050DD4E and complete native marker-parent input binding are not checked here, so the two constructor error/continue paths and derived SetParent(P.GetParent()) 0x0050DFFA..0x0050E002 are not claimed built. Height tolerance and MakeUnitLength arithmetic are built independently");
         var list = new List<StoredElement>();
         if (type is PreActionType.Entry or PreActionType.None) return list;
