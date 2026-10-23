@@ -1,0 +1,1 @@
+M13-DRIVEOFF-HW evidence bundle. result.json holds every check, its engine citations and the source records; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram; events.jsonl keeps engine logs, API events and behaviour steps. Times are host capture times. No acceptance or manifest change was made.

@@ -1,0 +1,647 @@
+{
+  "testId": "M13-DRIVEOFF-HW",
+  "createdUtc": "2026-10-23T12:41:41.2341777Z",
+  "commit": "d2c72b24f8c8a2be00ee461b90203ab2e504cfa9",
+  "argv": [
+    "m13-driveoff-hw",
+    "--resources",
+    "re-analysis/obb/assets/cozmo_resources"
+  ],
+  "resources": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources",
+  "connected": true,
+  "startup": {
+    "gate": {
+      "outcome": "Ready",
+      "ready": true,
+      "waitedMs": 3603.8632,
+      "budgetMs": 60000,
+      "failureReason": null,
+      "description": "engine readiness delivered after 3604 ms; connect callback completed",
+      "rule": "M2-021: request connection only after IsReadyDelivered; cancellation or startup failure takes priority. The 60-second budget is host coverage, not recovered engine timing."
+    },
+    "records": [
+      "M2-021",
+      "M5-010"
+    ],
+    "sources": [
+      "M2-021: unity/scripts/csharp/StartupManager.cs:322-341; unity/scripts/csharp/ConnectionFlowController.cs:670-673; native ConnectToRobot 0x004ED020..0x004ED07C has no loader gate",
+      "M5-010: AnimationStreamer constructor 0x0057A0D4..0x0057A282 reads/caches neutral/reset source once"
+    ],
+    "errorCount": 0,
+    "errors": [],
+    "badNeutralAnimGroup": false,
+    "cachedNeutralFaceAvailable": true,
+    "positiveVerdictAllowed": true,
+    "reason": null,
+    "summary": "engine readiness delivered after 3604 ms; connect callback completed; 0 error-level engine log(s)",
+    "window": "engine-log subscription registered in BeforeStart through connection setup completion, or startup interruption before cleanup; construction before BeforeStart is not captured",
+    "interrupted": null
+  },
+  "checks": [
+    {
+      "verdict": "MATCH",
+      "missing": null,
+      "sendsBeforeDrive": [
+        {
+          "atMs": 12648.5133,
+          "value": 50,
+          "wirePosition": 160
+        },
+        {
+          "atMs": 12648.5133,
+          "value": 50,
+          "wirePosition": 161
+        }
+      ],
+      "platformAtDriveStart": true,
+      "contactAtDriveStart": true,
+      "id": "ON_CHARGER",
+      "records": [
+        "M4-019",
+        "M13-040",
+        "M13-017"
+      ],
+      "sourceComparisons": [
+        {
+          "Check": "ON_CHARGER",
+          "Record": "M4-019",
+          "Citation": "0x00512D80..0x00512DA2; 0x00511D44..0x00511DCA (send 0x00511DA0)",
+          "Comparison": "The first frame-matched state moves the travel accumulator from -1 to 0 and sends 50; the rising contact edge sets the platform, whose change sends 50. Before the drive the wire carries exactly 50, 50 and no 400 (no other sender runs: increments need a cache of at least 151, the 400 restore runs only from Delocalize)."
+        },
+        {
+          "Check": "ON_CHARGER",
+          "Record": "M13-040",
+          "Citation": "0x00512AAC..0x00512AB4; 0x00511990..0x00511C2D",
+          "Comparison": "A synchronized RobotState with IS_ON_CHARGER (bit 12) calls SetOnCharger, which sets the platform flag on the rising edge."
+        },
+        {
+          "Check": "ON_CHARGER",
+          "Record": "M13-017",
+          "Citation": "0x005C0B10",
+          "Comparison": "IsRunnableInternal returns the platform flag (robot\u002B0x34A), so DriveOffCharger is runnable on the contacts."
+        }
+      ],
+      "uncertainty": [
+        "M13-040",
+        "M13-017"
+      ],
+      "resultKind": "MATCH",
+      "summary": "ON_CHARGER: OK. The stack did what the original engine does. [MATCH]"
+    },
+    {
+      "verdict": "MATCH",
+      "missing": null,
+      "earlySends": [],
+      "crossingState": {
+        "atMs": 43328.6135,
+        "wirePosition": 5386,
+        "travelMm": 51.134815,
+        "previousTravelMm": 47.930122
+      },
+      "contactsDropped": {
+        "atMs": 42790.6298,
+        "travelMm": 5.1806436
+      },
+      "travelRule": "Recomputed from the received RobotStates: sum of |MoveRobotPoseForward(pose,-20 mm) difference| in f32 from the identity pose, frame-matched states only (M4-019 C7). Graded only if the crossing state is the same without the first-state term.",
+      "id": "HOLD_50",
+      "records": [
+        "M4-019",
+        "M13-040"
+      ],
+      "sourceComparisons": [
+        {
+          "Check": "HOLD_50",
+          "Record": "M4-019",
+          "Citation": "0x00512E2A..0x00512E96; 0x00511D4C..0x00511D6A",
+          "Comparison": "The travel is the summed XY displacement of MoveRobotPoseForward(pose, -20 mm) over frame-matched states; 400 is sent only once it is strictly greater than 50.0 (ble at 0x00512E96). SetOnCharger(false) leaves the platform set, so the contacts dropping sends nothing."
+        },
+        {
+          "Check": "HOLD_50",
+          "Record": "M13-040",
+          "Citation": "0x00513CD8..0x00513E2A",
+          "Comparison": "The platform clears only when the robot\u0027s footprint leaves the located charger\u0027s; until then no platform change sends 400."
+        }
+      ],
+      "uncertainty": [
+        "M13-040"
+      ],
+      "resultKind": "MATCH",
+      "summary": "HOLD_50: OK. The stack did what the original engine does. [MATCH]"
+    },
+    {
+      "verdict": "MATCH",
+      "missing": null,
+      "sendsAfterCrossing": [
+        {
+          "atMs": 43391.2772,
+          "value": 400,
+          "wirePosition": 5398
+        },
+        {
+          "atMs": 43698.5937,
+          "value": 400,
+          "wirePosition": 5475
+        }
+      ],
+      "distanceSendLagMs": 62.663699999997334,
+      "crossingState": {
+        "atMs": 43328.6135,
+        "wirePosition": 5386,
+        "travelMm": 51.134815,
+        "previousTravelMm": 47.930122
+      },
+      "contactsDropped": {
+        "atMs": 42790.6298,
+        "travelMm": 5.1806436
+      },
+      "travelRule": "Recomputed from the received RobotStates: sum of |MoveRobotPoseForward(pose,-20 mm) difference| in f32 from the identity pose, frame-matched states only (M4-019 C7). Graded only if the crossing state is the same without the first-state term.",
+      "id": "DISTANCE_400",
+      "records": [
+        "M4-019"
+      ],
+      "sourceComparisons": [
+        {
+          "Check": "DISTANCE_400",
+          "Record": "M4-019",
+          "Citation": "0x00512E84..0x00512EA6; 0x00511DA0",
+          "Comparison": "One 400 on the first state whose travel exceeds 50 mm (flag \u002B0x52C, set once); the platform exit sends 400 again. After the crossing state exactly two 400s, or one if the platform never cleared."
+        }
+      ],
+      "uncertainty": [],
+      "resultKind": "MATCH",
+      "summary": "DISTANCE_400: OK. The stack did what the original engine does. [MATCH]"
+    },
+    {
+      "verdict": "MATCH",
+      "missing": null,
+      "platformFalseAtMs": [
+        43665.8348
+      ],
+      "exitPosition": {
+        "forwardMm": 90.81019,
+        "travelMm": 91.1229,
+        "headingChangeRad": -0.0016160524,
+        "expected": "about 85.9 mm forward for a straight drive with no heading change (observation, not graded)"
+      },
+      "id": "PLATFORM_EXIT",
+      "records": [
+        "M4-019",
+        "M13-040",
+        "M13-024"
+      ],
+      "sourceComparisons": [
+        {
+          "Check": "PLATFORM_EXIT",
+          "Record": "M4-019",
+          "Citation": "0x00511D4C..0x00511D6A",
+          "Comparison": "SetOnChargerPlatform(b) stores b or the contacts flag, so the platform can clear only after the contacts dropped, and changes once."
+        },
+        {
+          "Check": "PLATFORM_EXIT",
+          "Record": "M13-040",
+          "Citation": "0x00513CD8..0x00513E2A; 0x00514DB2..0x00514DD8",
+          "Comparison": "The per-tick footprint test clears the platform when the robot quad stops intersecting the charger quad; straight back off the contacts that is at x \u003E 85.9 mm (research/20261023-m13-017-groundwork-tests-claude-check.md). The exit position is recorded, not graded."
+        },
+        {
+          "Check": "PLATFORM_EXIT",
+          "Record": "M13-024",
+          "Citation": "0x00513CD8..0x00513E2A",
+          "Comparison": "The footprint quads come from minAreaRect; the exit position depends on them and is an observation here."
+        }
+      ],
+      "uncertainty": [
+        "M13-040",
+        "M13-024"
+      ],
+      "resultKind": "MATCH",
+      "summary": "PLATFORM_EXIT: OK. The stack did what the original engine does. [MATCH]"
+    },
+    {
+      "verdict": "MATCH",
+      "run": {
+        "RunnableAtStart": true,
+        "Started": true,
+        "EndedOnItsOwn": true,
+        "TimedOut": false,
+        "PlatformAtEnd": false,
+        "ActionAtEnd": false,
+        "DriveResult": "Success"
+      },
+      "id": "BEHAVIOUR_END",
+      "records": [
+        "M13-017"
+      ],
+      "sourceComparisons": [
+        {
+          "Check": "BEHAVIOUR_END",
+          "Record": "M13-017",
+          "Citation": "0x005C0DA8..0x005C0E32",
+          "Comparison": "UpdateInternal keeps running while the platform is set; off the platform it keeps running while an action is current and otherwise stamps the whiteboard and returns 2."
+        }
+      ],
+      "uncertainty": [
+        "M13-017"
+      ],
+      "resultKind": "MATCH",
+      "summary": "BEHAVIOUR_END: OK. The stack did what the original engine does. [MATCH]"
+    },
+    {
+      "verdict": "KNOWN_GAP",
+      "missingReports": [
+        "MISSING: M13-017 BehaviorDriveOffCharger::InitInternal SevereNeeds state writer (R-M15-SEVERE-INPUT, row 39): robot\u002B0x264-\u003EAI\u002B0x30-\u003Ecomponent\u002B0x14 has no live owner in this stack; the ==3 gate cannot be evaluated, so PushDrivingAnimations is not called"
+      ],
+      "id": "DRIVING_ANIMATIONS",
+      "records": [
+        "M13-017",
+        "M5-063"
+      ],
+      "sourceComparisons": [
+        {
+          "Check": "DRIVING_ANIMATIONS",
+          "Record": "M13-017",
+          "Citation": "0x005C0B34..0x005C0B50",
+          "Comparison": "KNOWN GAP: the push of (0x97,0x93,0x8F) is gated on SevereNeeds state 3, whose writer has no live owner in the stack (R-M15-SEVERE-INPUT); the stack reports the missing piece."
+        },
+        {
+          "Check": "DRIVING_ANIMATIONS",
+          "Record": "M5-063",
+          "Citation": "0x004F0D80..0x004F0D8C",
+          "Comparison": "Without the push, the driving animation handler keeps its default triplet; recorded only."
+        }
+      ],
+      "uncertainty": [
+        "M13-017"
+      ],
+      "resultKind": "KNOWN_GAP",
+      "summary": "DRIVING_ANIMATIONS: KNOWN MISSING PIECE. Reported as expected; not a failure of this run. [KNOWN_GAP]"
+    },
+    {
+      "verdict": "OBSERVATION",
+      "pathLines": [
+        {
+          "atMs": 42440.5084,
+          "lengthMm": 156,
+          "payloadHex": "3D0000000000000000E2FF1B4387FCC1BE0000C842000048430000FA43"
+        }
+      ],
+      "expectedLineMm": "156 (96.0 \u002B extraDistanceToDrive_mm 60.0); one line per drive, re-driven while the platform stays set",
+      "robotCliffEvents": 0,
+      "robotPotentialCliffs": 0,
+      "robotStopped": 0,
+      "thresholdSendsAfterDrive": [
+        {
+          "atMs": 43391.2772,
+          "value": 400
+        },
+        {
+          "atMs": 43698.5937,
+          "value": 400
+        }
+      ],
+      "apiEvents": [
+        {
+          "onContacts": false,
+          "atMs": 42825.5914,
+          "kind": "charger-contacts"
+        },
+        {
+          "Tag": 3000002,
+          "ActionType": 26,
+          "Result": 0,
+          "SubActionResults": [],
+          "NativeCompletionCache": 0,
+          "atMs": 43633.9101,
+          "kind": "action-completed"
+        },
+        {
+          "onPlatform": false,
+          "atMs": 43665.998,
+          "kind": "platform-changed"
+        },
+        {
+          "Tag": 3000003,
+          "ActionType": 26,
+          "Result": 33554432,
+          "SubActionResults": [],
+          "NativeCompletionCache": 0,
+          "atMs": 44570.3429,
+          "kind": "action-completed"
+        },
+        {
+          "Tag": 3000004,
+          "ActionType": 26,
+          "Result": 0,
+          "SubActionResults": [],
+          "NativeCompletionCache": 0,
+          "atMs": 45045.4266,
+          "kind": "action-completed"
+        },
+        {
+          "Tag": 3000001,
+          "ActionType": 8,
+          "Result": 0,
+          "SubActionResults": [
+            33554432
+          ],
+          "NativeCompletionCache": 0,
+          "atMs": 45106.3428,
+          "kind": "action-completed"
+        },
+        {
+          "endedOnItsOwn": true,
+          "timedOut": false,
+          "platform": false,
+          "action": false,
+          "driveResult": "Success",
+          "atMs": 45115.9075,
+          "kind": "behaviour-ended"
+        }
+      ],
+      "operator": {
+        "check": "DRIVE_OFF",
+        "phase": "DRIVE",
+        "watch": "Cozmo and the charger",
+        "fromMs": 42377.062,
+        "toMs": 46617.8467,
+        "droveOff": {
+          "window": {
+            "check": "DRIVE_OFF",
+            "phase": "DRIVE",
+            "watch": "Cozmo and the charger",
+            "fromMs": 42377.062,
+            "toMs": 46617.8467
+          },
+          "question": "Did Cozmo drive all the way OFF the charger onto the floor?",
+          "rawAnswer": "1",
+          "answer": "yes",
+          "askedAtMs": 46618.1402,
+          "answeredAtMs": 51221.6213,
+          "interpretation": "Operator observation only; unexpected, unclear and free text are retained for investigation, never converted into hardware acceptance."
+        },
+        "stoppedOnCharger": {
+          "window": {
+            "check": "DRIVE_OFF",
+            "phase": "DRIVE",
+            "watch": "Cozmo and the charger",
+            "fromMs": 42377.062,
+            "toMs": 46617.8467,
+            "droveOff": {
+              "window": {
+                "check": "DRIVE_OFF",
+                "phase": "DRIVE",
+                "watch": "Cozmo and the charger",
+                "fromMs": 42377.062,
+                "toMs": 46617.8467
+              },
+              "question": "Did Cozmo drive all the way OFF the charger onto the floor?",
+              "rawAnswer": "1",
+              "answer": "yes",
+              "askedAtMs": 46618.1402,
+              "answeredAtMs": 51221.6213,
+              "interpretation": "Operator observation only; unexpected, unclear and free text are retained for investigation, never converted into hardware acceptance."
+            }
+          },
+          "question": "Did he STOP suddenly while still on the charger, then maybe start again?",
+          "rawAnswer": "2",
+          "answer": "no",
+          "askedAtMs": 51222.5326,
+          "answeredAtMs": 56885.9529,
+          "interpretation": "Operator observation only; unexpected, unclear and free text are retained for investigation, never converted into hardware acceptance."
+        },
+        "freeText": ""
+      },
+      "id": "DRIVE_OBSERVATIONS",
+      "records": [
+        "M13-017",
+        "M13-013",
+        "M4-019"
+      ],
+      "sourceComparisons": [
+        {
+          "Check": "DRIVE_OBSERVATIONS",
+          "Record": "M13-017",
+          "Citation": "0x005C09D4..0x005C09E6; 0x005C0C02..0x005C0C08; config/engine/behaviorSystem/behaviors/freeplay/driveOffCharger.json",
+          "Comparison": "The drive is a DriveStraightAction of 96.0f \u002B extraDistanceToDrive_mm (60.0) = 156 mm, re-driven while the platform stays set. Recorded for review, not graded (M13-013 path gaps)."
+        },
+        {
+          "Check": "DRIVE_OBSERVATIONS",
+          "Record": "M13-013",
+          "Citation": "0x005470F0..0x0054725E",
+          "Comparison": "DriveStraightAction path details are recorded only."
+        },
+        {
+          "Check": "DRIVE_OBSERVATIONS",
+          "Record": "M4-019",
+          "Citation": "0x0053582C..0x00535998",
+          "Comparison": "Cliff and stop reports from the robot are recorded only; a PotentialCliff on the platform is ignored by the engine."
+        }
+      ],
+      "uncertainty": [
+        "M13-017",
+        "M13-013"
+      ],
+      "resultKind": "OBSERVATION",
+      "summary": "DRIVE_OBSERVATIONS: SAVED FOR REVIEW. Nothing here can pass or fail. [OBSERVATION]"
+    }
+  ],
+  "records": [
+    {
+      "id": "M4-019",
+      "subsystem": "M4-control",
+      "title": "CliffSensorComponent: defaults, CliffEvent/PotentialCliff, the EnableStopOnCliff senders, the 50/400/150 schedule with its running stats, HandleRobotStopped\u0027s Evaluate and broadcast gate",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "evidence": [
+        "SC1..SC8, SC4a..SC4j, SC6, C2, C7, C8 as before",
+        "H1 HandleRobotStopped is subscribed for robot tag 0xD4 (0x00532B6E, GOT 0x0103EA8C)",
+        "H2 0x0053539C..0x0053542E body: Get_robotStopped, sEventF, EvaluateCliffSuspiciousnessWhenStopped",
+        "H3 0x00634840..0x00634846 Evaluate = comp\u002B0x1C := robot\u002B0x2C",
+        "H4 0x00535432..0x00535480 if the sensor is enabled: RequestCurrentBehaviorEndImmediately, ActionList::Cancel(-1), broadcast RobotStopped",
+        "S1 0x00512FB0..0x00512F22 stats/threshold run for frame-mismatched states for the first 100",
+        "S2 0x006343C6..0x006343D6 gates \u002B0x1C != 0 and MC\u002B0xC == 0",
+        "S3 0x006343D8..0x00634404 std::map::lower_bound(comp\u002B0x1C) over RobotStateHistory at robot\u002B0x390",
+        "S4 0x0063448E..0x006344AA in-order successor walk",
+        "S5 0x00634420..0x0063448A min(cliff[0]); Increment when variance \u003E 10000.0f and min\u002B15 \u003C cliff",
+        "S6 0x006344AC..0x006344AE clears \u002B0x1C at the end of the walk",
+        "S7 0x0063451A..0x006345AA Increment: cache \u003C 151 returns; else cache = max(cache-250,150), send, count=0",
+        "S8 senders: 0x00511DA0, 0x00512DA2 (50), 0x00512EA0 (400), 0x006345A4, 0x006347F8",
+        "W1 0x00634636..0x00634656 sample gate: moving, robot\u002B0x355 == 0, state\u002B0x50 \u003E cache",
+        "W3 0x0063466A/0x006346D0..0x006346FC add-only Welford with n = size",
+        "W4 0x0063466C..0x006346CE removal with N = the constant 100.0f (0x00634728), not the deque size",
+        "W5 0x00634700..0x0063471E M2 \u002B= s0; variance = M2/(size-1) once size \u003E= 2",
+        "W6 0x00634668 the window is 100 samples",
+        "C12.3 robot\u002B0x2C0 is per-mismatch-run: 0 at the ctor 0x0050FF08, 0 on a frame match 0x00512EAE, 0 on the treads Delocalize 0x00512B9C, old\u002B1 on a mismatch 0x00512F1C, 0 after 0x65 0x00512F88",
+        "C12.4 the stats gate r6=0 is false on the AddRobotStateToHistory failure (0x00512BEE/0x00512BF4/0x00512C38), the GetLastStateWithFrameID failure (0x00513088/0x00513110) and the origin miss (0x00512F0C)",
+        "C13.2 the treads-change Delocalize stores \u002B0x2C0 = 0 at 0x00512B9C then b 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch increment; the stats run unconditionally",
+        "C13.3 RobotStateHistory ctor sets a 3000 ms retention window at \u002B0x3c (0x0053088D..0x005308C6); the stack\u0027s parallel cliff history mirrors it",
+        "Handoffs in HandleRobotStopped: the gate ldrb r0,[r0,#4]; cbz 0x00535436..0x00535438; BehaviorManager::RequestCurrentBehaviorEndImmediately blx 0x4AA1C8 0x00535454 (M8-019); ldr.w r0,[r4,#0x250]; mov.w r1,#-1; blx 0x4A7ABC ActionList::Cancel(-1) 0x00535466..0x0053546E (M8-015); the RobotStopped game message blx 0x4AA1D4 0x00535478 and Robot::Broadcast 0x00535480. In UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4 (M10-015). The history lookups (C12.4): M11-051/M11-053; the charger geometry: M13-009",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 6 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
+      ],
+      "effect": "cliffs are detected or handled differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "status": "EXACT_SOURCE",
+      "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CliffSensorComponent defaults (enabled, cache 400, raw 0xFFFF, SC1); SendCliffDetectThresholdToRobot always sends (SC3); CliffEvent with the sensor disabled and flags != 0 is dropped (SC5); the game EnableCliffSensor only stores \u002B4 (SC6); PotentialCliff -\u003E StopAllMotors \u002B EnableStopOnCliff{0} (SC7); EnableStopOnCliff only from the caller (SC8); the first accepted state of the current frame sends 50 and 400 follows once after more than 50 mm (SC4, SC4e). Verifier round (2026-09-25, corrections C1..C5): the threshold schedule runs only for a state that passed the origin check (C3). Re-verify round (2026-09-25, C6..C8): C7 (rows D1..D5): the distance behind the 400 threshold is the XY displacement of the drive centre, MoveRobotPoseForward(pose, -20 mm) = (x \u002B d cos(theta), y \u002B d sin(theta), 0), between the robot pose before and after each accepted state\u0027s pose update, added on every state whose frame id matches from the first one (CozmoSensors.CliffThresholdSchedule). C8 (rows P1..P6): SetOnChargerPlatform(b) = b or the contacts flag, with RobotOnChargerPlatformEvent and 50/400 on a change; set true by SetOnCharger on the rising IS_ON_CHARGER edge, left alone by SetOnCharger(false), set false by a committed off-treads change to anything but OnTreads; SC7: a PotentialCliff on the platform is ignored.",
+      "unresolved": "built, awaiting strong verification: B-M3M4-5: ClearCliffRunningStats clears count and restores threshold cache, then emits event and sends outside sensor lock, then clears stats; regression checks order and lock release. Previous notes: built, awaiting strong verification: B-M3M4-3: HandleRobotStopped event first with structured variance $data; restoring-threshold event and send before sample/mean/variance/M2 clear. Welford below-two behavior retained. Previous manager-adopted instructions: IMPLEMENTATION_GAP: build from re-analysis/research/20261011-m3m4-fix-rows.md section 6 and the rulings in section 12. Before: Final settling pass: KEEP. Omitted: HandleRobotStopped\u0027s sEventF with $data = to_string(cliff\u002B0x3C) (0x005353A4..0x005353F6, H2), see M3-048. Below size 2 the engine leaves \u002B0x3C unchanged (blo at 0x0063470E); the C# writes 0. Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed. Build round: Sensors.cs:91-98 and :795-806 leave Cancel(-1) and RequestCurrentBehaviorEndImmediately unwired with a comment only, although EngineRobot.ActionList exists: wire Cancel(-1) to M8-015\u0027s ActionList and make the behaviour end a visible handoff naming M8-019 (new); DetectGyroDrift/DetectBias get a hook naming M10-015 (new); the threshold and EnableStopOnCliff sends lack Robot::SendMessage\u0027s failure warning. Before: built, awaiting strong verification: checked C12.3/C13.2/C13.3 lower counter/treads/history-window slices confirmed already live, 2026-10-09. Treads changes leave counter0 and jump to unconditional stats, match resets0, mismatch increments and 101 resets after error log/_errG/debug-break gate before the Delocalize trigger. Fixed MismatchedFrameIDs to sErrorF level and exact unsigned fields; running cliff history retains 3000 ms. Existing source-derived reset/treads/first100 tests retained. MISSING: actual M11 AddRobotStateToHistory/GetLastStateWithFrameID failure results, Delocalize/origin/charger geometry; H4 M7 behavior end and M8 Cancel(-1). Rule10 census also identifies DetectGyroDrift at 00512FBA and DetectBias at 00512FC4 without a live counterpart; their M10/manager allocation and checked recipient rows are still needed, not guessed. No synthetic history success added. B-M3M4-9 built, awaiting strong verification: Threshold-change info precedes cache store/send; Count/NewThreshold events bracket cache reduction before send and count reset; each walked sample logs timestamp/value; Undetected and both PotentialCliff branches use explicit source calls; variance reads locked. MISSING: ComputeCliffPose/AddCliff 0x00535548..0x005356E6 and 0x00634980 have no checked bodies, so Detected coordinates (0x00535602) and ComputeCliffPoseFailed/error/errG/break (0x00535682..0x005356BC) remain visibly missing rather than invented success/failure. B-M3M4-10 (2026-10-12), built, awaiting strong verification: UpdateCliffDetectThreshold clears \u002B0x1C after the successor walk/logs, at 0x006344AC..0x006344AE; regression observes the nonzero timestamp during each source debug callback. MISSING: PotentialCliff \u002B0x34B drone branch at 0x00535898..0x00535924: action-list current type0x1B gate, TriggerLiftSafeAnimationAction(DroneModeCliffEvent) construction and queued action need higher-layer recovery/checked rows. EnableDroneMode ingress remains absent; no surrogate action or new mode is introduced. B-M3M4-12 (2026-10-12), built, awaiting strong verification: ComputeCliffPose/AddCliff runtime MISSING names M4-038; no-drone-mode input doc names M4-039. No geometry/drone implementation invented. OV24 check (re-analysis/research/overnight/20261014-ov23-24-check.md): its C12.4/C13.2 gates (including the GetLastStateWithFrameID failure 0x0051307A..0x00513110) also gate the gyro detectors (M10-015).\nB-M1-5 (2026-10-17), built, awaiting strong verification: Host CliffDetected and RobotStopped enqueue at their existing Broadcast points; synchronous internal reaction consumers use separate internal hooks. Cancel(-1) and resulting 5F precede RobotStopped (0x0053546E before 0x00535480); no wire or gate change.\nB-M1-6 (2026-10-18), built, awaiting strong verification: OnChargerPlatformChanged queues at external send0x00511D8A. Threshold send0x00511DA0 still follows, then FreeplayDataTracker internal hook0x00511DB0; FreeplayStack moved to the internal hook. Public handler runs outside engine locks.\nSettling pass B (re-analysis/research/20261018-m3m4-settling-b.md): (i) in-layer: the cliff history must admit only what robot\u002B0x390 holds (AddRobotStateToHistory: on-ramp 0x00512BE2 -\u003E 0x00512BEE, else after ContainsOriginID 0x00512C44; rejected states and add failures 0x00512C38 excluded); Sensors.cs:980-985 admits every synced state. (ii) The history query/admission results (the C12.4 gate 0x00513088..0x00513110) are M11-097\u0027s (new), not M11-051/M11-053\u0027s; make the gate a runtime MISSING naming M11-097.\nB-M3M4-30 (2026-10-18), built, awaiting strong verification: Raw cliff copy no longer unconditionally enters the parallel cliff history before origin admission. Supported off-ramp origin and treads-delocalize gates precede admission; samples are timestamp-unique/sorted. Native add/query outcomes remain M11-097: without them production reports MISSING and skips history admission and the C12.4 gyro/cliff-stat tail rather than assuming success. 50/400 pose schedule remains; explicit unit result fixtures exercise successful/failed admission and duplicate exclusion. On-ramp entry unreachable under M2-024 (no ramp writer). ComputeCliffPose now names M11-097. No M11-097 body recovered here.\nOV128 A8 adopted (re-analysis/research/overnight/20261018-ov128-check.md): the gyro/cliff-stats/threshold tail runs only after a successful add with a frame match or one of the first 100 mismatches (0x00512D1C..0x00512FD6); origin rejection, add failure and a failed GetLastStateWithFrameID skip it. The history itself is M11-097/M11-051\u0027s; until built, the stack keeps the visible MISSING.\nB-M3M4-33 (2026-10-19), built, awaiting strong verification: B30 admission/query substitutions and parallel cliff history retired. Sensors performs robot-owned native history admission, current pose update and frame/treads tail gates; cliff statistics walk the admitted raw map. Default tail now calls existing RobotGyroDriftDetector/DetectBias with checked live inputs. Production dispatch tests reach threshold50, distance\u003E50 threshold400, stopped/suspicious threshold150. World-frame then pose-tree/history gate order retained; source log callback deferral used around history mutations/queries.\nB-M3M4-33 frame-window regression: IMU/treads/charger/movement/admission/current-pose/counter/tail state handling shares World.FrameGate with the vision worker. Counter reset therefore cannot precede frame admission. M3M4X28BuilderTests uses actual packet dispatch for reset contention and the native component notification for the synchronous frame window; the public API report is correctly queued after the handler.\nSettle readiness (manager, 2026-10-19; re-analysis/research/20261019-m3m4-settle.md): source verdict supported. Operator decision 2026-10-19: CozmoRobot always builds its world model (VisionSystem/BlockWorld), as the engine does; the composition without a VisionSystem becomes test-only (job B-M3M4-36). Settles at the B-M3M4-36 check once the production join is confirmed.\nB-M3M4-36 (2026-10-19), built, awaiting strong verification: The existing VisionSystem constructor installs the real charger-platform world-footprint step before any production connection. The fallback is now only explicit world-less test composition or after host disposal. Existing Enabled/calibration/worker behavior unchanged. SC7 isolated contact/InAir unit explicitly omits world rather than disabling the production footprint step.\nSettled EXACT_SOURCE (manager, 2026-10-19; re-analysis/research/20261019-m3m4-settle.md; re-analysis/research/20261019-b-m3m4-36-check.md): source verdict and remaining owners per the settle file; production join confirmed by B-M3M4-36 (CozmoRobot always builds its world model, operator 2026-10-19).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M4ControlTests.M4_019_SC1_SC5_SC6_CliffDefaultsAndTheDisabledDrop, M4ControlTests.M4_019_SC7_PotentialCliffStopsAllMotorsAndDisablesStopOnCliff, M4ControlTests.M4_019_SC4_SC8_TheThresholdSchedule, M4ControlTests.M4_019_C7_TheDistanceIsTheDriveCentreDisplacement, M4ControlTests.M4_019_C8_SC7_TheChargerPlatform, M4ControlTests.B9_CliffThresholdCountAndLiveUndetectedLogsKeepNativeOrder, M4ControlTests.M4_019_SC4b_TheSuspiciousWalkSends150; B-M1-5 ReportOrderingRegressionTests.CliffStopPublishesAnimationAbortBeforeRobotStoppedAndCompletionHasAHostView (production D4 through tick).; B-M1-6: ReportOrderingRegressionTests.CalibrationAndChargerPlatformFollowEarlierReportsWhileInternalHooksStaySynchronous (production packet/tick).; B-M3M4-30 M3M4SettlingBuilderTests.CliffHistoryExcludesRejectedFailedAndDuplicateStates (unit native result fixtures); UnknownHistoryAdmissionIsVisibleAndDoesNotAdmitCliffSamples (production packet/tick and MISSING boundary).; RobotStateHistoryAdmissionTests.ProductionHistoryEnablesFiftyFourHundredAndSuspiciousThresholdSends"
+    },
+    {
+      "id": "M13-040",
+      "subsystem": "M13-navigation",
+      "title": "Contact-true charger observation: live ingress, located identity, Known pose and ordered world/contact effects",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "RobotState sync gate 0x0051293C..942, contact bit12 0x00512AAC/AAE and SetOnCharger call 0x00512AB4; SetOnCharger 0x00511990..0x00511C2D observes on every true input before old-contact gate 0x00511BA8/BB0. Contacts \u002B0x338; platform \u002B0x34A.",
+        "ChargerDockPose 0x004EA304..0x004EA35A: Z rotation pi bits 0x40490FDB, translation (30,0,0), robot pose parent and ChargerDockPose name. Located family4/type13 first/current-origin query 0x00511A1C..A52, 0x0061EBF2..0x0061EC26; factory and connected identity/unique SetID 0x00511AD6..0x00511B40, 0x004EF468..0x004EF528.",
+        "Known observation 0x00511B4A -\u003E 0x00506B70..0x00506C48: reparent/root flatten, existing/new branch, SetPoseHelper 0x0050609C, distance -1, confirmer count1/reference/existing timestamp. Actionable cache invalidation 0x004E01E4..226; common SetPose 0x004EF590..646. AddLocatedObject 0x00622AC0..EB0 includes obstacle deletion, VizManager pointer store obj\u002B0x54 (0x00622D24..0x00622D30; CozmoContext\u002B0x24, ctor 0x004EA734; read by EraseVisualization 0x004EA5E8..0x004EA5F2): viz, no effect on 1-4 and notification.",
+        "Notifications 0x00506F98/FA8/FB8 world/map/state-change; unchanged return 0x00506296..29A; changed nonzero new state map 0x005062B4 and active light recipient. 0x00639840 compares NEW state r3 with1: Known trigger0x25/layer2, other changed trigger1/layer2; unchanged no request.",
+        "Contact edge/store ordering 0x00511A66..ACC, 0x00511B50..0x00511C14; platform setter 0x00511D44..DCA; existing footprint tick 0x00513CD8..0x00513E2A and M4-019 threshold send 0x0063427E, 0x006342C8..CE, 0x00634364..368.",
+        "re-analysis/research/20261021-m13-017-located-charger-check.md: independent check of A1-A11/P1-P4 with corrected A9; supplementary mount and exhaustive caller census excluded."
+      ],
+      "effect": "Missing located charger clears platform protection too early after contacts drop; pose, identity and API/world effects must follow source.",
+      "provenance": "Independent native-source review 2026-10-21; operator authorized integrating the checked contract and queueing builder B-M13-9.",
+      "unresolved": "built, awaiting strong verification: B-M13-9 wires synchronized contact-true ingress to the shared BlockWorld charger factory/identity owner, native ChargerDockPose parent/flatten, Known existing/new observation, actionable cache clearing and ordered existing world/map/light recipients before contact edges. Received-state regressions in M13ContactChargerTests cover identity, current origin, nontrivial pose, repeated true, distance/timestamp/localization, recipient order and footprint exit. MISSING shared BlockConfigurationManager::SetObjectPoseChanged 0x00624892, M11-074 map height/cache continuations and M12-001/M12-045 cached-pose destructor ownership retain their existing boundaries; no bypass or invented map insertion. Prior scope note (before this build): Unbuilt live contact-observation join. B-M13-9 builds checked A1-A11/P1-P4 with A9 corrected to NEW state. Shared pose/map/obstacle/light implementation gaps remain visible; existence of helpers is not proof of whole-path fidelity. No mount implementation or exhaustive caller census is claimed. No hardware verification or M13-017 settlement. B-M13-10 removes the false insertion timestamp claim; obj\u002B0x54 is VizManager, per the Claude check 2026-10-21.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M13ContactChargerTests (received RobotState/real world recipients; isolated actionable-cache fixture explicitly labelled)"
+    },
+    {
+      "id": "M13-017",
+      "subsystem": "M13-navigation",
+      "title": "BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ChargerBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ctor 0x005C0980 stores 96.0 \u002B json extraDistanceToDrive_mm at \u002B0x11C (0x005C09D4/0x005C09E2/0x005C09E6); IsRunnableInternal 0x005C0B10 returns robot\u002B0x34A (the on-charger-platform flag; contacts are \u002B0x338)",
+        "InitInternal 0x005C0B18 takes the reaction lock, pushes driving animations when the animation state is 3 (0x005C0B4A) and transitions only when robot\u002B0x355 == 0 (0x005C0B54); \u002B0x355 is the robot\u0027s OffTreadsState (OnTreads = 0), written only by Robot::CheckAndUpdateTreadsState 0x00512088/0x0051208E and named by OffTreadsStateFromString 0x0078DF58 (OnTreads 0, InAir 1, OnBack 2, OnLeftSide 3, OnRightSide 4, OnFace 5, Falling 6)",
+        "TransitionToDrivingForward 0x005C0BB8 drives \u002B0x11C (0x005C0C02/0x005C0C08)",
+        "UpdateInternal 0x005C0DA8: once off the platform (robot\u002B0x34A == 0) it records the time at robot-\u003E[\u002B0x264]-\u003E[\u002B0x18]\u002B0x44 and returns 2 (0x005C0DF4..0x005C0E0A); while still on the platform and robot\u002B0x355 != 0 it calls StopActing(false,false) (0x005C0DB6/0x005C0DC4) and waits; on the platform with \u002B0x355 == 0 it transitions to driving forward (0x005C0E18)"
+      ],
+      "effect": "the drive-off behaviour runs when it should not, drives the wrong distance or never stops",
+      "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): BehaviorDriveOffCharger per the binary: runnable on OnChargerPlatform (\u002B0x34A, 0x005C0B10, 0x005C0DA8), redrives until the platform flag clears, no 5 s timeout, the whiteboard \u002B0x44 stamp is float and written only by the behaviour (0x005C0E02..0x005C0E08; the local FreeplaySystem writer is removed), IsRunnableBase reads it in float (0x005BD826..0x005BD962); the Robot::Update platform step (0x00513CD8..0x00513E2A) clears the flag from the charger and robot quads (minAreaRect built from the validated float32 port). Contact-true located-charger observation is built by B-M13-9, corrected by B-M13-10 (M13-040); shared-owner gaps remain. Still open: PushDrivingAnimations and WaitForOnTreads action ownership; Markerless/Ramp/HumanHead footprints; GetBoundingQuad catch-all 0x004E65C6; shared SetObjectPoseChanged 0x00624892, M11-074 map continuations and M12-001/M12-045 cached-pose destructor ownership; a drive-off regression through admitted, frame-matched RobotStates. No hardware verification or settlement. B-M13-11 builds the shared row2 height selector and n\u003C=2 minAreaRect results. The old double-rotation-cast description is stale: the current quaternion getter creates Mat3 with f32 storage; shared pose arithmetic retains its own verification boundary. Codex review; Claude spot-check pending. These units do not close drive-off ownership or live input gaps.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent"
+    },
+    {
+      "id": "M13-024",
+      "subsystem": "M13-navigation",
+      "title": "The exact footprint: cv::minAreaRect, convexHull, Sklansky_ and RotatedRect::points",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs",
+      "effect": "a footprint (and so every found-on-top or blocked decision) differs from the engine for tilted objects, or by a float ulp for yaw-only ones",
+      "provenance": "recovered by the R-VIS M13 gap pass 3; the C# uses the planar stand-in (M13-007) for any footprint it cannot compute, and an exact-rectangle footprint only for yaw-only cubes",
+      "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped OpenCV 3.1.0 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q1, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q1: the port reproduced the real code bit for bit on 270 fresh inputs, 0 mismatches, and RotatedRect::points on 200 fresh rects): GetBoundingQuad\u003Cfloat\u003E 0x004E6490 copies the points, calls cv::minAreaRect (the InputArray flags 0x8103000D = CV_32FC2), then RotatedRect::points into Quadrilateral(p0,p1,p2,p3), then SortCornersClockwise; a catch-all landing pad (0x004E65C6, LSDA range 0x004E64F4..0x004E6502 = the minAreaRect call only) logs sErrorF(\u0027GetBoundingQuad.CvMinAreaRectFailed.COZMO-1916\u0027, \u0027cvPoints.size=%zu%s\u0027) and falls back to the axis-aligned box (Rectangle::InitFromPointContainer, angle 0.0). cv::minAreaRect 0x0009C760 (libopencv_imgproc.so, inlining rotatingCalipers): convexHull(points, hull, clockwise=1, returnPoints=1) 0x00039174 (CHullCmpPoints 0x00037990; first-strict min/max y; upper half Sklansky_(ptr,0,maxy,-1,1) and Sklansky_(ptr,total-1,maxy,-1,-1); lower half Sklansky_(0,miny,1,-1) and (total-1,miny,1,1); the stop/check_idx rule); Sklansky_\u003Cfloat\u003E 0x0003781A in float non-fused with pprev = stack[ss_old-4] (NOT -3); n \u003C= 2 paths at 0x0009CDFE (midpoint, size (dist, 0), atan2) and 0x0009CE82; the calipers: vect and inv[i] = (float)(1.0/sqrt((double)dy*dy \u002B (double)dx*dx)), first-strict left/right/top/bottom, orientation from the first non-zero double convexity, seq = {bottom, right, top, left}, minarea FLT_MAX, dp0..dp3 and c_i, the main index (first strictly greater), the tbb table at 0x0009CBE2 (bytes 36 02 07 0C) assigning (base_a, base_b) = (lx,ly), (ly,-lx), (-lx,-ly), (-ly,lx), the area formulas, \u0027area \u003C= minarea keeps the LAST minimal\u0027 (bhi skips), the result construction (C1, C2, idet, px, py, o1, o2, centre, sizes as float(sqrt(double))), angle = (float)((float)angle_rad * 180.0f / pi); RotatedRect::points 0x00086188 (libopencv_core.so): _a = (double)angle * pi / 180.0, b = (float)cos(_a)*0.5f, a = (float)sin(_a)*0.5f, pt0 = (cx - a*h - b*w, cy \u002B b*h - a*w), pt1 = (cx \u002B a*h - b*w, cy - b*h - a*w), pt2 = 2c - pt0, pt3 = 2c - pt1, each a separate float op. The validated float32 port is re-analysis/evidence/m13-minarearect/port.py. Yaw-only footprints give a RotatedRect with angle -90 and a w/h swap (e.g. a 44 cube: (0,0,44,44,-90), points (22,22),(-22,22),(-22,-22),(22,-22))",
+      "evidence": [
+        "0x004E6490..0x004E6570, 0x004E65C6..0x004E67C4, 0x0009C760..0x0009CEAC, 0x00039174..0x005395E0, 0x0003781A..0x00037968, 0x00086188..0x00086276",
+        "re-analysis/evidence/m13-minarearect/port.py, emu.py, emu2.py, emu4.py, cmp2.py",
+        "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q1; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q1"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "build the port (convexHull, Sklansky_, calipers, RotatedRect::points) with strict float32 operations (no fused multiply-add) and double sqrt/atan2/sin/cos, replacing both the exact-rectangle shortcut and the planar stand-in for cube candidates; the libm numerics (bionic sin/cos/atan2) are a policy question (M13-023 (e)); note std::sort is unstable while the port sorts stably (only -0.0 vs \u002B0.0 ties).\nB-M3M4-16 (2026-10-13), built, awaiting strong verification: Existing minAreaRect/RotatedRect.points reused by the markerless footprint (no second algorithm); native scale/rotate/quad/translate and canonical corner order exercised by live known-history cliff fixture. Degenerate hull and sort-tie gaps remain existing M13-023/024 boundaries.\n\nB-M13-4 (2026-10-15), partial build, awaiting strong verification; BLOCKED: M13-023\u0027s RectangleFallback numerical helper is built/tested inside the shared MinAreaRectF class, but full GetBoundingQuad catch/error integration at0x004E65C6 /0x004E676A remains unbuilt. In particular native cvPoints diagnostic formatting and exception producer are not inferred from managed port-gap NotSupportedExceptions. Existing n\u003C=2 and other minAreaRect gaps stay visible.\nB-M13-11 (2026-10-21), built, awaiting strong verification: empty convexHull and zero/singleton/two-point minAreaRect branches now follow the reviewed native f32/f64 sequence. This supersedes the earlier n\u003C=2 implementation-gap text only. Full GetBoundingQuad exception/catch integration, sort ties and shared numerical/owner boundaries remain open. Codex review; Claude spot-check pending.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests;M3M4X16BuilderTests; M13CheckedRowsBuilderTests; M13RVisBuildTests; M4AbortSleepTests; M13X1BuilderTests; M13X2BuilderTests"
+    },
+    {
+      "id": "M5-063",
+      "subsystem": "M5-animation",
+      "title": "DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -\u003E HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -\u003E PushDrivingAnimations 0x004F0944; 0x004F120E -\u003E RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732).",
+        "re-analysis/research/20261012-m5-driving-handler-read.md: handler state ctor 0x004F06B0..0x004F0878 / Init 0x004F0FC4..0x004F0FF4; Push gate warning 0x004F094C..0x004F0964 and push_back 0x004F0988..0x004F09FA; Remove gate 0x004F0A9E..0x004F0AB4, empty-stack warning 0x004F0ADA..0x004F0C22 (0xBE4672), first-match erase 0x004F0AE4..0x004F0C6C, LoopBoundOverflow drivingAnimationHandler.cpp:108 0x004F0B5A..0x004F0BB6; UpdateCurrDrivingAnimations only from Init (0x004F0D2C..0x004F0D74: back(), else Sad 0x2C, else needs-met 0x38, else default 0x20); HandleActionCompleted 0x004F0D78..0x004F0E2A with PlayEndAnim 0x004F0EFA..0x004F0F4A, PlayDrivingLoopAnim 0x004F0E58..0x004F0EA0, PlayDrivingEndAnim 0x004F106C..0x004F10C0, lock/unlock helpers 0x004F0EB2..0x004F0EE2 / 0x004F0F4C; ActionIsBeingDestroyed 0x004F0F94..0x004F0FC0."
+      ],
+      "effect": "What driving animations do when an action completes, and when the stack pushes or removes them.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "Settled EXACT_SOURCE 2026-10-19 (re-analysis/research/20261019-m5-settling-b.md, manager-adopted): Bodies built and checked (B-M5-15..22 chain ends in PASS). Remaining MISSINGs are owned by M7-026, M15-001, M8-020/M8-021, M12-024 and the M7/M15 callers. Superseded below: the M12-032 HasPathToFollow / PlayStartAnim body MISSINGs (built by B-M12-1, B-M5-17). Previous notes: Read 2026-10-12 (re-analysis/research/20261012-m5-driving-handler-read.md): build the handler bodies (job B-M5-15). Ownership: M5-063 owns the handler bodies, including PlayEndAnim, the loop/end plays, UpdateCurrDrivingAnimations and ActionIsBeingDestroyed; M12-024 owns the action-side call sites. The 16 engine-internal Push/Remove callers (SevereNeedsComponent, activities, DriveOffCharger, PounceOnMotion, TrackLaser, OnboardingShowCube, ReactToFrustration; listed in the research file) belong to their behaviour layers (M7/M15), which own their arguments. Not read: MovementComponent lock/unlock semantics of the double UnlockTracks; TriggerLiftSafeAnimationAction parameter names. Previous notes: RECOVERABLE_GAP: read the three bodies. B-M5-15 (2026-10-12), built, awaiting strong verification: Shared Robot driving handler implements checked Push/Remove gates, warnings, first-match erase,1000-entry bound, Init-only selection, ordered completion ID comparisons, double Unlock, state4/Lock and action-destruction Cancel order. Native signed to_string(int) for tag owner. B5/B6 host inputs and E2G5A bound to same handler; existing ActionList completion forwarded to E2G signal. M12 DriveToPose uses same interface/instance. MISSING: M7-026 GetSimpleMood, M15-001 AreNeedsMet binding, M12-032 HasPathToFollow, PlayStartAnim body, ActionList TriggerLiftSafeAnimationAction runner factory (existing M8-005 task helper cannot substitute), M12-024 action-side lifecycle and16 higher-layer Push/Remove caller arguments/gates. Test-only inputs exercise known branches; missing decisions stop with no fabricated trigger/ID/action. B-M5-15 final correction: checked constructor0x004F0724..0x004F0728 copies Default triggers to Current; tracks0/unlock1/repeat0, IDs zero. Retained facade resets old Robot owner and constructed driver state on removal; native handler is deleted/reconstructed. Internal ActionList game gate now bound to E2G5A, while M7-020 public-payload gap remains visible. B-M5-15 integration correction: ActionList.Update uses the checked T5 successor/erase order after Queue.Update (0x0053F5B2..0x0053F5D6), so synchronous E2G completion can insert a later IN_PARALLEL end queue and that queue updates this tick without invalidating a managed dictionary iterator. Regression drives the real ActionRunner completion/E2G callback and both loop/end queue updates.\nB-M5-16: native ctor never writes tag\u002B0x44; managed tag default is latent until Init assigns it. Init argument repeatWhilePath is documented as fourth C\u002B\u002B parameter, excluding this. Activity OnSelected/OnDeselected now emit visible MISSING M5-063/M15-006 at native Push 0x005B319A / Remove 0x005B3450; no guessed triplet/lock or unmatched handler stack mutation. M12-024 read (re-analysis/research/20261013-m12-024-driving-lifecycle.md): PlayStartAnim (0x004F0FF6..0x004F1014) and PlayDrivingStartAnim (0x004F1016..0x004F105A: state 1, TriggerLiftSafeAnimationAction(robot, start, 1, true, 0, 60.0f, false), \u002B0x58 tag, QueueAction(5)) now read; Init arguments: \u002B0x49 = !suppressTrackLocking, \u002B0x4A = repeat; the double unlock is M4-047. Build them in B-M5-17.\nbuilt, awaiting strong verification: B-M5-17 H1/H2 implement state-0 start-or-loop selection, state 1, exact constructor tuple (trigger,1,true,0,0x42700000,false), start tag and QueueAction(5). Init writes known fields even when selection inputs are MISSING, leaving Current unknown rather than using ctor defaults. Animation action factory is fixture-only; real M8-005 runner, mood/needs/path inputs and M8-015 cancellation re-entrance remain MISSING. No guessed animation IDs or queued runners.\nbuilt, awaiting strong verification: B-M5-18 deduplicates handler missing-input notices within Init, preventing unknown start selection spam on every following tick. TrackFace shared-handler destruction is serialized with the ActionList gate used by driving Update and cancellation; no source state/order changed. B-M5-18 check (re-analysis/research/20261013-b-m5-18-check.md): production has no triplet (selection stops on missing mood/needs inputs) and no end-animation action (no CreateAction factory), so every drive times out at 30.0 s. Natively UpdateCurrDrivingAnimations always yields a triplet (default 0x95/0x91/0x8D in the else branch). Fix in B-M5-19.\nB-M12-1 built, awaiting strong verification: handler HasPathToFollow now reads the actual mask-0xC PathComponent; the obsolete missing-input assertion was removed. Mood/trigger inputs remain explicitly MISSING.\nB-M12-1 rebase note: retained the upstream Opus B-M5-18 FAIL. This job replaces the status stand-in only; default triplet selection and production TriggerLiftSafeAnimationAction factories remain the separate B-M5-19 repair. NoAnimation/isolated dependency tests do not prove default production drive completion; the 30-second TIMEOUT defect remains visible.\nB-M5-19 built, awaiting strong verification: UpdateCurrent always selects the checked pushed/sad/happy/default triplet; unavailable GetSimpleMood or AreNeedsMet takes the next branch with a visible per-drive M7-026/M15-001 MISSING. Freeplay binds its actual NeedsState.AreNeedsMet and trigger map; MoodState has no recovered GetSimpleMood operation. Start/loop/end now create real ActionList TriggerLiftSafeAnimationAction runners with (1,true,0,60.0f,false), queued InParallel=5; existing playback tickets reach E2G 0x5A and the end completion sets state 4 before drive result recomputation. Production-input behavior regression loads shipped assets, uses the real engine ticker and wire-derived firmware AnimationState budgets, with no pushed triplet, action factory or drive status/timeout seams. MISSING dedupe is limited to drive-input messages; unrelated handler diagnostics are not suppressed. Concrete runner callbacks/union/DAS/cached-pointer lifecycle remain incomplete under M8-020/M8-021, visibly reported, not settled.\nB-M5-20 (2026-10-15), built, awaiting strong verification: the handler gives all start/loop/end action constructors the same per-drive diagnostic set. Init replaces the set so old actions retain their original drive scope and repeated Init tags still get one diagnostic per new drive. Native selection/state/call arguments unchanged. Freeplay restores the previous DrivingTriggerMap on Dispose, alongside existing teardown callbacks.\nB-M5-21 (2026-10-15), built, awaiting strong verification: host Freeplay DrivingTriggerMap/AreNeedsMet inputs are published only after successful creation, with both restore callbacks installed before mutation. Failed MoodModel load leaves both previous inputs untouched; successful Dispose restores the prior AreNeedsMet delegate instead of unconditionally clearing it. No native driving state-machine behavior changed.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M5X15BuilderTests.DrivingStackErasesFirstMatchAndChangesCurrentOnlyOnInit; M5X15BuilderTests.DrivingInitSelectsMoodBeforeNeedsThenDefault; M5X15BuilderTests.CompletedLoopDoubleUnlocksThenEndCompletionLocksAndDestroyCancelsInOrder; M5X15BuilderTests.MissingDrivingInputsStopDecisionsAndDoNotFabricateQueueEntries; M5X15BuilderTests.DrivingTrackOwnerUsesSignedToStringOfTagBits; M5X15BuilderTests.ActionListCompletionReachesTheEngineToGameSignal; ActionCompletionTests.M7_020_TheGameSendIsGatedByHasExternalInterface; EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed; M5X15BuilderTests.CompletedLoopQueuesAndUpdatesItsEndDuringTheSameActionListTick; M5X16BuilderTests; M5X14BuilderTests; M12RVisBuildTests; M5X17BuilderTests; NavigationTests; R2FloorPlacementTests; M5X15BuilderTests; M5X16BuilderTests (B-M5-17 regressions); M5X18BuilderTests; CorrectionTests; R2FloorPlacementTests (M12-032 stand-in, not native status verification); M5X18BuilderTests (B-M12-1); M5X19BuilderTests; FreeplayTests; ActionListTests; M5X20BuilderTests.ConcreteActionGapIsReportedOncePerDriveEvenWithRepeatedInitTags; M5X20BuilderTests.FreeplayDisposeRestoresThePreviousDrivingTriggerInput; M5X21BuilderTests.AThrowingFreeplayLoadLeavesBothPreviousDrivingInputsUntouched"
+    },
+    {
+      "id": "M13-013",
+      "subsystem": "M13-navigation",
+      "title": "DriveOffChargerContactsAction: a drive straight that retries while still on the charger",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/ChargerActions.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "DriveOffChargerContactsAction ctor 0x00558228: DriveStraightAction(10 mm, 20 mm/s, false) (0x00558232/0x00558236/0x0055823E); then \u002B0x44 = 7 (0x00558276/0x00558278), which is IActionRunner\u0027s RobotActionType (stored at \u002B0x44 by the IActionRunner ctor 0x0053FDCC) and 7 = DRIVE_OFF_CHARGER_CONTACTS (RobotActionTypeFromString 0x0075A448 maps the string at 0x00C1604E to 7)",
+        "in SDK mode only, the constructor clears the required-track lock: CozmoContext::IsInSdkMode 0x0055827C, cmp #1 0x00558280, then IActionRunner::SetTracksToLock(0) 0x00558286/0x00558288; SetTracksToLock 0x00540918 writes the argument to IActionRunner\u002B0x54 only when the action state (\u002B0x18) is 0x2000001 (not started), else warns; it is a local pre-run flag consumed by IActionRunner::Update 0x00540438 (MovementComponent::AreAnyTracksLocked), not a robot message",
+        "Init 0x005582D0 copies robot\u002B0x338 into action\u002B0x8B (0x005582D2/0x005582D6) and returns 0 when not on contacts",
+        "CheckIfDone 0x005582E4 retries while the drive is still running and fails 0x04000009 if still on the contacts (0x00558344)"
+      ],
+      "effect": "the robot does not leave the charger, or the SDK track lock is left cleared/kept wrongly",
+      "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): DriveOffChargerContactsAction as native ctor/init/check on the tick model with the SDK-only SetTracksToLock(0) gate, robot\u002B0x338 capture and 0x04000009 (0x00558228..0x00558344), 30.0f timeout. Still open: SmartRemoveDisableReactionsLock on a non-zero result; DriveStraightAction Init/CheckIfDone and the two-argument constructor defaults (speed 100/-80, accel 0x43480000, decel 0x43FA0000) unread; IsInSdkMode\u0027s source; no production caller (only the ManipTool). M12-024 read (re-analysis/research/20261013-m12-024-driving-lifecycle.md S1/S2): DriveStraightAction::Init calls handler Init (repeat 0) at 0x005475F6; CheckIfDone 0x005478C0..0x005479EE (state-3 gate, LastPathFailed 0x04000002 without PlayEndAnim, PlayStartAnim once when the path starts if \u002B0x8A, PlayEndAnim at the end, Success after the end animation); destructor 0x00547540..0x00547558. Log strings 0x005478F0..0x005479AE unread.\nbuilt, awaiting strong verification: B-M5-17 existing DriveStraightAction is an ActionRunner using handler Init repeat 0, state-3 hold, failed path retry without end, start once, active hold, end then Success; cleanup IsActive/Abort then shared destroy. Concrete timeout, native LastPathFailed/HasPathToFollow/IsActive and CanInterrupt inputs remain MISSING. Info/debug calls 0x00547904/0x0054794E/0x005479AE remain MISSING, exact strings/arguments unread. Existing geometry path creation is not reclassified; concrete DriveOffChargerContactsAction/native derived result mapping remains incomplete.\nB-M5-17 host cancellation adapter: stored Cancel skips UpdateInternal callbacks; the host task completes at the existing ActionQueue WatcherEnding/destruction boundary, without adding an end animation or changing ActionList order. Regression fixtures now tick ActionList for start, planner failure and cancellation.\nbuilt, awaiting strong verification: B-M5-18 uses native base timeout 30.0f and CanInterrupt=false, ActionList cancellation, real DriveStraight name (13 bytes at 0xBEA0DC), native float |d|\u003C0x3727C5AC early return with started=true/no path. AppendLine/ExecuteCustomPath failure branches 0x005476AE..0x005476D2 are visibly MISSING, not fabricated. Path-follower status/IsActive stand-in is explicit M12-032; geometry candidate and unread diagnostic arguments retained.\nB-M12-1 built, awaiting strong verification: DriveStraight ExecuteCustomPath failure returns 0x03000016; CheckIfDone uses real LastPathFailed/HasPathToFollow/IsActive and cleanup globally aborts active PC. Existing AppendLine/motion-profile gaps remain. OV09 check (re-analysis/research/overnight/20261014-ov09-m13-029-check.md): DriveStraightAction\u0027s dtor Abort is gated on PathComponent::IsActive (0x00547540..0x0054754E).\nB-M5-20 (2026-10-15), built, awaiting strong verification: bounded HostDriveStraightTick adapter fix: a nonzero PathRun.Result from StartPath returns 0x03000016 before waiting; a null wait after a successful start retains the prior cancellation mapping. Native ExecuteCustomPath failure return 0x005476C6..0x005476D0. The host adapter remains explicitly unported as a whole; this does not claim full native DriveStraight Init/CheckIfDone.\n\nB-M13-4 (2026-10-15), partial build, awaiting strong verification; BLOCKED: OV09 DriveStraightAction destructor active-status guard confirmed after Path Abort: no extra ClearPath. No change to existing guard or legacy/live drive scheduling and traversal gaps; the test does not certify the complete native DriveStraight lifecycle.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests.DriveOffChargerContactsActionFailsWhileStillOnTheContacts; M5X17BuilderTests; M12RVisBuildTests; NavigationTests; R2FloorPlacementTests; M5X15BuilderTests; M5X16BuilderTests (B-M5-17 regressions); CorrectionTests.ADriveCancelledMidPathAbortsItOnTheRobot; CorrectionTests.APlannerFailureSendsNoPathEvenWhenTheStraightLineIsClear; RFixBatch2Tests.M13_005_AStoppedPlanSendsNoPathThroughDriveToPoseAction; ManipulationTests.DriveToPoseSucceedsWhenThePathCompletesAtTheGoal; M5X18BuilderTests; M5X17BuilderTests; NavigationTests; CorrectionTests; M12RVisBuildTests; R2FloorPlacementTests (M12-032 stand-in, not native status verification); M12PathMachineBuilderTests; M5X18BuilderTests; M12RVisBuildTests; NavigationTests; M4AbortSleepTests (B-M12-1); M5X20BuilderTests.HostStraightFailedStartReturnsTheNativeInitFailure; M13CheckedRowsBuilderTests; M13RVisBuildTests; M4AbortSleepTests; M13X1BuilderTests; M13X2BuilderTests"
+    },
+    {
+      "id": "M2-021",
+      "subsystem": "M2-protocol",
+      "title": "App input: when ConnectToRobot is sent (the app waits for EngineLoadingDataStatus ratio \u003E= 1); the engine has no load-before-connect gate",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): ConnectToRobot handler 0x004ED020..0x004ED07C and AddRobot 0x004ED1E0..0x004ED1F2 have no state or loaded gate; engine states 1 -\u003E 2 -\u003E 3 (0x004ED5CC..0x004ED618, loader 0x00523570..0x005235FA); the app connects after ratio \u003E= 1 (StartupManager.cs:322-341, ConnectionFlowController.cs:670-673)."
+      ],
+      "effect": "Whether behaviours (and their subscriptions) exist when the robot is built.",
+      "provenance": "Codex research checked by Opus (2026-10-13), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY: the stack connects only after loading completes, as the shipped app does (an app input under the 2026-10-09 scope rule).\nB-M3M4-25 (2026-10-15), built, awaiting strong verification: host constructor synchronously loads the existing BehaviorConfigLoader map from ResourcesPath before exposing the robot; public engine ConnectToRobot rejects an unready host before queueing anything. Production without a resource root fails loading rather than claiming success. Explicit offline/test fixtures may supply an empty corpus. Readiness is published only after successful return; native Connect handler/AddRobot have no new state gate. Existing full asynchronous engine loader/state machine is not claimed implemented.\nB-M3M4-29 (2026-10-15), built, awaiting strong verification: removed both unsupported throws: null ResourcesPath no longer rejects production construction, and ConnectToRobot no longer rejects a host request before HostBehaviorMapLoaded. The native ConnectToRobot/AddRobot have no state/load gate (0x004ED020..0x004ED07C, 0x004ED1E0..0x004ED1F2). Configured resource-map loading is retained before host constructor publication; null means no load to await and an empty retained host map, as the existing options contract permits. App connection timing is not an engine construction failure. Supersedes the B-M3M4-25 production-null rejection and its old early-connect exception test; no native loader state machine or new policy invented.\nB-M1-5 (2026-10-17), built, awaiting strong verification: Correction to the historical B-M3M4-29 note: null ResourcesPath still permits construction and an empty host behavior map, but now fails asynchronous startup clearly under M1-058/M1-034; it is not an empty-corpus successful production startup. ConnectAsync without resources reports IOException without a pre-cancelled token. ConnectToRobot itself retains no engine load gate.\nB-M1-5 manager-clarification follow-up (2026-10-18), built, awaiting strong verification: Manager clarification14ae481e: ConnectAsync waits for IsReadyDelivered, not engine-side IsReady. Its internal ready waiter is read at dispatch rather than captured at publication, so a slow initial Create-thread startup observer cannot make a late-installed waiter lose a queued ready transition. Subscribe-then-check handles already-delivered readiness. Direct ConnectToRobot remains ungated. This is host wait plumbing, not a new native gate or source-recovery claim.\nB-M1-6 (2026-10-18), built, awaiting strong verification: 84a6430b delivered-ready waiter retained. A forced-interleaving regression blocks the initial host report until engine state3 is stored/captured, then blocks names until ConnectAsync has subscribed, before releasing delivery. Real transport firmware/manufacturing packets complete ConnectAsync. Reflection only observes the waiter and retrieves the real transport, not substituting readiness or a handshake result.\nB-M1-7 (2026-10-18), built, awaiting strong verification: Readiness/failure subscribe-then-check handoffs now have publishing-side Thread.MemoryBarrier between the volatile flag store and subscriber read/capture, pairing with the existing event-add Interlocked fence. The first-tick test-only hook orders actual threads and substitutes no readiness, progress, transport or handler result. Both interleaving regressions hold the real runner before its first tick until initial host delivery is owned by the creating thread; that host callback releases the runner before waiting on real native-ready publication.\nManager (2026-10-18; research/20261018-m1m2-policy-confirmation.md): confirmed. Host wait point: engine state 3 delivered to the host (IsReadyDelivered), set in the same completion tick as the ratio-1 EngineLoadingDataStatus (0x004ED60E before 0x004ED612); ConnectToRobot is processed on a later tick either way. The cited test ConnectAsyncWithoutEngineOptionsReachesCancellationInsteadOfConstructionFailure is superseded by ConnectAsyncWithoutResourcesFailsStartupBeforeCancellation.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "; M3M4X25BuilderTests.ResourceRootBehaviorMapIsLoadedBeforeTheFirstRobotConstruction; M3M4X29BuilderTests.ProductionCreateWithoutEngineOptionsSupportsNullResources; M3M4X29BuilderTests.ConnectAsyncWithoutEngineOptionsReachesCancellationInsteadOfConstructionFailure; M3M4X25BuilderTests.EarlyHostConnectWithNoResourcesQueuesWithoutAConstructionOrLoadException; B-M1-5 M3M4X29BuilderTests.ConnectAsyncWithoutResourcesFailsStartupBeforeCancellation (production missing-root failure with non-cancelled token); StartupDeliveryRegressionTests.ConnectAsyncCallerCanObserveNamesAndEveryStartupTransition (production).; B-M1-5 clarification: StartupDeliveryRegressionTests.ConnectAsyncDoesNotMissReadyPublishedWhileCreateIsDeliveringAnEarlierReport (production public BeforeStart/ConnectAsync, real ticker/loopback connection request, then cancellation).; B-M1-6: StartupDeliveryRegressionTests.ConnectAsyncCompletesWhenSubscriptionFallsBetweenReadyCaptureAndDelivery (production, real ticker, scripted peer, no sleeps-as-proof).; B-M1-7: StartupDeliveryRegressionTests.ConnectAsyncDoesNotMissReadyPublishedWhileCreateIsDeliveringAnEarlierReport and ConnectAsyncCompletesWhenSubscriptionFallsBetweenReadyCaptureAndDelivery (production; first-tick seam orders threads only; repeated-run counts in B-M1-7 report)."
+    },
+    {
+      "id": "M5-010",
+      "subsystem": "M5-animation",
+      "title": "Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+      "evidence": [
+        "A2 0x0057A0D4..0x0057A20E, ProceduralFace::Reset 0x0058359C; AnimationTriggerMap.json:1308-1309",
+        "A30 0x0057BA60..0x0057BD6E",
+        "A31 0x0057CF6A..0x0057CFF2",
+        "R-ANIM pre-extraction part 1 item 3 P1..P8: _resetData GOT 0x103ED4C, Reset 0x0058359C, TLC::Init 0x0064EDE2, streamer ctor 0x0057A0D4..0x0057A288, default face 0x00583660",
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-010 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 7 (Opus fix rows, manager-adopted 2026-10-11)."
+      ],
+      "live_path": true,
+      "test": "M5AnimationTests.M5_010_A2_TheNeutralFaceIsTheLayerBase, M5AnimationTests.M5_010_A6_A31_TheNeutralFaceIsReplayedAfterACancel, M5AnimationTests.M5_010_P1_P2_WithoutANeutralFaceTheLayerBaseStaysTheDefault, M5FinalBuilderTests.KeepAliveUsesNanosecondsAtTheStrictHalfSecondBoundary, M5X13BuilderTests.MissingNeutralSkipsResetDataWriteAndRetainsPriorReset, M5X14BuilderTests.RobotConstructionReadsNeutralOnceAndLoadCompletionDoesNotRetry, M5X14BuilderTests.ResetMissAndFacelessClipKeepPriorResetData; M5X16BuilderTests; M5X14BuilderTests; M12RVisBuildTests",
+      "effect": "the resting face differs",
+      "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationScheduler.LoadNeutralFace is A2 (GetAnimationForTrigger(NeutralFace) \u2192 GetFirstAnimationName; an empty group an error, more than one a warning; the clip stored as \u002B0x40 and the face of its first ProceduralFace keyframe given to TrackLayerComponent.Init as the layer base); CozmoAnimations.LoadFrom runs it with the loaded library as the catalog. The keep-alive block replays it after an abort to nothing (\u002B0x73, A6, A31) and RemoveIdleAnimation does when the top becomes Count while an idle plays and nothing streams (A30). Verify round 3 (2026-09-29, C5 item 3): the reset data is null until SetResetData; Reset is a no-op when it is null, so the layer-base face stays the default-constructed ProceduralFace; the streamer constructor runs TLC::Init before any neutral face is read, and LoadNeutralFace is that read (SetResetData then Init). Settled EXACT_SOURCE on 2026-09-29 (R-ANIM, C5/C4): the rows above were checked by @cozmo-verifier against libcozmoEngine.so and the built path was verified.",
+      "unresolved": "Settled EXACT_SOURCE 2026-10-19 (re-analysis/research/20261019-m5-settling-b.md, manager-adopted): The three items reopened by the B-M5-13 check are closed: ResetToConstructed skips on a miss; the neutral read runs once per Robot (BindRobotLifetime); the faceless neutral is the M1-034 visible skip. Previous notes: Reopened 2026-10-12 by the Opus check of B-M5-13 (re-analysis/research/20261012-b-m5-13-check.md): the B-M5-13 hunk (skip SetResetData on a miss, 0x0057A1FA -\u003E 0x0057A214) is correct, but (1) ResetToConstructed (AnimationScheduler.cs:2005-2008) still calls SetResetData unconditionally on reconnect; (2) the native neutral read sits in the streamer constructor (0x0057A0D4..0x0057A288), so it runs per Robot with its logs and errG (0x0057A122, 0x0057A19E, 0x0057A234, GetAnimation InvalidName 0x0057A1F2); the stack runs it once per load (CozmoAnimations.cs:375), which also lets a late load run LoadNeutralFace on a destroyed scheduler; (3) a neutral clip with no ProceduralFace keyframe makes the original read address 0xC (0x0057A20A/0x0057A20C): no departure covers it yet. Job B-M5-14. Previous notes: Settled 2026-10-12 by the second M5 Opus pass (re-analysis/research/20261012-m5-settling-2.md): keep-alive gate 0x0057CF6A..0x0057CFF2 on the cached (float)(ns/1e9) clock 0x0084BC52..0x0084BC8C; neutral path 0x0057A0D4..0x0057A282; the InitStream miss is M5-054. Previous notes: built, awaiting strong verification: B-M5-1: BadNeutralAnimGroup, MultipleNeutralFaceAnimations and NeutralFaceDataNotFound exact sites. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-010 (logs: exact rows to be extracted). Settled (C5): the reset data is null until the streamer constructor\u0027s SetResetData; the layer base is the default face. The neutral face is read once in the streamer constructor, before TLC::Init. The engine\u0027s _resetData is a process static; here it is held per component, equivalent with one streamer. B-M5-8 (2026-10-12), built, awaiting strong verification: runner Timer.Nanoseconds now reaches the keep-alive gate and last-stream store as (float)(ns / 1e9), including the idle store (0x0084BC80, 0x0057CF86..0x0057CFAE, 0x0057D02A..0x0057D02E, 0x0057D428..0x0057D43E). B-M5-13 (2026-10-12), built, awaiting strong verification: Corrected neutral miss: 0x0057A1FA branches around SetResetData0x0057A20E, so missing clip/group skips the reset-data write, retaining any prior reset data before TLC.Init. Source keyed miss/error-flag tails unchanged. Existing EXACT_SOURCE classification retained per job; manager must reopen/re-settle this amendment. B-M5-14 (2026-10-12), built, awaiting strong verification: Per-Robot lifetime binding now reads neutral once; load completion publishes containers without touching the streamer. Reset skips SetResetData on miss; faceless neutral is visibly isolated under the approved M1-034 departure, retaining prior reset data. Native 0x57A0D4..0x57A288. B-M5-14 check (re-analysis/research/20261012-b-m5-14-check.md, re-analysis/research/20261012-m5-group-lookup.md): an early Robot logs GetResponse warning (0x006708E2), then M5-065 InvalidName and errG (C2 0x0057A0E2, looked up even for \u0022\u0022), then BadNeutralAnimGroup. The stack logged only the last; fix in B-M5-16.\nB-M5-16 built, awaiting strong verification: per-Robot pre-load read sees concrete empty containers with the same source sinks; GetResponse Warning, group InvalidName Error/errG for empty name, then BadNeutralAnimGroup Error/errG. A library published during loading forwards sinks to its default Triggers as well. No load-completion retry. M1-034 faceless skip is logged at construction only, not ResetToConstructed removal.",
+      "hardware_required": false
+    }
+  ],
+  "provenance": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/M13DriveOffHw.cs",
+      "sha256": "916f65295b8caf0c7c2682b5c2bb3b8833d6c8c5d04576ddff050918f5809b58"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs",
+      "sha256": "88011137ed34f00cbfca59398a569bd1961f949a250d2dd3b627323547a8656f"
+    },
+    {
+      "path": "re-analysis/acceptance/hardware/scripts/m13-driveoff-hw-1.md",
+      "sha256": "41dbeb38a103d2d694fbdea63e765918f40c98a2756ba57f8b0808c62a3a9383"
+    },
+    {
+      "path": "re-analysis/fidelity_manifest.json",
+      "sha256": "e2052804ae3dcbb23bc2db73a293436cf64664a0fa882b5155e0c291d9e8459b"
+    }
+  ],
+  "errors": [],
+  "acceptance": "NOT_JUDGED: manager review required; hardware success does not raise provenance"
+}
