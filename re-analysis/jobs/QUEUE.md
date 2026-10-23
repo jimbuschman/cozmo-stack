@@ -182,8 +182,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3y | [B-M13-12](B-M13-12.md) | DONE 7a8f79b5; Claude spot-check PASS research/20261022-b-m13-12-claude-check.md, fix queued B-M13-13 |
 | 61w3z | [B-M13-13](B-M13-13.md) | DONE d67b73bd; Claude spot-check: code PASS, tests missing (research/20261022-b-m13-13-claude-check.md) |
 | 61w40 | [B-M13-14](B-M13-14.md) | DONE; focused tests pass |
-| 61w41 | [B-M13-15](B-M13-15.md) | open (configuration pending set, Update gate, notify; groundwork C1-C6) |
-| 61w41a | [B-M13-18](B-M13-18.md) | open, after B-M13-15 (notify -> existing broadcaster UpdateStackHeight; R-M11-CONFIG-SUBSCRIBERS checked) |
+| 61w41 | [B-M13-15](B-M13-15.md) | DONE 7c45c2c9 (status 83ee04e0); full 6060/6060; Claude check PASS (research/20261023-b-m13-15-claude-check.md) |
+| 61w41a | [B-M13-18](B-M13-18.md) | open (reduced: subscriber tests and MISSING wording; the UpdateStackHeight call is in B-M13-15) |
 | 61w42 | [B-M13-16](B-M13-16.md) | open, after B-M13-18 (charger map add/cache/remove; groundwork M1-M9, W1) |
 | 61w43 | [B-M13-17](B-M13-17.md) | open, after B-M13-16 (SetPose pre-action cache clear; groundwork L1-L2) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
