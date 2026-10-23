@@ -40,6 +40,7 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **Drive-off robot check ready (manager, 2026-10-23).** `m13-driveoff-hw` (guide `acceptance/hardware/scripts/m13-driveoff-hw-1.md`): Cozmo starts on the charger, the shipped DriveOffCharger drives him off; graded on the 0x54 threshold wire (50,50 parked; nothing before >50 mm of recomputed travel; then two 400s), the single platform exit after the contacts drop, and the behaviour end. Verifier FAIL (grading window) fixed and re-verified PASS (`research/20261023-m13-driveoff-hw-claude-check.md`); 15/15 harness tests. **Operator runs it next.** Codex queued 2026-10-23: B-M13-15, B-M13-16, B-M13-17 (M13-017 shared pieces, one at a time) and research row 57 (R-M11-CONFIG-SUBSCRIBERS); each build gets a Claude check before acceptance.
 - **Resume point (manager, 2026-10-23).** Claude check PASS on the M13-017 groundwork (ec4dc4a8), the drive-off
   threshold tests (7cfb711d) and B-M13-14 (`research/20261023-m13-017-groundwork-tests-claude-check.md`). The threshold
   contract (50 until footprint exit or >50 mm travel) is covered through production. Next, in a **fresh session**:

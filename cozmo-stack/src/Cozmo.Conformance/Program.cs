@@ -21,6 +21,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "control-check" => ControlCheck.Run(args),
     "m3m4-hw" => M3M4Hw.Run(args),
     "m5-hw" => M5Hw.Run(args),
+    "m13-driveoff-hw" => M13DriveOffHw.Run(args),
     "m1m2-hw" => M1M2Hw.Run(args),
     "fakerobot" => FakeRobot(args),
     "probe" => Probe.Run(args).GetAwaiter().GetResult(),
@@ -175,6 +176,7 @@ static int Usage()
                                              Exit 0 PASS, 1 FAIL or INCOMPLETE, 2 usage or OBB missing, 3 watchdog,
                                              4 interrupted (Ctrl+C)
           m5-hw [robot-ip] --resources <dir> [--only <checks>] [--allow-drive] [--out <dir>] [--yes] | --validate
+          m13-driveoff-hw [robot-ip] --resources <dir> [--out <dir>] [--yes] | --validate | --preview
           m3m4-hw [robot-ip] --resources <dir> [--only <checks>] [--include-lift] [--allow-drive] [--cube-wait <s>] [--photo KEY=path] [--out <dir>] [--yes]
                                              DRAFT hardware run M3M4-HW (M3-008, M3-016, M3-036, M4-013, M4-021, M4-024): observations only, no PASS
           m1m2-hw [robot-ip] --resources <cozmo_resources> [--skip-connect-async] [--operator <label>] [--out <dir>] [--yes]
