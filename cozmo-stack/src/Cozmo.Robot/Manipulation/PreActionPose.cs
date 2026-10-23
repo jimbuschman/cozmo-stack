@@ -219,6 +219,10 @@ public static class CubePreActionPoses
     /// <summary>One element of <c>Block::GeneratePreActionPoses</c>'s output: the pose stored in the object's cache vector (marker-local, before the push-out).</summary>
     public sealed record StoredElement(KnownMarker Marker, Pose3d Stored, Vec3 BuiltTranslation, double BuiltAngle, int Sb)
     {
+        // Native element +0/type and +0x18/scalar; the charger supplies positive zero.
+        public PreActionType Type {get;init;}
+        public float DistanceMm {get;init;}
+        internal bool OwnsStoredPose {get;init;}
         // fidelity: M12-038 — the stored element includes +14, alongside its existing +18 value.
         public float HeightToleranceMm { get; init; } = PreActionPose.ComputeHeightTolerance(Stored.Translation);
     }
@@ -230,11 +234,7 @@ public static class CubePreActionPoses
     // fidelity: M12-001, M12-021
     public static List<StoredElement> GenerateStored(ObservableObject cube, PreActionType type)
     {
-        if (cube.Type == ObjectType.Charger_Basic)
-        {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001/M13-040 GetCurrentPreActionPoses virtual generator 0x004DF8BA -> Charger.GeneratePreActionPoses 0x004E9FB0: ChargerGeometry.GeneratePreActionPoses exists, but its stored PreActionPose element/constructor adapter is not bound to this cache. L2 establishes empty-vector regeneration, not the charger element's scalar/parent contract");
-            return new List<StoredElement>();
-        }
+        if (cube.Type == ObjectType.Charger_Basic)return GenerateChargerStored(cube,type);
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001 PreActionPose ctor integration 0x0050DB14/0x0050DB6C/0x0050DCFC/0x0050DF00: stored/world cache still uses the existing flat marker/object adapter; IsChildOf body called at 0x0050DD4E and complete native marker-parent input binding are not checked here, so the two constructor error/continue paths and derived SetParent(P.GetParent()) 0x0050DFFA..0x0050E002 are not claimed built. Height tolerance and MakeUnitLength arithmetic are built independently");
         var list = new List<StoredElement>();
         if (type is PreActionType.Entry or PreActionType.None) return list;
@@ -252,8 +252,40 @@ public static class CubePreActionPoses
                 // PreActionPose ctor re-roots to the marker's parent, so stored = marker.PoseOnObject ∘ built.
                 var built = new Pose3d(builtAngle, new Vec3(0, 0, 1), builtTranslation);
                 var rotated = RotateBy(built, sb);
-                list.Add(new StoredElement(marker, marker.PoseOnObject.Compose(rotated), builtTranslation, builtAngle, sb));
+                list.Add(new StoredElement(marker, marker.PoseOnObject.Compose(rotated), builtTranslation, builtAngle, sb){Type=type,DistanceMm=(float)DistanceFor(type)});
             }
+        }
+        return list;
+    }
+
+    // fidelity: M13-009, M12-001 - Charger::GeneratePreActionPoses 0x004E9FB0..0x004EA122.
+    private static List<StoredElement> GenerateChargerStored(ObservableObject charger,PreActionType type)
+    {
+        var list=new List<StoredElement>();
+        if((uint)type>1)return list;
+        if(charger.ChargerMarker is not {} marker || marker.PoseOnObject.Node is null)
+        {StackDiagnostics.Write("M1-034 M13-009 null charger marker at 0x004EA048/0x004EA058: skip stored element; prior state retained");return list;}
+        float angle=0f+BitConverter.UInt32BitsToSingle(ChargerGeometry.PreDockAngleAddBits);
+        var translation=new Vec3(0f,-BitConverter.UInt32BitsToSingle(ChargerGeometry.PreDockDistanceBits),
+            BitConverter.UInt32BitsToSingle(ChargerGeometry.PreDockZBits));
+        using var temporary=new Pose3d(Rotation3d.FromAngleAxis(new Radians(angle).Value,new Vec3(0,0,1)),translation,
+            "Charger"+unchecked((int)charger.ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture)+"PreActionPose",marker.PoseOnObject);
+        // Pose ctor 0x0050DCFC: IsChildOf is true by construction of this immediate parent.
+        // This valid producer does not implement the unread generic IsChildOf body or accept arbitrary pose arguments.
+        Pose3d parent=null!;
+        if(!marker.PoseOnObject.TryGetParent(ref parent))
+        {StackDiagnostics.Write("M1-034 M12-001/M13-009 marker GetParent root read 0x008452BA: skip stored element");return list;}
+        using(parent)
+        {
+            var stored=new Pose3d();
+            try
+            {
+                if(!temporary.TryWithRespectTo(parent,stored))
+                    PoseDiagnostics.Error("PreActionPose.GetPoseWrtMarkerParentFailed","Could not get the pre-action pose w.r.t. the marker's parent.");
+                stored.Name="PreActionPose";
+                list.Add(new StoredElement(marker,stored,translation,angle,0){Type=type,DistanceMm=0f,OwnsStoredPose=true});
+            }
+            catch{stored.Dispose();throw;}
         }
         return list;
     }
@@ -273,14 +305,18 @@ public static class CubePreActionPoses
                                                    double preDockPoseOffsetMm = 0)
     {
         var poses = new List<PreActionPose>();
-        foreach (var e in GenerateStored(cube, type)) poses.Add(Compose(cube, e, type, robotPose, preDockPoseOffsetMm));
+        var generated=GenerateStored(cube,type);
+        try{foreach(var e in generated)poses.Add(Compose(cube,e,type,robotPose,preDockPoseOffsetMm));}
+        finally{foreach(var e in generated)if(e.OwnsStoredPose)e.Stored.Dispose();}
         return poses;
     }
 
     private static PreActionPose Compose(ObservableObject cube, StoredElement e, PreActionType type, Pose3d robotPose, double preDockPoseOffsetMm)
     {
-        var world = ComposeWorld(cube.Pose, e.Stored, robotPose, DistanceFor(type), preDockPoseOffsetMm);
-        return new PreActionPose(type, e.Marker, world, DistanceFor(type))
+        if(cube.Type==ObjectType.Charger_Basic)
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001/M13-009 derived world pre-action constructor 0x0050DF00..0x0050E04A: existing ComposeWorld adapter still has flat output-parent/generic lifetime gaps; charger stored type/marker/zero scalar and parent are built, full world-result fidelity is not claimed");
+        var world = ComposeWorld(cube.Pose, e.Stored, robotPose, e.DistanceMm, preDockPoseOffsetMm);
+        return new PreActionPose(e.Type, e.Marker, world, e.DistanceMm)
         {
             LocalOffsetMm = e.BuiltTranslation,
             LocalAngleRad = e.BuiltAngle,
@@ -296,8 +332,13 @@ public static class CubePreActionPoses
         if(!Caches.TryGetValue(obj,out var caches))return;
         lock(caches)
         {
-            if(caches.Values.Any(cache=>cache.Count!=0))Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001/M12-045 ActionableObject.SetPose 0x004E01F8..0x004E0212 cached pre-action pose destructor/retained-value ownership is not fully bound; vector contents clear, full pose-lifetime cleanup remains unbuilt");
-            foreach(var cache in caches.Values)cache.Clear();
+            if(caches.Values.Any(cache=>cache.Any(e=>!e.OwnsStoredPose)))Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001/M12-045 ActionableObject.SetPose 0x004E01F8..0x004E0212 cached pre-action pose destructor/retained-value ownership is not fully bound; vector contents clear, full pose-lifetime cleanup remains unbuilt");
+            foreach(var cache in caches.Values)
+                while(cache.Count!=0)
+                {
+                    var last=cache[^1];cache.RemoveAt(cache.Count-1); // native end decrement before pose destructor
+                    if(last.OwnsStoredPose)last.Stored.Dispose();
+                }
         }
     }
 
@@ -324,16 +365,44 @@ public static class CubePreActionPoses
             {
                 if (!caches.TryGetValue(type, out cache!)) caches[type] = cache = new List<StoredElement>();
                 if (cache.Count == 0) { regenerated = true; cache.AddRange(GenerateStored(obj, type)); }
-                cache = cache.ToList();
+                cache = SnapshotForCollection(cache);
             }
-            foreach (var e in cache)
+            try
             {
-                if (withCode.Count > 0 && !withCode.Contains(e.Marker.Code)) continue;
-                var pose = Compose(obj, e, type, robotPose, preDockPoseOffsetMm);
-                if (PreActionValidity.IsPreActionPoseValid(obj, pose, obstacles, trace)) output.Add(pose);
+                foreach (var e in cache)
+                {
+                    if (withCode.Count > 0 && !withCode.Contains(e.Marker.Code)) continue;
+                    var pose = Compose(obj, e, type, robotPose, preDockPoseOffsetMm);
+                    bool appended=false;
+                    try
+                    {
+                        if(PreActionValidity.IsPreActionPoseValid(obj,pose,obstacles,trace)){output.Add(pose);appended=true;}
+                    }
+                    finally{if(e.OwnsStoredPose && !appended)pose.WorldPose.Dispose();}
+                }
             }
+            finally{foreach(var e in cache)if(e.OwnsStoredPose)e.Stored.Dispose();}
         }
         return regenerated;
+    }
+
+    // 0x004DF8C8 range copy, copy ctor 0x0050E138..0x0050E166. Only newly owned charger entries
+    // use this full pose copy; generic legacy cube-cache ownership remains explicitly MISSING.
+    internal static List<StoredElement> SnapshotForCollection(IReadOnlyList<StoredElement> cache)
+    {
+        var copy=new List<StoredElement>();
+        try
+        {
+            foreach(var element in cache)
+            {
+                if(!element.OwnsStoredPose){copy.Add(element);continue;}
+                var pose=new Pose3d(element.Stored);
+                try{copy.Add(element with{Stored=pose});}
+                catch{pose.Dispose();throw;}
+            }
+            return copy;
+        }
+        catch{foreach(var element in copy)if(element.OwnsStoredPose)element.Stored.Dispose();throw;}
     }
 
     /// <summary>The gate at 0x004E5976/0x004E5B94/0x004E5C80: <c>(1&lt;&lt;sb) &amp; mask</c>, only for types 0, 4 and 5.</summary>

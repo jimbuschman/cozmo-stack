@@ -198,7 +198,16 @@ public sealed partial class ObservableObject
 
     public ObservableObject(uint objectId, ObjectType type, IReadOnlyList<KnownMarker> markers)
     {
-        ObjectId = objectId; Type = type; Markers = markers.Select(m => m with { LastObservedTimestamp = null }).ToArray();
+        ObjectId = objectId; Type = type;
+        if(type==ObjectType.Charger_Basic)
+        {
+            // fidelity: M13-009, M12-001 - AddMarker result retained at Charger+0xFC (0x004E9C38..3C).
+            var definition=ChargerGeometry.Markers[0];
+            var markerPose=new Pose3d(definition.PoseOnObject.Quaternion,definition.PoseOnObject.Translation,parent:_pose);
+            ChargerMarker=new KnownMarker(definition.Code,definition.Face,markerPose,definition.SizeMm){HeightMm=definition.HeightMm};
+            Markers=new[]{ChargerMarker};
+        }
+        else Markers = markers.Select(m => m with { LastObservedTimestamp = null }).ToArray();
         foreach (var marker in Markers)
         {
             short code = unchecked((short)marker.Code);
@@ -222,6 +231,7 @@ public sealed partial class ObservableObject
     public ObjectType Type { get; }
     public ObjectFamily Family { get; }
     public IReadOnlyList<KnownMarker> Markers { get; }
+    internal KnownMarker? ChargerMarker {get;} // exact owned AddMarker identity; never reselected during generation
     /// <summary>obj+0x40: the radio slot of the connected cube this object was matched with, -1 by default (ActiveCube ctor 0x004E0C4C, Charger ctor 0x004E9CD4).</summary>
     public int ActiveId { get; internal set; } = -1;
     /// <summary>obj+0x44: the cube's factory ID, 0 by default (0x004E0C58).</summary>
@@ -247,7 +257,17 @@ public sealed partial class ObservableObject
     public Pose3d Pose
     {
         get{if(!NativeCarryingTree)return _pose;using var flat=_pose.GetWithRespectToRoot();return Pose3d.FromFlatRotation(flat.Quaternion,flat.Translation);}
-        internal set=>_pose=value;
+        internal set
+        {
+            if(Type==ObjectType.Charger_Basic)
+            {
+                // 0x004EF598..0x004EF5A2 assigns into the object's embedded pose; marker children retain that node.
+                if(_pose.Node is null)_pose=new Pose3d(value); // host fixture may have released its initial wrapper
+                else _pose.AssignInputValue(value);
+            }
+            else _pose=value;
+            if(ChargerMarker is {} marker)marker.PoseOnObject.SetParent(_pose);
+        }
     }
     public PoseState PoseState { get; internal set; } = PoseState.Unknown;
     public bool IsLocated => PoseState != PoseState.Unknown;

@@ -23,9 +23,14 @@ public sealed class M13ChargerMapTests
             Maps.Maps[Root.Id]=Memory;Maps.RobotPose=()=>RobotPose;Maps.ImageTimestamp=()=>123u;
         }
         internal void Move(float x=0,float y=0,float z=0,float angle=0)
-        {ObjectPose.Node!.Transform=new Transform3d(Rotation3d.FromAngleAxis(angle,new Vec3(0,0,1)),new Vec3(x,y,z));}
+        {
+            // 0x004EF598..0x004EF5A2 copies the input; moving that input is not itself a native SetPose.
+            Assert.NotSame(ObjectPose.Node,Object.NativePose.Node); // B-M13-22 old setter aliases the two nodes
+            ObjectPose.Node!.Transform=new Transform3d(Rotation3d.FromAngleAxis(angle,new Vec3(0,0,1)),new Vec3(x,y,z));
+            Object.SetPose(ObjectPose,-1,PoseState.Known);
+        }
         internal void Add()=>Maps.UpdateObjectPose(Object,null,PoseState.Unknown);
-        public void Dispose(){Maps.Dispose();ObjectPose.Dispose();RobotPose.Dispose();Root.Dispose();}
+        public void Dispose(){Maps.Dispose();Object.ChargerMarker?.PoseOnObject.Dispose();Object.NativePose.Dispose();ObjectPose.Dispose();RobotPose.Dispose();Root.Dispose();}
     }
 
     // reach: unit (supplies owned poses and camera time; real confirmer/world/map caller; generic tree M11-048 remains MISSING).
@@ -48,6 +53,7 @@ public sealed class M13ChargerMapTests
     [InlineData(0f,4f,0f,0f)]
     [InlineData(0f,0f,4f,0f)]
     [InlineData(0f,0f,0f,0.1f)]
+    // B-M13-22 old value: input and charger share one pose node; native SetPose copies, so this case now checks independence.
     public void ValidWithinThresholdSkipsWithoutTimestampDedup(float x,float y,float z,float angle)
     {
         using var f=new Fixture();int inserts=0;f.Memory.ObjectInsertForTest=(_,_)=>inserts++;
@@ -61,6 +67,7 @@ public sealed class M13ChargerMapTests
     // reach: unit (owned robot/object poses and time; real height helper/cache and retry dispatch).
     // Old code: no cache entry and no remove/add continuation; new code stores the ORIGINAL high pose then retries.
     [Fact]
+    // B-M13-22 old value: input and charger share one pose node; native SetPose copies, so this case now checks independence.
     public void FalseHeightEntryRetriesRemoveThenAddRatherThanTakingAbsentEntryBranch()
     {
         using var f=new Fixture();f.Move(z:200);f.Add();
@@ -76,6 +83,7 @@ public sealed class M13ChargerMapTests
     // reach: unit (supplies owned robot/object roots and time; tree geometry MISSING at 0x006817D2).
     // Old code: 0 inserts/cache entries. New: 1 per root and no removal for either absent entry.
     [Fact]
+    // B-M13-22 old value: input and charger share one pose node; native SetPose copies, so this case now checks independence.
     public void AbsentValidEntryAddsWithoutRemovalAndKeepsSeparateRootEntries()
     {
         using var otherRoot=new Pose3d("other") {Id=202};using var f=new Fixture();
@@ -85,6 +93,8 @@ public sealed class M13ChargerMapTests
         var otherMap=new MemoryMap();otherMap.ObjectInsertForTest=(_,_)=>inserts++;
         otherMap.ObjectRemovalForTest=_=>removes++;
         f.Maps.Maps[202]=otherMap;f.ObjectPose.SetParent(otherRoot);f.RobotPose.SetParent(otherRoot);
+        Assert.NotSame(f.ObjectPose.Node,f.Object.NativePose.Node); // B-M13-22 old setter shares input node
+        f.Object.SetPose(f.ObjectPose,-1,PoseState.Known);
         f.Maps.UpdateObjectPose(f.Object,f.ObjectPose,PoseState.Known);
         Assert.Equal(2,inserts);Assert.Equal(0,removes);
         Assert.True(f.Maps.CachedObjectPose(77,101)!.Value.Added);Assert.True(f.Maps.CachedObjectPose(77,202)!.Value.Added);
@@ -93,6 +103,7 @@ public sealed class M13ChargerMapTests
     // reach: unit (supplies owned robot/object poses and camera time; real GetWithRespectTo and height helper).
     // Old code: no true entry. New: true even at world z200, because the actual robot-relative z is zero.
     [Fact]
+    // B-M13-22 old value: input and charger share one pose node; native SetPose copies, so this case now checks independence.
     public void HeightUsesRobotRelativePoseRatherThanWorldZ()
     {
         using var f=new Fixture();f.Move(z:200);
