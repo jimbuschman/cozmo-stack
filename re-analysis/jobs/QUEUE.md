@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work: B-M13-10 and B-M13-11 are done (Codex bounded reviews; Claude spot-check pending).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work (manager, 2026-10-23): B-M13-15, B-M13-16, B-M13-17 in order, one at a time (M13-017 shared pieces from the checked groundwork).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -182,6 +182,9 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3y | [B-M13-12](B-M13-12.md) | DONE 7a8f79b5; Claude spot-check PASS research/20261022-b-m13-12-claude-check.md, fix queued B-M13-13 |
 | 61w3z | [B-M13-13](B-M13-13.md) | DONE d67b73bd; Claude spot-check: code PASS, tests missing (research/20261022-b-m13-13-claude-check.md) |
 | 61w40 | [B-M13-14](B-M13-14.md) | DONE; focused tests pass |
+| 61w41 | [B-M13-15](B-M13-15.md) | open (configuration pending set, Update gate, notify; groundwork C1-C6) |
+| 61w42 | [B-M13-16](B-M13-16.md) | open, after B-M13-15 (charger map add/cache/remove; groundwork M1-M9, W1) |
+| 61w43 | [B-M13-17](B-M13-17.md) | open, after B-M13-16 (SetPose pre-action cache clear; groundwork L1-L2) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -293,3 +296,4 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 54 | [R-M7-MOOD-MISSING](../research/requests/20261021-m7-missing-mood-config-outcome.md) | HELD (reading hold 2026-10-21; M7/M14 wait for their layer) |
 | 55 | [R-M14-CALIBRATION-CORPUS](../research/requests/20261021-m14-existing-calibration-corpus.md) | HELD (reading hold 2026-10-21; M7/M14 wait for their layer) |
 | 56 | [R-M13-017-REST](../research/requests/20261022-m13-017-remaining-footprints.md) | answered 321c6ac0; **Claude check: central claim wrong** (charger is ActionableObject, not Markerless; research/20261022-r-m13-017-rest-claude-check.md); not usable for a build |
+| 57 | [R-M11-CONFIG-SUBSCRIBERS](../research/requests/20261023-m11-config-notify-subscribers.md) | open (feeds the B-M13-15 follow-up: notify subscribers) |
