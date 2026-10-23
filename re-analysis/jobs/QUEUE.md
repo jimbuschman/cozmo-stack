@@ -186,6 +186,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w41a | [B-M13-18](B-M13-18.md) | DONE 8f562461..76ccce0d; full 6065/6065 here; Claude check PASS (research/20261023-b-m13-18-claude-check.md); the reported blocker was an M3M4ReviewFixTests setup timing flake, fixed |
 | 61w42 | [B-M13-16](B-M13-16.md) | DONE ec46eceb (status b5371ef0); full 6078/6078; 6 MISSING; Claude check PASS (research/20261023-b-m13-16-claude-check.md) |
 | 61w43 | [B-M13-17](B-M13-17.md) | DONE f6f370bc (status 1b135e7f); full 6084; 3 MISSING; Claude check PASS (research/20261023-b-m13-17-claude-check.md) |
+| 61w44 | [B-M13-19](B-M13-19.md) | open (native tree insert geometry and collision ray query; R-M11-TREE-GEOMETRY checked) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -299,4 +300,4 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 56 | [R-M13-017-REST](../research/requests/20261022-m13-017-remaining-footprints.md) | answered 321c6ac0; **Claude check: central claim wrong** (charger is ActionableObject, not Markerless; research/20261022-r-m13-017-rest-claude-check.md); not usable for a build |
 | 57 | [R-M11-CONFIG-SUBSCRIBERS](../research/requests/20261023-m11-config-notify-subscribers.md) | answered 5c3e88f2; Claude check PASS (research/20261023-r-m11-config-subscribers-claude-check.md); feeds B-M13-18 |
 | 58 | [R-M13-038-LIFETIME](../research/requests/20261023-m13-038-audio-client-lifetime.md) | answered 528ea827; Claude check PASS (research/20261023-r-m13-038-lifetime-claude-check.md); agrees with the adopted M13-038 result; no new build |
-| 59 | [R-M11-TREE-GEOMETRY](../research/requests/20261023-m11-tree-insert-ray-geometry.md) | open (feeds the native tree insert and ray query for CanDriveIdealDistanceForward; B-M13-16 MISSINGs 1 and 5) |
+| 59 | [R-M11-TREE-GEOMETRY](../research/requests/20261023-m11-tree-insert-ray-geometry.md) | answered 8c56752b; Claude check PASS (research/20261023-r-m11-tree-geometry-claude-check.md); feeds B-M13-19 |
