@@ -210,7 +210,7 @@ public sealed class BlockConfigurationManager
                 UpdateLastCheckPoses();
                 NotifyCount++;
                 NativeRobot?.Invoke()?.BehaviorPublicState.UpdateStackHeight(unchecked((byte)(GetTallestStack()?.StackHeight ?? 0)));
-                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 NotifyBroadcasterOfConfigurationManagerUpdate 0x0064DCAA..0x0064DD78: native configuration-container/tallest-stack producer and complete subscriber/game-message closure remain unbuilt; existing semantic public-state owner stores byte+6 and dispatches its signal only on change");
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037/M12-049 NotifyBroadcasterOfConfigurationManagerUpdate 0x0064DCAA..0x0064DD76: native configuration-container and tallest-stack producer remain unbuilt; existing public-state owner dispatches to the two known BehaviorAudioClients, BehaviorManager A before BehaviorSystemManager B");
             }
             // Both the no-movement and successful rebuild branches reset here, after notify.
             ForceUpdate = false;
