@@ -1,3 +1,4 @@
+using System.Reflection;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
@@ -11,26 +12,61 @@ public sealed class M13ConfigurationAudioNotifyTests
 {
     private sealed class Fixture : IDisposable
     {
-        internal readonly M4ControlTests.Rig Rig = new();
-        internal readonly ManipulationSystem Manipulation;
+        internal readonly M4ControlTests.Rig Rig;
+        internal readonly ManipulationSystem Manipulation = null!;
         internal EngineRobot Robot => Rig.Engine.Robot!;
         internal BlockConfigurationManager Configurations => Manipulation.Configurations;
         internal readonly List<byte> Heights = new();
         internal readonly List<string> Visits = new();
         internal readonly List<BehaviorAudioRequest> Requests = new();
-        private readonly RetainedSubscription _observation;
+        private readonly RetainedSubscription? _observation;
+        private readonly int _missingSubscribers = MissingSubscribers();
+        private readonly List<Thread> _workers = new();
+        private bool _disposed;
+        internal Action? BeforeObserverRelease; // fixture-only failure injection; never installed on the robot
         private readonly List<uint> _cubeIds = new();
         internal Fixture()
         {
-            Rig.ToSynced(); Rig.Robot.Vision.Enabled = false;
-            Manipulation = new ManipulationSystem(Rig.Robot, Rig.Robot.Vision);
-            // Observe the existing robot-owned clients; never construct or replace either subscriber.
-            Assert.NotNull(Robot.BehaviorAudioA); Assert.NotNull(Robot.BehaviorAudioB);
-            Assert.NotSame(Robot.BehaviorAudioA, Robot.BehaviorAudioB);
-            Robot.BehaviorAudioA!.StepForTest = step => { if (step == "world") Visits.Add("A"); };
-            Robot.BehaviorAudioB!.StepForTest = step => { if (step == "world") Visits.Add("B"); };
-            Robot.BehaviorAudioRecipient = Requests.Add; // observe robot+0x58 requests; no M6/M9 playback substitute
-            _observation = Robot.BehaviorPublicState.Subscribe(state => Heights.Add(state.StackHeight));
+            Rig = new();
+            try
+            {
+                Rig.ToSynced(); Rig.Robot.Vision.Enabled = false;
+                Manipulation = new ManipulationSystem(Rig.Robot, Rig.Robot.Vision);
+                // Observe the existing robot-owned clients; never construct or replace either subscriber.
+                Assert.NotNull(Robot.BehaviorAudioA); Assert.NotNull(Robot.BehaviorAudioB);
+                Assert.NotSame(Robot.BehaviorAudioA, Robot.BehaviorAudioB);
+                Robot.BehaviorAudioA!.StepForTest = step => { if (step == "world") Visits.Add("A"); };
+                Robot.BehaviorAudioB!.StepForTest = step => { if (step == "world") Visits.Add("B"); };
+                Robot.BehaviorAudioRecipient = Requests.Add; // observe robot+0x58 requests; no M6/M9 playback substitute
+                _observation = Robot.BehaviorPublicState.Subscribe(state => Heights.Add(state.StackHeight));
+                // Even a manually ticked rig owns transport and DAS workers. Keep their exact references,
+                // rather than comparing process thread counts or assuming the manual rig has no threads.
+                CaptureThread(Field(Field(Rig.Robot.Transport, "_exec")!, "_thread"));
+                CaptureThread(Field(Field(Rig.Robot.Transport, "_deferred")!, "_thread"));
+                CaptureThread(Field(Rig.Engine.Das, "_worker"));
+                CaptureThread(Field(Rig.Robot.Vision, "_processorThread"));
+                CaptureThread(Rig.Engine.FirmwareHeaderLoader);
+                Assert.Null(Field(Rig.Engine, "_runner")); // CreateForTest has no engine tick thread.
+            }
+            catch
+            {
+                try { _observation?.Dispose(); }
+                finally { try { Manipulation?.Dispose(); } finally { Rig.Dispose(); } }
+                throw;
+            }
+        }
+        private static object? Field(object owner, string name) => owner.GetType()
+            .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(owner);
+        private static int MissingSubscribers() => (typeof(SteppedBehavior)
+            .GetField("MissingReported", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null) as Delegate)
+            ?.GetInvocationList().Length ?? 0;
+        private void CaptureThread(object? value) { if (value is Thread worker) _workers.Add(worker); }
+        internal void AssertReleased()
+        {
+            Assert.Null(Rig.Engine.Robot);
+            Assert.Equal(0, Rig.Engine.AnimationMessages.Count(0xA3, false));
+            Assert.Equal(_missingSubscribers, MissingSubscribers());
+            Assert.All(_workers, worker => Assert.False(worker.IsAlive, $"Fixture left {worker.Name} running"));
         }
         internal void AddCube(uint id, float z)
         {
@@ -72,8 +108,46 @@ public sealed class M13ConfigurationAudioNotifyTests
         }
         public void Dispose()
         {
-            Robot.BehaviorAudioA!.StepForTest = null; Robot.BehaviorAudioB!.StepForTest = null;
-            Robot.BehaviorAudioRecipient = null; _observation.Dispose(); Manipulation.Dispose(); Rig.Dispose();
+            if (_disposed) return;
+            _disposed = true;
+            var native = Robot;
+            try
+            {
+                native.BehaviorAudioA!.StepForTest = null; native.BehaviorAudioB!.StepForTest = null;
+                native.BehaviorAudioRecipient = null;
+                BeforeObserverRelease?.Invoke();
+            }
+            finally
+            {
+                try { _observation?.Dispose(); }
+                finally { try { Manipulation.Dispose(); } finally { Rig.Dispose(); } }
+            }
+            AssertReleased();
+        }
+    }
+
+    // reach: unit (test-fixture teardown only; no source-fidelity or production behavior claim).
+    // Old sequential cleanup leaves Engine.Robot non-null, its two A3 subscriptions and owned workers alive
+    // when observer cleanup throws. The finally chain must release all of them before propagating the error.
+    [Fact]
+    public void FixtureReleasesItsRobotSubscriptionsAndWorkersWhenObserverCleanupThrows()
+    {
+        var fixture = new Fixture();
+        fixture.BeforeObserverRelease = () => throw new InvalidOperationException("fixture observer cleanup");
+        try
+        {
+            var error = Assert.Throws<InvalidOperationException>(() => fixture.Dispose());
+            Assert.Equal("fixture observer cleanup", error.Message);
+            fixture.AssertReleased();
+        }
+        finally
+        {
+            // Also release resources on the old-code regression path, so a failing isolation test cannot
+            // itself contaminate the following live-engine tests.
+            if (fixture.Rig.Engine.Robot is not null)
+            {
+                try { fixture.Manipulation.Dispose(); } finally { fixture.Rig.Dispose(); }
+            }
         }
     }
 
