@@ -14,9 +14,7 @@ public sealed class M13X2BuilderTests
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));
         var events=new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();rig.Robot.Engine.LogEntry+=events.Enqueue;
-        // A / reach: unit: old parentless goal gave FailedTraversingPath; supply the production origin parent.
         using var goalInput=At(200,0,MathF.PI/2);
-        goalInput.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
         var drive=new DriveToPoseAction(rig.M){Goal=goalInput};
         var result=SignalTestContext.Result(drive.RunAsync(default),()=>rig.Pump());
         Assert.Equal(ActionResult.Success,result);var turn=rig.Sent.OfType<AppendPathSegmentPointTurn>().Last();

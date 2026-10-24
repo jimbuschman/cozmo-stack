@@ -6,6 +6,14 @@ namespace Cozmo.Robot;
 // fidelity: M11-097, M11-051, M11-053
 public sealed partial class EngineRobot
 {
+    // Robot::GetPose 0x004EA398, copied while holding the current-pose writer's gates in the same order.
+    internal Pose3d CopyCheckedMainPose()
+    {
+        Pose3d snapshot=null!;
+        using var frame=Engine.DelocalizationWorld?.EnterPoseMutation();
+        LogCallbackDeferral.RunGated(PoseTreeGate,()=>snapshot=new Pose3d(GetCheckedMainPose()));
+        return snapshot;
+    }
     internal byte OnRampState; // robot+0x316; no true writer is reachable under M2-024/OV127
     internal uint LastHistoryAdmissionResult {get;private set;}
     internal uint LastFullStateResult {get;set;}

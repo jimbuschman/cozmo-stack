@@ -136,9 +136,11 @@ public sealed class FlipBlockAction
             _trace.Add($"FlipBlockAction.CheckIfDone: object {ObjectId} is not located while the compound is running (warning); BadObject");
             return ActionResult.BadObject;
         }
-        if (!LiftRaised && _m.RobotPose() is { } now)
+        using var now=LiftRaised?null:_m.CopyPreActionRobotPose();
+        if (now is not null)
         {
-            var t = obj.Pose.WithRespectTo(now).Translation;                                      // GetWithRespectTo at 0x0055F0E0
+            using var relative=obj.NativePose.WithRespectTo(now);
+            var t = relative.Translation;                                      // GetWithRespectTo at 0x0055F0E0
             float norm = Norm3(t);                                                                 // [T+0x20]^2, then [T+0x24]^2 and [T+0x28]^2, vsqrt.f32 (binary32)
             if (norm < (float)LiftTriggerDistanceMm)
             {
@@ -160,7 +162,7 @@ public sealed class FlipBlockAction
     {
         var target = _m.World.GetLocatedObjectById(ObjectId);
         if (target is null) { _trace.Add("FlipBlockAction.Init.NullObject"); return ActionResult.BadObject; }
-        var robot = _m.RobotPose();
+        using var robot = _m.CopyPreActionRobotPose();
         if (robot is null) return ActionResult.Abort;
         // fidelity: M12-031
         // FlipBlockAction::Init 0x0055EDC8 calls IDockAction::GetPreActionPoses at 0x0055EE5E EVEN WHEN +0x140 is 0, with flag A = the byte [this+0x140], tolerance 0x3DB2B8C2, and
@@ -313,7 +315,7 @@ public sealed class DriveAndFlipBlockAction
     public static ActionResult GetPossiblePoses(ManipulationSystem m, ObservableObject obj, out IReadOnlyList<PreActionPose> posesOut, bool closestOnly, List<string>? trace = null)
     {
         posesOut = Array.Empty<PreActionPose>();
-        var robotOpt = m.RobotPose();
+        using var robotOpt = m.CopyPreActionRobotPose();
         if (robotOpt is null) return ActionResult.Abort;
         var robot = robotOpt.Value;
         var output = DockPreActionPoses.Get(new PreActionPoseInput(obj, PreActionType.Flipping, FlagA: false, FlipBlockAction.InitAngleToleranceRad, 0.0, UseApproachAngle: false, 0.0),
@@ -344,7 +346,11 @@ public sealed class DriveAndFlipBlockAction
             var pa = output.Poses[a].WorldPose; var pb = output.Poses[b].WorldPose;
             if (face is not null)
             {
-                float da = Distance(pa, face.HeadPose), db = Distance(pb, face.HeadPose);
+                // Faces.cs supplies a flat world value. Bind only this local comparison copy to the native frame.
+                using var facePose=new Pose3d(face.HeadPose);
+                if(!facePose.HasParent && robot.HasParent)
+                {Pose3d parent=null!;if(robot.TryGetParent(ref parent))using(parent)facePose.SetParent(parent);}
+                float da = Distance(pa, facePose), db = Distance(pb, facePose);
                 chosen = da > db ? a : b;                                                             // ties and NaN give B
             }
             else
