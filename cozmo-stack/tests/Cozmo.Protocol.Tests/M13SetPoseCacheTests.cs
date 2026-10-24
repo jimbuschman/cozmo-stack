@@ -99,7 +99,9 @@ public sealed class M13SetPoseCacheTests
     [Fact]
     public void GoalCopiedBeforeSameValueSetPoseKeepsItsPoseWhileTheCacheRegenerates()
     {
-        using var pose = new Pose3d(Rotation3d.Identity, new Vec3(100, 0, 22));
+        // A: old fixture had no object parent and produced 0 goals; production supplies its origin parent.
+        using var origin=new Pose3d("origin");
+        using var pose = new Pose3d(Rotation3d.Identity, new Vec3(100, 0, 22),parent:origin);
         using var robot = new Pose3d(Rotation3d.Identity, new Vec3(0, 0, 0));
         var obj = new ObservableObject(701, ObjectType.Block_LIGHTCUBE1,
             CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1));
@@ -126,6 +128,7 @@ public sealed class M13SetPoseCacheTests
         {
             foreach (var p in output.Concat(regenerated)) p.WorldPose.Dispose();
             foreach (var p in Cache(obj).Values.SelectMany(values => values)) p.Stored.Dispose();
+            foreach(var marker in obj.Markers)marker.PoseOnObject.Dispose();obj.NativePose.Dispose();
         }
     }
 }

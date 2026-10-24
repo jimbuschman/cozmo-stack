@@ -255,8 +255,12 @@ public class M13RVisBuildTests
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
-        obj.Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(200, 0, 66));                       // the located cube is tilted by more than 0.349066 rad
+        // A / reach: unit: the old replacement erased the located cube's origin parent.
+        using var tilted=new Pose3d(Mat3.AboutX(0.5),new Vec3(200,0,66));
+        tilted.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        obj.Pose = tilted;                       // the located cube is tilted by more than 0.349066 rad
         var flat = Cube(50, 200, 0, 22);
+        flat.NativePose.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
         var stack = rig.M.Docking.CanStackOnTopOfObject(flat);                                // the tilted cube is a candidate; no exception
         Assert.False(stack);                                                                  // the stand-in finds it one cube height above (disclosed reading: an object on top makes it invalid)
         var ex = Record.Exception(() => rig.M.Docking.SetObjectAsAttachedToLift(7, MarkerType.LightCubeI_Front));

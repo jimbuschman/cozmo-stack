@@ -32,35 +32,50 @@ public class ManipulationTests
         => SignalTestContext.Until(cond, tick);
 
 
+    private sealed class PreActionFixture(ObservableObject obj) : IDisposable
+    {
+        private readonly List<PreActionPose> _output=new();
+        internal IReadOnlyList<PreActionPose> For(PreActionType type,Pose3d robot,double preDockPoseOffsetMm=0)
+        {var result=CubePreActionPoses.For(obj,type,robot,preDockPoseOffsetMm);_output.AddRange(result);return result;}
+        public void Dispose()
+        {foreach(var p in _output)p.WorldPose.Dispose();CubePreActionPoses.ClearForSetPose(obj);foreach(var marker in obj.Markers)marker.PoseOnObject.Dispose();obj.NativePose.Dispose();}
+    }
+
     // ------------------------------------------------------------------ pre-action poses
 
     [Fact]
     public void ACubeHasTheEnginesGatedPreActionPosesAndDistances()
     {
-        var cube = new ObservableObject(7, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1)) { Pose = CubeAt(200, 50, 0.3), PoseState = PoseState.Known };
-        var robot = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
+        // reach: unit; A: old parentless object gave 0 goals; production CreateObjectsFromMarkers gives the origin parent.
+        using var origin=new Pose3d("origin");
+        using var input=CubeAt(200,50,0.3);
+        var cube = new ObservableObject(7, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1)) { Pose = input, PoseState = PoseState.Known };
+        cube.NativePose.SetParent(origin);
+        using var fixture=new PreActionFixture(cube);
+        using var robot = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
 
         // M12-021 gate. For the three real cubes +0xC = 0x05 on FaceNames 0..3, 0x00 on FaceName 4 (Top) and
         // 0x0F on FaceName 5 (Bottom); +0xD = 0x0F on every face. sb = 0..3 are the Y rotations 0, pi/2, pi, -pi/2.
         // Docking and Flipping (+0xC): 4 side faces x 2 rotations + bottom x 4 = 12.
-        var docking = CubePreActionPoses.For(cube, PreActionType.Docking, robot);
+        var docking = fixture.For(PreActionType.Docking, robot);
         Assert.Equal(12, docking.Count);
-        Assert.Equal(12, CubePreActionPoses.For(cube, PreActionType.Flipping, robot).Count);
+        Assert.Equal(12, fixture.For(PreActionType.Flipping, robot).Count);
         // Rolling (+0xD): all six faces x four rotations = 24.
-        Assert.Equal(24, CubePreActionPoses.For(cube, PreActionType.Rolling, robot).Count);
+        Assert.Equal(24, fixture.For(PreActionType.Rolling, robot).Count);
         // Types 1 and 2 are ungated: six faces x four rotations.
-        Assert.Equal(24, CubePreActionPoses.For(cube, PreActionType.PlaceRelative, robot).Count);
-        Assert.Equal(24, CubePreActionPoses.For(cube, PreActionType.PlaceOnGround, robot).Count);
+        Assert.Equal(24, fixture.For(PreActionType.PlaceRelative, robot).Count);
+        Assert.Equal(24, fixture.For(PreActionType.PlaceOnGround, robot).Count);
         // Type 3 (Entry) produces nothing; None (>5) produces nothing.
-        Assert.Empty(CubePreActionPoses.For(cube, PreActionType.Entry, robot));
-        Assert.Empty(CubePreActionPoses.For(cube, PreActionType.None, robot));
+        Assert.Empty(fixture.For(PreActionType.Entry, robot));
+        Assert.Empty(fixture.For(PreActionType.None, robot));
 
         // M12-001: the 4th ctor arg stored at PreActionPose+0x18 is the DistanceMm, not the pose offset.
         Assert.All(docking, p => Assert.Equal(75.0, p.DistanceMm));
-        Assert.All(CubePreActionPoses.For(cube, PreActionType.Rolling, robot), p => Assert.Equal(75.0, p.DistanceMm));
-        Assert.All(CubePreActionPoses.For(cube, PreActionType.PlaceRelative, robot), p => Assert.Equal(40.0, p.DistanceMm));
-        Assert.All(CubePreActionPoses.For(cube, PreActionType.PlaceOnGround, robot), p => Assert.Equal(0.0, p.DistanceMm));
-        Assert.All(CubePreActionPoses.For(cube, PreActionType.Flipping, robot), p => Assert.Equal(0.0, p.DistanceMm));
+        Assert.All(fixture.For(PreActionType.Rolling, robot), p => Assert.Equal(75.0, p.DistanceMm));
+        Assert.All(fixture.For(PreActionType.PlaceRelative, robot), p => Assert.Equal(40.0, p.DistanceMm));
+        Assert.All(fixture.For(PreActionType.PlaceOnGround, robot), p => Assert.Equal(0.0, p.DistanceMm));
+        Assert.All(fixture.For(PreActionType.Flipping, robot), p => Assert.Equal(0.0, p.DistanceMm));
 
         // the enabled (face, rotation) set is exactly the mask
         var byFace = docking.GroupBy(p => p.Marker.Face).ToDictionary(g => g.Key, g => g.Select(p => p.RotationIndex).OrderBy(i => i).ToArray());
@@ -75,16 +90,16 @@ public class ManipulationTests
         var front = docking.First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
         Assert.Equal(new Vec3(0, -65, -22), front.LocalOffsetMm);
         Assert.Equal(Math.PI / 2, front.LocalAngleRad, 6);
-        var pr = CubePreActionPoses.For(cube, PreActionType.PlaceRelative, robot).First(p => p.Marker.Face == BlockFace.Front);
+        var pr = fixture.For(PreActionType.PlaceRelative, robot).First(p => p.Marker.Face == BlockFace.Front);
         Assert.Equal(new Vec3(0, -100, -22), pr.LocalOffsetMm);
         Assert.Equal(Math.PI / 2, pr.LocalAngleRad, 6);
-        var pg = CubePreActionPoses.For(cube, PreActionType.PlaceOnGround, robot).First(p => p.Marker.Face == BlockFace.Front);
+        var pg = fixture.For(PreActionType.PlaceOnGround, robot).First(p => p.Marker.Face == BlockFace.Front);
         Assert.Equal(new Vec3(0, -49, -22), pg.LocalOffsetMm);
         Assert.Equal(Math.PI / 2, pg.LocalAngleRad, 6);
-        var ro = CubePreActionPoses.For(cube, PreActionType.Rolling, robot).First(p => p.Marker.Face == BlockFace.Front);
+        var ro = fixture.For(PreActionType.Rolling, robot).First(p => p.Marker.Face == BlockFace.Front);
         Assert.Equal(new Vec3(0, -65, -22), ro.LocalOffsetMm);
         Assert.Equal(Math.PI / 2, ro.LocalAngleRad, 6);
-        var fl = CubePreActionPoses.For(cube, PreActionType.Flipping, robot).First(p => p.Marker.Face == BlockFace.Front);
+        var fl = fixture.For(PreActionType.Flipping, robot).First(p => p.Marker.Face == BlockFace.Front);
         // M12-001 / 0x004E5C60, 0x004E5CB2..0x004E5CBC: the corner is binary32 0x42624EEF (0xC2624EEF for the Y), added to size.x*0.5f in float (0x004E5934)
         Assert.Equal(0x42624EEFu, BitConverter.SingleToUInt32Bits((float)CubePreActionPoses.FlippingCornerMm));
         float cornerEngine = BitConverter.UInt32BitsToSingle(0x42624EEF);
@@ -111,25 +126,31 @@ public class ManipulationTests
     [Fact]
     public void TheWorldPreActionPoseIsTheObjectPoseComposedWithThePushedOutStoredPose()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
+        // reach: unit; A: old parentless object gave 0 goals; production CreateObjectsFromMarkers gives the origin parent.
+        using var origin=new Pose3d("origin");
+        using var input=new Pose3d(Mat3.Identity,new Vec3(200,0,22));
         var cube = new ObservableObject(7, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
-        { Pose = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22)), PoseState = PoseState.Known };
-        var far = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
+        { Pose = input, PoseState = PoseState.Known };
+        cube.NativePose.SetParent(origin);
+        using var fixture=new PreActionFixture(cube);
+        using var far = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
 
-        var front = CubePreActionPoses.For(cube, PreActionType.Docking, far)
+        var front = fixture.For(PreActionType.Docking, far)
             .First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
         Assert.Equal(40.289, front.WorldPose.Translation.X, 3);
         Assert.Equal(0.0, front.WorldPose.Translation.Y, 3);
         Assert.Equal(-18.387, front.WorldPose.Translation.Z, 3);
 
         // a robot close enough that the projection is shorter than the DistanceMm cap: b = dist2 = 37
-        var close = new Pose3d(Mat3.Identity, new Vec3(150, 0, 0));
-        var near = CubePreActionPoses.For(cube, PreActionType.Docking, close)
+        using var close = new Pose3d(Mat3.Identity, new Vec3(150, 0, 0));
+        var near = fixture.For(PreActionType.Docking, close)
             .First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
         Assert.Equal(77.129, near.WorldPose.Translation.X, 3);
         Assert.Equal(-9.071, near.WorldPose.Translation.Z, 3);
 
         // the non-zero preDockPoseOffset_mm argument replaces b (E7: 0 on every path this stack builds)
-        var offset = CubePreActionPoses.For(cube, PreActionType.Docking, far, preDockPoseOffsetMm: 10)
+        var offset = fixture.For(PreActionType.Docking, far, preDockPoseOffsetMm: 10)
             .First(p => p.Marker.Face == BlockFace.Front && p.RotationIndex == 0);
         Assert.Equal(103.305, offset.WorldPose.Translation.X, 3);
         Assert.Equal(-2.452, offset.WorldPose.Translation.Z, 3);
@@ -241,7 +262,10 @@ public class ManipulationTests
     {
         using var signals = SignalTestContext.Install();
         using var rig = new Rig();
-        var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.AboutZ(0.5), new Vec3(150, -40, 0)) };
+        // A / reach: unit: old parentless goal gave FailedTraversingPath; supply the production origin parent.
+        using var goalInput=new Pose3d(Mat3.AboutZ(0.5), new Vec3(150, -40, 0));
+        goalInput.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        var drive = new DriveToPoseAction(rig.M) { Goal = goalInput };
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);

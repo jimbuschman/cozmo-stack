@@ -138,6 +138,7 @@ public class NavigationTests
     [Fact]
     public void TurningPrimitivesBecomeLineAndArcSegmentsThatEndOnTheLattice()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         var prims = Prims();
         if (prims is null) return;
         var env = new LatticeEnvironment(prims);
@@ -203,7 +204,10 @@ public class NavigationTests
         if (obb is null) return;
         using var rig = new Rig();
         Assert.True(rig.M.LoadPlanner(obb));
-        var drive = new DriveToPoseAction(rig.M) { Goal = At(250, 120, Math.PI / 2) };
+        // A / reach: unit: old parentless goal gave FailedTraversingPath; supply the production origin parent.
+        using var goalInput=At(250, 120, Math.PI / 2);
+        goalInput.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        var drive = new DriveToPoseAction(rig.M) { Goal = goalInput };
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
@@ -820,7 +824,10 @@ public class NavigationTests
         var ctx = Ctx(rig);
         ctx.Needs = new NeedsManager(() => 0);
         var bring = new BringCubeToBeaconBehavior(rig.M, "Hiking_BringCubeToBeacon", 45);
-        rig.M.Whiteboard.AddBeacon(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), 175);
+        // A / reach: unit: the old manually supplied beacon root was unrelated to the production object origin.
+        using var beaconInput=new Pose3d(Mat3.Identity,Vec3.Zero);
+        beaconInput.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        rig.M.Whiteboard.AddBeacon(beaconInput,175);
         rig.Robot.Animations.ManualTicking = true;
         rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
         bring.ActionTaskRunner = SignalTestContext.Schedule;

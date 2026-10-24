@@ -572,6 +572,9 @@ public sealed class DriveToObjectAction
                 // flat robot pose is held to. The object pose as +0xB4, +0xC0 = 1 (the threshold pair) and the (10, 10, 10) / 0x3E32B8C2 tolerances are the engine's.
                 var closest = CubePreActionPoses.Closest(poses, robot.Value)!;
                 var goal = new Pose3d(Mat3.AboutZ(YawTowardObject(obj.Pose, closest.WorldPose)), closest.WorldPose.Translation);
+                // Retain the pre-action goal's origin frame when the existing yaw adapter creates its goal copy.
+                Pose3d goalParent=null!;
+                if(closest.WorldPose.TryGetParent(ref goalParent))using(goalParent)goal.SetParent(goalParent);
                 using var preActionObjectPose = new Pose3d(obj.Pose);
                 var drive = new DriveToPoseAction(_m) { Goal = goal, Goals = new[] { goal }, IgnoreObstacleIds = new[] { ObjectId },
                                                          PreActionObjectPose = preActionObjectPose, Profile = Profile };
@@ -878,7 +881,7 @@ public sealed class DriveToPlaceCarriedObjectAction
             _inner.ApproachAngleRad = angle;
         }
         // ObservableObject::Clone keeps nothing: ObjectID -1 (uint.MaxValue here), a fresh marker set, no pose; then InitPose(+0x16C, Known).
-        _clone = new ObservableObject(uint.MaxValue, obj.Type, CubeGeometry.MarkersFor(obj.Type)) { Pose = PlacementPose, PoseState = PoseState.Known };
+        _clone = new ObservableObject(uint.MaxValue, obj.Type, CubeGeometry.MarkersFor(obj.Type)) { PoseWorld=_m.World,Pose = PlacementPose, PoseState = PoseState.Known };
         // [+0x7C] := the carried id is not modelled separately: the inner action turns towards (and tests carrying for) CarriedIdAtConstruction, which is the
         // same id unless a different object was picked up after this action was built.
         if (!FlagAt0x179) return CheckIfDone(await _inner.InitHelperAsync(_clone, cancel));

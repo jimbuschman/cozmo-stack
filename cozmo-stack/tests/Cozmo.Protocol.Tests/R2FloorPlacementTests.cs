@@ -12,8 +12,18 @@ namespace Cozmo.Protocol.Tests;
 /// <c>re-analysis/evidence/m15-floor-placement/emulate_candidates.py</c>, never from running the C#.
 /// </summary>
 [Collection("SteppedBehavior missing-report statics")]
-public class R2FloorPlacementTests
+public class R2FloorPlacementTests : IDisposable
 {
+    private readonly List<Pose3d> _originInputs=new();
+    private readonly List<ObservableObject> _fixtureObjects=new();
+    // A / reach: unit: these explicit world-coordinate fixtures previously had unrelated root nodes.
+    private Pose3d InOrigin(Rig rig,Pose3d pose)
+    {pose.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));_originInputs.Add(pose);return pose;}
+    public void Dispose()
+    {
+        foreach(var obj in _fixtureObjects){CubePreActionPoses.ClearForSetPose(obj);foreach(var marker in obj.Markers)marker.PoseOnObject.Dispose();obj.NativePose.Dispose();}
+        foreach(var pose in _originInputs)pose.Dispose();
+    }
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
 
     /// <summary>The tests that render markers must not pass silently without the marker library: they fail with the reason unless the run says COZMO_TESTS_WITHOUT_ASSETS=1.</summary>
@@ -29,9 +39,11 @@ public class R2FloorPlacementTests
 
     private static Pose3d At(double x, double y, double z = 0, double yaw = 0) => new(Mat3.AboutZ(yaw), new Vec3(x, y, z));
 
-    private static ObservableObject Cube(Rig rig, uint id, Pose3d pose, ObjectType type = ObjectType.Block_LIGHTCUBE1, bool locate = true)
+    private ObservableObject Cube(Rig rig, uint id, Pose3d pose, ObjectType type = ObjectType.Block_LIGHTCUBE1, bool locate = true)
     {
         var o = new ObservableObject(id, type, CubeGeometry.MarkersFor(type)) { Pose = pose, PoseState = PoseState.Known, OriginId = rig.M.World.CurrentOriginId };
+        if(!o.NativePose.HasParent)o.NativePose.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        _fixtureObjects.Add(o);
         if (locate) rig.M.World.AddLocatedObject(o);
         return o;
     }
@@ -137,19 +149,20 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_019_TheGridOrderAndTheOutPoseHoldingTheLastTestedCandidate()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var bring = NewBring(rig);
-        var carried = Cube(rig, 7, At(500, 500, 22), locate: false);
-        var robot = At(-300, 0);
+        var carried = Cube(rig, 7, InOrigin(rig,At(500, 500, 22)), locate: false);
+        var robot = InOrigin(rig,At(-300, 0));
         // nine failures, each blocking everything within 100 mm of itself: every grid point (54 i, 54 j), |i|,|j| <= 2, is within 100 mm of one of them
         uint id = 100;
         foreach (var (x, y) in new[] { (0, 0), (108, 0), (-108, 0), (0, 108), (0, -108), (108, 108), (108, -108), (-108, 108), (-108, -108) })
-            rig.M.Whiteboard.SetFailedToUse(id++, ObjectActionFailure.PlaceObjectAt, At(x, y));
+            rig.M.Whiteboard.SetFailedToUse(id++, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(x, y)));
         List<(int, int)> Run(double radius, out bool found, out Pose3d pose)
         {
-            var beacon = new AIBeacon(At(0, 0), radius);
+            var beacon = new AIBeacon(InOrigin(rig,At(0, 0)), radius);
             bring.CandidateLog = new List<(int I, int J)>();
             found = bring.FindFreePoseInBeacon(carried, beacon, robot, 45f, out pose);
             return bring.CandidateLog.Select(c => (c.I, c.J)).ToList();
@@ -180,39 +193,40 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_019_TheRadiusTestIsStrictAndTheFailureSkipIsASphereOf100Millimetres()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var bring = NewBring(rig);
-        var carried = Cube(rig, 7, At(500, 500, 22), locate: false);
-        var robot = At(-300, 0);
-        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, At(0, 0));
+        var carried = Cube(rig, 7, InOrigin(rig,At(500, 500, 22)), locate: false);
+        var robot = InOrigin(rig,At(-300, 0));
+        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(0, 0)));
         bring.CandidateLog = new();
-        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(At(0, 0), 108), robot, 45f, out var pose));
+        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(InOrigin(rig,At(0, 0)), 108), robot, 45f, out var pose));
         Assert.Equal(new[] { (0, 0), (0, -1), (0, 1), (0, -2) }, bring.CandidateLog.Select(c => (c.I, c.J)).ToArray());
         Assert.Equal(0xC2D80000u, B((float)pose.Translation.Y));                              // 54.0f * -2.0f
         Assert.Equal(0u, B((float)pose.Translation.X) & 0x7FFFFFFFu);
         // the same search with a failure 100 mm from (0,-108) (at (0,-8)): the distance is exactly 100.0f, d2 <= d*d accepts the match (inclusive), so (0,-108) is rejected; (0, 108) is 116 mm away
         rig.M.Whiteboard.OnRobotDelocalized();
-        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, At(0, -8));
+        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(0, -8)));
         bring.CandidateLog = new();
-        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(At(0, 0), 175), robot, 45f, out pose));
+        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(InOrigin(rig,At(0, 0)), 175), robot, 45f, out pose));
         Assert.Equal(108.0, pose.Translation.Y, 3);
         Assert.Equal((0, 2), bring.CandidateLog[^1]);
         // a spherical test: (80, 80) apart per axis is 113 mm, outside 100 although every axis is within 100 (a per-axis box would match)
         rig.M.Whiteboard.OnRobotDelocalized();
-        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, At(54 - 80, 0 - 80));            // 80 mm from (54, 0) on each of x and y
-        Assert.False(rig.M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(54, 0), 100.0f, BeaconFloorGeometry.Pi));
-        Assert.True(rig.M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(54 - 60, 0 - 80 + 80), 100.0f, BeaconFloorGeometry.Pi));
+        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(54 - 80, 0 - 80)));            // 80 mm from (54, 0) on each of x and y
+        Assert.False(rig.M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(54, 0)), 100.0f, BeaconFloorGeometry.Pi));
+        Assert.True(rig.M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(54 - 60, 0 - 80 + 80)), 100.0f, BeaconFloorGeometry.Pi));
         // the failure expires with the cooldown: a candidate that failed 45 s ago is free again (row 4.3.6: strict, 1e-5f slack)
         rig.M.Whiteboard.OnRobotDelocalized();
-        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, At(0, 0));
+        rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(0, 0)));
         clock = 44.9;
-        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(At(0, 0), 108), robot, 45f, out pose));
+        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(InOrigin(rig,At(0, 0)), 108), robot, 45f, out pose));
         Assert.Equal(-108.0, pose.Translation.Y, 3);
         clock = 45.0;
         bring.CandidateLog = new();
-        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(At(0, 0), 108), robot, 45f, out pose));
+        Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(InOrigin(rig,At(0, 0)), 108), robot, 45f, out pose));
         Assert.Equal((0, 0), bring.CandidateLog[0]);
         Assert.Single(bring.CandidateLog);                                                        // accepted at once: the failure is 45.0 s old, not younger
     }
@@ -227,18 +241,19 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_019_M15_020_TheFrameFollowsTheNearestNonCarriedCubeAndTheObstacleTestUsesTheCarriedFootprint()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var bring = NewBring(rig);
-        var carried = Cube(rig, 7, At(100, 50, 22, 0));
-        Cube(rig, 8, At(110, 50, 22, Math.PI / 2));
-        Cube(rig, 9, At(120, 90, 22, 1.0), ObjectType.Block_LIGHTCUBE2);
+        var carried = Cube(rig, 7, InOrigin(rig,At(100, 50, 22, 0)));
+        Cube(rig, 8, InOrigin(rig,At(110, 50, 22, Math.PI / 2)));
+        Cube(rig, 9, InOrigin(rig,At(120, 90, 22, 1.0)), ObjectType.Block_LIGHTCUBE2);
         rig.M.Docking.Carrying.SetCarrying(7);
-        var beacon = new AIBeacon(At(100, 50, 0), 175);
+        var beacon = new AIBeacon(InOrigin(rig,At(100, 50, 0)), 175);
         // the predicate: 8 and 9 are in the beacon (3-D: z = 22 counts), the carried 7 is not
         Assert.Equal(new uint[] { 8, 9 }, rig.M.Whiteboard.FindCubesInBeacon(beacon).Select(o => o.ObjectId).ToArray());
         bring.CandidateLog = new();
-        Assert.True(bring.FindFreePoseInBeacon(carried, beacon, At(0, 0), 45f, out var pose));
+        Assert.True(bring.FindFreePoseInBeacon(carried, beacon, InOrigin(rig,At(0, 0)), 45f, out var pose));
         Assert.Equal(new[] { (0, 0), (0, -1), (0, 1) }, bring.CandidateLog.Select(c => (c.I, c.J)).ToArray());
         Assert.Equal(0x42380001u, B((float)pose.Translation.X));
         Assert.Equal(0x42480000u, B((float)pose.Translation.Y));
@@ -253,11 +268,12 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_020_FindCubesInBeaconIsThreeDimensionalAndSkipsTheCarriedCube()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
-        Cube(rig, 8, At(10, 0, 22));
-        Cube(rig, 9, At(0, 0, 80));                                                        // z = 80 > 30: outside a 30 mm beacon although planar-inside
-        var beacon = new AIBeacon(At(0, 0, 0), 30);
+        Cube(rig, 8, InOrigin(rig,At(10, 0, 22)));
+        Cube(rig, 9, InOrigin(rig,At(0, 0, 80)));                                                        // z = 80 > 30: outside a 30 mm beacon although planar-inside
+        var beacon = new AIBeacon(InOrigin(rig,At(0, 0, 0)), 30);
         Assert.Equal(new uint[] { 8 }, rig.M.Whiteboard.FindCubesInBeacon(beacon).Select(o => o.ObjectId).ToArray());
         rig.M.Docking.Carrying.SetCarrying(8);
         Assert.Empty(rig.M.Whiteboard.FindCubesInBeacon(beacon));
@@ -273,21 +289,22 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_024_TheCapsKeepTheLastEntriesPerObjectAndPerFailureKind()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var wb = rig.M.Whiteboard;
-        for (int k = 0; k < 11; k++) { clock = k; wb.SetFailedToUse(5, ObjectActionFailure.PlaceObjectAt, At(k, 0)); }
+        for (int k = 0; k < 11; k++) { clock = k; wb.SetFailedToUse(5, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(k, 0))); }
         var list = wb.GetObjectFailureTable(ObjectActionFailure.PlaceObjectAt)[5];
         Assert.Equal(10, list.Count);
         Assert.Equal(1.0, list[0].Pose.Translation.X);                                       // the first (k = 0) was removed to add the eleventh
         Assert.Equal(1.0f, list[0].TimeSec);
         Assert.Equal(10.0f, list[^1].TimeSec);
-        clock = 20; wb.SetFailedToUse(6, ObjectActionFailure.PickUpObject, At(1, 0)); wb.SetFailedToUse(6, ObjectActionFailure.PickUpObject, At(2, 0));
+        clock = 20; wb.SetFailedToUse(6, ObjectActionFailure.PickUpObject, InOrigin(rig,At(1, 0))); wb.SetFailedToUse(6, ObjectActionFailure.PickUpObject, InOrigin(rig,At(2, 0)));
         var pick = wb.GetObjectFailureTable(ObjectActionFailure.PickUpObject)[6];
         Assert.Single(pick); Assert.Equal(2.0, pick[0].Pose.Translation.X);                  // cap 1
-        wb.SetFailedToUse(6, ObjectActionFailure.StackOnObject, At(3, 0)); wb.SetFailedToUse(6, ObjectActionFailure.StackOnObject, At(4, 0));
-        wb.SetFailedToUse(6, ObjectActionFailure.RollOrPopAWheelie, At(5, 0)); wb.SetFailedToUse(6, ObjectActionFailure.RollOrPopAWheelie, At(6, 0));
+        wb.SetFailedToUse(6, ObjectActionFailure.StackOnObject, InOrigin(rig,At(3, 0))); wb.SetFailedToUse(6, ObjectActionFailure.StackOnObject, InOrigin(rig,At(4, 0)));
+        wb.SetFailedToUse(6, ObjectActionFailure.RollOrPopAWheelie, InOrigin(rig,At(5, 0))); wb.SetFailedToUse(6, ObjectActionFailure.RollOrPopAWheelie, InOrigin(rig,At(6, 0)));
         Assert.Equal(4.0, Assert.Single(wb.GetObjectFailureTable(ObjectActionFailure.StackOnObject)[6]).Pose.Translation.X);
         Assert.Equal(6.0, Assert.Single(wb.GetObjectFailureTable(ObjectActionFailure.RollOrPopAWheelie)[6]).Pose.Translation.X);
         Assert.False(wb.GetObjectFailureTable(ObjectActionFailure.PickUpObject).ContainsKey(5));
@@ -303,32 +320,33 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_024_EntryMatchesExpiryDistanceAndAngle()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var wb = rig.M.Whiteboard;
         float noDist = F(0xBF800000);
         float pi = BeaconFloorGeometry.Pi;
-        wb.SetFailedToUse(5, ObjectActionFailure.PlaceObjectAt, At(0, 0, 0, 0.0));
+        wb.SetFailedToUse(5, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(0, 0, 0, 0.0)));
         clock = 44.0;
-        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0), noDist, 0f));
+        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0)), noDist, 0f));
         clock = 45.0;
-        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0), noDist, 0f));                 // 45.0 - 1e-5f <= 45.0: too old
-        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, -1f, At(0, 0), noDist, 0f));                  // a negative time never expires
+        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0)), noDist, 0f));                 // 45.0 - 1e-5f <= 45.0: too old
+        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, -1f, InOrigin(rig,At(0, 0)), noDist, 0f));                  // a negative time never expires
         clock = 0;
-        Assert.True(wb.DidFailToUse(5, ObjectActionFailure.PlaceObjectAt, 45f, At(1000, 1000), noDist, 0f));             // dist -1.0f: the pose is not read
-        Assert.False(wb.DidFailToUse(6, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0), noDist, 0f));                  // another id
-        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0), noDist, 0f));                  // -1: any id
-        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.StackOnObject, 45f, At(0, 0), noDist, 0f));                 // another failure kind
+        Assert.True(wb.DidFailToUse(5, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(1000, 1000)), noDist, 0f));             // dist -1.0f: the pose is not read
+        Assert.False(wb.DidFailToUse(6, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0)), noDist, 0f));                  // another id
+        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0)), noDist, 0f));                  // -1: any id
+        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.StackOnObject, 45f, InOrigin(rig,At(0, 0)), noDist, 0f));                 // another failure kind
         // the distance: (60, 80, 0) is exactly 100.0f away: inclusive; 100.1 is not; z counts
-        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(60, 80), 100f, pi));
-        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(60.1, 80), 100f, pi));
-        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0, 100.5), 100f, pi));
+        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(60, 80)), 100f, pi));
+        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(60.1, 80)), 100f, pi));
+        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0, 100.5)), 100f, pi));
         // the angle: with 20.0f and pi/8 (the stack-on filter's arguments) a yaw difference of 0.3 matches (0.3 < 0.3927), 0.4 does not; with pi any rotation matches
         float stackDist = BringCubeToBeaconBehavior.StackFilterDistMm, stackAngle = BringCubeToBeaconBehavior.StackFilterAngleRad;
-        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0, 0, 0.3), stackDist, stackAngle));
-        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0, 0, 0.4), stackDist, stackAngle));
-        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, At(0, 0, 0, 3.0), 20f, pi));
+        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0, 0, 0.3)), stackDist, stackAngle));
+        Assert.False(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0, 0, 0.4)), stackDist, stackAngle));
+        Assert.True(wb.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(0, 0, 0, 3.0)), 20f, pi));
     }
 
     /// <summary>
@@ -339,23 +357,24 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_024_TheStackOnFilterUsesThePoseAwareMemory()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var bring = NewBring(rig);
-        var beacon = new AIBeacon(At(0, 0), 175);
-        var carried = Cube(rig, 7, At(500, 500, 22), locate: false);
-        var stackable = Cube(rig, 8, At(0, 0, 22));
+        var beacon = new AIBeacon(InOrigin(rig,At(0, 0)), 175);
+        var carried = Cube(rig, 7, InOrigin(rig,At(500, 500, 22)), locate: false);
+        var stackable = Cube(rig, 8, InOrigin(rig,At(0, 0, 22)));
         rig.M.Docking.Carrying.SetCarrying(7);
         bring.IsUnlocked = _ => true;
         Assert.Same(stackable, bring.FindFreeCubeToStackOn(carried, beacon));
-        rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, At(10, 0, 22, 0.1));                    // 10 mm and 0.1 rad away: within 20.0f and pi/8
+        rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, InOrigin(rig,At(10, 0, 22, 0.1)));                    // 10 mm and 0.1 rad away: within 20.0f and pi/8
         Assert.Null(bring.FindFreeCubeToStackOn(carried, beacon));
         rig.M.Whiteboard.OnRobotDelocalized();
-        rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, At(10, 0, 22, 1.0));                    // 1.0 rad away: outside pi/8
+        rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, InOrigin(rig,At(10, 0, 22, 1.0)));                    // 1.0 rad away: outside pi/8
         Assert.Same(stackable, bring.FindFreeCubeToStackOn(carried, beacon));
         rig.M.Whiteboard.OnRobotDelocalized();
-        rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, At(30, 0, 22, 0.0));                    // 30 mm away: outside 20.0f
+        rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, InOrigin(rig,At(30, 0, 22, 0.0)));                    // 30 mm away: outside 20.0f
         Assert.Same(stackable, bring.FindFreeCubeToStackOn(carried, beacon));
     }
 
@@ -369,15 +388,16 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_023_TheFailureStampBlocksTheBehaviourForTheCooldown()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 1000; rig.M.ClockSec = () => clock;
         var ctx = Ctx(rig);
-        Cube(rig, 8, At(500, 0, 22));                                                       // a usable cube outside every beacon
+        Cube(rig, 8, InOrigin(rig,At(500, 0, 22)));                                                       // a usable cube outside every beacon
         var hiking = NewBring(rig, 45);
         var sparks = new BringCubeToBeaconBehavior(rig.M, "SparksBringCubeToBeacon", 5);
         Assert.False(Runnable(hiking, ctx));                                                // no beacon: not runnable (0x005DF144)
-        var beacon = rig.M.Whiteboard.AddBeacon(At(0, 0), 175);
+        var beacon = rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175);
         Assert.Equal(0u, B(beacon.FailedToFindLocationTimeSec));                            // movs r2,#0; str r2,[r0,#0x10]
         Assert.True(Runnable(hiking, ctx));
         int renders = 0; rig.M.Whiteboard.BeaconRenderUpdated += () => renders++;
@@ -404,16 +424,17 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_023_M15_025_NoFreePosesStampsLogsTriggersTheEventAndStartsNothing()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         if (!NeedsAssets()) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 500; rig.M.ClockSec = () => clock;
-        rig.Cube = At(330, -20, 22);
-        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, At(255, 90, 22)));
+        rig.Cube = InOrigin(rig,At(330, -20, 22));
+        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, InOrigin(rig,At(255, 90, 22))));
         Assert.Equal(2, rig.Frame().Objects.Count);
         var ctx = Ctx(rig);
         ctx.Needs = new NeedsManager(() => 0);
-        var beacon = rig.M.Whiteboard.AddBeacon(At(250, 90), 30);
+        var beacon = rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(250, 90)), 30);
         var bring = NewBring(rig);
         bring.IsUnlocked = _ => false;                                                       // FindFreeCubeToStackOn answers null: the floor branch
         bring.ActionTaskRunner = SignalTestContext.Schedule;
@@ -444,7 +465,7 @@ public class R2FloorPlacementTests
     private (BringCubeToBeaconBehavior Bring, uint Target) StartedBring(Rig rig, BehaviorContext ctx)
     {
         Cube(rig, 8, At(500, 0, 22));
-        rig.M.Whiteboard.AddBeacon(At(0, 0), 175);
+        rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175);
         var bring = NewBring(rig);
         bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         return (bring, bring.Candidate!.Value);
@@ -522,6 +543,7 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_InitSendsTheMessageThenStopsMotorsAndTheActionWaitsForTheStatusGate()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 100; rig.M.ClockSec = () => clock;
@@ -532,7 +554,7 @@ public class R2FloorPlacementTests
         Assert.Contains(rig.Sent, m => m is StopAllMotors);
         Assert.DoesNotContain(rig.Sent, m => m is PlaceObjectOnGround);
         rig.Sent.Clear();
-        var obj = Cube(rig, 7, At(100, 0, 22));
+        var obj = Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
         // M12-006 A4: the happy release input is a native pose in the robot tree, not a flat adapter root.
         obj.NativePose.SetParent(rig.Robot.Engine.Robot!.GetNativeOrigin(rig.Robot.Engine.Robot.CurrentOriginId));
         rig.M.Docking.Carrying.SetCarrying(7);
@@ -583,11 +605,12 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_TheActionsResultIsTheVerifyActionsAfterTheStatusGate()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         foreach (var verify in new[] { ActionResult.Success, ActionResult.VisualObservationFailed })
         {
             using var signals_rig = SignalTestContext.Install();
             using var rig = new Rig();
-            Cube(rig, 7, At(100, 0, 22));
+            Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
             rig.M.Docking.Carrying.SetCarrying(7);
             var sub = new FixedSubActions(verify);
             var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = sub };
@@ -631,6 +654,7 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_InitTakesTheReactionLockOnObjectPositionUpdatedAndTheEndRemovesIt()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
@@ -639,7 +663,7 @@ public class R2FloorPlacementTests
         manager.AddReaction(new AlwaysOffStrategy(ReactionTrigger.CubeMoved), new IdleBehavior());
         Assert.Equal(21, PlaceObjectOnGroundAction.ReactionLockTable.ToMask().Length);
         Assert.Equal(new[] { 8 }, PlaceObjectOnGroundAction.ReactionLockTable.ToMask().Select((v, i) => (v, i)).Where(p => p.v).Select(p => p.i).ToArray());
-        Cube(rig, 7, At(100, 0, 22));
+        Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
         rig.M.Docking.Carrying.SetCarrying(7);
         var action = new PlaceObjectOnGroundAction(rig.M) { ReactionLocks = manager, SubActions = new FixedSubActions(ActionResult.Success) };
         var task = action.RunAsync(default);
@@ -678,17 +702,18 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_022_ABlockedPlacementGoalFailsWithRetry()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
-        Cube(rig, 7, At(300, 0, 22));
-        var blocker = Cube(rig, 20, At(0, 0, 22), ObjectType.Block_LIGHTCUBE2);
+        Cube(rig, 7, InOrigin(rig,At(300, 0, 22)));
+        var blocker = Cube(rig, 20, InOrigin(rig,At(0, 0, 22)), ObjectType.Block_LIGHTCUBE2);
         rig.M.Docking.Carrying.SetCarrying(7);
-        var drive = new DriveToPlaceCarriedObjectAction(rig.M, At(0, 0), true, false, false, true, BeaconFloorGeometry.Ten);
+        var drive = new DriveToPlaceCarriedObjectAction(rig.M, InOrigin(rig,At(0, 0)), true, false, false, true, BeaconFloorGeometry.Ten);
         Assert.False(drive.FlagAt0x178); Assert.True(drive.FlagAt0x179); Assert.Equal(PreActionType.PlaceOnGround, drive.ActionType);
         Assert.Equal(0x41200000u, B((float)drive.PaddingAt0x17C));
         Assert.Equal(ActionResult.PlacementGoalNotFree, drive.CheckIfDone(ActionResult.Running));
         Assert.Equal(0x04000008u, (uint)ActionResult.PlacementGoalNotFree);
-        blocker.Pose = At(300, 300, 22);
+        blocker.Pose = InOrigin(rig,At(300, 300, 22));
         Assert.Equal(ActionResult.Running, drive.CheckIfDone(ActionResult.Running));
         Assert.DoesNotContain(rig.Sent, m => m is PlaceObjectOnGround);
     }
@@ -723,9 +748,12 @@ public class R2FloorPlacementTests
         bring.WorkPosted += signals_rig.Notify;
         Assert.Equal(45.0, bring.RecentFailureCooldownSec);
         Assert.Equal(5.0, Assert.IsType<BringCubeToBeaconBehavior>(stack.Bound["SparksBringCubeToBeacon"]).RecentFailureCooldownSec);
-        rig.Cube = At(330, -20, 22);
+        rig.Cube = InOrigin(rig,At(330, -20, 22));
         Assert.Single(rig.Frame().Objects);
-        rig.M.Whiteboard.AddBeacon(At(0, 0), 175);
+        // A / reach: unit: old manually supplied beacon had no origin; production copies Robot::GetPose.
+        using var beaconInput=InOrigin(rig,At(0,0));
+        beaconInput.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        rig.M.Whiteboard.AddBeacon(beaconInput,175);
         stack.Manager.Activity = null;                                                       // the activity chooser is not under test: the manager ticks only the behaviour it was switched to
         // Placement's running checks resume only after an explicit modeled firmware pump.
         var firmwareTicks = new System.Collections.Concurrent.ConcurrentQueue<TaskCompletionSource>();
@@ -766,32 +794,33 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_020_TheCandidateFilterIsPickUpAndRollFailuresMatchedByPose()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         if (!NeedsAssets()) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 100; rig.M.ClockSec = () => clock;
         var ctx = Ctx(rig);
-        rig.Cube = At(300, 0, 22);
+        rig.Cube = InOrigin(rig,At(300, 0, 22));
         Assert.Single(rig.Frame().Objects);
         var obj = rig.M.World.LocatedObjects.Single();
-        rig.M.Whiteboard.AddBeacon(At(0, 0), 175);
+        rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175);
         var bring = NewBring(rig);
-        void Reset() { rig.M.Whiteboard.OnRobotDelocalized(); rig.M.Whiteboard.AddBeacon(At(0, 0), 175); }       // delocalization drops the beacons too
+        void Reset() { rig.M.Whiteboard.OnRobotDelocalized(); rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175); }       // delocalization drops the beacons too
         Assert.True(Runnable(bring, ctx));
         var pose = obj.Pose;
         rig.M.Whiteboard.SetFailedToUse(obj, ObjectActionFailure.PlaceObjectAt, pose);
         rig.M.Whiteboard.SetFailedToUse(obj, ObjectActionFailure.StackOnObject, pose);
         Assert.True(Runnable(bring, ctx));                                                  // neither kind is in the set {0, 3}
-        rig.M.Whiteboard.SetFailedToUse(obj.ObjectId, ObjectActionFailure.PickUpObject, new Pose3d(pose.Rotation, pose.Translation + new Vec3(30, 0, 0)));
+        rig.M.Whiteboard.SetFailedToUse(obj.ObjectId, ObjectActionFailure.PickUpObject, InOrigin(rig,new Pose3d(pose.Rotation, pose.Translation + new Vec3(30, 0, 0))));
         Assert.True(Runnable(bring, ctx));                                                  // 30 mm away: outside 20.0f
         Reset();
-        rig.M.Whiteboard.SetFailedToUse(obj.ObjectId, ObjectActionFailure.PickUpObject, new Pose3d(Mat3.AboutZ(1.0) * pose.Rotation, pose.Translation + new Vec3(5, 0, 0)));
+        rig.M.Whiteboard.SetFailedToUse(obj.ObjectId, ObjectActionFailure.PickUpObject, InOrigin(rig,new Pose3d(Mat3.AboutZ(1.0) * pose.Rotation, pose.Translation + new Vec3(5, 0, 0))));
         Assert.True(Runnable(bring, ctx));                                                  // 1.0 rad away: outside pi/8 = 0.3927
         Reset();
-        rig.M.Whiteboard.SetFailedToUse(99, ObjectActionFailure.PickUpObject, new Pose3d(pose.Rotation, pose.Translation));
+        rig.M.Whiteboard.SetFailedToUse(99, ObjectActionFailure.PickUpObject, InOrigin(rig,new Pose3d(pose.Rotation, pose.Translation)));
         Assert.True(Runnable(bring, ctx));                                                  // the call passes the candidate's id (0x005DF24E): another object's failure is not consulted
         Reset();
-        rig.M.Whiteboard.SetFailedToUse(obj.ObjectId, ObjectActionFailure.PickUpObject, new Pose3d(Mat3.AboutZ(0.1) * pose.Rotation, pose.Translation + new Vec3(5, 0, 0)));
+        rig.M.Whiteboard.SetFailedToUse(obj.ObjectId, ObjectActionFailure.PickUpObject, InOrigin(rig,new Pose3d(Mat3.AboutZ(0.1) * pose.Rotation, pose.Translation + new Vec3(5, 0, 0))));
         Assert.False(Runnable(bring, ctx));                                                 // 5 mm and 0.1 rad: within 20.0f and pi/8 of the cube's pose
         clock = 100 + 44.9;
         Assert.False(Runnable(bring, ctx));
@@ -805,7 +834,7 @@ public class R2FloorPlacementTests
         Reset();
         ctx.Needs = new NeedsManager(() => 0);
         bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        bring.PlaceCompleted((ActionResult)0x04000008u, At(0, 0), 3);
+        bring.PlaceCompleted((ActionResult)0x04000008u, InOrigin(rig,At(0, 0)), 3);
         Assert.Single(rig.M.Whiteboard.GetObjectFailureTable(ObjectActionFailure.PlaceObjectAt));
         Assert.True(Runnable(bring, ctx));
     }
@@ -819,17 +848,18 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_020_FindUsableAndAreAllFollowTheEngine()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var wb = rig.M.Whiteboard;
         wb.CanPickUpObject = o => o.ObjectId != 12;
-        Cube(rig, 10, At(10, 0, 22));                                                       // in a 30 mm beacon at the origin (3-D d2 = 584 <= 900)
-        Cube(rig, 11, At(200, 0, 22));                                                      // outside
-        Cube(rig, 12, At(300, 0, 22));                                                      // CanPickUpObject false
-        Cube(rig, 13, At(0, 0, 80), ObjectType.Block_LIGHTCUBE2);                           // planar-inside but 80 high: outside a 30 mm beacon in 3-D
+        Cube(rig, 10, InOrigin(rig,At(10, 0, 22)));                                                       // in a 30 mm beacon at the origin (3-D d2 = 584 <= 900)
+        Cube(rig, 11, InOrigin(rig,At(200, 0, 22)));                                                      // outside
+        Cube(rig, 12, InOrigin(rig,At(300, 0, 22)));                                                      // CanPickUpObject false
+        Cube(rig, 13, InOrigin(rig,At(0, 0, 80)), ObjectType.Block_LIGHTCUBE2);                           // planar-inside but 80 high: outside a 30 mm beacon in 3-D
         Assert.Empty(wb.FindUsableCubesOutOfBeacons());
         Assert.False(wb.AreAllCubesInBeacons());                                            // no beacon
-        wb.AddBeacon(At(0, 0, 0), 30);
+        wb.AddBeacon(InOrigin(rig,At(0, 0, 0)), 30);
         Assert.Equal(new uint[] { 11, 13 }, wb.FindUsableCubesOutOfBeacons().Select(o => o.ObjectId).ToArray());
         Assert.False(wb.AreAllCubesInBeacons());
         rig.M.Docking.Carrying.SetCarrying(11);
@@ -837,7 +867,7 @@ public class R2FloorPlacementTests
         Assert.False(wb.AreAllCubesInBeacons());
         Assert.True(rig.M.Docking.Carrying.IsCarryingObjectId(11));
         Assert.False(rig.M.Docking.Carrying.IsCarryingObjectId(13));
-        rig.M.Docking.Carrying.AttachToLift(11, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1)[0], At(0, 0), 13, At(0, 0));
+        rig.M.Docking.Carrying.AttachToLift(11, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1)[0], InOrigin(rig,At(0, 0)), 13, InOrigin(rig,At(0, 0)));
         Assert.True(rig.M.Docking.Carrying.IsCarryingObjectId(13));                         // [+0x14], the on-top id (0x00633F88)
         Assert.False(rig.M.Docking.Carrying.IsCarrying(13));                                // the stack's own strict test is unchanged
         Assert.False(rig.M.Docking.Carrying.IsCarryingObjectId(10));
@@ -855,16 +885,17 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_020_CanPickUpObjectRejectsACubeThatIsTooHigh()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         if (!NeedsAssets()) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
-        rig.Cube = At(300, 0, 22);
+        rig.Cube = InOrigin(rig,At(300, 0, 22));
         Assert.Single(rig.Frame().Objects);
         var obj = rig.M.World.LocatedObjects.Single();
         Assert.True(rig.M.Docking.CanPickUpObject(obj));
-        obj.Pose = At(300, 0, 100);
+        obj.Pose = InOrigin(rig,At(300, 0, 100));
         Assert.False(rig.M.Docking.CanPickUpObject(obj));
-        obj.Pose = At(300, 0, 70);
+        obj.Pose = InOrigin(rig,At(300, 0, 70));
         Assert.True(rig.M.Docking.CanPickUpObject(obj));
     }
 
@@ -876,12 +907,13 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_ABareActionTakesTheLockThroughTheManipulationSystemsManager()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
         manager.AddReaction(new ObjectPositionStrategy(), new IdleBehavior());
-        Cube(rig, 7, At(100, 0, 22));
+        Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
         var missing = new List<string>();
         void OnMissing(string s) => missing.Add(s);
         SteppedBehavior.ResetMissingForTests();
@@ -920,10 +952,11 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_TheVerifyChildIsTheEnginesTurnTowardsObjectAction()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         if (!NeedsAssets()) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
-        rig.Cube = At(300, 0, 22);
+        rig.Cube = InOrigin(rig,At(300, 0, 22));
         Assert.Single(rig.Frame().Objects);
         var obj = rig.M.World.LocatedObjects.Single();
         var exec = new TurnTowardsObjectExecutor(rig.M);
@@ -946,15 +979,16 @@ public class R2FloorPlacementTests
     [Fact]
     public void M12_012_IsPoseTooHighIsBinary32()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
-        var cube = Cube(rig, 7, At(0, 0, 22), locate: false);
+        var cube = Cube(rig, 7, InOrigin(rig,At(0, 0, 22)), locate: false);
         double z = 37.0 + 3.0 * Math.Pow(2, -18);
         Assert.True(44.0 * 1.0 + 15.0 + 1e-5 < 44.0 * 0.5 + z);                                       // the double evaluation differs
-        Assert.False(CubeGeometry.IsPoseTooHigh(cube, At(0, 0, z), 1.0f, 15.0f, 0.5f));                // binary32: equal, not less
-        Assert.True(CubeGeometry.IsPoseTooHigh(cube, At(0, 0, z + 1e-4), 1.0f, 15.0f, 0.5f));           // one more ulp or so is
-        Assert.False(CubeGeometry.IsPoseTooHigh(cube, At(0, 0, 70), 2.0f, 15.0f, 0.5f));               // 103 + 1e-5 < 92 no
-        Assert.True(CubeGeometry.IsPoseTooHigh(cube, At(0, 0, 100), 2.0f, 15.0f, 0.5f));               // 103 + 1e-5 < 122
+        Assert.False(CubeGeometry.IsPoseTooHigh(cube, InOrigin(rig,At(0, 0, z)), 1.0f, 15.0f, 0.5f));                // binary32: equal, not less
+        Assert.True(CubeGeometry.IsPoseTooHigh(cube, InOrigin(rig,At(0, 0, z + 1e-4)), 1.0f, 15.0f, 0.5f));           // one more ulp or so is
+        Assert.False(CubeGeometry.IsPoseTooHigh(cube, InOrigin(rig,At(0, 0, 70)), 2.0f, 15.0f, 0.5f));               // 103 + 1e-5 < 92 no
+        Assert.True(CubeGeometry.IsPoseTooHigh(cube, InOrigin(rig,At(0, 0, 100)), 2.0f, 15.0f, 0.5f));               // 103 + 1e-5 < 122
     }
 
     /// <summary>
@@ -985,6 +1019,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_020_InitInternalResumesAtThePlacementPhaseWhileCarryingAndPicksTheNearestOtherwise()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         if (!NeedsAssets()) return;
         // not carrying: two usable cubes, the one at (250, 90) is nearer (72500 against 109000) though the other is listed first by id
         using (var rig = new Rig())
@@ -994,7 +1029,7 @@ public class R2FloorPlacementTests
             Assert.Equal(2, rig.Frame().Objects.Count);
             var far = rig.M.World.LocatedObjects.OrderByDescending(o => o.Pose.Translation.X).First();
             var near = rig.M.World.LocatedObjects.OrderBy(o => o.Pose.Translation.X).First();
-            rig.M.Whiteboard.AddBeacon(At(0, -300), 175);
+            rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, -300)), 175);
             var ctx = Ctx(rig); ctx.Needs = new NeedsManager(() => 0);
             var bring = NewBring(rig);
             Assert.True(Runnable(bring, ctx));
@@ -1012,7 +1047,7 @@ public class R2FloorPlacementTests
             rig.Cube = At(330, -20, 22);
             Assert.Single(rig.Frame().Objects);
             var target = rig.M.World.LocatedObjects.Single();
-            rig.M.Whiteboard.AddBeacon(At(0, 0), 175);
+            rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175);
             rig.M.Docking.Carrying.SetCarrying(target.ObjectId);
             var ctx = Ctx(rig); ctx.Needs = new NeedsManager(() => 0);
             var bring = NewBring(rig);
@@ -1044,7 +1079,7 @@ public class R2FloorPlacementTests
             rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, At(255, 90, 22)));
             Assert.Equal(2, rig.Frame().Objects.Count);
             var target = rig.M.World.LocatedObjects.OrderByDescending(o => o.Pose.Translation.X).First();
-            rig.M.Whiteboard.AddBeacon(At(250, 90), 30);
+            rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(250, 90)), 30);
             rig.M.Docking.Carrying.SetCarrying(target.ObjectId);
             var ctx = Ctx(rig); ctx.Needs = new NeedsManager(() => 0);
             var bring = NewBring(rig);

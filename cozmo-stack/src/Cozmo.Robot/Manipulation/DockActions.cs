@@ -146,13 +146,14 @@ public sealed class TurnTowardsObjectExecutor : IDockSubActionExecutor
         var obj = _m.World.GetLocatedObjectById(t.ObjectId);                                                  // 0x0054A21C GetLocatedObjectByIdHelper(id, -1)
         if (obj is null) { trace.Add($"TurnTowardsObjectAction.Init: object {t.ObjectId} not found"); return ActionResult.BadObject; }
         if (_m.Vision.History.Latest is not { } latest) { trace.Add("TurnTowardsObjectAction.Init: no robot pose"); return ActionResult.BadPose; }     // the engine always has Robot::GetPose(); the stack's TurnTowardsPoseAction answers BAD_POSE the same way
-        var robot = latest.RobotPose;
+        var robot = _m.RobotPose()??latest.RobotPose; // source Robot::GetPose retains its origin parent
         Pose3d markerPose;
         if (t.Code.IsAny)
         {
             if (ObjectPoseQueries.GetClosestMarkerPose(obj, robot, planar: true, out var wrt) is null)
             { trace.Add("TurnTowardsObjectAction.Init: GetClosestMarkerPose failed"); return ActionResult.BadMarker; }       // 0x03000002
-            markerPose = robot.Compose(wrt);
+            markerPose = robot.Compose(wrt);wrt.Dispose();
+            if(robot.HasParent){Pose3d parent=null!;if(robot.TryGetParent(ref parent))using(parent)markerPose.SetParent(parent);}
         }
         else
         {
@@ -160,19 +161,21 @@ public sealed class TurnTowardsObjectExecutor : IDockSubActionExecutor
             Pose3d? chosen = null;
             foreach (var m in obj.Markers.Where(k => unchecked((short)(int)k.Code) == t.Code.Code))
             {
-                var world = obj.Pose.Compose(m.PoseOnObject);
-                var rel = world.WithRespectTo(robot).Translation;
+                using var world=m.PoseOnObject.GetWithRespectToRoot();
+                using var relative=world.WithRespectTo(robot);
+                var rel=relative.Translation;
                 float x = (float)rel.X, y = (float)rel.Y, z = (float)rel.Z;
                 float d2 = x * x;
                 d2 += y * y;
                 d2 += z * z;
                 float dist = MathF.Sqrt(d2);                                                                    // vsqrt.f32 0x0054A402 (sqrtf for a NaN, 0x0054A410)
-                if (dist < best) { best = dist; chosen = world; }                                               // vcmpe s18,s16; bpl skips (0x0054A41C..0x0054A424)
+                if (dist < best) { best = dist; chosen?.Dispose();chosen = new Pose3d(world); }                                               // vcmpe s18,s16; bpl skips (0x0054A41C..0x0054A424)
                 // a marker whose pose cannot be taken with respect to the robot ends Init with 0x03000005 (0x0054A65C..0x0054A6B8); the stack's one origin makes that impossible here
             }
             if (chosen is null) { trace.Add($"TurnTowardsObjectAction.Init: object {t.ObjectId} has no marker with code {t.Code}"); return ActionResult.BadMarker; }
             markerPose = chosen.Value;
         }
+        using var markerOwner=markerPose;
         var turn = new Cozmo.Robot.Vision.TurnTowardsPoseAction(_m.Vision, markerPose, t.RadiansArgument);
         ActionResult r;
         try

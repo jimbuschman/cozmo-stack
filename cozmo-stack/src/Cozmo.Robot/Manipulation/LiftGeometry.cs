@@ -118,8 +118,12 @@ public static class LiftGeometry
         if (markers.Count >= 2) log?.Invoke($"SetObjectAsAttachedToLift: object {id} has {markers.Count} markers {markerCode}; using the first");
         var marker = markers[0];
         if (state is not { } st) { log?.Invoke("SetObjectAsAttachedToLift: no robot pose to take the lift pose from"); return AttachFailed; }
-        var liftWorld = st.RobotPose.Compose(LiftPoseInRobotFrame(st.LiftAngleRad));
-        var objWrtLift = ObjectOnLift(marker, obj.Pose.WithRespectTo(liftWorld).Rotation);
+        using var liftLocal=LiftPoseInRobotFrame(st.LiftAngleRad);
+        using var liftWorld=st.RobotPose.Compose(liftLocal);
+        if(st.RobotPose.HasParent){Pose3d parent=null!;if(st.RobotPose.TryGetParent(ref parent))using(parent)liftWorld.SetParent(parent);}
+        // 0x00632E24..0x00632E38 uses the existing live lift node when supplied by DockingSystem.
+        using var relativeToLift=obj.NativePose.WithRespectTo(liveLiftPose??liftWorld);
+        var objWrtLift = ObjectOnLift(marker, relativeToLift.Rotation);
 
         var cubes = world.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
         var top = BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, cubes, onTop: true, StackToleranceMm);

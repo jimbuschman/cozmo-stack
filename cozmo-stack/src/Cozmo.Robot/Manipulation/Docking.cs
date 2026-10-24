@@ -457,7 +457,7 @@ public sealed class DockingSystem : IDisposable
     {
         if (!CanInteractWithObjectHelper(obj)) return false;
         if (_vision.History.Latest is not { } state) return false;
-        var wrt = obj.Pose.WithRespectTo(state.RobotPose);
+        using var wrt = obj.NativePose.WithRespectTo(_robot.Engine.Robot?.GetCheckedMainPose()??state.RobotPose);
         return !CubeGeometry.IsPoseTooHigh(obj, wrt, 1.0f, 15.0f, 0.5f);      // ObservableObject::IsPoseTooHigh 0x00877954 (M12-012 C-E4), binary32
     }
 
@@ -471,7 +471,7 @@ public sealed class DockingSystem : IDisposable
     {
         if (!CanInteractWithObjectHelper(obj)) return false;
         if (_vision.History.Latest is not { } state) return false;
-        var wrt = obj.Pose.WithRespectTo(state.RobotPose);
+        using var wrt = obj.NativePose.WithRespectTo(_robot.Engine.Robot?.GetCheckedMainPose()??state.RobotPose);
         return !CubeGeometry.IsPoseTooHigh(obj, wrt, 2.0f, 15.0f, 0.5f);
     }
 

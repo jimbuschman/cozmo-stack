@@ -10,8 +10,20 @@ namespace Cozmo.Protocol.Tests;
 /// value is taken from the record's citation (address in the test's summary), never from what the code returns: the numbers are
 /// worked by hand from the cited constants and rows.
 /// </summary>
-public class M12RVisBuildTests
+public class M12RVisBuildTests : IDisposable
 {
+    private readonly Pose3d _objectOrigin=new("unit origin");
+    private readonly List<ObservableObject> _parentedObjects=new();
+    public void Dispose()
+    {
+        foreach(var obj in _parentedObjects)
+        {CubePreActionPoses.ClearForSetPose(obj);foreach(var marker in obj.Markers)marker.PoseOnObject.Dispose();obj.NativePose.Dispose();}
+        foreach(var pose in _unitPoseInputs)pose.Dispose();
+        _objectOrigin.Dispose();
+    }
+    private readonly List<Pose3d> _unitPoseInputs=new();
+    private Pose3d InUnitOrigin(Pose3d pose)
+    {pose.SetParent(_objectOrigin);_unitPoseInputs.Add(pose);return pose;}
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
     private const double StackToleranceMm = 15.0;                     // 0x00632F0C
     // Not a source value: the bound for re-expressing a stored offset through f32 pose compositions (R24-R27) at the
@@ -227,8 +239,9 @@ public class M12RVisBuildTests
     private static DriveToPoseTick Tick(int status, double now = 0, Pose3d? robot = null, double height = 70, ushort id42 = 1, ushort id44 = 1) =>
         new(status, now, robot ?? At(0, 0), height, id42, id44);
 
-    private static (DriveToPoseAction Action, FakeAnim Anim, Func<int> Aborts) NewDrive(Rig rig, Pose3d goal)
+    private (DriveToPoseAction Action, FakeAnim Anim, Func<int> Aborts) NewDrive(Rig rig, Pose3d goal)
     {
+        _unitPoseInputs.Add(goal);
         var anim = new FakeAnim(); int aborts = 0;
         var d = new DriveToPoseAction(rig.M) { Goal = goal, DrivingAnimations = anim, AbortPath = () => aborts++ };
         return (d, anim, () => aborts);
@@ -392,7 +405,9 @@ public class M12RVisBuildTests
     public void M12_024_TheLivePathReturnsSuccessThroughTheEndLifecycle()
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();
-        var drive=new DriveToPoseAction(rig.M){Goal=At(150,-40,0,0.5)};
+        // A / reach: unit: only the live task needs the production origin; direct Tick fixtures retain their shared flat inputs.
+        using var goal=At(150,-40,0,0.5);goal.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        var drive=new DriveToPoseAction(rig.M){Goal=goal};
         var task=drive.RunAsync(default);
         SignalTestContext.Run(task,()=>rig.Pump());Assert.Equal(ActionResult.Success,task.GetAwaiter().GetResult());
         Assert.DoesNotContain(drive.Trace,l=>l.Contains("unbuilt; source remains RUNNING"));
@@ -480,8 +495,9 @@ public class M12RVisBuildTests
         Assert.Equal(0, ok.Field0xBB);
     }
 
+    // A / reach: unit: the substituted centre has the production helper's origin parent (old: unrelated root).
     private static ObjectPoseQueries CentreRotatedBy(double psi) =>
-        new((o, z) => new Pose3d(Mat3.AboutZ(psi), o.Pose.Translation), (_, _) => MarkerType.LightCubeI_Front);
+        new((o,z)=>{var pose=new Pose3d(Mat3.AboutZ(psi),o.Pose.Translation);if(o.NativePose.HasParent){using var root=o.NativePose.FindRoot();pose.SetParent(root);}return pose;},(_,_)=>MarkerType.LightCubeI_Front);
 
     /// <summary>
     /// M12-025, TransformPlacementOffsetsRelativeObject 0x00554E40 (verified by the verifier): psi (the z-rotated point above the centre, 0.5, with respect to
@@ -622,15 +638,16 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_031_IsAtPreActionPoseWithVisualVerificationMapsTheInPositionByteForNonPlaceTypes()
     {
+        // A / reach: unit: old root object produced no goals; supply the production origin parent only.
         var cal = CameraCalibration.Nominal();
-        var obj = NewCube(At(200, 0, 22));
+        var obj = CubeWith(7,ObjectType.Block_LIGHTCUBE1,At(200,0,22));
         obj.LastObservedTimestamp = 5000;
         ActionResult Run(Pose3d robot, PreActionType type, uint? carried = null) =>
             PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerification(obj, type, 0, 0, 5000, robot, carried, cal, IdentityCentre, NoObstacles);
-        Assert.Equal(0u, (uint)Run(At(60, 0), PreActionType.Docking));
-        Assert.Equal(0x04000001u, (uint)Run(At(-20, 0), PreActionType.Docking));
-        Assert.Equal(0x03000004u, (uint)Run(At(60, 0), PreActionType.Docking, carried: 7u));
-        Assert.Equal(0x03000010u, (uint)Run(At(60, 0), PreActionType.Entry));                // the Entry type generates nothing (M12-001)
+        Assert.Equal(0u, (uint)Run(InUnitOrigin(At(60,0)), PreActionType.Docking));
+        Assert.Equal(0x04000001u, (uint)Run(InUnitOrigin(At(-20,0)), PreActionType.Docking));
+        Assert.Equal(0x03000004u, (uint)Run(InUnitOrigin(At(60,0)), PreActionType.Docking, carried: 7u));
+        Assert.Equal(0x03000010u, (uint)Run(InUnitOrigin(At(60,0)), PreActionType.Entry));                // the Entry type generates nothing (M12-001)
     }
 
     // ------------------------------------------------------------------ M12-008
@@ -848,10 +865,11 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_031_ANullOrCarriedObjectIsBadObject()
     {
-        var obj = NewCube(At(200, 0, 22));
-        Assert.Equal(0x03000004u, (uint)DockPreActionPoses.Get(new PreActionPoseInput(null, PreActionType.Docking, false, 0.13, 0, false, 0), At(0, 0), null, NoObstacles).Result);
-        Assert.Equal(0x03000004u, (uint)DockPreActionPoses.Get(new PreActionPoseInput(obj, PreActionType.Docking, false, 0.13, 0, false, 0), At(0, 0), 7u, NoObstacles).Result);
-        Assert.Equal(ActionResult.Success, DockPreActionPoses.Get(new PreActionPoseInput(obj, PreActionType.Docking, false, 0.13, 0, false, 0), At(0, 0), 8u, NoObstacles).Result);
+        // A / reach: unit: old root object produced no goals; supply the production origin parent only.
+        var obj = CubeWith(7,ObjectType.Block_LIGHTCUBE1,At(200,0,22));
+        Assert.Equal(0x03000004u, (uint)DockPreActionPoses.Get(new PreActionPoseInput(null, PreActionType.Docking, false, 0.13, 0, false, 0), InUnitOrigin(At(0,0)), null, NoObstacles).Result);
+        Assert.Equal(0x03000004u, (uint)DockPreActionPoses.Get(new PreActionPoseInput(obj, PreActionType.Docking, false, 0.13, 0, false, 0), InUnitOrigin(At(0,0)), 7u, NoObstacles).Result);
+        Assert.Equal(ActionResult.Success, DockPreActionPoses.Get(new PreActionPoseInput(obj, PreActionType.Docking, false, 0.13, 0, false, 0), InUnitOrigin(At(0,0)), 8u, NoObstacles).Result);
     }
 
     /// <summary>M12-031 (research 10.5): no pose left is 0x03000010; the Entry type (3) generates none (M12-001).</summary>
@@ -871,8 +889,9 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_031_TheApproachAngleFilterErasesAtOrBeyondPointSevenEightFive()
     {
-        var obj = NewCube(At(200, 0, 22));
-        var robot = At(0, 0);
+        // A / reach: unit: old root object produced no goals; supply the production origin parent only.
+        var obj = CubeWith(7,ObjectType.Block_LIGHTCUBE1,At(200,0,22));
+        var robot = InUnitOrigin(At(0,0));
         var all = DockPreActionPoses.Get(new PreActionPoseInput(obj, PreActionType.Docking, false, 0.13, 0, false, 0), robot, null, NoObstacles).Poses;
         var front = all.First(p => p.Marker.Face == BlockFace.Front);
         double yaw = EngineRadians.GetAngleAroundZaxis(front.WorldPose.Rotation);
@@ -1304,11 +1323,12 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_026_ComputeTakesItsPosesFromGetPreActionPoses()
     {
-        var obj = NewCube(At(200, 0, 22));
+        // A / reach: unit: old root object produced no goals; supply the production origin parent only.
+        var obj = CubeWith(7,ObjectType.Block_LIGHTCUBE1,At(200,0,22));
         var cal = DistinctCal();
-        Assert.Equal(0x03000010u, (uint)PlaceRelObjectOffsetPoses.Compute(obj, 0, 0, At(0, 0), 7u, cal, ObjectPoseQueries.Engine, NoObstacles, out var none, out _));
+        Assert.Equal(0x03000010u, (uint)PlaceRelObjectOffsetPoses.Compute(obj, 0, 0, InUnitOrigin(At(0,0)), 7u, cal, ObjectPoseQueries.Engine, NoObstacles, out var none, out _));
         Assert.Empty(none);
-        Assert.Equal(ActionResult.Success, PlaceRelObjectOffsetPoses.Compute(obj, 0, 0, At(0, 0), null, cal, ObjectPoseQueries.Engine, NoObstacles, out var poses, out _));
+        Assert.Equal(ActionResult.Success, PlaceRelObjectOffsetPoses.Compute(obj, 0, 0, InUnitOrigin(At(0,0)), null, cal, ObjectPoseQueries.Engine, NoObstacles, out var poses, out _));
         Assert.NotEmpty(poses);
     }
 
@@ -1465,14 +1485,19 @@ public class M12RVisBuildTests
     // Every expected value is worked by hand from the record text / citation (the pose tables worked with an independent numpy evaluation of M12-001's per-type
     // constants and M12-021's masks), never from what the code returned.
 
-    private static ObservableObject CubeWith(uint id, ObjectType type, Pose3d pose) =>
-        new(id, type, CubeGeometry.CubeMarkers(type)) { Pose = pose, PoseState = PoseState.Known };
+    // A / reach: unit: old parentless object fixture gave 0 goals. Match production's origin parent only.
+    private ObservableObject CubeWith(uint id, ObjectType type, Pose3d pose)
+    {
+        var obj=new ObservableObject(id,type,CubeGeometry.CubeMarkers(type)){Pose=pose,PoseState=PoseState.Known};
+        if(!obj.NativePose.HasParent)obj.NativePose.SetParent(_objectOrigin);
+        _parentedObjects.Add(obj);pose.Dispose();return obj;
+    }
 
     /// <summary>The hand-built Front docking pose of a cube at (200, 0, 22) for a robot at the origin: (40.289, 0, -18.387), rotation identity (see ManipulationTests, M12-001 E1).</summary>
     private static PreActionPose FrontDockingPoseOfTheCubeAt200(ObservableObject cube) =>
         new(PreActionType.Docking, cube.Markers.First(m => m.Face == BlockFace.Front), At(40.289, 0, -18.387), 75.0);
 
-    private static PreActionObstacle Obstacle(uint id, double x, double y, double z = 22) =>
+    private PreActionObstacle Obstacle(uint id, double x, double y, double z = 22) =>
         PreActionObstacle.For(CubeWith(id, ObjectType.Block_LIGHTCUBE2, At(x, y, z)), 0f);
 
     // ------------------------------------------------------------------ M12-036
@@ -2065,7 +2090,9 @@ public class M12RVisBuildTests
         var notCarrying = new DriveToPlaceCarriedObjectAction(rig.M, At(300, 0, 22), true, false, false, false, 0.0);
         Assert.Equal(0x03000011u, (uint)await notCarrying.RunAsync(default));
         rig.M.Docking.Carrying.SetCarrying(7);
-        var placement = At(300, 100, 22, 0.4);
+        // A: old placement goal was parentless and the clone got no pre-action poses.
+        using var placement = At(300, 100, 22, 0.4);
+        placement.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
         var act = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, false, false, false, 0.0);
         var t = act.RunAsync(default); Spin(t, rig);
         Assert.True(t.IsCompleted);
@@ -2075,11 +2102,14 @@ public class M12RVisBuildTests
         Assert.Equal(PoseState.Known, act.Clone.PoseState);
         Assert.Equal(300.0, act.Clone.Pose.Translation.X, 9); Assert.Equal(100.0, act.Clone.Pose.Translation.Y, 9);
         Assert.Contains(rig.Sent, m => m is ExecutePath);                        // the inner InitHelper found poses and drove
+        placement.ClearParent(); // Preserve the deliberately disjoint-root input of the following failure-branch check.
         var approach = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, true, false, false, 0.0);
-        // OV05 now runs the real calculation. This older flat-world fixture has disjoint pose roots,
-        // so GetWithRespectTo returns the checked failure before clone/InitHelper; the parented success case is in M12CheckedRowsBuilderTests.
-        Assert.Equal((ActionResult)0x03000005, await approach.RunAsync(default));
-        Assert.Null(approach.Clone);
+        // B: old 0x03000005/null came from the carried object's missing parent. OV05's
+        // GetWithRespectTo(carried,robot) now succeeds, so the native Init creates the clone (Q4.3).
+        // The deliberately root placement then reaches world row1e / 0x0050DFFA:
+        // M1-034 skips GetParent(root), leaving empty goals / 0x03000010 (Q2.4).
+        Assert.Equal(ActionResult.NoPreActionPoses, await approach.RunAsync(default));
+        Assert.NotNull(approach.Clone);
         rig.M.Docking.Carrying.UnsetCarrying();
         var gone = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, false, false, false, 0.0);      // built with nothing carried: the invalid id
         rig.M.Docking.Carrying.SetCarrying(7);
@@ -2189,11 +2219,13 @@ public class M12RVisBuildTests
 
     // ------------------------------------------------------------------ M12-035
 
-    private static (Rig Rig, ObservableObject Cube) FlipRig(float robotY)
+    private (Rig Rig, ObservableObject Cube) FlipRig(float robotY)
     {
         var rig = new Rig();
         rig.X = 0; rig.Y = robotY; rig.Angle = 0; rig.State();
-        return (rig, CubeWith(7, ObjectType.Block_LIGHTCUBE1, At(200, 0, 22)));
+        var cube=CubeWith(7,ObjectType.Block_LIGHTCUBE1,At(200,0,22));
+        cube.NativePose.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        return (rig,cube);
     }
 
     /// <summary>
@@ -2235,10 +2267,15 @@ public class M12RVisBuildTests
         var (rig, cube) = FlipRig(-10f);
         using (rig)
         {
-            rig.M.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(3, new FaceRect(0, 0, 10, 10), Name: "Bob"), 1000) { HeadPose = new Pose3d(Mat3.Identity, new Vec3(130, 80, 50)) }, Pose3d.Identity, false);
+            // A: old face fixtures were parentless; their world positions belong to the rig's origin.
+            using var faceLeft=new Pose3d(Mat3.Identity,new Vec3(130,80,50));
+            using var faceFront=new Pose3d(Mat3.Identity,new Vec3(130,-80,50));
+            faceLeft.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+            faceFront.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+            rig.M.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(3, new FaceRect(0, 0, 10, 10), Name: "Bob"), 1000) { HeadPose = faceLeft }, Pose3d.Identity, false);
             DriveAndFlipBlockAction.GetPossiblePoses(rig.M, cube, out var nearLeft, closestOnly: false);
             Assert.Equal(BlockFace.Front, Assert.Single(nearLeft).Marker.Face);
-            rig.M.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(4, new FaceRect(0, 0, 10, 10), Name: "Amy"), 2000) { HeadPose = new Pose3d(Mat3.Identity, new Vec3(130, -80, 50)) }, Pose3d.Identity, false);
+            rig.M.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(4, new FaceRect(0, 0, 10, 10), Name: "Amy"), 2000) { HeadPose = faceFront }, Pose3d.Identity, false);
             DriveAndFlipBlockAction.GetPossiblePoses(rig.M, cube, out var nearFront, closestOnly: false);
             Assert.Equal(BlockFace.Left, Assert.Single(nearFront).Marker.Face);
         }
@@ -2550,7 +2587,10 @@ public class M12RVisBuildTests
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         var task = StartFlipAtTheDrive(rig, flip, out _);
         Assert.False(flip.LiftRaised);                                               // 200 mm away: no tick so far queued it
-        obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(cubeX, 0, 22));
+        // A: old replacement was parentless; production preserves the origin parent (no coordinate change).
+        using var replacement=new Pose3d(obj.Pose.Rotation, new Vec3(cubeX, 0, 22));
+        replacement.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        obj.Pose=replacement;
         bool checkedNewPose = false;
         flip.CheckTickObserved += () => checkedNewPose = true;
         SignalTestContext.Until(() => checkedNewPose, () => rig.Pump());
@@ -2657,7 +2697,10 @@ public class M12RVisBuildTests
     {
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         obj = Assert.Single(rig.Frame().Objects).Object;
-        obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(x, 0, 22));
+        // A: old replacement was parentless; production preserves the origin parent (no coordinate change).
+        using var replacement=new Pose3d(obj.Pose.Rotation, new Vec3(x, 0, 22));
+        replacement.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        obj.Pose=replacement;
         return new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
     }
 
@@ -2724,7 +2767,10 @@ public class M12RVisBuildTests
         using var rig = new Rig();
         var flip = FlipWithCubeAt(rig, 200.0, out var obj);
         var task = StartFlipAtTheDrive(rig, flip, out _);
-        obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(30.0, 0, 22));
+        // A: old replacement was parentless; production preserves the origin parent (no coordinate change).
+        using var replacement=new Pose3d(obj.Pose.Rotation, new Vec3(30.0, 0, 22));
+        replacement.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        obj.Pose=replacement;
 
         // M4-016: stop pumping as soon as the carry lift is queued, so the engine clock stays well inside the 30 s IAction timeout.
         SignalTestContext.Until(() => !(!flip.LiftRaised), () => { rig.Pump(); });

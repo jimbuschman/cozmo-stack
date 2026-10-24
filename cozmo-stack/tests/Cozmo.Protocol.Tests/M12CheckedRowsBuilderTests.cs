@@ -135,13 +135,16 @@ public sealed class M12CheckedRowsBuilderTests
         f.Vision.World.ApplyRelativeObservation(obj,obj.NativePose,PoseState.Known,4);
         var confirmerNode=obj.Confirmation!.Pose.Node;
         obj.PoseState=PoseState.Dirty;obj.LastObservedTimestamp=123;
-        var argument=new Pose3d(Rotation3d.Identity,new Vec3(2,3,4),parent:f.Native.LiftPose);
+        using var argument=new Pose3d(Rotation3d.Identity,new Vec3(2,3,4),parent:f.Native.LiftPose);
         bool called=false;
         typeof(BlockWorld).GetField("_appendPoseChanges",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(f.Vision.World,true);
         f.Vision.World.SetObjectPoseChanged=(id,state)=>
         {
-            called=true;Assert.Equal(4,obj.Confirmation!.Count);Assert.Same(argument,obj.NativePose);
-            obj.SetPose(new Pose3d(Rotation3d.Identity,new Vec3(99,0,0)),0,PoseState.Known);
+            // B: old wrapper alias was Same; ObservableObject::SetPose copies into its embedded pose
+            // (0x004EF598..0x004EF5A2). The argument must remain independent when the callback writes again.
+            called=true;Assert.Equal(4,obj.Confirmation!.Count);Assert.NotSame(argument,obj.NativePose);
+            Assert.Equal(new Vec3(2,3,4),obj.NativePose.Translation);Assert.Same(f.Native.LiftPose.Node,obj.NativePose.Node!.Parent);
+            using var changed=new Pose3d(Rotation3d.Identity,new Vec3(99,0,0));obj.SetPose(changed,0,PoseState.Known);
         };
         Assert.Equal(0u,ObjectPoseConfirmerRelative.AddLiftRelativeObservation(f.Vision.World,obj,argument));
         var queued = (System.Collections.IList)typeof(BlockWorld).GetField("_poseChanges",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(f.Vision.World)!;
