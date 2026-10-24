@@ -1426,7 +1426,10 @@ public static class TurnTowardsPose
     {
         angle = 0.0f;
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Robot::ComputeHeadAngleToSeePose 0x00518344: the neck-pose composition, GetInverse and the rotation of P (0x004A4864, 0x004A8194, Transform3d) are this stack's double Pose3d algebra narrowed to binary32, not the engine's quaternion operations; the loop's scalar operations are binary32");
-        var wrt = poseInRobotFrame.WithRespectTo(new Pose3d(Mat3.Identity, HeadGeometry.NeckPositionMm)).Translation;     // 0x0051838E GetWithRespectTo(pose, [robot+0x2CC]); the pose arrives in the robot frame (0x0054A94C)
+        using var neck=new Pose3d(Mat3.Identity,HeadGeometry.NeckPositionMm);
+        if(poseInRobotFrame.HasParent){Pose3d parent=null!;if(poseInRobotFrame.TryGetParent(ref parent))using(parent)neck.SetParent(parent);}
+        using var relativeToNeck=poseInRobotFrame.WithRespectTo(neck);
+        var wrt=relativeToNeck.Translation; // 0x0051838E: goal and neck both belong to the robot frame
         float tx = (float)wrt.X, ty = (float)wrt.Y, tz = (float)wrt.Z;
         float sq = tx * tx;
         sq = sq + ty * ty;

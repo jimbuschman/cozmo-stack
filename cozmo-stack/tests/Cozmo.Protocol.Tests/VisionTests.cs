@@ -1142,8 +1142,14 @@ public class VisionTests
         rig.Observe(CubeAhead(), head: -0.15f);
         var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         var entryPose = o.ReferencePose;
-        bool ConfirmedAt(Pose3d pose) => rig.Vision.World.IsObjectConfirmedAtObservedPose(
-            new ObservableObject(ObjectType.Block_LIGHTCUBE1, o.Markers) { Pose = pose }, out _);
+        // A / reach: unit: old offset/rotation samples were parentless and could not match the located origin.
+        bool ConfirmedAt(Pose3d pose)
+        {
+            using var input=new Pose3d(pose);input.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+            var observed=new ObservableObject(ObjectType.Block_LIGHTCUBE1,o.Markers){Pose=input};
+            try{return rig.Vision.World.IsObjectConfirmedAtObservedPose(observed,out _);}
+            finally{foreach(var marker in observed.Markers)marker.PoseOnObject.Dispose();observed.NativePose.Dispose();if(!ReferenceEquals(pose,entryPose))pose.Dispose();}
+        }
         Assert.True(ConfirmedAt(entryPose));
         Assert.True(ConfirmedAt(new Pose3d(entryPose.Rotation, entryPose.Translation + new Vec3(0, 20, 0))));
         Assert.False(ConfirmedAt(new Pose3d(entryPose.Rotation, entryPose.Translation + new Vec3(0, 40, 0))));
@@ -1391,6 +1397,7 @@ public class VisionTests
     [Fact]
     public void TheCapturedRoomFramesDecodeAndCarryNoCubeMarkers()
     {
+        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
         // without the library the frames still decode and the detector finds quads but decodes none; the
         // no-cube-marker claim holds either way
         var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "hw_fw2457_probe.log");

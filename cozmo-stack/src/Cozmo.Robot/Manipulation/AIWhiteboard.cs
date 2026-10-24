@@ -148,7 +148,7 @@ public sealed partial class AIWhiteboard
     /// </summary>
     public AIBeacon AddBeacon(Pose3d pose, double radiusMm)
     {
-        var b = new AIBeacon(pose, radiusMm);
+        var b = new AIBeacon(new Pose3d(pose), radiusMm); // native vector owns the value's pose copy
         _beacons.Add(b);
         UpdateBeaconRender();
         return b;
@@ -172,7 +172,7 @@ public sealed partial class AIWhiteboard
     public event Action<string>? Log;
     private void Warn(string message) => Log?.Invoke("warning: AIWhiteboard." + message);
 
-    public void ClearAllBeacons() => _beacons.Clear();
+    public void ClearAllBeacons(){foreach(var beacon in _beacons)beacon.Pose.Dispose();_beacons.Clear();}
 
     /// <summary>
     /// <c>CarryingComponent::IsCarryingObject(id)</c>, the first test of the <c>FindCubesInBeacon</c> predicate (0x0056D142). Wired by <see cref="ManipulationSystem"/>; null: nothing is carried.
@@ -189,7 +189,7 @@ public sealed partial class AIWhiteboard
     public IReadOnlyList<ObservableObject> FindCubesInBeacon(AIBeacon beacon) =>
         _world.LocatedObjects.Where(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube)
             .OrderBy(o => (int)o.Family).ThenBy(o => (int)o.Type).ThenBy(o => o.ObjectId)
-            .Where(o => !(IsCarryingObject?.Invoke(o.ObjectId) ?? false) && beacon.IsLocWithinBeacon(o.Pose, 0.0f))
+            .Where(o => !(IsCarryingObject?.Invoke(o.ObjectId) ?? false) && beacon.IsLocWithinBeacon(o.NativePose, 0.0f))
             .ToList();
 
     /// <summary>
@@ -219,7 +219,7 @@ public sealed partial class AIWhiteboard
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("AIWhiteboard::FindUsableCubesOutOfBeacons predicate 0x0056D03A: DockingComponent::CanPickUpObject is not wired to this whiteboard (AIWhiteboard.CanPickUpObject), so no cube is usable");
         return _world.LocatedObjects.Where(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube)
             .OrderBy(o => (int)o.Family).ThenBy(o => (int)o.Type).ThenBy(o => o.ObjectId)
-            .Where(o => (CanPickUpObject?.Invoke(o) ?? false) && !_beacons.Any(b => b.IsLocWithinBeacon(o.Pose, 0.0f)))
+            .Where(o => (CanPickUpObject?.Invoke(o) ?? false) && !_beacons.Any(b => b.IsLocWithinBeacon(o.NativePose, 0.0f)))
             .ToList();
     }
 
@@ -235,7 +235,7 @@ public sealed partial class AIWhiteboard
         if (_beacons.Count == 0) return false;
         if (CarriedObjectId?.Invoke() is not null) return false;
         int inBeacons = _world.LocatedObjects.Count(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube
-                                                          && o.PoseState == PoseState.Known && _beacons.Any(b => b.IsLocWithinBeacon(o.Pose, 0.0f)));
+                                                          && o.PoseState == PoseState.Known && _beacons.Any(b => b.IsLocWithinBeacon(o.NativePose, 0.0f)));
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("AIWhiteboard::AreAllCubesInBeacons 0x0056B5C4..0x0056B5F8: the value of the BlockWorld map at +0x48 for family 2 that the count of cubes in beacons is compared with is unidentified (its writers are not read); the stack compares with the number of located LightCubes");
         int lightCubes = _world.LocatedObjects.Count(o => o.Family == ObjectFamily.LightCube);
         return inBeacons == lightCubes;
@@ -398,7 +398,7 @@ public sealed partial class AIWhiteboard
     }
 
     /// <summary><c>OnRobotDelocalized</c>: beacons live in the old origin, so they are dropped.</summary>
-    public void OnRobotDelocalized() { _beacons.Clear(); lock (_failureGate) foreach (var t in _failureTables) t.Clear(); }
+    public void OnRobotDelocalized() { ClearAllBeacons(); lock (_failureGate) foreach (var t in _failureTables) t.Clear(); }
 }
 
 

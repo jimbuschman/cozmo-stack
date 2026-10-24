@@ -151,7 +151,9 @@ public sealed class ManipulationSystem : IDisposable
     /// </summary>
     public Func<TimeSpan, CancellationToken, Task> Wait { get; set; } = (t, c) => Task.Delay(t, c);
 
-    public Pose3d? RobotPose() => Vision.History.Latest?.RobotPose;
+    // Robot::GetPose 0x004EA398: use the existing live pose-tree owner, not the history API's flat snapshot.
+    public Pose3d? RobotPose() => Vision.History.Latest is {} latest
+        ? Robot.Engine.Robot?.GetCheckedMainPose() ?? latest.RobotPose : null;
 
 
     /// <summary>
@@ -215,6 +217,7 @@ public sealed class ManipulationSystem : IDisposable
 
     public void Dispose()
     {
+        Whiteboard.ClearAllBeacons(); // release this owner's independent beacon pose copies
         NativePlanners?.Stop();NativePlanners?.Dispose();
         if(World.MapClearQuad==Whiteboard.ProcessClearQuad)World.MapClearQuad=null;
         Follower.Dispose();

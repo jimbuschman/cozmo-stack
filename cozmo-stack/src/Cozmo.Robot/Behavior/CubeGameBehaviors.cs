@@ -1056,7 +1056,8 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
         // fidelity: M15-011
         // SelectNewBeacon 0x005E5F0C: Robot::GetPose, copied (Pose3d::Pose3d 0x005E5F1A), and AddBeacon(copy, [this+0x128]) (0x005E5F28..0x005E5F30): the whole robot pose, rotation and
         // translation including z, not a planar pose rebuilt from the yaw.
-        Selected = M.Whiteboard.AddBeacon(robot.Value, BeaconRadiusMm);
+        using var copy=new Pose3d(robot.Value);
+        Selected = M.Whiteboard.AddBeacon(copy, BeaconRadiusMm);
         Log($"SelectNewBeacon: beacon at {Selected.Pose.Translation} radius {BeaconRadiusMm}");
         PlayTrigger(NewAreaAnim, Finish);
     }
@@ -1409,6 +1410,7 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
             // 0x005E09E0..0x005E0DF2
             var (tx, ty, tz, rotated) = BeaconFloorGeometry.CandidateTranslation(rot, spacing, i, j, bx, by, bz);
             var pose = last = Pose3d.FromFlatRotation(new Rotation3d(rot.W,rot.X,rot.Y,rot.Z),new Vec3(tx,ty,tz));                      // *out = Pose3d(rot, t, origin, ""), BEFORE any test (0x005E0A96..0x005E0A9E)
+            pose.SetParent(M.World.GetNativeOrigin(M.World.CurrentOriginId)); // checked R2 row1.7: Robot::GetWorldOrigin
             float d2 = rotated.X * rotated.X;
             d2 += rotated.Y * rotated.Y;
             d2 += rotated.Z * rotated.Z;

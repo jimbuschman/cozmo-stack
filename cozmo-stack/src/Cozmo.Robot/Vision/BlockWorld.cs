@@ -207,7 +207,12 @@ public sealed partial class ObservableObject
             ChargerMarker=new KnownMarker(definition.Code,definition.Face,markerPose,definition.SizeMm){HeightMm=definition.HeightMm};
             Markers=new[]{ChargerMarker};
         }
-        else Markers = markers.Select(m => m with { LastObservedTimestamp = null }).ToArray();
+        else Markers = markers.Select(m =>
+        {
+            var pose=CubeGeometry.IsCube(type)?new Pose3d(m.PoseOnObject):m.PoseOnObject;
+            if(CubeGeometry.IsCube(type))pose.SetParent(_pose);
+            return m with{LastObservedTimestamp=null,PoseOnObject=pose};
+        }).ToArray();
         foreach (var marker in Markers)
         {
             short code = unchecked((short)marker.Code);
@@ -252,6 +257,7 @@ public sealed partial class ObservableObject
     /// <summary>Pose in the robot's world origin; meaningful while <see cref="PoseState"/> is not Unknown.</summary>
     private Pose3d _pose=Pose3d.Identity;
     internal Pose3d NativePose=>_pose;
+    internal BlockWorld? PoseWorld; // host serialization owner; not a recovered native object field
     internal bool NativeCarryingTree;
     // The public world-coordinate API remains a snapshot. The native carried path owns one shared node.
     public Pose3d Pose
@@ -259,14 +265,15 @@ public sealed partial class ObservableObject
         get{if(!NativeCarryingTree)return _pose;using var flat=_pose.GetWithRespectToRoot();return Pose3d.FromFlatRotation(flat.Quaternion,flat.Translation);}
         internal set
         {
-            if(Type==ObjectType.Charger_Basic)
+            using var mutation=PoseWorld?.EnterPoseMutation();
+            if(Type==ObjectType.Charger_Basic || CubeGeometry.IsCube(Type))
             {
                 // 0x004EF598..0x004EF5A2 assigns into the object's embedded pose; marker children retain that node.
                 if(_pose.Node is null)_pose=new Pose3d(value); // host fixture may have released its initial wrapper
                 else _pose.AssignInputValue(value);
             }
             else _pose=value;
-            if(ChargerMarker is {} marker)marker.PoseOnObject.SetParent(_pose);
+            foreach(var marker in Markers)if(Type==ObjectType.Charger_Basic || CubeGeometry.IsCube(Type))marker.PoseOnObject.SetParent(_pose);
         }
     }
     public PoseState PoseState { get; internal set; } = PoseState.Unknown;
@@ -329,6 +336,7 @@ public sealed partial class ObservableObject
     /// </summary>
     internal void SetPose(Pose3d pose, double fromDistance, PoseState state)
     {
+        using var mutation=PoseWorld?.EnterPoseMutation(); // cache clear and embedded write are one native-thread unit
         ClearPreActionPosesForSetPose();
         SetPoseAfterCacheClear(pose, fromDistance, state);
     }
@@ -1668,9 +1676,12 @@ public sealed partial class BlockWorld
                     if (joint is not null && joint.RmsReprojectionPx <= MaxReprojectionRmsPx * 2) { pose = camera.Pose.Compose(joint.ObjectInCamera); rms = joint.RmsReprojectionPx; }
                 }
                 var seenMarkers = cluster.Select(c => c.Seen).ToList();
-                var instance = new ObservableObject(group.Key, CubeGeometry.MarkersFor(group.Key)) { OriginId = CurrentOriginId };
+                var instance = new ObservableObject(group.Key, CubeGeometry.MarkersFor(group.Key)) { OriginId = CurrentOriginId,PoseWorld=this };
                 double key = pose.Translation.Dot(pose.Translation);
                 var placed = instance.IsActive ? ClampPoseToFlat(pose, CreationFlatClampAngleRad) : pose;   // 0x00625578
+                // The solver/clamp adapter returns root-relative coordinates; bind the existing native origin owner.
+                // Native CreateObjectsFromMarkers passes an origin-parented pose to InitPose (0x00625578..0x00625580).
+                if(!placed.HasParent)placed.SetParent(GetNativeOrigin(CurrentOriginId));
                 instance.SetPose(placed, -1.0, PoseState.Dirty);                                            // InitPose 0x00625580
                 foreach (var seen in seenMarkers)
                     instance.SetMarkerAsObserved(seen, seenMarkers[0].Timestamp, BitConverter.UInt32BitsToSingle(0x3DCCCCCD), camera,
@@ -2338,6 +2349,7 @@ public sealed partial class BlockWorld
     internal void AddLocatedObject(ObservableObject obj)
     {
         using var frameMutation=EnterPoseMutation();
+        obj.PoseWorld=this;
         var connected = GetConnectedActiveObjectByIdHelper(obj.ObjectId);
         if (connected is not null)
         {
@@ -2589,7 +2601,12 @@ public sealed partial class BlockWorld
                 Source(EngineLogLevel.Warning,null,"BlockWorld.UpdateStacks.OriginMismatch","Can't obtain topPose wrt old, but that's exactly how we found the object in topPose.");
                 continue;
             }
-            var newPose = obj.Pose.Compose(stacked.Pose.WithRespectTo(e.Pose));
+            using var relative=stacked.NativePose.WithRespectTo(e.Pose);
+            using var newPose=new Pose3d(relative);
+            newPose.PreComposeWith(obj.NativePose);
+            Pose3d parent=null!;
+            if(!obj.NativePose.TryGetParent(ref parent))continue;
+            using(parent)newPose.SetParent(parent); // 0x0062196E..0x006219A8
             if (AddObjectRelativeObservation(stacked, newPose, obj) != 0)
             {
                 Source(EngineLogLevel.Warning,null,"BlockWorld.UpdateRotationOfObjectsStackedOn.AddRelativeObservationFailed","Giving up on rest of stack");
@@ -2701,7 +2718,10 @@ public sealed partial class BlockWorld
         var cross = up.Cross(ez);
         if (cross.Length < 1e-12) return pose;
         var fix = Mat3.AxisAngle(cross, Math.Asin(Math.Clamp(cross.Length, 0, 1)));
-        return new Pose3d((fix * r).Orthonormalized(), pose.Translation);
+        var result=new Pose3d((fix * r).Orthonormalized(),pose.Translation);
+        // Clamp changes rotation in the input frame; the native pose still has that same origin parent.
+        if(pose.HasParent){Pose3d parent=null!;if(pose.TryGetParent(ref parent))using(parent)result.SetParent(parent);}
+        return result;
     }
 
     // ------------------------------------------------------------------------------ connected objects

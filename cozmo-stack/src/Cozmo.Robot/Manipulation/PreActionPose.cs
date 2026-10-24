@@ -216,7 +216,7 @@ public static class CubePreActionPoses
         };
     }
 
-    /// <summary>One element of <c>Block::GeneratePreActionPoses</c>'s output: the pose stored in the object's cache vector (marker-local, before the push-out).</summary>
+    /// <summary>One element of <c>Block::GeneratePreActionPoses</c>'s output: the pose stored in the object's cache vector (relative to the marker's object parent, before the push-out).</summary>
     public sealed record StoredElement(KnownMarker Marker, Pose3d Stored, Vec3 BuiltTranslation, double BuiltAngle, int Sb)
     {
         // Native element +0/type and +0x18/scalar; the charger supplies positive zero.
@@ -234,10 +234,10 @@ public static class CubePreActionPoses
     // fidelity: M12-001, M12-021
     public static List<StoredElement> GenerateStored(ObservableObject cube, PreActionType type)
     {
+        using var mutation=cube.PoseWorld?.EnterPoseMutation();
         if (cube.Type == ObjectType.Charger_Basic)return GenerateChargerStored(cube,type);
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001 PreActionPose ctor integration 0x0050DB14/0x0050DB6C/0x0050DCFC: cube stored cache still uses the existing flat marker/object adapter; IsChildOf body called at 0x0050DD4E and complete native marker-parent input binding are not checked here, so the two stored-constructor error/continue paths and cube stored-pose lifetime are not claimed built. Downstream derived world construction is built");
         var list = new List<StoredElement>();
-        if (type is PreActionType.Entry or PreActionType.None) return list;
+        if ((uint)type>5 || type==PreActionType.Entry) return list;
         var size = CubeGeometry.SizeOf(cube.Type);
         foreach (var def in FaceDefsFor(cube.Type))
         {
@@ -250,9 +250,9 @@ public static class CubePreActionPoses
                 // Block::GeneratePreActionPoses builds Pose3d(builtAngle, Z_AXIS, builtTranslation) with the marker
                 // as parent, then rotates it about Y by sb*pi/2 with Transform3d::RotateBy 0x0084BB3A (C-E7). The
                 // PreActionPose ctor re-roots to the marker's parent, so stored = marker.PoseOnObject ∘ built.
-                var built = new Pose3d(builtAngle, new Vec3(0, 0, 1), builtTranslation);
-                var rotated = RotateBy(built, sb);
-                list.Add(new StoredElement(marker, marker.PoseOnObject.Compose(rotated), builtTranslation, builtAngle, sb){Type=type,DistanceMm=(float)DistanceFor(type)});
+                using var built=new Pose3d(Rotation3d.FromAngleAxis(new Radians((float)builtAngle).Value,new Vec3(0,0,1)),builtTranslation,parent:marker.PoseOnObject);
+                using var rotated=RotateBy(built,sb); // shared helper preserves its immediate marker parent
+                if(ConstructStored(type,marker,rotated,(float)DistanceFor(type),builtTranslation,builtAngle,sb) is {} element)list.Add(element);
             }
         }
         return list;
@@ -270,11 +270,18 @@ public static class CubePreActionPoses
             BitConverter.UInt32BitsToSingle(ChargerGeometry.PreDockZBits));
         using var temporary=new Pose3d(Rotation3d.FromAngleAxis(new Radians(angle).Value,new Vec3(0,0,1)),translation,
             "Charger"+unchecked((int)charger.ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture)+"PreActionPose",marker.PoseOnObject);
-        // Pose ctor 0x0050DCFC: IsChildOf is true by construction of this immediate parent.
-        // This valid producer does not implement the unread generic IsChildOf body or accept arbitrary pose arguments.
+        if(ConstructStored(type,marker,temporary,0f,translation,angle,0) is {} element)list.Add(element);
+        return list;
+    }
+
+    // fidelity: M12-001, M12-038 — 0x0050DCFC..0x0050DE48, shared valid-producer pose overload.
+    private static StoredElement? ConstructStored(PreActionType type,KnownMarker marker,Pose3d temporary,float distance,Vec3 builtTranslation,double builtAngle,int sb)
+    {
+        // Both checked generators explicitly construct the argument as an immediate child of this marker.
+        // Thus the checked IsChildOf assertion succeeds without inventing a generic ancestry/error policy.
         Pose3d parent=null!;
         if(!marker.PoseOnObject.TryGetParent(ref parent))
-        {StackDiagnostics.Write("M1-034 M12-001/M13-009 marker GetParent root read 0x008452BA: skip stored element");return list;}
+        {StackDiagnostics.Write("M1-034 M12-001 marker GetParent root read 0x008452BA: skip stored element");return null;}
         using(parent)
         {
             var stored=new Pose3d();
@@ -283,11 +290,10 @@ public static class CubePreActionPoses
                 if(!temporary.TryWithRespectTo(parent,stored))
                     PoseDiagnostics.Error("PreActionPose.GetPoseWrtMarkerParentFailed","Could not get the pre-action pose w.r.t. the marker's parent.");
                 stored.Name="PreActionPose";
-                list.Add(new StoredElement(marker,stored,translation,angle,0){Type=type,DistanceMm=0f,OwnsStoredPose=true});
+                return new StoredElement(marker,stored,builtTranslation,builtAngle,sb){Type=type,DistanceMm=distance,OwnsStoredPose=true};
             }
             catch{stored.Dispose();throw;}
         }
-        return list;
     }
 
     /// <summary>
@@ -304,6 +310,7 @@ public static class CubePreActionPoses
     public static IReadOnlyList<PreActionPose> For(ObservableObject cube, PreActionType type, Pose3d robotPose,
                                                    double preDockPoseOffsetMm = 0)
     {
+        using var mutation=cube.PoseWorld?.EnterPoseMutation();
         var poses = new List<PreActionPose>();
         var generated=GenerateStored(cube,type);
         try{foreach(var e in generated)if(Compose(cube,e,type,robotPose,preDockPoseOffsetMm) is {} pose)poses.Add(pose);}
@@ -355,6 +362,7 @@ public static class CubePreActionPoses
                                                 Pose3d robotPose, double preDockPoseOffsetMm, IReadOnlyList<PreActionObstacle> obstacles,
                                                 List<PreActionPose> output, List<string>? trace = null)
     {
+        using var mutation=obj.PoseWorld?.EnterPoseMutation(); // same gate as vision/telemetry writers; then cache lock
         bool regenerated = false;
         var caches = Caches.GetOrCreateValue(obj);
         foreach (var type in withAction.Distinct().OrderBy(t => (int)t))
@@ -386,8 +394,8 @@ public static class CubePreActionPoses
         return regenerated;
     }
 
-    // 0x004DF8C8 range copy, copy ctor 0x0050E138..0x0050E166. Only newly owned charger entries
-    // use this full pose copy; generic legacy cube-cache ownership remains explicitly MISSING.
+    // 0x004DF8C8 range copy, copy ctor 0x0050E138..0x0050E166. Cube and charger entries
+    // both own their stored pose and use the same independent snapshot and destructor path.
     internal static List<StoredElement> SnapshotForCollection(IReadOnlyList<StoredElement> cache)
     {
         var copy=new List<StoredElement>();
@@ -619,11 +627,13 @@ public sealed record ObjectPoseQueries(Func<ObservableObject, double, Pose3d> ZR
     /// <summary><c>ObservableObject::GetZRotatedPointAboveObjectCenter(float)</c> 0x00877574.</summary>
     public static Pose3d GetZRotatedPointAboveObjectCenter(ObservableObject obj, double f)
     {
-        var l = obj.Pose;
+        using var l = obj.NativePose.GetWithRespectToRoot();
         double dimZ = CubeGeometry.DimInParentFrameZ(obj);
         double yaw = l.AngleAroundZ;
         var t = new Vec3(obj.Pose.Translation.X, obj.Pose.Translation.Y, l.Translation.Z + dimZ * f);
-        return new Pose3d(yaw, new Vec3(0, 0, 1), t);
+        var result=new Pose3d(yaw,new Vec3(0,0,1),t);
+        if(obj.NativePose.HasParent){using var root=obj.NativePose.FindRoot();result.SetParent(root);}
+        return result;
     }
 
     /// <summary><c>ObservableObject::GetClosestMarkerPose</c> 0x00877774: the closest marker's code and pose (with respect to <paramref name="pose"/>), or null (result 0x06000000).</summary>
@@ -634,10 +644,18 @@ public sealed record ObjectPoseQueries(Func<ObservableObject, double, Pose3d> ZR
         double bestD2 = float.MaxValue;                                        // 0x7F7FFFFF (0x00877914)
         foreach (var m in obj.Markers)
         {
-            var wrt = obj.Pose.Compose(m.PoseOnObject).WithRespectTo(pose);    // GetWithRespectTo(markerPose, pose)
+            var wrt=new Pose3d();
+            if(!Pose3d.GetWithRespectTo(m.PoseOnObject,pose,wrt))
+            {
+                wrt.Dispose();
+                // Retain the existing flat host-fixture adapter only for its original parentless inputs.
+                if(obj.NativePose.HasParent || pose.HasParent)continue;
+                using var flat=obj.Pose.Compose(m.PoseOnObject);wrt=flat.WithRespectTo(pose);
+            }
             double x = wrt.Translation.X, y = wrt.Translation.Y, z = wrt.Translation.Z;
             double d2 = planar ? x * x + y * y : x * x + y * y + z * z;
-            if (d2 < bestD2) { bestD2 = d2; best = m.Code; markerWrtPose = wrt; }   // strictly smaller; NaN never is
+            if (d2 < bestD2) { bestD2 = d2; best = m.Code; markerWrtPose?.Dispose();markerWrtPose = wrt; }
+            else wrt.Dispose();   // strictly smaller; NaN never is
         }
         return best;
     }
@@ -1021,8 +1039,10 @@ public static class PlaceRelObjectOffsetPoses
             if (mode1) { xs = Math.Min(limit, Math.Max(-limit, a)); ys = b; }
             else { xs = a; ys = Math.Min(limit, Math.Max(-limit, b)); }
             // 12.15 / Q4.6: shift in the object-centre frame, then back to the world origin
-            var shifted = new Pose3d(local, new Vec3(x + xs, y + ys, local.Translation.Z));
-            var world = centre.Compose(shifted);
+            using var shifted = new Pose3d(local, new Vec3(x + xs, y + ys, local.Translation.Z));
+            Pose3d world;
+            if(centre.HasParent){shifted.SetParent(centre);world=shifted.GetWithRespectToRoot();}
+            else world=centre.Compose(shifted); // existing flat fixture input, outside the native parented caller
             list[i] = world;
             // 12.16 / 12.17: the threshold pair (shifted element first, object pose second), z 100.0
             CubePreActionPoses.DistanceThresholdMm(world, obj.Pose, PreActionAngleRad, out double out0, out double out1);
