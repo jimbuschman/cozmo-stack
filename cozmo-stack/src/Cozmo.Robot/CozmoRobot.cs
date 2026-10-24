@@ -340,7 +340,7 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.RobotMapUpdate = () => LogCallbackDeferral.RunGated(LocalizationWorld.FrameGate, () =>
         {
             if(Engine.Robot is {} native)LocalizationWorld.Maps.UpdateRobotPose(native.MainPose,
-                Sensors.CliffDetectedNow,native.StoredState?.Timestamp ?? 0,LocalizationWorld.MapClearQuad);
+                Sensors.CliffDetectedByEvent,native.StoredState?.Timestamp ?? 0,LocalizationWorld.MapClearQuad);
         });
         // fidelity: M4-019
         Engine.ChargerPlatformUpdate = ChargerPlatformStepWithoutWorld;

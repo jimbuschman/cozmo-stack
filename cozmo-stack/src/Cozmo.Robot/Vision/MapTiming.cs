@@ -53,7 +53,7 @@ internal sealed partial class SourceMapComponent : IDisposable
     {
         foreach(var entries in _objectPoses.Values)foreach(var value in entries.Values)value.Pose.Dispose();
         _objectPoses.Clear();
-        foreach(var map in Maps.Values)map?.ReleaseRobotPose();
+        _lastRobotPose?.Dispose();_lastRobotPose=null;
     }
     // GetRootID 0x00844B0A: null wrapper returns zero; otherwise the same parent walk as FindRoot.
     private static uint PoseRootId(Pose3d pose)
@@ -170,10 +170,22 @@ internal sealed partial class SourceMapComponent : IDisposable
     internal void SetBroadcastInterval(float value,float timer)
     {BroadcastInterval=value;BroadcastDeadline=timer;} // G2E145, 0x0068085E
 
-    internal void UpdateRobotPose(Pose3d pose,bool cliff,uint timestamp,Action<Cozmo.Robot.Manipulation.WhiteboardClearQuad>? clear)
+    // MapComponent+0x2C (0x0067E252/0x0067E486), retained across map/origin changes.
+    private Pose3d? _lastRobotPose;
+    internal MemoryMapRegion? UpdateRobotPose(Pose3d pose,bool cliff=false,uint timestamp=0,
+        Action<Cozmo.Robot.Manipulation.WhiteboardClearQuad>? clear=null)
     {
-        if(Current is {} map)map.UpdateRobotPose(pose,cliff,timestamp,clear);
-        else StackDiagnostics.Write("M1-034 M11-074 null map at 0x0067E38C/0x0067E3E4: skip robot-pose writes and save; prior state retained");
+        using var current=new Pose3d(pose);
+        if(_lastRobotPose is { HasParent:true } last &&
+            current.IsSameAs(last,new Vec3(8,8,8),MemoryMap.RobotPoseTurnRad,out _)) return null;
+        if(Current is {} map)
+        {
+            var region=map.UpdateRobotPose(current,cliff,timestamp,clear);
+            _lastRobotPose?.Dispose();_lastRobotPose=new Pose3d(current);
+            return region;
+        }
+        StackDiagnostics.Write("M1-034 M11-074 null map at 0x0067E38C/0x0067E3E4: skip robot-pose writes and save; prior state retained");
+        return null;
     }
     internal void Update(uint timestamp,float timer)
     {

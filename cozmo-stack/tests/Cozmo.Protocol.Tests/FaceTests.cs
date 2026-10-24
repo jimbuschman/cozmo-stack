@@ -83,7 +83,7 @@ public class FaceTests
     [Fact]
     public void TheRobotWritesTheGroundItHasBeenOverIntoTheMemoryMap()
     {
-        var map=new MemoryMap();
+        using var maps=new SourceMapComponent {CurrentOrigin=1};var map=new MemoryMap();maps.Maps.Add(1,map);
         using var root=new Pose3d("root");
         using var initialPose=new Pose3d("initial",root);
         using var nearPose=new Pose3d(Rotation3d.Identity,new Vec3(5,0,0),parent:root);
@@ -91,14 +91,14 @@ public class FaceTests
         using var largerTurn=new Pose3d(Rotation3d.FromAngleAxis(0.4f,new Vec3(0,0,1)),new Vec3(9,0,0),parent:root);
         try
         {
-            Assert.NotNull(map.UpdateRobotPose(initialPose));
-            Assert.Null(map.UpdateRobotPose(nearPose));
-            Assert.NotNull(map.UpdateRobotPose(movedPose));
-            Assert.NotNull(map.UpdateRobotPose(largerTurn));
+            Assert.NotNull(maps.UpdateRobotPose(initialPose));
+            Assert.Null(maps.UpdateRobotPose(nearPose));
+            Assert.NotNull(maps.UpdateRobotPose(movedPose));
+            Assert.NotNull(maps.UpdateRobotPose(largerTurn));
             Assert.Empty(map.Regions);
             Assert.True(map.HasCollisionRayWithTypes(new(-30,0),new(-20,0),t=>t==MemoryMapContentType.ClearOfObstacle));
         }
-        finally {map.ReleaseRobotPose();}
+        finally {maps.Dispose();}
     }
 
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>
