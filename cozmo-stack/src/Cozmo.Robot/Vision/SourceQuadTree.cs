@@ -39,10 +39,10 @@ internal sealed class SourceNodeContent
 }
 
 // fidelity: M11-045 — checked P bookkeeping, including native parent's retained subdivision credit.
-internal sealed class SourceQuadProcessor
+internal sealed partial class SourceQuadProcessor
 {
     internal double ExploredArea, EdgeArea;
-    internal readonly Dictionary<MemoryMapContentType, HashSet<SourceQuadNode>> TypeSets = new();
+    internal readonly Dictionary<MemoryMapContentType, List<SourceQuadNode>> TypeSets = new();
     internal int BorderGeneration;
     private static double Area(SourceQuadNode n) { float m = n.Side * BitConverter.UInt32BitsToSingle(0x3A83126F); return m*m; }
     private void Erase(SourceQuadNode n, MemoryMapContentType t) { if (((1 << (int)t) & 0x7C8) != 0 && TypeSets.TryGetValue(t, out var set)) set.Remove(n); }
@@ -58,16 +58,157 @@ internal sealed class SourceQuadProcessor
         if (((1 << (int)type) & 0x7C8) != 0)
         {
             if (!TypeSets.TryGetValue(type, out var set)) TypeSets[type] = set = new();
-            set.Add(n);
+            if(!set.Contains(n))set.Add(n);
         }
-        BorderGeneration++;
+        InvalidateBorders();
     }
     internal void Destroyed(SourceQuadNode n)
     {
         var type = n.Content.Data.Type;
         if (n.Children.Count == 0 && type != 0) ExploredArea -= Area(n);
         if (type == MemoryMapContentType.InterestingEdge) EdgeArea -= Area(n);
-        Erase(n, type); BorderGeneration++;
+        Erase(n, type); InvalidateBorders();
+    }
+}
+
+// fidelity: M11-047 -- OV11 a-g; approved seed insertion order, not pointer-hash order.
+internal sealed class SourceBorderWaypoint(SourceQuadNode from,SourceQuadNode to,int direction)
+{
+    internal readonly SourceQuadNode From=from,To=to;
+    internal readonly int Direction=direction;
+    internal bool End,Start;
+}
+internal sealed class SourceBorderCombination
+{
+    internal bool Dirty=true;
+    internal readonly List<SourceBorderWaypoint> Waypoints=new();
+}
+internal sealed partial class SourceQuadProcessor
+{
+    internal readonly SortedDictionary<ulong,SourceBorderCombination> Borders=new();
+    internal SourceBorderCombination? ActiveBorder;
+    internal bool BorderWalkStarted;
+    internal void InvalidateBorders()
+    {
+        BorderGeneration++;
+        foreach(var entry in Borders.Values){entry.Dirty=true;entry.Waypoints.Clear();}
+    }
+    private sealed class BorderFault(string address) : Exception(address);
+    private sealed class CheckedDirection
+    {
+        internal bool[] Bits=Array.Empty<bool>();
+        internal int Remaining=-1;
+        internal void Init(int count){if(Bits.Length==0){Bits=new bool[count];Remaining=count;}}
+        internal bool Mark(int i)
+        {
+            if((uint)i>=(uint)Bits.Length)throw new BorderFault("0x0068AF10 reverse contact/index");
+            if(Bits[i])return false;Bits[i]=true;Remaining--;return true;
+        }
+    }
+    private static readonly byte[] NeighborTable={2,0,1,1,2,1,1,0,3,0,0,0,3,1,0,1,0,1,3,1,0,0,3,0,1,1,2,0,1,0,2,1};
+    private static SourceQuadNode? SingleNeighbor(SourceQuadNode node,int d)
+    {
+        if((uint)d>3)throw new BorderFault("0x00688190 direction");
+        if(node.Parent is not {} parent)return null; // native root quadrant 4
+        int q=parent.Children.IndexOf(node);
+        if((uint)q>3)throw new BorderFault("0x006881E4 parent/quadrant");
+        int child=NeighborTable[q*8+d*2];
+        if(NeighborTable[q*8+d*2+1]!=0)return parent.Children.Count==0?null:parent.Children[child];
+        var neighbor=SingleNeighbor(parent,d);
+        return neighbor is {Children.Count:>0}?neighbor.Children[child]??neighbor:neighbor;
+    }
+    private static void Descendants(SourceQuadNode node,int d,bool clock,List<SourceQuadNode> result)
+    {
+        if(node.Children.Count==0){result.Add(node);return;}
+        var pair=d switch {0=>(0,1),1=>(1,3),2=>(3,2),3=>(2,0),_=>throw new BorderFault("0x00688190 direction")};
+        if(clock)pair=(pair.Item2,pair.Item1);
+        foreach(int i in new[]{pair.Item1,pair.Item2})
+            Descendants(node.Children[i]??throw new BorderFault("0x00688190 null child"),d,clock,result);
+    }
+    internal static List<SourceQuadNode> SmallestNeighbors(SourceQuadNode node,int d)
+    {
+        var result=new List<SourceQuadNode>();
+        if(SingleNeighbor(node,d) is {} next)Descendants(next,(d+2)%4,true,result);
+        return result;
+    }
+    internal SourceBorderCombination RefreshBorders(MemoryMapContentType seedType,uint flags)
+    {
+        ulong key=((ulong)(uint)seedType<<32)|flags;
+        if(!Borders.TryGetValue(key,out var combination))Borders.Add(key,combination=new());
+        if(!combination.Dirty)return combination;
+        if(!TypeSets.TryGetValue(seedType,out var seeds))TypeSets.Add(seedType,seeds=new());
+        var output=new List<SourceBorderWaypoint>();
+        var checkedNodes=new Dictionary<SourceQuadNode,CheckedDirection[]>();
+        int marks=0;
+        CheckedDirection[] Info(SourceQuadNode n)
+        {
+            if(!checkedNodes.TryGetValue(n,out var value))checkedNodes.Add(n,value=Enumerable.Range(0,4).Select(_=>new CheckedDirection()).ToArray());
+            return value;
+        }
+        List<SourceQuadNode> Side(SourceQuadNode n,int d)
+        {var side=SmallestNeighbors(n,d);Info(n)[d].Init(side.Count);return side;}
+        void Mark(SourceQuadNode n,int d,int i){if(Info(n)[d].Mark(i))marks++;}
+        MemoryMapContentType Type(SourceQuadNode n)=>n.Content?.Data?.Type??throw new BorderFault("0x0068AD2C/0x0068AE4C/0x0068AE62/0x0068AF30 null content");
+        bool Masked(SourceQuadNode n)=>(flags&(1u<<(int)Type(n)))!=0;
+        void Finish(){if(output.Count!=0)output[^1].End=true;}
+        ActiveBorder=combination;BorderWalkStarted=true;
+        try
+        {
+            foreach(var seed in seeds)
+            while(Info(seed).Any(x=>x.Remaining!=0))
+            {
+                int direction=0,index=0;List<SourceQuadNode> side=new();bool found=false;
+                for(;direction<4 && !found;direction++)
+                {
+                    if(Info(seed)[direction].Remaining==0)continue;
+                    side=Side(seed,direction);
+                    for(index=0;index<side.Count;index++)
+                    {
+                        if(Info(seed)[direction].Bits[index])continue;
+                        Mark(seed,direction,index); // mark BEFORE type test, no same-type check
+                        if(Masked(side[index])){found=true;break;}
+                    }
+                }
+                if(!found)continue;
+                direction--;
+                output.Add(new(seed,side[index],direction){Start=true});index++;
+                var current=seed;
+                // M1-034: detect an actual repeated unchanged traversal state, never an arbitrary step limit.
+                var visited=new HashSet<(SourceQuadNode,int,int,int,int,bool)>();
+                while(true)
+                {
+                    if(!visited.Add((current,direction,index,marks,output.Count,output.Count!=0&&output[^1].End)))
+                        throw new BorderFault("0x0068ADC4..0x0068B03A non-progressing walk");
+                    if(index>=side.Count){direction=(direction+1)&3;side=Side(current,direction);index=0;continue;}
+                    var next=side[index];
+                    if(Type(next)==seedType)
+                    {
+                        direction=(direction+2)%4;side=Side(next,direction);
+                        index=side.FindIndex(n=>ReferenceEquals(n,current));
+                        if(index<0)throw new BorderFault("0x0068AF10 reverse contact missing");
+                        Mark(next,direction,index);current=next;index++;continue;
+                    }
+                    bool stop=false;
+                    if(Masked(next))
+                    {
+                        if(Info(current)[direction].Bits[index])
+                        {
+                            if(output.Count!=0&&!output[^1].End)output.Add(new(current,next,direction));
+                            Finish();stop=true;
+                        }
+                        else output.Add(new(current,next,direction));
+                    }
+                    else Finish();
+                    Mark(current,direction,index);
+                    if(stop)break;index++;
+                }
+            }
+            combination.Waypoints.Clear();combination.Waypoints.AddRange(output);combination.Dirty=false;
+        }
+        catch(BorderFault error)
+        {StackDiagnostics.Write("M1-034 M11-047 skip border refresh at "+error.Message+"; prior map/cache retained");}
+        finally{ActiveBorder=null;}
+        return combination;
     }
 }
 
@@ -211,6 +352,51 @@ internal sealed class SourceQuadTree
             else Expand(CentroidForTest?.Invoke(polygon) ?? new Vec2(native.CenterX,native.CenterY),maxShifts,()=>Contains(native));
         }
         Dirty |= Root.InsertRecursive(new SourceNodeContent(data),this,native);
+    }
+    // fidelity: M11-047 -- 0x00689FAC..0x0068A2D6, snapshot before direct node inserts.
+    internal int FillBorder(MemoryMapContentType seed,uint flags,SourceMapData data)
+    {
+        long start=System.Diagnostics.Stopwatch.GetTimestamp();
+        int count=0;
+        LogCallbackDeferral.RunGated(_geometryGate,()=>
+        {
+            var combination=Processor.RefreshBorders(seed,flags);
+            if(combination.Dirty)return; // M1-034 failed refresh cannot publish a partial fill
+            var seen=new HashSet<SourceQuadNode>();var points=new List<Vec2>();
+            foreach(var waypoint in combination.Waypoints)
+                if(seen.Add(waypoint.From))points.Add(new(waypoint.From.X,waypoint.From.Y));
+            foreach(var point in points)
+            {
+                var root=Root; // reload for every saved centre; Insert result intentionally ignored
+                root.InsertRecursive(new SourceNodeContent(data),this,new SourceFastPolygon(new[]{point}));
+                count++;
+            }
+            Dirty=true; // FillBorderInternal's map+8 write, even with no points
+        });
+        RecordBorderTiming(start);
+        return count;
+    }
+    // Static Profiler timer (OV11 row22); reuse the existing PrintTimerData owner.
+    private static readonly object FillProfilerGate=new();
+    private static readonly LifetimeProfiler FillProfiler=new();
+    private static readonly LifetimeProfiler.Timer FillTimer=FillProfiler.CreateTimer("QuadTreeProcessor.FillBorder");
+    private static long LastFillPrint=System.Diagnostics.Stopwatch.GetTimestamp();
+    private void RecordBorderTiming(long start)
+    {
+        long elapsed=System.Diagnostics.Stopwatch.GetElapsedTime(start).Ticks/TimeSpan.TicksPerMillisecond;
+        string? message=null;
+        lock(FillProfilerGate)
+        {
+            FillTimer.Total=unchecked(FillTimer.Total+elapsed);FillTimer.Calls=unchecked(FillTimer.Calls+1);
+            long now=System.Diagnostics.Stopwatch.GetTimestamp();
+            if(System.Diagnostics.Stopwatch.GetElapsedTime(LastFillPrint,now).Ticks/TimeSpan.TicksPerMillisecond>5000)
+            {
+                LastFillPrint=now;
+                FillProfiler.SourceLog=(_,_,_,text)=>message=text;
+                FillProfiler.Print(FillTimer);
+            }
+        }
+        if(message is not null)SourceLog?.Invoke(EngineLogLevel.Info,"Profiler","Profiler",message);
     }
     internal bool UpgradeRootLevel(Vec2 direction, byte limit)
     {

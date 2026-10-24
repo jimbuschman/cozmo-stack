@@ -123,8 +123,7 @@ public sealed partial class MemoryMap
         const uint mask=(1u<<3)|(1u<<4)|(1u<<5)|(1u<<6)|(1u<<7)|(1u<<10); // 0x00C87675
         var data=new SourceMapData(MemoryMapContentType.NotInterestingEdge,timestamp,timestamp);
         ObjectBorderForTest?.Invoke(MemoryMapContentType.InterestingEdge,mask,data);
-        Behavior.SteppedBehavior.ReportMissing("M11-074/M11-017/M11-046 FillBorder from 0x0067F0BC/0x006803AA -> 0x006813B0 -> 0x00689FAC: generic tree border callback/consumer closure is unbuilt; legacy polygon border is not substituted");
-        Tree.Dirty=true; // 0x006813FA..FC, after the processor call
+        Tree.FillBorder(MemoryMapContentType.InterestingEdge,mask,data);
     }
     internal void RemoveObject(SourceObjectRemoval removal)
     {
@@ -203,7 +202,7 @@ public sealed partial class MemoryMap
         for (int i = 0; i < 11; i++)
             if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
         if (Tree.HasCollisionRayWithTypes(from,to,mask)) return true;
-        Behavior.SteppedBehavior.ReportMissing("M11-046/M11-074 legacy MemoryMap.Insert, FreeplayStack.SyncFromWorld, FillBorder, FlagQuadAsNotInterestingEdges and FlagGroundPlaneRoiInterestingEdgesAsUncertain still own legacy regions; native robot-pose and overhead writers are built, but HasCollisionRayWithTypes retains their remaining selected legacy content through SegmentTouchesPolygon");
+        Behavior.SteppedBehavior.ReportMissing("M11-046/M11-074 legacy MemoryMap.Insert, FreeplayStack.SyncFromWorld, FlagQuadAsNotInterestingEdges and FlagGroundPlaneRoiInterestingEdgesAsUncertain still own legacy regions; native robot-pose and overhead writers are built, but HasCollisionRayWithTypes retains their remaining selected legacy content through SegmentTouchesPolygon");
         lock (_gate)
             foreach (var region in _regions)
                 if ((mask & (1u << (int)region.Type)) != 0 && SegmentTouchesPolygon(from,to,region.Polygon)) return true;
@@ -271,35 +270,14 @@ public sealed partial class MemoryMap
     public double? AddVisionOverheadEdges(OverheadEdgeFrame frame, Pose3d robotPose) =>
         AddOverheadFromHistory(frame,robotPose);
 
-    /// <summary>
-    /// <c>MemoryMap::FillBorderInternal(type, mask, borderType, timestamp)</c> (the vtable's +0x4C slot),
-    /// which is <c>QuadTreeProcessor::FillBorder</c> 0x00689FAC over the tree:
-    /// <c>RefreshBorderCombination(type, mask)</c> finds the nodes of <paramref name="type"/> that
-    /// neighbour a node of one of the masked types, and the data of <paramref name="write"/> is written
-    /// at each of them. Here the same question is asked of the polygons - a region of that type touching
-    /// one of the masked ones, to within the map's own content precision - and the region takes the new
-    /// type. Returns how many changed.
-    /// </summary>
-    public int FillBorder(MemoryMapContentType type, Func<MemoryMapContentType, bool> mask,
-                          MemoryMapContentType write, uint timestamp)
+    /// <summary>Native global border pass, 0x006813B0/0x00689FAC. Returns the number of centre-point inserts.</summary>
+    public int FillBorder(MemoryMapContentType type,Func<MemoryMapContentType,bool> mask,
+                          MemoryMapContentType write,uint timestamp)
     {
-        int changed = 0;
-        lock (_gate)
-            for (int i = 0; i < _regions.Count; i++)
-            {
-                var r = _regions[i];
-                if (r.Type != type) continue;
-                bool borders = false;
-                foreach (var q in _regions)
-                {
-                    if (ReferenceEquals(q, r) || !mask(q.Type)) continue;
-                    if (PolygonsTouch(r.Polygon, q.Polygon, ContentPrecisionMm)) { borders = true; break; }
-                }
-                if (!borders) continue;
-                _regions[i] = r with { Type = write, Timestamp = timestamp };
-                changed++;
-            }
-        return changed;
+        uint flags=0;
+        // 0x006813C6..D8: all eleven enum/bool pairs participate in stored order.
+        for(int i=0;i<11;i++)if(mask((MemoryMapContentType)i))flags|=1u<<i;
+        return Tree.FillBorder(type,flags,new SourceMapData(write,timestamp,timestamp));
     }
 
     /// <summary>
