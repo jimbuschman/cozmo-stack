@@ -135,7 +135,8 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     public override uint CheckIfDone()
     {
         if (_m.DriveTickForTest is { } input) return (uint)CheckIfDone(input(this));
-        if(_m.RobotPose() is not {} pose){MissingSource("live pose input unavailable");return (uint)ActionResult.Running;}
+        using var nativePose=Goal?.HasParent==true?_m.CopyPreActionRobotPose():null;
+        if((nativePose??_m.RobotPose()) is not {} pose){MissingSource("live pose input unavailable");return (uint)ActionResult.Running;}
         var path=_m.Robot.Motion.Path;
         return (uint)CheckIfDone(new DriveToPoseTick(path.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,pose,_m.RobotHeightMm(),path.Field42,path.Field44,unchecked((sbyte)path.Field40)));
     }
@@ -479,7 +480,7 @@ public sealed class DriveToObjectAction
     public ActionResult GetPossiblePoses(ObservableObject obj, out IReadOnlyList<PreActionPose> posesOut, ref bool alreadyInPosition)
     {
         posesOut = Array.Empty<PreActionPose>();
-        var robot = _m.RobotPose();
+        using var robot = _m.CopyPreActionRobotPose();
         if (robot is null) return ActionResult.Abort;
         var output = DockPreActionPoses.Get(new PreActionPoseInput(obj, ActionType, FlagA: false, PreActionAngleToleranceRad, DistanceFromMarkerMm, UseApproachAngle, ApproachAngleRad),
                                             robot.Value, _m.Docking.Carrying.CarriedObjectId, () => _m.GetObstacles(robot.Value), _trace);

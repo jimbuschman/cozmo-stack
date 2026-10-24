@@ -151,9 +151,11 @@ public sealed class ManipulationSystem : IDisposable
     /// </summary>
     public Func<TimeSpan, CancellationToken, Task> Wait { get; set; } = (t, c) => Task.Delay(t, c);
 
-    // Robot::GetPose 0x004EA398: use the existing live pose-tree owner, not the history API's flat snapshot.
-    public Pose3d? RobotPose() => Vision.History.Latest is {} latest
-        ? Robot.Engine.Robot?.GetCheckedMainPose() ?? latest.RobotPose : null;
+    public Pose3d? RobotPose() => Vision.History.Latest?.RobotPose;
+
+    // Owned, scoped input for native pre-action geometry only; general callers use RobotPose's history value.
+    internal Pose3d? CopyPreActionRobotPose() => Vision.History.Latest is {} latest
+        ? Robot.Engine.Robot?.CopyCheckedMainPose() ?? new Pose3d(latest.RobotPose) : null;
 
 
     /// <summary>

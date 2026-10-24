@@ -103,7 +103,7 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         RunAction($"reach for block {bottom}", async ct =>
         {
             await M.TurnTowardsObjectAsync(bottom, Math.PI, ct);
-            var obj = M.World.GetLocatedObjectById(bottom); var robot = M.RobotPose();
+            var obj = M.World.GetLocatedObjectById(bottom); using var robot = M.CopyPreActionRobotPose();
             if (obj is null || robot is null) return ActionResult.BadObject;
             // 0x005C3346..0x005C33A0: the block's pose with respect to the robot; only when its x plus 10 is
             // beyond 85 mm does a DriveStraightAction(x - 85) at 60 mm/s go into the sequence. Closer than that,
@@ -1051,12 +1051,11 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        var robot = M.RobotPose();
-        if (robot is null) { Finish(); return; }
         // fidelity: M15-011
         // SelectNewBeacon 0x005E5F0C: Robot::GetPose, copied (Pose3d::Pose3d 0x005E5F1A), and AddBeacon(copy, [this+0x128]) (0x005E5F28..0x005E5F30): the whole robot pose, rotation and
         // translation including z, not a planar pose rebuilt from the yaw.
-        using var copy=new Pose3d(robot.Value);
+        using var copy=M.CopyPreActionRobotPose();
+        if(copy is null){Finish();return;}
         Selected = M.Whiteboard.AddBeacon(copy, BeaconRadiusMm);
         Log($"SelectNewBeacon: beacon at {Selected.Pose.Translation} radius {BeaconRadiusMm}");
         PlayTrigger(NewAreaAnim, Finish);
@@ -1215,7 +1214,7 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
         }
         else
         {
-            var robot = M.RobotPose();
+            using var robot = M.CopyPreActionRobotPose();
             float best = BeaconFloorGeometry.FltMax;
             int bestIndex = 0;
             for (uint i = 0; i < _candidates.Count; i++)

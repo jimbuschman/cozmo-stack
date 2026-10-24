@@ -389,9 +389,7 @@ public class CorrectionTests
         if (seen.Objects.Count == 0) return;           // the render did not resolve the marker
         rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
 
-        // A / reach: unit (offline drive): old goal parent=null yielded FailedTraversingPath.
         using var goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22));
-        goal.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
         var drive = new DriveToPoseAction(rig.M) { Goal = goal };
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());

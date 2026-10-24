@@ -405,8 +405,7 @@ public class M12RVisBuildTests : IDisposable
     public void M12_024_TheLivePathReturnsSuccessThroughTheEndLifecycle()
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();
-        // A / reach: unit: only the live task needs the production origin; direct Tick fixtures retain their shared flat inputs.
-        using var goal=At(150,-40,0,0.5);goal.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        using var goal=At(150,-40,0,0.5);
         var drive=new DriveToPoseAction(rig.M){Goal=goal};
         var task=drive.RunAsync(default);
         SignalTestContext.Run(task,()=>rig.Pump());Assert.Equal(ActionResult.Success,task.GetAwaiter().GetResult());
@@ -2267,11 +2266,8 @@ public class M12RVisBuildTests : IDisposable
         var (rig, cube) = FlipRig(-10f);
         using (rig)
         {
-            // A: old face fixtures were parentless; their world positions belong to the rig's origin.
             using var faceLeft=new Pose3d(Mat3.Identity,new Vec3(130,80,50));
             using var faceFront=new Pose3d(Mat3.Identity,new Vec3(130,-80,50));
-            faceLeft.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
-            faceFront.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
             rig.M.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(3, new FaceRect(0, 0, 10, 10), Name: "Bob"), 1000) { HeadPose = faceLeft }, Pose3d.Identity, false);
             DriveAndFlipBlockAction.GetPossiblePoses(rig.M, cube, out var nearLeft, closestOnly: false);
             Assert.Equal(BlockFace.Front, Assert.Single(nearLeft).Marker.Face);

@@ -51,7 +51,8 @@ public sealed class TurnTowardsPoseAction
         if (latest is null) return TurnTowardsPoseCompound.BadPose;
         // Native parented goals use Robot::GetPose. Preserve the existing, explicitly labelled
         // M11-066 flat-input adapter for legacy face/host goals until their producer is parented.
-        var robot = _compound.Pose?.HasParent==true ? _v.Robot.Engine.Robot?.GetCheckedMainPose()??latest.Value.RobotPose : latest.Value.RobotPose;
+        using var nativePose=_compound.Pose?.HasParent==true ? _v.Robot.Engine.Robot?.CopyCheckedMainPose() : null;
+        var robot = nativePose??latest.Value.RobotPose;
         var env = new TurnTowardsPoseEnv(robot, latest.Value.HeadAngleRad,
             p => TurnTowardsPose.ComputeHeadAngleToSeePose(_v.Calibration, p, TurnTowardsPoseCompound.SeePoseToleranceRad, out var seen, _v.LogLine) == 0 ? seen : null,   // Robot::ComputeHeadAngleToSeePose(pose, &rad, 0.01f); non-zero is the engine's failure result
             null, null, _v.LogLine,

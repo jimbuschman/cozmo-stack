@@ -262,9 +262,7 @@ public class ManipulationTests
     {
         using var signals = SignalTestContext.Install();
         using var rig = new Rig();
-        // A / reach: unit: old parentless goal gave FailedTraversingPath; supply the production origin parent.
         using var goalInput=new Pose3d(Mat3.AboutZ(0.5), new Vec3(150, -40, 0));
-        goalInput.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
         var drive = new DriveToPoseAction(rig.M) { Goal = goalInput };
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());

@@ -146,7 +146,7 @@ public sealed class TurnTowardsObjectExecutor : IDockSubActionExecutor
         var obj = _m.World.GetLocatedObjectById(t.ObjectId);                                                  // 0x0054A21C GetLocatedObjectByIdHelper(id, -1)
         if (obj is null) { trace.Add($"TurnTowardsObjectAction.Init: object {t.ObjectId} not found"); return ActionResult.BadObject; }
         if (_m.Vision.History.Latest is not { } latest) { trace.Add("TurnTowardsObjectAction.Init: no robot pose"); return ActionResult.BadPose; }     // the engine always has Robot::GetPose(); the stack's TurnTowardsPoseAction answers BAD_POSE the same way
-        var robot = _m.RobotPose()??latest.RobotPose; // source Robot::GetPose retains its origin parent
+        using var robot = _m.CopyPreActionRobotPose()??new Pose3d(latest.RobotPose);
         Pose3d markerPose;
         if (t.Code.IsAny)
         {
@@ -467,7 +467,7 @@ public abstract class DockActionBase
         // (2)
         var target = M.World.GetLocatedObjectById(ObjectId);
         if (target is null) { _trace.Add("IDockAction.NullDockObject: Dock object is null"); return ActionResult.BadObject; }
-        var robot = M.RobotPose();
+        using var robot = M.CopyPreActionRobotPose();
         if (robot is null) return ActionResult.Abort;
         // (4) GetPreActionPoses(flag A = [+0xB9], tolerance [+0x88], distanceFromMarker [+0xBC] = 0, no approach angle). The default of [+0xBC] is not itemised
         // (the drive-then-dock compound sets it from its own distance, research Q7.7); 0 is the value every path this stack builds passes (M12-001 E7).
@@ -520,7 +520,7 @@ public abstract class DockActionBase
             // the legacy place callers keep the pre-batch stand-in (see UsesLegacyTurnAndVerify): turn (result ignored as before), the marker facing the robot, and the placement-clear check, no wait
             _trace.Add("SetupTurnAndVerifyAction: legacy PlaceRelObjectAction keeps the pre-batch stand-in (M12-028)");
             await M.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
-            var robotNow = M.RobotPose() ?? robot.Value;
+            using var robotNow = M.CopyPreActionRobotPose() ?? new Pose3d(robot.Value);
             marker = MarkerFacing(target, robotNow);
             if (marker is null) { _trace.Add("IDockAction.CheckIfDone.NoMarkerFacingRobot"); return ActionResult.VisualObservationFailed; }
             if (!VerifyNoObjectAtPlacementPose(target, robotNow)) { _trace.Add("IDockAction.CheckIfDone.VisualVerifyFailed: an object is located at the placement pose"); return ActionResult.VisualObservationFailed; }
@@ -895,7 +895,7 @@ public sealed class PlaceRelObjectAction : DockActionBase
     {
         var obj = M.World.GetLocatedObjectById(ObjectId);
         if (obj is null) return ActionResult.BadObject;
-        var robot = M.RobotPose();
+        using var robot = M.CopyPreActionRobotPose();
         if (robot is null) return ActionResult.Abort;
         var centre = Queries.ZRotatedPointAboveObjectCenter(obj, TransformPointAboveCentre);
         double psi = centre.WithRespectTo(robot.Value).AngleAroundZ;
