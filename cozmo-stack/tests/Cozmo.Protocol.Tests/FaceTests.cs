@@ -24,8 +24,8 @@ public class FaceTests
     /// <c>ObjectFamilyToMemoryMapContentType</c> 0x0067F4C0, and a markerless object is refused there, so
     /// the collision obstacle an unexpected movement leaves in the world never reaches the map.
     /// </summary>
-    // reach: unit (legacy region producers; native tree query is real, producer joins remain MISSING M11-074).
-    // Pre-fix B-M13-19 returns false; the authorized fallback preserves blocking legacy content until its tree join exists.
+    // reach: unit (supplied native obstacle polygons and real mask/ray; no full vision producer claim).
+    // Old B-M13-27 value: a legacy observable added after the clear setup below answers true; new: false.
     [Fact]
     public void TheMemoryMapAnswersWhetherTheRobotCanDriveInToAFace()
     {
@@ -47,26 +47,31 @@ public class FaceTests
         var map = new MemoryMap();
         using var nearPose = new Pose3d(Mat3.Identity, new Vec3(60, 0, 0));
         var near = MemoryMap.Rectangle(nearPose, 44, 44);   // spans x 38..82
-        map.Insert(near, MemoryMapContentType.ObstacleObservable, objectId: 1);
-        Assert.True(map.HasCollisionRayWithTypes(from, to)); // legacy fallback, not native cell evidence
-        map.Clear();
+        void NativeObstacle(MemoryMap target,Vec2[] polygon)=>target.InsertObject(polygon,
+            new ObservableMapData(1,polygon.Select(p=>new P2f((float)p.X,(float)p.Y)).ToArray(),0));
+        NativeObstacle(map,near);
+        Assert.True(map.HasCollisionRayWithTypes(from, to));
+        map=new MemoryMap();
         using var farPose = new Pose3d(Mat3.Identity, new Vec3(90, 0, 0));
-        map.Insert(MemoryMap.Rectangle(farPose, 44, 44), MemoryMapContentType.ObstacleObservable, objectId: 1);
+        NativeObstacle(map,MemoryMap.Rectangle(farPose, 44, 44));
         Assert.False(map.HasCollisionRayWithTypes(from, to));       // 68 mm away: the probe stops short
         // a cleared region is not in the way
-        map.Clear();
-        map.Insert(near, MemoryMapContentType.ClearOfObstacle, objectId: 1);
+        map=new MemoryMap();
+        map.InsertObject(near,new SourceMapData(MemoryMapContentType.ClearOfObstacle,0,0));
+        map.Insert(near,MemoryMapContentType.ObstacleObservable,objectId:1); // no legacy bypass of native admission
         Assert.False(map.HasCollisionRayWithTypes(from, to));
 
         // a collision obstacle is a markerless object: in the world, never in the map
         var world = new BlockWorld(Array.Empty<(uint, ObjectType)>);
         using var collisionPose = new Pose3d(Mat3.Identity, new Vec3(30, 0, 0));
-        world.AddCollisionObstacle(collisionPose);
-        Assert.Single(world.LocatedObjects);
-        map.Clear();
-        map.SyncFromWorld(world);
-        Assert.Empty(map.Regions);
-        Assert.False(map.HasCollisionRayWithTypes(from, to));
+        var collision=world.AddCollisionObstacle(collisionPose);
+        try
+        {
+            Assert.Single(world.LocatedObjects);
+            Assert.Empty(world.Maps.Current!.Regions);
+            Assert.False(world.Maps.Current.HasCollisionRayWithTypes(from,to));
+        }
+        finally{collision.NativePose.Dispose();world.Maps.Dispose();}
 
         Assert.Equal(-15.0, InteractWithFacesBehavior.DriveBackwardMm);
         Assert.Equal(40f, InteractWithFacesBehavior.DriveSpeedMmps);
