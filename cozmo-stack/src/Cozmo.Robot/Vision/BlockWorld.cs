@@ -2120,11 +2120,10 @@ public sealed partial class BlockWorld
     {
         if (newState == PoseState.Unknown) { MarkObjectUnknown(obj, true); return; }
         if (newState == PoseState.Dirty && LocalizedToObjectId == obj.ObjectId) SetLocalizedTo(null);
-        var oldPose = carryingObservation?new Pose3d(obj.NativePose):obj.Pose; var oldState = obj.PoseState;
+        using var oldPose = new Pose3d(carryingObservation?obj.NativePose:obj.Pose); var oldState = obj.PoseState;
         if(carryingObservation)obj.SetCarryingObservationPose(pose,newState);
         else obj.SetPose(pose, dist, newState);
-        try{BroadcastObjectPoseChanged(obj, oldPose, oldState);}
-        finally{if(carryingObservation)oldPose.Dispose();}
+        BroadcastObjectPoseChanged(obj, oldPose, oldState);
     }
 
     /// <summary>
@@ -2611,7 +2610,7 @@ public sealed partial class BlockWorld
         bool inWorld;
         lock (_gate) inWorld = _located.ContainsKey(KeyOf(obj));
         if (!inWorld) EmitPublicLog($"ObjectPoseConfirmer.AddObjectRelativeObservation.NotABlockWorldObject: {obj.ObjectId}");
-        var oldPose = obj.Pose; var oldState = obj.PoseState;
+        using var oldPose = new Pose3d(obj.Pose); var oldState = obj.PoseState;
         if (inWorld) { obj.SetPose(pose, -1.0, PoseState.Dirty); BroadcastObjectPoseChanged(obj, oldPose, oldState); }
         var entry = EntryForOrCreate(obj.ObjectId);
         obj.Confirmation = entry;
@@ -3093,17 +3092,21 @@ public sealed partial class BlockWorld
     internal void ApplyRelativeObservation(ObservableObject obj, Pose3d pose, PoseState state, int? confirmationCount)
     {
         using var frameMutation=EnterPoseMutation();
-        PoseState prev=default;Pose3d oldPose=null!;
-        LogCallbackDeferral.RunGated(_gate,()=>
+        PoseState prev=default;Pose3d? oldPose=null;
+        try
         {
-            prev = obj.PoseState; oldPose = obj.Pose;
-            obj.SetPose(pose, -1.0, state);
-            var entry = EntryForOrCreate(obj.ObjectId);
-            obj.Confirmation = entry;
-            entry.Pose = pose;
-            if (confirmationCount is { } count) entry.Count = count;
-        });
-        BroadcastObjectPoseChanged(obj, oldPose, prev);
+            LogCallbackDeferral.RunGated(_gate,()=>
+            {
+                prev = obj.PoseState; oldPose = new Pose3d(obj.Pose);
+                obj.SetPose(pose, -1.0, state);
+                var entry = EntryForOrCreate(obj.ObjectId);
+                obj.Confirmation = entry;
+                entry.Pose = pose;
+                if (confirmationCount is { } count) entry.Count = count;
+            });
+            BroadcastObjectPoseChanged(obj, oldPose, prev);
+        }
+        finally { oldPose?.Dispose(); }
     }
 
     // fidelity: M13-040 -- A2-A9, SetOnCharger 0x005119AA..0x00511B4C.

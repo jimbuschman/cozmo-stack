@@ -572,8 +572,9 @@ public sealed class DriveToObjectAction
                 // flat robot pose is held to. The object pose as +0xB4, +0xC0 = 1 (the threshold pair) and the (10, 10, 10) / 0x3E32B8C2 tolerances are the engine's.
                 var closest = CubePreActionPoses.Closest(poses, robot.Value)!;
                 var goal = new Pose3d(Mat3.AboutZ(YawTowardObject(obj.Pose, closest.WorldPose)), closest.WorldPose.Translation);
+                using var preActionObjectPose = new Pose3d(obj.Pose);
                 var drive = new DriveToPoseAction(_m) { Goal = goal, Goals = new[] { goal }, IgnoreObstacleIds = new[] { ObjectId },
-                                                         PreActionObjectPose = obj.Pose, Profile = Profile };
+                                                         PreActionObjectPose = preActionObjectPose, Profile = Profile };
                 var r = await drive.RunAsync(cancel);
                 _trace.AddRange(drive.Trace);
                 if (r != ActionResult.Success) return r;
@@ -629,9 +630,10 @@ public sealed class DriveToObjectAction
         }
         if (double.IsNaN(goal.Translation.X) || double.IsNaN(goal.Translation.Y) || double.IsNaN(goal.AngleAroundZ))
             throw new NotSupportedException("MISSING: DriveToObjectAction.InitHelper with a NaN +0x84 builds a NaN goal (0x005591E4) and returns no result; what DriveToPoseAction / PathComponent (M13) do with a NaN goal is not in the inventory.");
+        using var preActionObjectPose = new Pose3d(obj.Pose);
         var drive = new DriveToPoseAction(_m)
         {
-            Goal = goal, Goals = new[] { goal }, IgnoreObstacleIds = new[] { ObjectId }, PreActionObjectPose = obj.Pose,
+            Goal = goal, Goals = new[] { goal }, IgnoreObstacleIds = new[] { ObjectId }, PreActionObjectPose = preActionObjectPose,
             DistanceToleranceMm = 10.0, AngleToleranceRad = 0.174533, Profile = Profile,
         };
         var r = await drive.RunAsync(cancel);
