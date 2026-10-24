@@ -62,8 +62,10 @@ public sealed class M11CheckedObservationRowsTests
     [Fact]
     public void MarkerMergeUsesUnsignedMaxByPositionWithoutAppendingOrMatchingCodes()
     {
-        var destination=Object(1,ObjectType.Charger_Basic,Marker((MarkerType)1),Marker((MarkerType)2),Marker((MarkerType)3));
-        var source=Object(2,ObjectType.Charger_Basic,Marker((MarkerType)99),Marker((MarkerType)98));
+        // A real charger owns exactly its one code-2 marker (Charger ctor 0x004E9C38..3C, B-M13-22), so this
+        // multi-marker merge uses cube-type objects; UpdateMarkerObservationTimes is the same for both.
+        var destination=Object(1,ObjectType.Block_LIGHTCUBE1,Marker((MarkerType)1),Marker((MarkerType)2),Marker((MarkerType)3));
+        var source=Object(2,ObjectType.Block_LIGHTCUBE2,Marker((MarkerType)99),Marker((MarkerType)98));
         destination.LastObservedTimestamp=7;source.LastObservedTimestamp=1000;
         destination.LastImageRect=(1,2,3,4);source.LastImageRect=(5,6,7,8);destination.TimesObserved=9;source.LastObservedMarkers=new[]{(MarkerType)99};
         destination.Markers[0].LastObservedTimestamp=0x80000001;destination.Markers[1].LastObservedTimestamp=4;destination.Markers[2].LastObservedTimestamp=77;
