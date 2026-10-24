@@ -35,12 +35,19 @@ public sealed class MarkerObservationTimeCheckedRowsTests
     [Fact] public void NearestMarkerWinsAndFirstKeepsExactTie()
     {
         using var i=new Inputs();var obj=i.Object(i.Marker(3),i.Marker(1),i.Marker(-1));obj.LastObservedTimestamp=999;
+        // A / reach: unit: old object parent=null kept [10,11,12]; this identity root is the supplied world origin.
+        obj.NativePose.SetParent(i.CameraPose);
         for(int n=0;n<3;n++)obj.Markers[n].LastObservedTimestamp=(uint)(10+n);
         i.Mark(obj,timestamp:123);
         Assert.Equal(new uint?[]{10,123,12},obj.Markers.Select(m=>m.LastObservedTimestamp));Assert.Equal(999u,obj.LastObservedTimestamp);Assert.Empty(i.Logs);
     }
     [Fact] public void TimestampIsPlainStoreRatherThanMaximum()
-    {using var i=new Inputs();var obj=i.Object(i.Marker());obj.Markers[0].LastObservedTimestamp=999;i.Mark(obj,timestamp:3);Assert.Equal(3u,obj.Markers[0].LastObservedTimestamp);}
+    {
+        using var i=new Inputs();var obj=i.Object(i.Marker());
+        // A / reach: unit: old object parent=null kept 999; use the fixture's supplied identity world origin.
+        obj.NativePose.SetParent(i.CameraPose);
+        obj.Markers[0].LastObservedTimestamp=999;i.Mark(obj,timestamp:3);Assert.Equal(3u,obj.Markers[0].LastObservedTimestamp);
+    }
     [Fact] public void AreaRatioAtLeastPointOneIsRejected()
     {
         using var i=new Inputs();var obj=i.Object(i.Marker(width:11,height:10));obj.Markers[0].LastObservedTimestamp=17;i.Mark(obj);
@@ -51,7 +58,9 @@ public sealed class MarkerObservationTimeCheckedRowsTests
     {using var i=new Inputs();var obj=i.Object(i.Marker());i.Mark(obj,tolerance:BitConverter.UInt32BitsToSingle(bits));Assert.Null(obj.Markers[0].LastObservedTimestamp);Assert.Single(i.Logs);}
     [Fact] public void NearerAreaFailureDoesNotSuppressFartherValidCandidate()
     {
-        using var i=new Inputs();var obj=i.Object(i.Marker(width:11,height:10),i.Marker(1));i.Mark(obj);
+        using var i=new Inputs();var obj=i.Object(i.Marker(width:11,height:10),i.Marker(1));
+        // A / reach: unit: old object parent=null left the second timestamp null.
+        obj.NativePose.SetParent(i.CameraPose);i.Mark(obj);
         Assert.Null(obj.Markers[0].LastObservedTimestamp);Assert.Equal(73u,obj.Markers[1].LastObservedTimestamp);Assert.Empty(i.Logs);
     }
     [Fact] public void OutsideContainmentRejectsBeforeAnyTimestampStore()
@@ -82,6 +91,8 @@ public sealed class MarkerObservationTimeCheckedRowsTests
     [Fact] public void NeededMalformedCoefficientReadUsesVisiblePolicyAndPreservesPriorTime()
     {
         using var i=new Inputs(new double[]{1});var obj=i.Object(i.Marker());obj.Markers[0].LastObservedTimestamp=88;var policy=new List<string>();StackDiagnostics.Reported+=policy.Add;
+        // A / reach: unit: old object parent=null produced NoMatchingMarkerFound before coefficient access.
+        obj.NativePose.SetParent(i.CameraPose);
         try{i.Mark(obj);i.Mark(obj);Assert.Equal(88u,obj.Markers[0].LastObservedTimestamp);Assert.Empty(i.Logs);Assert.Equal(2,policy.Count(s=>s.Contains("M1-034/M11-013")&&s.Contains("0085E2AE")));}
         finally{StackDiagnostics.Reported-=policy.Add;}
     }
@@ -101,6 +112,8 @@ public sealed class MarkerObservationTimeCheckedRowsTests
     [Fact] public void ProducerFeedsCheckedUnsignedPositionalConsumerWithoutChangingObjectTime()
     {
         using var i=new Inputs();var destination=i.Object(i.Marker());var source=i.Object(i.Marker());destination.Markers[0].LastObservedTimestamp=7;destination.LastObservedTimestamp=11;
+        // A / reach: unit: old object parents=null left destination time 7; bind both to the supplied world origin.
+        destination.NativePose.SetParent(i.CameraPose);source.NativePose.SetParent(i.CameraPose);
         i.Mark(source,timestamp:0xF0000000);BlockWorld.UpdateMarkerObservationTimes(destination,source);
         Assert.Equal(0xF0000000u,destination.Markers[0].LastObservedTimestamp);Assert.Equal(11u,destination.LastObservedTimestamp);
     }

@@ -100,6 +100,8 @@ public sealed class M3M4X23BuilderTests
         robot.Engine.Robots.AddRobot(CozmoEngine.RobotId);var native=robot.Engine.Robot!;
         vision.History.Add(new RobotState{Timestamp=1,PoseOriginId=native.CurrentOriginId});
         var (unused,cube,camera,pose)=World();vision.World.AddLocatedObject(cube);
+        // A / reach: unit: old rootless cube threw M11-066 on the native live-lift conversion.
+        if(operation=="attach")cube.NativePose.SetParent(vision.World.GetNativeOrigin(vision.World.CurrentOriginId));
         var docking=new DockingSystem(robot,vision);
         uint attachResult=uint.MaxValue;
         Action mutate=operation switch

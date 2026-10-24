@@ -21,7 +21,10 @@ public sealed class M5X18BuilderTests
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();NoAnimationFixtureInputs(rig);
         var observed=new List<string>();rig.Robot.Engine.StackLogLine+=observed.Add;
-        using var d=new DriveToPoseAction(rig.M){Goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0))};
+        // A / reach: unit (offline drive): old goal parent=null yielded FailedTraversingPath.
+        using var goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0));
+        goal.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
+        using var d=new DriveToPoseAction(rig.M){Goal=goal};
         var result=SignalTestContext.Result(d.RunAsync(default),()=>rig.Pump());
         Assert.Equal(ActionResult.Success,result);Assert.False(d.CanInterrupt());Assert.Equal(0x41F00000,BitConverter.SingleToInt32Bits(d.TimeoutSeconds));
         Assert.DoesNotContain(observed,s=>s.Contains("status/IDs mapping is a stand-in"));
