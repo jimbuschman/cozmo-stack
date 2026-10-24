@@ -191,8 +191,8 @@ public sealed partial class MemoryMap
     /// <summary>
     /// <c>MemoryMap::HasCollisionRayWithTypes(from, to, types)</c> 0x0068176E: the types are folded into a
     /// flag mask (<c>EContentTypeToFlag</c> per entry whose bool is set) and handed to the quad tree's ray
-    /// walk. Selected cells answer through native overlap geometry; legacy producers also retain their
-    /// segment-touch fallback until their tree joins are built. <paramref name="blocks"/> defaults to
+    /// walk. The legacy fallback covers only the remaining unported prox/unrecognized/explicit
+    /// not-interesting-quad writes. <paramref name="blocks"/> defaults to
     /// <see cref="MemoryMapTypes.BlocksTheRobot"/>, the mask the face behaviour passes.
     /// </summary>
     public bool HasCollisionRayWithTypes(Vec2 from, Vec2 to, Func<MemoryMapContentType, bool>? blocks = null)
@@ -202,11 +202,14 @@ public sealed partial class MemoryMap
         for (int i = 0; i < 11; i++)
             if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
         if (Tree.HasCollisionRayWithTypes(from,to,mask)) return true;
-        Behavior.SteppedBehavior.ReportMissing("M11-046/M11-074 legacy MemoryMap.Insert, FreeplayStack.SyncFromWorld, FlagQuadAsNotInterestingEdges and FlagGroundPlaneRoiInterestingEdgesAsUncertain still own legacy regions; native robot-pose and overhead writers are built, but HasCollisionRayWithTypes retains their remaining selected legacy content through SegmentTouchesPolygon");
+        // Host transition boundary, not a native mask: the other producers now own native tree cells.
+        const uint legacyTypes=(1u<<6)|(1u<<7)|(1u<<10);
+        MemoryMapRegion[] legacy;
         lock (_gate)
-            foreach (var region in _regions)
-                if ((mask & (1u << (int)region.Type)) != 0 && SegmentTouchesPolygon(from,to,region.Polygon)) return true;
-        return false;
+            legacy=_regions.Where(region=>(mask & legacyTypes & (1u << (int)region.Type)) != 0).ToArray();
+        if(legacy.Length==0)return false;
+        Behavior.SteppedBehavior.ReportMissing("M11-046/M11-074 legacy ray fallback: MemoryMap.Insert ObstacleProx (M13-030 payload 0x00622646..0x006226E6), ObstacleUnrecognized (native producer unbound), and FlagQuadAsNotInterestingEdges (type10, 0x0067E6B0) still lack native writer joins");
+        return legacy.Any(region=>SegmentTouchesPolygon(from,to,region.Polygon));
     }
 
     // ------------------------------------------------------------------ the overhead edges
@@ -368,29 +371,6 @@ public sealed partial class MemoryMap
         double u = (d.X * r.Y - d.Y * r.X) / denom;
         if (t < 0 || t > 1 || u < 0 || u > 1) return null;
         return a0 + r * t;
-    }
-
-    /// <summary>
-    /// Refreshes the object content from the world model, which is what the engine does one object at a
-    /// time through <c>MapComponent::AddObservableObject</c> and <c>RemoveObservableObject</c> as the world
-    /// changes: every located object of a family the map takes is in, at its bounding quad, and everything
-    /// else is out. Regions that came from <see cref="Insert"/> (a cliff, say) are left alone.
-    /// </summary>
-    public void SyncFromWorld(BlockWorld world, uint timestamp = 0)
-    {
-        var keep = new List<MemoryMapRegion>();
-        lock (_gate)
-        {
-            foreach (var r in _regions) if (r.ObjectId is null) keep.Add(r);
-            foreach (var o in world.LocatedObjects)
-            {
-                var type = MemoryMapTypes.ContentTypeForFamily(o.Family, adding: true);
-                if (type == MemoryMapContentType.Unknown) continue;
-                keep.Add(new MemoryMapRegion(type, BoundingQuad(o), o.ObjectId, timestamp));
-            }
-            _regions.Clear();
-            _regions.AddRange(keep);
-        }
     }
 
     /// <summary>

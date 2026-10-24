@@ -358,13 +358,7 @@ public sealed class FreeplayStack : IDisposable
     {
         // fidelity: M13-032 — follow the live current-origin owner after delocalization/robot reconstruction.
         if (vision is not null) Context.Map = robot.Engine.Robot is not null ? vision.World.Maps.Current : null;
-        // the object content of the memory map follows the world model, as MapComponent's
-        // AddObservableObject / RemoveObservableObject keep it following BlockWorld
-        if (Context.Map is { } map)
-        {
-            if (vision?.World is { } world) map.SyncFromWorld(world, robot.State.Latest?.Timestamp ?? 0);
-
-        }
+        // BlockWorld pose notifications already drive the native map's gated object add/removal path.
         Freeplay.RefreshInputs(robot, vision, m, nowSec);
         DataTracker.Update();   // reads its own clock (0x0056EC1E..0x0056EC22)
         return Freeplay.Tick(nowSec, nowMs);
