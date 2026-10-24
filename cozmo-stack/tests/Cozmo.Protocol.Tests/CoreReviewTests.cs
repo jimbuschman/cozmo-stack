@@ -916,8 +916,7 @@ public class CoreReviewTests
         var map = new MemoryMap();
         // Map assertion reach: unit (supplied pose/time; whiteboard origin MISSING at 0x0056AC92). Old writer leaves a legacy region and no native type-1 cells.
         using var mapPose=new Pose3d(Mat3.Identity,Vec3.Zero);
-        try {map.UpdateRobotPose(mapPose,false,1);}
-        finally {map.ReleaseRobotPose();}
+        map.UpdateRobotPose(mapPose,false,1);
         Assert.True(map.HasCollisionRayWithTypes(new(-30,0),new(-20,0),t=>t==MemoryMapContentType.ClearOfObstacle));
         int delocalized = 0;
         Action<uint> onDelocalized=_=>{delocalized++;map.Clear();};

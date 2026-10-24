@@ -153,23 +153,19 @@ public sealed partial class MemoryMap
         lock (_gate) return _regions.Any(r => r.Type == type);
     }
 
-    public void Clear() { lock (_gate) _regions.Clear(); ReleaseRobotPose(); }
+    public void Clear() { lock (_gate) _regions.Clear(); }
 
     public const double RobotPoseMoveMm = 8.0;
     public static readonly double RobotPoseTurnRad = BitConverter.UInt32BitsToSingle(0x3EB2B8C2);
-    private Pose3d? _lastRobotPose;
-    internal void ReleaseRobotPose() { _lastRobotPose?.Dispose(); _lastRobotPose=null; }
 
     // fidelity: M11-074, M8-026, M11-094
-    // 0x0067E224..0x0067E486: two native inserts, notification, then saved-pose assignment.
+    // 0x0067E224..0x0067E486: insertion/notification unit; SourceMapComponent owns admission and saved pose.
     public MemoryMapRegion? UpdateRobotPose(Pose3d robotPose, bool cliffDetected = false, uint timestamp = 0) =>
         UpdateRobotPose(robotPose,cliffDetected,timestamp,null);
     internal MemoryMapRegion? UpdateRobotPose(Pose3d robotPose,bool cliffDetected,uint timestamp,
         Action<Cozmo.Robot.Manipulation.WhiteboardClearQuad>? processClearQuad)
     {
         using var current=new Pose3d(robotPose);
-        if (_lastRobotPose is { HasParent: true } last &&
-            current.IsSameAs(last,new Vec3(8,8,8),RobotPoseTurnRad,out _)) return null;
         var size=MarkerlessObject.SizeByType(ObjectType.ProxObstacle)!.Value;
         float hx=(float)size.X*0.5f, hy=(float)size.Y*0.5f, hz=(float)size.Z*0.5f;
         var corners=new[]{new Vec3(hx,hy,hz),new Vec3(-hx,hy,hz),new Vec3(hx,-hy,hz),new Vec3(-hx,-hy,hz)};
@@ -190,7 +186,6 @@ public sealed partial class MemoryMap
         var full=new Cozmo.Robot.Manipulation.WhiteboardClearQuad(Q(0),Q(1),Q(2),Q(3));
         if(processClearQuad is {} clear)clear(full);
         else Behavior.SteppedBehavior.ReportMissing("M8-026 ProcessClearQuad 0x0067E47E: native robot footprint is built; AIWhiteboard owner is unbound");
-        ReleaseRobotPose();_lastRobotPose=new Pose3d(current);
         return new MemoryMapRegion(data.Type,patch,null,timestamp);
     }
 

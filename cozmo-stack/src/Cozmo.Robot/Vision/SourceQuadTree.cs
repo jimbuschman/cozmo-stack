@@ -275,7 +275,7 @@ internal sealed partial class SourceMapComponent
         {
             bool dead = zombie(id);
             SourceLog?.Invoke(EngineLogLevel.Event,null,dead ? "MapComponent.memory_map.deleting_zombie_map" : "MapComponent.memory_map.keeping_alive_map",unchecked((int)origin).ToString(CultureInfo.InvariantCulture));
-            if (dead) {Maps[id]?.ReleaseRobotPose();Maps.Remove(id);}
+            if (dead) Maps.Remove(id);
         }
         if (origin == 0) return;
         var map = new MemoryMap { SourceLog = SourceLog, Missing = Missing };
@@ -293,6 +293,6 @@ internal sealed partial class SourceMapComponent
             Maps[next] = new MemoryMap { SourceLog = SourceLog, Missing = Missing };
         }
         Missing?.Invoke("MISSING: M11-048 MemoryMap merge vt+0xC 0x0067DF80 (including null old-map handling); merge not guessed");
-        CurrentOrigin = next; oldMap?.ReleaseRobotPose();Maps.Remove(old);
+        CurrentOrigin = next; Maps.Remove(old);
     }
 }

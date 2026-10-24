@@ -39,7 +39,7 @@ public sealed class M13OverheadMapWriterTests
             return new(4242,true,GroundPlaneROI.GroundQuad(),new[]{chain});
         }
         internal double? Run(bool border,params Vec2[] points)=>Map.AddVisionOverheadEdges(Frame(border,points),Current);
-        public void Dispose(){Map.OverheadContext=null;Map.ReleaseRobotPose();Current.Dispose();Historical.Dispose();Root.Dispose();}
+        public void Dispose(){Map.OverheadContext=null;Current.Dispose();Historical.Dispose();Root.Dispose();}
     }
     // reach: production (public capture entry with real stored robot history, Freeplay frame subscription and whiteboard owner).
     // Old writer: no AIWhiteboard +0x4C/+0x50 update, regardless of legacy regions.
