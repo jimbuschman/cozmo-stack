@@ -187,9 +187,9 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w42 | [B-M13-16](B-M13-16.md) | DONE ec46eceb (status b5371ef0); full 6078/6078; 6 MISSING; Claude check PASS (research/20261023-b-m13-16-claude-check.md) |
 | 61w43 | [B-M13-17](B-M13-17.md) | DONE f6f370bc (status 1b135e7f); full 6084; 3 MISSING; Claude check PASS (research/20261023-b-m13-17-claude-check.md) |
 | 61w44 | [B-M13-19](B-M13-19.md) | DONE 07de2898 + fix-up 6343ddf5 (status d71d4338); full 6099/6099; Claude check PASS (research/20261023-b-m13-19-claude-check.md); ReviewFix 15 s stall open |
-| 61w45 | [B-M13-20](B-M13-20.md) | open (UpdateRobotPose writes onto the native tree) |
-| 61w46 | [B-M13-21](B-M13-21.md) | open, after B-M13-20 (AddVisionOverheadEdges onto the native tree; drop the legacy ray fallback) |
-| 61w47 | [B-M13-22](B-M13-22.md) | open, after B-M13-21 (charger stored pre-action elements) |
+| 61w45 | [B-M13-20](B-M13-20.md) | DONE 96805ef3 on main; Claude check FAIL, 2 blocking (cliff byte input; saved pose per map) — fix-up open (research/20261023-b-m13-20-21-22-claude-check.md) |
+| 61w46 | [B-M13-21](B-M13-21.md) | DONE 46a971ba; Claude check PASS (same file) |
+| 61w47 | [B-M13-22](B-M13-22.md) | BLOCKED on B-M13-22-wip (stale test fixed by manager c11385a2); Claude check FAIL, 1 blocking (in-place charger setter overwrites old pose) — fix-up open |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
