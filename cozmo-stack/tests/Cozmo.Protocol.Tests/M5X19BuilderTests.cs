@@ -11,7 +11,14 @@ public sealed class M5X19BuilderTests
     private sealed class DriveBehavior(ManipulationSystem m):ManipulationBehavior("drive-regression","drive-regression",m)
     {
         internal ActionResult? Result;
-        protected override void OnStart()=>RunAction("DriveToPose",ct=>new DriveToPoseAction(M){Goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0))}.RunAsync(ct),r=>{Result=r;Finish();});
+        protected override void OnStart()=>RunAction("DriveToPose",async ct=>
+        {
+            // A / reach: unit input in the production runner: old parent=null yielded FailedTraversingPath.
+            using var goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0));
+            goal.SetParent(M.World.GetNativeOrigin(M.World.CurrentOriginId));
+            using var drive=new DriveToPoseAction(M){Goal=goal};
+            return await drive.RunAsync(ct);
+        },r=>{Result=r;Finish();});
     }
     private sealed class Pending:ActionRunner
     { internal Pending():base(0,0){} public override uint CheckIfDone()=>EngineActionResult.Running; public override bool CanInterrupt()=>false; }

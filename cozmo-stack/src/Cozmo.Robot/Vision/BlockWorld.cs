@@ -256,13 +256,25 @@ public sealed partial class ObservableObject
     public bool IsUnique => ObservableMapSlot5C == 1;
     /// <summary>Pose in the robot's world origin; meaningful while <see cref="PoseState"/> is not Unknown.</summary>
     private Pose3d _pose=Pose3d.Identity;
+    private Pose3d? _publicPose;
+    private string? _publicPoseSourceName;
     internal Pose3d NativePose=>_pose;
     internal BlockWorld? PoseWorld; // host serialization owner; not a recovered native object field
     internal bool NativeCarryingTree;
-    // The public world-coordinate API remains a snapshot. The native carried path owns one shared node.
+    // The public value must survive a later SetPose. NativePose alone exposes the embedded shared node.
     public Pose3d Pose
     {
-        get{if(!NativeCarryingTree)return _pose;using var flat=_pose.GetWithRespectToRoot();return Pose3d.FromFlatRotation(flat.Quaternion,flat.Translation);}
+        get
+        {
+            if(NativeCarryingTree){using var flat=_pose.GetWithRespectToRoot();return Pose3d.FromFlatRotation(flat.Quaternion,flat.Translation);}
+            if(Type!=ObjectType.Charger_Basic && !CubeGeometry.IsCube(Type))return _pose;
+            // Preserve the API's stable value between writes without lending out the native mutable node.
+            var snapshot=_publicPose;
+            if(snapshot?.Node is null || !snapshot.Transform.Equals(_pose.Transform) ||
+               !ReferenceEquals(snapshot.Node.Parent,_pose.Node!.Parent) || _publicPoseSourceName!=_pose.Name)
+            {snapshot=new Pose3d(_pose);_publicPose=snapshot;_publicPoseSourceName=_pose.Name;}
+            return snapshot;
+        }
         internal set
         {
             using var mutation=PoseWorld?.EnterPoseMutation();
@@ -2601,11 +2613,22 @@ public sealed partial class BlockWorld
                 Source(EngineLogLevel.Warning,null,"BlockWorld.UpdateStacks.OriginMismatch","Can't obtain topPose wrt old, but that's exactly how we found the object in topPose.");
                 continue;
             }
-            using var relative=stacked.NativePose.WithRespectTo(e.Pose);
+            using var topPose=new Pose3d(stacked.NativePose);
+            using var oldPose=new Pose3d(e.Pose);
+            using var currentPose=new Pose3d(obj.NativePose);
+            // The standalone component's existing host API accepts flat world-coordinate inputs.
+            // Bind those values to its origin before the native operations; never invent GetParent(root).
+            if(NativeOrigin is null && !topPose.HasParent && !oldPose.HasParent && !currentPose.HasParent &&
+               topPose.HasLegacyFrameInput && oldPose.HasLegacyFrameInput && currentPose.HasLegacyFrameInput)
+            {
+                var origin=GetNativeOrigin(obj.OriginId);
+                topPose.SetParent(origin);oldPose.SetParent(origin);currentPose.SetParent(origin);
+            }
+            using var relative=topPose.WithRespectTo(oldPose);
             using var newPose=new Pose3d(relative);
-            newPose.PreComposeWith(obj.NativePose);
+            newPose.PreComposeWith(currentPose);
             Pose3d parent=null!;
-            if(!obj.NativePose.TryGetParent(ref parent))continue;
+            if(!currentPose.TryGetParent(ref parent))continue;
             using(parent)newPose.SetParent(parent); // 0x0062196E..0x006219A8
             if (AddObjectRelativeObservation(stacked, newPose, obj) != 0)
             {
