@@ -190,10 +190,11 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w45 | [B-M13-20](B-M13-20.md) | DONE 96805ef3 + fix-up d0c1c2b7; Claude check PASS after fix-up (research/20261023-b-m13-20-21-22-claude-check.md) |
 | 61w46 | [B-M13-21](B-M13-21.md) | DONE 46a971ba; Claude check PASS (same file) |
 | 61w47 | [B-M13-22](B-M13-22.md) | DONE f65b3960 + c11385a2 + fix-up 934fcb7a, merged 9138555c; full 6133; Claude check PASS after fix-up (same file) |
-| 61w48 | [B-M13-23](B-M13-23.md) | DONE on main; Claude check pending |
-| 61w49 | [B-M13-24](B-M13-24.md) | DONE on main; Claude check pending |
+| 61w48 | [B-M13-23](B-M13-23.md) | DONE 0fc1fba1; Claude check PASS (research/20261024-b-m13-23-24-claude-check.md) |
+| 61w49 | [B-M13-24](B-M13-24.md) | DONE 33e868fe; Claude check PASS (same file) |
 | 61w4a | [B-M13-25](B-M13-25.md) | BLOCKED on B-M13-25-wip: 56 failures, cubes get no pre-action poses (no native parented stored elements); unblocked by B-M13-26 |
 | 61w4b | [B-M13-26](B-M13-26.md) | open, on B-M13-25-wip (cube stored pre-action elements through the native constructors) |
+| 61w4c | [B-M13-27](B-M13-27.md) | open, after B-M13-26 (stop the legacy all-objects map sync; drop the ray fallback when unneeded) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
