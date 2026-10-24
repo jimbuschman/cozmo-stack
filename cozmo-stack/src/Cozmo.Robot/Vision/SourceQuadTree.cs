@@ -20,6 +20,23 @@ internal class SourceMapData(MemoryMapContentType type, uint first, uint last)
         return Type == other.Type;
     }
 }
+// fidelity: M11-074, M14-007 -- 0x00684A38/0x00684A8C/0x00684AE8.
+internal sealed class ObservableMapData : SourceMapData
+{
+    internal readonly uint ObjectId;
+    internal readonly P2f[] Polygon;
+    internal ObservableMapData(uint objectId,P2f[] polygon,uint timestamp)
+        :base(MemoryMapContentType.ObstacleObservable,timestamp,timestamp)
+    {ObjectId=objectId;Polygon=polygon.ToArray();}
+    internal override SourceMapData Clone()=>new ObservableMapData(ObjectId,Polygon,First){Type=Type,Last=Last};
+    internal override bool Same(SourceMapData? other)
+    {
+        if(other is null||other.Type!=Type)return false;
+        if(other is ObservableMapData observable)return ObjectId==observable.ObjectId;
+        StackDiagnostics.Write("M1-034 M11-074 skip forged type-3 equality layout read at 0x00684AFA; prior data retained");
+        return false;
+    }
+}
 internal sealed class CliffMapData(Vec2 normal, uint timestamp) : SourceMapData(MemoryMapContentType.Cliff, timestamp, timestamp)
 {
     internal Vec2 Normal = new((float)normal.X, (float)normal.Y);
@@ -34,7 +51,9 @@ internal sealed class CliffMapData(Vec2 normal, uint timestamp) : SourceMapData(
 internal sealed class SourceNodeContent
 {
     internal SourceMapData Data;
-    internal SourceNodeContent(SourceMapData data) { Data = data.Clone(); } // native constructor vt+8
+    internal SourceNodeContent(SourceMapData data) :this(data,true) { } // native constructor vt+8
+    private SourceNodeContent(SourceMapData data,bool clone) { Data=clone?data.Clone():data; }
+    internal static SourceNodeContent FromShared(SourceMapData data)=>new(data,false); // Transform's shared-pointer overload
     internal bool Same(SourceNodeContent other) => Data.Type == other.Data.Type && (ReferenceEquals(Data, other.Data) || Data.Same(other.Data));
 }
 
@@ -289,6 +308,26 @@ internal sealed class SourceQuadNode(float x, float y, float z, float side, byte
         };
     }
     private bool CanOverrideAll(SourceNodeContent incoming, int overlap) => overlap == 2 && CanOverride(incoming, overlap) && Children.All(c => c!.CanOverrideAll(incoming, overlap));
+    // fidelity: M11-046 -- 0x00688378..0x00688474, children/merge precede own callback.
+    internal bool TransformContent(SourceQuadTree tree,SourceFastPolygon polygon,Func<SourceMapData,SourceMapData> callback)
+    {
+        if(polygon.GetOverlapType(this)==0)return false;
+        if(Children.Count!=0)
+        {
+            foreach(var child in Children)child!.TransformContent(tree,polygon,callback); // child results ignored
+            TryAutoMerge(tree.Processor);
+        }
+        if(Content?.Data is not {} own)return false;
+        var replacement=callback(own);
+        if(replacement is null)
+        {
+            StackDiagnostics.Write("M1-034 M11-046 skip null Transform result equality read at 0x0068C4C4; prior cell retained");
+            return false;
+        }
+        var result=SourceNodeContent.FromShared(replacement);
+        if(Content.Same(result)||Children.Count!=0)return false;
+        ForceSet(result,tree.Processor);return true;
+    }
     internal bool InsertRecursive(SourceNodeContent incoming, SourceQuadTree tree, SourceFastPolygon polygon)
     {
         if (ReferenceEquals(Content.Data,incoming.Data)) return false;
@@ -352,6 +391,20 @@ internal sealed class SourceQuadTree
             else Expand(CentroidForTest?.Invoke(polygon) ?? new Vec2(native.CenterX,native.CenterY),maxShifts,()=>Contains(native));
         }
         Dirty |= Root.InsertRecursive(new SourceNodeContent(data),this,native);
+    }
+    // fidelity: M11-046 -- whole-map overload 0x0068140C -> 0x0068A414.
+    internal void TransformContent(Func<SourceMapData,SourceMapData> callback)
+    {
+        LogCallbackDeferral.RunGated(_geometryGate,()=>
+        {
+            if(Root is not {} root)return;
+            float h=root.Side*.5f+0f; // MakeQuadXY padding zero; keep independent f32 operations
+            var quad=new[]{new P2f(root.X+h,root.Y+h),new P2f(root.X-h,root.Y+h),
+                new P2f(root.X+h,root.Y-h),new P2f(root.X-h,root.Y-h)};
+            var polygon=PolygonF.ImportQuad2d(quad);
+            root.TransformContent(this,new SourceFastPolygon(polygon.Select(p=>new Vec2(p.X,p.Y))),callback);
+            // The whole-map wrapper does not write Dirty or OR any return into it.
+        });
     }
     // fidelity: M11-047 -- 0x00689FAC..0x0068A2D6, snapshot before direct node inserts.
     internal int FillBorder(MemoryMapContentType seed,uint flags,SourceMapData data)

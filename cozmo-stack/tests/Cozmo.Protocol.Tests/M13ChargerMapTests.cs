@@ -144,8 +144,8 @@ public sealed class M13ChargerMapTests
         Assert.Empty(f.Memory.Regions); // no polygon-list substitute for missing generic tree geometry
     }
 
-    // reach: unit (supplies poses/time and existing map; real callback with supplied derived ObjectID;
-    // whole-map Transform and derived reader MISSING at 0x0068140C/0x0068110E).
+    // reach: unit (supplies poses/time and existing map; real callback and actual derived data;
+    // no substituted ID reader; live vision acquisition is not exercised).
     // Old code: no removal callback dispatched; new dispatches once. Type4 preservation itself is an existing invariant.
     [Fact]
     public void ValidToInvalidUsesOldRootAndRemovalCallbackLeavesType4Untouched()
@@ -155,10 +155,11 @@ public sealed class M13ChargerMapTests
         f.Memory.ObjectRemovalForTest=removal=>
         {
             removes++;Assert.Equal(77u,removal.ObjectId);Assert.Equal(MemoryMapContentType.ObstacleChargerRemoved,removal.RemovalType);
-            Assert.Same(charger,removal.Apply(charger,77));
-            var observable=new SourceMapData(MemoryMapContentType.ObstacleObservable,1,2);
-            Assert.Same(observable,removal.Apply(observable,78));
-            var replaced=removal.Apply(observable,77);Assert.Equal(MemoryMapContentType.ObstacleChargerRemoved,replaced.Type);
+            Assert.Same(charger,removal.Apply(charger));
+            var observable=new ObservableMapData(78,Array.Empty<Cozmo.Robot.Manipulation.P2f>(),1){Last=2};
+            Assert.Same(observable,removal.Apply(observable));
+            var matching=new ObservableMapData(77,Array.Empty<Cozmo.Robot.Manipulation.P2f>(),1){Last=2};
+            var replaced=removal.Apply(matching);Assert.Equal(MemoryMapContentType.ObstacleChargerRemoved,replaced.Type);
             Assert.Equal(123u,replaced.First);Assert.Equal(123u,replaced.Last);
         };
         using var otherRoot=new Pose3d("new root") {Id=202};

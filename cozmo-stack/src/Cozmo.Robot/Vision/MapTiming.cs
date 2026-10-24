@@ -25,13 +25,15 @@ internal readonly record struct SourceMapAging(uint Now, uint CliffThreshold, ui
 // fidelity: M11-074 — callback instructions 0x006810F2..0x00681172.
 internal readonly record struct SourceObjectRemoval(uint ObjectId,MemoryMapContentType RemovalType,uint Timestamp)
 {
-    // The eventual Transform adapter must read the derived payload's +0x14 ID, never infer one for base data.
-    internal SourceMapData Apply(SourceMapData data,uint? observableObjectId)
+    internal SourceMapData Apply(SourceMapData data)
     {
-        if(data.Type!=MemoryMapContentType.ObstacleObservable)return data;
-        if(observableObjectId is null)
-        {SteppedBehavior.ReportMissing("M11-046 removal callback 0x0068110E: derived content-3 ObjectID reader is unbound");return data;}
-        return observableObjectId==ObjectId ? new SourceMapData(RemovalType,Timestamp,Timestamp) : data;
+        if(data.Type!=MemoryMapContentType.ObstacleObservable)return data; // before the derived read
+        if(data is not ObservableMapData observable)
+        {
+            StackDiagnostics.Write("M1-034 M11-074 skip forged type-3 removal layout read at 0x0068110E; prior data retained");
+            return data;
+        }
+        return observable.ObjectId==ObjectId ? new SourceMapData(RemovalType,Timestamp,Timestamp) : data;
     }
 }
 
@@ -114,17 +116,16 @@ internal sealed partial class SourceMapComponent : IDisposable
         {CacheObjectPose(obj.ObjectId,root,supplied,false);return;}
         using var flat=supplied.GetWithRespectToRoot();
         if(!obj.TryObservableBoundingQuad50(flat,0,out var quad))return;
-        if(type==MemoryMapContentType.ObstacleObservable)
-        {
-            SteppedBehavior.ReportMissing("M11-074 MemoryMapData_ObservableObject constructor 0x00684A38 at 0x0067EF00: full derived payload producer is not checked by M7; no base-data substitute for content 3");return;
-        }
-        SourceLog?.Invoke(EngineLogLevel.Warning,null,"MapComponent.AddObservableObject.AddedNonObservableType","AddObservableObject was called to add a non observable object");
+        if(type!=MemoryMapContentType.ObstacleObservable)
+            SourceLog?.Invoke(EngineLogLevel.Warning,null,"MapComponent.AddObservableObject.AddedNonObservableType","AddObservableObject was called to add a non observable object");
         if(ImageTimestamp is not {} clock)
         {SteppedBehavior.ReportMissing("M11-074 Robot::GetLastImageTimeStamp 0x00516EC0 called at 0x0067EFCE: owner is unbound");return;}
         if(clock() is not {} now)return; // unbound host input has already reported its gap
         var polygon=Cozmo.Robot.Manipulation.PolygonF.ImportQuad2d(Enumerable.Range(0,4)
             .Select(i=>new Cozmo.Robot.Manipulation.P2f(quad![i].X,quad[i].Y)).ToArray());
-        map.InsertObject(polygon.Select(p=>new Vec2(p.X,p.Y)).ToArray(),new SourceMapData(type,now,now));
+        SourceMapData data=type==MemoryMapContentType.ObstacleObservable
+            ?new ObservableMapData(obj.ObjectId,polygon.ToArray(),now):new SourceMapData(type,now,now);
+        map.InsertObject(polygon.Select(p=>new Vec2(p.X,p.Y)).ToArray(),data);
         CacheObjectPose(obj.ObjectId,root,flat,true); // Insert's result is deliberately ignored
         if(clock() is {} borderTime)map.FillObjectBorder(borderTime);
     }

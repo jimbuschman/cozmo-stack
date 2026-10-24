@@ -128,7 +128,7 @@ public sealed partial class MemoryMap
     internal void RemoveObject(SourceObjectRemoval removal)
     {
         ObjectRemovalForTest?.Invoke(removal);
-        Behavior.SteppedBehavior.ReportMissing("M11-074/M11-046 RemoveObservableObject 0x0067F368 -> TransformContent 0x0068140C/0x0068A414: whole-map transform and derived content-3 ObjectID reader are not integrated; checked removal callback is not applied to legacy regions");
+        Tree.TransformContent(removal.Apply);
     }
     private readonly List<MemoryMapRegion> _regions = new();
     private readonly object _gate = new();
