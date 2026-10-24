@@ -34,6 +34,8 @@ public sealed class M3M4ReviewFixTests
             // Setup waits ride the engine tick; under full-suite load on a slower PC 5 s timed out (B-M13-18 runs), so they match the 15 s readiness wait.
             Robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==1,TimeSpan.FromSeconds(15)));
+            // The transport opens its connection asynchronously; a ConnectionResponse injected before that is dropped.
+            Assert.True(SpinWait.SpinUntil(()=>Robot.Transport.Connection is not null,TimeSpan.FromSeconds(15)));
             In(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==2,TimeSpan.FromSeconds(15)));
             Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});

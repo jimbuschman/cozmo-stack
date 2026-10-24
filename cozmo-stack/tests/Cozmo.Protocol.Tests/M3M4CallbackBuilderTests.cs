@@ -106,6 +106,8 @@ public sealed class M3M4CallbackBuilderTests
                 Assert.True(SpinWait.SpinUntil(()=>robot.Engine.IsReadyDelivered,TimeSpan.FromSeconds(10)));
                 robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
                 Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==1,TimeSpan.FromSeconds(5)));
+                // The transport opens its connection asynchronously; a ConnectionResponse injected before that is dropped.
+                Assert.True(SpinWait.SpinUntil(()=>robot.Transport.Connection is not null,TimeSpan.FromSeconds(5)));
                 ushort seq=1;
                 void In(ReliableMessageType type,byte[] body)=>robot.Transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(type,body,seq++),1)));
                 void Data(RobotMessage message)=>In(ReliableMessageType.SingleReliableMessage,message.ToBytes());

@@ -33,6 +33,8 @@ public sealed class M3M4WorldOwnershipTests
         void Data(RobotMessage m)=>In(ReliableMessageType.SingleReliableMessage,m.ToBytes());
         robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
         Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==1,5000));
+        // The transport opens its connection asynchronously; a ConnectionResponse injected before that is dropped.
+        Assert.True(SpinWait.SpinUntil(()=>robot.Transport.Connection is not null,5000));
         In(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
         Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==2,5000));
         Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});
