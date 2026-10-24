@@ -306,3 +306,6 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 59 | [R-M11-TREE-GEOMETRY](../research/requests/20261023-m11-tree-insert-ray-geometry.md) | answered 8c56752b; Claude check PASS (research/20261023-r-m11-tree-geometry-claude-check.md); feeds B-M13-19 |
 | 60 | [R-M11-MAP-PRODUCERS](../research/requests/20261023-m11-map-legacy-producers.md) | answered 393bc407; Claude check PASS (research/20261023-r-m11-producers-m12-charger-preaction-claude-check.md); feeds B-M13-20, B-M13-21 |
 | 61 | [R-M12-CHARGER-PREACTION](../research/requests/20261023-m12-charger-preaction.md) | answered 475c6ebc; Claude check PASS (same file); feeds B-M13-22 |
+| 62 | [R-M11-FILLBORDER](../research/requests/20261024-m11-fillborder.md) | open (feeds the map border processor; B-M13-16/B-M13-21 MISSINGs) |
+| 63 | [R-M11-OBJECT-DATA](../research/requests/20261024-m11-object-map-data.md) | open (feeds cubes in the native map and their removal) |
+| 64 | [R-M12-PREACTION-WORLD](../research/requests/20261024-m12-preaction-world.md) | open (feeds the pre-action world constructor; B-M13-22 MISSING) |
