@@ -190,6 +190,9 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w45 | [B-M13-20](B-M13-20.md) | DONE 96805ef3 + fix-up d0c1c2b7; Claude check PASS after fix-up (research/20261023-b-m13-20-21-22-claude-check.md) |
 | 61w46 | [B-M13-21](B-M13-21.md) | DONE 46a971ba; Claude check PASS (same file) |
 | 61w47 | [B-M13-22](B-M13-22.md) | DONE f65b3960 + c11385a2 + fix-up 934fcb7a, merged 9138555c; full 6133; Claude check PASS after fix-up (same file) |
+| 61w48 | [B-M13-23](B-M13-23.md) | open (map border processor) |
+| 61w49 | [B-M13-24](B-M13-24.md) | open, after B-M13-23 (cubes in the native map; whole-map removal) |
+| 61w4a | [B-M13-25](B-M13-25.md) | open, after B-M13-24 (pre-action world poses and validity) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -306,6 +309,6 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 59 | [R-M11-TREE-GEOMETRY](../research/requests/20261023-m11-tree-insert-ray-geometry.md) | answered 8c56752b; Claude check PASS (research/20261023-r-m11-tree-geometry-claude-check.md); feeds B-M13-19 |
 | 60 | [R-M11-MAP-PRODUCERS](../research/requests/20261023-m11-map-legacy-producers.md) | answered 393bc407; Claude check PASS (research/20261023-r-m11-producers-m12-charger-preaction-claude-check.md); feeds B-M13-20, B-M13-21 |
 | 61 | [R-M12-CHARGER-PREACTION](../research/requests/20261023-m12-charger-preaction.md) | answered 475c6ebc; Claude check PASS (same file); feeds B-M13-22 |
-| 62 | [R-M11-FILLBORDER](../research/requests/20261024-m11-fillborder.md) | open (feeds the map border processor; B-M13-16/B-M13-21 MISSINGs) |
-| 63 | [R-M11-OBJECT-DATA](../research/requests/20261024-m11-object-map-data.md) | open (feeds cubes in the native map and their removal) |
-| 64 | [R-M12-PREACTION-WORLD](../research/requests/20261024-m12-preaction-world.md) | open (feeds the pre-action world constructor; B-M13-22 MISSING) |
+| 62 | [R-M11-FILLBORDER](../research/requests/20261024-m11-fillborder.md) | answered 4f539ae5; Claude check PASS (research/20261024-r-m11-fillborder-objectdata-m12-world-claude-check.md); feeds B-M13-23 |
+| 63 | [R-M11-OBJECT-DATA](../research/requests/20261024-m11-object-map-data.md) | answered e039f360; Claude check PASS (same file); feeds B-M13-24 |
+| 64 | [R-M12-PREACTION-WORLD](../research/requests/20261024-m12-preaction-world.md) | answered f57b04ac; Claude check PASS (same file); feeds B-M13-25 |
