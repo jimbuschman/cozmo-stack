@@ -192,8 +192,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w47 | [B-M13-22](B-M13-22.md) | DONE f65b3960 + c11385a2 + fix-up 934fcb7a, merged 9138555c; full 6133; Claude check PASS after fix-up (same file) |
 | 61w48 | [B-M13-23](B-M13-23.md) | DONE 0fc1fba1; Claude check PASS (research/20261024-b-m13-23-24-claude-check.md) |
 | 61w49 | [B-M13-24](B-M13-24.md) | DONE 33e868fe; Claude check PASS (same file) |
-| 61w4a | [B-M13-25](B-M13-25.md) | BLOCKED on B-M13-25-wip: 56 failures, cubes get no pre-action poses (no native parented stored elements); unblocked by B-M13-26 |
-| 61w4b | [B-M13-26](B-M13-26.md) | on B-M13-25-wip 29ddb606, full suite clean; Claude check FAIL, 3 blocking from one RobotPose() hunk (research/20261024-b-m13-25-26-claude-check.md); fix-up open |
+| 61w4a | [B-M13-25](B-M13-25.md) | DONE c0930bd7, merged with B-M13-26 from B-M13-25-wip; Claude check PASS after fix-up 2 (research/20261024-b-m13-25-26-claude-check.md) |
+| 61w4b | [B-M13-26](B-M13-26.md) | DONE 93aadeb1 + 88297922 + fix-up 2 9f16e298 (f486b673); full 6155; Claude check PASS (same file); merged to main |
 | 61w4c | [B-M13-27](B-M13-27.md) | open, after B-M13-26 (stop the legacy all-objects map sync; drop the ray fallback when unneeded) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
