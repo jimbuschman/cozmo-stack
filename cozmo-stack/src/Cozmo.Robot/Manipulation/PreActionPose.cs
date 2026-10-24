@@ -235,7 +235,7 @@ public static class CubePreActionPoses
     public static List<StoredElement> GenerateStored(ObservableObject cube, PreActionType type)
     {
         if (cube.Type == ObjectType.Charger_Basic)return GenerateChargerStored(cube,type);
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001 PreActionPose ctor integration 0x0050DB14/0x0050DB6C/0x0050DCFC/0x0050DF00: stored/world cache still uses the existing flat marker/object adapter; IsChildOf body called at 0x0050DD4E and complete native marker-parent input binding are not checked here, so the two constructor error/continue paths and derived SetParent(P.GetParent()) 0x0050DFFA..0x0050E002 are not claimed built. Height tolerance and MakeUnitLength arithmetic are built independently");
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001 PreActionPose ctor integration 0x0050DB14/0x0050DB6C/0x0050DCFC: cube stored cache still uses the existing flat marker/object adapter; IsChildOf body called at 0x0050DD4E and complete native marker-parent input binding are not checked here, so the two stored-constructor error/continue paths and cube stored-pose lifetime are not claimed built. Downstream derived world construction is built");
         var list = new List<StoredElement>();
         if (type is PreActionType.Entry or PreActionType.None) return list;
         var size = CubeGeometry.SizeOf(cube.Type);
@@ -306,16 +306,15 @@ public static class CubePreActionPoses
     {
         var poses = new List<PreActionPose>();
         var generated=GenerateStored(cube,type);
-        try{foreach(var e in generated)poses.Add(Compose(cube,e,type,robotPose,preDockPoseOffsetMm));}
+        try{foreach(var e in generated)if(Compose(cube,e,type,robotPose,preDockPoseOffsetMm) is {} pose)poses.Add(pose);}
         finally{foreach(var e in generated)if(e.OwnsStoredPose)e.Stored.Dispose();}
         return poses;
     }
 
-    private static PreActionPose Compose(ObservableObject cube, StoredElement e, PreActionType type, Pose3d robotPose, double preDockPoseOffsetMm)
+    private static PreActionPose? Compose(ObservableObject cube, StoredElement e, PreActionType type, Pose3d robotPose, double preDockPoseOffsetMm)
     {
-        if(cube.Type==ObjectType.Charger_Basic)
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001/M13-009 derived world pre-action constructor 0x0050DF00..0x0050E04A: existing ComposeWorld adapter still has flat output-parent/generic lifetime gaps; charger stored type/marker/zero scalar and parent are built, full world-result fidelity is not claimed");
-        var world = ComposeWorld(cube.Pose, e.Stored, robotPose, e.DistanceMm, preDockPoseOffsetMm);
+        var world=ComposeWorld(cube.NativePose,e.Stored,robotPose,e.DistanceMm,preDockPoseOffsetMm);
+        if(world is null)return null;
         return new PreActionPose(e.Type, e.Marker, world, e.DistanceMm)
         {
             LocalOffsetMm = e.BuiltTranslation,
@@ -371,14 +370,15 @@ public static class CubePreActionPoses
             {
                 foreach (var e in cache)
                 {
-                    if (withCode.Count > 0 && !withCode.Contains(e.Marker.Code)) continue;
+                    if(!withAction.Contains(e.Type) || withCode.Count > 0 && !withCode.Contains(e.Marker.Code))continue;
                     var pose = Compose(obj, e, type, robotPose, preDockPoseOffsetMm);
-                    bool appended=false;
+                    if(pose is null)continue;
                     try
                     {
-                        if(PreActionValidity.IsPreActionPoseValid(obj,pose,obstacles,trace)){output.Add(pose);appended=true;}
+                        if(PreActionValidity.IsPreActionPoseValid(obj,pose,obstacles,trace))
+                            output.Add(pose with{WorldPose=new Pose3d(pose.WorldPose)}); // native copy append 0x004DFC3E
                     }
-                    finally{if(e.OwnsStoredPose && !appended)pose.WorldPose.Dispose();}
+                    finally{pose.WorldPose.Dispose();}
                 }
             }
             finally{foreach(var e in cache)if(e.OwnsStoredPose)e.Stored.Dispose();}
@@ -442,48 +442,53 @@ public static class CubePreActionPoses
     /// <c>(cos(angle), sin(angle))·distanceMm</c> (0x004DF9B8..0x004DFC16).
     /// </summary>
     // fidelity: M12-001
-    public static Pose3d ComposeWorld(Pose3d objectPose, Pose3d stored, Pose3d robotPose, double distanceMm,
+    public static Pose3d? ComposeWorld(Pose3d objectPose,Pose3d stored,Pose3d robotPose,double distanceMm,
                                       double preDockPoseOffsetMm)
     {
-        double b;
-        if (preDockPoseOffsetMm != 0)
+        float offset=(float)preDockPoseOffsetMm,a=(float)distanceMm;
+        var initial=ComposeDerived(objectPose,stored,offset);
+        if(initial is null || offset!=0f)return initial; // unordered also bypasses projection
+        try
         {
-            b = preDockPoseOffsetMm;
-        }
-        else
-        {
-            double d = distanceMm;
-            var w0 = objectPose.Compose(stored);
-            double ang = w0.AngleAroundZ;
-            double dx = Math.Cos(ang) * d;
-            double dy = Math.Sin(ang) * d;
-            double px, py;
-            if (Math.Abs(dx) < OffsetEpsilon)
-            {
-                px = 0;
-                py = robotPose.Translation.Y - w0.Translation.Y;
-            }
-            else if (Math.Abs(dy) < OffsetEpsilon)
-            {
-                px = robotPose.Translation.X - w0.Translation.X;
-                py = 0;
-            }
+            using var world=initial.GetWithRespectToRoot();
+            using var robot=robotPose.GetWithRespectToRoot();
+            float angle=(float)initial.AngleAroundZ;
+            float x0=(float)initial.Translation.X,y0=(float)initial.Translation.Y;
+            float xw=(float)world.Translation.X,yw=(float)world.Translation.Y;
+            float rx=(float)robot.Translation.X,ry=(float)robot.Translation.Y;
+            float dx=(x0+MathF.Cos(angle)*a)-xw,dy=(y0+MathF.Sin(angle)*a)-yw;
+            float xr,yr;
+            if(MathF.Abs(dx)<(float)OffsetEpsilon){xr=0f;yr=ry-yw;}
+            else if(MathF.Abs(dy)<(float)OffsetEpsilon){xr=rx-xw;yr=0f;}
             else
             {
-                double m = dy / dx;
-                double a = robotPose.Translation.Y + robotPose.Translation.X / m - w0.Translation.Y + m * w0.Translation.X;
-                double q = a / (m + 1 / m);
-                px = q - w0.Translation.X;
-                py = (robotPose.Translation.Y + robotPose.Translation.X / m - q / m) - w0.Translation.Y;
+                float m=dy/dx,s=ry+rx/m,c=yw-m*xw;
+                float qx=(s-c)/(m+1f/m),qy=s-qx/m;
+                xr=qx-xw;yr=qy-yw;
             }
-            double dist2 = Math.Sqrt(px * px + py * py);
-            b = dist2 >= d ? d : (dist2 > 0 ? dist2 : 0);
+            float squared=yr*yr+xr*xr; // 0x004DFB42: y square plus x square
+            float candidate=MathF.Sqrt(squared)>0f?MathF.Sqrt(squared):0f;
+            float b=a;
+            if(candidate<a)b=MathF.Sqrt(squared)>0f?MathF.Sqrt(squared):0f;
+            return ComposeDerived(objectPose,stored,b); // second construction, including both signed zero inputs
         }
-        var unit = stored.Translation;
-        float len = PreActionPose.MakeUnitLength(ref unit);
-        float scale = len + (float)b;
-        var pushed = new Vec3((float)unit.X * scale, (float)unit.Y * scale, (float)unit.Z * scale);
-        return objectPose.Compose(new Pose3d(stored, pushed));
+        finally{initial.Dispose();}
+    }
+    private static Pose3d? ComposeDerived(Pose3d objectPose,Pose3d stored,float b)
+    {
+        if(objectPose.Node is null || !objectPose.HasParent)
+        {
+            StackDiagnostics.Write("M1-034 M12-001/M11-076 derived PreActionPose GetParent(root) at 0x0050DFFA -> 0x008452BA: skip result; prior output retained");
+            return null;
+        }
+        var t=stored.Translation;
+        float len=PreActionPose.MakeUnitLength(ref t),scale=len+b;
+        var pushed=new Vec3(scale*(float)t.X,scale*(float)t.Y,scale*(float)t.Z);
+        using var local=new Pose3d(stored.Rotation,pushed); // quaternion -> matrix -> Rodrigues -> quaternion
+        Pose3d parent=null!;
+        if(!objectPose.TryGetParent(ref parent))return null;
+        using(parent)
+            return new Pose3d(objectPose.Transform.Compose(local.Transform),"PreActionPose",parent);
     }
 
     /// <summary>
@@ -676,8 +681,7 @@ public sealed record PreActionObstacle(Quadrilateral? Quad, Point2f Centre, uint
 
 /// <summary>
 /// <c>ActionableObject::IsPreActionPoseValid</c> 0x004DF2C0 and <c>BlockWorld::GetObstacles</c> 0x00626D44: the pre-action pose filter (M12-036; re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q2,
-/// verified in 20260929-R-VIS-verify-M12-gap3.md and by the M12 fix-round verifier). Built for cube candidates; the Ramp 0x0050F9AC and Charger 0x004EA648 overrides (M12-034) are unread and have no
-/// pose generator here.
+/// verified in 20260929-R-VIS-verify-M12-gap3.md and by the M12 fix-round verifier). Charger 0x004EA648 dispatches to this base filter; the unsupported Ramp path remains separate (M12-034).
 /// </summary>
 // fidelity: M12-036
 public static class PreActionValidity
@@ -728,29 +732,36 @@ public static class PreActionValidity
     /// </summary>
     public static bool IsPreActionPoseValid(ObservableObject obj, PreActionPose elem, IReadOnlyList<PreActionObstacle> obstacles, List<string>? trace = null)
     {
-        float r22 = (float)elem.WorldPose.Rotation[2, 2];
+        using var goal=elem.WorldPose.GetWithRespectToRoot();
+        float r22 = (float)goal.Rotation[2, 2];
         if (!(MathF.Abs(r22 - 1f) < RotationTolerance)) return false;                 // 0x004DF2F2..0x004DF318; NaN fails
         if (obstacles.Count == 0) return true;                                        // 0x004DF31A..0x004DF320
-        var m = obj.Pose.Compose(elem.Marker.PoseOnObject).Translation;
-        float px = (float)elem.WorldPose.Translation.X, py = (float)elem.WorldPose.Translation.Y;
+        // Charger markers already belong to the native object tree. The existing cube marker adapter
+        // supplies an object-local definition; retain that declared input boundary with a temporary parent.
+        using var marker=elem.Marker.PoseOnObject.HasParent
+            ?new Pose3d(elem.Marker.PoseOnObject)
+            :new Pose3d(elem.Marker.PoseOnObject.Transform,parent:obj.NativePose);
+        using var markerRoot=marker.GetWithRespectToRoot();
+        var m=markerRoot.Translation;
+        float px=(float)goal.Translation.X,py=(float)goal.Translation.Y;
         float dx = (float)m.X - px, dy = (float)m.Y - py;
         float len2 = dx * dx + dy * dy;
         float ux = dx, uy = dy, len;
-        if (len2 <= 0f) len = 0f;                                                     // the direction is left as it is
+        if (!(len2 > 0f)) len = 0f;                                                     // the direction is left as it is
         else { len = MathF.Sqrt(len2); float inv = 1f / len; ux = dx * inv; uy = dy * inv; }   // vdiv 1/len (0x004DF3C2) then vmul (0x004DF3D2)
         // n = (int)floorf((L + 55.9) / 10) (0x004DF45C..0x004DF48C: vdiv #10, blx floorf via PLT 0x4A4084 whose GOT slot 0x010402B8 is floorf, vcvt.s32.f32, cmp r5,#1, blt); L = 0 gives 5
         float nf = MathF.Floor((len + SweepBehindMm) / SweepStepMm);
-        int n = float.IsNaN(nf) ? 0 : (int)nf;
+        int n = Animation.AnimationScheduler.VcvtS32(nf);
         if (n < 1) return true;
         float sx = px - SweepBehindMm * ux, sy = py - SweepBehindMm * uy;
         float perpX = uy * SweepHalfWidthMm, perpY = -ux * SweepHalfWidthMm;
         float stepX = SweepStepMm * ux, stepY = SweepStepMm * uy;
-        var own = PreActionObstacle.For(obj, 0f);                                     // Q: the object's own quad at its pose, padding 0
-        if (own.IsStandIn) trace?.Add("IsPreActionPoseValid: own footprint is the M13-023 planar stand-in");
         // the engine accumulates centre, left and right by +10u per sample (0x004DF582..0x004DF5DA); left/right start at start +- perp
         float cx = sx, cy = sy, lx = sx + perpX, ly = sy + perpY, rx = sx - perpX, ry = sy - perpY;
         for (int i = 0; i < n; i++)
         {
+            var own=PreActionObstacle.For(obj,0f); // native virtual bounding quad is called per sample
+            if(own.IsStandIn)trace?.Add("IsPreActionPoseValid: own footprint is the M13-023 planar stand-in");
             var centre = new Point2f(cx, cy);
             var left = new Point2f(lx, ly);
             var right = new Point2f(rx, ry);
