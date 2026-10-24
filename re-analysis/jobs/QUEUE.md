@@ -194,7 +194,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w49 | [B-M13-24](B-M13-24.md) | DONE 33e868fe; Claude check PASS (same file) |
 | 61w4a | [B-M13-25](B-M13-25.md) | DONE c0930bd7, merged with B-M13-26 from B-M13-25-wip; Claude check PASS after fix-up 2 (research/20261024-b-m13-25-26-claude-check.md) |
 | 61w4b | [B-M13-26](B-M13-26.md) | DONE 93aadeb1 + 88297922 + fix-up 2 9f16e298 (f486b673); full 6155; Claude check PASS (same file); merged to main |
-| 61w4c | [B-M13-27](B-M13-27.md) | open, after B-M13-26 (stop the legacy all-objects map sync; drop the ray fallback when unneeded) |
+| 61w4c | [B-M13-27](B-M13-27.md) | DONE 91e0b5e9, merged d73714fc; full-suite failure was the test-setup race fixed in 7588e84e; Claude check PASS (research/20261024-b-m13-27-claude-check.md), Q1-Q4 queued |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
