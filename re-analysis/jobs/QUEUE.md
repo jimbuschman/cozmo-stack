@@ -304,7 +304,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 48 | [R-M14-IMAGE-TURN](../research/requests/20261021-m14-image-turn-history-join.md) | answered 50138aea; pending independent review/adoption |
 | 49 | [R-M7-MOOD-JOIN](../research/requests/20261021-m7-mood-completion-owner-join.md) | answered 3f5a1337; pending independent review/adoption |
 | 50 | [R-M14-IMAGE-INPUT](../research/requests/20261021-m14-image-coordinate-input.md) | answered b7b32940; pending independent review/adoption |
-| 51 | [R-M12-DETACH-POSE](../research/requests/20261021-m12-detach-pose-join.md) | open |
+| 51 | [R-M12-DETACH-POSE](../research/requests/20261021-m12-detach-pose-join.md) | answered 79da201e; review waits for the M12 layer |
 | 52 | [R-M7-MOOD-INIT](../research/requests/20261021-m7-mood-init-input.md) | answered b19ce1bc; pending independent review/adoption |
 | 53 | [R-M14-PET-SIZE](../research/requests/20261021-m14-pet-image-size-boundary.md) | answered d2fa68f3; pending independent review/adoption |
 | 54 | [R-M7-MOOD-MISSING](../research/requests/20261021-m7-missing-mood-config-outcome.md) | HELD (reading hold 2026-10-21; M7/M14 wait for their layer) |
@@ -321,3 +321,6 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 65 | [R-M11-ROOT-GROWTH](../research/requests/20261024-m11-root-growth.md) | answered 817d279f; Claude check PASS (research/20261025-r-m11-root-growth-claude-check.md); feeds B-M11-19 |
 | 66 | [R-M11-MAP-MERGE](../research/requests/20261024-m11-map-merge.md) | answered 080f13b7; Claude check PASS (research/20261025-r-m11-map-merge-obstacle-writers-claude-check.md); feeds B-M11-20 |
 | 67 | [R-M11-OBSTACLE-WRITERS](../research/requests/20261024-m11-obstacle-writers.md) | answered df0d13b2; Claude check PASS (same file); type 6 no engine caller, type 7 census PARTIAL, type 10 waits for B-M11-16 |
+| 68 | [R-M11-LAST-IMAGE-TS](../research/requests/20261025-m11-last-image-timestamp.md) | open |
+| 69 | [R-M11-REJIGGER](../research/requests/20261025-m11-rejigger.md) | open |
+| 70 | [R-M11-EXPLORED-AREA](../research/requests/20261025-m11-explored-area.md) | open |
