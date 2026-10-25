@@ -13975,7 +13975,7 @@
       ],
       "effect": "Driving and idle animations pushed while a need is severe, the reactions it disables, and the value drive-off, ExpressNeedsTransition, the IBehavior required-severe-need gate and the cliff reaction read.",
       "provenance": "Free-model research row 39 (2026-10-21), checked instruction by instruction by Opus (2026-10-25), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: to build (B-M15-12). The stack keeps a per-need HashSet (Needs.cs _severeExpressed) and no selected-need scalar; AIComponent.Update omits the SevereNeeds phase. UNKNOWN (stays visible MISSING when built): BehaviorExpressNeeds own+0x134 writer; the PlayNeedsGetOutAnimIfNeeded action is not built in the stack; exhaustive indirect-caller census; a shipped witness that selects Play 2 through PlayAnimOnNeedsChange. The wakeup input is M15-073.",
+      "unresolved": "IMPLEMENTATION_GAP: to build (B-M15-12). The stack keeps a per-need HashSet (Needs.cs _severeExpressed) and no selected-need scalar; AIComponent.Update omits the SevereNeeds phase. BehaviorExpressNeeds +0x134/+0x135 are the config bools shouldClearExpressedState/caresAboutExpressedState (default false, ctor 0x005EE186; reads 0x005EE300/0x005EE32E; +0x135 gates IsRunnable at 0x005EE570..0x005EE5B0 on the selected need), added 2026-10-25 from the check addendum. UNKNOWN (stays visible MISSING when built): the PlayNeedsGetOutAnimIfNeeded action is not built in the stack; exhaustive indirect-caller census; a shipped witness that selects Play 2 through PlayAnimOnNeedsChange. The wakeup input is M15-073.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

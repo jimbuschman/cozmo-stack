@@ -47,3 +47,21 @@
   connection is left for the operator.**
 - **Not taken from the answer:** nothing is a constant delegate. The ExpressNeeds +0x134 writer and the get-out action
   stay visible MISSINGs.
+
+## Addendum: the ExpressNeeds flags (manager, 2026-10-25)
+
+The +0x134 writer is no longer UNKNOWN, so no research row is queued.
+
+- **Constructor** 0x005EE144: `movs r7,#0` (0x005EE174), then `strh.w r7,[r4,#0x134]` (0x005EE186). Both bytes are
+  false by default.
+- **Config reads:** `JsonTools::GetValueOptional<bool>` into +0x134 at 0x005EE300, key `shouldClearExpressedState`
+  (0x00BF55B9, 25 bytes), and into +0x135 at 0x005EE32E, key `caresAboutExpressedState` (0x00BF55D3, 24 bytes).
+- **Shipped:** only `behaviors/freeplay/needs/needs_SevereLowEnergyForcedGetOut.json` sets them, both true.
+- **+0x135 reader** 0x005EE570..0x005EE5B0 (a further scalar consumer):
+  - when +0x135 is set and +0x120 (bracket) == 3:
+    - need (+0x11C) != `[[robot+0x264]+0x30]+0x14` returns false (0x005EE598);
+    - equal skips IsNeedAtBracket and goes to 0x005EE5B0;
+  - otherwise IsNeedAtBracket(+0x11C, +0x120) must be 1.
+- **The stack** names both keys only in a doc comment (`ExplorerBehaviors.cs:404`) and doesn't load them.
+
+Added to B-M15-12 item 6.
