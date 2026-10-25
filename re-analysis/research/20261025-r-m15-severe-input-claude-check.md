@@ -65,3 +65,10 @@ The +0x134 writer is no longer UNKNOWN, so no research row is queued.
 - **The stack** names both keys only in a doc comment (`ExplorerBehaviors.cs:404`) and doesn't load them.
 
 Added to B-M15-12 item 6.
+
+## Addendum: the wakeup auto-send (operator, 2026-10-25)
+
+The operator decided the stack sends NotifyCozmoWakeup itself, once per robot connection, at the point it reports the
+robot connected and ready. That is where the app's WakeupSequence ran (`ConnectionFlowController.cs:591-611`; the
+message goes right after starting the wake animation, at :608-610). The stack has no wake animation sequence, so that
+animation stays app flow outside M15-073. The host API call is kept. Recorded on M15-073 and in B-M15-12.

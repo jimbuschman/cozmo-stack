@@ -13994,7 +13994,7 @@
       ],
       "effect": "Whether a need that is Critical at wakeup starts its severe expression (driving/idle animations and reaction locks).",
       "provenance": "Manager record (2026-10-25) under the 2026-10-09 app-boundary scope rule.",
-      "unresolved": "IMPLEMENTATION_GAP until built (B-M15-12), then COMPATIBILITY_POLICY: the input the app supplied is supplied by the host through a C# API call that delivers G2E 166 through the same subscription the engine uses; the stack does not send it by itself (manager, 2026-10-25). Whether the stack should send it after connection, as the app's wakeup sequence does, is open for the operator.",
+      "unresolved": "IMPLEMENTATION_GAP until built (B-M15-12), then COMPATIBILITY_POLICY (operator, 2026-10-25: 'do it'): the stack sends NotifyCozmoWakeup (G2E 166) itself, once per robot connection, at the point the app ran WakeupSequence: when the stack reports the robot connected and ready. It is delivered through the same game-to-engine subscription the engine uses (Init 0x00572A64..0x00572A86). The app sent it right after starting the wake animation (ConnectionFlowController.cs:608-610), not after it finished; the app's SDK and simulator branches did not send it, and the stack has neither. The host C# API call stays as well. The app's wake animation itself (GetAnimationForWakeUp: ConnectWakeUp, OnboardingWakeUpDriveOffCharger or a needs-based choice) is app flow, not covered by this record.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
