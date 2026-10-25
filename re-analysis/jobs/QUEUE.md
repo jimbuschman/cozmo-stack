@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work (manager, 2026-10-24): B-M13-28 (map cleanup after B-M13-27). Research rows 65-67 (quad-tree root growth, map merge, the missing obstacle writers) feed the next M11/M13 builds.** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work (manager, 2026-10-25): B-M11-19 (quad-tree root growth and shift, from the checked row 65).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -195,7 +195,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w4a | [B-M13-25](B-M13-25.md) | DONE c0930bd7, merged with B-M13-26 from B-M13-25-wip; Claude check PASS after fix-up 2 (research/20261024-b-m13-25-26-claude-check.md) |
 | 61w4b | [B-M13-26](B-M13-26.md) | DONE 93aadeb1 + 88297922 + fix-up 2 9f16e298 (f486b673); full 6155; Claude check PASS (same file); merged to main |
 | 61w4c | [B-M13-27](B-M13-27.md) | DONE 91e0b5e9, merged d73714fc; full-suite failure was the test-setup race fixed in 7588e84e; Claude check PASS (research/20261024-b-m13-27-claude-check.md), Q1-Q4 queued |
-| 61w4d | [B-M13-28](B-M13-28.md) | open (remove the unwritten legacy ray fallback; CORE-007 reads the native tree) |
+| 61w4d | [B-M13-28](B-M13-28.md) | DONE f73271da (full suite 3d164d99); Claude check pending |
+| 61w4e | [B-M11-19](B-M11-19.md) | open (quad-tree root growth and shift; drive-off run 2 hit the MISSING 21 times) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -210,9 +211,6 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 62 | [B-M9-2](B-M9-2.md) | BLOCKED per status/B-M9-2.md (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | BLOCKED per status/B-M12-5.md (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
 | 64 | [B-M8-5](B-M8-5.md) | BLOCKED per status/B-M8-5.md |
-| 65 | [R-M11-ROOT-GROWTH](../research/requests/20261024-m11-root-growth.md) | open |
-| 66 | [R-M11-MAP-MERGE](../research/requests/20261024-m11-map-merge.md) | open |
-| 67 | [R-M11-OBSTACLE-WRITERS](../research/requests/20261024-m11-obstacle-writers.md) | open |
 | 65 | [B-M11-10](B-M11-10.md) | BLOCKED per status/B-M11-10.md |
 | 66 | [B-M15-4](B-M15-4.md) | BLOCKED per status/B-M15-4.md |
 | 67 | [B-M11-11](B-M11-11.md) | BLOCKED per status/B-M11-11.md |
@@ -318,3 +316,6 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 62 | [R-M11-FILLBORDER](../research/requests/20261024-m11-fillborder.md) | answered 4f539ae5; Claude check PASS (research/20261024-r-m11-fillborder-objectdata-m12-world-claude-check.md); feeds B-M13-23 |
 | 63 | [R-M11-OBJECT-DATA](../research/requests/20261024-m11-object-map-data.md) | answered e039f360; Claude check PASS (same file); feeds B-M13-24 |
 | 64 | [R-M12-PREACTION-WORLD](../research/requests/20261024-m12-preaction-world.md) | answered f57b04ac; Claude check PASS (same file); feeds B-M13-25 |
+| 65 | [R-M11-ROOT-GROWTH](../research/requests/20261024-m11-root-growth.md) | answered 817d279f; Claude check PASS (research/20261025-r-m11-root-growth-claude-check.md); feeds B-M11-19 |
+| 66 | [R-M11-MAP-MERGE](../research/requests/20261024-m11-map-merge.md) | answered 080f13b7; Claude check pending |
+| 67 | [R-M11-OBSTACLE-WRITERS](../research/requests/20261024-m11-obstacle-writers.md) | answered df0d13b2; Claude check pending |
