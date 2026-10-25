@@ -190,11 +190,13 @@ internal static class EventFan
 /// </summary>
 public sealed partial class CozmoRobot : IDisposable
 {
-    /// <summary>Supplies the app's wake notification (G2E166); never sent automatically.</summary>
+    /// <summary>Supplies the app's wake notification (G2E166), also sent once when each connection is ready.</summary>
     // fidelity: M15-073
     public void NotifyCozmoWakeup()=>Engine.PostGameMessage(()=>Engine.AnimationMessages.Deliver(166,false,null));
     private Behavior.SevereNeedsComponent? _boundSevereNeeds;
     private bool _severeNeedsConstructed;
+    private volatile bool _connectionReadyForWake;
+    private bool _automaticWakeSent;
     private Action? _severeNeedsUpdate;
     // fidelity: M15-072, M15-073 -- the native owner exists even without the host Freeplay handle.
     internal Behavior.SevereNeedsComponent BindSevereNeedsInputs(bool subscribe=true)
@@ -213,6 +215,7 @@ public sealed partial class CozmoRobot : IDisposable
     }
     private void BindNativeSevereNeeds(EngineRobot native)
     {
+        _connectionReadyForWake=false;_automaticWakeSent=false;
         var severe=BindSevereNeedsInputs(false);severe.ResetForConstruction();
         severe.DisableReactions=null;severe.RemoveReactions=null; // old native manager is gone
         severe.Subscribe(Engine,native.HasExternalInterface);
@@ -443,6 +446,10 @@ public sealed partial class CozmoRobot : IDisposable
         Animations.Scheduler.DesiredFaceDistortion=()=>Engine.Needs.GetCurrentDesiredDistortion();
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
+        Engine.ReadyDeliveredInternal += () =>
+        {
+            if (_connectionReadyForWake) Engine.PostGameMessage(TryAutomaticWake);
+        };
         Engine.LoadHostBehaviorMap();
         Engine.ConfigureStartupLoaders(Animations);
         // fidelity: M4-009, M4-018, M4-019, M4-027
@@ -492,6 +499,17 @@ public sealed partial class CozmoRobot : IDisposable
     {
         Engine.SendRobotVolume(Engine.Options.RobotVolume);
         Cubes.EnableAutoBlockPool(enabled: true, discoveryTimeSeconds: 0f);
+        _connectionReadyForWake=true;
+        TryAutomaticWake();
+    }
+
+    // M15-073 operator policy 2026-10-25: same readiness contract as ConnectAsync: Gate A delivered + Success.
+    // Both entry points marshal here through the engine game-message queue; no live state crosses threads.
+    private void TryAutomaticWake()
+    {
+        if (_automaticWakeSent || !_connectionReadyForWake || !Engine.IsReadyDelivered || Engine.Robot is null) return;
+        _automaticWakeSent=true;
+        NotifyCozmoWakeup();
     }
 
     /// <summary>

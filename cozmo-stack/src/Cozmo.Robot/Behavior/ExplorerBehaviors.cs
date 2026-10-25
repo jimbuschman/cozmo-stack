@@ -412,10 +412,11 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
     private readonly NeedsManager _needs;
     private double? _lastRunSec;
 
-    public ExpressNeedsBehavior(NeedsManager needs, string id, NeedId need, NeedBracketId bracket, IReadOnlyList<AnimationTrigger> triggers, Graph2d cooldown, VisionSystem? v = null, NeedId? requiredSevereState = null)
+    public ExpressNeedsBehavior(NeedsManager needs, string id, NeedId need, NeedBracketId bracket, IReadOnlyList<AnimationTrigger> triggers, Graph2d cooldown, VisionSystem? v = null, NeedId? requiredSevereState = null, bool shouldClearExpressedState = false, bool caresAboutExpressedState = false)
         : base(id, "ExpressNeeds")
     {
         _needs = needs; Need = need; Bracket = bracket; Triggers = triggers; Cooldown = cooldown; _v = v; RequiredSevereState = requiredSevereState;
+        ShouldClearExpressedState = shouldClearExpressedState; CaresAboutExpressedState = caresAboutExpressedState;
     }
 
     public NeedId Need { get; }
@@ -423,12 +424,19 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
     public IReadOnlyList<AnimationTrigger> Triggers { get; }
     public Graph2d Cooldown { get; }
     public NeedId? RequiredSevereState { get; }
+    public bool ShouldClearExpressedState { get; }
+    public bool CaresAboutExpressedState { get; }
 
     public double CooldownSec => Cooldown.EvaluateY(_needs.State.GetNeedLevel(Need));
 
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
-        if (!_needs.State.IsNeedAtBracket(Need, Bracket)) return false;
+        // 0x005EE57A..0x005EE5B0: selected Critical expressions bypass the current bracket query.
+        if (CaresAboutExpressedState && Bracket == NeedBracketId.Critical)
+        {
+            if (_needs.SevereNeeds.Selected != (int)Need) return false;
+        }
+        else if (!_needs.State.IsNeedAtBracket(Need, Bracket)) return false;
         // Common required-severe gate, RB2 0x005BD7E6..0x005BD7F6: compare Selected, not that need's bracket.
         if (RequiredSevereState is { } s && _needs.SevereNeeds.Selected!=(int)s) return false;
         return _lastRunSec is not { } last || Clock() / 1000.0 - last >= CooldownSec;
@@ -454,7 +462,8 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
     protected override void OnStop(BehaviorStopReason reason)
     {
         base.OnStop(reason); // retain ActionBehavior's cancellation cleanup
-        ReportMissing("M15-072 ExpressNeeds.StopInternal 0x005EE7D8: own+0x134 writer is UNKNOWN; conditional Clear is not guessed. PlayNeedsGetOutAnimIfNeeded 0x0054504C/0x005451C8 has no stack owner");
+        if (ShouldClearExpressedState) _needs.SevereNeeds.Clear(); // 0x005EE7D8
+        // MISSING: M15-072 PlayNeedsGetOutAnimIfNeeded 0x0054504C/0x005451C8 has no stack action owner.
     }
 }
 
@@ -565,7 +574,9 @@ public static class ExplorerBehaviors
                         {
                             var cd = r.TryGetProperty("cooldown", out var c) ? Graph2d.FromJson(c) : null;
                             NeedId? severe = r.TryGetProperty("requiredSevereNeedsState", out var rs) && Enum.TryParse<NeedId>(rs.GetString(), true, out var sn) ? sn : null;
-                            list.Add(new ExpressNeedsBehavior(needs, id, need, bracket, Triggers(), cd ?? new Graph2d(new[] { (0.0, 20.0) }), v, severe));
+                            list.Add(new ExpressNeedsBehavior(needs, id, need, bracket, Triggers(), cd ?? new Graph2d(new[] { (0.0, 20.0) }), v, severe,
+                                r.TryGetProperty("shouldClearExpressedState", out var clearState) && clearState.GetBoolean(),
+                                r.TryGetProperty("caresAboutExpressedState", out var caresState) && caresState.GetBoolean()));
                         }
                         else problems?.Add($"{id}: need / needBracket not parsed");
                         break;

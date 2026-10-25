@@ -185,4 +185,86 @@ public sealed class M15SevereNeedsTests
         Assert.Contains(handler.Entries,e=>e.LockName=="severe_need_component_lock");
         Assert.Equal(NeedId.Energy,f.M.AiExpressedNeedValue!());Assert.Equal(NeedId.Energy,f.Stack.Context.AiExpressedNeedValue!());
     }
+    private static void Flag(ExpressNeedsBehavior b,string name,bool value)
+        =>typeof(ExpressNeedsBehavior).GetField("<"+name+">k__BackingField",BindingFlags.Instance|BindingFlags.NonPublic)?.SetValue(b,value);
+
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public void CaringCriticalExpressionUsesSelectionAndSkipsTheBracket(bool selected)
+    {
+        // reach: unit, actual predicate/state; flag reflection only allows execution against the old class.
+        // Old: mismatched selection admits Critical Energy (true); selected Energy outside Critical rejects (false).
+        using var rig=new M4ControlTests.Rig();var needs=new NeedsManager(()=>0);using var owner=Owner(needs) as IDisposable;
+        needs.SetLevel(NeedId.Energy,selected?1:0);needs.SetSevereExpressed(selected?NeedId.Energy:NeedId.Repair,true);
+        var b=new ExpressNeedsBehavior(needs,"expression",NeedId.Energy,NeedBracketId.Critical,
+            Array.Empty<AnimationTrigger>(),new Graph2d(Array.Empty<(double,double)>()));
+        Flag(b,"CaresAboutExpressedState",true);
+        var predicate=typeof(ExpressNeedsBehavior).GetMethod("IsRunnableInternal",BindingFlags.NonPublic|BindingFlags.Instance)!;
+        var ctx=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap(),Needs=needs};
+        Assert.Equal(selected,(bool)predicate.Invoke(b,new object[]{ctx})!);
+        Flag(b,"CaresAboutExpressedState",false);
+        Assert.Equal(!selected,(bool)predicate.Invoke(b,new object[]{ctx})!);
+    }
+
+    [Theory] [InlineData(BehaviorStopReason.Interrupted)] [InlineData(BehaviorStopReason.Completed)]
+    public void ExpressNeedsClearFlagClearsTheGlobalSelectionOnEitherStop(BehaviorStopReason reason)
+    {
+        // reach: unit, actual StopInternal and shared Clear recipients. Old: selected Repair remains true.
+        var needs=new NeedsManager(()=>0);using var owner=Owner(needs) as IDisposable;
+        needs.SetSevereExpressed(NeedId.Repair,true);
+        var b=new ExpressNeedsBehavior(needs,"expression",NeedId.Energy,NeedBracketId.Critical,
+            Array.Empty<AnimationTrigger>(),new Graph2d(Array.Empty<(double,double)>()));
+        var stop=typeof(ExpressNeedsBehavior).GetMethod("OnStop",BindingFlags.NonPublic|BindingFlags.Instance)!;
+        stop.Invoke(b,new object[]{reason});Assert.True(needs.IsSevereExpressed(NeedId.Repair)); // default false
+        Flag(b,"ShouldClearExpressedState",true);stop.Invoke(b,new object[]{reason});
+        Assert.False(needs.IsSevereExpressed(NeedId.Repair));Assert.Equal(3,Selected(needs));
+    }
+
+    [Fact]
+    public void ShippedForcedGetOutLoadsBothExpressionFlags()
+    {
+        // reach: production Freeplay loader and shipped JSON. Old: neither flag loaded (false / absent).
+        using var f=new Live();var b=Assert.IsType<ExpressNeedsBehavior>(f.Stack.Bound["Needs_SevereLowEnergyForcedGetOut"]);
+        foreach(var name in new[]{"ShouldClearExpressedState","CaresAboutExpressedState"})
+            Assert.True((bool?)typeof(ExpressNeedsBehavior).GetProperty(name)?.GetValue(b)??false);
+    }
+
+    [Fact]
+    public void AReadyConnectionAutomaticallyDeliversOneWakeAndStartsCriticalRepair()
+    {
+        // reach: production worker, framed simulated peer, connection Success/defaults, queued G2E166 and live Set.
+        // Needs levels are input fixtures, not a replacement wake handler. Old: zero automatic G2E166 deliveries.
+        var d=new DirectoryInfo(AppContext.BaseDirectory);
+        while(d is not null&&!Directory.Exists(Path.Combine(d.FullName,"re-analysis","obb","assets")))d=d.Parent;
+        Assert.NotNull(d);
+        using var robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions{ResourcesPath=Path.Combine(d!.FullName,"re-analysis","obb","assets","cozmo_resources"),BlockPoolPath=""});
+        int wakes=0;
+        using var observer=robot.Engine.AnimationMessages.SubscribeMessage(166,false,_=>Interlocked.Increment(ref wakes));
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.IsReadyDelivered,TimeSpan.FromSeconds(15)));
+        // NeedsManager's connection/serial initialization preserves these production-shaped level inputs.
+        robot.Engine.InvokeEngineRequest(()=>
+        {robot.Engine.Needs.SetLevel(NeedId.Repair,0);robot.Engine.Needs.SetLevel(NeedId.Energy,1);return true;});
+        ushort sequence=1;
+        void In(ReliableMessageType type,byte[] body)=>robot.Transport.ProcessIncoming(FrameCodec.Encode(
+            Frame.Single(new SubMessage(type,body,sequence++),1)));
+        robot.ConnectToRobot(System.Net.IPAddress.Loopback,isSimulated:true);
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==1&&robot.Transport.Connection is not null,5000));
+        In(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==2,5000));
+        In(ReliableMessageType.SingleReliableMessage,new FirmwareVersion{RobotId=1,Signature=System.Text.Encoding.UTF8.GetBytes("{\"sim\":true}")}.ToBytes());
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.RobotValidated==true,5000));
+        In(ReliableMessageType.SingleReliableMessage,new ManufacturingID{SerialNumber=123,BodyHwVersion=1,BodyColor=0}.ToBytes());
+        Assert.True(SpinWait.SpinUntil(()=>Volatile.Read(ref wakes)>0,5000));
+        robot.Engine.InvokeEngineRequest(()=>
+        {
+            Assert.True(robot.Engine.Needs.IsSevereExpressed(NeedId.Repair));
+            Assert.Contains(robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="severe_need_component_lock");
+            return true;
+        });
+        Assert.Equal(1,Volatile.Read(ref wakes));
+        // Another successful response on this same connection must not send another wake.
+        robot.Engine.InvokeEngineRequest(()=>{robot.Engine.BroadcastConnectionResponse(new RobotConnectionResponse(RobotConnectionResult.Success,0,0,0,0));return true;});
+        robot.Engine.InvokeEngineRequest(()=>true);robot.Engine.InvokeEngineRequest(()=>true);
+        Assert.Equal(1,Volatile.Read(ref wakes));
+    }
+
 }
