@@ -356,9 +356,19 @@ public static class CoreChecks
         using var stack=FreeplayStack.Create(obb,robot,context,()=>robot.Engine.Timer.Seconds,vision,withReactions:false);
         vision.OverheadEdges = new OverheadEdgesDetector();
         int framesWithEdges = 0, framesSeen = 0;
+        long overheadWrites=0;
+        var observedMaps=new Dictionary<MemoryMap,long>();
+        if(context.Map is {} initialMap)observedMaps[initialMap]=initialMap.OverheadWriteCount;
         void Observe(VisionFrameResult r)
         {
             Interlocked.Increment(ref framesSeen);
+            // Freeplay's writer subscription runs before this observer. Preserve evidence across origin changes.
+            if(context.Map is {} currentMap)
+            {
+                long writes=currentMap.OverheadWriteCount;
+                Interlocked.Add(ref overheadWrites,writes-observedMaps.GetValueOrDefault(currentMap));
+                observedMaps[currentMap]=writes;
+            }
             if (r.OverheadEdges is not { } edges) return;
             if (edges.Chains.Sum(c => c.Points.Count) > 0) Interlocked.Increment(ref framesWithEdges);
         }
@@ -372,32 +382,32 @@ public static class CoreChecks
             while (sw.Elapsed.TotalSeconds < seconds)
             {
                 await Task.Delay(500);
-                var counts=context.Map?.NativeContentCounts;
-                say($"  [{sw.Elapsed.TotalSeconds,5:F1}s] frames {Volatile.Read(ref framesSeen)}, frames with edge points {Volatile.Read(ref framesWithEdges)}, native overhead cells {(counts is null?0:Core007ContentCount(counts))}");
+                say($"  [{sw.Elapsed.TotalSeconds,5:F1}s] frames {Volatile.Read(ref framesSeen)}, frames with edge points {Volatile.Read(ref framesWithEdges)}, overhead writer calls {Interlocked.Read(ref overheadWrites)}");
             }
             var map=context.Map;
             if(map is null)return(false,"current-origin native map unavailable");
             var byType=map.NativeContentCounts;
             foreach (var (type, count) in byType.OrderByDescending(x => x.Value)) say($"  native map holds {count} leaf cell(s) of {type}");
-            say($"native overhead content: clear={byType.GetValueOrDefault(MemoryMapContentType.ClearOfObstacle)}, interesting edge={byType.GetValueOrDefault(MemoryMapContentType.InterestingEdge)}, not-interesting edge={byType.GetValueOrDefault(MemoryMapContentType.NotInterestingEdge)}");
-            if (!Core007HasEvidence(Volatile.Read(ref framesSeen), Volatile.Read(ref framesWithEdges), map))
+            say("type10 overhead border writes cannot occur while the ImageTimestamp join is MISSING (0x00516EC0/0x00680396); content counts are observations, not overhead-write evidence.");
+            if (!Core007HasEvidence(Volatile.Read(ref framesSeen), Volatile.Read(ref framesWithEdges), Interlocked.Read(ref overheadWrites)))
             {
-                if (framesSeen == 0) return (false, "no frames were processed at all");
-                if (framesWithEdges == 0) return (false, "frames were processed but none contained an overhead-edge point");
-                return (false, "edge points were found but nothing reached the map");
+                return (false,Core007FailureReason(Volatile.Read(ref framesSeen),Volatile.Read(ref framesWithEdges)));
             }
-            return (true, $"{framesWithEdges} of {framesSeen} frames carried edge points and the native map holds {Core007ContentCount(byType)} overhead leaf cell(s)");
+            return (true, $"{framesWithEdges} of {framesSeen} frames carried edge points; overhead writer issued {Interlocked.Read(ref overheadWrites)} insert/border call(s)");
         }
         finally{vision.FrameProcessed-=Observe;robot.StopCamera();}
     }
 
     // Engine overhead alternatives write type1: 0x0067FFE0/0x006800C8/0x0068017C;
     // type9: 0x006802E0; type10 border: 0x006803AA. Unknown/other content is not overhead-write evidence.
-    public static int Core007ContentCount(IReadOnlyDictionary<MemoryMapContentType,int> counts) =>
-        counts.GetValueOrDefault(MemoryMapContentType.ClearOfObstacle)+counts.GetValueOrDefault(MemoryMapContentType.InterestingEdge)+counts.GetValueOrDefault(MemoryMapContentType.NotInterestingEdge);
     /// <summary>The three independently required observables for CORE-007's automated verdict.</summary>
     public static bool Core007HasEvidence(int framesSeen, int framesWithEdges, MemoryMap map) =>
-        framesSeen > 0 && framesWithEdges > 0 && Core007ContentCount(map.NativeContentCounts) > 0;
+        Core007HasEvidence(framesSeen,framesWithEdges,map.OverheadWriteCount);
+    public static bool Core007HasEvidence(int framesSeen,int framesWithEdges,long overheadWrites) =>
+        framesSeen>0 && framesWithEdges>0 && overheadWrites>0;
+    public static string Core007FailureReason(int framesSeen,int framesWithEdges) =>
+        framesSeen==0?"no frames were processed at all":framesWithEdges==0?
+        "frames were processed but none contained an overhead-edge point":"edge points were found but nothing reached the map";
 
     // ================================================================ CORE-008
 

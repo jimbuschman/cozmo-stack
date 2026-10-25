@@ -1403,7 +1403,7 @@ public class HardwareRunnerTests
     public void Core007RequiresProcessedFramesActualEdgePointsAndMapContent()
     {
         // reach: unit (explicit overhead/history inputs, real native writer and CORE-007 grader;
-        // camera detector/hardware not exercised). Old map.Regions count=0, so the verdict was false.
+        // camera detector/hardware not exercised). Preservation control: old and new overhead verdict=true.
         using var f=new M13OverheadMapWriterTests.Fixture();
         f.Run(false,new(60,-20),new(60,20)); // type1 clear writer 0x0067FFE0
         Assert.Empty(f.Map.Regions);

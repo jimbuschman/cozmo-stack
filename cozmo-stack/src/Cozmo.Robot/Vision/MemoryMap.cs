@@ -152,7 +152,7 @@ public sealed partial class MemoryMap
     /// <summary><c>MemoryMap::HasContentType</c> 0x006817A8.</summary>
     public bool HasContentType(MemoryMapContentType type)
     {
-        lock (_gate) return _regions.Any(r => r.Type == type);
+        return Tree.HasContentType(type);
     }
 
     public void Clear() { lock (_gate) _regions.Clear(); }

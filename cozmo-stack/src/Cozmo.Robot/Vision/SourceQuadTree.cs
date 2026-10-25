@@ -358,6 +358,10 @@ internal sealed class SourceQuadNode(float x, float y, float z, float side, byte
 internal sealed class SourceQuadTree
 {
     private readonly object _geometryGate = new();
+    internal bool HasContentType(MemoryMapContentType type)
+    {
+        lock(_geometryGate)return Processor.TypeSets.TryGetValue(type,out var nodes)&&nodes.Count!=0;
+    }
     // Host observation only. Take the same gate as Insert/ray and return detached counts.
     internal IReadOnlyDictionary<MemoryMapContentType,int> ContentCounts()
     {

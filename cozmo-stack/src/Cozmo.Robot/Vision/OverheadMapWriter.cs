@@ -27,6 +27,9 @@ internal sealed class OverheadMapContext
 // fidelity: M11-017, M11-089, M11-074, M8-026
 public sealed partial class MemoryMap
 {
+    private long _overheadWriteCount;
+    /// <summary>Host observation: insert/border calls issued by this overhead writer only, not stored cell counts.</summary>
+    public long OverheadWriteCount => Interlocked.Read(ref _overheadWriteCount);
     internal OverheadMapContext? OverheadContext;
     private double? AddOverheadFromHistory(OverheadEdgeFrame frame,Pose3d currentPose)
     {
@@ -102,15 +105,18 @@ public sealed partial class MemoryMap
         foreach(var quad in quads)
         {
             InsertOverheadClear(quad,frame.Timestamp);
+            Interlocked.Increment(ref _overheadWriteCount); // 0x0067FFE0/0x006800C8/0x0068017C
             if(context.Clear is {} clear)clear(quad);
             else SteppedBehavior.ReportMissing("M8-026 overhead ProcessClearQuad 0x006801B0: AIWhiteboard owner is unbound; full clamped quad retained by the checked producer");
         }
         InsertPreparedInterestingEdges(segments,frame.Timestamp);
+        Interlocked.Add(ref _overheadWriteCount,segments.Count); // 0x006802E0
         if(segments.Count!=0)
         {
             // 0x00680312..38E transforms a temporary ROI quad, which no recipient reads.
             foreach(var p in frame.GroundQuad)_=W(p);
-            if(context.ImageTimestamp?.Invoke() is {} stamp)FillObjectBorder(stamp);
+            if(context.ImageTimestamp?.Invoke() is {} stamp)
+            {FillObjectBorder(stamp);Interlocked.Increment(ref _overheadWriteCount);} // 0x006803AA
             else SteppedBehavior.ReportMissing("M11-017 Robot::GetLastImageTimeStamp 0x00516EC0 at 0x00680396: fresh image clock is unbound; border fill not guessed from frame.ts");
         }
         float distance=float.IsNaN(minimum)?BitConverter.UInt32BitsToSingle(0x7FC00000):MathF.Sqrt(minimum);

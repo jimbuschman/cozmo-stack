@@ -28,5 +28,5 @@ public sealed class VisitInterestingEdgeBehavior : SteppedBehavior
         throw new NotSupportedException("M11-092 native VisitInterestingEdge activation is unread");
     }
     protected override void OnStop(BehaviorStopReason reason)
-        =>ReportMissing("M11-092 VisitInterestingEdge StopInternal/Flag lifecycle 0x005E7018..0x005E815A");
+        =>ReportMissing("M11-092 VisitInterestingEdge StopInternal/Flag lifecycle 0x005E7018..0x005E815A; explicit type10 FlagQuadAsNotInterestingEdges 0x0067E6B0/0x0067E71C writer join remains unbuilt");
 }
