@@ -321,6 +321,6 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 65 | [R-M11-ROOT-GROWTH](../research/requests/20261024-m11-root-growth.md) | answered 817d279f; Claude check PASS (research/20261025-r-m11-root-growth-claude-check.md); feeds B-M11-19 |
 | 66 | [R-M11-MAP-MERGE](../research/requests/20261024-m11-map-merge.md) | answered 080f13b7; Claude check PASS (research/20261025-r-m11-map-merge-obstacle-writers-claude-check.md); feeds B-M11-20 |
 | 67 | [R-M11-OBSTACLE-WRITERS](../research/requests/20261024-m11-obstacle-writers.md) | answered df0d13b2; Claude check PASS (same file); type 6 no engine caller, type 7 census PARTIAL, type 10 waits for B-M11-16 |
-| 68 | [R-M11-LAST-IMAGE-TS](../research/requests/20261025-m11-last-image-timestamp.md) | open |
-| 69 | [R-M11-REJIGGER](../research/requests/20261025-m11-rejigger.md) | open |
-| 70 | [R-M11-EXPLORED-AREA](../research/requests/20261025-m11-explored-area.md) | open |
+| 68 | [R-M11-LAST-IMAGE-TS](../research/requests/20261025-m11-last-image-timestamp.md) | answered 602f0ea3; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); border stamp is result N-1 (pre-tail); FakeImageProcessed callers UNKNOWN |
+| 69 | [R-M11-REJIGGER](../research/requests/20261025-m11-rejigger.md) | answered 68972eae; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); feeds B-M11-20 reachability |
+| 70 | [R-M11-EXPLORED-AREA](../research/requests/20261025-m11-explored-area.md) | answered e85666d5; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); only reader found is DAS robot.play_area_size; no no-effect claim |
