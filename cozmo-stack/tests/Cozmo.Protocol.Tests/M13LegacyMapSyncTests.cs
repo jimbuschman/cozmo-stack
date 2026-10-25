@@ -54,20 +54,49 @@ public sealed class M13LegacyMapSyncTests
     }
 
     [Fact]
-    public void OnlyTheRemainingUnportedLegacyWritersCanBlockTheFallback()
+    public void LegacyRegionsOfEveryTypeLeaveTheNativeRayAnswerUnchanged()
     {
-        // reach: unit (explicit legacy inputs and real native ray; prox/unrecognized/quad joins remain MISSING).
-        // Old: a legacy type-3 region answered true despite its native owner; new: false. Types 6/7/10 retain true.
-        foreach(var type in new[]{MemoryMapContentType.ObstacleObservable,MemoryMapContentType.ObstacleCharger,
-                    MemoryMapContentType.Cliff,MemoryMapContentType.InterestingEdge,MemoryMapContentType.ObstacleProx,
-                    MemoryMapContentType.ObstacleUnrecognized,MemoryMapContentType.NotInterestingEdge})
+        // reach: unit (deliberate legacy-only inputs, not produced in production; real native ray).
+        // Old: selected types 6/7/10 turn the clear ray true. Native wrapper 0x006817A4 only queries the tree.
+        foreach(var type in Enum.GetValues<MemoryMapContentType>())
         {
             var map=new MemoryMap();var quad=new[]{new Vec2(30,-1),new Vec2(30,1),new Vec2(40,1),new Vec2(40,-1)};
+            bool native=map.Tree.HasCollisionRayWithTypes(new(29,0),new(41,0),1u<<(int)type);
             if(type==MemoryMapContentType.NotInterestingEdge)map.FlagQuadAsNotInterestingEdges(quad);
             else map.Insert(quad,type);
-            bool retained=type is MemoryMapContentType.ObstacleProx or MemoryMapContentType.ObstacleUnrecognized or MemoryMapContentType.NotInterestingEdge;
-            Assert.Equal(retained,map.HasCollisionRayWithTypes(new(29,0),new(41,0)));
+            Assert.Equal(native,map.HasCollisionRayWithTypes(new(29,0),new(41,0),t=>t==type)); // selecting Unknown may hit the untouched native root
             Assert.False(map.HasCollisionRayWithTypes(new(29,0),new(41,0),_=>false));
+            map.InsertObject(new[]{new Vec2(0,0)},new SourceMapData(type,1,1));
+            Assert.Equal(map.Tree.HasCollisionRayWithTypes(new(0,0),new(0,0),1u<<(int)type),
+                map.HasCollisionRayWithTypes(new(0,0),new(0,0),t=>t==type));
         }
+    }
+
+    [Fact]
+    public void MissingWritersRemainVisibleAtTheirExistingEntries()
+    {
+        // reach: unit (explicit markerless input and protected runnable unit, no sensor/behavior lifecycle join).
+        // Preservation control: old code also reports both gaps. Removing the ray fallback must not hide them.
+        var logs=new List<string>();var world=new BlockWorld();
+        void Log(string text)=>logs.Add(text);
+        world.Log+=Log;
+        using var pose=new Pose3d();
+        ObservableObject? prox=null;
+        try
+        {
+            prox=world.AddMarkerlessObject(pose,ObjectType.ProxObstacle);
+            Assert.Contains(logs,s=>s.Contains("M13-030: MemoryMapData_ProxObstacle 0x00622646"));
+        }
+        finally{world.Log-=Log;prox?.NativePose.Dispose();world.Maps.Dispose();}
+        SteppedBehavior.ResetMissingForTests();
+        SteppedBehavior.MissingReported+=Log;
+        try
+        {
+            var edge=new VisitInterestingEdgeBehavior("edge",new(false,105,110,15,0,10,20,1));
+            var method=typeof(VisitInterestingEdgeBehavior).GetMethod("IsRunnableInternal",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!;
+            Assert.False((bool)method.Invoke(edge,new object[]{null!})!); // null-input branch never reads context
+            Assert.Contains(logs,s=>s.Contains("M11-089 live native border-vector/map/RNG/robot-root input join"));
+        }
+        finally{SteppedBehavior.MissingReported-=Log;}
     }
 }

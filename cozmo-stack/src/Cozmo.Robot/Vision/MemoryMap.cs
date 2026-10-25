@@ -91,6 +91,9 @@ public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, 
 public sealed partial class MemoryMap
 {
     internal readonly SourceQuadTree Tree = new();
+    /// <summary>Read-only diagnostic snapshot of native leaf cells by content type, including Unknown.
+    /// Counts cells, not source polygons or distinct payloads; does not change the map.</summary>
+    public IReadOnlyDictionary<MemoryMapContentType,int> NativeContentCounts => Tree.ContentCounts();
     internal SourceLogSink? SourceLog { get => Tree.SourceLog; set => Tree.SourceLog = value; }
     internal Action<string>? Missing { get => Tree.Missing; set => Tree.Missing = value; }
     public double ExploredRegionAreaM2
@@ -191,8 +194,7 @@ public sealed partial class MemoryMap
     /// <summary>
     /// <c>MemoryMap::HasCollisionRayWithTypes(from, to, types)</c> 0x0068176E: the types are folded into a
     /// flag mask (<c>EContentTypeToFlag</c> per entry whose bool is set) and handed to the quad tree's ray
-    /// walk. The legacy fallback covers only the remaining unported prox/unrecognized/explicit
-    /// not-interesting-quad writes. <paramref name="blocks"/> defaults to
+    /// walk. <paramref name="blocks"/> defaults to
     /// <see cref="MemoryMapTypes.BlocksTheRobot"/>, the mask the face behaviour passes.
     /// </summary>
     public bool HasCollisionRayWithTypes(Vec2 from, Vec2 to, Func<MemoryMapContentType, bool>? blocks = null)
@@ -201,15 +203,7 @@ public sealed partial class MemoryMap
         uint mask = 0;
         for (int i = 0; i < 11; i++)
             if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
-        if (Tree.HasCollisionRayWithTypes(from,to,mask)) return true;
-        // Host transition boundary, not a native mask: the other producers now own native tree cells.
-        const uint legacyTypes=(1u<<6)|(1u<<7)|(1u<<10);
-        MemoryMapRegion[] legacy;
-        lock (_gate)
-            legacy=_regions.Where(region=>(mask & legacyTypes & (1u << (int)region.Type)) != 0).ToArray();
-        if(legacy.Length==0)return false;
-        Behavior.SteppedBehavior.ReportMissing("M11-046/M11-074 legacy ray fallback: MemoryMap.Insert ObstacleProx (M13-030 payload 0x00622646..0x006226E6), ObstacleUnrecognized (native producer unbound), and FlagQuadAsNotInterestingEdges (type10, 0x0067E6B0) still lack native writer joins");
-        return legacy.Any(region=>SegmentTouchesPolygon(from,to,region.Polygon));
+        return Tree.HasCollisionRayWithTypes(from,to,mask);
     }
 
     // ------------------------------------------------------------------ the overhead edges

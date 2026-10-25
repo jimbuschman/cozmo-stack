@@ -23,9 +23,9 @@ public sealed class M13TreeGeometryTests
     }
 
     // reach: unit (explicit native and legacy region producers; native traversal is unchanged).
-    // Old B-M13-27 value: the final legacy-only cliff answers true; its native writer now owns that type.
+    // Old B-M13-28 value: the legacy-only type10 answers true; wrapper 0x006817A4 queries only the tree.
     [Fact]
-    public void RayKeepsSelectedLegacyBlockingContentAlongsideNativeCells()
+    public void RayReadsNativeCellsWithoutALegacyOverride()
     {
         var map = new MemoryMap();
         map.InsertObject(Box(1,1,2,2),new SourceMapData(MemoryMapContentType.ObstacleCharger,1,1));
@@ -33,7 +33,7 @@ public sealed class M13TreeGeometryTests
         map.Insert(Box(50,50,60,60),MemoryMapContentType.ClearOfCliff);
         map.Insert(Box(70,70,80,80),MemoryMapContentType.Cliff);
         Assert.True(map.HasCollisionRayWithTypes(new(9,8),new(9,9))); // native-only corner cell
-        Assert.True(map.HasCollisionRayWithTypes(new(29,35),new(41,35))); // remaining legacy-only selected type10
+        Assert.False(map.HasCollisionRayWithTypes(new(29,35),new(41,35))); // no production legacy writer
         Assert.False(map.HasCollisionRayWithTypes(new(29,35),new(41,35),t=>t==MemoryMapContentType.ObstacleCharger));
         Assert.False(map.HasCollisionRayWithTypes(new(49,55),new(61,55))); // unselected legacy type
         Assert.False(map.HasCollisionRayWithTypes(new(69,75),new(81,75))); // native-owned cliff excludes legacy bypass

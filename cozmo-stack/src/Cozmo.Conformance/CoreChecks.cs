@@ -4,6 +4,7 @@ using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Conformance;
 
@@ -80,7 +81,7 @@ public static class CoreChecks
                 "CORE-002" => await Core002(robot, obb, Say),
                 "CORE-003" => await Core003(robot, obb, Say),
                 "CORE-004" => await Core004(robot, Say),
-                "CORE-007" => await Core007(robot, seconds, Say),
+                "CORE-007" => await Core007(robot, obb, seconds, Say),
                 "CORE-008" => await Core008(robot, seconds, Say),
                 _ => (false, $"no case called '{which}'; {Usage}"),
             };
@@ -336,9 +337,9 @@ public static class CoreChecks
     ///
     /// The detector and the map's side of it were both built and nothing joined them. The join is now what
     /// the engine does, and this is the only way to see it work on a real floor: real lighting, a real
-    /// camera, a real edge in front of him. The map's own region counts are the evidence.
+    /// camera, a real edge in front of him. Native leaf-cell counts are the evidence.
     /// </summary>
-    private static async Task<(bool, string)> Core007(CozmoRobot robot, int seconds, Action<string> say)
+    private static async Task<(bool, string)> Core007(CozmoRobot robot, string? obb, int seconds, Action<string> say)
     {
         var vision = robot.Vision;
         var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
@@ -349,46 +350,54 @@ public static class CoreChecks
         }
         say($"camera calibration read from the robot: fx={cal.FocalLengthX:F1} fy={cal.FocalLengthY:F1}");
 
-        var map = new MemoryMap();
+        if(obb is null)return(false,"pass --obb to bind the existing Freeplay overhead-map writer");
+        // Reuse the existing history/current-origin writer subscription; a detached map has no history join.
+        var context=new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()};
+        using var stack=FreeplayStack.Create(obb,robot,context,()=>robot.Engine.Timer.Seconds,vision,withReactions:false);
         vision.OverheadEdges = new OverheadEdgesDetector();
         int framesWithEdges = 0, framesSeen = 0;
-        vision.FrameProcessed += r =>
+        void Observe(VisionFrameResult r)
         {
-            framesSeen++;
+            Interlocked.Increment(ref framesSeen);
             if (r.OverheadEdges is not { } edges) return;
-            if (edges.Chains.Sum(c => c.Points.Count) > 0) framesWithEdges++;
-            map.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
-        };
-
-        robot.StartCamera();
-        say($"watching the ground for {seconds} s. Keep the edge in front of him.");
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.Elapsed.TotalSeconds < seconds)
-        {
-            await Task.Delay(500);
-            var regions = map.Regions;
-            say($"  [{sw.Elapsed.TotalSeconds,5:F1}s] frames {framesSeen}, frames with edge points {framesWithEdges}, map regions {regions.Count}");
+            if (edges.Chains.Sum(c => c.Points.Count) > 0) Interlocked.Increment(ref framesWithEdges);
         }
-        robot.StopCamera();
+        vision.FrameProcessed += Observe;
 
-        var byType = map.Regions.GroupBy(r => r.Type).ToDictionary(g => g.Key, g => g.Count());
-        foreach (var (type, count) in byType.OrderByDescending(x => x.Value)) say($"  map holds {count} region(s) of {type}");
-
-        bool obstacles = map.HasContentType(MemoryMapContentType.ObstacleUnrecognized);
-        bool clear = map.HasContentType(MemoryMapContentType.ClearOfObstacle);
-        say($"the map holds an unrecognised obstacle: {obstacles}; ground marked clear: {clear}");
-        if (!Core007HasEvidence(framesSeen, framesWithEdges, map.Regions.Count))
+        try
         {
-            if (framesSeen == 0) return (false, "no frames were processed at all");
-            if (framesWithEdges == 0) return (false, "frames were processed but none contained an overhead-edge point");
-            return (false, "edge points were found but nothing reached the map");
+            robot.StartCamera();
+            say($"watching the ground for {seconds} s. Keep the edge in front of him.");
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            while (sw.Elapsed.TotalSeconds < seconds)
+            {
+                await Task.Delay(500);
+                var counts=context.Map?.NativeContentCounts;
+                say($"  [{sw.Elapsed.TotalSeconds,5:F1}s] frames {Volatile.Read(ref framesSeen)}, frames with edge points {Volatile.Read(ref framesWithEdges)}, native overhead cells {(counts is null?0:Core007ContentCount(counts))}");
+            }
+            var map=context.Map;
+            if(map is null)return(false,"current-origin native map unavailable");
+            var byType=map.NativeContentCounts;
+            foreach (var (type, count) in byType.OrderByDescending(x => x.Value)) say($"  native map holds {count} leaf cell(s) of {type}");
+            say($"native overhead content: clear={byType.GetValueOrDefault(MemoryMapContentType.ClearOfObstacle)}, interesting edge={byType.GetValueOrDefault(MemoryMapContentType.InterestingEdge)}, not-interesting edge={byType.GetValueOrDefault(MemoryMapContentType.NotInterestingEdge)}");
+            if (!Core007HasEvidence(Volatile.Read(ref framesSeen), Volatile.Read(ref framesWithEdges), map))
+            {
+                if (framesSeen == 0) return (false, "no frames were processed at all");
+                if (framesWithEdges == 0) return (false, "frames were processed but none contained an overhead-edge point");
+                return (false, "edge points were found but nothing reached the map");
+            }
+            return (true, $"{framesWithEdges} of {framesSeen} frames carried edge points and the native map holds {Core007ContentCount(byType)} overhead leaf cell(s)");
         }
-        return (true, $"{framesWithEdges} of {framesSeen} frames carried edge points and the map holds {map.Regions.Count} region(s)");
+        finally{vision.FrameProcessed-=Observe;robot.StopCamera();}
     }
 
+    // Engine overhead alternatives write type1: 0x0067FFE0/0x006800C8/0x0068017C;
+    // type9: 0x006802E0; type10 border: 0x006803AA. Unknown/other content is not overhead-write evidence.
+    public static int Core007ContentCount(IReadOnlyDictionary<MemoryMapContentType,int> counts) =>
+        counts.GetValueOrDefault(MemoryMapContentType.ClearOfObstacle)+counts.GetValueOrDefault(MemoryMapContentType.InterestingEdge)+counts.GetValueOrDefault(MemoryMapContentType.NotInterestingEdge);
     /// <summary>The three independently required observables for CORE-007's automated verdict.</summary>
-    public static bool Core007HasEvidence(int framesSeen, int framesWithEdges, int mapRegions) =>
-        framesSeen > 0 && framesWithEdges > 0 && mapRegions > 0;
+    public static bool Core007HasEvidence(int framesSeen, int framesWithEdges, MemoryMap map) =>
+        framesSeen > 0 && framesWithEdges > 0 && Core007ContentCount(map.NativeContentCounts) > 0;
 
     // ================================================================ CORE-008
 

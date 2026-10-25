@@ -1402,10 +1402,23 @@ public class HardwareRunnerTests
     [Fact]
     public void Core007RequiresProcessedFramesActualEdgePointsAndMapContent()
     {
-        Assert.False(CoreChecks.Core007HasEvidence(1, 0, 4));
-        Assert.False(CoreChecks.Core007HasEvidence(1, 2, 0));
-        Assert.False(CoreChecks.Core007HasEvidence(0, 2, 4));
-        Assert.True(CoreChecks.Core007HasEvidence(1, 1, 1));
+        // reach: unit (explicit overhead/history inputs, real native writer and CORE-007 grader;
+        // camera detector/hardware not exercised). Old map.Regions count=0, so the verdict was false.
+        using var f=new M13OverheadMapWriterTests.Fixture();
+        f.Run(false,new(60,-20),new(60,20)); // type1 clear writer 0x0067FFE0
+        Assert.Empty(f.Map.Regions);
+        var counts=f.Map.NativeContentCounts;
+        Assert.True(counts[Cozmo.Robot.Vision.MemoryMapContentType.ClearOfObstacle]>0);
+        Assert.False(CoreChecks.Core007HasEvidence(1,0,f.Map));
+        Assert.False(CoreChecks.Core007HasEvidence(0,2,f.Map));
+        Assert.False(CoreChecks.Core007HasEvidence(1,2,new Cozmo.Robot.Vision.MemoryMap()));
+        Assert.True(CoreChecks.Core007HasEvidence(1,1,f.Map));
+        // Snapshot is detached; native type9 survives a clamp failure at 0x006802E0.
+        using var edge=new M13OverheadMapWriterTests.Fixture();
+        edge.Run(true,new(20,-10),new(20,10));
+        Assert.True(CoreChecks.Core007HasEvidence(1,1,edge.Map));
+        Assert.DoesNotContain(Cozmo.Robot.Vision.MemoryMapContentType.InterestingEdge,counts.Keys);
+        Assert.DoesNotContain(Cozmo.Robot.Vision.MemoryMapContentType.InterestingEdge,f.Map.NativeContentCounts.Keys);
     }
 
     [Fact]
