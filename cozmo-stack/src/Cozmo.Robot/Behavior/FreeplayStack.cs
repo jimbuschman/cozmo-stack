@@ -319,11 +319,7 @@ public sealed class FreeplayStack : IDisposable
                     {
                         History=ts=>OverheadHistorySample.Read(vision.History,ts),
                         Origin=()=>native.GetNativeOrigin(vision.World.Maps.CurrentOrigin),
-                        ImageTimestamp=()=>
-                        {
-                            SteppedBehavior.ReportMissing("M11-017/M11-037 Robot::GetLastImageTimeStamp 0x00516EC0 at 0x00680396: native camera getter owner is unbuilt; existing VisionSystem raw/processed clock stand-ins are not substituted for the fresh border stamp");
-                            return null;
-                        },
+                        ImageTimestamp=()=>robot.CameraSettings.LastProcessedImageTimestamp, // 0x00516EC0 -> VC+0xE8, before this result's tail
                         Clear=m is null?null:m.Whiteboard.ProcessClearQuad,
                         WhiteboardState=m is null?null:m.Whiteboard.SetOverheadEdgeState,
                     };

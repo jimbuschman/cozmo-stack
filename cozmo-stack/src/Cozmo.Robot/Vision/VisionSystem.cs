@@ -753,6 +753,7 @@ public sealed partial class VisionSystem : IDisposable
     private void OnFrame(CameraFrame f)
     {
         if(!Enabled||!_processorRun||_disposed)return;
+        SteppedBehavior.ReportMissing("M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp +0xE4 owner is unbuilt; rollback of +0xE4/+0xE8 is not substituted with the processed clock");
         if(Calibration is null){WarnNoCalibration(Volatile.Read(ref _removals));return;}
         var pose=QueryFramePose(f.Timestamp);
         if(pose is {} captured)HandOverFrame(f,captured);
@@ -1180,10 +1181,11 @@ public sealed partial class VisionSystem : IDisposable
             if (rawTimestamp is { } raw) LastRawFrameTimestamp = raw;
             FramesProcessed++;
             LastResult = result;
-            // fidelity: M11-035
-            _robot.CameraSettings.LastProcessedImageTimestamp = result.Timestamp;
             // Raised under the lock a removal waits on, so a frame the removal discarded never raises it afterwards.
-            FrameProcessed?.Invoke(result);
+            // fidelity: M11-035 -- 0x006549A2..0x006549AA: handlers see the previous +0xE8.
+            // A consumed result still reaches the tail when a host handler throws.
+            try { FrameProcessed?.Invoke(result); }
+            finally { _robot.CameraSettings.LastProcessedImageTimestamp = result.Timestamp; }
         }
         return result;
     }

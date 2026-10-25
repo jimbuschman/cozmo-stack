@@ -563,7 +563,7 @@ public readonly record struct CurrentCameraParams(float Gain, ushort ExposureMs,
 public sealed partial class CameraSettings
 {
     // fidelity: M11-035
-    /// <summary>VisionComponent+0xE8, read by 0x006527A2. Its result-commit exactness belongs to M11-035.</summary>
+    /// <summary>VisionComponent+0xE8 (0x006527A2): previous consumed result during handlers, current result after their tail (0x006549AA).</summary>
     public uint LastProcessedImageTimestamp { get; internal set; }
     /// <summary>VisionSystem constructor (1a, A21; 0x006B002A..0x006B004A): max exposure 66 ms (+0x88).</summary>
     public const ushort ConstructorMaxExposureMs = 66;
