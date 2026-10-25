@@ -157,6 +157,7 @@
 | 61w4f | B-M11-20 | DONE 4199b9a4 (full suite 842c8c86); Claude check PASS (research/20261025-b-m11-19-20-r... | DONE (4/4 items; 2 MISSING) | none found |
 | 61w4g | B-M11-21 | DONE 04417900 (full suite 263f522f); Claude check PASS (research/20261025-b-m11-21-clau... | DONE (5/5 items; 1 MISSING) | `research/20261025-b-m11-21-claude-check.md` |
 | 61w4h | B-M15-12 | DONE 6cd86f8a..5fe5401b (full suite 6217/6217); Claude check PASS (research/20261025-b-... | DONE (8/8 items; 2 MISSING) | `research/20261025-b-m15-12-claude-check.md` |
+| 61w4i | B-M13-29 | open — map cleanup (legacy fallback, constant-restating test, type-7 MISSING, MemoryMap... | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
