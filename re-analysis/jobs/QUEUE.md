@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work (manager, 2026-10-25): B-M13-28a done (check PASS); B-M11-19 (quad-tree root growth and shift), then B-M11-20 (map merge).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work (manager, 2026-10-25): B-M13-28a, B-M11-19, B-M11-20 done (checks PASS); next B-M11-21 (image timestamp and type-10 border stamp).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -197,8 +197,9 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w4c | [B-M13-27](B-M13-27.md) | DONE 91e0b5e9, merged d73714fc; full-suite failure was the test-setup race fixed in 7588e84e; Claude check PASS (research/20261024-b-m13-27-claude-check.md), Q1-Q4 queued |
 | 61w4d | [B-M13-28](B-M13-28.md) | DONE f73271da (full suite 3d164d99); Claude check FAIL (CORE-007 passes on footprint cells; research/20261025-b-m13-28-claude-check.md), fix-up B-M13-28a |
 | 61w4d1 | [B-M13-28a](B-M13-28a.md) | DONE ee9d27f9 (full suite 50a5f8fe); Claude check PASS (research/20261025-b-m13-28a-claude-check.md) |
-| 61w4e | [B-M11-19](B-M11-19.md) | open (quad-tree root growth and shift; drive-off run 2 hit the MISSING 21 times) |
-| 61w4f | [B-M11-20](B-M11-20.md) | open, after B-M11-19 (memory-map merge on re-localization) |
+| 61w4e | [B-M11-19](B-M11-19.md) | DONE 662de509 (full suite 95e9063f); Claude check PASS (research/20261025-b-m11-19-20-row-71-claude-check.md) |
+| 61w4f | [B-M11-20](B-M11-20.md) | DONE 4199b9a4 (full suite 842c8c86); Claude check PASS (research/20261025-b-m11-19-20-row-71-claude-check.md) |
+| 61w4g | [B-M11-21](B-M11-21.md) | open (VisionComponent+0xE8 tail order and the type-10 border stamp) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -324,4 +325,4 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 68 | [R-M11-LAST-IMAGE-TS](../research/requests/20261025-m11-last-image-timestamp.md) | answered 602f0ea3; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); border stamp is result N-1 (pre-tail); FakeImageProcessed callers UNKNOWN |
 | 69 | [R-M11-REJIGGER](../research/requests/20261025-m11-rejigger.md) | answered 68972eae; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); feeds B-M11-20 reachability |
 | 70 | [R-M11-EXPLORED-AREA](../research/requests/20261025-m11-explored-area.md) | answered e85666d5; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); only reader found is DAS robot.play_area_size; no no-effect claim |
-| 71 | [R-M11-FAKE-IMAGE-PROCESSED](../research/requests/20261025-m11-fake-image-processed.md) | open |
+| 71 | [R-M11-FAKE-IMAGE-PROCESSED](../research/requests/20261025-m11-fake-image-processed.md) | answered dfa6097d; Claude check PASS (research/20261025-b-m11-19-20-row-71-claude-check.md); no caller in engine or app; manager: not supported (recorded on M11-035 when B-M11-21 is accepted) |
