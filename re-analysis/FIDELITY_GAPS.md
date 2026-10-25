@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **709 records** over 16 subsystems.
+Manifest of **710 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 239 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 6 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 357 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 358 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 40 | 0 | 34 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 73 | 4 | 63 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 74 | 4 | 64 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3940,6 +3940,15 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204; app sender authority 2.
 * evidence: re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.; SevereNeedsComponent::Init 0x00572A64..0x00572A86 subscribes only when HasExternalInterface(); helper 0x00572B10..0x00572B96 registers G2E 0xA6 (166); the callback 0x005734F2..0x00573504 forwards to the wake handler 0x00572E00.; App sender: unity/scripts/csharp/ConnectionFlowController.cs WakeupSequence 600..611 (wake animation, then NotifyCozmoWakeup); Cozmo.Hub/NeedsHub.cs:95.
 * outstanding: IMPLEMENTATION_GAP until built (B-M15-12), then COMPATIBILITY_POLICY (operator, 2026-10-25: 'do it'): the stack sends NotifyCozmoWakeup (G2E 166) itself, once per robot connection, at the point the app ran WakeupSequence: when the stack reports the robot connected and ready. It is delivered through the same game-to-engine subscription the engine uses (Init 0x00572A64..0x00572A86). The app sent it right after starting the wake animation (ConnectionFlowController.cs:608-610), not after it finished; the app's SDK and simulator branches did not send it, and the stack has neither. The host C# API call stays as well. The app's wake animation itself (GetAnimationForWakeUp: ConnectWakeUp, OnboardingWakeUpDriveOffCharger or a needs-based choice) is app flow, not covered by this record.
+
+**M15-074 — PlayNeedsGetOutAnimIfNeeded action: per-need get-out trigger at Init, SevereNeeds clear on first start or destruction, offered through the C# API** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* effect: Which get-out animation plays when a host asks Cozmo to leave a severe-need expression, and when the expression's driving/idle animations and reaction lock are removed.
+* rests on: Free-model research row 73 (2026-10-25), checked by Opus (2026-10-25), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204; app sender authority 2.
+* evidence: re-analysis/research/20261025-m15-needs-get-out-action.md (row 73), checked by re-analysis/research/20261025-b-m13-29-rows-72-74-claude-check.md.; Only constructor call 0x0052A872 (0xCC bytes, 0x0052A868) from factory adapters 0x00525EFC (union 20) and 0x00525F10 (G2E 27), registration row 0x01020280.; ctor 0x00544F88: TriggerAnimationAction(Count 0x23F, loops 1) 0x00544FA2..0x00544FA8, +0xC9 = 0 at 0x00544FAE.; Init 0x005450AC: selected [[robot+0x264]+0x30]+0x14 (0x005450BA); TBB 0x005450C4 bytes 07 02 05 10: Repair 0x141, Energy 0x135, Play 0x13A, none -> SUCCESS 0.; CheckIfDone 0x005451C4..0x0054520E: Count -> 0; first start with +0xC9 == 0 -> Clear (0x005451E8), +0xC9 = 1; ended -> 0, failed -> 0x03000001, else 0x01000000. Destructor 0x0054504C..0x0054505E clears when selected != 3 and +0xC9 == 0.; App senders: unity/scripts/csharp/Robot.cs:1408 (QueueSingleAction union 20); NeedsHub.cs:300-320, NeedsHub_2018.cs:375-395, CubeHelpSevereHelper.cs:15-35, SettingsSDKPanel.cs:75-90.
+* outstanding: IMPLEMENTATION_GAP: to build (B-M15-13). App boundary (manager, 2026-10-25): the engine creates the action only from a game message; the stack offers it as a C# API action queued like the app's QueueSingleAction (union 20, NOW, 0 retries). The app's hub, feed and SDK flows that sent it are not reproduced. Universal indirect-creator census PARTIAL.
 
 ## What remains after both: blocked externally, or needing hardware
 

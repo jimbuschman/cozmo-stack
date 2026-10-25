@@ -1054,3 +1054,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP: SevereNeedsComponent live selected need (+0x14, ctor 3 at 0x00572A0E); Set 0x00572E48..0x005731C0, Clear 0x00572C8C..0x00572D6E, Update 0x00572BD0 at AI phase 0x00569F38; callers 0x00572E00, 0x005BFEF8, 0x005EE7D8, 0x0054504C, 0x005451C8 | M15-072 (new) |
 | New IMPLEMENTATION_GAP, to become COMPATIBILITY_POLICY when built: NotifyCozmoWakeup G2E 166 (Init 0x00572A64, callback 0x005734F2) supplied by a host C# API call; no auto-send | M15-073 (new) |
 
+## Row 73, the get-out action (manager, 2026-10-25; research/20261025-b-m13-29-rows-72-74-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: PlayNeedsGetOutAnimIfNeeded (ctor 0x00544F88, Init 0x005450AC, CheckIfDone 0x005451C4, dtor 0x0054503C; factory 0x0052A864, row 0x01020280), offered through the C# API | M15-074 (new) |
+

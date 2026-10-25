@@ -13998,6 +13998,28 @@
       "hardware_required": false,
       "live_path": true,
       "test": ""
+    },
+    {
+      "id": "M15-074",
+      "subsystem": "M15-freeplay",
+      "title": "PlayNeedsGetOutAnimIfNeeded action: per-need get-out trigger at Init, SevereNeeds clear on first start or destruction, offered through the C# API",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; app sender authority 2.",
+      "evidence": [
+        "re-analysis/research/20261025-m15-needs-get-out-action.md (row 73), checked by re-analysis/research/20261025-b-m13-29-rows-72-74-claude-check.md.",
+        "Only constructor call 0x0052A872 (0xCC bytes, 0x0052A868) from factory adapters 0x00525EFC (union 20) and 0x00525F10 (G2E 27), registration row 0x01020280.",
+        "ctor 0x00544F88: TriggerAnimationAction(Count 0x23F, loops 1) 0x00544FA2..0x00544FA8, +0xC9 = 0 at 0x00544FAE.",
+        "Init 0x005450AC: selected [[robot+0x264]+0x30]+0x14 (0x005450BA); TBB 0x005450C4 bytes 07 02 05 10: Repair 0x141, Energy 0x135, Play 0x13A, none -> SUCCESS 0.",
+        "CheckIfDone 0x005451C4..0x0054520E: Count -> 0; first start with +0xC9 == 0 -> Clear (0x005451E8), +0xC9 = 1; ended -> 0, failed -> 0x03000001, else 0x01000000. Destructor 0x0054504C..0x0054505E clears when selected != 3 and +0xC9 == 0.",
+        "App senders: unity/scripts/csharp/Robot.cs:1408 (QueueSingleAction union 20); NeedsHub.cs:300-320, NeedsHub_2018.cs:375-395, CubeHelpSevereHelper.cs:15-35, SettingsSDKPanel.cs:75-90."
+      ],
+      "effect": "Which get-out animation plays when a host asks Cozmo to leave a severe-need expression, and when the expression's driving/idle animations and reaction lock are removed.",
+      "provenance": "Free-model research row 73 (2026-10-25), checked by Opus (2026-10-25), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: to build (B-M15-13). App boundary (manager, 2026-10-25): the engine creates the action only from a game message; the stack offers it as a C# API action queued like the app's QueueSingleAction (union 20, NOW, 0 retries). The app's hub, feed and SDK flows that sent it are not reproduced. Universal indirect-creator census PARTIAL.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     }
   ]
 }

@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-25",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "5f348eca23999611ce11e80dd90c82cb639f8b25d4a22373d65c455f30e4e0ea",
+  "inventory_sha256": "581054bf99cb980542c6405244da91cb16243642ef4c2b2ea6df830a2c3038b8",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -868,6 +868,21 @@
         "re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.",
         "SevereNeedsComponent::Init 0x00572A64..0x00572A86 subscribes only when HasExternalInterface(); helper 0x00572B10..0x00572B96 registers G2E 0xA6 (166); the callback 0x005734F2..0x00573504 forwards to the wake handler 0x00572E00.",
         "App sender: unity/scripts/csharp/ConnectionFlowController.cs WakeupSequence 600..611 (wake animation, then NotifyCozmoWakeup); Cozmo.Hub/NeedsHub.cs:95."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-074": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlayNeedsGetOutAnimIfNeeded action: per-need get-out trigger at Init, SevereNeeds clear on first start or destruction, offered through the C# API",
+      "authority": "libcozmoEngine.so 3.4.0-1204; app sender authority 2.",
+      "evidence": [
+        "re-analysis/research/20261025-m15-needs-get-out-action.md (row 73), checked by re-analysis/research/20261025-b-m13-29-rows-72-74-claude-check.md.",
+        "Only constructor call 0x0052A872 (0xCC bytes, 0x0052A868) from factory adapters 0x00525EFC (union 20) and 0x00525F10 (G2E 27), registration row 0x01020280.",
+        "ctor 0x00544F88: TriggerAnimationAction(Count 0x23F, loops 1) 0x00544FA2..0x00544FA8, +0xC9 = 0 at 0x00544FAE.",
+        "Init 0x005450AC: selected [[robot+0x264]+0x30]+0x14 (0x005450BA); TBB 0x005450C4 bytes 07 02 05 10: Repair 0x141, Energy 0x135, Play 0x13A, none -> SUCCESS 0.",
+        "CheckIfDone 0x005451C4..0x0054520E: Count -> 0; first start with +0xC9 == 0 -> Clear (0x005451E8), +0xC9 = 1; ended -> 0, failed -> 0x03000001, else 0x01000000. Destructor 0x0054504C..0x0054505E clears when selected != 3 and +0xC9 == 0.",
+        "App senders: unity/scripts/csharp/Robot.cs:1408 (QueueSingleAction union 20); NeedsHub.cs:300-320, NeedsHub_2018.cs:375-395, CubeHelpSevereHelper.cs:15-35, SettingsSDKPanel.cs:75-90."
       ],
       "live_path": true,
       "hardware_required": false
