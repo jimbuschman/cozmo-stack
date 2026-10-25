@@ -152,19 +152,13 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
 
     /// <summary>
     /// <c>[[[robot+0x264]+0x30]+0x14]</c> (0x00605176, 0x00604DDE): the SevereNeedsComponent's single current severe <c>NeedId</c> (Repair 0, Energy 1, Play 2,
-    /// Count 3 = none). Its constructor stores 3 (0x00572A0E) and <c>ClearSevereNeedExpression</c> stores 3 (0x00572D6A); this stack has no component with the
-    /// engine's writers, so with <see cref="BehaviorContext.AiExpressedNeedValue"/> unset the engine's value is exactly 3 here, and the gap is reported once.
-    /// A null from the seam is 3 as well.
+    /// Count 3 = none). Reads the shared mutable owner; a null from the optional override represents3.
     /// </summary>
     private int SevereNeedValue()
     {
         var seam = Context.AiExpressedNeedValue;
-        if (seam is null)
-        {
-            ReportMissing("[[[robot+0x264]+0x30]+0x14] (SevereNeedsComponent's current severe NeedId, 0x00604DDE, 0x00605176): this stack has no SevereNeedsComponent with the engine's writers (SetSevereNeedExpression / ClearSevereNeedExpression), so the value is its constructed 3 (none)");
-            return 3;
-        }
-        return seam() is { } need ? (int)need : 3;
+        var value=seam is {} read?read():(Context.Needs??Context.Robot.Engine.Needs).SevereNeeds.SelectedNeed;
+        return value is {} need?(int)need:3;
     }
 
     protected override void OnStart()

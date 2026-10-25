@@ -450,13 +450,18 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
         }
         else Play();
     }
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        base.OnStop(reason); // retain ActionBehavior's cancellation cleanup
+        ReportMissing("M15-072 ExpressNeeds.StopInternal 0x005EE7D8: own+0x134 writer is UNKNOWN; conditional Clear is not guessed. PlayNeedsGetOutAnimIfNeeded 0x0054504C/0x005451C8 has no stack owner");
+    }
 }
 
 /// <summary>
 /// <c>BehaviorPlayAnimOnNeedsChange</c> (0x005BFDxx; Needs_SevereLow{Energy,Play,Repair}GetIn): a
 /// <c>BehaviorPlayAnimSequence</c> for a <c>need</c>; runnable when the need is Critical and its severe state has
 /// not been expressed (<c>ShouldGetInBePlayed</c>: <c>IsNeedAtBracket(need, Critical)</c>); <c>StopInternal</c>
-/// marks the severe state expressed when the get-in played ("SevereNeedExpressed").
+/// rechecks that predicate and sets the shared severe need on any stop reason.
 /// </summary>
 public sealed class PlayAnimOnNeedsChangeBehavior : SteppedBehavior
 {
@@ -464,22 +469,20 @@ public sealed class PlayAnimOnNeedsChangeBehavior : SteppedBehavior
     public PlayAnimOnNeedsChangeBehavior(NeedsManager needs, string id, NeedId need, IReadOnlyList<AnimationTrigger> triggers) : base(id, "PlayAnimOnNeedsChange") { _needs = needs; Need = need; Triggers = triggers; }
     public NeedId Need { get; }
     public IReadOnlyList<AnimationTrigger> Triggers { get; }
-    private bool _played;
-
-    public bool ShouldGetInBePlayed() => _needs.State.IsNeedAtBracket(Need, NeedBracketId.Critical) && !_needs.IsSevereExpressed(Need);
+    public bool ShouldGetInBePlayed()
+    {bool differs=_needs.SevereNeeds.Selected!=(int)Need;bool critical=_needs.State.IsNeedAtBracket(Need, NeedBracketId.Critical);return differs && critical;}
     protected override bool IsRunnableInternal(BehaviorContext context) => ShouldGetInBePlayed();
 
     protected override void OnStart()
     {
-        _played = false;
         int i = 0;
-        void Next() { if (i >= Triggers.Count) { _played = true; Finish(); return; } PlayTrigger(Triggers[i++], Next); }
+        void Next() { if (i >= Triggers.Count) { Finish(); return; } PlayTrigger(Triggers[i++], Next); }
         Next();
     }
 
     protected override void OnStop(BehaviorStopReason reason)
     {
-        if (_played || reason == BehaviorStopReason.Completed) { _needs.SetSevereExpressed(Need, true); Log($"severe {Need} state expressed"); }
+        if (ShouldGetInBePlayed()) { _needs.SevereNeeds.Set(Need); Log($"severe {Need} state expressed"); }
     }
 }
 

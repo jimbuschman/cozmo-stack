@@ -60,10 +60,8 @@ public sealed class BehaviorContext
     /// <summary>
     /// The one value <c>StrategyExpressNeedsTransition::WantsToRunInternal</c> 0x006136D8 compares its need
     /// against: <c>[[robot+0x264]+0x30]+0x14</c> (<c>ldr.w r0,[r1,#0x264]</c> 0x006136DC; <c>ldr r5,[r0,#0x30]</c>
-    /// 0x006136E2; <c>ldr r2,[r5,#0x14]</c> 0x006136FC). The inventory records the name of that object and of
-    /// its +0x14 field as UNKNOWN, and nothing in this stack supplies that exact value (the per-need
-    /// <c>NeedsManager.IsSevereExpressed</c> set is not it), so it is a seam: null makes
-    /// <c>ExpressNeedsTransition</c> throw <see cref="NotSupportedException"/> rather than answer. MISSING: M8-006.
+    /// 0x006136E2; <c>ldr r2,[r5,#0x14]</c> 0x006136FC). Freeplay binds the shared SevereNeeds selected scalar;
+    /// readers without an override use that same owner from NeedsManager. Null represents Count (3).
     /// </summary>
     // fidelity: M8-006
     public Func<NeedId?>? AiExpressedNeedValue { get; set; }

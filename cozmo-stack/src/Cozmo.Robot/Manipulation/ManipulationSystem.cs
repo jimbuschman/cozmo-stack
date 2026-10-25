@@ -13,6 +13,7 @@ public sealed class ManipulationSystem : IDisposable
     public ManipulationSystem(CozmoRobot robot, VisionSystem vision)
     {
         Robot = robot; Vision = vision;
+        AiExpressedNeedValue=()=>robot.Engine.Needs.SevereNeeds.SelectedNeed;
         Paths = new PathSender(robot);
         Follower = new PathFollower(robot);
         Docking = new DockingSystem(robot, vision);

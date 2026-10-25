@@ -667,7 +667,8 @@ public sealed class NeedsManager
     /// tick, so the transition is visible as soon as the callback returns.
     /// </summary>
     private readonly object _gate = new();
-    private readonly HashSet<NeedId> _severeExpressed = new();
+    // fidelity: M15-072 -- shared with AI+0x30; no per-need expression flags.
+    internal SevereNeedsComponent SevereNeeds { get; }
     private readonly Dictionary<NeedId, NeedBracketId> _prevBrackets = new();
     /// <summary><c>+0x1d5</c>: while set, <c>Update</c> returns at once (0x00695CA4).</summary>
     private bool _paused;
@@ -757,6 +758,7 @@ public sealed class NeedsManager
         Decay = decay ?? new DecayConfig(new Dictionary<NeedId, IReadOnlyList<(double, double)>>(), new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
         Actions = actions ?? new Dictionary<string, NeedsActionDelta>();
         State = new NeedsState(Config);
+        SevereNeeds = new SevereNeedsComponent { IsAtBracket=State.IsNeedAtBracket };
         Random = random ?? new Random();
         State.Warn += m => Log?.Invoke(m);
         State.SourceLog = (level, channel, key, text) => SourceLogDispatch.Write(SourceLog, Log, level, channel, key, text);
@@ -2076,8 +2078,9 @@ public sealed class NeedsManager
         return true;
     }
 
-    public bool IsSevereExpressed(NeedId n) => _severeExpressed.Contains(n);
-    public void SetSevereExpressed(NeedId n, bool expressed) { if (expressed) _severeExpressed.Add(n); else _severeExpressed.Remove(n); }
+    // Retained host API forwards to the one owner; false is Clear, never a per-need removal.
+    public bool IsSevereExpressed(NeedId n) => SevereNeeds.Selected==(int)n;
+    public void SetSevereExpressed(NeedId n, bool expressed) { if (expressed) SevereNeeds.Set(n); else SevereNeeds.Clear(); }
 
     private void DetectBracketChanges(bool force = false, double? nowOverride = null)
     {
@@ -2091,7 +2094,6 @@ public sealed class NeedsManager
                 // J10: the DAS elapsed is now - +0x214, read before the emit (0x006959D6, 0x006959FA).
                 double elapsed = now - _bracketChangedSec[(int)n];
                 Log?.Invoke($"need {n}: {_prevBrackets[n]} -> {b} (level {State.GetNeedLevel(n):F3})");
-                if (b != NeedBracketId.Critical) _severeExpressed.Remove(n);
                 BracketChanged?.Invoke(n, _prevBrackets[n], b, elapsed);
                 // The force path emits for every need and does not update the cached bracket (+0x214);
                 // only the conditional pass writes +0x214 = now (0x00695BA2).

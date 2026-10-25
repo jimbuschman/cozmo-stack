@@ -1284,7 +1284,13 @@ public class FreeplayTests
         RunToEnd(rig, getIn, ctx);
         Assert.True(needs.IsSevereExpressed(NeedId.Energy));
         Assert.False(Runnable(getIn, ctx));                                                   // expressed until the need recovers
-        needs.SetLevel(NeedId.Energy, 0.5); needs.SetLevel(NeedId.Energy, 0);
+        // reach: unit (direct needs/behavior entries). Old: becoming non-Critical cleared the per-need flag immediately.
+        // 0x00572BD0 only clears in the AI phase; until that update Selected remains Energy.
+        needs.SetLevel(NeedId.Energy, 0.5);
+        Assert.True(needs.IsSevereExpressed(NeedId.Energy));
+        var severe=typeof(NeedsManager).GetProperty("SevereNeeds",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.GetValue(needs)!;
+        severe.GetType().GetMethod("Update",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.Invoke(severe,null);
+        needs.SetLevel(NeedId.Energy, 0);
         Assert.True(Runnable(getIn, ctx));
         var sparks = new EarnedSparksBehavior(needs);
         Assert.False(Runnable(sparks, ctx));

@@ -38,6 +38,7 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         : base(id, "DriveOffCharger", m)
     {
         ExtraDistanceMm = extraDistanceToDriveMm;
+        SevereNeedsState=()=>m.Robot.Engine.Needs.SevereNeeds.Selected;
         DriveDistanceMm = ChargerLengthMm + (float)extraDistanceToDriveMm;       // Json::Value::asFloat, then vadd.f32 (0x005C09C0..0x005C09E6)
     }
 
@@ -47,7 +48,7 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
     public double DistanceMm => DriveDistanceMm;
     /// <summary>IBehavior +0x120: set after PushDrivingAnimations (0x005C0B50); tested by StopInternal (0x005C0D90..0x005C0DA4).</summary>
     public int DrivingAnimationsFlag { get; private set; }
-    /// <summary>Seam for the SevereNeeds state (robot+0x264->AI+0x30->component+0x14); writer pending (R-M15-SEVERE-INPUT).</summary>
+    /// <summary>Bound to the shared SevereNeeds selected scalar (robot+0x264->AI+0x30->component+0x14).</summary>
     public Func<int>? SevereNeedsState { get; set; }
     /// <summary>Seam for the robot's AI process input at robot+0x24C PushDrivingAnimations(name, triplet).</summary>
     public Action<string, byte, byte, byte>? PushDrivingAnimations { get; set; }
@@ -78,16 +79,18 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         DrivingAnimationsFlag = 0;                                                  // Init clears behavior+0x120 at 0x005C0B30
         // fidelity: M13-017
         // Init 0x005C0B34..0x005C0B50: robot+0x264 -> AI+0x30 -> component+0x14 compared to 3 (SevereNeeds state, not handler animation state). When equal to 3, call the driving handler at robot+0x24C with the behavior name and the ROM triplet (0x97,0x93,0x8F), then set +0x120. Otherwise skip.
-        if (SevereNeedsState is null)
-            SteppedBehavior.ReportMissing("M13-017 BehaviorDriveOffCharger::InitInternal SevereNeeds state writer (R-M15-SEVERE-INPUT, row 39): robot+0x264->AI+0x30->component+0x14 has no live owner in this stack; the ==3 gate cannot be evaluated, so PushDrivingAnimations is not called");
-        else if (SevereNeedsState() == 3)
+        Context.Robot.Engine.InvokeEngineRequest(()=>
         {
-            if (PushDrivingAnimations is null)
-                SteppedBehavior.ReportMissing("M13-017 BehaviorDriveOffCharger::InitInternal PushDrivingAnimations join (robot+0x24C, 0x005C0B40..0x005C0B4A): no live AI process input owner is bound; triplet (0x97,0x93,0x8F) is not pushed");
-            else
-                PushDrivingAnimations(Id, 0x97, 0x93, 0x8F);
-            DrivingAnimationsFlag = 1;                                              // +0x120 set only after Push at 0x005C0B50
-        }
+            if ((SevereNeedsState?.Invoke()??M.Robot.Engine.Needs.SevereNeeds.Selected) == 3)
+            {
+                if (PushDrivingAnimations is null)
+                    SteppedBehavior.ReportMissing("M13-017 BehaviorDriveOffCharger::InitInternal PushDrivingAnimations join (robot+0x24C, 0x005C0B40..0x005C0B4A): no live AI process input owner is bound; triplet (0x97,0x93,0x8F) is not pushed");
+                else
+                    PushDrivingAnimations(Id, 0x97, 0x93, 0x8F);
+                DrivingAnimationsFlag = 1;                                          // +0x120 set only after Push at 0x005C0B50
+            }
+            return 0;
+        });
         // fidelity: M7-021, M13-017
         // InitInternal 0x005C0B54..0x005C0B8C: robot+0x355 set takes the "WaitForOnTreads" state name (0x005C0B74), else TransitionToDrivingForward.
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads) { SetStateName("WaitForOnTreads"); CurrentPhase = Phase.WaitForOnTreads; }

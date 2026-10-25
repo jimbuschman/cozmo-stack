@@ -958,7 +958,11 @@ public class M8BatchThreeDTests
             hiking.OnDeselected(2);
             Assert.False(stack.AI.Analyzer.IsProcessRunning(1));
         }
-        Assert.Null(rig.Robot.Engine.AIComponentUpdate);
+        // reach: production wake/engine tick after releasing the host Freeplay handle.
+        // Old: AI slot=null and no166 subscriber; no selected Energy. Native owner lives with the robot (M15-072/073).
+        var needs=rig.Robot.Engine.Needs;needs.SetLevel(NeedId.Repair,1);needs.SetLevel(NeedId.Energy,0);
+        rig.Robot.NotifyCozmoWakeup();rig.Robot.Engine.Tick();Assert.True(needs.IsSevereExpressed(NeedId.Energy));
+        needs.SetLevel(NeedId.Energy,1);rig.Robot.Engine.Tick();Assert.False(needs.IsSevereExpressed(NeedId.Energy));
     }
 
     /// <summary>A minimal IActionRunner whose Update records the ActionList tick's position in the engine order.</summary>

@@ -223,15 +223,8 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     {
         if (context.Needs is not { } needs || StrategyNeed is not { } need) return false;
         if (!needs.State.IsNeedAtBracket(need, NeedBracketId.Critical)) return false;
-        // [[robot+0x264]+0x30]+0x14 is the SevereNeedsComponent's current severe NeedId, 3 (none) from its constructor (0x00572A0E); this stack has no component
-        // with the engine's writers, so unset it is 3 and the gap is reported once.
-        NeedId? expressedValue;
-        if (context.AiExpressedNeedValue is { } expressed) expressedValue = expressed();
-        else
-        {
-            SteppedBehavior.ReportMissing("StrategyExpressNeedsTransition [[robot+0x264]+0x30]+0x14 (0x006136DC..0x006136FC): this stack has no SevereNeedsComponent with the engine's writers; the value is its constructed 3 (none)");
-            expressedValue = null;
-        }
+        // 0x006136FC reads the shared mutable scalar, never a per-need expressed set.
+        var expressedValue=context.AiExpressedNeedValue is {} expressed?expressed():(context.Needs??context.Robot.Engine.Needs).SevereNeeds.SelectedNeed;
         return expressedValue != need;
     }
 
@@ -592,7 +585,7 @@ public static class ShippedBehaviors
         {
             b.PushDrivingAnimations = (name, s, l, e) =>
                 m.Robot.Animations.DrivingAnimations.Push(new DrivingAnimations((AnimationTrigger)s, (AnimationTrigger)l, (AnimationTrigger)e), name);
-            b.RemoveDrivingAnimations = name => m.Robot.Animations.DrivingAnimations.Remove(name);
+            b.RemoveDrivingAnimations = name => m.Robot.Engine.InvokeEngineRequest(()=>{m.Robot.Animations.DrivingAnimations.Remove(name);return 0;});
         }
         return list;
     }

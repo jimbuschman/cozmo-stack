@@ -801,8 +801,9 @@ public sealed class ActivityStrategy
                 reason = $"{n} is {b}"; return true;
             case "SevereNeedTransition":
                 if (Need is not { } sn || inputs.Needs is null) { reason = "no needs state"; return false; }
+                // Native activity entry 0x005B4D88 delegates IWantsToRunStrategy; the expression predicate is 0x006136D8.
                 if (!inputs.Needs.State.IsNeedAtBracket(sn, NeedBracketId.Critical)) { reason = $"{sn} not Critical"; return false; }
-                if (inputs.Needs.IsSevereExpressed(sn)) { reason = $"{sn} severe state already expressed"; return false; }
+                if (inputs.Needs.SevereNeeds.Selected==(int)sn) { reason = $"{sn} severe state already expressed"; return false; }
                 reason = $"{sn} just became Critical"; return true;
             case "Pyramid":
                 if (inputs.LocatedCubes < 3) { reason = $"{inputs.LocatedCubes} cube(s) located, a pyramid needs 3"; return false; }

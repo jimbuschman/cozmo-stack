@@ -662,14 +662,14 @@ public class BehaviorFrameworkTests
         expressed = NeedId.Play;                                  // another need being expressed does not stop it
         Assert.True(transition.WantsToRunNow(ctx));
 
-        // the per-need set of the old stack is not the engine's value and no longer decides anything
+        // The explicit unit override still reads Play; the legacy host API updates the shared owner to Energy.
         needs.SetSevereExpressed(NeedId.Energy, true);
         Assert.True(transition.WantsToRunNow(ctx));
 
-        // with nothing to supply that value it is the SevereNeedsComponent's constructed 3 (none, 0x00572A0E), reported once: not the strategy's need, so true
-        // once the Critical test has passed (it reads the value only then); the old throw was the stack refusing, not an engine path
+        // reach: unit (strategy entry and supplied needs; no complete activity lifecycle).
+        // Old: true with an unwired context. M15-072 / 0x006136FC now reads shared Selected=Energy.
         var unwired = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Needs = needs };
-        Assert.True(transition.WantsToRunNow(unwired));
+        Assert.False(transition.WantsToRunNow(unwired));
         needs.SetLevel(NeedId.Energy, 1.0);
         Assert.False(transition.WantsToRunNow(unwired));          // not Critical: false before the value is read
 

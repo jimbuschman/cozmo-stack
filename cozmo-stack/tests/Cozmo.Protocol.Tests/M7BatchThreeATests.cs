@@ -425,13 +425,15 @@ public class M7BatchThreeATests
     }
 
     /// <summary>
-    /// B1: [[[robot+0x264]+0x30]+0x14] is the SevereNeedsComponent's current severe NeedId, 3 (none) from its constructor (0x00572A0E). This stack has no
-    /// component with the engine's writers, so unset the value is 3 and reported once; it must never throw. Value 3 takes the stop reaction (sev >= 2)
+    /// B1: [[[robot+0x264]+0x30]+0x14] is the live SevereNeedsComponent's selected NeedId, initially3 (0x00572A0E).
+    /// Without a context override the same owner is read. Value3 takes the stop reaction (sev >= 2)
     /// and then the else-branch trigger 0x19D.
     /// </summary>
     [Fact]
-    public void WithoutTheSevereNeedSeamTheValueIsThreeAndReported()
+    public void WithoutTheSevereNeedSeamTheLiveOwnerSuppliesThree()
     {
+        // reach: unit (direct cliff Init/Update, actual native severe owner; manager selection not exercised).
+        // Old: one unbound-SevereNeeds MISSING; new: constructed Selected3 is read without that diagnostic.
         using var rig = new Rig();
         var reported = new List<string>();
         void On(string x) => reported.Add(x);
@@ -441,11 +443,13 @@ public class M7BatchThreeATests
         {
             var b = new ReactToCliffBehavior(rig.Robot);
             var ctx = Ctx(rig);                                     // AiExpressedNeedValue unset
-            b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-            for (int t = 0; t < 10; t++) b.Update(ctx, t * 100);
+            using var scope=new BehaviorScope();
+            b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+            try{for (int t = 0; t < 10; t++) b.Update(ctx, t * 100);}
+            finally{b.Stop(BehaviorStopReason.Interrupted);}
             Assert.Contains(b.Trace, l => l.StartsWith("ReactToCliffDetectorStop:"));
             Assert.Contains(b.Trace, l => l.StartsWith("ReactToCliff:"));
-            Assert.Single(reported, r => r.Contains("[[robot+0x264]+0x30]+0x14") && r.Contains("SevereNeedsComponent"));   // once, not per read
+            Assert.DoesNotContain(reported, r => r.Contains("[[robot+0x264]+0x30]+0x14") && r.Contains("SevereNeedsComponent"));
         }
         finally { SteppedBehavior.MissingReported -= On; }
     }
@@ -460,6 +464,7 @@ public class M7BatchThreeATests
     [Fact]
     public void ACliffEventThroughTheFreeplayStackPlaysTheStopReactionThenTheCliffAnimation()
     {
+        // reach: production Freeplay context/event/manager/cliff; old: context severe reader=null.
         var obb = ObbRoot();
         if (obb is null) return;
         using var rig = new Rig();
@@ -467,7 +472,7 @@ public class M7BatchThreeATests
         double clock = 0;
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(5) };
         using var stack = NewStack(rig, obb, ctx, () => clock);
-        Assert.Null(ctx.AiExpressedNeedValue);
+        Assert.NotNull(ctx.AiExpressedNeedValue);Assert.Null(ctx.AiExpressedNeedValue()); // shared Selected3
         stack.Manager.RemoveDisableReactionsLock("sdk");
         var cliff = (ReactToCliffBehavior)stack.Manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.CliffDetected).Behavior;
         rig.Clock.Advance(4000);
@@ -484,19 +489,22 @@ public class M7BatchThreeATests
         Assert.True(stop >= 0 && anim > stop);
     }
 
-    /// <summary>B1: with the seam at 0 and 1 the stop reaction is skipped (sev &lt; 2) and the trigger is 0x13D / 0x131 (the same through the stack's context).</summary>
+    /// <summary>B1: selected0/1 skips the stop reaction (sev &lt; 2) and chooses 0x13D / 0x131 through the live context.</summary>
     [Theory]
     [InlineData(NeedId.Repair, "NeedsSevereLowRepairCliffReact")]
     [InlineData(NeedId.Energy, "NeedsSevereLowEnergyCliffReact")]
     public void ASevereNeedSkipsTheStopReactionAndPicksItsTrigger(NeedId need, string trigger)
     {
+        // reach: production shared scalar Set -> Freeplay event/manager/cliff. No constant scalar seam.
+        // Old: per-need flag does not feed cliff, so ordinary stop/ReactToCliff instead of the severe trigger.
         var obb = ObbRoot();
         if (obb is null) return;
         using var rig = new Rig();
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         double clock = 0;
-        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(5), AiExpressedNeedValue = () => need };
+        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(5) };
         using var stack = NewStack(rig, obb, ctx, () => clock);
+        stack.Needs.SetLevel(need,0);stack.Needs.SetSevereExpressed(need,true);
         stack.Manager.RemoveDisableReactionsLock("sdk");
         var cliff = (ReactToCliffBehavior)stack.Manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.CliffDetected).Behavior;
         rig.Clock.Advance(4000);

@@ -129,6 +129,7 @@ public sealed class FreeplayStack : IDisposable
         // the behaviours report needs actions themselves (IBehavior::NeedActionCompleted 0x005BE40C), so the
         // context carries both the manager and every shipped behaviour's own needsActionID
         ctx.Needs = needs;
+        ctx.AiExpressedNeedValue=()=>needs.SevereNeeds.SelectedNeed;
         // the memory map the face behaviour asks before driving in (MapComponent::GetCurrentMemoryMapHelper)
         if (vision is not null && robot.Engine.Robot is not null) ctx.Map ??= vision.World.Maps.Current; // M13-031: one current-origin map owner
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
@@ -190,7 +191,10 @@ public sealed class FreeplayStack : IDisposable
         // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update from the engine tick
         // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
         // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
-        var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
+        var severe=robot.BindSevereNeedsInputs();
+        robot.Engine.InvokeEngineRequest(()=>{severe.DisableReactions=manager.DisableReactionsWithLock;severe.RemoveReactions=manager.RemoveDisableReactionsLock;return 0;});
+        var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text), severe);
+        ai.BindDestructionRecipient(0x30,()=>{severe.Dispose();ai.NativeTeardown.Destroy(0x30);});
         // fidelity: M11-079, M8-013 — native activity/chooser requests reach this same analyzer.
         void BindAnalyzer(Activity activity)
         {
@@ -216,6 +220,8 @@ public sealed class FreeplayStack : IDisposable
             if(lifetimeRobot is not null&&!ReferenceEquals(native,lifetimeRobot))
             {SteppedBehavior.ReportMissing("M15-027/M15-045 replacement AI/Freeplay owner construction is not built; do not bind a retired host AI/tracker as the new native owner");return;}
             lifetimeRobot=native;
+            severe.DisableReactions=manager.DisableReactionsWithLock;severe.RemoveReactions=manager.RemoveDisableReactionsLock;
+            severe.Subscribe(robot.Engine,native.HasExternalInterface);
             foreach(var guard in guardDogDisconnects)guard.Subscribe(robot.Engine,native.HasExternalInterface);
             if(guardDogDisconnects.Count!=0)SteppedBehavior.ReportMissing("M15-067 GuardDog checked subscriptions bound from factory; native pre-hook/running/action/state-label owner and base teardown join remain absent");
             native.Lifetime.Bind(-2,_=>tracker.ForceUpdate());
@@ -232,9 +238,12 @@ public sealed class FreeplayStack : IDisposable
         Action<string> endRequest = manager.RequestCurrentBehaviorEndImmediately;
         robot.Sensors.RequestCurrentBehaviorEndImmediately = endRequest;
         stack._unsubscribe.Add(() => { if (ReferenceEquals(robot.Sensors.RequestCurrentBehaviorEndImmediately, endRequest)) robot.Sensors.RequestCurrentBehaviorEndImmediately = null; });
-        robot.Engine.AIComponentUpdate = () => ai.Update(robot);
+        var previousAiUpdate=robot.Engine.AIComponentUpdate;
+        Action aiUpdate=()=>ai.Update(robot);robot.Engine.AIComponentUpdate=aiUpdate;
         if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
-        stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);
+        stack._unsubscribe.Add(() => {if(ReferenceEquals(robot.Engine.AIComponentUpdate,aiUpdate))robot.Engine.AIComponentUpdate=previousAiUpdate;});
+        // Releasing a host handle does not destroy the native severe-needs owner or its wake subscription.
+        stack._unsubscribe.Add(()=>robot.Engine.InvokeEngineRequest(()=>{severe.DisableReactions=null;severe.RemoveReactions=null;return 0;}));
         // fidelity: M7-023 — no captured old ActionList unregister on host Dispose; native +250 is already null at mood destruction.
 
         // fidelity: M1-024

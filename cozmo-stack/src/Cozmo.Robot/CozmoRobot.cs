@@ -190,6 +190,36 @@ internal static class EventFan
 /// </summary>
 public sealed partial class CozmoRobot : IDisposable
 {
+    /// <summary>Supplies the app's wake notification (G2E166); never sent automatically.</summary>
+    // fidelity: M15-073
+    public void NotifyCozmoWakeup()=>Engine.PostGameMessage(()=>Engine.AnimationMessages.Deliver(166,false,null));
+    private Behavior.SevereNeedsComponent? _boundSevereNeeds;
+    private bool _severeNeedsConstructed;
+    private Action? _severeNeedsUpdate;
+    // fidelity: M15-072, M15-073 -- the native owner exists even without the host Freeplay handle.
+    internal Behavior.SevereNeedsComponent BindSevereNeedsInputs(bool subscribe=true)
+        =>Engine.InvokeEngineRequest(()=>BindSevereNeedsInputsCore(subscribe));
+    private Behavior.SevereNeedsComponent BindSevereNeedsInputsCore(bool subscribe)
+    {
+        var severe=Engine.Needs.SevereNeeds;
+        if(!ReferenceEquals(_boundSevereNeeds,severe)){_boundSevereNeeds?.Dispose();_boundSevereNeeds=severe;}
+        severe.Engine=Engine;severe.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
+        severe.PushDriving=(start,loop,end,name)=>Animations.DrivingAnimations.Push(new(start,loop,end),name);
+        severe.RemoveDriving=Animations.DrivingAnimations.Remove;
+        severe.PushIdle=Animations.Scheduler.PushIdleAnimation;
+        severe.RemoveIdle=name=>Animations.Scheduler.RemoveIdleAnimation(name,Engine.Timer.TimeStampMs);
+        if(subscribe&&Engine.Robot is {} native)severe.Subscribe(Engine,native.HasExternalInterface);
+        return severe;
+    }
+    private void BindNativeSevereNeeds(EngineRobot native)
+    {
+        var severe=BindSevereNeedsInputs(false);severe.ResetForConstruction();
+        severe.DisableReactions=null;severe.RemoveReactions=null; // old native manager is gone
+        severe.Subscribe(Engine,native.HasExternalInterface);
+        if(_severeNeedsConstructed||Engine.AIComponentUpdate is null)Engine.AIComponentUpdate=_severeNeedsUpdate;
+        _severeNeedsConstructed=true;
+        native.Lifetime.Bind(0x264,address=>{severe.Dispose();native.Lifetime.Missing(address,0x264);}); // other AI children remain their existing gap
+    }
     public ReliableTransport Transport { get; }
     public CozmoCamera Camera { get; } = new();
     /// <summary>The camera's exposure, gain and colour settings, and the connection-time calibration read (M3-019..M3-023).</summary>
@@ -405,6 +435,10 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.BlockFilterFactory = () => Cubes.Connections; // M10-014: the existing live filter state, not a parallel pool.
         Engine.RequestInitialBlockPool=Cubes.Connections.GetBlockPool;
         Engine.BindNeedsRobotServices();
+        _severeNeedsUpdate=()=>Engine.Needs.SevereNeeds.Update();
+        Engine.AIComponentUpdate=_severeNeedsUpdate;
+        Engine.BindRobotLifetime+=BindNativeSevereNeeds;
+        if(Engine.Robot is {} severeOwner)BindNativeSevereNeeds(severeOwner);
         // fidelity: M7-017 — the streamer reads the engine-owned component even without a Freeplay handle.
         Animations.Scheduler.DesiredFaceDistortion=()=>Engine.Needs.GetCurrentDesiredDistortion();
         // fidelity: M1-042
