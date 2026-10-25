@@ -57,7 +57,7 @@ public sealed class M13LegacyMapSyncTests
     public void LegacyRegionsOfEveryTypeLeaveTheNativeRayAnswerUnchanged()
     {
         // reach: unit (deliberate legacy-only inputs, not produced in production; real native ray).
-        // Old: selected types 6/7/10 turn the clear ray true. Native wrapper 0x006817A4 only queries the tree.
+        // Old: selected types 6/7/10 turn the clear ray true. Native wrapper M11-046, 0x0068176E..0x006817A4, only queries the tree.
         foreach(var type in Enum.GetValues<MemoryMapContentType>())
         {
             var map=new MemoryMap();var quad=new[]{new Vec2(30,-1),new Vec2(30,1),new Vec2(40,1),new Vec2(40,-1)};
@@ -99,4 +99,32 @@ public sealed class M13LegacyMapSyncTests
         }
         finally{SteppedBehavior.MissingReported-=Log;}
     }
+    [Theory] [InlineData(true)] [InlineData(false)]
+    public void RejectedMarkerlessRouteNamesTheUnknownTypeSevenProducer(bool adding)
+    {
+        // reach: unit (direct family mapper; no confirmed native type-7 producer/event join, UNKNOWN in row 67).
+        // Old: Unknown return, but zero ObstacleUnrecognized producer diagnostics. Return remains native Unknown.
+        var logs=new List<string>();
+        void Log(string message)=>logs.Add(message);
+        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Log;
+        try
+        {
+            Assert.Equal(MemoryMapContentType.Unknown,MemoryMapTypes.ContentTypeForFamily(ObjectFamily.MarkerlessObject,adding));
+            Assert.Contains(logs,s=>s.Contains("ObstacleUnrecognized (type 7) producer UNKNOWN")&&s.Contains("0x0067F542")&&s.Contains("PARTIAL"));
+        }
+        finally{SteppedBehavior.MissingReported-=Log;}
+    }
+
+    [Fact]
+    public void ExploredAreaMissingNamesTheExploredGetterRatherThanTheRootTimestamp()
+    {
+        // reach: unit (direct cached-area API, diagnostic observer; explored-area accumulation remains MISSING).
+        // Old: NaN with the misleading label "explored-area helper+0x38". +0x38 is a u32 root-content timestamp.
+        // Checked row 70: M11-045 getter 0x006816E8 reads f64 MemoryMap+0x40, vtable virtual +0x1C.
+        var logs=new List<string>();var map=new MemoryMap{Missing=logs.Add};
+        Assert.True(double.IsNaN(map.ExploredRegionAreaM2));
+        Assert.Contains(logs,s=>s.Contains("explored-area virtual +0x1C")&&s.Contains("0x006816E8")&&s.Contains("MemoryMap+0x40"));
+        Assert.DoesNotContain(logs,s=>s.Contains("helper+0x38"));
+    }
+
 }

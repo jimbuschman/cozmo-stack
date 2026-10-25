@@ -37,14 +37,20 @@ public static class MemoryMapTypes
     /// "ContentType MarkerlessObject addition is not supported" (0x0067F4EC). So the collision obstacle an
     /// unexpected movement leaves behind is in the world model but never in the memory map.
     /// </summary>
-    public static MemoryMapContentType ContentTypeForFamily(ObjectFamily family, bool adding) => family switch
+    public static MemoryMapContentType ContentTypeForFamily(ObjectFamily family, bool adding)
     {
-        ObjectFamily.Block or ObjectFamily.LightCube or ObjectFamily.CustomObject =>
-            adding ? MemoryMapContentType.ObstacleObservable : MemoryMapContentType.ClearOfObstacle,
-        ObjectFamily.Charger =>
-            adding ? MemoryMapContentType.ObstacleCharger : MemoryMapContentType.ObstacleChargerRemoved,
-        _ => MemoryMapContentType.Unknown,
-    };
+        // Row 67: this suspected route is negatively bound, not a recovered type-7 writer.
+        if (family == ObjectFamily.MarkerlessObject)
+            Behavior.SteppedBehavior.ReportMissing("M11-074 ObstacleUnrecognized (type 7) producer UNKNOWN: row 67 whole-binary producer census remains PARTIAL; family-6 mapper 0x0067F500/0x0067F542 returns Unknown and AddObservableObject 0x0067ED16 skips insertion");
+        return family switch
+        {
+            ObjectFamily.Block or ObjectFamily.LightCube or ObjectFamily.CustomObject =>
+                adding ? MemoryMapContentType.ObstacleObservable : MemoryMapContentType.ClearOfObstacle,
+            ObjectFamily.Charger =>
+                adding ? MemoryMapContentType.ObstacleCharger : MemoryMapContentType.ObstacleChargerRemoved,
+            _ => MemoryMapContentType.Unknown,
+        };
+    }
 
     /// <summary>
     /// The type mask <c>BehaviorInteractWithFaces::CanDriveIdealDistanceForward</c> hands the map, the
@@ -98,7 +104,7 @@ public sealed partial class MemoryMap
     internal Action<string>? Missing { get => Tree.Missing; set => Tree.Missing = value; }
     public double ExploredRegionAreaM2
     {
-        get { Missing?.Invoke("MISSING: M11-045 explored-area helper+0x38: tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
+        get { Missing?.Invoke("MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
     }
     internal uint LastObservedTime => Tree.Root.Content.Data.Last;
     // fidelity: M11-075, M11-046
