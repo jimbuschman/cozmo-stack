@@ -5,7 +5,7 @@
   (`research/20261024-b-m13-27-claude-check.md`, Q1 and Q4). None of these content types reaches the native tree today, so
   the ray checks (CanDriveIdealDistanceForward, the face behaviour's drive-in check) never see them:
   - type 6 ObstacleProx: the markerless prox payload and writer, 0x00622646..0x006226E6 (M13-030; MISSING at
-    `cozmo-stack/src/Cozmo.Robot/World/BlockWorld.cs:1243`);
+    `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs:1263`);
   - type 7 ObstacleUnrecognized: no producer is bound at all;
   - type 10 not-interesting quads: FlagQuadAsNotInterestingEdges, 0x0067E6B0/0x0067E71C (MISSING through
     `Behavior/VisitInterestingEdgeBehavior.cs:22`). The overhead border writer, type 10 through FillBorder, is already
