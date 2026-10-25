@@ -324,3 +324,4 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 68 | [R-M11-LAST-IMAGE-TS](../research/requests/20261025-m11-last-image-timestamp.md) | answered 602f0ea3; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); border stamp is result N-1 (pre-tail); FakeImageProcessed callers UNKNOWN |
 | 69 | [R-M11-REJIGGER](../research/requests/20261025-m11-rejigger.md) | answered 68972eae; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); feeds B-M11-20 reachability |
 | 70 | [R-M11-EXPLORED-AREA](../research/requests/20261025-m11-explored-area.md) | answered e85666d5; Claude check PASS (research/20261025-r-m11-rows-68-70-claude-check.md); only reader found is DAS robot.play_area_size; no no-effect claim |
+| 71 | [R-M11-FAKE-IMAGE-PROCESSED](../research/requests/20261025-m11-fake-image-processed.md) | open |
