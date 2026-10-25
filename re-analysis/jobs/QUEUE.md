@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work (manager, 2026-10-25): B-M13-28a, B-M11-19, B-M11-20 done (checks PASS); B-M11-21 done (check PASS). B-M15-12 open (released 2026-10-25).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work (manager, 2026-10-25): B-M13-28a, B-M11-19, B-M11-20 done (checks PASS); B-M11-21 done (check PASS). B-M15-12 done (check PASS). Builder lane has no open current-layer job.** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -200,7 +200,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w4e | [B-M11-19](B-M11-19.md) | DONE 662de509 (full suite 95e9063f); Claude check PASS (research/20261025-b-m11-19-20-row-71-claude-check.md) |
 | 61w4f | [B-M11-20](B-M11-20.md) | DONE 4199b9a4 (full suite 842c8c86); Claude check PASS (research/20261025-b-m11-19-20-row-71-claude-check.md) |
 | 61w4g | [B-M11-21](B-M11-21.md) | DONE 04417900 (full suite 263f522f); Claude check PASS (research/20261025-b-m11-21-claude-check.md) |
-| 61w4h | [B-M15-12](B-M15-12.md) | open — the live SevereNeedsComponent (M15-072) and the NotifyCozmoWakeup input (M15-073); unblocks the drive-off severe-needs gate (M13-017) |
+| 61w4h | [B-M15-12](B-M15-12.md) | DONE 6cd86f8a..5fe5401b (full suite 6217/6217); Claude check PASS (research/20261025-b-m15-12-claude-check.md); Q1 reaction lock outside Freeplay queued |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
