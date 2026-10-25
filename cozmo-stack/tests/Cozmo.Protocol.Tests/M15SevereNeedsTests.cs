@@ -132,6 +132,21 @@ public sealed class M15SevereNeedsTests
     }
 
     [Fact]
+    public void ExpressNeedsRequiredStateComparesTheSelectedNeedRatherThanItsBracket()
+    {
+        // reach: unit (direct runnable predicate; supplied needs, real shared scalar and a valid context).
+        // Old: true when Energy is Critical even with Repair selected. RB2 0x005BD7E6..F6 requires Selected=Energy.
+        using var rig=new M4ControlTests.Rig();var needs=new NeedsManager(()=>0);using var owner=Owner(needs) as IDisposable;
+        needs.SetLevel(NeedId.Repair,0);needs.SetLevel(NeedId.Energy,0);needs.SetSevereExpressed(NeedId.Repair,true);
+        var b=new ExpressNeedsBehavior(needs,"expression",NeedId.Energy,NeedBracketId.Critical,
+            Array.Empty<AnimationTrigger>(),new Graph2d(Array.Empty<(double,double)>()),requiredSevereState:NeedId.Energy);
+        var predicate=typeof(ExpressNeedsBehavior).GetMethod("IsRunnableInternal",BindingFlags.NonPublic|BindingFlags.Instance)!;
+        var ctx=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap(),Needs=needs};
+        Assert.False((bool)predicate.Invoke(b,new object[]{ctx})!);
+        needs.SetSevereExpressed(NeedId.Energy,true);Assert.True((bool)predicate.Invoke(b,new object[]{ctx})!);
+    }
+
+    [Fact]
     public void AiClearsOnlyTheSelectedNeedBeforeTheNextBehaviorInit()
     {
         // reach: production engine AI phase after real NeedsState changes, then behavior Init using live scalar.

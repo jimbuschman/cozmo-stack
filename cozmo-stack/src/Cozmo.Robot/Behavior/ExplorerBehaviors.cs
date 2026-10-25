@@ -429,7 +429,8 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
         if (!_needs.State.IsNeedAtBracket(Need, Bracket)) return false;
-        if (RequiredSevereState is { } s && !_needs.State.IsNeedAtBracket(s, NeedBracketId.Critical)) return false;
+        // Common required-severe gate, RB2 0x005BD7E6..0x005BD7F6: compare Selected, not that need's bracket.
+        if (RequiredSevereState is { } s && _needs.SevereNeeds.Selected!=(int)s) return false;
         return _lastRunSec is not { } last || Clock() / 1000.0 - last >= CooldownSec;
     }
 
