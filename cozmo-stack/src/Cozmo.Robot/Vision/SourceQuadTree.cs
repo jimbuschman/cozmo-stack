@@ -359,6 +359,7 @@ internal sealed class SourceQuadNode(float x, float y, float z, float side, byte
 // fidelity: M11-045, M13-030
 internal sealed class SourceQuadTree
 {
+    private static readonly object MergeGate=new(); // serializes two-tree lock acquisition; normal writers take one geometry gate
     private readonly object _geometryGate = new();
     internal bool HasContentType(MemoryMapContentType type)
     {
@@ -592,6 +593,54 @@ internal sealed class SourceQuadTree
             string.Format(CultureInfo.InvariantCulture,"Quad caused expansion, but expansion was not enough PolyCenter({0:F2}, {1:F2}), Root({2:F2},{3:F2}) with sideLen({4:F2}).",centroid.X,centroid.Y,Root.X,Root.Y,Root.Side));
         Dirty = true;
     }
+
+    // 0x00685504..0x00685720. Pose2d, raw 3D budget, DFS leaves, then the normal Insert owner.
+    internal void Merge(SourceQuadTree source,Pose3d transform)
+    {
+        LogCallbackDeferral.RunGated(MergeGate,()=>
+            LogCallbackDeferral.RunGated(source._geometryGate,()=>
+                LogCallbackDeferral.RunGated(_geometryGate,()=>MergeCore(source,transform))));
+    }
+    private void MergeCore(SourceQuadTree source,Pose3d transform)
+    {
+        var planar=new Pose2d(transform);
+        var leaves=new List<SourceQuadNode>();
+        void Collect(SourceQuadNode node)
+        {
+            if(node.Children.Count==0){leaves.Add(node);return;}
+            foreach(var child in node.Children)Collect(child!);
+        }
+        Collect(source.Root);
+        var centre=transform.Apply(new Vec3(source.Root.X,source.Root.Y,source.Root.Z));
+        float x=(float)centre.X-Root.X,y=(float)centre.Y-Root.Y,z=(float)centre.Z-Root.Z;
+        float squared=x*x;squared+=y*y;squared+=z*z;
+        float distance=MathF.Sqrt(squared); // native vsqrt, with sqrtf retry only for NaN; same host sqrt result
+        if(float.IsNaN(distance))distance=MathF.Sqrt(squared);
+        float ceiling=MathF.Ceiling(distance/BitConverter.UInt32BitsToSingle(0x44A00000));
+        int budget=Animation.AnimationScheduler.VcvtS32(ceiling); // existing ARM conversion owner
+        foreach(var leaf in leaves)
+        {
+            if(leaf.Content.Data.Type==MemoryMapContentType.Unknown)continue;
+            float h=leaf.Side*.5f+0f;
+            Point2f[] corners=[new(leaf.X+h,leaf.Y+h),new(leaf.X-h,leaf.Y+h),new(leaf.X+h,leaf.Y-h),new(leaf.X-h,leaf.Y-h)];
+            foreach(int i in new[]{0,2,1,3})corners[i]=planar.Transform.Apply(corners[i]);
+            // Use the checked strict __sort4 owner. PolygonF's general OrderBy import is not the tie owner.
+            var quad=ObjectFootprint.SortQuadrilateral(corners);
+            var polygon=new[]{quad[0],quad[1],quad[3],quad[2]}.Select(p=>new Vec2(p.X,p.Y)).ToArray();
+            Insert(polygon,leaf.Content.Data,budget); // cloning/override/stamp refresh remain in normal insertion
+        }
+    }
+}
+
+// fidelity: M13-032, M11-045
+public sealed partial class MemoryMap
+{
+    internal void Merge(MemoryMap? source,Pose3d transform)
+    {
+        if(source is null)
+        {StackDiagnostics.Write("M1-034 M13-032 skip null source map merge invalid read at 0x00688254; destination retained");return;}
+        Tree.Merge(source.Tree,transform);
+    }
 }
 
 // fidelity: M13-032, M13-031
@@ -604,6 +653,7 @@ internal sealed partial class SourceMapComponent
     internal float BroadcastDeadline; // +0x40, raw f32
     internal SourceLogSink? SourceLog;
     internal Action<string>? Missing;
+    internal Func<uint,Pose3d?>? OriginPose;
     internal MemoryMap? Current => Maps.GetValueOrDefault(CurrentOrigin); // null only while the host defers reconstruction/teardown.
     internal void CreateLocalizedMemoryMap(uint origin, Func<uint,bool> zombie)
     {
@@ -619,6 +669,7 @@ internal sealed partial class SourceMapComponent
     }
     internal void UpdateMapOrigins(uint old, uint next, Action updateObjects)
     {
+        var oldOrigin=OriginPose?.Invoke(old);var newOrigin=OriginPose?.Invoke(next);
         updateObjects();
         Maps.TryGetValue(old,out var oldMap);
         if (!Maps.ContainsKey(old)) Maps[old] = null!; // native operator[]
@@ -626,9 +677,17 @@ internal sealed partial class SourceMapComponent
         {
             SourceLog?.Invoke(EngineLogLevel.Error,null,"MapComponent.UpdateObjectOrigins.NullMapFound",$"Origin '{PoseOriginNames.NameOf(next)}' did not have a memory map. Creating empty");
             EngineErrorState.StoreAndMaybeBreak();
-            Maps[next] = new MemoryMap { SourceLog = SourceLog, Missing = Missing };
+            newMap = new MemoryMap { SourceLog = SourceLog, Missing = Missing };Maps[next]=newMap;
         }
-        Missing?.Invoke("MISSING: M11-048 MemoryMap merge vt+0xC 0x0067DF80 (including null old-map handling); merge not guessed");
+        using var transform=new Pose3d();
+        if(oldMap is null)newMap.Merge(null,transform); // policy skip never consumes the transform
+        else if(oldOrigin is null || newOrigin is null)
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-032 UpdateMapOrigins origin-pose input 0x0067DE52/0x0067DE64 is unbound; merge skipped");
+        else
+        {
+            _=oldOrigin.TryWithRespectTo(newOrigin,transform); // 0x0067DF72: Boolean deliberately not tested
+            newMap.Merge(oldMap,transform);
+        }
         CurrentOrigin = next; Maps.Remove(old);
     }
 }

@@ -825,6 +825,7 @@ public sealed partial class BlockWorld
     // Robot::GetPose returns the main pose even when its diagnostic verifies fail.
     private void BindMapInputs()
     {
+        Maps.OriginPose=GetNativeOrigin; // UpdateMapOrigins uses the existing origin-list owner, not public-pose subtraction.
         Maps.RobotPose=()=>CurrentRobotPose?.Invoke();
         Maps.ImageTimestamp=()=>
         {

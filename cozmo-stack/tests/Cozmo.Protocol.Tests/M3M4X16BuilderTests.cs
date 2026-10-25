@@ -170,7 +170,11 @@ public sealed class M3M4X16BuilderTests : IDisposable
     [Fact]
     public void MapLifecyclePrintsArgumentOriginAndKeepsCurrentHelperNonNull()
     {
-        var m = new SourceMapComponent();Assert.Equal(0u,m.CurrentOrigin);Assert.Empty(m.Maps);
+        // reach: unit (supplied origin poses; live Rejigger join MISSING at 0x0051590C).
+        // Old: merge MISSING after creating destination. Checked origins now allow the real empty-source merge.
+        using var m = new SourceMapComponent();Assert.Equal(0u,m.CurrentOrigin);Assert.Empty(m.Maps);
+        using var root=new Pose3d("root");using var oldOrigin=new Pose3d("old",root);using var nextOrigin=new Pose3d("next",root);
+        m.OriginPose=id=>id==3?oldOrigin:nextOrigin;
         var log = new List<(EngineLogLevel,string,string)>(); m.SourceLog=(l,c,k,s)=>log.Add((l,k,s));
         var missing = new List<string>();m.Missing=missing.Add;
         m.CreateLocalizedMemoryMap(1,_=>false);Assert.Empty(log);Assert.NotNull(m.Current);
@@ -181,7 +185,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         log.Clear();bool objects=false;m.UpdateMapOrigins(3,4,()=>objects=true);
         Assert.True(objects);Assert.Equal("MapComponent.UpdateObjectOrigins.NullMapFound",Assert.Single(log).Item2);
         Assert.True(EngineErrorState.ErrorFlagSet);Assert.Equal(4u,m.CurrentOrigin);Assert.False(m.Maps.ContainsKey(3));Assert.NotNull(m.Current);
-        Assert.Contains(missing,s=>s.Contains("M11-048"));
+        Assert.Empty(missing);
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
