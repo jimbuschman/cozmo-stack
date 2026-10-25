@@ -130,6 +130,33 @@
 | 61w3s7 | B-M5-31 | done8b9bc2d1; Codex bounded review PASS (research/20261020-b-m5-31-check.md);24..31 rev... | DONE (3/3 items; 0 MISSING) | `research/20261020-b-m5-31-check.md` |
 | 61w3s8 | B-M5-32 | DONE; baseline published with B-M5-33 in c984cc1f; initial review FAIL F1/F2, both clos... | DONE (4/4 items; 0 MISSING) | `research/20261020-b-m5-32-check.md` |
 | 61w3s9 | B-M5-33 | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-... | DONE (2/2 corrections; 0 MISSING) | `research/20261020-b-m5-33-check.md` |
+| 61w3t | B-M13-9 | DONE 0138af17 + 3f54bccc; independent bounded PASS research/20261021-b-m13-9-check.md, ... | DONE (1/1 contact-observation join; 3 shared-owner MISSING groups) | `research/20261021-b-m13-9-b-m10-2-claude-check.md`, `research/20261021-b-m13-9-check.md` |
+| 61w3u | B-M11-18 | HELD — proposed M11-098 core inventory addition/approval; bounded source review ready, ... | no status file | none found |
+| 61w3v | B-M10-2 | DONE e332207b; bounded PASS research/20261021-b-m10-2-check.md; builder reports focused... | DONE (6/6 items; 0 MISSING) | `research/20261021-b-m10-2-check.md`, `research/20261021-b-m13-9-b-m10-2-claude-check.md` |
+| 61w3w | B-M13-10 | DONE 7f42b427; Codex review PASS (Claude spot-check pending), focused53/full6019, no re... | DONE (8/8 items; 0 new MISSING) | `research/20261021-b-m13-10-check.md`, `research/20261022-b-m13-10-b-m13-11-claude-check.md` |
+| 61w3x | B-M13-11 | DONE6a8d507f; focused73/full6036 PASS; Codex review, Claude spot-check pending; Claude ... | DONE (4/4 items; 0 MISSING inside released scope) | `research/20261021-b-m13-11-check.md`, `research/20261022-b-m13-10-b-m13-11-claude-check.md` |
+| 61w3y | B-M13-12 | DONE 7a8f79b5; Claude spot-check PASS research/20261022-b-m13-12-claude-check.md, fix q... | # B-M13-12 status — DONE | `research/20261022-b-m13-12-claude-check.md` |
+| 61w3z | B-M13-13 | DONE d67b73bd; Claude spot-check: code PASS, tests missing (research/20261022-b-m13-13-... | # B-M13-13 status - DONE | `research/20261022-b-m13-13-claude-check.md` |
+| 61w40 | B-M13-14 | DONE; focused tests pass | # B-M13-14 status - DONE | none found |
+| 61w41 | B-M13-15 | DONE 7c45c2c9 (status 83ee04e0); full 6060/6060; Claude check PASS (research/20261023-b... | DONE (6/6 items; 2 MISSING) | `research/20261023-b-m13-15-claude-check.md` |
+| 61w41a | B-M13-18 | DONE 8f562461..76ccce0d; full 6065/6065 here; Claude check PASS (research/20261023-b-m1... | BLOCKED (b: full suite after cleanup correction still fails M3M4ReviewFixTests.CameraFrameMismatchDropsWithNativeOriginMismatchLog) | `research/20261023-b-m13-18-claude-check.md` |
+| 61w42 | B-M13-16 | DONE ec46eceb (status b5371ef0); full 6078/6078; 6 MISSING; Claude check PASS (research... | DONE (7/7 items; 6 MISSING) | `research/20261023-b-m13-16-claude-check.md` |
+| 61w43 | B-M13-17 | DONE f6f370bc (status 1b135e7f); full 6084; 3 MISSING; Claude check PASS (research/2026... | DONE (2/2 items; 3 MISSING) | `research/20261023-b-m13-17-claude-check.md` |
+| 61w44 | B-M13-19 | DONE 07de2898 + fix-up 6343ddf5 (status d71d4338); full 6099/6099; Claude check PASS (r... | DONE (7/7 items; 5 MISSING) | `research/20261023-b-m13-19-claude-check.md` |
+| 61w45 | B-M13-20 | DONE 96805ef3 + fix-up d0c1c2b7; Claude check PASS after fix-up (research/20261023-b-m1... | DONE (7/7 items; 2 MISSING) | `research/20261023-b-m13-20-21-22-claude-check.md` |
+| 61w46 | B-M13-21 | DONE 46a971ba; Claude check PASS (same file) | DONE (7/9 items; 6 MISSING) | none found |
+| 61w47 | B-M13-22 | DONE f65b3960 + c11385a2 + fix-up 934fcb7a, merged 9138555c; full 6133; Claude check PA... | DONE (5/5 items; 2 MISSING) | none found |
+| 61w48 | B-M13-23 | DONE 0fc1fba1; Claude check PASS (research/20261024-b-m13-23-24-claude-check.md) | DONE (5/5 items; 2 MISSING) | `research/20261024-b-m13-23-24-claude-check.md` |
+| 61w49 | B-M13-24 | DONE 33e868fe; Claude check PASS (same file) | DONE (4/4 items; 1 MISSING) | none found |
+| 61w4a | B-M13-25 | DONE c0930bd7, merged with B-M13-26 from B-M13-25-wip; Claude check PASS after fix-up 2... | BLOCKED (b: full suite failed: 56 failed, 6096 passed, 0 skipped) | `research/20261024-b-m13-25-26-claude-check.md` |
+| 61w4b | B-M13-26 | DONE 93aadeb1 + 88297922 + fix-up 2 9f16e298 (f486b673); full 6155; Claude check PASS (... | DONE (4/4 items; 0 MISSING) | none found |
+| 61w4c | B-M13-27 | DONE 91e0b5e9, merged d73714fc; full-suite failure was the test-setup race fixed in 758... | BLOCKED (b: full suite failed M3M4ReviewFixTests.CameraHandoffReachesObjectObservedAndItsHostLightCommandDoesNotHoldFrameGate) | `research/20261024-b-m13-27-claude-check.md` |
+| 61w4d | B-M13-28 | DONE f73271da (full suite 3d164d99); Claude check FAIL (CORE-007 passes on footprint ce... | DONE (4/4 items; 3 MISSING) | `research/20261025-b-m13-28-claude-check.md` |
+| 61w4d1 | B-M13-28a | DONE ee9d27f9 (full suite 50a5f8fe); Claude check PASS (research/20261025-b-m13-28a-cla... | DONE (3/3 items; 2 MISSING) | `research/20261025-b-m13-28a-claude-check.md` |
+| 61w4e | B-M11-19 | DONE 662de509 (full suite 95e9063f); Claude check PASS (research/20261025-b-m11-19-20-r... | DONE (5/5 items; 0 MISSING) | `research/20261025-b-m11-19-20-row-71-claude-check.md` |
+| 61w4f | B-M11-20 | DONE 4199b9a4 (full suite 842c8c86); Claude check PASS (research/20261025-b-m11-19-20-r... | DONE (4/4 items; 2 MISSING) | none found |
+| 61w4g | B-M11-21 | DONE 04417900 (full suite 263f522f); Claude check PASS (research/20261025-b-m11-21-clau... | DONE (5/5 items; 1 MISSING) | `research/20261025-b-m11-21-claude-check.md` |
+| 61w4h | B-M15-12 | open — the live SevereNeedsComponent (M15-072) and the NotifyCozmoWakeup input (M15-073... | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

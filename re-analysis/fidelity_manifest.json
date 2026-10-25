@@ -264,7 +264,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-18",
+        "approved": "2026-10-25",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -13957,6 +13957,47 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M13ContactChargerTests (received RobotState/real world recipients; isolated actionable-cache fixture explicitly labelled)"
+    },
+    {
+      "id": "M15-072",
+      "subsystem": "M15-freeplay",
+      "title": "SevereNeedsComponent live selected need (AI+0x30, +0x14): Set/Clear side effects and order, AI-phase Update clear, and its native callers",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.",
+        "ctor stores 3 to +0x14 at 0x00572A0E; AIComponent::Update 0x00569F24..0x00569F4C calls AIInformationAnalyzer, AIWhiteboard, SevereNeedsComponent::Update (0x00569F38), BehaviorHelperComponent, FreeplayDataTracker in that order.",
+        "Update 0x00572BD0..0x00572C3E: selected == 3 returns; else IsNeedAtBracket(selected, Critical 3) (0x00572BEA); false logs and calls Clear (0x00572C38).",
+        "Clear 0x00572C8C..0x00572D6E: RemoveDrivingAnimations (robot+0x24C, 0x00572CF6), AnimationStreamer::RemoveIdleAnimation (robot+0x60, 0x00572D26), BehaviorManager::RemoveDisableReactionsLock (0x00572D56), each with 'severe_need_component_lock' (0x00BEE67C, 26 bytes); then +0x14 = 3 (0x00572D6A).",
+        "Set 0x00572E48..0x005731C0: idle map from 0x00C596C4 (Energy 1 -> 0x137, Repair 0 -> 0x143); driving triplets Energy 1 -> 0x134/0x133/0x132 (0x0105A9F8), Repair 0 -> 0x140/0x13F/0x13E (0x0105AA08); PushDrivingAnimations 0x005730E2, PushIdleAnimation 0x00573152, DisableReactionsWithLock(lock, table, true) 0x005731A0 with the table from map 0x0105A9D8 (init 0x004D71B4; pairs at 0x010237A0: Energy and Repair -> 0x00C59670, Play -> 0x00C5969A all false); then +0x14 = need (0x005731B4).",
+        "Callers: wake handler 0x00572E00..0x00572E42 (Repair Critical -> Set 0, else Energy Critical -> Set 1, else nothing); BehaviorPlayAnimOnNeedsChange ShouldGetInBePlayed 0x005BFECA..0x005BFEF6 and StopInternal 0x005BFEF8..0x005BFF16 (Set(config need) when it differs from the selected need and is Critical, regardless of stop reason); BehaviorExpressNeeds::StopInternal 0x005EE7D8..0x005EE7E8 (Clear when own+0x134); PlayNeedsGetOutAnimIfNeeded destructor 0x0054504C..0x0054505E and CheckIfDone 0x005451C8..0x005451EE (Clear under the own+0xC9/+0x88/trigger 0x23F guards)."
+      ],
+      "effect": "Driving and idle animations pushed while a need is severe, the reactions it disables, and the value drive-off, ExpressNeedsTransition, the IBehavior required-severe-need gate and the cliff reaction read.",
+      "provenance": "Free-model research row 39 (2026-10-21), checked instruction by instruction by Opus (2026-10-25), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: to build (B-M15-12). The stack keeps a per-need HashSet (Needs.cs _severeExpressed) and no selected-need scalar; AIComponent.Update omits the SevereNeeds phase. UNKNOWN (stays visible MISSING when built): BehaviorExpressNeeds own+0x134 writer; the PlayNeedsGetOutAnimIfNeeded action is not built in the stack; exhaustive indirect-caller census; a shipped witness that selects Play 2 through PlayAnimOnNeedsChange. The wakeup input is M15-073.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-073",
+      "subsystem": "M15-freeplay",
+      "title": "App input: NotifyCozmoWakeup (G2E 166) to the SevereNeedsComponent wake handler",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; app sender authority 2.",
+      "evidence": [
+        "re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.",
+        "SevereNeedsComponent::Init 0x00572A64..0x00572A86 subscribes only when HasExternalInterface(); helper 0x00572B10..0x00572B96 registers G2E 0xA6 (166); the callback 0x005734F2..0x00573504 forwards to the wake handler 0x00572E00.",
+        "App sender: unity/scripts/csharp/ConnectionFlowController.cs WakeupSequence 600..611 (wake animation, then NotifyCozmoWakeup); Cozmo.Hub/NeedsHub.cs:95."
+      ],
+      "effect": "Whether a need that is Critical at wakeup starts its severe expression (driving/idle animations and reaction locks).",
+      "provenance": "Manager record (2026-10-25) under the 2026-10-09 app-boundary scope rule.",
+      "unresolved": "IMPLEMENTATION_GAP until built (B-M15-12), then COMPATIBILITY_POLICY: the input the app supplied is supplied by the host through a C# API call that delivers G2E 166 through the same subscription the engine uses; the stack does not send it by itself (manager, 2026-10-25). Whether the stack should send it after connection, as the app's wakeup sequence does, is open for the operator.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     }
   ]
 }

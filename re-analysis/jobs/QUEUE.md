@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work (manager, 2026-10-25): B-M13-28a, B-M11-19, B-M11-20 done (checks PASS); B-M11-21 done (check PASS). Builder lane has no open current-layer job.** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work (manager, 2026-10-25): B-M13-28a, B-M11-19, B-M11-20 done (checks PASS); B-M11-21 done (check PASS). B-M15-12 open (released 2026-10-25).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -200,6 +200,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w4e | [B-M11-19](B-M11-19.md) | DONE 662de509 (full suite 95e9063f); Claude check PASS (research/20261025-b-m11-19-20-row-71-claude-check.md) |
 | 61w4f | [B-M11-20](B-M11-20.md) | DONE 4199b9a4 (full suite 842c8c86); Claude check PASS (research/20261025-b-m11-19-20-row-71-claude-check.md) |
 | 61w4g | [B-M11-21](B-M11-21.md) | DONE 04417900 (full suite 263f522f); Claude check PASS (research/20261025-b-m11-21-claude-check.md) |
+| 61w4h | [B-M15-12](B-M15-12.md) | open — the live SevereNeedsComponent (M15-072) and the NotifyCozmoWakeup input (M15-073); unblocks the drive-off severe-needs gate (M13-017) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -293,7 +294,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 36 | [R-M11-POSE-CONFIG](../research/requests/20261021-m11-pose-change-configuration.md) | bounded Codex review recorded; redone independent review 20261022-r-m11-pose-config-check.md (Claude spot-check pending); C1/C2/C3/C5/C6/C7/C8/C9/C10/C11/threshold verified by disassembly; C12 and downstream not reviewed; no build release |
 | 37 | [R-M13-DRIVEOFF-JOINS](../research/requests/20261021-m13-driveoff-remaining-joins.md) | answered 19b0a313; expanded caller/constructor/cancel review research/20261021-m13-driveoff-remaining-check.md; independent review 20261022-r-m13-driveoff-joins-check.md (Codex review; Claude spot-check pending); citations D1-D6/wait matrix/StopActing/constructor/completion confirmed; severe-need writer and M8-015 tag binding remain open |
 | 38 | [R-M11-CHARGER-MAP](../research/requests/20261021-m11-charger-map-add-join.md) | answered 9ff5b508; bounded add/cache/height review research/20261021-m11-charger-map-add-check.md; independent review 20261022-r-m11-charger-map-add-check.md (Codex review; Claude spot-check pending); height defect and family4/type4-add/type5-remove confirmed; cache/valid-valid/owner bindings remain open |
-| 39 | [R-M15-SEVERE-INPUT](../research/requests/20261021-m15-severe-need-input.md) | answered 3609db0c; pending independent review/adoption |
+| 39 | [R-M15-SEVERE-INPUT](../research/requests/20261021-m15-severe-need-input.md) | answered 3609db0c; Claude check PASS (research/20261025-r-m15-severe-input-claude-check.md); new M15-072, M15-073; feeds B-M15-12 |
 | 40 | [R-M8-EXTERNAL-ADMISSION](../research/requests/20261021-m8-external-action-admission.md) | answered b50df484; redone independent review 20261022-r-m8-external-admission-check.md (Claude spot-check pending); E1 (Robot+2C7 init 0), E3-E6 (transition broadcast before flag, old/new both types, flag-write r1 logic, MC+D4 first then Robot+2C7), E8 helper confirmed by disassembly; E2 (BehaviorManager constructor), E7 body (0x5A2270), second tag range, indirect-writer closure not reviewed; record M8-012/M8-007 remain gaps |
 | 41 | [R-M7-SDK-BOUNDARY](../research/requests/20261021-m7-sdk-record-boundary.md) | answered 97bdc60f; pending independent review/adoption |
 | 42 | [R-M12-CACHE-LIFETIME](../research/requests/20261021-m12-predock-cache-lifetime.md) | answered d257817c; pending independent review/adoption |

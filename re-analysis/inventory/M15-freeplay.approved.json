@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-18",
+  "approved": "2026-10-25",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "18d5de4ed5c03d143843cdb123dda79fb34aff43dc828d96062f8e3f0ac68849",
+  "inventory_sha256": "5f348eca23999611ce11e80dd90c82cb639f8b25d4a22373d65c455f30e4e0ea",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -841,6 +841,33 @@
         "SparksRewardCommunicatedToUser 0x00696E64 clears the pending flag (+0x3D8, 0x00696E78) and builds FreeplaySparksAwarded from the amount at +0x3DC (0x00696E82..0x00696E88), then calls the E2G Broadcast(&&) through the external interface vtable +0x1C (0x00696E90). It has no pending-flag test (research/20261018-b-m1-7-check-delivery.md finding 1).",
         "Callers named in Needs.cs: IActivity::OnDeselected 0x005B3548, BehaviorEarnedSparks::StopInternal 0x005DAF7C, and RegisterNeedsActionCompleted; whether they guard the call on the pending flag is unread.",
         "The stack's public SparksRewardAwarded (Needs.cs:828) is queued with no payload and returns early when !SparksRewardPending (Needs.cs:841)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-072": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "SevereNeedsComponent live selected need (AI+0x30, +0x14): Set/Clear side effects and order, AI-phase Update clear, and its native callers",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.",
+        "ctor stores 3 to +0x14 at 0x00572A0E; AIComponent::Update 0x00569F24..0x00569F4C calls AIInformationAnalyzer, AIWhiteboard, SevereNeedsComponent::Update (0x00569F38), BehaviorHelperComponent, FreeplayDataTracker in that order.",
+        "Update 0x00572BD0..0x00572C3E: selected == 3 returns; else IsNeedAtBracket(selected, Critical 3) (0x00572BEA); false logs and calls Clear (0x00572C38).",
+        "Clear 0x00572C8C..0x00572D6E: RemoveDrivingAnimations (robot+0x24C, 0x00572CF6), AnimationStreamer::RemoveIdleAnimation (robot+0x60, 0x00572D26), BehaviorManager::RemoveDisableReactionsLock (0x00572D56), each with 'severe_need_component_lock' (0x00BEE67C, 26 bytes); then +0x14 = 3 (0x00572D6A).",
+        "Set 0x00572E48..0x005731C0: idle map from 0x00C596C4 (Energy 1 -> 0x137, Repair 0 -> 0x143); driving triplets Energy 1 -> 0x134/0x133/0x132 (0x0105A9F8), Repair 0 -> 0x140/0x13F/0x13E (0x0105AA08); PushDrivingAnimations 0x005730E2, PushIdleAnimation 0x00573152, DisableReactionsWithLock(lock, table, true) 0x005731A0 with the table from map 0x0105A9D8 (init 0x004D71B4; pairs at 0x010237A0: Energy and Repair -> 0x00C59670, Play -> 0x00C5969A all false); then +0x14 = need (0x005731B4).",
+        "Callers: wake handler 0x00572E00..0x00572E42 (Repair Critical -> Set 0, else Energy Critical -> Set 1, else nothing); BehaviorPlayAnimOnNeedsChange ShouldGetInBePlayed 0x005BFECA..0x005BFEF6 and StopInternal 0x005BFEF8..0x005BFF16 (Set(config need) when it differs from the selected need and is Critical, regardless of stop reason); BehaviorExpressNeeds::StopInternal 0x005EE7D8..0x005EE7E8 (Clear when own+0x134); PlayNeedsGetOutAnimIfNeeded destructor 0x0054504C..0x0054505E and CheckIfDone 0x005451C8..0x005451EE (Clear under the own+0xC9/+0x88/trigger 0x23F guards)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-073": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "App input: NotifyCozmoWakeup (G2E 166) to the SevereNeedsComponent wake handler",
+      "authority": "libcozmoEngine.so 3.4.0-1204; app sender authority 2.",
+      "evidence": [
+        "re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.",
+        "SevereNeedsComponent::Init 0x00572A64..0x00572A86 subscribes only when HasExternalInterface(); helper 0x00572B10..0x00572B96 registers G2E 0xA6 (166); the callback 0x005734F2..0x00573504 forwards to the wake handler 0x00572E00.",
+        "App sender: unity/scripts/csharp/ConnectionFlowController.cs WakeupSequence 600..611 (wake animation, then NotifyCozmoWakeup); Cozmo.Hub/NeedsHub.cs:95."
       ],
       "live_path": true,
       "hardware_required": false

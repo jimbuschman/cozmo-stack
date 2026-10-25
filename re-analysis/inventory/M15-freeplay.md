@@ -1046,3 +1046,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP: SparksRewardCommunicatedToUser's FreeplaySparksAwarded game broadcast (0x00696E64; Broadcast 0x00696E90; amount +0x3DC), callers' guards unread | M15-071 (new) |
+
+## Row 39, the SevereNeeds selected need (manager, 2026-10-25; research/20261025-r-m15-severe-input-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: SevereNeedsComponent live selected need (+0x14, ctor 3 at 0x00572A0E); Set 0x00572E48..0x005731C0, Clear 0x00572C8C..0x00572D6E, Update 0x00572BD0 at AI phase 0x00569F38; callers 0x00572E00, 0x005BFEF8, 0x005EE7D8, 0x0054504C, 0x005451C8 | M15-072 (new) |
+| New IMPLEMENTATION_GAP, to become COMPATIBILITY_POLICY when built: NotifyCozmoWakeup G2E 166 (Init 0x00572A64, callback 0x005734F2) supplied by a host C# API call; no auto-send | M15-073 (new) |
+

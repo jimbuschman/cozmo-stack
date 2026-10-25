@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **707 records** over 16 subsystems.
+Manifest of **709 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 239 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 6 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 355 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 357 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 40 | 0 | 34 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 71 | 4 | 61 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 73 | 4 | 63 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3922,6 +3922,24 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261016-ov109-110-answer.md: IsRunnableInternal 0x005F2A9C..0x005F2C9C (FeatureGate 7 at 0x005F2AAC; byte [[[robot+0x264]+0x18]+0x74] at 0x005F2AB8..0x005F2AC4; 3 matches 0x005F2ADC; rotated axis Z == 3 0x005F2AFE..0x005F2B04; spread < 100.0f 0x005F2B90..0x005F2C50); InitInternal 0x005F2CFC..0x005F2E08; UpdateInternal pre-dispatch 0x005F2E80..0x005F3000; tbh 0x005F3016; state 0 0x005F304E..0x005F30A0 with callback 0x005F59D8..0x005F5A1E; state 2 per M11-093.; re-analysis/research/overnight/20261016-ov120-122-answer.md: GuardDog listing 0x005F28DC..0x005F6400: ctor 0x005F28FE..0x005F296A; IsRunnable 0x005F2AAA..0x005F2C50; Init 0x005F2D02..0x005F2E04; pre-dispatch 0x005F2E80..0x005F300E; states via tbh 0x005F3012; HandleWhileRunning 0x005F4D28..0x005F51A8; accel 0x005F54BC..0x005F5642; monitoring 0x005F4454..0x005F4604; light anims 0x005F3C5C..0x005F53C2; stage 0x005F3B84..0x005F3BDE; RecordResult 0x005F3CAC..0x005F3DDA; StopInternal 0x005F4718..0x005F4772; whiteboard+0x74 = hiccups flag (0x006107A6, 0x00610212).
 * outstanding: RECOVERABLE_GAP: read IsRunnable (and what the +0x74 byte is), Init, the pre-dispatch flags [0x13C]/[0x140]/[0x144] and state-5 timers, and states 0-11 with callbacks; M11-093 owns state 2's ComputeStartingPose and drive. App input: the GuardDog unlock (requiredUnlockId), see M15-056. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov120-122-answer.md): IMPLEMENTATION_GAP for D1-D3, R1-R5, I1-I4, P1-P5, S0-S11, H1-H5, M1-M5, X1, SY1 (StopActing(1,0) runs the current callback synchronously before the handler's state). States 7-10 broadcast GuardDogEnd twice. The byte +0x74 is the AIWhiteboard hiccups flag (always 0 in the stack while M10-016 omits the Hiccup strategy). LogDasEvents formatting: M15-070. MovementListener semantics: M9-017.
+
+**M15-072 — SevereNeedsComponent live selected need (AI+0x30, +0x14): Set/Clear side effects and order, AI-phase Update clear, and its native callers** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs`
+* effect: Driving and idle animations pushed while a need is severe, the reactions it disables, and the value drive-off, ExpressNeedsTransition, the IBehavior required-severe-need gate and the cliff reaction read.
+* rests on: Free-model research row 39 (2026-10-21), checked instruction by instruction by Opus (2026-10-25), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.; ctor stores 3 to +0x14 at 0x00572A0E; AIComponent::Update 0x00569F24..0x00569F4C calls AIInformationAnalyzer, AIWhiteboard, SevereNeedsComponent::Update (0x00569F38), BehaviorHelperComponent, FreeplayDataTracker in that order.; Update 0x00572BD0..0x00572C3E: selected == 3 returns; else IsNeedAtBracket(selected, Critical 3) (0x00572BEA); false logs and calls Clear (0x00572C38).; Clear 0x00572C8C..0x00572D6E: RemoveDrivingAnimations (robot+0x24C, 0x00572CF6), AnimationStreamer::RemoveIdleAnimation (robot+0x60, 0x00572D26), BehaviorManager::RemoveDisableReactionsLock (0x00572D56), each with 'severe_need_component_lock' (0x00BEE67C, 26 bytes); then +0x14 = 3 (0x00572D6A).; Set 0x00572E48..0x005731C0: idle map from 0x00C596C4 (Energy 1 -> 0x137, Repair 0 -> 0x143); driving triplets Energy 1 -> 0x134/0x133/0x132 (0x0105A9F8), Repair 0 -> 0x140/0x13F/0x13E (0x0105AA08); PushDrivingAnimations 0x005730E2, PushIdleAnimation 0x00573152, DisableReactionsWithLock(lock, table, true) 0x005731A0 with the table from map 0x0105A9D8 (init 0x004D71B4; pairs at 0x010237A0: Energy and Repair -> 0x00C59670, Play -> 0x00C5969A all false); then +0x14 = need (0x005731B4).; Callers: wake handler 0x00572E00..0x00572E42 (Repair Critical -> Set 0, else Energy Critical -> Set 1, else nothing); BehaviorPlayAnimOnNeedsChange ShouldGetInBePlayed 0x005BFECA..0x005BFEF6 and StopInternal 0x005BFEF8..0x005BFF16 (Set(config need) when it differs from the selected need and is Critical, regardless of stop reason); BehaviorExpressNeeds::StopInternal 0x005EE7D8..0x005EE7E8 (Clear when own+0x134); PlayNeedsGetOutAnimIfNeeded destructor 0x0054504C..0x0054505E and CheckIfDone 0x005451C8..0x005451EE (Clear under the own+0xC9/+0x88/trigger 0x23F guards).
+* outstanding: IMPLEMENTATION_GAP: to build (B-M15-12). The stack keeps a per-need HashSet (Needs.cs _severeExpressed) and no selected-need scalar; AIComponent.Update omits the SevereNeeds phase. UNKNOWN (stays visible MISSING when built): BehaviorExpressNeeds own+0x134 writer; the PlayNeedsGetOutAnimIfNeeded action is not built in the stack; exhaustive indirect-caller census; a shipped witness that selects Play 2 through PlayAnimOnNeedsChange. The wakeup input is M15-073.
+
+**M15-073 — App input: NotifyCozmoWakeup (G2E 166) to the SevereNeedsComponent wake handler** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs`
+* effect: Whether a need that is Critical at wakeup starts its severe expression (driving/idle animations and reaction locks).
+* rests on: Manager record (2026-10-25) under the 2026-10-09 app-boundary scope rule.
+* best authority: libcozmoEngine.so 3.4.0-1204; app sender authority 2.
+* evidence: re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.; SevereNeedsComponent::Init 0x00572A64..0x00572A86 subscribes only when HasExternalInterface(); helper 0x00572B10..0x00572B96 registers G2E 0xA6 (166); the callback 0x005734F2..0x00573504 forwards to the wake handler 0x00572E00.; App sender: unity/scripts/csharp/ConnectionFlowController.cs WakeupSequence 600..611 (wake animation, then NotifyCozmoWakeup); Cozmo.Hub/NeedsHub.cs:95.
+* outstanding: IMPLEMENTATION_GAP until built (B-M15-12), then COMPATIBILITY_POLICY: the input the app supplied is supplied by the host through a C# API call that delivers G2E 166 through the same subscription the engine uses; the stack does not send it by itself (manager, 2026-10-25). Whether the stack should send it after connection, as the app's wakeup sequence does, is open for the operator.
 
 ## What remains after both: blocked externally, or needing hardware
 
