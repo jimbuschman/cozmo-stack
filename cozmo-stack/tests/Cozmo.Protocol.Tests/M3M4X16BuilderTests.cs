@@ -26,8 +26,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
     }
     private static Pose3d At(double x,double y,double z=0,double yaw=0) => new(Mat3.AboutZ(yaw),new Vec3(x,y,z));
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    // Old code: geometry stops before Expand, omitting InsufficientExpansion from the four-entry log order.
-    // Growth/shift remain MISSING: this out-of-root input reaches their existing boundary, not a fabricated insertion.
+    // Old B-M11-19: InsufficientExpansion and M11-048 instead of the growth log; native ray at (100,200)=false.
     [Fact]
     public void LiveCliffUsesConstructorMapSharedIdInputQuadAndRobotNormal()
     {
@@ -48,6 +47,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         robot.Sensors.CliffHistoricalPoseForTest = _ => (0,input);
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 100, DetectedFlags = 1 });
         var cliff = Assert.Single(world.LocatedObjects);
+        using var cliffNativePose=cliff.NativePose;
         Assert.Equal(preceding+1,cliff.ObjectId); Assert.Equal("Object_-1",cliff.PoseNameNode!.Name);
         Assert.Equal((byte)1,cliff.PoseInitialized);
         Assert.Equal(900u,cliff.LastObservedTimestamp); Assert.Equal(900u,data!.First);
@@ -56,8 +56,9 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Equal(100,attempted!.Average(p => p.X),3); Assert.Equal(200,attempted.Average(p => p.Y),3);
         Assert.Equal(0,world.PoseChangeCount);
         Assert.DoesNotContain(entries,e => e.Name.Contains("FirstPoseForObject") || e.Name.Contains("MultipleChanges"));
-        Assert.Equal(new[] { "BlockWorld.AddLocatedObject","robot.object_located","QuadTree.Expand.InsufficientExpansion","RobotImplMessaging.HandleCliffEvent.Detected" },entries.Select(e=>e.Name));
-        Assert.Contains(missing,s=>s.Contains("M11-048")); Assert.Empty(world.Maps.Current.Regions);
+        Assert.Equal(new[] { "BlockWorld.AddLocatedObject","robot.object_located","QuadTree.UpdgradeRootLevel","RobotImplMessaging.HandleCliffEvent.Detected" },entries.Select(e=>e.Name));
+        Assert.DoesNotContain(missing,s=>s.Contains("M11-048")); Assert.Empty(world.Maps.Current.Regions);
+        Assert.True(world.Maps.Current.HasCollisionRayWithTypes(new(100,200),new(100,200),t=>t==MemoryMapContentType.Cliff));
         }
         finally
         {
@@ -154,12 +155,13 @@ public sealed class M3M4X16BuilderTests : IDisposable
     [Fact]
     public void ExpansionGateTypoKeyRemovalWarningAndDirtyMatchCheckedRows()
     {
+        // Old: the shift body emitted MISSING rather than CantShiftPMx. Real growth now replaces the body seam.
         var tree=new SourceQuadTree();var keys=new List<string>();var missing=new List<string>();tree.SourceLog=(l,c,k,s)=>keys.Add(k);tree.Missing=missing.Add;
         tree.Root.Depth=255;Assert.False(tree.UpgradeRootLevel(new Vec2(0,0),8));tree.Root.Depth=8;Assert.False(tree.UpgradeRootLevel(new Vec2(0,0),8));Assert.Empty(missing);
-        tree.Root.Depth=7;tree.UpgradeBodyForTest=(_,_)=>{tree.Root.Depth=8;tree.Root.Side=2560;return true;}; // isolates unread body, verifies checked gate/log only
+        tree.Root.Depth=7;tree.Root.Side=1280;tree.Root.Bounds=new(tree.Root.X,tree.Root.Y,tree.Root.Side);
         Assert.True(tree.UpgradeRootLevel(new Vec2(0,0),8));Assert.Equal("QuadTree.UpdgradeRootLevel",Assert.Single(keys));
-        keys.Clear();tree.UpgradeBodyForTest=null;tree.Expand(new Vec2(999,1000),1,()=>false);
-        Assert.True(tree.Dirty);Assert.Equal("QuadTree.Expand.InsufficientExpansion",Assert.Single(keys));Assert.Contains(missing,s=>s.Contains("ShiftRoot"));
+        keys.Clear();tree.Expand(new[]{new Vec2(-4000,0),new Vec2(4000,0)},1);
+        Assert.True(tree.Dirty);Assert.Equal(new[]{"QuadTreeNode.ShiftRoot.CantShiftPMx","QuadTree.Expand.InsufficientExpansion"},keys);Assert.Empty(missing);
         var removal=new SourceQuadTree { OverlapForTest=(_,_)=>0, SourceLog=(l,c,k,s)=>keys.Add(k) }; // isolates UNKNOWN overlap, native warning comes before node insert
         removal.Insert(new[] {new Vec2(81,81)},new SourceMapData(MemoryMapContentType.ObstacleChargerRemoved,1,2),1);
         Assert.Equal("QuadTree.Insert.RemovalPolyNotContained",keys[^1]);Assert.False(removal.Dirty);

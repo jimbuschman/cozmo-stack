@@ -264,10 +264,12 @@ internal sealed class SourceQuadNode(float x, float y, float z, float side, byte
         while (Children.Count != 0) Children.RemoveAt(Children.Count-1); // callback pass precedes reverse free pass
     }
     internal void DestroyNodes(SourceQuadProcessor proc)
+        =>DestroyNodes(Children,proc);
+    internal static void DestroyNodes(List<SourceQuadNode?> nodes,SourceQuadProcessor proc)
     {
-        for (int i = 0; i < Children.Count; i++)
+        for (int i = 0; i < nodes.Count; i++)
         {
-            var child = Children[i]!; child.DestroyNodes(proc); proc.Destroyed(child); Children[i] = null;
+            var child = nodes[i]!; child.DestroyNodes(proc); proc.Destroyed(child); nodes[i] = null;
         } // vectors stay full of nulls, unlike ClearDescendants
     }
     internal void SwapChildrenAndContent(SourceQuadNode other, SourceQuadProcessor proc)
@@ -384,8 +386,6 @@ internal sealed class SourceQuadTree
     internal Action<string>? Missing;
     internal Func<SourceQuadNode,Vec2[],int>? OverlapForTest;
     internal bool Dirty;
-    internal Func<Vec2[],Vec2>? CentroidForTest;
-    internal Func<Vec2,byte,bool>? UpgradeBodyForTest;
     internal void Insert(Vec2[] polygon, SourceMapData data, int maxShifts)
     {
         LogCallbackDeferral.RunGated(_geometryGate,()=>InsertCore(polygon,data,maxShifts));
@@ -408,7 +408,7 @@ internal sealed class SourceQuadTree
         {
             if (data.Type == MemoryMapContentType.ObstacleChargerRemoved)
                 SourceLog?.Invoke(EngineLogLevel.Warning,null,"QuadTree.Insert.RemovalPolyNotContained","Poly is not fully contained in root, removal does not cause expansion.");
-            else Expand(CentroidForTest?.Invoke(polygon) ?? new Vec2(native.CenterX,native.CenterY),maxShifts,()=>Contains(native));
+            else ExpandCore(native,maxShifts);
         }
         Dirty |= Root.InsertRecursive(new SourceNodeContent(data),this,native);
     }
@@ -471,16 +471,88 @@ internal sealed class SourceQuadTree
         }
         if(message is not null)SourceLog?.Invoke(EngineLogLevel.Info,"Profiler","Profiler",message);
     }
+    // 0x006876D8..0x00687A38: five ForceSets precede doubling/level and ResetBoundingBox.
     internal bool UpgradeRootLevel(Vec2 direction, byte limit)
     {
+        bool result=false;
+        LogCallbackDeferral.RunGated(_geometryGate,()=>result=UpgradeRootLevelCore(direction,limit));
+        return result;
+    }
+    private bool UpgradeRootLevelCore(Vec2 direction,byte limit)
+    {
         if (Root.Depth == 255 || Root.Depth >= limit) return false;
-        if (UpgradeBodyForTest is null)
-        { Missing?.Invoke("MISSING: M11-048 UpgradeRootLevel body 0x006876FA..0x006879C0; root unchanged"); return false; }
-        bool upgraded = UpgradeBodyForTest(direction,limit);
-        if (upgraded) Root.Bounds = new(Root.X,Root.Y,Root.Side);
-        if (upgraded) SourceLog?.Invoke(EngineLogLevel.Info,"QuadTree","QuadTree.UpdgradeRootLevel",
+        var oldChildren=Root.Children;Root.Children=new();
+        var oldContent=Root.Content;uint timestamp=oldContent.Data.Last;
+        float side=Root.Side,hp=side*.5f,hn=side*-.5f;
+        float negativeEpsilon=BitConverter.UInt32BitsToSingle(0xB727C5AC);
+        bool px=(float)direction.X>=negativeEpsilon,py=(float)direction.Y>=negativeEpsilon;
+        Root.X=Root.X+(px?hp:hn);Root.Y=(py?hp:hn)+Root.Y;
+        CreateChildren(side,Root.Depth,timestamp);
+        int recipient=(px?2:0)+(py?1:0);
+        var unknown=new SourceNodeContent(new SourceMapData(MemoryMapContentType.Unknown,timestamp,timestamp));
+        for(int i=0;i<4;i++)if(i!=recipient)Root.Children[i]!.ForceSet(unknown,Processor);
+        var kept=Root.Children[recipient]!;
+        foreach(var child in oldChildren)child!.Parent=kept;
+        kept.Children=oldChildren;kept.ForceSet(oldContent,Processor);Root.ForceSet(unknown,Processor);
+        Root.Side=side+side;Root.Depth=unchecked((byte)(Root.Depth+1));ResetRootBounds();
+        SourceLog?.Invoke(EngineLogLevel.Info,"QuadTree","QuadTree.UpdgradeRootLevel",
             string.Format(CultureInfo.InvariantCulture,"Root expanded to level {0}. Allowing {1:F2}m",Root.Depth,(double)(Root.Side*BitConverter.UInt32BitsToSingle(0x3A83126F))));
-        return upgraded;
+        return true;
+    }
+    private void ResetRootBounds()=>Root.Bounds=new(Root.X,Root.Y,Root.Side);
+    private void CreateChildren(float side,byte level,uint timestamp)
+    {
+        float h=side*.5f;
+        foreach(var (x,y) in new[]{(h,h),(h,-h),(-h,h),(-h,-h)})
+            Root.Children.Add(new SourceQuadNode(Root.X+x,Root.Y+y,Root.Z,side,level)
+            {Parent=Root,Content=new SourceNodeContent(new SourceMapData(MemoryMapContentType.Unknown,timestamp,timestamp))});
+    }
+    // 0x00686DF8..0x006873FE: keep root identity; only children/content are swapped.
+    internal bool ShiftRoot(Vec2[] polygon)
+    {
+        bool result=false;
+        var points=polygon.Select(p=>new P2f((float)p.X,(float)p.Y)).ToArray();
+        LogCallbackDeferral.RunGated(_geometryGate,()=>result=ShiftRootCore(points));
+        return result;
+    }
+    private bool ShiftRootCore(IReadOnlyList<P2f> polygon)
+    {
+        float h=Root.Side*.5f,e=BitConverter.UInt32BitsToSingle(0x3727C5AC);
+        bool px=false,nx=false,py=false,ny=false;
+        foreach(var p in polygon)
+        {
+            px=px || (h+Root.X)-e<=p.X;nx=nx || p.X<=(Root.X-h)+e;
+            py=py || (h+Root.Y)-e<=p.Y;ny=ny || p.Y<=(Root.Y-h)+e;
+        }
+        if(px&&nx || py&&ny)
+        {
+            SourceLog?.Invoke(EngineLogLevel.Warning,null,px&&nx?"QuadTreeNode.ShiftRoot.CantShiftPMx":"QuadTreeNode.ShiftRoot.CantShiftPMy","Current root size can't accomodate given points");
+            return false;
+        }
+        if(!(px||nx||py||ny))
+        {
+            SourceLog?.Invoke(EngineLogLevel.Error,null,"QuadTreeNode.ShiftRoot.AllPointsIn","We don't need to shift");
+            EngineErrorState.StoreAndMaybeBreak();return false;
+        }
+        Root.X=(px?h:nx?-h:0f)+Root.X;Root.Y=(py?h:ny?-h:0f)+Root.Y;ResetRootBounds();
+        if(Root.Children.Count!=0)
+        {
+            var old=Root.Children;Root.Children=new();
+            uint timestamp=Root.Content.Data.Last;
+            CreateChildren(h,unchecked((byte)(Root.Depth-1)),timestamp);
+            var unknown=new SourceNodeContent(new SourceMapData(MemoryMapContentType.Unknown,timestamp,timestamp));
+            // Q3b's ordered new-index operations: -1 = ForceSet Unknown, otherwise Swap with old[j].
+            int[] moves=px?(py?[-1,-1,-1,0]:ny?[-1,-1,1,-1]:[-1,-1,0,1]):
+                nx?(py?[-1,2,-1,-1]:ny?[3,-1,-1,-1]:[2,3,-1,-1]):
+                py?[-1,0,-1,2]:[1,-1,3,-1];
+            for(int i=0;i<4;i++)
+                if(moves[i]<0)Root.Children[i]!.ForceSet(unknown,Processor);
+                else Root.Children[i]!.SwapChildrenAndContent(old[moves[i]]!,Processor);
+            SourceQuadNode.DestroyNodes(old,Processor);
+        }
+        SourceLog?.Invoke(EngineLogLevel.Info,"QuadTree","QuadTree.ShiftRoot",
+            string.Format(CultureInfo.InvariantCulture,"Root level is still {0}, root shifted. Allowing {1:F2}m",Root.Depth,(double)(Root.Side*BitConverter.UInt32BitsToSingle(0x3A83126F))));
+        return true;
     }
     private bool Contains(SourceFastPolygon polygon)
     {
@@ -505,13 +577,18 @@ internal sealed class SourceQuadTree
             if (HasCollisionRay(child!,polygon,mask)) return true;
         return false;
     }
-    internal void Expand(Vec2 centroid, int limit, Func<bool> contains)
+    // 0x00685200..0x00685438: growth first, then budgeted shifts, then caller's sole insertion.
+    internal void Expand(Vec2[] polygon,int limit)
     {
+        LogCallbackDeferral.RunGated(_geometryGate,()=>ExpandCore(new SourceFastPolygon(polygon),limit));
+    }
+    private void ExpandCore(SourceFastPolygon polygon,int limit)
+    {
+        var centroid=new Vec2(polygon.CenterX,polygon.CenterY);
         bool upgraded;
-        do { upgraded = UpgradeRootLevel(centroid-new Vec2(Root.X,Root.Y),8); } while (upgraded && !contains());
-        for (int i = 0; !contains() && i < limit; i++)
-            Missing?.Invoke("MISSING: M11-048 ShiftRoot 0x00686DF8..0x0068743E; return ignored, root unchanged");
-        if (!contains()) SourceLog?.Invoke(EngineLogLevel.Warning,null,"QuadTree.Expand.InsufficientExpansion",
+        do { upgraded = UpgradeRootLevelCore(new Vec2((float)centroid.X-Root.X,(float)centroid.Y-Root.Y),8); } while (upgraded && !Contains(polygon));
+        for (int i = 0; !Contains(polygon) && i < limit; i++)ShiftRootCore(polygon.Points); // ignore return
+        if (!Contains(polygon)) SourceLog?.Invoke(EngineLogLevel.Warning,null,"QuadTree.Expand.InsufficientExpansion",
             string.Format(CultureInfo.InvariantCulture,"Quad caused expansion, but expansion was not enough PolyCenter({0:F2}, {1:F2}), Root({2:F2},{3:F2}) with sideLen({4:F2}).",centroid.X,centroid.Y,Root.X,Root.Y,Root.Side));
         Dirty = true;
     }
