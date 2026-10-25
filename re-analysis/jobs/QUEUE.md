@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work (manager, 2026-10-25): B-M13-28a (CORE-007 fix-up), then B-M11-19 (quad-tree root growth and shift), then B-M11-20 (map merge).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work (manager, 2026-10-25): B-M13-28a done (check PASS); B-M11-19 (quad-tree root growth and shift), then B-M11-20 (map merge).** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -196,7 +196,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w4b | [B-M13-26](B-M13-26.md) | DONE 93aadeb1 + 88297922 + fix-up 2 9f16e298 (f486b673); full 6155; Claude check PASS (same file); merged to main |
 | 61w4c | [B-M13-27](B-M13-27.md) | DONE 91e0b5e9, merged d73714fc; full-suite failure was the test-setup race fixed in 7588e84e; Claude check PASS (research/20261024-b-m13-27-claude-check.md), Q1-Q4 queued |
 | 61w4d | [B-M13-28](B-M13-28.md) | DONE f73271da (full suite 3d164d99); Claude check FAIL (CORE-007 passes on footprint cells; research/20261025-b-m13-28-claude-check.md), fix-up B-M13-28a |
-| 61w4d1 | [B-M13-28a](B-M13-28a.md) | open (fix-up: CORE-007 grades on the overhead writer's own inserts; before B-M11-19) |
+| 61w4d1 | [B-M13-28a](B-M13-28a.md) | DONE ee9d27f9 (full suite 50a5f8fe); Claude check PASS (research/20261025-b-m13-28a-claude-check.md) |
 | 61w4e | [B-M11-19](B-M11-19.md) | open (quad-tree root growth and shift; drive-off run 2 hit the MISSING 21 times) |
 | 61w4f | [B-M11-20](B-M11-20.md) | open, after B-M11-19 (memory-map merge on re-localization) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
