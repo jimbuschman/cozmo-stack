@@ -33,3 +33,18 @@ Claude polls `origin/codex-m13-manager-2` for rows marked READY FOR CLAUDE. For 
 
 Claude writes hardware scripts when a batch is worth a robot run, and notifies the operator. The operator's part is
 running the scripts and copying back the bundles.
+
+## Usage and hardware (operator, 2026-10-26)
+
+**Robot runs never hold anything up.** A job merges on its Claude check and the full gate alone. Claude writes a
+hardware script only when merged work has piled up that changes robot traffic or behaviour, and the operator runs it
+when convenient. A failed run becomes a FIX row for the job it points at; nothing else stops.
+
+**Claude usage is the scarce resource, so the reading is Codex's.**
+- **Codex** does all extraction, all building, its own independent Codex check, and runs `scripts/test-full.sh` on the
+  branch before marking a row READY FOR CLAUDE. Its `HANDOFF-<job>.md` lists each behaviour-changing claim with its
+  address, the files changed, the tests and how each reaches the behaviour, and the gate result.
+- **Claude** does not redo the extraction. It checks the handoff's claims that change "What we reproduce" 1–4 at their
+  cited addresses, looks for circular tests and unrecorded gaps, and stops there. A claim the cited address does not
+  settle goes back as FIX with the question; Codex does the reading.
+- **Claude reviews in batches:** all rows that are READY FOR CLAUDE at the time, in one pass.
