@@ -1,0 +1,23 @@
+# Drive-off pilot: one complete behaviour
+
+Operator PLAN-BEHAVIOURS.md replaces the fragment scope. Branch codex-m13-manager-2 was pulled and rebased on origin/main25107ead; REVIEW.md reread after rebase. R1's MERGED supersedes its historical FIX. No outstanding Claude FIX at this start.
+
+Goal: finish the supported DriveOffCharger behaviour end to end, including every observable dependency and an explicit record-settlement package for Claude. Earlier partial jobs and passing robot runs are evidence to reuse, not proof of completeness. No further source/test implementation until the WHOLE pilot read independently PASSes.
+
+## Read, then independently check
+
+Trace the actual shipped behaviour construction/configuration, entry/readiness/selection inputs, base-behaviour admission, reaction locks, driving animations/severe-needs input, on/off-treads, charger contacts/platform/world/map updates, DriveStraight construction/action admission/Init/CheckIfDone, planner/profile/path execution/wire/cancellation/completion, clocks/timers, objective/mood/API recipients and downstream state. Each step must have a current record quote (title/status/evidence), native address or source asset, concrete producer/consumer, and one-line observable1–4 justification. Reuse existing verified evidence via known.py before tracing every address/name. Accepted lower layers remain cited boundaries; verify the exact join instead of redoing their inventories. Follow genuine unresolved observable joins across subsystems until none on the pilot path is unread. Do not treat unrelated global startup/tick diagnostics as dependencies without a producer-to-consumer link.
+
+Extractor research_reconciliation writes research/20261026-driveoff-pilot-read.md. Different checker acceptance_blockers first maps current C# and hardware diagnostics in research/20261026-driveoff-pilot-path-codex-check.md, then independently checks primary instructions and the whole inventory in research/20261026-driveoff-pilot-read-codex-check.md. No source/test changes while reading. If a normal source path is unknown, retain UNKNOWN and investigate available evidence; never fill it with a plausible result. Internal mechanisms without observable effects receive a one-line explanation and the simplest implementation, not their own job.
+
+CM13-05 is folded into this pilot ONLY if its configuration producer genuinely changes an observable result or downstream state on this path. Its uncompiled/unverified draft is preserved on local safety branch codex/cm13-05-paused1260b287; it is absent from this branch. Do not reapply it solely because it exists. Checked research may be reused. Its interrupted initial focused command produced no compile/test result. Remaining callbacks/public adapter/footprint unknowns must not disappear in a settlement claim.
+
+Public Vector source exists at https://github.com/digital-dream-labs/vector (engine tree includes actions, drivingAnimationHandler, navMap and blockWorld). It may guide navigation ONLY, authority6; it is never evidence of Cozmo behaviour. Differences must be settled in the local Cozmo ELF, not copied from Vector.
+
+## Build and handoff
+
+After the whole-read PASS, the manager writes one complete build contract covering ALL remaining observable discrepancies and delegates one builder. A different verifier checks the implementation against primary source, actual production paths, unintended changes and non-circular tests. Do not split another hidden dependency into a later fragment job. Existing work may be retained where supported; internal mechanism need not match native if observable results do.
+
+Run focused/negative controls where meaningful, required regressions/fidelity/queue checks and scripts/test-full.sh on committed code in this asset-complete checkout. HANDOFF-DRIVE-OFF-PILOT.md is short: every changed behaviour claim/address, actual test reach/gate, RECORDS TO SETTLE with whole-record evidence, precise leftovers on incomplete records, and requested robot-script coverage for Claude. Codex changes no statuses/approvals/acceptance/REVIEW/Claude files. Robot runs never block the next behaviour. Only an operator-reserved decision warrants BLOCKED.md.
+
+Set the pilot queue row exactly READY FOR CLAUDE and push only codex-m13-manager-2. Then write BEHAVIOURS.md here from shipped freeplay activity/reaction/spark configs, subsystem dependencies and shared-piece order, with finished/in progress/not started columns. Count a behaviour finished only under PLAN-BEHAVIOURS.md's full criteria; report behaviours finished, records settled and open gaps daily. Never equate jobs/commits/test counts with finished behaviours.
