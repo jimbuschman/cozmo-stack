@@ -159,8 +159,8 @@
 | 61w4h | B-M15-12 | DONE 6cd86f8a..5fe5401b (full suite 6217/6217); Claude check PASS (research/20261025-b-... | DONE (8/8 items; 2 MISSING) | `research/20261025-b-m15-12-claude-check.md` |
 | 61w4i | B-M13-29 | DONE a4815c1b (status 0c6335a2); Claude check PASS (research/20261025-b-m13-29-rows-72-... | DONE (4/4 items; 2 MISSING) | `research/20261025-b-m13-29-rows-72-74-claude-check.md` |
 | 61w4j | B-M7-4 | open — BehaviorManager with robot lifetime (robot+0x44); reaction locks before Freeplay | no status file | none found |
-| 61w4k | B-M15-13 | open, after B-M7-4 — PlayNeedsGetOutAnimIfNeeded action via the C# API (M15-074) | no status file | none found |
-| 61w4l | B-M13-30 | open, after B-M15-13 — map root timestamp seed and planner import gate (M13-030, M13-003) | no status file | none found |
+| 61w4k | B-M15-13 | open — PlayNeedsGetOutAnimIfNeeded action via the C# API (M15-074) | no status file | none found |
+| 61w4l | B-M13-30 | open — map root timestamp seed and planner import gate (M13-030, M13-003) | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

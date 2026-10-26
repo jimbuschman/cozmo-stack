@@ -203,8 +203,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w4h | [B-M15-12](B-M15-12.md) | DONE 6cd86f8a..5fe5401b (full suite 6217/6217); Claude check PASS (research/20261025-b-m15-12-claude-check.md); Q1 reaction lock outside Freeplay queued |
 | 61w4i | [B-M13-29](B-M13-29.md) | DONE a4815c1b (status 0c6335a2); Claude check PASS (research/20261025-b-m13-29-rows-72-74-claude-check.md) |
 | 61w4j | [B-M7-4](B-M7-4.md) | open — BehaviorManager with robot lifetime (robot+0x44); reaction locks before Freeplay |
-| 61w4k | [B-M15-13](B-M15-13.md) | open, after B-M7-4 — PlayNeedsGetOutAnimIfNeeded action via the C# API (M15-074) |
-| 61w4l | [B-M13-30](B-M13-30.md) | open, after B-M15-13 — map root timestamp seed and planner import gate (M13-030, M13-003) |
+| 61w4k | [B-M15-13](B-M15-13.md) | open — PlayNeedsGetOutAnimIfNeeded action via the C# API (M15-074) |
+| 61w4l | [B-M13-30](B-M13-30.md) | open — map root timestamp seed and planner import gate (M13-030, M13-003) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
