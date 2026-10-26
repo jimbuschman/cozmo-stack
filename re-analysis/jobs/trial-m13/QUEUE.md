@@ -1,6 +1,6 @@
 # Trial queue (isolated branch only)
 
-Current authority: AUTONOMY.md (operator2026-10-26): R1 first, then CM13-04, CM13-05, then the standing M13/M6 scope. This file is Codex-owned; authoritative Claude verdicts are read only from REVIEW.md on main. No official fidelity statuses, approvals or subsystem acceptance changes; no main push. Earlier trial limits/states below are historical.
+Current authority: PLAN-BEHAVIOURS.md and AUTONOMY.md (operator2026-10-26): outstanding Claude FIX first, then the whole drive-off pilot, BEHAVIOURS.md, and one whole behaviour at a time. This file is Codex-owned; authoritative Claude verdicts are read only from REVIEW.md on main. No official fidelity statuses, approvals or subsystem acceptance changes; no main push. Earlier fragment scope, trial limits and states below are historical.
 
 | Job | State | Purpose | Evidence/review |
 | --- | --- | --- | --- |
