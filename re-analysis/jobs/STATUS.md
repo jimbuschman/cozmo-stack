@@ -161,7 +161,7 @@
 | 61w4j | B-M7-4 | DONE fc39a9f5..d2f351e9 (full 6223/6223); Claude check PASS (research/20261026-b-m7-4-m... | DONE (5/5 items; 5 MISSING) | `research/20261026-b-m7-4-m15-13-m13-30-claude-check.md` |
 | 61w4k | B-M15-13 | DONE fc6ce88e (full 6231/6231); Claude check PASS (research/20261026-b-m7-4-m15-13-m13-... | DONE (1/3 items; 2 MISSING) | none found |
 | 61w4l | B-M13-30 | DONE 1993dd63 (full 6240/6240); Claude check FAIL: map seed uses the image clock, engin... | DONE (3/3 items; 3 MISSING) | none found |
-| 61w4l1 | B-M13-30a | open — seed new maps from Robot+0x2C (last RobotState timestamp) | no status file | none found |
+| 61w4l1 | B-M13-30a | DONE c0ad22df (full 6240/6240); Claude check PASS (research/20261026-b-m7-4-m15-13-m13-... | DONE (3/3 items; 1 MISSING) | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
