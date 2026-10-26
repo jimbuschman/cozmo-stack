@@ -28,8 +28,8 @@ public static class ManipTool
         using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         var vision = robot.Vision;
         using var m = new ManipulationSystem(robot, vision);
-        var log = new List<string>();
-        void Say(string line) { Console.WriteLine(line); log.Add(line); }
+        var log = new DiagnosticJournal<string>();
+        void Say(string line) => log.Write(line, line);
         if (obb is not null)
         {
             Say(m.LoadPlanner(obb) ? "lattice planner loaded from cozmo_mprim.json (M13)" : "no cozmo_mprim.json under --obb: straight-line planner");
@@ -224,7 +224,7 @@ public static class ManipTool
             if (acceptance is not null)
             {
                 var record = WriteAcceptance("manip", acceptance, success, robot, humanCheck,
-                    new { mode = what, outcome = result, messagesSent = m.Paths.Sent.Count + m.Docking.Sent.Count, log }, what is "--flip" or "--knockover" or "--wheelie" or "--mount" or "--driveoff" ? "M13" : "M12");
+                    new { mode = what, outcome = result, messagesSent = m.Paths.Sent.Count + m.Docking.Sent.Count, log = log.Snapshot() }, what is "--flip" or "--knockover" or "--wheelie" or "--mount" or "--driveoff" ? "M13" : "M12");
                 Console.WriteLine($"acceptance record: {record}");
             }
             robot.Disconnect();

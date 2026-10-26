@@ -171,11 +171,10 @@ public static class ReactionsTool
         }
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var log = new List<object>();
+        var log = new DiagnosticJournal<object>();
         void Line(string text)
         {
-            Console.WriteLine($"[{sw.Elapsed.TotalSeconds,7:F2}s] {text}");
-            log.Add(new { t = sw.Elapsed.TotalSeconds, text });
+            log.Write(new { t = sw.Elapsed.TotalSeconds, text }, $"[{sw.Elapsed.TotalSeconds,7:F2}s] {text}");
         }
 
         foreach (var reg in ShippedBehaviors.Reactions(robot, vision.Locator, () => sw.Elapsed.TotalSeconds, vision, obbRoot: obb))
@@ -275,7 +274,7 @@ public static class ReactionsTool
             var record = WriteAcceptance("reactions", acceptance, fired.Count > 0, robot,
                 "each reaction did what the engine's does: flip down from the back, roll off the face, ask to be righted on a side, " +
                 "react then check the pitch on a slope, act dizzy after a shake, react to a push; no reaction fired for a state he was not in",
-                new { fired = fired.Select(f => f.ToString()).OrderBy(x => x), log,
+                new { fired = fired.Select(f => f.ToString()).OrderBy(x => x), log = log.Snapshot(),
                       classifierEnabled = robot.Sensors.OffTreadsClassifierEnabled });
             Console.WriteLine($"acceptance record: {record}");
         }

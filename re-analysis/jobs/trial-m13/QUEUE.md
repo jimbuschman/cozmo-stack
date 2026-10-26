@@ -1,6 +1,6 @@
 # Trial queue (isolated branch only)
 
-Operator scope: M13-017, M13-040, M13-003, M13-030 drive-off/planner. Up to three useful bounded implementation jobs. No official status changes or subsystem acceptance. Main QUEUE is history only.
+Current authority: AUTONOMY.md (operator2026-10-26): R1 first, then CM13-04, CM13-05, then the standing M13/M6 scope. This file is Codex-owned; authoritative Claude verdicts are read only from REVIEW.md on main. No official fidelity statuses, approvals or subsystem acceptance changes; no main push. Earlier trial limits/states below are historical.
 
 | Job | State | Purpose | Evidence/review |
 | --- | --- | --- | --- |
@@ -20,7 +20,8 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 
 | Job | State | Purpose |
 | --- | --- | --- |
-| CM13-03 | CODE VERIFIED; FULL GATE FAIL; Claude pending | Runtime ownership b1c1169d: Phase1/build independent PASS; full6274 pass/1 fail/0 skip (KnockOver cause UNKNOWN). Upstream gaps visible. Branch `codex-m13-manager-2`; see HANDOFF-2.md. |
+| CM13-03 | REVIEW COMPLETE | Historical local gate failure retained in HANDOFF-2.md. Current authoritative Claude disposition/gate is in REVIEW.md on main; no hardware dependency. |
+| R1 | READY FOR CLAUDE | Corrected shared multi-producer tool log/snapshot race after REVIEW finding; original full task diagnostics retained. Codee592d1b2; independent11/11 PASS, full6285/6285 zero skipped. HANDOFF-R1.md; host diagnostics native N/A. |
 | CM13-04 | RELEASED | ComputeOriginPose 0x00517F6C and the robot-quad Pose3d round trip 0x004FE042..0x004FE08E (M13-003). Codex scopes it; same read-check-build order. |
 | CM13-05 | RELEASED | M12-049 configuration-container producer. Codex scopes it; same order. |
 

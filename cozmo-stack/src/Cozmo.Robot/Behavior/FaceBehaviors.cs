@@ -24,6 +24,16 @@ public abstract class ActionBehavior : SteppedBehavior
         Log($"start {what}");
         ObserveAsyncWork(RunAsyncAction(() => action(cts.Token)).ContinueWith(t =>
         {
+            // Stack-owned diagnostics survive a stopped/replaced action; onDone still uses Post and its stale guard.
+            if (t.IsFaulted) Log($"{what} faulted: {t.Exception}"); // AggregateException.ToString retains every inner and stack.
+            else if (t.IsCanceled)
+            {
+                try { t.GetAwaiter().GetResult(); }
+                catch (OperationCanceledException error)
+                {
+                    Log($"{what} cancelled (observation stack from completed task; original cancellation throw site may be unavailable): {error}");
+                }
+            }
             var r = t.Status == TaskStatus.RanToCompletion ? t.Result : failed;
             Post(() =>
             {
