@@ -55,7 +55,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         {
             if(F0){_source(EngineLogLevel.Warning,null,"LatticePlanner.ComputePath.PreviousPlanRequested","timeToPlan already set, so another compute path call is already waiting to signal the planner");return 0;}
             _goals=goals.ToArray();
-            _backend.Env.ImportBlockWorldObstacles(_world,_carried(),false);
+            _backend.ImportBlockWorldObstacles(_world,_carried(),false);
             if(!_backend.CheckContextGoals(_goals.Select(LatticePlanner.ToStateC).ToArray(),new(),new()))return 0;
             return ComputeNewPathIfNeeded(start,true);
         }
@@ -83,7 +83,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             if(force)_total=new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
             else
             {
-                _backend.Env.ImportBlockWorldObstacles(_world,_carried(),true,_ignore);
+                _backend.ImportBlockWorldObstacles(_world,_carried(),true,_ignore);
                 var closest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,LatticePlanner.ToStateC(start));
                 nearest=closest;
                 if(closest.Distance>=20f)
@@ -103,7 +103,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             {Info("LatticePlanner.ReplanIfNeeded.InvalidStart","could not set start");return 0;}
             if(!_backend.CheckContextGoals(_goals.Select(LatticePlanner.ToStateC).ToArray(),new(),new()))
             {Info("LatticePlanner.ReplanIfNeeded.InvalidGoals","Goals may have moved into collision");return 0;}
-            _backend.Env.ImportBlockWorldObstacles(_world,_carried(),false,_ignore);
+            _backend.ImportBlockWorldObstacles(_world,_carried(),false,_ignore);
             _missing("M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump recipient at 0x004FF052..0x004FF30A remain incomplete");
             _searchNum=unchecked(_searchNum+1);Info("LatticePlannerImpl.GetPlan",$"searchNum: {unchecked((int)_searchNum)}");
             _backend.SetRunFlag(true);

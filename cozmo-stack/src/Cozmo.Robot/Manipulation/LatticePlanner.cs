@@ -947,8 +947,35 @@ public class LatticePlanner
     // fidelity: M13-018
     public const int MaxExpansions = 30_000_000;
 
-    public LatticePlanner(LatticeEnvironment env) => Env = env;
+    public LatticePlanner(LatticeEnvironment env)
+    {
+        Env = env;
+        _lastImportedMapTimestamp = 0; // LatticePlannerImpl ctor 0x004FCCDE, r1=0 at 0x004FCCA6.
+    }
     public LatticeEnvironment Env { get; }
+    private uint _lastImportedMapTimestamp;
+    private readonly object _obstacleImportGate = new();
+
+    // fidelity: M13-030, M13-003 — 0x004FD4DA..0x004FD5CE. Cache belongs to the planner, not a map or import call.
+    internal bool ImportBlockWorldObstacles(BlockWorld world, uint? carriedObjectId, bool tightPadding, IEnumerable<uint>? ignore = null)
+    {
+        object gate = NativeRuntime?.ContextMutex ?? _obstacleImportGate;
+        if (!Monitor.TryEnter(gate)) return false;
+        try
+        {
+            if (world.Maps.Current is not {} map)
+            {
+                Behavior.SteppedBehavior.ReportMissing("M13-030 planner import 0x004FD508..0x004FD510 current map is absent; root Last cannot be sampled, retaining the prior obstacle snapshot");
+                return false;
+            }
+            uint sampled = map.LastObservedTime;
+            if (tightPadding && _lastImportedMapTimestamp >= sampled) return false; // unsigned, including backward clocks
+            _lastImportedMapTimestamp = sampled; // 0x004FD5CE: before any obstacle rebuild
+            Env.ImportBlockWorldObstacles(world, carriedObjectId, tightPadding, ignore);
+            return true;
+        }
+        finally { Monitor.Exit(gate); }
+    }
 
     /// <summary>
     /// impl+0x108: the pre-plan wait in ms. The ctor 0x004FCCF6 sets 0 and
@@ -1001,7 +1028,7 @@ public class LatticePlanner
     {
         ReplanFlag = forceReplan;
         RunFlag = true;
-        Env.ImportBlockWorldObstacles(world, carriedObjectId, tightPadding: !forceReplan, ignore);
+        ImportBlockWorldObstacles(world, carriedObjectId, tightPadding: !forceReplan, ignore);
     }
 
     /// <summary>

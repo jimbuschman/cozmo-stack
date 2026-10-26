@@ -338,7 +338,13 @@ public sealed partial class CozmoRobot : IDisposable
         LocalizationWorld.DelocalizeRuntime=()=>Engine.Robot?.Delocalize(Carrying.IsCarryingObject);
         LocalizationWorld.Log += Engine.EmitStackLog;
         // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.
-        Engine.ConstructorMapCreated = () => LocalizationWorld.ConstructMapComponent();
+        Engine.ConstructorMapCreated = () =>
+        {
+            LocalizationWorld.ConstructMapComponent();
+            // fidelity: M13-030 — seed each map from the checked Robot::GetLastImageTimeStamp / VC+0xE8 getter.
+            // Separate construction input: existing producer-clock gaps are not changed by this job.
+            LocalizationWorld.Maps.ConstructionImageTimestamp = () => CameraSettings.LastProcessedImageTimestamp;
+        };
         LocalizationWorld.RobotTimestamp = () => State.Latest?.Timestamp ?? 0;
         LocalizationWorld.CurrentRobotPose = () => Engine.Robot?.MainPose; // borrowed native Robot::GetPose; admission updates it
         LocalizationWorld.OriginNode = id => Engine.Robot?.OriginNames.Get(id);

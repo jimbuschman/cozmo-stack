@@ -96,7 +96,10 @@ public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, 
 /// </summary>
 public sealed partial class MemoryMap
 {
-    internal readonly SourceQuadTree Tree = new();
+    internal readonly SourceQuadTree Tree;
+    public MemoryMap() : this(0) { }
+    // fidelity: M13-030 — 0x00681384..96, Unknown.First = Unknown.Last = Robot+0x2C.
+    internal MemoryMap(uint imageTimestamp) => Tree = new SourceQuadTree(imageTimestamp);
     /// <summary>Read-only diagnostic snapshot of native leaf cells by content type, including Unknown.
     /// Counts cells, not source polygons or distinct payloads; does not change the map.</summary>
     public IReadOnlyDictionary<MemoryMapContentType,int> NativeContentCounts => Tree.ContentCounts();
