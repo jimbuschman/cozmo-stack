@@ -124,3 +124,22 @@ Pending reconciliation. Official manifest frozen; no proposed status changes yet
 - Manager committed verified CM13-02 on builder branch3d2021a8, fast-forwarded trial branch. No main merge/push. This removes the objective sender omission, with current host action-admission test boundary/mood/native recipients retained as gaps; no complete native behavior-manager or hardware claim.
 - Two implementation jobs completed; third deliberately deferred. Both independent reviewers found no remaining blocking defect in their bounded diffs. No source changes remain unreviewed.
 - Preparing single required combined final scripts/test-full.sh run on clean committed trial HEAD (repository instruction runs after code commit, records fingerprint). Counts/statuses and accepted subsystems will be compared to frozen baseline after actual outcome. No final full-suite result claimed yet.
+
+## Ending manifest audit (gate still running)
+
+- Explicit UTF-8 JSON comparison confirms ENTIRE fidelity_manifest.json identical to baseline16173227; git diff also empty. A preliminary diagnostic comparison used the Windows default decoder and falsely differed on historical Unicode text; corrected the comparator, not the manifest. Regenerated frozen snapshots using UTF-8 and obtained no content diffs.
+- Counts remain EXACT239/EQUIVALENT6/POLICY68/HARDWARE14/BLOCKED2/IMPLEMENTATION358/RECOVERABLE23=710; accepted subsystems remain M1/M2/M3/M4/M5 only. Unchanged official counts are not used to deny the two bounded repairs or to imply unapproved settlements.
+- Final gate started02e83626; source/code records were clean at start, test log .scratch/test-full.log. Handoff draft records pending result honestly; no new source changes made during gate.
+
+## Full gate attempt1 failed / bounded correction
+
+- scripts/test-full.sh on02e83626 exit1: fidelity710 PASS; testhost crashed after5009 passed/0 failed/0 skipped (partial count, NOT full pass). Fatal disposed Pose3d in native planner worker; blame names new CM13-01 dispatch fixture. Exact stack/trace in gate-run-1.md. No passed fingerprint accepted.
+- Builder and reviewer independently traced fixture reverse using-disposal: goal destroyed before m/runtime join while asynchronous worker still maps retained goal wrapper. Reviewer acknowledges initial cleanup race missed. Correct fixture ordering without sleeps or production catch, then affected-only verify and repeat full gate because test code changed.
+- This correction does not fix/certify production native goal-copy/start-state ownership. M11-084/M13-033 retained reference boundary remains explicit high-priority follow-up; no exclusion or harmlessness claim. Trial remains not accepted.
+
+## Teardown correction accepted / final gate attempt2
+
+- Builder changed ONLY dispatch fixture declaration/lifetime order so drive -> m.Dispose/worker.Join -> goal -> rig cleanup holds even on assertion failure; no source behavior changed, no sleeps or catches. Manager accepted independent affected-diff review PASS. Reviewer appended acknowledgment that original review missed fixture race, superseding earlier no-race statement for teardown; production ownership uncertainty retained.
+- Builder focused25/25 PASS;20 separate testhost dispatch/cleanup repetitions20/20 PASS, zero skipped/aborts. Reviewer independent dispatch1/1 PASS348ms. Detailed current-record quotes and commands in updated CM13-01 reports. Test-only logkey0keys/0ABSENT; diffcheck PASS.
+- Manager committed correctionb2891e6c and fast-forwarded trial branch. Original first-gate failure preserved in gate-run-1.md and local .scratch/test-full-attempt-1.log. No failure concealed or counted as acceptance.
+- Required full suite will repeat because test code changed after abort; this is a justified correction/reverify cycle, not a repeated passing suite. No third implementation job added.

@@ -20,3 +20,8 @@ No proposed numerical count changes are approved. Review and hardware remain ind
 
 M13-003 already records the unported Pose3d roundtrip / ComputeOriginPose. Narrow feasibility inspection found that00517F6C reads Robot+284 then component+8, defaults offset20.0 at00517F70 and conditionally picks another literal before tail008CAE4C. Generic M11-065/066 pose helpers and M11-094 footprint rows do not establish this state-dependent operation. Stop before building a guessed shortcut. Next candidate is a separate bounded recovery of that tail/offset/live-input binding, then independent check and job release.
 
+
+## Production ownership follow-up exposed by full gate
+
+Current NativeLatticePlannerRuntime retains caller Pose3d wrappers in its goal array/start. CM13-01 fixture teardown correctionb2891e6c keeps borrowed input alive until Join; it does not establish native copy/start snapshot ownership or early-disposal API safety. Preserve M11-084 RECOVERABLE_GAP and M13-033 IMPLEMENTATION_GAP boundaries. A narrow source/production-copy ownership investigation is high priority before whole planner acceptance. First gate's5009 partial passes ended in host abort, not a full pass; reviewer acknowledges missed fixture race.
+
