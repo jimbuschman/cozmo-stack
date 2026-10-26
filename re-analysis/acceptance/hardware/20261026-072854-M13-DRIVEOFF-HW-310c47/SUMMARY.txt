@@ -1,0 +1,25 @@
+Drive-off-charger test
+OVERALL: no problems found in any check. Send this folder for review.
+
+OK = the stack did what the original engine does. PROBLEM = it did something the engine would not.
+COULD NOT CHECK = setup or evidence missing. KNOWN MISSING PIECE and SAVED FOR REVIEW never pass or fail.
+Your answers are saved as notes; they never decide a result.
+
+ON_CHARGER: OK. The stack did what the original engine does. [MATCH]
+
+HOLD_50: OK. The stack did what the original engine does. [MATCH]
+
+DISTANCE_400: OK. The stack did what the original engine does. [MATCH]
+
+PLATFORM_EXIT: OK. The stack did what the original engine does. [MATCH]
+
+BEHAVIOUR_END: OK. The stack did what the original engine does. [MATCH]
+
+DRIVING_ANIMATIONS: OK. The stack did what the original engine does. [MATCH]
+
+DRIVE_OBSERVATIONS: SAVED FOR REVIEW. Nothing here can pass or fail. [OBSERVATION]
+
+Startup: engine readiness delivered after 4626 ms; connect callback completed; 0 error-level engine log(s)
+
+Run errors:
+None.
