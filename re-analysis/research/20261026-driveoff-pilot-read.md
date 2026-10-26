@@ -1448,3 +1448,63 @@ C6's literal current M8-002/M8-003 quotes remain applicable to scored/lifecycle 
 Exact per-tick effect: after common RB gates and repetition evaluation, CS1 skips only score<=0. Otherwise nonrunning LC candidate consumes one shared Robot.GetRNG RandDbl call via0060A49E..4BC even if DriveOff remains winner1000. Candidate draw is f64limit3FB99999A0000000 added to widened f32score then narrowed once. Preserve stored ordered chooser traversal and actual timer history; do not assume alwayspositive after a previous stop, or skip it because lower score. During a fresh never-run candidate, stopstamp30=0 returns penalty1, so platformfalse + on-treads + rawcarry sentinel + eligible common gates gives score1 and one draw. If any common gate rejects, no derived score/draw; actual state, not class-not-implemented, must decide.
 
 Smallest source-supported unit is therefore a real typed nonrunning candidate using actual Robot/common config/score/lifecycle and shared RNG, with constant derived gate and actual raw-state flags. No actionbody required for that losing interval. Once DriveOff ends or Look wins/needs Init/Resume, stop with explicit owning-record MISSING for unimplemented selected behavior; do not return fake success, fake running lifetime, reset stop stamps, or present absent candidate as score0. This is a bounded implementation inventory, not a feature exclusion or whole LookForFaceAndCube settlement. Different checker PASS required before adoption.
+
+
+### C7.1 — actual scored8B subscription and default41 filter (builder clarification)
+
+No correction of LC9's subscription claim is needed: exact caller instructions prove it. This supplement replaces any inference from the helper's name with the concrete source path. Actual model/effort remains unobservable; known.py preflights005BC388,005BF00C,005BFD96,008CBFBC,005BC25E before these reads. Current owning common records (literal title/status/first evidence item, full quotes earlier):
+
+```json
+{
+  "id": "M8-001",
+  "title": "The IBehavior lifecycle: constructor fields, Init, Update, Stop, StopActing, Resume, IsRunnable and IsRunnableScored",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "IBehavior::IBehavior 0x005bbc38 stores behaviourID at +0x3c, behaviourClass at +0x64, needsActionID at +0x68; zeroes +0x24/+0x28, the flat score at +0x100 and +0x104 (strd r8,r8,[r4,#0x100] 0x005bbd28); sets +0x108 = 0, +0x10c = 0x29 (invalid behaviour objective), and +0x110 = +0x111 = 1 (movw r0,#0x101 0x005bbd30, strh.w r0,[r4,#0x110] 0x005bbd34); constructs the repetition graph at +0xe8 and the running-penalty graph at +0xf4 (GraphEvaluator2d::GraphEvaluator2d 0x005bbd12/0x005bbd22); calls ReadFromJson 0x005bbd40 and ScoredConstructor 0x005bbe32."
+  ]
+}
+```
+
+```json
+{
+  "id": "M8-003",
+  "title": "Scored selection: emotion scorers or the flat score, times the repetition and running penalties",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "IBehavior::ReadFromScoredJson 0x005bc488 reads five keys, not four: \"emotionScorers\" into a MoodScorer at +0xdc, \"flatScore\" into the float at +0x100 (0x005bc4ca/0x005bc4e0), \"repetitionPenalty\" into the graph at +0xe8 (0x005bc4ee), \"considerThisHasRunForBehaviorObjective\" into a behaviour objective at +0x10c through BehaviorObjectiveFromString (call 0x005bc5a0), and \"runningPenalty\" into the graph at +0xf4 (string 0x005bc602; add.w r6,r4,#0xf4 0x005bc5f8; AddNode(0,1,true) 0x005bc678)."
+  ]
+}
+```
+
+| Row | Exact primary path | Consequence |
+|---|---|---|
+| LC10 actual caller | Look005EF80C calls base005BBB74. Base default objective10C=0x29(41) at005BBD26/2C; ReadFromJson call005BBD40; inside root reader005BC25E/260/262/264 calls ReadFromScoredJson(root,false). Base then reaches005BBE30 movr0,this /005BBE32 BLX004B28B0 ScoredConstructor005BC388 before returning. | Look is not merely a5A subscriber. ScoredConstructor is an actual unconditional base-constructor tail call, not a separately required derived class or a side effect of later activity scoring. |
+| LC11 actual8B condition/lifetime |005BC398 loads storedRobot2C,39A HasExternalInterface,39E compares1,3A0 skips when!=1. Otherwise3AE tag8B,3B4 capturedthis,3CA interface virtual28 registration;3CC..3F8 retains scoped handle in this+20 vector. | Actual constructed owner/interface presence controls subscription and retained lifetime. Do not add when native interface absent, create a separate global observer, or tie it only to activity selection. Existing common5A registration remains independent. |
+| LC12 dispatcher | PIC literal005BC454 plusPC005BC3BA→vtableheader01026818, addresspoint01026820; invoke slot+18 wordat01026838=005BFD97→Thumb005BFD96. FD98 loads capturedthis+4,FD9A adds event+10,FD9E gets BehaviorObjectiveAchieved payload,FDA2/A4 passespayload/owner,FDAA tails008CBFBC. ThumbBXPC at8CBFBC thenARM8CBFC0 LDRip/8CBFC4 ADDpc andliteral8CBFC8=FFBE6A40 resolvePLT004B2A0C HandleBehaviorObjective005BF00C. | Typed8B payload is handled by this exact common recipient, not the generic while-not-running tag46 hook. |
+| LC13 source filter / state effect |005BF010 loads configured10C;F014 compares0x29;F016 BEQreturnF02A BEFOREpayloadread orclock. OtherwiseF018 loads incomingrawobjective;F01A comparesconfigured;F01E returnsifdifferent. Onlyequal/non41 callsBaseStationTimer atF020/024 andstorescurrentf32time into last-run30 atF028. | Default41 ignores ALLobjectives without changing scoring/history/RNG/action state, including incoming41. Therefore `raw!=configured` alone omits the explicit41 sentinel rule. Source-equivalent no-effect filtering is `(configured==41)||(incoming!=configured)`; onlythecomplement updates30. No configurable non41 behavior is inferred absent. |
+| LC14 absent-key preservation |ReadFromScoredJson005BC56A..57A gets optional considerThisHasRunForBehaviorObjective;isNull/nonzero57A jumps005BC5F8. Onlypresentvalue reachesBehaviorObjectiveFromString005BC5A0/store10C005BC5A4. Actual rootLookJSON and PutDownDispatch's Look scoring both omit this key. | Default41 survives BOTH root construction scoring and activity scoring. Thus actualshippedLook objective4 has proven no-effect underLC13, but subscription/ownerlifetime still accounted for. No event callback is required to manufacture a last-run stamp for a default41 candidate. |
+
+Read scope stops here; no new subscriber census, selected Look action body, or status change. Different B primary check is required before builder adopts this clarification. This is a concrete proof of LC9, not a corrected assertion that subscription is absent.
+
+
+### MO-A — independent narrow Mood raw/API/local output check: SOURCE PASS
+
+Current owning record before claim:
+
+```json
+{
+  "id": "M7-012",
+  "title": "Mood schema, decay graphs, action-result events, affectors, update and game output",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "re-analysis/obb/assets/cozmo_resources/config/engine/mood_config.json",
+    "StaticMoodData::ReadFromJson 0x0067ce6c",
+    "MoodManager::Update 0x0067b5d4",
+    "MoodManager::SendEmotionsToGame 0x0067b724..0x0067b7f8"
+  ]
+}
+```
+
+Independently compared B's “Narrow Mood broadcast join” in20261026-driveoff-pilot-read-codex-check.md with primary instructions after known.py preflights0067B736,00511DE8,006625CE,00725FFC,0071677E,00704F6E,0070FB56. **PASS for this bounded delivery correction.** MoodManager.SendEmotionsToGame0067B736/73C nullRobot12C returns; otherwise copies exactly9rawfloatwords from18+20*i (B74E..77C), constructsMoodStateB78E, actualBroadcastB796 thenClearCurrentB79C. No added physical/resource/animation-library gate. Robot00511DE8..DFC requires context+4externalnonnull thenvslot18; actualUi rvalue006625B0 calls app006625CE BEFOREtimestamp/eventconstruction and synchronous local006625FA→00662590/5A8. App enqueue/publicdelivery mechanism can use the existing host contract, while local61 delivery must not be replaced by a typed-only event.
+
+Serializer personallychecked: Set_MoodState00725FFC..6032 storesU16tag61. Pack0071677E→00704F6E readsvectorcount(end-begin)/4, writeslowU8count,then0070FB56..84 writes everyvectorwordas4rawbytesinorder. This producer count9 gives37bodybytes/39withuniontag; no timestamp/namedfields/float64narrowing introduced atserialization. ExistingM1/M2outerU16unionframing reused. Appropriate source-backed correction preserves typedpublicMood event AND raw61 app event AND local61 underactualinterfaceguard/app-before-local order. Tests/diffverification stillpending; notwholeM7orwholepilotacceptance. No code/tests/manifest/git changes by checker.

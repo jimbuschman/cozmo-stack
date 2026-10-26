@@ -315,3 +315,38 @@ Actual vtable0102A474 addresspoint+8: flags20/24/28 resolve005BF04C/0059EC12/005
 **PASS ONLY for NONRUNNING candidate eligibility/scoring/state during the running-DriveOff PutDownDispatch interval.** Common real robot gates/readiness/history decide admission, followed by real flat/repetition and ordered shared RNG even when candidate loses. Prior stops must not be erased and class-not-bound must not mean score0. A currently running Look candidate invalidates this bound. If Look is later selected and needs Init/Resume/Update, it must visibly stop at its owning unimplemented behavior boundary; do not return fake success/running or claim whole Look complete. No selected action/search body or unrelated M14 feature was extracted or approved. Manager owns a precise new record if necessary before whole settlement; this checker changes no IDs/statuses.
 
 No tests/build/source/git changes. Root and builder received this narrow PASS immediately; final whole implementation verification remains PENDING.
+
+### C7.1 actual 8B registration/default41 filter — independent source PASS
+
+Explicit caller proof closes a precision missing from the earlier LC9 check: Look ctor005EF80C calls IBehavior005BBB74, whose NORMAL common tail005BBE30/32 unconditionally calls IBehavior::ScoredConstructor through PLT004B28B0. It is not a separate derived-class assumption. ScoredConstructor005BC388 gates HasExternalInterface==1 then actually registers8B at005BC3AE..CA and retains the handle. IBehavior's own5A subscription remains separate. Missing external interface suppresses8B registration by its actual gate, not scoring configuration.
+
+Actual functor operator cell01026820+18=01026838 contains005BFD97.005BFD96 loads captured owner+4, unwraps message+10 BehaviorObjectiveAchieved at005BFD9E and tails005BFDAA→008CBFBC. Mixed Thumb bxpc/ARM008CBFC0/C4 plus literalFFBE6A40 reaches PLT004B2A0C HandleBehaviorObjective005BF00C. The handler first reads configured objective10C; value29hex/41 returns at005BF016 BEFORE reading payload or Timer. Only a non41 exact payload match reads BaseStationTimer seconds and writes common stopstamp30 at005BF028.
+
+Ctor005BBD26/2C initializes objective41; IBehavior::ReadFromJson always calls ReadFromScoredJson withroot and bool0 at005BC25E..264. ReadFromScoredJson missing/null considerThisHasRunForBehaviorObjective branches005BC57A→005BC5F8 preserving that value. The actual Look root and activity scoring entry contain no objective, so any8B payload, including4, produces no stopstamp/RNG/state change through this recipient. This is actual subscribed-owner filter evidence, not an absent subscription or global suppression claim. Existing common5A/8B lifetime/handler-isolation obligations remain; prior C7 fields are unchanged. No code/tests/build/git or manifest edits; this exact unit is released to the manager for adoption.
+
+
+## Narrow Mood broadcast join — independent read PASS, implementation correction required
+
+Current record quoted before claim:
+
+```json
+{
+  "id": "M7-012",
+  "title": "Mood schema, decay graphs, action-result events, affectors, update and game output",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "re-analysis/obb/assets/cozmo_resources/config/engine/mood_config.json",
+    "StaticMoodData::ReadFromJson 0x0067ce6c",
+    "MoodManager::Update 0x0067b5d4",
+    "MoodManager::SendEmotionsToGame 0x0067b724..0x0067b7f8"
+  ]
+}
+```
+
+Known preflight followed by primary instruction reads of0067B724..7F8,00511DE8..1DFC,006625B0..614/00662590..5AE,00704F6E..FA0,0070FB56..84,00725FFC..6032,0072928C..98 and0072974C..56. Reused checked M1-056/M2-022 rvalue Broadcast dispatch evidence (current literal records reread).
+
+PASS for this bounded join: Mood null robot+12C returns at0067B736/73C. Otherwise exactly nine raw float words at18+20*i are copied, MoodState constructed0067B78E and Robot.Broadcast called0067B796.0067B79C is ClearCurrent, not Broadcast. Robot00511DE8 loads context+4 external owner, null returns0; present calls vslot18. Actual UI rvalue006625CE delivers to app first, then006625FA reaches local tag lookup/emit00662590..5A8 synchronously. No physical-robot, animation-library or successful-resource-load gate is added. This confirms a real missing production join if code only publishes the typed MoodStateBroadcast: raw EngineToGameMessage tag61 and local61 must also occur under the actual external interface guard.
+
+Wire independently confirmed: Set_MoodState stores0x61; Pack writes U16tag, helper704F76 writes U8(end-begin)/4, helper70FB56 writes EVERY vector float as four rawbytes in order. This producer is count9,37payload bytes/39withuniontag, no timestamp or named fields. Existing DeliverAnimationReportToApp(61,PackBody,CaptureAppEvent(typed)) followed by AnimationMessages.Deliver(61,true,message) under actual HasExternalInterface is compatible with the already checked app FIFO/local order. Typed public subscription remains valid and must be retained; changing the test to typed-only would conceal the local/raw omission.
+
+No code/tests/build/hardware by checker. This is read authorization for this precise delivery correction, not whole M7/path acceptance. Final build remains PENDING.
