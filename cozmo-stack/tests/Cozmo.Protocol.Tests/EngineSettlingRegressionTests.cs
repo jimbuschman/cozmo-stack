@@ -93,6 +93,7 @@ public sealed class EngineSettlingRegressionTests
         try
         {
             int ticks=0;bool initialized=false;int ticksAtReady=-1;
+            IDisposable? readinessObserver=null;
             var ready=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             using var robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions
             {
@@ -102,16 +103,20 @@ public sealed class EngineSettlingRegressionTests
                     initialized=e.Needs is not null;
                     var actual=e.NeedsUpdate!;
                     e.NeedsUpdate=now=>{actual(now);Interlocked.Increment(ref ticks);};
-                    e.AnimationMessages.SubscribeMessage(0x7B,true,p=>{if(p is EngineStateTransition{NewState:3})ticksAtReady=Volatile.Read(ref ticks);});
+                    readinessObserver=e.AnimationMessages.SubscribeMessage(0x7B,true,p=>{if(p is EngineStateTransition{NewState:3})ticksAtReady=Volatile.Read(ref ticks);});
                     e.EngineStateChanged+=s=>{if(s.NewState==3)ready.TrySetResult();};
                 }
             });
+            using var observedReadiness=readinessObserver;
             Assert.True(initialized);
             Assert.False(File.Exists(Path.Combine(state,"needsState.json"))); // M15-030 device persistence is gated.
             await ready.Task.WaitAsync(TimeSpan.FromSeconds(60));
             Assert.Equal(0,ticksAtReady);
             var owner=robot.Engine.Needs;
             var tickHook=robot.Engine.NeedsUpdate;
+            // B-M7-4 / unit host fixture at this point: source ConnectToRobot constructs Robot before Freeplay (M1-025,0x004ED07C).
+            // Startup/needs values below are unchanged; the old setup omitted that owner entirely.
+            robot.Engine.InvokeEngineRequest(()=>{robot.Engine.Robots.AddRobot(CozmoEngine.RobotId);return 0;});
             using(var stack=FreeplayStack.Create(obb,robot,new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()},()=>robot.Engine.Timer.SecondsF,withReactions:false))
                 Assert.Same(owner,stack.Needs);
             Assert.Same(owner,robot.Engine.Needs);

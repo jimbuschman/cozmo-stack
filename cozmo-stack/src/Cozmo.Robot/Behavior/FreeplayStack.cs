@@ -43,6 +43,7 @@ public sealed class FreeplayStack : IDisposable
     public static FreeplayStack Create(string obbRoot, CozmoRobot robot, BehaviorContext ctx, Func<double> clockSec, VisionSystem? vision = null, ManipulationSystem? m = null,
                                        NeedsManager? needs = null, bool withReactions = true, Random? random = null, string? needsDirectory = null)
     {
+        var manager=robot.Engine.InvokeEngineRequest(()=>robot.BehaviorManager??throw new InvalidOperationException("Freeplay requires a constructed native robot."));
         var problems = new List<string>();
         // J3: the needs device-file directory is the host's; FreeplayTool's --state-dir supplies it.
         needs ??= robot.Engine.Needs;
@@ -166,8 +167,11 @@ public sealed class FreeplayStack : IDisposable
         if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is CantHandleTallStackBehavior tallStack
             && robot.Engine.Robot?.TallStackContainers.FirstOrDefault() is {} nativeTall)
             tallStack.BindDelocalizationData(nativeTall);
-        var manager=robot.BehaviorManager??throw new InvalidOperationException("Freeplay requires a constructed native robot.");
-        robot.Engine.InvokeEngineRequest(()=>{manager.BindFreeplayInputs(ctx,obbRoot,vision,m,bound);return 0;});
+        robot.Engine.InvokeEngineRequest(()=>
+        {
+            if(!ReferenceEquals(manager,robot.BehaviorManager))throw new InvalidOperationException("Native robot changed while Freeplay inputs were being loaded.");
+            manager.BindFreeplayInputs(ctx,obbRoot,vision,m,bound);return 0;
+        });
 
         // one repetition history for the whole stack: the manager records it, every chooser reads it
         var tree = ActivityTreeLoader.Load(obbRoot, bound, manager.Penalty, random);

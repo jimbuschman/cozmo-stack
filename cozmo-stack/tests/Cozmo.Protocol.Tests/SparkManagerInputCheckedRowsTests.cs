@@ -130,8 +130,14 @@ public sealed class SparkManagerInputCheckedRowsTests
     [Fact]
     public void HostDisposeRetiresTheActualInputSubscription()
     {
-        using var robot=CozmoRobot.CreateOffline();var manager=new BehaviorManager(Context(robot));manager.AttachSparkInput();
-        manager.Dispose();Assert.Equal(0,robot.Engine.AnimationMessages.Count(0x96,false));
+        // reach: unit (separate unit manager and actual native owner; direct G2E delivery, no Freeplay selection).
+        // Old: native baseline0 and final0. M7-014 ctor/Init0x00510388 plus M15-0570x005A15B0/15CE give native baseline1.
+        // Disposing this unit manager removes only its own handle; native manager remains until Robot removal.
+        using var robot=CozmoRobot.CreateOffline();
+        Assert.Equal(1,robot.Engine.AnimationMessages.Count(0x96,false));
+        using var manager=new BehaviorManager(Context(robot));manager.AttachSparkInput();
+        Assert.Equal(2,robot.Engine.AnimationMessages.Count(0x96,false));
+        manager.Dispose();Assert.Equal(1,robot.Engine.AnimationMessages.Count(0x96,false));
         robot.Engine.AnimationMessages.Deliver(0x96,false,new SparkManagerMessage(0,3));Assert.Equal(0x55,manager.RequestedSparkId);
     }
 }

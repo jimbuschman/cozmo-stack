@@ -2537,7 +2537,7 @@ public class M4ControlTests
 
     /// <summary>
     /// M4-019 H4 (0x00535432..0x00535480) with M8-015 / M8-019: with the cliff sensor enabled, HandleRobotStopped calls
-    /// BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454, M8-019: this fixture has no bound manager recipient), then ActionList::Cancel(-1)
+    /// BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454, M8-019: native manager receives it; the final switch remains MISSING), then ActionList::Cancel(-1)
     /// (0x0053546E) on the robot's own list, then broadcasts; with the sensor disabled none of the three happens. UpdateFullRobotState's
     /// DetectGyroDrift/DetectBias calls (0x00512FBA, 0x00512FC4, M10-015) are reported MISSING too, until a hook is set.
     /// </summary>
@@ -2564,10 +2564,12 @@ public class M4ControlTests
             lock (missing) Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M8-019"));
             s.SetCliffSensorEnabled(true);
             var order = new List<string>();
-            void OnOrder(string m) { if (m.StartsWith("MISSING: M8-019 HandleRobotStopped ")) lock (order) order.Add("behaviour-end"); }
+            // B-M7-4: actual message/native manager entry; old observer saw the unbound-caller diagnostic.
+            // Now the real manager receives it and reports its still-unbuilt switch. H4 cancel/broadcast order stays unchanged.
+            void OnOrder(string m) { if (m.StartsWith("MISSING: M8-019 RequestCurrentBehaviorEndImmediately SwitchToBehaviorBase")) lock (order) order.Add("behaviour-end"); }
             Cozmo.Robot.Behavior.SteppedBehavior.MissingReported += OnOrder;
             int logSeen = 0;
-            s.RobotStopped += () =>
+            void OnStopped()
             {
                 lock (order)
                 {
@@ -2575,15 +2577,20 @@ public class M4ControlTests
                     if (rig.Log.Any(l => l.StartsWith("info: [Actions] IActionRunner.Cancel: Cancelling action MoveHeadTo"))) order.Add("cancel");
                     order.Add("broadcast"); logSeen++;
                 }
-            };
-            rig.Data(new RobotStopped { Field0 = 7 }); rig.Tick();
-            Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= OnOrder;
+            }
+            s.RobotStopped += OnStopped;
+            try{rig.Data(new RobotStopped { Field0 = 7 }); rig.Tick();}
+            finally
+            {
+                s.RobotStopped -= OnStopped;
+                Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= OnOrder;
+            }
             Assert.Equal(1, logSeen);                                                     // the broadcast fired
             lock (order) Assert.Equal(new[] { "behaviour-end", "cancel", "broadcast" }, order);   // H4 order: 0x00535454, 0x0053546E, 0x00535480
             Assert.Contains(rig.Log, l => l.StartsWith("info: [Actions] IActionRunner.Cancel: Cancelling action MoveHeadTo"));
             lock (missing)
             {
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M8-019 HandleRobotStopped "));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M8-019 RequestCurrentBehaviorEndImmediately SwitchToBehaviorBase"));
                 Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M11-097 C12.4"));
             }
             await Task.WhenAny(head, Task.Delay(1000));
