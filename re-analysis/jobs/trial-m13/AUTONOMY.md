@@ -48,3 +48,13 @@ when convenient. A failed run becomes a FIX row for the job it points at; nothin
   cited addresses, looks for circular tests and unrecorded gaps, and stops there. A claim the cited address does not
   settle goes back as FIX with the question; Codex does the reading.
 - **Claude reviews in batches:** all rows that are READY FOR CLAUDE at the time, in one pass.
+
+## Where verdicts go, and how Codex sees them (operator, 2026-10-26)
+
+- **Claude writes its verdicts only in `REVIEW.md`** in this folder on main: one line per job, MERGED or FIX with the
+  finding. Codex never edits `REVIEW.md`; Claude never edits `QUEUE.md` on Codex's branch. That keeps rebases free of
+  conflicts. (This replaces "writes the finding into the row" above.)
+- **Codex reads `origin/main:re-analysis/jobs/trial-m13/REVIEW.md`** at the start of every job, after the rebase. A FIX
+  line comes before any new job.
+- **While Codex is idle** (waiting, or after its scope runs out), it polls `origin/main` with a plain shell loop about
+  every 15 minutes, not with model turns.
