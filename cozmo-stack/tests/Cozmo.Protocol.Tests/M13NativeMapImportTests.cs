@@ -167,10 +167,12 @@ public sealed class M13NativeMapImportTests
         var world=rig.Robot.Vision.World;
         Assert.Single(world.LocatedObjects.Where(o=>o.Type==ObjectType.Charger_Basic));
         Assert.True(world.Maps.Current!.NativeContentCounts.TryGetValue(MemoryMapContentType.ObstacleCharger,out var cells)&&cells>0);
+        // The async planner retains these goal wrappers. Keep the goal alive until m.Dispose joins its worker,
+        // including assertion-failure cleanup: reverse disposal is drive -> m/worker join -> goal -> rig.
+        using var goal=new Pose3d(Mat3.Identity,new Vec3(200,0,0));
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);Assert.True(m.LoadPlanner(Obb()));
         // A stale prior snapshot proves the dispatch really rebuilds rather than observing initial empty buckets.
         m.Planner!.Env.ImportObstaclePolygons(new[]{Payload().Polygon},false);Assert.Equal(1,m.Planner.Env.ObstacleCount);
-        using var goal=new Pose3d(Mat3.Identity,new Vec3(200,0,0));
         using var drive=new DriveToPoseAction(m){Goal=goal};
         Assert.Equal(0,drive.Init());
         Assert.Same(m.NativePlanners!.Lattice,m.NativePlanners.Current);
