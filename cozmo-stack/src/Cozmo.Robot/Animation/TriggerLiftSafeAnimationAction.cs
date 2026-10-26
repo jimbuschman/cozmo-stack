@@ -1,14 +1,18 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Behavior;
 namespace Cozmo.Robot.Animation;
 
 // fidelity: M5-063, M8-020, M8-021
 // ActionList runner for the checked driving calls. Playback uses the existing streamer.
 // The unported concrete-action callback/union/DAS portions stay visible, never source-complete.
-internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
+internal class TriggerAnimationAction : ActionRunner
 {
     private readonly CozmoRobot _robot;
-    internal readonly DrivingAnimationRequest Request;
-    private readonly string? _group;
+    internal DrivingAnimationRequest Request { get; private set; }
+    private string? _group;
+    protected bool HasStarted => _started;
+    protected bool HasEnded => _ended;
+    protected bool Failed => _failed;
     private AnimationTicket? _ticket;
     private string _clip="";
     private bool _destroyed;
@@ -17,7 +21,7 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
     private byte _animationTag;
     private RetainedSubscription? _ca, _cb, _d5, _aborted;
     private readonly Action<string> _missing;
-    internal TriggerLiftSafeAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null) : base(0x1A, (uint)request.Argument4)
+    internal TriggerAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null, bool liftSafe = false) : base(0x1A, (uint)request.Argument4)
     {
         _robot=robot;Request=request;_missing=missing??Behavior.SteppedBehavior.ReportMissing;
         _loops = unchecked((uint)request.Argument2);
@@ -26,14 +30,21 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
             ? BitConverter.Int32BitsToSingle(0x7F7FFFFF) : request.Argument5;
         SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);Log=robot.Engine.EmitStackLog;
         // Checked M8-005/007 lift-safe ctor gate, 0x00544714..0x00544732.
-        if(robot.Motion.IsCarryingObject?.Invoke()==true && robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)RequiredTrackMask|=2;
-        _group=robot.Animations.DrivingTriggerMap?.GroupFor(request.Trigger);
+        if(liftSafe && robot.Motion.IsCarryingObject?.Invoke()==true && robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)RequiredTrackMask|=2;
+        SetAnimGroupFromTrigger(request.Trigger);
+        Missing(liftSafe ? "M8-021/M8-005 concrete TriggerLiftSafeAnimationAction callback lifecycle is incomplete: completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction semantics remain unbuilt; checked CA/CB/D5/5F bodies use robot events rather than playback-ticket completion"
+            : "M8-020/M8-021 TriggerAnimationAction inherited completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction remain unbuilt; checked playback callbacks are shared");
+    }
+    // TriggerAnimationAction::SetAnimGroupFromTrigger 0x0054432C; shared by constructor and get-out Init.
+    protected void SetAnimGroupFromTrigger(AnimationTrigger trigger)
+    {
+        Request = Request with { Trigger = trigger };
+        _group=_robot.Animations.DrivingTriggerMap?.GroupFor(trigger);
         if(_group is not null)
         {
-            robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Animations","GetResponseForAnimationTrigger.Found",$"{request.Trigger} -> {_group}");
-            if(_group.Length==0)robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"TriggerAnimationAction.EmptyAnimGroupNameForTrigger",$"Event: {request.Trigger}");
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Animations","GetResponseForAnimationTrigger.Found",$"{trigger} -> {_group}");
+            if(_group.Length==0)_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"TriggerAnimationAction.EmptyAnimGroupNameForTrigger",$"Event: {trigger}");
         }
-        Missing("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction callback lifecycle is incomplete: completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction semantics remain unbuilt; checked CA/CB/D5/5F bodies use robot events rather than playback-ticket completion");
     }
     private void Missing(string text)=>_missing(text);
     protected override string ActionName=>"PlayAnimation"+(_group??"");
@@ -126,4 +137,11 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
         _ca?.Dispose(); _ca = null;
         base.WatcherEnding();
     }
+}
+
+// Preserve the driving-only lift-safe constructor gate; the general trigger action has no extra lift mask.
+internal sealed class TriggerLiftSafeAnimationAction : TriggerAnimationAction
+{
+    internal TriggerLiftSafeAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null)
+        : base(robot, request, missing, liftSafe: true) { }
 }

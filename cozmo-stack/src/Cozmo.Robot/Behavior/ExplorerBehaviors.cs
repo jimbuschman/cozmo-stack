@@ -463,7 +463,6 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
     {
         base.OnStop(reason); // retain ActionBehavior's cancellation cleanup
         if (ShouldClearExpressedState) _needs.SevereNeeds.Clear(); // 0x005EE7D8
-        // MISSING: M15-072 PlayNeedsGetOutAnimIfNeeded 0x0054504C/0x005451C8 has no stack action owner.
     }
 }
 
