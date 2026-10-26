@@ -158,9 +158,10 @@
 | 61w4g | B-M11-21 | DONE 04417900 (full suite 263f522f); Claude check PASS (research/20261025-b-m11-21-clau... | DONE (5/5 items; 1 MISSING) | `research/20261025-b-m11-21-claude-check.md` |
 | 61w4h | B-M15-12 | DONE 6cd86f8a..5fe5401b (full suite 6217/6217); Claude check PASS (research/20261025-b-... | DONE (8/8 items; 2 MISSING) | `research/20261025-b-m15-12-claude-check.md` |
 | 61w4i | B-M13-29 | DONE a4815c1b (status 0c6335a2); Claude check PASS (research/20261025-b-m13-29-rows-72-... | DONE (4/4 items; 2 MISSING) | `research/20261025-b-m13-29-rows-72-74-claude-check.md` |
-| 61w4j | B-M7-4 | open — BehaviorManager with robot lifetime (robot+0x44); reaction locks before Freeplay | no status file | none found |
-| 61w4k | B-M15-13 | open — PlayNeedsGetOutAnimIfNeeded action via the C# API (M15-074) | no status file | none found |
-| 61w4l | B-M13-30 | open — map root timestamp seed and planner import gate (M13-030, M13-003) | no status file | none found |
+| 61w4j | B-M7-4 | DONE fc39a9f5..d2f351e9 (full 6223/6223); Claude check PASS (research/20261026-b-m7-4-m... | DONE (5/5 items; 5 MISSING) | `research/20261026-b-m7-4-m15-13-m13-30-claude-check.md` |
+| 61w4k | B-M15-13 | DONE fc6ce88e (full 6231/6231); Claude check PASS (research/20261026-b-m7-4-m15-13-m13-... | DONE (1/3 items; 2 MISSING) | none found |
+| 61w4l | B-M13-30 | DONE 1993dd63 (full 6240/6240); Claude check FAIL: map seed uses the image clock, engin... | DONE (3/3 items; 3 MISSING) | none found |
+| 61w4l1 | B-M13-30a | open — seed new maps from Robot+0x2C (last RobotState timestamp) | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
