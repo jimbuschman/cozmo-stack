@@ -13,3 +13,11 @@ Superseded work rejected: repeat root geometry/growth/shift/merge, severe-needs 
 
 
 No further jobs released. Two bounded jobs complete with independent code review; no subsystem acceptance. Final required gate PASS on36817201 after documented first-attempt teardown abort/fixb2891e6c. Production ownership/pose/configuration/mood/recipient gaps remain in HANDOFF.md and PROPOSALS.md.
+
+## Round 2 (released by the Claude manager, 2026-10-26)
+
+CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); merged to main at 1f7567ea.
+
+| Job | State | Purpose |
+| --- | --- | --- |
+| CM13-03 | RELEASED | Planner goal/start-state ownership (M13-033 / M11-084): read, independent check, then build. Branch `codex-m13-manager-2`. See CM13-03.md. |
