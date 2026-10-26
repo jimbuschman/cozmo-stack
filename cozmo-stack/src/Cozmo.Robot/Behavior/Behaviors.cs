@@ -731,12 +731,12 @@ public static class ShippedBehaviors
         if (vision is not null)
         {
             var ack = new AcknowledgeObjectBehavior(vision.World, vision.Locator);
-            // Robot::GetLastImageTimeStamp is the vision system's last raw frame timestamp (M11 interface); the carried and
-            // docking object ids are M12's and not attached here.
+            // PositionUpdate ShouldReactToTarget0x00612584 / RobotReactedToId0x00612A9E call
+            // Robot::GetLastImageTimeStamp0x00516EC0 (VC+0xE8). Carried/docking IDs remain M12 inputs.
             built.Add((ack.Id, ReactionTrigger.ObjectPositionUpdated, ack,
                        new ObjectPositionUpdatedStrategy(vision.World, ack, robot)
                        {
-                           LastImageTimestamp = () => vision.LastRawFrameTimestamp ?? 0,
+                           LastImageTimestamp = () => robot.CameraSettings.LastProcessedImageTimestamp,
                        }));
 
             // FacePositionUpdated -> AcknowledgeFace and PetInitialDetection -> ReactToPet. With no face detector the

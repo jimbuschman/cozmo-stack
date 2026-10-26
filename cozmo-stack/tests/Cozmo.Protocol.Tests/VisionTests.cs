@@ -953,7 +953,11 @@ public class VisionTests
         var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         Assert.True(o.IsLocated);
         rig.Vision.World.MarkDirty(WorldRig.CubeId);   // as an ObjectMoved from the cube does
-        // same view, cube gone
+        // Old: first empty result counted1; corrected getter sees the last confirmation's timestamp.
+        // 0x00625028 reads pre-tail E8; GetLastVisuallyMatchedTime >= ts skips0x00621D64..6A.
+        var pending = rig.Frame(null, head: -0.15f);
+        Assert.Empty(pending.Forgotten);Assert.Equal(0, o.UnobservedCount);
+        // same view, cube gone; now two genuinely eligible misses
         var r1 = rig.Frame(null, head: -0.15f);
         Assert.Empty(r1.Forgotten);
         Assert.Equal(1, o.UnobservedCount);
@@ -1061,6 +1065,10 @@ public class VisionTests
         rig.Observe(CubeAhead(), head: -0.15f);
         var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         rig.Vision.World.MarkDirty(WorldRig.CubeId);   // the Dirty-with-nothing-behind case applies
+        // Old: first empty result counted1; pre-tail E8 still equals the confirmation time here.
+        // Consume that result before testing the movement bit on an eligible candidate (0x00621D64..6A).
+        rig.Frame(null, head: -0.15f, flags: RobotStatusFlag.AreWheelsMoving);
+        Assert.Equal(0, o.UnobservedCount);
         rig.Frame(null, head: -0.15f, flags: RobotStatusFlag.AreWheelsMoving);
         Assert.Equal(1, o.UnobservedCount);            // AreWheelsMoving alone does not gate
         Assert.True(o.IsLocated);

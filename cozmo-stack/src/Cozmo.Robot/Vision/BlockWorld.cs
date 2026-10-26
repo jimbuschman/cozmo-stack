@@ -827,11 +827,8 @@ public sealed partial class BlockWorld
     {
         Maps.OriginPose=GetNativeOrigin; // UpdateMapOrigins uses the existing origin-list owner, not public-pose subtraction.
         Maps.RobotPose=()=>CurrentRobotPose?.Invoke();
-        Maps.ImageTimestamp=()=>
-        {
-            Behavior.SteppedBehavior.ReportMissing("M11-037/M11-044 map stamp input 0x0067EFCE/0x0067F0A6/0x0067F32C -> Robot::GetLastImageTimeStamp 0x00516EC0: existing VisionSystem last-image clock is an unsourced stand-in; its camera getter join remains unchecked");
-            return LastImageTimestamp is {} clock ? clock() : MissingMapImageTimestamp();
-        };
+        // 0x0067EFCE/0x0067F0A6/0x0067F32C -> Robot::GetLastImageTimeStamp (VC+0xE8).
+        Maps.ImageTimestamp=()=>LastImageTimestamp is {} clock ? clock() : MissingMapImageTimestamp();
     }
     private static uint? MissingMapImageTimestamp()
     {
