@@ -41,6 +41,7 @@ public sealed record FreeplayDecision(double AtSec, string? Activity, string? Be
 public sealed class FreeplaySystem : IManagedActivity
 {
     private readonly BehaviorManager _manager;
+    private readonly Action<BehaviorManager.ReactionSwitch> _reactionObserver;
     private readonly BehaviorContext _ctx;
     private readonly IReadOnlyDictionary<string, IBehavior> _bound;
     private IBehavior? _pendingInterlude;
@@ -63,7 +64,14 @@ public sealed class FreeplaySystem : IManagedActivity
         // BehaviorManager::GetCurrentActivity (0x005a2f78): the manager ticks this activity, asks it for the
         // desired behaviour behind the reaction check, and reports what a reaction switched to.
         manager.Activity = this;
-        manager.ReactionTriggered += sw => { Record(_tickNowSec, Current?.Id, sw.Behavior, $"reaction {sw.Trigger}"); _recordedThisTick = true; };
+        _reactionObserver=sw => { Record(_tickNowSec, Current?.Id, sw.Behavior, $"reaction {sw.Trigger}"); _recordedThisTick = true; };
+        manager.ReactionTriggered += _reactionObserver;
+    }
+
+    internal void DetachHostHandle()
+    {
+        _manager.ReactionTriggered-=_reactionObserver;
+        if(ReferenceEquals(_manager.Activity,this))_manager.Activity=null;
     }
 
     public Activity Freeplay { get; }

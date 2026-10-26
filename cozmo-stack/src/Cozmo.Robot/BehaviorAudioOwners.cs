@@ -22,6 +22,7 @@ public sealed partial class EngineRobot
         catch{BehaviorAudioB?.Dispose();BehaviorAudioA?.Dispose();throw;}
         Lifetime.Bind(0x44,address=>
         {
+            var manager=BehaviorManagerOwner;BehaviorManagerOwner=null;manager?.Dispose();
             Lifetime.Missing(address,0x44); // retain the existing per-Robot remaining-owner diagnostic
             var client=BehaviorAudioA;BehaviorAudioA=null;client?.Dispose();
         });

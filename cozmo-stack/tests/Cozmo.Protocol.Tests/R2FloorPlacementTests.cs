@@ -901,7 +901,7 @@ public class R2FloorPlacementTests : IDisposable
 
     /// <summary>
     /// PlaceObjectOnGroundAction::Init 0x005548C6 takes the lock for EVERY action: a bare action built by any caller (PutDown, FistBump, Motion's lift-height-32 path, ManipTool) takes it through the
-    /// ManipulationSystem's manager (FreeplayStack.Create wires it); with none attached the lock is reported MISSING once and not taken.
+    /// ManipulationSystem's native robot manager; before a native robot exists the absent recipient is reported MISSING once.
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
@@ -923,8 +923,10 @@ public class R2FloorPlacementTests : IDisposable
             rig.M.Docking.Carrying.SetCarrying(7);
             var bare = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedSubActions(ActionResult.Success) };
             var t1 = bare.RunAsync(default);
-            Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));      // no manager attached: not taken
-            Assert.Contains(missing, m => m.Contains("placeOnGroundAction"));
+            Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));      // the local unit override has not been attached; native owner receives the call
+            // B-M7-4 / unit: old ReactionLocks=null and recipient MISSING; now the native manager exists.
+            Assert.NotNull(rig.M.ReactionLocks);
+            Assert.DoesNotContain(missing, m => m.Contains("placeOnGroundAction"));
             int raised1 = 0; bool cleared1 = false;
 
             SignalTestContext.Run(t1, () => { rig.Pump(); Firmware(rig, ref raised1, ref cleared1, () => bare.StatusLatched); });

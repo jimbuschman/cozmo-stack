@@ -193,6 +193,19 @@ public sealed partial class CozmoRobot : IDisposable
     /// <summary>Supplies the app's wake notification (G2E166), also sent once when each connection is ready.</summary>
     // fidelity: M15-073
     public void NotifyCozmoWakeup()=>Engine.PostGameMessage(()=>Engine.AnimationMessages.Deliver(166,false,null));
+    /// <summary>The manager owned by the current native robot; null before connection or after removal.</summary>
+    internal Behavior.BehaviorManager? BehaviorManager => Engine.Robot?.BehaviorManagerOwner;
+    private void BindNativeBehaviorManager(EngineRobot native)
+    {
+        var context=new Behavior.BehaviorContext{Robot=this,Triggers=Animations.DrivingTriggerMap??new Behavior.AnimationTriggerMap(),
+            ClockSec=()=>Engine.Timer.Seconds,Needs=Engine.Needs};
+        var manager=new Behavior.BehaviorManager(context);
+        manager.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
+        manager.InitializeRobotReactions(Engine.Options.ResourcesPath,_vision);
+        if(native.HasExternalInterface)manager.AttachSparkInput();
+        native.BehaviorManagerOwner=manager;
+        Sensors.RequestCurrentBehaviorEndImmediately=manager.RequestCurrentBehaviorEndImmediately;
+    }
     private Behavior.SevereNeedsComponent? _boundSevereNeeds;
     private bool _severeNeedsConstructed;
     private volatile bool _connectionReadyForWake;
@@ -217,7 +230,8 @@ public sealed partial class CozmoRobot : IDisposable
     {
         _connectionReadyForWake=false;_automaticWakeSent=false;
         var severe=BindSevereNeedsInputs(false);severe.ResetForConstruction();
-        severe.DisableReactions=null;severe.RemoveReactions=null; // old native manager is gone
+        severe.DisableReactions=native.BehaviorManagerOwner!.DisableReactionsWithLock;
+        severe.RemoveReactions=native.BehaviorManagerOwner.RemoveDisableReactionsLock;
         severe.Subscribe(Engine,native.HasExternalInterface);
         if(_severeNeedsConstructed||Engine.AIComponentUpdate is null)Engine.AIComponentUpdate=_severeNeedsUpdate;
         _severeNeedsConstructed=true;
@@ -422,7 +436,7 @@ public sealed partial class CozmoRobot : IDisposable
         // because callers hold them, so each is put back in its as-constructed state instead (ResetDevices).
         // NOT YET RESET (named residual for M12-M15): the upper-layer Robot components the engine also builds in
         // Robot::Robot 0x0050FBF1 and deletes with it - DockingSystem's Carrying (CarryingComponent), DockingComponent,
-        // PathFollower, BehaviorManager, MoodManager, ReactiveBehavior, CubeMovedReactionStrategy - are
+        // PathFollower, MoodManager, ReactiveBehavior - are
         // built by callers here and keep their state across a removal.
         Engine.RobotRemoved = ResetDevices;
         // fidelity: M4-026, M4-027
@@ -440,8 +454,6 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.BindNeedsRobotServices();
         _severeNeedsUpdate=()=>Engine.Needs.SevereNeeds.Update();
         Engine.AIComponentUpdate=_severeNeedsUpdate;
-        Engine.BindRobotLifetime+=BindNativeSevereNeeds;
-        if(Engine.Robot is {} severeOwner)BindNativeSevereNeeds(severeOwner);
         // fidelity: M7-017 — the streamer reads the engine-owned component even without a Freeplay handle.
         Animations.Scheduler.DesiredFaceDistortion=()=>Engine.Needs.GetCurrentDesiredDistortion();
         // fidelity: M1-042
@@ -457,6 +469,9 @@ public sealed partial class CozmoRobot : IDisposable
         // Subscribe before any connection event; retain the existing NV calibration and worker start gates.
         if (!Engine.Options.OmitVisionForTest)
             _vision = new Vision.VisionSystem(this,Engine.Options.VisionCalibration,Engine.Options.VisionDetector,Engine.Options.VisionOkaoRecognizer);
+        Engine.BindRobotLifetime+=native=>{BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
+        if(Engine.Robot is {} severeOwner){BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}
+
     }
 
     private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _lightLoadingLogs = new();
@@ -973,4 +988,10 @@ public sealed partial class CozmoRobot : IDisposable
     /// routing carried on; this is how that is made visible rather than silent.
     /// </summary>
     public event Action<Exception>? HandlerFaulted;
+}
+
+// fidelity: M7-014 -- Robot+0x44; retained until the existing native +0x44 destruction recipient.
+public sealed partial class EngineRobot
+{
+    internal Behavior.BehaviorManager? BehaviorManagerOwner;
 }

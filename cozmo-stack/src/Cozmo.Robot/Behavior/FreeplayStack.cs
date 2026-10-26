@@ -37,8 +37,8 @@ public sealed class FreeplayStack : IDisposable
 
     /// <summary>
     /// Builds the stack. <paramref name="vision"/> and <paramref name="m"/> enable the cube, navigation and
-    /// face behaviours; without them the config-free and animation-only sets are bound. The reactions are
-    /// registered when <paramref name="withReactions"/>.
+    /// face behaviours; without them the config-free and animation-only sets are bound. Native reaction entries
+    /// belong to the robot; <paramref name="withReactions"/> controls reaction checks for this host handle.
     /// </summary>
     public static FreeplayStack Create(string obbRoot, CozmoRobot robot, BehaviorContext ctx, Func<double> clockSec, VisionSystem? vision = null, ManipulationSystem? m = null,
                                        NeedsManager? needs = null, bool withReactions = true, Random? random = null, string? needsDirectory = null)
@@ -166,14 +166,8 @@ public sealed class FreeplayStack : IDisposable
         if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is CantHandleTallStackBehavior tallStack
             && robot.Engine.Robot?.TallStackContainers.FirstOrDefault() is {} nativeTall)
             tallStack.BindDelocalizationData(nativeTall);
-        var manager = new BehaviorManager(ctx);
-        manager.AttachSparkInput();
-        if (m is not null) m.ReactionLocks = manager;       // M15-022: PlaceObjectOnGroundAction::Init takes its reaction lock on the robot's BehaviorManager for every caller; the newest stack's manager is the robot's
-        if (withReactions)
-            foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
-                         bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard,
-                         obbRoot, m))
-                manager.AddReaction(reg.Strategy, reg.Behavior);
+        var manager=robot.BehaviorManager??throw new InvalidOperationException("Freeplay requires a constructed native robot.");
+        robot.Engine.InvokeEngineRequest(()=>{manager.BindFreeplayInputs(ctx,obbRoot,vision,m,bound);return 0;});
 
         // one repetition history for the whole stack: the manager records it, every chooser reads it
         var tree = ActivityTreeLoader.Load(obbRoot, bound, manager.Penalty, random);
@@ -233,17 +227,13 @@ public sealed class FreeplayStack : IDisposable
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
         stack._unsubscribe.Add(()=>robot.Engine.BindRobotLifetime-=BindNativeLifetime);
-        // fidelity: M8-019
-        // Bind the existing host manager. Its request entry is partial and visibly stops at the native switch gap.
-        Action<string> endRequest = manager.RequestCurrentBehaviorEndImmediately;
-        robot.Sensors.RequestCurrentBehaviorEndImmediately = endRequest;
-        stack._unsubscribe.Add(() => { if (ReferenceEquals(robot.Sensors.RequestCurrentBehaviorEndImmediately, endRequest)) robot.Sensors.RequestCurrentBehaviorEndImmediately = null; });
+        // M8-019: the native robot's manager owns the sensor request entry too.
+        var previousReactionChecks=robot.Engine.InvokeEngineRequest(()=>{var previous=manager.HostReactionChecksEnabled;manager.HostReactionChecksEnabled=withReactions;return previous;});
+        stack._unsubscribe.Add(()=>robot.Engine.InvokeEngineRequest(()=>{if(ReferenceEquals(manager.Activity,system))manager.HostReactionChecksEnabled=previousReactionChecks;return 0;}));
         var previousAiUpdate=robot.Engine.AIComponentUpdate;
         Action aiUpdate=()=>ai.Update(robot);robot.Engine.AIComponentUpdate=aiUpdate;
-        if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
         stack._unsubscribe.Add(() => {if(ReferenceEquals(robot.Engine.AIComponentUpdate,aiUpdate))robot.Engine.AIComponentUpdate=previousAiUpdate;});
         // Releasing a host handle does not destroy the native severe-needs owner or its wake subscription.
-        stack._unsubscribe.Add(()=>robot.Engine.InvokeEngineRequest(()=>{severe.DisableReactions=null;severe.RemoveReactions=null;return 0;}));
         // fidelity: M7-023 — no captured old ActionList unregister on host Dispose; native +250 is already null at mood destruction.
 
         // fidelity: M1-024
@@ -355,6 +345,7 @@ public sealed class FreeplayStack : IDisposable
         stack._unsubscribe.Add(() => robot.Animations.DrivingAnimations.AreNeedsMet = previousAreNeedsMet);
         robot.Animations.DrivingTriggerMap = ctx.Triggers;
         robot.Animations.DrivingAnimations.AreNeedsMet = ctx.Needs.State.AreNeedsMet;
+        stack._unsubscribe.Add(()=>robot.Engine.InvokeEngineRequest(()=>{system.DetachHostHandle();return 0;}));
         return stack;
     }
 
@@ -380,6 +371,6 @@ public sealed class FreeplayStack : IDisposable
         foreach (var off in _unsubscribe) { try { off(); } catch { } }
         _unsubscribe.Clear();
         // Native ForceUpdate belongs to ~Robot's head, not releasing this host stack handle.
-        Manager.Dispose();
+        // The native robot owns Manager and its locks; this host handle does not retire it.
     }
 }

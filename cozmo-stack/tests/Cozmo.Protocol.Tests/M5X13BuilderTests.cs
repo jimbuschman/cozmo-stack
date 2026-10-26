@@ -45,12 +45,14 @@ public class M5X13BuilderTests : IDisposable
             Assert.True(load.Wait(TimeSpan.FromSeconds(15)));
             Assert.Empty(load.Result.GroupNames); // +0x278 gate prevents group definition.
             // Old: no G2E A6 unlink. M15-073 Init0x00572A86 and severe dtor0x00572A30 now retire its wake handle with AI before NV.
+            // B-M7-4 old: no96 outside Freeplay. M15-057 registers96 at0x005A15B0/15CE;
+            // manager vector+6C retires at0x005A0D86/0D8A, before audio client+68 at0x005A0D8E..98.
             // E07/E08/E09/E10/E11; subscription vectors release from the back.
             // M13-038: manager releases0051112C/0051113A retire A then B's0xA3 handles before BlockFilter.
             // M10-014 +0x44C releases E7/E5/E6/E9/EA/EB in reverse at 0x0051122A, before NV.
             // NV +0x260 is released at 0x005112E4; its backup destructor (0x00643F48 -> 0x0051A5F0)
             // retires the constructor's 6B/6D/6C handle vector from the back before the streamer owners.
-            Assert.Equal(new[] { "unlink G2E F7", "unlink G2E E0", "unlink G2E DF", "unlink G2E DE", "unlink G2E DD", "unlink G2E DC", "unlink G2E DB", "unlink G2E A3", "unlink G2E A3", "unlink G2E EB", "unlink G2E EA", "unlink G2E E9", "unlink G2E E6", "unlink G2E E5", "unlink G2E E7", "unlink G2E A6", "unlink G2E 6C", "unlink G2E 6D", "unlink G2E 6B", "unlink E2G 0D", "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
+            Assert.Equal(new[] { "unlink G2E F7", "unlink G2E E0", "unlink G2E DF", "unlink G2E DE", "unlink G2E DD", "unlink G2E DC", "unlink G2E DB", "unlink G2E 96", "unlink G2E A3", "unlink G2E A3", "unlink G2E EB", "unlink G2E EA", "unlink G2E E9", "unlink G2E E6", "unlink G2E E5", "unlink G2E E7", "unlink G2E A6", "unlink G2E 6C", "unlink G2E 6D", "unlink G2E 6B", "unlink E2G 0D", "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
                 "unlink G2E C4", "unlink G2E AD", "unlink G2E AF", "unlink G2E AE",
                 "unlink G2E B4", "robots", "abort", "join", "loader", "hub" }, order.Where(line => line is not ("unlink G2E 95" or "unlink E2G 35" or "unlink E2G 32")));
             // M11-072: no-resource fixture has R2/R5; completed deletion retires their tokens.

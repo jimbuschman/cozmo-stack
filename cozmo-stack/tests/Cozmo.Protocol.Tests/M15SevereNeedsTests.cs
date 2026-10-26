@@ -257,6 +257,12 @@ public sealed class M15SevereNeedsTests
         robot.Engine.InvokeEngineRequest(()=>
         {
             Assert.True(robot.Engine.Needs.IsSevereExpressed(NeedId.Repair));
+            // B-M7-4 / reach: production auto-wake before Freeplay. Old: null manager / reaction recipient MISSING.
+            var manager=Assert.IsType<BehaviorManager>(typeof(CozmoRobot).GetProperty("BehaviorManager",BindingFlags.Instance|BindingFlags.NonPublic)?.GetValue(robot));
+            Assert.Contains(manager.Reactions,r=>r.Strategy.Trigger==ReactionTrigger.RobotPickedUp);
+            Assert.True(manager.HasDisableLock(ReactionTrigger.RobotPickedUp,"severe_need_component_lock"));
+            Assert.False(manager.HasDisableLock(ReactionTrigger.CliffDetected,"severe_need_component_lock"));
+
             Assert.Contains(robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="severe_need_component_lock");
             return true;
         });

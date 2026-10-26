@@ -2385,6 +2385,8 @@ public class FreeplayTests
         rig.Robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId, wasConnecting: false);
         Assert.Null(rig.Robot.Engine.AcquiredSerialNumber);
 
+        // B-M7-4 / unit fixture: reconnect constructs Robot/its manager before Freeplay (M1-025,0x004ED07C).
+        rig.Robot.Engine.Robots.AddRobot(CozmoEngine.RobotId);
         // a stack created now does not replay the old serial, and handles the new mfgId
         var needs2 = new NeedsManager(() => clock); needs2.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         using (var stack2 = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs2, withReactions: false))

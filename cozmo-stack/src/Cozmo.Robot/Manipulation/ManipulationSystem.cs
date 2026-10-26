@@ -99,11 +99,11 @@ public sealed class ManipulationSystem : IDisposable
     }
 
     /// <summary>
-    /// The BehaviorManager the actions take reaction locks through (<c>[robot+0x44]</c>): <c>PlaceObjectOnGroundAction::Init</c> 0x005548C6 takes "placeOnGroundAction" for EVERY action. Set by
-    /// <see cref="Cozmo.Robot.Behavior.FreeplayStack.Create"/>; null (a tool or a motion path with no manager): the lock is not taken and that is reported MISSING once.
+    /// The BehaviorManager the actions take reaction locks through (<c>[robot+0x44]</c>): <c>PlaceObjectOnGroundAction::Init</c> 0x005548C6 takes "placeOnGroundAction" for EVERY action. Reads the current native robot owner even before Freeplay; null before a native robot exists. An explicit host/unit override can be supplied.
     /// </summary>
     // fidelity: M15-022
-    public Cozmo.Robot.Behavior.BehaviorManager? ReactionLocks { get; set; }
+    private Cozmo.Robot.Behavior.BehaviorManager? _reactionLocksOverride;
+    public Cozmo.Robot.Behavior.BehaviorManager? ReactionLocks { get=>_reactionLocksOverride??Robot.BehaviorManager; set=>_reactionLocksOverride=value; }
 
     /// <summary>The block configurations (stacks, pyramid bases, pyramids) over the world model, rebuilt on every observation.</summary>
     public BlockConfigurationManager Configurations { get; }

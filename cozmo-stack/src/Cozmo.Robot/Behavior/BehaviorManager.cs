@@ -55,7 +55,7 @@ public sealed partial class BehaviorManager : IDisposable
 {
     private readonly List<IBehavior> _behaviors = new();
     private readonly RepetitionPenalty _penalty;
-    private readonly BehaviorContext _context;
+    private BehaviorContext _context;
     private readonly object _gate = new();
 
     private IBehavior? _current;
@@ -75,6 +75,55 @@ public sealed partial class BehaviorManager : IDisposable
         for (int t = 0; t < TriggerCount; t++) _map[(ReactionTrigger)t] = new TriggerInfo();
         _unexpectedMovementGate = () => IsReactionTriggerEnabled(ReactionTrigger.UnexpectedMovement);
         context.Robot.Sensors.UnexpectedMovement.ReactionTriggerEnabled = _unexpectedMovementGate;
+    }
+
+    private IReadOnlyList<ReactionMapEntry> _nativeReactionRows = Array.Empty<ReactionMapEntry>();
+    private bool _nativeReactionMapLoaded;
+    // fidelity: M7-014 -- row72: initialize the real map before exposing the robot's AI inputs.
+    internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision)
+    {
+        if (_nativeReactionMapLoaded) return;
+        lock (_gate) _map.Clear(); // private construction only; no deferred locks or replay
+        Initialized=false;
+        _nativeReactionRows=resources is null?Array.Empty<ReactionMapEntry>():ReactionTriggerMap.Load(resources);
+        foreach(var row in _nativeReactionRows)
+            if(!_map.ContainsKey(row.Trigger))_map.Add(row.Trigger,new TriggerInfo());
+        if(_nativeReactionRows.Count==0)
+            SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x00510396: shipped reaction map unavailable at robot construction; no entries or deferred locks invented");
+        else
+        {
+            var unbound=new List<string>();
+            foreach(var reg in ShippedBehaviors.Reactions(_context.Robot,vision?.Locator,
+                ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound))
+            {
+                if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+                AddReaction(reg.Strategy,reg.Behavior);
+            }
+            foreach(var entry in unbound)
+                SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding before Freeplay; trigger entry retained, no placeholder behavior");
+            _nativeReactionMapLoaded=true;
+        }
+        Initialized=true;
+    }
+    internal void BindFreeplayInputs(BehaviorContext context,string resources,Cozmo.Robot.Vision.VisionSystem? vision,
+        Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,IReadOnlyDictionary<string,IBehavior> bound)
+    {
+        _context=context;context.Penalty=_penalty;
+        if(context.Arbiter is {} arb)arb.ManagerDispatchesReactions=true;
+        InitializeRobotReactions(resources,vision); // explicit late resource input, only if startup map was absent
+        foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
+            cliff.DriveStraight=manipulation is null?null:(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
+        if(manipulation is null)return;
+        if(_nativeReactionRows.Any(r=>r.BehaviorId=="ReactToFrustrationMajor")&&!Reactions.Any(r=>r.Behavior.Id=="ReactToFrustrationMajor"))
+        {
+            var strategy=new FrustrationStrategy(-0.9f,0f,()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+            var behavior=ReactToFrustrationBehavior.Major(manipulation,strategy);
+            behavior.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+            AddReaction(strategy,behavior); // shipped order is Minor then Major; same existing trigger's lock set
+        }
+        if(_nativeReactionRows.Any(r=>r.BehaviorId=="RamIntoBlock")&&!Reactions.Any(r=>r.Behavior.Id=="RamIntoBlock")
+            &&bound.TryGetValue("RamIntoBlock",out var candidate)&&candidate is RamIntoBlockBehavior ram)
+            AddReaction(new NoPreDockPosesStrategy(manipulation.Whiteboard,ram),ram);
     }
 
     private readonly Func<bool> _unexpectedMovementGate;
@@ -128,6 +177,8 @@ public sealed partial class BehaviorManager : IDisposable
     private IBehavior? _resumeAfterReaction;
     /// <summary>manager+0x4C: the sticky gate (C3); 0 in the constructor (0x5A08F8).</summary>
     private bool _reactionGateOpen;
+    // Existing Freeplay host option; does not remove native entries, subscribers or locks.
+    internal bool HostReactionChecksEnabled=true;
     private bool _warnedNoActionList;
     // fidelity: M10-008
     /// <summary>
@@ -296,6 +347,7 @@ public sealed partial class BehaviorManager : IDisposable
     // fidelity: M8-012
     public ReactionSwitch? CheckReactions(double nowSec)
     {
+        if(!HostReactionChecksEnabled)return null;
         // C3
         if (ActionListIsEmpty is { } empty)
         {
@@ -1018,9 +1070,11 @@ public sealed partial class BehaviorManager : IDisposable
         lock (_gate)
         {
             strategies = _map.Values.SelectMany(i => i.Entries).Select(r => r.Strategy).Distinct().ToList();
-            foreach (var i in _map.Values) i.Entries.Clear();
+            _map.Clear(); // destruction retires both entries and their per-trigger locks
         }
         foreach (var s in strategies) if (s is IDisposable d) d.Dispose();
+        if(_context.Robot.Sensors.RequestCurrentBehaviorEndImmediately?.Target==this)
+            _context.Robot.Sensors.RequestCurrentBehaviorEndImmediately=null;
         var um = _context.Robot.Sensors.UnexpectedMovement;
         if (ReferenceEquals(um.ReactionTriggerEnabled, _unexpectedMovementGate)) um.ReactionTriggerEnabled = null;
     }
