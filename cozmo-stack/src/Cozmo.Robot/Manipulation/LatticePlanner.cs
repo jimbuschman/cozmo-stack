@@ -1040,6 +1040,10 @@ public class LatticePlanner
     // fidelity: M13-018
     internal event Action? PlanningStarted;
     public PlanningResult DoPlanning(StateC start, IReadOnlyList<StateC> goals, out LatticePlan? plan)
+        =>DoPlanningContext(start,goals.Select((g,i)=>(unchecked((byte)i),g)).ToArray(),out plan);
+
+    // fidelity: M13-033 -- CM13-03 P3/P5: repeated validation consumes unchanged raw original-ID pairs.
+    internal PlanningResult DoPlanningContext(StateC start,IReadOnlyList<(byte Id,StateC C)> goals,out LatticePlan? plan)
     {
         PlanningStarted?.Invoke();
         if (ArtificialPlannerDelayMs > 0)
@@ -1054,7 +1058,7 @@ public class LatticePlanner
             }
         }
         long before=System.Diagnostics.Stopwatch.GetTimestamp();
-        plan = ComputePath(start, goals);
+        plan = ComputePathContext(start, goals,MaxExpansions);
         LastPlanningElapsedMs=(System.Diagnostics.Stopwatch.GetTimestamp()-before)*1000/System.Diagnostics.Stopwatch.Frequency;
         if (plan is null) return PlanningResult.Failure;
         if (plan.Actions.Count == 0) return PlanningResult.EmptyPlan;
@@ -1151,21 +1155,33 @@ public class LatticePlanner
     /// </summary>
     // fidelity: M13-018
     public bool CheckContextGoals(IReadOnlyList<StateC> goals, List<(byte Id, LatticeState State)> outStates, List<(byte Id, StateC C)> outC)
+        =>CheckContextGoalsWithIds(goals.Select((g,i)=>(unchecked((byte)i),g)).ToArray(),outStates,outC);
+
+    // fidelity: M13-033 -- 0x00858470..8A discards these rounded outputs at initial admission.
+    internal bool GoalIsValid(StateC goal)=>TryCheckGoal(goal,out _);
+    private bool TryCheckGoal(StateC g,out LatticeState rounded)
     {
-        var set = Env.Primitives;
-        for (int i = 0; i < goals.Count; i++)
+        rounded=default;
+        if(Env.IsInCollision(g.X,g.Y,g.Theta))return false;
+        var set=Env.Primitives;float inv=set.InverseResolution;
+        float xr=MathF.Round(g.X*inv,MidpointRounding.AwayFromZero);
+        float yr=MathF.Round(inv*g.Y,MidpointRounding.AwayFromZero);
+        rounded=new LatticeState((short)(int)xr,(short)(int)yr,(byte)EngineF.ThetaIndex(g.Theta,set.InverseAngleStep,set.NumAngles));
+        if(Env.IsInCollision(rounded) && !Env.RoundSafe(g,out rounded))return false;
+        return true;
+    }
+    // fidelity: M13-033 -- 0x008591CE..0x00859488 retains IDs while creating temporary rounded outputs.
+    internal bool CheckContextGoalsWithIds(IReadOnlyList<(byte Id,StateC C)> goals,
+        List<(byte Id,LatticeState State)> outStates,List<(byte Id,StateC C)> outC)
+    {
+        var set=Env.Primitives;
+        foreach(var g in goals)
         {
-            var g = goals[i];
-            if (Env.IsInCollision(g.X, g.Y, g.Theta)) continue;
-            float inv = set.InverseResolution;
-            float xr = MathF.Round(g.X * inv, MidpointRounding.AwayFromZero);
-            float yr = MathF.Round(inv * g.Y, MidpointRounding.AwayFromZero);
-            var rounded = new LatticeState((short)(int)xr, (short)(int)yr, (byte)EngineF.ThetaIndex(g.Theta, set.InverseAngleStep, set.NumAngles));
-            if (Env.IsInCollision(rounded) && !Env.RoundSafe(g, out rounded)) continue;
-            outStates.Add(((byte)i, rounded));
-            outC.Add(((byte)i, new StateC(set.ResolutionMm * (float)rounded.X, set.ResolutionMm * (float)rounded.Y, set.Angles[rounded.Theta])));
+            if(!TryCheckGoal(g.C,out var rounded))continue;
+            outStates.Add((g.Id,rounded));
+            outC.Add((g.Id,new StateC(set.ResolutionMm*(float)rounded.X,set.ResolutionMm*(float)rounded.Y,set.Angles[rounded.Theta])));
         }
-        return outStates.Count > 0;
+        return outStates.Count>0;
     }
 
     /// <summary>
@@ -1302,9 +1318,13 @@ public class LatticePlanner
     internal IReadOnlyDictionary<uint, byte> GoalIdMapForTests { get; private set; } = new Dictionary<uint, byte>();
 
     public LatticePlan? ComputePath(StateC start, IReadOnlyList<StateC> goals, int maxExpansions = MaxExpansions)
+        =>ComputePathContext(start,goals.Select((g,i)=>(unchecked((byte)i),g)).ToArray(),maxExpansions);
+
+    // fidelity: M13-033 -- worker search revalidates numeric context, never caller Pose3d wrappers.
+    internal LatticePlan? ComputePathContext(StateC start,IReadOnlyList<(byte Id,StateC C)> goals,int maxExpansions)
     {
         _goalStates.Clear(); _goalC.Clear();
-        if (!CheckContextGoals(goals, _goalStates, _goalC)) return null;
+        if (!CheckContextGoalsWithIds(goals, _goalStates, _goalC)) return null;
         if (!CheckContextStart(start, out var startState)) return null;
         _table = new(); _open = new(); _expansions = 0; _considerations = 0;
         // the goal-id hash (planner+0x10) is filled from the CheckContextGoals output (0x00858760..0x00858780) BEFORE InitializeHeuristic, which prunes only planner+4, +0x24 and +0xA0

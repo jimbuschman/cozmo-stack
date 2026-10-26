@@ -15,8 +15,9 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     private readonly SourceLogSink _source;
     private readonly Action<string> _missing;
     private readonly CozmoEngine? _engine;
-    private Pose3d _start;
-    private IReadOnlyList<Pose3d> _goals=Array.Empty<Pose3d>();
+    private StateC _start;
+    private readonly List<Pose3d> _goals=new(); // impl+C0: own nodes, source parent shared_ptr retained
+    private readonly List<(byte Id,StateC C)> _goalContext=new(); // impl+88: admitted RAW pairs, not rounded outputs
     private IEnumerable<uint>? _ignore;
     private LatticePlan? _total;
     private int _disposed;
@@ -54,12 +55,38 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         try
         {
             if(F0){_source(EngineLogLevel.Warning,null,"LatticePlanner.ComputePath.PreviousPlanRequested","timeToPlan already set, so another compute path call is already waiting to signal the planner");return 0;}
-            _goals=goals.ToArray();
-            _backend.ImportBlockWorldObstacles(_world,_carried(),false);
-            if(!_backend.CheckContextGoals(_goals.Select(LatticePlanner.ToStateC).ToArray(),new(),new()))return 0;
+            AssignGoalPoses(goals); // 0x004FD296..2A4, all full poses before validity/old-context clearing
+            _backend.ImportBlockWorldObstacles(_world,_carried(),false); // 0x004FD2B0 precedes old actions/context clearing
+            if(_total is {} old)_total=old with{Actions=Array.Empty<MotionPrimitive>(),Penalties=Array.Empty<float>()};
+            _goalContext.Clear();
+            for(int i=0;i<goals.Count;i++)
+            {
+                var raw=LatticePlanner.ToStateC(goals[i]); // 0x004FD348..382 reads incoming poses synchronously
+                if(_backend.GoalIsValid(raw))_goalContext.Add((unchecked((byte)i),raw));
+            }
+            if(_goalContext.Count==0)return 0;
             return ComputeNewPathIfNeeded(start,true);
         }
         finally{if(held)Monitor.Exit(ContextMutex);}
+    }
+    // fidelity: M13-033, M11-084 -- 0x00501BC0/1C40/1C70/1C92/1CA8..BA.
+    private void AssignGoalPoses(IReadOnlyList<Pose3d> incoming)
+    {
+        if(ReferenceEquals(incoming,_goals))return;
+        if(incoming.Count>_goals.Capacity)
+        {
+            ReleaseGoalPoses(); // native deallocates old elements before new storage/copy
+            _goals.Capacity=incoming.Count;
+        }
+        int common=Math.Min(_goals.Count,incoming.Count);
+        for(int i=0;i<common;i++)_goals[i].Assign(incoming[i]);
+        for(int i=common;i<incoming.Count;i++)_goals.Add(new Pose3d(incoming[i]));
+        for(int i=_goals.Count-1;i>=incoming.Count;i--){_goals[i].Dispose();_goals.RemoveAt(i);}
+    }
+    private void ReleaseGoalPoses()
+    {
+        for(int i=_goals.Count-1;i>=0;i--)_goals[i].Dispose();
+        _goals.Clear();
     }
     internal void SetIgnore(IEnumerable<uint>? ignore)=>_ignore=ignore?.ToArray();
     public int ComputeNewPathIfNeeded(Pose3d start,bool force)
@@ -75,7 +102,8 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         }
         try
         {
-            _start=start;
+            var stateLog=LatticePlanner.ToStateC(start); // 0x004FEB82..AA, synchronous caller-side snapshot
+            var selectedStart=stateLog;
             _backend.SetReplanFlag(force);
             (int Index,float Distance) nearest=(0,float.MaxValue);
             // fidelity: M13-033 force path 0x004FEBD2 -> 0x004FECDA..0x004FECF6: the total takes the zeroed start
@@ -84,7 +112,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             else
             {
                 _backend.ImportBlockWorldObstacles(_world,_carried(),true,_ignore);
-                var closest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,LatticePlanner.ToStateC(start));
+                var closest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,stateLog);
                 nearest=closest;
                 if(closest.Distance>=20f)
                 {
@@ -95,13 +123,13 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
                 // StartPlanning calls PlanIsSafe at 0x004FF424 only when force is false.
                 if(NativePlanDependencies.PlanIsSafe(retained,nearest.Index,40f,_backend.Env.Primitives,NativeApplyAction,ref prefix,ref endpoint,_missing))return 2;
                 Info("LatticePlanner.GetPlan.OldPlanUnsafe",$"old plan unsafe! Will replan, starting from {nearest.Index}, keeping {prefix.Actions.Count} actions from oldPlan.");
-                _total=prefix;if(prefix.Actions.Count!=0)_start=new Pose3d(Mat3.AboutZ(endpoint.Theta),new Vec3(endpoint.X,endpoint.Y,0));
+                _total=prefix;if(prefix.Actions.Count!=0)selectedStart=endpoint;
             }
-            var stateLog=LatticePlanner.ToStateC(start);
+            _start=selectedStart; // 0x004FEED6/DA: persist scalar selected start before validation/signal
             _source(EngineLogLevel.Info,"Unnamed","LatticePlanner","currentRobotState:("+LibcxxPrintf.FormatFloat(stateLog.X)+","+LibcxxPrintf.FormatFloat(stateLog.Y)+","+LibcxxPrintf.FormatFloat(stateLog.Theta)+")");
-            if(!_backend.CheckContextStart(LatticePlanner.ToStateC(_start),out _))
+            if(!_backend.CheckContextStart(_start,out _))
             {Info("LatticePlanner.ReplanIfNeeded.InvalidStart","could not set start");return 0;}
-            if(!_backend.CheckContextGoals(_goals.Select(LatticePlanner.ToStateC).ToArray(),new(),new()))
+            if(!_backend.CheckContextGoalsWithIds(_goalContext,new(),new()))
             {Info("LatticePlanner.ReplanIfNeeded.InvalidGoals","Goals may have moved into collision");return 0;}
             _backend.ImportBlockWorldObstacles(_world,_carried(),false,_ignore);
             _missing("M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump recipient at 0x004FF052..0x004FF30A remain incomplete");
@@ -118,7 +146,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     {
         using var poseLogs=Pose3d.UseSourceLog(_source,_engine is null?null:_engine.Das.ForceFlushNow);
         Publish(1);
-        var result=_backend.DoPlanning(LatticePlanner.ToStateC(_start),_goals.Select(LatticePlanner.ToStateC).ToArray(),out var plan);
+        var result=_backend.DoPlanningContext(_start,_goalContext,out var plan);
         string eventName=result==LatticePlanner.PlanningResult.Failure?"robot.lattice_planner_failure":"robot.lattice_planner_success";
         string eventText=$"{_backend.LastNumExpansions}:{_backend.LastNumConsiderations}";
         if(_engine is {} engine)engine.EmitSourceLog(EngineLogLevel.Event,null,eventName,eventText,new Dictionary<string,string>{{"$data",_backend.LastPlanningElapsedMs.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
@@ -193,6 +221,8 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     {
         if(Interlocked.Exchange(ref _disposed,1)!=0)return;F1=true;_wake.Set();
         _source(EngineLogLevel.Debug,"Planner","LatticePlanner.DestroyThread.Join","");_worker.Join();
-        _source(EngineLogLevel.Debug,"Planner","LatticePlanner.DestroyThread.Joined","");_runModeSubscription?.Dispose();_runModeSubscription=null;_wake.Dispose();_backend.NativeRuntime=null;
+        _source(EngineLogLevel.Debug,"Planner","LatticePlanner.DestroyThread.Joined","");
+        ReleaseGoalPoses();_goalContext.Clear(); // 0x00501954 join precedes C0 destruction0x005019D8/DC
+        _runModeSubscription?.Dispose();_runModeSubscription=null;_wake.Dispose();_backend.NativeRuntime=null;
     }
 }
