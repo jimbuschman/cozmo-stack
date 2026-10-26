@@ -22,7 +22,7 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | --- | --- | --- |
 | CM13-03 | REVIEW COMPLETE | Historical local gate failure retained in HANDOFF-2.md. Current authoritative Claude disposition/gate is in REVIEW.md on main; no hardware dependency. |
 | R1 | REVIEW COMPLETE | Authoritative external disposition is in REVIEW.md on main (supersedes its earlier finding). Corrected codee592d1b2 and full6285/6285; HANDOFF-R1.md. |
-| CM13-04 | READY FOR CLAUDE | Native per-heading pose/origin and actual carrying input; codef55fb6ee, independent46/46 PASS, full6306/6306 zero skipped. HANDOFF-CM13-04.md lists each changed claim/address and open scope. |
+| CM13-04 | REVIEW COMPLETE | Authoritative external disposition is in REVIEW.md on mainaca8c400 (MERGED481ade53, source spot-check and full6306/6306 zero skipped). HANDOFF-CM13-04.md retains the local evidence and open whole-planner scope. |
 | CM13-05 | FOLDED INTO DRIVE-OFF-PILOT | Draft paused and preserved locally; finish only if the whole pilot read establishes its observable dependency. No compiled/verified build claimed. |
 | DRIVE-OFF-PILOT | RELEASED | Whole DriveOffCharger production path and all remaining observable dependencies, one read/check/build/check/gate; RECORDS TO SETTLE for Claude. |
 
