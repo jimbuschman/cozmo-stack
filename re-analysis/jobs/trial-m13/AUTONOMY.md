@@ -58,3 +58,9 @@ when convenient. A failed run becomes a FIX row for the job it points at; nothin
   line comes before any new job.
 - **While Codex is idle** (waiting, or after its scope runs out), it polls `origin/main` with a plain shell loop about
   every 15 minutes, not with model turns.
+
+## Superseded scope (operator, 2026-10-26)
+
+The "Standing scope" above is replaced by `PLAN-BEHAVIOURS.md`: one behaviour per job, read end to end before
+building, settled in the Claude check. Start with the drive-off pilot, then write `BEHAVIOURS.md`. Finish CM13-05 only
+if it is on drive-off's path; otherwise fold it into the behaviour that needs it.
