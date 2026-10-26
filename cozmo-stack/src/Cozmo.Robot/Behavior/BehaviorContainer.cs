@@ -18,6 +18,7 @@ public sealed class BehaviorFactoryContext
     public VisionSystem? Vision { get; init; }
     /// <summary>The manipulation system (the M12/M13 layer), for the classes that dock, place or drive.</summary>
     public ManipulationSystem? Manipulation { get; init; }
+    internal EngineRobot? NativeRobot {get;init;}
     /// <summary>Stack diagnostics and standalone log observation; source calls use the separate typed seam.</summary>
     public Action<string>? Log { get; init; }
     public SourceLogSink? SourceLog { get; init; }
@@ -286,12 +287,20 @@ public sealed class BehaviorFactory
         // the whole of the shipped Hiccup behaviour (reactions/hiccup.json: animTriggers ["Hiccup"]); the timed hiccup/cure logic is the M10
         // strategy ReactionTriggerStrategyHiccup, which is not this class.
         [BehaviorClass.PlayAnim] = (ctx, json) => PlayAnimBehavior.FromConfig(json, ctx.Log),
+        [BehaviorClass.DriveOffCharger] = CreateDriveOff,
+        [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         // case 0x19: BehaviorFistBump(robot, config), 0x158 bytes (0x0059cc84..0x0059cca2).
         [BehaviorClass.FistBump] = (ctx, json) => FistBumpBehavior.FromConfig(json, ctx.Vision, ctx.Manipulation),
         // case 0x4C: BehaviorReactToSparked(robot, config), 0x120 bytes (0x0059d2f2..0x0059d310).
         [BehaviorClass.VisitInterestingEdge] = (ctx, json) => VisitInterestingEdgeBehavior.FromConfig(json),
         [BehaviorClass.ReactToSparked] = (ctx, json) => new ReactToSparkedBehavior(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
     };
+    private static IBehavior CreateDriveOff(BehaviorFactoryContext ctx,JsonElement json)
+    {
+        var manipulation=ctx.Manipulation??throw new InvalidOperationException("MISSING: DriveOff factory actual manipulation owner");
+        return new DriveOffChargerBehavior(manipulation,BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(),
+            json.TryGetProperty("extraDistanceToDrive_mm",out var extra)?extra.GetSingle():0f,ctx.NativeRobot??manipulation.Robot.Engine.Robot);
+    }
 
     /// <summary>The 79 cases in ordinal order.</summary>
     public static IReadOnlyList<Entry> Table { get; } = Rows
@@ -330,7 +339,17 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
+        if(cls==BehaviorClass.DriveOffCharger && ctx.Manipulation is null)
+        {
+            SteppedBehavior.ReportMissing("BehaviorContainer::CreateBehavior DriveOffCharger: actual manipulation input unavailable; no hand-built/default owner substituted");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
         var behavior = entry.Construct(ctx, config);
+        if(behavior is SteppedBehavior stepped && ctx.NativeRobot is {} native && ctx.Manipulation is {} source)
+            {
+            stepped.BindActionCompletionOwner(source.Robot,native);
+            stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
+        }
         container.AddToFactory(behavior);
         status = BehaviorCreateStatus.Created;
         return behavior;

@@ -1,14 +1,22 @@
 namespace Cozmo.Robot;
 /// <summary>Known action completion fields. NativeCompletionCache exposes the existing runner cache; concrete completion-union recovery remains with the action's owner (for animation, M8-020).</summary>
-public sealed record ActionCompletionReport(uint Tag,int ActionType,uint Result,IReadOnlyList<uint> SubActionResults,uint NativeCompletionCache);
+public sealed record ActionCompletionReport(uint Tag,int ActionType,uint Result,IReadOnlyList<uint> SubActionResults,uint NativeCompletionCache)
+{
+    public string? AnimationName {get;init;}
+    public byte? CompletionVariant {get;init;}
+}
 // fidelity: M8-015, M8-020
 public sealed partial class CozmoEngine
 {
     public event Action<ActionCompletionReport>? ActionCompleted;
     internal void BroadcastActionCompletion(RobotCompletedAction record)
     {
-        QueueAppBroadcast(ActionCompleted,new ActionCompletionReport(record.Tag,record.ActionType,record.Result,
-            Array.AsReadOnly(record.SubActionResults.ToArray()),record.CompletionUnion));
+        var typed=new ActionCompletionReport(record.Tag,record.ActionType,record.Result,
+            Array.AsReadOnly(record.SubActionResults.ToArray()),record.CompletionUnion)
+            {AnimationName=record.AnimationName,CompletionVariant=record.CompletionVariant};
+        if(record.CompletionVariant is 1 or 6)
+            DeliverAnimationReportToApp(RobotCompletedAction.UnionTag,record.PackBody(),CaptureAppEvent(ActionCompleted,typed));
+        else QueueAppBroadcast(ActionCompleted,typed); // Other concrete unions retain their named raw-cache gap.
         AnimationMessages.Deliver(RobotCompletedAction.UnionTag,true,record);
     }
 }

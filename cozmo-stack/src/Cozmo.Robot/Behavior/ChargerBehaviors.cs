@@ -35,13 +35,21 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
     public const string EmotionEventName = "DriveOffCharger";
 
     public DriveOffChargerBehavior(ManipulationSystem m, string id = "DriveOffCharger", double extraDistanceToDriveMm = 60)
+        :this(m,id,extraDistanceToDriveMm,m.Robot.Engine.Robot) { }
+    internal DriveOffChargerBehavior(ManipulationSystem m,string id,double extraDistanceToDriveMm,EngineRobot? nativeOwner)
         : base(id, "DriveOffCharger", m)
     {
+        _nativeOwner=nativeOwner;
         ExtraDistanceMm = extraDistanceToDriveMm;
         SevereNeedsState=()=>m.Robot.Engine.Needs.SevereNeeds.Selected;
         DriveDistanceMm = ChargerLengthMm + (float)extraDistanceToDriveMm;       // Json::Value::asFloat, then vadd.f32 (0x005C09C0..0x005C09E6)
+        BindActionCompletionOwner(m.Robot,nativeOwner);
+        PushDrivingAnimations=(name,start,loop,end)=>m.Robot.Animations.DrivingAnimations.Push(
+            new Animation.DrivingAnimations((AnimationTrigger)start,(AnimationTrigger)loop,(AnimationTrigger)end),name);
+        RemoveDrivingAnimations=name=>m.Robot.Engine.InvokeEngineRequest(()=>{m.Robot.Animations.DrivingAnimations.Remove(name);return 0;});
     }
 
+    private readonly EngineRobot? _nativeOwner;
     public double ExtraDistanceMm { get; }
     /// <summary>+0x11C: 96.0f + the config's extra distance, binary32.</summary>
     public float DriveDistanceMm { get; }
@@ -66,7 +74,11 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
     protected override bool KeepsRunningWithoutAction => true;
 
     // fidelity: M13-017
+    public override bool IsRunnable(BehaviorContext context)=>IsRunnableBase(context)&&IsRunnableInternal(context);
     protected override bool IsRunnableInternal(BehaviorContext context) => context.Robot.Sensors.OnChargerPlatform;      // ldrb robot+0x34A, 0x005C0B10
+    protected override bool RunnableGate20(BehaviorContext context)=>true; // 0x005C0E4A
+    protected override bool RunnableGate24(BehaviorContext context)=>true; // 0x005C0E4E
+    protected override bool RunnableGate28(BehaviorContext context)=>false; // 0x005C0E52
 
     protected override void OnStart()
     {
@@ -104,14 +116,9 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         SetStateName("DrivingForward");                                              // 0x005C0BE2
         if (!Context.Robot.Sensors.OnChargerPlatform) return;                        // 0x005C0BF4: robot+0x34A
         CurrentPhase = Phase.Driving;
-        int handle = StartActing();                                                  // IBehavior::StartActing 0x005C0C26
-        if (handle == 0) return;
-        int epoch = CallbackEpoch;
-        SteppedBehavior.ReportMissing("DriveStraightAction(Robot&, float) 0x005C0C08: the two-argument constructor's speed and animation defaults and its Init/CheckIfDone are not in the M13 inventory; this stack's DriveStraightAction default speed is used");
-        RunAction($"DriveStraightAction({DriveDistanceMm:F0} mm)", ct => new DriveStraightAction(M, DriveDistanceMm).RunAsync(ct), r =>
+        StartActing(new DriveStraightAction(M,DriveDistanceMm), completed =>
         {
-            ActingEnded(handle);                                                     // HandleActionComplete clears +0x84 first (0x005BE1FC)
-            if (!CallbackMayRun(epoch)) return;
+            var r=(ActionResult)completed.Result;
             DriveResult = r;
             OnDriveComplete(r);
         });
@@ -125,7 +132,12 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         // EnumToString objective4: 0x0076954C, table0x01033150 -> 0x00C19BAC (CM13-02 adopted row).
         Context.Robot.Engine.ReportBehaviorObjective(ObjectiveDriveOffCharger,"DroveAsIntended",Id);
         Log($"BehaviorObjectiveAchieved({ObjectiveDriveOffCharger}, true)");
-        EmotionEvent(EmotionEventName);                                              // MoodManager::TriggerEmotionEvent 0x005C0EE2
+        if(_nativeOwner is {} owner && ReferenceEquals(Context.Robot.Engine.Robot,owner) && owner.MoodOwner is {} mood)
+        {
+            mood.Trigger(EmotionEventName,Context.Robot.Engine.Timer.SecondsF);
+            Log("emotion event DriveOffCharger");
+        }
+        else EmotionEvent(EmotionEventName); // standalone host context only; native ctor always has its owner.
     }
 
     /// <summary><c>UpdateInternal</c> 0x005C0DA8.</summary>
@@ -148,7 +160,7 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         }
         if (HasCurrentAction) return;                                                // 0x005C0DF4: still acting, return 1
         // BaseStationTimer::GetCurrentTimeInSeconds -> [[robot+0x264]+0x18]+0x44 (0x005C0DFA..0x005C0E08), then return 2
-        double now = Context.ClockSec?.Invoke() ?? Clock() / 1000.0;
+        double now = _nativeOwner is not null?Context.Robot.Engine.Timer.SecondsF:Context.ClockSec?.Invoke() ?? Clock() / 1000.0;
         DroveOffAtSec = now;
         Context.LastDriveOffChargerSec = (float)now;                                 // [[robot+0x264]+0x18]+0x44: a float (GetCurrentTimeInSeconds), read by IsRunnableBase 0x005BD93C
         LeftChargerOnTreads = sensors.OffTreadsState == OffTreadsState.OnTreads;

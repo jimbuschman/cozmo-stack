@@ -283,6 +283,7 @@ public sealed class ScoringChooser : IBehaviorChooser
     public IReadOnlyList<string> BehaviorIds => Entries.Select(e => e.BehaviorId).ToList();
     public IReadOnlyList<string> Unbound => Entries.Where(e => !_bound.ContainsKey(e.BehaviorId)).Select(e => e.BehaviorId).ToList();
     public Random Random { get; set; } = new();
+    internal Animation.EngineRandom? ContextRandom {get;set;}
 
     /// <summary>
     /// The <c>RandomGenerator::RandDbl</c> draw (0x0060a4a8) added to a non-running challenger's score.
@@ -314,22 +315,28 @@ public sealed class ScoringChooser : IBehaviorChooser
             bool running = current is not null && current.Id == b.Id;
             // IBehavior +0x104: the running-score bonus IncreaseScoreWhileActing accumulates (M8-003).
             double runningBonus = b is SteppedBehavior sb ? sb.RunningScoreBonus : 0;
-            double s = e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty,
+            float s = (float)e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty,
                                   runningBonus: runningBonus, penaltySuppressed: _penalty.IsSuppressed(b.Id, nowSec),
                                   runningClockSec: b is SteppedBehavior clocked ? clocked.RunningPenaltyClockSec : null);
-            if (s <= 0) { scores.Add((b.Id, s, b.IsRunnable(ctx) ? "scored 0" : "not runnable")); continue; }
+            if (s <= 0) { scores.Add((b.Id, s, "scored 0")); continue; }
             if (running)
             {
                 // 0x0060a466 ldrb +0xa1; 0x0060a474 GraphEvaluator2d::EvaluateY(chooser+0x28, running duration);
                 // 0x0060a486 vadd the 0.1 constant; 0x0060a48a floor at 0.01.
-                s += ScoreBonusForCurrent?.EvaluateY(currentRunningSec) ?? 0;   // 0x0060a474
-                s += 0.1;                                                       // 0x0060a486
-                if (s < 0.01) s = 0.01;                                         // 0x0060a48a
+                s = (float)(ScoreBonusForCurrent?.EvaluateY(currentRunningSec) ?? 0)+s; // 0x0060a474
+                s += BitConverter.Int32BitsToSingle(0x3DCCCCCD);                  // 0x0060a486
+                float floor=BitConverter.Int32BitsToSingle(0x3C23D70A);
+                if (!(s > floor)) s = floor; // vmovgt retains floor on unordered.
                 currentScore = s;
             }
-            else s += RandomDraw?.Invoke() ?? Random.NextDouble();                               // 0x0060a4a8
+            else
+            {
+                double limit=BitConverter.Int64BitsToDouble(0x3FB99999A0000000);
+                double draw=RandomDraw is {} substitute?substitute()*limit:ContextRandom?.RandDbl(limit)??Random.NextDouble()*limit;
+                s=(float)((double)s+draw); // exact widening, vadd.f64, then one vcvt.f32.f64.
+            }
             scores.Add((b.Id, s, running ? "running" : ""));
-            if (s > bestScore) { bestScore = s; best = b; }
+            if (!(s <= bestScore)) { bestScore = s; best = b; } // BLE: unordered replaces, equality retains.
         }
         if (best is null) return new ChooserDecision(null, "no listed behaviour is runnable and wants to run", scores);
         if (current is not null && current.Id == best.Id) return new ChooserDecision(best, "already running", scores);
@@ -924,6 +931,8 @@ public sealed class FeatureGates
 /// </summary>
 public sealed class Activity
 {
+    internal Action? NativePublicStateSelected;
+    internal NativeActivityObjectiveOwner? ObjectiveOwner;
     // fidelity: M15-055, M15-056 — explicit native delegate and checked Feeding owner; enclosing lifecycle remains M15-061.
     internal Func<EngineRobot,uint>? NativeUpdate20;
     internal FeedingDisconnectUnit? FeedingDisconnect;
@@ -959,11 +968,13 @@ public sealed class Activity
     public void OnSelected(double nowSec, Action<string>? missing = null)
     {
         SelectedAtSec = nowSec; Strategy.OnStarted(nowSec);
-        ReportActivityMissing("PublicStateBroadcaster::UpdateActivity 0x005B3154", missing);
+        if(NativePublicStateSelected is {} publish)publish();
+        else ReportActivityMissing("PublicStateBroadcaster::UpdateActivity 0x005B3154", missing);
         if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing);
         if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("SmartPushIdleAnimation 0x005B31BC", missing);
         SetAnalyzerRequest(true);
         FeedingDisconnect?.OnSelected();
+        ObjectiveOwner?.OnSelectedInternal();
     }
     public void OnDeselected(double nowSec, Action<string>? missing = null)
     {
@@ -1014,8 +1025,12 @@ public static class ActivityTreeLoader
     public static string ActivitiesDir(string obbRoot) => Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine", "behaviorSystem");
 
     public static IReadOnlyList<Activity> Load(string obbRoot, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty = null, Random? random = null)
+        =>LoadDirectory(ActivitiesDir(obbRoot),bound,penalty,random,null);
+    internal static IReadOnlyList<Activity> LoadResources(string resources, IReadOnlyDictionary<string,IBehavior> bound,
+        RepetitionPenalty penalty,EngineRobot owner,Random? random=null)
+        =>LoadDirectory(Path.Combine(resources,"config","engine","behaviorSystem"),bound,penalty,random,owner);
+    private static IReadOnlyList<Activity> LoadDirectory(string dir,IReadOnlyDictionary<string,IBehavior> bound,RepetitionPenalty? penalty,Random? random,EngineRobot? owner)
     {
-        var dir = ActivitiesDir(obbRoot);
         var byId = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
         var docs = new List<JsonDocument>();
         foreach (var f in Directory.EnumerateFiles(Path.Combine(dir, "activities"), "*.json", SearchOption.AllDirectories))
@@ -1027,11 +1042,11 @@ public static class ActivityTreeLoader
         var top = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "activities_config.json")), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
         docs.Add(top);
         var result = new List<Activity>();
-        foreach (var a in top.RootElement.EnumerateArray()) result.Add(Build(a, byId, bound, penalty, random, 0));
+        foreach (var a in top.RootElement.EnumerateArray()) result.Add(Build(a, byId, bound, penalty, random, 0,owner));
         return result;
     }
 
-    private static Activity Build(JsonElement e, Dictionary<string, JsonElement> byId, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random, int priority)
+    private static Activity Build(JsonElement e, Dictionary<string, JsonElement> byId, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random, int priority,EngineRobot? owner)
     {
         string id = e.GetProperty("activityID").GetString()!;
         var subs = new List<Activity>();
@@ -1041,7 +1056,7 @@ public static class ActivityTreeLoader
                 string sid = s.GetProperty("activityID").GetString()!;
                 // activityPriority is parsed with ParseUint8 and discarded (0x005AD63C/0x005AD640); the
                 // child order is the JSON array order, not a priority sort (M15-013).
-                if (byId.TryGetValue(sid, out var se)) subs.Add(Build(se, byId, bound, penalty, random, 0));
+                if (byId.TryGetValue(sid, out var se)) subs.Add(Build(se, byId, bound, penalty, random, 0,owner));
                 else subs.Add(new Activity { Id = sid, Type = "Missing", Priority = 0, Strategy = new ActivityStrategy { Type = "Missing" } });
             }
         AnimationTrigger? Trig(string k) => e.TryGetProperty(k, out var t) && Enum.TryParse<AnimationTrigger>(t.GetString(), out var tr) ? tr : null;
@@ -1056,7 +1071,7 @@ public static class ActivityTreeLoader
         // fidelity: M15-008
         if (id == "SparksGatherCubes" || (e.TryGetProperty("activityType", out var gty) && gty.GetString() == "GatherCubes"))
             SteppedBehavior.ReportMissing("ActivityGatherCubes (Update 0x005AF27C) is not built: its Update reports NeedActionCompleted(GatherCubes 0x14) when every cube is in a beacon (0x005AF2EC..0x005AF2F8, 0x005AF2F0) and plays the cube lights; the activity (SparksGatherCubes, feature-gated off in the shipped features.json) has no body, and the behaviours PeekABoo, TrackLaser and GuardDog that report needs actions are unbuilt too (M15-008)");
-        return new Activity
+        var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,
             Id = id, Type = e.TryGetProperty("activityType", out var ty) ? ty.GetString() ?? "BehaviorsOnly" : "BehaviorsOnly", Priority = priority, Strategy = strategy,
@@ -1067,6 +1082,26 @@ public static class ActivityTreeLoader
             NeedsActionId = e.TryGetProperty("needsActionID", out var na) ? na.GetString() : null,
             SubActivities = subs, DesiredActivityNames = desired,
         };
+        if(owner is not null)
+        {
+            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,_=>null};
+            if(nativeId is {} value)activity.NativePublicStateSelected=()=>owner.BehaviorPublicState.UpdateActivity(value);
+            if(activity.Type=="BehaviorsOnly")activity.NativeUpdate20=_=>0; // vtable10252F8 -> 005A7373.
+            foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
+                if(chooser is ScoringChooser scoring)scoring.ContextRandom=owner.Engine.ContextRandom;
+            // C7.1: the checked Look invalid41 filter requires BOTH its root and
+            // the actual chooser entry scoring to omit the objective override.
+            foreach(string chooserKey in new[]{"behaviorChooser","universalChooser","interludeBehaviorChooser"})
+                if(e.TryGetProperty(chooserKey,out var rawChooser) && rawChooser.TryGetProperty("behaviors",out var rawEntries)
+                    &&rawEntries.ValueKind==JsonValueKind.Array)
+                    foreach(var rawEntry in rawEntries.EnumerateArray())
+                        if(rawEntry.ValueKind==JsonValueKind.Object &&rawEntry.TryGetProperty("behaviorID",out var rawId)
+                            &&rawId.ValueKind==JsonValueKind.String &&bound.TryGetValue(rawId.GetString()!,out var candidate)
+                            &&candidate is NativeLookForFaceAndCubeBehavior look &&rawEntry.TryGetProperty("scoring",out var rawScoring))
+                            look.CheckObjectiveInput(rawScoring,"activity "+id+" "+chooserKey);
+            if(activity.Type is "Socialize" or "Sparked")activity.ObjectiveOwner=new(activity,owner,e);
+        }
+        return activity;
     }
 
     public static IBehaviorChooser BuildChooser(JsonElement c, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random)

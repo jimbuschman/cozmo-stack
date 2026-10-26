@@ -709,7 +709,12 @@ public sealed partial class CameraSettings
         SetNextCameraParams(exposureMs, gain);
         CurrentCameraParams info;
         lock (_gate) info = new CurrentCameraParams(gain, unchecked((ushort)exposureMs), AutoExposureEnabled);
-        _robot.Engine.QueueAppBroadcast(CurrentCameraParamsChanged,info);
+        if(_robot.Engine.Robot?.HasExternalInterface==true)
+        {
+            var body=new CladWriter().F32(info.Gain).U16(info.ExposureMs).U8(info.AutoExposureEnabled?(byte)1:(byte)0).ToArray();
+            _robot.Engine.DeliverAnimationReportToApp(0x2F,body,_robot.Engine.CaptureAppEvent(CurrentCameraParamsChanged,info));
+            _robot.Engine.AnimationMessages.Deliver(0x2F,true,info);
+        }
         return true;
     }
 

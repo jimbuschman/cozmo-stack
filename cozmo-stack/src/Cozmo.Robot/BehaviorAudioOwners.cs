@@ -23,6 +23,7 @@ public sealed partial class EngineRobot
         Lifetime.Bind(0x44,address=>
         {
             var manager=BehaviorManagerOwner;BehaviorManagerOwner=null;manager?.Dispose();
+            var runtime=NativeBehaviorRuntime;NativeBehaviorRuntime=null;runtime?.Dispose();
             Lifetime.Missing(address,0x44); // retain the existing per-Robot remaining-owner diagnostic
             var client=BehaviorAudioA;BehaviorAudioA=null;client?.Dispose();
         });

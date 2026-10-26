@@ -15,6 +15,7 @@ internal class TriggerAnimationAction : ActionRunner
     protected bool Failed => _failed;
     private AnimationTicket? _ticket;
     private string _clip="";
+    private AnimationClip? _cachedClip;
     private bool _destroyed;
     private bool _started, _ended, _failed;
     private uint _loops;
@@ -30,10 +31,10 @@ internal class TriggerAnimationAction : ActionRunner
             ? BitConverter.Int32BitsToSingle(0x7F7FFFFF) : request.Argument5;
         SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);Log=robot.Engine.EmitStackLog;
         // Checked M8-005/007 lift-safe ctor gate, 0x00544714..0x00544732.
-        if(liftSafe && robot.Motion.IsCarryingObject?.Invoke()==true && robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)RequiredTrackMask|=2;
+        if(liftSafe && robot.Engine.Robot is {} owner && owner.CarryingOwner is {} carrying &&
+            (carrying.CarriedObjectId??uint.MaxValue)!=uint.MaxValue && robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)RequiredTrackMask|=2;
         SetAnimGroupFromTrigger(request.Trigger);
-        Missing(liftSafe ? "M8-021/M8-005 concrete TriggerLiftSafeAnimationAction callback lifecycle is incomplete: completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction semantics remain unbuilt; checked CA/CB/D5/5F bodies use robot events rather than playback-ticket completion"
-            : "M8-020/M8-021 TriggerAnimationAction inherited completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction remain unbuilt; checked playback callbacks are shared");
+        Missing("M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs");
     }
     // TriggerAnimationAction::SetAnimGroupFromTrigger 0x0054432C; shared by constructor and get-out Init.
     protected void SetAnimGroupFromTrigger(AnimationTrigger trigger)
@@ -71,7 +72,8 @@ internal class TriggerAnimationAction : ActionRunner
         }
         // fidelity: M8-015, M8-020 — PlayAnimation::Init 0x00543F20..0x00544180.
         _started = _ended = _failed = false;
-        _ticket=_robot.Animations.PlayTracked(_clip,Request.Argument3,numLoops:Request.Argument2);
+        _cachedClip??=library.GetClip(_clip); // 0x00543F6E..7E: first lookup survives retries.
+        _ticket=_robot.Animations.PlayTracked(_cachedClip,Request.Argument3,numLoops:Request.Argument2);
         if (_ticket is null) return 0x03000001;
         _animationTag = _ticket.Tag;
         var owner = _robot.Engine.Robot!;
@@ -121,15 +123,15 @@ internal class TriggerAnimationAction : ActionRunner
         _failed = true;
     }
     public override uint CheckIfDone() => _ended ? 0u : _failed ? 0x03000001u : EngineActionResult.Running;
+    public override string? GetAnimationCompletionName()=>_clip; // current +78, not cached clip+90.
+    public override byte? GetCompletionVariant()=>1;
     public override void WatcherEnding()
     {
         if(_destroyed)return;_destroyed=true;
-        if(_ticket is {} ticket && !ticket.Completion.IsCompleted && _robot.Animations.Generation==ticket.Generation)
+        if(_robot.Animations.ClearStreamIfClipMatches(_cachedClip))
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","PlayAnimationAction.Destructor.StillStreaming",$"Action destructing, but AnimationStreamer is still streaming this animation({_clip}). TellingAnimationStreamer to stream null.");
-            _robot.Animations.StopIfCurrent(ticket.Generation);
         }
-        else if(_ticket is null)Missing("M8-020 null cached Animation pointer destructor/idle Abort path 0x00543DAC..0x00543E6A is not represented by a playback ticket");
         // 0x00543E6A..0x00543E9E: UI 5F then D5, CB, CA before the base.
         _aborted?.Dispose(); _aborted = null;
         _d5?.Dispose(); _d5 = null;

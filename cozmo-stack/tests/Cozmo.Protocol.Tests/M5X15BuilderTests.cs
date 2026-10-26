@@ -82,7 +82,10 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Equal(new DrivingAnimations((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D), handler.Current); Assert.True(handler.Init(4, 42, false, false)); Assert.Equal(b, handler.Current);
         robot.Animations.RemoveDrivingAnimations("same"); Assert.Single(handler.Entries); Assert.Equal(b, handler.Entries[0].Animations);
         Assert.Equal(b, handler.Current); robot.Animations.RemoveDrivingAnimations("same"); Assert.Empty(handler.Entries); Assert.Equal(b, handler.Current);
-        var keys = new List<string>(); robot.Engine.LogEntry += e => keys.Add(e.Name!);
+        var keys = new List<string>(); robot.Engine.LogEntry += e =>
+        {
+            if(e.Name.StartsWith("DrivingAnimationHandler.",StringComparison.Ordinal)||e.Name=="LoopBoundOverflow")keys.Add(e.Name);
+        }; // Observe this stack's exact warnings; canonical periodic Mood diagnostics have their own tests.
         robot.Animations.RemoveDrivingAnimations("absent");
         Assert.Equal(new[] { "DrivingAnimationHandler.PopDrivingAnimations", "DrivingAnimationHandler.PopDrivingAnimations" }, keys);
         handler.ActionIsBeingDestroyed();
@@ -130,20 +133,30 @@ public sealed class M5X15BuilderTests : IDisposable
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void MissingMoodAndNeedsFallThroughToDefaultAndQueueARealRunner()
+    public void CanonicalMoodAndNeedsSelectHappyTripletAndQueueARealRunner()
     {
         using var robot = CozmoRobot.CreateOffline(); var handler = robot.Animations.DrivingAnimations;
         var lines = new List<string>(); robot.Engine.StackLogLine += lines.Add;
+        Assert.Null(handler.GetSimpleMoodForTest);Assert.Null(handler.AreNeedsMetForTest);
+        Assert.Equal(SimpleMood.Default,robot.Engine.Robot!.MoodOwner!.GetSimpleMood());
+        foreach(var need in new[]{NeedId.Repair,NeedId.Energy,NeedId.Play})
+            Assert.True(robot.Engine.Needs.State.GetNeedBracket(need) is NeedBracketId.Full or NeedBracketId.Normal);
         Assert.True(handler.Init(4, 99, false, false)); Assert.Equal(0, handler.State); Assert.True(handler.InputsReady);
-        Assert.Contains(lines, l => l.Contains("M5-063 M7-026 GetSimpleMood"));
+        Assert.Equal(new DrivingAnimations((AnimationTrigger)0x96,(AnimationTrigger)0x92,(AnimationTrigger)0x8E),handler.Current);
+        Assert.DoesNotContain(lines,l=>l.Contains("M7-026")||l.Contains("M15-001"));
+        var completions=new List<RobotCompletedAction>();
+        using var reports=robot.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>completions.Add(Assert.IsType<RobotCompletedAction>(p)));
         handler.Push(new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D), "test");
         Assert.True(handler.Init(4, 99, false, false)); handler.PlayDrivingLoopAnim();
         Assert.NotEqual(0u, handler.LoopId); Assert.Equal(1, robot.Engine.Robot!.ActionList.QueueCount);
-        Assert.Contains(lines, l => l.Contains("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction"));
+        uint loopId=handler.LoopId;
         robot.Engine.Robot.ActionList.Update(); // No map/library: terminal NO_ANIM_NAME still emits E2G 5A.
         robot.Engine.Robot.ActionList.Update();
         Assert.DoesNotContain(lines, l => l.Contains("M12-032 PathComponent.HasPathToFollow")); // P30 now reads the real constructor's Ready status.
         Assert.Equal(0, robot.Engine.Robot!.ActionList.QueueCount);
+        var completion=Assert.Single(completions.Where(record=>record.Tag==loopId));
+        Assert.Equal(26,completion.ActionType);Assert.Equal(0x0300000Cu,completion.Result);
+        Assert.Equal((byte)1,completion.CompletionVariant);Assert.Equal("",completion.AnimationName);
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]

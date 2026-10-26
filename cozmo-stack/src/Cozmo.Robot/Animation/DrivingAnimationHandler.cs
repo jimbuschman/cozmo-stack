@@ -71,12 +71,26 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     private bool UpdateCurrent()
     {
         if (_entries.Count != 0) { Current = _entries[^1].Animations; return true; }
-        // MoodState has emotion values but no recovered GetSimpleMood; do not derive that enum from emotions.
-        if (GetSimpleMoodForTest is null) DriveMissing("M7-026 GetSimpleMood (0x004F0D42) unavailable; proceeding to the needs/default branch");
-        else if (GetSimpleMoodForTest() == 1) { Current = new((AnimationTrigger)0x94, (AnimationTrigger)0x90, (AnimationTrigger)0x8C); return true; }
-        var needs=AreNeedsMetForTest ?? AreNeedsMet;
-        if(needs is null)DriveMissing("M15-001 AreNeedsMet (0x004F0D5A) unavailable; proceeding to the default triplet");
-        Current = needs?.Invoke() == true ? new((AnimationTrigger)0x96, (AnimationTrigger)0x92, (AnimationTrigger)0x8E)
+        // M7-026: empty override stack unconditionally reads the BOUND Robot's
+        // Mood+440 at004F0D3C/3E/42. Raw1 is Sad (not Happy).
+        int mood;
+        if(GetSimpleMoodForTest is {} substitute)mood=substitute();
+        else if(_owner?.MoodOwner is {} actualMood)mood=(int)actualMood.GetSimpleMood();
+        else
+        {
+            DriveMissing("M1-034/M7-026 skip null bound Robot/Mood selection at0x004F0D3C..42; prior triplet retained, no needs/default fallback invented");
+            return false;
+        }
+        if (mood == 1) { Current = new((AnimationTrigger)0x94, (AnimationTrigger)0x90, (AnimationTrigger)0x8C); return true; }
+        bool needsMet;
+        if(AreNeedsMetForTest is {} substituteNeeds)needsMet=substituteNeeds();
+        else if(_owner?.Engine.Needs is {} actualNeeds)needsMet=actualNeeds.State.AreNeedsMet(); //004F0D50..66→6960A8→69CB4C.
+        else
+        {
+            DriveMissing("M1-034/M15-001 skip null bound Needs owner selection at0x004F0D50..5A; prior triplet retained, no default fallback invented");
+            return false;
+        }
+        Current = needsMet ? new((AnimationTrigger)0x96, (AnimationTrigger)0x92, (AnimationTrigger)0x8E)
             : new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D);
         return true;
     }

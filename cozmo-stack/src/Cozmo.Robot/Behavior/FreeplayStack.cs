@@ -13,6 +13,20 @@ namespace Cozmo.Robot.Behavior;
 public sealed class FreeplayStack : IDisposable
 {
     private readonly List<Action> _unsubscribe = new();
+    private NativeBehaviorRuntime? _nativeObserver;
+    /// <summary>Observe canonical configured owners. This does not select Freeplay or tick the engine.</summary>
+    public static FreeplayStack CreateNative(CozmoRobot robot)=>robot.Engine.InvokeEngineRequest(()=>
+    {
+        var native=robot.Engine.Robot??throw new InvalidOperationException("Native Robot is absent");
+        var runtime=native.NativeBehaviorRuntime??throw new InvalidOperationException("Native behavior runtime is absent");
+        return new FreeplayStack(native.BehaviorManagerOwner!,runtime.FreeplayObserver,runtime.Tree,runtime.Bound,
+            robot.Engine.Needs,runtime.Context,runtime.Tracker,runtime.AI){_nativeObserver=runtime};
+    });
+    /// <summary>Explicit standalone custom driver; source ownership stays with the canonical native runtime.</summary>
+    public static FreeplayStack CreateStandalone(string obbRoot,CozmoRobot robot,BehaviorContext ctx,Func<double> clockSec,
+        VisionSystem? vision=null,ManipulationSystem? m=null,NeedsManager? needs=null,bool withReactions=true,Random? random=null,string? needsDirectory=null)
+        =>Create(obbRoot,robot,ctx,clockSec,vision,m,needs,withReactions,random,needsDirectory);
+
 
     private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx, FreeplayDataTracker tracker, AIComponent ai)
     {
@@ -36,18 +50,24 @@ public sealed class FreeplayStack : IDisposable
     public IReadOnlyList<string> UnboundIds => Tree.SelectMany(a => a.AllBehaviorIds()).Distinct().Where(id => !Bound.ContainsKey(id)).OrderBy(x => x).ToList();
 
     /// <summary>
-    /// Builds the stack. <paramref name="vision"/> and <paramref name="m"/> enable the cube, navigation and
+    /// Builds the standalone manual/custom driver (historical API). It does not replace or tick native engine owners.
+    /// <paramref name="vision"/> and <paramref name="m"/> enable the cube, navigation and
     /// face behaviours; without them the config-free and animation-only sets are bound. Native reaction entries
     /// belong to the robot; <paramref name="withReactions"/> controls reaction checks for this host handle.
     /// </summary>
     public static FreeplayStack Create(string obbRoot, CozmoRobot robot, BehaviorContext ctx, Func<double> clockSec, VisionSystem? vision = null, ManipulationSystem? m = null,
                                        NeedsManager? needs = null, bool withReactions = true, Random? random = null, string? needsDirectory = null)
     {
-        var manager=robot.Engine.InvokeEngineRequest(()=>robot.BehaviorManager??throw new InvalidOperationException("Freeplay requires a constructed native robot."));
+        var canonical=robot.Engine.Robot?.NativeBehaviorRuntime;
+        if(ReferenceEquals(ctx,canonical?.Context) || ctx.Arbiter is {} arbiter && ReferenceEquals(arbiter,canonical?.Context.Arbiter))
+            throw new ArgumentException("Canonical context/arbiter belongs to the engine. Use CreateNative to observe it; supply independent inputs to CreateStandalone.",nameof(ctx));
+        // Historical Create(ctx,clock,...) is an explicit host/manual driver. Its
+        // custom inputs never replace the canonical engine manager or owners.
+        var manager=new BehaviorManager(ctx,null,bindSensorOwner:false);
         var problems = new List<string>();
         // J3: the needs device-file directory is the host's; FreeplayTool's --state-dir supplies it.
         needs ??= robot.Engine.Needs;
-        if(!ReferenceEquals(needs,robot.Engine.Needs))robot.Engine.UseNeedsForOfflineTest(needs);
+
         if(needsDirectory is not null && needs.DeviceDirectory!=needsDirectory)
             throw new ArgumentException("Supply NeedsDeviceDirectory in engine options before initialization.",nameof(needsDirectory));
         // fidelity: M15-014
@@ -67,7 +87,8 @@ public sealed class FreeplayStack : IDisposable
         // component's Init (the config parse) before this.
         needs.TickCount = () => robot.Engine.Timer.TickCount;
         needs.DistortionRng ??= robot.Animations.Scheduler.ContextRandom;
-        robot.Animations.Scheduler.DesiredFaceDistortion = needs.GetCurrentDesiredDistortion;
+        // The native scheduler keeps its engine-owned Needs producer; custom
+        // standalone needs are inputs to this driver, not a replacement hook.
         var all = new List<IBehavior>();
         // fidelity: M7-018, M7-002
         // RobotDataLoader::LoadBehaviors 0x005206bc reads the config corpus and BehaviorContainer 0x0059c324 builds every behaviour whose class the
@@ -138,7 +159,7 @@ public sealed class FreeplayStack : IDisposable
         // MoodManager::Init 0x0067aebc: StaticMoodData::Init reads the shipped mood_config.json and the
         // emotion events; MoodState is the stack's runtime for it. Wired here so every Context.Mood?.Trigger
         // call and FreeplaySystem's per-tick Advance have a live model.
-        ctx.Mood ??= robot.Engine.Robot?.MoodOwner ?? new MoodState(MoodModel.Load(obbRoot));
+        ctx.Mood ??= new MoodState(MoodModel.Load(obbRoot));
         // The MoodManager's robot pointer (+0x12c): SendEmotionsToGame sends nothing without it (0x0067b736..0x0067b73c).
         if (ctx.Mood.Robot is null) ctx.Mood.AttachRobot(robot);
         var moodOwner=ctx.Mood; // native closures capture the concrete MoodManager, not a mutable host context slot.
@@ -150,8 +171,8 @@ public sealed class FreeplayStack : IDisposable
         // documented stand-in), so the record is mapped through the shipped RobotActionType/ActionResultCategory tables. The int-keyed model and
         // the forward-map miss fallback are not built; M7-020 is not settled.
         var actionEndedList = robot.Engine.Robot?.ActionList;
-        int actionEndedHandle = 0;
-        if (actionEndedList is not null)
+        int actionEndedHandle = moodOwner.ActionCallbackId;
+        if (actionEndedList is not null && actionEndedHandle==0 && !ReferenceEquals(moodOwner,robot.Engine.Robot?.MoodOwner))
         {
             actionEndedHandle = actionEndedList.RegisterActionEndedCallback(r =>
             {
@@ -169,7 +190,6 @@ public sealed class FreeplayStack : IDisposable
             tallStack.BindDelocalizationData(nativeTall);
         robot.Engine.InvokeEngineRequest(()=>
         {
-            if(!ReferenceEquals(manager,robot.BehaviorManager))throw new InvalidOperationException("Native robot changed while Freeplay inputs were being loaded.");
             manager.BindFreeplayInputs(ctx,obbRoot,vision,m,bound);return 0;
         });
 
@@ -189,8 +209,8 @@ public sealed class FreeplayStack : IDisposable
         // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update from the engine tick
         // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
         // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
-        var severe=robot.BindSevereNeedsInputs();
-        robot.Engine.InvokeEngineRequest(()=>{severe.DisableReactions=manager.DisableReactionsWithLock;severe.RemoveReactions=manager.RemoveDisableReactionsLock;return 0;});
+        var severe=new SevereNeedsComponent{IsAtBracket=needs.State.IsNeedAtBracket,
+            DisableReactions=manager.DisableReactionsWithLock,RemoveReactions=manager.RemoveDisableReactionsLock};
         var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text), severe);
         ai.BindDestructionRecipient(0x30,()=>{severe.Dispose();ai.NativeTeardown.Destroy(0x30);});
         // fidelity: M11-079, M8-013 — native activity/chooser requests reach this same analyzer.
@@ -212,31 +232,15 @@ public sealed class FreeplayStack : IDisposable
         ai.BindDestructionRecipient(0x2C,tracker.DestroyStorage);
         // The constructed host helper is real, but its captured IHelper destruction remains explicitly unread.
         ai.BindDestructionRecipient(0x10,()=>ai.NativeTeardown.Destroy(0x10));
-        EngineRobot? lifetimeRobot=null;
-        void BindNativeLifetime(EngineRobot native)
-        {
-            if(lifetimeRobot is not null&&!ReferenceEquals(native,lifetimeRobot))
-            {SteppedBehavior.ReportMissing("M15-027/M15-045 replacement AI/Freeplay owner construction is not built; do not bind a retired host AI/tracker as the new native owner");return;}
-            lifetimeRobot=native;
-            severe.DisableReactions=manager.DisableReactionsWithLock;severe.RemoveReactions=manager.RemoveDisableReactionsLock;
-            severe.Subscribe(robot.Engine,native.HasExternalInterface);
-            foreach(var guard in guardDogDisconnects)guard.Subscribe(robot.Engine,native.HasExternalInterface);
-            if(guardDogDisconnects.Count!=0)SteppedBehavior.ReportMissing("M15-067 GuardDog checked subscriptions bound from factory; native pre-hook/running/action/state-label owner and base teardown join remain absent");
-            native.Lifetime.Bind(-2,_=>tracker.ForceUpdate());
-            native.Lifetime.Bind(0x264,_=>ai.DestroyDirect());
-            moodOwner.BindNativeLifetime(native,actionEndedHandle);
-        }
-        robot.Engine.BindRobotLifetime+=BindNativeLifetime;
-        if(robot.Engine.Robot is {} lifetimeOwner)BindNativeLifetime(lifetimeOwner);
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
-        stack._unsubscribe.Add(()=>robot.Engine.BindRobotLifetime-=BindNativeLifetime);
+        stack._unsubscribe.Add(manager.Dispose);
+        stack._unsubscribe.Add(severe.Dispose);
+        if(actionEndedHandle!=0 && !ReferenceEquals(moodOwner,robot.Engine.Robot?.MoodOwner) && actionEndedList is not null)
+            stack._unsubscribe.Add(()=>actionEndedList.UnregisterActionEndedCallback(actionEndedHandle));
         // M8-019: the native robot's manager owns the sensor request entry too.
         var previousReactionChecks=robot.Engine.InvokeEngineRequest(()=>{var previous=manager.HostReactionChecksEnabled;manager.HostReactionChecksEnabled=withReactions;return previous;});
         stack._unsubscribe.Add(()=>robot.Engine.InvokeEngineRequest(()=>{if(ReferenceEquals(manager.Activity,system))manager.HostReactionChecksEnabled=previousReactionChecks;return 0;}));
-        var previousAiUpdate=robot.Engine.AIComponentUpdate;
-        Action aiUpdate=()=>ai.Update(robot);robot.Engine.AIComponentUpdate=aiUpdate;
-        stack._unsubscribe.Add(() => {if(ReferenceEquals(robot.Engine.AIComponentUpdate,aiUpdate))robot.Engine.AIComponentUpdate=previousAiUpdate;});
         // Releasing a host handle does not destroy the native severe-needs owner or its wake subscription.
         // fidelity: M7-023 — no captured old ActionList unregister on host Dispose; native +250 is already null at mood destruction.
 
@@ -253,8 +257,6 @@ public sealed class FreeplayStack : IDisposable
         // Freeplay. C1 §5: BehaviorManager::InitConfiguration (0x005A0DFC) also sets flag 0 paused, and only
         // SetCurrentActivity(1 Freeplay) clears it; this stack is created as Freeplay starts, so clearing it
         // here is the equivalent end state.
-        robot.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, p);
-        stack._unsubscribe.Add(() => robot.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads = null);
         void onCharger(bool on) => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger, on);
         robot.Sensors.OnChargerPlatformChangedInternal += onCharger;
         stack._unsubscribe.Add(() => robot.Sensors.OnChargerPlatformChangedInternal -= onCharger);
@@ -303,52 +305,6 @@ public sealed class FreeplayStack : IDisposable
         robot.Sensors.OffTreadsStateChangedInternal += onTreads;
         stack._unsubscribe.Add(() => robot.Sensors.OffTreadsStateChangedInternal -= onTreads);
 
-        // The ground in front of the robot reaches the map here, which is the join the engine makes in
-        // VisionComponent::UpdateOverheadEdges 0x006553FC -> MapComponent::ProcessVisionOverheadEdges
-        // 0x0067F7AC. The detector runs inside the vision system on each frame's own pose data, and the
-        // frame is put in the map against the robot pose of that same frame - the engine looks that pose
-        // up by the frame's timestamp, and here it arrives with the frame.
-        if (vision is not null && ctx.Map is { } theMap)
-        {
-            vision.OverheadEdges ??= new OverheadEdgesDetector();
-            void onFrame(VisionFrameResult r)
-            {
-                if(r.OverheadEdges is not { GroundPlaneValid:true } edges || edges.Chains.Count==0)return;
-                LogCallbackDeferral.RunGated(vision.World.FrameGate,()=>
-                {
-                    if(vision.World.Maps.Current is not {} map || robot.Engine.Robot is not {} native)return;
-                    var previous=map.OverheadContext;
-                    map.OverheadContext=new OverheadMapContext
-                    {
-                        History=ts=>OverheadHistorySample.Read(vision.History,ts),
-                        Origin=()=>native.GetNativeOrigin(vision.World.Maps.CurrentOrigin),
-                        ImageTimestamp=()=>robot.CameraSettings.LastProcessedImageTimestamp, // 0x00516EC0 -> VC+0xE8, before this result's tail
-                        Clear=m is null?null:m.Whiteboard.ProcessClearQuad,
-                        WhiteboardState=m is null?null:m.Whiteboard.SetOverheadEdgeState,
-                    };
-                    try{map.AddVisionOverheadEdges(edges,native.MainPose);}
-                    finally{map.OverheadContext=previous;}
-                });
-            }
-            vision.FrameProcessed += onFrame;
-            stack._unsubscribe.Add(() => vision.FrameProcessed -= onFrame);
-
-            // A delocalization puts the robot in a new origin, and the engine gives that origin a map of
-            // its own (MapComponent::CreateLocalizedMemoryMap, called from BlockWorld::OnRobotDelocalized
-            // 0x006249D6). Follow the owner; zombie/keep-alive decisions retain or erase the old maps.
-            void onDelocalized(uint origin) => ctx.Map = vision.World.Maps.Current;
-            vision.RobotDelocalized += onDelocalized;
-            stack._unsubscribe.Add(() => vision.RobotDelocalized -= onDelocalized);
-        }
-        // fidelity: M5-063 — use the actual stack inputs only after successful creation.
-        // Host inputs are published only after every load/creation step above has succeeded.
-        // Install both restore callbacks before changing either input.
-        var previousDrivingTriggerMap = robot.Animations.DrivingTriggerMap;
-        var previousAreNeedsMet = robot.Animations.DrivingAnimations.AreNeedsMet;
-        stack._unsubscribe.Add(() => robot.Animations.DrivingTriggerMap = previousDrivingTriggerMap);
-        stack._unsubscribe.Add(() => robot.Animations.DrivingAnimations.AreNeedsMet = previousAreNeedsMet);
-        robot.Animations.DrivingTriggerMap = ctx.Triggers;
-        robot.Animations.DrivingAnimations.AreNeedsMet = ctx.Needs.State.AreNeedsMet;
         stack._unsubscribe.Add(()=>robot.Engine.InvokeEngineRequest(()=>{system.DetachHostHandle();return 0;}));
         return stack;
     }
@@ -356,6 +312,7 @@ public sealed class FreeplayStack : IDisposable
     /// <summary>One tick with the inputs refreshed from the robot and the world.</summary>
     public FreeplayDecision Tick(double nowSec, double nowMs, CozmoRobot robot, VisionSystem? vision, ManipulationSystem? m)
     {
+        if(_nativeObserver is {} observer)return observer.Observe();
         // fidelity: M13-032 — follow the live current-origin owner after delocalization/robot reconstruction.
         if (vision is not null) Context.Map = robot.Engine.Robot is not null ? vision.World.Maps.Current : null;
         // BlockWorld pose notifications already drive the native map's gated object add/removal path.

@@ -39,6 +39,14 @@ public sealed partial class EngineRobot
     internal RobotStateHistory PoseHistory {get;}=new();
     internal byte VisionPoseUpdated;
     internal bool HasExternalInterface=true;
+    internal bool TryGetNativeOriginOwner(uint id,out Pose3d? origin)
+    {
+        lock(PoseTreeGate)
+        {
+            if(_nativeOrigins.TryGetValue(id,out var owner)&&owner.Node is not null){origin=owner;return true;}
+            origin=null;return false; // Never substitute MissingOrigin for an actual producer input.
+        }
+    }
     internal Pose3d GetNativeOrigin(uint id)
     {
         if(_nativeOrigins.TryGetValue(id,out var root))return root;
@@ -118,7 +126,11 @@ public sealed partial class EngineRobot
         {PoseDiagnostics.Verify("Robot.SetPose.NewPoseOriginAndWorldOriginMismatch","VERIFY(newPose.HasSameRootAs(GetWorldOrigin())): ");return;}
         string name=MainPose.Name;MainPose.Assign(value);MainPose.Name=name;
         ForwardPose.Assign(MainPose);
-        float offset=(Engine.PublicationCarrying?.Invoke()??(-1,-1)).Item1==-1?-20:0;
+        // Robot::SetPose 0x0051508C: read the actual raw carrying ID at this write,
+        // not a publication callback or a later DriveStraight Init input.
+        if(CarryingOwner is null)
+            throw new InvalidOperationException("MISSING: Robot.SetPose actual CarryingOwner");
+        float offset=(CarryingOwner.CarriedObjectId??uint.MaxValue)==uint.MaxValue?-20f:0f;
         float yaw=(float)MainPose.AngleAroundZ;
         // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped cosf/sinf, separate f32 mul/add.
         float x=(float)ForwardPose.Translation.X+offset*MathF.Cos(yaw);

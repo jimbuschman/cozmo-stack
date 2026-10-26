@@ -16,7 +16,8 @@ public sealed partial class CozmoEngine
             BinaryPrimitives.WriteUInt32LittleEndian(payload,objective); // union0x007285FE, pack0x0071BEAE
             DeliverAnimationReportToApp(0x8B,payload); // rvalue0x006625B0: enqueue before synchronous local emit
             AnimationMessages.Deliver(0x8B,true,objective);
-            SteppedBehavior.ReportMissing("M15-059 ActivitySparked objective recipients 0x005B181E..0x005B1866: specialized owners remain unbuilt; objective local delivery does not establish their state effects");
+            if(Robot?.NativeActivityRecipientsConstructed!=true)
+                SteppedBehavior.ReportMissing("Objective recipients: actual constructed Activity owners/subscription readiness unavailable; Sparked0x005B181E and Socialize0x005B07C2 effects are not established by local delivery alone");
         }
         // 0x005BE24A..308: both diagnostics run even when publication is suppressed.
         EmitSourceLog(EngineLogLevel.Info,"Behaviors","IBehavior.BehaviorObjectiveAchieved",

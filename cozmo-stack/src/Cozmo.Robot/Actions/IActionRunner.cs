@@ -77,6 +77,8 @@ public interface IActionRunner
     /// <see cref="ActionRunner"/> returns the cache; a runner that is not an <see cref="ActionRunner"/> answers 0.
     /// </summary>
     uint GetCompletionUnion() => 0;
+    string? GetAnimationCompletionName()=>null;
+    byte? GetCompletionVariant()=>null;
     /// <summary>W10/D5: enqueue the destruction event. Batch 4 (D/W).</summary>
     void WatcherEnding();
     /// <summary>L14: release this action's track lock. Batch 2 (L).</summary>
@@ -174,6 +176,10 @@ public abstract class ActionRunner : IActionRunner
     private readonly bool _hasSuppliedNativeName;
     private bool _prepped;                       // L13: +0x55 guard
     internal uint PreparedCompletionUnion=>_completionUnion;
+    internal string? PreparedAnimationCompletionName=>_animationCompletionName;
+    private string? _animationCompletionName;
+    internal byte? PreparedCompletionVariant=>_completionVariant;
+    private byte? _completionVariant;
     private uint _completionUnion;               // L13: +0x1C cache
     private readonly List<Action<uint>> _completionCallbacks = new();   // L1: callback list +0x64
 
@@ -265,6 +271,8 @@ public abstract class ActionRunner : IActionRunner
     public virtual int Init() => 0;
     public abstract uint CheckIfDone();
     public virtual uint GetCompletionUnion() => _completionUnion;
+    public virtual string? GetAnimationCompletionName()=>_animationCompletionName;
+    public virtual byte? GetCompletionVariant()=>_completionVariant;
     public virtual bool SetMotionProfile() => false;
 
     /// <summary>L12: AddCompletionCallback appends; RunCallbacks loops the list in order with the full result.</summary>
@@ -438,6 +446,8 @@ public abstract class ActionRunner : IActionRunner
             return;
         }
         _completionUnion = GetCompletionUnion();
+        _animationCompletionName=GetAnimationCompletionName();
+        _completionVariant=GetCompletionVariant();
         _prepped = true;
     }
 

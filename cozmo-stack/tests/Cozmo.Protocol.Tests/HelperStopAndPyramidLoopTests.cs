@@ -142,7 +142,7 @@ public sealed class HelperStopAndPyramidLoopTests
     public void SnapshotRetainsDuplicatesTestsTopFirstAndContinuesAfterDelegation()
     {
         using var rig=new Rig();Add(rig,7);Add(rig,8);var b=Pyramid(rig);
-        var entry=new PyramidBase(7,8,Vec3.Zero);var cache=new List<PyramidBase>{new(7,99,Vec3.Zero),entry,entry};
+        var entry=new NativePyramidBase(7,8);var cache=new List<NativePyramidBase>{new(7,99),entry,entry};
         rig.M.Configurations.NativePyramidBaseStrongCache=()=>cache;
         using var root=new Pose3d("root");
         Pose3d? capturedMidpoint=null,capturedCenter=null;
@@ -161,7 +161,7 @@ public sealed class HelperStopAndPyramidLoopTests
     public void EitherGeometryFailureBreaksBeforeTheNextCandidate(bool conversionFailure)
     {
         using var rig=new Rig();Add(rig,7);Add(rig,8);var b=Pyramid(rig);
-        rig.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{new PyramidBase(7,8,Vec3.Zero),new PyramidBase(7,8,Vec3.Zero)};
+        rig.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{new NativePyramidBase(7,8),new NativePyramidBase(7,8)};
         int midpointCalls=0,made=0;
         b.TopBaseMidpoint=(_,_,_)=>{midpointCalls++;return conversionFailure;};
         b.TopBaseCenter=_=>new Pose3d("unrelated");
@@ -173,7 +173,7 @@ public sealed class HelperStopAndPyramidLoopTests
     public void LoopRereadsTheReferencedIdsAfterSynchronousDelegation()
     {
         using var rig=new Rig();Add(rig,7);Add(rig,8);var b=Pyramid(rig);
-        var entry=new PyramidBase(7,8,Vec3.Zero);
+        var entry=new NativePyramidBase(7,8);
         rig.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{entry,entry};
         using var root=new Pose3d("root");
         b.TopBaseMidpoint=(_,_,output)=>{using var p=new Pose3d("point",root);output.AssignInputValue(p);return true;};

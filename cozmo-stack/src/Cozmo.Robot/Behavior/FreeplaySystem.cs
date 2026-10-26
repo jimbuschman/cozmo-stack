@@ -58,12 +58,14 @@ public sealed class FreeplaySystem : IManagedActivity
     private string? _switchedFromId;
 
     public FreeplaySystem(BehaviorManager manager, BehaviorContext ctx, Activity freeplay, IReadOnlyDictionary<string, IBehavior> bound, FreeplayInputs inputs)
+        :this(manager,ctx,freeplay,bound,inputs,true) { }
+    internal FreeplaySystem(BehaviorManager manager,BehaviorContext ctx,Activity freeplay,IReadOnlyDictionary<string,IBehavior> bound,FreeplayInputs inputs,bool attach)
     {
         _manager = manager; _ctx = ctx; Freeplay = freeplay; _bound = bound; Inputs = inputs;
         foreach (var b in bound.Values) if (manager.Find(b.Id) is null) manager.Add(b);
         // BehaviorManager::GetCurrentActivity (0x005a2f78): the manager ticks this activity, asks it for the
         // desired behaviour behind the reaction check, and reports what a reaction switched to.
-        manager.Activity = this;
+        if(attach)manager.Activity = this;
         _reactionObserver=sw => { Record(_tickNowSec, Current?.Id, sw.Behavior, $"reaction {sw.Trigger}"); _recordedThisTick = true; };
         manager.ReactionTriggered += _reactionObserver;
     }
@@ -152,18 +154,21 @@ public sealed class FreeplaySystem : IManagedActivity
     /// run (with their side effects) before the reaction check.
     /// </summary>
     // fidelity: M8-012
+    internal Func<FreeplayDecision>? ObserveOnly;
     public FreeplayDecision Tick(double nowSec, double nowMs)
     {
+        if(ObserveOnly is {} observe)return observe();
         // Mood first, and on this tick's clock. The engine updates it from Robot::Update (0x00513E8A)
         // every tick, whatever the behaviour system then decides, and MoodManager reads its time from
         // BaseStationTimer - the same clock the emotion events are stamped with
         // (GetCurrentTimeInSeconds 0x0067ADA8). Without this the decay only ran when something else
         // happened to advance it, so an emotion stayed wherever an event left it and everything that
         // reads mood - the scoring, the gating - read a value that should long since have decayed.
-        _ctx.Mood?.Advance(nowSec);
+        bool standaloneMood=!ReferenceEquals(_ctx.Robot.Engine.Robot?.MoodOwner,_ctx.Mood);
+        if(standaloneMood)_ctx.Mood?.Advance(nowSec);
         // MoodManager::Update 0x0067b5d4 ends with SendEmotionsToGame (0x0067b6a4): with a robot attached it builds the
         // nine-float MoodState message and raises it on MoodState.MoodStateBroadcast (no engine-to-game sink exists: M7-012).
-        _ctx.Mood?.SendEmotionsToGame();
+        if(standaloneMood)_ctx.Mood?.SendEmotionsToGame();
         // The NeedsManager is not ticked here: the engine calls NeedsManager::Update from its own tick,
         // between MessageHandler::ProcessMessages and UpdateAllRobots, on BaseStationTimer seconds
         // (M1-024, 0x004ED640). FreeplayStack.Create hands the manager to CozmoEngine.NeedsUpdate.
@@ -438,6 +443,6 @@ public sealed class FreeplaySystem : IManagedActivity
             Inputs.LocatedCubes = vision.World.LocatedObjects.Count(o => CubeGeometry.IsCube(o.Type));
             Inputs.FaceKnown = vision.Faces.HasAnyFaces();
         }
-        if (m is not null) Inputs.PyramidBuilt = m.Configurations.Pyramids.Count > 0;
+        if (m is not null) Inputs.PyramidBuilt = m.NativePyramids.Count > 0;
     }
 }

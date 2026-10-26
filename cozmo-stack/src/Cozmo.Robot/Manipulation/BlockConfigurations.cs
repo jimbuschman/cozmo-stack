@@ -93,18 +93,19 @@ public sealed class BlockConfigurationManager
     public IReadOnlyList<PyramidBase> PyramidBases => Cache(BlockConfigurationType.PyramidBase).Cast<PyramidBase>().ToList();
     // fidelity: M12-047 — manager+48 is PyramidBase container+4, a strong-pointer vector (5DC150..5DC168).
     // M12-049 owns its producers; the host all-pairs snapshot is not this native cache.
-    internal Func<IReadOnlyList<PyramidBase>>? NativePyramidBaseStrongCache;
-    internal PyramidBase[]? CopyNativePyramidBaseCache()
+    internal Func<IReadOnlyList<NativePyramidBase>>? NativePyramidBaseStrongCache;
+    internal NativePyramidBase[]? CopyNativePyramidBaseCache()
     {
-        lock (_updateGate)
+        // The optional override is an explicitly substituted strong-cache fixture input.
+        if(NativePyramidBaseStrongCache is {} fixture)return fixture().ToArray();
+        var native=_world.NativeConfigurations;
+        if(native is not null)
         {
-            if (NativePyramidBaseStrongCache is not { } get)
-            {
-                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-049 native PyramidBase strong cache manager+0x48 at 0x005DC15E: producer Container::Update0x0061682C/CastNewEntry0x0062C68C/PruneFullPyramids0x0062C72E is unread; M12-047 snapshot/loop is built, no host cache substituted");
-                return null;
-            }
-            return get().ToArray(); // retained object references, same order and duplicates; independent vector snapshot
+            if(!native.InputsAvailable)Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-049 strong cache rebuild UNKNOWN; retained complete prior native publication used");
+            return native.Snapshot.Bases.ToArray();
         }
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-049 native PyramidBase strong cache inputs unavailable; no public host cache substituted");
+        return null;
     }
     public IReadOnlyList<Pyramid> Pyramids => Cache(BlockConfigurationType.Pyramid).Cast<Pyramid>().ToList();
 
@@ -139,8 +140,8 @@ public sealed class BlockConfigurationManager
     internal Func<EngineRobot?>? NativeRobot;
     public bool ForceUpdate
     {
-        get { lock (_world.FrameGate) return NativeRobot?.Invoke() is {} robot ? robot.BlockConfigurationForceUpdate : _forceUpdate; }
-        set { lock (_world.FrameGate) { if (NativeRobot?.Invoke() is {} robot) robot.BlockConfigurationForceUpdate = value; else _forceUpdate = value; } }
+        get { lock (_world.FrameGate) return _forceUpdate; }
+        set { lock (_world.FrameGate) _forceUpdate=value; } // D1: public host input cannot mutate native flags.
     }
 
     private readonly SortedSet<uint> _pending = new(Comparer<uint>.Create((a,b) => unchecked((int)a).CompareTo(unchecked((int)b))));
@@ -209,8 +210,8 @@ public sealed class BlockConfigurationManager
                 RebuildCount++;
                 UpdateLastCheckPoses();
                 NotifyCount++;
-                NativeRobot?.Invoke()?.BehaviorPublicState.UpdateStackHeight(unchecked((byte)(GetTallestStack()?.StackHeight ?? 0)));
-                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037/M12-049 NotifyBroadcasterOfConfigurationManagerUpdate 0x0064DCAA..0x0064DD76: native configuration-container and tallest-stack producer remain unbuilt; existing public-state owner dispatches to the two known BehaviorAudioClients, BehaviorManager A before BehaviorSystemManager B");
+                // D1: this all-pairs snapshot/event/time adapter is a host extension.
+                // Only the independent native producer may publish engine stack height/audio.
             }
             // Both the no-movement and successful rebuild branches reset here, after notify.
             ForceUpdate = false;
@@ -519,7 +520,7 @@ public static class Footprint
         using var flat=atPose.GetWithRespectToRoot(); // checked Flatten helper, not a yaw projection
         var points=ObjectFootprint.BlockProjectedCorners(size,flat.Quaternion,padding);
         Point2f[] corners;
-        try{corners=MinAreaRectF.Points(MinAreaRectF.Compute(points));}
+        try{corners=MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(points));}
         catch(NotSupportedException)
         {
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-043/M13-024 Block::GetBoundingQuadXY 0x004E6396: existing minAreaRect port has an unported hull branch; no axis-aligned substitute or fabricated native cv failure log");return false;
@@ -539,11 +540,27 @@ public static class Footprint
 /// <c>RotatedRect::points</c> (0x00086188). The libm calls (cos, sin, atan2, sqrt) are <see cref="Math"/>'s, the stack's libm policy.
 ///
 /// Hulls with zero, one or two points use the native zero, point and line results (0x0009CDFC..0x0009CEAC).
-/// The <c>GetBoundingQuad</c> catch-all that falls back to the axis-aligned box when cv::minAreaRect throws (0x004E65C6) is not reproduced.
+/// The defined zero-orientation cv failure is handled by the bounding-quad caller's rectangle fallback.
 /// </summary>
 // fidelity: M13-024
 public static class MinAreaRectF
 {
+    internal sealed class OrientationException : Exception
+    {
+        internal OrientationException():base("OpenCV(-215): orientation != 0 in rotatingCalipers, line166") { }
+    }
+    // GetBoundingQuad 0x004E65C6..004E67C4. Only a recovered native cv failure
+    // belongs here; managed unported branches keep their distinct availability result.
+    internal static RotatedRect ComputeBoundingQuadRectangle(IReadOnlyList<Point2f> points)
+    {
+        try{return Compute(points);}
+        catch(OrientationException error)
+        {
+            StackDiagnostics.Write("GetBoundingQuad: "+error.Message+"; RectangleFallback (0x004E6778)");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return RectangleFallback(points);
+        }
+    }
     /// <summary>cv::RotatedRect: centre, size and the angle in degrees.</summary>
     public readonly record struct RotatedRect(float Cx, float Cy, float W, float H, float AngleDeg);
 
@@ -683,7 +700,7 @@ public static class MinAreaRectF
             if (c != 0) { orient = c > 0 ? 1f : -1f; break; }
             ax = bx; ay = by;
         }
-        if (orient == 0f) throw new NotSupportedException("M13-024: a hull with no non-zero convexity is not a case the port covers");
+        if (orient == 0f) throw new OrientationException(); // cv::error 0x0009CAB4, caught by engine GetBoundingQuad.
         float baseA = orient, baseB = 0f;
         var seq = new[] { bottom, right, top, left };
         float minarea = float.MaxValue;
@@ -804,7 +821,7 @@ public static class ObjectFootprint
             pts.Add(new Point2f((x*(float)r[0,0] + y*(float)r[0,1]) + z*(float)r[0,2],
                 (x*(float)r[1,0] + y*(float)r[1,1]) + z*(float)r[1,2]));
         }
-        var c = MinAreaRectF.Points(MinAreaRectF.Compute(pts));
+        var c = MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(pts));
         var sorted = SortQuadrilateral(c);
         float tx = (float)pose.Translation.X, ty = (float)pose.Translation.Y;
         Point2f T(Point2f p) => new(p.X+tx,p.Y+ty);
@@ -831,7 +848,7 @@ public static class ObjectFootprint
             float ry = (ya + yb) + yc;
             pts.Add(new Point2f(rx, ry));
         }
-        var rect = MinAreaRectF.Points(MinAreaRectF.Compute(pts));
+        var rect = MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(pts));
         var sorted = SortQuadrilateral(rect);
         float tx = (float)atPose.Translation.X, ty = (float)atPose.Translation.Y;
         Point2f T(Point2f p) => new(tx + p.X, ty + p.Y);

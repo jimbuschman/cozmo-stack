@@ -979,7 +979,11 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     private bool _started, _destroyed, _missingDiagnostics;
     private readonly HashSet<string> _missingMessages=new();
     private TaskCompletionSource<ActionResult>? _done;
-    public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps = 100f, bool shouldPlayAnimation = true) : base(8,4)
+    public DriveStraightAction(ManipulationSystem m, double distanceMm)
+        : this(m,distanceMm,distanceMm<0?-80f:100f) { }
+    public DriveStraightAction(ManipulationSystem m, double distanceMm, bool shouldPlayAnimation)
+        :this(m,distanceMm,distanceMm<0?-80f:100f,shouldPlayAnimation){}
+    public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps, bool shouldPlayAnimation = true) : base(8,4)
     { _m=m;DistanceMm=distanceMm;SpeedMmps=speedMmps;ShouldPlayAnimation=shouldPlayAnimation;DrivingAnimations=m.DrivingAnimationsForTest?.Invoke()??m.Robot.Animations.DrivingAnimations;SourceLog=(l,c,k,t)=>m.Robot.Engine.EmitSourceLog(l,c,k,t);Log=m.Robot.Engine.EmitStackLog; }
     public double DistanceMm { get; }
     public float SpeedMmps { get; }
@@ -991,17 +995,27 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     protected override void UnlockTracksInternal(uint mask,string owner)=>_m.Robot.Motion.UnlockTracks((byte)mask,owner);
     protected override bool AreAllTracksLockedBy(uint mask,string owner)=>_m.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
     protected override string ActionName => "DriveStraight"; // thirteen bytes at 0x00BEA0DC.
+    public override byte? GetCompletionVariant()=>6; // type8 ctor 0x0053FF0E..14, Set_defaultCompleted.
     public override bool CanInterrupt()=>false; // 0x0052B0B3.
     private void Missing(string text){if(_missingMessages.Add(text))_m.Robot.Engine.EmitStackLog("MISSING: M13-013 | "+text);}
     public override int Init()
     {
         DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);_started=false;
         if(MathF.Abs((float)DistanceMm)<BitConverter.Int32BitsToSingle(0x3727C5AC)){_started=true;return 0;} // 0x0054761E..26.
-        Missing("AppendLine failure branch 0x005476AE remains unbuilt on the host Path geometry candidate");
-        var robot=_m.RobotPose();if(robot is null){Missing("pose/path Init input unavailable");return 0;}
-        double h=robot.Value.AngleAroundZ;var to=robot.Value.Translation+new Vec3(Math.Cos(h)*DistanceMm,Math.Sin(h)*DistanceMm,0);
-        var p=PathMotionProfile.Default;float speed=DistanceMm<0?-Math.Abs(SpeedMmps):Math.Abs(SpeedMmps);
-        int result=_m.Robot.Motion.Path.ExecuteCustomPath(new PathSegment[]{new PathSegment.Line(robot.Value.Translation.X,robot.Value.Translation.Y,to.X,to.Y,speed,p.AccelMmps2,p.DecelMmps2)},false);
+        if(_m.Robot.Engine.Robot is not {} robot){Missing("actual pose/path Init owner unavailable");return 0;}
+        float x,y,endX,endY;
+        lock(robot.PoseTreeGate)
+        {
+            // 0x0054762A/3C: main-pose yaw, independently stored forward-pose XY.
+            float yaw=(float)robot.MainPose.AngleAroundZ, distance=(float)DistanceMm;
+            x=(float)robot.ForwardPose.Translation.X;y=(float)robot.ForwardPose.Translation.Y;
+            float dx=MathF.Cos(yaw)*distance,dy=MathF.Sin(yaw)*distance;
+            endX=x+dx;endY=y+dy;
+        }
+        float speed=DistanceMm<0?-Math.Abs(SpeedMmps):Math.Abs(SpeedMmps);
+        // Fresh native Path count0, one AppendLine: the signed-negative-count branch
+        // is unreachable for this producer (0x005476AE), without a fabricated failure.
+        int result=_m.Robot.Motion.Path.ExecuteCustomPath(new PathSegment[]{new PathSegment.Line(x,y,endX,endY,speed,200f,500f)},false);
         return result==0?0:0x03000016; // P14.
     }
     public ActionResult CheckIfDone(DriveStraightTick tick)
