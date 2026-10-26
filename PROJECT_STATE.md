@@ -40,6 +40,7 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **CM13-01 and CM13-02 Claude check PASS; trial branch merged to main (manager, 2026-10-26; `research/20261026-cm13-01-02-claude-check.md`).** The planner now imports native type-3 map polygons (no ID filter, charger excluded by the predicate). A successful drive-off sends BehaviorObjectiveAchieved(4) as E2G 0x8B. No record settled. Open: planner goal ownership (M13-033/M11-084), ComputeOriginPose, mood/action admission, the M15-059 recipients.
 - **Isolated Codex M13 manager trial (2026-10-26): code review complete, full gate6267/6267 PASS.** Only on branch codex-m13-manager: CM13-01 9d52255b binds planner obstacles to native type3 map payloads; CM13-02 3d2021a8 delivers drive-off objective4 through E2G0x8B. Independent Codex checks PASS; final full gate6267/6267, zero failed/skipped after documented fixture teardown correctionb2891e6c. Claude review and hardware outstanding. No official fidelity/status/acceptance changes. Trial log and bounded queue: codex-manager-log.md and re-analysis/jobs/trial-m13/. No main queue work claimed.
 
 - **B-M11-22 check PASS (manager, 2026-10-26; `research/20261026-b-m11-22-claude-check.md`).** The BlockWorld map stamp and the object-moved reaction strategy now read VisionComponent+0xE8 (Robot::GetLastImageTimeStamp). Both lanes empty: baseline for the operator's Codex-as-manager M13 experiment.
