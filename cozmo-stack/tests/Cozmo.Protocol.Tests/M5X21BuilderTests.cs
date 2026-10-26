@@ -70,7 +70,11 @@ public sealed class M5X21BuilderTests
     [Fact]
     public void AThrowingFreeplayLoadLeavesBothPreviousDrivingInputsUntouched()
     {
-        using var f=new Fixture();var previous=f.Rig.Robot.Animations.DrivingTriggerMap;
+        using var f=new Fixture();
+        // B-M7-4 unit setup: Freeplay now borrows native Robot+44; create the real owner first (M1-025,0x004ED07C).
+        // Original fixture had no Robot. Keep the JsonException and both prior-input expectations unchanged.
+        f.Rig.Engine.InvokeEngineRequest(()=>{f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);return 0;});
+        var previous=f.Rig.Robot.Animations.DrivingTriggerMap;
         Func<bool> needsInput=()=>false;f.Rig.Robot.Animations.DrivingAnimations.AreNeedsMet=needsInput;
         var context=new BehaviorContext{Robot=f.Rig.Robot,Triggers=AnimationTriggerMap.Load(f.Map)};
         // MoodModel.Load is after the old assignments and before the new publication point.
