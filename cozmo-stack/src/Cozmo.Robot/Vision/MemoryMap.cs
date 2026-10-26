@@ -110,6 +110,9 @@ public sealed partial class MemoryMap
         get { Missing?.Invoke("MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
     }
     internal uint LastObservedTime => Tree.Root.Content.Data.Last;
+    // fidelity: M11-074 -- 0x00681674..0x006816DC forwards the existing output without clearing.
+    internal void FindContentIf(Func<SourceMapData,int> predicate,List<SourceMapData> output)
+        =>Tree.FindContentIf(predicate,output);
     // fidelity: M11-075, M11-046
     internal void TransformAging(SourceMapAging aging)
     {

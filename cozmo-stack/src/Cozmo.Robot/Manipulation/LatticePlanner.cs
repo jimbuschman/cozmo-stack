@@ -546,8 +546,8 @@ public readonly record struct LatticeSuccessor(uint NextId, int ActionIndex, flo
 /// <b>What the import puts in it.</b> <c>LatticePlannerImpl::ImportBlockworldObstaclesIfNeeded</c> 0x004FD4B8: the paddings are the robot's 7 and the obstacle's 6 (or 2 and 1 for the function's own
 /// <c>true</c> argument); each obstacle polygon becomes a <c>ConvexPolygon</c> (clockwise), is radially expanded by the obstacle padding and is expanded into configuration space for each
 /// heading against the robot's bounding quad at that heading, with the constant penalty 0.1f. <b>The engine takes the polygons from the memory map</b> (<c>FindContentIf</c> for content type 3,
-/// <c>ObstacleObservable</c>, in the hash set's order); this stack's memory map is not the engine's quad tree (M14-007), so <see cref="ImportBlockWorldObstacles"/> feeds the world's located
-/// objects' bounding quads in its place: MISSING, a visible stand-in.
+/// <c>ObstacleObservable</c>, in approved first-found insertion order); <see cref="ImportBlockWorldObstacles"/> consumes the native tree's stored
+/// observable payload polygons without rebuilding live object footprints.
 /// </summary>
 // fidelity: M13-003
 public sealed class LatticeEnvironment
@@ -767,27 +767,27 @@ public sealed class LatticeEnvironment
     }
 
     /// <summary>
-    /// STAND-IN for the memory-map read of <c>ImportBlockworldObstaclesIfNeeded</c> (MISSING: <c>MapComponent::GetCurrentMemoryMapHelper</c>, <c>FindContentIf</c> with the
-    /// content-type-3 predicate 0x00502410 and the hash-set order, 0x004FDF1C..0x004FDF8C): every located object except the one being carried becomes an obstacle from its footprint, charger
-    /// included (the engine's predicate excludes the charger's content type 4). <paramref name="tightPadding"/> is the function's own first bool argument: true selects 2/1, false 7/6.
+    /// Imports the current native map's type-3 stored polygons (0x004FDF18..0x004FDF8C).
+    /// Carried/ignore arguments remain for tool compatibility; this consumer applies no object-ID filter.
     /// </summary>
-    // fidelity: M13-003
+    // fidelity: M13-003, M11-074
     public void ImportBlockWorldObstacles(BlockWorld world, uint? carriedObjectId, bool tightPadding, IEnumerable<uint>? ignore = null)
     {
-        var skip = new HashSet<uint>(ignore ?? Array.Empty<uint>());
-        if (carriedObjectId is { } c) skip.Add(c);
-        var polys = new List<IReadOnlyList<P2f>>();
-        foreach (var o in world.LocatedObjects)
+        // 0x004FD5E2 obtains the current helper again, separately from the timestamp sample.
+        if(world.Maps.Current is not {} map)
         {
-            if (skip.Contains(o.ObjectId)) continue;
-            var size = CubeGeometry.SizeOf(o.Type);
-            var flat = new Pose3d(Mat3.AboutZ(o.Pose.AngleAroundZ), o.Pose.Translation with { Z = 0 });
-            if (o.Type == Cozmo.Protocol.ObjectType.Charger_Basic)
-                flat = flat.Compose(new Pose3d(Mat3.Identity, new Vec3(size.X / 2, 0, 0)));      // the charger's origin is its front lip
-            polys.Add(PolygonF.ImportQuad2d(new[] { new Vec3(-size.X / 2, -size.Y / 2, 0), new Vec3(size.X / 2, -size.Y / 2, 0), new Vec3(size.X / 2, size.Y / 2, 0), new Vec3(-size.X / 2, size.Y / 2, 0) }
-                .Select(p => { var w = flat.Apply(p); return new P2f((float)w.X, (float)w.Y); }).ToArray()));
+            StackDiagnostics.Write("M1-034 M13-003/M13-030 skip absent current map dereference at 0x004FD50C; prior obstacle snapshot retained");
+            return;
         }
-        ImportObstaclePolygons(polys, tightPadding);
+        var matches=new List<SourceMapData>();
+        map.FindContentIf(data=>data.Type==MemoryMapContentType.ObstacleObservable?1:0,matches);
+        var polygons=new List<IReadOnlyList<P2f>>();
+        foreach(var data in matches)
+        {
+            if(data is ObservableMapData observable)polygons.Add(observable.Polygon.ToArray());
+            else StackDiagnostics.Write("M1-034 M13-003/M11-074 skip forged type-3 polygon layout read at 0x004FDF64; other obstacles retained");
+        }
+        ImportObstaclePolygons(polygons,tightPadding);
     }
 
     /// <summary>
@@ -965,7 +965,7 @@ public class LatticePlanner
         {
             if (world.Maps.Current is not {} map)
             {
-                Behavior.SteppedBehavior.ReportMissing("M13-030 planner import 0x004FD508..0x004FD510 current map is absent; root Last cannot be sampled, retaining the prior obstacle snapshot");
+                StackDiagnostics.Write("M1-034 M13-003/M13-030 skip absent current map dereference at 0x004FD50C; prior obstacle snapshot/cache retained");
                 return false;
             }
             uint sampled = map.LastObservedTime;

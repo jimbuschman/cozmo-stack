@@ -310,6 +310,16 @@ internal sealed class SourceQuadNode(float x, float y, float z, float side, byte
         };
     }
     private bool CanOverrideAll(SourceNodeContent incoming, int overlap) => overlap == 2 && CanOverride(incoming, overlap) && Children.All(c => c!.CanOverrideAll(incoming, overlap));
+    // fidelity: M11-074 -- 0x006884FC..0x00688754, physical children before own data.
+    internal void FindIf(SourceFastPolygon polygon, Func<SourceMapData,int> predicate, List<SourceMapData> output)
+    {
+        if(polygon.GetOverlapType(this)==0)return;
+        foreach(var child in Children)child!.FindIf(polygon,predicate,output);
+        if(Content?.Data is not {} data || predicate(data)!=1)return;
+        // The callback can replace the shared data; native reloads it after the call.
+        var found=Content.Data;
+        if(!output.Any(existing=>ReferenceEquals(existing,found)))output.Add(found);
+    }
     // fidelity: M11-046 -- 0x00688378..0x00688474, children/merge precede own callback.
     internal bool TransformContent(SourceQuadTree tree,SourceFastPolygon polygon,Func<SourceMapData,SourceMapData> callback)
     {
@@ -417,6 +427,19 @@ internal sealed class SourceQuadTree
             else ExpandCore(native,maxShifts);
         }
         Dirty |= Root.InsertRecursive(new SourceNodeContent(data),this,native);
+    }
+    // fidelity: M11-074 -- 0x0068A5F8..0x0068A7D2; same root geometry as whole-map Transform.
+    internal void FindContentIf(Func<SourceMapData,int> predicate,List<SourceMapData> output)
+    {
+        lock(_geometryGate)
+        {
+            if(Root is not {} root)return;
+            float h=root.Side*.5f+0f;
+            var quad=new[]{new P2f(root.X+h,root.Y+h),new P2f(root.X-h,root.Y+h),
+                new P2f(root.X+h,root.Y-h),new P2f(root.X-h,root.Y-h)};
+            var polygon=PolygonF.ImportQuad2d(quad);
+            root.FindIf(new SourceFastPolygon(polygon.Select(p=>new Vec2(p.X,p.Y))),predicate,output);
+        }
     }
     // fidelity: M11-046 -- whole-map overload 0x0068140C -> 0x0068A414.
     internal void TransformContent(Func<SourceMapData,SourceMapData> callback)

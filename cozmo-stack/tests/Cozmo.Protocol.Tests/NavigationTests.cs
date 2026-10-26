@@ -218,7 +218,7 @@ public class NavigationTests
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
-    public void DriveToObjectWithThePlannerTreatsOtherCubesAsObstaclesButNotTheTarget()
+    public void DriveToObjectWithThePlannerIncludesTheAdmittedTargetPolygon()
     {
         using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
@@ -231,7 +231,9 @@ public class NavigationTests
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.True(task.Result == ActionResult.Success, "result=" + task.Result + " trace: " + string.Join(" | ", drive.Trace));
-        Assert.Equal(0, rig.M.Planner!.Env.ObstacleCount);                         // the target is not an obstacle
+        // CM13-01: 0x00502424 selects all type3 map data; 0x004FDF64 reads its polygon with no target-ID filter.
+        // The camera fixture admits this target to the map; soft obstacles still allow the pre-action drive.
+        Assert.Equal(1, rig.M.Planner!.Env.ObstacleCount);
         // the drive reached the pre-action pose it chose. The corrected geometry (C-E7) puts the front
         // docking pose at ~90 mm for a cube at 260, not the refuted 97 mm standoff the old 150..175 range
         // assumed; the chosen pose comes from the source-derived pre-action table.
