@@ -44,7 +44,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
-**Current-layer work (manager, 2026-10-25): B-M13-28a, B-M11-19, B-M11-20 done (checks PASS); B-M11-21 done (check PASS). B-M15-12 done (check PASS). B-M7-4, B-M15-13 done (checks PASS); B-M13-30 + fix-up B-M13-30a PASS; drive-off run 3 PASS; B-M11-22 open (2026-10-26). No open research row.** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
+**Current-layer work (manager, 2026-10-25): B-M13-28a, B-M11-19, B-M11-20 done (checks PASS); B-M11-21 done (check PASS). B-M15-12 done (check PASS). B-M7-4, B-M15-13 done (checks PASS); B-M13-30 + fix-up B-M13-30a PASS; drive-off run 3 PASS; B-M11-22 PASS (2026-10-26). Builder lane has no open current-layer job. No open research row.** No duplicate builder pickup. B-M11-18 and other HELD rows remain held.
 
 **HOLD (manager, 2026-10-17):** start no builder job whose row reads HELD. Rows marked HELD are not `open` and must not
 be claimed, even if they look next. B-M2M15-2 is released (M1+M2 path). The others stay held until the manager
@@ -206,7 +206,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w4k | [B-M15-13](B-M15-13.md) | DONE fc6ce88e (full 6231/6231); Claude check PASS (research/20261026-b-m7-4-m15-13-m13-30-claude-check.md); public API admission MISSING (no app QueueSingleAction path) |
 | 61w4l | [B-M13-30](B-M13-30.md) | DONE 1993dd63 (full 6240/6240); Claude check FAIL: map seed uses the image clock, engine reads Robot+0x2C (RobotState timestamp); fix-up B-M13-30a |
 | 61w4l1 | [B-M13-30a](B-M13-30a.md) | DONE c0ad22df (full 6240/6240); Claude check PASS (research/20261026-b-m7-4-m15-13-m13-30-claude-check.md) |
-| 61w4m | [B-M11-22](B-M11-22.md) | open — BlockWorld map stamp reads VisionComponent+0xE8 (found in drive-off run 3 review) |
+| 61w4m | [B-M11-22](B-M11-22.md) | DONE 27316c63 (full 6243/6243); Claude check PASS (research/20261026-b-m11-22-claude-check.md) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
