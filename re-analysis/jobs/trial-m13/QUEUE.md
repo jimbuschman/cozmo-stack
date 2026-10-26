@@ -21,9 +21,8 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | Job | State | Purpose |
 | --- | --- | --- |
 | CM13-03 | REVIEW COMPLETE | Historical local gate failure retained in HANDOFF-2.md. Current authoritative Claude disposition/gate is in REVIEW.md on main; no hardware dependency. |
-| R1 | FIX | Full task fault/cancellation diagnostics before unchanged Abort/callback path. Code6d9ccafd; read/build independent PASS, full6281/6281 zero skipped. HANDOFF-R1.md; host diagnostics native N/A. |
+| R1 | READY FOR CLAUDE | Corrected shared multi-producer tool log/snapshot race after REVIEW finding; original full task diagnostics retained. Codee592d1b2; independent11/11 PASS, full6285/6285 zero skipped. HANDOFF-R1.md; host diagnostics native N/A. |
 | CM13-04 | RELEASED | ComputeOriginPose 0x00517F6C and the robot-quad Pose3d round trip 0x004FE042..0x004FE08E (M13-003). Codex scopes it; same read-check-build order. |
 | CM13-05 | RELEASED | M12-049 configuration-container producer. Codex scopes it; same order. |
 
 After these: Codex continues under the standing scope in AUTONOMY.md, adding its own rows.
-
