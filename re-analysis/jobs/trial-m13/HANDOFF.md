@@ -15,7 +15,9 @@ Old-code controls: CM13-01 prior world import yields3 expected behavioral failur
 
 ## Final gate
 
-First `scripts/test-full.sh` on committed `02e83626` ABORTED after5009 partial passes because the new asynchronous dispatch fixture disposed its borrowed goal before planner join. This escaped initial focused/reviewer runs. Fixture teardown correctionb2891e6c passed affected re-review, builder25/25 plus20 separate host repetitions and reviewer1/1. A repeat final gate is pending. See gate-run-1.md. No aborted/pending result is represented as a full pass.
+First `scripts/test-full.sh` on committed `02e83626` ABORTED after5009 partial passes because the new asynchronous dispatch fixture disposed its borrowed goal before planner join. This escaped initial focused/reviewer runs. Fixture teardown correctionb2891e6c passed affected re-review, builder25/25 plus20 separate host repetitions and reviewer1/1. Repeat final gate on36817201 PASS:6267/6267 tests,0 failed,0 skipped, duration5m17s; fidelity710 PASS and fingerprint recorded. See gate-run-1.md. The first aborted run is not counted as a pass; only the corrected complete run is the final full-suite result. No source/test changes followed that pass.
+
+Official ending counts are unchanged and read directly from the manifest: EXACT239, EQUIVALENT6, POLICY68, HARDWARE14, BLOCKED2, IMPLEMENTATION358, RECOVERABLE23 (total710). Entire manifest and accepted M1-M5 subsystem list are identical to baseline. No proposed status promotion applied. See codex-manager-log.md for all test runs/agent decisions and PROPOSALS.md for pending reconciliation.
 
 ## Remaining blockers and uncertainty
 
@@ -40,5 +42,3 @@ The trial reused checked geometry/growth/merge/payload/seed/gate evidence, rejec
 Initial duplicate manager chats caused a coordination interruption requiring operator clarification. After explicit ownership resumed here, work stayed with one manager, one active builder and independent reviewers. Next trial should name one owning chat/worktree and preflight local assets/index/testhost before delegation. Actual worker model/effort telemetry was unavailable; requested Sol medium is recorded, not asserted as measured.
 
 Recommendation: continue with another bounded Codex-managed batch after Claude reviews these commits and the operator decides the relevant hardware follow-up. Do not call the acceptance target or M13 complete.
-
-

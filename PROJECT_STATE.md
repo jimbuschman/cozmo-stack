@@ -40,7 +40,7 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
-- **Isolated Codex M13 manager trial (2026-10-26): code review complete, final gate pending.** Only on branch codex-m13-manager: CM13-01 9d52255b binds planner obstacles to native type3 map payloads; CM13-02 3d2021a8 delivers drive-off objective4 through E2G0x8B. Independent Codex checks PASS, Claude review and hardware outstanding. No official fidelity/status/acceptance changes. Trial log and bounded queue: codex-manager-log.md and re-analysis/jobs/trial-m13/. No main queue work claimed.
+- **Isolated Codex M13 manager trial (2026-10-26): code review complete, full gate6267/6267 PASS.** Only on branch codex-m13-manager: CM13-01 9d52255b binds planner obstacles to native type3 map payloads; CM13-02 3d2021a8 delivers drive-off objective4 through E2G0x8B. Independent Codex checks PASS; final full gate6267/6267, zero failed/skipped after documented fixture teardown correctionb2891e6c. Claude review and hardware outstanding. No official fidelity/status/acceptance changes. Trial log and bounded queue: codex-manager-log.md and re-analysis/jobs/trial-m13/. No main queue work claimed.
 
 - **B-M11-22 check PASS (manager, 2026-10-26; `research/20261026-b-m11-22-claude-check.md`).** The BlockWorld map stamp and the object-moved reaction strategy now read VisionComponent+0xE8 (Robot::GetLastImageTimeStamp). Both lanes empty: baseline for the operator's Codex-as-manager M13 experiment.
 - **Drive-off robot run 3 PASSES, all six graded checks MATCH (manager, 2026-10-26; `acceptance/hardware/20261026-072854-M13-DRIVEOFF-HW-310c47`).** On a7af18cd. DRIVING_ANIMATIONS graded for the first time: selected need 3, one push (DriveOffCharger 97,93,8F), flag 1, one remove at stop. Run 2's 21 M11-048 root-growth MISSINGs are gone. Review found the BlockWorld map stamp still on a host frame clock; B-M11-22 queued. No record settled.
@@ -395,4 +395,3 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 ## Open decisions for the operator
 
 - **M6-002 Vorbis IMDCT (correction C8).** The engine's inverse MDCT is a float NEON transform whose per-lane arithmetic and table indexing are RECOVERABLE_GAP (ranges and the 615-float master table are named in `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`). **Decided (operator, 2026-09-27): exact.** Transliterate the lane-level arithmetic and vendor the 2460 table bytes. The RECOVERABLE_GAP rows go back to the extractor. The kernel stays fail-closed until then.
-
