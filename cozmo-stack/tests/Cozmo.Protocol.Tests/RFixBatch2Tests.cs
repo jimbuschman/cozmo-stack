@@ -11,6 +11,7 @@ namespace Cozmo.Protocol.Tests;
 /// citation it checks. A float32 emulation here is written from the cited instruction listing in the test itself, not read back from the implementation.
 /// </summary>
 [Collection("SteppedBehavior missing-report statics")]
+// Polygon fixture calls explicitly supply raw carried ID0 for zero-shift test geometry (substituted tool input).
 public class RFixBatch2Tests
 {
     private static float F(uint bits) => BitConverter.UInt32BitsToSingle(bits);
@@ -92,7 +93,7 @@ public class RFixBatch2Tests
         var prims = Prims();
         if (prims is null) return;
         var env = new LatticeEnvironment(prims);
-        env.AddRectangleObstacle(At(0, 0, 0), 44, 44, "cube");
+        env.AddRectangleObstacle(At(0, 0, 0), 44, 44, 0, "cube");
         // heading 0: the exact rectangle; the radial expansion moves each corner of the 44 mm square 6 mm along its own ray, so the obstacle's half side is 22 + 6/sqrt2
         double half = 22 + 6 / Math.Sqrt(2);
         var poly0 = env.Bucket(0)[0].Poly;
@@ -191,7 +192,7 @@ public class RFixBatch2Tests
         Assert.Equal(Bits(0f + (2.5f + longStraight.Prim.Cost)), Bits(free.Successors(start, 2.5f, reverse: false).Single(s => s.ActionIndex == 1).Cost));
         // a soft cube across the path (its C-space starts near x = 36.7): the long straight (50 mm, poses every 0.5 mm) picks up penalties; the short one (10 mm) does not
         var soft = new LatticeEnvironment(prims);
-        soft.AddRectangleObstacle(At(80, 0, 0), 20, 20, "soft");
+        soft.AddRectangleObstacle(At(80, 0, 0), 20, 20, 0, "soft");
         var longSoft = soft.Successors(start, 0f, reverse: false).Single(s => s.ActionIndex == 1);
         Assert.True(longSoft.SoftPenalty > 0f);
         float expectedSoft = 0f;
@@ -201,7 +202,7 @@ public class RFixBatch2Tests
         Assert.Equal(Bits(expectedSoft), Bits(longSoft.SoftPenalty));
         // a hard obstacle at the end of the long straight rejects it but not the short one
         var hard = new LatticeEnvironment(prims);
-        hard.AddRectangleObstacle(At(80, 0, 0), 20, 20, "hard", 1000.0f);
+        hard.AddRectangleObstacle(At(80, 0, 0), 20, 20, 0, "hard", 1000.0f);
         var left = hard.Successors(start, 0f, reverse: false).Select(s => s.ActionIndex).ToList();
         Assert.DoesNotContain(1, left);
         Assert.Contains(0, left);
@@ -373,7 +374,7 @@ public class RFixBatch2Tests
         Assert.Equal(planner.LastFinalCost, plan.Cost);
         // a goal in a hard obstacle is dropped; with no goal left the planner fails
         var hard = new LatticeEnvironment(prims);
-        hard.AddRectangleObstacle(At(150, 0, 0), 20, 40, "hard", 1000.0f);
+        hard.AddRectangleObstacle(At(150, 0, 0), 20, 40, 0, "hard", 1000.0f);
         Assert.Null(new LatticePlanner(hard).ComputePath(new StateC(0, 0, 0), new[] { new StateC(150, 0, 0) }));
     }
 
@@ -387,7 +388,7 @@ public class RFixBatch2Tests
         var prims = Prims();
         if (prims is null) return;
         var env = new LatticeEnvironment(prims);
-        env.AddRectangleObstacle(At(150, 0, 0), 44, 44, "cube");
+        env.AddRectangleObstacle(At(150, 0, 0), 44, 44, 0, "cube");
         var planner = new LatticePlanner(env);
         var goal = new LatticeState(15, 0, 0);
         Assert.True(env.IsInSoftCollision(goal));
@@ -1028,7 +1029,7 @@ public class RFixBatch2Tests
         var prims = Prims();
         if (prims is null) return;
         var env = new LatticeEnvironment(prims);
-        env.AddRectangleObstacle(At(150, 0, 0), 44, 44, "cube", 999f);                  // a soft obstacle (< 1000): the goal inside it is not dropped by CheckContextGoals
+        env.AddRectangleObstacle(At(150, 0, 0), 44, 44, 0, "cube", 999f);                  // a soft obstacle (< 1000): the goal inside it is not dropped by CheckContextGoals
         var planner = new LatticePlanner(env);
         var plan = planner.ComputePath(new StateC(150, 0, 0), new[] { new StateC(150, 0, 0), new StateC(0, 60, 0) });
         Assert.Equal(2, planner.GoalIdMapForTests.Count);                                 // both goals are in the hash although the heuristic pruned the first

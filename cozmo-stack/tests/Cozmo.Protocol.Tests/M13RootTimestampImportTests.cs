@@ -7,6 +7,7 @@ using Xunit;
 namespace Cozmo.Protocol.Tests;
 
 [Collection("M5 process statics")]
+// Polygon fixture calls explicitly supply raw carried ID0 for zero-shift test geometry (substituted tool input).
 public sealed class M13RootTimestampImportTests
 {
     private static MotionPrimitiveSet Primitives()
@@ -18,7 +19,7 @@ public sealed class M13RootTimestampImportTests
     private static uint Cache(LatticePlanner planner)=>(uint?)typeof(LatticePlanner)
         .GetField("_lastImportedMapTimestamp",BindingFlags.Instance|BindingFlags.NonPublic)?.GetValue(planner) ?? uint.MaxValue;
     private static void PriorObstacle(LatticeEnvironment env)
-        =>env.ImportObstaclePolygons(new[]{new P2f[]{new(500,500),new(540,500),new(540,540),new(500,540)}},false);
+        =>env.ImportObstaclePolygons(new[]{new P2f[]{new(500,500),new(540,500),new(540,540),new(500,540)}},false,0);
 
     [Fact]
     public void NewOriginsSeedBothRootTimesFromTheLastRobotState()

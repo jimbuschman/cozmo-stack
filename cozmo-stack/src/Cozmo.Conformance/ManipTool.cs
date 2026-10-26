@@ -242,7 +242,7 @@ public static class ManipTool
         }
     }
 
-    private const string Usage = "manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack|--flip|--knockover|--wheelie|--mount|--driveoff [--obb <dir>] [--seconds 120] [--nominal] [--acceptance [file]]  |  manip --plan <x> <y> <angleDeg> [--obb <dir>] [--obstacle <x> <y>]";
+    private const string Usage = "manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack|--flip|--knockover|--wheelie|--mount|--driveoff [--obb <dir>] [--seconds 120] [--nominal] [--acceptance [file]]  |  manip --plan <x> <y> <angleDeg> [--obb <dir>] [--obstacle <x> <y> --carried-object-id none|<uint>]";
 
     private static int Plan(string[] a)
     {
@@ -254,8 +254,14 @@ public static class ManipTool
         if (prims is not null)
         {
             var env = new LatticeEnvironment(prims);
+            string? carryingInput = Arg(a, "--carried-object-id");
+            bool explicitNone = string.Equals(carryingInput, "none", StringComparison.OrdinalIgnoreCase);
+            if (a.Contains("--obstacle") && !explicitNone && !uint.TryParse(carryingInput, out _))
+            { Console.WriteLine("--obstacle requires --carried-object-id none|<uint> for the standalone planner's carrying context"); return 1; }
+            uint.TryParse(carryingInput, out uint rawCarriedObjectId);
+            if (explicitNone) rawCarriedObjectId = uint.MaxValue;
             for (int i = 2; i < a.Length - 2; i++)
-                if (a[i] == "--obstacle") env.AddRectangleObstacle(new Pose3d(Mat3.Identity, new Vec3(double.Parse(a[i + 1]), double.Parse(a[i + 2]), 0)), CubeGeometry.CubeSizeMm, CubeGeometry.CubeSizeMm, "cube");
+                if (a[i] == "--obstacle") env.AddRectangleObstacle(new Pose3d(Mat3.Identity, new Vec3(double.Parse(a[i + 1]), double.Parse(a[i + 2]), 0)), CubeGeometry.CubeSizeMm, CubeGeometry.CubeSizeMm, rawCarriedObjectId, "cube");
             var planner = new LatticePlanner(env);
             var res = planner.PlanTo(Pose3d.Identity, new[] { goal }, PathMotionProfile.Default);
             if (res is null) { Console.WriteLine("the lattice planner found no plan"); return 2; }
