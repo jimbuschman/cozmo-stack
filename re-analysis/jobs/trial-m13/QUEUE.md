@@ -20,8 +20,8 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 
 | Job | State | Purpose |
 | --- | --- | --- |
-| CM13-03 | CODE VERIFIED; FULL GATE FAIL; Claude pending | Runtime ownership b1c1169d: Phase1/build independent PASS; full6274 pass/1 fail/0 skip (KnockOver cause UNKNOWN). Upstream gaps visible. Branch `codex-m13-manager-2`; see HANDOFF-2.md. |
-| R1 | RELEASED | Log ActionBehavior fault/cancellation exception details before existing Abort fallback; host error handling, no native extraction. See R1.md. |
+| CM13-03 | REVIEW COMPLETE | Historical local gate failure retained in HANDOFF-2.md. Current authoritative Claude disposition/gate is in REVIEW.md on main; no hardware dependency. |
+| R1 | READY FOR CLAUDE | Full task fault/cancellation diagnostics before unchanged Abort/callback path. Code6d9ccafd; read/build independent PASS, full6281/6281 zero skipped. HANDOFF-R1.md; host diagnostics native N/A. |
 | CM13-04 | RELEASED | ComputeOriginPose 0x00517F6C and the robot-quad Pose3d round trip 0x004FE042..0x004FE08E (M13-003). Codex scopes it; same read-check-build order. |
 | CM13-05 | RELEASED | M12-049 configuration-container producer. Codex scopes it; same order. |
 
