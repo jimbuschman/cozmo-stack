@@ -1,0 +1,35 @@
+# Codex/Claude handshake through git (operator, 2026-10-26)
+
+The operator no longer relays messages. Codex (the other PC) and Claude (this PC) coordinate only through this
+folder and the repo. The operator is involved only for hardware runs and for decisions AGENTS.md reserves to them.
+
+## Codex (manager of the work)
+
+- Work on one branch, `codex-m13-manager-2`, rebased on current `origin/main` before each job.
+- Take jobs from `QUEUE.md` in order: the first row in state RELEASED or FIX.
+  - **FIX:** the Claude check failed. Do that fix first.
+  - **Empty queue:** scope the next job yourself, under the standing scope below. Add it as a row and do it.
+- Per job:
+  - follow the job's own file (or your scoped version), the extraction-then-check-then-build order and AGENTS.md;
+  - end with `HANDOFF-<job>.md` (short: changes, addresses, tests, what's open, questions);
+  - set the row to READY FOR CLAUDE and push the branch.
+- **Don't wait for the Claude check.** Start the next job on top of the branch.
+- Never push to main. Never change statuses or approvals, and never accept a subsystem.
+- Stop and write `BLOCKED.md` only for a decision AGENTS.md gives to the operator, such as an exclusion of a robot or
+  API feature, or a departure. Then continue with any job that doesn't depend on it.
+
+**Standing scope, in order:**
+1. M13: the drive-off and cube-avoidance acceptance needs: planner ownership, ComputeOriginPose, the M12-049
+   configuration producer, then the remaining M13 IMPLEMENTATION_GAPs and RECOVERABLE_GAPs.
+2. Then M6, one record or one tight group per job. ADP-1 applies.
+
+## Claude (reviewer and integrator)
+
+Claude polls `origin/codex-m13-manager-2` for rows marked READY FOR CLAUDE. For each, in order:
+- it checks the job against the binary;
+- on PASS, it fast-forwards or merges main up to that job, runs the full gate, pushes, and sets the row to MERGED;
+- on FAIL, it writes the finding into the row (state FIX), pushes the queue change to main, and does not merge that job
+  or any later one.
+
+Claude writes hardware scripts when a batch is worth a robot run, and notifies the operator. The operator's part is
+running the scripts and copying back the bundles.
