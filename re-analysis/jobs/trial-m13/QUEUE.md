@@ -5,8 +5,9 @@ Operator scope: M13-017, M13-040, M13-003, M13-030 drive-off/planner. Up to thre
 | Job | State | Purpose | Evidence/review |
 | --- | --- | --- | --- |
 | CM13-01 | CODE VERIFIED, integrated9d52255b; combined full suite pending | Native current-map type3 FindIf/payload planner source | independent20261026-cm13-01-codex-check.md PASS; builder98/98, reviewer10+6; no HW |
-| CM13-02 | RELEASED | Wire drive-off objective4 to real E2G0x8B API/local delivery | adopted RC3 and narrow serializer/broadcast checks; independent review pending |
+| CM13-02 | CODE VERIFIED, integrated3d2021a8; combined full suite pending | Wire drive-off objective4 to real E2G0x8B API/local delivery | adopted RC3 and narrow serializer/broadcast checks; independent review pending |
 
 Deferred: native configuration-container producer M12-049; broader pose lifetime M11-073/084; native ActivitySparked objective recipient M15-059 and mood attachment. Neither is dismissed or marked no-effect.
 
 Superseded work rejected: repeat root geometry/growth/shift/merge, severe-needs manager lifetime, timestamp seed/cache gate, Markerless charger footprints, and unrelated get-out API admission.
+

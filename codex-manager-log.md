@@ -98,3 +98,29 @@ Pending reconciliation. Official manifest frozen; no proposed status changes yet
 - Builder final focused98/98 PASS, zero skipped39s. Prior broader run FAIL1/PASS96 was solely source-contradicted target-ID test; narrow fix independently accepted. Negative old-loop control3FAIL/1PASS (charger/high cube/stored polygon fail, normal cube control passes), corrected bytes restored. Reviewer independently ran dispatch+timestamp10/10 and query6/6, zero skipped. All detailed commands/results in builder/review reports.
 - Manager committed verified work on builder branch9d52255b, fast-forwarded codex-m13-manager to same commit. No main merge/push. Code-verified offline production-path source blocker removed; no hardware verification or whole-record settlement. Final combined suite pending.
 - Released CM13-02 objective emitter job from Agent A's adopted RC3 plus narrow native delivery findings. One active builder reused only after CM13-01 stopped/reviewed. Same separate worktree will fast-forward trial job contract before starting; requested Sol medium remains unchanged/unobservable.
+
+## CM13-02 source-review checkpoint
+
+- Independent reviewer reopened RC3 body/adapters, E2G constructor/Pack, UI rvalue and drive-off callback in binary before reviewing implementation; contract matches instructions. Actual applied model/reasoning still not exposed.
+- Builder found current BehaviorObjective enum lacks4; rather than guessing a native diagnostic name, requested read-only extractor's narrow EnumToString table lookup. Payload is numeric u32 and already settled by serializer; no broad enum recovery is commissioned. Logs remain best effort, but existing native value can be reused cheaply.
+- Optional third-job feasibility delegated read-only ONLY for remaining M13-003 RobotQuad quaternion/ComputeOriginPose join using already checked helpers; no third job released or promised. It will be deferred if recovery/verification grows beyond a bounded direct planner change.
+
+## Third-job stop decision
+
+- No third implementation job released. Agent A's bounded feasibility check found state-dependent ComputeOriginPose00517F6C (Robot+284->component+8, default20.0 and alternate offset before008CAE4C). Existing generic pose/footprint rows do not justify substituting a helper. Agent stopped further tracing on request. This clarifies an existing M13-003 gap, not a new bulk audit or silent exclusion.
+- Objective4's native diagnostic name is DroveAsIntended, independently confirmed by A and reviewer from table01033150 ->00C19BAC. It is distinct from behavior/mood key DriveOffCharger. Builder received adopted exact row; no guessed name used.
+- Trial will finish with two justified implementation jobs if CM13-02 verifies. PROPOSALS.md records pending unresolved-prose reconciliation and retained boundaries; no record is proposed for whole-path settlement.
+
+## CM13-02 focused/negative evidence
+
+- Builder initial focused8/8 PASS, including received PathFollowingEvent through actual DriveStraight ActionList and queued behavior callback. Host admission/scheduler substitutions are explicitly unit-boundary-labelled; no private callback reflection/manual result injection claims production completion.
+- Old callback-only negative control FAIL1/PASS1 as expected: successful completion lacks objective and fails, non-success suppression control passes; corrected bytes restored exactly. Final broader result/reviewer run pending.
+- New shared engine producer uses broadcast byte==1 and native external-interface gate, raw0x8B/u32LE delivery, app enqueue then local emit, diagnostic then DAS regardless gate. Only drive-off call site wired. Explicit M15-059 recipient and existing mood gap remain.
+
+## CM13-02 integration and final gate
+
+- Independent native/diff verification PASS, report20261026-cm13-02-codex-check.md. Reviewer personally checked RC3, callback, serializer, rvalue delivery and exact DroveAsIntended string; independently ran final objective class8/8 PASS, zero skipped380ms.
+- Builder final broader66/66 PASS, zero skipped39s; initial8/8, expected old-callback1FAIL/1PASS behavioral control with corrected bytes restored; logkey3 EXACT/0ABSENT, diffcheck PASS. Detailed commands/reach in builder report.
+- Manager committed verified CM13-02 on builder branch3d2021a8, fast-forwarded trial branch. No main merge/push. This removes the objective sender omission, with current host action-admission test boundary/mood/native recipients retained as gaps; no complete native behavior-manager or hardware claim.
+- Two implementation jobs completed; third deliberately deferred. Both independent reviewers found no remaining blocking defect in their bounded diffs. No source changes remain unreviewed.
+- Preparing single required combined final scripts/test-full.sh run on clean committed trial HEAD (repository instruction runs after code commit, records fingerprint). Counts/statuses and accepted subsystems will be compared to frozen baseline after actual outcome. No final full-suite result claimed yet.
