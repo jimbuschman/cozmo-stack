@@ -14,3 +14,13 @@
   AGENTS.md; this is the stack's own error handling, so no engine evidence is needed. Small job; do it next.
 | R1 | FIX | 6d9ccafd adds `Log` calls in the `ContinueWith` continuation (FaceBehaviors.cs RunAction). That runs on whichever thread completes the task (ExecuteSynchronously; a cancellation or fault can complete it on a pool thread), so `SteppedBehavior.Log` now raises `Step` off the behaviour's thread. `_trace` is locked, but `Step` is invoked outside the lock, and two subscribers append to a plain `List` with no lock: `ManipTool.cs:32` (`log.Add` in `Say`) and `Reactions.cs:178` (`log.Add` in `Line`). Both are hardware tools whose logs go into the bundles. A race is a blocking finding. Fix it so the new diagnostic never raises `Step` concurrently with the behaviour's own lines (your choice of mechanism, e.g. a lock around the whole of Log, or locking the subscribers), add a test that drives a fault/cancel from another thread with a `Step` subscriber attached, and mark READY FOR CLAUDE again. Everything else in R1 is fine. |
 | R1 | MERGED | a04bf06c (fix e592d1b2: locked DiagnosticJournal for the ManipTool/Reactions Step subscribers; bundles take a snapshot). Full gate on main 6285/6285, 0 skipped. Supersedes the FIX line above. |
+
+## Operator decisions
+
+- **D1 (operator, 2026-10-26), answers BLOCKED.md "extra configuration APIs": option 1.** Keep the whole public
+  block-configuration adapter (`BlockConfigurationManager.ConfigurationSeen`, `FirstSeenSec`, the cached midpoint) as
+  a documented stack extension, separate from engine fidelity. Record its host semantics as such (a
+  COMPATIBILITY_POLICY-style record naming it a stack extension, decided by the operator 2026-10-26). It must not feed
+  native engine state or any behaviour decision: `CubeGameBehaviors.cs:846` currently uses `FirstSeenSec`, so move that
+  decision onto the engine's own path (BehaviorOnConfigSeen 0x005DB2D4..0x005DB396: per-type cache count growth,
+  stored float stamp, dt < 4.99999 and |stamp - now| < 1e-5). Delete BLOCKED.md and continue the pilot.
