@@ -122,8 +122,9 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
     private void OnDriveComplete(ActionResult result)
     {
         if (result != ActionResult.Success) return;                                  // cbnz r0 at 0x005C0EA4
+        // EnumToString objective4: 0x0076954C, table0x01033150 -> 0x00C19BAC (CM13-02 adopted row).
+        Context.Robot.Engine.ReportBehaviorObjective(ObjectiveDriveOffCharger,"DroveAsIntended",Id);
         Log($"BehaviorObjectiveAchieved({ObjectiveDriveOffCharger}, true)");
-        SteppedBehavior.ReportMissing("IBehavior::BehaviorObjectiveAchieved(BehaviorObjective, bool) body is not in the inventory; BehaviorDriveOffCharger's completion callback (0x005C0EAC) only traces the call");
         EmotionEvent(EmotionEventName);                                              // MoodManager::TriggerEmotionEvent 0x005C0EE2
     }
 
