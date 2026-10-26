@@ -53,10 +53,10 @@ public static class M13DriveOffHw
             "The footprint quads come from minAreaRect; the exit position depends on them and is an observation here."),
         new("BEHAVIOUR_END", "M13-017", "0x005C0DA8..0x005C0E32",
             "UpdateInternal keeps running while the platform is set; off the platform it keeps running while an action is current and otherwise stamps the whiteboard and returns 2."),
-        new("DRIVING_ANIMATIONS", "M13-017", "0x005C0B34..0x005C0B50",
-            "KNOWN GAP: the push of (0x97,0x93,0x8F) is gated on SevereNeeds state 3, whose writer has no live owner in the stack (R-M15-SEVERE-INPUT); the stack reports the missing piece."),
+        new("DRIVING_ANIMATIONS", "M13-017", "0x005C0B34..0x005C0B50; 0x005C0D90..0x005C0DA4",
+            "Init reads the selected severe need ([[robot+0x264]+0x30]+0x14, M15-072). When it is 3 the behaviour pushes (its name, 0x97,0x93,0x8F) and then sets +0x120; otherwise neither. StopInternal removes by name only when +0x120 is set."),
         new("DRIVING_ANIMATIONS", "M5-063", "0x004F0D80..0x004F0D8C",
-            "Without the push, the driving animation handler keeps its default triplet; recorded only."),
+            "What the driving animation handler then plays is recorded only."),
         new("DRIVE_OBSERVATIONS", "M13-017", "0x005C09D4..0x005C09E6; 0x005C0C02..0x005C0C08; config/engine/behaviorSystem/behaviors/freeplay/driveOffCharger.json",
             "The drive is a DriveStraightAction of 96.0f + extraDistanceToDrive_mm (60.0) = 156 mm, re-driven while the platform stays set. Recorded for review, not graded (M13-013 path gaps)."),
         new("DRIVE_OBSERVATIONS", "M13-013", "0x005470F0..0x0054725E", "DriveStraightAction path details are recorded only."),
@@ -363,14 +363,39 @@ public static class M13DriveOffHw
         row["run"] = JsonSerializer.SerializeToNode(b);
         return row;
     }
-    public const string SevereNeedsMissingText = "BehaviorDriveOffCharger::InitInternal SevereNeeds state writer";
-    public static JsonObject GradeDrivingAnimations(IEnumerable<string> stackLogLines, bool started)
+    /// <summary>What the behaviour did with the driving animations: the selected severe need around Init, its push and
+    /// remove calls (name, triplet), and the +0x120 flag after Init.</summary>
+    public sealed record DrivingRun(int SelectedBefore, int SelectedAfter, int FlagAfterInit,
+        IReadOnlyList<string> Pushes, IReadOnlyList<string> Removes, bool Stopped);
+    // M13-017 0x005C0B34..0x005C0B50: push (name, 0x97,0x93,0x8F) and set +0x120 only when the selected severe need is 3.
+    // StopInternal 0x005C0D90..0x005C0DA4: remove by name only when +0x120 is set.
+    public static JsonObject GradeDrivingAnimations(DrivingRun? d, bool started)
     {
-        var lines = stackLogLines.Where(l => l.Contains(SevereNeedsMissingText, StringComparison.Ordinal)).ToArray();
-        var row = !started ? Row("INCONCLUSIVE", "The behaviour did not start.")
-            : lines.Length > 0 ? new JsonObject { ["verdict"] = "KNOWN_GAP" }
-            : Row("INCONCLUSIVE", "The expected missing-piece report for the SevereNeeds writer was not logged.");
-        row["missingReports"] = new JsonArray(lines.Select(l => (JsonNode)l).ToArray());
+        if (!started || d is null) return Row("INCONCLUSIVE", "The behaviour did not start.");
+        JsonObject row;
+        if (d.SelectedBefore != d.SelectedAfter)
+            row = Row("INCONCLUSIVE", $"The selected severe need changed during Init ({d.SelectedBefore} -> {d.SelectedAfter}).");
+        else
+        {
+            var problems = new JsonArray();
+            bool expectPush = d.SelectedBefore == 3;
+            string expected = "DriveOffCharger 97,93,8F";
+            if (expectPush)
+            {
+                if (d.Pushes.Count != 1 || d.Pushes[0] != expected) problems.Add($"Selected need 3: expected one push '{expected}', saw [{string.Join("; ", d.Pushes)}].");
+                if (d.FlagAfterInit != 1) problems.Add($"Selected need 3: expected +0x120 = 1 after Init, saw {d.FlagAfterInit}.");
+                if (d.Stopped && (d.Removes.Count != 1 || d.Removes[0] != "DriveOffCharger")) problems.Add($"Flag set: expected one remove 'DriveOffCharger' at stop, saw [{string.Join("; ", d.Removes)}].");
+            }
+            else
+            {
+                if (d.Pushes.Count != 0) problems.Add($"Selected need {d.SelectedBefore}: expected no push, saw [{string.Join("; ", d.Pushes)}].");
+                if (d.FlagAfterInit != 0) problems.Add($"Selected need {d.SelectedBefore}: expected +0x120 = 0, saw {d.FlagAfterInit}.");
+                if (d.Removes.Count != 0) problems.Add($"Flag clear: expected no remove at stop, saw [{string.Join("; ", d.Removes)}].");
+            }
+            row = new JsonObject { ["verdict"] = problems.Count == 0 ? "MATCH" : "MISMATCH" };
+            if (problems.Count > 0) row["problems"] = problems;
+        }
+        row["drivingRun"] = JsonSerializer.SerializeToNode(d);
         return row;
     }
 
@@ -407,6 +432,7 @@ internal sealed class M13DriveOffRun
     readonly ConcurrentQueue<(double T, bool Out, byte[] Raw, Frame? Frame, string? Error)> frames = new();
     readonly List<JsonObject> results = new(); readonly ConcurrentQueue<string> errors = new(); readonly CancellationTokenSource cancel = new();
     readonly ConcurrentQueue<string> stackLines = new();
+    M13DriveOffHw.DrivingRun? drivingRun;
     CozmoRobot? robot; RobotConnectionResponse? response; bool connected, disposed;
     HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup;
     Task<string?>? pendingRead;
@@ -537,7 +563,7 @@ internal sealed class M13DriveOffRun
             {
                 _ when !connected => Missing("connection/readiness unavailable: " + (startup?.Describe() ?? "startup not completed")),
                 "BEHAVIOUR_END" => run is null ? Missing("The drive part did not run (Cozmo was not on the charger, or the run stopped).") : M13DriveOffHw.GradeBehaviour(run, platformAtDriveStart),
-                "DRIVING_ANIMATIONS" => M13DriveOffHw.GradeDrivingAnimations(stackLines, run?.Started == true),
+                "DRIVING_ANIMATIONS" => M13DriveOffHw.GradeDrivingAnimations(drivingRun, run?.Started == true),
                 "DRIVE_OBSERVATIONS" => Observations(wire, driveStart, observation),
                 _ => graded.TryGetValue(def.Id, out var g) ? g : Missing("not graded")
             };
@@ -560,11 +586,19 @@ internal sealed class M13DriveOffRun
         var b = ShippedBehaviors.Navigation(m).OfType<DriveOffChargerBehavior>().Single(x => x.Id == "DriveOffCharger");
         var ctx = new BehaviorContext { Robot = r, Triggers = new AnimationTriggerMap() };
         b.Step += line => Event("behaviour-step", new() { ["line"] = line });
+        // Record the behaviour's own push/remove calls, then forward them to the stack's bound handler unchanged.
+        var pushes = new List<string>(); var removes = new List<string>();
+        var push = b.PushDrivingAnimations; var remove = b.RemoveDrivingAnimations;
+        b.PushDrivingAnimations = (name, s, l, e) => { pushes.Add($"{name} {s:X2},{l:X2},{e:X2}"); push?.Invoke(name, s, l, e); };
+        b.RemoveDrivingAnimations = name => { removes.Add(name); remove?.Invoke(name); };
+        static int Selected(CozmoRobot r) => new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => (int?)n).FirstOrDefault(n => r.Engine.Needs.IsSevereExpressed((NeedId)n!.Value)) ?? 3;
         driveStart = Now;
         bool runnable = b.IsRunnable(ctx); Event("behaviour-runnable", new() { ["runnable"] = runnable });
         if (!runnable) return new(false, false, false, false, r.Sensors.OnChargerPlatform, false, null);
+        int selectedBefore = Selected(r);
         b.StartAsync(ctx, new BehaviorScope(), cancel.Token).GetAwaiter().GetResult();
-        Event("behaviour-started", new());
+        int selectedAfter = Selected(r), flagAfterInit = b.DrivingAnimationsFlag;
+        Event("behaviour-started", new() { ["selectedSevereNeed"] = selectedBefore, ["drivingFlag"] = flagAfterInit, ["pushes"] = new JsonArray(pushes.Select(p => (JsonNode)p).ToArray()) });
         double t = 0, limit = Now + 30000; bool timedOut = false;
         while (b.Update(ctx, t))
         {
@@ -575,6 +609,7 @@ internal sealed class M13DriveOffRun
         bool ended = !timedOut && b.DroveOffAtSec is not null;
         Event("behaviour-ended", new() { ["endedOnItsOwn"] = ended, ["timedOut"] = timedOut, ["platform"] = platform, ["action"] = action, ["driveResult"] = b.DriveResult?.ToString() });
         b.Stop(timedOut ? BehaviorStopReason.Cancelled : BehaviorStopReason.Completed);
+        drivingRun = new(selectedBefore, selectedAfter, flagAfterInit, pushes.ToArray(), removes.ToArray(), true);
         if (timedOut) r.Motion.StopAllMotors();
         Wait(1500); // trailing threshold sends and reports
         return new(true, true, ended, timedOut, platform, action, b.DriveResult?.ToString());

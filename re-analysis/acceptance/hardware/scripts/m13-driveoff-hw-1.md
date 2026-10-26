@@ -49,7 +49,6 @@ Seven result lines, then one `OVERALL:` line, also in `SUMMARY.txt`:
 - **OK:** the stack did what the original engine does.
 - **PROBLEM:** the stack did something the engine would not. Needs review.
 - **COULD NOT CHECK:** setup or evidence was missing; the reason is shown. Not a failure by itself.
-- **KNOWN MISSING PIECE:** expected (DRIVING_ANIMATIONS).
 - **SAVED FOR REVIEW:** recorded only (DRIVE_OBSERVATIONS).
 
 Send the results folder back for review either way:
@@ -68,7 +67,7 @@ MoveRobotPoseForward(pose, −20 mm) between states, in f32, from the identity p
 | DISTANCE_400 | After that state, exactly two 400s (distance one-shot, platform exit), the first message being 400; one if the platform never cleared. | M4-019 0x00512E84..0x00512EA6, 0x00511DA0 |
 | PLATFORM_EXIT | The platform clears once, and only after a state with the contacts off. The exit position is recorded against the 85.9 mm straight-drive figure, not graded. | M4-019 0x00511D4C..0x00511D6A; M13-040 0x00513CD8..0x00513E2A, 0x00514DB2..0x00514DD8; M13-024 |
 | BEHAVIOUR_END | DriveOffCharger is runnable on the platform and ends on its own only off the platform with no action running. | M13-017 0x005C0B10, 0x005C0DA8..0x005C0E32 |
-| DRIVING_ANIMATIONS | KNOWN GAP: the SevereNeeds state writer has no live owner (R-M15-SEVERE-INPUT), so the (0x97,0x93,0x8F) push is not made; the stack's MISSING report is expected. | M13-017 0x005C0B34..0x005C0B50; M5-063 |
+| DRIVING_ANIMATIONS | With no severe need selected (3) at Init, exactly one push (DriveOffCharger, 0x97,0x93,0x8F), +0x120 = 1, and one remove by name at stop; with a need selected (for example Repair or Energy Critical at connection, through the automatic wakeup), no push, flag 0, no remove. The push/remove calls are recorded where the behaviour makes them. | M13-017 0x005C0B34..0x005C0B50, 0x005C0D90..0x005C0DA4; M15-072 (selected need); M5-063 (what then plays, recorded only) |
 | DRIVE_OBSERVATIONS | Recorded only: path lines (expected 156 mm = 96.0 + 60.0), robot cliff/stop reports, API events, your answers. | M13-017 0x005C09D4..0x005C09E6, 0x005C0C02..0x005C0C08, `driveOffCharger.json`; M13-013; M4-019 SC7 |
 
 **Limits.** The behaviour is started and ticked by the harness (every 33 ms), not chosen by freeplay; its selection

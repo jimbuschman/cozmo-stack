@@ -167,13 +167,20 @@ public class M13DriveOffHwTests
         Assert.Equal("INCONCLUSIVE", Verdict(M13DriveOffHw.GradeBehaviour(new(true, true, false, true, true, true, null), true)));
     }
 
-    // reach: unit. The SevereNeeds writer is a recorded gap; its MISSING report makes the row a known missing piece.
+    // reach: unit. M13-017 0x005C0B34..0x005C0B50 / 0x005C0D90..0x005C0DA4: push and flag only when the selected
+    // severe need is 3; remove by name at stop only when the flag is set.
     [Fact]
-    public void SevereNeedsMissingReportIsAKnownGap()
+    public void DrivingAnimationsFollowTheSelectedSevereNeed()
     {
-        var line = "MISSING: M13-017 " + M13DriveOffHw.SevereNeedsMissingText + " (R-M15-SEVERE-INPUT, row 39)";
-        Assert.Equal("KNOWN_GAP", Verdict(M13DriveOffHw.GradeDrivingAnimations(new[] { line }, true)));
-        Assert.Equal("INCONCLUSIVE", Verdict(M13DriveOffHw.GradeDrivingAnimations(Array.Empty<string>(), true)));
+        string[] none = Array.Empty<string>();
+        string[] push = { "DriveOffCharger 97,93,8F" }, remove = { "DriveOffCharger" };
+        Assert.Equal("MATCH", Verdict(M13DriveOffHw.GradeDrivingAnimations(new(3, 3, 1, push, remove, true), true)));
+        Assert.Equal("MATCH", Verdict(M13DriveOffHw.GradeDrivingAnimations(new(1, 1, 0, none, none, true), true)));
+        Assert.Equal("MISMATCH", Verdict(M13DriveOffHw.GradeDrivingAnimations(new(3, 3, 0, none, none, true), true)));
+        Assert.Equal("MISMATCH", Verdict(M13DriveOffHw.GradeDrivingAnimations(new(3, 3, 1, push, none, true), true)));
+        Assert.Equal("MISMATCH", Verdict(M13DriveOffHw.GradeDrivingAnimations(new(0, 0, 1, push, remove, true), true)));
+        Assert.Equal("INCONCLUSIVE", Verdict(M13DriveOffHw.GradeDrivingAnimations(new(3, 1, 1, push, remove, true), true)));
+        Assert.Equal("INCONCLUSIVE", Verdict(M13DriveOffHw.GradeDrivingAnimations(null, false)));
     }
 
     // reach: unit. Every check has a cited comparison and names only real records.
