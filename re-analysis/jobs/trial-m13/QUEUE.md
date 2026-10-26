@@ -20,4 +20,4 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 
 | Job | State | Purpose |
 | --- | --- | --- |
-| CM13-03 | RELEASED | Planner goal/start-state ownership (M13-033 / M11-084): read, independent check, then build. Branch `codex-m13-manager-2`. See CM13-03.md. |
+| CM13-03 | CODE VERIFIED; FULL GATE FAIL; Claude pending | Runtime ownership b1c1169d: Phase1/build independent PASS; full6274 pass/1 fail/0 skip (KnockOver cause UNKNOWN). Upstream gaps visible. Branch `codex-m13-manager-2`; see HANDOFF-2.md. |
