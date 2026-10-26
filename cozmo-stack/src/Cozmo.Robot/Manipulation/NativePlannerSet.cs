@@ -19,7 +19,13 @@ internal sealed class NativePlannerSet : IDisposable
         _m=m;_missing=s=>m.Robot.Engine.EmitStackLog("MISSING: "+s);
         Source=(level,channel,key,text)=>m.Robot.Engine.EmitSourceLog(level,channel,key,text);
         Face=m.Robot.Motion.Path.NativeFace;Minimal=m.Robot.Motion.Path.NativeMinimal;
-        if(m.Planner is {} backend)Lattice=new(backend,m.World,()=>m.Docking.Carrying.CarriedObjectId,Source,_missing,m.Robot.Engine);
+        if(m.Planner is {} backend)Lattice=new(backend,m.World,ReadCarryingState,Source,_missing,m.Robot.Engine);
+    }
+    private LatticeCarryingState ReadCarryingState()
+    {
+        // Re-read the actual current Robot+284 owner for every heading, never Docking's early fallback.
+        var owner = _m.Robot.Engine.Robot?.CarryingOwner;
+        return owner is null ? default : LatticeCarryingState.FromRaw(owner.CarriedObjectId);
     }
     internal void Configure(Pose3d start,IReadOnlyList<Pose3d> goals,PathMotionProfile profile,IEnumerable<uint>? ignore)
     {
@@ -27,7 +33,7 @@ internal sealed class NativePlannerSet : IDisposable
         _missing("M13-033/M11-084 NativePlannerSet.Configure still borrows caller start/goal wrappers before runtime capture; native action SetGoal copies and PathComponent owned root/drive-center conversions (0x0055A450/468, 0x0064ADAC/0x0064AE78) remain unbuilt");
         Start=start;Goals=goals;Profile=profile;
         if(_m.Planner is {} backend && !ReferenceEquals(Lattice?.Backend,backend))
-        {Lattice?.Dispose();Lattice=new(backend,_m.World,()=>_m.Docking.Carrying.CarriedObjectId,Source,_missing,_m.Robot.Engine);}
+        {Lattice?.Dispose();Lattice=new(backend,_m.World,ReadCarryingState,Source,_missing,_m.Robot.Engine);}
         Lattice?.SetIgnore(ignore);
     }
     internal void Select()

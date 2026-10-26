@@ -11,7 +11,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     private readonly Thread _worker;
     private readonly LatticePlanner _backend;
     private readonly BlockWorld _world;
-    private readonly Func<uint?> _carried;
+    private readonly Func<LatticeCarryingState> _carried;
     private readonly SourceLogSink _source;
     private readonly Action<string> _missing;
     private readonly CozmoEngine? _engine;
@@ -35,7 +35,10 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     public int CheckPlanningStatus=>_status;
     internal LatticePlan? TotalPlan=>_total;
     internal LatticePlanner Backend=>_backend;
+    // Explicit raw-state constructor for standalone test/tool fixtures.
     internal NativeLatticePlannerRuntime(LatticePlanner backend,BlockWorld world,Func<uint?> carried,SourceLogSink source,Action<string> missing,CozmoEngine? engine=null)
+        : this(backend,world,() => LatticeCarryingState.FromRaw(carried()),source,missing,engine) { }
+    internal NativeLatticePlannerRuntime(LatticePlanner backend,BlockWorld world,Func<LatticeCarryingState> carried,SourceLogSink source,Action<string> missing,CozmoEngine? engine=null)
     {
         _engine=engine;_backend=backend;_world=world;_carried=carried;_source=source;_missing=missing;
         backend.NativeRuntime=this;backend.SetRunFlag(true);
@@ -56,7 +59,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         {
             if(F0){_source(EngineLogLevel.Warning,null,"LatticePlanner.ComputePath.PreviousPlanRequested","timeToPlan already set, so another compute path call is already waiting to signal the planner");return 0;}
             AssignGoalPoses(goals); // 0x004FD296..2A4, all full poses before validity/old-context clearing
-            _backend.ImportBlockWorldObstacles(_world,_carried(),false); // 0x004FD2B0 precedes old actions/context clearing
+            _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,false); // 0x004FD2B0 precedes old actions/context clearing
             if(_total is {} old)_total=old with{Actions=Array.Empty<MotionPrimitive>(),Penalties=Array.Empty<float>()};
             _goalContext.Clear();
             for(int i=0;i<goals.Count;i++)
@@ -111,7 +114,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             if(force)_total=new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
             else
             {
-                _backend.ImportBlockWorldObstacles(_world,_carried(),true,_ignore);
+                _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,true,_ignore);
                 var closest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,stateLog);
                 nearest=closest;
                 if(closest.Distance>=20f)
@@ -131,7 +134,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             {Info("LatticePlanner.ReplanIfNeeded.InvalidStart","could not set start");return 0;}
             if(!_backend.CheckContextGoalsWithIds(_goalContext,new(),new()))
             {Info("LatticePlanner.ReplanIfNeeded.InvalidGoals","Goals may have moved into collision");return 0;}
-            _backend.ImportBlockWorldObstacles(_world,_carried(),false,_ignore);
+            _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,false,_ignore);
             _missing("M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump recipient at 0x004FF052..0x004FF30A remain incomplete");
             _searchNum=unchecked(_searchNum+1);Info("LatticePlannerImpl.GetPlan",$"searchNum: {unchecked((int)_searchNum)}");
             _backend.SetRunFlag(true);

@@ -536,6 +536,12 @@ public sealed class FastPolygonF
 /// <summary>A <c>xythetaEnvironment::SuccessorIterator</c> result.</summary>
 public readonly record struct LatticeSuccessor(uint NextId, int ActionIndex, float Cost, float SoftPenalty, MotionPrimitive Prim);
 
+/// <summary>Availability is distinct from a present owner's native FFFFFFFF sentinel.</summary>
+public readonly record struct LatticeCarryingState(bool Available, uint RawObjectId)
+{
+    public static LatticeCarryingState FromRaw(uint? raw) => new(true, raw ?? uint.MaxValue);
+}
+
 /// <summary>
 /// The engine's <c>Anki::Planning::xythetaEnvironment</c>: the primitive set plus the obstacles the plan must avoid, per heading (env+0x44), as the engine builds and queries them.
 ///
@@ -625,8 +631,8 @@ public sealed class LatticeEnvironment
     /// <summary>
     /// The robot's bounding quad at a heading, padded: <c>Robot::GetBoundingQuadXY(pose, padding)</c> 0x00514D74. The canonical quad is (TL, BL, TR, BR) = (front, -w), (front, w), (back, -w),
     /// (back, w); a non-zero padding adds (p, -p), (p, p), (-p, -p), (-p, p) corner by corner; each corner is rotated by <c>RotationMatrix2d(angle)</c> = [cosf, -sinf; sinf, cosf] with
-    /// <c>x' = x*c + y*(-s)</c>, <c>y' = x*s + y*c</c> (separate float operations), and the pose translation (zero here) is added. The pose's rotation goes through the engine's quaternion
-    /// (<c>Pose3d(Radians, Z_AXIS, ...)</c>, <c>GetAngleAroundZaxis</c>); that round trip is not transliterated, so the heading is used directly (MISSING).
+    /// <c>x' = x*c + y*(-s)</c>, <c>y' = x*s + y*c</c> (separate float operations). This canonical helper has no origin shift;
+    /// pose-based callers supply their own yaw and translation, while the importer constructs its source-specific pose separately.
     /// </summary>
     // fidelity: M13-003
     public static P2f[] RobotQuad(float headingRad, float paddingMm)
@@ -730,54 +736,113 @@ public sealed class LatticeEnvironment
     /// number of polygons imported.
     /// </summary>
     // fidelity: M13-003
+    // Legacy public tool signatures cannot infer native carrying state. Keep the API and expose the missing input.
     public void ImportObstaclePolygons(IEnumerable<IReadOnlyList<P2f>> polygons, bool tightPadding)
+        => MissingCarryingContext();
+
+    public bool ImportObstaclePolygons(IEnumerable<IReadOnlyList<P2f>> polygons, bool tightPadding, uint? rawCarriedObjectId)
+        => ImportObstaclePolygons(polygons, tightPadding, () => LatticeCarryingState.FromRaw(rawCarriedObjectId));
+
+    public bool ImportObstaclePolygons(IEnumerable<IReadOnlyList<P2f>> polygons, bool tightPadding, Func<LatticeCarryingState>? carrying)
     {
-        TightPadding = tightPadding;
-        ClearObstacles();
-        var obstacles = polygons.Select(p => PolygonF.RadialExpand(PolygonF.ConvexPolygon(p), ObstaclePadding)).ToList();
-        for (int t = 0; t < Primitives.NumAngles; t++)
-        {
-            var robot = PolygonF.ConvexPolygon(PolygonF.ImportQuad2d(RobotQuad(Primitives.Angles[t], RobotPadding)));
-            foreach (var o in obstacles) AddObstacleWithExpansion(o, robot, t, ObstaclePenalty);
-        }
-        _obstacleCount = obstacles.Count;
+        float obstaclePadding = tightPadding ? TightObstaclePaddingMm : ObstaclePaddingMm;
+        var obstacles = polygons.Select(p => PolygonF.RadialExpand(PolygonF.ConvexPolygon(p), obstaclePadding)).ToList();
+        return BuildObstacleBuckets(obstacles, tightPadding, carrying, ObstaclePenalty, append: false);
     }
 
-    /// <summary>
-    /// A rectangle at a pose as one obstacle (the polygon the memory map would hold for an object's quad), added without clearing the others: its corners as floats, then the import's polygon
-    /// path. <paramref name="penalty"/> replaces the import's 0.1f for tests that need a hard obstacle (the engine's import never does).
-    /// </summary>
+    // fidelity: M13-003, M11-065, M11-067, M11-094
+    // CM13-04 O1-O12: importer locals, NOT a change to the canonical RobotQuad helper.
+    internal static float OriginOffset(uint rawCarriedObjectId)
+        => rawCarriedObjectId == uint.MaxValue ? 20f : EngineF.Bits(0x80000000); // 0x00517F90: negative zero
+
+    internal static P2f[] ImportRobotQuad(float heading, float padding, uint rawCarriedObjectId)
+    {
+        TryImportRobotQuad(heading, padding, () => LatticeCarryingState.FromRaw(rawCarriedObjectId), out var quad);
+        return quad;
+    }
+
+    private static bool TryImportRobotQuad(float heading, float padding, Func<LatticeCarryingState>? carrying, out P2f[] quad)
+    {
+        quad = Array.Empty<P2f>();
+        var radians = new Radians(heading); // exactly one input construction; FromAngleAxis does not rescale
+        using var input = new Pose3d(Rotation3d.FromAngleAxis(radians.Value, new Vec3(0, 0, 1)), Vec3.Zero);
+        using var output = new Pose3d(); // output destroyed before input, 0x004FE1CC/1D2
+        var state = carrying?.Invoke() ?? default; // 0x00517F6C/78 reads current owner/word after local pose construction
+        if (!state.Available) return MissingCarryingContext();
+        output.Assign(input); // 0x00517ED4 retains the copied rotation/parent
+        float yaw = (float)input.AngleAroundZ, offset = OriginOffset(state.RawObjectId);
+        float dx = MathF.Cos(yaw) * offset, dy = MathF.Sin(yaw) * offset;
+        output.Node!.Transform = new(output.Quaternion, new Vec3((float)input.Translation.X + dx, (float)input.Translation.Y + dy, 0f));
+        var bounds = ObjectFootprint.RobotBoundingQuadXY(output, padding);
+        quad = Enumerable.Range(0, 4).Select(i => new P2f(bounds[i].X, bounds[i].Y)).ToArray();
+        return true;
+    }
+
+    private bool BuildObstacleBuckets(IReadOnlyList<P2f[]> obstacles, bool tightPadding, Func<LatticeCarryingState>? carrying, float penalty, bool append)
+    {
+        // Missing context is not no-carry. Stage all buckets so a missing owner even mid-loop retains the whole prior snapshot.
+        var staged = new List<(FastPolygonF Poly, float Penalty)>[_buckets.Length];
+        float robotPadding = tightPadding ? TightRobotPaddingMm : RobotPaddingMm;
+        for (int t = 0; t < Primitives.NumAngles; t++)
+        {
+            if (!TryImportRobotQuad(Primitives.Angles[t], robotPadding, carrying, out var quad)) return false;
+            staged[t] = append ? new(_buckets[t]) : new();
+            var robot = PolygonF.ConvexPolygon(PolygonF.ImportQuad2d(quad));
+            foreach (var obstacle in obstacles) staged[t].Add((new FastPolygonF(ExpandCSpace(obstacle, robot)), penalty));
+        }
+        for (int t = 0; t < _buckets.Length; t++) _buckets[t] = staged[t];
+        TightPadding = tightPadding;
+        _obstacleCount = (append ? _obstacleCount : 0) + obstacles.Count;
+        return true;
+    }
+
+    private static bool MissingCarryingContext()
+    {
+        StackDiagnostics.Write("MISSING: M13-003 ComputeOriginPose current CarryingOwner/raw field unavailable; complete prior obstacle snapshot retained");
+        return false;
+    }
+
     public void AddRectangleObstacle(Pose3d pose, double lengthX, double widthY, string name = "", float? penalty = null)
+        => MissingCarryingContext();
+
+    public void AddPolygonObstacle(IReadOnlyList<P2f> polygon, float penalty)
+        => MissingCarryingContext();
+
+    /// <summary>Standalone rectangle tool: carrying state must be supplied explicitly.</summary>
+    public bool AddRectangleObstacle(Pose3d pose, double lengthX, double widthY, uint rawCarriedObjectId, string name = "", float? penalty = null)
+        => AddRectangleObstacleWithCarrying(pose, lengthX, widthY, () => LatticeCarryingState.FromRaw(rawCarriedObjectId), name, penalty);
+
+    public bool AddRectangleObstacleWithCarrying(Pose3d pose, double lengthX, double widthY, Func<LatticeCarryingState>? carrying, string name = "", float? penalty = null)
     {
         var corners = new[] { new Vec3(-lengthX / 2, -widthY / 2, 0), new Vec3(lengthX / 2, -widthY / 2, 0), new Vec3(lengthX / 2, widthY / 2, 0), new Vec3(-lengthX / 2, widthY / 2, 0) }
             .Select(p => { var w = pose.Apply(p); return new P2f((float)w.X, (float)w.Y); }).ToArray();
-        AddPolygonObstacle(PolygonF.ImportQuad2d(corners), penalty ?? ObstaclePenalty);
+        return AddPolygonObstacle(PolygonF.ImportQuad2d(corners), penalty ?? ObstaclePenalty, carrying);
     }
 
-    /// <summary>Adds one obstacle polygon (not cleared first): <see cref="ImportObstaclePolygons"/>'s per-obstacle step.</summary>
-    public void AddPolygonObstacle(IReadOnlyList<P2f> polygon, float penalty)
+    public bool AddPolygonObstacle(IReadOnlyList<P2f> polygon, float penalty, uint? rawCarriedObjectId)
+        => AddPolygonObstacle(polygon, penalty, () => LatticeCarryingState.FromRaw(rawCarriedObjectId));
+
+    public bool AddPolygonObstacle(IReadOnlyList<P2f> polygon, float penalty, Func<LatticeCarryingState>? carrying)
     {
-        var o = PolygonF.RadialExpand(PolygonF.ConvexPolygon(polygon), ObstaclePadding);
-        for (int t = 0; t < Primitives.NumAngles; t++)
-        {
-            var robot = PolygonF.ConvexPolygon(PolygonF.ImportQuad2d(RobotQuad(Primitives.Angles[t], RobotPadding)));
-            AddObstacleWithExpansion(o, robot, t, penalty);
-        }
-        _obstacleCount++;
+        var obstacle = PolygonF.RadialExpand(PolygonF.ConvexPolygon(polygon), ObstaclePadding);
+        return BuildObstacleBuckets(new[] { obstacle }, TightPadding, carrying, penalty, append: true);
     }
 
     /// <summary>
     /// Imports the current native map's type-3 stored polygons (0x004FDF18..0x004FDF8C).
-    /// Carried/ignore arguments remain for tool compatibility; this consumer applies no object-ID filter.
+    /// Raw carried ID drives ComputeOriginPose only; this consumer applies no object-ID filter.
     /// </summary>
     // fidelity: M13-003, M11-074
     public void ImportBlockWorldObstacles(BlockWorld world, uint? carriedObjectId, bool tightPadding, IEnumerable<uint>? ignore = null)
+        => ImportBlockWorldObstaclesWithCarrying(world, () => LatticeCarryingState.FromRaw(carriedObjectId), tightPadding, ignore);
+
+    public bool ImportBlockWorldObstaclesWithCarrying(BlockWorld world, Func<LatticeCarryingState> carrying, bool tightPadding, IEnumerable<uint>? ignore = null)
     {
         // 0x004FD5E2 obtains the current helper again, separately from the timestamp sample.
         if(world.Maps.Current is not {} map)
         {
             StackDiagnostics.Write("M1-034 M13-003/M13-030 skip absent current map dereference at 0x004FD50C; prior obstacle snapshot retained");
-            return;
+            return false;
         }
         var matches=new List<SourceMapData>();
         map.FindContentIf(data=>data.Type==MemoryMapContentType.ObstacleObservable?1:0,matches);
@@ -787,7 +852,7 @@ public sealed class LatticeEnvironment
             if(data is ObservableMapData observable)polygons.Add(observable.Polygon.ToArray());
             else StackDiagnostics.Write("M1-034 M13-003/M11-074 skip forged type-3 polygon layout read at 0x004FDF64; other obstacles retained");
         }
-        ImportObstaclePolygons(polygons,tightPadding);
+        return ImportObstaclePolygons(polygons,tightPadding,carrying);
     }
 
     /// <summary>
@@ -958,6 +1023,9 @@ public class LatticePlanner
 
     // fidelity: M13-030, M13-003 — 0x004FD4DA..0x004FD5CE. Cache belongs to the planner, not a map or import call.
     internal bool ImportBlockWorldObstacles(BlockWorld world, uint? carriedObjectId, bool tightPadding, IEnumerable<uint>? ignore = null)
+        => ImportBlockWorldObstaclesWithCarrying(world, () => LatticeCarryingState.FromRaw(carriedObjectId), tightPadding, ignore);
+
+    internal bool ImportBlockWorldObstaclesWithCarrying(BlockWorld world, Func<LatticeCarryingState> carrying, bool tightPadding, IEnumerable<uint>? ignore = null)
     {
         object gate = NativeRuntime?.ContextMutex ?? _obstacleImportGate;
         if (!Monitor.TryEnter(gate)) return false;
@@ -971,8 +1039,7 @@ public class LatticePlanner
             uint sampled = map.LastObservedTime;
             if (tightPadding && _lastImportedMapTimestamp >= sampled) return false; // unsigned, including backward clocks
             _lastImportedMapTimestamp = sampled; // 0x004FD5CE: before any obstacle rebuild
-            Env.ImportBlockWorldObstacles(world, carriedObjectId, tightPadding, ignore);
-            return true;
+            return Env.ImportBlockWorldObstaclesWithCarrying(world, carrying, tightPadding, ignore);
         }
         finally { Monitor.Exit(gate); }
     }

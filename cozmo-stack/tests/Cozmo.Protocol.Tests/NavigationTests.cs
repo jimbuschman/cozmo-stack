@@ -12,6 +12,7 @@ namespace Cozmo.Protocol.Tests;
 /// built on them, all on the fake robot side of <see cref="Rig"/>.
 /// </summary>
 [Collection("SteppedBehavior missing-report statics")]
+// Polygon fixture calls explicitly supply raw carried ID0 for zero-shift test geometry (substituted tool input).
 public class NavigationTests
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
@@ -169,7 +170,7 @@ public class NavigationTests
         var prims = Prims();
         if (prims is null) return;
         var env = new LatticeEnvironment(prims);
-        env.AddRectangleObstacle(At(150, 0, 0), CubeGeometry.CubeSizeMm, CubeGeometry.CubeSizeMm, "cube");
+        env.AddRectangleObstacle(At(150, 0, 0), CubeGeometry.CubeSizeMm, CubeGeometry.CubeSizeMm, 0, "cube");
         Assert.Equal(1, env.ObstacleCount);
         // the obstacle is expanded by the obstacle padding and then into configuration space with the
         // robot's own quad at that heading, so the point tested is the robot's origin. Its penalty is the
@@ -189,7 +190,7 @@ public class NavigationTests
         Assert.True(path.Count >= 3);
         // a hard obstacle (penalty >= 1000) rejects a goal inside it
         var hard = new LatticeEnvironment(prims);
-        hard.AddRectangleObstacle(At(150, 0, 0), 20, 40, "hard", 1000.0f);
+        hard.AddRectangleObstacle(At(150, 0, 0), 20, 40, 0, "hard", 1000.0f);
         Assert.True(hard.IsInCollision(150f, 0f, 0f));
         Assert.Null(new LatticePlanner(hard).PlanTo(At(0, 0, 0), new[] { At(150, 0, 0) }, PathMotionProfile.Default));
     }

@@ -6,6 +6,7 @@ using Xunit;
 namespace Cozmo.Protocol.Tests;
 
 [Collection("M5 process statics")]
+// Polygon fixture calls explicitly supply raw carried ID0 for zero-shift test geometry (substituted tool input).
 public sealed class M13NativeMapImportTests
 {
     private static string Obb()
@@ -143,7 +144,7 @@ public sealed class M13NativeMapImportTests
         using var rig=new M4ControlTests.Rig();rig.ToSynced();var world=rig.Robot.Vision.World;
         var env=new LatticeEnvironment(MotionPrimitiveSet.FromObb(Obb())!);var planner=new LatticePlanner(env);
         world.Maps.Current!.Tree.Root.Content.Data.Last=123;Assert.True(planner.ImportBlockWorldObstacles(world,null,false));
-        env.ImportObstaclePolygons(new[]{Payload().Polygon},false);
+        env.ImportObstaclePolygons(new[]{Payload().Polygon},false,0);
         uint origin=world.Maps.CurrentOrigin;world.Maps.CurrentOrigin=uint.MaxValue;
         try
         {
@@ -172,7 +173,7 @@ public sealed class M13NativeMapImportTests
         using var goal=new Pose3d(Mat3.Identity,new Vec3(200,0,0));
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);Assert.True(m.LoadPlanner(Obb()));
         // A stale prior snapshot proves the dispatch really rebuilds rather than observing initial empty buckets.
-        m.Planner!.Env.ImportObstaclePolygons(new[]{Payload().Polygon},false);Assert.Equal(1,m.Planner.Env.ObstacleCount);
+        m.Planner!.Env.ImportObstaclePolygons(new[]{Payload().Polygon},false,0);Assert.Equal(1,m.Planner.Env.ObstacleCount);
         using var drive=new DriveToPoseAction(m){Goal=goal};
         Assert.Equal(0,drive.Init());
         Assert.Same(m.NativePlanners!.Lattice,m.NativePlanners.Current);
