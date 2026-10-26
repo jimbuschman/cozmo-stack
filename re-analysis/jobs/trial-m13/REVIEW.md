@@ -24,3 +24,4 @@
   native engine state or any behaviour decision: `CubeGameBehaviors.cs:846` currently uses `FirstSeenSec`, so move that
   decision onto the engine's own path (BehaviorOnConfigSeen 0x005DB2D4..0x005DB396: per-type cache count growth,
   stored float stamp, dt < 4.99999 and |stamp - now| < 1e-5). Delete BLOCKED.md and continue the pilot.
+| CM13-04 | MERGED | 481ade53 (pushed with this line). Spot-checked ComputeOriginPose 0x00517F6C. Full gate on main 6306/6306, 0 skipped. |
