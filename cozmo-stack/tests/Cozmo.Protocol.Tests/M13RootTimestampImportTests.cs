@@ -21,21 +21,28 @@ public sealed class M13RootTimestampImportTests
         =>env.ImportObstaclePolygons(new[]{new P2f[]{new(500,500),new(540,500),new(540,540),new(500,540)}},false);
 
     [Fact]
-    public void NewOriginsSeedBothRootTimesFromTheCurrentProcessedImage()
+    public void NewOriginsSeedBothRootTimesFromTheLastRobotState()
     {
         // reach: production (decoded-capture API and public delocalization, real native origin/map construction).
-        // Old: root First=Last=0 after both captures. Row74 0x00681384..96 and checked VC getter0x006527A2.
-        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State();
+        // Old 179bc7b3: root First=Last=image stamp166 instead of newer RobotState stamp199.
+        // Corrected row74 / 20261026 Claude check: 0x00681384..96 reads Robot+0x2C, not VC+0xE8.
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();
+        Assert.Null(rig.Engine.Robot!.StoredState);
+        var initial=rig.Robot.Vision.World.Maps.Current!.Tree.Root.Content.Data;
+        Assert.Equal((0u,0u),(initial.First,initial.Last)); // native field remains zero before any RobotState
+        rig.State();
         var vision=rig.Robot.Vision;vision.Calibration=CameraCalibration.Nominal();vision.Enabled=true;vision.ModeEnableMask=0;
         var image=new GrayImage(vision.Calibration.Columns,vision.Calibration.Rows);
         uint previous=0;
         for(uint frame=1;frame<=2;frame++)
         {
-            rig.State();uint stamp=rig.Engine.Robot!.PoseHistory.NewestTimeStamp;Assert.True(stamp>previous);
+            rig.State(origin:rig.Engine.Robot!.CurrentOriginId);uint stamp=rig.Engine.Robot.PoseHistory.NewestTimeStamp;Assert.True(stamp>previous);
             Assert.NotNull(vision.ProcessCapture(image,frame,stamp));
             Assert.Equal(stamp,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
+            rig.State(origin:rig.Engine.Robot.CurrentOriginId);
+            uint robotStamp=rig.Engine.Robot.StoredState!.Timestamp;Assert.NotEqual(stamp,robotStamp);
             vision.World.OnRobotDelocalized();var root=vision.World.Maps.Current!.Tree.Root.Content.Data;
-            Assert.Equal(MemoryMapContentType.Unknown,root.Type);Assert.Equal((stamp,stamp),(root.First,root.Last));
+            Assert.Equal(MemoryMapContentType.Unknown,root.Type);Assert.Equal((robotStamp,robotStamp),(root.First,root.Last));
             previous=stamp;
         }
     }
@@ -44,10 +51,12 @@ public sealed class M13RootTimestampImportTests
     public void MissingDestinationOriginMapSamplesTheConstructionClockAgain()
     {
         // reach: unit (substituted clock and direct UpdateMapOrigins; native origin lookup/merge inputs not supplied).
-        // Old: new destination root Last=0. Uses the same checked MemoryMap constructor, no new merge clock rule.
+        // Control: old 179bc7b3 with its construction input supplied also gives123/456; only the input name changes.
+        // Uses the same checked MemoryMap constructor; planner tests below are unchanged.
         using var maps=new SourceMapComponent();uint stamp=123;
-        typeof(SourceMapComponent).GetField("ConstructionImageTimestamp",BindingFlags.Instance|BindingFlags.NonPublic)
-            ?.SetValue(maps,(Func<uint>)(()=>stamp));
+        typeof(SourceMapComponent).GetFields(BindingFlags.Instance|BindingFlags.NonPublic)
+            .Single(f=>f.Name.StartsWith("Construction",StringComparison.Ordinal)&&f.FieldType==typeof(Func<uint>))
+            .SetValue(maps,(Func<uint>)(()=>stamp));
         maps.CreateLocalizedMemoryMap(1,_=>false);Assert.Equal(123u,maps.Current!.LastObservedTime);
         stamp=456;maps.UpdateMapOrigins(1,2,()=>{});Assert.Equal(456u,maps.Current!.LastObservedTime);
     }

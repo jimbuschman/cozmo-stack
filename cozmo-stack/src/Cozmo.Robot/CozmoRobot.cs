@@ -341,9 +341,9 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.ConstructorMapCreated = () =>
         {
             LocalizationWorld.ConstructMapComponent();
-            // fidelity: M13-030 — seed each map from the checked Robot::GetLastImageTimeStamp / VC+0xE8 getter.
+            // fidelity: M13-030 — seed each map from Robot+0x2C, the stored RobotState timestamp (zero before the first state).
             // Separate construction input: existing producer-clock gaps are not changed by this job.
-            LocalizationWorld.Maps.ConstructionImageTimestamp = () => CameraSettings.LastProcessedImageTimestamp;
+            LocalizationWorld.Maps.ConstructionRobotTimestamp = () => Engine.Robot?.StoredState?.Timestamp ?? 0u;
         };
         LocalizationWorld.RobotTimestamp = () => State.Latest?.Timestamp ?? 0;
         LocalizationWorld.CurrentRobotPose = () => Engine.Robot?.MainPose; // borrowed native Robot::GetPose; admission updates it

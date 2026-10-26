@@ -383,10 +383,10 @@ internal sealed class SourceQuadTree
     }
     internal readonly SourceQuadProcessor Processor = new();
     internal readonly SourceQuadNode Root;
-    internal SourceQuadTree(uint imageTimestamp = 0)
+    internal SourceQuadTree(uint robotTimestamp = 0)
     {
         Root = new(0,0,1,160,4) // 0x00684C28..48, with caller-supplied initial content.
-        { Content = new(new SourceMapData(MemoryMapContentType.Unknown,imageTimestamp,imageTimestamp)) };
+        { Content = new(new SourceMapData(MemoryMapContentType.Unknown,robotTimestamp,robotTimestamp)) };
     }
     internal SourceLogSink? SourceLog;
     internal Action<string>? Missing;
@@ -660,12 +660,12 @@ internal sealed partial class SourceMapComponent
     internal Action<string>? Missing;
     internal Func<uint,Pose3d?>? OriginPose;
     internal MemoryMap? Current => Maps.GetValueOrDefault(CurrentOrigin); // null only while the host defers reconstruction/teardown.
-    internal Func<uint>? ConstructionImageTimestamp;
+    internal Func<uint>? ConstructionRobotTimestamp;
     private MemoryMap ConstructMemoryMap()
     {
         uint timestamp = 0;
-        if (ConstructionImageTimestamp is {} clock) timestamp = clock();
-        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-030 MemoryMap constructor 0x00681384 Robot+0x2C image timestamp owner is unbound on this standalone map component; zero is a fixture fallback, not the native clock");
+        if (ConstructionRobotTimestamp is {} clock) timestamp = clock();
+        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-030 MemoryMap constructor 0x00681384 Robot+0x2C RobotState timestamp owner is unbound on this standalone map component; zero is a fixture fallback, not the native clock");
         return new MemoryMap(timestamp) { SourceLog = SourceLog, Missing = Missing };
     }
     internal void CreateLocalizedMemoryMap(uint origin, Func<uint,bool> zombie)
