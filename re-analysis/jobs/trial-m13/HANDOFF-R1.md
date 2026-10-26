@@ -1,22 +1,19 @@
-# R1 handoff
+# R1 handoff (subscriber-race correction)
 
-**READY FOR CLAUDE.** Code6d9ccafd381c9075fb2a4b9752ecbd4cc1e3258b on codex-m13-manager-2, basea4bbc533. Independent read/build PASS; full gate6281 passed,0 failed,0 skipped,6m49s on that committed code. Asset-complete worktree (local shipped AudioAssets.zip141488171bytes); fidelity710 PASS. No main push, record/status/approval/acceptance or REVIEW.md change, no hardware run.
+FIX implemented and independently code-checked; corrected full gate pending. Branch codex-m13-manager-2, base origin/main4892b66d. This supersedes the initial READY at12963731/code6d9ccafd: Claude correctly found the ordinary shared-list consumers unsafe. Original exception diagnostics remain unchanged; the fix protects those consumers. No main push, native record/status/approval/acceptance change, REVIEW.md edit or hardware run.
 
-All changed diagnostic claims (operator-authorized host error handling; native addresses **N/A**, as requested in REVIEW.md/R1):
+Every changed behavior claim is operator-authorized **host error handling; native address N/A**:
 
-| Claim | C# location/evidence |
+| Claim | Production evidence |
 |---|---|
-| Faulted action logs action identity and full aggregate/inner exception type, message and available original stacks before selecting the supplied fallback | FaceBehaviors.cs ActionBehavior.RunAction:26..27; interpolation of Task.Exception invokes AggregateException.ToString |
-| Cancelled action observes its already-completed task, logs the real cancellation exception, and labels an observation stack whose original cancellation site may be unavailable | FaceBehaviors.cs:28..35; narrow GetAwaiter().GetResult/OperationCanceledException catch |
-| Late stopped/replaced action failures remain diagnostic; Step may run on completion thread via existing locked Log/Trace | FaceBehaviors.cs:26..36; SteppedBehavior.Log existing implementation; explicitly checked host-debug mechanism |
+| Fault logs full aggregate/inner type, message and available stacks; cancellation logs the observed exception with an honest observation-stack label before unchanged fallback | FaceBehaviors.cs RunAction26..46 (original6d9ccafd, rebasedae850034); unchanged in this fix |
+| Late stopped/replaced faults stay visible; callbacks retain Post/Update and stale guard | Same RunAction; no scheduler or behavior locking change |
+| Every ManipTool.Say producer (Step, vision/world/manip/follower/message/main) now serializes console output and append through one shared journal | ManipTool.cs Run; DiagnosticJournal<T>.Write |
+| Reactions.Line does the same for multiple behaviors, manager and sensor producers; strings versus timestamped-object shapes preserved | Reactions.cs Run; same DiagnosticJournal<T>.Write |
+| Acceptance serialization receives a separately allocated array snapshot taken under the same journal lock, so later producers cannot mutate the serialized collection | DiagnosticJournal<T>.Snapshot; both WriteAcceptance call sites |
 
-Successful result, fallback value, existing Post/Update tick delivery and `_cancel != cts` callback suppression are unchanged (FaceBehaviors.cs:37..46). No scheduler, callback/ownership refactor or broad listener catch. Only production file FaceBehaviors.cs changed (+10lines); new tests ActionBehaviorDiagnosticTests.cs exercise real RunAction/Task.Run/continuation/Post/Update with deterministic controlled tasks, not just a formatter.
+Actual tests: builder corrected10/10 zero skipped2s; different reviewer11/11 (diagnostic10+KnockOver) zero skipped4s. New four cases attach real RunAction worker fault/cancellation Step to the production shared journal with concurrent ordinary producers/snapshots, verify all2000 ordinary entries, full diagnostic details, output serialization and pre-tick/fallback order. Held diagnostic/readiness barriers and finally joins cover the overlap and fixture lifetime. Existing six cover success and late stop/replacement. Quiet lock-removal control failed4/4 before final barrier strengthening; exact failing assertions UNKNOWN (no TRX), not claimed as a specific oracle.
 
-Verification:
-- Focused6/6; old-production control2 expected diagnostic failures/1 success pass; corrected bytes restored. Final affected16/16 includes prior KnockOver and objective flows. Reviewer independently7/7 (new6+KnockOver),0skipped. Task inputs completed/awaited in finally; Step recorder is ConcurrentQueue.
-- `sh scripts/test-full.sh` on6d9ccafd: **6281/6281 PASS**,0skipped; fidelity710. Log retained locally .scratch/r1-test-full.log. No code/test/tool/frozen-record change after gate. Exact commands/results in R1-builder.md and independent reports20261026-r1-{read,build}-codex-check.md.
-- Existing unchanged FaceBehaviors engine-key checker ABSENT/PART findings are documented in builder report; no new engine keys introduced or unrelated native cleanup performed.
+Independent read/build reports: research/20261026-r1-fix-{read,build}-codex-check.md. Exact commands/results in R1-builder.md. Prior full6281/6281 on original code is historical and does not certify this correction. Full corrected gate will be recorded here before READY.
 
-Open: prior KnockOver Abort root cause remains UNKNOWN; these diagnostics preserve future fault/cancellation evidence, not a claimed diagnosis. No native behavior/status settlement.
-
-Claude questions: Is the full fault/cancellation information visible on the existing debug channel before Abort, while action callback order/suppression stays intact? Is the explicit completion-thread Step diagnostic and labelled cancellation observation sufficiently clear? No binary extraction is required for this authorized host diagnostic.
+Open: Step remains synchronous on the calling/completion thread; shared sink safety is fixed, no new event-thread guarantee. Historical KnockOver Abort cause remains UNKNOWN. No native behavior/status settlement. Claude should spot-check shared producer convergence, locked snapshots/unchanged JSON shape, and tests' actual worker completion path. No binary extraction is needed for this authorized host correction.

@@ -13,3 +13,19 @@ Commands used explicit Python313/dotnet executables with real PATH and authorize
 4. Diff whitespace check PASS. logkey check on touched FaceBehaviors.cs reports existing unchanged ABSENT ReactionTriggerStrategyPositionUpdate.RobotReactedToId and PART ReactionTriggerStrategyFacePositionUpdated (exit1). New host diagnostics add no engine-log keys; unrelated native key cleanup is outside scope.
 
 Remaining: root cause of prior KnockOver Abort remains UNKNOWN until an actual failure supplies these diagnostics. Host Step diagnostic may run on completion thread by approved mechanism; no engine-event timing/fidelity claim. Manager owns commit/full gate after independent review.
+
+
+## R1 FIX subscriber correction (2026-10-26)
+
+Read R1 FIX and independent `20261026-r1-fix-read-codex-check.md` PASS before code. This supersedes the earlier concurrency approval: a locked behavior trace did not protect ordinary shared tool lists. No FaceBehaviors/SteppedBehavior change. Actual model/effort/tier remains unobservable; native evidence/address N/A for approved host diagnostics.
+
+New `DiagnosticJournal<T>` uses one private lock for console output plus append and for independent array snapshots. All producers already converge through ManipTool.Say or Reactions.Line; both now use this same helper. Their acceptance detail `log` receives Snapshot(), so serialization never enumerates the live list or holds the journal lock during file writing. Console/bundle shapes stay strings and timestamped objects respectively. Existing CM13-04 CLI draft bytes are preserved.
+
+Four added ActionBehaviorDiagnosticTests cases cover fault/cancellation with both tool entry shapes through actual RunAction/worker continuation/Step/Post/Update. A held diagnostic writer and readiness barrier exercise overlapping ordinary writes; four producers each retain500 unique entries while taking snapshots. Tests assert full aggregate/inner/stack or labelled cancellation details, complete ordered prefixes, serialized output, independent acceptance arrays, and diagnostic-before-tick fallback. Finally releases the writer/barriers and awaits every worker before event/fixture cleanup. Existing six tests retain success and stopped/replaced callback coverage.
+
+Actual runs, explicit dotnet/Python313 PATH, authorized testhost IPC:
+- `C:/Program Files/dotnet/dotnet.exe test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-restore --filter FullyQualifiedName~ActionBehaviorDiagnosticTests --verbosity quiet -m:1 -nr:false -clp:ErrorsOnly`: initial PASS10/10/skip0,2s (`.scratch/r1-fix-first.log`).
+- Bounded control: removed only both `lock (_gate)` statements from the new helper, reproducing the old unsynchronized list/console mechanism; filter `FullyQualifiedName~SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots`, same options. Expected FAIL4/PASS0/skip0,272ms, exit1 (`.scratch/r1-fix-negative.log`). No host crash. Quiet output retained case names but no assertion detail/TRX: exact failure assertions UNKNOWN; no claim about which oracle fired. Restored corrected helper bytes in finally, verified SHA256747d7902f08b7974e8eb0ca5637be2aefe5d83e5688e8c2b113b7b235ae18146. This control preceded the deterministic-writer barrier addition; no extra negative rerun merely for verbosity.
+- Final corrected class after barrier addition: same complete class command PASS10/10/skip0,2s (`.scratch/r1-fix-final.log`). `git diff --check` PASS. No active testhost, no full suite/git mutation/hardware run. No engine-log keys added, no records/status/inventory/REVIEW/Claude edits.
+
+Step still may execute on the completion thread; the correction protects these shared sinks, not a single-thread event guarantee. Root cause of the historical KnockOver Abort remains UNKNOWN. Stable affected diff ready for independent review; manager owns commit/gate. CM13-04 remains paused pending explicit release.
