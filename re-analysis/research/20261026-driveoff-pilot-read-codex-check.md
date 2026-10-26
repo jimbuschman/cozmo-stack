@@ -159,3 +159,133 @@ The additional configured Activity.OnSelected output attachment question is a se
 The revised Phase2 contract's current selected-name+78 wording is correct. Add/retain the actual configured activity-entry PublicState producer and exact time/chooser/publication order. Keep objective4 attachment scoped to actual constructed activity owner/subscription/lifecycle: Sparked4's proven configured mismatch has no mutation; Socialize pre-initialization skip/log must follow the real owner, become initialized only at its actual OnSelectedInternal point, survive deselection and retire with that owner. A generic host node or global observer must not be advertised as the recovered complete specialized activity. Unknown owner readiness remains MISSING rather than fabricated success. This is a bounded objective4 recipient contract, not a new feature exclusion or all-objective implementation.
 
 Combined narrow refinement verdict: **PASS for animation-name, Socialize inactive/reselection and configured activity-entry source coverage.** The bounded engine inventory PASS stands, with these explicit required joins. PUBLIC ADAPTER POLICY HOLD, implementation/testing/production/hardware/acceptance distinctions and record-ownership obligations remain unchanged. No production/test/git/official-record changes or test execution.
+
+## Reopened joined details — prior read PASS limitation
+
+Manager identified three precise pre-wire questions during builder design: completion-union serializer for plain/default variant and string width (the getter alone does not establish bytes), actual VisionProcessingResult byteC8 producer and RobotProcessedImage payload, and exact Q17 base-config/scoring arithmetic where current code differs. The earlier whole-read statement that no necessary engine join remained unread was too broad for these details. I missed that boundary in the initial check. Source coverage for THESE units is provisional pending extractor refinement and independent primary confirmation; no guessed bytes, inputs or arithmetic are approved. Other established rows remain reusable, not a new broad audit. Build verification remains PENDING; no code/test execution or production claim by checker.
+
+D1 additionally preserves the public extension's existing query semantics, including GetTallestStack and membership; migrating native consumers means explicit native accessors rather than silently repurposing those public methods. Every behavior/native consumer must be isolated from the legacy public adapter.
+
+## Independent pre-wire refinements U/V/Q/N/DOWN — per-unit PASS
+
+The previously reopened units are now checked individually against actual instructions and the cited adopted packets; these precise answers supersede the earlier incomplete serializer/input wording. No tests, emulation or implementation success is claimed.
+
+- **U1/U2 PASS:** ctor0053FECA/CC uses actionType+2; type8 indexes literal1B at0053FEE2, branching to0053FF0E/14 Set_defaultCompleted. Setter0075C868/6A writes6. Pack0075C8D8 writes U8tag first; actual tag6 TBB target0075C940 writes no payload: plain DriveStraight wire06. Tag1 target0075C90E calls006C22DC: writes U8 length then UXTB006C2304 determines the number of bytes copied. Name length256 serializes0100;257 serializes0101 plus its first stored byte. Full Size length+2 remains separate. Animation source remains CURRENTselectedname+78, not retainedclip+90.
+- **V1–V4 PASS, material correction:** resultbyteC8 is RAWu8 imageMean, never bool. Mode8 ShouldProcess==1 at006B5124/28 leads image+step10 into ComputeMean006B5136..3A;006B5142 stores+38C and006B5146/4A sets mask100. ComputeMean006B2CDC samples x/y0,10,... with stride, signed32 sum/divideceilcounts then0..255 clamp/uxtb. Header+378 is explicit006B4E34/38; queue006B5680/86 and mailbox006B2B3A..40 transfer fivewords+byte.006549EE/00654A02/08/0A selects rawmean when modebit100, else0; modes ascend ordinals0..15. Serializer00712FF2 writes timestamp4bytes; IMPORTANT00712FFA BL0071301A writes U8count then00730D6E writes every modeU32 BEFORE returning to00712FFE/0071300C rawmean. Setter0072487A writes U16tag43. Timestamp01020304,modes1/8,meanA7 produces430004030201020100000008000000A7. The result-drain failure aggregate is a separate bool. Earlier report/checklist 'processed-image bool' is wrong and overridden here.
+- **Q1/Q2 PASS:** current native keys/defaults and GP/RB/CS packets checked.005BBC08 process0;005BBCA8 severe3;005BBCAC unlock55;005BBCAE/B6 andBE recent/maxswitch-1f. requiredUnlockId literal005BC2D4 stores+70; requiredSevereNeedsState005BC348→NeedIdFromString stores+74; optional recent source keys readasFloat→78/7C. GP3 missingflat preserves prior and empty repetition/running graphs receive(0,1,true). Actual0060A482/486 performs f32graph+score then+.1, GT selects floor; nonrunning literal3FB99999A0000000, score widenF64/addF64/narrowONCE0060A4B4/B8/BC; running has no RNG draw. Equality/unordered use native BLE/GT semantics. **Additional RNG owner confirmed:** hidden-return ABI means Robot&r2 savedr6 at0060A3F4;0060A49E passes it to Robot.GetRNG;005126B6/B8 returns Robot[0]Context's+14 RNG. System.Random or a new local RNG is unsupported. Groupdraw separately loads AnimationGroupContainer[0] at0058AA76; any asserted same-stream relation also needs the existing container attachment witness, not assumption from chooser arithmetic.
+- **N1–N8 PASS within null/missing-file boundary:** fresh loader+D0 JsonNull0051EE52/56 and adopted small-reads-2 missing/unopenable/empty reader preserves payload/type; const null-key lookup008EAF84/8C/C2 and nullSingleton008E5F2E are defined. Static constructor0067CD54..78 creates9curves; InitDecay0067CDFE/CE00 SKIPS already nonempty curves, so null reread retains EXISTING curves rather than resetting all to freshdefaults. Read0067CE88/92 clears events/globalrepetition; null decayGraphs earlyfalse0067CEEE/CF00 bypasses late globaldefault node. Init0067AED4 ignoresfalse, nullactionmap does not insert/clear, watcher0067AF34 still registers and Update0067B67E..B6A4 remains active. Fresh Emotion value/clock zero00679412/14. Trigger0067B87C miss→0067BA88 warning→0067BACC return, before penalty/mutation. Surviving separate valid events get their OWN default(0,1)00679D8C..9E, distinct from emptyglobalgraph. Empty EvaluateY00804BD6 dereference confirms the separately reached unknown-name AddToEmotion fault boundary; standing M1-034 smallest mutation skip applies there, not an invented global no-penalty default. No general malformed-JSON/fullMood API safety claim follows.
+- **DOWN PASS:** actual00619358 helper→35C/360 nullonly→362..378 append, no carried comparison. UP006192A8..B4 and seed0061943A..448 explicit rawcarry checks are asymmetric. Helper006260A8 copiesfilter,006260AC..B8 excludes referenceID only; actual worldquery root lookup0061EBFA is Robot+294, notcarry+284. Do not add a symmetric DOWN carried exclusion. Other admitted geometry/query checks remain the previously checked container contract.
+
+These are source per-unit PASSes for manager adoption, not a replacement broad whole-PASS or build verdict. Pending final stable diff/testing and operator D1 extension isolation requirements still apply. Any additional newly exposed producer is stopped and checked at that exact boundary.
+
+### Narrow chooser attachment/bonus/Feeding follow-up — PASS; audio endpoint remains open
+
+Shared RNG attachment now independently confirmed, closing the extra Q ownership question: Context004EA794/796 supplies THIS to RobotDataLoader;0051ED36/3A saves that context;0051EDB6 passes context+14 RNG into AnimationGroupContainer;0058B49E stores container+28;0058B4B8/BE passes it into AnimationGroup constructor0058A5C2 storing group[0], consumed by0058AA76/7E. Existing adopted M5 R3 packet gives the same chain. It is the same context RNG returned to the chooser by Robot.GetRNG005126B6/B8, distinct from IKeyFrame.sRNG. Bind the canonical shared engine ContextRandom stream, preserving draw interleaving.
+
+**CH2 PASS, distinct graph defaults:** ScoringChooser's bonus graph+28 receives(0,0,true) at0060A134..13C if empty. This is NOT the behavior's running graph+F4 default(0,1,true) in GP3. The earlier Q verdict applies to GP3 only; any wording/test conflating these graphs is incorrect. Actual packet CH2 and instructions both confirm zero chooser bonus.
+
+**Feeding universal-first PASS:** ctor005AA7A4..B4 sends its universalChooser JSON to the actual chooser factory with the robot;005AA7C2 stores the result in+B8. Getter005ABDE8 loads it,005ABE0C invokes it BEFORE stage/map selection; nonnull005ABE24 branches to005ABE96 return. Only null falls into GetBestBehaviorFromMap005ABE2A. Actual shipped Feeding JSON is StrictPriority with DriveOffCharger first. This closes the bounded DriveOff selection join, not the rest of Feeding's stage/controller feature.
+
+Separate audio recipient endpoint remains OPEN pending the extractor's narrow does-it-matter answer: A/B request emission alone and test delegates do not prove robot/API/backend output. The manager found no current production BehaviorAudioRecipient writer; no complete whole-audio path is certified here. Any source-defined robot+58 virtual recipient that affects outputs1–4 must be bound or precisely recorded, never silently replaced by an observer delegate.
+
+D1 additional approved host projection boundary: any public OnConfigSeen.Seen/legacy metadata is diagnostic only AFTER actual native count/time admission; it must not gate eligibility, null-abort source execution or select animation. Public host queries including tallest/membership retain their extension semantics; every native/behavior reader uses explicit native accessors. Initial source counters/stamps require checked construction values rather than guessed zero.
+
+### BehaviorsOnly, source counter initialization and conditional candidate proof — PASS
+
+Independently checked ctor005A7190..98's vtable install and actual cell010252F8=005A7373: Update005A7372/74 is MOVS r0,0/BX LR. MeetCozmo/PutDownDispatch common BehaviorsOnly Update is therefore a checked source no-op, not an absent-delegate assumption. Feeding's real preceding Update remains its separately inventoried M15-061 effects; universal-first getter does not waive that caller.
+
+OnConfigSeen initialization is source-settled:005DB0F6 zero;tree120/124 zero and11C sentinel005DB0FC..106; memclr target128,length18hex at005DB0F8/10A/112/114 covers138/13C, initializing BOTH previous evaluation and growth stamp to+0f.005DB1A2 sets sb0; configured-type emplace005DB1C8 followed by005DB1CC/CE writes node+14 count0, including an existing duplicate key. No guessed -1 or first-update shortcut is permitted. Combined with previously checked005DB2D4 count/time logic this gives deterministic initial behavior inputs.
+
+Conditional competitor claim PASS with explicit state bound: actual RV09/10/15/51/58/59 ZTV addresses01026E40/01026F80/01027674/0102A474/0102B19C/0102B458, addresspoint+8+slot24 all store0059EC13;0059EC12/14 is MOV0/BX. Adopted RB4 rejects these while platform34A=true, PROVIDED each competitor is not already running; CS1 skips zero before a nonrunning RNG draw. Therefore fresh/nonrunning DriveOff alone consumes one context draw, running DriveOff consumes none. Running-bypass RB1 means arbitrary already-running competitors cannot be silently ignored. Actual previous-activity Stop/readiness must establish the bound in production tests; flatScore1000 is not a substitute for RNG-count evidence.
+
+Shared group/chooser RNG attachment was already checked and remains PASS. Audio facade/request boundary remains explicitly OPEN pending downstream source disposition; no testdelegate or object-scoped SetSwitch alone proves complete robot/audio/API output.
+
+### DriveOff-only host animation-library admission gate — source PASS
+
+Current SteppedBehavior.IsRunnable imposes Animations.Library!=null before IsRunnableBase/Internal. The adopted complete RB1–RB5 base-admission rows and DriveOff005C0B10 platform predicate contain no such gate. A DriveOff-only override retaining the actual base/internal checks is supported; no unrelated global behavior change follows. This does not establish streamer/resource readiness or authorize fabricated animation success. Verification must distinguish null-library admission from a real configured animation lifecycle fixture using the actual shipped library and CA/CB handlers, retaining visible downstream missing-resource/failure behavior.
+
+The latest IActivity getter refinement also limits earlier candidate reasoning: cache+2C is interlude result, not normal winner; no-interlude activities re-evaluate the chooser each tick. Consequently platformtrue/nonrunning-competitor rejection does not cover the final platformfalse tick. Derived eligibility/scoring/RNG of newly admitted competitors must have source-covered inputs wherever reached; score1000 alone does not justify omitting their evaluation or draws. This exact additional scope boundary was sent to the manager, not silently certified by the earlier conditional PASS.
+
+Audio A1–A7 report now explicitly identifies a real producer-to-sink STOP: facade/event requests do not close bank/controller readiness, object-scoped switch store/query/eligible observer and engine audio-tail drain. Fresh no-music-input state differs from an already active music schedule. This checker has not issued full audio control/consumer PASS from the report alone; source-preserved object1 SetSwitch cannot be rerouted to object7, inert dict or directPCM. No new audio/DSP audit or implementation claim is made here.
+
+
+## Audio A1–A7 independent bounded primary check
+
+Current record quotes before the resulting scope claims:
+
+```json
+{
+  "id": "M6-006",
+  "title": "Control path: queued PostEvent, ExecuteEvent, EnqueueOrExecute (frames + remainder; PlayAndContinue one frame early), drain order, Play/Stop/Seek execute, switch resolution",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "PostEvent 0x009A6704 / core 0x9A0EF8; pump 0x9AE0B0; ExecuteEvent 0x9AA3DC",
+    "EnqueueOrExecute 0x9AA0FC; drain 0x9A9F88; Perform 0x9AF8A8",
+    "Play 0xA62D38 / 0xA62A1C; Stop 0xA663C8; Seek 0xA645C8",
+    "Switch PlayInternal 0xA2C730"
+  ]
+}
+```
+
+```json
+{
+  "id": "M6-024",
+  "title": "Bank and scene loading call sites: the CozmoAudioController six-bank list and InitScene, LoadAudioScene/LoadSoundbank, AddZipFiles",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "CozmoAudioController ctor 0x00592BB0; InitializeAudioEngine 0x008D1D1E; RegisterAudioScene 0x005935E2; LoadAudioScene 0x005935EA; banks Init.bnk/Music.bnk/UI.bnk/SFX.bnk/Cozmo.bnk/Dev_Debug.bnk and scene InitScene",
+    "LoadAudioScene 0x008D2EE8 -> LoadSoundbank 0x008D2FE4; AddZipFiles 0x008D1E3E feeds the OBB archives"
+  ]
+}
+```
+
+```json
+{
+  "id": "M6-022",
+  "title": "The live voice and bus engine: the 0xA57FF8 wrapper and 0xA44D4C render body, the voice pass, the bus pass, idle removal, the per-voice DSP chain, the four Perform group members, the PBI flush, the 0x108DAE8 output-device state and its three gate bytes, and the JNI audio-route poll",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "wrapper 0xA57FF8 -> 0xA57D64 + 0xA44D4C; render body 0xA44D4C pre-loop over the output-device list 0x108DB04 (0xA44D5C..0xA44DA0); throttle 0x108DA9C/0x108D870+0x4c (0xA44DAC..0xA44DD4)",
+    "voice pass 0xA44948 (pre-pass 0x9D3CC0/0xA43D24/0xA39564; voice list base 0x108DF54, head +0x14, next +0xD0, state +0xDC); bus pass 0xA44C18; idle removal 0xA43F64",
+    "voice mix dispatcher 0xA44630; params fill 0xA54F1C; source execute 0xA548C0; pitch 0xA53134; resampler execute 0xA52D4C; mix-in 0xA4FBEC; mixer 0xA45E9C",
+    "callee bodies 0xA4C60C -> 0xA766B8 (0xA766F0 LPF / 0xA77480 HPF), 0xA56E00 -> 0xA56A7C, 0xA03E8C, 0xA05574, 0xA56650, 0xA4F9E0, 0x9E9E78, 0x9E9F08, 0xA55750, 0xA4AF50, 0x9D3CC0",
+    "group members 0xA36AC4, 0x9FF308, 0x9D3C98, 0x9E6D2C; Perform call order 0x9AFA4C..0x9AFAA8; PBI flush 0xA38420",
+    "output-device state struct 0x108DAE8 (gate1 0x108DAF0 at +8, 0x108DAFC at +0x14, list 0x108DB04 at +0x1C, gate2 0x108DB08 at +0x20, 0x108DB0C at +0x24, 0x108DB18 at +0x30); gate3 0x1052430",
+    "gate writers: gate1 0x9EB090/0x9EBBA8/0x9EC00C/0x9EC1B4; gate2 0x9EAE18/0x9EC47C/0x9EC4A0; gate3 0x9EAE24/0x9EBBAC/0x9EC488/0x9EC4A8; module init 0x9EADE8; term 0x9EAF90; device advance 0x9EBA54; SetOutputDevice 0x9EC418 (call site 0x9AE3B0); frame count 0x9D4778 -> 0x9EC38C -> 0x9EBE6C",
+    "JNI audio-route poll 0xA57D64..0xA5803C (GetEnv/AttachCurrentThread, FindClass, NewStringUTF, GetMethodID, CallObjectMethodV 0x593E58, CallBooleanMethodV 0xA58008, result 0x108DF98, notify 0x9EA66C)",
+    "C12 voice callees (report 20260928-B-M6b-voice-callees.md): device node vt+0x2c=0x9E935C / vt+0x30=0x9E9420, node vtable 0x103B498 (0xA44D4C pre-loop); 0xA43D24 ducking/volume pre-pass (0xA43D24..0xA43EFC; 0xA55750 -> bus +0x88/+0x8C -> 0xA4AF50 -> 0xA437E0 -> 0xA4B4B0; container 0x108DF50, bus count 0x108DF54, voice count 0x108DF5C, voice head 0x108DF64); 0xA39564 node cleanup (0xA39564..0xA395FC); 0xA54F1C full state machine (0xA54F1C..0xA5574C) with 0xA4B4B0 and 0xA4BC58 (0xA4BC58..0xA4C000); 0xA44630 full order (0xA44630..0xA44938); 0xA548C0 and bus vt+0x58 = 0x9C07C4 (0x103ACE0); 0xA52D4C / 0xA5268C / 0xA4721C / 0xA47224 (0xA52D4C..0xA53134); 0xA55D04 / 0xA55A84 / 0xA54A30 and the state-0x11 tail (0xA44A94..0xA44BFC); 0xA01BD8 (0xA01BD8..0xA01CA0); 0x9E84C8 (0x9E84C8..0x9E859C)",
+    "C12 bus-output/group callees (report 20260928-B-M6b-bus-group-callees.md): 0xA4FEF8 branch/mask and non-FX path 0xA50120 (0xA4FEF8..0xA50174, 0xA50EA4..0xA50F04); 0xA4F754 SetInsertFx and 0xA4E974 per-slot create/init/reset (0xA4F754..0xA4F9AB, 0xA4E974..0xA4ECD4) and 0xA4E7CC slot drop; 0xA38420 PBI flush and 0x9D3470 (0xA38420..0xA385D7), PBI vtable 0x103B768 (+0x10=0xA029DC, +4=0x009FF54C), ContinuousPBI 0x103D3B0 (+0x10=0xA6ACC0), queue 0xA38600/0xA01800; 0xA3587C (0xA3587C..0xA358B0); 0x9FDD90 (0x9FDD90..0x9FDE48); 0x9D3644/0x9D3864/0xA01800/0xA41854/0xA431A8/0xA54480 (0x9D3644..0x9D3830, 0x9D3864..0x9D3C58); 0x9E6D2C purge (0x9E6D2C..0x9E6E10, 0x9E2AE4..0x9E2BC8, 0x9E21FC..0x9E24AC, 0x9E2510..0x9E2550, 0x9D8A24..0x9D8F54)",
+    "C12 bus-output tail (report 20260928-B-M6b-bus-metering.md): 0xA4FEF8 tail 0xA4FF40..0xA50FD0 is the bus level-analysis/metering stage (min/max peak 0xA50D48, RMS 0xA50C84, filtered peak 0xA501B0, 0xA52164 at 0xA500B0; flag byte at [out+0x18]+0x20; buffer fields +0/+4/+0xc/+0xe/+0x10/+0x14/+0x18); 0xA4D994 bus gain/param update (0xA4D994..0xA4DD43) with 0xA25FF8; 0x9C806C callback dispatch (0x9C806C..0x9C8104); 0xA52164 biquad+loudness (0xA52164..0xA5266B)",
+    "C12 source classes (report 20260928-B-M6b-source-classes.md): factory 0xA562B8 dispatch on (mode, plugin>>16); shipped plugin ids 0x00040001 Vorbis / 0x00020001 ADPCM; Vorbis via registered-plugin 0x9CC3EC (vtables 0x103E0B8 streamed / 0x103E138 in-memory); real render slots 0xA73D34 (ADPCM t1) / 0xA72554 (ADPCM t3) / 0xAB0448 (Vorbis streamed) / 0xAB1550 (Vorbis in-memory); vt+0x4C = 0xA72B14 (bit6 of [[source+0xC]+0x1BE]); [source+0xC] is the PBI, not the bus; source-class field layouts",
+    "C12 modulator evaluator (report 20260928-B-M6b-modulator-evaluator.md): 0x9E2BD0 (0x9E2BD0..0x9E52F3) per-voice LFO (five shapes 0..4) + transition evaluator and pool allocator; type-0 records 0x4C (list [arg+0x20]) and type-1 records 0x30 (list [arg+0x14]); 0x9E52F8 (0x9E52F8..0x9E5E8B) five-segment ramp"
+  ]
+}
+```
+
+```json
+{
+  "id": "M9-004",
+  "title": "Music switch containers, decision trees, meters and MIDI target",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "re-analysis/inventory/M6-wwise-bank.md",
+    "Cozmo.bnk objects 914766641, 139286641, 602865028 and MIDI target 110896138"
+  ]
+}
+```
+
+**Per-row control-scoped read PASS; explicit STOP beyond the fresh/no-active-voice boundary.** This is source inventory confirmation, not a claim that the current C# path or a partial control build completes general audio. No code/audio tests were authorized or run by this checker.
+
+- **A1 PASS:** actual AddRobot004ED264..274 conditionally registers AudioEngineInput with context mux then publishes its handler to Robot+58 client even if muxnull.0058FB08 stores client1C;00590BEC copies the native message before signal dispatch; adopted SH1–8/AS6 establish synchronous native tag0..5 subscriptions/delivery and ownership. Input owns handler; client borrows it. App-envelope queued host Post is a different route and cannot replace this native synchronous input.
+- **A2 PASS:** typed dispatcher00590944..99E and adopted UC30–35/UE2–7 establish event/state/switch/parameter field forwarding. Actual controller008D2446/52 and helper008D9108 enabled gates precede native0099FE1C. The latter publishes tag8/object4/groupC/value10, releases producer accounting only after fields, returns1. Missing handler/mux/disabled controller/helper remain distinct defined outcomes. Callbackempty event has no invented callback or audible-success event. Native event and direct switch delivery must share source command order and readiness.
+- **A3 PASS:** independently hashed full1071008-byte Music.bnk:424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c. Exact21-byte payloads at1069745 and1066518 match the extractor. Both are1901 SetSwitch, target0/isbus0, no property/range entries, group8379F505 and values817CDD53/27F8B66A. They are not direct Play/Stop or object7. Actual ARM00A658BC..E4 copies group/value words. GetDelay00A61274 reads defaulttable+3C; missing authored delay reaches that default, absent range does not draw RNG. ARM initializer004DE020/03C initializes3C=0;00A6131C/20 also bypasses RNG for zero range span. This is initial default evidence, not an absence-of-all-later-writers claim.
+- **A4 PASS:** actual ARM00A65940..9C captures actiongroup/value and pending requestobject, enters notification nesting, gets group, calls00A32ED0 then leaves nesting. Actual tag8 consumer009AEFC4..009AF034 retains registered object before the same nested group/store path; missing object consumes without a switch write.00A3321C stores incoming value BEFORE notification gating/live observer traversal00A33220..B8. The setter itself does not suppress equal values. Scoped query/state and eligible notifications are real production state, not an unused dictionary. Adopted QC/SX packets retain deferred nesting order and scoped lookup/storage branches; internal containers may differ only with these outputs preserved.
+- **A5 PASS as a real consumer/STOP witness:** source query00A2BD58 dispatches ordinary switch scopes to00A347A8, with state-manager type1 separate. Changed observer0099D3C8 stores new/old state, rebuilds, then tails009994F0. Its actual schedule48 and active54 gates return only when inactive; otherwise it enters position/mode/scheduler processing. No-op notifications or a dictionary disconnected from actual selection are insufficient when a live observer exists. M9-004/M6 execution remains a real reachable dependency for that state, not phone-only/no-effect or unavailable binary evidence.
+- **A6 PASS ONLY for the explicit fresh state:** actual MusicConductor008D74BC clears playing4/pending18/deadline10;008D751E/20 skips music update while pending0. Adopted SL1/SL2/SJ487E establishes empty InitScene event vector, six bank names and object registration1..10. The two authored SetSwitch actions do not start a voice in a fresh context with no external music-state/Play input. This is not an exclusion of supported active-music input or a universal assertion that drive-off can never affect music. Existing active music must receive real switch notifications; future Play/MusicState can consume the stored scope.
+- **A7 PASS:** actual engine004ED6BE..C4 reaches the mux/controller audio tail.008D2928 runs conductor first, helper render next, callback flush last.008D88C0 gates helper enabled then explicitly passes1 through008D88C4/C6 to RenderAudio. Adopted UC20 establishes that rendering may signal a worker; no invented fixed completion delay or immediate-render success follows. Enqueueing into a facade is not execution of queued switch state. Host mechanisms can differ, but processing phase/order/readiness cannot be arbitrary or absent.
+
+### Smallest real prerequisite and stop condition
+
+The useful bounded control implementation is one canonical per-engine audio owner, with actual construction/readiness from source scene/bank and object registration; real native client-handler/input/mux/controller gates; shared event/direct-switch FIFO;1901 reader/executor preserving playing-ID/default-delay behavior; one registered-object scoped switch store WITH its real selected-state query and eligible observer delivery; and actual engine audio-tail drain. It must retain field/object identities and A-before-B order. An isolated BehaviorAudioRecipient delegate, test callback, separate per-client owner, never-read dictionary, object7 reuse or 'posted=audible' result is not that prerequisite. Tests must reach this constructed production owner and consume/query state after the source drain; a supplied callback may observe it, not stand in for it.
+
+STOP before claiming complete audio for an admitted active schedule/voice: the real notification enters music scheduling, live control/render and output obligations in current M9-004/M6-006/M6-022. The current production bank/controller readiness owner and tail binding also cannot be replaced with assumed enabled defaults. Source exists; this is an implementation/scoping boundary, not BLOCKED_EXTERNAL and not a supported-feature exclusion. A fresh/no-active-voice control slice is useful only with its input/state boundary explicit and with later/active consumers still visibly unresolved. The manager must scope those necessary joins before a whole supported-pilot audio claim; the original whole-read PASS never authorizes silently cutting them off. No DSP audit, invented equivalence threshold, new audio policy, status upgrade or hardware claim was made here.
