@@ -53,3 +53,48 @@ Pending reconciliation. Official manifest frozen; no proposed status changes yet
 - Accepted Agent B's bounded native transfer contract (004FD508/5E2,004FDF18..7A,0050241C..28; FindContentIf slot0103097C and polygon constructor GOT bindings). It corroborates A's finding. Existing checked Q1-Q6 and payload rows are reused, not commissioned again.
 - Released CM13-01 native memory-map obstacle import. Scope: actual FindIf + planner source transfer, preserving cache/padding/collision algorithm. Required production dispatch regression with contact-created charger plus honest unit query/payload tests. Other unresolved M13-003 robot-quad arithmetic and broad producer/lifetime/configuration gaps stay explicit.
 - Builder will use separate branch/worktree and may not commit/push; manager will review before integration and run final suite once on committed reviewed code.
+
+## Builder delegation and evidence baseline
+
+- Committed baseline/job contract in 4d02e793 (documentation only). Created isolated builder worktree `.scratch/worktrees/codex-m13-map-import`, branch codex/m13-map-import from this exact commit; no unrelated edits transferred.
+- Agent `/root/map_import_builder` requested gpt-6.1-sol medium, fresh context, actual config unobservable. Assigned CM13-01 only. No builder commits/push/full-suite; focused tests/report required. Agent B will independently verify after implementation.
+- Agent A assigned read-only triage of existing drive-off objective-callback evidence only, to decide whether any second job is justified. No implementation job manufactured.
+- Manager inspected run3 raw events as well as README: M8-015 host action producer, legacy DriveStraight diagnostic, M13-013 AppendLine branch, configuration owner early-ingress gap and public-state input joins remain visible. B-M11-22 fixes the run's image-clock MISSING after the recorded hardware commit. Straight drive run3 does not prove native lattice type3 reader fidelity.
+- Correction to inherited baseline log: current trial QUEUE/STATUS at16173227 describe B-M11-22 complete/PASS, not open. Prior inherited note calling those views open is inaccurate. No job was taken from them.
+- No additional tests run since baseline fidelity PASS. Full suite will run once after independent code review, on committed code via scripts/test-full.sh, per repository builder instructions.
+
+## Isolated runtime preparation
+
+- New builder worktree initially lacked ignored proprietary evidence/assets. Added local junctions for resources, decomp and obb to existing original checkout, plus obb for manager worktree; no proprietary data tracked/uploaded, no original files modified. Junction creation was denied in sandbox and succeeded after escalation.
+- Index caveat: original checkout has no decomp index; the stopped manager had copied an index and binary into manager worktree only. Builders/reviewers were directed to the manager worktree's absolute known.py for preflight (identical frozen evidence), and can read native binary through resources. No behavior was inferred from a missing index.
+- Agent A's first followup on objective delivery failed before findings because selected model was at capacity; retried same requested model/effort, no unsupported model-selection claim.
+
+## Candidate CM13-02 evidence decision
+
+- Agent A found objective emitter already recovered in adopted RC3 (20261007-q17-checked-additions.md); independently rechecked005BE228..308/005BE3A8..3D6. Narrow new checks establish E2G0x8B/four-byte LE serializer007285FE/0071BEAE and app-then-local rvalue006625B0. Existing stack delivery machinery is suitable.
+- Accepted a PREPARED second job for objective producer/drive-off success only. No job released while first builder active. No invented local consumer or mood owner: M15-059 objective recipient and unattached mood remain visible gaps.
+- Agent A explicitly distinguishes no CURRENT stack0x8B subscriber from no native effect; manager accepts this boundary. Existing M1-056/M5-056 support delivery/subscription machinery but do not settle M13-017.
+- Preliminary CM13-01 reviewer reports no source mismatch, valid real native planner dispatch test with a synthetic prior obstacle snapshot. Requested a source-map cube admission/height rejection regression and honest reach label before completion. Top stale stand-in comment queued for correction.
+- Git shell sandbox launch failed before executing command-v probes; this was not a test run. Final test-full will require normal shell sandbox escalation if the launch restriction remains.
+
+## Test accounting checkpoint
+
+- CM13-01 builder reports logkey15/15 EXACT, ABSENT0. Initial focused compile failed on namespace qualification and was corrected before any test pass claim. Initial parallel restore failed; single-process cached restore succeeded with an audit-network warning. Focused behavioral test outcome remains pending, not counted as passed.
+- Added source-map admission regression at normal22mm/high200mm cube poses, accurately labelled unit with actual AddLocatedObject/native height gate/import. Production charger test explicitly labels synthetic prior planner snapshot; its actual dispatch/query/import are not replaced.
+- Captured current M7-019/M15-059/M1-056/M5-056 records verbatim in CM13-02-records.md before relying on objective/delivery path. Official manifest unchanged.
+
+## CM13-01 focused execution
+
+- Builder corrected focused run PASS25/25, zero skipped: new native import/query/admission/dispatch16 plus retained timestamp gate9. Local IPC testhost ran successfully after escalation. Earlier90s testhost connection abort executed no assertions and is not counted as a code failure/pass.
+- Builder now running old-loop-only negative controls for real charger dispatch, cube height admission and stored-polygon source; corrected bytes restored in finally before any integration. No full-suite pass claimed yet.
+
+## CM13-01 existing-regression correction
+
+- Broader focused run exposed NavigationTests.DriveToObjectWithThePlannerTreatsOtherCubesAsObstaclesButNotTheTarget: old assertion count0 requires removed target-ID filtering. Adopted native predicate00502424 and consumption loop004FDF48..7A have no such filter. Manager approved narrow name/count correction to include admitted target count1, retaining action success and arrival assertions; reviewer will independently check. This is a source-contradicted test oracle, not permission to weaken unrelated tests. Final broader result pending.
+
+## CM13-01 integration / CM13-02 release
+
+- Accepted CM13-01 after independent native/diff review PASS; report20261026-cm13-01-codex-check.md. Reviewer verified binary SHA02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1, call bindings/ordering/identity behavior and real dispatch reach.
+- Builder final focused98/98 PASS, zero skipped39s. Prior broader run FAIL1/PASS96 was solely source-contradicted target-ID test; narrow fix independently accepted. Negative old-loop control3FAIL/1PASS (charger/high cube/stored polygon fail, normal cube control passes), corrected bytes restored. Reviewer independently ran dispatch+timestamp10/10 and query6/6, zero skipped. All detailed commands/results in builder/review reports.
+- Manager committed verified work on builder branch9d52255b, fast-forwarded codex-m13-manager to same commit. No main merge/push. Code-verified offline production-path source blocker removed; no hardware verification or whole-record settlement. Final combined suite pending.
+- Released CM13-02 objective emitter job from Agent A's adopted RC3 plus narrow native delivery findings. One active builder reused only after CM13-01 stopped/reviewed. Same separate worktree will fast-forward trial job contract before starting; requested Sol medium remains unchanged/unobservable.
