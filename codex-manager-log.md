@@ -153,3 +153,9 @@ Pending reconciliation. Official manifest frozen; no proposed status changes yet
 - Ending manifest counts identical to starting baseline: EXACT239, EQUIVALENT6, POLICY68, HARDWARE14, BLOCKED2, IMPLEMENTATION358, RECOVERABLE23=710. Entire JSON unchanged; accepted M1-M5 only. Proposed reconciliation separate, none approved/applied. No fidelity approval, Claude-file edit, main merge/push or physical hardware action.
 - Trial assessment: duplicate manager setup cost one operator clarification; thereafter autonomous one-builder delegation, evidence reuse and independent checks reduced orchestration/duplicate reading. It did not eliminate rework or make Codex checks acceptance. Next trial should designate one owning chat/worktree, preflight assets/index/local testhost and explicitly inspect asynchronous fixture lifetime. Recommend another bounded batch after Claude reviews current commits, prioritizing production planner ownership/origin recovery; operator decides hardware follow-up.
 - Publication pending below; full handoff at re-analysis/jobs/trial-m13/HANDOFF.md. All workers stopped at their completed/reviewed tasks; no queued background work remains.
+
+## Publication and closeout
+
+- Normal git push origin codex-m13-manager succeeded, publishing reviewed/tested package through b5a49a32. Hook remained enabled; no --no-verify. Only trial branch advanced, not main.
+- Final post-documentation fidelity check PASS710 and diff check clean after EOF formatting cleanup; no source/test/tool/manifest/Claude-file difference from the tested content. Original checkout remains clean at2dd741c70ff95c428b9779d7d4e3de69e891862c.
+- This closeout entry is documentation only; source/test content remains exactly the complete passing gate36817201. Trial ready for external Claude review, not subsystem acceptance. No further agent work or robot commands scheduled.
