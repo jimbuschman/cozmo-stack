@@ -633,7 +633,8 @@ public class R2FloorPlacementTests : IDisposable
         using var signals=SignalTestContext.Install();
         using var cancel=new CancellationTokenSource();
         using var rig=new Rig();
-        rig.M.ClockSec=()=>100.0; // negative control restores the old coupled transport clock on this line only
+        double heldActionSec=rig.M.ClockSec();
+        Assert.Equal(rig.Clock.NowMs/1000.0,heldActionSec);
         Cube(rig,7,InOrigin(rig,At(100,0,22)));
         rig.M.Docking.Carrying.SetCarrying(7);
         using var manager=new BehaviorManager(Ctx(rig));
@@ -660,6 +661,7 @@ public class R2FloorPlacementTests : IDisposable
             SignalTestContext.Run(task);
             Assert.Equal(ActionResult.Success,task.Result);Assert.True(action.StatusLatched);Assert.Equal(1,verify.Calls);
             Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated,"placeOnGroundAction"));
+            Assert.Equal(heldActionSec,rig.M.ClockSec());
         }
         finally
         {

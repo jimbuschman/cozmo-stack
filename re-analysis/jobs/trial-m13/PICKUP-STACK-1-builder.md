@@ -54,3 +54,22 @@ Finite subtree is built; whole PICKUP behavior is NOT complete. Existing native 
 Final post-test changes are comments/fidelity ownership labels only: native M13-026 versus public M11-066, accurate k25/write/arithmetic and adapter/native-runner descriptions. No behavioral changes after receiver-boundary-final.
 
 Independent final bounded BUILD PASS: B ran the complete A OR B affected filter with explicit dotnet --no-build --no-restore --nologo -v:q, EXIT0 466P/0F/0skip26s; independent-regression-final.{log,trx}. All8 frozen raw-file hash rows matched before/after (69b01b58...82aa artifact). No source edits/rebuild by reviewer, no timeouts/errors/abort. Scope limits above unchanged; no further builder tests.
+
+## N5 shared Rig clock correction (2026-10-27)
+
+New isolated codex/pickup-stack-n5-clock atb94c1c3dc5a7b5b34e0d9a80835a9b2a592a927a; A+B independent host-read PASS before code, REVIEW N5 and job N5 section read. Actual model/effort telemetry unobservable. ONLY ManipRig.cs and existing R2 delayed-poll method changed: atomic Volatile action-clock property snapshots initial ManualClock.NowMs/1000 ONCE (currently1sec); standalone M uses that independent held value. Pump/HoldClock/transport/animations/engine Timer/raw state/native500ms remain unchanged. Existing explicit M.ClockSec overrides still work; private WB/host configuration follow their existing delegate. No production code/API/policy changed.
+
+Delayed-poll removes its redundant100 override and now grades the shared default. All original assertions remain, including >30s transport advance, pending/lock state, actual high→latched→low, one verify, Success and lock removal. Initial snapshot equality is checked; held-clock equality comes AFTER the old behavioral assertions. All R2 text outside this method compared equal to HEAD after LF normalization, including100/129.9/130 and binary32 deadline cases. Diffcheck EXIT0.
+
+Explicit C:/Program Files/dotnet/dotnet.exe, real Python313/dotnet PATH and UTF8. Artifacts `.scratch/pickup-stack-n5/`. Test project unchanged. Test rebuild template: `dotnet test <project> --no-restore --nologo -v:q -clp:ErrorsOnly --filter '<filter>' --logger 'trx;LogFileName=<stem>.trx' --results-directory .scratch/pickup-stack-n5`.
+
+| Stem | Exact filter / command distinction | Actual result |
+| --- | --- | --- |
+| focused-1 | ManipulationTests OR R2FloorPlacementTests OR NavigationTests OR M12RVisBuildTests OR M12RFix2StreamATests OR PickupPyramidPilotTests OR PickupStackNativeVisionTests (FullyQualifiedName~ each) | EXIT1 NETSDK1004 missing new-worktree project.assets.json; no tests executed |
+| restore-1 | `dotnet restore <project> --source C:/Users/JimBu/.nuget/packages --ignore-failed-sources --nologo -v:q` | EXIT0 local cache only |
+| focused-2 | same focused-1 filter/rebuild | EXIT0 287P/0F/0skip27s |
+| old-coupled-control | ONLY FullyQualifiedName~R2FloorPlacementTests.M15_022_ADelayedPollDoesNotSpendTheControlledActionClockWhileTransportAdvances; restore ONLY old constructor Clock.NowMs/1000 delegate | EXIT1 EXPECTED0P/1F/0skip377ms. Original action assertion failed: "The resumed status poll must latch before completion; result=Timeout". Added held-property equality was not reached. Exact candidate bytes restored finally, comparison TRUE. |
+| corrected-final | FullyQualifiedName~R2FloorPlacementTests OR FullyQualifiedName~ManipulationTests.PlaceOnGroundNeedsACarriedObjectAndReleasesIt; rebuild after restored control | EXIT0 37P/0F/0skip4s |
+
+Frozen2 test-file raw hashes `.scratch/pickup-stack-n5/source-hashes.txt`, LF UTF8 artifact SHA25635cb33b83ed6b8be07b252bb0f28c8ff7fa2d49e133fff2b100936eedfe9cdca. No skipped/assertion-relaxed tests, sleeps or timeout increases. No active testhost; frozen for independent affected BUILD check. No builder full gate/commit/push; manager owns two consecutive full gates after integration. N5 is host scheduling only, no engine fidelity/whole pickup/hardware/official status claim.
+Independent N5 bounded BUILD PASS: B ran the exact focused-1 OR filter with explicit dotnet --no-build --no-restore --nologo -v:q and logger independent-n5-final.trx, results-directory .scratch/pickup-stack-n5; EXIT0 287P/0F/0skip24s. Artifacts independent-n5-final.{log,trx}. Both frozen raw file hashes matched before/after; R2 outside the delayed-poll method remained LF-identical. Reviewer made no source edits/rebuild. No further builder tests.
