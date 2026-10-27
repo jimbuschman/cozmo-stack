@@ -1,0 +1,3 @@
+# PICKUP-STACK-1 — independent read check
+
+**Bounded READ PASS**, acceptance_blockers, different from extractor research_reconciliation. Personally known-preflighted then checked PanTilt/retirement bodies549C48..D60,569460..950E,54D0A4..D6,54D18C..1FC and final input/math delta54A930..AC18,518344..620,513358..412,510FFC..1066,54B428..564. P1 previously checked Visual/Wait body retained. Required corrections are explicit in the linked read contract; especially Radians operators, real owner/calibration and k25 output write BEFORE result1. No whole behavior/record/build acceptance, tests or code edits. Actual model/effort telemetry unavailable.
