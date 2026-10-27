@@ -189,7 +189,7 @@ internal sealed class BackupFiles(CozmoEngine engine)
     internal static void ClearDefaultsForTest() => Defaults.Clear();
     internal static uint[] CurrentDefaults()=>Defaults.ToArray();
     internal bool ProgressionOverridesNeedRecovery;
-    internal void InitProgressionDefaults(){ProgressionOverridesNeedRecovery=false;GetDefaultUnlocks(true);}
+    internal bool InitProgressionDefaults(){ProgressionOverridesNeedRecovery=false;GetDefaultUnlocks(true);return !ProgressionOverridesNeedRecovery;}
     private IReadOnlyList<uint> GetDefaultUnlocks(bool forceResourceRead=false)
     {
         if (Defaults.Count != 0 && !forceResourceRead) return Defaults.ToArray();
@@ -242,7 +242,9 @@ internal sealed class BackupFiles(CozmoEngine engine)
         try
         {
             var value=Json.Member(root,"freeplayOverrides");
-            ProgressionOverridesNeedRecovery=value.Kind!=FirmwareJsonKind.Array||value.Elements.Count>0;
+            ProgressionOverridesNeedRecovery=value.Kind==FirmwareJsonKind.Array&&value.Elements.Count>0;
+            if(value.Kind!=FirmwareJsonKind.Array)
+            {engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.Init.InvalidFreeplayOverrides","freeplayOverrides is not an array; empty override state retained");EngineErrorState.StoreAndMaybeBreak();}
         }
         catch(JsonLogicError){Skip("M15-034","0x0064B8D4 / JsonCpp operator[]","Progression Init overrides");ProgressionOverridesNeedRecovery=true;}
     }

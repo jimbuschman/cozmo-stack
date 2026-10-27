@@ -12,10 +12,13 @@ public sealed record DefaultUnlocksReport(IReadOnlyList<uint> UnlockIds);
 internal sealed class ProgressionUnlockOwner(EngineRobot robot)
 {
     internal readonly SortedSet<uint> Unlocked=new();
+    internal bool OverridesKnownEmpty {get;private set;}=true; //0064B86E ctor empty tree, before any NV response.
+    internal bool TryIsUnlocked(uint id,out bool unlocked)
+    {unlocked=false;if(!OverridesKnownEmpty)return false;unlocked=Unlocked.Contains(id);return true;}
     internal void Init()
     {
-        robot.Engine.BackupFiles.InitProgressionDefaults();
-        if(robot.Engine.BackupFiles.ProgressionOverridesNeedRecovery)
+        OverridesKnownEmpty=robot.Engine.BackupFiles.InitProgressionDefaults();
+        if(!OverridesKnownEmpty)
         {SteppedBehavior.ReportMissing("M15-034 nonempty/malformed freeplayOverrides Init branch 0x0064B928..0x0064B9F8 is unread; remaining Init unit skipped");return;}
         if(robot.Engine.NvStorage!.Read(0x182000,ReadSink)==0)
             robot.Engine.EmitSourceLog(EngineLogLevel.Info,"UnlockComponent","ReadCurrentUnlocksToRobot","Read failed");
@@ -68,7 +71,7 @@ internal sealed class ProgressionUnlockOwner(EngineRobot robot)
     }
     internal void Retire()
     {
-        SteppedBehavior.ReportMissing("M15-027/M15-034 progression scoped vector+1C and tree+10 concrete recipients remain absent at 0x005111BE..0x005111EE; current unlock tree cleared in checked order, global defaults retained");Unlocked.Clear();
+        SteppedBehavior.ReportMissing("M15-027/M15-034 progression scoped vector+1C and tree+10 concrete recipients remain absent at 0x005111BE..0x005111EE; current unlock tree cleared in checked order, global defaults retained");Unlocked.Clear();OverridesKnownEmpty=false;
     }
 }
 

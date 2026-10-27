@@ -1174,6 +1174,8 @@ public class M12RVisBuildTests : IDisposable
         Assert.Equal(5, b[17]); Assert.Equal(0, b[20]);
         using var signals_rig2 = SignalTestContext.Install();
         using var rig2 = new Rig();
+        rig2.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig2.OnDockResult=()=>rig2.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
         rig2.Cube = ManipulationTests.CubeAt(150, 0);
         Assert.Single(rig2.Frame().Objects);
         var pick = new PickupObjectAction(rig2.M, 7) { CheckPreActionPose = false };
@@ -1192,6 +1194,8 @@ public class M12RVisBuildTests : IDisposable
         if (Lib is null) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
         rig.X = 60; rig.Angle = 0; rig.State();
@@ -1996,6 +2000,8 @@ public class M12RVisBuildTests : IDisposable
         if (Lib is null) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var cube = Assert.Single(rig.Frame().Objects).Object;
         Assert.Equal(new[] { MarkerType.LightCubeI_Front }, cube.LastObservedMarkers);
@@ -2066,6 +2072,8 @@ public class M12RVisBuildTests : IDisposable
         if (Lib is null) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         Assert.Single(rig.Frame().Objects);
         var pick = new PickupObjectAction(rig.M, 7) { CheckPreActionPose = false };

@@ -14,6 +14,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal ManipulationSystem? Manipulation {get;}
     internal NativeConfigurationManager Configurations {get;}
     internal AIComponent AI {get;}
+    internal NativePickupTargetCache? PickupTargets {get;}
     internal IReadOnlyDictionary<string,IBehavior> Bound {get;}
     internal IReadOnlyList<Activity> Tree {get;}
     internal FreeplayDataTracker Tracker {get;}
@@ -46,6 +47,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         if(vision is not null)
         {
             Manipulation=new(facade,vision,robot){ClockSec=()=>facade.Engine.Timer.SecondsF};
+            PickupTargets=new NativePickupTargetCache(Manipulation,robot);
             if(vision.OverheadEdges is null)
             {
                 _ownedVision=vision;_ownedOverhead=new OverheadEdgesDetector();vision.OverheadEdges=_ownedOverhead;
@@ -156,6 +158,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _observer?.DetachHostHandle();
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
         Configurations.Dispose();
         Manipulation?.Dispose();
     }

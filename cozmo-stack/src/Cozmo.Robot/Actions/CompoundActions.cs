@@ -135,6 +135,7 @@ public abstract class CompoundAction : ActionRunner
     /// type (+0x44) from the first live child whose current tag matches, and finally from the completion cache
     /// (+0x7C) when the tag is found there.
     /// </summary>
+    internal void SetNativeCompletionProxy(uint childTag)=>SetCompletionUnionProxy(childTag);
     protected void SetCompletionUnionProxy(uint childTag)
     {
         _proxyTag = childTag;

@@ -7,13 +7,13 @@ namespace Cozmo.Robot.Behavior;
 internal sealed class NativeBehaviorBaseInputs
 {
     private readonly EngineRobot _robot;
-    private readonly string? _requiredUnlock;
+    private readonly uint _requiredUnlock;
     private readonly int _requiredSevere;
     private readonly float _recentDriveOff, _recentSwitch;
     internal NativeBehaviorBaseInputs(EngineRobot robot,JsonElement config)
     {
         _robot=robot;
-        _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)?unlock.GetString():null;
+        _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)&&unlock.ValueKind!=JsonValueKind.Null?NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(unlock.GetString()!)):0x55;
         _requiredSevere=config.TryGetProperty("requiredSevereNeedsState",out var need)
             ?need.GetString() switch{"Repair"=>0,"Energy"=>1,"Play"=>2,"Count"=>3,_=>-1}:3;
         _recentDriveOff=config.TryGetProperty("requiredRecentDriveOffCharger_sec",out var drive)?drive.GetSingle():-1f;
@@ -25,8 +25,12 @@ internal sealed class NativeBehaviorBaseInputs
         if(!ReferenceEquals(context.Robot.Engine.Robot,_robot) || _robot.CarryingOwner is null)
         {SteppedBehavior.ReportMissing("IBehavior native base admission: actual Robot/Carrying owner unavailable");return false;}
         if(_requiredSevere!=3 && _requiredSevere!=context.Robot.Engine.Needs.SevereNeeds.Selected)return false;
-        if(_requiredUnlock is not null)
-        {SteppedBehavior.ReportMissing("IBehavior requiredUnlockId 0x005BD810: non-sentinel progression input is not bound");return false;}
+        if(_requiredUnlock!=0x55)
+        {
+            if(_robot.Progression is not {} progression||!progression.TryIsUnlocked(_requiredUnlock,out bool unlocked))
+            {SteppedBehavior.ReportMissing("IBehavior requiredUnlockId005BD810 actual progression override state unavailable; no hardcoded unlock");return false;}
+            if(!unlocked)return false;
+        }
         float epsilon=BitConverter.UInt32BitsToSingle(0x3727C5AC);
         float now=context.Robot.Engine.Timer.SecondsF;
         if(!(_recentDriveOff < -epsilon))

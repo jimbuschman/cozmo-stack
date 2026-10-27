@@ -3023,7 +3023,7 @@ public sealed partial class BlockWorld
     /// object's ID is created when absent and its pose set. Returns 0.
     /// </summary>
     // fidelity: M11-043
-    private uint CopyWithNewPose(ObservableObject obj, Pose3d newPose, ObservableObject src)
+    internal uint CopyWithNewPose(ObservableObject obj, Pose3d newPose, ObservableObject src)
     {
         obj.SetPose(newPose, src.FromDistance, src.PoseState);
         var entry = EntryForOrCreate(obj.ObjectId);
