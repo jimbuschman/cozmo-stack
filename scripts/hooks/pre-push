@@ -9,6 +9,9 @@
 zero=0000000000000000000000000000000000000000
 root=$(git rev-parse --show-toplevel)
 cd "$root" || exit 1
+# Stop the compiler and MSBuild servers on exit: they stay resident after a build and grow by several GB over
+# repeated runs (operator, 2026-10-27).
+trap 'dotnet build-server shutdown >/dev/null 2>&1' EXIT
 # Only code and the fidelity records need the test suite; config, scripts, agent files and docs push at once.
 needs_tests='^(cozmo-stack/|re-analysis/fidelity_manifest\.json|re-analysis/FIDELITY_GAPS\.md|re-analysis/inventory/|re-analysis/tools/)'
 

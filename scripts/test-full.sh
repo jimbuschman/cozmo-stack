@@ -4,6 +4,9 @@
 # pushing (operator, 2026-10-18).
 root=$(git rev-parse --show-toplevel); cd "$root" || exit 1
 . scripts/hooks/gate-key.sh
+# Stop the compiler and MSBuild servers on exit: they stay resident after a build and grow by several GB over
+# repeated runs (operator, 2026-10-27).
+trap 'dotnet build-server shutdown >/dev/null 2>&1' EXIT
 if ! git diff --quiet HEAD -- || [ -n "$(git ls-files --others --exclude-standard -- cozmo-stack)" ]; then
     echo "test-full: commit (or move) your changes under cozmo-stack first; only committed code is recorded."; exit 1
 fi
