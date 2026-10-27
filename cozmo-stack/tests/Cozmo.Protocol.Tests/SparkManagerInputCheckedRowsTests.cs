@@ -47,14 +47,15 @@ public sealed class SparkManagerInputCheckedRowsTests
         Assert.Equal(1,robot.Engine.AnimationMessages.Count(0x96,false));
         stack.ActivateSpark(int.MinValue); // offline Kick may drain the engine queue immediately
         robot.Engine.Tick();
-        Assert.Equal(int.MinValue,stack.Manager.RequestedSparkId);Assert.Equal((byte)0,stack.Manager.RequestedSparkSoft);
-        Assert.Equal(0x55,stack.Manager.ActiveSparkId);Assert.Null(stack.Freeplay.Inputs.RequestedSpark);
+        var manager=robot.Engine.Robot!.BehaviorManagerOwner!;
+        Assert.Equal(int.MinValue,manager.RequestedSparkId);Assert.Equal((byte)0,manager.RequestedSparkSoft);
+        Assert.Equal(0x55,manager.ActiveSparkId);Assert.Null(stack.Freeplay.Inputs.RequestedSpark);
         Assert.Contains(missing,s=>s.Contains("native UnlockId EnumToString"));
         Assert.Contains(missing,s=>s.Contains("raw-ID Freeplay pick/switch"));
         Assert.Contains(missing,s=>s.Contains("M15-059")&&s.Contains("SparksTrackLaser"));
         Assert.DoesNotContain("BehaviorManager.SetRequestedSpark",keys); // no invented name
-        stack.ActivateSpark(0x55);robot.Engine.Tick();Assert.Equal((byte)1,stack.Manager.SparkCancelLatch);
-        stack.ActivateSpark(0x40);robot.Engine.Tick();Assert.Equal((byte)1,stack.Manager.SparkCancelLatch);
+        stack.ActivateSpark(0x55);robot.Engine.Tick();Assert.Equal((byte)1,manager.SparkCancelLatch);
+        stack.ActivateSpark(0x40);robot.Engine.Tick();Assert.Equal((byte)1,manager.SparkCancelLatch);
     }
 
     [Fact]

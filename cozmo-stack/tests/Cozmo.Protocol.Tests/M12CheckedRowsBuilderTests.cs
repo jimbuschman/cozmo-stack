@@ -369,7 +369,7 @@ public sealed class M12CheckedRowsBuilderTests
         typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.BaseBlockId))!.SetValue(behavior,8u);
         typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.TopBlockId))!.SetValue(behavior,8u);
         // OV74: reach the midpoint recipient via the explicit native strong-cache input, not the host snapshot above.
-        f.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{new PyramidBase(7,8,new Vec3(12345,6789,42))};
+        f.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{new NativePyramidBase(7,8)};
         int made=0;behavior.PlacementHelperCreatedForTest=h=>{made++;h.PrecheckForTest=()=>ActionResult.Running;};
         typeof(BuildPyramidBaseBehavior).GetMethod("TransitionToPlacingTopBlock",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(behavior,null);
         Assert.Equal(0,made);Assert.Equal(7u,behavior.StaticBlockId);Assert.Equal(BuildPyramidBaseBehavior.Phase.PlacingTopBlock,behavior.CurrentPhase);

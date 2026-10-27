@@ -844,6 +844,7 @@ public sealed partial class BlockWorld
     internal Action<bool>? UnsetCarryingObjects;
     internal Func<uint>? LocalizeRobotResultForTest;
     internal Action<uint, PoseState>? SetObjectPoseChanged;
+    internal Cozmo.Robot.Manipulation.NativeConfigurationManager? NativeConfigurations;
     public event Action<uint>? LocatedObjectDeleted;
     internal bool PoseChangeWindow => _appendPoseChanges;
     internal int PoseChangeCount => _poseChanges.Count;
@@ -1607,7 +1608,8 @@ public sealed partial class BlockWorld
         if (!r7) return new BlockWorldFrameResult(observations, forgotten) { Status = resultStatus };       // 0x00625220: the error return skips the tail
         lock (_gate) _appendPoseChanges = false;                                   // 0x006250D8
         CollisionDirtyPass();
-        BlockConfigurationManagerUpdate?.Invoke();                                 // 0x0062520C
+        NativeConfigurations?.Update();                                           // 0x0062520C: actual native producer first.
+        BlockConfigurationManagerUpdate?.Invoke();                                 // Separate public host extension, D1.
         UpdateMarkerlessObjects(lastImage, pd.RobotPose);                          // 0x0062521A
         return new BlockWorldFrameResult(observations, forgotten);
     }
@@ -2444,8 +2446,9 @@ public sealed partial class BlockWorld
         }
         if(key is not null)Source(EngineLogLevel.Info,"BlockWorld",key,text!);
         if(missing is not null)Missing(missing);
+        NativeConfigurations?.SetObjectPoseChanged(obj.ObjectId,obj.PoseState);
         if (SetObjectPoseChanged is { } set) set(obj.ObjectId,obj.PoseState);
-        else if(!_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892: configuration manager owner has not been attached");}
+        else if(NativeConfigurations is null && !_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892: configuration manager owner has not been attached");}
         // fidelity: M11-074 — 0x00506FA8, after BlockWorld::OnObjectPoseChanged.
         Maps.SourceLog=SourceLog;
         Maps.UpdateObjectPose(obj,oldPose,oldState);
@@ -2969,7 +2972,8 @@ public sealed partial class BlockWorld
                 foreach (var k in _located.Keys.Where(k => k.Origin == oldOriginId).ToList()) _located.Remove(k);
         FindLocatedObjectHelper(new BlockWorldFilter(), AddInExistingPose, false);                                     // 0x006206BE..0x006206E0
         UnbuiltBroadcastLocatedObjectStatesCalls++;                                                                    // 0x006206E6 (M11-038: no message type)
-        if (BlockConfigurationManagerForceUpdate is { } force) force(); else UnwiredForceUpdateCalls++;                // 0x006206EA
+        NativeConfigurations?.ForceUpdate(); // source 0x006206EA, independent from host extension flags.
+        if (BlockConfigurationManagerForceUpdate is { } force) force(); else if(NativeConfigurations is null)UnwiredForceUpdateCalls++;
         return 0;
     }
 

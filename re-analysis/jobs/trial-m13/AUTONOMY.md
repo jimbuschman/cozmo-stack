@@ -64,3 +64,10 @@ when convenient. A failed run becomes a FIX row for the job it points at; nothin
 The "Standing scope" above is replaced by `PLAN-BEHAVIOURS.md`: one behaviour per job, read end to end before
 building, settled in the Claude check. Start with the drive-off pilot, then write `BEHAVIOURS.md`. Finish CM13-05 only
 if it is on drive-off's path; otherwise fold it into the behaviour that needs it.
+## Operator scope correction (2026-10-26, after N1)
+
+- A behavior's boundary is what changes ITS observable result while it runs; do not read everything running alongside it. Possible outside effects get one leftover line.
+- A recorded gap with visible MISSING is acceptable to hand off; it does not hold the job.
+- Propose settling every complete record's OWN claimed path, independently of neighboring gaps. Partial records get one or two lines saying exactly what remains.
+- Handoffs are short lists of claims/addresses, records to settle and leftovers. Build/push the read scope; do not wait for the whole picture.
+- Binary evidence/no guessing and all approval/status/main/hardware restrictions remain unchanged. Progress is records settled and behaviors finished.

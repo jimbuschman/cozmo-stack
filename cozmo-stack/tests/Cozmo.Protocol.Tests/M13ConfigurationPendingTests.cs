@@ -13,12 +13,12 @@ public class M13ConfigurationPendingTests
         internal readonly M4ControlTests.Rig Rig = new();
         internal readonly ManipulationSystem M;
         internal BlockWorld World => Rig.Robot.Vision.World;
-        internal BlockConfigurationManager Manager => M.Configurations;
+        internal NativeConfigurationManager Manager => World.NativeConfigurations!;
         internal Fixture()
         {
             Rig.ToSynced(); Rig.Robot.Vision.Enabled = false;
             M = new ManipulationSystem(Rig.Robot, Rig.Robot.Vision);
-            Manager.ForceUpdate = false;
+            Rig.Engine.Robot!.BlockConfigurationForceUpdate = false;
         }
         internal ObservableObject Cube(uint id, float z = 22)
         {
@@ -46,40 +46,40 @@ public class M13ConfigurationPendingTests
     {
         using var f = new Fixture(); f.Contact();
         var charger = Assert.Single(f.World.LocatedObjects.Where(o => o.Family == ObjectFamily.Charger));
-        Assert.Equal(new[] { charger.ObjectId }, f.Manager.PendingPoseChanges);
+        Assert.Equal(new[] { charger.ObjectId }, f.Manager.Pending);
         Assert.Equal(0, f.Manager.RebuildCount);
         f.Contact();
-        Assert.Equal(new[] { charger.ObjectId }, f.Manager.PendingPoseChanges);
+        Assert.Equal(new[] { charger.ObjectId }, f.Manager.Pending);
         Assert.Equal(0, f.Manager.RebuildCount);
     }
 
-    // reach: unit (located cube/pose and direct setter substituted; native container population MISSING at 0x0061682C).
+    // reach: unit (located cube/pose and direct setter substituted; actual native containers; direct located-pose fixture input).
     // 0x00616D6C..74: old code has no last-check cache, so HasLastCheckPose is false after the forced update.
     [Fact]
     public void KnownPreservesLastCheckPoseButInvalidErasesIt()
     {
         using var f = new Fixture(); var cube = f.Cube(10);
-        f.Manager.ForceUpdate = true; f.Manager.Update();
+        f.Manager.ForceUpdate(); f.Manager.Update();
         Assert.True(f.Manager.HasLastCheckPose(10));
         f.Manager.SetObjectPoseChanged(10, PoseState.Known);
         Assert.True(f.Manager.HasLastCheckPose(10));
-        Assert.Equal(new uint[] { 10 }, f.Manager.PendingPoseChanges);
+        Assert.Equal(new uint[] { 10 }, f.Manager.Pending);
         f.Manager.SetObjectPoseChanged(10, PoseState.Unknown);
         Assert.False(f.Manager.HasLastCheckPose(10));
-        Assert.Equal(new uint[] { 10 }, f.Manager.PendingPoseChanges);
+        Assert.Equal(new uint[] { 10 }, f.Manager.Pending);
     }
 
-    // reach: unit (located cube and direct frame-tail Update substituted; full containers MISSING at 0x0061682C).
+    // reach: unit (located cube and direct frame-tail Update substituted; actual native container producer; direct frame-tail call).
     // 0x00616D96 -> DC2: old code gives rebuild/notify delta 1 on the no-movement call, instead of 0.
     [Fact]
     public void NoMovementConsumesPendingAndSkipsRebuildAndNotifyIncludingEmptyGate()
     {
         using var f = new Fixture(); var cube = f.Cube(10);
-        f.Manager.ForceUpdate = true; f.Manager.Update();
+        f.Manager.ForceUpdate(); f.Manager.Update();
         int builds = f.Manager.RebuildCount, notifies = f.Manager.NotifyCount;
         f.Manager.SetObjectPoseChanged(10, PoseState.Known); f.Manager.Update();
         Assert.Equal(builds, f.Manager.RebuildCount); Assert.Equal(notifies, f.Manager.NotifyCount);
-        Assert.Empty(f.Manager.PendingPoseChanges); Assert.False(f.Manager.ForceUpdate);
+        Assert.Empty(f.Manager.Pending); Assert.False(f.Rig.Engine.Robot!.BlockConfigurationForceUpdate);
         f.Manager.Update();
         Assert.Equal(builds, f.Manager.RebuildCount); Assert.Equal(notifies, f.Manager.NotifyCount);
     }
@@ -92,11 +92,11 @@ public class M13ConfigurationPendingTests
         using var f = new Fixture();
         for (int i = 0; i < 2; i++)
         {
-            f.Contact(); var id = Assert.Single(f.Manager.PendingPoseChanges);
+            f.Contact(); var id = Assert.Single(f.Manager.Pending);
             int before = f.Manager.RebuildCount;
             f.Manager.Update();
             Assert.Equal(before + 1, f.Manager.RebuildCount);
-            Assert.False(f.Manager.HasLastCheckPose(id)); Assert.Empty(f.Manager.PendingPoseChanges);
+            Assert.False(f.Manager.HasLastCheckPose(id)); Assert.Empty(f.Manager.Pending);
         }
     }
 
@@ -110,15 +110,15 @@ public class M13ConfigurationPendingTests
         using var subscription = broadcaster.Subscribe(s =>
         {
             heights.Add(s.StackHeight);
-            Assert.True(f.Manager.ForceUpdate); // 0x00616DBE precedes reset at DCC.
+            Assert.True(f.Rig.Engine.Robot!.BlockConfigurationForceUpdate); // 0x00616DBE precedes reset at DCC.
         });
         f.Cube(10); f.Cube(11, 66);
-        f.Manager.ForceUpdate = true; f.Manager.Update();
+        f.Manager.ForceUpdate(); f.Manager.Update();
         Assert.Equal((byte)2, broadcaster.State.StackHeight); Assert.Equal(new byte[] { 2 }, heights);
-        f.Manager.ForceUpdate = true; f.Manager.Update();
+        f.Manager.ForceUpdate(); f.Manager.Update();
         Assert.Equal(new byte[] { 2 }, heights);
         f.World.MarkUnknown(10); f.World.MarkUnknown(11); // no tallest stack -> byte zero
-        f.Manager.ForceUpdate = true; f.Manager.Update();
+        f.Manager.ForceUpdate(); f.Manager.Update();
         Assert.Equal((byte)0, broadcaster.State.StackHeight); Assert.Equal(new byte[] { 2, 0 }, heights);
     }
 }

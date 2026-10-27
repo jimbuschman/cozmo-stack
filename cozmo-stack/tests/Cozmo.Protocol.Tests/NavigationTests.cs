@@ -17,6 +17,20 @@ public class NavigationTests
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
 
+    // Pilot source oracle: SetPose0051508C retains the no-carry forward center;
+    // Straight54762A/3C/66/AA builds from that stored XY with f32 trig/product/add.
+    // Firmware state feedback remains an explicit Rig input, not a physical claim.
+    private static void AssertForwardLine(AppendPathSegmentLine line,Vec3 main,float yaw,float distance)
+    {
+        float cosine=MathF.Cos(yaw),sine=MathF.Sin(yaw);
+        float x=(float)main.X-20f*cosine,y=(float)main.Y-20f*sine;
+        float endX=x+cosine*distance,endY=y+sine*distance;
+        // Existing host libm/quaternion boundary; no phone-last-bit identity claim.
+        Assert.InRange(line.XStartMm,x-.01f,x+.01f);Assert.InRange(line.YStartMm,y-.01f,y+.01f);
+        Assert.InRange(line.XEndMm,endX-.01f,endX+.01f);Assert.InRange(line.YEndMm,endY-.01f,endY+.01f);
+    }
+
+
     private static string? ObbRoot()
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
@@ -508,13 +522,21 @@ public class NavigationTests
         using var rig = new Rig();
         rig.Cube = CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
+        var sourceMain=rig.Robot.Engine.Robot!.MainPose.Translation;
+        float sourceYaw=(float)rig.Robot.Engine.Robot.MainPose.AngleAroundZ;
+        using var initialMain=rig.M.CopyPreActionRobotPose();
+        using var relative=obj.NativePose.WithRespectTo(initialMain!);
+        var v=relative.Translation;float vx=(float)v.X,vy=(float)v.Y,vz=(float)v.Z;
+        float norm=vx*vx;norm=norm+vy*vy;norm=norm+vz*vz;
+        float sourceDistance=MathF.Sqrt(norm)+20f; //0055EED6..EF1C
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         Idle(rig);
         var task = flip.RunAsync(default);
         SignalTestContext.Run(task, () => { Idle(rig); rig.Pump(); });   // M13-028: the drive waits for the 45 mm lift move; Idle() acks every lift and streams the lift in position
         Assert.Equal(ActionResult.Success, task.Result);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
-        Assert.InRange(line.XEndMm, 217, 224);          // distance + 20
+        Assert.InRange(line.XEndMm-line.XStartMm, 217, 224); // unchanged source action distance +20
+        AssertForwardLine(line,sourceMain,sourceYaw,sourceDistance);
         Assert.Equal(150f, line.Speed.SpeedMmps);
         // the lift already reports 45 mm (angle 0), so the initial MoveLiftToHeightAction sends nothing (M4-016 MA15); whether a carry-height lift was queued depends on a poll tick catching the fake robot
         // between its instant jump and the path's completion, so only the deterministic CheckIfDoneTick tests (M13_028_*) assert it. The object is marked Unknown when the compound is done (0x0055F186).
@@ -578,11 +600,16 @@ public class NavigationTests
         var ctx = Ctx(rig);
         var seen = OnConfigSeenBehavior.RespondToPyramidBase(rig.M);
         clock = 104.5; Assert.True(Runnable(seen, ctx));
-        clock = 105.5; Assert.False(Runnable(seen, ctx));
+        clock = 105.5; Assert.True(Runnable(seen, ctx)); // host clock cannot change native eligibility.
+        rig.Clock.Advance(100);rig.Robot.Engine.Tick();
+        Assert.False(Runnable(seen,ctx)); // native clock changed; no count growth on this evaluation.
         clock = 104.5;
+        seen=OnConfigSeenBehavior.RespondToPyramidBase(rig.M); // fresh source ctor counts0.
+        Assert.True(Runnable(seen,ctx));
         RunToEnd(rig, seen, ctx);
         Assert.Contains(seen.Trace, l => l.Contains("BuildPyramidReactToBase"));
-        Assert.False(Runnable(seen, ctx));                                          // reacted already
+        rig.Clock.Advance(100);rig.Robot.Engine.Tick();
+        Assert.False(Runnable(seen, ctx)); // no new native count growth on later engine clock; host _reacted is diagnostic only.
         // the third cube on top of the midpoint completes a pyramid
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE3, CubeAt(260, 14, 0, 66)));
         clock = 106;
@@ -942,6 +969,11 @@ public class NavigationTests
         Assert.Equal(3, r.Objects.Count);
         var stack = rig.M.Configurations.GetTallestStack();
         Assert.NotNull(stack); Assert.Equal(3, stack!.StackHeight);
+        var sourceMain=rig.Robot.Engine.Robot!.MainPose.Translation;
+        var bottom=rig.Vision.World.GetLocatedObjectById(stack.BottomBlockId)!;
+        var relativeBottom=bottom.Pose.Translation-sourceMain;
+        float sourceYaw=(float)Math.Atan2(relativeBottom.Y,relativeBottom.X);
+        float sourceDistance=(float)(Math.Sqrt(relativeBottom.X*relativeBottom.X+relativeBottom.Y*relativeBottom.Y)-85);
         var ctx = Ctx(rig);
         Idle(rig);
         var b = new KnockOverCubesBehavior(rig.M, "KnockOverCubes", 3);
@@ -982,7 +1014,8 @@ public class NavigationTests
         // block is at 260 and its observed pose carries a few millimetres of vision error
         var reach = rig.Sent.OfType<AppendPathSegmentLine>().First();
         Assert.Equal(60f, reach.Speed.SpeedMmps);
-        Assert.InRange(reach.XEndMm, 165, 180);
+        Assert.InRange(reach.XEndMm-reach.XStartMm, 165, 180);
+        AssertForwardLine(reach,sourceMain,sourceYaw,sourceDistance);
     }
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
@@ -1063,6 +1096,10 @@ public class NavigationTests
         using var rig = new Rig();
         rig.Cube = CubeAt(250, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
+        var sourceMain=rig.Robot.Engine.Robot!.MainPose.Translation;
+        var relativeBlock=obj.Pose.Translation-sourceMain;
+        float sourceYaw=(float)Math.Atan2(relativeBlock.Y,relativeBlock.X);
+        float sourceDistance=(float)Math.Sqrt(relativeBlock.X*relativeBlock.X+relativeBlock.Y*relativeBlock.Y);
         var ctx = Ctx(rig);
         var b = new RamIntoBlockBehavior(rig.M);
         RunToEnd(rig, b, ctx);
@@ -1070,7 +1107,8 @@ public class NavigationTests
         Assert.Equal(2, lines.Count);
         Assert.Equal(100f, lines[0].Speed.SpeedMmps);
         Assert.Equal(-100f, lines[1].Speed.SpeedMmps);
-        Assert.InRange(lines[0].XEndMm, 245, 255);   // to the block's centre
+        Assert.InRange(lines[0].XEndMm-lines[0].XStartMm, 245, 255); // unchanged source distance to block
+        AssertForwardLine(lines[0],sourceMain,sourceYaw,sourceDistance);
         Assert.Contains(rig.LiftHeights, h => h == LiftPresets.LowDockMm);
         Assert.Contains(b.Trace, l => l.Contains("SoundOnlyRamIntoBlock"));
         Assert.Equal(PoseState.Dirty, obj.PoseState);

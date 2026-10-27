@@ -991,6 +991,17 @@ public sealed class AnimationScheduler
             return true;
         }
     }
+    internal bool ClearStreamIfClipMatches(AnimationClip? clip)
+    {
+        lock(_gate)
+        {
+            // PlayAnimation dtor 0x00543DB2..C8 compares semantic clip identity,
+            // including null==null, independently of a ticket's generation/completion.
+            if(!ReferenceEquals(_streamingClip,clip))return false;
+            SetStreamingAnimationLocked(null,1,interrupt:true);
+            return true;
+        }
+    }
 
     // ================================================================== Abort (A22..A24)
 

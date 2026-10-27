@@ -78,12 +78,17 @@ public sealed class M5X19BuilderTests
         Assert.Contains(records,r=>r.Tag==drive.Tag && r.Result==0x01000000);
     }
     [Fact]
-    public void MissingInputSelectionFallsThroughAndNonDriveMissingIsNotDeduplicated()
+    public void CanonicalInputSelectionUsesMetNeedsAndRetirementMissingIsNotDeduplicated()
     {
         using var robot=CozmoRobot.CreateOffline();var h=robot.Animations.DrivingAnimations;var logs=new List<string>();robot.Engine.StackLogLine+=logs.Add;
-        Assert.True(h.Init(0,1,false,false));Assert.Equal(new DrivingAnimations((AnimationTrigger)0x95,(AnimationTrigger)0x91,(AnimationTrigger)0x8D),h.Current);
-        Assert.Single(logs.Where(l=>l.Contains("M7-026 GetSimpleMood")));Assert.Single(logs.Where(l=>l.Contains("M15-001 AreNeedsMet")));
-        h.Init(0,2,false,false);Assert.Equal(2,logs.Count(l=>l.Contains("M7-026 GetSimpleMood")));
+        Assert.Null(h.GetSimpleMoodForTest);Assert.Null(h.AreNeedsMetForTest);
+        Assert.Equal(SimpleMood.Default,robot.Engine.Robot!.MoodOwner!.GetSimpleMood());
+        foreach(var need in new[]{NeedId.Repair,NeedId.Energy,NeedId.Play})
+            Assert.True(robot.Engine.Needs.State.GetNeedBracket(need) is NeedBracketId.Full or NeedBracketId.Normal);
+        Assert.True(h.Init(0,1,false,false));Assert.Equal(new DrivingAnimations((AnimationTrigger)0x96,(AnimationTrigger)0x92,(AnimationTrigger)0x8E),h.Current);
+        Assert.DoesNotContain(logs,line=>line.Contains("M7-026")||line.Contains("M15-001"));
+        Assert.True(h.Init(0,2,false,false));Assert.Equal(new DrivingAnimations((AnimationTrigger)0x96,(AnimationTrigger)0x92,(AnimationTrigger)0x8E),h.Current);
+        Assert.DoesNotContain(logs,line=>line.Contains("M7-026")||line.Contains("M15-001"));
         robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);logs.Clear();h.ActionIsBeingDestroyed();h.ActionIsBeingDestroyed();
         Assert.Equal(6,logs.Count(l=>l.Contains("ActionList.Cancel recipient absent")));
     }

@@ -1,6 +1,6 @@
 # Trial queue (isolated branch only)
 
-Current authority: AUTONOMY.md (operator2026-10-26): R1 first, then CM13-04, CM13-05, then the standing M13/M6 scope. This file is Codex-owned; authoritative Claude verdicts are read only from REVIEW.md on main. No official fidelity statuses, approvals or subsystem acceptance changes; no main push. Earlier trial limits/states below are historical.
+Current authority: PLAN-BEHAVIOURS.md and AUTONOMY.md (operator2026-10-26): outstanding Claude FIX first, then the whole drive-off pilot, BEHAVIOURS.md, and one whole behaviour at a time. This file is Codex-owned; authoritative Claude verdicts are read only from REVIEW.md on main. No official fidelity statuses, approvals or subsystem acceptance changes; no main push. Earlier fragment scope, trial limits and states below are historical.
 
 | Job | State | Purpose | Evidence/review |
 | --- | --- | --- | --- |
@@ -22,7 +22,10 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | --- | --- | --- |
 | CM13-03 | REVIEW COMPLETE | Historical local gate failure retained in HANDOFF-2.md. Current authoritative Claude disposition/gate is in REVIEW.md on main; no hardware dependency. |
 | R1 | REVIEW COMPLETE | Authoritative external disposition is in REVIEW.md on main (supersedes its earlier finding). Corrected codee592d1b2 and full6285/6285; HANDOFF-R1.md. |
-| CM13-04 | READY FOR CLAUDE | Native per-heading pose/origin and actual carrying input; codef55fb6ee, independent46/46 PASS, full6306/6306 zero skipped. HANDOFF-CM13-04.md lists each changed claim/address and open scope. |
-| CM13-05 | RELEASED | M12-049 configuration-container producer. Codex scopes it; same order. |
+| CM13-04 | REVIEW COMPLETE | Authoritative external disposition is in REVIEW.md on mainaca8c400 (MERGED481ade53, source spot-check and full6306/6306 zero skipped). HANDOFF-CM13-04.md retains the local evidence and open whole-planner scope. |
+| CM13-05 | FOLDED INTO DRIVE-OFF-PILOT | Draft paused and preserved locally; finish only if the whole pilot read establishes its observable dependency. No compiled/verified build claimed. |
+| DRIVE-OFF-PILOT | READY FOR CLAUDE | FIX5c25c9a7; independent36/36; two consecutive full6362/6362 PASS,0skipped on b273fe62. N3 five records settle on merge; M12-043/M8-027 open. N2 withdrawn on main337879ab; no split. HANDOFF-DRIVE-OFF-PILOT.md. |
+| DRIVE-OFF-PILOT-2 | SUPERSEDED | Operator scope correction: no outward contexts/vision/world audit. Existing possible outside effects remain one-line leftovers; no new pilot reading job released. |
+| PICKUP-PYRAMID-1 | RELEASED | Exact shipped SparksPickupSingleCubeForPyramid/PickUpCube; Phase1 source reading A, independent check B before any code. PICKUP-PYRAMID-1.md. |
 
-After these: Codex continues under the standing scope in AUTONOMY.md, adding its own rows.
+Current authority: operator scope correction in AUTONOMY.md. Pilot handed off now; settle complete OWN records without waiting for neighboring gaps, then work down BEHAVIOURS.md. Scoreboard now0finished/2inprogress/176notstarted pending external review/acceptance. Audio stays last. Earlier fragment rows are history.

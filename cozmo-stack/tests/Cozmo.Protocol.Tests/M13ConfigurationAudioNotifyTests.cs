@@ -15,7 +15,7 @@ public sealed class M13ConfigurationAudioNotifyTests
         internal readonly M4ControlTests.Rig Rig;
         internal readonly ManipulationSystem Manipulation = null!;
         internal EngineRobot Robot => Rig.Engine.Robot!;
-        internal BlockConfigurationManager Configurations => Manipulation.Configurations;
+        internal NativeConfigurationManager Configurations => Rig.Robot.Vision.World.NativeConfigurations!;
         internal readonly List<byte> Heights = new();
         internal readonly List<string> Visits = new();
         internal readonly List<BehaviorAudioRequest> Requests = new();
@@ -84,10 +84,10 @@ public sealed class M13ConfigurationAudioNotifyTests
         internal void Update()
         {
             int before = Configurations.NotifyCount;
-            Configurations.ForceUpdate = true; // even unchanged height must reach Notify, not stop at the movement gate
+            Configurations.ForceUpdate(); // even unchanged height must reach Notify, not stop at the movement gate
             Configurations.Update();
             Assert.Equal(before + 1, Configurations.NotifyCount);
-            Assert.False(Configurations.ForceUpdate);
+            Assert.False(Robot.BlockConfigurationForceUpdate);
         }
         internal void ClearObservations() { Heights.Clear(); Visits.Clear(); Requests.Clear(); }
         internal void RemoveAllCubes()

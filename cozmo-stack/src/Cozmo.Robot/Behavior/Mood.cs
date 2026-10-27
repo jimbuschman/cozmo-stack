@@ -102,14 +102,28 @@ public sealed class MoodModel
     /// <c>emotionevents</c> directory at some depth.
     /// </summary>
     public static MoodModel Load(string root)
+        =>LoadCore(root,new MoodModel());
+    internal static MoodModel LoadNative(string? root,MoodModel? prior,Action<string>? failedReader=null)
+        =>LoadCore(root??"",prior??new MoodModel(),failedReader??(_=>{}));
+    private static MoodModel LoadCore(string root,MoodModel model,Action<string>? failedReader=null)
     {
-        var model = new MoodModel();
+        // StaticMoodData::ReadFromJson 0x0067CE88/92 clears these before its
+        // missing-decayGraphs early return. Existing nonempty decay curves survive.
+        model._events.Clear();model.DefaultRepetitionPenalty=null;
+        model._actionResultEvents.Clear(); // Each newly constructed Mood owner has a fresh action map.
         var unknown = new List<string>();
 
         var config = FindFile(root, "mood_config.json");
-        if (config is not null)
+        JsonDocument? mainDocument=null;
+        if(config is not null)
         {
-            using var doc = JsonDocument.Parse(Decomment(File.ReadAllText(config)));
+            try{mainDocument=JsonDocument.Parse(Decomment(File.ReadAllText(config,System.Text.Encoding.UTF8)));}
+            catch(Exception error) when(failedReader is not null && error is IOException or UnauthorizedAccessException or JsonException)
+            {failedReader("Mood main resource read/parse failed; defined null-input continuation: "+error);}
+        }
+        using(mainDocument)
+        if(mainDocument is {RootElement.ValueKind:JsonValueKind.Object} doc)
+        {
             if (doc.RootElement.TryGetProperty("decayGraphs", out var graphs))
                 foreach (var g in graphs.EnumerateArray())
                 {
@@ -126,7 +140,7 @@ public sealed class MoodModel
             // StaticMoodData::ReadFromJson 0x0067ce6c: after decayGraphs, defaultRepetitionPenalty
             // (GraphEvaluator2d::ReadFromJson 0x0067d128) and eventMapper; MoodManager::Init 0x0067aebc
             // then LoadActionCompletedEventMap 0x0067afb4 reads actionResultEmotionEvents.
-            if (doc.RootElement.TryGetProperty("defaultRepetitionPenalty", out var dp))
+            if (doc.RootElement.TryGetProperty("decayGraphs",out _) && doc.RootElement.TryGetProperty("defaultRepetitionPenalty", out var dp))
                 model.DefaultRepetitionPenalty = ReadGraph("defaultRepetitionPenalty", dp);
             if (doc.RootElement.TryGetProperty("actionResultEmotionEvents", out var ar) &&
                 ar.ValueKind == JsonValueKind.Object)
@@ -323,6 +337,18 @@ public sealed partial class MoodState
 
     /// <summary>MoodManager+0x130: the time of the last <see cref="Advance"/> (float seconds; 0 until the first).</summary>
     private float _lastUpdateSec;
+    internal float LastUpdateSeconds {get {lock(_lifetimeGate)return _lastUpdateSec;} }
+    // fidelity: M7-026
+    // MoodManager::GetSimpleMood 0x0067C084: Sad overrides Happy.
+    public Animation.SimpleMood GetSimpleMood()
+    {
+        lock(_lifetimeGate)
+        {
+            float happy=_values[(int)EmotionType.Happy],confident=_values[(int)EmotionType.Confident];
+            var mood=happy>0.33f?Animation.SimpleMood.Happy:Animation.SimpleMood.Default;
+            return confident < -0.29f || happy < -0.33f ? Animation.SimpleMood.Sad : mood;
+        }
+    }
 
     /// <summary>MoodManager+0x120: the last trigger time of each event name (a float map), for the repetition penalty.</summary>
     private readonly Dictionary<string, float> _lastEventSec = new(StringComparer.Ordinal);
@@ -387,7 +413,12 @@ public sealed partial class MoodState
         {
             if (RejectRetiredUse()) return false;
             var e = _model.Event(eventName);
-            if (e is null) return false;
+            if (e is null)
+            {
+                LogCallbackDeferral.Run(()=>SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Warning,null,
+                    "MoodManager.TriggerEmotionEvent.EventNotFound",$"Unknown emotion event '{eventName}'"));
+                return false; // 0x0067B87C -> BA88 warning -> BACC, before repetition/affectors.
+            }
             float penalty = RepetitionPenalty(e, eventName, (float)nowSec);
             foreach (var a in e.Affectors)
                 Add((int)a.Emotion, penalty * (float)a.Value);
@@ -516,10 +547,13 @@ public sealed partial class MoodState
         {
             if (RejectRetiredUse()) return;
             if (Robot is null) return;                                           // 0x0067b736..0x0067b73c
+            if(_nativeRobot?.HasExternalInterface!=true)return; // Robot::Broadcast00511DE8, context+4.
             var nine = new float[_values.Length];
             for (int i = 0; i < nine.Length; i++) nine[i] = _values[i];          // 0x0067b73e..0x0067b77c: this+0x18, stepping 0x20
-            var message = new MoodStateMessage(nine);                            // 0x0067b77e..0x0067b79c: MoodState -> MessageEngineToGame
-            Robot.Engine.QueueAppBroadcast(MoodStateBroadcast,message);
+            var message = new MoodStateMessage(nine);                            // 0x0067b77e..0x0067b796: MoodState -> Broadcast (79C clears temporary)
+            Robot.Engine.DeliverAnimationReportToApp(MoodStateMessage.UnionTag,message.PackBody(),
+                Robot.Engine.CaptureAppEvent(MoodStateBroadcast,message));
+            Robot.Engine.AnimationMessages.Deliver(MoodStateMessage.UnionTag,true,message); // app enqueue THEN local006625FA.
         });
     }
 

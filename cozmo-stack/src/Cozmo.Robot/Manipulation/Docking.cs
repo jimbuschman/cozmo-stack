@@ -185,10 +185,12 @@ public sealed class DockingSystem : IDisposable
     public uint? DockTargetObjectId { get => _native.TargetId; private set => _native.TargetId = value; }
 
     public DockingSystem(CozmoRobot robot, VisionSystem vision)
+        : this(robot,vision,robot.Engine.Robot) { }
+    internal DockingSystem(CozmoRobot robot, VisionSystem vision, EngineRobot? nativeOwner)
     {
         _robot = robot; _vision = vision;
-        _native = robot.Engine.Robot?.DockingOwner ?? new DockingComponentData();
-        Carrying = robot.Engine.Robot?.CarryingOwner ?? new CarryingComponent();
+        _native = nativeOwner?.DockingOwner ?? new DockingComponentData();
+        Carrying = nativeOwner?.CarryingOwner ?? new CarryingComponent();
         _nativeUnset = UnsetCarryingObjects;
         Carrying.NativeUnset = _nativeUnset;
         // fidelity: M1-053

@@ -37,6 +37,7 @@ public class M8BatchThreeDTests
         public BehaviorStatus InternalResult = BehaviorStatus.Running;
         public bool Cancel;
         public Action<TestHelper>? OnInit;
+        public Action? OnInternal;
         public int OriginReadAtInit = int.MinValue;
         public Func<int>? StoredOrigin;
         public readonly List<bool> Stops = new();
@@ -52,7 +53,7 @@ public class M8BatchThreeDTests
             OnInit?.Invoke(this);
             return InitResult;
         }
-        protected override BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot) { InternalCalls++; _events.Add($"{Name}.Internal"); return InternalResult; }
+        protected override BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot) { InternalCalls++; _events.Add($"{Name}.Internal"); OnInternal?.Invoke();return InternalResult; }
         protected override void OnStopSlot24(bool first) { Stops.Add(first); _events.Add($"{Name}.Stop({first})"); }
     }
 
@@ -844,18 +845,18 @@ public class M8BatchThreeDTests
     public void M8_011_TheEngineTickRunsTheHelperStackBeforeTheActionListAndTheStreamer()
     {
         using var fx = new Fx();
-        var ai = new AIComponent(() => fx.Origin);
+        var ai = fx.Robot.Engine.Robot!.NativeBehaviorRuntime!.AI;
         var h = new TestHelper(fx.Robot, "H", fx.Behavior, ai.Helpers, fx.Events);
         var order = new List<string>();
         var e = fx.Robot.Engine;
-        e.AIComponentUpdate = () => { order.Add("ai"); ai.Update(fx.Robot); };
+        h.OnInternal=()=>order.Add("ai");
         var actions = e.Robot!.ActionList;
         actions.QueueAction(QueueActionPosition.Now, new OrderAction(() => order.Add("actions")), 0);
         var streamer = e.AnimationStreamerUpdate; e.AnimationStreamerUpdate = () => { order.Add("streamer"); return streamer?.Invoke() ?? 0; };
         var components = e.RobotComponentsUpdate; e.RobotComponentsUpdate = () => { order.Add("components"); components?.Invoke(); };
         IHelper? raw = h;
         Assert.True(ai.Helpers.DelegateToHelper(fx.Robot, ai.Helpers.AddHelperToComponent(ref raw), null, null));
-        Assert.Equal(1, h.InternalCalls);                   // the push's own update
+        Assert.Equal(1, h.InternalCalls);order.Clear();   // the push's own update
         e.Tick();
         Assert.Equal(2, h.InternalCalls);                   // the engine tick's AIComponent::Update ran the helper once more
         Assert.Equal("ai", order[0]);
@@ -880,9 +881,15 @@ public class M8BatchThreeDTests
         using var unsub = new Unsub(() => SteppedBehavior.MissingReported -= onMissing);
         SteppedBehavior.ResetMissingForTests();
         var e = robot.Engine;
+        Assert.True(e.Robot!.FirstFullStateHandled);
+        e.VisionUpdateAllResultsFailed=null; // explicit missing-hook unit input; constructor normally installs the actual recipient
         e.HasCameraCalibration = () => true; // M3-032: this scenario explicitly models a non-null calibration pointer; live installation is tested in M3DeviceTests.
         int ticks = 0;
-        e.AIComponentUpdate = () => ticks++;
+        var canonical=e.Robot!.NativeBehaviorRuntime!.AI;
+        var helper=new TestHelper(robot,"gate-probe",new Probe(),canonical.Helpers,new List<string>());
+        helper.OnInternal=()=>ticks++;
+        IHelper? raw=helper;var handle=canonical.Helpers.AddHelperToComponent(ref raw);
+        Assert.True(canonical.Helpers.DelegateToHelper(robot,handle,null,null));handle.Release();ticks=0;
         e.Tick();
         Assert.Equal(1, ticks);
         e.Tick();
@@ -907,7 +914,11 @@ public class M8BatchThreeDTests
         var e = fx.Robot.Engine;
         e.Robot!.FirstFullStateHandled = false;
         int ticks = 0;
-        e.AIComponentUpdate = () => ticks++;
+        var canonical=e.Robot!.NativeBehaviorRuntime!.AI;
+        var helper=new TestHelper(fx.Robot,"gate-probe",fx.Behavior,canonical.Helpers,fx.Events);
+        helper.OnInternal=()=>ticks++;
+        IHelper? raw=helper;var handle=canonical.Helpers.AddHelperToComponent(ref raw);
+        Assert.True(canonical.Helpers.DelegateToHelper(fx.Robot,handle,null,null));handle.Release();ticks=0;
         e.Tick();
         Assert.Equal(0, ticks);
         e.Robot.FirstFullStateHandled = true;
@@ -924,13 +935,13 @@ public class M8BatchThreeDTests
     {
         var obb = ObbRoot();
         Assert.True(obb is not null, "re-analysis/obb assets not found: the FreeplayStack wiring test cannot run");
-        using var rig = new Rig();
+        using var rig = new Rig(resources:Path.Combine(obb!,"assets","cozmo_resources"));
         rig.Robot.Animations.LoadFrom(Path.Combine(obb!, "assets", "cozmo_resources", "assets"));
-        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(3) };
         var events = new List<string>();
-        using (var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => 1.0, rig.Vision, rig.M, withReactions: false, random: new Random(1)))
+        using (var stack = FreeplayStack.CreateNative(rig.Robot))
         {
-            Assert.Same(stack.AI, ctx.AI);
+            var ctx=stack.Context;
+            Assert.Same(stack.AI,ctx.AI);Assert.Same(stack.AI,rig.Robot.Engine.Robot!.NativeBehaviorRuntime!.AI);
             Assert.NotNull(stack.Needs.PossiblyWriteLabAssignments); // B-M15-5: same actual engine Lab owner.
             var lab = rig.Robot.Engine.Experiments;
             lab.SetAssignmentVectorsForTest(new[]{new LabAssignmentDef(new byte[]{97},Array.Empty<byte>(),new byte[]{98})},Array.Empty<LabAssignmentPair>());

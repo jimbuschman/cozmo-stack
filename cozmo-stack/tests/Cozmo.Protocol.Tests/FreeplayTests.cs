@@ -335,7 +335,7 @@ public class FreeplayTests
         Assert.Equal(new[] { "missing" }, chooser.Unbound);
         var d = chooser.GetDesiredActiveBehavior(null, 0, ctx, 0);
         Assert.Equal("a", d.Behavior!.Id);                                            // c is not runnable, missing is not built
-        Assert.Contains(d.Scores, s => s.Id == "c" && s.Note == "not runnable");
+        Assert.Contains(d.Scores, s => s.Id == "c" && s.Score == 0 && s.Note == "scored 0");
         Assert.Contains(d.Scores, s => s.Id == "missing" && s.Note == "not built");
         // a just ran: its repetition penalty is 0 at 0 s, 0.5 at 15 s; b wins until a recovers past 0.8
         chooser.Ran("a", 100);                                                                // a stamp above zero (0x005beeea..0x005beef8)
@@ -900,6 +900,9 @@ public class FreeplayTests
         var needs = new NeedsManager(() => clock);
         var writes = new List<bool>();
         needs.WriteToDevice = forced => writes.Add(forced);
+        // Explicit admitted offline engine-owner input; a standalone facade
+        // does not reconfigure the engine's Needs owner as a side effect.
+        rig.Robot.Engine.UseNeedsForOfflineTest(needs);
         using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
         Assert.True(needs.Connected);
 
@@ -937,6 +940,9 @@ public class FreeplayTests
         var needs = new NeedsManager(() => clock);
         Assert.False(needs.AwaitingRobotData);
 
+        // Explicit admitted offline engine-owner input; a standalone facade
+        // does not reconfigure the engine's Needs owner as a side effect.
+        rig.Robot.Engine.UseNeedsForOfflineTest(needs);
         using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
         // the replay: Robot 1 already exists, so InitAfterConnection ran at creation (+0x3d0 = 1)
         Assert.True(needs.AwaitingRobotData);
@@ -1760,6 +1766,9 @@ public class FreeplayTests
         using (var rig = new Rig())
         {
             var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
+        // Explicit admitted offline engine-owner input; a standalone facade
+        // does not reconfigure the engine's Needs owner as a side effect.
+        rig.Robot.Engine.UseNeedsForOfflineTest(needs);
             using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
             Assert.Null(rig.Robot.Engine.AcquiredSerialNumber);
             rig.Robot.Engine.RaiseSerialNumberAcquired(0x41D04D9D);
@@ -1778,6 +1787,7 @@ public class FreeplayTests
         using (var rig = new Rig())
         {
             var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
+            rig.Robot.Engine.UseNeedsForOfflineTest(needs);
             rig.Robot.Engine.RaiseSerialNumberAcquired(0x1234);
             using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
             Assert.Equal(0x1234u, needs.SerialNumber);
@@ -2375,6 +2385,9 @@ public class FreeplayTests
         double clock = 0;
         using var rig = new Rig();
         var needs1 = new NeedsManager(() => clock); needs1.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
+        // Explicit admitted offline engine-owner input; a standalone facade
+        // does not reconfigure the engine's Needs owner as a side effect.
+        rig.Robot.Engine.UseNeedsForOfflineTest(needs1);
         using (var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs1, withReactions: false))
         {
             rig.Robot.Engine.RaiseSerialNumberAcquired(0x1111);
@@ -2389,6 +2402,7 @@ public class FreeplayTests
         rig.Robot.Engine.Robots.AddRobot(CozmoEngine.RobotId);
         // a stack created now does not replay the old serial, and handles the new mfgId
         var needs2 = new NeedsManager(() => clock); needs2.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
+        rig.Robot.Engine.UseNeedsForOfflineTest(needs2);
         using (var stack2 = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs2, withReactions: false))
         {
             Assert.Equal(0u, needs2.SerialNumber);

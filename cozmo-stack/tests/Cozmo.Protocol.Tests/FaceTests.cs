@@ -506,20 +506,37 @@ public class FaceTests
     }
 
     [Fact]
-    public void DriveToFaceDrivesUntilTwoHundredMillimetresAway()
+    public void DriveToFaceSendsMainDistanceMinusTwoHundredFromStoredForwardStart()
     {
         using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(600, 0, 250), null));
         rig.Frame();
         var ctx = Ctx(rig);
+        var native=rig.Robot.Engine.Robot!;
+        Vec3 start=default;float yaw=0,distance=0,travel=0;bool captured=false;
         var b = new DriveToFaceBehavior(rig.Vision, rig.M) { TrackTimeScale = 0.05 };
+        b.Step+=line=>
+        {
+            if(!line.StartsWith("start DriveStraight("))return;
+            // Synchronous pre-action capture after both turns and verification, before the line is built.
+            var main=native.MainPose.Translation;start=native.ForwardPose.Translation;
+            yaw=(float)native.MainPose.AngleAroundZ;
+            var delta=rig.Vision.Faces.GetFace(7)!.HeadPose.Translation-main;
+            float dx=(float)delta.X,dy=(float)delta.Y;
+            distance=MathF.Sqrt(dx*dx+dy*dy);travel=distance-200f;captured=true;
+        };
         Assert.True(Runnable(b, ctx));
         RunToEnd(rig, b, ctx, ms: 15000);
         Assert.Equal(DriveToFaceBehavior.Phase.Idle, b.CurrentPhase);
         Assert.InRange(b.DistanceMm!.Value, 590, 610);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
-        Assert.Equal(60f, line.Speed.SpeedMmps);
-        Assert.InRange(rig.X, 390, 410);                                              // stopped 200 mm from the face
+        Assert.Equal(60f, line.Speed.SpeedMmps); // current implementation characterization: source220/decel166.66667 remain a known gap
+        Assert.True(captured);
+        Assert.Equal(distance,b.DistanceMm!.Value,3);
+        Assert.Equal((float)start.X,line.XStartMm,3);Assert.Equal((float)start.Y,line.YStartMm,3);
+        Assert.Equal((float)start.X+MathF.Cos(yaw)*travel,line.XEndMm,3);
+        Assert.Equal((float)start.Y+MathF.Sin(yaw)*travel,line.YEndMm,3);
+        // Rig feedback copies wire coordinates; success below is simulated, not physical stopping-distance evidence.
         Assert.Contains(b.Trace, l => l.Contains("VisuallyVerifyFace -> Success"));
         // close already: no drive
         using var near = FaceRig((7, new Vec3(160, 0, 120), null));                   // a low face close by, inside the camera's view

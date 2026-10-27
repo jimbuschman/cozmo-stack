@@ -123,16 +123,18 @@ public sealed class M15MutationCheckedRowsTests
     [Fact]
     public void LiveStackForcesTheNativeTimerTrackerBeforeAbortAndDoesNotForceOnHostDispose()
     {
-        using var robot=CozmoRobot.CreateOffline();
         var directory=new DirectoryInfo(AppContext.BaseDirectory);
         while(directory is not null&&!Directory.Exists(Path.Combine(directory.FullName,"re-analysis","obb")))directory=directory.Parent;
         var obb=Path.Combine(directory!.FullName,"re-analysis","obb");
         Assert.True(Directory.Exists(obb));
-        var stack=FreeplayStack.Create(obb,robot,new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()},()=>99,needs:new NeedsManager(()=>0),withReactions:false);
+        using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{ResourcesPath=Path.Combine(obb,"assets","cozmo_resources")});
+        var stack=FreeplayStack.CreateNative(robot);
+        Assert.Same(robot.Engine.Robot!.NativeBehaviorRuntime!.Tracker,stack.DataTracker);
         foreach(var flag in stack.DataTracker.PausedFlags.ToArray())stack.DataTracker.SetFreeplayPauseFlag(flag,false);
         var order=new List<string>();
         robot.Engine.LogEntry+=entry=>{if(entry.Name=="robot.destructor")order.Add("destructor");if(entry.Name=="FreeplayDataTracker.SendData.Accumulate")order.Add("accumulate");if(entry.Name=="robot.active_freeplay_time"){Assert.Equal("2",entry.Text);order.Add("event");}};
-        robot.Engine.Robot!.Lifetime.Bind(-3,_=>order.Add("abort"));
+        robot.Engine.Robot!.SendFault=message=>{if(message is Cozmo.Protocol.AbortDocking)order.Add("abort");return null;};
+        stack.Dispose();Assert.Empty(order);
         robot.Engine.Timer.UpdateTime(2_000_000_000);
         robot.Engine.Robots.RemoveRobot(1,false);
         Assert.Equal(new[]{"destructor","accumulate","event","abort"},order);

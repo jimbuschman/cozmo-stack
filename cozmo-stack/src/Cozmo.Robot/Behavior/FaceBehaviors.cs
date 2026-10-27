@@ -738,11 +738,11 @@ public sealed class PyramidThankYouBehavior : FaceBehavior
     private readonly ManipulationSystem _m;
     public PyramidThankYouBehavior(VisionSystem v, ManipulationSystem m, string id = "PyramidThankYou") : base(id, "PyramidThankYou", v) => _m = m;
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => V.Faces.HasAnyFaces() && _m.Configurations.Pyramids.Count > 0;
+    protected override bool IsRunnableInternal(BehaviorContext context) => V.Faces.HasAnyFaces() && _m.NativePyramids.Count > 0;
 
     protected override void OnStart()
     {
-        var pyramid = _m.Configurations.Pyramids.FirstOrDefault();
+        var pyramid = _m.NativePyramids.FirstOrDefault();
         if (pyramid is null) { Finish(); return; }
         // fidelity: M13-014 (0x005DE160..0x005DE170: a TurnTowardsLastFacePoseAction with +0x193 = 1)
         var turn = new TurnTowardsLastFacePoseAction(V, Math.PI, sayName: false) { RequireVerifiedFace = true };

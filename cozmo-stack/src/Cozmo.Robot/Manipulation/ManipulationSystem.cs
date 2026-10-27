@@ -11,33 +11,52 @@ namespace Cozmo.Robot.Manipulation;
 public sealed class ManipulationSystem : IDisposable
 {
     public ManipulationSystem(CozmoRobot robot, VisionSystem vision)
+        : this(robot,vision,robot.Engine.Robot) { }
+    /// <summary>Explicit host driver with a private whiteboard/configuration clock. Native services are borrowed.</summary>
+    public static ManipulationSystem CreateStandalone(CozmoRobot robot,VisionSystem vision,Func<double> clockSec)
+        =>robot.Engine.InvokeEngineRequest(()=>new ManipulationSystem(robot,vision,robot.Engine.Robot,true,clockSec));
+    internal ManipulationSystem(CozmoRobot robot, VisionSystem vision, EngineRobot? nativeOwner)
+        :this(robot,vision,nativeOwner,false,null){}
+    private ManipulationSystem(CozmoRobot robot,VisionSystem vision,EngineRobot? nativeOwner,bool standalone,Func<double>? clockSec)
     {
         Robot = robot; Vision = vision;
         AiExpressedNeedValue=()=>robot.Engine.Needs.SevereNeeds.SelectedNeed;
-        Paths = new PathSender(robot);
-        Follower = new PathFollower(robot);
-        Docking = new DockingSystem(robot, vision);
-        Docking.Log += l => Log?.Invoke(l);
+        var shared=nativeOwner?.NativeBehaviorRuntime?.Manipulation;
+        if(standalone&&(shared is null||shared._disposed||!ReferenceEquals(robot.Engine.Robot,nativeOwner)))throw new InvalidOperationException("CreateStandalone requires the actual live native manipulation owner to borrow services");
+        _standalone=standalone;
+        _ownsSharedServices=shared is null;
+        _ownsWhiteboard=standalone||_ownsSharedServices;
+        _clockSec=standalone?(clockSec??throw new ArgumentNullException(nameof(clockSec))):()=>robot.Engine.Timer.SecondsF;
+        Paths=shared?.Paths??new PathSender(robot);
+        Follower=shared?.Follower??new PathFollower(robot);
+        Docking = shared?.Docking??new DockingSystem(robot, vision,nativeOwner);
+        _dockingLogForwarder = l => Log?.Invoke(l);
+        Docking.Log += _dockingLogForwarder;
         Configurations = new BlockConfigurationManager(vision.World, () => ClockSec()) { NativeRobot = () => robot.Engine.Robot };
-        Docking.Configurations = Configurations;      // SetObjectAsAttachedToLift step 9 sets its dirty flag (M12-008)
+        if(_ownsSharedServices)Docking.Configurations = Configurations; // host extension belongs only to the owned service
         // M11-072: the native R2 callback owns +0xC even before this host facade exists.
-        Whiteboard = new AIWhiteboard(vision.World, () => ClockSec());
-        vision.World.MapClearQuad=Whiteboard.ProcessClearQuad;
+        Whiteboard = standalone?new AIWhiteboard(vision.World,()=>ClockSec()):shared?.Whiteboard??new AIWhiteboard(vision.World, () => ClockSec());
+        if(_ownsSharedServices)vision.World.MapClearQuad=Whiteboard.ProcessClearQuad;
         // fidelity: M8-026
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built");
         // AIWhiteboard::Init 0x0056a394 registers the three handlers through the robot's external interface
         // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This
         // stack has no external interface registered, so the warning path is the live one.
-        Whiteboard.Init();
+        if(_ownsSharedServices)Whiteboard.Init();
         // fidelity: M15-020
         // The FindCubesInBeacon predicate's first test, CarryingComponent::IsCarryingObject(id) (0x0056D142).
+        if(_ownsWhiteboard)
+        {
         Whiteboard.IsCarryingObject = Docking.Carrying.IsCarryingObjectId;
         Whiteboard.CarriedObjectId = () => Docking.Carrying.CarriedObjectId;
         Whiteboard.CanPickUpObject = Docking.CanPickUpObject;
+        }
         // fidelity: M11-037, M11-063, M13-040
         // 0x00624892 queues IDs only; 0x0062520C consumes them at the frame tail.
         vision.World.SetObjectPoseChanged = Configurations.SetObjectPoseChanged;
         vision.World.BlockConfigurationManagerUpdate = Configurations.Update;
+        if(_ownsSharedServices)
+        {
         vision.World.UnsetCarryingObjects = topOnly => Docking.Carrying.UnsetCarrying(topOnly);
         vision.World.CarriedPrimaryId = () => Docking.Carrying.CarriedObjectId;
 
@@ -67,7 +86,37 @@ public sealed class ManipulationSystem : IDisposable
         // LC3: the default-layer choice prefers the carried object over Visible and Connected (the carried ObjectID is a world ID: its type is the connected object's).
         robot.Lights.Cubes.IsCarried = t => Docking.Carrying.CarriedObjectId is { } id
             && vision.World.ConnectedObjects.FirstOrDefault(o => o.ObjectId == id)?.Type == t;
+        }
+        // Retire only the exact callbacks installed by this owner; later replacements remain usable.
+        var hostHook0=vision.World.SetObjectPoseChanged;
+        _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.SetObjectPoseChanged,hostHook0))vision.World.SetObjectPoseChanged=null;});
+        var hostHook1=vision.World.BlockConfigurationManagerUpdate;
+        _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.BlockConfigurationManagerUpdate,hostHook1))vision.World.BlockConfigurationManagerUpdate=null;});
+        if(_ownsSharedServices)
+        {
+            var pathSend=robot.Motion.Path.SendPathMessage;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(robot.Motion.Path.SendPathMessage,pathSend))robot.Motion.Path.SendPathMessage=null;});
+            var ownedHook0=robot.Motion.IsCarryingObject;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(robot.Motion.IsCarryingObject,ownedHook0))robot.Motion.IsCarryingObject=null;});
+            var ownedHook1=robot.Motion.PlaceObjectOnGroundAsync;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(robot.Motion.PlaceObjectOnGroundAsync,ownedHook1))robot.Motion.PlaceObjectOnGroundAsync=null;});
+            var ownedHook2=robot.Sensors.UnattachCarriedObjectIfCarrying;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(robot.Sensors.UnattachCarriedObjectIfCarrying,ownedHook2))robot.Sensors.UnattachCarriedObjectIfCarrying=null;});
+            var ownedHook3=robot.Cubes.ExcludeFromMovedBroadcast;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(robot.Cubes.ExcludeFromMovedBroadcast,ownedHook3))robot.Cubes.ExcludeFromMovedBroadcast=null;});
+            var ownedHook4=robot.Lights.Cubes.IsCarried;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(robot.Lights.Cubes.IsCarried,ownedHook4))robot.Lights.Cubes.IsCarried=null;});
+            var ownedHook5=vision.World.UnsetCarryingObjects;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.UnsetCarryingObjects,ownedHook5))vision.World.UnsetCarryingObjects=null;});
+            var ownedHook6=vision.World.CarriedPrimaryId;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.CarriedPrimaryId,ownedHook6))vision.World.CarriedPrimaryId=null;});
+        }
     }
+    private readonly List<Action> _installedCallbacks=new();
+    private readonly bool _ownsSharedServices,_ownsWhiteboard,_standalone;
+    private Func<double> _clockSec;
+    private readonly Action<string> _dockingLogForwarder;
+    private bool _disposed;
 
     /// <summary>
     /// The same seam as <c>BehaviorContext.AiExpressedNeedValue</c>: <c>[[[robot+0x264]+0x30]+0x14]</c>, the SevereNeedsComponent's severe NeedId (3 = none when unset or null).
@@ -75,8 +124,16 @@ public sealed class ManipulationSystem : IDisposable
     /// </summary>
     public Func<Cozmo.Robot.Behavior.NeedId?>? AiExpressedNeedValue { get; set; }
 
-    /// <summary>Seconds on the clock the components stamp with (the robot's clock by default; tests inject theirs).</summary>
-    public Func<double> ClockSec { get; set; } = () => Environment.TickCount64 / 1000.0;
+    /// <summary>Native views read the engine clock. CreateStandalone owns a replaceable host clock shared with its private whiteboard/configuration adapter.</summary>
+    public Func<double> ClockSec
+    {
+        get=>_clockSec;
+        set
+        {
+            if(!_standalone&&!_ownsSharedServices)throw new InvalidOperationException("Native manipulation views use the engine clock. Use CreateStandalone for a controlled host clock.");
+            _clockSec=value??throw new ArgumentNullException(nameof(value));
+        }
+    }
 
     /// <summary>
     /// The engine's lattice planner (M13), when the motion-primitive set is available: <see cref="DriveToPoseAction"/>
@@ -107,6 +164,24 @@ public sealed class ManipulationSystem : IDisposable
 
     /// <summary>The block configurations (stacks, pyramid bases, pyramids) over the world model, rebuilt on every observation.</summary>
     public BlockConfigurationManager Configurations { get; }
+    internal NativeConfigurationManager NativeConfigurations
+    {
+        get
+        {
+            var owner=World.NativeConfigurations;
+            if(owner is null)
+                throw new NativeConfigurationUnavailable("actual native configuration producer owner absent; no host/empty snapshot substituted");
+            if(!owner.InputsAvailable)
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Native configuration consumer: rebuild inputs UNKNOWN; retained complete prior publication used, no host/empty cache substituted");
+            return owner;
+        }
+    }
+    internal IReadOnlyList<NativePyramidBase> NativePyramidBases=>NativeConfigurations.Snapshot.Bases;
+    internal IReadOnlyList<NativePyramidConfiguration> NativePyramids=>NativeConfigurations.Snapshot.Pyramids;
+    internal IReadOnlyList<NativeBlockConfiguration> NativeCache(BlockConfigurationType type)=>NativeConfigurations.Snapshot.Cache(type);
+    internal StackOfCubes? NativeTallestStack()=>NativeConfigurations.Tallest()?.View;
+    internal bool NativeIsPartOfConfiguration(uint id,BlockConfigurationType type)=>NativeConfigurations.Contains(id,type);
+
     /// <summary>Beacons and object-failure memory shared by the behaviours.</summary>
     public AIWhiteboard Whiteboard { get; }
     /// <summary>The workout configs, when loaded from the OBB.</summary>
@@ -220,11 +295,17 @@ public sealed class ManipulationSystem : IDisposable
 
     public void Dispose()
     {
-        Whiteboard.ClearAllBeacons(); // release this owner's independent beacon pose copies
+        if(_disposed)return;
+        _disposed=true;
+        Docking.Log -= _dockingLogForwarder;
+        foreach(var detach in _installedCallbacks)detach();
+        _installedCallbacks.Clear();
+        if(_standalone)Whiteboard.RetireStandaloneStorage();
+        else if(_ownsWhiteboard)Whiteboard.ClearAllBeacons(); // public handles do not retire the native shared owner
         NativePlanners?.Stop();NativePlanners?.Dispose();
-        if(World.MapClearQuad==Whiteboard.ProcessClearQuad)World.MapClearQuad=null;
-        Follower.Dispose();
-        Docking.Dispose();
+        if(_ownsSharedServices && World.MapClearQuad==Whiteboard.ProcessClearQuad)World.MapClearQuad=null;
+        if(_ownsSharedServices)Follower.Dispose();
+        if(_ownsSharedServices)Docking.Dispose();
     }
 }
 

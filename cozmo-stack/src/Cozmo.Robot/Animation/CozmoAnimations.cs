@@ -413,15 +413,10 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-045
         // R45-2..R45-3: loader -> container+0x28 -> group+0 uses context+0x14.
         Library.ContextRandom = _scheduler.ContextRandom;
-        int reportedMoodClock = 0;
-        Library.CooldownTimeSec = () =>
-        {
-            if (Interlocked.Exchange(ref reportedMoodClock,1)==0)
-            {
-                _robot.Engine.EmitStackLog("MISSING: M7-026 MoodManager+0x130 clock input (0x0058A95C/0x0067B67E); existing BaseStationTimer stand-in remains unverified");
-            }
-            return _robot.Engine.Timer.Seconds;
-        }; // M7 owns the cached clock. This job does not build or claim that recipient.
+        Library.CurrentMood=()=>_robot.Engine.Robot?.MoodOwner?.GetSimpleMood()
+            ??throw new InvalidOperationException("MISSING: animation group actual Mood owner unavailable");
+        Library.CooldownTimeSec=()=>_robot.Engine.Robot?.MoodOwner?.LastUpdateSeconds
+            ??throw new InvalidOperationException("MISSING: animation group actual Mood cached time unavailable");
         return Library;
     }
 
@@ -554,6 +549,7 @@ public sealed class CozmoAnimations : IDisposable
     /// animation it started, but must not end an unrelated one that has since replaced it.
     /// </summary>
     public bool StopIfCurrent(long generation) => _scheduler.StopIfCurrent(generation);
+    internal bool ClearStreamIfClipMatches(AnimationClip? clip)=>_scheduler.ClearStreamIfClipMatches(clip);
 
     /// <summary>
     /// Plays a clip and reports which animation it became, so the caller can stop exactly that one.

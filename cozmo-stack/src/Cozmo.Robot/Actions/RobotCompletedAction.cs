@@ -24,7 +24,9 @@ internal readonly record struct RobotCompletedAction(
     int ActionType,
     uint Result,
     IReadOnlyList<uint> SubActionResults,
-    uint CompletionUnion)
+    uint CompletionUnion,
+    string? AnimationName = null,
+    byte? CompletionVariant = null)
 {
     /// <summary>The outer <c>MessageEngineToGame</c> union tag for <c>RobotCompletedAction</c>: uint16 0x005A (90, D9/MessageEngineToGame.cs:104).</summary>
     public const ushort UnionTag = 0x005A;
@@ -38,7 +40,17 @@ internal readonly record struct RobotCompletedAction(
         var subs = SubActionResults;
         var w = new CladWriter().U32(Tag).I32(ActionType).U32(Result).U8(unchecked((byte)subs.Count));
         foreach (var s in subs) w.U32(s);
-        w.U32(CompletionUnion);
+        // AnimationCompleted: tag1, byte-length-prefixed current selected name
+        // (0x0075C90E..16 -> 0x006C22DC..2326). Other legacy variants retain their
+        // explicit raw-cache boundary until their concrete producer is established.
+        if(AnimationName is {} name)
+        {
+            var bytes=System.Text.Encoding.UTF8.GetBytes(name);
+            byte count=unchecked((byte)bytes.Length); // 0x006C2304 UXTB; copy the narrowed count too.
+            w.U8(1).U8(count).Bytes(bytes.AsSpan(0,count));
+        }
+        else if(CompletionVariant==6)w.U8(6); // 0x0075C940: defaultCompleted has no payload.
+        else w.U32(CompletionUnion);
         return w.ToArray();
     }
 

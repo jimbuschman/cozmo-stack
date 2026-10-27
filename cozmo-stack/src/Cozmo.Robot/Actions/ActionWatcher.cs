@@ -127,9 +127,11 @@ internal sealed class ActionWatcher
         }
 
         uint union = runner is ActionRunner baseRunner?baseRunner.PreparedCompletionUnion:runner.GetCompletionUnion(); // base vptr/cache after destruction; W3: virtual union BEFORE GetSubActionResults
+        string? animationName=runner is ActionRunner prepared?prepared.PreparedAnimationCompletionName:runner.GetAnimationCompletionName();
+        byte? variant=runner is ActionRunner cached?cached.PreparedCompletionVariant:runner.GetCompletionVariant();
         var subs = new List<uint>();
         GetSubActionResults(tag, subs);                    // W3: then the descendants
-        node.Record = new RobotCompletedAction(tag, type, result, subs, union);
+        node.Record = new RobotCompletedAction(tag, type, result, subs, union,animationName,variant);
         node.EndingMark = true;                            // +0x50
         _deque.Enqueue(node.Record);                       // W3: deque push
 
@@ -231,7 +233,7 @@ internal sealed class ActionWatcher
         var subs = new List<uint>();
         GetSubActionResults(runner.Tag, subs);                               // D3: subresults first
         uint union = runner.GetCompletionUnion();                            // D3: then the virtual union
-        return new RobotCompletedAction(runner.Tag, runner.Type, runner.State, subs, union);
+        return new RobotCompletedAction(runner.Tag, runner.Type, runner.State, subs, union,runner.GetAnimationCompletionName(),runner.GetCompletionVariant());
     }
 
     /// <summary>

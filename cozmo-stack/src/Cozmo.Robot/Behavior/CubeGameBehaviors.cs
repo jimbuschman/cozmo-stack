@@ -65,7 +65,7 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
     /// </summary>
     private readonly HashSet<uint> _tipped = new();
 
-    private StackOfCubes? Tallest() { var s = M.Configurations.GetTallestStack(); return s is not null && s.StackHeight >= MinimumStackHeight ? s : null; }
+    private StackOfCubes? Tallest() { var s = M.NativeTallestStack(); return s is not null && s.StackHeight >= MinimumStackHeight ? s : null; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) => !M.Docking.Carrying.IsCarryingObject && Tallest() is not null;
 
@@ -191,8 +191,8 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
         // TransitionToPlayingReaction 0x005C3946..0x005C394E sets robot+0x34->+0x94->+0xC = 1, i.e.
         // BlockWorld's BlockConfigurationManager dirty flag, forcing all configurations to recompute on
         // the next Update.
-        M.Configurations.ForceUpdate = true;
-        M.Configurations.Update();
+        if(M.World.NativeConfigurations is {} native)native.ForceUpdate();
+        else SteppedBehavior.ReportMissing("KnockOverCubes native force producer0x005C3946 has no actual configuration owner");
         // TransitionToPlayingReaction 0x005C3908 selects the success trigger (+0x15C) or the failure
         // trigger (+0x160) by the tipped-object set size at +0x14C != 0. The earlier stack-height check
         // was not the engine's selector.
@@ -589,18 +589,17 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     /// <summary><c>UpdatePyramidTargets</c>: static, base and top candidates among the free upright cubes.</summary>
     protected (uint? Static, uint? Base, uint? Top) Targets()
     {
-        var cfg = M.Configurations;
         var robot = M.RobotPose();
         var free = M.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type) && o.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative
-                                                     && !cfg.IsObjectPartOfConfigurationType(o.ObjectId, BlockConfigurationType.Pyramid)
-                                                     && !cfg.IsObjectPartOfConfigurationType(o.ObjectId, BlockConfigurationType.StackOfCubes))
+                                                     && !M.NativeIsPartOfConfiguration(o.ObjectId, BlockConfigurationType.Pyramid)
+                                                     && !M.NativeIsPartOfConfiguration(o.ObjectId, BlockConfigurationType.StackOfCubes))
                                         .OrderBy(o => robot is null ? 0 : (o.Pose.Translation - robot.Value.Translation).Length).ToList();
-        var existingBase = cfg.PyramidBases.FirstOrDefault();
+        var existingBase = M.NativePyramidBases.FirstOrDefault();
         uint? carried = M.Docking.Carrying.CarriedObjectId;
         if (existingBase is not null)
         {
             var top = free.FirstOrDefault(o => !existingBase.ContainsBlock(o.ObjectId) && (carried is null || o.ObjectId == carried));
-            return (existingBase.LeftBlockId, existingBase.RightBlockId, top?.ObjectId);
+            return (existingBase.MinId, existingBase.MaxId, top?.ObjectId);
         }
         var st = free.FirstOrDefault(o => o.ObjectId != carried);
         var bs = carried is { } c ? free.FirstOrDefault(o => o.ObjectId == c) : free.FirstOrDefault(o => o.ObjectId != st?.ObjectId);
@@ -611,8 +610,8 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
         var (s, b, t) = Targets();
-        bool baseDone = M.Configurations.PyramidBases.Count > 0;
-        if (BuildTop) return s is not null && b is not null && t is not null && M.Configurations.Pyramids.Count == 0;
+        bool baseDone = M.NativePyramidBases.Count > 0;
+        if (BuildTop) return s is not null && b is not null && t is not null && M.NativePyramids.Count == 0;
         return !baseDone && s is not null && b is not null;
     }
 
@@ -621,7 +620,7 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
         Scope.DisableReactions();
         var (s, b, t) = Targets();
         StaticBlockId = s; BaseBlockId = b; TopBlockId = t;
-        if (BuildTop && M.Configurations.PyramidBases.Count > 0)
+        if (BuildTop && M.NativePyramidBases.Count > 0)
         {
             if (M.Docking.Carrying.IsCarrying(t ?? uint.MaxValue)) TransitionToPlacingTopBlock(); else TransitionToDrivingToTopBlock();
             return;
@@ -665,8 +664,8 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
         {
             PlayTrigger(AnimationTrigger.BuildPyramidReactToBase, () =>
             {
-                M.Configurations.Update();
-                if (BuildTop && TopBlockId is not null && M.Configurations.PyramidBases.Count > 0) TransitionToDrivingToTopBlock();
+                SteppedBehavior.ReportMissing("BuildPyramid observing-base completion callback: native configuration update/callback join is unbuilt; public host Update is not a native producer");
+                if (BuildTop && TopBlockId is not null && M.NativePyramidBases.Count > 0) TransitionToDrivingToTopBlock();
                 else { CurrentPhase = Phase.Idle; Finish(); }
             });
         });
@@ -687,7 +686,7 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     // fidelity: M12-047 — checked caller loop; M12-043 owns the missing midpoint recipient.
     internal Func<ObservableObject,ObservableObject,Pose3d,bool>? TopBaseMidpoint;
     internal Func<ObservableObject,Pose3d> TopBaseCenter = PlacementProducerGeometry.Center;
-    internal Action<PyramidBase,uint>? TopContainsForTest;
+    internal Action<NativePyramidBase,uint>? TopContainsForTest;
     internal void TransitionToPlacingTopBlock()
     {
         CurrentPhase = Phase.PlacingTopBlock;
@@ -773,7 +772,7 @@ public sealed class RespondPossiblyRollBehavior : ManipulationBehavior
     public uint? TargetObjectId { get; private set; }
     private readonly HashSet<uint> _responded = new();
 
-    private ObservableObject? Target() => ClosestCube(o => !_responded.Contains(o.ObjectId) && !M.Configurations.IsObjectPartOfConfigurationType(o.ObjectId, BlockConfigurationType.PyramidBase));
+    private ObservableObject? Target() => ClosestCube(o => !_responded.Contains(o.ObjectId) && !M.NativeIsPartOfConfiguration(o.ObjectId, BlockConfigurationType.PyramidBase));
 
     protected override bool IsRunnableInternal(BehaviorContext context) => !M.Docking.Carrying.IsCarryingObject && Target() is not null;
 
@@ -784,7 +783,7 @@ public sealed class RespondPossiblyRollBehavior : ManipulationBehavior
         if (t is null) { Finish(); return; }
         TargetObjectId = t.ObjectId;
         _responded.Add(t.ObjectId);
-        int placed = Math.Clamp(M.Configurations.PyramidBases.Count > 0 ? 2 : Math.Min(2, _responded.Count - 1), 0, 2);
+        int placed = Math.Clamp(M.NativePyramidBases.Count > 0 ? 2 : Math.Min(2, _responded.Count - 1), 0, 2);
         if (t.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative)
         {
             CurrentPhase = Phase.RespondingPositively;
@@ -823,10 +822,16 @@ public sealed class RespondPossiblyRollBehavior : ManipulationBehavior
 public sealed class OnConfigSeenBehavior : ManipulationBehavior
 {
     public const double RecentSec = 4.99999;
-    private readonly HashSet<string> _reacted = new();
+    private readonly HashSet<string> _reacted = new(); // optional host diagnostic metadata ONLY
+    private readonly SortedDictionary<BlockConfigurationType,int> _nativeCounts=new();
+    private float _previousEvaluationSeconds, _growthSeconds; // ctor memclr128..13F, 005DB112/114
 
     public OnConfigSeenBehavior(ManipulationSystem m, string id, IReadOnlyList<BlockConfigurationType> configTriggers, IReadOnlyList<AnimationTrigger> animTriggers)
-        : base(id, "OnConfigSeen", m) { ConfigTriggers = configTriggers; AnimTriggers = animTriggers; }
+        : base(id, "OnConfigSeen", m)
+    {
+        ConfigTriggers = configTriggers; AnimTriggers = animTriggers;
+        foreach(var type in configTriggers)_nativeCounts[type]=0; // ReadJson5DB1CE also resets duplicates.
+    }
 
     public static OnConfigSeenBehavior RespondToPyramidBase(ManipulationSystem m) =>
         new(m, "RespondToPyramidBase", new[] { BlockConfigurationType.PyramidBase }, new[] { AnimationTrigger.BuildPyramidReactToBase });
@@ -848,14 +853,34 @@ public sealed class OnConfigSeenBehavior : ManipulationBehavior
         return null;
     }
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => Recent() is not null;
+    protected override bool IsRunnableInternal(BehaviorContext context)
+    {
+        var native=M.NativeConfigurations;
+        if(native is null)return false; // availability guard; preserve native timer/count state for retry.
+        float now=context.Robot.Engine.Timer.SecondsF;
+        float elapsed=now-_previousEvaluationSeconds;
+        _previousEvaluationSeconds=now;
+        foreach(var type in _nativeCounts.Keys.ToArray())
+        {
+            int count=native.Snapshot.Cache(type).Count;
+            if(count>_nativeCounts[type])_growthSeconds=now;
+            _nativeCounts[type]=count;
+        }
+        return elapsed<BitConverter.UInt32BitsToSingle(0x409FFFEB)
+            &&MathF.Abs(_growthSeconds-now)<BitConverter.UInt32BitsToSingle(0x3727C5AC);
+    }
 
     protected override void OnStart()
     {
-        Seen = Recent();
-        if (Seen is null) { Finish(); return; }
-        _reacted.Add(Seen.Type + ":" + string.Join(",", Seen.BlockIds.OrderBy(i => i)));
-        Log($"configuration seen: {Seen.Type} of {string.Join(",", Seen.BlockIds)}");
+        // D1 host extension: this optional view never gates native admission or actions.
+        try{Seen=Recent();}
+        catch(Exception error){Seen=null;Log("host configuration view unavailable: "+error);}
+        Log("native configuration count growth");
+        if(Seen is not null)
+        {
+            _reacted.Add(Seen.Type + ":" + string.Join(",", Seen.BlockIds.OrderBy(i => i)));
+            Log($"host configuration view: {Seen.Type} of {string.Join(",", Seen.BlockIds)}");
+        }
         int i = 0;
         void Next() { if (i >= AnimTriggers.Count) { Finish(); return; } PlayTrigger(AnimTriggers[i++], Next); }
         Next();
@@ -897,7 +922,7 @@ public sealed class CantHandleTallStackBehavior : ManipulationBehavior
     public StackOfCubes? TargetStack { get => _delocalization.Stack; private set => _delocalization.Stack = value; }
     private Dictionary<uint, Pose3d> _posesAtStart = new();
 
-    private StackOfCubes? Tallest() { var s = M.Configurations.GetTallestStack(); return s is not null && s.StackHeight >= MinimumStackHeight && M.World.GetLocatedObjectById(s.BottomBlockId) is not null ? s : null; }
+    private StackOfCubes? Tallest() { var s = M.NativeTallestStack(); return s is not null && s.StackHeight >= MinimumStackHeight && M.World.GetLocatedObjectById(s.BottomBlockId) is not null ? s : null; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) => Tallest() is not null;
     protected override bool KeepsRunningWithoutAction => true;
@@ -1018,7 +1043,7 @@ public sealed class ReactToConfigurationBehavior : ManipulationBehavior
     public double? NextAllowedSec { get; private set; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) =>
-        M.Configurations.Cache(Type).Count > 0 && (NextAllowedSec is null || M.ClockSec() >= NextAllowedSec);
+        M.NativeCache(Type).Count > 0 && (NextAllowedSec is null || M.ClockSec() >= NextAllowedSec);
 
     protected override void OnStart()
     {

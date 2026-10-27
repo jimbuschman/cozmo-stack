@@ -204,6 +204,7 @@ public sealed partial class CozmoRobot : IDisposable
         manager.InitializeRobotReactions(Engine.Options.ResourcesPath,_vision);
         if(native.HasExternalInterface)manager.AttachSparkInput();
         native.BehaviorManagerOwner=manager;
+        native.NativeBehaviorRuntime=new(this,native,manager,context,_vision);
         Sensors.RequestCurrentBehaviorEndImmediately=manager.RequestCurrentBehaviorEndImmediately;
     }
     private Behavior.SevereNeedsComponent? _boundSevereNeeds;
@@ -235,7 +236,9 @@ public sealed partial class CozmoRobot : IDisposable
         severe.Subscribe(Engine,native.HasExternalInterface);
         if(_severeNeedsConstructed||Engine.AIComponentUpdate is null)Engine.AIComponentUpdate=_severeNeedsUpdate;
         _severeNeedsConstructed=true;
-        native.Lifetime.Bind(0x264,address=>{severe.Dispose();native.Lifetime.Missing(address,0x264);}); // other AI children remain their existing gap
+        var ai=native.NativeBehaviorRuntime!.AI;
+        ai.BindDestructionRecipient(0x30,()=>{severe.Dispose();ai.NativeTeardown.Destroy(0x30);});
+        native.Lifetime.Bind(0x264,_=>ai.DestroyDirect()); // tracker storage retires at +2C; no second ForceUpdate
     }
     public ReliableTransport Transport { get; }
     public CozmoCamera Camera { get; } = new();
@@ -475,8 +478,8 @@ public sealed partial class CozmoRobot : IDisposable
         // Subscribe before any connection event; retain the existing NV calibration and worker start gates.
         if (!Engine.Options.OmitVisionForTest)
             _vision = new Vision.VisionSystem(this,Engine.Options.VisionCalibration,Engine.Options.VisionDetector,Engine.Options.VisionOkaoRecognizer);
-        Engine.BindRobotLifetime+=native=>{BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
-        if(Engine.Robot is {} severeOwner){BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}
+        Engine.BindRobotLifetime+=native=>{BindNativeMood(native);BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
+        if(Engine.Robot is {} severeOwner){BindNativeMood(severeOwner);BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}
 
     }
 

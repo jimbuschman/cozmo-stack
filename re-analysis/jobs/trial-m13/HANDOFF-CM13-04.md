@@ -1,4 +1,4 @@
-# CM13-04 handoff â€” importer origin pose
+# CM13-04 handoff — importer origin pose
 
 **READY FOR CLAUDE.** Independent source/code check PASS; full gate **6306/6306 PASS,0failed/0skipped,6m55s**. Branch codex-m13-manager-2, base origin/main d2967c92 (R1 externally reviewed). Code f55fb6ee0857c13813a8f42b29853b1f67ed1af6; full gate ran on ec267402 before rebase. Complete code/record/inventory/tool trees are identical after rebase (git diff exit0), so the recorded gate fingerprint is unchanged. No manifest/status/approval/acceptance or REVIEW.md change; no hardware run or dependency on one.
 

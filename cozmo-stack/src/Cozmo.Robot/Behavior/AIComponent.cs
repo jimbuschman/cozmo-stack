@@ -54,6 +54,7 @@ public sealed class AIComponent
 
     /// <summary><c>AIComponent+0x10</c>.</summary>
     public BehaviorHelperComponent Helpers { get; }
+    internal FreeplayDataTracker? Tracker {get;set;}
 
     // fidelity: M11-079 — native +8, constructor 0x005741A4..0x005741F6.
     public AIInformationAnalyzer Analyzer { get; }
@@ -67,6 +68,7 @@ public sealed class AIComponent
         // Whiteboard's existing Update is a no-op. SevereNeeds follows it at 0x00569F38.
         SevereNeeds.Update();
         Helpers.Update(robot);
+        Tracker?.Update(); // 0x00569F44/46, after helpers
     }
 }
 

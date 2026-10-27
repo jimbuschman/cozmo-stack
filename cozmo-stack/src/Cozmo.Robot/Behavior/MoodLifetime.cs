@@ -18,7 +18,7 @@ public sealed partial class MoodState
     internal RetainedSubscription? LastSubscriptionForTest { get { lock (_lifetimeGate) return _subscriptions.LastOrDefault(); } }
     internal int SubscriptionCount { get { lock (_lifetimeGate) return _subscriptions.Count; } }
     internal void AddSubscriptionForTest(RetainedSubscription handle) { lock (_lifetimeGate) _subscriptions.Add(handle); }
-    internal void BindNativeLifetime(EngineRobot native, int actionCallbackId)
+    internal void BindNativeLifetime(EngineRobot native, int actionCallbackId, bool initialized=true)
     {
         LogCallbackDeferral.RunGated(native.MoodLifetimeGate, () =>
         {
@@ -27,7 +27,7 @@ public sealed partial class MoodState
                 if (native.Lifetime.Destroying || _nativeRetired || (_lifetimeOwner is not null && !ReferenceEquals(native, _lifetimeOwner)) || native.MoodOwner is { } previous && !ReferenceEquals(previous, this))
                 { SteppedBehavior.ReportMissing("M7-023 replacement/shared Mood owner construction is not established; retired or different MoodState is not rebound as the native owner"); return; }
                 _lifetimeOwner=native; _nativeRobot = native; _actionCallbackId = actionCallbackId; native.MoodOwner = this;
-                if (native.HasExternalInterface)
+                if (initialized && native.HasExternalInterface && _subscriptions.Count==0)
                     _subscriptions.Add(native.Engine.AnimationMessages.SubscribeMessage(0xC3, false, UnbuiltMoodMessage));
                 native.Lifetime.Bind(0x440, _ => DestroyForRobot());
             });

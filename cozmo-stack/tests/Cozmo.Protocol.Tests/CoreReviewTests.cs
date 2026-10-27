@@ -1108,7 +1108,7 @@ public class CoreReviewTests
         Assert.Contains(cube.ObjectId, rig.Vision.CarriedObjects!());
         var oldCallback = (Delegate)typeof(DockingSystem).GetField("_carriedPose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(original.Docking)!;
         var callbacks = (Delegate?)typeof(VisionSystem).GetField("FrameProcessed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(rig.Vision);
-        Assert.DoesNotContain(oldCallback, callbacks?.GetInvocationList() ?? Array.Empty<Delegate>());
+        Assert.Contains(oldCallback, callbacks?.GetInvocationList() ?? Array.Empty<Delegate>());
         replacement.Docking.Carrying.UnsetCarrying();
 
         // The explicit owner mutation clears carrying; constructing a facade does not.
@@ -1136,16 +1136,27 @@ public class CoreReviewTests
     {
         using var rig = new Rig();
         var original = rig.M;
+        var canonicalConfigurations=original.Docking.Configurations;
         var replacement = new ManipulationSystem(rig.Robot, rig.Vision);
         var theirs = rig.Vision.IsCarryingObject;
         Assert.NotNull(theirs);
 
+        var originalLogs=new List<string>();var replacementLogs=new List<string>();
+        original.Log+=originalLogs.Add;replacement.Log+=replacementLogs.Add;
+        Assert.Same(original.Docking,replacement.Docking);
+        Assert.Same(canonicalConfigurations,replacement.Docking.Configurations);
         original.Dispose();                                  // the late cleanup
+        original.Dispose();                                  // idempotent: detach only this host forwarder
+        Deliver(rig.Robot,new PickAndPlaceResult());          // actual handled docking diagnostic
+        Assert.Empty(originalLogs);
+        Assert.Contains(replacementLogs,l=>l.Contains("PickAndPlaceResult:"));
 
         Assert.Same(theirs, rig.Vision.IsCarryingObject);     // still the replacement's
         Assert.NotNull(rig.Vision.CarriedObjects);
         replacement.Dispose();
-        Assert.Null(rig.Vision.IsCarryingObject);             // and the owner can take it back
+        Assert.Same(theirs, rig.Vision.IsCarryingObject);     // both host handles borrow the canonical owner
+        rig.Robot.Engine.Robot!.NativeBehaviorRuntime!.Dispose();
+        Assert.Null(rig.Vision.IsCarryingObject);             // actual native owner retirement takes it back
     }
 
     // ================================================================ CORE-011

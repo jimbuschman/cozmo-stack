@@ -63,6 +63,8 @@ public sealed partial class BehaviorManager : IDisposable
     private double _startedSec;
 
     public BehaviorManager(BehaviorContext context, RepetitionPenalty? penalty = null)
+        :this(context,penalty,true) { }
+    internal BehaviorManager(BehaviorContext context,RepetitionPenalty? penalty,bool bindSensorOwner)
     {
         _context = context;
         _penalty = penalty ?? new RepetitionPenalty();
@@ -74,7 +76,7 @@ public sealed partial class BehaviorManager : IDisposable
         // All 21 triggers are mapped and enabled at startup (gap1 4f, 4g); the detector's B12 gate asks this map.
         for (int t = 0; t < TriggerCount; t++) _map[(ReactionTrigger)t] = new TriggerInfo();
         _unexpectedMovementGate = () => IsReactionTriggerEnabled(ReactionTrigger.UnexpectedMovement);
-        context.Robot.Sensors.UnexpectedMovement.ReactionTriggerEnabled = _unexpectedMovementGate;
+        if(bindSensorOwner)context.Robot.Sensors.UnexpectedMovement.ReactionTriggerEnabled = _unexpectedMovementGate;
     }
 
     private IReadOnlyList<ReactionMapEntry> _nativeReactionRows = Array.Empty<ReactionMapEntry>();
@@ -1066,6 +1068,7 @@ public sealed partial class BehaviorManager : IDisposable
         SteppedBehavior.ReportMissing("M8-016/M8-023 host BehaviorManager.Dispose still performs host Stop/strategy unsubscribe cleanup; native activity/chooser/strategy shared-control tree ownership and destructor position0x005A0D22..0x005A0DFA are unbuilt; host cleanup is not a native destructor");
         _sparkInput?.Dispose(); // host retained handle cleanup; native destructor position remains M8-023
         Stop(BehaviorStopReason.Cancelled, 0);
+        foreach(var behavior in _behaviors.OfType<SteppedBehavior>())behavior.RetireActionCompletionOwner();
         List<IReactionTriggerStrategy> strategies;
         lock (_gate)
         {

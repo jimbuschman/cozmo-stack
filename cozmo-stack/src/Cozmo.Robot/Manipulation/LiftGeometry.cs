@@ -136,6 +136,8 @@ public static class LiftGeometry
             topId = top.ObjectId; topWrtCarried = tmp;
         }
         carrying.AttachToLiftChecked(world, id, marker, objWrtLift, topId, topWrtCarried);
+        if(world.NativeConfigurations is { } nativeConfigurations)nativeConfigurations.ForceUpdate();
+        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-008 0x006331BC: native configuration owner unavailable; attachment native-force write skipped");
         if (configurations is not null) configurations.ForceUpdate = true;
         var argument = liftWorld.Compose(objWrtLift);
         if (liveLiftPose is not null)

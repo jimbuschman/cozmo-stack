@@ -238,6 +238,7 @@ public abstract partial class SteppedBehavior : IBehavior
                 return false;
             }
         }
+        if (NativeBaseInputs is { } nativeInputs && !nativeInputs.Allows(context)) return false;
         if (RobotStateAllowsRun is { } state && !state()) return false;           // +0x74
         if (UnlockAllowsRun is { } unlock && !unlock()) return false;             // +0x70
         if (!RecentTimersAllow(context)) return false;                            // +0x78/+0x7c
@@ -248,15 +249,16 @@ public abstract partial class SteppedBehavior : IBehavior
         // +0x78/+0x7c timers and the spark gate have no source in this stack: with no seam they are reported MISSING, not allowed.
         bool notOnTreads = RobotState355?.Invoke() ?? context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads;
         if (notOnTreads && !RunnableGate20(context)) return false;
-        if (RobotState34a is null) ReportMissing("IBehavior::IsRunnableBase robot+0x34a (0x005bd876): no source for the byte; the vtable+0x24 gate is not consulted");
+        if (NativeBaseInputs is not null) { if(context.Robot.Sensors.OnChargerPlatform && !RunnableGate24(context))return false; }
+        else if (RobotState34a is null) ReportMissing("IBehavior::IsRunnableBase robot+0x34a (0x005bd876): no source for the byte; the vtable+0x24 gate is not consulted");
         else if (RobotState34a() && !RunnableGate24(context)) return false;
-        bool carrying = RobotComponent284?.Invoke() ?? context.Robot.Motion.IsCarryingObject?.Invoke() == true;
+        bool carrying = NativeBaseInputs is { } inputs ? inputs.IsCarrying : RobotComponent284?.Invoke() ?? context.Robot.Motion.IsCarryingObject?.Invoke() == true;
         if (carrying && !RunnableGate28(context)) return false;
-        if (RobotStateAllowsRun is null || UnlockAllowsRun is null)
+        if (NativeBaseInputs is null && (RobotStateAllowsRun is null || UnlockAllowsRun is null))
             ReportMissing("IBehavior::IsRunnableBase +0x74 state (0x005bd7e6) and +0x70 unlock (0x005bd810) inputs: no source in this stack; not tested");
         if (!WantsToRun(context)) return false;                                   // +0x38
         double now = context.ClockSec?.Invoke() ?? Clock() / 1000.0;
-        return (float)now >= _resumeSuppressionUntil;                             // +0x118
+        return !((float)now < _resumeSuppressionUntil);                             // +0x118
     }
 
     /// <summary>The float timers' check (<c>+0x78</c>/<c>+0x7c</c>). A class that reads them from its config overrides it.</summary>
@@ -267,6 +269,7 @@ public abstract partial class SteppedBehavior : IBehavior
 
     /// <summary>Native +0x1C, initialized to zero at 0x005BBC08. The unbuilt VisitInterestingEdge constructor writes one.</summary>
     public int RequiredProcessId { get; protected internal set; }
+    internal NativeBehaviorBaseInputs? NativeBaseInputs;
     /// <summary>Test override for a nonzero process ID; production reads the owned analyzer.</summary>
     public Func<bool>? RequiredProcessRunning { get; set; }
     /// <summary>The robot-state seam (<c>+0x74</c> against 3 or the AI state); null = allow.</summary>

@@ -10,6 +10,22 @@ public abstract partial class SteppedBehavior
     internal uint CurrentRunnerTag => unchecked((uint)Volatile.Read(ref _currentActionHandle));
     // The default is the real robot+250 ActionList. The seam exposes defined QueueAction failure results.
     internal Func<QueueActionPosition, IActionRunner, byte, int>? QueueOwnedAction;
+    private RetainedSubscription? _actionCompletionSubscription;
+    internal void BindActionCompletionOwner(CozmoRobot robot,EngineRobot? actualOwner=null)
+    {
+        if (_actionCompletionSubscription is not null) return;
+        var owner=actualOwner??robot.Engine.Robot;
+        if(owner is null)return; // An unbound standalone constructor is diagnosed at admission.
+        // IBehavior ctor 0x005BBD5E..7A; the functor invokes HandleActionComplete
+        // synchronously, independently of the later ActionWatcher callback drain.
+        if (owner.HasExternalInterface)
+            _actionCompletionSubscription=robot.Engine.AnimationMessages.SubscribeMessage(RobotCompletedAction.UnionTag,true,
+                payload=>{if(payload is RobotCompletedAction completed)HandleActionComplete(completed);});
+    }
+    internal void RetireActionCompletionOwner()
+    {
+        _actionCompletionSubscription?.Dispose();_actionCompletionSubscription=null;
+    }
 
     /// <summary>5BDACC..5BDC12: ownership of incoming passes to this call, including every reject path.</summary>
     internal bool StartActing(IActionRunner? incoming, Action<RobotCompletedAction>? completion)
@@ -42,7 +58,8 @@ public abstract partial class SteppedBehavior
         _runner = incoming;
         Volatile.Write(ref _currentActionHandle, unchecked((int)incoming.Tag));
         ScoredActingStateChanged(true);
-        ReportMissing("M8-015 IBehavior completion subscription/lifetime owner at constructor 0x005BBB74 -> receiver 0x005BE1E6 is not bound to this adapter; HandleActionComplete is built, no deferred-watcher substitute");
+        if (_actionCompletionSubscription is null && Context.Robot.Engine.Robot?.HasExternalInterface==true)
+            ReportMissing("M8-015 IBehavior constructor completion subscription is unavailable for this action owner");
         int result;
         if (QueueOwnedAction is { } queue) result = queue(QueueActionPosition.Now, incoming, 0);
         else if (list is not null) result = list.QueueAction(QueueActionPosition.Now, incoming, 0);

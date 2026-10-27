@@ -74,30 +74,64 @@ public sealed class M5X20BuilderTests
     }
 
     [Fact]
-    public void ConcreteActionGapIsReportedOncePerDriveEvenWithRepeatedInitTags()
+    public void ConcreteLoopActionsReportRealNoAnimationCompletionAcrossReinitialization()
     {
-        using var robot=CozmoRobot.CreateOffline();var handler=robot.Animations.DrivingAnimations;var log=new List<string>();
-        robot.Engine.StackLogLine+=log.Add;
-        handler.Init(0,99,false,false);handler.PlayDrivingLoopAnim();handler.PlayDrivingLoopAnim();handler.PlayDrivingLoopAnim();
-        Assert.Single(log.Where(s=>s.Contains("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction")));
-        handler.Init(0,99,false,false);handler.PlayDrivingLoopAnim();
-        Assert.Equal(2,log.Count(s=>s.Contains("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction")));
+        using var robot=CozmoRobot.CreateOffline();var handler=robot.Animations.DrivingAnimations;
+        var reports=new List<RobotCompletedAction>();
+        using var subscription=robot.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>reports.Add(Assert.IsType<RobotCompletedAction>(p)));
+        for(int pass=0;pass<2;pass++)
+        {
+            Assert.True(handler.Init(0,99,false,false));
+            var ids=new List<uint>();
+            for(int i=0;i<3;i++){handler.PlayDrivingLoopAnim();ids.Add(handler.LoopId);}
+            Assert.All(ids,id=>Assert.NotEqual(0u,id));Assert.Equal(3,ids.Distinct().Count());
+            Assert.Equal(3,robot.Engine.Robot!.ActionList.QueueCount); // each source Play call queues its concrete action
+            for(int tick=0;tick<10&&robot.Engine.Robot.ActionList.QueueCount!=0;tick++)robot.Engine.Robot.ActionList.Update();
+            Assert.Equal(0,robot.Engine.Robot.ActionList.QueueCount);
+            uint end=handler.EndId;Assert.NotEqual(0u,end);Assert.DoesNotContain(end,ids);
+            Assert.Equal(ids.Append(end),reports.Skip(pass*4).Select(report=>report.Tag));
+            foreach(uint id in ids.Append(end))
+            {
+                var report=Assert.Single(reports.Where(r=>r.Tag==id));
+                Assert.Equal(26,report.ActionType);Assert.Equal(0x0300000Cu,report.Result);
+                Assert.Equal((byte)1,report.CompletionVariant);Assert.Equal("",report.AnimationName);
+            }
+        }
+        Assert.Equal(8,reports.Count);
     }
 
     // reach: unit (offline robot and trigger map inputs; persistence is supplied at engine initialization).
     [Fact]
-    public void FreeplayDisposeRestoresThePreviousDrivingTriggerInput()
+    public void StandaloneCustomTriggerInputNeverReplacesCanonicalDrivingInput()
     {
         var root=Assets();
         try
         {
-            using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{NeedsDeviceDirectory=root});var previous=AnimationTriggerMap.Load(root);robot.Animations.DrivingTriggerMap=previous;
+            using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{NeedsDeviceDirectory=root});
+            robot.Animations.ManualTicking=true;robot.Animations.ClockMs=()=>0;
+            File.WriteAllText(Path.Combine(root,"animations","manual.json"),"{\"manual_a\":[{\"Name\":\"HeadAngleKeyFrame\",\"triggerTime_ms\":0,\"durationTime_ms\":10000,\"angle_deg\":5,\"angleVariability_deg\":0}]}",System.Text.Encoding.UTF8);
+            File.WriteAllText(Path.Combine(root,"animationGroups","manual.json"),"{\"Animations\":[{\"Name\":\"manual_a\",\"Weight\":1,\"Mood\":\"Default\"}]}",System.Text.Encoding.UTF8);
+            robot.Animations.LoadFrom(root);var previous=robot.Animations.DrivingTriggerMap!;
             Func<bool> previousNeeds=()=>false;robot.Animations.DrivingAnimations.AreNeedsMet=previousNeeds;
-            File.WriteAllText(Path.Combine(root,"animationGroupMaps","AnimationTriggerMap.json"),"{\"Pairs\":[]}");var replacement=AnimationTriggerMap.Load(root);
+            File.WriteAllText(Path.Combine(root,"animationGroupMaps","AnimationTriggerMap.json"),System.Text.Json.JsonSerializer.Serialize(new { Pairs=new[]{new{CladEvent=((AnimationTrigger)0x95).ToString(),AnimName="manual"}}}),System.Text.Encoding.UTF8);var replacement=AnimationTriggerMap.Load(root);
             var context=new BehaviorContext{Robot=robot,Triggers=replacement};
             var obb=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../re-analysis/obb"));
             using(var stack=FreeplayStack.Create(obb,robot,context,()=>0,withReactions:false,needsDirectory:root))
-                Assert.Same(replacement,robot.Animations.DrivingTriggerMap);
+            {
+                Assert.Same(replacement,stack.Context.Triggers);
+                Assert.Same(previous,robot.Animations.DrivingTriggerMap);
+                Assert.Same(previousNeeds,robot.Animations.DrivingAnimations.AreNeedsMet);
+                var behavior=new PlayAnimBehavior("manual-trigger-probe","PlayAnim",new[]{(AnimationTrigger)0x95});
+                try
+                {
+                    behavior.StartAsync(stack.Context,new BehaviorScope(),default).GetAwaiter().GetResult();
+                    robot.Animations.Scheduler.Advance(0);
+                    Assert.Contains(behavior.Trace,line=>line=="play "+((AnimationTrigger)0x95)+" -> manual_a");
+                    Assert.True(behavior.HasCurrentAction);Assert.Equal("manual_a",robot.Animations.Scheduler.Playing);
+                    Assert.Same(previous,robot.Animations.DrivingTriggerMap);Assert.Same(previousNeeds,robot.Animations.DrivingAnimations.AreNeedsMet);
+                }
+                finally{behavior.Stop(BehaviorStopReason.Interrupted);Assert.True(behavior.AnimationCallbackCompletion.Wait(TimeSpan.FromSeconds(5)));}
+            }
             Assert.Same(previous,robot.Animations.DrivingTriggerMap);
             Assert.Same(previousNeeds,robot.Animations.DrivingAnimations.AreNeedsMet);
         }

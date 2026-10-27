@@ -1258,11 +1258,11 @@ public sealed partial class EngineRobot
     /// </summary>
     internal void Update()
     {
+        float now = Engine.Timer.SecondsF; // 0x00513BE2..BEA, captured once before Vision.
         Idle.Update();
         // fidelity: M1-041
         // The deadline is f32 (0x00513C02..0x00513C14): the stored +0x520 is the float at +0x10, and the
         // engine adds 5.0 and compares in single precision (vcvt.f32.f64 at 0x0084BC80 feeds +0x10).
-        float now = Engine.Timer.SecondsF;
         if (SyncTimeSentAt > 0 && now > SyncTimeSentAt + 5.0f)
         {
             Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.Update.SyncTimeAckNotReceived", "");
@@ -1304,10 +1304,13 @@ public sealed partial class EngineRobot
         // 0x00513CD8..0x00513E2A: the charger-platform step (the platform flag's clear) follows UpdateAllResults / SendAbsLocalizationUpdate / MapComponent::UpdateRobotPose
         // and precedes MoodManager::Update (0x00513E84) and so AIComponent::Update; it is owned by the world's owner (the VisionSystem), which sets this hook.
         if (Engine.ChargerPlatformUpdate is { } platform) Engine.RunIsolated(platform);
+        UpdateNativeMood(now); // 0x00513E84..8A: same entry-captured float; unavailable host input is explicit.
         // fidelity: M8-011
         // 0x00513EA8..0x00513EAC: AIComponent::Update (its BehaviorHelperComponent step) runs here, ahead of ActionList::Update (0x005140BC), the animation streamer
         // (0x0051410C) and NVStorage::Update (0x0051416A).
-        if (Engine.AIComponentUpdate is { } ai) Engine.RunIsolated(ai);
+        if(NativeBehaviorRuntime is {} behaviorRuntime)Engine.RunIsolated(behaviorRuntime.UpdateAI);
+        else if (Engine.AIComponentUpdate is { } ai) Engine.RunIsolated(ai);
+        if(NativeBehaviorRuntime is {} managerRuntime)Engine.RunIsolated(()=>managerRuntime.UpdateManager(now));
         // fidelity: M13-038 — only a stack diagnostic at the absent public-state input/caller join.
         ReportBehaviorPublicStateInputJoin();
         // fidelity: M4-016

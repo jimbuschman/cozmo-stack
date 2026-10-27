@@ -629,19 +629,30 @@ public class M3DeviceTests
             if (e.Name == "NVStorageComponent.HandleNVOpResult.Recvd") order.Add("recvd");
             if (e.Name == "NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback") order.Add("executing");
         };
-        nv.NVStorageOpResultBroadcast += b => { order.Add("broadcast"); broadcasts.Add(b); };
-        uint publications=rig.Engine.NativeUiDeliveryCount;
-        nv.Erase(0x182000, r => { Assert.Equal(publications+1,rig.Engine.NativeUiDeliveryCount);order.Add("callback"); Assert.True(rig.Engine.Backup!.HasPendingData(0x182000)); }, broadcast: true);
-        rig.Tick();
-        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = result });
-        rig.Tick();
-        // 0x00642FFE -> 0x0064339E -> ExecutingWriteCallback -> 0x006433F6.
-        // Broadcast is enqueued before the callback (counter checked above); host code runs after the tick.
-        Assert.Equal(new[] { "recvd", "executing", "callback", "broadcast" }, order);
-        var b0 = Assert.Single(broadcasts);
-        Assert.Equal((0x182000u, NvStorageComponent.OpErase, result, 0), (b0.Tag, b0.Op, b0.Result, b0.Index));
-        Assert.Empty(b0.Data);
-        Assert.False(rig.Engine.Backup!.HasPendingData(0x182000)); // The mirror is cleared after the callback, at 0x00643418.
+        var late=new List<NVStorageOpResult>();bool? pendingAtCallback=null;int callbackResult=int.MinValue;
+        int earlyAtCallback=-1,lateAtCallback=-1;
+        Action<NVStorageOpResult> early=report=>{order.Add("broadcast");broadcasts.Add(report);};
+        Action<NVStorageOpResult> lateHandler=late.Add;
+        nv.NVStorageOpResultBroadcast+=early;
+        try
+        {
+            nv.Erase(0x182000, r =>
+            {
+                callbackResult=r.Result;pendingAtCallback=rig.Engine.Backup!.HasPendingData(0x182000);
+                earlyAtCallback=broadcasts.Count;lateAtCallback=late.Count;order.Add("callback");
+                nv.NVStorageOpResultBroadcast-=early;nv.NVStorageOpResultBroadcast+=lateHandler;
+            },broadcast:true);
+            rig.Tick();rig.Data(new NVOpResult{Tag=0x182000,Op=NvStorageComponent.OpErase,Result=result});rig.Tick();
+            // Actual enqueue captures EARLY before callback swaps subscribers; API delivery follows callback.
+            Assert.Equal(result,callbackResult);Assert.True(pendingAtCallback);
+            Assert.Equal(0,earlyAtCallback);Assert.Equal(0,lateAtCallback);
+            Assert.Equal(new[]{"recvd","executing","callback","broadcast"},order);
+            var b0=Assert.Single(broadcasts);Assert.Empty(late);
+            Assert.Equal((0x182000u,NvStorageComponent.OpErase,result,0),(b0.Tag,b0.Op,b0.Result,b0.Index));
+            Assert.Empty(b0.Data);Assert.False(rig.Engine.Backup!.HasPendingData(0x182000));
+        }
+        finally{nv.NVStorageOpResultBroadcast-=early;nv.NVStorageOpResultBroadcast-=lateHandler;}
+
     }
 
     /// <summary>
