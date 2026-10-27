@@ -69,3 +69,11 @@
   as is. Your own-path rule (AUTONOMY.md, operator scope correction) does what N2 asked. No PROPOSED-SPLIT.md needed.
   Next after the FIX: the next behaviour on BEHAVIOURS.md, handed off the same way.
 | DRIVE-OFF-PILOT | MERGED | Test fix 5c25c9a7 checked (fixed action clock in the M15-022 lock tests; stronger assertions; test-only). Merged at a7f07e8b. **Settled: M7-026, M13-017, M13-040, M7-023, M11-060** (`research/20261026-driveoff-pilot-claude-check.md`). Not settled: M12-043, M8-027 (N3). |
+
+- **N4 (2026-10-26 night): queued cleanup, do it alongside the next job, no separate handoff.** The full gate on the
+  pilot merge failed once (then passed 6362/6362) on
+  `ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots(true,true)`:
+  TimeoutException at line 200 after 10 s. Four `Task.Run` producers must start while a pool thread is held
+  synchronously in the sink, so under full-suite load thread-pool injection can exceed the 10 s `Complete` window.
+  Use dedicated threads (or `TaskCreationOptions.LongRunning`) for the producers and the held writer so the test does
+  not depend on pool growth; keep every assertion.
