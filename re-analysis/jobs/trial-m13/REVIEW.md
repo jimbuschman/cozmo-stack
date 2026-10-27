@@ -98,3 +98,4 @@
   records, so both can settle. Then the native pickup children (Pickup/IDock/DriveTo). Propose a new record only where
   no existing record covers the behaviour's own step.
 | PICKUP-PYRAMID-2 | MERGED | d71e12c7. Spot-checked AbortDocking 0x0063BE10..0x0063BE5E and the IDock cleanup order 0x00557448..0x005575B4. **Settled: M12-018.** `research/20261027-pickup-pyramid-2-claude-check.md`. N6 still applies: M13-027 and M15-012 next. |
+| PICKUP-PYRAMID-3 | MERGED | 8e767209. Spot-checked StopActing 0x005BD3D6..0x005BD3FE (pre-clear only without keep, Cancel always, post compare-clear) and the wait deadline store 0x0054CA1C..0x0054CA36. Nothing proposed or settled; M12-010, M8-001, M8-017 stay open. N6 next. |
