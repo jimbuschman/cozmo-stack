@@ -1060,3 +1060,8 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New IMPLEMENTATION_GAP: PlayNeedsGetOutAnimIfNeeded (ctor 0x00544F88, Init 0x005450AC, CheckIfDone 0x005451C4, dtor 0x0054503C; factory 0x0052A864, row 0x01020280), offered through the C# API | M15-074 (new) |
 
+## PUTDOWN-BLOCK-1, the PutDownBlock lifecycle (operator approved 2026-10-27; research/20261027-putdown-block-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorPutDownBlock IsRunnableInternal 0x005C7FB0, Init 0x005C7FD0..0x005C80DE, LookDownAtBlock 0x005C80E0 and its release callback 0x005C8480..0x005C84D4; factory 0x0059CEE6..0x0059CF04. The look action itself stays M15-012 | M15-075 (new) |

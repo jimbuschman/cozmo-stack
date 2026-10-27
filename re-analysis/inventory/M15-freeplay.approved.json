@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-25",
+  "approved": "2026-10-27",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "581054bf99cb980542c6405244da91cb16243642ef4c2b2ea6df830a2c3038b8",
+  "inventory_sha256": "fd909d6876eb987e7f151d4b2a6f228051fbb2699d2164401b35610bdc934649",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -548,7 +548,7 @@
       "hardware_required": false
     },
     "M15-044": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "UnlockId name-to-value table and InitConfig details: UnlockIdFromString map builder; the root state after a failed readAsJson",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -883,6 +883,20 @@
         "Init 0x005450AC: selected [[robot+0x264]+0x30]+0x14 (0x005450BA); TBB 0x005450C4 bytes 07 02 05 10: Repair 0x141, Energy 0x135, Play 0x13A, none -> SUCCESS 0.",
         "CheckIfDone 0x005451C4..0x0054520E: Count -> 0; first start with +0xC9 == 0 -> Clear (0x005451E8), +0xC9 = 1; ended -> 0, failed -> 0x03000001, else 0x01000000. Destructor 0x0054504C..0x0054505E clears when selected != 3 and +0xC9 == 0.",
         "App senders: unity/scripts/csharp/Robot.cs:1408 (QueueSingleAction union 20); NeedsHub.cs:300-320, NeedsHub_2018.cs:375-395, CubeHelpSevereHelper.cs:15-35, SettingsSDKPanel.cs:75-90."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-075": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorPutDownBlock lifecycle: IsRunnableInternal, Init (reaction lock, random backup, put-down animation, score) and LookDownAtBlock (score, StartActing, carried-object release callback)",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "IsRunnableInternal 0x005C7FB0..0x005C7FC8: [[robot+0x284]+8] != -1 -> true, else this+0x84 != 0.",
+        "Init 0x005C7FD0..0x005C80DE: SmartDisableReactionsWithLock 0x005C7FE2; GetRNG/RandDblInRange(-45.0, -75.0) 0x005C7FEC..0x005C8002, vcvt.f32.f64 0x005C801E; DriveStraightAction(dist, 100.0f, true) 0x005C802C..0x005C8034; TriggerAnimationAction(0x19A, loops 1, 60.0f) 0x005C8048..0x005C805E; CompoundActionSequential 0x005C8076; IncreaseScoreWhileActing(5.0f) 0x005C807C..0x005C8084; StartActing<BehaviorPutDownBlock>(action, &LookDownAtBlock) 0x005C8096.",
+        "LookDownAtBlock 0x005C80E0..0x005C8148: CreateLookAfterPlaceAction(robot, true) 0x005C80F6; IncreaseScoreWhileActing(5.0f) 0x005C80FA..0x005C8104; StartActing(action, std::function) 0x005C811C. Callback 0x005C8480..0x005C84D4: if [[robot+0x284]+8] != -1, sWarningF then CarryingComponent::SetCarriedObjectAsUnattached(false) 0x005C84CE.",
+        "Factory binding of the four shipped PutDownBlock IDs 0x0059CEE6..0x0059CF04 (handoff HANDOFF-PUTDOWN-BLOCK-1.md, Codex independent check re-analysis/research/20261027-putdown-block-1-codex-check.md).",
+        "re-analysis/research/20261027-putdown-block-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

@@ -5,6 +5,7 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M15-012
+// fidelity: M15-075
 //005C7F98..84D4. Public PutDownBlockBehavior remains the separate manual adapter.
 internal sealed class NativePutDownBlockBehavior:SteppedBehavior
 {

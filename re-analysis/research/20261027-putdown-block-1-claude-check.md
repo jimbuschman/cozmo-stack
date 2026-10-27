@@ -1,4 +1,4 @@
-# PUTDOWN-BLOCK-1 Claude check (2026-10-27): PASS, nothing settled
+# PUTDOWN-BLOCK-1 Claude check (2026-10-27): PASS; M15-075 settled
 
 Branch `codex-m13-manager-2` (handoff `jobs/trial-m13/HANDOFF-PUTDOWN-BLOCK-1.md`, gate candidate 0ffe53aa).
 Spot-checked `NativePutDownBlockBehavior.cs` against 0x005C7F98..0x005C82CC (Capstone Thumb):
@@ -13,12 +13,23 @@ Spot-checked `NativePutDownBlockBehavior.cs` against 0x005C7F98..0x005C82CC (Cap
 | Image wait | 0x005C8242 (2, mode 1) | `NativeWaitForImagesRunner(_m, 2, 1, 0)` |
 | Keep-alive and face | 0x005C828E trigger 0x199, 60f; turn PI (0x40490FDB) 0x005C82A0 | match |
 
-The head child's speed arguments (15, 20) and the 0x005C8480..0x005C84D4 release callback were not re-read here;
-they rest on Codex's independent check.
+Second pass, after the operator approved the new record (2026-10-27):
+
+| Step | Binary | C# |
+|---|---|---|
+| IsRunnableInternal | 0x005C7FB0..0x005C7FC8: carried id != -1 -> true, else this+0x84 != 0 | `RawCarry != uint.MaxValue \|\| HasCurrentAction` |
+| Init order | lock 0x005C7FE2, draw, drive, animation, sequential, score 5, StartActing(&LookDownAtBlock) 0x005C8096 | `OnStart` in that order |
+| LookDownAtBlock | CreateLookAfterPlaceAction(robot, true) 0x005C80F6, score 5, StartActing with callback 0x005C811C | `LookDown` (the true argument adds the keep-alive face turn, 0x005C8264) |
+| Release callback | 0x005C8480..0x005C84D4: still carrying -> sWarningF, SetCarriedObjectAsUnattached(false) | match |
+| Head child 15/20 | MoveHeadToAngleAction ctor defaults 0x41700000/0x41A00000 at 0x00547F18..0x00547F20 | `CreateNativeHeadChild(..., 15f, 20f)` |
 
 ## Records
 
-Nothing settles. The handoff proposes a NEW record ("Configured PutDownBlock lifecycle and owned action flow",
+**Settled: M15-075** (new, operator-approved 2026-10-27), the PutDownBlock lifecycle. Its `unresolved` names what it
+does not cover: the look action's contents (M15-012), the face turn (M13-027), the release's own effect (M12-006) and
+the face data (M14-008).
+
+Originally nothing settled. The handoff proposes a NEW record ("Configured PutDownBlock lifecycle and owned action flow",
 0x0059CEE6..0x0059CF04 / 0x005C7F98..0x005C84D4). M15 is an approved subsystem, so a new record needs the operator's
 inventory approval before it can be added and settled. M15-012, M13-027 and M14-008 stay IMPLEMENTATION_GAP: each
 still has a manual or host-input part the handoff names as open.

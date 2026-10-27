@@ -264,7 +264,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-25",
+        "approved": "2026-10-27",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -14020,6 +14020,27 @@
       "hardware_required": false,
       "live_path": true,
       "test": ""
+    },
+    {
+      "id": "M15-075",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorPutDownBlock lifecycle: IsRunnableInternal, Init (reaction lock, random backup, put-down animation, score) and LookDownAtBlock (score, StartActing, carried-object release callback)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePutDownBlockBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "IsRunnableInternal 0x005C7FB0..0x005C7FC8: [[robot+0x284]+8] != -1 -> true, else this+0x84 != 0.",
+        "Init 0x005C7FD0..0x005C80DE: SmartDisableReactionsWithLock 0x005C7FE2; GetRNG/RandDblInRange(-45.0, -75.0) 0x005C7FEC..0x005C8002, vcvt.f32.f64 0x005C801E; DriveStraightAction(dist, 100.0f, true) 0x005C802C..0x005C8034; TriggerAnimationAction(0x19A, loops 1, 60.0f) 0x005C8048..0x005C805E; CompoundActionSequential 0x005C8076; IncreaseScoreWhileActing(5.0f) 0x005C807C..0x005C8084; StartActing<BehaviorPutDownBlock>(action, &LookDownAtBlock) 0x005C8096.",
+        "LookDownAtBlock 0x005C80E0..0x005C8148: CreateLookAfterPlaceAction(robot, true) 0x005C80F6; IncreaseScoreWhileActing(5.0f) 0x005C80FA..0x005C8104; StartActing(action, std::function) 0x005C811C. Callback 0x005C8480..0x005C84D4: if [[robot+0x284]+8] != -1, sWarningF then CarryingComponent::SetCarriedObjectAsUnattached(false) 0x005C84CE.",
+        "Factory binding of the four shipped PutDownBlock IDs 0x0059CEE6..0x0059CF04 (handoff HANDOFF-PUTDOWN-BLOCK-1.md, Codex independent check re-analysis/research/20261027-putdown-block-1-codex-check.md).",
+        "re-analysis/research/20261027-putdown-block-1-claude-check.md"
+      ],
+      "effect": "how far and how fast Cozmo backs up before putting a cube down, which animation plays, when PutDownBlock may run, and whether the carried cube is released when the look-down ends",
+      "provenance": "PUTDOWN-BLOCK-1 (Codex read and build, 2026-10-27), checked by Claude 2026-10-27; record added with operator approval 2026-10-27.",
+      "unresolved": "Settled (Claude check, 2026-10-27; re-analysis/research/20261027-putdown-block-1-claude-check.md): every step in the evidence read against the binary and matched in NativePutDownBlockBehavior.cs; the head child's 15/20 are MoveHeadToAngleAction's ctor defaults (0x00547F18..0x00547F20). Stack-only: a missing Carrying owner reports MISSING and is not runnable. Not this record: the contents of the look-after-place action (CreateLookAfterPlaceAction 0x005C8174) are M15-012; the face turn inside it is M13-027; SetCarriedObjectAsUnattached's own effect is M12-006; the face data the turn reads is M14-008.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "PutDownBlockNativeTests"
     }
   ]
 }

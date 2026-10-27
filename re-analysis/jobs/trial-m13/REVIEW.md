@@ -88,3 +88,12 @@
   only the deadline tests opt into advancing it. Keep every assertion. Run the full gate twice.
 | PICKUP-STACK-1 | MERGED | baa24a33. Spot-checked ComputeHeadAngleToSeePose 0x00518344..0x00518600 (NaN branches, write before MaxIterations, exhaustion) and GetAbsoluteHeadAngleToLookAtPose 0x0054B428..0x0054B55A. **Settled: M13-026** (EQUIVALENT_IMPLEMENTATION, libm boundary only). N5 accepted. `research/20261027-pickup-stack-1-claude-check.md`. |
 | PUTDOWN-BLOCK-1 | MERGED | 0ffe53aa. Spot-checked 0x005C7F98..0x005C82CC (backup draw -45..-75, speeds, head -20 deg/2 deg, drive -30, image wait 2/mode1, triggers 0x19A/0x199, face PI). Nothing settled: the proposed new lifecycle record waits for operator approval; M15-012/M13-027/M14-008 stay open. `research/20261027-putdown-block-1-claude-check.md`. |
+- **PUTDOWN-BLOCK-1 follow-up (2026-10-27):** the operator approved the proposed lifecycle record. Added and settled as
+  **M15-075** (IsRunnableInternal, Init, LookDownAtBlock and the release callback); M15-012, M13-027, M12-006 and
+  M14-008 stay open and are named in its `unresolved`.
+
+- **N6 (2026-10-27): close the shared children before starting another behaviour.** Each behaviour so far ends with the
+  same open records underneath it. Next job after the current one: **M13-027** (TurnTowardsFaceWrapperAction: the
+  generic flags and speech) and **M15-012** (the manual image-wait path and the CantHandleTallStack trigger), whole
+  records, so both can settle. Then the native pickup children (Pickup/IDock/DriveTo). Propose a new record only where
+  no existing record covers the behaviour's own step.
