@@ -1,3 +1,5 @@
+> **Deferred by manager N1, REVIEW.md on main1a507642 (2026-10-26 evening).** AudioM6/M9 stays last; no further audio reading for DriveOff. This report preserves executed preliminary source work only. The interrupted independent AO check issued no PASS/build release. OQ4's exact request/evaluation and active renderer joins remain gaps, not guessed defaults, exclusions or completed audio. Hand off the built pilot scope with these exact leftovers instead of holding it for audio.
+
 # Drive-off: actual object1 audio owner/readiness/consumer boundary
 
 Requested by manager/root after D2 documentation reconciliation, 2026-10-26. Actual model/reasoning telemetry is unavailable (requested Solmedium). Research-only; no production/tests/manifest/status/git/hardware changes. This report does **not** finish DriveOff, M6 or M9, and does not release implementation before an independent check.
