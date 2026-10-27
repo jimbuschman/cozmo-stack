@@ -24,6 +24,7 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | R1 | REVIEW COMPLETE | Authoritative external disposition is in REVIEW.md on main (supersedes its earlier finding). Corrected codee592d1b2 and full6285/6285; HANDOFF-R1.md. |
 | CM13-04 | REVIEW COMPLETE | Authoritative external disposition is in REVIEW.md on mainaca8c400 (MERGED481ade53, source spot-check and full6306/6306 zero skipped). HANDOFF-CM13-04.md retains the local evidence and open whole-planner scope. |
 | CM13-05 | FOLDED INTO DRIVE-OFF-PILOT | Draft paused and preserved locally; finish only if the whole pilot read establishes its observable dependency. No compiled/verified build claimed. |
-| DRIVE-OFF-PILOT | RELEASED | Whole DriveOffCharger production path and all remaining observable dependencies, one read/check/build/check/gate; RECORDS TO SETTLE for Claude. |
+| DRIVE-OFF-PILOT | READY FOR CLAUDE | First built/read scope per REVIEW N1: f03c7d23+c16d4711; independent code/production PASS, full6361/6361 zero skipped on99dd4403. HANDOFF-DRIVE-OFF-PILOT.md proposes M7-026/M8-027 and gives exact leftovers; whole behavior not finished. |
+| DRIVE-OFF-PILOT-2 | RELEASED | Read-only Phase1 of DRIVE-OFF-PILOT-2.md: actual remaining non-audio contexts/vision/world joins; different-agent read PASS before code. Audio stays last per N1. |
 
-Current order is PLAN-BEHAVIOURS.md: finish drive-off pilot, write BEHAVIOURS.md from shipped configs, then one behaviour per job. Earlier fragment rows are historical evidence, not finished behaviours.
+Current order is PLAN-BEHAVIOURS.md with REVIEW N1: review the first built pilot scope with exact leftovers, then close the remaining non-audio pilot path. BEHAVIOURS.md is present (178 typed IDs,0finished/1inprogress/177notstarted), not a completion claim. Audio M6/M9 stays last; no further audio reading for drive-off. Earlier fragment rows are historical evidence, not finished behaviours.

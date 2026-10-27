@@ -1,6 +1,6 @@
 # Drive-off pilot: record proposals, not official changes
 
-Preparation for the single pilot handoff. The first candidate is integrated; its full gate failed and corrections remain under independent verification. No official ID, status, evidence, approval or acceptance state is changed here. Claude assigns/settles records only after its external check. The full current record quotations and whole-path inventory are in `research/20261026-driveoff-pilot-read.md`; this file never replaces the manifest.
+Proposals accompanying the first pilot handoff under REVIEW N1. Initial full gate failed; corrected code passed independent production checks and the full6361/6361 gate, zero skipped. Whole drive-off remains unfinished. No official ID, status, evidence, approval or acceptance state is changed here. Claude assigns/settles records only after its external check. The full current record quotations and whole-path inventory are in `research/20261026-driveoff-pilot-read.md`; this file never replaces the manifest.
 
 ## New owning record needed: Socialize objective recipient
 
