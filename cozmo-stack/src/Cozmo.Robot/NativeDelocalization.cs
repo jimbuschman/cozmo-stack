@@ -25,6 +25,15 @@ public sealed partial class EngineRobot
             _nativeOrigins.Clear();
         });
     }
+    //00513AB8..B16: readonly Robot ctor geometry reconstructed with checked P2 operations.
+    //The final parent is this result's SAME owned computed history pose, never MAIN/current origin.
+    internal Pose3d CopyHistoricalCameraPose(HistRobotState state)
+    {
+        using var neck=new Pose3d(Rotation3d.Identity,HeadGeometry.NeckPositionMm);
+        using var headcam=new Pose3d(HeadGeometry.DefaultHeadCamRotation,HeadGeometry.EngineHeadCamPositionMm);
+        var camera=HeadGeometry.GetCameraPose(headcam,state.State.HeadAngle);
+        camera.PreComposeWith(neck);camera.SetParent(state.Pose);return camera;
+    }
     internal uint NativeRobotId {get;}
     private static readonly Pose3d MissingOrigin=new(""); // MissingOrigin's native name is not a checked input in this job.
     internal Pose3d MainPose {get;}=new("");

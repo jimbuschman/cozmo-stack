@@ -52,6 +52,9 @@ internal sealed class ActionWatcher
 
     /// <summary>Test/inspection: the runner whose tag is the selected root (W7). Set by ParentActionUpdating, cleared by Update.</summary>
     internal IActionRunner? Parent { get; private set; }
+    internal int HostUpdateDepth=>_rootStack.Count;
+    internal void UnwindUnavailableHostUpdate(int depth)
+    {while(_rootStack.Count>depth)ActionEndUpdating();}
 
     /// <summary>Test/inspection: records waiting to drain.</summary>
     public int PendingEventCount => _deque.Count;
@@ -129,9 +132,10 @@ internal sealed class ActionWatcher
         uint union = runner is ActionRunner baseRunner?baseRunner.PreparedCompletionUnion:runner.GetCompletionUnion(); // base vptr/cache after destruction; W3: virtual union BEFORE GetSubActionResults
         string? animationName=runner is ActionRunner prepared?prepared.PreparedAnimationCompletionName:runner.GetAnimationCompletionName();
         byte? variant=runner is ActionRunner cached?cached.PreparedCompletionVariant:runner.GetCompletionVariant();
+        var interaction=runner is ActionRunner preparedInteraction?preparedInteraction.PreparedObjectInteractionCompletion:runner.GetObjectInteractionCompletion();
         var subs = new List<uint>();
         GetSubActionResults(tag, subs);                    // W3: then the descendants
-        node.Record = new RobotCompletedAction(tag, type, result, subs, union,animationName,variant);
+        node.Record = new RobotCompletedAction(tag, type, result, subs, union,animationName,variant,interaction);
         node.EndingMark = true;                            // +0x50
         _deque.Enqueue(node.Record);                       // W3: deque push
 
@@ -233,7 +237,7 @@ internal sealed class ActionWatcher
         var subs = new List<uint>();
         GetSubActionResults(runner.Tag, subs);                               // D3: subresults first
         uint union = runner.GetCompletionUnion();                            // D3: then the virtual union
-        return new RobotCompletedAction(runner.Tag, runner.Type, runner.State, subs, union,runner.GetAnimationCompletionName(),runner.GetCompletionVariant());
+        return new RobotCompletedAction(runner.Tag, runner.Type, runner.State, subs, union,runner.GetAnimationCompletionName(),runner.GetCompletionVariant(),runner.GetObjectInteractionCompletion());
     }
 
     /// <summary>

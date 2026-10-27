@@ -130,7 +130,9 @@ public sealed class MarkerObservationTimeCheckedRowsTests
         try
         {
             var made=(List<ObservableObject>)typeof(BlockWorld).GetMethod("CreateObjectsFromMarkers",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(world,new object[]{new[]{observed},camera})!;
-            var obj=Assert.Single(made);Assert.Equal(173u,obj.LastObservedTimestamp);Assert.All(obj.Markers,m=>Assert.Null(m.LastObservedTimestamp));
+            var obj=Assert.Single(made);Assert.Equal(173u,obj.LastObservedTimestamp);
+            //Native KnownMarker ctor87E27C clears timestamp48; public unknown-input fixtures above remain nullable.
+            Assert.All(obj.Markers,m=>Assert.Equal(0u,m.LastObservedTimestamp));
             Assert.Contains(missing,s=>s.Contains("M11-013 SetMarkerAsObserved")&&s.Contains("parent-root binding"));Assert.DoesNotContain(missing,s=>s.Contains("writer/body is not supplied"));
         }
         finally{SteppedBehavior.MissingReported-=missing.Add;}

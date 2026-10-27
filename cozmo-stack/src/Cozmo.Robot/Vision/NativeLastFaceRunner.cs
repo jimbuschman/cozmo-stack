@@ -1,3 +1,5 @@
+using Cozmo.Robot.Behavior;
+using Cozmo.Protocol;
 using Cozmo.Robot.Animation;
 namespace Cozmo.Robot.Vision;
 
@@ -44,9 +46,13 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     private int _faceState;
     private float _best=float.MaxValue;
     private bool _locked;
+    private readonly bool _sayName;
+    private readonly int _sayTrigger,_noNameTrigger;
+    private readonly float _maximum;
     protected override string ActionName=>"TurnTowardsLastFacePose";
-    internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):base(m,Pose3d.Identity,Radians.Pi,0x29,0)
-    {_requested=new(m.Robot,0);_verified=new(m.Robot);}
+    internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
+    internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,float maximum,bool sayName,int sayTrigger=0x23F,int noNameTrigger=0x23F):base(m,Pose3d.Identity,maximum,0x29,0,true)
+    {_requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;}
     internal int FaceState=>_faceState;
     internal int VerifiedId=>_verified.Id;
     internal int RequestedId=>_requested.Id;
@@ -104,7 +110,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         if(M.Robot.Engine.Robot is not {} owner||!face.HeadPose.TryWithRespectTo(owner.GetCheckedMainPose(),relative))return;
         if(owner.MoodOwner is {} mood)mood.Trigger("LookAtFaceVerified",M.Robot.Engine.Timer.SecondsF);
         else Behavior.SteppedBehavior.ReportMissing("M1-034 M13-014 LastFace Mood owner absent at0067ADA8; smallest emotion call skipped");
-        SetChild(new NativeTurnTowardsPoseRunner(M,relative,BitConverter.UInt32BitsToSingle(0x3F490FDB)));
+        SetChild(new NativeTurnTowardsPoseRunner(M,relative,MathF.Min(_maximum,BitConverter.UInt32BitsToSingle(0x3F490FDB))));
     }
     private uint Final()
     {if(_verified.Id!=0)M.Vision.Faces.SetTurnedTowardsFace(_verified.Id,true);return 0;}
@@ -125,7 +131,21 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             return result==0?Final():result;
         }
         if(_faceState==2)
-        {uint result=_child?.Update()??0;return result==0?Final():result;}
+        {
+            if(_child is null)return Final();
+            uint result=_child.Update();if(result!=0)return result;
+            if(!_sayName)return Final();
+            using var mutation=M.World.EnterPoseMutation();
+            var face=M.Vision.Faces.GetFace(_verified.Id);if(face is null)return Final();
+            if(face.HasName)
+            {
+                Behavior.SteppedBehavior.ReportMissing("M13-014 LastFace SayText(name,intent3), animation trigger"+_sayTrigger+" recipient unavailable");
+                throw new NativeActionUnavailable("M13-014 native LastFace SayText(name,intent3)0054C5AA recipient unavailable");
+            }
+            if(_noNameTrigger==0x23F)return Final();
+            SetChild(new TriggerLiftSafeAnimationAction(M.Robot,new((AnimationTrigger)_noNameTrigger,1,true,0,60f,false)));
+            _faceState=3;
+        }
         uint terminal=_child?.Update()??0;
         if(terminal!=0)return terminal;
         if(_child is not null)M.Robot.Engine.Needs.RegisterNeedsActionCompleted("SayName"); //retained-child ReInit path54C606..61E.

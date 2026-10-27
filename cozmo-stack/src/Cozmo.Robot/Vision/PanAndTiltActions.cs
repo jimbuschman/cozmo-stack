@@ -56,7 +56,9 @@ public class PanAndTiltAction
     public bool PanIsAbsolute { get; init; }                  // +0x124
     public bool HeadIsAbsolute { get; init; }                 // +0x125
     public bool Byte0x126 { get; init; } = true;              // +0x126, copied to tia+0xD8 and mh+0x9C; the constructor's only store (0x005496B2)
-    public double PanToleranceRad { get; init; } = DefaultToleranceRad;   // +0x140
+    private double _panToleranceRad=DefaultToleranceRad;
+    public double PanToleranceRad { get=>_panToleranceRad; init=>_panToleranceRad=value; }
+    internal void SetNativePanTolerance(float value)=>_panToleranceRad=value;   // +0x140
     public double MaxSpeedRadPerSec { get; init; } = BitConverter.Int32BitsToSingle(0x40A78D36);          // +0x148
     public double MaxAccelRadPerSec2 { get; init; } = 10.0;               // +0x14C
     public double HeadToleranceRad { get; init; } = DefaultToleranceRad;  // +0x150
@@ -146,13 +148,15 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
     public static readonly float HeadMaxRad = BitConverter.Int32BitsToSingle(0x3F46D3F2);           // 0x3F46D3F2
     public const float SeePoseToleranceRad = 0.01f;       // 0x3C23D70A
 
-    public TurnTowardsPoseCompound(double maxTurnRad)
+    public TurnTowardsPoseCompound(double maxTurnRad):this(maxTurnRad,false){}
+    internal TurnTowardsPoseCompound(double maxTurnRad,bool copiedRadians)
     {
         PanIsAbsolute = false; HeadIsAbsolute = true;     // the constructors' fixed arguments to PanAndTiltAction: pan relative, tilt absolute
-        MaxTurnAbsRad = MathF.Abs(new Radians((float)maxTurnRad).Value);     // +0x170 = abs(maxTurn)
+        MaxTurnAbsRad = MathF.Abs(copiedRadians?(float)maxTurnRad:new Radians((float)maxTurnRad).Value);     // +0x170 = abs(maxTurn)
     }
 
-    public TurnTowardsPoseCompound(Pose3d pose, double maxTurnRad) : this(maxTurnRad) { Pose = new Pose3d(pose); PoseSet = true; }
+    public TurnTowardsPoseCompound(Pose3d pose, double maxTurnRad) : this(pose,maxTurnRad,false){}
+    internal TurnTowardsPoseCompound(Pose3d pose,double maxTurnRad,bool copiedRadians):this(maxTurnRad,copiedRadians){Pose=new Pose3d(pose);PoseSet=true;}
 
     /// <summary>+0x164: the pose to look at, in this stack's world frame.</summary>
     public Pose3d? Pose { get; private set; }

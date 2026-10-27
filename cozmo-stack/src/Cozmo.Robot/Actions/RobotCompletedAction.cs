@@ -26,7 +26,8 @@ internal readonly record struct RobotCompletedAction(
     IReadOnlyList<uint> SubActionResults,
     uint CompletionUnion,
     string? AnimationName = null,
-    byte? CompletionVariant = null)
+    byte? CompletionVariant = null,
+    ObjectInteractionCompletion? ObjectInteraction = null)
 {
     /// <summary>The outer <c>MessageEngineToGame</c> union tag for <c>RobotCompletedAction</c>: uint16 0x005A (90, D9/MessageEngineToGame.cs:104).</summary>
     public const ushort UnionTag = 0x005A;
@@ -43,7 +44,8 @@ internal readonly record struct RobotCompletedAction(
         // AnimationCompleted: tag1, byte-length-prefixed current selected name
         // (0x0075C90E..16 -> 0x006C22DC..2326). Other legacy variants retain their
         // explicit raw-cache boundary until their concrete producer is established.
-        if(AnimationName is {} name)
+        if(ObjectInteraction is {} interaction)w.U8(0).Bytes(interaction.PackBody());
+        else if(AnimationName is {} name)
         {
             var bytes=System.Text.Encoding.UTF8.GetBytes(name);
             byte count=unchecked((byte)bytes.Length); // 0x006C2304 UXTB; copy the narrowed count too.

@@ -19,7 +19,7 @@ internal sealed class NativePickupBlockHelper: IHelper
     private Func<uint,byte>? _converter;
     internal NativePickupBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,float maxTurn,bool flag104,bool flag105)
         :base(m.Robot,"PickupBlock",parent,factory)
-    {_m=m;_parent=parent;Target=target;MaxTurn=maxTurn;Flag104=flag104;Flag105=flag105;}
+    {_m=m;_parent=parent;Target=target;MaxTurn=new Radians(maxTurn).Value;Flag104=flag104;Flag105=flag105;}
     public override bool ShouldCancelDelegates(CozmoRobot robot)=>false;
     protected override BehaviorStatus Init(CozmoRobot robot)
     {Attempts=0;AlternateRetry=false;StartPickup(false);return Status;}
@@ -35,12 +35,20 @@ internal sealed class NativePickupBlockHelper: IHelper
         var pre=PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerification(_m.World.GetLocatedObjectByIdHelper(Target),PreActionType.Docking,0,0,state.Timestamp,main,
             owner.CarryingOwner?.CarriedObjectId,calibration,ObjectPoseQueries.Engine,()=>_m.GetObstacles(main));
         if(pre!=ActionResult.Success){Drive(false);return;}
-        Missing("native engine-ticked PickupObject/TurnTowardsLastFace/TurnTowardsObject runner recipients unavailable; execution preflight retains prior selection, no async substitute");
+        var pickup=new NativePickupObjectRunner(_m,Target);
+        NativeLastFaceRunner? face=null;NativeTurnTowardsObjectRunner? turn=null;
+        if(Attempts==0&&MathF.Abs(MaxTurn)>=BitConverter.UInt32BitsToSingle(0x3727C5AC))
+        {
+            face=new(_m,MaxTurn,Flag104,0x187,0x188);
+            turn=new(_m,Target,NativeTurnTowardsObjectRunner.AnyCode,Radians.Pi,false,false);
+        }
+        var compound=BuildPickupCompound(pickup,face,turn);
+        StartWithResponse(compound,Respond);Attempts=unchecked(Attempts+1);
 
     }
     internal CompoundActionSequential BuildPickupCompound(ActionRunner pickup,ActionRunner? lastFace,ActionRunner? objectTurn)
     {
-        var compound=new CompoundActionSequential(()=>_m.Robot.Engine.Timer.SecondsF,null);
+        var compound=new PickupSequence(this);
         if(Attempts==0&&MathF.Abs(MaxTurn)>=BitConverter.UInt32BitsToSingle(0x3727C5AC))
         {
             if(lastFace is null||objectTurn is null)throw new NotSupportedException("Native first-attempt turn runner inputs unavailable");
@@ -48,6 +56,34 @@ internal sealed class NativePickupBlockHelper: IHelper
         }
         compound.AddAction(pickup,false,false);compound.SetNativeCompletionProxy(pickup.Tag);
         return compound;
+    }
+    private sealed class PickupSequence:CompoundActionSequential
+    {
+        private readonly NativePickupBlockHelper _helper;
+        private bool _hostFailurePending;
+        internal PickupSequence(NativePickupBlockHelper helper):base(()=>helper._m.Robot.Engine.Timer.SecondsF){_helper=helper;}
+        public override uint Update()
+        {
+            if(_hostFailurePending&&State==EngineActionResult.Running)return EngineActionResult.Running;
+            int depth=Watcher?.HostUpdateDepth??0;
+            try{return base.Update();}
+            catch(NativeActionUnavailable error)
+            {
+                Watcher?.UnwindUnavailableHostUpdate(depth);
+                _hostFailurePending=true;
+                var h=_helper;h._responseCallback=null;h._converter=null;
+                SteppedBehavior.ReportMissing(error.ToString());
+                h._m.Robot.Engine.Robot!.ActionList.DeferHostCleanup(()=>
+                {
+                    if(h._parent.CurrentRunnerTag!=Tag)return;
+                    var manager=h._m.Robot.Engine.Robot?.BehaviorManagerOwner;
+                    if(ReferenceEquals(manager?.Current,h._parent))manager.Stop(BehaviorStopReason.Interrupted,h._m.Robot.Engine.Timer.SecondsF);
+                    else h._parent.Stop(BehaviorStopReason.Interrupted);
+                    h._m.Robot.Engine.Robot?.ActionList.Cancel(Tag); // Only this unsupported owned subtree; callbacks were cleared before cancellation.
+                });
+                return EngineActionResult.Running; //host teardown pending, never interpreted as native completion/failure.
+            }
+        }
     }
     private void Drive(bool force)
     {
@@ -84,7 +120,8 @@ internal sealed class NativePickupBlockHelper: IHelper
             case 0x03000010:_m.Whiteboard.NoPreDockPosesObjectId=Target;return;
             case 0x04000001:Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();StoreStatus(BehaviorStatus.Failure);return;
             case 0x0300001D:
-                Missing("generated objectInteractionCompleted payload byte15 absent from current completion carrier; SearchForBlock(minSeen0,maxStage0) recipient not substituted");return;
+                if(completed.ObjectInteraction?.Flag==true){Mark();StoreStatus(BehaviorStatus.Failure);return;}
+                Missing("SearchForBlock(minSeen0,maxStage0) recipient unavailable; original defined completion flag retained");return;
         }
         if(r is 0x04000003 or 0x04000004 or 0x04000005 or 0x03000015)
         {

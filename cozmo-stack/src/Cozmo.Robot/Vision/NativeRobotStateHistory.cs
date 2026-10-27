@@ -301,11 +301,13 @@ public sealed partial class RobotStateHistory
     public bool ComputeAndInsertStateAt(uint timestamp)=>ComputeAndInsertStateAt(timestamp,out _);
     internal bool ComputeAndInsertStateAt(uint timestamp,out uint originId)
     {uint origin=0;bool result=WithGate(()=>ComputeAndInsertCore(timestamp,out origin));originId=origin;return result;}
-    private bool ComputeAndInsertCore(uint timestamp,out uint originId)
+    internal bool ComputeAndInsertStateAt(uint timestamp,HistRobotState output,out uint originId)
+    {uint origin=0;bool result=WithGate(()=>ComputeAndInsertCore(timestamp,out origin,output));originId=origin;return result;}
+    private bool ComputeAndInsertCore(uint timestamp,out uint originId,HistRobotState? output=null)
     {
         lock(_gate)
         {
-            originId=0;using var value=new HistRobotState();uint time=0;
+            originId=0;using var owned=output is null?new HistRobotState():null;var value=output??owned!;uint time=0;
             if(ComputeStateAt(timestamp,ref time,value,true)!=0)return false;
             using var root=value.Pose.FindRoot();originId=root.Id;
             InsertComputedStateAt(timestamp,value.Pose);

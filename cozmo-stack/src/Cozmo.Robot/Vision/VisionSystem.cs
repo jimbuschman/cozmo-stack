@@ -46,6 +46,7 @@ public sealed partial class VisionSystem : IDisposable
     internal static readonly TimeSpan RemovalWait = TimeSpan.FromSeconds(2);
     /// <summary>M3-034: the FaceAlbum/Enrollment consumer, kept so Dispose can unsubscribe it.</summary>
     private readonly Action<byte[], byte[]> _faceAlbumLoaded;
+    private readonly Action<NativeObservedObject> _nativeObjectObserved;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -90,6 +91,12 @@ public sealed partial class VisionSystem : IDisposable
             if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
             Behavior.SteppedBehavior.ReportMissing($"M14-008 native face{tag:X2} complete app report unavailable; no truncated wire payload; checked LOCAL ID projection only");
             _robot.Engine.AnimationMessages.Deliver(tag,true,payload);
+        };
+        World.NativeObjectObserved=_nativeObjectObserved=observation=>
+        {
+            if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
+            SteppedBehavior.ReportMissing("M11-038 native44 complete app report unavailable; checked immutable LOCAL prefix only, no truncated wire");
+            _robot.Engine.AnimationMessages.Deliver(0x44,true,observation);
         };
         Faces.NativeMainPose=()=>_robot.Engine.Robot?.GetCheckedMainPose();
         Faces.NativePoseScope=()=>World.EnterPoseMutation();
@@ -1094,9 +1101,13 @@ public sealed partial class VisionSystem : IDisposable
             {
                 IReadOnlyList<ObjectObservation> objects;
                 IReadOnlyList<ObservableObject> forgotten;
+                VisionFrameResult result;
+                using(World.EnterPoseMutation())
+                {
+                using var historicalResult=new HistRobotState();
+                using var nativeResultCameraPose=new Pose3d("");
                 using var resultCameraPose=processingPose.CameraPose;
                 var processingCamera=new CameraModel(cal,resultCameraPose);
-                VisionFrameResult result;
                 lock(_busy)
                 {
                 if(RemovedSince(removal))return null;
@@ -1123,7 +1134,18 @@ public sealed partial class VisionSystem : IDisposable
                 uint stateOrigin = 0;
                 bool originKnown = false;
                 if (offline) History.InsertComputedStateAt(timestamp, processingPose.RobotPose);   // LOCAL: the caller's pose data stands for the raw state
-                else { stateComputed = History.ComputeAndInsertStateAt(timestamp, out stateOrigin); originKnown = stateComputed; }
+                else
+                {
+                    stateComputed=History.ComputeAndInsertStateAt(timestamp,historicalResult,out stateOrigin);originKnown=stateComputed;
+                    if(stateComputed)
+                    {
+                        if(_robot.Engine.Robot is not {} cameraOwner||Calibration is not {} installed)
+                        {SteppedBehavior.ReportMissing("M11-050 native historical Camera owner/calibration unavailable; result withheld");return null;}
+                        using var nativeCamera=cameraOwner.CopyHistoricalCameraPose(historicalResult);
+                        nativeResultCameraPose.AssignInputValue(nativeCamera);
+                        processingCamera=new CameraModel(installed,nativeResultCameraPose);
+                    }
+                }
                 if (!stateComputed)
                     Log?.Invoke($"VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: {timestamp}, hist: {History.OldestTimeStamp} to {History.NewestTimeStamp}");
                 else if (originKnown && !IsPoseInWorldOrigin(stateOrigin))
@@ -1227,6 +1249,7 @@ public sealed partial class VisionSystem : IDisposable
             FramesProcessed++;
             LastResult = result;
                 }
+                } // Release pose owners and frame gate before optional host callbacks.
             // Native result state is committed before optional host callbacks; a host
             // callback may dispose/join the worker without holding its processing lock.
             // Raised under the lock a removal waits on, so a frame the removal discarded never raises it afterwards.
@@ -1305,6 +1328,7 @@ public sealed partial class VisionSystem : IDisposable
         }
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
+        if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;
         lock(_busy)DiscardPreparedResults();
         if(_robot.Engine.VisionUpdateAllResultsFailed==DrainPreparedResults)_robot.Engine.VisionUpdateAllResultsFailed=null;
         // V3-V7 depend on native recipient ownership, not host reset/GC.

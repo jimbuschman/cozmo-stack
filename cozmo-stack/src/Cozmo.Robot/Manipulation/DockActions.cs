@@ -667,6 +667,8 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
     private Pose3d? _savedPose;
     private uint _verifyStartedAt,_loadDeadline;
     private bool _turnDone;
+    internal Pose3d? SavedVerificationPose=>_savedPose;
+    internal ActionResult SelectNative(ObservableObject target,out DockAction action)=>SelectDockActionResult(target,out action);
     internal uint VerifyStartedAt=>_verifyStartedAt;
     internal uint LoadDeadline=>_loadDeadline;
     public PickupObjectAction(ManipulationSystem m,uint objectId):base(m,objectId) { }
@@ -699,7 +701,7 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
         if(height>BitConverter.UInt32BitsToSingle(0x42076666))action=DockAction.PickupHigh;
         return ActionResult.Success;
     }
-    private ActionResult VerifyPrefix(ObservableObject? target,DockResult result)
+    internal ActionResult VerifyPrefix(ObservableObject? target,DockResult result)
     {
         var owner=M.Robot.Engine.Robot;
         if(owner?.StoredState is not {} state)
@@ -749,7 +751,7 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
         if(cancel.IsCancellationRequested)return ActionResult.CancelledWhileRunning;
         return VerifyCarrying();
     }
-    private ActionResult VerifyCarrying()
+    internal ActionResult VerifyCarrying()
     {
         using var mutation=M.World.EnterPoseMutation();
         uint raw=M.Docking.Carrying.CarriedObjectId??uint.MaxValue;

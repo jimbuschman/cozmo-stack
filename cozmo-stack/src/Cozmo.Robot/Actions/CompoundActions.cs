@@ -21,7 +21,7 @@ public abstract class CompoundAction : ActionRunner
 
     private readonly List<ActionRunner> _children = new();                       // +0x70
     private readonly Dictionary<ActionRunner, Func<uint, ActionRunner, bool>> _ignorePredicates = new();  // +0x88
-    private readonly Dictionary<uint, (uint Union, uint Type)> _completionCache = new();                  // +0x7C
+    private readonly Dictionary<uint, (uint Union, uint Type, ObjectInteractionCompletion? Interaction)> _completionCache = new();                  // +0x7C
     private readonly Func<float>? _engineClock;
     private string? _nativeName = "ICompoundAction";
     protected override string ActionName => _nativeName ?? "ICompoundAction";
@@ -155,7 +155,7 @@ public abstract class CompoundAction : ActionRunner
     protected bool StoreCompletionUnionAndDelete(ActionRunner child)
     {
         uint union = child.GetCompletionUnion();                       // virtual child union BEFORE Prep
-        _completionCache[child.Tag] = (union, (uint)child.Type);       // cache by current tag
+        _completionCache[child.Tag] = (union, (uint)child.Type, child.GetObjectInteractionCompletion());       // cache by current tag
         child.Prep();
         if (_proxy && child.Tag == _proxyTag) Type = child.Type;       // P6: proxy match copies the child type
         if (_deleteOnCompletion)
@@ -176,6 +176,13 @@ public abstract class CompoundAction : ActionRunner
     /// NOT write the compound's +0x44: only <see cref="SetCompletionUnionProxy"/> and
     /// <see cref="StoreCompletionUnionAndDelete"/> do.
     /// </summary>
+    public override ObjectInteractionCompletion? GetObjectInteractionCompletion()
+    {
+        if(!_proxy)return base.GetObjectInteractionCompletion();
+        var child=_children.FirstOrDefault(c=>c.Tag==_proxyTag);
+        if(child is not null)return child.GetObjectInteractionCompletion();
+        return _completionCache.TryGetValue(_proxyTag,out var cached)?cached.Interaction:base.GetObjectInteractionCompletion();
+    }
     public override uint GetCompletionUnion()
     {
         if (!_proxy) return base.GetCompletionUnion();
