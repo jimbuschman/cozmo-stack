@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-26. **0 finished · 1 in progress · 177 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Only the exact shipped ID `DriveOffCharger` is in progress; other configurations of that class remain not started.
+Whole-behavior scoreboard, 2026-10-26. **0 finished · 2 in progress · 176 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger` and `SparksPickupSingleCubeForPyramid` are in progress; other configurations remain not started.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -28,7 +28,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 
 | Shipped ID | Class | State | Established subsystem slice; remaining dependencies | Configured contexts / map locator |
 |---|---|---|---|---|
-| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | not started | UNKNOWN | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
+| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | Phase1 PICKUP-PYRAMID-1; whole path UNKNOWN pending read/check | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
 | `SparksPickupSingleCubeToStack` | `PickUpCube` | not started | UNKNOWN | spark: SparksStackBlock. 1 refs; R233+ in map |
 | `PutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: Hiking; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: MeetCozmo. 8 refs; R019+ in map |
 | `PutDownBlockNothingToDo` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: NothingToDo. 1 refs; R050+ in map |

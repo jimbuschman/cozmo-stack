@@ -26,5 +26,6 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | CM13-05 | FOLDED INTO DRIVE-OFF-PILOT | Draft paused and preserved locally; finish only if the whole pilot read establishes its observable dependency. No compiled/verified build claimed. |
 | DRIVE-OFF-PILOT | READY FOR CLAUDE | FIX5c25c9a7; independent36/36; two consecutive full6362/6362 PASS,0skipped on b273fe62. N3 five records settle on merge; M12-043/M8-027 open. N2 withdrawn on main337879ab; no split. HANDOFF-DRIVE-OFF-PILOT.md. |
 | DRIVE-OFF-PILOT-2 | SUPERSEDED | Operator scope correction: no outward contexts/vision/world audit. Existing possible outside effects remain one-line leftovers; no new pilot reading job released. |
+| PICKUP-PYRAMID-1 | RELEASED | Exact shipped SparksPickupSingleCubeForPyramid/PickUpCube; Phase1 source reading A, independent check B before any code. PICKUP-PYRAMID-1.md. |
 
-Current authority: operator scope correction in AUTONOMY.md. Pilot handed off now; settle complete OWN records without waiting for neighboring gaps, then work down BEHAVIOURS.md. Scoreboard remains0finished/1inprogress/177notstarted pending external review/acceptance. Audio stays last. Earlier fragment rows are history.
+Current authority: operator scope correction in AUTONOMY.md. Pilot handed off now; settle complete OWN records without waiting for neighboring gaps, then work down BEHAVIOURS.md. Scoreboard now0finished/2inprogress/176notstarted pending external review/acceptance. Audio stays last. Earlier fragment rows are history.

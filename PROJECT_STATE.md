@@ -40,6 +40,8 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **PICKUP-PYRAMID-1 active:** next exact shipped behavior SparksPickupSingleCubeForPyramid. Source extraction and separate independent check underway; configured factory is currently visibly unbuilt, legacy host closest-cube path is not accepted as native evidence. No code before source PASS. Drive-off remains READY; do not wait for Claude to continue.
+
 - **Drive-off pilot READY FOR CLAUDE.** Test-only clock FIX5c25c9a7 independently passed36/36; two consecutive asset-complete full gates on b273fe62 passed6362/6362 each,0failed/0skipped. REVIEW N3 on main337879ab passes M13-017/040, M7-023/026 and M11-060 for settlement on merge; M12-043/M8-027 stay open. N2 withdrawn; no split. Official statuses/approvals unchanged; no new hardware acceptance. Next: next behavior on BEHAVIOURS.md, not outward pilot-2 reading.
 
 - **New plan (operator, 2026-10-26): one behaviour at a time, end to end; `jobs/trial-m13/PLAN-BEHAVIOURS.md`.** Layer-4 settled count sat at 46/347 for two weeks while gaps grew 227->301: work was read and built in fragments and finished records were never settled. Now: read a behaviour's whole path once, build it once, check once, robot run (batched, never blocking), settle its records in the check. Progress is counted in finished behaviours. Pilot: drive-off. CM13-04 merged locally (481ade53), push waits on a full gate run (killed for low memory).
