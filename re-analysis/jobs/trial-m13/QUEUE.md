@@ -26,13 +26,13 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | CM13-05 | FOLDED INTO DRIVE-OFF-PILOT | Draft paused and preserved locally; finish only if the whole pilot read establishes its observable dependency. No compiled/verified build claimed. |
 | DRIVE-OFF-PILOT | REVIEW COMPLETE | Authoritative MERGED verdict on main4fb2908b; five records settled externally. M12-043/M8-027 remain open; N2 withdrawn. Local FIX/two full6362/6362 results retained in HANDOFF-DRIVE-OFF-PILOT.md. |
 | DRIVE-OFF-PILOT-2 | SUPERSEDED | Operator scope correction: no outward contexts/vision/world audit. Existing possible outside effects remain one-line leftovers; no new pilot reading job released. |
-| PICKUP-PYRAMID-1 | READY FOR CLAUDE | Factory/native cache/eligibility/manual Verify code independently checked; full6378/6378 PASS0skip. Native concrete pickup children/activity admission remain MISSING. M15-044 own-record proposal; HANDOFF-PICKUP-PYRAMID-1.md. |
+| PICKUP-PYRAMID-1 | REVIEW COMPLETE | Authoritative MERGED verdict on main: M15-044 settled EXACT_SOURCE externally; native concrete pickup children/activity admission remain MISSING. HANDOFF-PICKUP-PYRAMID-1.md retains local gate/evidence. |
 
-Current authority: operator scope correction in AUTONOMY.md. Pilot handed off now; settle complete OWN records without waiting for neighboring gaps, then work down BEHAVIOURS.md. Scoreboard now0finished/2inprogress/176notstarted pending external review/acceptance. Audio stays last. Earlier fragment rows are history.
+Current authority: operator scope correction in AUTONOMY.md. Settle complete OWN records without waiting for neighboring gaps, then work down BEHAVIOURS.md. Scoreboard0finished/4inprogress/174notstarted; seven trial records externally settled including M15-044/M13-026. Audio stays last. Earlier fragment rows are history.
 
 ## Next behaviour
 
 | Job | State | Purpose |
 | --- | --- | --- |
-| PICKUP-STACK-1 | READY FOR CLAUDE | Owned native visual subtree and N5 shared clock fix independently checked; two full6387/6387 PASS0skip on e6973c7a. M13-026 own-method proposal under existing libm boundary; full pickup remains MISSING. HANDOFF-PICKUP-STACK-1.md. |
-| PUTDOWN-BLOCK-1 | RELEASED | Exact shipped PutDownBlock; whole own class/face receiver reading, independent check then isolated build. Remaining complete host face report/flat pose input remain visible gaps. PUTDOWN-BLOCK-1.md. |
+| PICKUP-STACK-1 | REVIEW COMPLETE | Authoritative MERGED verdict on main: M13-026 settled EQUIVALENT_IMPLEMENTATION (libm only), N5 accepted. Two local full6387/6387 PASS0skip; full pickup remains MISSING. HANDOFF-PICKUP-STACK-1.md. |
+| PUTDOWN-BLOCK-1 | READY FOR CLAUDE | Native configured lifecycle/action flow0ffe53aa; independent112/112 and full6405/6405 PASS0skip. New narrow-record proposal; broad manual-wrapper/face input/report gaps remain. HANDOFF-PUTDOWN-BLOCK-1.md. |

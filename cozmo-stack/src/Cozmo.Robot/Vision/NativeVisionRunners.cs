@@ -73,12 +73,13 @@ internal class NativePanTiltRunner : NativeVisionRunner
     public override void WatcherEnding(){Compound.WatcherEnding();base.WatcherEnding();}
 }
 
-internal sealed class NativeTurnTowardsPoseRunner : NativePanTiltRunner
+internal class NativeTurnTowardsPoseRunner : NativePanTiltRunner
 {
     private readonly TurnTowardsPoseCompound _pose;
     protected override string ActionName=>"TurnTowardsPose";
-    internal NativeTurnTowardsPoseRunner(ManipulationSystem m,Pose3d pose,float maximumTurn)
-        :base(m,new TurnTowardsPoseCompound(pose,maximumTurn),0x2D){_pose=(TurnTowardsPoseCompound)Parameters;}
+    internal NativeTurnTowardsPoseRunner(ManipulationSystem m,Pose3d pose,float maximumTurn,int type=0x2D,uint tracks=5)
+        :base(m,new TurnTowardsPoseCompound(pose,maximumTurn),type){_pose=(TurnTowardsPoseCompound)Parameters;RequiredTrackMask=tracks;}
+    protected void AssignGoal(Pose3d pose)=>_pose.Pose!.Assign(pose);
     internal bool TurnSkipped=>_pose.Byte0x179;
     internal Pose3d GoalPose=>_pose.Pose!;
     public override int Init()
