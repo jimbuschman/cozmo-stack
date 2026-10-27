@@ -36,3 +36,12 @@
   second job, not a reason to hold the first. Audio (M6/M9) stays last per PROJECT_STATE: record it as a leftover,
   don't read further into it for drive-off.
 | DRIVE-OFF-PILOT | FIX | Code and spot-checks PASS (research file follows with the merge): 0x004F0D2C and GetSimpleMood 0x0067C084 match; M7-026 will settle on merge; M8-027 will not (see below). **Not merged:** the full gate here failed twice on a7b80fee merged onto main, each time one R2FloorPlacementTests M15-022 reaction-lock test returning Timeout instead of Success (run 1: M15_022_InitTakesTheReactionLock... at 51 ms; run 2: M15_022_ABareActionTakesTheLock... at 74 ms). Both pass 20/20 alone, so it shows under full-suite load only. The pilot changed the shared Rig (ManipulationSystem.CreateStandalone with the test clock), which these tests use. Find the cause (likely a timeout measured on a clock that advances independently of the pumped rig, or native owners now ticking concurrently); fix it without weakening the assertions; run the full gate twice in a row; mark READY FOR CLAUDE. M8-027: the eight release functions each run an unlink helper that destroys the stored callable, so teardown's effect depends on each callable's destructor; enumerate those before proposing it again. |
+
+- **N2 (operator go-ahead 2026-10-26: "however you think is best"): split the over-broad drive-off records.** After
+  the pilot FIX, and before more building: M13-017 is "the whole drive-off behaviour", so it can never settle, and
+  M13-040, M13-013 and M12-049 have the same problem. Propose a split in `PROPOSED-SPLIT.md`: each new record is one
+  observable piece (for example drive-off's eligibility, its distance check, its completion objective/mood order),
+  with title, the evidence addresses it inherits, status, and for each one either "complete now: evidence" or "left:
+  one line". Use the source ledger you already have; no new reading. Keep it to the pieces drive-off actually uses.
+  Claude reviews it, the operator signs off, and Claude re-approves the subsystems so the complete pieces can settle.
+  Mark the row READY FOR CLAUDE when it's pushed.
