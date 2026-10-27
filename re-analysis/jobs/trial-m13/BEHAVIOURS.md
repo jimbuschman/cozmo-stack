@@ -4,6 +4,12 @@ Whole-behavior scoreboard, 2026-10-27. **0 finished · 4 in progress · 174 not 
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
+## Daily progress
+
+| Date | Behaviours finished | Layer-4 records settled (total) | Jobs merged | Main gaps |
+|---|---|---|---|---|
+| 2026-10-27 | 0 | 55 (46 on 2026-10-26; +9: M7-026, M13-017, M13-040, M7-023, M11-060, M15-044, M13-026, M15-075, M12-018) | drive-off pilot, PICKUP-PYRAMID-1/2/3, PICKUP-STACK-1, PUTDOWN-BLOCK-1; full suite 6435/6435 | Shared children block every in-progress behaviour: M13-027 (face turn), M15-012 (look/wait), M12-006 (release effect), M14-008 (face data), native DriveTo/Pickup/IDock children, search. Next job: REVIEW N6. |
+
 ## Sources and interpretation
 
 [Shipped map](../../research/20261026-shipped-behaviour-map.md) contains all178 exact ID/class/path tuples,273 explicit reference locations/R-codes, repeated class use and51 IDs with no reference in the surveyed config corpus. Its178 tuples match the existing checked [M7 inventory Appendix C](../../inventory/M7-behaviour.md). All14 current-record title/status/literal first-evidence quotes in that map were rechecked against the current manifest for this draft; zero mismatches. A map/config reference proves configured input, not runtime admission or full source coverage.
@@ -28,7 +34,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 
 | Shipped ID | Class | State | Established subsystem slice; remaining dependencies | Configured contexts / map locator |
 |---|---|---|---|---|
-| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | P1 MERGED/M15-044 settled; P4 MERGED/M12-018 settled. P5 READY: native no-marker search/retry and interrupted owned-action cancellation, independent849/full6435 PASS. N6 shared children next; S7/DriveTo/name/signal/input/activity gaps remain | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
+| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | P1 MERGED/M15-044 settled; P4 MERGED/M12-018 settled. P5 MERGED (main aa01c37c), nothing settled: native no-marker search/retry and interrupted owned-action cancellation, full6435 PASS. N6 shared children next; S7/DriveTo/name/signal/input/activity gaps remain | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
 | `SparksPickupSingleCubeToStack` | `PickUpCube` | in progress | P2 MERGED/M13-026 settled, N5 accepted; shared native pickup children built inP4, this configured instance and remaining input/recovery paths unverified | spark: SparksStackBlock. 1 refs; R233+ in map |
 | `PutDownBlock` | `PutDownBlock` | in progress | PUTDOWN-BLOCK-1 MERGED/M15-075 settled after operator approval; local full6405/6405 PASS. M15-012/M13-027 shared paths next per REVIEW N6; flat input remains a gap | freeplay: Hiking; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: MeetCozmo. 8 refs; R019+ in map |
 | `PutDownBlockNothingToDo` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: NothingToDo. 1 refs; R050+ in map |

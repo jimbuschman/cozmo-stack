@@ -29,4 +29,4 @@ the live MAIN pose. The public flat-input static adapter stays M11-066's labelle
 
 ## Queued cleanup
 
-- `PanAndTiltActions.cs` AbsoluteHeadAngleToLookAtPose still carries `// fidelity: M13-021`; it belongs to M13-026.
+- `PanAndTiltActions.cs` AbsoluteHeadAngleToLookAtPose still carries `// fidelity: M13-021`; it belongs to M13-026. **Done** in 959bbc26 (the tag now reads M13-026; checked by the manager 2026-10-27).
