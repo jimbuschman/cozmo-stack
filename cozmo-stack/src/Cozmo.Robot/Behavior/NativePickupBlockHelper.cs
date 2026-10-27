@@ -15,6 +15,7 @@ internal sealed class NativePickupBlockHelper: IHelper
     internal bool Flag105 {get;}
     internal uint Attempts {get;private set;}
     internal bool AlternateRetry {get;private set;}
+    internal NativeSearchForBlockHelper? SearchHelper {get;private set;}
     private Action<RobotCompletedAction>? _responseCallback;
     private Func<uint,byte>? _converter;
     internal NativePickupBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,float maxTurn,bool flag104,bool flag105)
@@ -120,8 +121,15 @@ internal sealed class NativePickupBlockHelper: IHelper
             case 0x03000010:_m.Whiteboard.NoPreDockPosesObjectId=Target;return;
             case 0x04000001:Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();StoreStatus(BehaviorStatus.Failure);return;
             case 0x0300001D:
-                if(completed.ObjectInteraction?.Flag==true){Mark();StoreStatus(BehaviorStatus.Failure);return;}
-                Missing("SearchForBlock(minSeen0,maxStage0) recipient unavailable; original defined completion flag retained");return;
+                if(completed.ObjectInteraction is not {} interaction)
+                {Missing("PK9 defined internal completion flag unavailable; no invented zero/Search delegation");return;}
+                if(interaction.Flag){Mark();StoreStatus(BehaviorStatus.Failure);return;}
+                var search=Factory.CreateNativeSearchForBlock(_m,_parent,Target);
+                SearchHelper=(NativeSearchForBlockHelper)search.Pointer;
+                Delegation.Delegate=search;
+                Delegation.OnSuccessHandler=_=>{StartPickup(false);return Status;};
+                Delegation.OnFailureHandler=_=>{Mark();return BehaviorStatus.Failure;};
+                return;
         }
         if(r is 0x04000003 or 0x04000004 or 0x04000005 or 0x03000015)
         {

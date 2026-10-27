@@ -28,13 +28,14 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | DRIVE-OFF-PILOT-2 | SUPERSEDED | Operator scope correction: no outward contexts/vision/world audit. Existing possible outside effects remain one-line leftovers; no new pilot reading job released. |
 | PICKUP-PYRAMID-1 | REVIEW COMPLETE | Authoritative MERGED verdict on main: M15-044 settled EXACT_SOURCE externally; native concrete pickup children/activity admission remain MISSING. HANDOFF-PICKUP-PYRAMID-1.md retains local gate/evidence. |
 
-Current authority: operator scope correction in AUTONOMY.md. Settle complete OWN records without waiting for neighboring gaps, then work down BEHAVIOURS.md. Scoreboard0finished/4inprogress/174notstarted; seven trial records externally settled including M15-044/M13-026. Audio stays last. Earlier fragment rows are history.
+Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settle complete OWN records without waiting for neighboring gaps. Scoreboard0finished/4inprogress/174notstarted; nine trial records externally settled including M15-075/M12-018. After current P5, close whole M13-027/M15-012 shared paths before more native pickup/DriveTo work. Audio stays last. Earlier fragment rows are history.
 
 ## Next behaviour
 
 | Job | State | Purpose |
 | --- | --- | --- |
 | PICKUP-STACK-1 | REVIEW COMPLETE | Authoritative MERGED verdict on main: M13-026 settled EQUIVALENT_IMPLEMENTATION (libm only), N5 accepted. Two local full6387/6387 PASS0skip; full pickup remains MISSING. HANDOFF-PICKUP-STACK-1.md. |
-| PUTDOWN-BLOCK-1 | REVIEW COMPLETE | Authoritative MERGED on main1b80095c; Claude source check PASS, no record settled (new lifecycle proposal needs operator inventory approval). Local full6405/6405 PASS0skip. HANDOFF-PUTDOWN-BLOCK-1.md. |
-| PICKUP-PYRAMID-2 | READY FOR CLAUDE | Native execution47cf34a4, camera1ad0d4be, notification-scoped71e12c7; independent700/92/final107 PASS, final full6421/6421 PASS0skip. M12-018 proposed; exact other leftovers in HANDOFF-PICKUP-PYRAMID-2.md. P5 already building. |
-| PICKUP-PYRAMID-3 | RELEASED | Same pickup no-marker recovery via actual stage0 SearchForBlock/Nearby/timedWait; finite independent READ PASS committed2843c384, exact snapshot-visibility branch MISSING. Isolated builder, no tests while P4 full gate owns host; PICKUP-PYRAMID-3.md. |
+| PUTDOWN-BLOCK-1 | REVIEW COMPLETE | MERGED0ffe53aa; operator-approved lifecycle M15-075 subsequently settled on main0154b845. Other own paths stay open per REVIEW N6. Local full6405/6405 PASS0skip. HANDOFF-PUTDOWN-BLOCK-1.md. |
+| PICKUP-PYRAMID-2 | REVIEW COMPLETE | Authoritative MERGED/PASS main744aeb9a; M12-018 settled externally. Native execution47cf34a4, camera1ad0d4be, notification-scoped71e12c7; independent700/92/final107 PASS, final full6421/6421 PASS0skip. Exact other leftovers in HANDOFF-PICKUP-PYRAMID-2.md. |
+| PICKUP-PYRAMID-3 | READY FOR CLAUDE | Native recovery/cancellation8e767209; full verified builder range274c8e39 includesWIP. Independent849/849 PASS; asset-complete full6435/6435 PASS0skip. HANDOFF-PICKUP-PYRAMID-3.md; S7/later-stage gaps explicit, no whole-record settlement proposal. |
+| SHARED-CHILDREN-1 | RELEASED | REVIEW N6 next: whole M13-027/M15-012 shared pickup/put-down children. Independent finite primary READ PASS and callback-lifetime supplement; explicit M14-006 named speech frontier. Isolated codex/shared-children-1 prepared; implementation begins after P5 push. SHARED-CHILDREN-1.md. |

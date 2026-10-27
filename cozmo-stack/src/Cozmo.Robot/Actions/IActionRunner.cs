@@ -275,6 +275,8 @@ public abstract class ActionRunner : IActionRunner
     public virtual uint GetCompletionUnion() => _completionUnion;
     public virtual string? GetAnimationCompletionName()=>_animationCompletionName;
     public virtual byte? GetCompletionVariant()=>_completionVariant;
+    // Native ctor default (53FF0E); public adapters retain their legacy unset/U32 union.
+    internal void SeedNativeEmptyCompletion()=>_completionVariant=6;
     public virtual ObjectInteractionCompletion? GetObjectInteractionCompletion()=>PreparedObjectInteractionCompletion;
     public virtual bool SetMotionProfile() => false;
 

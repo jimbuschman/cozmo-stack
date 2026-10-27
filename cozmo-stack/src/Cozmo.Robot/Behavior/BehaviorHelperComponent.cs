@@ -28,7 +28,8 @@ public sealed class HelperControl
     /// <summary>The number of live <see cref="HelperRef"/> handles.</summary>
     public int Owners => Volatile.Read(ref _owners);
     internal void AddOwner() => Interlocked.Increment(ref _owners);
-    internal void ReleaseOwner() => Interlocked.Decrement(ref _owners);
+    internal void ReleaseOwner()
+    {if(Interlocked.Decrement(ref _owners)==0&&Pointer is NativeSearchForBlockHelper owned)owned.Dispose();}
     internal bool TryAddOwner()
     {
         // weak_ptr::lock: succeeds only while an owner is left
@@ -88,6 +89,8 @@ public sealed class BehaviorHelperFactory
 {
     internal BehaviorHelperFactory(BehaviorHelperComponent component) { Component = component; }
     public BehaviorHelperComponent Component { get; }
+    internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target)
+    {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target);return Component.AddHelperToComponent(ref helper);}
 }
 
 // fidelity: M8-011

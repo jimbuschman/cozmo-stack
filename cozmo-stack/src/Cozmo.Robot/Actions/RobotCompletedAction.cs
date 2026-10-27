@@ -18,7 +18,7 @@ namespace Cozmo.Robot;
 /// surface does not settle. This type carries only the 4-byte +0x1C cache value (<see cref="CompletionUnion"/>)
 /// and packs it as four LE bytes. It does NOT invent an <c>ActionCompletedUnion</c> tag or payload.
 /// </summary>
-// fidelity: M7-020
+// fidelity: M8-015
 internal readonly record struct RobotCompletedAction(
     uint Tag,
     int ActionType,

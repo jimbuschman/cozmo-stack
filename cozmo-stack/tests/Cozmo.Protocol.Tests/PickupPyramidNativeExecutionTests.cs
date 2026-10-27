@@ -17,7 +17,7 @@ public sealed class PickupPyramidNativeExecutionTests
         {var path=Path.Combine(dir.FullName,"re-analysis","obb","assets","cozmo_resources");if(File.Exists(Path.Combine(path,"config","engine","behaviorSystem","activities_config.json")))return path;}
         throw new InvalidOperationException("Shipped resources absent");
     }
-    private sealed class Fixture:IDisposable
+    internal sealed class Fixture:IDisposable
     {
         internal readonly M4ControlTests.Rig Rig=new(Resources());
         internal EngineRobot Robot=>Rig.Engine.Robot!;
