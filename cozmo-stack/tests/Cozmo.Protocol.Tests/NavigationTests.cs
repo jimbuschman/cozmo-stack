@@ -53,6 +53,25 @@ public class NavigationTests
 
 
 
+    // Explicit positive firmware input for only the four pickup-dependent fixtures below.
+    // C1 is already carried by the actual DockWithObject.Field8 request; DA timing is supplied,
+    // not inferred from PickAndPlaceResult or claimed as reproduced firmware behavior.
+    private static void SupplyRequestedPickupLoad(Rig rig)
+    {
+        rig.M.ClockSec=()=>100; // These tests assert no elapsed action time; transport keeps advancing.
+        var previous=rig.OnDockResult;
+        rig.OnDockResult=()=>
+        {
+            previous?.Invoke();
+            var dock=rig.Sent.OfType<DockWithObject>().Last();
+            if(dock.DockAction is (byte)DockAction.PickupLow or (byte)DockAction.PickupHigh)
+            {
+                Assert.True(dock.Field8);
+                if(dock.Field8)rig.Send(new LiftLoad{Field0=true});
+            }
+        };
+    }
+
     private static BehaviorContext Ctx(Rig rig) => new() { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
 
     /// <summary><c>IsRunnable</c> also needs animation assets, which these tests do not load; this asks the class's own gate.</summary>
@@ -696,6 +715,7 @@ public class NavigationTests
             throw new Xunit.Sdk.XunitException("the marker library is missing, so this live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
         }
         using var rig = new Rig();
+        SupplyRequestedPickupLoad(rig);
         rig.Cube = CubeAt(330, -20);
         Assert.Single(rig.Frame().Objects);
         var ctx = Ctx(rig);
@@ -809,6 +829,7 @@ public class NavigationTests
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
+        SupplyRequestedPickupLoad(rig);
         rig.Cube = CubeAt(300, -30);
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(230, 22, 22))));
         rig.Frame();
@@ -927,14 +948,34 @@ public class NavigationTests
         var obb = ObbRoot();
         if (obb is null || Lib is null) return;
         using var rig = new Rig();
+        SupplyRequestedPickupLoad(rig);
         rig.M.Workouts = WorkoutComponent.FromObb(obb);
 
         rig.Cube = CubeAt(220, 10);
         Assert.Single(rig.Frame().Objects);
         var ctx = Ctx(rig);
         var b = new CubeLiftWorkoutBehavior(rig.M, "CubeLiftWorkout");
+        PlaceObjectOnGroundAction? putDown=null;Task<ActionResult>? putDownTask=null;
+        bool highSent=false,sawLatch=false,lowSent=false;
+        b.ManualPutDownStartedForTest=(action,task)=>{putDown=action;putDownTask=task;};
+        try
+        {
         Assert.True(Runnable(b, ctx));
-        RunToEnd(rig, b, ctx, frames: () => !rig.M.Docking.Carrying.IsCarryingObject);
+        RunToEnd(rig, b, ctx, frames: () =>
+        {
+            if(putDown is not null&&!lowSent)
+            {
+                if(putDown.StatusLatched)
+                {sawLatch=true;rig.State(flags:(uint)(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos));lowSent=true;}
+                else
+                {rig.State(flags:(uint)RobotStatusFlag.IsPickingOrPlacing);highSent=true;}
+            }
+            return (putDownTask is null||putDownTask.IsCompleted)&&!rig.M.Docking.Carrying.IsCarryingObject;
+        });
+        Assert.True(highSent);Assert.True(sawLatch);Assert.True(lowSent);
+        Assert.NotNull(putDown);Assert.True(putDown.StatusLatched);
+        Assert.NotNull(putDownTask);Assert.True(putDownTask.IsCompletedSuccessfully);
+        Assert.Equal(ActionResult.Success,putDownTask.GetAwaiter().GetResult());
         Assert.Equal(5, b.StrongLiftsPlanned);                                        // Confident 0 without a mood
         Assert.Equal(1, b.WeakLiftsPlanned);
         Assert.Equal(5, b.Trace.Count(l => l.Contains("WorkoutStrongLift_highEnergy")));
@@ -945,6 +986,15 @@ public class NavigationTests
         Assert.Contains(b.Trace, l => l.Contains("PerformedWorkout, PerformedStrongWorkout"));
         Assert.Equal(1, rig.M.Workouts.CompletedWorkouts);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
+        }
+        finally
+        {
+            var work=b.AsyncWorkCompletion;
+            b.ManualPutDownStartedForTest=null;
+            b.Stop(BehaviorStopReason.Cancelled);
+            SignalTestContext.Run(work,()=>rig.Pump());
+            if(putDownTask is not null)SignalTestContext.Run(putDownTask,()=>rig.Pump());
+        }
     }
 
     // ------------------------------------------------------------------ the cube behaviours
@@ -1199,6 +1249,7 @@ public class NavigationTests
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
+        SupplyRequestedPickupLoad(rig);
         rig.Cube = CubeAt(240, 90);
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, CubeAt(240, -90)));
         Assert.Equal(2, rig.Frame().Objects.Count);

@@ -598,7 +598,7 @@ public abstract partial class SteppedBehavior : IBehavior
 
     public virtual double EvaluateScore(BehaviorContext context) => IsRunnable(context) ? Score : 0;
 
-    public Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
+    public virtual Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
     {
         BeginRun(context, scope);
         InitLifecycle(context, context.ClockSec?.Invoke() ?? Clock() / 1000.0, SparkGate?.Invoke() ?? false);

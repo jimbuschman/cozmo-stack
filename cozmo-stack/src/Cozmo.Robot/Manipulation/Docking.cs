@@ -364,7 +364,7 @@ public sealed class DockingSystem : IDisposable
     }
 
     // fidelity: M12-045
-    private void UnsetCarryingObjects(bool topOnly)
+    internal void UnsetCarryingObjects(bool topOnly)
     {
         using var frameMutation=_vision.World.EnterPoseMutation();
         if(_robot.Engine.Robot is not {} robot)

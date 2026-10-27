@@ -46,6 +46,7 @@ public sealed record TurnTowardsObject(uint ObjectId, DockTurnCode Code) : DockS
     public bool BoolArgument6 => false;
 }
 
+
 /// <summary>
 /// The <c>CompoundActionSequential(robot, {})</c> (0xAC bytes, <c>[compound+0x56] = 1</c>) that <c>SetupTurnAndVerifyAction</c> stores at <c>IDockAction+0x98</c> (M12-037): the
 /// verify action first, then the turn action. The async model runs it to completion: the first sub-action that does not succeed ends it with its result.
@@ -309,6 +310,9 @@ public abstract class DockActionBase
         return selected is null ? ActionResult.Abort : ActionResult.Success;
     }
     protected abstract ActionResult Verify(ObservableObject? target, DockResult result);
+    protected virtual Task<ActionResult> VerifyAsync(ObservableObject? target,DockResult result,CancellationToken cancel)=>Task.FromResult(Verify(target,result));
+    protected virtual void ResetVerification() { }
+    protected virtual void RetireVerification() { }
     /// <summary>
     /// The virtual <c>InitInternal</c> (vptr+0x30) that <c>IDockAction::Init</c> calls as its LAST setup step (0x00551C0C..0x00551C14: after the pre-action
     /// check, <c>SelectDockAction</c>, the handler registration, <c>SetupTurnAndVerifyAction</c>, the reaction lock, the cube light and <c>RemoveSquint</c>),
@@ -462,6 +466,9 @@ public abstract class DockActionBase
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
+        ResetVerification();
+        try
+        {
         _actionStartSec = M.ClockSec();
         _trace.Add("IDockAction.Init: not modelled: reaction locks (1),(10) M8; IsValidLightCube and the cube light (3),(11) M10; handler bodies (6) and RemoveSquint (12) M12-034; slot vtbl+0x34 of every subclass (MISSING)");
         // (2)
@@ -547,7 +554,7 @@ public abstract class DockActionBase
         if (result is null) return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.Timeout;
         Result = result;
         _trace.Add($"dock result {result}");
-        var verified = Verify(M.World.GetObjectById(ObjectId), result);
+        var verified = await VerifyAsync(M.World.GetObjectById(ObjectId), result,cancel);
         _trace.Add($"Verify -> {verified}");
         // fidelity: M12-007
         // A Verify that returns RUNNING (0x01000000, 0x00554056) is called again on the next update (PickupObjectAction::Verify 0x00553BE0 keeps its
@@ -561,10 +568,12 @@ public abstract class DockActionBase
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("IDockAction::CheckIfDone re-entry while Verify returns RUNNING: the engine calls it on every action update; this stack waits for the next RobotState message with a new timestamp (not itemised)");
             if (!await NextRobotStateAsync(cancel)) return ActionResult.CancelledWhileRunning;
             if (CheckDeletedTarget() != ActionResult.Running) return CheckDeletedTarget();
-            verified = Verify(M.World.GetObjectById(ObjectId), result);
+            verified = await VerifyAsync(M.World.GetObjectById(ObjectId), result,cancel);
             _trace.Add($"Verify -> {verified}");
         }
         return verified;
+        }
+        finally { RetireVerification(); }
     }
 
     /// <summary>Completes (true) when the robot reports a state with a timestamp different from the latest one now; false when cancelled.</summary>
@@ -643,7 +652,7 @@ public abstract class DockActionBase
 ///
 /// The constructor sets all four numbers at 0x005536CC onwards.
 /// </summary>
-public sealed class PickupObjectAction : DockActionBase
+public sealed class PickupObjectAction : DockActionBase, IDisposable
 {
     // fidelity: M12-007
     public const double HighDockHeightMm = 33.85;
@@ -655,78 +664,120 @@ public sealed class PickupObjectAction : DockActionBase
     /// <summary>+0x120: and for a high one.</summary>
     public const uint HighDockObservationTimeoutMs = 2000;
 
-    private Pose3d _originalPose;
-    private uint _verifyStartedAt;
-    /// <summary>The first-call stamp at +0x10C (0x00553BF8), for tests.</summary>
-    internal uint VerifyStartedAt => _verifyStartedAt;
-
-    public PickupObjectAction(ManipulationSystem m, uint objectId) : base(m, objectId) { }
-    protected override PreActionType PreActionType => PreActionType.Docking;
-    protected override DockingMethod DockingMethod => DockingMethod.Method2;   // 0x005536EA
-    protected override bool DockFlag8 => true;                                 // 0x005536F8
-
-    protected override DockAction? SelectDockAction(ObservableObject target)
+    private Pose3d? _savedPose;
+    private uint _verifyStartedAt,_loadDeadline;
+    private bool _turnDone;
+    internal uint VerifyStartedAt=>_verifyStartedAt;
+    internal uint LoadDeadline=>_loadDeadline;
+    public PickupObjectAction(ManipulationSystem m,uint objectId):base(m,objectId) { }
+    protected override PreActionType PreActionType=>PreActionType.Docking;
+    protected override DockingMethod DockingMethod=>DockingMethod.Method2;
+    protected override bool DockFlag8=>true;
+    protected override void ResetVerification()
+    {_verifyStartedAt=0;_loadDeadline=0;_turnDone=false;_savedPose?.Dispose();_savedPose=null;}
+    protected override void RetireVerification(){_savedPose?.Dispose();_savedPose=null;}
+    public void Dispose()=>RetireVerification();
+    protected override DockAction? SelectDockAction(ObservableObject target)=>
+        SelectDockActionResult(target,out var action)==ActionResult.Success?action:null;
+    protected override ActionResult SelectDockActionResult(ObservableObject target,out DockAction action)
     {
-        if (M.Docking.Carrying.IsCarryingObject) { _trace.Add("PickupObjectAction.SelectDockAction.CarryingObject: Already carrying object. Can't pickup object. Aborting."); return null; }
-        _originalPose = target.Pose;
-        return target.Pose.Translation.Z > HighDockHeightMm ? DockAction.PickupHigh : DockAction.PickupLow;
-    }
-
-    protected override ActionResult Verify(ObservableObject? target, DockResult result)
-    {
-        // The order of PickupObjectAction::Verify 0x00553BE0 (no 0x04000000 is returned anywhere in it):
-        // (1) 0x00553BEE..0x00553BF8: the first call stamps +0x10C.
-        uint now = M.Robot.State.Latest?.Timestamp ?? result.Timestamp;
-        if (_verifyStartedAt == 0) _verifyStartedAt = now;
-
-        // (2) 0x00553C06: byte [[+0xCC]+5] is PickAndPlaceResult.didSucceed (written 0x00533790..0x0053379A); 0 branches to 0x00553D72, past the moving/seen-recently block.
-        // The [+0xC1]/[+0xC2] state test in front of it (0x00553C0E..0x00553C2E, with a deadline at [+0x114]) is not itemised: MISSING; taken as the 0x00553C72 branch.
-        if (result.Succeeded)
+        using var mutation=M.World.EnterPoseMutation();
+        action=DockAction.PickupLow;
+        var robot=M.Robot.Engine.Robot;
+        if(robot?.CarryingOwner is not {} carrying)
+        {Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Pickup Select00553A1C actual Robot/carry owner unavailable");return ActionResult.Running;}
+        if((carrying.CarriedObjectId??uint.MaxValue)!=uint.MaxValue)return (ActionResult)0x03000017;
+        var main=robot.GetCheckedMainPose();
+        Pose3d parentValue=null!;
+        if(!main.TryGetParent(ref parentValue))return ActionResult.BadObject;
+        using(parentValue)
         {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("PickupObjectAction::Verify 0x00553C72..0x00553C86: the engine tests the located-object lookup (null is 0x03000004, 0x00553CEE/0x00554008) and `[obj+0x40] < 0` (skips the moving block, 0x00553C82..0x00553C86); this stack maps both to IsLocated and has no [obj+0x40]");
-            if (target is not { IsLocated: true })
-            {
-                _trace.Add("PickupObjectAction.Verify: the dock object is not located");
-                return ActionResult.BadObject;                       // 0x00553CEE: the lookup is null, r4 = 0x03000004 (movs r4,#4; movt r4,#0x300 at 0x00553C00)
-            }
-            if (target.IsMoving)
-            {
-                // 0x00553C98..0x00553CA0: still moving past the allowance, so nothing was picked up; inside it (now <= stamp + 500, unsigned, `bls`) Verify
-                // returns RUNNING (0x00553CA0 -> 0x00554056, r4 = 0x01000000) and is called again on the next update.
-                if (now > _verifyStartedAt + StillMovingAllowanceMs)
-                {
-                    _trace.Add("PickupObjectAction.Verify.ObjectStillMoving");
-                    M.Docking.ReleaseCarriedObject(forget: true);        // SetCarriedObjectAsUnattached(true), 0x00553CAA
-                    return ActionResult.PickupObjectStillMoving;         // 0x03000014: r4 (0x03000004) + 0x10 at 0x00553CEA
-                }
-                return ActionResult.Running;
-            }
-            // 0x00553D0A: the sighting the verify rests on has to be recent enough, and how recent depends on which dock this was.
-            uint timeout = SelectedDockAction == DockAction.PickupLow ? LowDockObservationTimeoutMs : HighDockObservationTimeoutMs;
-            if (_verifyStartedAt > target.LastObservedTimestamp + timeout)
-            {
-                _trace.Add($"PickupObjectAction.Verify.ObjectNotSeenRecentlyEnough: last seen " +
-                           $"{target.LastObservedTimestamp}, verify began {_verifyStartedAt}, allowed {timeout} ms");
-                M.Docking.ReleaseCarriedObject(forget: true);            // SetCarriedObjectAsUnattached(true), 0x00553D2A
-                return ActionResult.PickupObjectNotSeenRecently;         // 0x03000015: r4 + 0x11 at 0x00553D6E
-            }
+            _savedPose?.Dispose();_savedPose=new Pose3d();
+            if(!Pose3d.GetWithRespectTo(target.NativePose,parentValue,_savedPose))return ActionResult.BadObject;
         }
-
-        // (3) 0x00553D72..0x00553DD8: the TurnTowardsPoseAction sub-action at [+0x104] (RUNNING until it ends) is not built here.
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("PickupObjectAction::Verify 0x00553D72..0x00553DD8: the [+0x104] TurnTowardsPoseAction sub-action (RUNNING until done) is not built; the early [+0xC1]/[+0xC2] state test (0x00553C0E..0x00553C2E) is not modelled");
-        // (4) 0x00553DDA: a dock action above 1 is 0x0300001A (0x00553F82..0x00553FC4); a pickup selects 0 or 1.
-        // (5) 0x00553DE4..0x00553DF2 and 0x00553FC8: [[+0xD0]+8] == -1 (not carrying) is 0x04000005.
-        if (!M.Docking.Carrying.IsCarryingObject) { _trace.Add("PickupObjectAction.Verify.ExpectedCarryingObject"); return ActionResult.PickupRetry; }
-
-        if (target is { IsLocated: true } && target.LastObservedTimestamp > result.Timestamp && target.Pose.IsSameAs(_originalPose, 20, 0.35))
-        {
-            _trace.Add("PickupObjectAction.Verify.SeeingCarriedObjectInOrigPose: Object pick-up FAILED! (Still seeing object in same place.)");
-            M.Docking.Carrying.UnsetCarrying();                          // 0x005542BC..0x005542C4: UnSetCarryingObjects(false), reached via 0x00554114
-            return ActionResult.PickupRetry;                             // 0x00554116: r4 = 0x04000005
-        }
-        _trace.Add("PickupObjectAction.Verify.Success: Object pick-up SUCCEEDED!");
+        float height=(float)_savedPose.Translation.Z-(float)main.Translation.Z;
+        if(height>BitConverter.UInt32BitsToSingle(0x42076666))action=DockAction.PickupHigh;
         return ActionResult.Success;
     }
+    private ActionResult VerifyPrefix(ObservableObject? target,DockResult result)
+    {
+        var owner=M.Robot.Engine.Robot;
+        if(owner?.StoredState is not {} state)
+        {Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Pickup Verify00553BF8 requires actual synchronized Robot.StoredState.Timestamp; no public history/result/manual clock fallback");return ActionResult.Running;}
+        uint now=state.Timestamp;if(_verifyStartedAt==0)_verifyStartedAt=now;
+        if(!result.Succeeded)return ActionResult.Success; //00553C06/0A bypasses the entire C1/C2/moving/recent prefix.
+        if(LiftLoadState==0)
+        {
+            if(_loadDeadline==0)_loadDeadline=unchecked(now+500);
+            if(now>_loadDeadline)_trace.Add("PickupObjectAction.Verify.WaitingForLiftLoad: deadline expired; still running");
+            return ActionResult.Running;
+        }
+        if(LiftLoadState==2&&target is null)return ActionResult.BadObject;
+        if(LiftLoadState==2 && target is {ActiveId:>=0})
+        {
+            if(target.IsMoving)
+            {
+                if(now>unchecked(_verifyStartedAt+StillMovingAllowanceMs))
+                {_trace.Add("PickupObjectAction.Verify.ObjectStillMoving");M.Docking.ReleaseCarriedObject(forget:true);return ActionResult.PickupObjectStillMoving;}
+                return ActionResult.Running;
+            }
+            uint timeout=SelectedDockAction==DockAction.PickupLow?LowDockObservationTimeoutMs:HighDockObservationTimeoutMs;
+            if(_verifyStartedAt>unchecked(target.LastObservedTimestamp+timeout))
+            {M.Docking.ReleaseCarriedObject(forget:true);return ActionResult.PickupObjectNotSeenRecently;}
+        }
+        return ActionResult.Success;
+    }
+    protected override ActionResult Verify(ObservableObject? target,DockResult result)
+    {
+        var prefix=VerifyPrefix(target,result);if(prefix!=ActionResult.Success)return prefix;
+        if(!_turnDone)return ActionResult.Running;
+        return VerifyCarrying();
+    }
+    protected override async Task<ActionResult> VerifyAsync(ObservableObject? target,DockResult result,CancellationToken cancel)
+    {
+        if(cancel.IsCancellationRequested)return ActionResult.CancelledWhileRunning;
+        var prefix=VerifyPrefix(target,result);if(prefix!=ActionResult.Success)return prefix;
+        if(!_turnDone)
+        {
+            if(_savedPose is null)return ActionResult.BadObject;
+            var turn=new TurnTowardsPoseAction(M.Vision,_savedPose,0);
+            uint init=turn.Init();
+            if(init==0)await turn.ExecuteAsync(cancel); // terminal child result is deliberately ignored while the parent remains active.
+            if(cancel.IsCancellationRequested)return ActionResult.CancelledWhileRunning;
+            _turnDone=true;
+        }
+        if(cancel.IsCancellationRequested)return ActionResult.CancelledWhileRunning;
+        return VerifyCarrying();
+    }
+    private ActionResult VerifyCarrying()
+    {
+        using var mutation=M.World.EnterPoseMutation();
+        uint raw=M.Docking.Carrying.CarriedObjectId??uint.MaxValue;
+        if(raw==uint.MaxValue){_trace.Add("PickupObjectAction.Verify.ExpectedCarryingObject");return ActionResult.PickupRetry;}
+        var carried=M.World.GetLocatedObjectByIdHelper(raw);
+        if(carried is null)return ActionResult.BadObject;
+        if(!CubeGeometry.IsCube(carried.Type))
+        {Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Pickup Verify passive virtual30/34/38 tolerances/ambiguities unavailable; no empty ambiguity fallback");return ActionResult.Running;}
+        var main=M.Robot.Engine.Robot!.GetCheckedMainPose();Pose3d parent=null!;
+        if(!main.TryGetParent(ref parent))return ActionResult.BadObject;
+        using(parent)_savedPose!.SetParent(parent); //00553EB2..EC8, AFTER the stored-pose turn and carried lookup.
+        var size=CubeGeometry.SizeOf(carried.Type);
+        float T(double dim){float scaled=(float)dim*BitConverter.UInt32BitsToSingle(0x3F4CCCCD);return scaled*.5f;}
+        var tolerance=new Vec3(T(size.X),T(size.Y),T(size.Z));
+        var filter=new BlockWorldFilter();filter.AllowedTypes.Add(carried.Type);
+        ObservableObject? matched=null;
+        foreach(var candidate in M.World.FindLocatedMatchingObjects(filter))
+            if(candidate.NativePose.IsSameAs(_savedPose!,tolerance,BitConverter.UInt32BitsToSingle(0x3F490FDB),out _)){matched=candidate;break;}
+        if(matched is null){_trace.Add("PickupObjectAction.Verify.Success: Object pick-up SUCCEEDED!");return ActionResult.Success;}
+        if(matched.ObjectId!=raw)
+        {
+            M.World.CopyWithNewPose(carried,matched.NativePose,matched);
+            var delete=new BlockWorldFilter();delete.AllowedIds.Add(matched.ObjectId);M.World.DeleteLocatedObjects(delete);
+        }
+        M.Docking.UnsetCarryingObjects(false);
+        return ActionResult.PickupRetry;
+    }
+
 }
 
 /// <summary>

@@ -465,6 +465,8 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
     public int StrongLiftsPlanned { get; private set; }
     public int WeakLiftsPlanned { get; private set; }
     public int LiftsDone { get; private set; }
+    // Observation only: no production action/task retention or alternate execution path.
+    internal Action<PlaceObjectOnGroundAction,Task<ActionResult>>? ManualPutDownStartedForTest { get; set; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) =>
         M.Workouts?.GetCurrentWorkout() is not null && !M.Docking.Carrying.IsCarryingObject && ClosestCube(o => o.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative) is not null;
@@ -516,7 +518,13 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
             if (M.Docking.Carrying.IsCarryingObject)
             {
                 CurrentPhase = Phase.ManualPutDown;
-                RunAction("PlaceObjectOnGround", ct => new PlaceObjectOnGroundAction(M).RunAsync(ct), _ => PostLift());
+                RunAction("PlaceObjectOnGround", ct =>
+                {
+                    var action=new PlaceObjectOnGroundAction(M);
+                    var task=action.RunAsync(ct);
+                    ManualPutDownStartedForTest?.Invoke(action,task);
+                    return task;
+                }, _ => PostLift());
             }
             else PostLift();
         });

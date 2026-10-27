@@ -785,6 +785,18 @@ public class R2FloorPlacementTests : IDisposable
         }
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100; // Positive supplied-input unit; manager/transport clocks still advance.
+        var previousDockResult=rig.OnDockResult;
+        rig.OnDockResult=()=>
+        {
+            previousDockResult?.Invoke();
+            var dock=rig.Sent.OfType<DockWithObject>().Last();
+            if(dock.DockAction is (byte)DockAction.PickupLow or (byte)DockAction.PickupHigh)
+            {
+                Assert.True(dock.Field8);
+                if(dock.Field8)rig.Send(new LiftLoad{Field0=true});
+            }
+        };
         rig.Robot.Animations.ManualTicking = true;
         rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));

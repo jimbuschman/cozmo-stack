@@ -182,18 +182,19 @@ public sealed class ActionBehaviorDiagnosticTests
         probe.Step+=Step;
         await probe.StartAsync(context,scope,default);var work=probe.AsyncWorkCompletion;
         var snapshots=new ConcurrentQueue<string[]>();var writersReady=Source<bool>();int writersStarted=0;
-        var producers=Enumerable.Range(0,4).Select(producer=>Task.Run(async()=>
+        // Dedicated synchronous workers keep held sink writes independent of thread-pool injection.
+        var producers=Enumerable.Range(0,4).Select(producer=>Task.Factory.StartNew(()=>
         {
-            await go.Task;await output.DiagnosticEntered.Task;
+            go.Task.GetAwaiter().GetResult();output.DiagnosticEntered.Task.GetAwaiter().GetResult();
             if(Interlocked.Increment(ref writersStarted)==4)writersReady.TrySetResult(true);
             for(int i=0;i<500;i++){Line($"ordinary:{producer}:{i}");snapshots.Enqueue(Snapshot());}
-        })).ToArray();
-        var completion=Task.Run(async()=>
+        },CancellationToken.None,TaskCreationOptions.LongRunning,TaskScheduler.Default)).ToArray();
+        var completion=Task.Factory.StartNew(()=>
         {
-            await go.Task;
+            go.Task.GetAwaiter().GetResult();
             if(cancelled)action.TrySetCanceled();
             else action.TrySetException(new Exception[]{CapturedFailure("journal first failure"),new AggregateException("journal aggregate",CapturedFailure("journal nested failure"))});
-        });
+        },CancellationToken.None,TaskCreationOptions.LongRunning,TaskScheduler.Default);
         try
         {
             go.TrySetResult(true);
