@@ -182,6 +182,8 @@ public sealed class DockingSystem : IDisposable
     /// does not reset it. The Moved (CD10a) and Stopped (CD10b) broadcasts exclude a cube whose id equals it.
     /// </summary>
     private readonly DockingComponentData _native;
+    private bool _nativeRequest; //explicit legacy Task adapter does not replace native retained-field ownership
+
     public uint? DockTargetObjectId { get => _native.TargetId; private set => _native.TargetId = value; }
 
     public DockingSystem(CozmoRobot robot, VisionSystem vision)
@@ -580,10 +582,12 @@ public sealed class DockingSystem : IDisposable
         {
             if (_pending is not null) throw new InvalidOperationException("a dock is already running");
             tcs = _pending = new TaskCompletionSource<DockResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _nativeRequest=false;
             _active = (target.ObjectId, marker, placementOffsetX, placementOffsetY, placementOffsetAngle, action);
             // fidelity: M4-009
             // C11.1 D2 (0x0063BAAC/0x0063BAB6): DockWithObject copies the docked object's ObjectID into +0xC.
             DockTargetObjectId = target.ObjectId;
+            _native.MarkerCode=unchecked((ushort)marker.Code);
             ErrorSignalsSent = 0;
             // 0x0055233E: after DockWithObject succeeds CheckIfDone stores 0 in IDockAction+0x94, the previous value of the IS_PICKING_OR_PLACING mirror
             _prevPickingOrPlacing = false;
@@ -657,8 +661,34 @@ public sealed class DockingSystem : IDisposable
         return _robot.SendMessage(message, reliable: true);
     }
 
+    //0063BA44..BD50: retained canonical request state, independent of legacy pending Tasks.
+    internal bool StartNativeDock(uint id,short code,DockAction action,PathMotionProfile profile)
+    {
+        using var mutation=_vision.World.EnterPoseMutation();
+        var target=_vision.World.GetLocatedObjectByIdHelper(id);if(target is null)return false;
+        _nativeRequest=true;
+        _native.MarkerCode=unchecked((ushort)code);_native.TargetId=id;
+        var markers=target.Markers.Where(m=>unchecked((short)m.Code)==code).ToArray();
+        if(markers.Length==0)return false;
+        if(markers.Length>1)Log?.Invoke("DockWithObject.MultipleMarkers: first matching marker retained");
+        bool child=false;
+        for(var node=markers[0].PoseOnObject.Node?.Parent;node is not null;node=node.Parent)
+            if(ReferenceEquals(node,target.NativePose.Node)){child=true;break;}
+        if(!child)return false;
+        _vision.World.MarkDirty(id);
+        _native.Success=false;_native.Slot14=0;_native.Slot18=0;_native.Slot1C=0;
+        var message=Message(profile.DockSpeedMmps,profile.DockAccelMmps2,profile.DockDecelMmps2,action,false,DockingMethod.Method2,true);
+        Sent.Add(message);return _robot.SendMessage(message,reliable:true);
+    }
+    private void NativeDockingError(VisionFrameResult result)
+    {
+        if((_native.TargetId??uint.MaxValue)==uint.MaxValue)return;
+        // The exact native consumer must not borrow legacy PoseEstimation/history-nearest/double clamp.
+        Behavior.SteppedBehavior.ReportMissing("M12-013/M12-019 native UpdateDockingErrorSignal0063BE80: computed-state/body-IMU and native f32 ClampPoseToFlat inputs not fully bound; no PnP/legacy signal substituted");
+    }
     private void OnFrame(VisionFrameResult r)
     {
+        if(_nativeRequest&&r.Markers.Count!=0)NativeDockingError(r);
         // fidelity: M12-013, M12-014, M12-019
         (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle, DockAction Action) active;
         lock (_gate) { if (_active is not { } a) return; active = a; }
@@ -733,7 +763,8 @@ public sealed class DockingSystem : IDisposable
                 // The dock in progress; a result that arrives with no dock running has neither an object nor a marker, so the attach below cannot
                 // be reached without both (the previous code's "no marker" case was unreachable: object and marker come from the same tuple).
                 (uint ObjectId, KnownMarker Marker)? dock;
-                lock (_gate) dock = _active is { } a ? (a.ObjectId, a.Marker) : null;
+                lock (_gate) dock = !_nativeRequest?(_active is {} a?(a.ObjectId,a.Marker):null):_native.TargetId is {} id&&id!=uint.MaxValue&&_vision.World.GetLocatedObjectByIdHelper(id) is {} target&&target.Markers.FirstOrDefault(m=>unchecked((ushort)m.Code)==_native.MarkerCode) is {} marker
+                    ?(id,marker):null;
                 if (result.Succeeded && result.Status == BlockStatus.BlockPickedUp && dock is { } d)
                 {
                     // HandlePickAndPlaceResult 0x00533850 (blockStatus == 2 and success != 0) calls SetDockObjectAsAttachedToLift, i.e.

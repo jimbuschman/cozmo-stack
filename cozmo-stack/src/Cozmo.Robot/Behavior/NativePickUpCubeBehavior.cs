@@ -55,8 +55,16 @@ internal sealed class NativePickUpCubeBehavior:SteppedBehavior,IDisposable
     }
     internal bool CheckExecutionAvailability()
     {
-        ReportMissing("PickUpCube execution unavailable: required native engine-ticked PickupObject runner and VisuallyVerifyNoObjectAtPoseAction positioning children at SetupTurnAndVerify00551FE6/005520B0, ignore targetID005520BA, root targetXYZ+parentDimZ/halfDimensions/56=1; no counted-success substitute; prior selection retained");
-        return false;
+        if(!_robot.HasExternalInterface||_robot.CarryingOwner is null||_robot.DockingOwner is null||_robot.StoredState is null||_m.Vision.Calibration is null)
+        {ReportMissing("PickUpCube execution requires actual carry/dock/raw-state/calibration owners");return false;}
+        using var mutation=_m.World.EnterPoseMutation();
+        var target=_m.World.GetLocatedObjectByIdHelper(Target);
+        if(target is null||!CubeGeometry.IsCube(target.Type)){ReportMissing("PickUpCube passive/absent target recipient unavailable");return false;}
+        using var main=new Pose3d(_robot.GetCheckedMainPose());
+        var pre=PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerification(target,PreActionType.Docking,0,0,_robot.StoredState.Timestamp,main,
+            _robot.CarryingOwner.CarriedObjectId,_m.Vision.Calibration,ObjectPoseQueries.Engine,()=>_m.GetObstacles(main));
+        if(pre!=ActionResult.Success){ReportMissing("PickUpCube direct pre-action input unavailable; required DriveToHelper recipient remains MISSING; prior selection retained");return false;}
+        return true;
     }
     public override Task StartAsync(BehaviorContext context,BehaviorScope scope,CancellationToken cancel)
     {

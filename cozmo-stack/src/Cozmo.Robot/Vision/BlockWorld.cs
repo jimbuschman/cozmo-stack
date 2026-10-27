@@ -233,6 +233,9 @@ public sealed partial class ObservableObject
 
     /// <summary>The ObjectID (obj+0x18). <see cref="UnassignedId"/> until assigned.</summary>
     public uint ObjectId { get; internal set; }
+    //0087E276..27C: only NEW canonical native construction calls this, never query/repair.
+    internal void InitializeNativeMarkerTimes(){foreach(var marker in Markers)marker.LastObservedTimestamp=0;}
+    internal ObservableObject CloneNative(){var copy=Clone();copy.InitializeNativeMarkerTimes();return copy;}
     public ObjectType Type { get; }
     public ObjectFamily Family { get; }
     public IReadOnlyList<KnownMarker> Markers { get; }
@@ -839,6 +842,7 @@ public sealed partial class BlockWorld
     internal Func<uint, PoseTreeNameNode?>? OriginNode;
     internal Func<bool>? RobotPoseTreeIsUnbuilt;
     internal uint RobotId = 1;
+    internal Action<NativeObservedObject>? NativeObjectObserved;
     internal uint? SelectedObjectId;
     internal Func<uint?>? CarriedPrimaryId;
     internal Action<bool>? UnsetCarryingObjects;
@@ -1689,6 +1693,7 @@ public sealed partial class BlockWorld
                 }
                 var seenMarkers = cluster.Select(c => c.Seen).ToList();
                 var instance = new ObservableObject(group.Key, CubeGeometry.MarkersFor(group.Key)) { OriginId = CurrentOriginId,PoseWorld=this };
+                instance.InitializeNativeMarkerTimes();
                 double key = pose.Translation.Dot(pose.Translation);
                 var placed = instance.IsActive ? ClampPoseToFlat(pose, CreationFlatClampAngleRad) : pose;   // 0x00625578
                 // The solver/clamp adapter returns root-relative coordinates; bind the existing native origin owner.
@@ -1786,6 +1791,9 @@ public sealed partial class BlockWorld
             var observation = new ObjectObservation(located, timestamp, located.LastObservedMarkers, prevPose, prevState, before is null, located.LastReprojectionRmsPx);
             EmitPublicLog($"{(before is null ? "new" : "seen")} {located} via {string.Join(",", located.LastObservedMarkers)} rms={located.LastReprojectionRmsPx:F2}px");
             observations.Add(observation);
+            if(!(located.IsActive&&located.Family==(ObjectFamily)2&&!CubeGeometry.IsCube(located.Type)))
+                NativeObjectObserved?.Invoke(new NativeObservedObject(located.LastObservedTimestamp,(uint)located.Family,(uint)located.Type,located.ObjectId));
+            else Source(EngineLogLevel.Error,null,"BlockWorld.BroadcastObjectObservation.InvalidActiveCube","Active family2 object is not an ActiveCube");
             DeliverPublic(ObjectObserved,observation);                                   // BroadcastObjectObservation 0x0061FED8 (0x006211DC)
             _didObjectsChange = true;                                              // 0x006211E6
             _timeOfLastChange = unchecked((uint)Math.Max((double)timestamp, MapLastObservedTime));   // 0x00621214: AddAndUpdateObjects's own ts argument (0x00620B9C)
@@ -2305,7 +2313,7 @@ public sealed partial class BlockWorld
             if (o.OriginId == CurrentOriginId)
             {
                 ClearLocatedObjectHelper(o);
-                var clone = o.Clone(); clone.ObjectId = o.ObjectId;
+                var clone = o.CloneNative(); clone.ObjectId = o.ObjectId;
                 if (clone.IsActive) { clone.ActiveId = o.ActiveId; clone.FactoryId = o.FactoryId; }
                 notifications.Add((o,clone,o.Pose,o.PoseState));
             }
@@ -2600,7 +2608,7 @@ public sealed partial class BlockWorld
                 Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.UpdateStacks",$"'{(int)e.Id}' does not exist in current frame. Ignoring change.");
                 continue;
             }
-            var clone = obj.Clone();
+            var clone = obj.CloneNative();
             clone.InitPose(e.Pose, e.State);
             var stacked = FindObjectOnTopOrUnderneathHelper(clone, StackToleranceMm, true, obj.ObjectId,
                                                             c => unchecked(c.LastObservedTimestamp + 100) < lastImage);
@@ -2877,7 +2885,8 @@ public sealed partial class BlockWorld
             EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
-        return new ObservableObject(type, CubeGeometry.MarkersFor(type)) { ActiveId = activeId, FactoryId = factoryId, OriginId = CurrentOriginId };
+        var result=new ObservableObject(type, CubeGeometry.MarkersFor(type)) { ActiveId = activeId, FactoryId = factoryId, OriginId = CurrentOriginId };
+        result.InitializeNativeMarkerTimes();return result;
     }
 
     /// <summary>
@@ -3008,7 +3017,7 @@ public sealed partial class BlockWorld
         else
         {
             EmitPublicLog($"BlockWorld.UpdateObjectOrigins.NoMatchFound: object {o.ObjectId} {o.Type}");
-            var clone = o.Clone();
+            var clone = o.CloneNative();
             clone.ObjectId = o.ObjectId;
             clone.OriginId = newOriginId;
             CopyWithNewPose(clone, pose, o);

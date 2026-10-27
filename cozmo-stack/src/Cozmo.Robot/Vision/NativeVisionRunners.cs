@@ -77,8 +77,8 @@ internal class NativeTurnTowardsPoseRunner : NativePanTiltRunner
 {
     private readonly TurnTowardsPoseCompound _pose;
     protected override string ActionName=>"TurnTowardsPose";
-    internal NativeTurnTowardsPoseRunner(ManipulationSystem m,Pose3d pose,float maximumTurn,int type=0x2D,uint tracks=5)
-        :base(m,new TurnTowardsPoseCompound(pose,maximumTurn),type){_pose=(TurnTowardsPoseCompound)Parameters;RequiredTrackMask=tracks;}
+    internal NativeTurnTowardsPoseRunner(ManipulationSystem m,Pose3d pose,float maximumTurn,int type=0x2D,uint tracks=5,bool copiedRadians=false)
+        :base(m,new TurnTowardsPoseCompound(pose,maximumTurn,copiedRadians),type){_pose=(TurnTowardsPoseCompound)Parameters;RequiredTrackMask=tracks;}
     protected void AssignGoal(Pose3d pose)=>_pose.Pose!.Assign(pose);
     internal bool TurnSkipped=>_pose.Byte0x179;
     internal Pose3d GoalPose=>_pose.Pose!;

@@ -46,6 +46,7 @@ public sealed partial class VisionSystem : IDisposable
     internal static readonly TimeSpan RemovalWait = TimeSpan.FromSeconds(2);
     /// <summary>M3-034: the FaceAlbum/Enrollment consumer, kept so Dispose can unsubscribe it.</summary>
     private readonly Action<byte[], byte[]> _faceAlbumLoaded;
+    private readonly Action<NativeObservedObject> _nativeObjectObserved;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -90,6 +91,12 @@ public sealed partial class VisionSystem : IDisposable
             if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
             Behavior.SteppedBehavior.ReportMissing($"M14-008 native face{tag:X2} complete app report unavailable; no truncated wire payload; checked LOCAL ID projection only");
             _robot.Engine.AnimationMessages.Deliver(tag,true,payload);
+        };
+        World.NativeObjectObserved=_nativeObjectObserved=observation=>
+        {
+            if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
+            SteppedBehavior.ReportMissing("M11-038 native44 complete app report unavailable; checked immutable LOCAL prefix only, no truncated wire");
+            _robot.Engine.AnimationMessages.Deliver(0x44,true,observation);
         };
         Faces.NativeMainPose=()=>_robot.Engine.Robot?.GetCheckedMainPose();
         Faces.NativePoseScope=()=>World.EnterPoseMutation();
@@ -1094,9 +1101,9 @@ public sealed partial class VisionSystem : IDisposable
             {
                 IReadOnlyList<ObjectObservation> objects;
                 IReadOnlyList<ObservableObject> forgotten;
+                VisionFrameResult result;
                 using var resultCameraPose=processingPose.CameraPose;
                 var processingCamera=new CameraModel(cal,resultCameraPose);
-                VisionFrameResult result;
                 lock(_busy)
                 {
                 if(RemovedSince(removal))return null;
@@ -1105,6 +1112,12 @@ public sealed partial class VisionSystem : IDisposable
             // A failure (no raw state at or after the timestamp) logs (0x00654DE2) and jumps to 0x0065507E: UpdateObservedMarkers is never reached and the function returns 0.
             bool stateComputed = markerMode;
             var keptMarkers = markers;
+            BlockWorldFrameResult? worldFrame;
+            using(World.EnterPoseMutation())
+            {
+            using var historicalResult=new HistRobotState();
+            using var nativeResultCameraPose=new Pose3d("");
+            var markerCamera=processingCamera;
             // fidelity: M11-036, M11-050
             // UpdateVisionMarkers 0x00654D60..0x006550AC, for a result that has markers (an empty list goes straight to UpdateObservedMarkers, 0x00654D76..0x00654DEC): after the computed state
             // (0x00654D92) the engine (b) drops the frame, logging, when Robot::IsPoseInWorldOrigin(state pose) is false (0x00654E56, log 0x00655028..0x00655074), (c) drops it, silently, when
@@ -1123,7 +1136,18 @@ public sealed partial class VisionSystem : IDisposable
                 uint stateOrigin = 0;
                 bool originKnown = false;
                 if (offline) History.InsertComputedStateAt(timestamp, processingPose.RobotPose);   // LOCAL: the caller's pose data stands for the raw state
-                else { stateComputed = History.ComputeAndInsertStateAt(timestamp, out stateOrigin); originKnown = stateComputed; }
+                else
+                {
+                    stateComputed=History.ComputeAndInsertStateAt(timestamp,historicalResult,out stateOrigin);originKnown=stateComputed;
+                    if(stateComputed)
+                    {
+                        if(_robot.Engine.Robot is not {} cameraOwner||Calibration is not {} installed)
+                        {SteppedBehavior.ReportMissing("M11-050 native historical Camera owner/calibration unavailable; result withheld");return null;}
+                        using var nativeCamera=cameraOwner.CopyHistoricalCameraPose(historicalResult);
+                        nativeResultCameraPose.AssignInputValue(nativeCamera);
+                        markerCamera=new CameraModel(installed,nativeResultCameraPose);
+                    }
+                }
                 if (!stateComputed)
                     Log?.Invoke($"VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: {timestamp}, hist: {History.OldestTimeStamp} to {History.NewestTimeStamp}");
                 else if (originKnown && !IsPoseInWorldOrigin(stateOrigin))
@@ -1150,9 +1174,10 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            if (stateComputed)
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose):null;
+            } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
+            if (worldFrame is not null)
             {
-                var worldFrame = World.UpdateObservedMarkers(keptMarkers, processingCamera, timestamp, processingPose);
                 objects = worldFrame.Objects;
                 forgotten = worldFrame.Forgotten;
                 // fidelity: M11-064 — warning, docking signal (even after failure), then caller's error.
@@ -1305,6 +1330,7 @@ public sealed partial class VisionSystem : IDisposable
         }
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
+        if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;
         lock(_busy)DiscardPreparedResults();
         if(_robot.Engine.VisionUpdateAllResultsFailed==DrainPreparedResults)_robot.Engine.VisionUpdateAllResultsFailed=null;
         // V3-V7 depend on native recipient ownership, not host reset/GC.

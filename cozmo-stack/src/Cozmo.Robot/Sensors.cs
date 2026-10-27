@@ -1029,6 +1029,9 @@ public sealed class CozmoSensors
                     // fidelity: M11-044
                     // r7 != 0 at 0x00512A94/0x00512A86 (a committed change to or from OnTreads) is what makes UpdateFullRobotState Delocalize at 0x00512B88..0x00512BA6 (performed below after the +0x2BC OR).
                     if (treadsChanged) DelocalizeTrigger = s;
+                    //00512A96..AA0: synchronized raw bit2 mirror, BEFORE charger and origin admission.
+                    if(er?.DockingOwner is {} dock)dock.Active=(byte)((s.Status>>2)&1);
+                    else Behavior.SteppedBehavior.ReportMissing("M1-034 M12-004 raw Docking+4 owner absent at00512A9C; smallest mirror write skipped");
                     // fidelity: M4-019
                     // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
                     SetOnCharger(s.Has(RobotStatusFlag.IsOnCharger));
