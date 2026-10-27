@@ -39,7 +39,7 @@ D1 separation detail: host public Update/pending/force/root-cache state is indep
 
 ## Settlement candidates, conditional on the final build check
 
-Operator scope correction supersedes the earlier neighboring-gap hold: propose M13-017, M13-040, M7-023, M7-026, M8-027, M11-060 and M12-043 for settlement of their complete OWN claimed paths. Two read-only agents rechecked existing evidence/code; no concrete own-path residual was identified. Addresses/tests and precise partial-record leftovers are in HANDOFF-DRIVE-OFF-PILOT.md. Claude settles; no official status changed.
+REVIEW N3 on main337879ab independently passed M13-017, M13-040, M7-023, M7-026 and M11-060 for settlement when the pilot FIX merges. M12-043 is withheld: midpoint recipient00617A8C..00617C32 and container/cache joins remain MISSING. M8-027 is withheld pending stored-callable destructor enumeration. N2 is withdrawn; no split is needed. Claude settles; no official status changed.
 
 M13-013's derived contacts-retry action, M12-002/032's other path/planner branches, M7-018's other factories, other objectives/Sparked lifecycle, BuildPyramid callbacks and other vision processors are not completed by their bounded drive-off slices. The final handoff must state exact residuals against CURRENT records instead of silently certifying those whole records. Existing firmware C6/animation feedback uncertainty remains input/hardware provenance; no offline pass turns it into hardware verification. Robot runs never block moving to the next behavior.
 ## Operator D2: controlled-clock standalone manipulation/whiteboard

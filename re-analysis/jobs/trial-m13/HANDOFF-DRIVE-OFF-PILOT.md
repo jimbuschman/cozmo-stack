@@ -1,8 +1,8 @@
 # Drive-off pilot — FIX in progress
 
-- Branch: `codex-m13-manager-2`, rebased on main `caea4e59`. REVIEW FIX: two load-only R2 lock-test timeouts; controlled-clock fixture correction and two consecutive full gates required. N2 record split follows the FIX.
+- Branch: `codex-m13-manager-2`, rebased on main `337879ab`. REVIEW FIX: two load-only R2 lock-test timeouts; controlled-clock fixture correction and two consecutive full gates required. N2 withdrawn in N3; no split needed.
 - Production commits: **f03c7d23**, **c16d4711**; both already pushed. Major files: `ChargerBehaviors.cs`, `NativeBehaviorRuntime.cs`, `DriveActions.cs`, `Mood*.cs`, `Native*Configuration*.cs`, `VisionSystem.cs`, `VisionResultQueue.cs`, `ManipulationSystem.cs`.
-- Full asset-complete gate: **6361/6361 PASS, zero failed/skipped**, on committed `99dd4403`; later edits are documentation only. Independent production checks: **138/138**, **36/36** PASS. Initial failed gate6312/42 and corrections remain in the manager log.
+- Full asset-complete gate: **6361/6361 PASS, zero failed/skipped**, on committed `99dd4403`; that is the earlier baseline, before the current test-only FIX. Two new full runs are pending. Independent production checks: **138/138**, **36/36** PASS. Initial failed gate6312/42 and corrections remain in the manager log.
 - Boundary: drive-off's observable result while it runs. Recorded neighboring MISSING paths do not hold this handoff. Official statuses/approvals are unchanged; Claude settles records. No new hardware or subsystem acceptance claim.
 
 ## Claims / binary addresses
@@ -29,7 +29,7 @@
 
 ## RECORDS TO SETTLE
 
-Current statuses remain **IMPLEMENTATION_GAP**. M7-026 source spot-check passed; settlement waits for merge. M13-017/040 whole-record proposals are withdrawn for N2 splitting after the FIX. M8-027 is withdrawn: enumerate stored callable destructors before proposing it again. Remaining rows are proposals, not approvals.
+Current statuses remain **IMPLEMENTATION_GAP**. REVIEW N3 on main337879ab independently passed the five rows below; Claude settles them when this FIX merges. M12-043 and M8-027 are not proposed. No official changes.
 
 | Record / current title | Evidence for settlement |
 |---|---|
@@ -38,9 +38,10 @@ Current statuses remain **IMPLEMENTATION_GAP**. M7-026 source spot-check passed;
 | **M7-023** — Mood destruction with already-null ActionList dependency |00511150/005111B6/005111C4;0067AE18..0067AE74;004EF184..004EF1CE; actual owner removal/last-retain/null-gate tests.|
 | **M7-026** — MoodManager::GetSimpleMood and the mood time MoodManager+0x130 (inputs to the animation group draw) |0067C084/0067B67E;0058A95C;004F0D2C..004F0D74; actual group/driving consumers.|
 | **M11-060** — VisionSystem::Update's application of the pending SetNextCameraParams to the current exposure and gain |006B229C..006B230C/006B50C8..006B50D8; actual worker applies before quality; later failure retains copy.|
-| **M12-043** — PyramidBase interior geometry: corners and midpoint for the pyramid top placement (GetBoundingQuad<float> corner order) |006177F0..00617C32;004E6490..004E6598/004E65C6;0062C5A2..0062C616; native root/frame/corners/ties/midpoint and real cache consumer.|
 
 ## Leftovers — do not hold this handoff
+
+- M12-043: midpoint recipient00617A8C..00617C32 and container/cache joins remain MISSING. M8-027: stored callable destructors require enumeration; no settlement claim.
 
 - M12-049: common cache producer built; BuildPyramid callbacks01029068/010290A8 remain MISSING. M12-047 owns its top-placement behavior.
 - M12-033: scalar center join built; general marker/rotation/frame API not wholly checked. M8-013: scoring built; executable/analyzer/external selection remains MISSING. M8-015: profile destructor recipient remains MISSING.
