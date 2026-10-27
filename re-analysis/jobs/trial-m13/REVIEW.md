@@ -81,7 +81,7 @@
 
 - **N5 (2026-10-27): fix the transport-clock coupling once, in the shared Rig, before the next behaviour's handoff.**
   The PICKUP-PYRAMID-1 merge gate failed once on `ManipulationTests.PlaceOnGroundNeedsACarriedObjectAndReleasesIt`
-  (line 522: Timeout, expected Success; then passed on rerun). Same cause as the M15-022 FIX: since the pilot, the
+  (line 522: Timeout, expected Success; the rerun was stopped for low memory). Same cause as the M15-022 FIX: since the pilot, the
   shared Rig builds `ManipulationSystem.CreateStandalone(..., ()=>Clock.NowMs/1000.0)`, so pumping the transport
   spends the action's own deadline under full-suite load. Patching tests one at a time (5c25c9a7, 283d6b6e) leaves
   the rest latent. Give the Rig a controlled action clock by default, separate from the transport clock, and let
