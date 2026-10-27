@@ -26,7 +26,7 @@ internal sealed class NativeConfigurationGeometry
     }
     private static bool Flat(ObservableObject o)
     {Require(o.NativePose);return o.IsRestingFlat(BitConverter.UInt32BitsToSingle(0x3E32B8C2));}
-    private static Vec3 Dimensions(ObservableObject obj,Pose3d flat)
+    internal static Vec3 Dimensions(ObservableObject obj,Pose3d flat)
     {
         if(!CubeGeometry.IsCube(obj.Type))throw new NativeConfigurationUnavailable("admitted Block dimensions are not bound for "+obj.Type);
         var r=flat.Rotation;var size=CubeGeometry.SizeOf(obj.Type);

@@ -1470,50 +1470,66 @@ public static class TurnTowardsPose
     }
 
     /// <summary>
-    /// <c>Robot::ComputeHeadAngleToSeePose(pose, &amp;angle, tolerance)</c> 0x00518344..0x00518620 (M13-021), the engine's own iteration. The pose (already in the robot frame) is taken with respect to the neck pose ([robot+0x2CC]:
-    /// (-13, 0, 49) in the robot frame, 0x0051838E; a failure is "Robot.ComputeHeadAngleToSeePose.OriginMismatch" and 0x06000000, impossible with one pose origin); <c>dist = sqrtf(x*x + y*y)</c>,
+    /// <c>Robot::ComputeHeadAngleToSeePose(pose, &amp;angle, tolerance)</c> 0x00518344..0x00518620 (M13-026), the engine's own iteration. The pose (already in the robot frame) is taken with respect to the neck pose ([robot+0x2CC]:
+    /// (-13, 0, 49) in the robot frame, 0x0051838E; a failure is "Robot.ComputeHeadAngleToSeePose.OriginMismatch" and 0x06000000); <c>dist = sqrtf(x*x + y*y)</c>,
     /// <c>P = (dist, 0, z)</c> (0x005183A6..0x005183E4). Without a camera calibration: "NullCamera" and 1 (0x0051851E). The threshold is <c>(float)rows * tolerance + 1e-5f</c> (0x00518432..0x00518436),
-    /// the angle starts at 0.0f and the loop runs while the counter <c>k</c> (from 1) is below 25: the camera pose for the angle is the head-cam pose pre-multiplied by a rotation about Y of -angle
+    /// the angle starts at 0.0f and the loop executes iterations 1 through 25: the camera pose for the angle is the head-cam pose pre-multiplied by a rotation about Y of -angle
     /// (<c>Robot::GetCameraPose</c> 0x00510FFC), <c>Q = inverse * P</c> (0x00518448..0x00518480); <c>Q.z &lt;= 1e-5f</c> is "BadProjectedZ" and 1 (0x00518494); <c>dv = fy * (Q.y / Q.z)</c>; when
-    /// <c>threshold &gt;= |dv|</c> (0x005184AE) the angle is the answer (0x005185B2) unless k is 25, which is "MaxIterations" and 1 (0x005185C6..0x00518600); otherwise <c>angle += atan2f(dv, fy) * -0.8f</c>
+    /// <c>threshold &gt;= |dv|</c> (0x005184AE) the angle is written (0x005185B2/B6); k=25 then returns "MaxIterations" and 1 (0x005185C6..0x00518600); otherwise <c>angle += atan2f(dv, fy) * -0.8f</c>
     /// (0x005184BC..0x005184DA, -0.8f = 0xBF4CCCCD). After the 25th non-converged iteration the function returns 0 with the angle UNASSIGNED (the counter compared at 0x005185C6 is then 26): the caller's
     /// Radians local, 0, is the result.
-    /// <para>Scalar operations are binary32 in the engine's order. The pose algebra (the neck pose, <c>GetInverse</c>, the quaternion rotation of P) is this stack's double
-    /// <see cref="Pose3d"/>, narrowed to binary32 for Q: the engine's own Transform3d/Rotation3d operations were not read here, MISSING (reported once) for the last bits.</para>
+    /// <para>The native overload requires the actual live MAIN owner for the neck and uses checked Transform3d/Rotation3d arithmetic;
+    /// scalar operations follow the sequential binary32 order. Host libm remains the existing platform boundary.
+    /// This public static adapter preserves its labelled M11-066 flattened-input behavior and is not the native receiver.</para>
     /// </summary>
-    // fidelity: M13-021
+    // fidelity: M11-066
     public static uint ComputeHeadAngleToSeePose(CameraCalibration? cal, Pose3d poseInRobotFrame, float tolerance, out float angle, Action<string>? log = null)
+        =>ComputeHeadAngleInput(cal,poseInRobotFrame,tolerance,out angle,log,null,true);
+
+    // fidelity: M13-026
+    internal static uint ComputeHeadAngleToSeePose(CameraCalibration? cal,Pose3d poseInRobotFrame,float tolerance,out float angle,Action<string>? log,Pose3d actualMain)
+        =>ComputeHeadAngleInput(cal,poseInRobotFrame,tolerance,out angle,log,actualMain??throw new ArgumentNullException(nameof(actualMain)),false);
+
+    private static uint ComputeHeadAngleInput(CameraCalibration? cal,Pose3d poseInRobotFrame,float tolerance,out float angle,Action<string>? log,Pose3d? actualMain,bool publicAdapter)
     {
         angle = 0.0f;
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Robot::ComputeHeadAngleToSeePose 0x00518344: the neck-pose composition, GetInverse and the rotation of P (0x004A4864, 0x004A8194, Transform3d) are this stack's double Pose3d algebra narrowed to binary32, not the engine's quaternion operations; the loop's scalar operations are binary32");
         using var neck=new Pose3d(Mat3.Identity,HeadGeometry.NeckPositionMm);
-        if(poseInRobotFrame.HasParent){Pose3d parent=null!;if(poseInRobotFrame.TryGetParent(ref parent))using(parent)neck.SetParent(parent);}
-        using var relativeToNeck=poseInRobotFrame.WithRespectTo(neck);
+        if(actualMain is not null)neck.SetParent(actualMain);
+        else if(poseInRobotFrame.HasParent){Pose3d parent=null!;if(poseInRobotFrame.TryGetParent(ref parent))using(parent)neck.SetParent(parent);}
+        using var relativeToNeck=new Pose3d("");
+        if(!poseInRobotFrame.TryWithRespectTo(neck,relativeToNeck))
+        {
+            // Preserve the existing labelled M11-066 public flattened-input adapter only.
+            // Native parented callers retain the checked conversion-failure result.
+            if(publicAdapter&&poseInRobotFrame.HasLegacyFrameInput&&neck.HasLegacyFrameInput&&!poseInRobotFrame.HasParent&&!neck.HasParent)
+            {using var legacy=poseInRobotFrame.WithRespectTo(neck);relativeToNeck.AssignInputValue(legacy);}
+            else return 0x06000000;
+        }
         var wrt=relativeToNeck.Translation; // 0x0051838E: goal and neck both belong to the robot frame
         float tx = (float)wrt.X, ty = (float)wrt.Y, tz = (float)wrt.Z;
         float sq = tx * tx;
         sq = sq + ty * ty;
         float dist = MathF.Sqrt(sq);                                                          // vsqrt.f32 0x005183BA
         var p = new Vec3(dist, 0.0, tz);
-        if (cal is null) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.NullCamera"); return 1; }
+        if (cal is null) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.NullCamera"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return 1; }
         float fy = (float)cal.FocalLengthY;
         float threshold = (float)(ushort)cal.Rows * tolerance;
         threshold += BitConverter.Int32BitsToSingle(0x3727C5AC);
         float eps = BitConverter.Int32BitsToSingle(0x3727C5AC);
         float a = 0.0f;
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("vision model head-cam z differs from the engine's (-8.0): blocked on M11 solvePnP");
-        var camInNeck = new Pose3d(HeadGeometry.DefaultHeadCamRotation, HeadGeometry.EngineHeadCamPositionMm);   // the engine's own composition (Robot::Robot 0x0050FF7C..0x0050FFBA); the vision model still uses the older z
+        using var camInNeck = new Pose3d(HeadGeometry.DefaultHeadCamRotation, HeadGeometry.EngineHeadCamPositionMm);   // the engine's own composition (Robot::Robot 0x0050FF7C..0x0050FFBA); the vision model still uses the older z
         for (int k = 1; k <= 25; k++)
         {
-            var cam = HeadGeometry.GetCameraPose(camInNeck, a);                                   // GetCameraPose(a) 0x00510FFC relative to the neck: RotateBy(RotationVector3d(Radians(-a), Y)) (R28, R22)
-            var q = cam.Inverse().Apply(p);
+            using var cam = HeadGeometry.GetCameraPose(camInNeck, a);                                   // GetCameraPose(a) 0x00510FFC relative to the neck: RotateBy(RotationVector3d(Radians(-a), Y)) (R28, R22)
+            using var inverse=cam.Inverse();
+            var q = inverse.Apply(p);
             float qy = (float)q.Y, qz = (float)q.Z;
             if (qz <= eps) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.BadProjectedZ"); return 1; }
             float dv = fy * (qy / qz);
             if (threshold >= MathF.Abs(dv))
             {
-                if (k == 25) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.MaxIterations"); return 1; }
                 angle = (float)Cozmo.Robot.Manipulation.EngineRadians32.Rescale(a);               // Radians::operator= 0x005185B6
+                if (k == 25) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.MaxIterations"); return 1; }
                 return 0;
             }
             float step = MathF.Atan2(dv, fy);

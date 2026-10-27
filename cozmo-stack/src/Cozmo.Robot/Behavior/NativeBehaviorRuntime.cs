@@ -18,6 +18,21 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal IReadOnlyDictionary<string,IBehavior> Bound {get;}
     internal IReadOnlyList<Activity> Tree {get;}
     internal FreeplayDataTracker Tracker {get;}
+    // SetupTurnAndVerify551FE6..5520BA: actual owner/located target, finite child only.
+    internal NativeVisuallyVerifyNoObjectRunner CreatePickupVisualVerification(uint targetId)
+    {
+        if(_retired||Manipulation is not {} m)throw new InvalidOperationException("MISSING: native pickup visual owner retired/unavailable");
+        using var mutation=m.World.EnterPoseMutation();
+        var target=m.World.GetLocatedObjectByIdHelper(targetId)??throw new InvalidOperationException("MISSING: native pickup visual target unavailable");
+        using var flat=target.NativePose.GetWithRespectToRoot();
+        var dimensions=NativeConfigurationGeometry.Dimensions(target,flat);
+        var t=flat.Translation;float z=(float)t.Z+(float)dimensions.Z;
+        using var root=target.NativePose.FindRoot();
+        using var raised=new Pose3d(flat.Quaternion,new Vec3((float)t.X,(float)t.Y,z),parent:root);
+        var child=new NativeVisuallyVerifyNoObjectRunner(m,raised,new Vec3((float)dimensions.X*0.5f,(float)dimensions.Y*0.5f,(float)dimensions.Z*0.5f));
+        child.AddIgnoreId(targetId);return child;
+    }
+
     private Activity? _selected;
     private bool _retired;
     private readonly Action<bool> _offTreadsPause,_chargerPause;

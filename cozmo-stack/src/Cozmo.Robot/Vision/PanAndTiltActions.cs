@@ -33,14 +33,9 @@ public sealed record MoveHeadToAngleSpec(double AngleRad, double ToleranceRad, d
 /// to 0 (0x00549D52 <c>orr r1,r0,#0x1000000</c>, 0x00549D56 <c>cmp.w r1,#0x1000000</c>). <c>CheckIfDone</c> 0x00549D73
 /// returns the compound's <c>IActionRunner::Update()</c> unchanged.
 ///
-/// What is NOT built: the compound (<c>CompoundActionParallel</c>, the M8 framework) and the wiring of the two child actions into it.
-/// <see cref="TurnInPlaceAction"/> (M13-022) exists as a class and the head move is the live <c>CozmoMotion</c> action (M4-016), but <see cref="Children"/> still
-/// holds the specs Init fills (how Init applies its tolerance, through SetTolerance's 2-degree minimum or by a store, is not in the
-/// inventory). <see cref="CompoundUpdate"/> is the compound's <c>IActionRunner::Update()</c>; it has no default, and calling
-/// <see cref="Init"/> or <see cref="CheckIfDone"/> without one throws <see cref="NotSupportedException"/>. THIS CLASS, TurnTowardsPoseCompound,
-/// WaitForImagesAction and TurnInPlaceAction ARE NOT LIVE: nothing outside the tests constructs them, except
-/// <see cref="TurnTowardsPoseCompound.InitPose"/>, which the face turn calls for its pan/head computation. The stack's own pan-and-tilt for
-/// the live paths is <see cref="Cozmo.Robot.Behavior.PanAndTilt"/>, which is not this class and is not claimed to be.
+/// This public specification adapter keeps its explicit CompoundUpdate seam. The native owned path is
+/// NativePanTiltRunner/NativeTurnTowardsPoseRunner, which construct the actual compound, turn and unqueued head child.
+/// Children here remain inspection specs; callers of this adapter still supply their executor explicitly.
 /// </summary>
 // fidelity: M13-020
 public class PanAndTiltAction
@@ -154,7 +149,7 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
     public TurnTowardsPoseCompound(double maxTurnRad)
     {
         PanIsAbsolute = false; HeadIsAbsolute = true;     // the constructors' fixed arguments to PanAndTiltAction: pan relative, tilt absolute
-        MaxTurnAbsRad = MathF.Abs((float)maxTurnRad);     // +0x170 = abs(maxTurn)
+        MaxTurnAbsRad = MathF.Abs(new Radians((float)maxTurnRad).Value);     // +0x170 = abs(maxTurn)
     }
 
     public TurnTowardsPoseCompound(Pose3d pose, double maxTurnRad) : this(maxTurnRad) { Pose = new Pose3d(pose); PoseSet = true; }
@@ -251,10 +246,10 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
             rel = wrt.Translation;
             pose.AssignInputValue(wrt);inRobot=pose;
         }
-        if (MaxTurnAbsRad > 0)                                                // (4) 0x0054AC8A
+        if (CozmoMotion.RadiansGreaterThan((float)MaxTurnAbsRad,0))                                                // (4) 0x0054AC8A
         {
-            float pan = MathF.Atan2((float)rel.Y, (float)rel.X);
-            if (MathF.Abs(pan) <= (float)MaxTurnAbsRad) PanAngleRad = pan;
+            float pan = new Radians(MathF.Atan2((float)rel.Y, (float)rel.X)).Value;
+            if (Radians.LessEqual(MathF.Abs(pan),(float)MaxTurnAbsRad)) PanAngleRad = pan;
             else { env.Log?.Invoke($"TurnTowardsPoseAction.Init: turn angle {pan * 180 / Math.PI:F1} deg exceeds the maximum {MaxTurnAbsRad * 180 / Math.PI:F1} deg"); Byte0x179 = true; return 0; }
         }
         // (5) 0x0054ABA6..0x0054ACBC
@@ -264,7 +259,11 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
             env.Log?.Invoke(FormattableString.Invariant($"TurnTowardsPoseAction.Init.FailedToComputedHeadAngle: PoseWrtRobot translation=({rel.X:F6},{rel.Y:F6},{rel.Z:F6})"));       // 0x0054AB66
             head = (env.GetAbsoluteHeadAngleToLookAtPose ?? AbsoluteHeadAngleToLookAtPose).Invoke(rel);       // 0x0054AB8C..0x0054AB9A: the pose was converted in place to the robot frame (0x0054A94C), so the argument is robot-relative
         }
-        HeadAngleRad = Math.Min(Math.Max((float)head.Value, HeadMinRad), HeadMaxRad);
+        float original=(float)head.Value; // Already a Radians output: preserve its copied bits.
+        float minimumPick=CozmoMotion.RadiansGreaterThan(original,HeadMinRad)?original:new Radians(HeadMinRad).Value;
+        HeadAngleRad=CozmoMotion.RadiansLessThan(minimumPick,HeadMaxRad)
+            ?(CozmoMotion.RadiansGreaterThan(original,HeadMinRad)?original:new Radians(HeadMinRad).Value)
+            :new Radians(HeadMaxRad).Value;
         callPanAndTiltInit = true;
         return 0;
     }
@@ -357,8 +356,9 @@ public sealed class TurnInPlaceAction : IDisposable
     private readonly object _stateGate;
     internal static readonly object DiagnosticCounterGate = new();
     internal static ushort WaitingAckCounter = 10, AngleNotReachedCounter = 10;
-    public uint Tag { get; }
+    public uint Tag { get; private set; }
     private bool _disposed;
+    private readonly bool _ownsTag;
     private T Gated<T>(Func<T> body) { T result=default!; LogCallbackDeferral.RunGated(_stateGate,()=>result=body()); return result; }
     private void Gated(Action body) => LogCallbackDeferral.RunGated(_stateGate,body);
     private void Emit(EngineLogLevel level, string? channel, string key, string text)
@@ -395,15 +395,20 @@ public sealed class TurnInPlaceAction : IDisposable
             Byte0xD9 = 0;
         }
         _ackSubscription?.Dispose();                         // +E4 release, 0x00545BC4..0x00545BCA
-        ActionRunnerTagCounter.Global.Release(Tag);           // existing base-tag teardown, after the C4 owner
+        if(_ownsTag)ActionRunnerTagCounter.Global.Release(Tag); // wrapped native action uses its runner's one reservation
     });
 
-    public TurnInPlaceAction(IPanTiltRobot robot, float angle, bool isAbsolute)
+    internal void BindOwnedRunnerTag(uint tag)
+    {if(_ownsTag)throw new InvalidOperationException("Only a wrapped turn can borrow its current runner tag");Tag=tag;}
+
+    public TurnInPlaceAction(IPanTiltRobot robot, float angle, bool isAbsolute):this(robot,angle,isAbsolute,null){}
+    internal TurnInPlaceAction(IPanTiltRobot robot,float angle,bool isAbsolute,uint? ownedRunnerTag)
     {
         _robot = robot;
         _stateGate=(robot as INativePanTiltServices)?.StateGate ?? new object();
-        uint tag; do { tag=ActionRunnerTagCounter.Global.NextIdTag(); } while (!ActionRunnerTagCounter.Global.TryReserve(tag));
-        Tag=tag;
+        _ownsTag=ownedRunnerTag is null;
+        if(ownedRunnerTag is {} existing)Tag=existing;
+        else {uint tag;do{tag=ActionRunnerTagCounter.Global.NextIdTag();}while(!ActionRunnerTagCounter.Global.TryReserve(tag));Tag=tag;}
         _ackSubscription = (robot as INativeMotorAckSource)?.SubscribeMotorAck(HandleMotorActionAck);
         Byte0x84 = false; Byte0x85 = false;
         Angle0x88 = angle;

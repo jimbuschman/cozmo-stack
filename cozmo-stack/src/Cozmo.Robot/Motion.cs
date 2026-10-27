@@ -777,7 +777,7 @@ bool requireCalibration = true)
     /// SetHeadAngle (MA10) uses this path; M10-008's compound reuses it as a child.
     /// </summary>
     private MoveAction BuildHeadAction(float radians, float maxSpeedRadPerSec, float accelRadPerSec2,
-                                       float durationSec, TimeSpan? timeout)
+                                       float durationSec, TimeSpan? timeout, float? suppliedTolerance = null)
     {
         // fidelity: M4-001
         // Radians ctor 0x0084C832 rescales first (0x0084C87C); so 99 rad → 99 − 16·2π = −1.5310 and clips to the
@@ -800,7 +800,7 @@ bool requireCalibration = true)
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "MoveHeadToAngleAction.Constructor.AngleTooHigh", FormattableString.Invariant($"Requested head angle ({degrees:F1}deg) more than max head angle (44.5deg). Clipping."));
             target = MaxHeadAngleRad;
         }
-        float tolerance = Math.Max(GameHeadToleranceRad, MinHeadToleranceRad);
+        float tolerance = Math.Max(suppliedTolerance ?? GameHeadToleranceRad, MinHeadToleranceRad);
         // fidelity: M4-003, M4-016
         // MA10: the game handler constructs the action and queues it at QueueActionPosition::NOW
         // (ActionList::QueueActionNow 0x0053DCA0). No synchronous Init/Update (Q4): the first ActionList tick
@@ -1161,6 +1161,23 @@ bool requireCalibration = true)
     {
         lock (_gate)
             for (int track = _trackLocks.Length - 1; track >= 0; track--) _trackLocks[track].Clear();
+    }
+
+    // Native PanTilt owns these children; only its compound ticks/queues them.
+    // Normal head9C1/9D0 matches the existing ctor; C11.3 proves A8 remainszero, so its gated eye branch cannot run.
+    internal ActionRunner CreateNativeHeadChild(float angle,float tolerance,float speed,float accel)
+    {
+        var child=BuildHeadAction(angle,speed,accel,0,null,tolerance);
+        lock(_gate)_actions.Add(child);
+        return child;
+    }
+    internal ActionRunner CreateNativeLiftChild(float height,float tolerance)
+    {
+        MoveAction? child=null;
+        child=new MoveAction(this,false,height,tolerance,"lift",id=>new SetLiftHeight(child!.Target,DefaultLiftSpeedRadPerSec,DefaultLiftAccelRadPerSec2,0,id));
+        child.SetName(MoveAction.LiftName(height));
+        lock(_gate)_actions.Add(child);
+        return child;
     }
 
     // fidelity: M4-028
