@@ -40,7 +40,7 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
-- **PICKUP-PYRAMID-1 active:** next exact shipped behavior SparksPickupSingleCubeForPyramid. Source extraction and separate independent check underway; configured factory is currently visibly unbuilt, legacy host closest-cube path is not accepted as native evidence. No code before source PASS. Drive-off remains READY; do not wait for Claude to continue.
+- **PICKUP-PYRAMID-1 bounded code independently checked; full gate pending:** configured native factory/cache/eligibility and source-correct manual pickup verification built. Independent413/413 plus final affected guard1/1 PASS. Concrete native pickup children/activity admission remain visible MISSING, so no finished behavior. M15-044 own-record settlement proposed; M12-007 still partial. Drive-off remains READY; do not wait for Claude.
 
 - **Drive-off pilot READY FOR CLAUDE.** Test-only clock FIX5c25c9a7 independently passed36/36; two consecutive asset-complete full gates on b273fe62 passed6362/6362 each,0failed/0skipped. REVIEW N3 on main337879ab passes M13-017/040, M7-023/026 and M11-060 for settlement on merge; M12-043/M8-027 stay open. N2 withdrawn; no split. Official statuses/approvals unchanged; no new hardware acceptance. Next: next behavior on BEHAVIOURS.md, not outward pilot-2 reading.
 

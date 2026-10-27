@@ -28,7 +28,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 
 | Shipped ID | Class | State | Established subsystem slice; remaining dependencies | Configured contexts / map locator |
 |---|---|---|---|---|
-| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | Phase1 PICKUP-PYRAMID-1; whole path UNKNOWN pending read/check | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
+| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | PICKUP-PYRAMID-1 factory/cache/eligibility/manual Verify independently checked; concrete native children/activity admission MISSING | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
 | `SparksPickupSingleCubeToStack` | `PickUpCube` | not started | UNKNOWN | spark: SparksStackBlock. 1 refs; R233+ in map |
 | `PutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: Hiking; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: MeetCozmo. 8 refs; R019+ in map |
 | `PutDownBlockNothingToDo` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: NothingToDo. 1 refs; R050+ in map |
