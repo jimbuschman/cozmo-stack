@@ -561,6 +561,13 @@ public sealed partial class BehaviorManager : IDisposable
             return none;
         }
 
+        if (best is NativePickUpCubeBehavior pickup && !pickup.CheckExecutionAvailability())
+        {
+            var unavailable = new BehaviorSelection(Current?.Id, "native execution unavailable; prior behavior retained") { Scores = scores };
+            Selected?.Invoke(unavailable);
+            return unavailable;
+        }
+
         string? replaced;
         BehaviorScope scope;
         lock (_gate)
@@ -762,6 +769,8 @@ public sealed partial class BehaviorManager : IDisposable
     private bool SwitchToBehaviorBaseCore(RunningInfo info, double nowSec, BehaviorStopReason stopReason,
                                           CancellationToken cancel = default)
     {
+        // Host availability boundary, not a native false/no-effect result. Do not retire the prior selection.
+        if(info.Current is NativePickUpCubeBehavior pickup&&!pickup.CheckExecutionAvailability())return false;
         lock (_gate) StopAndNullifyLocked(stopReason, nowSec);
 
         var next = info.Current;

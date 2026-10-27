@@ -54,6 +54,7 @@ public sealed class AIComponent
 
     /// <summary><c>AIComponent+0x10</c>.</summary>
     public BehaviorHelperComponent Helpers { get; }
+    internal NativePickupResponseDirector PickupResponses {get;}=new();
     internal FreeplayDataTracker? Tracker {get;set;}
 
     // fidelity: M11-079 — native +8, constructor 0x005741A4..0x005741F6.

@@ -165,6 +165,7 @@ public class M12RFix2StreamATests
         using var signals_rig = SignalTestContext.Install();
         var (rig, obj) = MovingCubeRig();
         using var _ = rig;
+        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=false}); //actual scopedDA: unloaded state2 enters moving/recent checks.
         var pick = new PickupObjectAction(rig.M, 7) { CheckPreActionPose = false };
         var task = pick.RunAsync(default);
         Spin(() => VerifyLines(pick) >= 1 || task.IsCompleted, () => { rig.Frame(); rig.Pump(); });
@@ -194,6 +195,8 @@ public class M12RFix2StreamATests
         Assert.Empty(lifts);
         Assert.Empty(posts);                                         // the byte equals the action's DockAction (+0x80): M12-005 compare
 
+        rig.Send(new LiftLoad{Field0=false}); //restore unloaded state2 after independently grading the true→1 handler above.
+        Assert.Equal(2,pick.LiftLoadState);
         // one millisecond past the boundary: failed
         rig.T = stamp + 501 - 33;
         rig.State();
@@ -207,7 +210,7 @@ public class M12RFix2StreamATests
         rig.Send(new LiftLoad { Field0 = true });
         rig.Send(new MovingLiftPostDock { Field0 = (byte)DockAction.PickupLow });
         Assert.Empty(lifts); Assert.Empty(posts);
-        Assert.Equal(1, pick.LiftLoadState); // retired DA cannot overwrite its prior value.
+        Assert.Equal(2, pick.LiftLoadState); // retired DA cannot overwrite its last real false→2 input.
     }
 
     /// <summary>
@@ -269,6 +272,8 @@ public class M12RFix2StreamATests
         if (Lib is null) return;
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         Assert.Single(rig.Frame().Objects);
         bool SquintLayer() => rig.Robot.Animations.Scheduler.Layers.Face.AllLayers.Any(l => l.Name == "DockSquint");

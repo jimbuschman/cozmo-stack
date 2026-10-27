@@ -429,6 +429,8 @@ public class ManipulationTests
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
         rig.Cube = CubeAt(200, 30, 0.2);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
@@ -469,6 +471,8 @@ public class ManipulationTests
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(120, 0, 66));       // sitting on another cube
         rig.Head = 0.1f;
         var r = rig.Frame();
@@ -616,6 +620,8 @@ public class ManipulationTests
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
+        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
+        rig.OnDockResult=()=>{rig.Send(new LiftLoad{Field0=true});rig.Cube=null;}; //suppliedsuccessfulpickup scene: stop rendering the old location; real world/carry remains untouched.
         rig.Cube = CubeAt(220, -20, 0.1);
         Assert.Single(rig.Frame().Objects);
         var ctx = Ctx(rig);

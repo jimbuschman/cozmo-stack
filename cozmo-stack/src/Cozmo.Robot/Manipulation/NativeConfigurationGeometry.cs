@@ -47,13 +47,13 @@ internal sealed class NativeConfigurationGeometry
             throw new NativeConfigurationUnavailable("M13-023/024 admitted virtual footprint unavailable (not a native false)");
         return quad!;
     }
-    internal ObservableObject? Neighbor(ObservableObject obj,bool onTop)
+    internal ObservableObject? Neighbor(ObservableObject obj,bool onTop,float tolerance=30f,BlockWorldFilter? suppliedFilter=null)
     {
         Require(obj.NativePose);using var reference=obj.NativePose.GetWithRespectToRoot(); // 0x00626048
         using var parent=reference.FindRoot();var refQuad=Quad(obj,reference);
         float z=(float)reference.Translation.Z,dim=(float)Dimensions(obj,reference).Z;
         float target=z+dim*(onTop?0.5f:-0.5f);
-        var filter=Filter();filter.IgnoreIds.Add(obj.ObjectId);
+        var filter=suppliedFilter?.Clone()??Filter();filter.IgnoreIds.Add(obj.ObjectId);
         filter.Predicates.Add(candidate=>
         {
             Require(candidate.NativePose);using var relative=new Pose3d();
@@ -65,7 +65,7 @@ internal sealed class NativeConfigurationGeometry
             if(!refQuad.Intersects(quad))return false;
             float candidateDim=(float)Dimensions(candidate,relative).Z;
             float surface=(float)saved.Z+candidateDim*(onTop?-0.5f:0.5f);
-            return MathF.Abs(target-surface)<=30f+BitConverter.UInt32BitsToSingle(0x3727C5AC);
+            return MathF.Abs(target-surface)<=tolerance+BitConverter.UInt32BitsToSingle(0x3727C5AC);
         });
         return _world.FindLocatedObjectHelper(filter,null,true); // FIRST, not collect-all's last return
     }
