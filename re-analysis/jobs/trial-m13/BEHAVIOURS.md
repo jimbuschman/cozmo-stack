@@ -29,7 +29,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | Shipped ID | Class | State | Established subsystem slice; remaining dependencies | Configured contexts / map locator |
 |---|---|---|---|---|
 | `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | PICKUP-PYRAMID-1 READY; factory/cache/eligibility/manual Verify checked, full6378PASS; concrete native children/activity admission MISSING | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
-| `SparksPickupSingleCubeToStack` | `PickUpCube` | in progress | PICKUP-STACK-1 shared concrete native visual subtree; input/math READ check pending; other native children MISSING | spark: SparksStackBlock. 1 refs; R233+ in map |
+| `SparksPickupSingleCubeToStack` | `PickUpCube` | in progress | PICKUP-STACK-1 READY; owned visual subtree independently checked, two full6387PASS; other native children MISSING | spark: SparksStackBlock. 1 refs; R233+ in map |
 | `PutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: Hiking; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: MeetCozmo. 8 refs; R019+ in map |
 | `PutDownBlockNothingToDo` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: NothingToDo. 1 refs; R050+ in map |
 | `PyramidPutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: BuildPyramid; spark: BuildPyramid; activity: Feeding. 3 refs; R014+ in map |

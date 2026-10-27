@@ -34,4 +34,4 @@ Current authority: operator scope correction in AUTONOMY.md. Pilot handed off no
 
 | Job | State | Purpose |
 | --- | --- | --- |
-| PICKUP-STACK-1 | RELEASED | SparksPickupSingleCubeToStack; reuse checked pickup class, implement shared concrete visual subtree after independent input/math/retirement READ PASS. PICKUP-STACK-1.md. |
+| PICKUP-STACK-1 | READY FOR CLAUDE | Owned native visual subtree and N5 shared clock fix independently checked; two full6387/6387 PASS0skip on e6973c7a. M13-026 own-method proposal under existing libm boundary; full pickup remains MISSING. HANDOFF-PICKUP-STACK-1.md. |

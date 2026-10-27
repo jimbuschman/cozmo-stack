@@ -40,7 +40,7 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
-- **PICKUP-STACK-1 bounded native visual code independently checked; N5 central fixture fix checked; two full gates pending:** actual queued motor/image paths verified466/466; N5 independent287/287 and old-coupling Timeout control. M13-026 native-method proposal uses existing libm boundary; M13-020/M12-037 and full pickup remain partial/MISSING. No behavior finish or hardware claim.
+- **PICKUP-STACK-1 READY FOR CLAUDE; N5 shared clock fix; two consecutive full6387/6387 PASS0skip on e6973c7a:** actual queued motor/image paths independently verified466/466; N5 independent287/287 and old-coupling Timeout control. M13-026 native-method proposal uses existing libm boundary; M13-020/M12-037 and full pickup remain partial/MISSING. No behavior finish or hardware claim. Continue PutDownBlock without waiting for Claude.
 
 - **PICKUP-PYRAMID-1 READY FOR CLAUDE; full6378/6378 PASS0skip on91ad1702:** configured native factory/cache/eligibility and source-correct manual pickup verification built. Independent413/413 plus final affected guard1/1 PASS. Concrete native pickup children/activity admission remain visible MISSING, so no finished behavior. M15-044 own-record settlement proposed; M12-007 still partial. Drive-off externally MERGED; five own records settled. Continue shared native pickup path without waiting for Claude.
 
