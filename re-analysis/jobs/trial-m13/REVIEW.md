@@ -78,3 +78,11 @@
   Use dedicated threads (or `TaskCreationOptions.LongRunning`) for the producers and the held writer so the test does
   not depend on pool growth; keep every assertion.
 | PICKUP-PYRAMID-1 | MERGED | 0936210c. Spot-checked Pickup Verify 0x00553BE0..0x00554056 (the +0xC1 gate is always 1 for pickup, ctor 0x005536F8). **Settled: M15-044** (81 pairs equal the emulated builder; read/InitConfig rows 1-6). N4 test fix accepted. `research/20261027-pickup-pyramid-1-claude-check.md`. Behaviour not finished: native pickup children remain MISSING; next job should close that path. |
+
+- **N5 (2026-10-27): fix the transport-clock coupling once, in the shared Rig, before the next behaviour's handoff.**
+  The PICKUP-PYRAMID-1 merge gate failed once on `ManipulationTests.PlaceOnGroundNeedsACarriedObjectAndReleasesIt`
+  (line 522: Timeout, expected Success; then passed on rerun). Same cause as the M15-022 FIX: since the pilot, the
+  shared Rig builds `ManipulationSystem.CreateStandalone(..., ()=>Clock.NowMs/1000.0)`, so pumping the transport
+  spends the action's own deadline under full-suite load. Patching tests one at a time (5c25c9a7, 283d6b6e) leaves
+  the rest latent. Give the Rig a controlled action clock by default, separate from the transport clock, and let
+  only the deadline tests opt into advancing it. Keep every assertion. Run the full gate twice.
