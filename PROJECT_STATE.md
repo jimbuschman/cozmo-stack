@@ -40,6 +40,8 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **PICKUP-STACK-1 bounded native visual code independently checked; N5 central fixture fix checked; two full gates pending:** actual queued motor/image paths verified466/466; N5 independent287/287 and old-coupling Timeout control. M13-026 native-method proposal uses existing libm boundary; M13-020/M12-037 and full pickup remain partial/MISSING. No behavior finish or hardware claim.
+
 - **PICKUP-PYRAMID-1 READY FOR CLAUDE; full6378/6378 PASS0skip on91ad1702:** configured native factory/cache/eligibility and source-correct manual pickup verification built. Independent413/413 plus final affected guard1/1 PASS. Concrete native pickup children/activity admission remain visible MISSING, so no finished behavior. M15-044 own-record settlement proposed; M12-007 still partial. Drive-off externally MERGED; five own records settled. Continue shared native pickup path without waiting for Claude.
 
 - **Drive-off pilot externally MERGED (main4fb2908b); M7-026/M13-017/M13-040/M7-023/M11-060 settled by Claude.** Test-only clock FIX5c25c9a7 independently passed36/36; two consecutive asset-complete full gates on b273fe62 passed6362/6362 each,0failed/0skipped. REVIEW N3 on main337879ab passes M13-017/040, M7-023/026 and M11-060 for settlement on merge; M12-043/M8-027 stay open. N2 withdrawn; no split. No Codex status/approval edits; no new hardware acceptance. Next: next behavior on BEHAVIOURS.md, not outward pilot-2 reading.
