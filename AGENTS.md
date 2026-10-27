@@ -353,6 +353,22 @@ Layers go bottom-up, one at a time: M1 transport, M2 protocol, then device, cont
 5. **Hardware**, where the layer needs it: the manager writes the script and the operator runs it (see below).
 6. **Accept.** The manager sets the subsystem's review state to ACCEPTED with the accepted commit.
 
+### Behaviour at a time (operator, 2026-10-26)
+
+Layer-4 work and later is done one behaviour at a time (`re-analysis/jobs/trial-m13/PLAN-BEHAVIOURS.md`).
+
+- **One behaviour per job.** Read its whole path once, build it once, check it once. Don't split it into small
+  read/build slices.
+- **The boundary is the behaviour's own observable result:** what the robot does and what the C# API delivers for it,
+  not a layer or a file.
+- **Hand off what is built.** A remaining MISSING gap doesn't hold the job back; it is recorded and goes into the next job.
+- **Records are settled in the Claude check,** each one on its own path, with the reason in its `unresolved`.
+- **Be cautious about evidence, not about scope.** Every step still needs a citation, but a job isn't kept small out
+  of caution.
+- **Progress is counted in behaviours finished and records settled,** reported daily
+  (`re-analysis/jobs/trial-m13/BEHAVIOURS.md`).
+- **Don't stop between jobs.** After a handoff, start the next behaviour without waiting.
+
 ### What the checker enforces
 
 `re-analysis/tools/fidelity.py --check` and `FidelityManifestTests` enforce these rules:
