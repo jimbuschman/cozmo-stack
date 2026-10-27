@@ -56,9 +56,9 @@ public sealed class PickupPyramidNativeExecutionTests
             }
             var state=Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos|extra,origin:Robot.CurrentOriginId,frame:Robot.PoseFrameId,x:X,y:Y,head:Head,liftAngle:Lift);state.Pose.Angle=Yaw;Rig.Data(state);Rig.Tick();
         }
-        internal void Image(uint id,bool cube=false,float cubeX=150)
+        internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1)
         {
-            M.Vision.Enabled=true;M.Vision.ModeEnableMask=1<<1;
+            M.Vision.Enabled=true;M.Vision.ModeEnableMask=modes;
             uint stamp=Robot.StoredState!.Timestamp;
             Rig.Data(new ImageImuData{ImageId=stamp,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
             var cal=M.Vision.Calibration!;var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
@@ -328,6 +328,34 @@ public sealed class PickupPyramidNativeExecutionTests
         Assert.Equal(4.520000457763672f,(float)camera.Translation.X);Assert.Equal(0f,(float)camera.Translation.Y);Assert.Equal(41f,(float)camera.Translation.Z);
         using var rootCamera=camera.GetWithRespectToRoot();Assert.Equal(4.520000457763672f,(float)rootCamera.Translation.X);
         Assert.Equal(100f,(float)f.Robot.GetCheckedMainPose().Translation.X);
+    }
+    private sealed class SuppliedFaceDetector:IFaceDetector
+    {
+        public bool IsAvailable=>true;
+        public string Description=>"supplied face detector result at proprietary boundary";
+        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>new[]{new DetectedFace(11,new FaceRect(120,40,60,60),new Vec2(135,60),new Vec2(165,60),RollRad:0)};
+    }
+    [Fact]
+    public void MixedRealWorkerFrameUsesHistoricalCameraForMarkersWithoutReplacingExistingFaceCameraInput()
+    {
+        // Same scene/head/face input with marker mode off/on; preserve the existing labelled face adapter.
+        using var f=new Fixture();var cube=f.Add();f.M.Vision.FaceDetector=new SuppliedFaceDetector();
+        var diagnostic=new List<string>();f.M.Vision.Log+=diagnostic.Add;f.M.World.Log+=diagnostic.Add;
+        f.Image(1,true,modes:1<<2);
+        var before=Assert.Single(f.M.Vision.LastFaces).HeadPose;
+        var faceTranslation=before.Translation;var faceRotation=before.Quaternion;
+        var objects=new List<NativeObservedObject>();
+        using var observed=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x44,true,p=>{if(p is NativeObservedObject value)objects.Add(value);});
+        //Actual pose confirmer requires repeated observations; no fabricated44 or timestamp writes.
+        for(uint frame=2;frame<=10&&objects.Count==0;frame++)
+        {
+            f.Motors();f.Image(frame,true,modes:(1<<1)|(1<<2));
+            var after=Assert.Single(f.M.Vision.LastFaces).HeadPose;
+            Assert.Equal(faceTranslation,after.Translation);Assert.Equal(faceRotation,after.Quaternion);
+        }
+        Assert.True(objects.Count>0,"markers="+f.M.Vision.LastResult?.Markers.Count+" head="+f.Head+" lift="+f.Lift+" world="+string.Join(" | ",diagnostic));
+        Assert.Contains(objects,o=>o.ObjectId==7);
+        Assert.NotEmpty(NativeObservedMarkers.Get(cube,cube.LastObservedTimestamp));
     }
     [Fact]
     public void RealWorkerReleasesFrameAndPoseGatesBeforePublicFrameAndProcessedImageRecipients()

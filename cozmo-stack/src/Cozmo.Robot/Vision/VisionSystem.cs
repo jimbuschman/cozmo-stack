@@ -1108,6 +1108,7 @@ public sealed partial class VisionSystem : IDisposable
                 using var nativeResultCameraPose=new Pose3d("");
                 using var resultCameraPose=processingPose.CameraPose;
                 var processingCamera=new CameraModel(cal,resultCameraPose);
+                var markerCamera=processingCamera;
                 lock(_busy)
                 {
                 if(RemovedSince(removal))return null;
@@ -1143,7 +1144,7 @@ public sealed partial class VisionSystem : IDisposable
                         {SteppedBehavior.ReportMissing("M11-050 native historical Camera owner/calibration unavailable; result withheld");return null;}
                         using var nativeCamera=cameraOwner.CopyHistoricalCameraPose(historicalResult);
                         nativeResultCameraPose.AssignInputValue(nativeCamera);
-                        processingCamera=new CameraModel(installed,nativeResultCameraPose);
+                        markerCamera=new CameraModel(installed,nativeResultCameraPose);
                     }
                 }
                 if (!stateComputed)
@@ -1174,7 +1175,7 @@ public sealed partial class VisionSystem : IDisposable
             // unobserved check, stacked poses, block configs and markerless objects.
             if (stateComputed)
             {
-                var worldFrame = World.UpdateObservedMarkers(keptMarkers, processingCamera, timestamp, processingPose);
+                var worldFrame = World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose);
                 objects = worldFrame.Objects;
                 forgotten = worldFrame.Forgotten;
                 // fidelity: M11-064 — warning, docking signal (even after failure), then caller's error.

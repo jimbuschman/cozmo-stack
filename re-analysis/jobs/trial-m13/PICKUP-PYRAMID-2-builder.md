@@ -72,3 +72,22 @@ Remaining MISSING: native computed-state/IMU/Rodrigues clamp error signal (M12-0
 ## Independent verification
 
 B independently ran the exact affected regression command above with `--no-build --no-restore`, logger `trx;LogFileName=independent-final.trx` and console `independent-final.log` in the same artifact folder: exit0,700/700PASS,0skip,35s; TRX error/timeout/aborted/disconnected all0. All27 frozen raw hashes matched before/after. Bounded BUILD PASS; no full suite or hardware run. Current M13-020 still has its separate public PanAndTilt setter scope remainder; no whole-record settlement is claimed here. B source/build check is `re-analysis/research/20261027-pickup-pyramid-2-codex-check.md`.
+
+
+## Post-check affected camera correction (after5287ada4)
+
+Root/B found the marker historical-camera replacement also changed the later face `UpdateTranslation` input through shared `processingCamera`. Checked513AB0/654E82 evidence establishes the marker/World join only; this does not recover a different face camera. Isolated correction uses separate `markerCamera`, retaining the original processing camera for faces, same owned history/native camera and pose-gate release. No broad face geometry claim. Added mixed real worker marker+face regression with explicitly supplied proprietary detector output: compare existing face camera output with marker processing off/on while asserting real LOCAL44 and native observed-marker stamps. No build/test while manager full gate owned the host; root later released the sole slot after cancelling that confirmed-defect full run (no full-suite result claim).
+
+
+Affected actual ledger (same executable/project/working directory/artifact folder; commands use `test <project> --no-restore --nologo -v:q --filter '<filter>' --logger 'trx;LogFileName=<name>.trx' --results-directory .scratch/pickup-pyramid-2`, console `<name>.log`):
+
+|Name|Exact filter|Actual result|
+|---|---|---|
+|camera-scope-final|`FullyQualifiedName~PickupPyramidNativeExecutionTests\|FullyQualifiedName~PutDownBlockNativeTests\|FullyQualifiedName~DriveOffPilotVisionTests\|FullyQualifiedName~FacesF23Tests`|42P/1F/0skip,43total,7s,exit1; last filter token has no matching class. Mixed face-equality passed, actual44 absent.|
+|camera-mixed-2|`FullyQualifiedName~PickupPyramidNativeExecutionTests.MixedRealWorkerFrame`|0P/1F/0skip,657ms,exit1; fresh actual rawstate before second image did not resolve missing44.|
+|camera-mixed-diagnose|same one-case filter|0P/1F/0skip,581ms,exit1; actual1marker; World NewEntry/NonConfirmingObservation proves existing pose confirmer needs repeated observations, not missing rendering or fake marker data.|
+|camera-scope-final-2|`FullyQualifiedName~PickupPyramidNativeExecutionTests\|FullyQualifiedName~PutDownBlockNativeTests\|FullyQualifiedName~DriveOffPilotVisionTests\|FullyQualifiedName~FaceTests`|92P/0F/0skip,10s,exit0. Real repeated frames until actual confirmation; face-equality every mixed frame, actual44 ID7 and native timestamp query.|
+
+Source/tests frozen again after the92-case run; no active builder host. Raw two-file rows `.scratch/pickup-pyramid-2/frozen-camera-scope-sha256.txt`. No source changes beyond the marker-only camera binding; existing face adapter/proprietary detector limitations unchanged. This correction requires a separate commit after independent affected verification, preserving prior5287ada4.
+
+Independent affected check: B ran the same92-case filter with `--no-build --no-restore` (exact invocation/artifacts in updated Codex check), exit0,92/92PASS,0skip,10s; TRX error/abort/timeout/disconnected0. Both replacement raw hashes before/after match aggregate45760425e20c69333b6572e3bbe8e388a5dd62e27ad1d31147aeb36334bd60ea; other25 files retain original raw hashes. No repeated700 run or hardware claim.

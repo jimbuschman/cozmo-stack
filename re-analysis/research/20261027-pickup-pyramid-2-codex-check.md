@@ -32,3 +32,24 @@ Current **M12-018 IMPLEMENTATION_GAP**, title **“The dock abort path”**, evi
 Current **M13-020 IMPLEMENTATION_GAP**, title **“PanAndTiltAction, TurnTowardsPoseAction::CheckIfDone and WaitForImagesAction”**, evidence **`549C48..549D60`, `54B010..54B01C`, `54CA64..54CBEC/54CC1C..54CC4C/54DD88..54DE38`**: native owned Init/Check/Wait execution, actual MAIN/head/calibration inputs, real parallel motor children and LOCAL43 lifecycle are now code/source verified and executed. Retain the existing M13-026 equivalent-libm boundary; no phone-last-bit claim. Whole-record settlement still needs Claude's own-scope decision on the four explicitly unbuilt PanAndTilt setters `5498A0/5499AC/549AE8/549B0C`, still stated in current code/record. This is a record recommendation issue, not a blocker in the built source-supported caller path.
 
 Whole M12-007/017/034/037 remain partial: existing supported public/manual Verify, general IDock setup/cleanup and marker-query adapters still have their own recorded differences; native external4C producer remains visibly unavailable. Native error-signal IMU/computed/clamp inputs (M12-019), named speech, DriveTo/Search, unsupported passive geometry and full host44 payload remain named MISSING. Typed LOCAL44 is only the recovered consumed prefix, never fake truncated wire. Enclosing Spark/BuildPyramid activity admission, proprietary detector/PnP input fidelity and hardware are not certified. No manifest/status/REVIEW/Claude files changed.
+
+## Final affected camera-scope correction (supersedes two earlier hashes)
+
+**Affected BUILD PASS.** A later narrow review found that assigning the historical marker camera to shared `processingCamera` also changed face translation on mixed marker/face frames. The checked `513AB0..513B16` / `654E82..E8E` contract established the marker recipient only; P3's face attachment/cache checks did not establish that face-input change. The manager stopped its in-progress full gate; no completed full-gate pass is claimed here.
+
+The exact three-line production correction keeps original `processingCamera` for faces, initializes separate `markerCamera`, replaces only that value with the historical native camera and supplies it solely to `World.UpdateObservedMarkers`. Historical-state ownership and released callback/pose gates are unchanged. The mixed actual-worker regression preserves exact face Translation/Quaternion on EVERY marker+face frame while requiring real LOCAL44 ID7 and actual observed-marker timestamps. Repeated real frames satisfy the existing pose confirmer; no fabricated44 or marker-stamp writes. The supplied face detector remains the explicit proprietary input boundary, not detector-source proof.
+
+Frozen replacement raw hashes, verified before AND after independent execution:
+
+- `Vision/VisionSystem.cs`: `caa0aeafcb4af52c77508a68d10667ba7eaa94e4212d0cd8f38875c6c63b0477`
+- `PickupPyramidNativeExecutionTests.cs`: `a32a48802cf8a6681d381d41058b7b9b0e782a33ad5a45858b6cdf000a123935`
+
+Full paths are in `.scratch/pickup-pyramid-2/frozen-camera-scope-sha256.txt`, UTF8/LF aggregate `45760425e20c69333b6572e3bbe8e388a5dd62e27ad1d31147aeb36334bd60ea`. All other25 original raw hashes still match. The earlier700/700 execution remains evidence for the prior candidate/unchanged paths, not a new700 run on these replacement bytes.
+
+Actual independent authorized escalated command:
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-build --no-restore --nologo -v:q --filter 'FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~PutDownBlockNativeTests|FullyQualifiedName~DriveOffPilotVisionTests|FullyQualifiedName~FaceTests' --logger 'trx;LogFileName=independent-camera-scope.trx' --results-directory .scratch/pickup-pyramid-2 *> .scratch/pickup-pyramid-2/independent-camera-scope.log
+```
+
+Exit0: **92 passed /0 failed /0 skipped,10 seconds**. TRX executed92; error/timeout/aborted/disconnected/notExecuted all0. Builder's preceding42P1F and individual fixture failures remain in its ledger; they were not passes. No production change beyond this camera separation, no repeat700/full suite, no hardware or broader face claim. Final bounded BUILD PASS applies to the combined original25 hashes plus these two replacements. Record recommendations and named gaps above remain unchanged. Own test process exited; exclusive slot released.
