@@ -29,3 +29,9 @@ CM13-01/02 Claude check PASS (`research/20261026-cm13-01-02-claude-check.md`); m
 | PICKUP-PYRAMID-1 | READY FOR CLAUDE | Factory/native cache/eligibility/manual Verify code independently checked; full6378/6378 PASS0skip. Native concrete pickup children/activity admission remain MISSING. M15-044 own-record proposal; HANDOFF-PICKUP-PYRAMID-1.md. |
 
 Current authority: operator scope correction in AUTONOMY.md. Pilot handed off now; settle complete OWN records without waiting for neighboring gaps, then work down BEHAVIOURS.md. Scoreboard now0finished/2inprogress/176notstarted pending external review/acceptance. Audio stays last. Earlier fragment rows are history.
+
+## Next behaviour
+
+| Job | State | Purpose |
+| --- | --- | --- |
+| PICKUP-STACK-1 | RELEASED | SparksPickupSingleCubeToStack; reuse checked pickup class, implement shared concrete visual subtree after independent input/math/retirement READ PASS. PICKUP-STACK-1.md. |
