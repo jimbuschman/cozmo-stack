@@ -87,3 +87,4 @@
   the rest latent. Give the Rig a controlled action clock by default, separate from the transport clock, and let
   only the deadline tests opt into advancing it. Keep every assertion. Run the full gate twice.
 | PICKUP-STACK-1 | MERGED | baa24a33. Spot-checked ComputeHeadAngleToSeePose 0x00518344..0x00518600 (NaN branches, write before MaxIterations, exhaustion) and GetAbsoluteHeadAngleToLookAtPose 0x0054B428..0x0054B55A. **Settled: M13-026** (EQUIVALENT_IMPLEMENTATION, libm boundary only). N5 accepted. `research/20261027-pickup-stack-1-claude-check.md`. |
+| PUTDOWN-BLOCK-1 | MERGED | 0ffe53aa. Spot-checked 0x005C7F98..0x005C82CC (backup draw -45..-75, speeds, head -20 deg/2 deg, drive -30, image wait 2/mode1, triggers 0x19A/0x199, face PI). Nothing settled: the proposed new lifecycle record waits for operator approval; M15-012/M13-027/M14-008 stay open. `research/20261027-putdown-block-1-claude-check.md`. |
