@@ -14,4 +14,3 @@ Current manifest reread before reliance: M12-010 IMPLEMENTATION_GAP, **“The se
 Release scope is actual native helper/owned Nearby/timed Wait plus existing TurnObject/motor/compound/44 recipients. S7 remains explicit branch MISSING until its exact input producer is available; stages1/2, DriveTo, general visibility, speech/audio and hardware are not certified. Implementation may proceed within this boundary; final BUILD review and real configured execution remain required. No tests/process mutations performed.
 
 S7 implementation condition: reuse scoped host-availability failure and cancel/retire only the owned search subtree after iteration, with callbacks cleared and visible MISSING; merely ignoring the unrelated observation and later reporting faithful success is not admitted. This does not block the source-supported matching-target/default-search branches.
-
