@@ -255,4 +255,3 @@ The initial Face analysis above correctly identifies the fixture's wire-forward-
 ### Extension provenance after reconciliation
 
 D1 public configuration APIs and D2 controlled-clock manual ownership are approved standalone extensions. Their controlled-clock values, host callback order/lifetime and isolation are API requirements; they do not claim that custom clocks, host per-arrangement first-seen/cache semantics or manual initialization match native engine/hardware behavior. Native clock/state/source paths retain their separately cited contracts. This documentation reconciliation changed no source, tests, statuses, queue or other report file.
-
