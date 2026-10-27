@@ -40,7 +40,7 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
-- **PutDownBlock native whole-class build in progress:** configured ActionList→path/animation/image→carry release test passes; native face lifetime corrections are independently checked before final freeze. Existing public manual helper and full face-report/input gaps remain explicit. No behaviour finish or hardware claim; no waiting for Claude.
+- **PutDownBlock READY FOR CLAUDE:** native configured lifecycle/action flow0ffe53aa; independent112/112 PASS, full6405/6405 PASS0skip on clean0ffe53aa. Actual ActionList→path/animation/worker43→carry release exercised. Existing public manual helper, generic wrapper and full face-report/input gaps remain explicit; proposed narrow lifecycle record only. No finished-behaviour or hardware claim. Next: remaining native pickup closure, without waiting for Claude.
 
 - **Pickup handoffs externally MERGED on main ef43c3a1:** M15-044 EXACT_SOURCE and M13-026 EQUIVALENT_IMPLEMENTATION (libm only) settled by Claude; N4/N5 accepted. Seven trial records settled in total, official710 now EXACT245/EQUIV7/IMPL351/POLICY68/HW14/RECOVERABLE23/BLOCKED2. No Codex status/approval edits. Whole pickup still has named MISSING paths; no finished-behaviour claim.
 

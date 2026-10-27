@@ -35,4 +35,4 @@ Current authority: operator scope correction in AUTONOMY.md. Settle complete OWN
 | Job | State | Purpose |
 | --- | --- | --- |
 | PICKUP-STACK-1 | REVIEW COMPLETE | Authoritative MERGED verdict on main: M13-026 settled EQUIVALENT_IMPLEMENTATION (libm only), N5 accepted. Two local full6387/6387 PASS0skip; full pickup remains MISSING. HANDOFF-PICKUP-STACK-1.md. |
-| PUTDOWN-BLOCK-1 | RELEASED | Exact shipped PutDownBlock; whole own class/face receiver reading, independent check then isolated build. Remaining complete host face report/flat pose input remain visible gaps. PUTDOWN-BLOCK-1.md. |
+| PUTDOWN-BLOCK-1 | READY FOR CLAUDE | Native configured lifecycle/action flow0ffe53aa; independent112/112 and full6405/6405 PASS0skip. New narrow-record proposal; broad manual-wrapper/face input/report gaps remain. HANDOFF-PUTDOWN-BLOCK-1.md. |
