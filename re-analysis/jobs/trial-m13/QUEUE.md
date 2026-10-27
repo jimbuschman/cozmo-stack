@@ -35,5 +35,5 @@ Current authority: operator scope correction in AUTONOMY.md. Settle complete OWN
 | Job | State | Purpose |
 | --- | --- | --- |
 | PICKUP-STACK-1 | REVIEW COMPLETE | Authoritative MERGED verdict on main: M13-026 settled EQUIVALENT_IMPLEMENTATION (libm only), N5 accepted. Two local full6387/6387 PASS0skip; full pickup remains MISSING. HANDOFF-PICKUP-STACK-1.md. |
-| PUTDOWN-BLOCK-1 | READY FOR CLAUDE | Native configured lifecycle/action flow0ffe53aa; independent112/112 and full6405/6405 PASS0skip. New narrow-record proposal; broad manual-wrapper/face input/report gaps remain. HANDOFF-PUTDOWN-BLOCK-1.md. |
-| PICKUP-PYRAMID-2 | RELEASED | Close same configured pickup's remaining native execution; Phase1 independent receiver/input/carrier check before code. PICKUP-PYRAMID-2.md; explicit name/DriveTo/Search gaps do not hold read-backed direct input. |
+| PUTDOWN-BLOCK-1 | REVIEW COMPLETE | Authoritative MERGED on main1b80095c; Claude source check PASS, no record settled (new lifecycle proposal needs operator inventory approval). Local full6405/6405 PASS0skip. HANDOFF-PUTDOWN-BLOCK-1.md. |
+| PICKUP-PYRAMID-2 | RELEASED | Same configured pickup remaining native execution; Phase1 independent READ PASS committed68d01e9 incl44/carrier and three receiver deltas. Isolated build now released; explicit name/DriveTo/Search/input gaps remain. PICKUP-PYRAMID-2.md. |
