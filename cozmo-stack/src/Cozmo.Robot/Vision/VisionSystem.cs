@@ -1102,13 +1102,8 @@ public sealed partial class VisionSystem : IDisposable
                 IReadOnlyList<ObjectObservation> objects;
                 IReadOnlyList<ObservableObject> forgotten;
                 VisionFrameResult result;
-                using(World.EnterPoseMutation())
-                {
-                using var historicalResult=new HistRobotState();
-                using var nativeResultCameraPose=new Pose3d("");
                 using var resultCameraPose=processingPose.CameraPose;
                 var processingCamera=new CameraModel(cal,resultCameraPose);
-                var markerCamera=processingCamera;
                 lock(_busy)
                 {
                 if(RemovedSince(removal))return null;
@@ -1117,6 +1112,12 @@ public sealed partial class VisionSystem : IDisposable
             // A failure (no raw state at or after the timestamp) logs (0x00654DE2) and jumps to 0x0065507E: UpdateObservedMarkers is never reached and the function returns 0.
             bool stateComputed = markerMode;
             var keptMarkers = markers;
+            BlockWorldFrameResult? worldFrame;
+            using(World.EnterPoseMutation())
+            {
+            using var historicalResult=new HistRobotState();
+            using var nativeResultCameraPose=new Pose3d("");
+            var markerCamera=processingCamera;
             // fidelity: M11-036, M11-050
             // UpdateVisionMarkers 0x00654D60..0x006550AC, for a result that has markers (an empty list goes straight to UpdateObservedMarkers, 0x00654D76..0x00654DEC): after the computed state
             // (0x00654D92) the engine (b) drops the frame, logging, when Robot::IsPoseInWorldOrigin(state pose) is false (0x00654E56, log 0x00655028..0x00655074), (c) drops it, silently, when
@@ -1173,9 +1174,10 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            if (stateComputed)
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose):null;
+            } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
+            if (worldFrame is not null)
             {
-                var worldFrame = World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose);
                 objects = worldFrame.Objects;
                 forgotten = worldFrame.Forgotten;
                 // fidelity: M11-064 — warning, docking signal (even after failure), then caller's error.
@@ -1250,7 +1252,6 @@ public sealed partial class VisionSystem : IDisposable
             FramesProcessed++;
             LastResult = result;
                 }
-                } // Release pose owners and frame gate before optional host callbacks.
             // Native result state is committed before optional host callbacks; a host
             // callback may dispose/join the worker without holding its processing lock.
             // Raised under the lock a removal waits on, so a frame the removal discarded never raises it afterwards.

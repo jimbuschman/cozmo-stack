@@ -345,6 +345,9 @@ public sealed class PickupPyramidNativeExecutionTests
         var before=Assert.Single(f.M.Vision.LastFaces).HeadPose;
         var faceTranslation=before.Translation;var faceRotation=before.Quaternion;
         var objects=new List<NativeObservedObject>();
+        var eventOrder=new List<(string Kind,uint Stamp)>();var faceTimesAtWorld=new List<(uint World,uint? Face)>();
+        f.M.World.ObjectObserved+=o=>{eventOrder.Add(("world",o.Timestamp));faceTimesAtWorld.Add((o.Timestamp,f.M.Vision.Faces.GetFace(11)?.LastObservedTimestamp));};
+        f.M.Vision.Faces.FaceObserved+=o=>eventOrder.Add(("face",o.Timestamp));
         using var observed=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x44,true,p=>{if(p is NativeObservedObject value)objects.Add(value);});
         //Actual pose confirmer requires repeated observations; no fabricated44 or timestamp writes.
         for(uint frame=2;frame<=10&&objects.Count==0;frame++)
@@ -356,6 +359,10 @@ public sealed class PickupPyramidNativeExecutionTests
         Assert.True(objects.Count>0,"markers="+f.M.Vision.LastResult?.Markers.Count+" head="+f.Head+" lift="+f.Lift+" world="+string.Join(" | ",diagnostic));
         Assert.Contains(objects,o=>o.ObjectId==7);
         Assert.NotEmpty(NativeObservedMarkers.Get(cube,cube.LastObservedTimestamp));
+        Assert.NotEmpty(faceTimesAtWorld);
+        Assert.All(faceTimesAtWorld,t=>Assert.True(t.Face<t.World,"world callback must precede this frame's face mutation"));
+        foreach(var worldEvent in eventOrder.Where(e=>e.Kind=="world"))
+            Assert.True(eventOrder.IndexOf(worldEvent)<eventOrder.FindIndex(e=>e.Kind=="face"&&e.Stamp==worldEvent.Stamp));
     }
     [Fact]
     public void RealWorkerReleasesFrameAndPoseGatesBeforePublicFrameAndProcessedImageRecipients()

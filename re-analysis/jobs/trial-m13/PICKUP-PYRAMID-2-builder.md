@@ -91,3 +91,20 @@ Affected actual ledger (same executable/project/working directory/artifact folde
 Source/tests frozen again after the92-case run; no active builder host. Raw two-file rows `.scratch/pickup-pyramid-2/frozen-camera-scope-sha256.txt`. No source changes beyond the marker-only camera binding; existing face adapter/proprietary detector limitations unchanged. This correction requires a separate commit after independent affected verification, preserving prior5287ada4.
 
 Independent affected check: B ran the same92-case filter with `--no-build --no-restore` (exact invocation/artifacts in updated Codex check), exit0,92/92PASS,0skip,10s; TRX error/abort/timeout/disconnected0. Both replacement raw hashes before/after match aggregate45760425e20c69333b6572e3bbe8e388a5dd62e27ad1d31147aeb36334bd60ea; other25 files retain original raw hashes. No repeated700 run or hardware claim.
+
+
+## Post-full-gate event-order correction (after e379c3a1)
+
+Manager full gate reported6420P/1F/0skip,6421total,6m48s,exit1; solefailure was unchanged `M3M4X16BuilderTests.VisionFailureStillCallsDockingBeforeLocalHandlerError`: direct docking preceded deferred World/Vision warnings. The ApplyResult-wide pose scope deferred World logs/public events until after docking/faces. Root/B confirmed implementation defect. No assertion or source error policy was changed.
+
+Correction preserves the original `_busy` envelope and original face camera. Only SAME historical-state computation, native marker camera and World.UpdateObservedMarkers are in the short pose scope. Hist/native camera dispose there; scope exits/drains normal World deferrals BEFORE returned status warning→docking→local handler error and faces. No manual queue drain/order injection. Existing LOCAL44 remains at its original synchronous World point. Extended mixed-worker test captures World event order and the prior FaceEntry timestamp visible inside ObjectObserved: current frame face mutation must still be pending, beyond merely testing deferred event queue order.
+
+Actual authorized sole-host affected command (console `.scratch/pickup-pyramid-2/camera-order-final.log`):
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-restore --nologo -v:q --filter 'FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~M3M4X16BuilderTests|FullyQualifiedName~PutDownBlockNativeTests|FullyQualifiedName~DriveOffPilotVisionTests|FullyQualifiedName~FaceTests' --logger 'trx;LogFileName=camera-order-final.trx' --results-directory .scratch/pickup-pyramid-2 *> .scratch/pickup-pyramid-2/camera-order-final.log
+```
+
+Exit0:107/107PASS,0skip,11s; includes original failure-order assertion unchanged, world-before-face event/mutation and prior callback gate checks. No repeat700/full suite. Two replacement raw hashes in `.scratch/pickup-pyramid-2/frozen-camera-order-sha256.txt`; source/tests frozen, no builder testhost. P5 drafts in separate worktree remain paused/unbuilt pending integration of this correction.
+
+Independent B event-order affected verification: same107-case filter with `--no-build --no-restore`, exit0,107/107PASS,0skip,10s; both final raw hashes match before/after (aggregate37eb330bca90f6546f2fc4f14114cf6689202293e71c5d5128f205071b18f2e9), other25 original files unchanged. Exact command/artifacts in final Codex addendum. No repeated700 or full-suite claim.

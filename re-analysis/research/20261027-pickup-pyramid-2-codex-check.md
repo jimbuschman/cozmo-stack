@@ -53,3 +53,24 @@ Actual independent authorized escalated command:
 ```
 
 Exit0: **92 passed /0 failed /0 skipped,10 seconds**. TRX executed92; error/timeout/aborted/disconnected/notExecuted all0. Builder's preceding42P1F and individual fixture failures remain in its ledger; they were not passes. No production change beyond this camera separation, no repeat700/full suite, no hardware or broader face claim. Final bounded BUILD PASS applies to the combined original25 hashes plus these two replacements. Record recommendations and named gaps above remain unchanged. Own test process exited; exclusive slot released.
+
+## Final affected event-order correction (supersedes the previous two replacement hashes)
+
+**Affected BUILD PASS.** The subsequent manager full gate actually failed **6420P/1F/0skip,6421 total**, exit1; it was not a pass. Its unchanged X16 oracle exposed an implementation defect: the ApplyResult-wide outer frame scope deferred World events/logs until after direct docking and face mutation. This affected observable event ordering, not merely diagnostic wording. The earlier700 and92 runs remain historical results and did not cover this defect.
+
+Independently reviewed the exact correction: original `_busy` envelope and face `processingCamera` lifetime remain; a short frame scope encloses SAME full-history compute/marker camera/World call. Native history/camera owners dispose inside that scope, which then releases/drains standard World deferrals BEFORE returned-status warnings, docking, local-handler error and faces. No manual callback/log reordering. LOCAL44 remains synchronous inside World. The mixed real-worker regression now grades both World-before-face events and PRIOR face timestamp inside the World callback, so delayed callbacks cannot pass merely because their deferred queue order is preserved. Original X16 order assertions remain unchanged; face-pose equality/real44/native stamp/callback gate checks remain.
+
+Final raw hashes verified before/after:
+
+- `Vision/VisionSystem.cs`: `d2a4c2a14907b10fb90883357a4474772127a08287a7c4c488faf862e2cf867a`
+- `PickupPyramidNativeExecutionTests.cs`: `f6a997abc3e15cc048e627fa9585d818b3b9b8ced7d1a4f80cd378fdb126f3c3`
+
+Artifact `.scratch/pickup-pyramid-2/frozen-camera-order-sha256.txt` UTF8/LF aggregate `37eb330bca90f6546f2fc4f14114cf6689202293e71c5d5128f205071b18f2e9`. Other25 original raw hashes match; diff-check exit0. These two rows supersede the earlier camera-scope replacement rows only.
+
+Actual independent escalated sole-host command:
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-build --no-restore --nologo -v:q --filter 'FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~M3M4X16BuilderTests|FullyQualifiedName~PutDownBlockNativeTests|FullyQualifiedName~DriveOffPilotVisionTests|FullyQualifiedName~FaceTests' --logger 'trx;LogFileName=independent-camera-order.trx' --results-directory .scratch/pickup-pyramid-2 *> .scratch/pickup-pyramid-2/independent-camera-order.log
+```
+
+Exit0, **107/107 passed,0 failed,0 skipped,10 seconds**. TRX executed107; errors/timeouts/aborts/disconnections/notExecuted all0. No repeat700 or new full gate/hardware execution. Final bounded BUILD PASS is restored for original25 files plus these two replacements, with prior named gaps/record recommendations unchanged. Process exited; exclusive testhost slot released. This correction still requires manager integration/full gate; no official status changed here.
