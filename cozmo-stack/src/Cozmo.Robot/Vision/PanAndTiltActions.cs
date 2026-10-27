@@ -109,10 +109,10 @@ public class PanAndTiltAction
 }
 
 /// <summary>
-/// What <c>TurnTowardsPoseAction::Init</c> reads from the robot and the two unread lookups it calls (M13-020, M13-021).
+/// What <c>TurnTowardsPoseAction::Init</c> reads from the robot and its checked M13-026 head-angle lookups.
 /// <see cref="ComputeHeadAngleToSeePose"/> is <c>Robot::ComputeHeadAngleToSeePose(pose, &amp;angle, 0.01f)</c> (0x3C23D70A), null = its
-/// failure result; <see cref="GetAbsoluteHeadAngleToLookAtPose"/> is 0x0054B428. Both bodies are unread (M13-021), so a null
-/// seam throws <see cref="NotSupportedException"/> and no default is supplied here.
+/// failure result; <see cref="GetAbsoluteHeadAngleToLookAtPose"/> is 0x0054B428. The native runner supplies the actual
+/// solver owner; a null fallback delegate uses the checked absolute-angle body below.
 /// </summary>
 public sealed record TurnTowardsPoseEnv(Pose3d RobotPose, double RobotHeadAngleRad,
                                         Func<Pose3d, double?>? ComputeHeadAngleToSeePose,
@@ -168,12 +168,12 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
     public bool Byte0x179 { get; private set; }
 
     /// <summary>
-    /// <c>TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose(Point3f)</c> 0x0054B428..0x0054B564 (M13-021), binary32 in the engine's operation order, for a point relative to the robot: <c>h = z + (-49.0f)</c>,
+    /// <c>TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose(Point3f)</c> 0x0054B428..0x0054B564 (M13-026), binary32 in the engine's operation order, for a point relative to the robot: <c>h = z + (-49.0f)</c>,
     /// <c>D = sqrtf(x*x + y*y) + 13.0f</c>, <c>t = (300.0f - D) / 150.0f</c>, <c>u = (0.0f - h) / -10.0f</c>, <c>a = atan2f(h, D)</c>; then the conditional picks of the <c>it pl / it gt</c> pairs at
     /// 0x0054B4C4..0x0054B54A (each condition is the latest <c>vcmpe</c> before its <c>vmrs</c>: <c>pl</c> is "not less than", NaN included; <c>gt</c> is ordered greater) between 0.0f, 0.0872665f (0x3DB2B8C2),
     /// 0.1308997f (0x3E060A92), <c>t*0.0872665f</c> and <c>u*0.1308997f</c>, and the result <c>(s24 + (a + s16)) + 0.0698132f (0x3D8EFA35)</c> as <c>Radians(float)</c>.
     /// </summary>
-    // fidelity: M13-021
+    // fidelity: M13-026
     public static double AbsoluteHeadAngleToLookAtPose(Vec3 p)
     {
         float x = (float)p.X, y = (float)p.Y, z = (float)p.Z;
