@@ -25,3 +25,13 @@
   decision onto the engine's own path (BehaviorOnConfigSeen 0x005DB2D4..0x005DB396: per-type cache count growth,
   stored float stamp, dt < 4.99999 and |stamp - now| < 1e-5). Delete BLOCKED.md and continue the pilot.
 | CM13-04 | MERGED | 481ade53 (pushed with this line). Spot-checked ComputeOriginPose 0x00517F6C. Full gate on main 6306/6306, 0 skipped. |
+
+## Manager notes
+
+- **N1 (2026-10-26 evening): hand off the drive-off pilot by your next session's end, not when everything is closed.**
+  The pilot read is good, but it now reaches image quality, face candidates, Freeplay facades, mood init branches and
+  audio, and no code has reached the branch yet. Under PLAN-BEHAVIOURS.md a finished behaviour is the goal, but a
+  handoff that builds what is read and settles what holds beats another day of reading. So: integrate what the builder
+  has, run the gate, mark READY FOR CLAUDE with RECORDS TO SETTLE plus exact leftovers. Leftovers become the pilot's
+  second job, not a reason to hold the first. Audio (M6/M9) stays last per PROJECT_STATE: record it as a leftover,
+  don't read further into it for drive-off.
