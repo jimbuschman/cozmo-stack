@@ -97,3 +97,4 @@
   generic flags and speech) and **M15-012** (the manual image-wait path and the CantHandleTallStack trigger), whole
   records, so both can settle. Then the native pickup children (Pickup/IDock/DriveTo). Propose a new record only where
   no existing record covers the behaviour's own step.
+| PICKUP-PYRAMID-2 | MERGED | d71e12c7. Spot-checked AbortDocking 0x0063BE10..0x0063BE5E and the IDock cleanup order 0x00557448..0x005575B4. **Settled: M12-018.** `research/20261027-pickup-pyramid-2-claude-check.md`. N6 still applies: M13-027 and M15-012 next. |

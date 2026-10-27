@@ -7,10 +7,10 @@ Manifest of **711 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 246 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 247 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 7 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 351 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 350 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -35,7 +35,7 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 36 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 40 | 0 | 31 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 75 | 4 | 63 | 1 | 1 | no | no |
@@ -63,7 +63,7 @@ status.
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
-| M12-manipulation | INVENTORY_APPROVED | 8 | 0 | 0 | 0 |
+| M12-manipulation | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
@@ -2494,17 +2494,6 @@ B-M3M4-18 built, awaiting strong verification: each IDockAction registration now
 B-M12-3 (2026-10-15), built, awaiting strong verification: Correction to the older appended-DA note: the engine-shaped live action replaces its C5/DA slots on re-Init; only its E2G vector appends. Public standalone RegisterActionHandlers(DockAction) remains a legacy test/host adapter, not this native action owner. +C2 is per action and direct DA writes cause no public C5/DA host-event callback. Async scheduler and full destructor cleanup remain visible MISSING. Ownership note 2026-10-16 (split from M2-023/M2-020; re-analysis/research/20261013-small-reads-2-check.md): the DA (0x00557E82..0x00557E9C) and C5 (QueueAction(5) -> AddConcurrentAction 0x0053DF2C..0x0053E004, no Init) handler bodies and the E4/DA/C5 handle wiring are this record's; B-M12-3 built DA and C5 up to the unbuilt TriggerLiftSafeAnimationAction (0x00544710). B-M12-3 check (2026-10-16, re-analysis/research/20261016-b-m12-3-check.md): FAIL. Retirement does not order against an in-flight delivery (blocking race; fix in B-M12-7); the note "retirement excluded with callbacks" overstates it. C5 on a match must construct TriggerLiftSafeAnimationAction and QueueAction(5) (0x00557CC8..0x00557CFA); both exist in the stack; the "not built" MISSING text is wrong. No tests for C5 InvalidAnimation/ActionMismatch/Playing.
 
 B-M2M15-2 built, awaiting strong verification: preserved current DockActionSubscriptions, per-action +C2/gate and +E4 append/C5-DA replacement. On matching C5, now constructs existing TriggerLiftSafeAnimationAction(1,false,0,0x42700000,false) and submits QueueAction(5,a,0); no Init, dedupe latch or extra host notification. Sentinel, HasResponse (including empty stored name), unsigned byte mismatch and warning/Info paths retained. Regression dispatches real robot signal into directly registered concrete dock owners; native async scheduler join0x005521AC and previously recorded B-M12-7 retirement race remain outside this publication. No whole-dock coverage claim.
-
-**M12-018 — The dock abort path** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: a dock abort is never sent, so the robot keeps docking
-* rests on: the abort path had no record
-* best authority: libcozmoEngine.so 3.4.0-1204: DockingComponent::AbortDocking 0x0063BE10 builds an AbortDocking and sends it via EngineToRobot(AbortDocking&&) 0x0063BE2A (blx 0x4B94C8) and SendMessage 0x0063BE36 (blx 0x4A5368)
-* evidence: 0x0063BE10 AbortDocking; 0x0063BE2A blx 0x4B94C8; 0x0063BE36 blx 0x4A5368
-* outstanding: compare Docking.cs with AbortDocking 0x0063BE10 Reopened 2026-10-14 (re-analysis/research/overnight/20261014-ov06-m12-040-check.md, "Contradicted"): the tagged DockingSystem.Abort() (Docking.cs:491-496) also cancels _pending and clears _pending/_active; the native AbortDocking 0x0063BE10..0x0063BE5E writes nothing to the component and returns the raw send result (0x0063BE3A, 0x0063BE52). No production caller of that method was found (AbortAll sends through Motion.cs:1105). Make the tagged method match, or move the tag.
-
-B-M12-3 (2026-10-15), built, awaiting strong verification: DockingSystem.Abort now sends reliable empty AbortDocking and returns raw send bool, with no _pending/_active cancellation or state writes. Existing host run completion/cancellation remains its own cleanup, not moved into Abort. Regression uses an actually pending dock and verifies both state fields and return results.
 
 **M12-019 — The docking-error-signal clamp is 40 degrees** (live path)
 
