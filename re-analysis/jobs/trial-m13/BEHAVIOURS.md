@@ -60,8 +60,8 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `Needs_SevereLowEnergyState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowEnergy. 1 refs; R037+ in map |
 | `Needs_SevereLowRepairState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowRepair. 1 refs; R045+ in map |
-| `DriveOffCharger` | `DriveOffCharger` | in progress | M8 action/chooser; M12/M13 custom path; M5/M7 mood/animation; M11 ingress/vision; M6/M9 audio STOP — pilot packet | freeplay: BuildPyramid; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: NothingToDo; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: PutDownDispatch; spark: BuildPyramid; spark: SparksFireTruckAlarm; spark: SparksFistBump; spark: GatherCubes; spark: SparksKnockOverCubes; spark: SparksPeekABoo; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksPounceOnMotion; spark: SparksRollBlock; spark: SparksStackBlock; spark: SparksTrackLaser; spark: SparksWorkout; activity: MeetCozmo; activity: Feeding. 26 refs; R001+ in map |
-| `Hiking_DriveOffCharger` | `DriveOffCharger` | not started | M8 action/chooser; M12/M13 custom path; M5/M7 mood/animation; M11 ingress/vision; M6/M9 audio STOP — pilot packet | freeplay: Hiking. 1 refs; R020+ in map |
+| `DriveOffCharger` | `DriveOffCharger` | in progress | Driving/contact/action; needs/mood/animation; neighboring vision/audio gaps tracked separately | freeplay: BuildPyramid; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: NothingToDo; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: PutDownDispatch; spark: BuildPyramid; spark: SparksFireTruckAlarm; spark: SparksFistBump; spark: GatherCubes; spark: SparksKnockOverCubes; spark: SparksPeekABoo; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksPounceOnMotion; spark: SparksRollBlock; spark: SparksStackBlock; spark: SparksTrackLaser; spark: SparksWorkout; activity: MeetCozmo; activity: Feeding. 26 refs; R001+ in map |
+| `Hiking_DriveOffCharger` | `DriveOffCharger` | not started | Driving/contact/action; needs/mood/animation; neighboring vision/audio gaps tracked separately | freeplay: Hiking. 1 refs; R020+ in map |
 | `VC_ComeHere` | `DriveToFace` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `EarnedSparks` | `EarnedSparks` | not started | UNKNOWN | freeplay: BuildPyramid; freeplay: Hiking; freeplay: NothingToDo; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Singing; freeplay: Socialize. 7 refs; R006+ in map |
 | `EnrollFace` | `EnrollFace` | not started | UNKNOWN | activity: MeetCozmo. 1 refs; R244+ in map |
@@ -249,17 +249,11 @@ Paths are relative to shipped `config/engine/behaviorSystem/`; `/` means the ass
 | `Freeplay` | `Freeplay` | — | `activities_config.json` `/3` |
 | `StrictPriorityFreeplay` | `StrictPriority` | — | `behavior_system_config.json` `/` |
 
-## Current pilot boundaries
+## Current pilot
 
-[Source handoff](../../research/20261026-driveoff-pilot-source-handoff.md), [full read and refinements](../../research/20261026-driveoff-pilot-read.md), [independent checks](../../research/20261026-driveoff-pilot-read-codex-check.md), and [pilot contract](DRIVE-OFF-PILOT.md) govern DriveOff. The pilot is **unfinished**; source PASS is not build verification or whole-record settlement.
-
-- Actual active audio owner/bank/readiness/control/render/scheduler/voice closure remains a STOP. Client requests, a delegate or a scoped dictionary are insufficient; no phone-only exclusion or control-only filler implementation.
-- General MeetCozmo's real M14 target selector/request state and Feeding's nontrivial Update before its chooser remain explicit boundaries. A high winning score or universal DriveOff-first entry does not prove exact losing-candidate RNG/state.
-- Live vision detector rectangles/ROI/clipping, available quality producer and other enabled result handlers remain visible. The checked quality receiver, aggregate and raw reports do not establish the whole producer.
-- C7/C7.1 source-checks the NONRUNNING PutDownDispatch losing LookForFaceAndCube candidate only; selecting/starting it next remains MISSING. This does not advance its whole-behavior state above not started.
-- M12-049 common configuration producer is recovered as a slice; BuildPyramid callbacks remain separate. M13-013 owns the derived contact-retry action, not merely the plain DriveStraight path used by this pilot. M7-026's named inputs may become a record-wide candidate after code verification; M8-027 current unresolved says teardown is memory-only with nothing behavioral left to build. None is settled by this scoreboard.
-- Operator D1 approved the WHOLE public configuration Cache/Stacks/Bases/Pyramids/MID/FirstSeenSec/ConfigurationSeen adapter as a documented standalone extension, isolated from ALL native state and behavior decisions. Native count-growth consumer/staging must remain separate. Older “policy pending” text is superseded; official policy/owner IDs are still manager/Claude work, never invented here.
-- Proposed Socialize objective recipient, D1 extension and typed Look candidate owning records remain proposals in [record handoff](DRIVE-OFF-PROPOSED-RECORDS.md), not official IDs.
+- [Drive-off handoff](HANDOFF-DRIVE-OFF-PILOT.md): production code pushed, full6361/6361 PASS;7 OWN-record settlement proposals await Claude. External review/hardware acceptance outstanding; scoreboard unchanged.
+- Operator scope: what changes the behavior's own observable result while it runs. Neighboring audio/ROI/other-activity MISSING paths are leftovers, not reasons to hold it. No outward pilot-2 reading job.
+- D1 configuration APIs and D2 controlled-clock whiteboard remain isolated standalone extensions; no status or support decision changes here.
 
 ## Supported-scope policies
 
