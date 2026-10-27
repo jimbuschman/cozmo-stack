@@ -45,3 +45,26 @@
   one line". Use the source ledger you already have; no new reading. Keep it to the pieces drive-off actually uses.
   Claude reviews it, the operator signs off, and Claude re-approves the subsystems so the complete pieces can settle.
   Mark the row READY FOR CLAUDE when it's pushed.
+
+- **N3 (2026-10-26 night): the 6d8d4006 handoff's seven proposals, checked against the binary.** These settle when the
+  pilot merges (after the M15-022 FIX), together with M7-026:
+  - **M13-017 PASS.** ctor 0x005C0980 (96 + extra), IsRunnableInternal 0x005C0B10 (+0x34A), Init 0x005C0B18 (lock,
+    severe-needs 3 push, +0x355 wait), TransitionToDrivingForward 0x005C0BB8 (platform gate), Update 0x005C0DA8
+    (stop on +0x355, redrive when idle, off-platform float stamp and 2), Stop 0x005C0D90, completion 0x005C0E9C
+    (result 0 only: objective 4, then the Robot+0x440 emotion event) all match `ChargerBehaviors.cs`.
+  - **M13-040 PASS.** SetOnCharger 0x00511990: family 4 / type 13 located find, else create + connected-ID copy or new
+    ID, AddRobotRelativeObservation on every true input, then the +0x338 rising edge (platform, ChargerEvent 1) and the
+    store. Matches `Sensors.cs` SetOnCharger and `BlockWorld.ObserveChargerFromContacts`.
+  - **M7-023 PASS.** Robot teardown nulls +0x250 (0x00511150) before deleting the mood (0x005111B6) and nulls +0x440
+    after; MoodManager dtor 0x0067AE14 gates on +0x158/+0x12C/ActionList, then +0x14C, +0x140, +0x134, +0x120 and the
+    nine 0x20 entries from 0x100 down. `MoodLifetime.cs` keeps that order; the live-ActionList branch is unreachable
+    from the only caller and reports MISSING.
+  - **M11-060 PASS.** Producer 0x006B229C (warn if pending, store +0xA8/+0xA4, set +0xA0); consumer 0x006B50C8..D8
+    (copy to +0x98/+0x9C, clear). Matches `Camera.cs` / `CameraQuality.cs`.
+  - **M12-043 not settled.** Its own path still reports MISSING: the midpoint recipient (`CubeGameBehaviors.cs:714`,
+    0x00617A8C..0x00617C32) and the container/cache joins (`BlockConfigurations.cs:234`). "Midpoint" is in the title.
+    Propose it again when those are built.
+  - **M8-027 not settled** (see the FIX row).
+- **N2 is withdrawn.** I called M13-017 "the whole drive-off behaviour"; its current title is narrower and settles
+  as is. Your own-path rule (AUTONOMY.md, operator scope correction) does what N2 asked. No PROPOSED-SPLIT.md needed.
+  Next after the FIX: the next behaviour on BEHAVIOURS.md, handed off the same way.
