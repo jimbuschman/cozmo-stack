@@ -317,7 +317,11 @@ public class M12RFix2StreamATests
         while (b.Update(ctx, t))
         {
             each?.Invoke(t);
-            rig.Pump(); t += 33;
+            rig.Pump();
+            rig.OneImage(); // Public offline image helper is not the native report producer.
+            // Explicit mode1 LOCAL43 recipient input; real worker publication is graded separately.
+            rig.Robot.Engine.AnimationMessages.Deliver(0x43,true,new ProcessedImageReport(rig.T,new uint[]{1},0));
+            t += 33;
             SignalTestContext.AdvanceBehavior(b);
         }
     }
@@ -342,7 +346,7 @@ public class M12RFix2StreamATests
         var ctx = Ctx(rig);
         rig.Robot.Animations.ManualTicking = true;
         rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
-        var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
+        using var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
         int releasedTraceCount=-1;
         rig.Robot.Engine.LogEntry+=e=>{if(e.Name=="BehaviorPutDownBlock.LookDownAtBlock.DidNotSeeBlock")releasedTraceCount=b.Trace.Count;};
         b.WorkPosted += signals_rig.Notify;
@@ -368,12 +372,12 @@ public class M12RFix2StreamATests
         var ctx = Ctx(rig);
         rig.Robot.Animations.ManualTicking = true;
         rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
-        var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
+        using var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
         b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        rig.Pump();
+        // Cancel the unstarted initial action; its actual queued terminal report enters the look.
+        rig.Robot.Engine.Robot!.ActionList.Cancel(b.CurrentRunnerTag);
         rig.Sent.Clear();
-        b.LookDownAtBlock();
         RunBehavior(rig, b, ctx);
         Assert.Empty(rig.Sent.OfType<SetHeadAngle>());
         Assert.Empty(rig.Sent.OfType<ExecutePath>());
@@ -399,10 +403,11 @@ public class M12RFix2StreamATests
         var ctx = Ctx(rig);
         rig.Robot.Animations.ManualTicking = true;
         rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
-        var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
+        using var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
         b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        b.LookDownAtBlock();
+        // Actual cancellation of the unstarted initial action delivers the any-result callback.
+        rig.Robot.Engine.Robot!.ActionList.Cancel(b.CurrentRunnerTag);
         int handled = 0;
         RunBehavior(rig, b, ctx, _ =>
         {

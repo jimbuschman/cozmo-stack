@@ -23,6 +23,15 @@ public abstract partial class SteppedBehavior
             _actionCompletionSubscription=robot.Engine.AnimationMessages.SubscribeMessage(RobotCompletedAction.UnionTag,true,
                 payload=>{if(payload is RobotCompletedAction completed)HandleActionComplete(completed);});
     }
+    // Host callers without a native container can own a constructor-lifetime lease. Never release an existing/native binding.
+    internal Action? AcquireActionCompletionOwner(CozmoRobot robot)
+    {
+        if(_actionCompletionSubscription is not null)return null;
+        BindActionCompletionOwner(robot);
+        var owned=_actionCompletionSubscription;
+        if(owned is null)return null;
+        return ()=>{if(!ReferenceEquals(_actionCompletionSubscription,owned))return;_actionCompletionSubscription=null;owned.Dispose();};
+    }
     internal void RetireActionCompletionOwner()
     {
         _actionCompletionSubscription?.Dispose();_actionCompletionSubscription=null;

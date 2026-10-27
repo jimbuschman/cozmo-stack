@@ -1,0 +1,48 @@
+# Shared-children-1 builder candidate
+
+Read PROJECT_STATE/AGENTS/REVIEW N6/job and independent finite read/check before implementation. Isolated codex/shared-children-1 at c2f34e4e; actual model/effort telemetry unavailable. No binary extraction/status/official records/hardware/main/push.
+
+Scope: generic eager before/wrapped/after face wrapper and full proxy (54C7DC..C8CE); shared rawcarry/head+drive/Wait43-after-parallel/face-before199 look and any-result release (5C8174..84D4); public IDisposable owner-lifetime completion lease retained through Stop/reuse, releasing only its own captured identity after Stop. Existing native binding lifetimes unchanged. Named intent3 metadata/traits/Robot268 speech/provider/audio remain visible M14-006 frontier; no synthetic provider/result or feature exclusion.
+
+Source supplements: Cant disappointment vtable1029FEC resolves5BDA56, Running iff84 nonzero elseComplete; ordinary1B emptycallback unchanged, upstream host wait phase retained. Shared initial5C7FD0..80DE uses actual ContextRandom one draw/f32 backup, Drive100true/ordinary19A/score5/any-resultLook; public getter widens finalfloat and phase observations occur at actual animation Init. Public KeepsRunningWithoutAction counts actual owned84 as native commonUpdate. No new binary reading.
+
+Actual commands/results (test project cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj; dotnet C:/Program Files/dotnet/dotnet.exe; artifacts .scratch/shared-children-1). All test invocations use --no-restore --nologo -v:q --logger trx;LogFileName=<run>.trx --results-directory .scratch/shared-children-1; output <run>.log. No full-suite run.
+
+- restore <project> --ignore-failed-sources --nologo -v:q: exit0, restore-1.log, existing local assets/cache only.
+- build <project> --no-restore --nologo -v:q: exit0,0errors,build-1.log,1m53s.
+- Focused filter FullyQualifiedName~SharedChildrenNativeTests|FullyQualifiedName~PutDownBlockNativeTests. focused-1 compileFAILexit1 CS0534: supplied completion unit omitted abstract CanInterrupt; zero executed, unit-only implementation added.
+- focused-2 exit1,25P/1F/0skip26total5s: public BackingUp ended early because inherited legacy KeepsRunningWithoutAction did not count native84; corrected from checked source, assertions retained.
+- focused-3 exit1,29P/2F/0skip31total6s. Two true-sayName recipient fixtures lost pose parent through existing no-eye face producer. face-diagnose-1 (filter FullyQualifiedName~SharedChildrenNativeTests.TrueSayName) exit1,0P/2F/0skip538ms. Supplied admitted eye-parts/parented native pose input, no FaceWorld production edit. Existing M14-008 no-eye parent-loss lead remains separate/unclaimed.
+- focused-4 exit0,31/31PASS0skip6s. Includes real queued Trigger/CA-CB/after-face proxy animation1; actual NativePickup/object0/raw22; public whole queue/worker43 path; owner lease/reentry; named M14-006 exception. Component face observations labelled supplied recipient input.
+- Caller filter FullyQualifiedName~M12RFix2StreamATests|FullyQualifiedName~ManipulationTests.PutDownBlock|FullyQualifiedName~NavigationTests.CantHandleTallStack. callers-1 compileFAILexit1 CS0234 test report namespace typo, zero executed. callers-2 after repair exit1,12P/3F/0skip15total1s. Native wait requires LOCAL43; old Rig.OneImage public offline adapter deliberately does not publish43. NoCarry supplied initial5A also left initial root queued, emitting an extra backup; pending scoped fixture retirement correction. All old assertions retained.
+
+- Root approved narrow old-fixture mode1 ProcessedImageReport43 recipient input using actual rig.T; these are not native image producer claims. New whole public path retains real worker43 proof. NoCarry/failure now cancel unstarted initial action and consume its actual queued Cancelled completion, without injected5A or changing assertions.
+- NativePickup-specific GetCompletionVariant0 bound from P4 setter75C460..4A6; existing undefined-body M1 publication skip/internal flag unchanged. Actual queued wrapper now asserts typed variant0 as well as exact raw22body.
+- focused-5 combined focused filter plus the caller filter above: exit0,46/46PASS0skip7s.
+- Concrete consequence of public owner lease: composite privately owns putDown and its Step link, no release surface. Released minimal IDisposable on PickUpAndPutDownCube: Stop then only owned putDown.Dispose, normalStop/reuse retains child lease, restart afterDispose rejected. Added ownership unit with supplied already-carried scene; no composite runnable/selection claim.
+
+- focused-6 same combined filter: compileFAILexit1 CS0619, zero executed/no TRX. xUnit selected obsolete Throws(Func<Task>) for the synchronous rejection assertion; changed to statement-lambda Action.
+- Disposed Cant and composite OnStart now reject before upstream state/head/waits, per released own-lifetime safety; ordinary Stop/reuse unchanged. Explicit composite owner test grades child lease acquired once, retained Stop/reuse, removed on idempotentDispose and restart rejected. Not a generic manager-lifetime claim.
+
+- focused-7 same combined filter: compileFAILexit1 analyzer xUnit2014 rejects async-call-inside-Throws even with statement lambda; zero executed/no TRX. Assertion now synchronously observes the returned task with GetAwaiter().GetResult, matching this synchronous caller test. No production correction.
+
+- focused-8 combined filter: exit1,47P/1F/0skip48total7s. New composite ownership unit had not loaded the animation library required by existing IsRunnable; supplied the actual shipped library before the existing transition. No production predicate or assertion changed.
+
+- owners-final (filter SharedChildrenNativeTests.CompositeOwner|SharedChildrenNativeTests.DisposedCant): exit1,1P/1F/0skip2total1s. All lease/reuse/disposal assertions passed; final IsEmpty incorrectly assumed Cancel also erases without an engine tick. Supplied normal engine/motor tick before unchanged emptiness assertion, matching ActionList.Cancel mark-then-retire semantics.
+
+- owners-final-2 same two-case owner filter after the real retirement tick: exit0,2/2PASS0skip1s.
+
+Reach: new whole public Start runs real native initial/look action chains, actual motor/path firmware messages, actual CA/CB and real worker43, then releases real carried scene; supplied firmware/scene is not hardware proof. Real generic queued animation wrapper grades full animation1/name after wrapped retirement and active after-face child; actual native pickup wrapper grades real object0/22bytes through queue/local/API/raw after retirement. Authored Payload and explicit local46/43 cases are separately labelled component recipient tests. Existing P4 real pickup/carrier producer tests remain regressions. No invented speech success/provider or broader face geometry claim.
+
+Remaining: named speech M14-006/M13-014 actual frontier throws visibly and owned subtree safely retires; no-eye parent-loss producer lead stays under M14-008; inherited upstream Cant sequence/selection and inferred composite pickup composition are not newly source-certified; public legacy unrelated adapters and phone-libm last-bit boundaries unchanged. No fidelity record/status edits by builder.
+
+Final builder regression: `regression-1` exit0,647/647PASS0skip59s; TRX total/executed/passed647, failed/error/timeout/aborted/disconnected/notExecuted0. Exact invocation follows (same compiled final bytes, no rebuild):
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-build --no-restore --nologo -v:q --filter 'FullyQualifiedName~SharedChildrenNativeTests|FullyQualifiedName~PutDownBlockNativeTests|FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~PickupSearchNativeTests|FullyQualifiedName~PickupStackNativeVisionTests|FullyQualifiedName~PickupPyramidPilotTests|FullyQualifiedName~PickupVerifyTests|FullyQualifiedName~M12RFix2StreamATests|FullyQualifiedName~M12RVisBuildTests|FullyQualifiedName~M12CheckedRowsBuilderTests|FullyQualifiedName~M13RVisBuildTests|FullyQualifiedName~FaceTests|FullyQualifiedName~CompoundActionTests|FullyQualifiedName~M8CompoundCheckedRowsTests|FullyQualifiedName~M8ActionCheckedRowsTests|FullyQualifiedName~ActionCompletionTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~BehaviorRunnerOwnershipTests|FullyQualifiedName~ManipulationTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~M7BatchThreeBTests' --logger 'trx;LogFileName=regression-1.trx' --results-directory .scratch/shared-children-1
+
+```
+
+Code/test freeze: 12 files, raw SHA256 rows in `.scratch/shared-children-1/frozen-source-sha256.txt`; aggregate SHA256 of UTF8 LF rows (including final LF) `3ff77a970590fbed52bef817887e4c78a134ad2bbd1279c3e81dd8c2c3947738`. All files inclusive base c2f34e4e plus new files; source/test bytes immutable after successful regression. `git diff --check` exit0. Testhost query found none; exclusive slot released to independent B. No builder commit/fullgate/push yet.
+
+Independent B: same exact final regression filter with --no-build --no-restore, artifacts `.scratch/shared-children-1/independent-final.log/.trx`, exit0,647/647PASS0skip1m3s; Completed/all failure/error/abort/timeout/disconnected0. All12 raw hashes match before/after the frozen artifact/aggregate above. Bounded BUILD PASS; source claims/remaining gaps unchanged, no whole subsystem/hardware claim. Reviewer host slot released. Root authorized only12 frozen code/tests plus this report and durable independent Codex check for normal isolated checkpoint, no push/fullgate by builder.
