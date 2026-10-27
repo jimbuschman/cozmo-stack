@@ -7,10 +7,10 @@ Manifest of **710 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 244 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 245 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 6 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 353 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 352 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 40 | 0 | 32 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 74 | 4 | 64 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 74 | 4 | 63 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 8 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -3659,20 +3659,6 @@ B-M2M15-2 built, awaiting strong verification: supersedes prior native-table/fai
 B-M2M15-2 publication update after manager7c5bfd3b (2026-10-17): builder rule10 now explicitly treats missing log text as best-effort cleanup, not MISSING. Removed the stack MISSING for the unread formatted-reader Debug argument; the existing read/config Error diagnostics remain visible. Formatter detail remains unclaimed, but is not an acceptance blocker. No status change.
 B-DELIV-1 (2026-10-17), built, awaiting strong verification: Shared UnlockStatus6D app delivery uses the copied-payload FIFO; backup/unlock handler logic and synchronous local emit are unchanged. No recovery or status promotion.
 B-M1-5 follow-up (2026-10-17), built, awaiting strong verification: the shared BroadcastBackup host boundary now copies and queues BackupReport through the common app FIFO before synchronous local hub delivery. This is the same checked Broadcast/enqueue boundary, not new restore/wipe/list/unlock recovery. Existing branch gates, payloads, NV callbacks, backup file writes and local consumers remain synchronous and unchanged. NativeUiDeliveryCount increments once when queued. Historical statements that the host callback runs before local subscribers are superseded: enqueue precedes local; host observation follows the outside-lock drain.
-
-**M15-044 — UnlockId name-to-value table and InitConfig details: UnlockIdFromString map builder; the root state after a failed readAsJson** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
-* effect: Which UnlockIds the default unlocks map to, and the logs when the unlock config is missing.
-* rests on: Opus check of R-BACKUP-UNLOCK (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-backup-unlock-and-stoull-check.md: UnlockIdFromString static map builder E:0x00794D84..0x007957AC (undecoded); DataPlatform::readAsJson failure root state (PLT E:0x004A64E4) unread.; re-analysis/research/20261013-small-reads-2-check.md: M15-044 section. UnlockIdFromString map 0x00794D84..0x00795834 (81 pairs, emulated; std::cerr on a miss); readAsJson 0x0084BFD4..0x0084C206; JsonCpp Reader 0x008E075A..0x008E12EC; InitConfig 0x0064BB68..0x0064BDB4; callers 0x0064B89E..0x0064B8C4, 0x0064C09C..0x0064C0C8.
-* outstanding: RECOVERABLE_GAP: decode the builder's name->value pairs (cross-check Unity UnlockId.cs, authority 2), and read readAsJson's failure path for the root it leaves. Read 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): IMPLEMENTATION_GAP, build rows 1-6 of the check file: the 81-entry table; a miss writes "error: string '<name>' is not a valid UnlockId value" to stderr and returns 0; readAsJson parses even when the open fails and logs DataPlatform.readAsJson errors; the callers pass a fresh null root, so a missing file logs UnlockConfigJsonNotFound then MissingDefaults and leaves the set empty; a malformed file keeps the partial object. Crash paths (JsonCpp depth > 1000; a non-object non-null root at operator[]) fall under the M1-034 standing rule.
-B-M15-1 (2026-10-15), built, awaiting strong verification: B-M15-1 did not read or build this native table/failure-root record, as explicitly excluded by that job. Its temporary UnityUnlockId authority-2 fallback is visible as stack MISSING; native table and failed-read root implementation remain for B-M2M15-1.
-B-M15-1b (2026-10-15): Correction to earlier builder wording: only the temporary authority-2 Unity UnlockId fallback is in place. Native 0x00794D84..0x007957AC was not read or built by B-M15-1 or B-M15-1b. This job does not implement or claim the native name table; the M15-044 stack MISSING remains. No native record settlement is implied.
-
-B-M2M15-2 (2026-10-17), built, awaiting strong verification: re-applies parked ed67f3ad onto current main. NativeUnlockNames uses the checked 81 byte-identical name/value pairs (Unity enum cross-check, independent report-table regression), raw stderr miss/flush -> Invalid0. BackupFiles.ReadJson uses the existing supplied-root Reader, even after open failure; partial roots survive false. InitUnlockConfig implements checked early exits, read/error then defaults guard, null/missing/nonarray diagnostics, object-member insertion, per-element conversion/insert/log and M1-034 depth/nonobject skips. Both actual progression Init and backup fallback pass fresh null roots and ignore bool. Preserved B-M15-3 force-read and reuse of the SAME root for freeplayOverrides. Conditional formatted-reader Debug remains M5-051 at0x0084C12A..0x0084C15C; no framework exception text substituted. Reader trailing-comment metadata is unchanged and not claimed reproduced. No status/evidence change; complete subsystem not claimed.
-B-M2M15-2 publication update after manager7c5bfd3b (2026-10-17): builder rule10 now explicitly treats missing log text as best-effort cleanup, not MISSING. Removed the stack MISSING for the unread formatted-reader Debug argument; the existing read/config Error diagnostics remain visible. Formatter detail remains unclaimed, but is not an acceptance blocker. No status change.
 
 **M15-045 — AIComponent teardown recursive recipients: BehaviorHelper IHelper types and callables, ObjectInteraction entries and ProcessInfo callables, BorderSegment release, SevereNeeds/RequestGame/AIWhiteboard handle inventories, Workout/ObjectInteraction/Whiteboard/Analyzer inner bodies** (live path)
 

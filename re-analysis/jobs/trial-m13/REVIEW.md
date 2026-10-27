@@ -77,3 +77,4 @@
   synchronously in the sink, so under full-suite load thread-pool injection can exceed the 10 s `Complete` window.
   Use dedicated threads (or `TaskCreationOptions.LongRunning`) for the producers and the held writer so the test does
   not depend on pool growth; keep every assertion.
+| PICKUP-PYRAMID-1 | MERGED | 0936210c. Spot-checked Pickup Verify 0x00553BE0..0x00554056 (the +0xC1 gate is always 1 for pickup, ctor 0x005536F8). **Settled: M15-044** (81 pairs equal the emulated builder; read/InitConfig rows 1-6). N4 test fix accepted. `research/20261027-pickup-pyramid-1-claude-check.md`. Behaviour not finished: native pickup children remain MISSING; next job should close that path. |
