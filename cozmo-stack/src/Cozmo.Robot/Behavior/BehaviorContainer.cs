@@ -289,6 +289,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.PlayAnim] = (ctx, json) => PlayAnimBehavior.FromConfig(json, ctx.Log),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
         [BehaviorClass.PickUpCube] = (ctx,json)=>new NativePickUpCubeBehavior(ctx,json),
+        [BehaviorClass.PutDownBlock] = (ctx,json)=>new NativePutDownBlockBehavior(ctx,json),
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         // case 0x19: BehaviorFistBump(robot, config), 0x158 bytes (0x0059cc84..0x0059cca2).
         [BehaviorClass.FistBump] = (ctx, json) => FistBumpBehavior.FromConfig(json, ctx.Vision, ctx.Manipulation),
@@ -340,14 +341,14 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        if((cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube) && ctx.Manipulation is null)
+        if((cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if(cls==BehaviorClass.PickUpCube&&ctx.NativeRobot is null)
+        if((cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock)&&ctx.NativeRobot is null)
         {
-            SteppedBehavior.ReportMissing("BehaviorContainer::CreateBehavior PickUpCube: actual native Robot input unavailable; no manual/private-owner fallback substituted");
+            SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
         var behavior = entry.Construct(ctx, config);

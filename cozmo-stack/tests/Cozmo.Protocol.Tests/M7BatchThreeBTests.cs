@@ -265,8 +265,8 @@ public class M7BatchThreeBTests
             Assert.Equal(r.Size, e.AllocationSize);
             Assert.Equal(r.Case, e.CaseAddress);
         }
-        // Config-built owners, including B-M11-15's checked goal unit with explicit unread lifecycle.
-        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube }.OrderBy(c=>c).ToArray(),
+        // Config-built owners; PutDown case0059CEE6/ctor005C7F98 independently checked before build.
+        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 

@@ -85,6 +85,14 @@ public sealed partial class VisionSystem : IDisposable
         // fidelity: M11-044
         // What the localization candidates and the frame sequence read from the robot: its current pose (Robot::GetPose), the robot states behind
         // RobotStateHistory::GetComputedStateAt, the MovementComponent bytes +0xA/+0xC, Robot::GetLastImageTimeStamp and BaseStationTimer::GetCurrentTimeInSeconds.
+        Faces.NativePublish=(tag,payload)=>
+        {
+            if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
+            Behavior.SteppedBehavior.ReportMissing($"M14-008 native face{tag:X2} complete app report unavailable; no truncated wire payload; checked LOCAL ID projection only");
+            _robot.Engine.AnimationMessages.Deliver(tag,true,payload);
+        };
+        Faces.NativeMainPose=()=>_robot.Engine.Robot?.GetCheckedMainPose();
+        Faces.NativePoseScope=()=>World.EnterPoseMutation();
         World.CurrentRobotPose = () => robot.Engine.Robot?.MainPose;
         // fidelity: M1-053
         // Supplied by localization/vision (M11-053/055/035), not the incoming packet or camera receipt time.
@@ -1181,7 +1189,12 @@ public sealed partial class VisionSystem : IDisposable
                     var tf = new TrackedFace(d, timestamp);
                     tf.UpdateTranslation(processingCamera);
                     faces.Add(tf);
-                    Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast);
+                    var observation=Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast);
+                    if(observation is not null && (observation.Face.TimesObserved>3||observation.Face.HasName) && _robot.Engine.Robot is {HasExternalInterface:true})
+                    {
+                        Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace full app report fields remain unavailable; no truncated wire report published; delivering checked LOCAL46 ID/timestamp projection only");
+                        _robot.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(observation.Face.Id,timestamp));
+                    }
                 }
                 LastFaces = faces;
                 Faces.Update(timestamp);

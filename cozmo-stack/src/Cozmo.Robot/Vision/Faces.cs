@@ -270,7 +270,7 @@ public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew,
 /// <c>HasAnyFaces(ts)</c>, <c>GetLastObservedFace(pose)</c>, <c>GetFace(id)</c>, all restricted to faces whose
 /// pose is in the robot's current origin (<c>IsPoseInWorldOrigin</c>; not modelled here, see <see cref="ShouldReturnFace"/>).
 /// </summary>
-public sealed class FaceWorld
+public sealed partial class FaceWorld
 {
     // The C2-F7 dead branch's constants: present in the binary (0x004F441A / 0x004F4428) but unreachable,
 // because FaceTracker::IsRecognitionSupported 0x0086B244 returns 1 unconditionally. Kept as the record's
@@ -333,6 +333,7 @@ public sealed class FaceWorld
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
         }
+        UpdateNativeLastFace(entry);
         var obs = new FaceObservation(entry, face.Timestamp, isNew, prev);
         FaceObserved?.Invoke(obs);
         return obs;
@@ -342,36 +343,40 @@ public sealed class FaceWorld
     // fidelity: M14-008
     public IReadOnlyList<int> Update(uint lastProcessedImageTimestamp)
     {
-        var removed = new List<int>();
-        lock (_gate)
+        using var mutation=NativePoseScope?.Invoke();
+        List<int> expired;
+        lock(_gate)expired=_faces.Values.Where(e=>!e.HasName&&lastProcessedImageTimestamp>e.LastObservedTimestamp&&lastProcessedImageTimestamp-e.LastObservedTimestamp>UnnamedFaceLifetimeMs).Select(e=>e.Id).ToList();
+        foreach(int id in expired)
         {
-            foreach (var e in _faces.Values.ToList())
-            {
-                if (e.HasName) continue;
-                if (lastProcessedImageTimestamp > e.LastObservedTimestamp && lastProcessedImageTimestamp - e.LastObservedTimestamp > UnnamedFaceLifetimeMs)
-                {
-                    Log?.Invoke($"FaceWorld.Update.DeletingOldFace: Removing unnamed face {e.Id} at t={lastProcessedImageTimestamp}, because it hasn't been seen since t={e.LastObservedTimestamp}.");
-                    _faces.Remove(e.Id); removed.Add(e.Id);
-                }
-            }
+            Log?.Invoke($"FaceWorld.Update.DeletingOldFace: Removing unnamed face {id} at t={lastProcessedImageTimestamp}.");
+            RemoveNativeFace(id,true);
         }
-        foreach (var id in removed) FaceDeleted?.Invoke(id);
-        return removed;
+        return expired;
     }
 
-    /// <summary><c>ChangeFaceID</c> (the recogniser merged a tracking id into a known face).</summary>
-    public bool ChangeFaceID(int oldId, int newId, string? newName = null)
+    /// <summary>Native47 follows unique insertion/removal, including an absent old ID; public events remain a separate adapter.</summary>
+    public bool ChangeFaceID(int oldId,int newId,string? newName=null)
     {
-        lock (_gate)
+        using var mutation=NativePoseScope?.Invoke();
+        bool found;
+        lock(_gate)
         {
-            if (!_faces.TryGetValue(oldId, out var e)) { Log?.Invoke($"FaceWorld.ChangeFaceID.UnknownOldID: ID {oldId} does not exist, cannot update to {newId}"); return false; }
-            _faces.Remove(oldId);
-            e.Id = newId; if (newName is not null) e.Name = newName;
-            _faces[newId] = e;
+            found=_faces.TryGetValue(oldId,out var old);
+            if(old is not null)
+            {
+                old.Id=newId; //004F4000 updates the held old entry BEFORE unique insertion.
+                if(newName is not null)old.Name=newName;
+                if(!_faces.ContainsKey(newId))
+                    _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),Rect=old.Rect,
+                        LastObservedTimestamp=old.LastObservedTimestamp,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
+                        FirstObservedTimestamp=old.FirstObservedTimestamp}); //existing host metadata, NOT native aux114.
+                _faces.Remove(oldId); //native remove(false): no4B, including old==new.
+            }
         }
+        NativePublish?.Invoke(0x47,new NativeChangedFace(oldId,newId));
+        if(!found){Log?.Invoke($"FaceWorld.ChangeFaceID.UnknownOldID: ID {oldId} does not exist, cannot update to {newId}");return false;}
         Log?.Invoke($"FaceWorld.ChangeFaceID.Success: Updating old face {oldId} to new ID {newId}");
-        FaceIdChanged?.Invoke(oldId, newId);
-        return true;
+        FaceIdChanged?.Invoke(oldId,newId);return true;
     }
 
     public FaceEntry? GetFace(int id) { lock (_gate) return _faces.GetValueOrDefault(id); }
@@ -433,10 +438,15 @@ public sealed class FaceWorld
     public void SetTurnedTowardsFace(int id, bool turned) { lock (_gate) if (_faces.TryGetValue(id, out var e)) e.TurnedTowards = turned; }
     public bool HasTurnedTowardsFace(int id) { lock (_gate) return _faces.TryGetValue(id, out var e) && e.TurnedTowards; }
 
-    public void RemoveFaceByID(int id)
+    public void RemoveFaceByID(int id)=>RemoveNativeFace(id,true);
+    internal bool RemoveNativeFace(int id,bool publish)
     {
-        bool removed; lock (_gate) removed = _faces.Remove(id);
-        if (removed) { Log?.Invoke($"FaceWorld.RemoveFaceByID: Removing face {id}"); FaceDeleted?.Invoke(id); }
+        using var mutation=NativePoseScope?.Invoke();
+        lock(_gate)if(!_faces.ContainsKey(id))return false;
+        if(publish)NativePublish?.Invoke(0x4B,new NativeDeletedFace(id)); //found iterator; BEFORE erase.
+        bool removed;lock(_gate)removed=_faces.Remove(id);
+        if(removed){Log?.Invoke($"FaceWorld.RemoveFaceByID: Removing face {id}");FaceDeleted?.Invoke(id);}
+        return removed;
     }
 
     public void ClearAllFaces() { List<int> ids; lock (_gate) { ids = _faces.Keys.ToList(); _faces.Clear(); } foreach (var id in ids) FaceDeleted?.Invoke(id); }
@@ -459,6 +469,7 @@ public sealed class FaceWorld
         lock (_gate)
         {
             _faces.Clear();
+            _nativeLastPose?.Dispose();_nativeLastPose=null;_nativeLastStamp=0;
         }
     }
 }
