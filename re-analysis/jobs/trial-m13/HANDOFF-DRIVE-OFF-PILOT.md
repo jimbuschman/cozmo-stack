@@ -1,8 +1,8 @@
-# Drive-off pilot — FIX in progress
+# Drive-off pilot — READY FOR CLAUDE
 
-- Branch: `codex-m13-manager-2`, rebased on main `337879ab`. REVIEW FIX: two load-only R2 lock-test timeouts; controlled-clock fixture correction and two consecutive full gates required. N2 withdrawn in N3; no split needed.
-- Production commits: **f03c7d23**, **c16d4711**; both already pushed. Major files: `ChargerBehaviors.cs`, `NativeBehaviorRuntime.cs`, `DriveActions.cs`, `Mood*.cs`, `Native*Configuration*.cs`, `VisionSystem.cs`, `VisionResultQueue.cs`, `ManipulationSystem.cs`.
-- Full asset-complete gate: **6361/6361 PASS, zero failed/skipped**, on committed `99dd4403`; that is the earlier baseline, before the current test-only FIX. Two new full runs are pending. Independent production checks: **138/138**, **36/36** PASS. Initial failed gate6312/42 and corrections remain in the manager log.
+- Branch: `codex-m13-manager-2`, rebased on main `337879ab`; N3 withdraws N2, so no split proposal.
+- Production commits: **e85f87ed**, **99de2d0a** (rebased pilot/corrections). Test-only FIX **5c25c9a7**: `R2FloorPlacementTests.cs`; no new production behavior or binary claim. Three positive units hold action time independently of transport pumping; original assertions and exact30s timeout test retained. New regression holds poll callbacks across>31s transport time, then requires actual status latch/clear, one verify and lock release; old-clock negative control fails Timeout.
+- **Two consecutive full gates PASS on clean committed `b273fe62`:6362/6362 each,0failed/0skipped,6m20s then6m54s.** Logs `.scratch/pilot-fix-full-1.log` and `-2.log`; independent FIX check36/36 PASS. Earlier production checks138/138 and36/36 PASS. [FIX review](../../research/20261026-driveoff-pilot-fix-codex-check.md), [exact commands/failed attempts](DRIVE-OFF-PILOT-FIX-builder.md). Unit fixture inputs/substituted verify are not full caller or hardware evidence.
 - Boundary: drive-off's observable result while it runs. Recorded neighboring MISSING paths do not hold this handoff. Official statuses/approvals are unchanged; Claude settles records. No new hardware or subsystem acceptance claim.
 
 ## Claims / binary addresses
