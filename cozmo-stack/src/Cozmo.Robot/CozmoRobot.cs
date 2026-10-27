@@ -236,7 +236,9 @@ public sealed partial class CozmoRobot : IDisposable
         severe.Subscribe(Engine,native.HasExternalInterface);
         if(_severeNeedsConstructed||Engine.AIComponentUpdate is null)Engine.AIComponentUpdate=_severeNeedsUpdate;
         _severeNeedsConstructed=true;
-        native.Lifetime.Bind(0x264,address=>{severe.Dispose();native.Lifetime.Missing(address,0x264);}); // other AI children remain their existing gap
+        var ai=native.NativeBehaviorRuntime!.AI;
+        ai.BindDestructionRecipient(0x30,()=>{severe.Dispose();ai.NativeTeardown.Destroy(0x30);});
+        native.Lifetime.Bind(0x264,_=>ai.DestroyDirect()); // tracker storage retires at +2C; no second ForceUpdate
     }
     public ReliableTransport Transport { get; }
     public CozmoCamera Camera { get; } = new();

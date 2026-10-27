@@ -104,16 +104,18 @@ public class M5BuilderCorrectionsTests
     }
 
     [Fact]
-    public void G1_MissingSimpleMoodIsVisibleOnceAndTheContextStreamIncludesFallbackDraw()
+    public void G1_CanonicalDefaultMoodAndExplicitOverrideUseTheSharedContextStream()
     {
         string root = Assets();
         try
         {
             using var robot = CozmoRobot.CreateOffline(); var diagnostics = new List<string>(); robot.Engine.StackLogLine += diagnostics.Add;
             var library = robot.Animations.LoadFrom(root);
+            Assert.Equal(SimpleMood.Default,robot.Engine.Robot!.MoodOwner!.GetSimpleMood());
+            robot.Engine.ContextRandom.SetSeed(5489);
             Assert.Equal("a", library.GetAnimationNameFromGroup("g", false));
-            Assert.Equal("a", library.GetAnimationNameFromGroup("g", false));
-            Assert.Single(diagnostics, s => s.StartsWith("MISSING: M7-026 SimpleMood"));
+            Assert.Equal((3890346734d+3586334585d*4294967296d)/18446744073709551616d,robot.Engine.ContextRandom.GetNextDbl());
+            Assert.DoesNotContain(diagnostics,s=>s.StartsWith("MISSING: M7-026 SimpleMood"));
             library.CurrentMood = () => SimpleMood.Happy; robot.Engine.ContextRandom.SetSeed(5489);
             Assert.Equal("a", library.GetAnimationNameFromGroup("g", false));
             Assert.Equal((545404204d + 4161255391d * 4294967296d) / 18446744073709551616d,

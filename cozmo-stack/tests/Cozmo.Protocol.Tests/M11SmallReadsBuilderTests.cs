@@ -75,11 +75,15 @@ public sealed class M11SmallReadsBuilderTests
     }
     // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
-    public void ConfigurationFacadeReadsTheSameNativeDirtyFlagAndRobotRemovalRetiresItsRecipients()
+    public void ConfigurationHostDirtyFlagIsIndependentAndRobotRemovalRetiresNativeRecipients()
     {
         using var f=new Fixture();var vision=f.Rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(f.Rig.Robot,vision);
-        Assert.True(m.Configurations.ForceUpdate);m.Configurations.ForceUpdate=false;Assert.False(f.Native.BlockConfigurationForceUpdate);
-        f.Order.Clear();f.Native.Delocalize(false);Assert.True(m.Configurations.ForceUpdate);
+        f.Native.BlockConfigurationForceUpdate=true; // explicit native flag input
+        Assert.False(m.Configurations.ForceUpdate);Assert.True(f.Native.BlockConfigurationForceUpdate);
+        m.Configurations.ForceUpdate=false;Assert.True(f.Native.BlockConfigurationForceUpdate);
+        f.Native.BlockConfigurationForceUpdate=false;m.Configurations.ForceUpdate=true;Assert.False(f.Native.BlockConfigurationForceUpdate);
+        m.Configurations.ForceUpdate=false;
+        f.Order.Clear();f.Native.Delocalize(false);Assert.True(f.Native.BlockConfigurationForceUpdate);Assert.False(m.Configurations.ForceUpdate);
         f.Rig.Engine.Robots.RemoveRobot(1,false);Assert.Equal(0,f.Rig.Engine.AnimationMessages.Count(0x32,true));
     }
     // reach: unit (fixture creates native container; Freeplay reuses the engine Needs owner).

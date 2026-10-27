@@ -177,6 +177,7 @@ public sealed class M15RestorationCheckedRowsTests
     {
         using var robot=CozmoRobot.CreateOffline();var needs=new NeedsManager(()=>0);
         string obb=Path.GetFullPath(Path.Combine(Path.GetDirectoryName(BackupTestResources.ShippedConfig())!,"../../../.."));
+        robot.Engine.UseNeedsForOfflineTest(needs);
         var stack=FreeplayStack.Create(obb,robot,new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()},()=>0,needs:needs,withReactions:false);
         var order=new List<string>();Action<EngineLogEntry> info=e=>{if(e.Name=="NeedsManager.ForceSetNeedsLevels"){Assert.Equal(1,needs.State.GetNeedLevel(NeedId.Play));Assert.Equal("Game sent ForceSetNeedsLevels message with 0.500000, 0.600000, 0.700000",e.Text);order.Add("info");}};robot.Engine.LogEntry+=info;
         Action<NeedsActionId> sent=action=>{Assert.Equal(NeedsActionId.NoAction,action);Assert.Equal(.7f,(float)needs.State.GetNeedLevel(NeedId.Play));order.Add("send");};needs.NeedsStateSent+=sent;

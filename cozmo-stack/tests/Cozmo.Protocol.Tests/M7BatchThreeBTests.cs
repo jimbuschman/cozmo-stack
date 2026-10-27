@@ -266,7 +266,7 @@ public class M7BatchThreeBTests
             Assert.Equal(r.Case, e.CaseAddress);
         }
         // Config-built owners, including B-M11-15's checked goal unit with explicit unread lifecycle.
-        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked }.OrderBy(c=>c).ToArray(),
+        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 
@@ -486,8 +486,10 @@ public class M7BatchThreeBTests
         var sparks = Assert.IsType<FistBumpBehavior>(container.Behaviors[BehaviorID.SparksFistBump]);
         Assert.Equal((5.0f, false, false), (sparks.MaxTimeToLookForFaceSec, sparks.AbortIfNoFaceFound, sparks.UpdateLastCompletionTime));
         // 15 PlayAnim + 2 FistBump + ReactToSparked + the checked VisitInterestingEdge goal owner (lifecycle M11-092).
-        Assert.Equal(19, container.Behaviors.Count);
-        Assert.Equal(159, container.NotCreated);
+        Assert.Equal(20, container.Behaviors.Count);
+        Assert.Equal(158, container.NotCreated);
+        Assert.Single(container.Behaviors.Values.OfType<NativeLookForFaceAndCubeBehavior>());
+        Assert.DoesNotContain(container.Behaviors.Values,b=>b is DriveOffChargerBehavior); // no Manipulation input in this pure factory context
     }
 
     // =============================================================== M7-018: FistBump

@@ -17,9 +17,8 @@ public sealed class M7LifetimeCheckedRowsTests
     [Fact]
     public void ActualRemovalClearsActionListBeforeMoodAndNullsMoodOnlyAfterAllChildren()
     {
-        using var robot=CozmoRobot.CreateOffline();var native=robot.Engine.Robot!;var mood=new MoodState(Model());var ctx=new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap(),Mood=mood};
-        using var stack=FreeplayStack.Create(Obb(),robot,ctx,()=>1,needs:new NeedsManager(()=>0),withReactions:false);
-        mood.Trigger("fixture",1);mood.Advance(1);mood.SetMoodEventOnCompletionEnabled("7",false);var before=mood.Snapshot();
+        using var robot=CozmoRobot.CreateOffline();var native=robot.Engine.Robot!;var mood=native.MoodOwner!;
+        mood.Advance(1);mood.SetMoodEventOnCompletionEnabled("7",false);var before=mood.Snapshot();
         int id=mood.ActionCallbackId;Assert.True(id>0);Assert.All(mood.HistoryCounts,n=>Assert.True(n>0));
         var stackLogs=new List<string>();robot.Engine.StackLogLine+=stackLogs.Add;
         var trace=new List<string>();native.ActionList.LifetimeObservedForTest=trace.Add;var logs=new List<string>();mood.Log=logs.Add;mood.SourceLog=(l,c,k,t)=>logs.Add(k);int reports=0;mood.MoodStateBroadcast+=_=>reports++;
@@ -31,12 +30,12 @@ public sealed class M7LifetimeCheckedRowsTests
         Assert.Equal(new[]{"clear","clear","subscriptions","completion set","action event map","event times","history:8","history:7","history:6","history:5","history:4","history:3","history:2","history:1","history:0","allocation"},trace);
         Assert.True(mood.NativeRetired);Assert.Null(native.MoodOwner);Assert.True(native.Lifetime.IsKnownNull(0x440));Assert.Equal(id,mood.ActionCallbackId);
         Assert.All(mood.HistoryStorageLengths,n=>Assert.Equal(0,n));Assert.Equal(before,mood.Snapshot());Assert.Empty(logs);Assert.Equal(0,reports);Assert.DoesNotContain(stackLogs,line=>line.Contains("MoodMessage C3 operational handler"));
-        Assert.Equal(0,robot.Engine.AnimationMessages.SubscriberCountForTest(0xC3,false));stack.Dispose();Assert.DoesNotContain("unregister",trace);
+        Assert.Equal(0,robot.Engine.AnimationMessages.SubscriberCountForTest(0xC3,false));Assert.DoesNotContain("unregister",trace);
     }
     [Fact]
     public void RealC3SubscriptionDisconnectsOnlyWhenTheLastSharedOwnerReleasesIt()
     {
-        using var robot=CozmoRobot.CreateOffline();var mood=new MoodState(Model());mood.BindNativeLifetime(robot.Engine.Robot!,0);
+        using var robot=CozmoRobot.CreateOffline();var mood=robot.Engine.Robot!.MoodOwner!;
         Assert.Equal(1,robot.Engine.AnimationMessages.SubscriberCountForTest(0xC3,false));var held=mood.LastSubscriptionForTest!.Retain();
         robot.Engine.Robots.RemoveRobot(1,false);Assert.Equal(0,mood.SubscriptionCount);Assert.Equal(1,robot.Engine.AnimationMessages.SubscriberCountForTest(0xC3,false));
         held.Dispose();Assert.Equal(0,robot.Engine.AnimationMessages.SubscriberCountForTest(0xC3,false));
@@ -87,9 +86,9 @@ public sealed class M7LifetimeCheckedRowsTests
     [Fact]
     public void NullRobotGatePreservesNonzeroCallbackIdWithoutUsingTheRetainedList()
     {
-        using var robot=CozmoRobot.CreateOffline();var native=robot.Engine.Robot!;var mood=new MoodState(Model());mood.AttachRobot(robot);mood.BindNativeLifetime(native,17);mood.AttachRobot(null);
+        using var robot=CozmoRobot.CreateOffline();var native=robot.Engine.Robot!;var mood=native.MoodOwner!;int actualId=mood.ActionCallbackId;Assert.True(actualId>0);mood.AttachRobot(null);
         int unregistered=0;native.ActionList.LifetimeObservedForTest=operation=>{if(operation=="unregister")unregistered++;};
-        mood.DestroyForRobot();Assert.True(mood.NativeRetired);Assert.Equal(17,mood.ActionCallbackId);Assert.Equal(0,unregistered);
+        mood.DestroyForRobot();Assert.True(mood.NativeRetired);Assert.Equal(actualId,mood.ActionCallbackId);Assert.Equal(0,unregistered);
     }
     [Fact]
     public void ZeroIdGateSkipsUnregisterEvenWithALiveRobotAndList()

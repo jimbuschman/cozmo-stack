@@ -397,6 +397,17 @@ public sealed partial class AIWhiteboard
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("AIBeacon [beacon+0x10] (the FailedToFindLocation stamp): only BehaviorExploreBringCubeToBeacon::IsRunnableInternal 0x005DF148 reads it here; other readers (e.g. BehaviorThinkAboutBeacons) were not scanned in the extraction, so none is built");
     }
 
+    // Host-only private storage retirement for the explicit standalone extension; no native destructor claim.
+    internal void RetireStandaloneStorage()
+    {
+        ClearAllBeacons();
+        lock(_failureGate)foreach(var table in _failureTables)
+        {
+            foreach(var entries in table.Values)foreach(var entry in entries)entry.Pose.Dispose();
+            table.Clear();
+        }
+    }
+
     /// <summary><c>OnRobotDelocalized</c>: beacons live in the old origin, so they are dropped.</summary>
     public void OnRobotDelocalized() { ClearAllBeacons(); lock (_failureGate) foreach (var t in _failureTables) t.Clear(); }
 }

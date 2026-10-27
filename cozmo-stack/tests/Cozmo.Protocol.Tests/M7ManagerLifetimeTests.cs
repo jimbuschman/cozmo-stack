@@ -32,8 +32,7 @@ public sealed class M7ManagerLifetimeTests
         rig.Robot.NotifyCozmoWakeup();rig.Tick();
         var strategy=manager.Reactions.First(r=>r.Strategy.Trigger==ReactionTrigger.RobotPickedUp).Strategy;
         Assert.True(manager.HasDisableLock(ReactionTrigger.RobotPickedUp,Lock));
-        using(var stack=FreeplayStack.Create(Obb(),rig.Robot,new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap()},
-            ()=>rig.Engine.Timer.Seconds,rig.Robot.Vision,m,withReactions:false))
+        using(var stack=FreeplayStack.CreateNative(rig.Robot))
         {
             Assert.Same(manager,stack.Manager);
             Assert.Same(strategy,manager.Reactions.First(r=>r.Strategy.Trigger==ReactionTrigger.RobotPickedUp).Strategy);
@@ -73,9 +72,8 @@ public sealed class M7ManagerLifetimeTests
         manager.DisableAllReactionsWithLock("before-map");
         Assert.False(manager.HasDisableLock(ReactionTrigger.RobotPickedUp,"before-map"));
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
-        using var stack=FreeplayStack.Create(Obb(),rig.Robot,new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap()},
-            ()=>rig.Engine.Timer.Seconds,rig.Robot.Vision,m,withReactions:false);
-        Assert.Same(manager,stack.Manager);Assert.NotEmpty(manager.Reactions);
+        manager.InitializeRobotReactions(Resources(),rig.Robot.Vision); // explicit native resource input; no deferred-lock replay
+        Assert.NotEmpty(manager.Reactions);
         Assert.False(manager.HasDisableLock(ReactionTrigger.RobotPickedUp,"before-map"));
     }
 }

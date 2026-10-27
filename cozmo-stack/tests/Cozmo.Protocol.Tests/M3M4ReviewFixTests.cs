@@ -38,12 +38,46 @@ public sealed class M3M4ReviewFixTests
             Assert.True(SpinWait.SpinUntil(()=>Robot.Transport.Connection is not null,TimeSpan.FromSeconds(15)));
             In(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==2,TimeSpan.FromSeconds(15)));
+            Data(new RobotAvailable{SerialNumberHead=1,HwVersion=5});
             Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.RobotValidated==true,TimeSpan.FromSeconds(15)));
+            Data(new ManufacturingID{SerialNumber=2,BodyHwVersion=7,BodyColor=2});
+            Assert.True(SpinWait.SpinUntil(()=>Logs.Any(log=>log.Name=="RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime"),TimeSpan.FromSeconds(15)));
             Data(new SyncTimeAck());
-            Vision=Robot.Vision; Vision.Calibration=CameraCalibration.Nominal(); Vision.Enabled=true; Vision.ModeEnableMask=1<<VisionSystem.DetectingMarkers;
+            Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.Robot!.TimeSynced,TimeSpan.FromSeconds(15)));
+            Vision=Robot.Vision; Vision.ModeEnableMask=1<<VisionSystem.DetectingMarkers;
             Robot.Engine.InvokeEngineRequest(()=>{Robot.Engine.Robot!.SendFault=m=>{if(m is CubeLights lights)Wire.Enqueue(lights);return null;};return true;});
-            if(state)State(100);
+            if(state)
+            {
+                State(100);Assert.True(Robot.Engine.Robot!.FirstFullStateHandled);Assert.Equal(0u,Robot.Engine.Robot.LastFullStateResult);
+                InstallCalibrationThroughActualNvQueue();
+            }
+            else
+            {
+                // Explicit host calibration input for empty-history rejection ONLY. No raw state,
+                // native calibration readiness, worker result or drain success is claimed.
+                Vision.Calibration=CameraCalibration.Nominal();Vision.Enabled=true;
+            }
+        }
+        private void InstallCalibrationThroughActualNvQueue()
+        {
+            var nv=Robot.Engine.NvStorage!;
+            for(int count=0;count<20&&Robot.CameraSettings.Calibration is null;count++)
+            {
+                Assert.True(SpinWait.SpinUntil(()=>nv.InFlightTag.HasValue,TimeSpan.FromSeconds(15)));
+                uint tag=nv.InFlightTag!.Value;
+                var writer=new CladWriter();
+                if(tag==CameraCalibration.NvEntryTag)
+                {
+                    foreach(float value in new[]{290f,291f,160f,120f,0f})writer.F32(value);
+                    writer.U16(240);writer.U16(320);for(int k=0;k<8;k++)writer.F32(.01f*(k+1));
+                }
+                Data(new NVOpResult{Tag=tag,Op=0,Result=tag==CameraCalibration.NvEntryTag?(sbyte)0:(sbyte)1,Length=0,Data=writer.ToArray()});
+                Assert.True(SpinWait.SpinUntil(()=>nv.InFlightTag!=tag||Robot.CameraSettings.Calibration is not null,TimeSpan.FromSeconds(15)));
+            }
+            Assert.NotNull(Robot.CameraSettings.Calibration);
+            Assert.Same(Robot.CameraSettings.Calibration,Vision.Calibration);
+            Assert.True(Vision.Enabled);
         }
         private void In(ReliableMessageType type,byte[] body)=>Robot.Transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(type,body,_seq++),1)));
         internal void Data(RobotMessage message)=>In(ReliableMessageType.SingleReliableMessage,message.ToBytes());

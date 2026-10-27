@@ -18,6 +18,7 @@ internal sealed class NativeConfigurationManager : IDisposable
     internal int RebuildCount {get;private set;}
     internal int NotifyCount {get;private set;}
     internal uint[] Pending {get {lock(_gate)return _pending.ToArray();}}
+    internal bool HasLastCheckPose(uint id){lock(_gate)return _rootCache.ContainsKey(id);}
     internal bool InputsAvailable {get;private set;}=true;
     internal NativeConfigurationManager(BlockWorld world,EngineRobot robot){_world=world;_robot=robot;}
     internal void SetObjectPoseChanged(uint id,PoseState state)

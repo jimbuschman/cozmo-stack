@@ -421,14 +421,41 @@ public class DesiredFaceDistortionTests
     {
         var obb = ObbRoot();
         Assert.NotNull(obb);
-        using var rig = new Rig();
-        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(3) };
-        using var stack = FreeplayStack.Create(obb!, rig.Robot, ctx, () => 0, withReactions: false);
-        var scheduler = rig.Robot.Animations.Scheduler;
-        Assert.NotNull(stack.Needs.DesiredFaceDistortion);
-        Assert.Same(stack.Needs, scheduler.DesiredFaceDistortion!.Target);
-        Assert.Same(scheduler.ContextRandom, stack.Needs.DistortionRng);
-        Assert.Equal(rig.Robot.Engine.Timer.TickCount, stack.Needs.TickCount());
+        using var rig = new M4ControlTests.Rig(Path.Combine(obb!,"assets","cozmo_resources"));
+        rig.ToSynced();
+        var canonical=rig.Robot.Engine.Needs;
+        using var stack=FreeplayStack.CreateNative(rig.Robot);
+        Assert.Same(canonical,stack.Needs);
+        var custom=Manager();
+        var ctx=new BehaviorContext { Robot=rig.Robot,Triggers=new AnimationTriggerMap(),Random=new Random(3) };
+        using(var standalone=FreeplayStack.CreateStandalone(obb!,rig.Robot,ctx,()=>0,needs:custom,withReactions:false))
+        {
+            Assert.Same(custom,standalone.Needs);
+            Assert.Same(canonical,rig.Robot.Engine.Needs);
+        }
+        Assert.Same(canonical,rig.Robot.Engine.Needs);
+        rig.State();rig.Tick(); // actual engine timer input, not a replaced TickCount delegate
+        var scheduler=rig.Robot.Animations.Scheduler;
+        var component=Assert.IsType<DesiredFaceDistortionComponent>(canonical.DesiredFaceDistortion);
+        Assert.Same(scheduler.ContextRandom,canonical.DistortionRng);
+        Assert.Equal(rig.Robot.Engine.Timer.TickCount,canonical.TickCount());
+        Assert.True(canonical.TickCount()>0);
+        var rng=canonical.DistortionRng!;var prior=rng.WordSourceForTest;int draws=0;
+        try
+        {
+            rng.WordSourceForTest=()=>{draws++;return 0x80000000;};
+            Init(component,Block(0.5,2,0,0),rng); // explicit constant source-config input
+            float first=canonical.GetCurrentDesiredDistortion();
+            Assert.Equal(Bits(0.5f),Bits(first));Assert.Equal(4,draws);
+            Assert.Equal(Bits(first),Bits(scheduler.DesiredFaceDistortion!()));
+            Assert.Equal(canonical.TickCount(),component.CachedTick);
+            Assert.Equal(Bits(first),Bits(component.CachedDegree));Assert.Equal(4,draws);
+            scheduler.Play(new AnimationClip { Name="distortion-wire",Keyframes=new List<Keyframe>{new HeadKeyframe(0,100,5,0)},Tracks=AnimationTrack.Head,DurationMs=100 },1000);
+            scheduler.Advance(1000);scheduler.Advance(1033); // existing live Glitch recipe
+            Assert.Contains("Glitch",scheduler.FaceLayerNames);
+        }
+        finally { rng.WordSourceForTest=prior; }
+
     }
 
     private static string? ObbRoot()

@@ -68,7 +68,7 @@ public sealed class BehaviorObjectiveReportTests
         Admit(rig,0,true);rig.Robot.Animations.ManualTicking=true;
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
         var behavior=new DriveOffChargerBehavior(m){ActionTaskRunner=SignalTestContext.Schedule};
-        var context=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap()};
+        var context=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap(),Mood=rig.Engine.Robot!.MoodOwner};
         var order=new List<string>();var host=new List<byte[]>();
         rig.Engine.EngineToGameMessage+=(tag,p)=>{if(tag==0x8B)host.Add(p.ToArray());};
         using var local=rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>
@@ -105,7 +105,8 @@ public sealed class BehaviorObjectiveReportTests
             Assert.Equal(success?new[]{"objective","mood"}:Array.Empty<string>(),order);
             if(success)
             {
-                Assert.Contains(behavior.Trace,s=>s.Contains("emotion event DriveOffCharger: no mood attached"));
+                Assert.Same(rig.Engine.Robot!.MoodOwner,context.Mood);
+                Assert.DoesNotContain(behavior.Trace,s=>s.Contains("no mood attached"));
                 rig.Engine.DrainAppDelivery();Assert.Equal(new byte[]{4,0,0,0},Assert.Single(host));
             }
             else{Assert.Empty(host);Assert.DoesNotContain(behavior.Trace,s=>s.Contains("emotion event DriveOffCharger"));}

@@ -19,6 +19,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal FreeplayDataTracker Tracker {get;}
     private Activity? _selected;
     private bool _retired;
+    private readonly Action<bool> _offTreadsPause,_chargerPause;
+    private readonly VisionSystem? _ownedVision;
+    private readonly OverheadEdgesDetector? _ownedOverhead;
 
     internal NativeBehaviorRuntime(CozmoRobot facade,EngineRobot robot,BehaviorManager manager,
         BehaviorContext context,VisionSystem? vision)
@@ -28,14 +31,25 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         AI=new(()=>unchecked((int)robot.CurrentOriginId),facade.Engine.EmitStackLog,
             (l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),facade.Engine.Needs.SevereNeeds);
         Context.AI=AI;
-        Tracker=new(()=>unchecked((ulong)facade.Engine.Timer.Nanoseconds));
+        Tracker=new(()=>unchecked((ulong)facade.Engine.Timer.Nanoseconds))
+        {SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t)};
+        AI.Tracker=Tracker;
+        AI.BindDestructionRecipient(0x2C,Tracker.DestroyStorage);
+        robot.Lifetime.Bind(-2,_=>Tracker.ForceUpdate()); // 0x0051111A, before AbortAll
+        _offTreadsPause=paused=>Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads,paused);
+        _chargerPause=paused=>Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger,paused);
+        facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=_offTreadsPause;
+        facade.Sensors.OnChargerPlatformChangedInternal+=_chargerPause;
         Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
         Configurations=new(facade.LocalizationWorld,robot);
         facade.LocalizationWorld.NativeConfigurations=Configurations;
         if(vision is not null)
         {
             Manipulation=new(facade,vision,robot){ClockSec=()=>facade.Engine.Timer.SecondsF};
-            vision.OverheadEdges??=new OverheadEdgesDetector();
+            if(vision.OverheadEdges is null)
+            {
+                _ownedVision=vision;_ownedOverhead=new OverheadEdgesDetector();vision.OverheadEdges=_ownedOverhead;
+            }
         }
         var factory=new BehaviorFactoryContext{Vision=vision,Manipulation=Manipulation,NativeRobot=robot,
             SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),Log=facade.Engine.EmitStackLog};
@@ -90,6 +104,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _selected?.OnDeselected(now,_facade.Engine.EmitStackLog);
         _selected=selected;
         selected.OnSelected(now,_facade.Engine.EmitStackLog);
+        Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,selected.Id!="Freeplay");
+        // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
         _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context);
     }
 
@@ -132,6 +148,10 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     public void Dispose()
     {
         if(_retired)return;_retired=true;
+        if(ReferenceEquals(_facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads,_offTreadsPause))
+            _facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=null;
+        _facade.Sensors.OnChargerPlatformChangedInternal-=_chargerPause;
+        if(_ownedVision is {} vision&&ReferenceEquals(vision.OverheadEdges,_ownedOverhead))vision.OverheadEdges=null;
         // The manager is stopped/disposed by its actual lifetime owner first.
         _observer?.DetachHostHandle();
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();

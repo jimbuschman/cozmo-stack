@@ -677,6 +677,7 @@ public class M12RVisBuildTests : IDisposable
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
+        rig.Robot.Engine.Robot!.BlockConfigurationForceUpdate=false;
         Assert.Equal(1u, Attach(rig, null, MarkerType.LightCubeI_Front));                 // step 1
         Assert.Equal(1u, Attach(rig, 99, MarkerType.LightCubeI_Front));                   // step 3
         Assert.Equal(1u, Attach(rig, 7, MarkerType.LightCubeJ_Front));                    // step 4: cube 1 has no such marker
@@ -684,6 +685,7 @@ public class M12RVisBuildTests : IDisposable
         rig.M.Docking.Carrying.SetCarrying(9);
         Assert.Equal(1u, Attach(rig, 7, MarkerType.LightCubeI_Front));                    // step 2
         Assert.True(rig.M.Docking.Carrying.IsCarrying(9));
+        Assert.False(rig.Robot.Engine.Robot!.BlockConfigurationForceUpdate);
     }
 
     /// <summary>
@@ -703,11 +705,13 @@ public class M12RVisBuildTests : IDisposable
         double yawBefore = obj.Pose.AngleAroundZ;
         var st = rig.Vision.History.Latest!.Value;
         rig.M.Configurations.ForceUpdate = false;
+        rig.Robot.Engine.Robot!.BlockConfigurationForceUpdate=false;
         Assert.Equal(0u, Attach(rig, 7, MarkerType.LightCubeI_Front));
         Assert.True(rig.M.Docking.Carrying.IsCarrying(7));
         Assert.Equal(PoseState.Known, obj.PoseState);
         Assert.Equal(1, obj.PoseConfirmationCount);
-        Assert.True(rig.M.Configurations.ForceUpdate);
+        Assert.True(rig.Robot.Engine.Robot!.BlockConfigurationForceUpdate);
+        Assert.False(rig.M.Configurations.ForceUpdate); // D1: borrowed host extension is independent
         double a = st.LiftAngleRad;
         var lift = st.RobotPose.Compose(new Pose3d(Mat3.Identity, new Vec3(-41 + 66 * Math.Cos(a), 0, 45 + 66 * Math.Sin(a))));
         var expected = lift.Apply(new Vec3(22.0 + 4.0, 0, -12.5));                  // L = 22 (half a 44 mm cube), +4.0, z -12.5
@@ -2444,7 +2448,7 @@ public class M12RVisBuildTests : IDisposable
 
     /// <summary>
     /// M13-028, FlipBlockAction::Init 0x0055EED6..0x0055EEFA: the drive distance is the THREE-D norm of the object pose with respect to the robot pose plus [this+0x130] (20). A cube at z 22 and
-    /// 200 mm gives sqrt(200^2 + 22^2) = 201.2 mm, so the line ends at 221.2 (the planar norm would give 220). The expectation is computed from the world's observed pose (an input). Init's
+    /// 200 mm gives sqrt(200^2 + 22^2) = 201.2 mm, so its travel is 221.2 (the planar norm would give 220), from the stored ForwardPose start. The expectation is computed from the world's observed pose (an input). Init's
     /// DisableReactionsWithLock (0x0055EEC6) and IActionRunner::Update (0x0055EF7E) are M8's: visible as a trace line and a counter, not modelled.
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
@@ -2456,15 +2460,21 @@ public class M12RVisBuildTests : IDisposable
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
-        var t = obj.Pose.Translation;
-        double expected = Math.Sqrt(t.X * t.X + t.Y * t.Y + t.Z * t.Z) + 20.0;
-        double planar = Math.Sqrt(t.X * t.X + t.Y * t.Y) + 20.0;
+        using var main=rig.M.CopyPreActionRobotPose();
+        using var relative=obj.NativePose.WithRespectTo(main!);
+        var t=relative.Translation;float tx=(float)t.X,ty=(float)t.Y,tz=(float)t.Z;
+        float sum=tx*tx;sum=sum+ty*ty;float planar=MathF.Sqrt(sum)+20f;
+        sum=sum+tz*tz;float expected=MathF.Sqrt(sum)+20f;
+        var native=rig.Robot.Engine.Robot!;var start=native.ForwardPose.Translation;
+        float yaw=(float)native.MainPose.AngleAroundZ;
         Assert.True(expected - planar > 0.5);                                       // the two readings are distinguishable for a cube at z 22
         rig.State(IdleFlags);
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         var task = flip.RunAsync(default); Spin(task, rig, () => rig.State(IdleFlags), ms: 60000);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().First();
-        Assert.Equal(expected, line.XEndMm, 0);
+        Assert.Equal((float)start.X,line.XStartMm,3);Assert.Equal((float)start.Y,line.YStartMm,3);
+        Assert.Equal((float)start.X+MathF.Cos(yaw)*expected,line.XEndMm,3);
+        Assert.Equal((float)start.Y+MathF.Sin(yaw)*expected,line.YEndMm,3);
         Assert.Contains(flip.Trace, l => l.Contains("DisableReactionsWithLock (0x0055EEC6)") && l.Contains("not modelled"));
         Assert.Equal(3, flip.M8CallsNotModelled);                                   // Init: DisableReactionsWithLock, Update; destructor: RemoveDisableReactionsLock (0x0055ED88)
     }
