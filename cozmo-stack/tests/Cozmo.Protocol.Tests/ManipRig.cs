@@ -24,6 +24,9 @@ internal sealed class Rig : IDisposable
     public bool NoLibrary => Lib is null;
     /// <summary>Starts away from zero: a send stamped at time zero reads as never sent to the reliable layer.</summary>
     public readonly ManualClock Clock = new() { NowMs = 1000 };
+    private double _actionClockSec;
+    /// <summary>Standalone action time; starts at the fixture clock snapshot, independently controlled thereafter.</summary>
+    public double ActionClockSec {get=>Volatile.Read(ref _actionClockSec);set=>Volatile.Write(ref _actionClockSec,value);}
     /// <summary>Hold controlled engine time for held-drive assertions; timeout cases leave this false or advance Clock explicitly.</summary>
     public bool HoldClock;
     public readonly CozmoRobot Robot;
@@ -83,6 +86,7 @@ internal sealed class Rig : IDisposable
     public Rig(IOkaoFaceRecognizer? okaoRecognizer=null,string? resources=null)
     {
         _signalContext = SynchronizationContext.Current as SignalTestContext;
+        _actionClockSec=Clock.NowMs/1000.0;
         Robot = CozmoRobot.CreateOffline(clock: Clock,engineOptions:new CozmoEngineOptions{VisionCalibration=Cal,VisionOkaoRecognizer=okaoRecognizer,ResourcesPath=resources});
         if (_signalContext is not null) Robot.Transport.MessageQueued += _signalContext.MarkFirmwareWorkPending;
         Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
@@ -92,7 +96,7 @@ internal sealed class Rig : IDisposable
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
         Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
-        M = ManipulationSystem.CreateStandalone(Robot, Vision,()=>Clock.NowMs/1000.0);
+        M = ManipulationSystem.CreateStandalone(Robot, Vision,()=>ActionClockSec);
         // These geometry/wire regressions isolate the M12-024 animation lifecycle.
         // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and
         // exercise the shared handler; NoAnimation fixture cases are labelled separately from B-M5-19's default-input case.

@@ -535,7 +535,9 @@ public sealed class MountChargerAction
             RobotMessageId.MotorActionAck, m => callback(((MotorActionAck)m).ActionId), "TurnAction");
 
         private readonly ManipulationSystem _m;
-        public LivePanTiltRobot(ManipulationSystem m) => _m = m;
+        private readonly bool _actualMain;
+        public LivePanTiltRobot(ManipulationSystem m):this(m,false){}
+        internal LivePanTiltRobot(ManipulationSystem m,bool actualMain){_m=m;_actualMain=actualMain;}
         public object StateGate => _m.Robot.Animations.NativeLayerGate;
         public SourceLogSink SourceLog => (level,channel,key,text) => _m.Robot.Engine.EmitSourceLog(level,channel,key,text);
         public string OffTreadsName => Enum.GetName(_m.Robot.Sensors.OffTreadsState) ?? "(null)";
@@ -559,7 +561,8 @@ public sealed class MountChargerAction
                 LogCallbackDeferral.RunGated(native.PoseTreeGate,()=>
                 {
                     using var logs=Pose3d.UseSourceLog(SourceLog,_m.Robot.Engine.Das.ForceFlushNow);
-                    _ = native.GetCheckedMainPose(); // Preserve the checked source VERIFY calls.
+                    var main = native.GetCheckedMainPose(); // Preserve the checked source VERIFY calls.
+                    if(_actualMain){angle=(float)main.AngleAroundZ;return;}
                     SteppedBehavior.ReportMissing("M11-066/M13-022 Robot::GetPose yaw at 0x005464C6 -> 0x004EA398: full live MainPose input binding is unbuilt; the constructor-owned node is not substituted for the existing labelled history-pose input");
                     angle=_m.RobotPose() is {} pose ? (float)pose.AngleAroundZ : 0f;
                 });
