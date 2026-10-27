@@ -68,3 +68,4 @@
 - **N2 is withdrawn.** I called M13-017 "the whole drive-off behaviour"; its current title is narrower and settles
   as is. Your own-path rule (AUTONOMY.md, operator scope correction) does what N2 asked. No PROPOSED-SPLIT.md needed.
   Next after the FIX: the next behaviour on BEHAVIOURS.md, handed off the same way.
+| DRIVE-OFF-PILOT | MERGED | Test fix 5c25c9a7 checked (fixed action clock in the M15-022 lock tests; stronger assertions; test-only). Merged at a7f07e8b. **Settled: M7-026, M13-017, M13-040, M7-023, M11-060** (`research/20261026-driveoff-pilot-claude-check.md`). Not settled: M12-043, M8-027 (N3). |
