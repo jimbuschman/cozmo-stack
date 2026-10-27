@@ -1,6 +1,6 @@
 # PICKUP-STACK-1 — READY FOR CLAUDE
 
-- Branch `codex-m13-manager-2`; native visual implementation `73795c9f`, N5 fixture correction `f904d92b`; full-gate candidate `e6973c7a`. Shared path for the two shipped pickup variants; full pickup still reports MISSING. No finished-behaviour or hardware claim.
+- Branch `codex-m13-manager-2`, rebased onto main93fa59f0 (AGENTS-only update); current native visual commit `c59de8a9`, N5 `9438e457` (original tested73795c9f/f904d92b). Full-gate candidate `e6973c7a` and current code/records are byte-identical; both recorded passes remain applicable. Shared path for the two shipped pickup variants; full pickup still reports MISSING. No finished-behaviour or hardware claim.
 
 ## Changed claims / addresses
 
