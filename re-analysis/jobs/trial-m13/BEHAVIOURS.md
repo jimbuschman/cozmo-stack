@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-26. **0 finished · 3 in progress · 175 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger` `SparksPickupSingleCubeForPyramid` and `SparksPickupSingleCubeToStack` are in progress; other configurations remain not started.
+Whole-behavior scoreboard, 2026-10-27. **0 finished · 4 in progress · 174 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack` and `PutDownBlock` are in progress; other configurations remain not started.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -30,7 +30,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 |---|---|---|---|---|
 | `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | PICKUP-PYRAMID-1 READY; factory/cache/eligibility/manual Verify checked, full6378PASS; concrete native children/activity admission MISSING | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
 | `SparksPickupSingleCubeToStack` | `PickUpCube` | in progress | PICKUP-STACK-1 READY; owned visual subtree independently checked, two full6387PASS; other native children MISSING | spark: SparksStackBlock. 1 refs; R233+ in map |
-| `PutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: Hiking; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: MeetCozmo. 8 refs; R019+ in map |
+| `PutDownBlock` | `PutDownBlock` | in progress | PUTDOWN-BLOCK-1 own class/face path reading/check; native owned implementation follows; full face report/flat input remain gaps | freeplay: Hiking; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: MeetCozmo. 8 refs; R019+ in map |
 | `PutDownBlockNothingToDo` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: NothingToDo. 1 refs; R050+ in map |
 | `PyramidPutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: BuildPyramid; spark: BuildPyramid; activity: Feeding. 3 refs; R014+ in map |
 | `SparksPutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | spark: SparksFistBump; spark: SparksKnockOverCubes; spark: SparksPeekABoo; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksPounceOnMotion; spark: SparksRollBlock; spark: SparksTrackLaser. 8 refs; R194+ in map |

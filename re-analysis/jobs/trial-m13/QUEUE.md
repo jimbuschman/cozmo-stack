@@ -35,3 +35,4 @@ Current authority: operator scope correction in AUTONOMY.md. Pilot handed off no
 | Job | State | Purpose |
 | --- | --- | --- |
 | PICKUP-STACK-1 | READY FOR CLAUDE | Owned native visual subtree and N5 shared clock fix independently checked; two full6387/6387 PASS0skip on e6973c7a. M13-026 own-method proposal under existing libm boundary; full pickup remains MISSING. HANDOFF-PICKUP-STACK-1.md. |
+| PUTDOWN-BLOCK-1 | RELEASED | Exact shipped PutDownBlock; whole own class/face receiver reading, independent check then isolated build. Remaining complete host face report/flat pose input remain visible gaps. PUTDOWN-BLOCK-1.md. |
