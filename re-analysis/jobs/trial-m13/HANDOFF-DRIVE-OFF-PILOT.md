@@ -1,6 +1,6 @@
-# Drive-off pilot — READY FOR CLAUDE
+# Drive-off pilot — FIX in progress
 
-- Branch: `codex-m13-manager-2`, based on main `1a507642`; no outstanding Claude FIX.
+- Branch: `codex-m13-manager-2`, rebased on main `caea4e59`. REVIEW FIX: two load-only R2 lock-test timeouts; controlled-clock fixture correction and two consecutive full gates required. N2 record split follows the FIX.
 - Production commits: **f03c7d23**, **c16d4711**; both already pushed. Major files: `ChargerBehaviors.cs`, `NativeBehaviorRuntime.cs`, `DriveActions.cs`, `Mood*.cs`, `Native*Configuration*.cs`, `VisionSystem.cs`, `VisionResultQueue.cs`, `ManipulationSystem.cs`.
 - Full asset-complete gate: **6361/6361 PASS, zero failed/skipped**, on committed `99dd4403`; later edits are documentation only. Independent production checks: **138/138**, **36/36** PASS. Initial failed gate6312/42 and corrections remain in the manager log.
 - Boundary: drive-off's observable result while it runs. Recorded neighboring MISSING paths do not hold this handoff. Official statuses/approvals are unchanged; Claude settles records. No new hardware or subsystem acceptance claim.
@@ -29,7 +29,7 @@
 
 ## RECORDS TO SETTLE
 
-All seven are currently **IMPLEMENTATION_GAP**. Propose **EXACT_SOURCE for each record's own claimed path**, independently reassessed against current titles/evidence; no concrete own-path residual found. Neighboring records remain separate.
+Current statuses remain **IMPLEMENTATION_GAP**. M7-026 source spot-check passed; settlement waits for merge. M13-017/040 whole-record proposals are withdrawn for N2 splitting after the FIX. M8-027 is withdrawn: enumerate stored callable destructors before proposing it again. Remaining rows are proposals, not approvals.
 
 | Record / current title | Evidence for settlement |
 |---|---|
@@ -37,7 +37,6 @@ All seven are currently **IMPLEMENTATION_GAP**. Propose **EXACT_SOURCE for each 
 | **M13-040** — Contact-true charger observation: live ingress, located identity, Known pose and ordered world/contact effects |0051293C/00511990..00511C2D;004EA304;00506B70/00506F98;00639840; actual received-state/world/map/cache/config/light ordering.|
 | **M7-023** — Mood destruction with already-null ActionList dependency |00511150/005111B6/005111C4;0067AE18..0067AE74;004EF184..004EF1CE; actual owner removal/last-retain/null-gate tests.|
 | **M7-026** — MoodManager::GetSimpleMood and the mood time MoodManager+0x130 (inputs to the animation group draw) |0067C084/0067B67E;0058A95C;004F0D2C..004F0D74; actual group/driving consumers.|
-| **M8-027** — ProtoHandle subscriber-callable census: which callables the 8 ProtoHandle kinds hold at teardown and what destroying them does |004EF138/0051D8F8/00591550/0064E618/00664708/00664EB8/006A3EFC/0083BED0; completed memory-only callable census, existing unlink/snapshot retirement.|
 | **M11-060** — VisionSystem::Update's application of the pending SetNextCameraParams to the current exposure and gain |006B229C..006B230C/006B50C8..006B50D8; actual worker applies before quality; later failure retains copy.|
 | **M12-043** — PyramidBase interior geometry: corners and midpoint for the pyramid top placement (GetBoundingQuad<float> corner order) |006177F0..00617C32;004E6490..004E6598/004E65C6;0062C5A2..0062C616; native root/frame/corners/ties/midpoint and real cache consumer.|
 
