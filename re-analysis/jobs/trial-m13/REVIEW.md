@@ -86,3 +86,4 @@
   spends the action's own deadline under full-suite load. Patching tests one at a time (5c25c9a7, 283d6b6e) leaves
   the rest latent. Give the Rig a controlled action clock by default, separate from the transport clock, and let
   only the deadline tests opt into advancing it. Keep every assertion. Run the full gate twice.
+| PICKUP-STACK-1 | MERGED | baa24a33. Spot-checked ComputeHeadAngleToSeePose 0x00518344..0x00518600 (NaN branches, write before MaxIterations, exhaustion) and GetAbsoluteHeadAngleToLookAtPose 0x0054B428..0x0054B55A. **Settled: M13-026** (EQUIVALENT_IMPLEMENTATION, libm boundary only). N5 accepted. `research/20261027-pickup-stack-1-claude-check.md`. |

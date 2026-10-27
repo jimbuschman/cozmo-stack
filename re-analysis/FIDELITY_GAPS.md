@@ -8,9 +8,9 @@ Manifest of **710 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 245 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 6 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EQUIVALENT_IMPLEMENTATION | 7 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 352 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 351 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -36,7 +36,7 @@ remains after both, and they do not go away by working harder on this repository
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
-| M13-navigation — Planning, charger and block configurations | 40 | 0 | 32 | 0 | 1 | yes | no |
+| M13-navigation — Planning, charger and block configurations | 40 | 0 | 31 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 74 | 4 | 63 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
@@ -64,7 +64,7 @@ status.
 | M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 8 | 0 | 0 | 0 |
-| M13-navigation | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
+| M13-navigation | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
@@ -3023,15 +3023,6 @@ B-M13-11 (2026-10-21), built, awaiting strong verification: empty convexHull and
 * outstanding: build the class footprints for Markerless, Charger, Ramp, HumanHead; the MatPiece/CustomObject corner lists and the numeric result of the base version (cv::Rodrigues renormalisation) stay open in M13-023. B-M3M4-16 check (re-analysis/research/20261013-b-m3m4-16-check.md): Footprint.GetBoundingQuadXY throws for a cube that is not yaw-only (BlockConfigurations.cs:400-402); the cliff intersection filter reaches it when unlocalized. Native always computes it. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The point rotation is M11-065 (R7/R8).
 B-M3M4-19: candidate cube footprint that the existing partial Footprint port cannot compute is explicitly MISSING naming M13-025 and skipped in AddMarkerless. Full tilted-cube/rotation arithmetic remains unbuilt; no source-fidelity status upgrade or claimed native intersection result. OV100 answer (re-analysis/research/overnight/20261016-ov100-101-106-answer.md): incomplete: MarkerlessObject (0x00502C50) and Block (0x004E62C0) re-root atPose first and take R and t from the re-rooted copy; only the base 0x0087713A uses atPose directly.
 
-**M13-026 — GetAbsoluteHeadAngleToLookAtPose and Robot::ComputeHeadAngleToSeePose** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/PanAndTiltActions.cs`
-* effect: a face-fine-tune or pan-and-tilt head angle differs from the engine's
-* rests on: recovered by the R-VIS M13 gap pass 3; the C# TurnTowardsPose.HeadAngleToSee is LOCAL numerics
-* best authority: libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3): TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose 0x0054B428: h = z + (-49.0) (0xC2440000); d = sqrt(x*x + y*y) (float vsqrt, NaN falls back to sqrtf); D = d + 13.0; a = (300.0 - D)/150.0 (0x43960000, 0x43160000); b = (0.0 - h)/-10.0; t1 = clamp01(a) * 0.0872664601 (5 degrees) and t2 = clamp01(b) * 0.130899698 (7.5 degrees) (0 for <=0 or NaN, the value for 0<x<1, 1 for >=1); A = atan2f(h, D); result = ((t2 + (A + t1)) + 0.0698131695 (4 degrees, 0x3D8EFA35)) as Radians. Robot::ComputeHeadAngleToSeePose 0x00518344: GetWithRespectTo(pose, robot+0x2CC) failing -> warning and 0x06000000; p = (sqrt(tx*tx+ty*ty), 0, tz); the camera copied from [robot+0x258]+0x24, a null calibration -> error and 1; tol = (float)calibration.nrows * f + 9.99999975e-06; theta = 0, index 1; each iteration: camPose = Robot::GetCameraPose(theta), inv = camPose.GetInverse(), q = T.rotation * p + T.translation; if not q.z > 1e-5f -> 'BadProjectedZ' warning and 1; dv = calibration.focal_y * (q.y/q.z); converged iff tol >= |dv| (writes headAngle = theta via Radians::operator=(float), returns 0 unless the index is 25 -> 'MaxIterations' warning and 1); else theta += -0.8f * atan2f(dv, focal_y); after 25 non-converged iterations the code returns 0 (success) WITHOUT writing headAngle (r0 = 26 passes the 'cmp r0,#0x19; bne' test). Confirmed by reading (register trace) in the verifier; not emulated
-* evidence: 0x0054B428..0x0054B55A, 0x00518344..0x00518780 (pools 0x00518744, 0x00518780); re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3
-* outstanding: build both exactly (float32, double atan2 for atan2f is float in the engine: use the float function), including the 25/26 iteration quirk and the result codes; Robot::GetCameraPose(float) and the Robot members at +0x2CC/+0x258 are M13-023 (d).
-
 **M13-027 — TurnTowardsFaceWrapperAction** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
@@ -3938,6 +3929,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M9-029 | M9-wwise-music | COMPATIBILITY_POLICY | SetStreamingAnimation custom-song branch (CreateCustomSongAnimation) | libcozmoEngine.so 3.4.0-1204. |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M12-014 | M12-manipulation | COMPATIBILITY_POLICY | The docking error signal's last two bytes are whatever was on the engine's stack | libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 is the only builder and never writes the struct bytes at +0x14/+0x15 (stack +0xb4/+0xb5); nothing clears the struct (no memclr, no ctor call), and Pack 0x007C0B26 reads both bytes and sends them |
+| M13-026 | M13-navigation | EQUIVALENT_IMPLEMENTATION | GetAbsoluteHeadAngleToLookAtPose and Robot::ComputeHeadAngleToSeePose | libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3): TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose 0x0054B428: h = z + (-49.0) (0xC2440000); d = sqrt(x*x + y*y) (float vsqrt, NaN falls back to sqrtf); D = d + 13.0; a = (300.0 - D)/150.0 (0x43960000, 0x43160000); b = (0.0 - h)/-10.0; t1 = clamp01(a) * 0.0872664601 (5 degrees) and t2 = clamp01(b) * 0.130899698 (7.5 degrees) (0 for <=0 or NaN, the value for 0<x<1, 1 for >=1); A = atan2f(h, D); result = ((t2 + (A + t1)) + 0.0698131695 (4 degrees, 0x3D8EFA35)) as Radians. Robot::ComputeHeadAngleToSeePose 0x00518344: GetWithRespectTo(pose, robot+0x2CC) failing -> warning and 0x06000000; p = (sqrt(tx*tx+ty*ty), 0, tz); the camera copied from [robot+0x258]+0x24, a null calibration -> error and 1; tol = (float)calibration.nrows * f + 9.99999975e-06; theta = 0, index 1; each iteration: camPose = Robot::GetCameraPose(theta), inv = camPose.GetInverse(), q = T.rotation * p + T.translation; if not q.z > 1e-5f -> 'BadProjectedZ' warning and 1; dv = calibration.focal_y * (q.y/q.z); converged iff tol >= |dv| (writes headAngle = theta via Radians::operator=(float), returns 0 unless the index is 25 -> 'MaxIterations' warning and 1); else theta += -0.8f * atan2f(dv, focal_y); after 25 non-converged iterations the code returns 0 (success) WITHOUT writing headAngle (r0 = 26 passes the 'cmp r0,#0x19; bne' test). Confirmed by reading (register trace) in the verifier; not emulated |
 | M15-018 | M15-freeplay | COMPATIBILITY_POLICY | NeedsStateOnRobot state version 0 / unsupported: the engine reads uninitialised fields | libcozmoEngine.so |
 | TOOL-001 | tools | COMPATIBILITY_POLICY | Conformance CLI pass and fail criteria | not applicable: the harness is not part of the app |
 | TOOL-002 | tools | COMPATIBILITY_POLICY | The fake robot side answers place docks without a marker signal | not applicable: this is the test double, not the robot |
