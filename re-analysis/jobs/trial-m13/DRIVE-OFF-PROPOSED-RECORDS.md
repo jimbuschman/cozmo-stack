@@ -1,6 +1,6 @@
 # Drive-off pilot: record proposals, not official changes
 
-Preparation for the single pilot handoff. Implementation and independent build check are still pending. No official ID, status, evidence, approval or acceptance state is changed here. Claude assigns/settles records only after its external check. The full current record quotations and whole-path inventory are in `research/20261026-driveoff-pilot-read.md`; this file never replaces the manifest.
+Preparation for the single pilot handoff. The first candidate is integrated; its full gate failed and corrections remain under independent verification. No official ID, status, evidence, approval or acceptance state is changed here. Claude assigns/settles records only after its external check. The full current record quotations and whole-path inventory are in `research/20261026-driveoff-pilot-read.md`; this file never replaces the manifest.
 
 ## New owning record needed: Socialize objective recipient
 
@@ -39,6 +39,9 @@ D1 separation detail: host public Update/pending/force/root-cache state is indep
 
 ## Settlement candidates, conditional on the final build check
 
-The source inventory identifies M13-017, M13-040 and M7-026 as potential complete-record candidates after ALL their actual pilot joins pass source/code/production checks. M8-027 is a separate confirmation candidate: its current residual is memory-only, so no allocation/retain-count implementation job is justified. These are not proposed approvals today. Exact final record-wide comparisons and evidence belong in HANDOFF-DRIVE-OFF-PILOT.md.
+The final record-wide comparison retains M7-026 as a conditional settlement candidate after its actual owner/time/group/driving joins pass the affected independent check and full gate. M8-027 is a separate confirmation candidate: its current residual is memory-only, so no allocation/retain-count implementation job is justified. M13-017 and M13-040 are NOT complete-record candidates in this package: actual audio/ROI/general-context and broader path/lifetime residuals remain. Earlier preliminary candidacy is superseded by these concrete joins, not by a status change. Exact evidence and residuals belong in HANDOFF-DRIVE-OFF-PILOT.md.
 
 M13-013's derived contacts-retry action, M12-002/032's other path/planner branches, M7-018's other factories, other objectives/Sparked lifecycle, BuildPyramid callbacks and other vision processors are not completed by their bounded drive-off slices. The final handoff must state exact residuals against CURRENT records instead of silently certifying those whole records. Existing firmware C6/animation feedback uncertainty remains input/hardware provenance; no offline pass turns it into hardware verification. Robot runs never block moving to the next behavior.
+## Operator D2: controlled-clock standalone manipulation/whiteboard
+
+Operator2026-10-26 explicitly chose to preserve the controlled-clock manipulation/whiteboard API as an isolated standalone extension (answer to BLOCKED.md). Preserve a coherent manual owner and its ClockSec-controlled failure stamps, strict expiry, caps and behavior inputs; native consumers retain their actual engine-owned whiteboard and timer. No clock override through a host facade may replace the native owner. Document the explicit standalone entry/ownership and keep the capability usable; do not change R2 expectations500/1000/1 to0 or loosen time/geometry rules. This is a proposed compatibility-style owner naming the operator decision, with no official ID/status allocated. It does not broaden D1 or exclude the native feature. BLOCKED.md is removed after this explicit answer.

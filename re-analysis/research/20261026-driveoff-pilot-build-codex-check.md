@@ -1,3 +1,138 @@
+# Gatefix final independent verdict — scoped CODE VERIFIED / PASS; whole pilot unfinished
+
+**PASS for the reviewed gatefix candidate only. No remaining blocking finding in these corrected bytes.** This permits a reviewable candidate checkpoint/integration; it does not call the whole job or DriveOff behavior complete, READY or accepted. The historical initial PASS was revoked after the real full-gate failures; that history remains below. No official fidelity status was changed.
+
+Checked isolated builder HEAD `00fcd999d14350662fe507e698265be7c16cf0f7` plus its frozen **30 changed/new source/test C# files**. Independently verified all30 per-file SHA256 values twice (including after execution), zero mismatches. Source-list artifact `.scratch/driveoff-pilot/gatefix-source-sha256.txt`: normalized CRLF→LF UTF8 SHA256 **4e7a97c3bf1ab407c7a05d654b76a97d0b2c667d9f7b80a01efd11706f9f7154**; raw CRLF bytes SHA256 **af3219272ca019cb9f06e3e933a8b0d3a1fb79c63bed01a03cacee3686b1d6d1**. This explains the metadata convention; actual source bytes match exactly. Per-file list follows this verdict.
+
+Independent execution after builder's explicit stable/host-release notice:
+
+| Artifact stem under builder `.scratch/driveoff-pilot/` | Actual result |
+|---|---|
+| `codex-independent-gatefix` | exit0,138/138 PASS,0 skipped,20s; TRX executed138,failed0,error0,aborted0,notExecuted0 |
+| `codex-independent-gatefix-d1d2` | exit0,36/36 PASS,0 skipped,3s; TRX executed36,failed0,error0,aborted0,notExecuted0 |
+
+Both commands used explicit `C:/Program Files/dotnet/dotnet.exe`, `--no-build --no-restore --nologo -v:q -clp:ErrorsOnly`, exact filters/loggers recorded in `.scratch/driveoff-pilot/codex-independent-gatefix-commands.txt`; full logs and TRX are retained. First filter's obsolete M11 method-name fragment matched no case; only omitted R2FloorPlacement class and renamed ConfigurationHostDirtyFlag were run in the second filter, not a repeat of138. Builder's separate376/376 PASS0skip26s is inspected supporting evidence, not an independent run and not added to these counts. Independent `fidelity.py --check` passed710; `git diff --check` exit0 (only preexisting working-copy CRLF notices).
+
+Closed reviewed blockers and actual reach:
+
+- Native attach writes actual configuration force after carrying assignment/before confirmer and visibly diagnoses absent native owner. Later confirmer-failure timing is source-order coverage, not an invented test seam.
+- Canonical tracker receives actual AI-after-helper ticks, source clocks/logs and sensor pause inputs; actual Robot retirement forces it before real AbortDocking, then captured AI+2C retires storage. Host observer disposal does not own it. Specialized Freeplay Spark writer remains at that feature's explicit missing boundary.
+- Retiring actual manipulation detaches only its installed device/path/world delegates and own Log relay; borrowed handles preserve shared services and later replacements. Runtime-created overhead detector is cleared only by identity; preexisting/replacement detector survives.
+- Approved D2 standalone owns one coherent clock/private whiteboard and its copied failure storage, borrows actual Docking/Carrying/Paths/Follower, preserves D1's host-only last-registration configuration hooks, and cannot alter native clock/flags/producers. Original R2 timing/cap/expiry expectations passed unchanged. Controlled storage retirement is host ownership, not a native allocator/destructor claim.
+- D1 native pending/root-cache/threshold/height/audio-request tests enter the actual native producer, while host controls remain separate. W2 proves its own NV enqueue-before-callback through captured subscribers without global Mood61 counts or assertions swallowed inside the callback. Exact C3 teardown position and loader barriers remain tested.
+- Camera handoff tests receive real handshake/manufacturing metadata, complete actual calibration NV queue and preserve captured-state/error/host-light behavior. Before-any-raw-state case remains explicitly a host-calibration empty-history leaf test, not native readiness or successful worker/drain evidence.
+- Actual configured PutDownDispatch, ActionList/5A completion, current selected-name versus retained clip, raw vision mean/quality/drain-failure/reset, canonical Mood/Needs, helper/manager/Spark ownership and concrete animation report paths were independently exercised offline. Custom standalone trigger now actually resolves/plays its authored clip while canonical inputs remain unchanged.
+- Face and Flip wire oracles use independent pre-action inputs/ordered f32 formula; no emitted endpoint was used to derive its own expectation. Face's physical plant conversion remains UNKNOWN; source Face speed220/decel166.66667 versus current60/500 is an explicit preexisting gap, not graded fidelity success.
+
+**Limits / handoff:** code verified and specific real offline production paths are distinguished from hardware (no run by this verifier) and acceptance (none granted). The whole pilot remains unfinished: actual audio control owner/active observer/render/output joins; live ROI/GetROI/proposal producer availability; general Meet/Feeding/specialized Freeplay and selected Look body/changed-config boundaries; existing pose/map/other missing paths remain visible. Passing regression tests do not close these dependencies or certify phone numeric bit identity.
+
+Current-record recommendations, with literal title/status/evidence below: **M7-026** is again a candidate for a separate whole-record Claude settlement check: simple-mood enum/thresholds, cached130 caller and both group/driving consumers are now code/source checked. **M8-027** remains a candidate for record-wide no-observable-effect settlement from the checked callable census/memory-only destruction, requiring no dummy allocator implementation; this does not upgrade unrelated captured-owner records. **M13-017 and M13-040 remain IMPLEMENTATION_GAP recommendations**, with their core behavior/ingress implemented and checked but no whole-record/full-observable-path closure claimed while the explicit audio/vision/general-context dependencies remain. Claude/manager must review exact record scope rather than inheriting a blanket pilot PASS. No manifest edits, source/test edits, commit, push, full-suite rerun or hardware action by this verifier. Selected model/reasoning telemetry unobservable.
+
+Initial full gate remains **6312 PASS /42 FAIL /0skip /6354total,exit1,7m25s**. Intermediate failures and specific correction records remain below; they are not erased by this bounded verdict.
+
+## Gatefix literal current record reread
+
+```json
+[
+  {
+    "id": "M13-017",
+    "title": "BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "ctor 0x005C0980 stores 96.0 + json extraDistanceToDrive_mm at +0x11C (0x005C09D4/0x005C09E2/0x005C09E6); IsRunnableInternal 0x005C0B10 returns robot+0x34A (the on-charger-platform flag; contacts are +0x338)",
+      "InitInternal 0x005C0B18 takes the reaction lock, pushes driving animations when the animation state is 3 (0x005C0B4A) and transitions only when robot+0x355 == 0 (0x005C0B54); +0x355 is the robot's OffTreadsState (OnTreads = 0), written only by Robot::CheckAndUpdateTreadsState 0x00512088/0x0051208E and named by OffTreadsStateFromString 0x0078DF58 (OnTreads 0, InAir 1, OnBack 2, OnLeftSide 3, OnRightSide 4, OnFace 5, Falling 6)",
+      "TransitionToDrivingForward 0x005C0BB8 drives +0x11C (0x005C0C02/0x005C0C08)",
+      "UpdateInternal 0x005C0DA8: once off the platform (robot+0x34A == 0) it records the time at robot->[+0x264]->[+0x18]+0x44 and returns 2 (0x005C0DF4..0x005C0E0A); while still on the platform and robot+0x355 != 0 it calls StopActing(false,false) (0x005C0DB6/0x005C0DC4) and waits; on the platform with +0x355 == 0 it transitions to driving forward (0x005C0E18)"
+    ]
+  },
+  {
+    "id": "M7-026",
+    "title": "MoodManager::GetSimpleMood and the mood time MoodManager+0x130 (inputs to the animation group draw)",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "re-analysis/research/20261012-m5-x9-extraction.md section 4f: GetSimpleMood 0x0067C084 (Default; Happy > 0.33f -> Happy; Confident < -0.29f -> Sad; Happy < -0.33f -> Sad; constants 0x0067C0C0..0x0067C0C8); the group draw reads MoodManager+0x130 (0x0058A95C), written only by MoodManager::Update(t) 0x0067B67E and Reset/ctor."
+    ]
+  },
+  {
+    "id": "M8-027",
+    "title": "ProtoHandle subscriber-callable census: which callables the 8 ProtoHandle kinds hold at teardown and what destroying them does",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "re-analysis/research/overnight/20261015-ov53-55-check.md: ProtoHandle vtables (8) confirmed; EngineToGame release 0x00664708, unlink 0x006634F4 (nulls the callable, decrements node refcount +0x20, frees at zero 0x0066352E..0x00663560).",
+      "re-analysis/research/overnight/20261016-ov105-107-108-answer.md: void() signal 0x0105DF8C: one subscriber via RegisterTransport 0x0083B9A0..0x0083BE4C (bind vt 0x0103795C trivial); Dispatch signal TransferQueueMgr+0xC: two RegisterTask::$_0 (vt 0x01031418, destroy memory-only) from TransferTask::Init 0x006A4358..0x006A438E; release bodies 0x004EF138, 0x0051D8F8, 0x00591550, 0x0064E618, 0x00664708, 0x00664EB8, 0x006A3EFC, 0x0083BED0 identical; ~TransferQueueMgr 0x006A3860..0x006A3898."
+    ]
+  },
+  {
+    "id": "M13-040",
+    "title": "Contact-true charger observation: live ingress, located identity, Known pose and ordered world/contact effects",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "RobotState sync gate 0x0051293C..942, contact bit12 0x00512AAC/AAE and SetOnCharger call 0x00512AB4; SetOnCharger 0x00511990..0x00511C2D observes on every true input before old-contact gate 0x00511BA8/BB0. Contacts +0x338; platform +0x34A.",
+      "ChargerDockPose 0x004EA304..0x004EA35A: Z rotation pi bits 0x40490FDB, translation (30,0,0), robot pose parent and ChargerDockPose name. Located family4/type13 first/current-origin query 0x00511A1C..A52, 0x0061EBF2..0x0061EC26; factory and connected identity/unique SetID 0x00511AD6..0x00511B40, 0x004EF468..0x004EF528.",
+      "Known observation 0x00511B4A -> 0x00506B70..0x00506C48: reparent/root flatten, existing/new branch, SetPoseHelper 0x0050609C, distance -1, confirmer count1/reference/existing timestamp. Actionable cache invalidation 0x004E01E4..226; common SetPose 0x004EF590..646. AddLocatedObject 0x00622AC0..EB0 includes obstacle deletion, VizManager pointer store obj+0x54 (0x00622D24..0x00622D30; CozmoContext+0x24, ctor 0x004EA734; read by EraseVisualization 0x004EA5E8..0x004EA5F2): viz, no effect on 1-4 and notification.",
+      "Notifications 0x00506F98/FA8/FB8 world/map/state-change; unchanged return 0x00506296..29A; changed nonzero new state map 0x005062B4 and active light recipient. 0x00639840 compares NEW state r3 with1: Known trigger0x25/layer2, other changed trigger1/layer2; unchanged no request.",
+      "Contact edge/store ordering 0x00511A66..ACC, 0x00511B50..0x00511C14; platform setter 0x00511D44..DCA; existing footprint tick 0x00513CD8..0x00513E2A and M4-019 threshold send 0x0063427E, 0x006342C8..CE, 0x00634364..368.",
+      "re-analysis/research/20261021-m13-017-located-charger-check.md: independent check of A1-A11/P1-P4 with corrected A9; supplementary mount and exhaustive caller census excluded."
+    ]
+  }
+]
+```
+
+## Exact frozen gatefix file hashes
+
+```text
+3cc0fb779b522d1873184f3fdef224e2914bce146a4222f8362c205d8adad967  cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs
+ff40fa0fd41b89b29f806b05459178f437e51e277506ebfd88412c1d909206c5  cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs
+0641d0f6de0cd96b4258bf09fda9b9ef799351dd2fed8724d0db27dee96172f5  cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs
+1d46a8d9312a2d5f36cd372b9667487fe0e0689a0fb0ee7bf5ad92878fd92c97  cozmo-stack/src/Cozmo.Robot/Manipulation/AIWhiteboard.cs
+2f5d0588c0ac78fbf4a2b62efc131771b862f069d9d19222c3f216cb407e1437  cozmo-stack/src/Cozmo.Robot/Manipulation/LiftGeometry.cs
+f0b46fe6358bf25cbb7f7b1bd5f84e5aaa791a79d997f04c0a1debd46ef8a263  cozmo-stack/src/Cozmo.Robot/Manipulation/ManipulationSystem.cs
+304f569710a09f742903dfb7099b1cbf58c12be1f5af2399c6612a05c0a4818e  cozmo-stack/src/Cozmo.Robot/Manipulation/NativeConfigurationManager.cs
+96b6fc7cd3530a43bf5e842caa5e8254e0ae6ca32c5ddd283f1adf0afb5c50f0  cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorObjectiveReportTests.cs
+6f85ee51142f326f225815daaff0a71f8b9c81f3f6c6bf22e13c940b1c656e82  cozmo-stack/tests/Cozmo.Protocol.Tests/CoreReviewTests.cs
+22191ba678fec1ce148eba7a6b56679b636784cabd29b569fd139ee7be9abf15  cozmo-stack/tests/Cozmo.Protocol.Tests/DesiredFaceDistortionTests.cs
+5dc588177e50abbef8497ad7b9132d14e099941e5f4be9199837433dc7b016ce  cozmo-stack/tests/Cozmo.Protocol.Tests/FaceTests.cs
+e38ace00d875d1f44b9f0f64885cb5fc77ad3ed6954f507cf16366dd1b5ba333  cozmo-stack/tests/Cozmo.Protocol.Tests/M11SmallReadsBuilderTests.cs
+e74babeef148c6948d2ce40be1fe2c06aa4b949952a75028a5eb59da465a39c6  cozmo-stack/tests/Cozmo.Protocol.Tests/M12RVisBuildTests.cs
+c86649411f993dbfc6d31b234013ab0aef2529106a049056fa138d172fbc0a46  cozmo-stack/tests/Cozmo.Protocol.Tests/M13ConfigurationAudioNotifyTests.cs
+d5aba3dca31d988aa7b2f4f311e35480b5a37012c6201c164b6f72988e4ac5e8  cozmo-stack/tests/Cozmo.Protocol.Tests/M13ConfigurationPendingTests.cs
+bab5a7f369bea79c17866643bd35753050b5b183a603712867a32c0606f5f11f  cozmo-stack/tests/Cozmo.Protocol.Tests/M15MutationCheckedRowsTests.cs
+3cf6ad4c905b309933bad7e3b26a75cbd591fce17c0b5144433e0c0c9e8d9cec  cozmo-stack/tests/Cozmo.Protocol.Tests/M15RestorationCheckedRowsTests.cs
+3828d568a72fa7e05f2371dc39b70067db2f3270b00040c97a04a3e5c2912da6  cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs
+60bc9e81d88f10dbecb4be975bb05dcfb3a35bc5eb46ef33407634af99e9d4e3  cozmo-stack/tests/Cozmo.Protocol.Tests/M3M4ReviewFixTests.cs
+3b2f9f474e1b47a5825cc5180eb58600376aa924f626fc6d29bb89297ae112d4  cozmo-stack/tests/Cozmo.Protocol.Tests/M5BuilderCorrectionsTests.cs
+2ba89f48ee29db74f9d8b73a0eb0b22e49aceb00af3be1c61641e02636bb316b  cozmo-stack/tests/Cozmo.Protocol.Tests/M5X13BuilderTests.cs
+da3e6e7e78e206ac95f470e9c03c4b2402f4114203d3d57d2619ab1ae491db2f  cozmo-stack/tests/Cozmo.Protocol.Tests/M5X20BuilderTests.cs
+f55621a85b9d76bfea9008bd6a30fc828db2c044bd001fdc20f4a4c2e9ef4d9a  cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs
+10bfd3b932946efbb82f3edd4c08062c003e6b1b0cfb459ea989b36d789a08dd  cozmo-stack/tests/Cozmo.Protocol.Tests/M7LifetimeCheckedRowsTests.cs
+d3fcd82d40b662241ee1512f77add696f1926f24b21b0954cf5bd6a7e7f05126  cozmo-stack/tests/Cozmo.Protocol.Tests/M7ManagerLifetimeTests.cs
+36bdd79c1f521c46b016e2d1e47dc25d35b4d59b7caea325549dc02367669e60  cozmo-stack/tests/Cozmo.Protocol.Tests/M8BatchThreeDTests.cs
+cdc896add7af4483752b31abce8757b4d7b7cb6227196c1875c9ca60ef7a32b3  cozmo-stack/tests/Cozmo.Protocol.Tests/ManipRig.cs
+233d5de5ce1af5068e440009f366b09115edc4af4a10cfee36e68a3fbff9eaca  cozmo-stack/tests/Cozmo.Protocol.Tests/NativeTrackerOwnerTests.cs
+a52b0586a9b24dbc9f346485996cb5889290ad2390660462a4b9baa2cb0d54ac  cozmo-stack/tests/Cozmo.Protocol.Tests/SparkManagerInputCheckedRowsTests.cs
+b84ada5afedc2e63c1c9c921bcab0a91ac05a5ba32f74acdb71884c2de54655f  cozmo-stack/tests/Cozmo.Protocol.Tests/StandaloneManipulationOwnerTests.cs
+```
+
+---
+
+# Post-full-gate addendum — prior scoped PASS REVOKED pending identified corrections
+
+Manager full gate on integrated d3d373ab **FAILED:6312pass/42fail/0skip,total6354,7m25s,exit1**. Immutable log `.scratch/driveoff-pilot-full-gate-1.log`, failure names `.scratch/driveoff-pilot-full-gate-1-failures.json`. Earlier focused passes remain their actual results; they did not expose all ownership/output changes. The earlier scoped PASS below is superseded by this addendum, not erased.
+
+I missed a real D1 producer join during the original consumer audit: Carrying SetObjectAsAttachedToLift now writes only publichost Configurations.ForceUpdate, which intentionally stopped forwarding to native Robot state. Current M12-008 step9 (known6331AE then primary6331B2/B6/B8/BC) requires actual boundRobot→World34→ConfigManager94 byte+C=1 AFTER SetCarrying and BEFORE AddLiftRelativeObservation6331C8. This nativeforce write must be restored independently of the public extension, including a later confirmer failure; pre-attach failures must not force. Borrowed public facades also overwrite canonical Docking.Configurations and attach anonymous untracked Log relays to shared Docking. Dispose correctly must not retire canonical callbacks, but each disposedhost must detach its own diagnostic relay. Both are genuine correction items, not merely stale test oracles.
+
+CORE010 failing callback-removal/null assertions assume each public facade owns Docking; the new source-backed lifetime uses actualRobot-owned canonical Docking/Carrying. Revised tests must retain canonical callback/owner until actual native retirement while proving facade-owned followers/relays retire and active sibling remains functional. Required exact corrections/source tests were sent manager before implementation; no changes to active manager checkout during fullgate.
+
+Mood.Update CALLSITE independently reread after known67B5D4: entire normalbody67B5D4..6B0 has NO early dt-return. Belowfloor logs67B644 and rejoins67B670; storescapturedt→13067B67E, updatesall9 emotions, unconditionallycallsSendEmotions67B6A4. Native physical/external/Robot gates remain at already checked enclosingphase/sender, not a new dt suppression. Thus added tag61 after an admitted normalRobotMoodphase is real output, not testnoise. Exact payload/delivery pass does not by itself settle all failing readiness/lifetime fixtures; those are being classified separately.
+
+DesiredFaceDistortion fullgate failure compares delegate.Target identity, not output: its test supplies NOcustomNeeds, so stack.Needs is actual Engine.Needs; new facade closure invokes the same canonicalproducer. Known/primary TrackLayer64EDEC..EDF4 reads context→NeedsManager34→component3D4; >epsilon AddGlitchEDF8..EE14. Preserve canonicalstreamer and valid standalonecontext custominputs. Replace storage-identity oracle only with actual sampledoutput/cache/Glitch proof and customstandalone isolation before/during/afterDispose; explicit offlineNeeds admission remains available.
+
+Face/M13-028 testwire-coordinate findings: Flip norm+20 was incorrectly compared to absolute XEnd after storedForward correction; preserve independent3Dvs2D travel proof and sourcef32 endpoint from prestate, no physicalrange relaxation. Face physicalMAIN X grade depends on unproved Rig Forwardendpoint→MAINfeedback conflation; no guessed+20 conversion/new380grade. A tests-only wire characterization must explicitly retain nativeFace speed/decel contradictions as gaps, never call that behavior source-complete.
+
+No new full-suite or hardware run by checker; no production/tests/manifest/status edits. Remaining42 failures require exact caller/prestate/owner classification before any oracle changes. Final candidate PASS/recordsettlement recommendations suspended until correction/review/verification; wholepilot remains unfinished.
+
+---
+
 # Final independent build review — PASS for the scoped candidate; whole pilot IN PROGRESS
 
 **Verdict: PASS for the checked implementation candidate at the final 55 source/test files below. No outstanding blocking finding in that scoped diff.** This authorizes manager/builder checkpoint commit and manager-owned full gate/Claude review; it does not certify the whole DriveOff behavior finished. Earlier PENDING/failure entries below are preserved chronological evidence, superseded only by the specific corrections/rechecks recorded here.
@@ -307,3 +442,153 @@ Affected source inspection complete: bound_owner Mood and Engine.Needs, rawSad1 
 ## Final single-fixture correction and closeout
 
 Independent inspected collector now admits only `DrivingAnimationHandler.*` or exact `LoopBoundOverflow`; all existing exact two-Pop order, current-only-on-Init, first-match removal,1000bound/errorflag and entry-count assertions remain. Production files are unchanged by this fix. Single affected test independently exit0,1pass/0fail/0skip,212ms (`codex-independent-collector.log/.trx`). The previous46pass/1fail execution remains above as the actual history; final changed fixture is verified without rerunning unrelated303 cases. M7-026 owning comment inspected at Mood.cs341; no behavior/test bytes changed for that annotation and no extra test cycle attributed to it. Final55hashes0mismatches and fidelity710exit0 confirmed after annotation. Final scoped candidate PASS, whole pilot IN PROGRESS, with record-wide recommendations and genuine remaining dependencies stated at the top. Manager owns commit/full gate/Claude/hardware/settlement.
+
+
+## Full-gate triage B — actual owner paths (2026-10-26, no new test run)
+
+The failed gate is retained as 6312 PASS / 42 FAIL / 0 skipped, 6354 total, exit1, 7m25s. The earlier scoped candidate PASS remains revoked pending these affected corrections. Read-only code/source triage does not turn a proposed correction into verified code.
+
+### Mood phase and NV callback evidence
+
+After known.py 67B5D4, the entire normal native Mood.Update body 0067B5D4..0067B6B0 was read: a too-small timestep logs at 67B644 and rejoins 67B670 (including 64A/66A paths), not an early return. Captured now is stored at 67B67E; all nine emotions update at 67B682..6A0; SendEmotionsToGame is unconditional at 67B6A4. Thus Advance(now) followed by SendEmotionsToGame is correct for an admitted normal update, including minimum-dt input. This does not authorize bypassing Robot's earlier calibration/drain gates. Raw61 is a real output, not logging noise.
+
+M3_031_W2's callback contains Assert.Equal(publications+1, NativeUiDeliveryCount) before order.Add("callback"). A real intervening Mood61 can break that global counter assertion; handler isolation then hides the callback's later test marker, yielding the observed recvd/executing/broadcast list. Proposed correction must observe the actual NV publication/tag/payload and preserve enqueue-before-callback, callback-before-backup-clear, and deferred host delivery. Do not infer a missing production callback from this marker alone, or loosen a global count arbitrarily.
+
+### Canonical tracker — genuine missing producer
+
+Current M15-015, "Freeplay active-time tracker and its four pause sources", IMPLEMENTATION_GAP, evidence FreeplayDataTracker ctor0056EBD4, SendData0056EC48, SetFreeplayPauseFlag0056EEBC, BehaviorManager.SetCurrentActivity005A106C, CheckAndUpdateTreadsState005121F4, SetOnChargerPlatform00511DB0, HighLevelActivity.cs. Current M15-027, "Disconnect persistence, ForceUpdate and AI/progression/inventory destruction", IMPLEMENTATION_GAP, evidence00695908..4A,0056EEB8,0056EC48..EDE2,00569CB2..9DAC,005111BE..EA,00511314..38 plus adopted OV25-27.
+
+Reused checked 20261021-m15-tracker-owner-join.md and personally reread after known.py 51111A: 00511114 loads Robot+264, 00511118 loads AI+2C, 0051111A calls ForceUpdate, then 00511120 AbortAll. AI update00569F44/46 updates tracker after Helpers. The new actual NativeBehaviorRuntime constructs Tracker but supplies no engine SourceLog, no actual tick call, no Lifetime(-2) ForceUpdate binding or AI+2C storage retirement binding; pause routing likewise must address actual owner. This is a genuine observable production omission, not merely the old standalone stack's failed assertion. Required correction: canonical tracker/clock/source log/pause routes, update after Helpers, unconditional destructor force before AbortAll, storage-only child retirement; standalone handles may not take ownership. Required test must use actual runtime.Tracker and actual removal, retaining exact order and no force from host handle disposal. No arithmetic recovery is requested.
+
+### Actual Mood lifetime fixtures
+
+Current M7-023, "Mood destruction with already-null ActionList dependency", IMPLEMENTATION_GAP, evidence0067AE14..74,00511150,005111B6; adopted OV34-35 gates0067AE18..30, children0067AE34..74, subscription retirement004EF184..1CE/00664EB8/0066365C/00663696/0067C228, owner null after delete005111C4.
+
+M7LifetimeCheckedRows's three failing fixtures try to replace an already constructed canonical MoodOwner using a new MoodState or standalone Freeplay.Create. BindNativeLifetime correctly rejects that replacement. Tests must use actual native.MoodOwner, its real watcher ID and retained C3 subscription, and preserve all child order/null gates. Null-Robot leaf can detach that real owner and verify its actual nonzero ID survives without unregister; an arbitrary17 must not be injected through a refused binding. Resource/event fixture setup must occur before actual native construction if required. No source replacement guard should be relaxed.
+
+M5X13 shutdown's new C3 unlink is the actual canonical Mood subscription. It should be checked at Mood's native retirement position, not removed from the oracle as general noise. Abort/join/Hub barriers and their finally cleanup must remain.
+
+### Device callback lifetime — genuine regression
+
+Current M4-027, "Sensor/light/movement/CubeAccel teardown and retained host reset candidate", EXACT_SOURCE, evidence005111EA..0051121A,005113E0..3F6,00511428..488,00511500..510 plus adopted T1-T9/S2. The current new canonical ManipulationSystem owns five device delegates: Motion.IsCarryingObject / PlaceObjectOnGroundAsync, Sensors.UnattachCarriedObjectIfCarrying, Cubes.ExcludeFromMovedBroadcast, Lights.Cubes.IsCarried. Existing device ResetToConstructed retains those hooks; current owned Dispose does not detach them. Therefore real RemoveRobot leaves references to retired Docking/Carrying. Do not alter the reset oracle to ignore this. Store exact installed delegates and clear only those still owned at actual service retirement; borrowed facade disposal must preserve canonical hooks and replacement/user hooks. Equivalent world delegates require the same bounded ownership review.
+
+### Other oracle dispositions (proposed, not tested here)
+
+- M15Restoration's ForceSet C6 test observes custom standalone Needs while the real subscription routes Engine.Needs. Explicit existing offline UseNeedsForOfflineTest(needs) before constructing the handle admits the intended actual owner and preserves deferred app event semantics. Keep info/mutate/send/retirement assertions; do not restore implicit engine replacement.
+- M5 G1's obsolete missing-SimpleMood log: actual LoadFrom installs the canonical Mood closure. Assert raw Default2, actual group draw/shared RNG, and retain explicit CurrentMood override.
+- M5X20 obsolete concrete Trigger gap: assert actual queued type26 action and 5A variant1 NO_ANIM_NAME failure, retaining repeated-init dedup. Standalone trigger-map fixture must prove custom context/API output while canonical map and Needs delegate remain unchanged before/during/after disposal.
+- BehaviorObjective success uses actual canonical Mood after Start. Keep objective-before-mood, full result and raw payload; assert the real owner and no false missing-attachment diagnostic.
+- Factory has six registered constructors. Pure empty BehaviorFactoryContext skips DriveOff for missing Manipulation, but constructs typed Look unconditionally. The pure-container count20/NotCreated158 is a typed-object count, not whole Look support or a NativeRobot-only condition. Retain FistBump parameters and assert the actual new entry type.
+
+### Camera calibration fixture
+
+Current M3-005 "At most 3 completed images per event time go on to vision; one EncodedImage at a time", EXACT_SOURCE, evidence00535B0E/00535B28..52 and00652B1C..006530C8. M3-022 "The connection-time CameraCalib read and its callback: the Failed/SizeMismatch/Recvd logs, the distortion zeroing for body hardware <= 6, the +0x48 store", EXACT_SOURCE, evidence006583E2..FA;0065AB68;0065ADE0/0065AE80;0065175E..66.
+
+CozmoRobot's actual HasCameraCalibration reads CameraSettings.Calibration. M3M4ReviewFix.Live only assigns Vision.Calibration; those are distinct preconditions. Correct live fixture should complete the real connection NV tag80000001 callback and assert installed calibration identity, using the existing56-byte recipe (five F32 intrinsics, rows/columns U16, eight F32 distortion). No fake drain/status delegate or timeout increase; before-any-raw-state case must not accidentally inject a raw state through a convenience queue helper.
+
+### Six-correction preliminary affected review
+
+Builder's native-force position (after AttachToLiftChecked/before confirmer), exact facade Log relay detach, and owned-only Docking.Configurations assignment are correct. Face's synchronous pre-Straight independent Main/face/Forward capture and Flip's native relative pose/ordered-f32 norm are independent wire oracles; neither certifies physical stopping. DesiredFaceDistortion now observes canonical component/cache and real Glitch output. One remaining diagnostic finding sent to builder: null-conditional world.NativeConfigurations?.ForceUpdate silently drops the required native force write for absent owner; add visible availability diagnostic rather than fabricated result/host fallback, unless all admitted paths prove owner presence. Later confirmer-failure coverage is static source order only; no unsupported failure seam was added.
+
+No source/test/manifest/status/Claude/REVIEW files were edited by this verifier. Actual model/reasoning telemetry remains unobservable. Whole pilot remains unfinished (audio/ROI/other activity/selected Look and Face caller gaps remain explicit).
+
+
+### Additional actual-owner fixture release and D1 boundary
+
+Independent code confirmation: EngineRobot.Update selects NativeBehaviorRuntime.UpdateAI at CozmoEngine1311; only absent runtime uses AIComponentUpdate. Thus M8 helper tests must register on actual runtime.AI.Helpers, retaining existing two-call/gate/order assertions; substituting a new AI cannot test the production path. Current M8-011 title "The Smart* scope helpers: idle animation, motion profile, track locks, custom light patterns, helper delegation and the reaction locks", IMPLEMENTATION_GAP, evidence includes SmartDelegateToHelper005BEB10→[Robot+264]+10 at005BEC2C, helper0056DAD8..DB37 and ctor00569AAE/B2. Native AI update/helper joins were already source checked in the pilot packet; no new helper algorithm is proposed.
+
+CozmoRobot constructs and assigns actual BehaviorManagerOwner, initializes that manager's reaction map and attaches Spark once; standalone Freeplay.Create intentionally constructs a different manager. Actual lifetime fixtures must use CreateNative; late-resource empty-map fixture calls the existing InitializeRobotReactions on the same real manager and preserves no deferred lock replay. Current M7-014 "Reaction-lock manager lifetime and concrete per-class lock tables", IMPLEMENTATION_GAP, evidence005BCE3C/005A27E8/005A3A48 and 13 concrete tables. This does not certify all reaction classes.
+
+Current M15-057 "BehaviorManagerMessage handler (G2E 0x96): ActivateSpark, SparkUnlocked, DoATrickRequest (RequestATrick, cost 3, AddInventoryAmount), PlayAGameRequest, bad-tag error", IMPLEMENTATION_GAP, evidence subscription005A15AC..CE, adapter005A5136..4A, dispatch005A3C70..78, case0 005A3C80..9A, case1 005A3DB4..C6, case2 005A3CA0..D5A, case3 005A3DCA..D6. The real 96 subscription updates the concrete owning canonical manager's full-width RequestedSparkId; the fixture must inspect that owner instead of standalone85. Do not add a duplicate subscriber, reroute app input, truncate the ID, loosen cancel latch or manufacture acknowledgement.
+
+D1 test migration approved within checked behavior: public ForceUpdate/Update controls the isolated extension and cannot be used to provoke native notify. Existing M13 pending/audio fixtures must target actual World.NativeConfigurations and robot.BlockConfigurationForceUpdate; a direct actual native Update is explicitly a unit substitute for frame-tail scheduling. Retain pending/root-cache/movement thresholds/height-before-reset/A→B/reset/unchanged behavior. Read-only cache introspection is acceptable, copied helper algorithms or fabricated containers are not. M11 facade dirty-flag test must become explicit host/native isolation before/after delocalization and retain actual R1 retirement. No public host setter alias may be restored.
+
+Tracker design refinement agrees with source: capture actual AI and Tracker before manager+44 clears the runtime field; later+264 destroys captured AI in existing direct slot order, with +30 severe cleanup and +2C storage-only retirement. Runtime.Dispose detaches owned sensor routes, not ForceUpdate/storage. Native Spark pause writes belong to the specialized Freeplay switch path005AE4E2..F2, not a generic app input or observer. Since that activity is visibly rejected before admission, do not invent Spark=false or attach standalone input to native state; this residual prevents whole M15-015 settlement. Existing standalone Spark callback remains local.
+
+
+### Exact shutdown / NV enqueue oracles and approved D2 design release
+
+M5X13 full-gate log2363..2370 differs at position10 only: expected secondA3 thenEB, actual secondA3 thenC3 thenEB. Actual Robot caller releases managers+44/+48 before ActionList and Mood+440; Mood destructor005111B6 retires C3 through0067AE34/004EF184..1CE before BlockFilter+44C0051122A. Add the single C3 to that exact ordered expectation, rather than filtering it as noise. Preserve all abort/join/loader/hub assertions and finally barrier release/join. This failure is an obsolete absent-owner fixture expectation; it is not evidence of a loader shutdown regression.
+
+W2 replacement oracle needs no new production observer: subscribe an early NVStorageOpResultBroadcast observer before erase, then in completion callback record facts (no asserts), remove early and attach late observer. QueueAppBroadcast captures its subscriber set at the actual NV enqueue. Deferred delivery must invoke exactly the early observer once with the matching NV payload, never the late observer; reversed enqueue/callback ordering would capture the late observer and fail. Assert callback result, no host delivery yet, backup still pending, exact recvd/executing/callback/broadcast order and backup cleared afterward OUTSIDE the isolated callback. Restore subscriptions in finally. This proves the NV report's own enqueue-before-callback independent of intervening Mood61/global UI publication counts and prevents swallowed test assertions masquerading as lost callbacks.
+
+Operator D2 approved a controlled-clock standalone extension. Independent concrete design PASS, not code PASS: canonical owner, borrowed native view, and explicit CreateStandalone(robot,vision,clock) are distinct modes. Standalone owns a private AIWhiteboard with closure()=>ClockSec(), while borrowing actual Docking/Carrying and canonical Paths/Follower. Split Whiteboard ownership from native/path-service ownership. Standalone must not install World/vision/device source callbacks, overwrite Docking.Configurations, subscribe native whiteboard tags, change native clock/force/state, or dispose shared services. In particular constructing PathSender replaces Motion.Path.SendPathMessage and PathFollower subscribes MessageInternal, so manual mode must borrow both instead of silently creating duplicate producers. It disposes its private whiteboard state and own tracked Log relay only. Borrowed native view ClockSec setter must reject clearly/direct caller to standalone, never ignore or mutate actual engine time. Actual internal owner retains engine clock. Existing R2 500/1000/1/45-second/caps oracles remain unchanged; explicit standalone fixture is the appropriate clock owner. Final construction/disposal/output verification is still pending implementation.
+
+Current manifest reread for the preceding two oracle claims (literal):
+
+```json
+[
+  {
+    "id": "M3-031",
+    "title": "NV read retry (7 resends / 8 transmissions, identical resend) and the 5 s timeout (-4, no retry)",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand 0x645C6A..0x645D7A: the counter +0xF4 is 0-based (reset by the send/arm at 0x645484), incremented then compared < +0xF5 = 8 (bhs at 0x645C7C), so 7 resends / 8 transmissions, then ReadOpFailed (0x6431FE..0x643234); the second caller is the write/erase path 0x643194..0x6431A2",
+      "timeout state 2: +0x78 set and robot+0x2C > +0x74 -> Update.ReadTimeout, cb(nullptr, 0, -4), SetState(0), no retry (0x64575A..0x6457C0)"
+    ]
+  },
+  {
+    "id": "M5-055",
+    "title": "~CozmoEngine member destruction order (RobotDataLoader abort flag, robot and streamer teardown, weak-signal unlinks)",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read.",
+      "re-analysis/research/20261012-m5-teardown-reads.md item 1 (Opus-checked 14/14): ~CozmoEngine 0x004EC68C..0x004EC722 (+0x64, vectors +0x50/+0x40, +0x3C, +0x38, +0x34 CozmoContext, +0x30 UiMessageHandler, Json +0x18, vector +4) and wrapper 0x004EC79C; ~CozmoContext 0x004EAAAC..0x004EAC14 calls RobotManager::RemoveRobots first (0x004EAABE -> 0x0052F428..0x0052F472); ~Robot 0x00511512..0x0051154A; ~AnimationStreamer 0x0057AF48..0x0057AFDA (+0xC base subscription, tag 0xB4, released last); ~RobotDataLoader 0x0051F0C6..0x0051F0EA (runs after RobotManager); ~UiMessageHandler 0x0066011C..0x00660192; signal destructors 0x006634B8 (E2G) and 0x00663620 (G2E). So the UiMessageHandler and both signal maps are alive when the Robots release their subscriptions."
+    ]
+  }
+]
+```
+
+
+D2/D1 clarification supersedes the overbroad “no World callbacks” phrase above: the two existing fields SetObjectPoseChanged and BlockConfigurationManagerUpdate are HOST-ONLY slots after native-first calls (BlockWorld2449→2450,1611→1612). Explicit standalone retains registration of its existing private public configuration adapter there, preserving ConfigurationSeen/FirstSeen frame updates on its controlled clock. Assignment retains existing single-slot/last-registration behavior; cleanup clears only if that slot still equals its own installed delegate, preserving later replacements. Do not introduce multicast fanout or a previous-callback restoration stack (which could reactivate disposed handles). Native MapClearQuad/UnsetCarrying/CarriedPrimary and device/AI/vision hooks remain forbidden to manual mode. No manual-to-native flag/clock/cache writes. This clarification is an independent read PASS based on the actual host/native split, not a new source algorithm or feature exclusion.
+
+
+### Owner-2 follow-up read findings (87-case builder run: 81 PASS / 6 FAIL)
+
+No checker test was running. Actual-owned PathSender constructor assigns Motion.Path.SendPathMessage=Send. Actual-owned path retirement must detach only its exact installed delegate if still current; borrowed/manual facades must neither construct a replacement producer nor detach the canonical one. Preserve later user/replacement delegates, no restoration stack.
+
+Camera fixture's RobotValidated=true occurs in OnSuccess before manufacturing info. Current HandleMfgId then emits SendConnectionResponse(Success), which invokes VisionConnected and Camera.OnRobotConnected's real NV read. The fixture supplied FirmwareVersion only, so no actual Success edge/camera request existed. Complete received RobotAvailable and ManufacturingID metadata before SyncTimeAck/fullstate; inspect actual Success/time-sync/firstfull/LastFullStateResult, then advance real NV queue. No unsolicited callback/request or fake drain input is allowed.
+
+After known.py DrivingAnimationHandler::HandleActionCompleted, personally reread entire normal004F0D78..004F0E2E. Matching current LoopId004F0D8E/90 considers repeat/HasPathToFollow004F0D94..DA4 then result004F0DA6/A8. A nonzero loop result reaches optional unlock and PlayEndAnim004F0DC2. EndId match sets state4 at004F0DCE/DD4. Therefore the new M5X20 fixture's three explicit loops perInit produce one automatic end for the latest current LoopId, twice across twoInit calls. Assert exact six loopIDs plus two EndIDs in per-pass order, their concrete type26/result0300000C/variant1/emptyname, total8; do not ignore unknown extras or loosen the total. Production handler change is not warranted.
+
+M8 gate cause still under focused diagnosis: IHelper.UpdateWhileActive has no parent IsRunning/Context gate, and its parent field affects Stop/IsActing only. Starting a Probe mirrors the fixture but is not proven to explain zero ticks. CreateOffline explicitly sets FirstFullStateHandled=true. Empty real Vision drain returnsfalse; installedhook alone likewise does not explain zero ticks. Missing-hook subcase must explicitly sethooknull to grade that intended absence. Preserve1/2/3 and actual canonical helper; inspect gate/stack/log state rather than restoring fallback.
+
+Current literal records reread before these claims:
+
+```json
+[
+  {
+    "id": "M1-028",
+    "title": "Initial-connection handshake outcomes",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "B29 RobotInitialConnection subscribes to factoryFirmwareVersion 0xD2 (0x0052D1B4), firmwareVersion 0xEE (0x0052D208), robotAvailable 0xC9 (0x0052D260); factoryFirmwareVersion -> 3; firmwareVersion: parse fail or FACTORY build -> 3, no robotAvailable yet -> 1, simulator -> 0 (0x0052D3BE, 0x0052D59E, 0x0052D4F2, 0x0052D7E4); OnNotified 3 -> reason 7, 4 -> reason 8, then SendConnectionResponse (0x0052DDAA..0x0052DDC4, 0x0052DE06); success: filter off (+0x2D), GetManufacturingInfo, then on mfgId 0xED store serial, HW version, colour, $session_id and send RobotConnectionResponse(Success) (0x0052DE6C, 0x0052DE7C, 0x0052E304..0x0052E3A2)",
+      "CB7..CB21: RIC state and subscriptions (0x0052D184..0x0052D28E); robotAvailable sets +0x2E (0x0052DC64); OnNotified outcomes (0x0052DDAA..0x0052DDFC); on Success +0x2D is set first, mfgId is subscribed, then GetManufacturingInfo is sent reliable with no timer or retry (0x0052DDD0..0x0052DE7C); the mfgId lambda stores serial, hw and colour (colour only if in {0,2,3,4}), sets $session_id and sends RobotConnectionResponse(Success) (0x0052E304..0x0052E3B2); SendConnectionResponse sets +0x10, releases the handles and broadcasts the 14-byte response, engine subscribers running synchronously (0x0052DF2E..0x0052DF64; 0x006625C6..0x006625FA)",
+      "CB14: with no robotAvailable, SendConnectionResponse(1, 0) is called directly, setting no disconnect reason (0x0052D7B8..0x0052D850)",
+      "CB31/CB34: there are no handshake timers or retries, and results 1, 3 and 4 keep the link and the Robot (0x0052DD98..0x0052DF80)",
+      "CD15/CD16: GetManufacturingInfo follows an accepted firmwareVersion; after the response, the mfgId handler also queues ReadLabAssignmentsFromRobot and ConnectRobotToNeedsManager (0x0052E3AA, 0x0052E3B2)",
+      "E1..E6: a second firmwareVersion before mfgId subscribes a second mfgId lambda and sends a second GetManufacturingInfo, but the first mfgId yields exactly one RobotConnectionResponse, because SendConnectionResponse unlinks both lambdas during the emit; a second mfgId reaches only the Robot's HandleRobotSetBodyID (0x0052DF2E..0x0052DFC8; emit 0x0069E27C..0x0069E2B2; unlink 0x0051D338..0x0051D3A4; 0x00532CD0..0x00532CDA)"
+    ]
+  },
+  {
+    "id": "M5-063",
+    "title": "DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732).",
+      "re-analysis/research/20261012-m5-driving-handler-read.md: handler state ctor 0x004F06B0..0x004F0878 / Init 0x004F0FC4..0x004F0FF4; Push gate warning 0x004F094C..0x004F0964 and push_back 0x004F0988..0x004F09FA; Remove gate 0x004F0A9E..0x004F0AB4, empty-stack warning 0x004F0ADA..0x004F0C22 (0xBE4672), first-match erase 0x004F0AE4..0x004F0C6C, LoopBoundOverflow drivingAnimationHandler.cpp:108 0x004F0B5A..0x004F0BB6; UpdateCurrDrivingAnimations only from Init (0x004F0D2C..0x004F0D74: back(), else Sad 0x2C, else needs-met 0x38, else default 0x20); HandleActionCompleted 0x004F0D78..0x004F0E2A with PlayEndAnim 0x004F0EFA..0x004F0F4A, PlayDrivingLoopAnim 0x004F0E58..0x004F0EA0, PlayDrivingEndAnim 0x004F106C..0x004F10C0, lock/unlock helpers 0x004F0EB2..0x004F0EE2 / 0x004F0F4C; ActionIsBeingDestroyed 0x004F0F94..0x004F0FC0."
+    ]
+  }
+]
+```
+
+
+### Latest resource and private-owner checks (candidate not yet PASS)
+
+NativeRuntime ctor's only persistent direct Vision resource write is OverheadEdges ??= new OverheadEdgesDetector(). Retirement must track the instance only when this runtime created it and clear only if the current property is still that instance; preexisting and later replacement detectors remain. Detector is managed, not IDisposable. ApplyOverhead's map.OverheadContext is temporary and already restored in finally. Owned manipulation's persistent callbacks are covered by the separately tracked exact-identity cleanup. This is narrow host resource retirement, not a new native allocator claim.
+
+D2 standalone's private whiteboard owns copied FailureInfo.Pose values (SetFailedToUse calls DeepCopy). ClearAllBeacons alone leaves failure memory and these wrappers retained; current OnRobotDelocalized clears maps without disposing them. A narrow internal RetireStandaloneStorage may dispose current stored failure wrappers under the failure gate, clear tables and beacons, called only from explicit standalone Dispose. Do not rewrite canonical whiteboard destruction, delocalization or cap eviction in this correction. Preserve caller input poses and native whiteboard history; retained private whiteboard must expose empty owned storage afterward.
+
+Static production diff reviewed against released contracts: tracker after Helpers and actual -2 force/captured +264 AI retirement; exact owned sensor/device/path/host-slot cleanup; standalone private clock/whiteboard and borrowed canonical services; source native force after carrying write/before confirmer plus visible absent-owner diagnostic; read-only native root-cache introspection. No further production blocker found in that reviewed diff before the requested overhead/private-whiteboard correction.
+
+Test coverage finding sent manager/builder: M5X20 StandaloneCustomTriggerInputNeverReplacesCanonicalDrivingInput still uses an empty replacement map and only compares identities/GroupFor to itself. It does not satisfy the explicitly requested preservation proof through actual manual trigger execution. Required test-only extension: a distinct nonempty custom map to an authored clip, real PlayAnimBehavior started with standalone.Context, assert resolved clip/trace plus actual scheduler stream/ticket, while canonical driving-map/needs delegate identity stays unchanged before/during/after. Static current RunTriggerAction already resolves Context.Triggers; this is a missing regression proof, not an asserted production defect.
