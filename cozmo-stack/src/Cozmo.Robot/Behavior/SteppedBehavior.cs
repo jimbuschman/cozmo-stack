@@ -733,9 +733,7 @@ public abstract partial class SteppedBehavior : IBehavior
     /// <c>StopHelperWithoutCallback</c> (0x005bd39c/0x005bd3d6); then, if the current-action handle
     /// <c>+0x84</c> is set, it clears it before the cancel unless <paramref name="keepAction"/>
     /// (0x005bd3e0/0x005bd3e4), cancels it in <c>ActionList</c> (<c>ActionList::Cancel</c> 0x005bd3f0) and clears
-    /// it afterwards when it is still the handle that was cancelled (0x005bd3f4..0x005bd3fe). This stack
-    /// cancels by advancing the action epoch and dropping the queued completion; the helper path is the
-    /// unowned BehaviorHelperComponent.
+    /// it afterwards when it is still the handle that was cancelled (0x005bd3f4..0x005bd3fe). Native owned runners cancel the actual ActionList tag; legacy async adapters retain their separate epoch/animation cancellation.
     /// </summary>
     // fidelity: M8-001
     protected void StopActing(bool keepAction, bool viaCallback)
@@ -753,7 +751,15 @@ public abstract partial class SteppedBehavior : IBehavior
         lock (_gate) _actionEpoch++;
         while (_pending.TryDequeue(out _)) { }
         if (handle != 0 && !keepAction) Interlocked.CompareExchange(ref _currentActionHandle, 0, handle);
-        StopOwnAnimation();                                  // ActionList::Cancel
+        // 5BD3DA..3FE: read the owned tag AFTER helper stop; cancel even when keepAction is true.
+        var owned=_runner;
+        var list=_runnerActionList;
+        if(handle!=0&&owned?.Tag==unchecked((uint)handle)&&list is not null)
+        {
+            list.Cancel(unchecked((uint)handle));
+            if(ReferenceEquals(_runner,owned)){_runner=null;_runnerActionList=null;}
+        }
+        else StopOwnAnimation(); // Separate existing public async adapter mechanism.
         if (handle != 0) Interlocked.CompareExchange(ref _currentActionHandle, 0, handle);   // 0x005bd3f4..0x005bd3fe
     }
 

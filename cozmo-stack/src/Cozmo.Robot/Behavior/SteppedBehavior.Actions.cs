@@ -4,6 +4,7 @@ namespace Cozmo.Robot.Behavior;
 public abstract partial class SteppedBehavior
 {
     private IActionRunner? _runner;
+    private ActionList? _runnerActionList;
     // The callable at +88, with presence at +98. Init and StopOnNextActionComplete clear it.
     private Action<RobotCompletedAction>? _runnerCompletion88;
     internal IActionRunner? OwnedRunner => _runner;
@@ -56,6 +57,7 @@ public abstract partial class SteppedBehavior
         _runnerCompletion88 = completion;
         _sharedHandle = completion;
         _runner = incoming;
+        _runnerActionList=QueueOwnedAction is null?list:null;
         Volatile.Write(ref _currentActionHandle, unchecked((int)incoming.Tag));
         ScoredActingStateChanged(true);
         if (_actionCompletionSubscription is null && Context.Robot.Engine.Robot?.HasExternalInterface==true)
@@ -120,6 +122,7 @@ public abstract partial class SteppedBehavior
         if (tag == 0 || completed.Tag != tag) return;
         Volatile.Write(ref _currentActionHandle, 0);
         _runner = null;
+        _runnerActionList=null;
         ScoredActingStateChanged(false);
         if (_engineRunning) _runnerCompletion88?.Invoke(completed);
         // Deliberately no clear/restore of +88 after invocation: a nested StartActing may have replaced it.

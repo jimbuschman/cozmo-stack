@@ -20,9 +20,9 @@ internal sealed class ActionList : IDisposable
     // mutating _queues while ActionList::Update enumerates it. A SortedDictionary modification during enumeration
     // throws InvalidOperationException; the same lock also serialises the ActionQueue internals and Cancel/Clear.
     private readonly object _gate = new();
-    private readonly Queue<Action> _hostCleanup = new();
+    private readonly System.Collections.Concurrent.ConcurrentQueue<Action> _hostCleanup = new();
     // Host availability errors retire their own subtree after queue iteration, independently of app input.
-    internal void DeferHostCleanup(Action cleanup) { lock(_gate) _hostCleanup.Enqueue(cleanup); }
+    internal void DeferHostCleanup(Action cleanup) => _hostCleanup.Enqueue(cleanup);
 
     internal void WithGate(Action action) { lock(_gate) action(); }
 

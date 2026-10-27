@@ -66,7 +66,7 @@ public abstract class IHelper : BSRunnable
 {
     private readonly CozmoRobot _robot;
     private readonly SteppedBehavior _behavior;                       // +0x9c
-    private BehaviorStatus _status = BehaviorStatus.Complete;         // +0x1c
+    private volatile BehaviorStatus _status = BehaviorStatus.Complete;         // +0x1c
     private bool _initHasRun;                                         // +0x2c
     private Func<CozmoRobot, BehaviorStatus>? _successHandler;        // +0x30 (manager +0x40)
     private Func<CozmoRobot, BehaviorStatus>? _failureHandler;        // +0x48 (manager +0x58)
@@ -88,6 +88,7 @@ public abstract class IHelper : BSRunnable
     public BehaviorStatus Status => _status;
     // Checked subclass response writers (M12-042) store the same +1C field.
     protected void StoreStatus(BehaviorStatus value) => _status = value;
+    protected virtual void CommitReturnedStatus(BehaviorStatus value)=>StoreStatus(value);
     /// <summary>+0x2c.</summary>
     public bool InitHasRun => _initHasRun;
     /// <summary>+0x98 (float).</summary>
@@ -156,7 +157,7 @@ public abstract class IHelper : BSRunnable
         sub = null;
         if (_initHasRun)
         {
-            _status = UpdateWhileActiveInternal(robot);
+            CommitReturnedStatus(UpdateWhileActiveInternal(robot));
         }
         else
         {
@@ -164,9 +165,9 @@ public abstract class IHelper : BSRunnable
             Log(EngineLogLevel.Info, "BehaviorHelpers", "IHelper.Init", Name);
             _initHasRun = true;
             _startTime = robot.Engine.Timer.SecondsF;
-            _status = Init(robot);
+            CommitReturnedStatus(Init(robot));
             if (_status == BehaviorStatus.Running && Delegation.Delegate is null)
-                _status = UpdateWhileActiveInternal(robot);
+                CommitReturnedStatus(UpdateWhileActiveInternal(robot));
         }
         if (Delegation.Delegate is { } delegateRef)
         {
