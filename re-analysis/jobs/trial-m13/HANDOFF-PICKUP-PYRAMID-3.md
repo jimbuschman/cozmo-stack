@@ -1,6 +1,7 @@
 # PICKUP-PYRAMID-3 — native no-marker recovery
 
 - Branch `codex-m13-manager-2`; implementation `8e767209` (entire independently checked builder range, including WIP). No manifest/approval/main changes. Whole pickup remains in progress.
+- Major files: `NativeSearchForBlockHelper.cs`, `NativeNearbySearchRunner.cs`, `NativePickupBlockHelper.cs`, `SteppedBehavior{,.Actions}.cs`, `IHelper.cs`, native completion/ActionList bindings and `PickupSearchNativeTests.cs`; all12 code/test paths and frozen hashes are listed in the Codex check.
 - PK9 `0300001D`, defined internal flag0 → real SearchForBlock(target,0,0); matching44 retries through the original helper; normal specific-target exhaustion fails. `005B8286..005B8458`, `005B8B7A`, `005B8BEA`, `005BAC7C..005BB830`.
 - Nearby: six shared RNG draws/narrowings, seven owned children, backup−80/animationfalse, relative turns, retained44/latch and update-before-latch semantics. `005469C0..005470EE`. Timed wait uses engine binary32 time and strict `now>deadline`: `0054C8FC/0054CA1C/0054CA3C`.
 - Interrupted owned actions now actually cancel: false preclear, both keep values cancel captured tag, postcompare preserves nested replacement. `005BD3DA..005BD3FE`. Natural object-position reaction previously left the retry queued; regression proves its retirement and unrelated-action survival.
