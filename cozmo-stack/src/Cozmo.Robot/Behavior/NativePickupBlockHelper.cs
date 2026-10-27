@@ -103,4 +103,3 @@ internal sealed class NativePickupResponseDirector
 {
     internal int Trigger(byte result)=>result switch {1=>0x1FA,0=>0x1F9,_=>0x23F}; //0056D86C/0056D904, finite actual AI+C owner.
 }
-
