@@ -28,7 +28,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 
 | Shipped ID | Class | State | Established subsystem slice; remaining dependencies | Configured contexts / map locator |
 |---|---|---|---|---|
-| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | PICKUP-PYRAMID-1 factory/cache/eligibility/manual Verify independently checked; concrete native children/activity admission MISSING | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
+| `SparksPickupSingleCubeForPyramid` | `PickUpCube` | in progress | PICKUP-PYRAMID-1 READY; factory/cache/eligibility/manual Verify checked, full6378PASS; concrete native children/activity admission MISSING | freeplay: BuildPyramid; spark: BuildPyramid. 2 refs; R004+ in map |
 | `SparksPickupSingleCubeToStack` | `PickUpCube` | not started | UNKNOWN | spark: SparksStackBlock. 1 refs; R233+ in map |
 | `PutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: Hiking; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: MeetCozmo. 8 refs; R019+ in map |
 | `PutDownBlockNothingToDo` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: NothingToDo. 1 refs; R050+ in map |
@@ -251,7 +251,7 @@ Paths are relative to shipped `config/engine/behaviorSystem/`; `/` means the ass
 
 ## Current pilot
 
-- [Drive-off handoff](HANDOFF-DRIVE-OFF-PILOT.md): production code pushed, full6361/6361 PASS;7 OWN-record settlement proposals await Claude. External review/hardware acceptance outstanding; scoreboard unchanged.
+- [Drive-off handoff](HANDOFF-DRIVE-OFF-PILOT.md): externally MERGED on main4fb2908b; five own records settled by Claude. M12-043/M8-027 remain open; no new hardware acceptance/finished-behavior claim.
 - Operator scope: what changes the behavior's own observable result while it runs. Neighboring audio/ROI/other-activity MISSING paths are leftovers, not reasons to hold it. No outward pilot-2 reading job.
 - D1 configuration APIs and D2 controlled-clock whiteboard remain isolated standalone extensions; no status or support decision changes here.
 
