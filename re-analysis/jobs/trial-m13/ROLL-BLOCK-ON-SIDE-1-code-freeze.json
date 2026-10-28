@@ -1,0 +1,20 @@
+{
+  "job": "ROLL-BLOCK-ON-SIDE-1",
+  "base_commit": "7ee01bdc0dca9957c2d69e256c32511a688fb2f8",
+  "utc": "2026-10-28T22:26:19.947984+00:00",
+  "note": "All changed C# including untracked. Test-only exact configuration and optional diagnostic scene ID; no production delta. Freeze made after attempt1 invocation; no C# changes after its draft review or invocation. Independent execution must verify these hashes.",
+  "files": [
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/RollBlockOnSideNativeTests.cs",
+      "bytes": 6406,
+      "sha256": "c821e95560e74e9b48a425252bdb8d4bad19966c752f57315ab2375210bff85c",
+      "canonical_lf_sha256": "c821e95560e74e9b48a425252bdb8d4bad19966c752f57315ab2375210bff85c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/RollFirmwareScene.cs",
+      "bytes": 10464,
+      "sha256": "2d2157daa15c600b7e26226b3ad39579194ddd16bc3df57717c596ec722475ec",
+      "canonical_lf_sha256": "2d2157daa15c600b7e26226b3ad39579194ddd16bc3df57717c596ec722475ec"
+    }
+  ]
+}

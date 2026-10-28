@@ -1,0 +1,26 @@
+# ROLL-BLOCK-ON-SIDE-1 independent implementation check
+
+2026-10-28. Reviewer requested DEFAULT/DEFAULT (overrides omitted); runtime telemetry unavailable. Source packet independent READ PASS is `20261028-roll-block-on-side-1-read-codex-check.md` for reader rawD448A4FF7A7839916E178D6B3C018FB48446B5BDB6243655360D352952413444. This implementation phase remains read-only except this report. No official metadata, production, test, git or hardware edits by reviewer.
+
+## Coherent draft review
+
+Finite source/code/oracle review **PASS** for worker `codex-roll-block-on-side-1` at source release7ee01bdc plus modified `RollFirmwareScene.cs` and untracked new `RollBlockOnSideNativeTests.cs`. No production delta. Existing native generic factory/class/helper/action path is reused through exact configured identity; source comparison does not require a new per-ID engine implementation.
+
+The new exact-instance regressions enter `Bound[RollBlockOnSide]`, actual enum/class/default input owners and real cache7/unlock gate; identity99/class49/rotationtrue/unlock9/default executable12 are independently source-derived S1-S7 expectations. The pipeline explicitly supplies manager admission, physical cube/images and firmware feedback, then reaches existing actual manager/helper/DriveTo/IDock/visual/callback recipients, objective2 before configured needs39, celebration1FB, native score0.8, light25/Layer1 wire and full-publication guard. Expected local defined target/count1/false and empty public Roll report map to native undefined-unused-word guard S14, not generic zero-padding. Scene helper contains no new input or physics logic; optional behaviorId changes trace lookup only and defaults Hiking_RollCube, so existing Hiking callers retain behavior.
+
+Owned-only Stop verifies actual owned action destruction/helper retirement/targetreset with unrelated action remaining Running; retained manager state-light entry maps S10/S16. Inputs remain labeled and actual PlayAlone/Socialize parents are not manufactured. No new record, completion forcing, result normalization, copied output-derived scene or terminal override introduced. Generic Roll/Place/state-light proposals and inherited Ground/unshipped-libm/parent/input boundaries remain unchanged.
+
+No code finding or required correction in this draft review. Reviewer-required behavioral corrective batches0; source-only clarification and builder selftests counted separately. Builder execution, frozen changed-source hashes, explicit host release and independent execution remain pending. No .NET host access/execution/release by reviewer is implied by this code PASS.
+
+## Independent frozen execution and final verdict
+
+Final **PASS**. Builder explicitly released exclusive .NET ownership after attempt1 affected36/36 PASS, actual successful server shutdown and zero-host native inventory22:27:33.1229650Z. Reviewer independently verified exact all-changed-C# coverage (including untracked test), bytes/raw SHA256/canonicalLF hashes for both files before and after execution against `ROLL-BLOCK-ON-SIDE-1-code-freeze.json`, manifest rawSHA2563E30D114B9E18E73FA666D191BE456EADB6CE712B183CA7F8DE8C1AC290155D9. No source bytes changed during review/execution.
+
+- `RollBlockOnSideNativeTests.cs`:6406bytes raw/LF C821E95560E74E9B48A425252BDB8D4BAD19966C752F57315AB2375210BFF85C.
+- `RollFirmwareScene.cs`:10464bytes raw/LF 2D2157DAA15C600B7E26226B3AD39579194DDD16BC3DF57717C596EC722475EC.
+
+Reviewer saved literal independent command/filter BEFORE invocation in worker `.scratch/roll-side-review/independent-1-command.ps1` and `filter.txt`; one authorized elevated invocation, same4ORfilter (RollBlockOnSideNativeTests/HikingRollCubeNativeTests/HikingRollCubeRecoveryTests/BehaviorStateLightsNativeTests), `--no-build --no-restore --disable-build-servers -m:1`, distinct output directory. Independent result **36/36 PASS,0failed,0skipped**, exit0, console duration16s; original TRX/log/exit retained. Builder and reviewer exact test-name+outcome multisets match36/36. `prehash.json` and `posthash-and-trx.json` retain independent coverage/hashes/result checks. No failed/abandoned reviewer invocation, hidden rerun or broadened execution.
+
+Reviewer actual elevated `dotnet build-server shutdown` exit0/both services success. Native process inventory22:29:05.1317447Z found0 dotnet/testhost/MSBuild/VBCSCompiler hosts, preserved `server-shutdown.log`/exit and `host-inventory.json`. Reviewer explicitly returns exclusive .NET execution ownership to root after this successful verification and shutdown. No further reviewer .NET commands planned.
+
+Reviewer-required behavioral corrective batches **0**, builder selftest corrections0, source-only notation/locator clarifications separate. No builder-raised new own-path MISSING remained; inherited parent/admission/Ground/full-publication/libm/input boundaries remain exactly named in source and handoff. All3new exact-instance tests executed; all direct scene consumers remained green. No production changes, new formal record allocation, status/approval edits or whole-existing-record settlement proposed. Manager integration/fidelity/asset-complete full gate and external review remain root-owned; no hardware or behavior-finished/acceptance claim.

@@ -1,0 +1,14 @@
+{
+  "job": "ROLL-BLOCK-ON-SIDE-LOW-SCORE-1",
+  "base_commit": "b51d334fa60ccb788c7b89ed8c8e04983734b1a7",
+  "utc": "2026-10-28T22:56:37.236345+00:00",
+  "note": "All changed tracked+untracked C# frozen before builder affected execution. Test-only exact ID100 with explicit supplied actual parent score7 to same canonical receiver; automatic scored reload remains MISSING. No production or fixture change.",
+  "files": [
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/RollBlockOnSideLowScoreNativeTests.cs",
+      "bytes": 7646,
+      "sha256": "8ca1d86b64c6338baa68d1708c32ed5208e877e37f2a59953a8f4226bd3b3413",
+      "canonical_lf_sha256": "8ca1d86b64c6338baa68d1708c32ed5208e877e37f2a59953a8f4226bd3b3413"
+    }
+  ]
+}

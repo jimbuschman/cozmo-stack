@@ -1,0 +1,15 @@
+{
+  "note": "Exact S1-S16/P1-P4 source READ PASS; same native own-path receiver/arguments as Hiking except actual configuredID99. No implementation/status/whole-behavior acceptance implied. Original Hiking packets unchanged.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-roll-block-on-side-1-read.md",
+      "reviewed_raw_sha256": "d448a4ff7a7839916e178d6b3c018fb48446b5bdb6243655360d352952413444",
+      "published_lf_sha256": "d448a4ff7a7839916e178d6b3c018fb48446b5bdb6243655360d352952413444"
+    },
+    {
+      "path": "re-analysis/research/20261028-roll-block-on-side-1-read-codex-check.md",
+      "reviewed_raw_sha256": "7da24b916ca0a910529bfbed71a6737367e4881a290e8b038f08d89d47b95b6f",
+      "published_lf_sha256": "bd3fee55941cb7be4cf12c3ba9a9fde1f5b78f413e0f4ca3763ca7b982b6dae8"
+    }
+  ]
+}
