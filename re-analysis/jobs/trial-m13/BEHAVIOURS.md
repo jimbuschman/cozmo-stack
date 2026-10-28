@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-28. **0 finished · 10 in progress · 168 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube` and `RollBlockOnSide` are in progress; other configurations remain not started.
+Whole-behavior scoreboard, 2026-10-28. **0 finished · 11 in progress · 167 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube`, `RollBlockOnSide` and `RollBlockOnSideLowScore` are in progress; other configurations remain not started.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -47,7 +47,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `StackBlocks` | `StackBlocks` | in progress | STACK-BLOCKS-1 MERGED (Claude PASS): actual4/2/native float-axis/config/needs42, independent1157/1157 and full6589/6589 PASS0skip;0fixrounds/1resolvedsourcequestion. Supplied manager choice, actual PlayAlone/scoring/interlude and broader record frontiers retained. No acceptance claim | freeplay: PlayAlone. 1 refs; R064+ in map |
 | `Hiking_RollCube` | `RollBlock` | in progress | HIKING-ROLL-CUBE-1 READY FOR CLAUDE: actual configured native Roll/Place/state-light path, independent582/582 and full6622/6622 PASS0skip;1fixround, readerSol/medium and builder/reviewerDEFAULT requests. Three unowned-scope proposals; parent/admission/API/geometry/firmware boundaries explicit, no acceptance claim | freeplay: Hiking; spark: GatherCubes. 2 refs; R023+ in map |
 | `RollBlockOnSide` | `RollBlock` | in progress | ROLL-BLOCK-ON-SIDE-1 READY FOR CLAUDE: exactID99/defaulttrue/cache7, same native production; independent36/36 and full6625/6625 PASS0skip. 0fixrounds, same genericRoll proposal callercoverage; PlayAlone/Socialize and inherited API/input frontiers explicit, no acceptance claim | freeplay: PlayAlone; freeplay: Socialize. 2 refs; R063+ in map |
-| `RollBlockOnSideLowScore` | `RollBlock` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R077+ in map |
+| `RollBlockOnSideLowScore` | `RollBlock` | in progress | ROLL-BLOCK-ON-SIDE-LOW-SCORE-1 READING after pushed57922f42; exact config/native/parent inputs pending, no implementation/acceptance claim | freeplay: PlayWithHumans. 1 refs; R077+ in map |
 | `SparksRollBlock` | `RollBlock` | not started | UNKNOWN | spark: SparksRollBlock. 1 refs; R227+ in map |
 | `PopAWheelie` | `PopAWheelie` | not started | UNKNOWN | freeplay: PlayAlone. 1 refs; R066+ in map |
 | `SparksPopAWheelie` | `PopAWheelie` | not started | UNKNOWN | spark: SparksPopAWheelie. 1 refs; R220+ in map |
