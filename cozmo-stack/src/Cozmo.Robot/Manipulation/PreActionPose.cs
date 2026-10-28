@@ -853,12 +853,22 @@ public static class DockPreActionPoses
     /// <summary><c>IDockAction::GetPreActionPoses</c> 0x005508C8.</summary>
     public static PreActionPoseOutput Get(PreActionPoseInput input, Pose3d robotPose, uint? carriedObjectId,
                                           Func<IReadOnlyList<PreActionObstacle>> getObstacles, List<string>? trace = null)
+        =>GetCore(input,robotPose,carriedObjectId,getObstacles,trace,null);
+
+    // SF9 native recipient only: public geometric specifications keep their existing pure contract.
+    internal static PreActionPoseOutput GetNative(PreActionPoseInput input,Pose3d robotPose,uint? carriedObjectId,
+        Func<IReadOnlyList<PreActionObstacle>> getObstacles,BlockWorld world,List<string>? trace=null)
+        =>GetCore(input,robotPose,carriedObjectId,getObstacles,trace,obj=>world.SelectNativeObject(obj.ObjectId));
+
+    private static PreActionPoseOutput GetCore(PreActionPoseInput input,Pose3d robotPose,uint? carriedObjectId,
+        Func<IReadOnlyList<PreActionObstacle>> getObstacles,List<string>? trace,Action<ObservableObject>? selectObject)
     {
         var output = new PreActionPoseOutput();
         var obj = input.Object;
         if (obj is null) { trace?.Add("IsCloseEnoughToPreActionPose.NullObject"); output.Result = ActionResult.BadObject; return output; }
         if (carriedObjectId == obj.ObjectId) { trace?.Add("IsCloseEnoughToPreActionPose.CarryingSelectedObject"); output.Result = ActionResult.BadObject; return output; }
-        // SelectObject(id) (no field here) and BlockWorld::GetObstacles(0.0) come next (0x00550980..0x005509A0), then GetCurrentPreActionPoses at 0x00550A3E with
+        selectObject?.Invoke(obj); //550988, AFTER null/carried guards and BEFORE obstacles5509A0.
+        // BlockWorld::GetObstacles(0.0), then GetCurrentPreActionPoses at 0x00550A3E with
         // withAction = {ActionType}; the request passes an EMPTY withCode set (0x00550A1C..0x00550A2C) and ignores the result byte (0x00550A42).
         var obstacles = getObstacles();
         CubePreActionPoses.GetCurrentPreActionPoses(obj, new[] { input.ActionType }, Array.Empty<MarkerType>(), robotPose, input.DistanceFromMarkerMm, obstacles, output.Poses, trace);
@@ -975,9 +985,14 @@ public static class PlaceRelObjectOffsetPoses
     public static ActionResult Compute(ObservableObject obj, double a, double b, Pose3d robotPose, uint? carriedObjectId, CameraCalibration calibration,
                                        ObjectPoseQueries queries, Func<IReadOnlyList<PreActionObstacle>> getObstacles,
                                        out IReadOnlyList<Pose3d> poses, out bool alreadyInPosition, List<string>? trace = null)
+        =>ComputeCore(obj,a,b,robotPose,carriedObjectId,calibration,queries,getObstacles,out poses,out alreadyInPosition,trace,null);
+
+    private static ActionResult ComputeCore(ObservableObject obj,double a,double b,Pose3d robotPose,uint? carriedObjectId,CameraCalibration calibration,
+        ObjectPoseQueries queries,Func<IReadOnlyList<PreActionObstacle>> getObstacles,out IReadOnlyList<Pose3d> poses,out bool alreadyInPosition,List<string>? trace,BlockWorld? nativeWorld)
     {
         var request = new PreActionPoseInput(obj, PreActionType.PlaceRelative, FlagA: false, PreActionAngleRad, 0.0, UseApproachAngle: false, 0.0);
-        var output = DockPreActionPoses.Get(request, robotPose, carriedObjectId, getObstacles, trace);
+        var output = nativeWorld is null?DockPreActionPoses.Get(request, robotPose, carriedObjectId, getObstacles, trace)
+            :DockPreActionPoses.GetNative(request,robotPose,carriedObjectId,getObstacles,nativeWorld,trace);
         var elements = output.Result == ActionResult.Success ? output.Poses.Select(p => p.WorldPose).ToList() : new List<Pose3d>();
         return Filter(obj, a, b, robotPose, calibration, queries, elements, out poses, out alreadyInPosition, trace);
     }
@@ -1081,16 +1096,29 @@ public static class PlaceRelObjectOffsetPoses
                                                                        uint nowMs, Pose3d robotPose, uint? carriedObjectId,
                                                                        CameraCalibration calibration, ObjectPoseQueries queries,
                                                                        Func<IReadOnlyList<PreActionObstacle>> getObstacles)
+        =>IsAtPreActionCore(obj,actionType,a,b,nowMs,robotPose,carriedObjectId,calibration,queries,getObstacles,null);
+
+    internal static ActionResult IsAtPreActionPoseWithVisualVerificationNative(ObservableObject? obj,PreActionType actionType,double a,double b,
+        uint nowMs,Pose3d robotPose,uint? carriedObjectId,CameraCalibration calibration,ObjectPoseQueries queries,
+        Func<IReadOnlyList<PreActionObstacle>> getObstacles,BlockWorld nativeWorld)
+        =>IsAtPreActionCore(obj,actionType,a,b,nowMs,robotPose,carriedObjectId,calibration,queries,getObstacles,nativeWorld);
+
+    private static ActionResult IsAtPreActionCore(ObservableObject? obj,PreActionType actionType,double a,double b,
+        uint nowMs,Pose3d robotPose,uint? carriedObjectId,CameraCalibration calibration,ObjectPoseQueries queries,
+        Func<IReadOnlyList<PreActionObstacle>> getObstacles,BlockWorld? nativeWorld)
     {
         if (obj is null) return ActionResult.BadObject;
-        if ((double)obj.LastObservedTimestamp + 1000.0 < nowMs) return ActionResult.VisualObservationFailed;
+        bool stale=nativeWorld is null?(double)obj.LastObservedTimestamp+1000.0<nowMs
+            :(float)obj.LastObservedTimestamp+1000f<(float)nowMs; //SF11 native f32 compare, including timestamps above2^24.
+        if(stale)return ActionResult.VisualObservationFailed;
         bool inPosition;
         if (actionType == PreActionType.PlaceRelative)
-            Compute(obj, a, b, robotPose, carriedObjectId, calibration, queries, getObstacles, out _, out inPosition);
+            ComputeCore(obj, a, b, robotPose, carriedObjectId, calibration, queries, getObstacles, out _, out inPosition,null,nativeWorld);
         else
         {
-            var output = DockPreActionPoses.Get(new PreActionPoseInput(obj, actionType, FlagA: false, PreActionAngleRad, 0.0, UseApproachAngle: false, 0.0),
-                                                robotPose, carriedObjectId, getObstacles);
+            var request=new PreActionPoseInput(obj, actionType, FlagA: false, PreActionAngleRad, 0.0, UseApproachAngle: false, 0.0);
+            var output = nativeWorld is null?DockPreActionPoses.Get(request,robotPose,carriedObjectId,getObstacles)
+                :DockPreActionPoses.GetNative(request,robotPose,carriedObjectId,getObstacles,nativeWorld);
             if (output.Result != ActionResult.Success) return output.Result;
             inPosition = output.InPosition;
         }

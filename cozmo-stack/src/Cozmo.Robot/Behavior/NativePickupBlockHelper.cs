@@ -56,8 +56,8 @@ internal sealed class NativePickupBlockHelper: IHelper
         if(owner?.StoredState is not {} state||_m.Vision.Calibration is not {} calibration)
         {Missing("visual pre-action005B7B48 actual Robot clock/calibration input unavailable; no direct pickup or replacement drive");return;}
         using var main=new Pose3d(owner.GetCheckedMainPose());
-        var pre=PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerification(_m.World.GetLocatedObjectByIdHelper(Target),PreActionType.Docking,0,0,state.Timestamp,main,
-            owner.CarryingOwner?.CarriedObjectId,calibration,ObjectPoseQueries.Engine,()=>_m.NativeObstacles(main));
+        var pre=PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerificationNative(_m.World.GetLocatedObjectByIdHelper(Target),PreActionType.Docking,0,0,state.Timestamp,main,
+            owner.CarryingOwner?.CarriedObjectId,calibration,ObjectPoseQueries.Engine,()=>_m.NativeObstacles(main),_m.World);
         if(pre!=ActionResult.Success){Drive(false);return;}
         var pickup=new NativePickupObjectRunner(_m,Target);
         NativeLastFaceRunner? face=null;NativeTurnTowardsObjectRunner? turn=null;

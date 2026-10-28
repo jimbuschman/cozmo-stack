@@ -2380,6 +2380,19 @@ public sealed partial class BlockWorld
         _didObjectsChange = true;
         _timeOfLastChange = (uint)Math.Max((double)(RobotTimestamp?.Invoke() ?? 0),MapLastObservedTime);
     }
+    // P9 0062712C..140: source current-origin lookup then existing Clear; no delete/broadcast substitution.
+    internal void ClearLocatedObjectByIdInCurrentOrigin(uint id)=>ClearLocatedObjectHelper(GetLocatedObjectByIdHelper(id));
+
+    // fidelity: M12-031 — SF9:00627148..1EC, guarded native pre-action selection recipient.
+    internal bool SelectNativeObject(uint id)
+    {
+        using var mutation=EnterPoseMutation();
+        if(GetLocatedObjectByIdHelper(id) is null)
+        {Source(EngineLogLevel.Warning,null,"BlockWorld.SelectObject.InvalidID",$"Cannot select missing located object {unchecked((int)id)}");return false;}
+        SelectedObjectId=id;
+        Source(EngineLogLevel.Debug,"BlockWorld","BlockWorld.SelectObject",$"Selected object {unchecked((int)id)}");
+        return true;
+    }
 
     /// <summary>
     /// <c>BlockWorld::AddLocatedObject(obj)</c> 0x00622ADE..0x00622E4E (M11-013): a connected object with the object's ID hands its ActiveID

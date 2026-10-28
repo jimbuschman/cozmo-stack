@@ -95,8 +95,8 @@ public sealed class BehaviorHelperFactory
     public BehaviorHelperComponent Component { get; }
     internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,int maxStage=0)
     {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target,maxStage);return Component.AddHelperToComponent(ref helper);}
-    internal HelperRef CreateNativeDriveTo(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,bool force)
-    {IHelper? helper=new NativeDriveToHelper(m,parent,this,target,force);return Component.AddHelperToComponent(ref helper);}
+    internal HelperRef CreateNativeDriveTo(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,bool force,Manipulation.PreActionType type=Manipulation.PreActionType.Docking)
+    {IHelper? helper=new NativeDriveToHelper(m,parent,this,target,force,type);return Component.AddHelperToComponent(ref helper);}
 }
 
 // fidelity: M8-011

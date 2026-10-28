@@ -113,7 +113,10 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         bool flag=_prepared?.Children.Any(c=>c.Type==0x30&&c.State==0x0300001D)==true;
         var carry=M.Robot.Engine.Robot?.CarryingOwner;
         if(_pickup.SelectedDockAction is not (DockAction.PickupLow or DockAction.PickupHigh)||carry?.CarriedObjectId is null)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M1-034 Pickup completion5537D4: native non-normal pickup carrier contains undefined words; skip full public payload, retain scalar/local delivery.");
             return new(0,0,0,0,0,0,flag,false);
+        }
         var words=new[]{_target,uint.MaxValue,uint.MaxValue,uint.MaxValue,uint.MaxValue};var ids=carry.GetCarryingObjects();
         for(int i=0;i<ids.Length&&i<words.Length;i++)words[i]=ids[i];
         return new(words[0],words[1],words[2],words[3],words[4],unchecked((byte)ids.Length),false);
