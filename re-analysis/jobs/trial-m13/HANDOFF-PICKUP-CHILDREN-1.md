@@ -1,0 +1,29 @@
+# PICKUP-CHILDREN-1 — native pickup children and configured approach
+
+- Branch `codex-m13-manager-2`; reviewed implementation `c6477cc0483e35a73d7998119ab10852eecde33d`. Codex independent review PASS; full gate pending below. No hardware or whole-behaviour acceptance claim.
+- Configured Pickup now delegates to native DriveToHelper/DriveToObject/DriveToPose, retains all original pre-action goals and IDs, uses canonical MAIN/FORWARD/current-origin inputs, shared Path-owned SpeedChooser/E1 and actual engine-ticked planning/status/turn/dock/carry/completion owners. Shipped primitives are loaded through canonical startup. `005B56B0/005B5800/005B5C94`, `005590AE/00559650/00559880`, `0055A86C/0055AB4C`, `0064ACC4..0064AEF0`, `0053B798..0053B8DA`.
+- Reachable Search stage1 has the source's eight owned children and default-filter exhaustion; light trigger DrivingTo0B is played even on Init failure and stopped on retirement; unsupported native inputs log and stop only their captured owner. `005BB1AA..005BB3C8/005BB478`, `00559650/00558950`, forced helper snapshot `005B61A2`.
+- Actual positive execution exposed and repaired the historical camera-parent loss at the World consumer. Cluster ordering keeps the original camera-local ordered-f32 squared-distance key before root conversion; closest pre-action comparisons use MAIN's exact parent. `0085D902/0085D90C`, `0062551A..006255BA`, `00550C7A..00550E22`. Detector/PnP/clamp algorithms are not certified by these bridge repairs.
+- Operator-approved M12-007 correction uses canonical motion-state time from IsMoving, not visual LastObservedTimestamp. Raw movement transitions update each connected/located object independently; source constructor/clone defaults and destination pose-copy retention are preserved. `00553C8E/00553D12..00553D20`, `004E3860/004E3874`, `004E0C84/004E0C86`. See `PICKUP-CHILDREN-1-CONTRACT-CORRECTION.md` for the approved contradiction and formal inventory work left to Claude.
+
+## Tests and source evidence
+
+- Source/check packets: `20261028-pickup-children-1-read.md`, `-read-codex-check.md`, final `-codex-check.md`; builder ledger lists every actual failed/aborted/provisional run and exact filters. Reused checked P1–P5/approach evidence rather than repeating planner/geometry extraction.
+- Builder final targeted278/278 and motion13/13 plus affected280/280 PASS, none skipped. Different reviewer independently ran **1623/1623 PASS, 0 skipped**, 1m11s; all22 raw C# files unchanged before/after, freeze SHA256 `c1c5c5b9e539e6254c43d2e2a813744f7781536843cbcb28f2668be21eb35809`.
+- Configured positive uses the shipped factory/manager/helper/ActionList, real worker observations, all-goal planning, supplied firmware/state/animation acknowledgements, actual turn/dock/carry and original typed/local/API/raw completion. It uses source loaded-state1; thirteen separate raw-intake/prefix tests cover unloaded-state2 and ActiveId>=0, opposite motion/visual freshness, captured firstVerify, low/high equality/wrap and transition/copy semantics. Component and substituted scene/planner/PnP inputs are explicitly labelled; no hardware/path-geometry proof is inferred.
+- Full repository gate: **PENDING**. Row remains VERIFYING until the asset-complete gate passes.
+
+## RECORDS TO SETTLE (proposals only)
+
+- **M12-007 IMPLEMENTATION_GAP**, “The two timed checks a pick-up is verified against”: propose the corrected supported native cube own path. Claude must reconcile approved M12 row27/M8 row175 and the record's stale last-observed authority with operator-approved J14/J15 before settlement; do not settle the old wording or silently include passive/general gaps.
+- **M12-029 IMPLEMENTATION_GAP**, “The default +0x150 pose function, the DriveToHelper functor and RemoveMatchingPredockPose”: native setter/default/forced callback/removal/caller path verified. Unset goals0300000F differs from admitted-empty vector03000013. M1-034 disposed-owner handling is explicit.
+- **M13-020 IMPLEMENTATION_GAP**, “PanAndTiltAction, TurnTowardsPoseAction::CheckIfDone and WaitForImagesAction”: native own composition/turn/processed-image wait and six recovered setter semantics verified through real motor recipients. Preserved public specification adapters are not newly certified.
+- **M4-009 stays EXACT_SOURCE**: missing canonical motion timestamp implementation restored under its existing source-backed writer claim. No official statuses, approvals or inventory content changed by Codex.
+
+## Exact leftovers
+
+- M12-011/022: type6/public async/manual/other variants; M12-017/034/037: generic optional/reinit/subclass/public IDock paths; M12-019: native docking-error clamp arithmetic. M12-010: stage2/sentinel/minSeen and unrelated44 S7 snapshot visibility. Each remains separately recorded.
+- M13-033/034: cached primitive/Create/ExtendPath/GetEndPose, complete path/profile geometry and native PathIsSafe producer bindings remain missing; candidate ToPath is still visible. No whole configured lattice-wire fidelity claim.
+- Other vision/footprint producers, named speech M14-006 and broader M13-014 KnockOver/DriveAndFlip remain open. No new record was needed. Claude owns any robot script and external settlement.
+
+Next proposed behaviour after publication: `KnockOverCubes`, reusing these shared native pieces and reading its own M13-014/flip path before code. No wait for Claude or hardware.
