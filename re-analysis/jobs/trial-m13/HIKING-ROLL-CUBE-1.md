@@ -21,3 +21,19 @@ Latest operator policy: reader/extractor explicitly `gpt-6.1-sol`/medium; builde
 Reader source report `20261028-hiking-roll-cube-1-read.md`; independent primary read check `20261028-hiking-roll-cube-1-read-codex-check.md`. No implementation until the coherent whole finite packet has independent READ PASS and manager release. Builder uses its own clean worktree, logs all attempts and raised MISSING/source questions with resolved/remaining dispositions. Reviewer records required correction batches/resubmissions as fix rounds, including draft review; self-test attempts and source-only clarifications stay separate.
 
 Build one combined configured path, source-derived actual factory/manager/cache/helper/action/firmware-input/API regression, all required shared-consumer checks. Inputs/admission/scene/firmware boundaries are labeled; no planner goals, manufactured terminal success or output-fed physical scene. Preserve failed/no-execution attempts, no timeout/oracle weakening. Builder affected→C# freeze/server stop/explicit host release→independent code/source/affected tests→manager commit/integration/fidelity/queue/asset-complete full gate. No physical commands/main push/official changes. Handoff lists claims/addresses, whole-record proposals, tests/gate/commit, worker requests/fix rounds/all builder MISSINGs and remaining uncertainty. Mark READY FOR CLAUDE, push, immediately start the next behavior. Current state READING.
+
+## Actual worker startup register
+
+| Actor | Role | Model requested | Effort requested |
+| --- | --- | --- | --- |
+| `/root/hiking_roll_source` | Reader/extractor | explicit `gpt-6.1-sol` | explicit medium |
+| `/root/hiking_roll_review` | Independent source/code reviewer | DEFAULT; model override omitted | DEFAULT; effort override omitted |
+| `/root/hiking_roll_build` | Isolated builder | DEFAULT; model override omitted | DEFAULT; effort override omitted |
+
+All were freshly started with fork_turns=none. The operator reports configured defaultgpt-6.1-terra; tool startup results expose task names only, so no backend telemetry is claimed. Builder preparation in `codex/hiking-roll-cube-1` passed one local-cache dependency restore and server shutdown, with no code/test/native-extraction/git/hardware changes. No implementation release yet.
+
+## Finite source findings before packet freeze
+
+A/B independently found the omitted key `isBlockRotationImportant` defaults true in ctor005C85DC..005C85F4, selecting intention7 at005C8CB2..005C8CC2. The old manual registration's false is an unsupported candidate, not the configured contract; no frozen approved-inventory contradiction was identified. Intention6 remains the optional class branch/shared predicate, not a replacement for the shipped target mode.
+
+A/B also independently confirmed Roll GetCompletionUnion00556744..005567EE's second setter replaces the earlier initialized union: only target atsp18 and halfword1 atsp2C are initialized; sp1C/20/24/28 are not. Setter0075C3F0..0075C410 copies all22bytes, and serializer0075B4F0..0075B536 writes all5words regardless of count. This is undefined unused data, not a defined phone-address contract. Standing M1-034 applies: guard only the affected full-public payload publication, retaining source-defined target/count1/false and scalar/local callback processing where known. Do not zero Roll fields under the PlaceRel policy, invent meaningful fields on other branches, assign official records, or ask a redundant departure approval for confirmed UB. Exact owner/proposed-owner and all reachable branch details remain required in the coherent source packet before build release.
