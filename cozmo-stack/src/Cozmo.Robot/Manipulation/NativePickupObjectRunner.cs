@@ -106,6 +106,8 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         uint turned=_verifyTurn.Update();if(turned==EngineActionResult.Running)return turned;
         return (uint)_pickup.VerifyCarrying(); //ordinary terminal child failures deliberately ignored.
     }
+    // 75C460..4A6: native object-interaction setter stores variant0; undefined body publication remains M1-034 guarded.
+    public override byte? GetCompletionVariant()=>0;
     public override ObjectInteractionCompletion GetObjectInteractionCompletion()
     {
         bool flag=_prepared?.Children.Any(c=>c.Type==0x30&&c.State==0x0300001D)==true;

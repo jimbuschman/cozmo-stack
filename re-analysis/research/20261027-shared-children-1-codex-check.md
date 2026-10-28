@@ -1,0 +1,53 @@
+# Shared-children-1 independent Codex build check
+
+**Bounded BUILD PASS, 2026-10-27.** Reviewed the complete `c2f34e4e..frozen candidate` delta, including both new files. Independently executed **647/647 tests PASS, zero skipped, 1m3s, exit0**. All 12 raw source/test hashes matched before and after execution. Extractor A, builder and this checker were separate agents; actual model/effort telemetry is unavailable. No hardware, full-suite execution, official record/status change, or whole-speech/whole-Cant acceptance is claimed.
+
+## Source comparison and actual reach
+
+- **Generic wrapper:** original `0054C7DC..0054C8CE` and previously checked Q5 establish eager independent before/after LastFace actions, copied maximum Radians, forwarded sayName, wrapped action always present, false/false insertion flags and wrapped-tag proxy. The implementation matches those construction/composition/dispatch rules. Compound cache/getters now retain immutable animation name and variant alongside scalar/object completion, by the child's CURRENT tag BEFORE Prep/destruction, following whole-union copy `0054F27A..0054F3EA`. Live-first/cache-second/base fallback and no-proxy behavior are preserved; getter additions do not write Type. Legacy scalar fallback and explicit native default6 retain their prior scope.
+- **Shared public/native PutDown:** `005C7FD0..005C80DE` reuse preserves the smart reaction table, one actual Engine.ContextRandom draw, binary64 -45/-75 recipe followed by one binary32 narrowing, Drive(distance,100,true), ordinary19A, score5 and resultless LookDown callback. Public BackUpMm widens the final float; phase hooks observe actual child Init. `005C8174..005C82DA` uses raw actual carrying, owned parallel head(-20deg,tolerance2deg)/default-speed drive(-30,-80), then real Wait43(2,mode1,after0), then face-before ordinary199. First child failure cancels remaining owned children and skips later wait/keepalive. Callback `005C8480..005C84D4` disregards result and releases only if still carrying, with false. Both public and configured native callers use the same builders.
+- **Cant terminal binding:** ordinary1B at `005ED0F0..005ED184` has an EMPTY callback, not invented Idle/Finish. Independently verified the actual vtable relocation at `01029FEC` to `005BDA57`: `005BDA56` returns Running iff parent84 exists, otherwise Complete; enclosing `005BD074..005BD08A` agrees. Only the public Disappointment phase now uses that action keepalive; unchanged upstream host waits are not newly source-certified.
+- **Completion producer:** native Pickup alone exposes variant0 from checked setter `0075C460..0075C4A6`. Undefined full-body publication remains skipped under its existing M1 guard; defined internal flag/scalar completion remain available. This does not turn an undefined body into a truncated wire payload or change other action variants.
+- **Host ownership:** public completion binding is acquired before first native queue and retained through chains, Stop and reuse. Dispose stops first and releases only its captured subscription identity, preserving preexisting/native bindings. Original `005BE1EC..005BE224` clears matching84 before slot80/running/callable checks and invokes the callback in place; no postcallback restoration was introduced. Public finalization checks run/tag identity so reentrant replacement survives. The composite privately owning PutDown now has minimal IDisposable forwarding to that child; normal Stop/reuse retains it. Disposed owner guards prevent later head/wait/queue work. No generic manager lifetime redesign was made.
+
+New actual queued tests cover real Trigger/CA-CB animation1/name through wrapped-child retirement while an after-face action remains active, and real native Pickup/worker44/docking/load/C5/carry/object0 exact22-byte completion through LOCAL5A, typed API and raw serialization. Whole public PutDown covers actual initial/look queues, path/motor messages, CA-CB, real worker43 after the parallel and carried-object release. Supplied firmware, scene and detector inputs are explicit offline inputs, not hardware proof. Authored Payload, supplied face recipients and isolated old-caller LOCAL43 cases are labelled component tests. Old direct-look tests now cancel the unstarted initial queue and consume its actual terminal callback, rather than fabricate completion or leave a stray root. Existing behavioral assertions are preserved; guarded sequence tests use assignability without weakening child/order/result assertions.
+
+Stop/reuse, old-tag delivery, preexisting binding, idempotent disposal, private-child ownership and reentrant release/replacement are exercised. The final composite emptiness assertion is evaluated after an actual retirement tick, respecting Cancel's mark-then-retire behavior.
+
+## Current own-record proposals and remaining limits
+
+Current manifest was reread before these proposals:
+
+- **M13-027 IMPLEMENTATION_GAP**, title **“TurnTowardsFaceWrapperAction”**, evidence **`0054C7DC..0054C8FC`**, Q5. Its own eager construction, flag/max/C forwarding, composition and full completion proxy are now implemented and verified. **Propose own-record settlement for manager/Claude review; no own constructor/composition remainder identified.** This does not certify every separately recorded child system.
+- **M15-012 IMPLEMENTATION_GAP**, title **“Put-down image wait and CantHandleTallStack animation trigger”**, evidence **CreateLookAfterPlaceAction `005C8174` and TransitionToDisapointment `005ED0F0`**. Both literal claims are covered, including the retained public API path: image subscription begins after the parallel, failure ownership is real, face-before199 is not skipped, any-result release is established, and ordinary1B has the empty callback plus source terminal condition. **Propose own-record settlement; no own remainder identified in these claims.** This is not whole CantHandleTallStack recovery.
+- **M15-075 EXACT_SOURCE**, title **“BehaviorPutDownBlock lifecycle: IsRunnableInternal, Init (reaction lock, random backup, put-down animation, score) and LookDownAtBlock (score, StartActing, carried-object release callback)”**, evidence `005C7FD0..005C80DE/005C80E0..005C8148`, is checked reuse; factoring does not broaden its status.
+- **M14-006 BLOCKED_EXTERNAL**, title **“Text to speech is not implemented”**, evidence **`libacattsandroid.so` and `PluginInfo.xml Anki Wave Portal`**, remains visible. Named intent3 metadata/traits/actual Robot268/provider/audio are not supplied. True sayName forwards correctly; the named branch raises the explicit frontier instead of inventing speech or success. The separately recorded no-eye parent-loss producer lead under M14-008, other face inputs, inferred composite pickup composition, unrelated public adapters and existing phone-libm boundaries are not settled by this build.
+
+Builder ledger `re-analysis/jobs/trial-m13/SHARED-CHILDREN-1-builder.md` retains every compile/fixture failure and correction: missing unit CanInterrupt, native84 keepalive defect, supplied eye-parts input, old offline43 recipient mismatch/stray initial queue, xUnit overload/analyzer errors, missing fixture library and pre-retirement emptiness check. Builder647 PASS59s is separate from the independent result. No failed attempt is relabelled a pass.
+
+## Independent execution and exact bytes
+
+Executed with authorized local IPC escalation in this builder worktree:
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-build --no-restore --nologo -v:q --filter 'FullyQualifiedName~SharedChildrenNativeTests|FullyQualifiedName~PutDownBlockNativeTests|FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~PickupSearchNativeTests|FullyQualifiedName~PickupStackNativeVisionTests|FullyQualifiedName~PickupPyramidPilotTests|FullyQualifiedName~PickupVerifyTests|FullyQualifiedName~M12RFix2StreamATests|FullyQualifiedName~M12RVisBuildTests|FullyQualifiedName~M12CheckedRowsBuilderTests|FullyQualifiedName~M13RVisBuildTests|FullyQualifiedName~FaceTests|FullyQualifiedName~CompoundActionTests|FullyQualifiedName~M8CompoundCheckedRowsTests|FullyQualifiedName~M8ActionCheckedRowsTests|FullyQualifiedName~ActionCompletionTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~BehaviorRunnerOwnershipTests|FullyQualifiedName~ManipulationTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~M7BatchThreeBTests' --logger 'trx;LogFileName=independent-final.trx' --results-directory .scratch/shared-children-1 *> .scratch/shared-children-1/independent-final.log
+```
+
+TRX outcome **Completed**, total/executed/passed **647**; failed/error/timeout/aborted/disconnected/notExecuted all **0**. Console duration **1m3s**, process exit0. Artifacts `.scratch/shared-children-1/independent-final.log/.trx`. `git diff --check c2f34e4e` exit0. Process exited and exclusive testhost slot released.
+
+Complete raw list `.scratch/shared-children-1/frozen-source-sha256.txt`, UTF8/LF aggregate **3ff77a970590fbed52bef817887e4c78a134ad2bbd1279c3e81dd8c2c3947738**, matched before/after. Reports are outside the frozen code/test hash scope.
+
+```text
+d5950b3241443499fee1c91ab083867697593fb9831e207a962754217dc1f472  cozmo-stack/src/Cozmo.Robot/Actions/CompoundActions.cs
+bfab5272c56c80272aa5c743760585439f9e7bea61affa282a095b9024ba5b81  cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs
+8615dca0f253dbb655466a514453b6fbd27076454122b186197239957f97d76b  cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs
+16191ec7bc0f9f55a341a9ec37ad14213fac026ff09b57b80aa15ca3f01d4f68  cozmo-stack/src/Cozmo.Robot/Behavior/NativePutDownActions.cs
+0196425db22d25f9f7ea8f3a1a8884e02a227485f37233e7932ee2eda9c01da0  cozmo-stack/src/Cozmo.Robot/Behavior/NativePutDownBlockBehavior.cs
+84226dde31dc8b62c22fb64431078c60d8a556c1152f9d314f1e5328c0a7bc94  cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.Actions.cs
+fd6592ab46d02ea4b1876325b816e3a72e58c8ee308b9d6216fcb5b4d3f1b5d7  cozmo-stack/src/Cozmo.Robot/Manipulation/NativePickupObjectRunner.cs
+a4c0e40e952d587d501905e52159365083a794e05a025edc8c382bfa584f8821  cozmo-stack/src/Cozmo.Robot/Vision/NativeLastFaceRunner.cs
+cdd44dcf5491da38d5a9fbc3bba7d310c25abdb6671e206dc223bfd244f04147  cozmo-stack/tests/Cozmo.Protocol.Tests/M12RFix2StreamATests.cs
+9d584991249ea40a8260488d20339f9aef3dced92157d437ad51f1950d2b9e03  cozmo-stack/tests/Cozmo.Protocol.Tests/ManipulationTests.cs
+e35c2a29a8bf3f53a3a7b2f6dbd1bddb7f1bdd2406f9b5f526d15d38175d9968  cozmo-stack/tests/Cozmo.Protocol.Tests/PutDownBlockNativeTests.cs
+350c1d22d50f2facfb03d145477ce9c7651b246fc5fc158c2ba62137ae0ab5dd  cozmo-stack/tests/Cozmo.Protocol.Tests/SharedChildrenNativeTests.cs
+```

@@ -646,9 +646,10 @@ public class ManipulationTests
         SeedCarriedObjectOnLift(rig);
 
         var ctx = Ctx(rig);
-        var b = new PutDownBlockBehavior(rig.M);
+        using var b = new PutDownBlockBehavior(rig.M);
         Assert.True(b.IsRunnable(ctx) || rig.Robot.Animations.Library is null);   // runnable gates on the animation library offline
-        RunToEnd(rig, b, ctx, frames: () => true);
+        // Supplied LOCAL43 recipient input; Rig.Frame is the public offline image adapter, not its producer.
+        RunToEnd(rig, b, ctx, frames: () => {rig.Robot.Engine.AnimationMessages.Deliver(0x43,true,new ProcessedImageReport(rig.T,new uint[]{1},0));return true;});
         Assert.InRange(b.BackUpMm, -75, -45);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
         Assert.Contains(b.Trace, l => l.Contains("PutDownBlockPutDown"));          // "play X" with assets, "X: no animation assets" without
@@ -658,7 +659,7 @@ public class ManipulationTests
         Assert.Equal(2, rig.Sent.OfType<ExecutePath>().Count());
         Assert.Contains(rig.Sent, m => m is SetHeadAngle sh && BitConverter.SingleToUInt32Bits(sh.AngleRad) == 0xBEB2B8C2u);
         // a behaviour that only makes sense while carrying
-        var again = new PutDownBlockBehavior(rig.M);
+        using var again = new PutDownBlockBehavior(rig.M);
         Assert.False(again.IsRunnable(ctx));
     }
 

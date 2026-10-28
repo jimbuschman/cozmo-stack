@@ -53,6 +53,8 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,float maximum,bool sayName,int sayTrigger=0x23F,int noNameTrigger=0x23F):base(m,Pose3d.Identity,maximum,0x29,0,true)
     {_requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;}
+    internal float MaximumTurn=>_maximum;
+    internal bool SayName=>_sayName;
     internal int FaceState=>_faceState;
     internal int VerifiedId=>_verified.Id;
     internal int RequestedId=>_requested.Id;
@@ -140,7 +142,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             if(face.HasName)
             {
                 Behavior.SteppedBehavior.ReportMissing("M13-014 LastFace SayText(name,intent3), animation trigger"+_sayTrigger+" recipient unavailable");
-                throw new NativeActionUnavailable("M13-014 native LastFace SayText(name,intent3)0054C5AA recipient unavailable");
+                throw new NativeActionUnavailable("M14-006/M13-014 native LastFace SayText(name,intent3)0054C5AA: intent metadata/trait inputs and actual Robot268 speech provider unavailable");
             }
             if(_noNameTrigger==0x23F)return Final();
             SetChild(new TriggerLiftSafeAnimationAction(M.Robot,new((AnimationTrigger)_noNameTrigger,1,true,0,60f,false)));
@@ -157,10 +159,22 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
 }
 
 // fidelity: M13-027
-//0054C7DC: sequential turn-before/wrapped/no-after, with wrapped animation completion proxy.
-internal sealed class NativeFaceBeforeAnimationRunner:CompoundActionSequential
+//0054C7DC..C8CE: eager distinct turns, independent flags, copied Radians and full wrapped proxy.
+internal class NativeTurnTowardsFaceWrapperRunner:CompoundActionSequential
+{
+    internal NativeTurnTowardsFaceWrapperRunner(Manipulation.ManipulationSystem m,ActionRunner wrapped,bool before,bool after,Radians maximum,bool sayName)
+        :base(()=>m.Robot.Engine.Timer.SecondsF)
+    {
+        SeedNativeEmptyCompletion();
+        if(before)AddAction(new NativeLastFaceRunner(m,maximum.Value,sayName),false,false);
+        AddAction(wrapped,false,false);
+        if(after)AddAction(new NativeLastFaceRunner(m,maximum.Value,sayName),false,false);
+        SetNativeCompletionProxy(wrapped.Tag);
+    }
+}
+// Existing exact put-down caller convenience; generic construction is shared above.
+internal sealed class NativeFaceBeforeAnimationRunner:NativeTurnTowardsFaceWrapperRunner
 {
     internal NativeFaceBeforeAnimationRunner(Manipulation.ManipulationSystem m,TriggerAnimationAction animation)
-        :base(()=>m.Robot.Engine.Timer.SecondsF)
-    {AddAction(new NativeLastFaceRunner(m),false,false);AddAction(animation,false,false);SetNativeCompletionProxy(animation.Tag);}
+        :base(m,animation,true,false,new Radians(Radians.Pi),false){}
 }

@@ -26,30 +26,15 @@ internal sealed class NativePutDownBlockBehavior:SteppedBehavior
         if(_robot.CarryingOwner is null){ReportMissing("PutDownBlock actual Carrying owner unavailable; no no-carry substitute");return false;}
         return RawCarry!=uint.MaxValue||HasCurrentAction;
     }
-    private CompoundActionSequential Sequence()=>new(()=>_m.Robot.Engine.Timer.SecondsF);
-    private TriggerAnimationAction Animation(AnimationTrigger trigger)=>new(_m.Robot,new(trigger,1,true,0,60f,false));
     protected override void OnStart()
     {
         Scope.SmartDisableReactionsWithLock(Id,ReactionLockTables.PutDownBlock);
-        double u=_m.Robot.Engine.ContextRandom.GetNextDbl();
-        BackupDistance=(float)((-75.0-(-45.0))*u+(-45.0));
-        var action=Sequence();action.AddAction(new DriveStraightAction(_m,BackupDistance,100f,true),false,false);
-        action.AddAction(Animation(AnimationTrigger.PutDownBlockPutDown),false,false);
+        var action=NativePutDownActions.CreateInitial(_m,out float backup);BackupDistance=backup;
         IncreaseScoreWhileActing(5f);StartActing(action,_=>LookDown());
     }
     internal void LookDown()
     {
-        var action=Sequence();
-        if(RawCarry!=uint.MaxValue)
-        {
-            var parallel=new CompoundActionParallel(()=>_m.Robot.Engine.Timer.SecondsF);
-            parallel.AddAction(_m.Robot.Motion.CreateNativeHeadChild(BitConverter.UInt32BitsToSingle(0xBEB2B8C2),BitConverter.UInt32BitsToSingle(0x3D0EFA35),15f,20f),false,false);
-            parallel.AddAction(new DriveStraightAction(_m,-30),false,false);
-            action.AddAction(parallel,false,false);
-            action.AddAction(new NativeWaitForImagesRunner(_m,2,(VisionMode)1,0),false,false);
-        }
-        var animation=Animation(AnimationTrigger.PutDownBlockKeepAlive);
-        action.AddAction(new NativeFaceBeforeAnimationRunner(_m,animation),false,false);
+        var action=NativePutDownActions.CreateLook(_m,this,true);
         IncreaseScoreWhileActing(5f);StartActing(action,_=>
         {
             if(RawCarry==uint.MaxValue)return;

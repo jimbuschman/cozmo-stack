@@ -109,16 +109,27 @@ public sealed class PickUpCubeBehavior : ManipulationBehavior
 /// (<c>RandDblInRange(-45, -75)</c>) at 100 mm/s, then <c>TriggerAnimationAction</c> 0x19A
 /// <see cref="AnimationTrigger.PutDownBlockPutDown"/> (the animation lowers the lift and releases the cube);
 /// then <c>LookDownAtBlock</c>: in parallel <c>MoveHeadToAngleAction(−20°, tol 2°)</c> and <c>DriveStraightAction(−30)</c>,
-/// then <c>WaitForImagesAction</c>, 0x199 <see cref="AnimationTrigger.PutDownBlockKeepAlive"/>, and a turn
-/// towards a face (max π; needs face tracking, DEFERRED). The carried object is released in the world model
+/// then <c>WaitForImagesAction</c>, a turn towards the last face (max π, sayName=false),
+/// then ordinary 0x199 <see cref="AnimationTrigger.PutDownBlockKeepAlive"/>. The carried object is released in the world model
 /// at the end of the look-after-place action: the std::function body 0x005C8480 calls SetCarriedObjectAsUnattached(false) at 0x005C84CE when it is still carried.
 /// </summary>
 // fidelity: M15-012
-public sealed class PutDownBlockBehavior : ManipulationBehavior
+public sealed class PutDownBlockBehavior : ManipulationBehavior,IDisposable
 {
     public enum Phase { Idle, BackingUp, PuttingDown, LookingDown, KeepAlive }
 
     public PutDownBlockBehavior(ManipulationSystem m, string id = "PutDownBlock") : base(id, "PutDownBlock", m) { }
+
+    private Action? _releaseCompletionOwner;
+    private bool _disposed;
+    private int _run;
+    protected override bool KeepsRunningWithoutAction=>HasCurrentAction;
+    private void EnsureNativeCompletionOwner()
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        _releaseCompletionOwner??=AcquireActionCompletionOwner(M.Robot);
+    }
+    public void Dispose(){if(_disposed)return;_disposed=true;Stop(BehaviorStopReason.Interrupted);_releaseCompletionOwner?.Invoke();_releaseCompletionOwner=null;}
 
     public Phase CurrentPhase { get; private set; }
     public double BackUpMm { get; private set; }
@@ -127,17 +138,11 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
-        BackUpMm = -(45 + Context.Random.NextDouble() * 30);
-        CurrentPhase = Phase.BackingUp;
-        RunAction($"DriveStraight({BackUpMm:F0} mm)", ct => new DriveStraightAction(M, BackUpMm, 100f).RunAsync(ct), _ =>
-        {
-            CurrentPhase = Phase.PuttingDown;
-            // InitInternal 0x005C7FD0: DriveStraight, the 0x19A put-down animation, then StartActing(LookDownAtBlock). Nothing clears the carried id during the animation
-            // (the SetCarriedObjectAsUnattached callers are HandlePickAndPlaceResult 0x005338A2, CheckAndUpdateTreadsState 0x0051210C, HandleMotorCalibration 0x00536BC4, HandleMotorAutoEnabled 0x00536E0E, PickupObjectAction::Verify 0x00553CAA/0x00553D2A, the std::function 0x005C84CE, CubeLiftWorkout::EndIteration 0x005D8A06 and ReactToPickup::StartAnim 0x00607844),
-            // so LookDownAtBlock runs with the id still set and the release comes at the end of the look-after-place action (FinishPutDown).
-            PlayTrigger(AnimationTrigger.PutDownBlockPutDown, LookDownAtBlock);
-        });
+        EnsureNativeCompletionOwner();_run++;
+        Scope.SmartDisableReactionsWithLock(Id,ReactionLockTables.PutDownBlock);
+        CurrentPhase=Phase.BackingUp;
+        var action=NativePutDownActions.CreateInitial(M,out float backup,()=>{CurrentPhase=Phase.PuttingDown;Log("start PutDownBlockPutDown");});
+        BackUpMm=backup;IncreaseScoreWhileActing(5f);StartActing(action,_=>LookDownAtBlock());
     }
 
     /// <summary>
@@ -153,71 +158,16 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
     // fidelity: M15-012
     public static readonly float LookDownHeadAngleRad = BitConverter.UInt32BitsToSingle(0xBEB2B8C2);
 
-    /// <summary>
-    /// The engine's <c>CompoundActionParallel</c> of <c>MoveHeadToAngleAction(LookDownHeadAngleRad, 0x3D0EFA35, 0)</c> and <c>DriveStraightAction(-30.0f, default speed)</c>
-    /// (0x005C8196..0x005C8210, list {head, drive}, 0xC1F00000 at 0x005C81EE), added to the look-after-place sequential compound with <c>AddAction(.., ignoreFailure = 0, ..)</c>
-    /// (0x005C8220/0x005C8222). Head and drive run together and the compound ends when both have ended; the first failed child ends it at once with its failure, as
-    /// <c>CompoundActionParallel::UpdateInternal</c> 0x0054FAB0..0x0054FBD0 does for an empty ignore-failure map (<see cref="SteppedBehavior"/>'s ParallelAction.ChildDone, same record). The
-    /// child that has not ended is cancelled here (the drive; the head move has no cancel): how the engine's deletion cancels it is not in the inventory (MISSING).
-    /// </summary>
-    private async Task<ActionResult> HeadAndDriveAsync(CancellationToken cancel)
-    {
-        using var legs = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-        var head = HeadLegAsync();
-        // DriveStraightAction(robot, -30.0f) is the TWO-argument constructor (0x4ABF68 -> 0x005470F0): its default speed for a distance < 0 is 0xC2A00000, -80 mm/s
-        // (literal pair 0x00547268/0x0054726C, `it ge; addge r1,#4` at 0x00547174); this stack's DriveStraightAction takes the magnitude and signs it by the distance.
-        var drive = new DriveStraightAction(M, -30, 80f).RunAsync(legs.Token);
-        var pending = new List<Task<ActionResult>> { head, drive };
-        while (pending.Count > 0)
-        {
-            var ended = await Task.WhenAny(pending);
-            pending.Remove(ended);
-            var result = await ended;
-            if (result != ActionResult.Success) { legs.Cancel(); return result; }
-        }
-        return ActionResult.Success;
-    }
-
-    private async Task<ActionResult> HeadLegAsync()
-    {
-        try
-        {
-            var outcome = await M.Robot.Motion.SetHeadAngleAsync(LookDownHeadAngleRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
-            // CHOICE: the engine's result for a failed head move is the move's own code (MotionOutcome.EngineResult when it has one); any other failure is Abort.
-            return outcome.Ok ? ActionResult.Success : outcome.EngineResult is { } code ? (ActionResult)code : ActionResult.Abort;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { return ActionResult.Abort; }
-    }
-
     // fidelity: M15-012
     internal void LookDownAtBlock()
     {
-        CurrentPhase = Phase.LookingDown;
-        // CreateLookAfterPlaceAction 0x005C8174: `ldr r0,[r5,#0x284]; ldr r0,[r0,#8]; adds r0,#1; beq 0x005C8264` (0x005C818C..0x005C8194): [[robot+0x284]+8] is the carried
-        // ObjectID (CarryingComponent, -1 when not carrying). When it is -1 the head+drive CompoundActionParallel AND the WaitForImagesAction (0x005C8196..0x005C825E) are
-        // skipped and only the keep-alive remains.
-        // LookDownAtBlock 0x005C80E0 calls CreateLookAfterPlaceAction(robot, true) with the carried id still set after the put-down animation, so the block is built in the live flow.
-        if (!M.Docking.Carrying.IsCarryingObject)
+        EnsureNativeCompletionOwner();int run=_run;CurrentPhase=Phase.LookingDown;
+        var action=NativePutDownActions.CreateLook(M,this,true,()=>{CurrentPhase=Phase.KeepAlive;Log("start PutDownBlockKeepAlive");});
+        IncreaseScoreWhileActing(5f);
+        StartActing(action,completed=>
         {
-            CurrentPhase = Phase.KeepAlive;
-            PlayTrigger(AnimationTrigger.PutDownBlockKeepAlive, () => { Log("TurnTowardsFace skipped (no face tracking; DEFERRED)"); FinishPutDown(); });
-            return;
-        }
-        // WaitForImagesAction waits for images that arrive *after* it starts. Taking the count now and
-        // comparing against it is the difference between waiting for the placed cube to be re-observed and
-        // waiting for nothing at all, because by this point in a run frames have always been processed.
-        int framesBefore = M.Vision.FramesProcessed;
-        RunAction("CompoundActionParallel(MoveHeadToAngleAction, DriveStraightAction(-30 mm))", HeadAndDriveAsync, r =>
-        {
-            // The sequential compound CreateLookAfterPlaceAction builds adds the parallel with ignoreFailure = 0, so a failed head or drive ends it: the image wait and the
-            // keep-alive after it do not run (CompoundActionSequential::UpdateInternal 0x0054F70C returns the failed child's result). What the behaviour's completion
-            // callback does with a failure is not in the inventory (MISSING); the behaviour finishes.
-            if (r != ActionResult.Success) { Log($"the look-after-place compound failed ({r}): the image wait and the keep-alive do not run"); FinishPutDown(); return; }
-            WaitUntil(() => M.Vision.FramesProcessed >= framesBefore + ImagesToWaitFor, 1.0, _ =>
-            {
-                CurrentPhase = Phase.KeepAlive;
-                PlayTrigger(AnimationTrigger.PutDownBlockKeepAlive, () => { Log("TurnTowardsFace skipped (no face tracking; DEFERRED)"); FinishPutDown(); });
-            }, $"{ImagesToWaitFor} image(s) after the place");
+            if(completed.Result!=0)Log($"the look-after-place compound failed ({(ActionResult)completed.Result}): the image wait and the keep-alive do not run");
+            FinishPutDown(run); //005C8480 discards every result before still-carrying release.
         });
     }
 
@@ -225,7 +175,7 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
     /// The std::function LookDownAtBlock gives StartActing (body 0x005C8480): when <c>[[robot+0x284]+8] != -1</c>, <c>SetCarriedObjectAsUnattached(false)</c> (0x005C84CE: the
     /// object stays located and Dirty); it runs when the look-after-place action ends, with any result.
     /// </summary>
-    private void FinishPutDown()
+    private void FinishPutDown(int run)
     {
         if (M.Docking.Carrying.IsCarryingObject)
         {
@@ -233,8 +183,8 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
             Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorPutDownBlock.LookDownAtBlock.DidNotSeeBlock","Forcibly setting carried objects as unattached (See COZMO-2192)");
             M.Docking.ReleaseCarriedObject();
         }
-        CurrentPhase = Phase.Idle;
-        Finish();
+        // Host phase/finalization must not finish a replacement queued by a reentrant release observer.
+        if(_run==run&&!HasCurrentAction){CurrentPhase=Phase.Idle;Finish();}
     }
 }
 
@@ -433,7 +383,7 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
 /// <see cref="PickUpCubeBehavior"/> then <see cref="PutDownBlockBehavior"/>. The engine's class was not
 /// disassembled separately (INFERRED composition from its name and the two transcribed classes).
 /// </summary>
-public sealed class PickUpAndPutDownCubeBehavior : SteppedBehavior
+public sealed class PickUpAndPutDownCubeBehavior : SteppedBehavior,IDisposable
 {
     private readonly PickUpCubeBehavior _pickUp;
     private readonly PutDownBlockBehavior _putDown;
@@ -447,12 +397,21 @@ public sealed class PickUpAndPutDownCubeBehavior : SteppedBehavior
         _putDown.Step += l => Log("putdown: " + l);
     }
 
+    private bool _disposed;
+    public override Task StartAsync(BehaviorContext context,BehaviorScope scope,CancellationToken cancel)
+    {ObjectDisposedException.ThrowIf(_disposed,this);return base.StartAsync(context,scope,cancel);}
+    public void Dispose()
+    {
+        if(_disposed)return;_disposed=true;
+        Stop(BehaviorStopReason.Interrupted);_putDown.Dispose();
+    }
     public IBehavior? Running => _running;
     protected override bool KeepsRunningWithoutAction => _running is not null;
     protected override bool IsRunnableInternal(BehaviorContext context) => _pickUp.IsRunnable(context);
 
     protected override void OnStart()
     {
+        ObjectDisposedException.ThrowIf(_disposed,this);
         _running = _pickUp;
         _pickUp.StartAsync(Context, Scope, CancellationToken.None).GetAwaiter().GetResult();
     }

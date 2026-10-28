@@ -94,7 +94,7 @@ public sealed class PutDownBlockNativeTests
         uint initial=f.Behavior.CurrentRunnerTag;
         f.Rig.Engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(initial,0,0x03000018,Array.Empty<uint>(),0));
         f.Behavior.Update(f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
-        var look=Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
+        var look=Assert.IsAssignableFrom<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         var parallel=Assert.IsType<CompoundActionParallel>(look.Children[0]);
         var backup=Assert.IsType<DriveStraightAction>(parallel.Children[1]);Assert.Equal(-30,backup.DistanceMm);Assert.Equal(-80f,backup.SpeedMmps);
         Assert.IsType<NativeWaitForImagesRunner>(look.Children[1]);
@@ -109,7 +109,7 @@ public sealed class PutDownBlockNativeTests
         using var f=new Fixture();f.Carry();Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(f.Behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         f.M.Docking.ReleaseCarriedObject();
         f.Rig.Engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(f.Behavior.CurrentRunnerTag,0,0,Array.Empty<uint>(),0));f.Behavior.Update(f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
-        var look=Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());Assert.Single(look.Children);Assert.IsType<NativeFaceBeforeAnimationRunner>(look.Children[0]);
+        var look=Assert.IsAssignableFrom<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());Assert.Single(look.Children);Assert.IsType<NativeFaceBeforeAnimationRunner>(look.Children[0]);
         uint stale=f.Behavior.CurrentRunnerTag;f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
         f.Carry();f.Rig.Engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(stale,0,0,Array.Empty<uint>(),0));f.Behavior.Update(f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);Assert.True(f.M.Docking.Carrying.IsCarryingObject);
     }

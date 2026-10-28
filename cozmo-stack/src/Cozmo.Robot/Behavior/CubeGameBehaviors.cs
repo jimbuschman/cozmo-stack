@@ -908,7 +908,7 @@ public sealed class OnConfigSeenBehavior : ManipulationBehavior
 /// <c>AlwaysHandle</c>: an <c>ObjectMoved</c> of a stack block past the threshold ends it.
 /// </summary>
 // fidelity: M15-012
-public sealed class CantHandleTallStackBehavior : ManipulationBehavior
+public sealed class CantHandleTallStackBehavior : ManipulationBehavior,IDisposable
 {
     public enum Phase { Idle, LookingUpAndDown, Disappointment }
     public const double HeadDownRad = -0.436332;
@@ -919,6 +919,18 @@ public sealed class CantHandleTallStackBehavior : ManipulationBehavior
         : base(id, "CantHandleTallStack", m)
     {
         MinimumStackHeight = minimumStackHeight; InitialWait = lookingInitialWaitSec; DownWait = lookingDownWaitSec; UpWait = lookingUpWaitSec; MovedThresholdMm = minBlockMovedThresholdMm;
+    }
+
+    private Action? _releaseCompletionOwner;
+    private bool _disposed;
+    public void Dispose(){if(_disposed)return;_disposed=true;Stop(BehaviorStopReason.Interrupted);_releaseCompletionOwner?.Invoke();_releaseCompletionOwner=null;}
+    internal void TransitionToDisappointment()
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        _releaseCompletionOwner??=AcquireActionCompletionOwner(M.Robot);
+        CurrentPhase=Phase.Disappointment;
+        Log("start CantHandleTallStack");
+        StartActing(new Animation.TriggerAnimationAction(M.Robot,new(AnimationTrigger.CantHandleTallStack,1,true,0,60f,false)),null);
     }
 
     public int MinimumStackHeight { get; }
@@ -933,10 +945,12 @@ public sealed class CantHandleTallStackBehavior : ManipulationBehavior
     private StackOfCubes? Tallest() { var s = M.NativeTallestStack(); return s is not null && s.StackHeight >= MinimumStackHeight && M.World.GetLocatedObjectById(s.BottomBlockId) is not null ? s : null; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) => Tallest() is not null;
-    protected override bool KeepsRunningWithoutAction => true;
+    //1029FEC→5BDA56: native disappointment Update is Running iff84 is nonzero, else Complete.
+    protected override bool KeepsRunningWithoutAction => CurrentPhase!=Phase.Disappointment||HasCurrentAction;
 
     protected override void OnStart()
     {
+        ObjectDisposedException.ThrowIf(_disposed,this);
         TargetStack = Tallest();
         if (TargetStack is null) { Finish(); return; }
         _delocalization.HasStoredPose = true; // M7 checked InitInternal +0x124 write, 0x005ECE74.
@@ -950,8 +964,7 @@ public sealed class CantHandleTallStackBehavior : ManipulationBehavior
                 _ = M.Robot.Motion.SetHeadAngleAsync((float)HeadUpRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
                 Wait(UpWait, () =>
                 {
-                    CurrentPhase = Phase.Disappointment;
-                    PlayTrigger(AnimationTrigger.CantHandleTallStack, () => { CurrentPhase = Phase.Idle; Finish(); });
+                    TransitionToDisappointment();
                 });
             });
         });
