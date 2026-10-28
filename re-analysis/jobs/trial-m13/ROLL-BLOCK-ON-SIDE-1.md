@@ -11,3 +11,13 @@ Reader/extraction requested explicit gpt-6.1-sol/medium; builder and independent
 ## Worker requests and startup log
 
 Planned fresh actors: reader /root/roll_side_source explicit gpt-6.1-sol/medium; independent reviewer /root/roll_side_review DEFAULT/DEFAULT (both overrides omitted); isolated builder /root/roll_side_build DEFAULT/DEFAULT (both overrides omitted). Each actual startup will be recorded after the tool returns. Operator-reported configured default is gpt-6.1-terra; runtime telemetry remains unavailable. Do not infer actual model identity.
+
+## Actual worker startup register
+
+| Actor | Role | Model requested | Effort requested |
+| --- | --- | --- | --- |
+| /root/roll_side_source | Reader/extractor | explicit gpt-6.1-sol | explicit medium |
+| /root/roll_side_review | Independent source/code reviewer | DEFAULT; override omitted | DEFAULT; override omitted |
+| /root/roll_side_build | Isolated builder | DEFAULT; override omitted | DEFAULT; override omitted |
+
+All three freshly started with fork_turns=none; tool returned their task names, no actual backend telemetry. No worker switch. Builder worktree codex-roll-block-on-side-1 / branchcodex/roll-block-on-side-1 at21d47cd9; no implementation release, preparation-only one local-cache restore permitted. Ignored OBBjunction uses original local asset directory. NativeSO02263C07F6BB60F4D7F351A3667DCA84FD3E6C0FC6F838E18B5DE7CF4E2989E1 and markerData1B7166AC37B166975F0E5313A3D4486EBAE73010E42FFB89BBD0D4536A29C81D copy-verified. Initial restricted junction creation was denied and ignored Data folder absent; inspected absent destination, then elevated setup/create-Data completed. No existing asset/worktree overwritten, no proprietary files staged/uploaded. Builder alone may run prep.NET; reader/reviewer remain source-only. Gate hooks must not run during worker compiler/test ownership.
