@@ -71,3 +71,9 @@ if it is on drive-off's path; otherwise fold it into the behaviour that needs it
 - Propose settling every complete record's OWN claimed path, independently of neighboring gaps. Partial records get one or two lines saying exactly what remains.
 - Handoffs are short lists of claims/addresses, records to settle and leftovers. Build/push the read scope; do not wait for the whole picture.
 - Binary evidence/no guessing and all approval/status/main/hardware restrictions remain unchanged. Progress is records settled and behaviors finished.
+
+## Worker model trial (operator, 2026-10-28)
+
+Starting with the next job after the already running STACK-BLOCKS-1, start the builder with `gpt-6.1-terra`, medium effort, for a **one-job trial**. Start the reader and independent reviewer with `gpt-6.1-sol`, high effort. Do not switch any worker's model or effort in the middle of a job; current workers finish their current job unchanged.
+
+Each handoff records the builder's start model/effort, how many reviewer fix rounds were required, and every MISSING item the builder raised, including how resolved items were settled. Preserve requested startup configuration separately from any actual runtime telemetry available; do not infer model identity from an agent label. See `MODEL-TRIAL-1.md` for the trial register and counting rule. The Terra trial covers one new job and is not silently extended.
