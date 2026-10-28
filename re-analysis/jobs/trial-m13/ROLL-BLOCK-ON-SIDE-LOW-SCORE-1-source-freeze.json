@@ -1,0 +1,15 @@
+{
+  "note": "Finite LowScore S1-S16/P1-P5 READ PASS. ExactID100 and parentPlayWithHumans context; same native ownclass. Current25quotes verified; no new record/status/policy/parentimplementation claim.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-roll-block-on-side-low-score-1-read.md",
+      "reviewed_raw_sha256": "a71fe1c4fc44d73a9ae5a810263de385fdce7e85b1a65b983072816823c73ae4",
+      "published_lf_sha256": "ac6d25e9f27bc1da16e07e5d6daf0186901a70d29cad2a6ad9f6cec5781955bc"
+    },
+    {
+      "path": "re-analysis/research/20261028-roll-block-on-side-low-score-1-read-codex-check.md",
+      "reviewed_raw_sha256": "de0b4cd38fabdc373c4ecbba19512bd8eea26a9f4b85a46114015812472bdc1f",
+      "published_lf_sha256": "6bfdb9bd2bc9c7f2998498aa2b693ad1e2567b4a8dc829a414f40ae6580a411a"
+    }
+  ]
+}
