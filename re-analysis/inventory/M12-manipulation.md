@@ -1062,3 +1062,9 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: PlaceRelObjectAction Verify 0x005555B4..0x0055581E and GetCompletionUnion 0x0055515C..0x00555344 (final payload 0x00555324..0x0055533E; setters 0x0075C3F0..0x0075C436 / 0x0075C460..0x0075C4A6; Pack 0x0075B4F0..0x0075B536). The four unused completion ID words are zeroed under an operator-approved compatibility policy (jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md), never EXACT_SOURCE | M12-050 (new) |
+
+## HIKING-ROLL-CUBE-1, the PlaceBlockHelper lifecycle (operator approved 2026-10-28; research/20261028-hiking-roll-cube-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: PlaceBlockHelper factory 0x005B5588, ctor 0x005B8C1C, Init 0x005B8CB0..0x005B8D50, RespondToTurnAction 0x005B8DF4..0x005B8E44, Update 0x005B8E60, RespondToPlacedAction 0x005B8E64..0x005B8E68 | M12-051 (new) |

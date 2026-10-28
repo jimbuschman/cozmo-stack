@@ -2,7 +2,7 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "2d0f70816067d8f6581e2b7d7e072f4b86a433f1cf70d8d4be10ae3053bb4452",
+  "inventory_sha256": "a4aa97441da10d8a6aee893c327895a006db2360a923fed13b6f742064c07db3",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -369,6 +369,19 @@
       "evidence": [
         "re-analysis/research/overnight/20261015-ov36-37-check.md: states 0x005FADC8..0x005FBBAB and 0x005FBBCC..0x005FBD13; track/pounce 0x005FBE84..0x005FC1D7; observation 0x005FC1D8..0x005FC5CB.",
         "re-analysis/research/overnight/20261015-ov62-64-check.md: callbacks 0x005FC68C..0x005FC6F2, 0x005FC79C..0x005FC8AC, 0x005FC9C6..0x005FC9DE, 0x005FCA44..0x005FCA94; update 0x005FB200..0x005FB32B (TBB 0x005FB218); transitions 0x005FADC8..0x005FAEF4, 0x005FAF70..0x005FB163, 0x005FB380..0x005FB3BF, 0x005FB3E8..0x005FB53F, 0x005FB8D0..0x005FBA09, 0x005FBA50..0x005FBB57, 0x005FBBCC..0x005FBCB7, 0x005FBE84..0x005FC0B3, 0x005FC0D4..0x005FC18B; CheckForTimeout 0x005FB5B0..0x005FB7DD; observation 0x005FC1D8..0x005FC4DC; ctor 0x005FA250..0x005FA31E; SetParamsFromConfig 0x005FA374..0x005FA955; lifecycle InitInternal 0x005FAC10..0x005FAC4C, Resume 0x005FBBAC..0x005FBBC8, Stop 0x005FBD14..0x005FBD3A, Cleanup 0x005FBD40..0x005FBDDA."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-030": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorManager::SetBehaviorStateLights: ordered diff against the previous lights, stop/replacement/new play on cube-light layer 1, retained vector and class, and the switch cleanup after Init",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "SetBehaviorStateLights 0x005A4320..0x005A45F2; IBehavior wrapper 0x005BEE38..0x005BEE46; manager ctor 0x005A0918..0x005A092A.",
+        "Lower calls: StopAndPlay 0x006396AC..0x00639722; PlayLightAnim overload 0x006389FC forwards layer 1 (the trailing integer 0 is not the layer).",
+        "Switch cleanup MS4 0x005A2114..0x005A226E inside SetRunningAndResumeInfo after Init.",
+        "re-analysis/research/20261028-hiking-roll-cube-1-state-lights-read.md, -state-lights-boundary.md, -lower-light-bindings.md with their independent checks; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

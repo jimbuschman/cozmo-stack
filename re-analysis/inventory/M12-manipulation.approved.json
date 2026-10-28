@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "cd1af8d708d7ae4c226b20093ba514dadff0ebabd0527121265e5d10656255ae",
+  "inventory_sha256": "c55f86969f239ca61a43a35c8c4e24c9d0ab47fa96269d6b90700840943e4cb3",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -669,6 +669,19 @@
         "Completion setters 0x0075C3F0..0x0075C436 / 0x0075C460..0x0075C4A6 copy the five 32-bit IDs, count and flag; Pack 0x0075B4F0..0x0075B536 serializes all five IDs, count and flag.",
         "Normal located-target path: IDs [target, 0, 0, phone stack address, 0], count 1, flag false (jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md).",
         "Read packet re-analysis/research/20261028-sparks-stack-1-read.md and its independent check; HANDOFF-SPARKS-STACK-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-051": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlaceBlockHelper lifecycle: factory and ctor, Init RNG turn, turn-to-Ground delegation, placed callback status, Update and inherited Stop",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x005B5588 (allocation 0xF0); ctor 0x005B8C1C..0x005B8C6A; ShouldCancelDelegates 0x005B8CA6..0x005B8CA8.",
+        "Init 0x005B8CB0..0x005B8D50: double magnitude PI/4..PI/2 and an independent sign draw, narrowed once to f32, TurnInPlace(angle,false).",
+        "RespondToTurnAction 0x005B8DF4..0x005B8E44 ignores the result and starts sequential PlaceObjectOnGround Add(false,true); Update 0x005B8E60 returns status; RespondToPlacedAction 0x005B8E64..0x005B8E68 ignores the result and stores 2.",
+        "PB1-PB4 in re-analysis/research/20261007-q17-checked-additions.md; re-analysis/research/20261028-hiking-roll-cube-1-helper-response-clarification.md, -place-helper-proposal.md; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false
