@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "ecc0f8ddad522bf6261c78e234ea135510c044ad0d6c0cdeca757efc939f5350",
+  "inventory_sha256": "cd1af8d708d7ae4c226b20093ba514dadff0ebabd0527121265e5d10656255ae",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -108,7 +108,7 @@
       "hardware_required": false
     },
     "M12-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The two timed checks a pick-up is verified against",
       "authority": "libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and, when not moving, the motion-state timestamp IsMoving returns through its out pointer (sp+0x48, read at 0x00553D12; ActiveObject IsMoving 0x004E3860 returns [+8], SetIsMoving 0x004E3874, ctor zero 0x004E0C84) against a dock-action timeout selected by +0x80; corrected from 'last-observed time', operator 2026-10-28 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC",
       "evidence": [
@@ -655,6 +655,20 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261016-ov69-74-75-77-check.md: callbacks vtables 0x01029068 / 0x010290A8 (built 0x005DC16C..0x005DC17C, passed at 0x005DC298); cache UpdateAllBlockConfigs 0x00616F00 -> Container::Update 0x0061682C -> AddAllConfigsWithObjectToCache 0x0062C56E -> CastNewEntryToBestSharedPointer 0x0062C68C; PruneFullPyramids 0x0062C72E."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-050": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlaceRelObjectAction Verify and GetCompletionUnion: dock-success and carry checks, the saved-carried turn child, high-place lift child, failure cleanup, and the ObjectInteraction completion payload",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Verify 0x005555B4..0x0055581E: selected dock action 2/3 checks, docking success and carry predicates, TurnTowardsObject saved-carried child, first/second Update sequence, failure cleanup, high-place MoveLift child.",
+        "GetCompletionUnion 0x0055515C..0x00555344: the chain it builds is overwritten by the final object-interaction payload at 0x00555324..0x0055533E.",
+        "Completion setters 0x0075C3F0..0x0075C436 / 0x0075C460..0x0075C4A6 copy the five 32-bit IDs, count and flag; Pack 0x0075B4F0..0x0075B536 serializes all five IDs, count and flag.",
+        "Normal located-target path: IDs [target, 0, 0, phone stack address, 0], count 1, flag false (jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md).",
+        "Read packet re-analysis/research/20261028-sparks-stack-1-read.md and its independent check; HANDOFF-SPARKS-STACK-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

@@ -160,7 +160,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M7-behaviour.md",
-        "approved": "2026-10-16",
+        "approved": "2026-10-28",
         "snapshot": "re-analysis/inventory/M7-behaviour.approved.json"
       }
     },
@@ -264,7 +264,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-27",
+        "approved": "2026-10-28",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -10211,6 +10211,27 @@
       "test": ""
     },
     {
+      "id": "M12-050",
+      "subsystem": "M12-manipulation",
+      "title": "PlaceRelObjectAction Verify and GetCompletionUnion: dock-success and carry checks, the saved-carried turn child, high-place lift child, failure cleanup, and the ObjectInteraction completion payload",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativePlaceRelRunner.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Verify 0x005555B4..0x0055581E: selected dock action 2/3 checks, docking success and carry predicates, TurnTowardsObject saved-carried child, first/second Update sequence, failure cleanup, high-place MoveLift child.",
+        "GetCompletionUnion 0x0055515C..0x00555344: the chain it builds is overwritten by the final object-interaction payload at 0x00555324..0x0055533E.",
+        "Completion setters 0x0075C3F0..0x0075C436 / 0x0075C460..0x0075C4A6 copy the five 32-bit IDs, count and flag; Pack 0x0075B4F0..0x0075B536 serializes all five IDs, count and flag.",
+        "Normal located-target path: IDs [target, 0, 0, phone stack address, 0], count 1, flag false (jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md).",
+        "Read packet re-analysis/research/20261028-sparks-stack-1-read.md and its independent check; HANDOFF-SPARKS-STACK-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md"
+      ],
+      "effect": "whether a place-on-cube action reports success, what it does after docking, and the ActionCompleted payload the C# API delivers for it",
+      "provenance": "SPARKS-STACK-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (jobs/trial-m13/PROPOSAL-SPARKS-STACK-LIFECYCLE.md).",
+      "unresolved": "Not supported as exact: the four unused completion ID words. On the normal path (selected dock 2/3, target located) the stack sends [target, 0, 0, 0, 0], count 1, flag false; the original's fourth word is a phone stack address. Decided by the operator 2026-10-28 (\"Approve zero unused ID slots\"; jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md). That part is COMPATIBILITY_POLICY and never EXACT_SOURCE; at settlement it moves to its own COMPATIBILITY_POLICY record. Paths where the meaningful fields are not established keep the payload unavailable with a visible diagnostic; nothing is invented. Built and checked in SPARKS-STACK-1 but not settled. Not this record: the PlaceRel ctor/Init/handlers/markers (M12-017/025/034/037), the shared IDock, motor and turn bodies, the neighbour query (M13-007).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "SparksStackNativeTests"
+    },
+    {
       "id": "M13-029",
       "subsystem": "M13-navigation",
       "title": "Path/planner abort and destruction",
@@ -14041,6 +14062,27 @@
       "hardware_required": false,
       "live_path": true,
       "test": "PutDownBlockNativeTests"
+    },
+    {
+      "id": "M15-076",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorStackBlocks, the configured SparksStackBlock instance: target cache and validity, Init, pickup and PlaceRel helper delegation, one retarget, ground recovery, success objective/animation/needs and stop/reset",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeStackBlocksBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CFE6; class range 0x005C93D0..0x005CA33A: ctor 0x005C93D0, IsRunnableInternal 0x005C9484, Init 0x005C9502, stacking 0x005C9520..0x005C961A, StopInternal 0x005C97F8.",
+        "UpdateInternal 0x005C9844..0x005C9A88 (M7 inventory row 885, corrected 2026-10-28): both targets valid skips the neighbour query (0x005C98BC..0x005C98C2); bottom invalid -> FindObjectOnTopOrUnderneathHelper(bottom, 15.0f, filter, true) must return the top (0x005C99C0, 0x005C9A1E); one GetClosestValidBottom retarget (0x005C9A5E..0x005C9A84).",
+        "Target cache: entries 0x0056F724..0x0056FDA2, dependency 0x00571040..0x005710CC (table 0x01023570), predicates 0x0057059E/0x0057062C/0x0057154C, entry cadence 0x005711E4..0x005712B6; shipped stackInAnyOrientation=true selects 5/3.",
+        "Success 0x005C9EA4..0x005C9F14: objective 40, optional animation 0x21A with score, then configured needs action 43.",
+        "Shipped config: SparksStackBlock (activity 27). Read packet re-analysis/research/20261028-sparks-stack-1-read.md S1-S14/C1-C5 and its independent check; HANDOFF-SPARKS-STACK-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md"
+      ],
+      "effect": "which cubes Cozmo picks up and stacks on, when it gives up or retargets, and what objective, animation and needs change a successful stack produces",
+      "provenance": "SPARKS-STACK-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (jobs/trial-m13/PROPOSAL-SPARKS-STACK-LIFECYCLE.md).",
+      "unresolved": "Built and checked in SPARKS-STACK-1 but not settled. Scope is the configured SparksStackBlock instance only; ordinary StackBlocks 4/2 and other instances are outside it (STACK-BLOCKS-1). Not this record: the factory/config binding (M7-018), the PlaceRel helper (M12-042), placement parameter producers (M12-028), the bottom-flat gate (M12-012), the neighbour query body (M13-007), the PlaceRel action's Verify/completion (M12-050), the Sparked activity (M15-059), needs/desired-activity reporting (M15-008).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "SparksStackNativeTests"
     }
   ]
 }

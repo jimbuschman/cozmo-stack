@@ -32,3 +32,15 @@ Neither is done in this check.
 The handoff proposes no existing record. M12-042, M12-028, M12-012, M12-017/025/026/031/034/037, M15-022 and M15-059
 keep their broader scope. Ordinary StackBlocks 4/2 is outside this job (STACK-BLOCKS-1 is building it). The earlier
 startup and manual Navigation failures stay UNKNOWN.
+
+## Addendum: operator checkpoints done (operator approved here, 2026-10-28)
+
+- **M7 row 885 corrected and M7-behaviour re-approved.** It now has the validity gate as above. Its tail was also
+  reversed: with `+0x120 == 1` and `+0x135 == 0` the native code runs GetClosestValidBottom and retargets once
+  (0x005C9A28..0x005C9A84), then always calls IBehavior::UpdateInternal (0x005C9A34/0x005C9A38). The row said the
+  base update runs in that case and the retarget otherwise. No manifest record quoted the row.
+- **New records, both IMPLEMENTATION_GAP:**
+  - **M15-076**: the configured SparksStackBlock lifecycle (M15-freeplay re-approved).
+  - **M12-050**: PlaceRelObjectAction Verify/GetCompletionUnion (M12-manipulation re-approved). Its `unresolved`
+    records the operator's zero-unused-ID-words decision as COMPATIBILITY_POLICY, which moves to its own record when
+    the rest settles.

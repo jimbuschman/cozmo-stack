@@ -1065,3 +1065,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorPutDownBlock IsRunnableInternal 0x005C7FB0, Init 0x005C7FD0..0x005C80DE, LookDownAtBlock 0x005C80E0 and its release callback 0x005C8480..0x005C84D4; factory 0x0059CEE6..0x0059CF04. The look action itself stays M15-012 | M15-075 (new) |
+
+## SPARKS-STACK-1, the SparksStackBlock lifecycle (operator approved 2026-10-28; research/20261028-sparks-stack-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorStackBlocks as the configured SparksStackBlock instance: ctor 0x005C93D0, Init 0x005C9502, UpdateInternal 0x005C9844..0x005C9A88, StopInternal 0x005C97F8, success 0x005C9EA4..0x005C9F14, target cache 0x0056F724..0x0056FDA2 / 0x00571040..0x005710CC / 0x005711E4..0x005712B6; factory 0x0059CFE6. Ordinary 4/2 is outside it | M15-076 (new) |
