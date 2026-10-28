@@ -122,3 +122,13 @@ The concrete approved host mechanism is one call equivalent to `DeliverAnimation
 A also clarified target-cache timing: existing independently checked 5C31DC/31E2/31EA proves Initialize uses only the retained weak stack. Neither Init nor Resume refreshes it. UpdateTargetStack remains the IsRunnable virtual-94 call. Preserve this distinction when building; no automatic refresh was released.
 
 Parent and A received the exact contract. No code changes, tests or testhost use by B.
+
+## Finite face-cache no-eye parent preservation — independent PRIMARY PASS
+
+Current M14-001 is IMPLEMENTATION_GAP, title “TrackedFace geometry, FaceWorld match and forgetting rules”. Its evidence already states that found/no-parts observations replace only the local translation at 4F4784..4F47A8 and keep incoming rotation before assignment. Current M14-008 is IMPLEMENTATION_GAP, title “Vision face-result handoff and FaceWorld lifecycle broadcasts”, evidence includes per-face AddOrUpdateFace and observed/deleted broadcasts. No whole-record settlement or scope change is implied.
+
+After known.py 4F4784, original instructions confirm the exact bridge: 4F42CA/4F42D0 copies the full tracked pose into a temporary; 4F42C4 gets the computed historical state's root ID; 4F42EA finds that origin and 4F42F2 parents the temporary to it. On the found/no-eye branch, 4F4784 and 4F4790 obtain the previous and prepared transforms; 4F4794..4F47A8 copies exactly three translation words. It does not replace the temporary's parent or rotation. 4F47BE assigns the resulting full pose into the entry.
+
+Current Faces.cs:329 constructs `new Pose3d(face.HeadPose, prev.Translation)`. Geometry.cs:264 forwards that overload to the quaternion/translation constructor, which creates a parentless node. This discards the incoming prepared pose's origin and makes the fourth unnamed observation's origin-qualified cached lookup fail. The source-consistent local correction is to copy the full prepared incoming pose, then replace only its translation with the previous local translation. Preserve incoming rotation and historical-origin parent. Do not change global constructor semantics, replace the parent with the previous pose's parent, or weaken the test to named faces.
+
+The existing flattened/rootless TrackedFace.UpdateTranslation producer boundary remains explicit under M14-001/M11-066. This finite recipient correction does not certify upstream pose preparation, detector/recognizer inputs or full face API delivery. Manager and A received the primary verdict before any correction; no code, tests or official record edits by B.

@@ -18,7 +18,7 @@ Next whole-behaviour job after PICKUP-CHILDREN-1 publication `bc801bea`, operato
 - Propose settling each whole existing record whose own claim is complete; partial records get exact remaining steps. Propose a new record only if none owns an observable step. No official changes by Codex.
 - Write short `HANDOFF-KNOCKOVER-CUBES-1.md` with claims/addresses, files, tests and reach, gate, settlement proposals and leftovers. Mark READY FOR CLAUDE, push the branch, then continue the scoreboard without waiting for Claude or hardware.
 
-State: READ PASS; combined build released. The manager adopts the complete K1–K23 read packet after independent B whole-packet READ PASS, including exact final reaction tables, Needs recipient and canonical upward-delete recipient. This authorizes implementation; it is not official inventory approval, settlement or acceptance.
+State: independent BUILD PASS, integration/full gate pending. The manager adopted the complete K1–K23 read packet after independent B whole-packet READ PASS, then checked finite event/common-input/pose clarifications. Final13-file source/code/test review and independent1637/1637 affected regression passed, zero skips; frozen implementation741cf8bf. This is not official inventory approval, settlement or acceptance. Only M13-002 is a whole-record proposal; live public014/028/035 paths remain explicit partials.
 
 Operator explicitly approved the independently proved runtime +0xD8 hard-spark correction during this read. See `KNOCKOVER-CUBES-1-CONTRACT-CORRECTION.md` for the frozen Q8 contradiction, original instructions and exact approval; official evidence/status changes remain Claude's. The whole read and independent check have passed before this build release.
 
