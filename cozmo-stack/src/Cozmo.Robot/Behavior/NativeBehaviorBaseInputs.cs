@@ -9,11 +9,16 @@ internal sealed class NativeBehaviorBaseInputs
     private readonly EngineRobot _robot;
     private readonly uint _requiredUnlock;
     internal uint RequiredUnlock=>_requiredUnlock;
+    // Checked common+6C metadata for the supported Stack configs only. Other explicit names
+    // remain unavailable here; this is not an executable finder or a general enum parser.
+    internal byte? CheckedExecutableType {get;}
     private readonly int _requiredSevere;
     private readonly float _recentDriveOff, _recentSwitch;
     internal NativeBehaviorBaseInputs(EngineRobot robot,JsonElement config)
     {
         _robot=robot;
+        CheckedExecutableType=!config.TryGetProperty("executableBehaviorType",out var executable)||executable.ValueKind!=JsonValueKind.String
+            ?(byte)12:executable.GetString()=="StackBlocks"?(byte)9:null; // ctor005BBCA2/A4; parser005BC1BE..C4, checked supplement.
         _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)&&unlock.ValueKind!=JsonValueKind.Null?NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(unlock.GetString()!)):0x55;
         _requiredSevere=config.TryGetProperty("requiredSevereNeedsState",out var need)
             ?need.GetString() switch{"Repair"=>0,"Energy"=>1,"Play"=>2,"Count"=>3,_=>-1}:3;

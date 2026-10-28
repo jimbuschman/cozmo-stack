@@ -7,7 +7,7 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
 {
     private sealed class Entry
     {internal float Last=-1f;internal uint Best=uint.MaxValue;internal IReadOnlyList<uint> Valid=Array.Empty<uint>();internal bool Available=true;internal int Rebuilds;}
-    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{3,new()},{5,new()}};
+    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()}};
     internal IReadOnlyList<uint> ValidIds=>_entries[0].Valid;
     internal uint Best=>_entries[0].Best;
     internal bool Available=>_entries[0].Available;
@@ -22,29 +22,44 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         using var mutation=m.World.EnterPoseMutation(); //retain candidate poses through collection AND DefaultBest conversion.
         if(!_entries.TryGetValue(intention,out var entry))throw new NativeConfigurationUnavailable("ordinary intention "+intention+" is not built; no 5/3 substitution");
         if(intention==3&&!Refresh(5))return false; // source dependency, BEFORE this entry's timestamp gate.
+        if(intention==2&&!Refresh(4))return false; // O2: independent ordinary dependency, also before its own stamp.
         float now=robot.Engine.Timer.SecondsF;
         if(MathF.Abs(entry.Last-now)<BitConverter.UInt32BitsToSingle(0x3727C5AC))return entry.Available;
         entry.Last=now; // source stamps before collection, even if a host availability guard stops reconstruction.
         try
         {
             var geometry=new NativeConfigurationGeometry(m.World,robot);
-            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj),3=>Bottom(obj),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
+            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj,false),4=>Top(obj,true),3=>Bottom(obj,5,false),2=>Bottom(obj,4,true),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
             uint best=ids.Contains(entry.Best)?entry.Best:Select(ids);
             entry.Valid=Array.AsReadOnly(ids);entry.Best=best;entry.Available=true;entry.Rebuilds++;return true;
         }
         catch(NativeConfigurationUnavailable error)
         {entry.Available=false;SteppedBehavior.ReportMissing("Intention"+intention+" target cache unavailable; prior complete IDs/best retained: "+error.Message);return false;}
     }
-    private bool Top(ObservableObject obj)
+    internal bool Top(ObservableObject obj,bool axis)
     {
         uint carried=robot.CarryingOwner is {} carry?carry.CarriedObjectId??uint.MaxValue:throw new NativeConfigurationUnavailable("actual carry owner absent");
-        return carried!=uint.MaxValue?ReferenceEquals(m.World.GetLocatedObjectByIdHelper(carried),obj):Eligible(obj);
+        if(carried!=uint.MaxValue)
+        {
+            bool same=ReferenceEquals(m.World.GetLocatedObjectByIdHelper(carried),obj);
+            if(!axis)return same;
+            bool aligned=RotatedParentAxis.GetNativeZ(obj.NativePose.Rotation)==3; // O3 LOCAL, not root.
+            return same & aligned;
+        }
+        if(!Eligible(obj))return false;
+        if(!axis)return true;
+        if(robot.Progression is not {} progression||!progression.TryIsUnlocked(9,out bool unlocked))
+            throw new NativeConfigurationUnavailable("CanPickupAxisCheck actual progression9 unavailable");
+        if(!unlocked)return true; // O4 literal direction: only unlocked==1 reaches the ROOT axis test.
+        using var root=obj.NativePose.GetWithRespectToRoot();
+        return RotatedParentAxis.GetNativeZ(root.Rotation)==3;
     }
-    private bool Bottom(ObservableObject obj)
+    private bool Bottom(ObservableObject obj,int top,bool axis)
     {
-        if(obj.ObjectId==_entries[5].Best)return false;
+        if(obj.ObjectId==_entries[top].Best)return false;
         if(m.Whiteboard.DidFailToUse(unchecked((int)obj.ObjectId),new[]{(ObjectActionFailure)1},3f,obj.NativePose,60f,BitConverter.UInt32BitsToSingle(0x40490FDB)))return false;
-        return obj.Family==(ObjectFamily)2&&CanStack(obj);
+        if(obj.Family!=(ObjectFamily)2||!CanStack(obj))return false;
+        return !axis||RotatedParentAxis.GetNativeZ(obj.NativePose.Rotation)==3; // O5 LOCAL only after shared helper accepts.
     }
     internal uint Select(IReadOnlyList<uint> ids)
     {

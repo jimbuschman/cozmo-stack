@@ -209,6 +209,16 @@ public sealed class TurnTowardsObjectExecutor : IDockSubActionExecutor
 // fidelity: M12-030, M12-037
 public static class RotatedParentAxis
 {
+    // STACK-BLOCKS-1 O3-O5,005507A0..00550854: exact float matrix row2 at native cache callers.
+    // The existing public/double specification and its other callers retain their contract.
+    internal static int GetNativeZ(Mat3 r)
+    {
+        float x=(float)r[2,0],y=(float)r[2,1],z=(float)r[2,2];
+        float dominant=MathF.Abs(x),value=x;int axis=1;
+        if(MathF.Abs(y)>dominant){axis=2;dominant=MathF.Abs(y);value=y;}
+        if(MathF.Abs(z)>dominant){axis=3;value=z;}
+        return value>0f?axis:-axis;
+    }
     /// <param name="parentAxis">0 for 'X', 1 for 'Y', 2 for 'Z'.</param>
     public static int Get(Mat3 r, int parentAxis)
     {
