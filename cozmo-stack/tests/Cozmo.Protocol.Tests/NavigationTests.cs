@@ -1054,7 +1054,7 @@ public class NavigationTests
         // false), 0x0055B370): the flip runs after the FIRST drive, the action's result is the flip's, and the behaviour never sees 0x04000001, so there is no retry and no blind flip.
         Assert.True(1 == b.Trace.Count(l => l.Contains("start DriveAndFlipBlockAction(7)")), string.Join(" | ", b.Trace));
         Assert.DoesNotContain(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7) -> DidNotReachPreActionPose"));   // the action's result; the drive's own 0x04000001 is only in the ignored-failure trace line
-        Assert.Contains(b.Trace, l => l.Contains("DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound"));
+        Assert.True(b.Trace.Any(l => l.Contains("DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound")), string.Join(Environment.NewLine,b.Trace));
         Assert.DoesNotContain(b.Trace, l => l.Contains("start FlipBlockAction (blind)"));
         Assert.Contains(b.Trace, l => l.Contains("FlipBlockAction.CheckIfDone: compound result Success; object 7 marked Unknown"));   // 0x0055F186; no carry lift is queued without a RUNNING tick within 40 mm
         Assert.True(b.KnockedOver, $"tipped={tipped} | " + string.Join(" | ", b.Trace));

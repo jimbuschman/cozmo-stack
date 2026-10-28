@@ -1,5 +1,7 @@
 # PICKUP-CHILDREN-1 — native pickup children and configured approach
 
+External verdict: Claude PASS; M12-007/M12-029/M13-020 all settled EXACT_SOURCE on main through `2377fc5a`. Claude corrected the approved inventory and re-approved M12 after operator confirmation. The proposals and first-gate history below describe the original handoff.
+
 - Branch `codex-m13-manager-2`; integrated implementation `997e2908` (reviewed isolated `c6477cc0`), teardown expectation correction `5fbe172b` (isolated `cef96471`). Codex independent review and full gate PASS. No hardware or whole-behaviour acceptance claim.
 - Configured Pickup now delegates to native DriveToHelper/DriveToObject/DriveToPose, retains all original pre-action goals and IDs, uses canonical MAIN/FORWARD/current-origin inputs, shared Path-owned SpeedChooser/E1 and actual engine-ticked planning/status/turn/dock/carry/completion owners. Shipped primitives are loaded through canonical startup. `005B56B0/005B5800/005B5C94`, `005590AE/00559650/00559880`, `0055A86C/0055AB4C`, `0064ACC4..0064AEF0`, `0053B798..0053B8DA`.
 - Reachable Search stage1 has the source's eight owned children and default-filter exhaustion; light trigger DrivingTo0B is played even on Init failure and stopped on retirement; unsupported native inputs log and stop only their captured owner. `005BB1AA..005BB3C8/005BB478`, `00559650/00558950`, forced helper snapshot `005B61A2`.
