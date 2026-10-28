@@ -27,7 +27,7 @@ Operator also explicitly approved zeroing the four unused PlaceRel completion ID
 
 ## Combined implementation release
 
-Manager accepted S1–S14/P1–P10/C1–C5 after independent B bounded READ PASS and A's reciprocal check of B-extracted cache facts. Frozen read SHA256 `b719a854d016f0ec5a3e78d510c24464e90ccd7e79671d3fdc5b02118ea684e9`; proposal `b11301104f4753f08ea61418b431d0035e410129d92beea6c5c6bd66f0489ee8`; independent report `684bcfd312393c674124262674fb82d8f68e8f9be4c4d11ad2238e0f8c241623`. Both explicit operator decisions are recorded above, with formal official changes left to Claude.
+Manager accepted S1–S14/P1–P10/C1–C5 after independent B bounded READ PASS and A's reciprocal check of B-extracted cache facts. Reviewed working-file raw SHA256: read `b719a854d016f0ec5a3e78d510c24464e90ccd7e79671d3fdc5b02118ea684e9`, proposal `b11301104f4753f08ea61418b431d0035e410129d92beea6c5c6bd66f0489ee8`; independent report `684bcfd312393c674124262674fb82d8f68e8f9be4c4d11ad2238e0f8c241623`. Git normalizes the read/proposal's CRLF to LF; canonical published hashes are recorded below. Both explicit operator decisions are recorded above, with formal official changes left to Claude.
 
 One isolated builder in `codex/sparks-stack-1` implements the entire finite configured path. Scope: native StackBlocks factory/lifecycle and its actual shared intention cache entries5/3/dependency/lazy timestamp cadence; actual pickup and PlaceRel helpers, checked zero-offset Drive1/native placement and ground recovery runners and required IDock/Verify/clear/turn/lift recipients; source-derived Sparked instance27/objective40/needs43/config inputs; actual callback/state/retarget/cancel/lifetime/API delivery and the action-specific approved unused-ID policy; directly required production bindings and tests. Reuse checked shared bodies while preserving pickup/Knock/put-down and public/manual paths; no unrelated modernization. If a new source question appears, stop that step and return it to A/B before code.
 
@@ -38,3 +38,16 @@ Tests must execute actual configured factory/activity/manager/cache/helpers/Acti
 Source getters +2C and +7C have recovered bodies; expose them if called, without inventing additional eligibility or refresh cadence for unresolved external consumers. Ordinary4/2, nonzero-offset/other parameter branches and inherited raw/post-null picker/M8-019/M15-071/vision44/geometry/planner/audio/firmware frontiers remain visible; no silent success, feature exclusion or whole-class settlement. Source-proved undefined payload branches retain meaningful scalar callback processing and visible availability/M1-034 handling without invented data.
 
 Builder owns sole test runner until meaningful affected regression and all changed C# raw-hash freeze; stop build servers and explicitly release to B. B independently reviews changed source/code/test reach and executes justified affected regressions on frozen bytes; root alone commits/integrates and runs the asset-complete full gate. All attempts are retained in `SPARKS-STACK-1-builder.md`. Current state: BUILDING; no whole record, behavior or hardware acceptance claim.
+
+## Published source bytes and finite follow-ups
+
+Root directly compared manager working bytes, LF-only normalization, committed Git blob and worker file: the only read-packet difference is484 CRLF pairs,58465→57981 bytes. No source row, literal or behavioral text changed. Canonical published LF SHA256 values:
+
+- Main read: `334d3ddd847233001b5579493b3b1c3f871177c434ff75ad7ae66a15c906db3f` (reviewed raw B719… above).
+- Original frozen proposal: `5e561bcc484ed3df2b50692a6f2f52d73aad412540ea86eb80543b00aa86cf7a` (reviewed raw B113… above).
+- Source follow-up1: `76fe1e765e38b3b6d9bd1bfb93e58a213729df611494e548ceb6bc3c8d169e8b` (reviewed raw FFC28C… in the log).
+- Source follow-up2: `40dcf86b2460f6076b3c6714a4ee3c4594b99d720f75bf4267309474c51ddd1f` (reviewed raw `f04239051a06930ec4b5e56b9c7b3f0884725aa96a9289054d297ae644be22ae`).
+
+Both finite follow-ups passed A/B primary checks without altering the original frozen packet. Follow-up2 SF4–8 confirms that Place initialization does **not** write SelectedObjectId; the draft extra write must be removed. Ground GetCompletionUnion `00554AE0..00554AFA` is variant0 with saved carry ID/count1/false and four truly uninitialized words: retain explicit payload-unavailable/M1-034 publication guarding and scalar callbacks. The Place-only zero-unused policy does not extend to Ground. Actual LowDock preset0 is32mm, tolerance5 (not speed5), default speed10/accel20/duration0; code uses the checked motor recipient.
+
+Ownership addendum to the unchanged frozen proposal: root re-read current M15-022's full title/evidence; it owns AtPose composition and Ground Init/Check, not this Ground completion getter. Include that unowned getter in the **second related placement verification/completion producer proposal**, alongside PlaceRel Verify/GetCompletion, with per-method citations and distinct policy/undefined boundaries. Do not silently absorb it into M15-022 or allocate a third tiny record. No official ID/status is assigned; whole M15-022 remains partial.
