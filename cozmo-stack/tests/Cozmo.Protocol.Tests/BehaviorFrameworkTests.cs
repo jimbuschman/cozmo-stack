@@ -1985,7 +1985,7 @@ public class BehaviorFrameworkTests
             Assert.NotNull(m.CheckReactions(1));
             Assert.Contains(seen, l => l.Contains("ReactionTriggerTransition"));
             Assert.Contains(seen, l => l.Contains("UpdateRobotPropertiesForReaction"));
-            Assert.Contains(seen, l => l.Contains("cube light"));
+            Assert.DoesNotContain(seen, l => l.Contains("cube light")); // empty manager state-light vector has no MS4 work.
         }
         finally { SteppedBehavior.MissingReported -= On; }
     }

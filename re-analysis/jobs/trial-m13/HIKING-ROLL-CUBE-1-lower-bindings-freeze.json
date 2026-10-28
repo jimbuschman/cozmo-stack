@@ -1,0 +1,20 @@
+{
+  "note": "Additive lower binding READ PASS; Place helper note is current ownership proposal only, uses already independently checked PB1-PB4. All prior frozen artifacts unchanged.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-lower-light-bindings.md",
+      "reviewed_raw_sha256": "0aeb98d16b7ac2e065fcbc2ad97ea0e99c6c8b3ff80d59332128b379c469d2f8",
+      "published_lf_sha256": "0fa8eee8561b22a07cd8be2cc7fca71fd135c79d5ce9a50338a99a25fa32a1ab"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-lower-light-bindings-codex-check.md",
+      "reviewed_raw_sha256": "a80495465a32de83598ab87197fc9b1b585ea16410289369ef5ab43ab4c12587",
+      "published_lf_sha256": "433910909a1ed7d175dadb4d67499f41f61ffaa7bd484ef6d285104c415c4bc5"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-place-helper-proposal.md",
+      "reviewed_raw_sha256": "d687e708542e032cf5609e28caaa0b3ef1130142192b17361de8e8b2c5325bef",
+      "published_lf_sha256": "6438e2f41c740abcae2bee38cb5dbc5eca2d2859fb0f1b1dd75f85d63f026418"
+    }
+  ]
+}

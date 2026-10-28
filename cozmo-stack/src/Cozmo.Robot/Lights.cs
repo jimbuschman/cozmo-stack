@@ -1070,6 +1070,31 @@ public sealed class CubeLightComponent
         PoseStatePlayObservedForTest?.Invoke(objectId,trigger,2,false,zero,0);
         PlayLightAnimForObjectId(objectId,trigger,2,false,zero,0);
     }
+    // Directly required 006396AC..00639722 wrapper: layer1 Stop(false), then overload Play(layer1,int0).
+    internal Action<uint,string,string?,int,bool,CubeLightModifier,int>? BehaviorStateCallObservedForTest;
+    internal bool PlayBehaviorStateLight(uint id,uint rawTrigger,bool modifier,CubeLightModifier lights)
+    {
+        string? trigger=Behavior.NativeCubeLightTriggers.Name(rawTrigger);
+        BehaviorStateCallObservedForTest?.Invoke(id,"Play",trigger,EngineLayer,modifier,lights,0);
+        if(trigger is not null)return PlayLightAnimForObjectId(id,trigger,EngineLayer,modifier,lights,0);
+        // Unknown raw enum is retained by its caller, never aliased to Count or another playable trigger.
+        Animations.EnsureLoaded();
+        bool exists;lock(_gate)exists=_infos.Values.Any(info=>info.ObjectId==id);
+        if(!exists)SourceLog(EngineLogLevel.Info,"CubeLightComponent","CubeLightComponent.PlayLightAnim.InvalidObjectID",$"No object with id {id} exists in _objectInfo map can't play animation");
+        else SourceLog(EngineLogLevel.Warning,null,"CubeLightComponent.NoAnimForTrigger",$"No animation found for raw trigger {rawTrigger}");
+        return false;
+    }
+    internal bool StopAndPlayBehaviorStateLight(uint id,uint oldTrigger,uint newTrigger,bool modifier,CubeLightModifier lights)
+    {
+        StopBehaviorStateLight(id,oldTrigger,false);
+        return PlayBehaviorStateLight(id,newTrigger,modifier,lights);
+    }
+    internal void StopBehaviorStateLight(uint id,uint rawTrigger,bool resume)
+    {
+        string? trigger=Behavior.NativeCubeLightTriggers.Name(rawTrigger);
+        BehaviorStateCallObservedForTest?.Invoke(id,resume?"StopResume":"Stop",trigger,EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
+        StopLightAnimForObjectId(id,trigger,EngineLayer,resume);
+    }
     internal bool PlayNativeInteracting(uint id)=>PlayLightAnimForObjectId(id,"Interacting",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
     internal bool PlayNativeDrivingTo(uint id)=>PlayLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
     internal void StopNativeDrivingTo(uint id)
@@ -1378,13 +1403,19 @@ public sealed class CubeLightComponent
     internal void StopLightAnim(string trigger, int layer, ObjectType? type = null, bool pickDefaultLayer = true)
     {
         int? id = type is null ? -1 : TryObjectId(type.Value) is { } value ? unchecked((int)value) : null;
+        StopLightAnimCore(trigger,layer,id,pickDefaultLayer);
+    }
+    private void StopLightAnimForObjectId(uint id,string? trigger,int layer,bool pickDefaultLayer)
+        =>StopLightAnimCore(trigger,layer,unchecked((int)id),pickDefaultLayer);
+    private void StopLightAnimCore(string? trigger,int layer,int? id,bool pickDefaultLayer)
+    {
         if (id is { } objectId) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopLightAnim", $"Stopping {trigger} on object {objectId} on layer {LayerName(layer)}.");
         else Log("MISSING: M4-018 | StopLightAnim 0x00638F9C: type-only caller has no native ObjectID");
         bool found = false;
         lock (_gate)
         {
             foreach (var (t, info) in _infos)
-                if (type is null || t == type)
+                if (id == -1 || unchecked((int)info.ObjectId) == id)
                     foreach (var p in info.Layers[layer])
                         if (MatchesTrigger(p, trigger)) { p.Stop = true; found = true; }
         }
@@ -1406,7 +1437,7 @@ public sealed class CubeLightComponent
     }
 
     /// <summary>The animation name a trigger maps to; a playing entry matches when its name is the trigger's name.</summary>
-    private bool MatchesTrigger(Playing p, string trigger) => p.Trigger == trigger;
+    private bool MatchesTrigger(Playing p, string? trigger) => p.Trigger == trigger;
 
     // fidelity: M4-018
     /// <summary>

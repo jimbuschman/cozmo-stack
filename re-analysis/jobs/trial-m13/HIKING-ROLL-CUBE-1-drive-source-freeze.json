@@ -1,0 +1,15 @@
+{
+  "note": "Additive independently checked D1-D5; original six frozen files unchanged. Source clarifications, no code pass or reviewer code correction batch.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-drive-joins.md",
+      "reviewed_raw_sha256": "a533481c43d3189c707a550a36d76b6d594b7ca056fadb0bd24591bb16c8cb6d",
+      "published_lf_sha256": "015e9b210d913ebe43e7fee144c597c6862b707586b7b51067777f906307ead9"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-drive-joins-codex-check.md",
+      "reviewed_raw_sha256": "a3cc66f92c3cac1637d00003fa0025e0e91ca307880ed286a321e925b26b4d7f",
+      "published_lf_sha256": "5f4e1582e59ba0e1c62b077ad3299bc2648adf6ef90e32f168e09bd5327bff69"
+    }
+  ]
+}

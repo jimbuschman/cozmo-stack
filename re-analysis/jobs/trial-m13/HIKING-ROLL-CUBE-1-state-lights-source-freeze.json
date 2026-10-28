@@ -1,0 +1,20 @@
+{
+  "note": "Complete bounded H7 source release. Final read/check supersede historical boundary layer0 shorthand: real engineLayer1, distinct trailing integer0. Original six+drive freeze untouched.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-state-lights-read.md",
+      "reviewed_raw_sha256": "e4bf90908c5a6cdc6c26ef99c8cbf66bd82ed4481f8c6991251c21e7c8fde0f7",
+      "published_lf_sha256": "9c783303eaac4757d071066a9297f782c84ddb4db0c3b93382325be081629cce"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-state-lights-read-codex-check.md",
+      "reviewed_raw_sha256": "7c34867aa7b09d91b74f17c9c92020e3c59b48b3c0c795a7777a8b9ebd280b31",
+      "published_lf_sha256": "fb4cc793e73d440b4fcf7170f884b2ff9d3ccfa9f4edd90af60f7c4717d74612"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-state-lights-boundary.md",
+      "reviewed_raw_sha256": "0a86e10a9bb2d0a6a112435265dc70571ee2078336138e76b2396a08dc1b3cdf",
+      "published_lf_sha256": "40bddabca5bd4679202d4426d93e2952a8d0b89f929a2aec6e5a776d5ed7a204"
+    }
+  ]
+}
