@@ -1,0 +1,35 @@
+{
+  "note": "Reviewed raw files; publication changes CRLF to LF only. Original source packets preserved; additive policy/joins/quote correction explicit.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-read.md",
+      "reviewed_raw_sha256": "1ff14f9bd4b72d14837fbee64096eec897dff4de12335d4a2001099f8a015e06",
+      "published_lf_sha256": "fc9f7d2da7c9d4040eab16885c449a7b078929e63d5e76de9b6532b01cbf9916"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-read-codex-check.md",
+      "reviewed_raw_sha256": "8747aa9a4aa70f561d6dd0cb1b5fcfc7708609cbdfe483bb9e4c970fbcfa1059",
+      "published_lf_sha256": "dfba8b679c2d3edb314dc7ab85eb95b8487edaca666e469421f68308ee812c23"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-libm-applicability.md",
+      "reviewed_raw_sha256": "c45d77fe5c18384c6828ecc445cc3d99d5bd5421116a8d3463cc05d86dbc236b",
+      "published_lf_sha256": "8117b64b8754e2838aa1eb87cd1ce112132cb9422121b2dd42747eaa0d06455a"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-helper-response-clarification.md",
+      "reviewed_raw_sha256": "ecb2a4cbfe85ebef1e50460a236aff9055efcbff73e6564e567d74bc32487787",
+      "published_lf_sha256": "bb5ea674b6a3e27f03942e1694a8574a51c6fa719d31a179ee65316472127939"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-joins-codex-check.md",
+      "reviewed_raw_sha256": "cdba3525ad64022e3c574531d5cce9e376de9a73357d976955db795b44dcd467",
+      "published_lf_sha256": "7e4d13c5d1a2167340ad99acef0c61f55124abd0ec39e018d85ab81727e3ff9b"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-record-quote-correction.md",
+      "reviewed_raw_sha256": "250bb1af77fa6c058bdbb1774aa68d92d6af9f851a89624ec6ca0c3ce2815aab",
+      "published_lf_sha256": "e0fbd8886c7a4e5b82a4e2fb8ae3699eccd19deabf743b0db1c716d2d484474c"
+    }
+  ]
+}
