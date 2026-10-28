@@ -7,10 +7,10 @@ Manifest of **711 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 252 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 253 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 7 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 345 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 344 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -36,7 +36,7 @@ remains after both, and they do not go away by working harder on this repository
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 34 | 0 | 1 | no | no |
-| M13-navigation — Planning, charger and block configurations | 40 | 0 | 29 | 0 | 1 | yes | no |
+| M13-navigation — Planning, charger and block configurations | 40 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 75 | 4 | 62 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
@@ -64,7 +64,7 @@ status.
 | M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
-| M13-navigation | INVENTORY_APPROVED | 8 | 0 | 0 | 0 |
+| M13-navigation | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
@@ -2770,15 +2770,6 @@ B-M1-3 (2026-10-17), built, awaiting strong verification: fixes Opus B2/Q3. SetC
 * outstanding: RECOVERABLE_GAP: read IHelper::Stop downstream (concrete StopInternal, LogStopEvent, StopActing) and which list BehaviorBuildPyramid's top loop iterates. M1-034 candidate: empty stack at 0x0056DCC6 (reachability unread). B-M12-5 (2026-10-16): actual BuildPyramid top-placement entry reports stack MISSING for unread native list/stop downstream before iterating the host candidate list. No fabricated helper-stop owner, callback suppression or complete behavior claim. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov69-74-75-77-check.md): IMPLEMENTATION_GAP for helper stop and the BuildPyramid list/loop. SmartDelegate rows are M8-011's, StopActing M8-001's. Callbacks and cache contents: M12-049. Empty-stack read 0x0056DCC6: reachability unknown, M1-034 skip if reached. B-M12-6 built, awaiting strong verification: existing IBehavior SmartStop wrapper is retained and regression-driven through weak lock, Info and component first-entry match. Empty stack now visibly skips the undefined0x0056DCC6 read under M1-034 rather than inventing stale-pointer success. ClearStackFromTopToIter re-reads the target value and end around Stop, pops the current end, releases it, preserves first-pass bool ordering, and ports exact LoopBoundOverflow Error text/global error/debug-break at1000. IHelper.Stop retains Info/event/active-cancel/vt24 order and existing no-op concrete tails; LogStopEvent now uses f32 subtraction then signed VCVT truncation, exact status mapping, Event level/name-only text/$data integer duration, negative-integer Error followed by error flag and duration0 event. BuildPyramid top entry looks up static+11C/top+124, warns using/clears moving-base+120, copies native manager+48 strong-cache references independently with duplicates/order, tests ContainsBlock(top) then ContainsBlock(static), calls midpoint/zero-height center/relative conversion, breaks on geometry failure, passes raw relativeXY/lowfalse/skipfalse into existing PlaceRelObjectHelper factory/SmartDelegate, and continues after delegation. Pose reads share FrameGate, released before callbacks, with temporaries retained through delegation and disposed afterward. Native cache producers and success/failure callbacks remain M12-049 ReportMissing joins; midpoint root/distance recipient remains M12-043 ReportMissing. Host all-pairs cache/midpoint is not substituted. Existing M8-001 code already clears matching tag after Cancel regardless of keepAction; no behavior change to that referenced record. HelperStopAndPyramidLoopTests plus corrected M8BatchThreeD empty-case test cover the checked branches and production entries. No whole helper/concrete-action/cache fidelity settlement. B-M12-6 ID-reference cross-check: ContainsBlock arguments keep native +124/+11C references across synchronous delegation (0x005DC188/0x005DC198); the loop rereads current ID fields each iteration and the factory rereads static+11C. Regression LoopRereadsTheReferencedIdsAfterSynchronousDelegation covers this without claiming unread callback bodies.
 
 ### M13-navigation — Planning, charger and block configurations
-
-**M13-002 — FlipBlockAction's constants, their roles and IAction type** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs`
-* effect: FlipBlock drives a different distance, angle or tolerance
-* rests on: the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: FlipBlockAction ctor 0x0055EC80: IAction type 0xF (0x0055ECA8/0x0055ECAA); +0x12C=150.0 (0x43160000), +0x130=20.0 (0x41A00000) at 0x0055ECF6/0x0055ECFA; +0x134=45.0 (0x42340000), +0x138=40.0 (0x42200000), +0x13C=-1 at 0x0055ECFE..0x0055ED0E; +0x140=1 at 0x0055ED10/0x0055ED12; +0x12C is the drive speed: Init 0x0055EF18 loads it into r3 and passes it to DriveStraightAction 0x0055EF2C; the r3 argument is stored at DriveStraightAction+0x7C (0x005472A4); +0x130 is the drive-past distance: Init computes the robot-to-object distance (vsqrt.f32 0x0055EEFA), adds +0x130 (0x0055EF14/0x0055EF1C) and passes the sum as DriveStraightAction's distance argument 0x0055EF20 (stored at DriveStraightAction+0x78); +0x134 is the approach lift height: Init 0x0055EF3A loads it into r2 for MoveLiftToHeightAction(45.0, 5.0, 0) 0x0055EF4A (added before the drive); +0x138 is the lift trigger distance: CheckIfDone 0x0055F124 vldr s0,[r4,#0x138] / vcmpe / bpl 0x0055F130; when the object is closer than it and +0x13C is still -1 it queues MoveLiftToHeightAction(preset 2, speed 5.0) 0x0055F14E and stores that action's id in +0x13C (0x0055F15C) through ActionList::QueueAction position 5 (0x0055F16A); +0x13C is the queued lift action's id, -1 when none; the destructor cancels it on robot+0x250 ActionList (0x0055ED6C/0x0055ED70/0x0055ED7A); +0x140 is shouldCheckPreActionPose: Init reads it (0x0055EE10) into the PreActionPoseInput byte at sp+0x64 (0x0055EE1C) passed to IDockAction::GetPreActionPoses with ActionType 5 (0x0055EE14/0x0055EE5E); SetShouldCheckPreActionPose writes it (0x0055EDC2)
-* outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): the 5 passed to MoveLiftToHeightAction(45, 5, 0) is a tolerance: the lift now goes out with the constructor defaults (speed 10, accel 20; 0x00548A6E..0x00548A78); the distance is computed in binary32 (0x0055EED6..0x0055EF1C, 0x0055F0E6..0x0055F10A). Still open: DriveAndFlipBlockAction.GetPossiblePoses (M12-035) still casts a double sum (0x0055E688 unread).
 
 **M13-003 — Obstacle expansion, per-heading C-space polygons, and the primitive collision test** (live path)
 

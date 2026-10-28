@@ -5018,8 +5018,8 @@
       "id": "M13-002",
       "subsystem": "M13-navigation",
       "title": "FlipBlockAction's constants, their roles and IAction type",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativeFlipBlockRunner.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "FlipBlockAction ctor 0x0055EC80: IAction type 0xF (0x0055ECA8/0x0055ECAA); +0x12C=150.0 (0x43160000), +0x130=20.0 (0x41A00000) at 0x0055ECF6/0x0055ECFA; +0x134=45.0 (0x42340000), +0x138=40.0 (0x42200000), +0x13C=-1 at 0x0055ECFE..0x0055ED0E; +0x140=1 at 0x0055ED10/0x0055ED12",
@@ -5032,7 +5032,7 @@
       ],
       "effect": "FlipBlock drives a different distance, angle or tolerance",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the 5 passed to MoveLiftToHeightAction(45, 5, 0) is a tolerance: the lift now goes out with the constructor defaults (speed 10, accel 20; 0x00548A6E..0x00548A78); the distance is computed in binary32 (0x0055EED6..0x0055EF1C, 0x0055F0E6..0x0055F10A). Still open: DriveAndFlipBlockAction.GetPossiblePoses (M12-035) still casts a double sum (0x0055E688 unread).",
+      "unresolved": "Settled EXACT_SOURCE (manager, 2026-10-28; research/20261028-knockover-cubes-1-claude-check.md). Own claim: the constants, their roles and the IAction type, on the native Flip (NativeFlipBlockRunner, used by configured KnockOverCubes): ctor 0x0055ECA8 type 0xF; +0x12C/+0x130 = 150/20 (0x0055ECF6/0x0055ECFA); +0x134/+0x138/+0x13C = 45/40/-1 (0x0055ED0E); +0x140 = 1 (shouldCheckPreActionPose); Init: lift(45, tolerance 5) then drive(distance + 20, speed 150); CheckIfDone 0x0055F124..0x0055F16A: distance < 40 (NaN skips, bpl) with +0x13C == -1 builds MoveLiftToHeightAction(preset 2, 5.0), sets [+0x56]=1, stores its tag in +0x13C and queues it InParallel (position 5); the teardown cancels it. Wording note: the evidence's 'speed 5.0' in the CheckIfDone item is the same tolerance argument as the Init lift's 5 (the R-FIX note below). Not part of this claim: DriveAndFlipBlockAction::GetPossiblePoses arithmetic (M12-035) and the public FlipBlockAction.RunAsync path (M13-028, partial).\nbuilt, awaiting strong verification (R-FIX, 2026-10-03): the 5 passed to MoveLiftToHeightAction(45, 5, 0) is a tolerance: the lift now goes out with the constructor defaults (speed 10, accel 20; 0x00548A6E..0x00548A78); the distance is computed in binary32 (0x0055EED6..0x0055EF1C, 0x0055F0E6..0x0055F10A). Still open: DriveAndFlipBlockAction.GetPossiblePoses (M12-035) still casts a double sum (0x0055E688 unread).",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose"
