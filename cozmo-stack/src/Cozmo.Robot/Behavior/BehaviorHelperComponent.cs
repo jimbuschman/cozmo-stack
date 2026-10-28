@@ -29,7 +29,11 @@ public sealed class HelperControl
     public int Owners => Volatile.Read(ref _owners);
     internal void AddOwner() => Interlocked.Increment(ref _owners);
     internal void ReleaseOwner()
-    {if(Interlocked.Decrement(ref _owners)==0&&Pointer is NativeSearchForBlockHelper owned)owned.Dispose();}
+    {
+        if(Interlocked.Decrement(ref _owners)!=0)return;
+        if(Pointer is NativeSearchForBlockHelper search)search.Dispose();
+        else if(Pointer is NativeDriveToHelper drive)drive.Dispose();
+    }
     internal bool TryAddOwner()
     {
         // weak_ptr::lock: succeeds only while an owner is left
@@ -89,8 +93,10 @@ public sealed class BehaviorHelperFactory
 {
     internal BehaviorHelperFactory(BehaviorHelperComponent component) { Component = component; }
     public BehaviorHelperComponent Component { get; }
-    internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target)
-    {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target);return Component.AddHelperToComponent(ref helper);}
+    internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,int maxStage=0)
+    {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target,maxStage);return Component.AddHelperToComponent(ref helper);}
+    internal HelperRef CreateNativeDriveTo(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,bool force)
+    {IHelper? helper=new NativeDriveToHelper(m,parent,this,target,force);return Component.AddHelperToComponent(ref helper);}
 }
 
 // fidelity: M8-011

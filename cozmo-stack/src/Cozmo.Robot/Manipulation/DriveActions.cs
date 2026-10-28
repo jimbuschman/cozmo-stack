@@ -119,6 +119,16 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         SourceLog = (l,c,k,t) => m.Robot.Engine.EmitSourceLog(l,c,k,t);
         Log = m.Robot.Engine.EmitStackLog;
     }
+    private bool _native,_nativeHead,_nativeManual,_nativeGoalsSet;
+    private List<Pose3d> _ownedGoals=new();
+    internal DriveToPoseAction(ManipulationSystem m,bool head,bool manual):this(m)
+    {_native=true;_nativeHead=head;_nativeManual=manual;RequiredTrackMask=manual?0u:4u;SeedNativeEmptyCompletion();}
+    internal bool SetNativeGoals(IReadOnlyList<Pose3d> goals)
+    {
+        if(State!=EngineActionResult.NotStarted)return false;
+        foreach(var old in _ownedGoals)old.Dispose();
+        _ownedGoals=goals.Select(p=>new Pose3d(p)).ToList();Goals=_ownedGoals;Goal=_ownedGoals.FirstOrDefault();_nativeGoalsSet=true;return true;
+    }
     private readonly PathGoalIndex _goalIndex=new();
     internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _destroyed;
@@ -135,6 +145,13 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     public override uint CheckIfDone()
     {
         if (_m.DriveTickForTest is { } input) return (uint)CheckIfDone(input(this));
+        if(_native)
+        {
+            using var mutation=_m.World.EnterPoseMutation();
+            var owner=_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
+            var nativePath=_m.Robot.Motion.Path;
+            return (uint)CheckIfDone(new DriveToPoseTick(nativePath.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,owner.GetCheckedMainPose(),_m.NativeHeight(),nativePath.Field42,nativePath.Field44,unchecked((sbyte)nativePath.Field40)));
+        }
         using var nativePose=Goal?.HasParent==true?_m.CopyPreActionRobotPose():null;
         if((nativePose??_m.RobotPose()) is not {} pose){MissingSource("live pose input unavailable");return (uint)ActionResult.Running;}
         var path=_m.Robot.Motion.Path;
@@ -145,6 +162,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
 
     public override int Init()
     {
+        if(_native)return InitNative();
         LifecycleCallObserved?.Invoke("InitDriving");
         DrivingAnimations.Init((byte)RequiredTrackMask, Tag, SuppressTrackLocking, false);
         DeadlineSec=-1.0; // 0x0055A8A6, including retries.
@@ -178,6 +196,22 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         }
         return 0;
     }
+    private int InitNative()
+    {
+        using var mutation=_m.World.EnterPoseMutation();
+        DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);DeadlineSec=-1;
+        if(!_nativeGoalsSet)return 0x0300000F;
+        var owner=_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
+        if(!owner.TryGetNativeOriginOwner(owner.CurrentOriginId,out var origin)||origin is null)
+            throw new NativeActionUnavailable("M12-023 current world origin owner unavailable");
+        foreach(var goal in _ownedGoals)if(!goal.TryWithRespectTo(origin,goal))return 0x03000005;
+        _goalIndex.Value=0;
+        var native=_m.Robot.Motion.Path;
+        int result=native.StartNativeDrivingToPose(_m,_ownedGoals,_goalIndex,_nativeManual,IgnoreObstacleIds);
+        if(result!=0)return 0x03000013;
+        if(_nativeHead&&_m.Robot.Motion.MoveHeadToAngle(BitConverter.UInt32BitsToSingle(0xBE860A92),2f,5f,0f,out _)!=0)return 0x03000016;
+        return 0;
+    }
     private void CleanupSource()
     {
         if (_destroyed) return; _destroyed=true;
@@ -191,6 +225,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
             else MissingSource("EraseAllPlannerObstacles("+(which?"1":"0")+") 0x0055A626/0x0055A632 visualizer handoff absent");
         }
         LifecycleCallObserved?.Invoke("DestroyDriving"); DrivingAnimations.ActionIsBeingDestroyed();
+        if(_native){foreach(var goal in _ownedGoals)goal.Dispose();_ownedGoals.Clear();PreActionObjectPose?.Dispose();PreActionObjectPose=null;}
     }
     public void Dispose() { if(_destroyed)return;CleanupSource();base.WatcherEnding(); }
     public override void WatcherEnding()
@@ -370,6 +405,7 @@ public delegate ActionResult PosesFunction(ObservableObject obj, out IReadOnlyLi
 /// </summary>
 public sealed class DriveToObjectAction
 {
+    internal bool NativeInputs;
     // fidelity: M12-011
     /// <summary><c>+0x14C</c>: Radians 0x3E060A92 (7.5 degrees), the ctor's <c>GetPossiblePoses</c> angle tolerance (research Q12.6, 0x0055850C).</summary>
     public static readonly double PreActionAngleToleranceRad = BitConverter.UInt32BitsToSingle(0x3E060A92);
@@ -480,10 +516,13 @@ public sealed class DriveToObjectAction
     public ActionResult GetPossiblePoses(ObservableObject obj, out IReadOnlyList<PreActionPose> posesOut, ref bool alreadyInPosition)
     {
         posesOut = Array.Empty<PreActionPose>();
-        using var robot = _m.CopyPreActionRobotPose();
+        using var robot = NativeInputs ? _m.NativeMainSnapshot() : _m.CopyPreActionRobotPose();
         if (robot is null) return ActionResult.Abort;
+        if(NativeInputs)_trace.Add("NativePreActionInputs MAIN="+NativePoseTrace(robot)+" object="+NativePoseTrace(obj.NativePose));
+        if(NativeInputs)_m.World.SelectedObjectId=obj.ObjectId;
         var output = DockPreActionPoses.Get(new PreActionPoseInput(obj, ActionType, FlagA: false, PreActionAngleToleranceRad, DistanceFromMarkerMm, UseApproachAngle, ApproachAngleRad),
-                                            robot.Value, _m.Docking.Carrying.CarriedObjectId, () => _m.GetObstacles(robot.Value), _trace);
+                                            robot.Value, NativeInputs?_m.Robot.Engine.Robot!.CarryingOwner!.CarriedObjectId:_m.Docking.Carrying.CarriedObjectId,
+                                            () => NativeInputs?_m.NativeObstacles(robot.Value):_m.GetObstacles(robot.Value), _trace);
         if (output.Result != ActionResult.Success) return output.Result;
         if (output.Poses.Count == 0)
         {
@@ -491,10 +530,18 @@ public sealed class DriveToObjectAction
             return ActionResult.NoPreActionPoses;
         }
         alreadyInPosition = output.InPosition;
+        if(NativeInputs)_trace.Add("NativePreActionGoals "+string.Join(";",output.Poses.Select(p=>NativePoseTrace(p.WorldPose))));
         _trace.Add($"GetPreActionPoses: {output.Poses.Count} pose(s), closest #{output.ClosestIndex} at |d|=({output.OffsetX:F1},{output.OffsetY:F1}), threshold=({output.ThresholdX:F1},{output.ThresholdY:F1}), inPosition={output.InPosition}");
         if (alreadyInPosition) _trace.Add("DriveToObjectAction.GetPossiblePoses.UseRobotPose: Robot's current pose is close enough to preAction pose");
         posesOut = output.Poses.ToList();
         return ActionResult.Success;
+    }
+
+    private static string NativePoseTrace(Pose3d pose)
+    {
+        using var root=pose.GetWithRespectToRoot();
+        var t=pose.Translation;var r=root.Translation;
+        return FormattableString.Invariant($"local({t.X:R},{t.Y:R},{t.Z:R}) root({r.X:R},{r.Y:R},{r.Z:R}) yaw{pose.AngleAroundZ:R} ")+pose.GetNamedPathToRoot(false);
     }
 
     /// <summary>The <c>+0x150</c> function when <see cref="DriveToHelperMatchPose"/> or <see cref="ExcludePoses"/> is set: <see cref="GetPossiblePoses"/> then the removals described there.</summary>

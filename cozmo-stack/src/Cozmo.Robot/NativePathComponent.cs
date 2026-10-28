@@ -40,18 +40,57 @@ internal sealed partial class PathComponent
     internal uint ParamsOrigin {get=>PlannerObjectsField0C;set=>PlannerObjectsField0C=value;}
     private RetainedSubscription? _pathSubscription;
     // Native C6 subscribes once in the Path ctor; this host binding helper is not a native re-Init path.
-    internal void Attach(EngineRobot owner){RetainedSubscription.Replace(ref _pathSubscription,owner.SubscribeMessage(new PathFollowingEvent().Id,m=>owner.ActionList.WithGate(()=>OnPathEvent((PathFollowingEvent)m)),"Path"));}
+    internal void Attach(EngineRobot owner){AttachSpeedChooser(owner);RetainedSubscription.Replace(ref _pathSubscription,owner.SubscribeMessage(new PathFollowingEvent().Id,m=>owner.ActionList.WithGate(()=>OnPathEvent((PathFollowingEvent)m)),"Path"));}
     // fidelity: M2-020 — destructor Abort precedes C6 release, 0x00649006..0x0064900A.
     internal void DestroyRawOwner(EngineRobot robot)
     {
         Abort(robot.SendChecked);
         _pathSubscription?.Dispose();_pathSubscription=null;
+        _speedChooserSubscription?.Dispose();_speedChooserSubscription=null;
         Behavior.SteppedBehavior.ReportMissing("M2-020 PathComponent destructor after C6 release 0x0064900A: remaining planner/doler destruction at this lifetime point is not built; existing managed reset remains separate");
     }
     private PathGoalIndex? _goalIndex;
     internal int PlannerStatus => _nativePlanners?.Current?.CheckPlanningStatus??_plan?.Status??1;
     private void ModelGap(){if(_nativePlanners?.Current is null)_modelMissing?.Invoke("M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate");}
     internal void SetNativePlanners(NativePlannerSet planners)=>_nativePlanners=planners;
+    internal PathMotionProfile NativeMotionProfile=PathMotionProfile.Default;
+    internal int StartNativeDrivingToPose(ManipulationSystem m,IReadOnlyList<Vision.Pose3d> originalGoals,PathGoalIndex index,bool manual,IEnumerable<uint>? ignore)
+    {
+        // 64ACC4: the empty-vector failure precedes every write/old-plan cancellation.
+        if(originalGoals.Count==0)return 1;
+        var owner=m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-032 actual Robot owner unavailable");
+        if(owner.CarryingOwner is null)throw new NativeActionUnavailable("M12-032 actual carrying owner unavailable");
+        if(Field47){PlannerSlot10?.Invoke();Field47=false;}
+        if(IsActive)Abort(SendNative);
+        Field46=manual;_goalIndex=index;SharedPath=index;ParamsOrigin=owner.CurrentOriginId;
+        if(!owner.TryGetNativeOriginOwner(ParamsOrigin,out var currentOrigin)||currentOrigin is null)
+            throw new NativeActionUnavailable("M12-032 actual current origin owner unavailable");
+        using var start=new Vision.Pose3d(owner.GetCheckedForwardPose());
+        if(!Vision.PoseTreeNode.HasSameRoot(start.Node,currentOrigin.Node)){SetStatus(0);return 1;}
+        var goals=new List<Vision.Pose3d>();
+        try
+        {
+            foreach(var original in originalGoals)
+            {
+                var goal=new Vision.Pose3d(original);goals.Add(goal);
+                float offset=(owner.CarryingOwner.CarriedObjectId??uint.MaxValue)==uint.MaxValue?-20f:0f;
+                float yaw=(float)goal.AngleAroundZ;
+                float x=(float)goal.Translation.X+MathF.Cos(yaw)*offset,y=(float)goal.Translation.Y+MathF.Sin(yaw)*offset;
+                goal.Node!.Transform=new(goal.Quaternion,new Vision.Vec3(x,y,0));
+                if(!Vision.PoseTreeNode.HasSameRoot(goal.Node,currentOrigin.Node)){SetStatus(0);return 1;}
+            }
+            var planners=m.GetNativePlanners();planners.ConfigureNative(start,goals,NativeMotionProfile,ignore);SetNativePlanners(planners);
+            ObjectsChangedInput=()=>m.World.DidObjectsChange;
+            _computeModel=null;PlannerSlot10=planners.Stop;
+            SelectPlanner(goals.Count);
+            if(!StartPlanner()){SetStatus(0);return 1;}
+            SetStatus(1);
+            if(!Field48)NativeMotionProfile=ChooseNativeProfile(owner,originalGoals);
+            planners.Profile=NativeMotionProfile;
+            return 0;
+        }
+        finally{foreach(var goal in goals)goal.Dispose();}
+    }
     private bool StatusMask(uint mask){int shift=DriveToPoseStatus&0x7F;return shift<32 && ((mask>>shift)&1)!=0;} // ARM register LSR, not C#'s modulo-32 shift.
     internal bool IsActive => StatusMask(0xE);
     internal bool HasPathToFollow => StatusMask(0xC);

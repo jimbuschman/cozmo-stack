@@ -50,7 +50,8 @@ public sealed class M10GyroCheckedRowsTests
             order.Add(stage);
         };
         f.Host.Engine.Robots.RemoveRobot(1,false);
-        Assert.Equal(new[]{"unlink G2E EB","unlink G2E EA","unlink G2E E9","unlink G2E E6","unlink G2E E5","unlink G2E E7","filter subscriptions retired","filter string/tree retired","filter allocation retired","gyro raw delete"},order);
+        //511248 filter delete precedes Path511284/chooser649072 E1 release, before gyro511424.
+        Assert.Equal(new[]{"unlink G2E EB","unlink G2E EA","unlink G2E E9","unlink G2E E6","unlink G2E E5","unlink G2E E7","filter subscriptions retired","filter string/tree retired","filter allocation retired","unlink G2E E1","gyro raw delete"},order);
         Assert.Null(native.BlockFilterOwner);Assert.DoesNotContain(f.Logs,l=>l.Name?.Contains("gyro")==true||l.Name=="RobotGyroDriftDetector.BiasDetected");
         f.Host.Engine.DerivedRetirementObservedForTest=null;
         var replacement=f.Host.Engine.Robots.AddRobot(1,false)!;Assert.NotSame(oldDetector,replacement.GyroDetector);Assert.Equal(0u,replacement.GyroDetector!.BiasCount);

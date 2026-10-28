@@ -1,5 +1,14 @@
 namespace Cozmo.Protocol;
 
+// 740CDE/740CE0: uint16 union tag E1 followed by the sole bool byte.
+public sealed record SetEnableSpeedChooserMessage(bool Enable)
+{
+    public const ushort UnionTag=0xE1;
+    public byte[] PackBody()=>new[]{Enable?(byte)1:(byte)0};
+    public byte[] ToUnionBytes()=>new[]{(byte)0xE1,(byte)0,Enable?(byte)1:(byte)0};
+    public static SetEnableSpeedChooserMessage UnpackBody(ReadOnlyMemory<byte> body)=>new(new CladReader(body).Bool());
+}
+
 // fidelity: M8-013
 /// <summary>
 /// The two <c>MessageGameToEngine</c> union members <c>SelectionBSRunnableChooser</c> subscribes

@@ -883,13 +883,28 @@ public static class DockPreActionPoses
         if (output.Poses.Count == 0) { trace?.Add("IsCloseEnoughToPreActionPose.NoPreActionPoses"); output.Result = ActionResult.NoPreActionPoses; return output; }
         output.ClosestIndex = output.Poses.Count;
         float best = float.MaxValue;                                           // 0x00550DC8
-        for (int i = 0; i < output.Poses.Count; i++)
+        Pose3d? parent=null;
+        if(robotPose.HasParent){Pose3d actualParent=null!;if(robotPose.TryGetParent(ref actualParent))parent=actualParent;}
+        try
         {
-            var t = output.Poses[i].WorldPose.Translation;
-            float dx = (float)robotPose.Translation.X - (float)t.X, dy = (float)robotPose.Translation.Y - (float)t.Y;
-            float d2 = dx * dx + dy * dy;                                      // planar, world axes, single precision as the engine's vcmpe
-            if (d2 < best) { best = d2; output.ClosestIndex = i; output.OffsetX = Math.Abs(dx); output.OffsetY = Math.Abs(dy); }
+            for (int i = 0; i < output.Poses.Count; i++)
+            {
+                using var converted=new Pose3d("");
+                var candidate=output.Poses[i].WorldPose;
+                // Q10.6 550A52/550CB6: compare in MAIN's immediate parent; keep the original vector and ordinal.
+                // Parentless public specification inputs retain their existing local-coordinate adapter.
+                if(parent is not null)
+                {
+                    if(!candidate.TryWithRespectTo(parent,converted)){trace?.Add("IDockAction.GetPreActionPoses.CannotGetPoseWrtParent");continue;}
+                    candidate=converted;
+                }
+                var t=candidate.Translation;
+                float dx = (float)robotPose.Translation.X - (float)t.X, dy = (float)robotPose.Translation.Y - (float)t.Y;
+                float d2 = dx * dx + dy * dy;
+                if (d2 < best) { best = d2; output.ClosestIndex = i; output.OffsetX = Math.Abs(dx); output.OffsetY = Math.Abs(dy); }
+            }
         }
+        finally{parent?.Dispose();}
         if (output.ClosestIndex == output.Poses.Count) { trace?.Add("IDockAction.GetPreActionPose.NoClosestPose"); output.Result = ActionResult.BadPose; return output; }
         output.Result = Evaluate(output, objectPose, robotPose, angleToleranceRad, flagA, trace);
         return output;

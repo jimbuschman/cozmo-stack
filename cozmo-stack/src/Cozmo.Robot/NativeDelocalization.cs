@@ -38,6 +38,14 @@ public sealed partial class EngineRobot
     private static readonly Pose3d MissingOrigin=new(""); // MissingOrigin's native name is not a checked input in this job.
     internal Pose3d MainPose {get;}=new("");
     internal Pose3d ForwardPose {get;}=new("");
+    internal float? NativeLiftAngle;
+    internal Pose3d GetCheckedForwardPose()
+    {
+        var current=GetNativeOrigin(CurrentOriginId);
+        if(!PoseTreeNode.HasSameRoot(ForwardPose.Node,current.Node))
+            PoseDiagnostics.Verify("Robot.GetDriveCenterPose.PoseOriginNotWorldOrigin","Stored drive center does not share the current world origin");
+        return ForwardPose; //5477A0 diagnostic does not change the returned pointer.
+    }
     // B-M11-8 queued: the ctor's names, "RobotLiftBase" (13 characters, 0x0050FFF8 -> 0x005109CC) for the pivot at +0x2E4 and
     // "RobotLift" (9 characters, 0x0051004A -> 0x005109DC) for the lift at +0x2F0.
     internal Pose3d LiftPivot {get;}=new(Rotation3d.Identity,new(-41,0,45),"RobotLiftBase");
@@ -170,6 +178,7 @@ public sealed partial class EngineRobot
     }
     private void ComputeLiftPoseLocked(float input)
     {
+        NativeLiftAngle=input; //51296A/513484 raw Robot+300 write before the canonical lift transform.
         var initial=Rotation3d.FromAngleAxis(new Radians(input).Value,new(0,1,0));
         var t=new Transform3d(initial,new(66,0,0));
         var vector=new RotationVector3d(new Radians(-input),new(0,1,0));

@@ -719,7 +719,7 @@ public sealed class CozmoCubes
                     SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.ObjectMovedOrStopped", $"ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {UpAxisName(mv.AxisOfAccel)}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
                     if (ShouldIgnoreMovementDueToDoubleTap(c)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.IgnoringMessage", $"Waiting for double tap id:{movedWorldId} ignoring movement message"); break; }
                     if (!c.Moving) { c.Moving = true; c.MovingChangedAt = mv.Timestamp; }
-                    _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)movedWorldId), true);
+                    _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)movedWorldId),true,mv.Timestamp);
                     c.Accel = new Vector3(mv.Accel.X, mv.Accel.Y, mv.Accel.Z);
                     c.UpAxis = mv.AxisOfAccel;
                     c.LastSeenUtc = DateTime.UtcNow;
@@ -749,7 +749,7 @@ public sealed class CozmoCubes
                     SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectStopped.ObjectMovedOrStopped", $"ObjectID: {stoppedWorldId} (Active ID {unchecked((int)sm.ObjectID)}), type: {c.Type}, axisOfAccel: <unknown>, accel: 0.000000 0.000000 0.000000, time: {unchecked((int)sm.Timestamp)} ms");
                     _ = ShouldIgnoreMovementDueToDoubleTap(c);
                     if (c.Moving) { c.Moving = false; c.MovingChangedAt = sm.Timestamp; }
-                    _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)stoppedWorldId), false);
+                    _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)stoppedWorldId),false,sm.Timestamp);
                     c.LastSeenUtc = DateTime.UtcNow;
                     callouts.Add(() => MovementLocatedLoop(sm.ObjectID, stoppedWorldId, false, sm.Timestamp, "Robot.ActiveObjectStopped."));
                     if (ExcludeFromMovedBroadcast?.Invoke(c) != true)
@@ -830,7 +830,7 @@ public sealed class CozmoCubes
             if (unchecked((int)o.ObjectId) != objectId)
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, prefix + "ActiveObjectInDifferentFramesWithDifferentIDs",
                     FormattableString.Invariant($"First object={unchecked((int)objects[0].ObjectId)} in '{world.RootName(objects[0])}'. This object={unchecked((int)o.ObjectId)} in '{world.RootName(o)}'."));
-            world.ApplyMovedOrStopped(o, moving);
+            world.ApplyMovedOrStopped(o,moving,timestamp);
         }
     }
 

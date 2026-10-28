@@ -303,6 +303,16 @@ public sealed partial class ObservableObject
     /// the object here too rather than in a tracker beside it.
     /// </summary>
     public bool IsMoving { get; internal set; }
+    // fidelity: M4-009, M12-007
+    // ActiveObject+8: ctor4E0C84/86 defines stamp0/false. Clone constructs fresh; pose copies never write these fields.
+    internal uint NativeMotionChangedAt {get;private set;}
+    internal bool GetNativeMotionState(out uint timestamp){timestamp=NativeMotionChangedAt;return IsMoving;}
+    internal void SetNativeMotionState(bool moving,uint timestamp)
+    {
+        //534140..15C/53494E..96A: each canonical object changes only on its own state transition.
+        if(IsMoving==moving)return;
+        IsMoving=moving;NativeMotionChangedAt=timestamp;
+    }
     public int TimesObserved { get; internal set; }
 
     /// <summary>The <c>ObjectPoseConfirmer</c> entry for this object's ID, or null while it has none. <see cref="BlockWorld"/> links and unlinks it.</summary>
@@ -1657,6 +1667,16 @@ public sealed partial class BlockWorld
     /// distance of the cluster pose from the world origin, nearest first, ties in creation order (the multimap at 0x006255B2..0x006255BA).
     /// </summary>
     // fidelity: M11-006, M11-013
+    internal static Pose3d CreateObservedCameraChild(CameraModel camera,Pose3d objectInCamera)
+        // 85D902/85D90C retains the camera as the solved object's immediate parent.
+        // Parentless public camera inputs retain their existing flat specification adapter.
+        =>camera.Pose.HasParent?new Pose3d(objectInCamera.Transform,parent:camera.Pose):camera.Pose.Compose(objectInCamera);
+    internal static (Pose3d RootPose,float Key) PrepareObservedCluster(Pose3d cluster)
+    {
+        var t=cluster.Translation;float x=(float)t.X,y=(float)t.Y,z=(float)t.Z;
+        float key=x*x;key=key+y*y;key=key+z*z; //62551A..53E: ORIGINAL local cluster, before root conversion.
+        return(cluster.GetWithRespectToRoot(),key);
+    }
     private List<ObservableObject> CreateObjectsFromMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera)
     {
         var made = new List<(double Key, ObservableObject Instance)>();
@@ -1669,7 +1689,7 @@ public sealed partial class BlockWorld
             var res = PoseEstimation.Solve(camera, known.CornersOnObject(), seen.Corners);
             if (res is null) { EmitPublicLog($"marker {seen.Code}: pose solve failed"); continue; }
             if (res.RmsReprojectionPx > MaxReprojectionRmsPx) { EmitPublicLog($"marker {seen.Code}: reprojection {res.RmsReprojectionPx:F1} px too large"); continue; }
-            var world = camera.Pose.Compose(res.ObjectInCamera);
+            var world = CreateObservedCameraChild(camera,res.ObjectInCamera);
             candidates.Add((type, known, seen, world, res.RmsReprojectionPx));
         }
 
@@ -1689,13 +1709,16 @@ public sealed partial class BlockWorld
                     var obj = cluster.SelectMany(c => c.Known.CornersOnObject()).ToList();
                     var img = cluster.SelectMany(c => c.Seen.Corners).ToList();
                     var joint = PoseEstimation.Solve(camera, obj, img);
-                    if (joint is not null && joint.RmsReprojectionPx <= MaxReprojectionRmsPx * 2) { pose = camera.Pose.Compose(joint.ObjectInCamera); rms = joint.RmsReprojectionPx; }
+                    if (joint is not null && joint.RmsReprojectionPx <= MaxReprojectionRmsPx * 2) { pose = CreateObservedCameraChild(camera,joint.ObjectInCamera); rms = joint.RmsReprojectionPx; }
                 }
                 var seenMarkers = cluster.Select(c => c.Seen).ToList();
                 var instance = new ObservableObject(group.Key, CubeGeometry.MarkersFor(group.Key)) { OriginId = CurrentOriginId,PoseWorld=this };
                 instance.InitializeNativeMarkerTimes();
-                double key = pose.Translation.Dot(pose.Translation);
-                var placed = instance.IsActive ? ClampPoseToFlat(pose, CreationFlatClampAngleRad) : pose;   // 0x00625578
+                // 625540/44 -> 4DF628: preserve all camera/history ancestors until this source root-conversion boundary.
+                var prepared=PrepareObservedCluster(pose);
+                using var rootPose=prepared.RootPose;
+                double key=prepared.Key;
+                var placed = instance.IsActive ? ClampPoseToFlat(rootPose, CreationFlatClampAngleRad) : rootPose;   // 0x00625578
                 // The solver/clamp adapter returns root-relative coordinates; bind the existing native origin owner.
                 // Native CreateObjectsFromMarkers passes an origin-parented pose to InitPose (0x00625578..0x00625580).
                 if(!placed.HasParent)placed.SetParent(GetNativeOrigin(CurrentOriginId));
@@ -3080,14 +3103,17 @@ public sealed partial class BlockWorld
     /// </summary>
     // fidelity: M11-009
     // fidelity: M4-009, M11-009 — manager-checked 0x00534924..0x0053494A.
-    internal void ApplyMovedOrStopped(ObservableObject matched, bool moving)
+    // Two-argument entry is the preserved host/test boolean adapter, with no native timestamp input.
+    internal void ApplyMovedOrStopped(ObservableObject matched,bool moving)=>ApplyMovedOrStoppedCore(matched,moving,null);
+    internal void ApplyMovedOrStopped(ObservableObject matched,bool moving,uint timestamp)=>ApplyMovedOrStoppedCore(matched,moving,timestamp);
+    private void ApplyMovedOrStoppedCore(ObservableObject matched,bool moving,uint? timestamp)
     {
         using var frameMutation=EnterPoseMutation();
         bool carried=IsCarryingObject?.Invoke(matched.ObjectId)==true;
         if(!carried && matched.PoseState==PoseState.Known)MarkObjectDirty(matched,false); // 0x0053413C -> SetPoseStateHelper
         lock (_gate)
         {
-            matched.IsMoving = moving;
+            if(timestamp is {} stamp)matched.SetNativeMotionState(moving,stamp);else matched.IsMoving=moving;
         }
     }
 
@@ -3248,13 +3274,14 @@ public sealed partial class BlockWorld
     /// <c>HandleActiveObjectMoved</c> finds, whose <c>IsMoving</c> <c>UpdatePoseInInstance</c> reads) and on the located objects with the ID.
     /// </summary>
     // fidelity: M4-009 — connected-object SetIsMoving 0x005343C8..0x00534402 / 0x00534A62..0x00534AA0.
-    internal void SetConnectedMoving(uint objectId, bool moving)
+    internal void SetConnectedMoving(uint objectId,bool moving,uint timestamp)
     {
         using var frameMutation=EnterPoseMutation();
         lock (_gate)
-            foreach (var o in _connectedObjects.Values) if (o.ObjectId == objectId) o.IsMoving = moving;
+            foreach (var o in _connectedObjects.Values) if (o.ObjectId == objectId) o.SetNativeMotionState(moving,timestamp);
     }
 
+    // Preserved host/test bool-only adapter: no recovered engine timestamp is supplied or invented.
     public void SetMoving(uint objectId, bool moving)
     {
         using var frameMutation=EnterPoseMutation();

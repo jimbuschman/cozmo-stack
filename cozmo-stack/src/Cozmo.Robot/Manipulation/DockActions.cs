@@ -717,14 +717,14 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
         if(LiftLoadState==2&&target is null)return ActionResult.BadObject;
         if(LiftLoadState==2 && target is {ActiveId:>=0})
         {
-            if(target.IsMoving)
+            if(target.GetNativeMotionState(out uint motionTimestamp))
             {
                 if(now>unchecked(_verifyStartedAt+StillMovingAllowanceMs))
                 {_trace.Add("PickupObjectAction.Verify.ObjectStillMoving");M.Docking.ReleaseCarriedObject(forget:true);return ActionResult.PickupObjectStillMoving;}
                 return ActionResult.Running;
             }
             uint timeout=SelectedDockAction==DockAction.PickupLow?LowDockObservationTimeoutMs:HighDockObservationTimeoutMs;
-            if(_verifyStartedAt>unchecked(target.LastObservedTimestamp+timeout))
+            if(_verifyStartedAt>unchecked(motionTimestamp+timeout))
             {M.Docking.ReleaseCarriedObject(forget:true);return ActionResult.PickupObjectNotSeenRecently;}
         }
         return ActionResult.Success;

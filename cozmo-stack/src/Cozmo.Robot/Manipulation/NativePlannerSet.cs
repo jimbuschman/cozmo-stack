@@ -14,6 +14,7 @@ internal sealed class NativePlannerSet : IDisposable
     private readonly Action<string> _missing;
     private SourceLogSink Source= null!;
     internal bool IsDisposed;
+    private bool _ownsNativePoses;
     internal NativePlannerSet(ManipulationSystem m)
     {
         _m=m;_missing=s=>m.Robot.Engine.EmitStackLog("MISSING: "+s);
@@ -29,6 +30,7 @@ internal sealed class NativePlannerSet : IDisposable
     }
     internal void Configure(Pose3d start,IReadOnlyList<Pose3d> goals,PathMotionProfile profile,IEnumerable<uint>? ignore)
     {
+        Stop();ReleaseNativePoses();
         // CM13-03 runtime capture does not close the upstream action/Path ownership/conversion boundary.
         _missing("M13-033/M11-084 NativePlannerSet.Configure still borrows caller start/goal wrappers before runtime capture; native action SetGoal copies and PathComponent owned root/drive-center conversions (0x0055A450/468, 0x0064ADAC/0x0064AE78) remain unbuilt");
         Start=start;Goals=goals;Profile=profile;
@@ -36,6 +38,16 @@ internal sealed class NativePlannerSet : IDisposable
         {Lattice?.Dispose();Lattice=new(backend,_m.World,ReadCarryingState,Source,_missing,_m.Robot.Engine);}
         Lattice?.SetIgnore(ignore);
     }
+    internal void ConfigureNative(Pose3d start,IReadOnlyList<Pose3d> goals,PathMotionProfile profile,IEnumerable<uint>? ignore)
+    {
+        Stop();ReleaseNativePoses();
+        Start=new Pose3d(start);Goals=goals.Select(p=>new Pose3d(p)).ToArray();_ownsNativePoses=true;Profile=profile;
+        if(_m.Planner is {} backend&&!ReferenceEquals(Lattice?.Backend,backend))
+        {Lattice?.Dispose();Lattice=new(backend,_m.World,ReadCarryingState,Source,_missing,_m.Robot.Engine);}
+        Lattice?.SetIgnore(ignore);
+    }
+    private void ReleaseNativePoses()
+    {if(!_ownsNativePoses)return;Start.Dispose();foreach(var goal in Goals)goal.Dispose();_ownsNativePoses=false;Goals=Array.Empty<Pose3d>();}
     internal void Select()
     {
         if(Goals.Count==0)return;
@@ -61,24 +73,25 @@ internal sealed class NativePlannerSet : IDisposable
         int data=float.IsNaN(rounded)?0:rounded>=2147483648f?int.MaxValue:rounded<=-2147483648f?int.MinValue:(int)rounded;
         _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.planner_selected",Current.Name,new Dictionary<string,string>{{"$data",data.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
         Fallback=ReferenceEquals(Current,Lattice)?null:Lattice;
-        _missing("M13-033 selection uses the stack pose input; source Robot root-conversion helper 0x004DF628..0x004DF6DC is separately incomplete, no full pose-origin claim");
+        if(!_ownsNativePoses)_missing("M13-033 legacy selection uses the stack pose input; no full pose-origin claim");
     }
     internal int StartPlanning()=>Current?.ComputePath(Start,Goals)??0;
-    internal int Restart()=>Current?.ComputeNewPathIfNeeded(_m.RobotPose()??Start,false)??0;
+    private Pose3d CurrentStart=>_ownsNativePoses?_m.Robot.Engine.Robot!.GetCheckedForwardPose():_m.RobotPose()??Start;
+    internal int Restart()=>Current?.ComputeNewPathIfNeeded(CurrentStart,false)??0;
     internal PathPlannerModelResult Read()
     {
         int status=Current?.CheckPlanningStatus??0;
         IReadOnlyList<PathSegment> path=Array.Empty<PathSegment>();byte index=0;
-        if((status is 2 or 3) && Current is {} planner && planner.GetCompletePath(_m.RobotPose()??Start,Profile,out var result,out var goal)){path=result;index=goal;}
+        if((status is 2 or 3) && Current is {} planner && planner.GetCompletePath(CurrentStart,Profile,out var result,out var goal)){path=result;index=goal;}
         return new(status,path,index);
     }
     internal bool UseFallback()
     {
         if(Fallback is not {} next)return false;string old=Current?.Name??"";Current=next;Fallback=null;
-        bool started=StartPlanning()!=0;
+        bool started=Current.ComputePath(CurrentStart,Goals)!=0; // J7: fallback rereads checked CURRENT FORWARD.
         if(started)_m.Robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.fallback_planner_used",old);
         return started;
     }
     internal void Stop()=>Current?.StopPlanning();
-    public void Dispose(){if(IsDisposed)return;IsDisposed=true;Lattice?.Dispose();}
+    public void Dispose(){if(IsDisposed)return;IsDisposed=true;Lattice?.Dispose();ReleaseNativePoses();}
 }

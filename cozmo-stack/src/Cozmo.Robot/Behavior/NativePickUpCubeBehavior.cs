@@ -60,10 +60,8 @@ internal sealed class NativePickUpCubeBehavior:SteppedBehavior,IDisposable
         using var mutation=_m.World.EnterPoseMutation();
         var target=_m.World.GetLocatedObjectByIdHelper(Target);
         if(target is null||!CubeGeometry.IsCube(target.Type)){ReportMissing("PickUpCube passive/absent target recipient unavailable");return false;}
-        using var main=new Pose3d(_robot.GetCheckedMainPose());
-        var pre=PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerification(target,PreActionType.Docking,0,0,_robot.StoredState.Timestamp,main,
-            _robot.CarryingOwner.CarriedObjectId,_m.Vision.Calibration,ObjectPoseQueries.Engine,()=>_m.GetObstacles(main));
-        if(pre!=ActionResult.Success){ReportMissing("PickUpCube direct pre-action input unavailable; required DriveToHelper recipient remains MISSING; prior selection retained");return false;}
+        // The real helper chooses direct pickup versus approach from its visual pre-action result.
+        // Availability no longer rejects the source-supported approach before that helper can run.
         return true;
     }
     public override Task StartAsync(BehaviorContext context,BehaviorScope scope,CancellationToken cancel)
