@@ -8,7 +8,7 @@ This is the operator-requested asset-based planning document, checked by the man
 
 | Date | Behaviours finished | Layer-4 records settled (total) | Jobs merged | Main gaps |
 |---|---|---|---|---|
-| 2026-10-28 | 0 | 57 (+2: M13-027, M15-012) | SHARED-CHILDREN-1 | Put-down's own path is now settled except its children's internals (M13-014 turn contents, M14-006 speech, M14-008). Pickup waits on the native Pickup/IDock/DriveTo children (next, N6). |
+| 2026-10-28 | 0 | 59 (+4: M13-027, M15-012, M12-029, M13-020) | SHARED-CHILDREN-1, PICKUP-CHILDREN-1 | Put-down's own path is now settled except its children's internals (M13-014 turn contents, M14-006 speech, M14-008). Pickup waits on the native Pickup/IDock/DriveTo children (next, N6). |
 | 2026-10-27 | 0 | 55 (46 on 2026-10-26; +9: M7-026, M13-017, M13-040, M7-023, M11-060, M15-044, M13-026, M15-075, M12-018) | drive-off pilot, PICKUP-PYRAMID-1/2/3, PICKUP-STACK-1, PUTDOWN-BLOCK-1; full suite 6435/6435 | Shared children block every in-progress behaviour: M13-027 (face turn), M15-012 (look/wait), M12-006 (release effect), M14-008 (face data), native DriveTo/Pickup/IDock children, search. Next job: REVIEW N6. |
 
 ## Sources and interpretation
