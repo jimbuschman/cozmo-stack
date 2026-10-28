@@ -1,6 +1,6 @@
-# SPARKS-STACK-1 — full gate pending
+# SPARKS-STACK-1 — READY FOR CLAUDE
 
-Not READY FOR CLAUDE until the integrated full gate passes. Independent changed-code verification passed; implementation66441408 is integrated asb5c503c8. No behavior, hardware or subsystem acceptance is claimed.
+Independent changed-code verification and the integrated full gate passed. Implementation66441408 is integrated asb5c503c8; full gate6557/6557 PASS0skip on a87ac003. No behavior, hardware or subsystem acceptance is claimed.
 
 ## Changed production path and evidence
 
@@ -36,11 +36,13 @@ Main read `20261028-sparks-stack-1-read.md` and independent read check contain S
 | Independent pre-action/public manipulation extension | 36/36 PASS,0skip,1s,exit0. |
 | Frozen byte/scope verification | All19 C# files unchanged before/after independent tests. Servers stopped, no active test hosts. |
 | Integrated fidelity/queue/authored whitespace | PASS;711 records and all official files unchanged from maina2b72726. |
-| Integrated asset-complete full suite | PENDING. |
+| Integrated asset-complete full suite | 6557/6557 PASS,0failed/0skip,5m23s,exit0 on a87ac003c7b39f1954ddacbfd24895c52132c1af. |
 
 The positive cases reach actual configured hard/soft owner/factory/cache/helper/action paths with both carried and pickup entry. Other cases check cached dependency/time/best retention, corrected validity, one strict-distance retarget/ties, owned cancellation/unrelated work, native failed-attempt/whiteboard/validity cancellation, actual Ground recovery/callback and standalone completion, guarded query selection and float32 freshness. The hidden-rendered negative diagnostic traces vision's MakingUnknown→DeleteLocated before Ground's later null clear; the original global no-deletion assertion was an oracle error, not a Ground production defect.
 
 `SPARKS-STACK-1-builder.md` preserves all17 focused/diagnostic attempts, including no-match/compile failures and fixture/oracle corrections; the independent report retains actual1125+36 counters and source checks. No green-only history or timeout weakening. Canonical committed code tree `bc34af6f084ca1882c226899ec0c2c7016194166` is identical between verified worker and integration. Checkout normalizes CRLF→LF in NativePickupObjectRunner and the two new test files; all19 normalized contents were directly compared identical,16 raw hashes identical. This is a newline-only byte difference; the integrated full gate compiles the canonical tree.
+
+Full attempt1 ran UTC2026-10-28T19:09:42.0199387Z..19:16:05.1882565Z; recorded fingerprint `8c96b66ad13de6528f0a3f013391b85291675a25`. Console/log/metadata retained as manager `.scratch/stack-full-1-console.log`, `.log`, `.json`. Gate stopped build servers; elevated inventory afterward found0 build/test processes. Fresh origin/main remainsa2b72726. No further full rerun is required for this documentation-only handoff.
 
 Offline inputs must remain explicit: scene/camera frames, firmware motor/path/dock feedback, progression, Spark admission and explicit next admission. Physical carry/rendering are scene-owned, never fed from the production released pose. Ground's separately supplied raw failure-response boundary verifies the real recipient/component callback path; it is not an end-to-end native failed-docking success claim. The native failed-attempt/whiteboard/validity-cancellation path is checked separately.
 
