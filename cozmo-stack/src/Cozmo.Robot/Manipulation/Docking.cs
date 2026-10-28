@@ -662,7 +662,7 @@ public sealed class DockingSystem : IDisposable
     }
 
     //0063BA44..BD50: retained canonical request state, independent of legacy pending Tasks.
-    internal bool StartNativeDock(uint id,short code,DockAction action,PathMotionProfile profile)
+    internal bool StartNativeDock(uint id,short code,DockAction action,PathMotionProfile profile,DockingMethod method=DockingMethod.Method2,bool flagC1=true)
     {
         using var mutation=_vision.World.EnterPoseMutation();
         var target=_vision.World.GetLocatedObjectByIdHelper(id);if(target is null)return false;
@@ -677,7 +677,7 @@ public sealed class DockingSystem : IDisposable
         if(!child)return false;
         _vision.World.MarkDirty(id);
         _native.Success=false;_native.Slot14=0;_native.Slot18=0;_native.Slot1C=0;
-        var message=Message(profile.DockSpeedMmps,profile.DockAccelMmps2,profile.DockDecelMmps2,action,false,DockingMethod.Method2,true);
+        var message=Message(profile.DockSpeedMmps,profile.DockAccelMmps2,profile.DockDecelMmps2,action,false,method,flagC1);
         Sent.Add(message);return _robot.SendMessage(message,reliable:true);
     }
     private void NativeDockingError(VisionFrameResult result)

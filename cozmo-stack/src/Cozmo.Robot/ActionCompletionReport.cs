@@ -16,7 +16,7 @@ public sealed partial class CozmoEngine
             Array.AsReadOnly(record.SubActionResults.ToArray()),record.CompletionUnion)
             {AnimationName=record.AnimationName,CompletionVariant=record.CompletionVariant,ObjectInteraction=record.ObjectInteraction};
         if(record.ObjectInteraction is {IsPayloadDefined:false})
-            Behavior.SteppedBehavior.ReportMissing("M1-034 Pickup completion5537D4 undefined words/count: public 5A publication skipped; defined internal flag/result retained");
+            Behavior.SteppedBehavior.ReportMissing("Concrete object-interaction completion fields unavailable: full public 5A payload withheld; defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; no cross-action unused-word policy is applied.");
         else if(record.ObjectInteraction is not null||record.CompletionVariant is 1 or 6)
             DeliverAnimationReportToApp(RobotCompletedAction.UnionTag,record.PackBody(),CaptureAppEvent(ActionCompleted,typed));
         else QueueAppBroadcast(ActionCompleted,typed); // Other concrete unions retain their named raw-cache gap.

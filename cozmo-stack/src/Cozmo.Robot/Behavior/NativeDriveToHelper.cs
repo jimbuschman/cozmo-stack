@@ -12,11 +12,12 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
     private readonly object _snapshotGate=new();
     internal uint Target {get;}
     internal bool Force {get;}
+    internal PreActionType ActionType {get;}
     internal uint Attempts {get;private set;}
     internal NativeDriveToObjectRunner? Runner {get;private set;}
     internal NativeSearchForBlockHelper? SearchHelper {get;private set;}
-    internal NativeDriveToHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,bool force)
-        :base(m.Robot,"DriveTo",parent,factory){_m=m;_parent=parent;Target=target;Force=force;}
+    internal NativeDriveToHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,bool force,PreActionType type=PreActionType.Docking)
+        :base(m.Robot,"DriveTo",parent,factory){_m=m;_parent=parent;Target=target;Force=force;ActionType=type;}
     public override bool ShouldCancelDelegates(CozmoRobot robot)=>false;
     protected override BehaviorStatus Init(CozmoRobot robot)
     {
@@ -28,7 +29,7 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
     {
         if(Attempts>=3){StoreStatus(BehaviorStatus.Failure);return;}
         Attempts=unchecked(Attempts+1);
-        var runner=new NativeDriveToObjectRunner(_m,Target);Runner=runner;
+        var runner=new NativeDriveToObjectRunner(_m,Target,ActionType);Runner=runner;
         if(Force)
         {
             runner.SetPosesFunction((ObservableObject obj,out IReadOnlyList<PreActionPose> poses,ref bool inPosition)=>

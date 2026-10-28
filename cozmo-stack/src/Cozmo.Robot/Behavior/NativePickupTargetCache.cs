@@ -2,30 +2,49 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
-// Intention0 only:005711E4/00570B44/00570398. All inputs belong to the actual Robot.
+// Actual shared object-intention owner. 0:00570398; proposed Stack entry bindings C1-C5:0056F724/57154C.
 internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot robot)
 {
-    private float _last=-1f;
-    private uint _best=uint.MaxValue;
-    private IReadOnlyList<uint> _valid=Array.Empty<uint>();
-    internal IReadOnlyList<uint> ValidIds=>_valid;
-    internal uint Best=>_best;
-    internal bool Available {get;private set;}=true;
-    internal bool Refresh()
+    private sealed class Entry
+    {internal float Last=-1f;internal uint Best=uint.MaxValue;internal IReadOnlyList<uint> Valid=Array.Empty<uint>();internal bool Available=true;internal int Rebuilds;}
+    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{3,new()},{5,new()}};
+    internal IReadOnlyList<uint> ValidIds=>_entries[0].Valid;
+    internal uint Best=>_entries[0].Best;
+    internal bool Available=>_entries[0].Available;
+    internal bool Refresh()=>Refresh(0);
+    internal uint GetBest(int intention)
+    {if(!Refresh(intention))throw new NativeConfigurationUnavailable("intention "+intention+" input unavailable");return _entries[intention].Best;}
+    internal IReadOnlyList<uint> GetValid(int intention)
+    {if(!Refresh(intention))throw new NativeConfigurationUnavailable("intention "+intention+" input unavailable");return _entries[intention].Valid;}
+    internal (float Last,uint Best,int Rebuilds) Inspect(int intention)=> (_entries[intention].Last,_entries[intention].Best,_entries[intention].Rebuilds);
+    private bool Refresh(int intention)
     {
         using var mutation=m.World.EnterPoseMutation(); //retain candidate poses through collection AND DefaultBest conversion.
+        if(!_entries.TryGetValue(intention,out var entry))throw new NativeConfigurationUnavailable("ordinary intention "+intention+" is not built; no 5/3 substitution");
+        if(intention==3&&!Refresh(5))return false; // source dependency, BEFORE this entry's timestamp gate.
         float now=robot.Engine.Timer.SecondsF;
-        if(MathF.Abs(_last-now)<BitConverter.UInt32BitsToSingle(0x3727C5AC))return Available;
-        _last=now; // source stamps before collection, even if a host availability guard stops reconstruction.
+        if(MathF.Abs(entry.Last-now)<BitConverter.UInt32BitsToSingle(0x3727C5AC))return entry.Available;
+        entry.Last=now; // source stamps before collection, even if a host availability guard stops reconstruction.
         try
         {
             var geometry=new NativeConfigurationGeometry(m.World,robot);
-            var ids=geometry.Query(Eligible).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
-            uint best=ids.Contains(_best)?_best:Select(ids);
-            _valid=Array.AsReadOnly(ids);_best=best;Available=true;return true;
+            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj),3=>Bottom(obj),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
+            uint best=ids.Contains(entry.Best)?entry.Best:Select(ids);
+            entry.Valid=Array.AsReadOnly(ids);entry.Best=best;entry.Available=true;entry.Rebuilds++;return true;
         }
         catch(NativeConfigurationUnavailable error)
-        {Available=false;SteppedBehavior.ReportMissing("Intention0 target cache unavailable; prior complete IDs/best retained: "+error.Message);return false;}
+        {entry.Available=false;SteppedBehavior.ReportMissing("Intention"+intention+" target cache unavailable; prior complete IDs/best retained: "+error.Message);return false;}
+    }
+    private bool Top(ObservableObject obj)
+    {
+        uint carried=robot.CarryingOwner is {} carry?carry.CarriedObjectId??uint.MaxValue:throw new NativeConfigurationUnavailable("actual carry owner absent");
+        return carried!=uint.MaxValue?ReferenceEquals(m.World.GetLocatedObjectByIdHelper(carried),obj):Eligible(obj);
+    }
+    private bool Bottom(ObservableObject obj)
+    {
+        if(obj.ObjectId==_entries[5].Best)return false;
+        if(m.Whiteboard.DidFailToUse(unchecked((int)obj.ObjectId),new[]{(ObjectActionFailure)1},3f,obj.NativePose,60f,BitConverter.UInt32BitsToSingle(0x40490FDB)))return false;
+        return obj.Family==(ObjectFamily)2&&CanStack(obj);
     }
     internal uint Select(IReadOnlyList<uint> ids)
     {
@@ -58,19 +77,23 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         bool can=CanPick(obj); // source evaluates docking even if whiteboard matched.
         return !failed & can;
     }
-    internal bool CanPick(ObservableObject obj)
+    internal bool CanPick(ObservableObject obj)=>CanInteract(obj,2f);
+    // fidelity: M12-012 — actual native CanStack body, without the host/legacy configuration adapter.
+    internal bool CanStack(ObservableObject obj)=>CanInteract(obj,1f);
+    private bool CanInteract(ObservableObject obj,float height)
     {
+        if(obj.Family is not (ObjectFamily.Block or ObjectFamily.LightCube))return false;
         if(!obj.IsRestingFlat(BitConverter.UInt32BitsToSingle(0x3E32B8C2)))return false;
         uint carried=robot.CarryingOwner?.CarriedObjectId??(robot.CarryingOwner is null?throw new NativeConfigurationUnavailable("actual carry owner absent"):uint.MaxValue);
         if(carried!=uint.MaxValue&&obj.ObjectId==carried)return false;
         using var relative=new Pose3d();
         if(!Pose3d.GetWithRespectTo(obj.NativePose,robot.GetCheckedMainPose(),relative))return false;
         if(new NativeConfigurationGeometry(m.World,robot).Neighbor(obj,true,15f,new BlockWorldFilter()) is not null)return false;
-        return !TooHigh(obj,relative);
+        return !TooHigh(obj,relative,height);
     }
-    private static bool TooHigh(ObservableObject obj,Pose3d relative)
+    private static bool TooHigh(ObservableObject obj,Pose3d relative,float height)
     {
         if(!CubeGeometry.IsCube(obj.Type))throw new NativeConfigurationUnavailable("CanPick admitted virtual dimensions unavailable for "+obj.Type);
-        return CubeGeometry.IsPoseTooHigh(obj,relative,2f,15f,.5f);
+        return CubeGeometry.IsPoseTooHigh(obj,relative,height,15f,.5f);
     }
 }

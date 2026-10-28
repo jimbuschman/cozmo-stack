@@ -40,8 +40,12 @@ internal sealed class NativeSparkedActivity : IDisposable
         _animation=(NativePlayArbitraryAnimBehavior)bound["PlayArbitraryAnim"];
         Minimum=config.GetProperty("minTimeSecs").GetSingle();Maximum=config.GetProperty("maxTimeSecs").GetSingle();
         Repetitions=unchecked((byte)config.GetProperty("numberOfRepetitions").GetInt32());
-        _objectiveId=config.GetProperty("behaviorObjective").GetString()=="KnockedOverBlocks"?13u:
-            throw new InvalidOperationException("MISSING: SparksKnockOverCubes changed behaviorObjective is outside the checked source mapping");
+        _objectiveId=(activity.Id,config.GetProperty("behaviorObjective").GetString()) switch
+        {
+            ("SparksKnockOverCubes","KnockedOverBlocks")=>13u,
+            ("SparksStackBlock","StackedBlock")=>40u, // S1 actual native objective40, not a generalized parser.
+            _=>throw new InvalidOperationException("MISSING: changed configured Spark objective is outside the checked instance mappings")
+        };
         if(config.TryGetProperty("maxTimeoutForActionComplete",out var wait))WaitForAction=wait.GetBoolean();
         _hasDelegate=config.TryGetProperty("subActivityDelegate",out _);
         _softTrigger=config.TryGetProperty("softSparkTrigger",out var soft)?Enum.Parse<AnimationTrigger>(soft.GetString()!):(AnimationTrigger)0x23F;
