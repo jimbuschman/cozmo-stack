@@ -20,7 +20,7 @@ Next whole-behaviour job after PICKUP-CHILDREN-1 publication `bc801bea`, operato
 
 State: READ PASS; combined build released. The manager adopts the complete K1–K23 read packet after independent B whole-packet READ PASS, including exact final reaction tables, Needs recipient and canonical upward-delete recipient. This authorizes implementation; it is not official inventory approval, settlement or acceptance.
 
-Operator explicitly approved the independently proved runtime +0xD8 hard-spark correction during this read. See `KNOCKOVER-CUBES-1-CONTRACT-CORRECTION.md` for the frozen Q8 contradiction, original instructions and exact approval; official evidence/status changes remain Claude's. Whole read/check still required before code.
+Operator explicitly approved the independently proved runtime +0xD8 hard-spark correction during this read. See `KNOCKOVER-CUBES-1-CONTRACT-CORRECTION.md` for the frozen Q8 contradiction, original instructions and exact approval; official evidence/status changes remain Claude's. The whole read and independent check have passed before this build release.
 
 ## Combined implementation release
 
