@@ -17,3 +17,13 @@ Groundcompletiongetter still expresslyunowned innewrecords. Narrowlycheckcurrent
 ## Planned new worker requests
 
 Fresh /root/sparks_roll_source explicitgpt-6.1-sol/medium; /root/sparks_roll_review DEFAULT/DEFAULT; /root/sparks_roll_build DEFAULT/DEFAULT, both overridesomitted/fork_none. Actual startups loggedaftertoolreturns, actualtelemetryunavailable. Research20261028-sparks-roll-block-1-read.md and independentchecks. Builderisolatedworktreepreponlyuntilrootrelease; oneactualmissingdependencylocalcache restore, shutdown/zeroownhosts. Preserve allpriorworkers/worktrees/artifacts andoldfrozenhandoffs.
+
+## Actual worker startup / preparation
+
+| Actor | Role | Model requested | Effort requested |
+| --- | --- | --- | --- |
+| /root/sparks_roll_source | Reader/extractor | explicitgpt-6.1-sol | medium |
+| /root/sparks_roll_review | Independent source/code reviewer | DEFAULT; override omitted | DEFAULT; override omitted |
+| /root/sparks_roll_build | Isolated builder | DEFAULT; override omitted | DEFAULT; override omitted |
+
+Freshfork_none toolstarts returnednamesonly, no runtime telemetry; no midjobswitch. Builder codex-sparks-roll-block-1 / codex/sparks-roll-block-1 cleanbasefabc5978044f199b1dede0b76c7c3dba7335ff8d; ignoredOBBjunction/sharedlocalassets copied+hashverified (SO02263C07F6BB60F4D7F351A3667DCA84FD3E6C0FC6F838E18B5DE7CF4E2989E1, marker1B7166AC37B166975F0E5313A3D4486EBAE73010E42FFB89BBD0D4536A29C81D). Onecache-onlyrestoreall5projects exit0, actualbuildservershutdown0/nativeinventory0hosts; no sourcecode/testedit/build/test/nativeextraction/official/Git/HW bybuilder. Builderprepcomplete/idle awaitingwhole source release. Sourcepreliminary confirms literalSparks configrotationfalse→cache6 anddifferent Sparked needs/executable; no implementation untilcoherentpacket/independentPASS/rootrelease. Parentduration/repetition/softLift inputs mustuseexactactualsource, notpriorconfigdefaults.
