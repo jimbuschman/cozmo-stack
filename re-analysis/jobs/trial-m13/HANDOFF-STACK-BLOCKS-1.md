@@ -1,6 +1,6 @@
-# STACK-BLOCKS-1 — integrated full gate pending
+# STACK-BLOCKS-1 — READY FOR CLAUDE
 
-Implementation `adc91a08` integrated as `70c3d660`; independent bounded CODE PASS,1157/1157 PASS0skip. Not READY until the integrated full gate passes. No behavior, hardware or subsystem acceptance claim.
+Implementation `adc91a08` integrated as `70c3d660`; independent bounded CODE PASS,1157/1157 PASS0skip. Integrated asset-complete full6589/6589 PASS0skip on9e525950. No behavior, hardware or subsystem acceptance claim.
 
 ## Changed path and primary claims
 
@@ -28,7 +28,7 @@ Changed production files: `NativePickupTargetCache.cs`, `NativeBehaviorBaseInput
 | Independent affected | 1157/1157 PASS0skip,100s,exit0; all adverse counters0. |
 | Freeze | All5 raw C# hashes unchanged before/after reviewer execution; shutdown0, no active build/test processes. |
 | Integrated fidelity/queue/whitespace | PASS;711 official records/files unchanged from main064c1e8e. |
-| Integrated asset-complete full suite | PENDING. |
+| Integrated asset-complete full suite | 6589/6589 PASS,0failed/0skip,6m testtime,exit0 on9e5259509156dbbc92c0d52dc626790fceb28ddf. |
 
 Tests include32 new ordinary cases: actual four carry/pickup/unlock pipelines; local/root/identity/axis float ties/sign/unlock direction; lazy dependency and best retention; real stack/equal-distance/signed-ID DefaultBest; source unlock10 readiness; hard flag, validity, retarget/tie/once, owned cancellation and unrelated work; real retry/exhaustion and separately labeled failure-response recovery boundary. Prior Sparks/native shared consumers remain covered. Scene poses/firmware/manager choice and callback inputs are explicit; no production release-pose feedback, planner goals or forced success.
 
@@ -38,6 +38,8 @@ Tests include32 new ordinary cases: actual four carry/pickup/unlock pipelines; l
 
 Full ledger: `STACK-BLOCKS-1-builder.md`; final independent report: `20261028-stack-blocks-1-codex-check.md`. Canonical code tree `159f81fac133d0ba6ee07e48dd4ce8719c26a4d6` matches the verified worker exactly. Four raw hashes also match checkout; the new test file alone normalizes CRLF→LF, with all5 normalized contents directly compared identical. Root full gate compiles the canonical tree.
 
+Full attempt1 completed UTC2026-10-28T20:08:01.1882959Z..20:15:01.8152198Z, fingerprint `8010ad6979d383d964207e91ccea8ceec7363806`. Manager `.scratch/stack-blocks-full-1-console.log`, `.log`, `.json` retain the result. After interruption, the saved completed exit0/result was verified; no duplicate run. Build/test process inventory0. Fresh origin/main064c1e8e is already included; official records/files remain unchanged from it.
+
 ## Records and remaining uncertainty
 
 Existing whole records proposed to settle: **none from this bounded delta**. M12-012/026/030/031/039/042 and broader factory/base scoring/strategy/parent records retain their other current live paths. No status, inventory, approval or official ID is changed.
@@ -46,4 +48,4 @@ This adds ordinary4/2 build/source coverage to the **existing pending Stack life
 
 Inherited MISSING: actual PlayAlone admission/scoring competition/interlude/parent transition; separate executable finder/other executable-name mappings and external +2C/+7C consumers; existing nonzero/Low/transform/public geometry and upstream planner/vision/math/audio/raw-report/scheduler boundaries. Keep unavailable sibling readiness visible rather than false; the supplied choice does not prove a Stack winner or whole PlayAlone. PlaceRel's prior normal unused-slot policy remains COMPATIBILITY_POLICY; Ground keeps its distinct M1-034 full-publication guard. Previous startup/manual Navigation unknown causes are not claimed repaired. No hardware commands were run.
 
-The next new job uses the operator's one-job `gpt-6.1-terra`/medium builder trial, with reader/reviewer `gpt-6.1-sol`/high. Trial startup is not claimed before it actually occurs.
+Latest model policy supersedes the unstarted trial: new readers/extractors explicitly request `gpt-6.1-sol`/medium; new builders/reviewers request the configured default without model/effort overrides (operator reports default `gpt-6.1-terra`). Each worker's requested configuration is logged. This job's already completed workers retained their original configurations.
