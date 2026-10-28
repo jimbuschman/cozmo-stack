@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-28. **0 finished · 5 in progress · 173 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock` and `KnockOverCubes` are in progress; other configurations remain not started.
+Whole-behavior scoreboard, 2026-10-28. **0 finished · 6 in progress · 172 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes` and `SparksKnockOverCubes` are in progress; other configurations remain not started.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -42,7 +42,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `PyramidPutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | freeplay: BuildPyramid; spark: BuildPyramid; activity: Feeding. 3 refs; R014+ in map |
 | `SparksPutDownBlock` | `PutDownBlock` | not started | M12 carrying/release: M12-006; rest UNKNOWN | spark: SparksFistBump; spark: SparksKnockOverCubes; spark: SparksPeekABoo; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksPounceOnMotion; spark: SparksRollBlock; spark: SparksTrackLaser. 8 refs; R194+ in map |
 | `KnockOverCubes` | `KnockOverCubes` | in progress | KNOCKOVER-CUBES-1 READY FOR CLAUDE; native configured own path independently checked, full6513/6513 PASS0skip. M13-002 proposed; retained public014/028/035, inherited activity/planner/input gaps and hardware remain | freeplay: BuildPyramid; freeplay: Hiking; freeplay: NothingToDo; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; spark: BuildPyramid; spark: GatherCubes; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksRollBlock; spark: SparksStackBlock; spark: SparksWorkout; activity: Feeding. 16 refs; R002+ in map |
-| `SparksKnockOverCubes` | `KnockOverCubes` | not started | M13 knock-over/drive-flip: M13-014; full chain UNKNOWN | spark: SparksKnockOverCubes. 1 refs; R203+ in map |
+| `SparksKnockOverCubes` | `KnockOverCubes` | in progress | SPARKS-KNOCKOVER-1 READING: reuse checked native class; min2/needs28 instance and matching objective13 M15-059 activity lifecycle/end/output joins. No new code released or acceptance claimed | spark: SparksKnockOverCubes. 1 refs; R203+ in map |
 | `SparksStackBlock` | `StackBlocks` | not started | M12 placement producer M12-028; full chain UNKNOWN | spark: SparksStackBlock. 1 refs; R232+ in map |
 | `StackBlocks` | `StackBlocks` | not started | M12 placement producer M12-028; full chain UNKNOWN | freeplay: PlayAlone. 1 refs; R064+ in map |
 | `Hiking_RollCube` | `RollBlock` | not started | UNKNOWN | freeplay: Hiking; spark: GatherCubes. 2 refs; R023+ in map |
