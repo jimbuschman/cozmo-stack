@@ -8,7 +8,7 @@ This is the operator-requested asset-based planning document, checked by the man
 
 | Date | Behaviours finished | Layer-4 records settled (total) | Jobs merged | Main gaps |
 |---|---|---|---|---|
-| 2026-10-28 | 0 | 60 (+5: M13-027, M15-012, M12-029, M13-020, M12-007) | SHARED-CHILDREN-1, PICKUP-CHILDREN-1 | Pickup Claude PASS; all three proposals settled externally, including approved inventory correction/re-approval at main2377fc5a. Independent1623 and full6487 PASS. KnockOverCubes READY FOR CLAUDE: independent1637 PASS, factory correction independent62 PASS, full6513/6513 PASS0skip; M13-002 proposed,014/028/035 retain live public gaps. No finished-behaviour claim. |
+| 2026-10-28 | 0 | 61 (+6: M13-027, M15-012, M12-029, M13-020, M12-007, M13-002) | SHARED-CHILDREN-1, PICKUP-CHILDREN-1, KNOCKOVER-CUBES-1 | Pickup Claude PASS; all three proposals settled externally, including approved inventory correction/re-approval at main2377fc5a. Independent1623 and full6487 PASS. KnockOverCubes READY FOR CLAUDE: independent1637 PASS, factory correction independent62 PASS, full6513/6513 PASS0skip; M13-002 proposed,014/028/035 retain live public gaps. No finished-behaviour claim. |
 | 2026-10-27 | 0 | 55 (46 on 2026-10-26; +9: M7-026, M13-017, M13-040, M7-023, M11-060, M15-044, M13-026, M15-075, M12-018) | drive-off pilot, PICKUP-PYRAMID-1/2/3, PICKUP-STACK-1, PUTDOWN-BLOCK-1; full suite 6435/6435 | Shared children block every in-progress behaviour: M13-027 (face turn), M15-012 (look/wait), M12-006 (release effect), M14-008 (face data), native DriveTo/Pickup/IDock children, search. Next job: REVIEW N6. |
 
 ## Sources and interpretation
