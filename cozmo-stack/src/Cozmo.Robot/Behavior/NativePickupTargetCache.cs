@@ -7,7 +7,7 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
 {
     private sealed class Entry
     {internal float Last=-1f;internal uint Best=uint.MaxValue;internal IReadOnlyList<uint> Valid=Array.Empty<uint>();internal bool Available=true;internal int Rebuilds;}
-    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()}};
+    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()},{6,new()},{7,new()}};
     internal IReadOnlyList<uint> ValidIds=>_entries[0].Valid;
     internal uint Best=>_entries[0].Best;
     internal bool Available=>_entries[0].Available;
@@ -29,13 +29,32 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         try
         {
             var geometry=new NativeConfigurationGeometry(m.World,robot);
-            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj,false),4=>Top(obj,true),3=>Bottom(obj,5,false),2=>Bottom(obj,4,true),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
-            uint best=ids.Contains(entry.Best)?entry.Best:Select(ids);
+            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj,false),4=>Top(obj,true),3=>Bottom(obj,5,false),2=>Bottom(obj,4,true),6=>RollEligible(obj,false),7=>RollEligible(obj,true),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
+            uint best=ids.Contains(entry.Best)?entry.Best:(intention is 6 or 7?SelectRoll(ids):Select(ids));
             entry.Valid=Array.AsReadOnly(ids);entry.Best=best;entry.Available=true;entry.Rebuilds++;return true;
         }
         catch(NativeConfigurationUnavailable error)
         {entry.Available=false;SteppedBehavior.ReportMissing("Intention"+intention+" target cache unavailable; prior complete IDs/best retained: "+error.Message);return false;}
     }
+    // Proposed Roll own-path H4/H5:00570676..00570902; generic cache clock/retained-best above is unchanged.
+    internal bool RollEligible(ObservableObject obj,bool axis)
+    {
+        using var root=axis?obj.NativePose.GetWithRespectToRoot():null; // Only AxisCheck flattens BEFORE NoAxisCheck.
+        if(m.Whiteboard.DidFailToUse(unchecked((int)obj.ObjectId),new[]{(ObjectActionFailure)3},60f,obj.NativePose,30f,Radians.Pi))return false;
+        if(obj.PoseState is not (PoseState.Known or PoseState.Dirty))return false;
+        if(!obj.IsRestingFlat(BitConverter.UInt32BitsToSingle(0x3E32B8C2)))return false;
+        using var relative=new Pose3d();if(!Pose3d.GetWithRespectTo(obj.NativePose,robot.GetCheckedMainPose(),relative))return false;
+        if(CubeGeometry.IsPoseTooHigh(obj,relative,2f,15f,.5f))return false;
+        if(m.NativeConfigurations.Snapshot.Stacks.Any(stack=>stack.BlockIds.Count>=3&&stack.ContainsBlock(obj.ObjectId)))return false;
+        return !axis||RotatedParentAxis.GetNativeZ(root!.Rotation)!=3;
+    }
+    private uint SelectRoll(IReadOnlyList<uint> ids)
+    {
+        var preferred=ids.Where(id=>m.World.GetLocatedObjectByIdHelper(id) is {} obj&&CanPick(obj)&&RotatedParentAxis.GetNativeZ(obj.NativePose.Rotation)!=3).ToArray();
+        return Select(preferred.Length==0?ids:preferred);
+    }
+    // Roll's actual CanActionRollObject recipient0063C880: common interaction then(.5,10,0).
+    internal bool CanRollFromGround(ObservableObject obj)=>CanInteract(obj,.5f,10f,0f);
     internal bool Top(ObservableObject obj,bool axis)
     {
         uint carried=robot.CarryingOwner is {} carry?carry.CarriedObjectId??uint.MaxValue:throw new NativeConfigurationUnavailable("actual carry owner absent");
@@ -95,7 +114,7 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
     internal bool CanPick(ObservableObject obj)=>CanInteract(obj,2f);
     // fidelity: M12-012 — actual native CanStack body, without the host/legacy configuration adapter.
     internal bool CanStack(ObservableObject obj)=>CanInteract(obj,1f);
-    private bool CanInteract(ObservableObject obj,float height)
+    private bool CanInteract(ObservableObject obj,float height,float tolerance=15f,float fraction=.5f)
     {
         if(obj.Family is not (ObjectFamily.Block or ObjectFamily.LightCube))return false;
         if(!obj.IsRestingFlat(BitConverter.UInt32BitsToSingle(0x3E32B8C2)))return false;
@@ -104,11 +123,11 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         using var relative=new Pose3d();
         if(!Pose3d.GetWithRespectTo(obj.NativePose,robot.GetCheckedMainPose(),relative))return false;
         if(new NativeConfigurationGeometry(m.World,robot).Neighbor(obj,true,15f,new BlockWorldFilter()) is not null)return false;
-        return !TooHigh(obj,relative,height);
+        return !TooHigh(obj,relative,height,tolerance,fraction);
     }
-    private static bool TooHigh(ObservableObject obj,Pose3d relative,float height)
+    private static bool TooHigh(ObservableObject obj,Pose3d relative,float height,float tolerance,float fraction)
     {
         if(!CubeGeometry.IsCube(obj.Type))throw new NativeConfigurationUnavailable("CanPick admitted virtual dimensions unavailable for "+obj.Type);
-        return CubeGeometry.IsPoseTooHigh(obj,relative,height,15f,.5f);
+        return CubeGeometry.IsPoseTooHigh(obj,relative,height,tolerance,fraction);
     }
 }

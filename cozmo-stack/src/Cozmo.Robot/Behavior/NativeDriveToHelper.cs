@@ -8,6 +8,9 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
 {
     private readonly ManipulationSystem _m;
     private readonly SteppedBehavior _parent;
+    private bool _useApproach,_specialRetry;
+    private float _approach;
+    internal void SetApproachAngle(float angle){_useApproach=true;_approach=new Radians(angle).Value;_specialRetry=true;}
     private Pose3d? _snapshot;
     private readonly object _snapshotGate=new();
     internal uint Target {get;}
@@ -30,6 +33,7 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
         if(Attempts>=3){StoreStatus(BehaviorStatus.Failure);return;}
         Attempts=unchecked(Attempts+1);
         var runner=new NativeDriveToObjectRunner(_m,Target,ActionType);Runner=runner;
+        runner.Action.UseApproachAngle=_useApproach;runner.Action.ApproachAngleRad=_approach;
         if(Force)
         {
             runner.SetPosesFunction((ObservableObject obj,out IReadOnlyList<PreActionPose> poses,ref bool inPosition)=>
@@ -58,7 +62,8 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
             case 0x02000001:case 0x03000004:StoreStatus(BehaviorStatus.Failure);return;
             case 0x03000010:
                 if(!Force)_m.Whiteboard.NoPreDockPosesObjectId=Target;StoreStatus(BehaviorStatus.Failure);return;
-            case 0x03000013:return; // ordinary type0 leaves status unchanged; type4 special retry is outside this caller.
+            case 0x03000013:
+                if(ActionType==PreActionType.Rolling&&_specialRetry){_specialRetry=false;_useApproach=false;Drive();}return; //005B5C94..5EFF type4 retries once only while104 set.
             case 0x0300001D:
                 if(_m.World.GetLocatedObjectByIdHelper(Target) is null){StoreStatus(BehaviorStatus.Failure);return;}
                 var search=Factory.CreateNativeSearchForBlock(_m,_parent,Target,1);SearchHelper=(NativeSearchForBlockHelper)search.Pointer;

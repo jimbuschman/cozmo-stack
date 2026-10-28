@@ -833,11 +833,11 @@ public sealed partial class BehaviorManager : IDisposable
     private void SetRunningAndResumeInfo(RunningInfo info, BehaviorScope? scope, double nowSec)
     {
         ReactionTrigger? oldTrigger;
-        IBehavior? oldCurrent;
+        IBehavior? oldCurrent,oldResume;
         lock (_gate)
         {
             oldTrigger = _currentReaction;
-            oldCurrent = _current;
+            oldCurrent = _current;oldResume=_resumeAfterReaction;
             _current = info.Current;
             _scope = info.Current is null ? null : scope;
             if (info.Current is not null) _startedSec = nowSec;
@@ -851,11 +851,7 @@ public sealed partial class BehaviorManager : IDisposable
             if (UpdateRobotPropertiesForReaction is { } update) update(info.Trigger is not null);
             else SteppedBehavior.ReportMissing("BehaviorManager::UpdateRobotPropertiesForReaction (0x005a2102, 0x005a2f54) writes robot+0x2c7 and MC+0xd4: not built (MC+0xd4 has no writer here)");
         }
-        if (!ReferenceEquals(oldCurrent, info.Current))
-        {
-            if (StopLightAnimsOnBehaviorChange is { } stopLights) stopLights();
-            else SteppedBehavior.ReportMissing("BehaviorManager::SetRunningAndResumeInfo stops the cube light animations on a behaviour change (0x005a2230..0x005a223e): not built");
-        }
+        UpdateStateLightsForRunningInfo(info.Current,oldCurrent,oldResume,oldTrigger,info.Trigger);
     }
 
     /// <summary>The <c>ReactionTriggerTransition</c> game message (0x005a2ee8). MISSING: nothing sends it.</summary>

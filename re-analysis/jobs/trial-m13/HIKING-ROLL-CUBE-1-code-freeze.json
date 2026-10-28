@@ -1,0 +1,127 @@
+{
+  "job": "HIKING-ROLL-CUBE-1",
+  "base_commit": "b5d1f9028996d791307810d36ab0db8d10073a97",
+  "requested_builder_model": "DEFAULT (override omitted)",
+  "requested_builder_effort": "DEFAULT (override omitted)",
+  "actual_runtime_telemetry": "unavailable",
+  "note": "All 19 changed C# raw bytes frozen for affected attempt14 and subsequent independent review; no implementation edits after this snapshot without a new manifest/review. No official status/approval/hardware claim.",
+  "files": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "31c209f1c5e4685db6b8c834f761bf091c8e07a220590bf99c4ca77839bd6024",
+      "bytes": 33614,
+      "canonical_lf_sha256": "cfe992cf920c95bad13c1366e6e0040af55d1846b17a8e3bfaa570fa04914e2e"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+      "sha256": "f15ad94a695efd1362f6e5416d95e3438689aa3db201e78ae53ee63f26db8150",
+      "bytes": 62021,
+      "canonical_lf_sha256": "e5aa65a2ebfd86a26bcdd238cc1aa9ab1aa22d23bb5b90c243a0cb197b4d58c3"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorStateLights.cs",
+      "sha256": "bfae281d5be08f48fe3f573ae39f231a601fb5c24b6bb9f9e9ad7e822d51159d",
+      "bytes": 3703,
+      "canonical_lf_sha256": "8bbdf72939f4ca8029095c89f79275cfaf64ef05ae78426725fa76cf03c0c7d4"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCubeLightTriggers.cs",
+      "sha256": "c986a3797a403c14613e4b30eb7b15e9a308a18801c808deb6eaf870435c46d4",
+      "bytes": 1153,
+      "canonical_lf_sha256": "88c710b7428aa3cd690386185edddf03098eed27ef8ac3348c659800df48017d"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDriveToHelper.cs",
+      "sha256": "a62d0063d57e9dc5a0d17cbd1886f14df1f7b47c852a3c572cf0ba7692942ef4",
+      "bytes": 4991,
+      "canonical_lf_sha256": "e92bef296cf0d42a2e8f1261c4966cea7f6987ceafbf73ee9d90fa5800ce6725"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupTargetCache.cs",
+      "sha256": "779311f5a08d92a4db108a6a8ab3bdc16dd3865ddd7800b828871a93a1a0ded6",
+      "bytes": 9532,
+      "canonical_lf_sha256": "ae1d363121c9855cffb5dd2018d843a8cfd54775aaa4fd1adb7917c5a4da8f4a"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePlaceBlockHelper.cs",
+      "sha256": "7577099092a86798287ec1f3bec31008aff393b84a63c54302a5c17c6da3c37e",
+      "bytes": 1681,
+      "canonical_lf_sha256": "5e18ca0821cd9c3e6effd7234861a3a19b79ca2f3cd5bdcbec9c06d110c7f033"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeRollBlockBehavior.cs",
+      "sha256": "7a77da113a826969dca39418b2e66cfc80d2bba6a27233b9c56ea0cf9b663ec0",
+      "bytes": 5761,
+      "canonical_lf_sha256": "6693d0ae824161ba5712d46c2f1bd6e0fae7f1accb2b20e2fa9ba3a55abf0698"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeRollBlockHelper.cs",
+      "sha256": "27f21cc6082df25c2defacabf75698401fb41964089180e2f28872ee966b6948",
+      "bytes": 7595,
+      "canonical_lf_sha256": "a694400e405ef2b0b9d6013fc7cee700857ce7abbfcbbf682daf413819cce39c"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "sha256": "68fb313cf0240730dfa027db4cca23ebf54d58e2bf098b55aec73f2d0d6eb059",
+      "bytes": 101835,
+      "canonical_lf_sha256": "85deebdf2142f560de3abf7eef1e48ca22df6708094a42b7e0e6a38675ff49c3"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativeDriveToRollRunner.cs",
+      "sha256": "3c1aa1b2ebd002115b7bd63f5a5a754ed26216cf46a3e253a3d7c8b3413d8ae4",
+      "bytes": 2827,
+      "canonical_lf_sha256": "269e83920bf9f7f4c307829969184adbcc897be224f12026d0672593df0c0291"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativeRollGeometry.cs",
+      "sha256": "fbc11d6e7ffc466b50a01c8784df5e3d93072a2893e37154c2ec2616d7e74d95",
+      "bytes": 2169,
+      "canonical_lf_sha256": "1ad365da9e27ac9826e60267422e95e619aadac6915375342ccd360a1f4a4f55"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativeRollObjectRunner.cs",
+      "sha256": "c8e7de12f6fd49a21a0ee6dc74d72c42faeb1295704978fbafa6e588ca7925fb",
+      "bytes": 10946,
+      "canonical_lf_sha256": "7f267dbc03f4032a9738caf73ec6d50f1c88dff58449013e3d93dd876132cfd3"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+      "sha256": "ebc6bb5f0186ac1989ae64afa8238f3e6ed0fc1d17a0d55c78e6c224f5ac1179",
+      "bytes": 130638,
+      "canonical_lf_sha256": "072c9b08516d0a4e56d608fc48b31c19878fb22ed47083775103b0ae709f137c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorStateLightsNativeTests.cs",
+      "sha256": "421ae2e4cbe3b670ead636a7f757c5df27a46276b8a5dfa9da99779920a1a620",
+      "bytes": 10118,
+      "canonical_lf_sha256": "b24306b6a63d021be01665f31d1686cfc38a9417d0c0389ef040d539c0b7625f"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/HikingRollCubeNativeTests.cs",
+      "sha256": "c03576ab4aceda86806dbaca5c2647a1a7215b466d1881977cd57e7c9f756156",
+      "bytes": 17049,
+      "canonical_lf_sha256": "189591321db98c2c68cc7f45e4f22ec63acdaa27dca7f4388ae8b11d51104226"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/HikingRollCubeRecoveryTests.cs",
+      "sha256": "4813ef7db489264da75bdb323a231c7af6b3a9292628c9d588fc55aeaf6e1f0e",
+      "bytes": 8274,
+      "canonical_lf_sha256": "7400277ae03f06dbc4fe14deb3775a3823740c8fc5854c7975a0a4d426225aa7"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "14319b92464f7153b98d89df7ca78dc2787ca3c28e64ef553857fe6c0b24537d",
+      "bytes": 58291,
+      "canonical_lf_sha256": "14a41d620cf05cce29f31f2664411a8131ac66960a9326bc6a9f3358f4eac4b5"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/RollFirmwareScene.cs",
+      "sha256": "a332e39f59323a2dfab51540f2d3a7dcfb8c2f89e5356b6c8b7c177f97c0baa5",
+      "bytes": 10505,
+      "canonical_lf_sha256": "780dc5d384675d4031287957f19db028c8214f4a0b1c87a347c7d30bd4ec131d"
+    }
+  ],
+  "version": 2,
+  "supersedes_manifest_raw_sha256": "32666908dab71ecfa1f67d3e988b374ddaf55a5f2d06fd0cd393d546fce2f936",
+  "prior_manifest_artifact": ".scratch/hiking-roll-build/code-freeze-v1.json"
+}
