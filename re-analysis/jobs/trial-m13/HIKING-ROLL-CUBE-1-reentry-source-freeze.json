@@ -1,0 +1,15 @@
+{
+  "note": "Finite diagnostic primary recheck; actual reaction cancellation, no queue fix/M1-034 guard/new record. Original source freezes unchanged. Later selected Frustration trace remains separate in builder attempts12+.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-reentry-contract.md",
+      "reviewed_raw_sha256": "31fcc08cc1e664c51a240f5b6ceb26d82974d08553e4d203d1b10ecda08c1507",
+      "published_lf_sha256": "f1ceaf660d910ba5c3f9745b60f13b5a5007c310e2643e65daeb08a095cc5ef1"
+    },
+    {
+      "path": "re-analysis/research/20261028-hiking-roll-cube-1-reentry-contract-codex-check.md",
+      "reviewed_raw_sha256": "2717474c2cb39629e2f71854a34b08b114b53a5613ac00271d7d2e8d27433872",
+      "published_lf_sha256": "dc7550ab424b3ae789c09bde989418acae6f8949d2c60b7525b5bbbf525c1076"
+    }
+  ]
+}
