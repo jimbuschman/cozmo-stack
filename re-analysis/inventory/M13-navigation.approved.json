@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-21",
+  "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "8cda4f5fc3fa25030d1d3ddebdc94a86b975988c18ea862a3cff4dc4e839fb14",
+  "inventory_sha256": "edfae8a1e7330a2c6eb4046cc459667955ac826f69f0f5c1e8673ffda670a49a",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -18,7 +18,7 @@
       "hardware_required": false
     },
     "M13-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "FlipBlockAction's constants, their roles and IAction type",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -196,7 +196,7 @@
         "TransitionToKnockingOverStack 0x005C34A8: TurnTowardsObjectAction(max pi), DriveAndFlipBlockAction with maxTurn = pi/2 on the first attempt (0x005C36BC) and 0.0 once +0x140 > 0 (0x005C36C0); +0xD9 or +0xD8 also forces 0.0 (0x005C34EA..0x005C34F8); WaitAction(0.5); the callback 0x005C3DCE writes AIWhiteboard+0x70 on NoPreActionPoses (0x03000010), re-runs while +0x140 <= 1 on a Retry result and otherwise blind-flips, incrementing +0x140 either way",
         "success goes to TransitionToPlayingReaction 0x005C3908: it sets robot->[+0x34]->[+0x94]->[+0xC] = 1 (0x005C3946..0x005C394E), i.e. the BlockWorld's BlockConfigurationManager dirty flag (BlockWorld+0x94 is the manager; BlockConfigurationManager+0xC is read by its Update 0x00616D84) forcing all block configurations to recompute; the tipped-object set size at +0x14C selects the success trigger +0x15C with BehaviorObjectiveAchieved(0xD, true) and NeedActionCompleted(0) (0x005C3950..0x005C3964) or the failure trigger +0x160 (0x005C396E); when +0xD9 or +0xD8 is set the reaction animation is skipped (0x005C3972/0x005C3978)",
         "IDriveToInteractWithObject 0x0055B1F4 adds TWO actions when maxTurn > 0 (0x0055B37C..0x0055B392): a TurnTowardsLastFacePoseAction (vtable overwritten from TurnTowardsFaceAction at 0x0055B3C4..0x0055B3D8) and a TurnTowardsObjectAction (0x0055B42E/0x0055B43C), both with failure ignored; the trailing float 20.0 is not read by DriveAndFlipBlockAction ctor 0x0055E208",
-        "+0xD9 is the JSON config key alwaysStreamline (IBehavior::ReadFromJson 0x005BC208/0x005BC216/0x005BC21E); +0xD8 is computed by IBehavior::Init 0x005BCCAA..0x005BCCC2 as 1 when the behaviour was entered by a soft spark switch and 0 for a hard switch or no current behaviour",
+        "+0xD9 is the JSON config key alwaysStreamline (IBehavior::ReadFromJson 0x005BC208/0x005BC216/0x005BC21E); +0xD8 is computed by IBehavior::Init 0x005BCCAA..0x005BCCC2 as 1 when the behaviour was entered by a hard spark switch and 0 for a soft switch or no current behaviour (corrected operator 2026-10-28: SetRequestedSpark 0x005A3ED4..0x005A3ED8 maps a non-zero bool to \"soft\" 0x00BF0B78 and zero to \"hard\" 0x00BF0B7D)",
         "0x0055B3C0..0x0055B3CC, 0x005DE160..0x005DE16C, 0x005B7DB2..0x005B7DC2 the vtable overwrite; vtable 0x010204F4 slots 2, 4, 6, 9, 10",
         "0x0054B7B6 the ctor store of +0x193; 0x005C229C, 0x005DE170, 0x005F20B8, 0x005F6942 the behaviour stores",
         "0x0054B978..0x0054B9F4 SetSayNameAnimationTrigger; 0x0054C606..0x0054C61E and 0x0054C2D0..0x0054C2E6 the NeedsManager registrations",
@@ -232,7 +232,7 @@
       "hardware_required": false
     },
     "M13-017": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -279,7 +279,7 @@
       "hardware_required": false
     },
     "M13-020": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PanAndTiltAction, TurnTowardsPoseAction::CheckIfDone and WaitForImagesAction",
       "authority": "libcozmoEngine.so 3.4.0-1204: PanAndTiltAction::Init 0x00549C48 clears the compound (this+0x78), sets [+0xCF]=[+0x57], adds a TurnInPlaceAction(robot, [this+0x114], [this+0x124]) (tolerance from this+0x140, [tia+0xD8]=[this+0x126], and if [this+0x160] a max speed [+0x148] and acceleration [+0x14C]) and a MoveHeadToAngleAction(robot, angle, tol [this+0x150], Radians(0)) where the angle is Radians([this+0x11C]) if [this+0x125] else robot[+0x2FC]+[this+0x11C], sets [this+0xCE]=1 and returns the compound's Update() mapped {SUCCESS, RUNNING} -> 0 (0x00549C48..0x00549D60); PanAndTiltAction::CheckIfDone 0x00549D73 returns the compound's IActionRunner::Update() unchanged; TurnTowardsPoseAction::CheckIfDone 0x0054B011 returns 0 if [this+0x179] is set (set by Init when |pan| exceeds the max turn) else the compound's Update(); WaitForImagesAction ctor 0x0054CA64 / Init 0x0054CB68 / CheckIfDone 0x0054CC1C / handler 0x0054DD88: it subscribes to tag 0x43 RobotProcessedImage and counts messages with timestamp > [this+0x7C] whose vision modes contain the wanted mode (or any if the mode is 0x10) until the count reaches [this+0x78]; R-VIS gap 2 (re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q4, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap2.md): PanAndTiltAction ctor 0x0054962C (type 0x14, tracks 5; +0x114 pan, +0x11C tilt, +0x124 isPanAbsolute, +0x125 isTiltAbsolute, +0x126 = 1 (the only store, 0x005496B2), defaults +0x128 = 0x3DB2B8C2, +0x12C = 0x40A78D36, +0x130 = 10.0, +0x134 = 0x3DB2B8C2, +0x138 = 15.0, +0x13C = 20.0, +0x140 and +0x150 = Radians(5 deg), +0x148 = [+0x12C], +0x14C = [+0x130], +0x158 = [+0x138], +0x15C = [+0x13C], +0x160/+0x161 = 0); +0x126 is copied to TurnInPlaceAction+0xD8 and MoveHeadToAngleAction+0x9C; +0x158/+0x15C are copied to [mh+0x90..0x97] when +0x161 is set. TurnTowardsPoseAction ctors 0x00549F10 and 0x0054B344 (pan-absolute 0, tilt-absolute 1, +0x170 = abs(maxTurn), +0x178, +0x179); TurnTowardsPoseAction::Init 0x0054A8FC in full: +0x179 = 0, +0x114 = 0; +0x178 == 0 -> BAD_POSE 0x03000005; a parentless pose gets SetParent(world origin), a parented one GetWithRespectTo(Robot::GetPose()) failing -> BAD_POSE; if +0x170 > 0: pan = atan2f(y, x), |pan| <= +0x170 -> +0x114 = pan, else +0x179 = 1 and return 0; the head angle from Robot::ComputeHeadAngleToSeePose(pose, 0.01) (failure: GetAbsoluteHeadAngleToLookAtPose) clamped to [-0.4363323, 0.7766715] into +0x11C; then PanAndTiltAction::Init",
       "evidence": [
@@ -355,7 +355,7 @@
       "hardware_required": false
     },
     "M13-026": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "GetAbsoluteHeadAngleToLookAtPose and Robot::ComputeHeadAngleToSeePose",
       "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3): TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose 0x0054B428: h = z + (-49.0) (0xC2440000); d = sqrt(x*x + y*y) (float vsqrt, NaN falls back to sqrtf); D = d + 13.0; a = (300.0 - D)/150.0 (0x43960000, 0x43160000); b = (0.0 - h)/-10.0; t1 = clamp01(a) * 0.0872664601 (5 degrees) and t2 = clamp01(b) * 0.130899698 (7.5 degrees) (0 for <=0 or NaN, the value for 0<x<1, 1 for >=1); A = atan2f(h, D); result = ((t2 + (A + t1)) + 0.0698131695 (4 degrees, 0x3D8EFA35)) as Radians. Robot::ComputeHeadAngleToSeePose 0x00518344: GetWithRespectTo(pose, robot+0x2CC) failing -> warning and 0x06000000; p = (sqrt(tx*tx+ty*ty), 0, tz); the camera copied from [robot+0x258]+0x24, a null calibration -> error and 1; tol = (float)calibration.nrows * f + 9.99999975e-06; theta = 0, index 1; each iteration: camPose = Robot::GetCameraPose(theta), inv = camPose.GetInverse(), q = T.rotation * p + T.translation; if not q.z > 1e-5f -> 'BadProjectedZ' warning and 1; dv = calibration.focal_y * (q.y/q.z); converged iff tol >= |dv| (writes headAngle = theta via Radians::operator=(float), returns 0 unless the index is 25 -> 'MaxIterations' warning and 1); else theta += -0.8f * atan2f(dv, focal_y); after 25 non-converged iterations the code returns 0 (success) WITHOUT writing headAngle (r0 = 26 passes the 'cmp r0,#0x19; bne' test). Confirmed by reading (register trace) in the verifier; not emulated",
       "evidence": [
@@ -366,7 +366,7 @@
       "hardware_required": false
     },
     "M13-027": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "TurnTowardsFaceWrapperAction",
       "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q5, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q5): TurnTowardsFaceWrapperAction ctor 0x0054C7DC (Robot&, IActionRunner*, bool A, bool B, Radians, bool C): CompoundActionSequential base with the wrapper vtable (GOT 0x0103EB70); if A: a TurnTowardsLastFacePoseAction (TurnTowardsFaceAction ctor with face id 0, Radians copy and bool C, vtable overwritten with GOT 0x0103EA0C) added with AddAction(action, false, false); then the wrapped action added the same way; if B: a second TurnTowardsLastFacePoseAction added the same way; then SetProxyTag([action+0x60]); order [turn-before if A][wrapped][turn-after if B] (0x0054C7EA..0x0054C8CA). The flag names were read from register order (A = r3, B = [sp+0x60], Radians at [sp+0x64], C at [sp+0x68]); the caller was not read",
       "evidence": [
@@ -507,7 +507,7 @@
       "hardware_required": false
     },
     "M13-040": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Contact-true charger observation: live ingress, located identity, Known pose and ordered world/contact effects",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

@@ -32,3 +32,7 @@ for settlement in any case (its public/manual path is still partial).
 
 M13-014, M13-028, M12-035 (partial, per the handoff); M13-033/034; M11-007/038/042. The earlier manual Navigation
 KnockOver fault was not reproduced and has no established cause; it stays a named uncertainty.
+
+## Addendum: spark flag corrected (operator approved here, 2026-10-28)
+
+Inventory `M13-navigation.md` (the M13-014 row text and the Q8 disassembly notes) and M13-014's evidence now say +0xD8 = 1 for a hard spark, citing 0x005A3ED4..0x005A3ED8 and the two literals. `fidelity.py --approve M13-navigation` was run. M13-014's status is unchanged.
