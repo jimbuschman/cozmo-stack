@@ -14,9 +14,10 @@ internal sealed class NativeDriveToObjectRunner:NativeVisionRunner
     internal DriveToPoseAction? Drive {get;private set;}
     protected override string ActionName=>"DriveToObject";
     internal CompoundActionSequential Sequence=>_sequence;
-    internal NativeDriveToObjectRunner(ManipulationSystem m,uint id):base(m,0x0A,4)
+    internal NativeDriveToObjectRunner(ManipulationSystem m,uint id):this(m,id,PreActionType.Docking){}
+    internal NativeDriveToObjectRunner(ManipulationSystem m,uint id,PreActionType type):base(m,0x0A,4)
     {
-        Action=new(m,id,PreActionType.Docking){NativeInputs=true};
+        Action=new(m,id,type){NativeInputs=true};
         _sequence=new(()=>m.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,SourceLog=SourceLog};
         _sequence.SeedNativeEmptyCompletion();
     }

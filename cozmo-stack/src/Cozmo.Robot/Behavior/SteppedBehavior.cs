@@ -607,7 +607,7 @@ public abstract partial class SteppedBehavior : IBehavior
     }
 
     /// <summary>The per-run reset a start or a resume begins with.</summary>
-    private void BeginRun(BehaviorContext context, BehaviorScope scope)
+    private protected void BeginRun(BehaviorContext context, BehaviorScope scope)
     {
         Context = context;
         Scope = scope;

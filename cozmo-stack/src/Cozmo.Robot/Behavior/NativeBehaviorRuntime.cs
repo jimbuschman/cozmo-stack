@@ -175,6 +175,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeKnockOverCubesBehavior>())candidate.Dispose();
         Configurations.Dispose();
         Manipulation?.Dispose();
     }

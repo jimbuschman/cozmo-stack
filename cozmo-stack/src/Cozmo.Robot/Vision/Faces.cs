@@ -326,9 +326,15 @@ public sealed partial class FaceWorld
             // C2-F7c: on the found path a no-parts observation keeps the entry's existing translation
             // (0x004F4784..0x004F47A8); its rotation still comes from the TrackedFace. A new entry, and a
             // parts observation, take the face's full pose.
-            entry.HeadPose = existing && !face.HasEyeParts
-                ? new Pose3d(face.HeadPose, prev.Translation)
-                : face.HeadPose;
+            if(existing && !face.HasEyeParts)
+            {
+                //K27/4F42D0..42F2,4F479C..47BE: preserve the incoming full pose/parent/rotation;
+                //only the three old translation words replace the prepared pose's translation.
+                var prepared=new Pose3d(face.HeadPose);
+                prepared.Node!.Transform=new(prepared.Quaternion,prev.Translation);
+                entry.HeadPose=prepared;
+            }
+            else entry.HeadPose=face.HeadPose;
             entry.Rect = face.Rect; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;

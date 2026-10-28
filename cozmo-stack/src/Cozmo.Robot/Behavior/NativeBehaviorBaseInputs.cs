@@ -8,6 +8,7 @@ internal sealed class NativeBehaviorBaseInputs
 {
     private readonly EngineRobot _robot;
     private readonly uint _requiredUnlock;
+    internal uint RequiredUnlock=>_requiredUnlock;
     private readonly int _requiredSevere;
     private readonly float _recentDriveOff, _recentSwitch;
     internal NativeBehaviorBaseInputs(EngineRobot robot,JsonElement config)

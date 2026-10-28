@@ -47,12 +47,17 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     private float _best=float.MaxValue;
     private bool _locked;
     private readonly bool _sayName;
-    private readonly int _sayTrigger,_noNameTrigger;
+    private int _sayTrigger,_noNameTrigger;
     private readonly float _maximum;
     protected override string ActionName=>"TurnTowardsLastFacePose";
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,float maximum,bool sayName,int sayTrigger=0x23F,int noNameTrigger=0x23F):base(m,Pose3d.Identity,maximum,0x29,0,true)
     {_requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;}
+    internal void SetNativeNameTriggers(int named,int unnamed)
+    {
+        if(!_sayName)M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,"Actions","TurnTowardsFaceAction.SetSayNameTriggerWithoutSayingName","Installing name triggers while sayName is false");
+        _sayTrigger=named;_noNameTrigger=unnamed;
+    }
     internal float MaximumTurn=>_maximum;
     internal bool SayName=>_sayName;
     internal int FaceState=>_faceState;

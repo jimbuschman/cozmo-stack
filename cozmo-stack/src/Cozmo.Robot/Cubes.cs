@@ -793,7 +793,13 @@ public sealed class CozmoCubes
         }
         if(moved is not null)_robot.Engine.QueueAppEvent(CubeMoved,moved.SnapshotForApp());
         if(movementBroadcast is not null)_robot.Engine.QueueAppBroadcast(MovementBroadcast,new CubeTimestampEvent(movementBroadcast.Cube.SnapshotForApp(),movementBroadcast.Timestamp));
-        if(upAxisBroadcast is not null)_robot.Engine.QueueAppBroadcast(UpAxisBroadcast,upAxisBroadcast);
+        if(upAxisBroadcast is not null&&_robot.Engine.Robot?.HasExternalInterface==true)
+        {
+            //K24/534E14/511DE8: ONE app publication queued before synchronous local signal11.
+            var writer=new CladWriter();writer.U32(upAxisBroadcast.Timestamp);writer.U32(unchecked((uint)upAxisBroadcast.ObjectID));writer.U8((byte)upAxisBroadcast.UpAxis);
+            _robot.Engine.DeliverAnimationReportToApp(0x11,writer.ToArray(),_robot.Engine.CaptureAppEvent(UpAxisBroadcast,upAxisBroadcast));
+            _robot.Engine.AnimationMessages.Deliver(0x11,true,upAxisBroadcast);
+        }
         if(powerBroadcast is not null)_robot.Engine.QueueAppBroadcast(PowerLevelBroadcast,new ObjectPowerLevel{ObjectID=powerBroadcast.ObjectID,MissedPackets=powerBroadcast.MissedPackets,BatteryLevel=powerBroadcast.BatteryLevel});
     }
 
