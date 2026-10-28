@@ -1,6 +1,6 @@
 # SPARKS-KNOCKOVER-1 — configured Spark knock-over
 
-Independent finite code/source PASS on isolated `1806c4b4`; manager integration/full gate pending. Branch `codex-m13-manager-2`. Main `a2b72726` contains Claude's M13-002 settlement and formal hard-spark correction/re-approval, imported unchanged. No hardware or whole-behaviour acceptance claim.
+Independent finite code/source PASS on isolated `1806c4b4`, integrated as `7e3b096a`; manager full gate pending. Branch `codex-m13-manager-2`. Main `a2b72726` contains Claude's M13-002 settlement and formal hard-spark correction/re-approval, imported unchanged. No hardware or whole-behaviour acceptance claim.
 
 - Actual shipped `SparksKnockOverCubes` uses the checked native class with minimum2, absent middle, objective13 and configured needs28; ordinary minimum3 remains distinct. No new KnockOver implementation. `005C314C/005C31A2`, `005C3A98..005C3AD4`, `005C3946..005C3978`; shipped `freeplay/sparkable/sparksKnockOverCubes.json`.
 - Its constructed activity owns lifetime objective8B/observed44 subscriptions, unsigned counter and Family1/2 ID set, including messages outside selection; selection resets them. Public activity state uses native ID21. `005B0DF0..005B0E0C`, `005B181E..005B1866`, `005B3154`; table `010330C4`/parser `00766F0A/00766F14`.
