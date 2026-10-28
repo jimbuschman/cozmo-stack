@@ -19,3 +19,5 @@ Next whole-behaviour job after PICKUP-CHILDREN-1 publication `bc801bea`, operato
 - Write short `HANDOFF-KNOCKOVER-CUBES-1.md` with claims/addresses, files, tests and reach, gate, settlement proposals and leftovers. Mark READY FOR CLAUDE, push the branch, then continue the scoreboard without waiting for Claude or hardware.
 
 State: READING. A and B released read-only after pickup push; no builder released and no next-job code/tests changed.
+
+Operator explicitly approved the independently proved runtime +0xD8 hard-spark correction during this read. See `KNOCKOVER-CUBES-1-CONTRACT-CORRECTION.md` for the frozen Q8 contradiction, original instructions and exact approval; official evidence/status changes remain Claude's. Whole read/check still required before code.
