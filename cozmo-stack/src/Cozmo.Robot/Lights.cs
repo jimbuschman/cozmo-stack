@@ -300,13 +300,19 @@ public sealed class BodyLightComponent
     /// <summary>LB2/LB4h: every colour rev(BLACK 00 00 00 FF), every period and offset 0.</summary>
     public static readonly LedPattern[] OffLights = Enumerable.Repeat(LedPattern.Solid(new LedColor(0, 0, 0, 0xFF)), 5).ToArray();
 
-    private sealed class Entry { public required LedPattern[] Leds; }
+    internal sealed class Entry { public required LedPattern[] Leds; }
+    // fidelity: M4-017 — 0063228C/006324A0, supplied locators are independent.
+    internal sealed class Locator
+    {
+        internal int Source;
+        internal LinkedListNode<Entry>? Node;
+    }
 
     private readonly Func<RobotMessage, bool> _send;
     private readonly object _gate = new();
     private readonly LinkedList<Entry>[] _sources = { new(), new(), new() };
     /// <summary>comp+0x24: the one locator the charging config, SetBackpackLights and SetBackpackLEDs use (LB4i).</summary>
-    private (int Source, LinkedListNode<Entry> Node)? _locator;
+    private readonly Locator _locator=new();
     private Entry? _previous;
     /// <summary>+0x38: the charging state, 0 from the constructor (0x006319B2).</summary>
     private int _chargingState;
@@ -327,7 +333,7 @@ public sealed class BodyLightComponent
         lock (_gate)
         {
             foreach (var s in _sources) s.Clear();
-            _locator = null;
+            _locator.Node=null;_locator.Source=0;
             _previous = null;
             _chargingState = 0;
         }
@@ -339,16 +345,30 @@ public sealed class BodyLightComponent
     /// </summary>
     internal SourceLogSink? SourceLog { get; set; }
     internal void StartLooping(LedPattern[] leds, int source)
+        =>StartLooping(leds,source,_locator);
+    internal void StartLooping(LedPattern[] leds,int source,Locator locator)
     {
-        bool invalid;
+        bool valid;
         lock (_gate)
         {
-            invalid = _locator is null;
-            if (_locator is { } l) _sources[l.Source].Remove(l.Node);
+            valid=StopLoopingLocked(locator);
             var node = _sources[source].AddFirst(new Entry { Leds = leds });
-            _locator = (source, node);
+            locator.Source=source;locator.Node=node;
         }
-        if (invalid) SourceLog?.Invoke(EngineLogLevel.Info, "BodyLightComponent", "BodyLightComponent::RemoveBackpackLightConfig.InvalidLocator", "Trying to remove an invalid locator.");
+        if(!valid)InvalidLocator();
+    }
+    private bool StopLoopingLocked(Locator locator)
+    {
+        if(locator.Node is {} node && ReferenceEquals(node.List,_sources[locator.Source]))
+        {_sources[locator.Source].Remove(node);return true;}
+        return false;
+    }
+    private void InvalidLocator()=>SourceLog?.Invoke(EngineLogLevel.Info,"BodyLightComponent","BodyLightComponent::RemoveBackpackLightConfig.InvalidLocator","Trying to remove an invalid locator.");
+    internal bool StopLooping(Locator locator)
+    {
+        lock(_gate)if(StopLoopingLocked(locator))return true;
+        InvalidLocator();
+        return false;
     }
 
     // fidelity: M4-017

@@ -287,6 +287,7 @@ public sealed class BehaviorFactory
         // the whole of the shipped Hiccup behaviour (reactions/hiccup.json: animTriggers ["Hiccup"]); the timed hiccup/cure logic is the M10
         // strategy ReactionTriggerStrategyHiccup, which is not this class.
         [BehaviorClass.PlayAnim] = (ctx, json) => PlayAnimBehavior.FromConfig(json, ctx.Log),
+        [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
         [BehaviorClass.PickUpCube] = (ctx,json)=>new NativePickUpCubeBehavior(ctx,json),
@@ -342,12 +343,12 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        if((cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
+        if((cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
+        if((cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
@@ -358,6 +359,11 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
+            if(stepped is NativePlayArbitraryAnimBehavior)
+            {
+                stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
+                stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
+            }
         }
         container.AddToFactory(behavior);
         status = BehaviorCreateStatus.Created;
