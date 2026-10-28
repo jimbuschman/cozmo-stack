@@ -16,17 +16,40 @@ internal sealed class NativePickupBlockHelper: IHelper
     internal uint Attempts {get;private set;}
     internal bool AlternateRetry {get;private set;}
     internal NativeSearchForBlockHelper? SearchHelper {get;private set;}
+    internal NativeDriveToHelper? DriveHelper {get;private set;}
     private Action<RobotCompletedAction>? _responseCallback;
     private Func<uint,byte>? _converter;
+    private bool _hostUnavailable;
+    private int _availabilityEpoch;
     internal NativePickupBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,float maxTurn,bool flag104,bool flag105)
         :base(m.Robot,"PickupBlock",parent,factory)
     {_m=m;_parent=parent;Target=target;MaxTurn=new Radians(maxTurn).Value;Flag104=flag104;Flag105=flag105;}
     public override bool ShouldCancelDelegates(CozmoRobot robot)=>false;
+    protected override void OnInitializeOnStackSlot20(){Interlocked.Increment(ref _availabilityEpoch);_hostUnavailable=false;}
+    protected override void OnStopSlot24(bool first)=>Interlocked.Increment(ref _availabilityEpoch);
     protected override BehaviorStatus Init(CozmoRobot robot)
     {Attempts=0;AlternateRetry=false;StartPickup(false);return Status;}
     protected override BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot)=>Status;
     private void Missing(string text)=>SteppedBehavior.ReportMissing("PickupBlockHelper "+text);
     internal void StartPickup(bool forceDrive)
+    {
+        if(_hostUnavailable)return;
+        try{StartPickupAvailable(forceDrive);}
+        catch(NativeActionUnavailable error)
+        {
+            _hostUnavailable=true;_responseCallback=null;_converter=null;
+            Missing("M12-031 visual pre-action005B7B48 unavailable: "+error.Message);
+            int epoch=Volatile.Read(ref _availabilityEpoch);uint tag=_parent.CurrentRunnerTag;
+            _m.Robot.Engine.Robot?.ActionList.DeferHostCleanup(()=>
+            {
+                if(epoch!=Volatile.Read(ref _availabilityEpoch)||!ReferenceEquals(_parent.HelperWeakReference?.Pointer,this)||!_parent.HasLiveHelper||_parent.CurrentRunnerTag!=tag)return;
+                var manager=_m.Robot.Engine.Robot?.BehaviorManagerOwner;
+                if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,_m.Robot.Engine.Timer.SecondsF);
+                else _parent.Stop(BehaviorStopReason.Interrupted);
+            });
+        }
+    }
+    private void StartPickupAvailable(bool forceDrive)
     {
         if(forceDrive){Drive(true);return;}
         var owner=_m.Robot.Engine.Robot;
@@ -34,7 +57,7 @@ internal sealed class NativePickupBlockHelper: IHelper
         {Missing("visual pre-action005B7B48 actual Robot clock/calibration input unavailable; no direct pickup or replacement drive");return;}
         using var main=new Pose3d(owner.GetCheckedMainPose());
         var pre=PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerification(_m.World.GetLocatedObjectByIdHelper(Target),PreActionType.Docking,0,0,state.Timestamp,main,
-            owner.CarryingOwner?.CarriedObjectId,calibration,ObjectPoseQueries.Engine,()=>_m.GetObstacles(main));
+            owner.CarryingOwner?.CarriedObjectId,calibration,ObjectPoseQueries.Engine,()=>_m.NativeObstacles(main));
         if(pre!=ActionResult.Success){Drive(false);return;}
         var pickup=new NativePickupObjectRunner(_m,Target);
         NativeLastFaceRunner? face=null;NativeTurnTowardsObjectRunner? turn=null;
@@ -88,7 +111,10 @@ internal sealed class NativePickupBlockHelper: IHelper
     }
     private void Drive(bool force)
     {
-        Missing("DriveToHelper005B7B5A tuple(type0,force="+force+",angle0,false,offset0/0), success re-entry/failed status0 known; concrete child recipient unavailable; no always-drive substitute");
+        var drive=Factory.CreateNativeDriveTo(_m,_parent,Target,force);DriveHelper=(NativeDriveToHelper)drive.Pointer;
+        Delegation.Delegate=drive;
+        Delegation.OnSuccessHandler=_=>{StartPickup(false);return Status;};
+        Delegation.OnFailureHandler=_=>BehaviorStatus.Failure;
     }
     private static byte ConvertResult(uint r)=>r is 0x04000003 or 0x04000004 or 0x04000005 or 0x03000015?(byte)1:r==0?(byte)3:(byte)0;
     internal void StartWithResponse(IActionRunner runner,Action<RobotCompletedAction> callback)

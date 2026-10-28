@@ -19,10 +19,12 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
     internal int Stage {get;private set;}
     internal bool SnapshotAttempted {get;private set;}
     internal NativeNearbySearchRunner? Nearby {get;private set;}
-    internal NativeSearchForBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target)
+    internal CompoundActionSequential? Sequence {get;private set;}
+    internal int MaxStage {get;}
+    internal NativeSearchForBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,int maxStage=0)
         :base(m.Robot,"SearchForBlock",parent,factory)
     {
-        _m=m;_parent=parent;Target=target;
+        _m=m;_parent=parent;Target=target;MaxStage=maxStage;
         if(m.Robot.Engine.Robot?.HasExternalInterface==true)
             _observed=m.Robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,OnObserved);
     }
@@ -42,21 +44,48 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
     private void Search()
     {
         lock(_stateGate){if(_hostUnavailable||_retired)return;}
-        bool missing=_m.World.GetLocatedObjectByIdHelper(Target) is null;
+        var target=_m.World.GetLocatedObjectByIdHelper(Target);
+        bool missing=target is null;
+        bool finish;
         lock(_stateGate)
         {
             if(_hostUnavailable||_retired)return;
-            if(missing||Stage>0){StoreStatus(BehaviorStatus.Failure);return;} //maxStage0 specific target normal finish5BB478.
+            finish=missing||Stage>MaxStage;
         }
-        Nearby=new(_m,Target,-20f,100f,BitConverter.UInt32BitsToSingle(0xBDB2B8C2));
+        if(finish)
+        {
+            // Checked SH7/A21 (5BB480..500): default filter intentionally invalidates the in-memory located world.
+            if(target?.PoseState==PoseState.Known&&MaxStage>=1)_m.World.DeleteLocatedObjects(new BlockWorldFilter());
+            // 5BB562 deletion returns before the unconditional native failure store5BB5BA/5BB5D0.
+            lock(_stateGate){if(!_hostUnavailable&&!_retired)StoreStatus(BehaviorStatus.Failure);}
+            return;
+        }
+        NativeNearbySearchRunner NewNearby()=>new(_m,Target,-20f,100f,BitConverter.UInt32BitsToSingle(0xBDB2B8C2));
+        NativeTurnInPlaceRunner Turn(float angle)=>new(_m,new TurnInPlaceSpec(angle,false,SearchForNearbyObjectAction.TurnToleranceRad,true,false,0,0,false));
         var sequence=new SearchSequence(this);
+        Sequence=sequence;
         sequence.SeedNativeEmptyCompletion();
-        sequence.AddAction(new NativeTurnTowardsObjectRunner(_m,Target,NativeTurnTowardsObjectRunner.AnyCode,Radians.Pi,false,false),true,false);
-        sequence.AddAction(Nearby,false,false);
+        if(Stage==0)
+        {
+            Nearby=NewNearby();
+            sequence.AddAction(new NativeTurnTowardsObjectRunner(_m,Target,NativeTurnTowardsObjectRunner.AnyCode,Radians.Pi,false,false),true,false);
+            sequence.AddAction(Nearby,false,false);
+        }
+        else
+        {
+            sequence.AddAction(new DriveStraightAction(_m,-20f,20f,false),true,false);
+            sequence.AddAction(Turn(Radians.Pi/4f),true,false);
+            sequence.AddAction(Turn(Radians.Pi/4f),true,false);
+            sequence.AddAction(NewNearby(),true,false);
+            sequence.AddAction(new DriveStraightAction(_m,-20f,20f,false),true,false);
+            sequence.AddAction(Turn(-3f*Radians.Pi/4f),true,false);
+            sequence.AddAction(Turn(-Radians.Pi/4f),true,false);
+            sequence.AddAction(NewNearby(),true,false);
+        }
         BeforeActionPublicationForTest?.Invoke();
         bool started=_parent.StartActing(sequence,_=>Search());
         bool unavailable;
-        lock(_stateGate){if(!_retired)Stage=1;unavailable=_retired||_hostUnavailable;}
+        lock(_stateGate){if(!_retired)Stage++;unavailable=_retired||_hostUnavailable;}
         if(started&&unavailable)ScheduleCleanup(sequence.Tag); //StartActing BEFORE stage publication.
     }
     protected override BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot)

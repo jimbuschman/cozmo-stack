@@ -47,9 +47,7 @@ public class PanAndTiltAction
 
     // The fields Init reads, named by offset, with the constructor's defaults (0x0054962C..0x00549700, M13-020): +0x126 = 1;
     // +0x140 and +0x150 = Radians(5 deg) (0x3DB2B8C2); +0x148 = [+0x12C] = 5.235988 (0x40A78D36); +0x14C = [+0x130] = 10.0;
-    // +0x158 = [+0x138] = 15.0 and +0x15C = [+0x13C] = 20.0; +0x160 = +0x161 = 0. The setters SetMaxPanSpeed 0x005498A0,
-    // SetPanAccel 0x005499AC, SetMaxTiltSpeed 0x00549AE8 and SetTiltAccel 0x00549B0C are not built (the limit SetMaxPanSpeed warns
-    // above is not in the inventory); a caller sets the fields and the +0x160/+0x161 flags itself.
+    // +0x158 = [+0x138] = 15.0 and +0x15C = [+0x13C] = 20.0; +0x160 = +0x161 = 0. Native setters below preserve these defaults and override flags.
     public static readonly float DefaultToleranceRad = BitConverter.Int32BitsToSingle(0x3DB2B8C2);    // 0x3DB2B8C2
     public double PanAngleRad { get; set; }                   // +0x114
     public double HeadAngleRad { get; set; }                  // +0x11C
@@ -58,14 +56,39 @@ public class PanAndTiltAction
     public bool Byte0x126 { get; init; } = true;              // +0x126, copied to tia+0xD8 and mh+0x9C; the constructor's only store (0x005496B2)
     private double _panToleranceRad=DefaultToleranceRad;
     public double PanToleranceRad { get=>_panToleranceRad; init=>_panToleranceRad=value; }
-    internal void SetNativePanTolerance(float value)=>_panToleranceRad=value;   // +0x140
-    public double MaxSpeedRadPerSec { get; init; } = BitConverter.Int32BitsToSingle(0x40A78D36);          // +0x148
-    public double MaxAccelRadPerSec2 { get; init; } = 10.0;               // +0x14C
-    public double HeadToleranceRad { get; init; } = DefaultToleranceRad;  // +0x150
-    public uint HeadSpeedAccelWord0 { get; init; } = 0x41700000;          // +0x158..0x15B (15.0f)
-    public uint HeadSpeedAccelWord1 { get; init; } = 0x41A00000;          // +0x15C..0x15F (20.0f)
-    public bool HasMaxSpeed { get; init; }                    // +0x160
-    public bool HasHeadSpeedAccel { get; init; }              // +0x161
+    internal void SetNativePanTolerance(float value)=>_panToleranceRad=NativeTolerance(value);
+    private double _maxSpeed=BitConverter.UInt32BitsToSingle(0x40A78D36),_maxAccel=10,_headTolerance=DefaultToleranceRad;
+    private uint _headSpeed=0x41700000,_headAccel=0x41A00000;
+    private bool _hasMaxSpeed,_hasHeadSpeed;
+    public double MaxSpeedRadPerSec { get=>_maxSpeed; init=>_maxSpeed=value; }
+    public double MaxAccelRadPerSec2 { get=>_maxAccel; init=>_maxAccel=value; }
+    public double HeadToleranceRad { get=>_headTolerance; init=>_headTolerance=value; }
+    public uint HeadSpeedAccelWord0 { get=>_headSpeed; init=>_headSpeed=value; }
+    public uint HeadSpeedAccelWord1 { get=>_headAccel; init=>_headAccel=value; }
+    public bool HasMaxSpeed { get=>_hasMaxSpeed; init=>_hasMaxSpeed=value; }
+    public bool HasHeadSpeedAccel { get=>_hasHeadSpeed; init=>_hasHeadSpeed=value; }
+    // 5498A0/5499AC/549AE8/549B0C: zero restores the default but keeps a prior override flag.
+    public void SetMaxPanSpeed(float value)
+    {
+        if(value==0){_maxSpeed=BitConverter.UInt32BitsToSingle(0x40A78D36);return;}
+        if(MathF.Abs(value)>BitConverter.UInt32BitsToSingle(0x40A78D36))
+            value=BitConverter.UInt32BitsToSingle((BitConverter.SingleToUInt32Bits(value)&0x80000000)|0x40A78D36);
+        _hasMaxSpeed=true;_maxSpeed=value;
+    }
+    public void SetPanAccel(float value){if(value==0){_maxAccel=10;return;}_hasMaxSpeed=true;_maxAccel=value;}
+    public void SetMaxTiltSpeed(float value){if(value==0){_headSpeed=0x41700000;return;}_hasHeadSpeed=true;_headSpeed=BitConverter.SingleToUInt32Bits(value);}
+    public void SetTiltAccel(float value){if(value==0){_headAccel=0x41A00000;return;}_hasHeadSpeed=true;_headAccel=BitConverter.SingleToUInt32Bits(value);}
+    public void SetPanTolerance(float value)=>SetNativePanTolerance(value);
+    public void SetTiltTolerance(float value)=>_headTolerance=NativeTolerance(value);
+    private static float NativeTolerance(float value)
+    {
+        var radians=new Radians(value);
+        if(Radians.IsNear(radians,new Radians(0),new Radians(Radians.Epsilon)))return DefaultToleranceRad;
+        radians.Assign(MathF.Abs(radians.Value));
+        float minimum=BitConverter.UInt32BitsToSingle(0x3D0EFA35);
+        if(radians.Value<minimum)radians.Assign(minimum);
+        return radians.Value;
+    }
     public byte Byte0x57 { get; init; }                       // +0x57, copied to +0xCF
 
     /// <summary>The compound's <c>IActionRunner::Update()</c> (PLT 0x004AA984). No default: the compound (CompoundActionParallel) is the M8 framework and is not built.</summary>

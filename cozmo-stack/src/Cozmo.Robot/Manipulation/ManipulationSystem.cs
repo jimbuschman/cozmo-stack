@@ -154,6 +154,18 @@ public sealed class ManipulationSystem : IDisposable
         NativePlanners?.Dispose();NativePlanners=null;GetNativePlanners(); // native worker exists before the first ComputePath
         return true;
     }
+    internal bool LoadNativePlanner(string resources)
+    {
+        if(Planner is not null)return true;
+        string path=Path.Combine(resources,"config","engine","cozmo_mprim.json");
+        if(!File.Exists(path)){Robot.Engine.EmitStackLog("MISSING: M13-033 native planner motion primitive asset unavailable: "+path);return false;}
+        MotionPrimitiveSet primitives;
+        try{primitives=MotionPrimitiveSet.Parse(File.ReadAllText(path));}
+        catch(Exception error)when(error is IOException or InvalidDataException or System.Text.Json.JsonException)
+        {Robot.Engine.EmitStackLog("MISSING: M13-033 native planner motion primitive load failed: "+error);return false;}
+        Planner=new LatticePlanner(new LatticeEnvironment(primitives));
+        NativePlanners?.Dispose();NativePlanners=null;GetNativePlanners();return true;
+    }
 
     /// <summary>
     /// The BehaviorManager the actions take reaction locks through (<c>[robot+0x44]</c>): <c>PlaceObjectOnGroundAction::Init</c> 0x005548C6 takes "placeOnGroundAction" for EVERY action. Reads the current native robot owner even before Freeplay; null before a native robot exists. An explicit host/unit override can be supplied.
@@ -228,6 +240,24 @@ public sealed class ManipulationSystem : IDisposable
     public Func<TimeSpan, CancellationToken, Task> Wait { get; set; } = (t, c) => Task.Delay(t, c);
 
     public Pose3d? RobotPose() => Vision.History.Latest?.RobotPose;
+
+    internal Pose3d NativeMainSnapshot()=>Robot.Engine.Robot?.CopyCheckedMainPose()
+        ??throw new NativeActionUnavailable("M12-029 actual MAIN owner unavailable");
+    internal List<PreActionObstacle> NativeObstacles(Pose3d main)
+    {
+        var owner=Robot.Engine.Robot??throw new NativeActionUnavailable("M12-036 actual Robot owner unavailable");
+        var carrying=owner.CarryingOwner??throw new NativeActionUnavailable("M12-036 actual carrying owner unavailable");
+        using var root=main.GetWithRespectToRoot();
+        var obstacles=PreActionValidity.GetObstacles(World.FindLocatedMatchingObjects(new BlockWorldFilter()),carrying.GetCarryingObjects(),root,NativeHeight(),0f);
+        if(obstacles.Any(o=>o.IsStandIn))throw new NativeActionUnavailable("M12-036 native obstacle footprint input unavailable; no planar stand-in on the native approach");
+        return obstacles;
+    }
+    internal float NativeHeight()
+    {
+        float lift=Robot.Engine.Robot?.NativeLiftAngle??throw new NativeActionUnavailable("M12-036 actual synchronized raw lift input unavailable");
+        float height=66f*MathF.Sin(lift);height=height+45f;height=height+0f;height=height+5f;
+        float floor=BitConverter.UInt32BitsToSingle(0x42876666);return height>floor?height:floor;
+    }
 
     // Owned, scoped input for native pre-action geometry only; general callers use RobotPose's history value.
     internal Pose3d? CopyPreActionRobotPose() => Vision.History.Latest is {} latest

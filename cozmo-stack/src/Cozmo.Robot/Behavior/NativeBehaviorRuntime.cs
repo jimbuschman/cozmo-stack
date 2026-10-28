@@ -62,6 +62,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         if(vision is not null)
         {
             Manipulation=new(facade,vision,robot){ClockSec=()=>facade.Engine.Timer.SecondsF};
+            if(facade.Engine.Options.ResourcesPath is {} plannerResources)Manipulation.LoadNativePlanner(plannerResources);
             PickupTargets=new NativePickupTargetCache(Manipulation,robot);
             if(vision.OverheadEdges is null)
             {
