@@ -14066,20 +14066,20 @@
     {
       "id": "M15-076",
       "subsystem": "M15-freeplay",
-      "title": "BehaviorStackBlocks, the configured SparksStackBlock instance: target cache and validity, Init, pickup and PlaceRel helper delegation, one retarget, ground recovery, success objective/animation/needs and stop/reset",
+      "title": "BehaviorStackBlocks, both shipped instances (SparksStackBlock and ordinary StackBlocks): target caches and validity, Init, pickup and PlaceRel helper delegation, one retarget, ground recovery, success objective/animation/needs and stop/reset",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeStackBlocksBehavior.cs",
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Factory 0x0059CFE6; class range 0x005C93D0..0x005CA33A: ctor 0x005C93D0, IsRunnableInternal 0x005C9484, Init 0x005C9502, stacking 0x005C9520..0x005C961A, StopInternal 0x005C97F8.",
         "UpdateInternal 0x005C9844..0x005C9A88 (M7 inventory row 885, corrected 2026-10-28): both targets valid skips the neighbour query (0x005C98BC..0x005C98C2); bottom invalid -> FindObjectOnTopOrUnderneathHelper(bottom, 15.0f, filter, true) must return the top (0x005C99C0, 0x005C9A1E); one GetClosestValidBottom retarget (0x005C9A5E..0x005C9A84).",
-        "Target cache: entries 0x0056F724..0x0056FDA2, dependency 0x00571040..0x005710CC (table 0x01023570), predicates 0x0057059E/0x0057062C/0x0057154C, entry cadence 0x005711E4..0x005712B6; shipped stackInAnyOrientation=true selects 5/3.",
-        "Success 0x005C9EA4..0x005C9F14: objective 40, optional animation 0x21A with score, then configured needs action 43.",
-        "Shipped config: SparksStackBlock (activity 27). Read packet re-analysis/research/20261028-sparks-stack-1-read.md S1-S14/C1-C5 and its independent check; HANDOFF-SPARKS-STACK-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md"
+        "Target caches: entries 0x0056F724..0x0056FDA2, dependencies 0x00571040..0x005710CC (5->3) and 0x004D705E..0x004D7072 (4->2), predicates 0x0057052C..0x0057066A / 0x0057154C, entry cadence 0x005711E4..0x005712B6; progression unlock 9 or stackInAnyOrientation selects 5/3, otherwise 4/2 (0x005C94A6..0x005C9500, 0x005C984E..0x005C988C); GetRotatedParentAxis<'Z'> 0x005507A0..0x00550854.",
+        "Success 0x005C9EA4..0x005C9F14: objective 40, optional animation 0x21A with score, then the configured needs action (43 for SparksStackBlock, 42 for StackBlocks).",
+        "Shipped configs: SparksStackBlock (activity 27) and freeplay/stackBlocks.json (behaviorID 0xA0, executable 9, unlock 10). Read packets re-analysis/research/20261028-sparks-stack-1-read.md and 20261028-stack-blocks-1-read.md with their independent checks; HANDOFF-SPARKS-STACK-1.md, HANDOFF-STACK-BLOCKS-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md, re-analysis/research/20261028-stack-blocks-1-claude-check.md."
       ],
       "effect": "which cubes Cozmo picks up and stacks on, when it gives up or retargets, and what objective, animation and needs change a successful stack produces",
-      "provenance": "SPARKS-STACK-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (jobs/trial-m13/PROPOSAL-SPARKS-STACK-LIFECYCLE.md).",
-      "unresolved": "Built and checked in SPARKS-STACK-1 but not settled. Scope is the configured SparksStackBlock instance only; ordinary StackBlocks 4/2 and other instances are outside it (STACK-BLOCKS-1). Not this record: the factory/config binding (M7-018), the PlaceRel helper (M12-042), placement parameter producers (M12-028), the bottom-flat gate (M12-012), the neighbour query body (M13-007), the PlaceRel action's Verify/completion (M12-050), the Sparked activity (M15-059), needs/desired-activity reporting (M15-008).",
+      "provenance": "SPARKS-STACK-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (jobs/trial-m13/PROPOSAL-SPARKS-STACK-LIFECYCLE.md). Widened to both shipped instances with operator approval 2026-10-28 (STACK-BLOCKS-1).",
+      "unresolved": "Built and checked in SPARKS-STACK-1 and STACK-BLOCKS-1 but not settled. Still missing: ordinary StackBlocks reaches the behaviour only through supplied admission; PlayAlone admission/scoring, parent transitions and the executable finder are unbuilt. Not this record: the factory/config binding (M7-018), the PlaceRel helper (M12-042), placement parameter producers (M12-028), the bottom-flat gate (M12-012), the neighbour query body (M13-007), the axis helper's other callers (M12-039), the PlaceRel action's Verify/completion (M12-050), the Sparked activity (M15-059), needs/desired-activity reporting (M15-008).",
       "hardware_required": false,
       "live_path": true,
       "test": "SparksStackNativeTests"

@@ -27,3 +27,8 @@ no record.
 
 Inherited MISSING items (PlayAlone admission and scoring, parent transitions, executable finder) and the UNKNOWN
 startup and manual Navigation faults carry forward.
+
+## Addendum: M15-076 widened (operator approved here, 2026-10-28)
+
+M15-076's title, evidence and `unresolved` now cover both shipped instances (SparksStackBlock and ordinary
+StackBlocks). M15-freeplay was re-approved. The record is still IMPLEMENTATION_GAP.
