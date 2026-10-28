@@ -56,6 +56,13 @@ public sealed partial class BehaviorManager : IDisposable
     private readonly List<IBehavior> _behaviors = new();
     private readonly RepetitionPenalty _penalty;
     private BehaviorContext _context;
+    internal CozmoRobot ContextRobot=>_context.Robot;
+    // fidelity: M8-001, M8-012 — manager forwarding 005A42C4..005A4304.
+    internal void RequestCurrentBehaviorEndOnNextActionComplete()
+    {
+        if(Current is SteppedBehavior behavior)behavior.StopOnNextActionComplete();
+        else if(Current is not null)SteppedBehavior.ReportMissing("M8-001 end-next-action current behavior has no native lifecycle; prior action retained");
+    }
     private readonly object _gate = new();
 
     private IBehavior? _current;

@@ -266,7 +266,7 @@ public class M7BatchThreeBTests
             Assert.Equal(r.Case, e.CaseAddress);
         }
         // Config-built owners; PutDown case0059CEE6/ctor005C7F98 and KnockOver case0059CCE4/ctor005C2EA0 independently checked before build.
-        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes }.OrderBy(c=>c).ToArray(),
+        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.PlayArbitraryAnim }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 

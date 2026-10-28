@@ -34,6 +34,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     }
 
     private Activity? _selected;
+    // Continuation of the missing parent picker, not an ActivitySparked state/Complete latch.
+    internal bool AwaitingParentActivityPick {get;private set;}
     private bool _retired;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
@@ -106,7 +108,12 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     {
         var selected=AllActivities(Tree).FirstOrDefault(a=>a.Id==activityId)
             ??throw new ArgumentException("No configured activity named "+activityId,nameof(activityId));
-        if(selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null)
+        if(selected.SparkedOwner is {CanExecute:false})
+        {
+            SteppedBehavior.ReportMissing("M15-059 changed Sparked parameter configuration requires native retained Wait or subActivityDelegate lifecycle, which is unbuilt; prior selected activity retained before admission");
+            return;
+        }
+        if(selected.SparkedOwner is null && (selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null))
         {
             SteppedBehavior.ReportMissing("Native activity admission "+activityId+": specialized lifecycle/interlude is not bound; prior activity retained (M15-061 for Feeding)");
             return;
@@ -121,10 +128,17 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _manager.Stop(BehaviorStopReason.Interrupted,now);
         _selected?.OnDeselected(now,_facade.Engine.EmitStackLog);
         _selected=selected;
+        AwaitingParentActivityPick=false;
         selected.OnSelected(now,_facade.Engine.EmitStackLog);
         Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,selected.Id!="Freeplay");
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
-        _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context);
+        _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick);
+    }
+    private void WaitForParentPicker(Activity activity)
+    {
+        if(!ReferenceEquals(_selected,activity))return;
+        AwaitingParentActivityPick=true;
+        SteppedBehavior.ReportMissing("M15-006 Sparked desired returned null: native Freeplay PickNewActivityForSpark 0x005AE70A..005AE760 is unbuilt; actual selected owner/manager activity/state retained at parent continuation. OnDeselected requires a changed selected candidate (0x005ADE02); explicit supplied next admission may resume this boundary; no fallback or repeated Complete");
     }
 
     internal FreeplayDecision Observe()=>new(_facade.Engine.Timer.SecondsF,_selected?.Id,_manager.Current?.Id,"native engine observation");
@@ -159,6 +173,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     }
     internal void UpdateManager(float capturedNow)
     {
+        if(AwaitingParentActivityPick)return;
         Context.Map=_facade.LocalizationWorld.Maps.Current;
         _manager.Update(capturedNow*1000.0,capturedNow);
     }
@@ -173,6 +188,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         // The manager is stopped/disposed by its actual lifetime owner first.
         _observer?.DetachHostHandle();
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();
+        foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeKnockOverCubesBehavior>())candidate.Dispose();
@@ -180,13 +196,20 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Manipulation?.Dispose();
     }
 
-    private sealed class ConfiguredActivity(Activity activity,EngineRobot robot,BehaviorManager manager,BehaviorContext context):IManagedActivity
+    private sealed class ConfiguredActivity(Activity activity,EngineRobot robot,BehaviorManager manager,BehaviorContext context,Action waitForParent,Func<bool> waiting):IManagedActivity
     {
-        public void Update(double now)=>_=activity.NativeUpdate20!(robot);
+        public void Update(double now){if(waiting())return;if(activity.SparkedOwner is {} spark)spark.Update();else _=activity.NativeUpdate20!(robot);}
         // No interlude is configured on the admitted MeetCozmo/PutDown routes.
         // 0x005B387C/38C2/005B3A6C: no cached normal winner; chooser runs each tick.
         public IBehavior? GetDesiredActiveBehavior(IBehavior? current,double now)
         {
+            if(waiting())return current;
+            if(activity.SparkedOwner is {} spark)
+            {
+                var next=spark.Desired(current,now,context);
+                if(next is null&&spark.State is 4 or 5)waitForParent();
+                return next;
+            }
             var desired=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now).Behavior;
             if(desired is NativeLookForFaceAndCubeBehavior)
             {
