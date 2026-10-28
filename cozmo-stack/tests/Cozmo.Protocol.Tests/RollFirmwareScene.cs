@@ -25,9 +25,11 @@ internal sealed class RollFirmwareScene:IDisposable
     private readonly HashSet<ushort> _paths=new();
     private readonly HashSet<byte> _animations=new();
     private uint _image;
+    private readonly string _behaviorId;
     internal readonly List<string> Trace=new();
-    internal RollFirmwareScene(bool carrying=false)
+    internal RollFirmwareScene(bool carrying=false,string behaviorId="Hiking_RollCube")
     {
+        _behaviorId=behaviorId;
         M4ControlTests.ConnectCube(F.Rig,0,ObjectType.Block_LIGHTCUBE1);
         Target=F.M.World.ConnectedObjects.Single(o=>o.Type==ObjectType.Block_LIGHTCUBE1).ObjectId;
         Add(Target,ObjectType.Block_LIGHTCUBE1,150);
@@ -136,7 +138,7 @@ internal sealed class RollFirmwareScene:IDisposable
         byte animation=F.Rig.Robot.Animations.CurrentTag;
         if(animation!=0&&_animations.Add(animation)){F.Rig.Data(new AnimationStarted{AnimId=animation});F.Rig.Data(new AnimationEnded{AnimId=animation});F.Rig.Tick();}
         Image();
-        var roll=(NativeRollBlockBehavior)F.Runtime.Bound["Hiking_RollCube"];
+        var roll=(NativeRollBlockBehavior)F.Runtime.Bound[_behaviorId];
         Trace.Add($"{F.Rig.Engine.Timer.SecondsF} robot({F.X},{F.Y}) yaw{F.Yaw} head{F.Head} marker{F.M.Vision.LastResult?.Markers.Count} state{roll.State} target{roll.Target} carry{F.Robot.CarryingOwner!.CarriedObjectId} helper{roll.RollHelper?.Status} attempts{roll.RollHelper?.Attempts} runner{roll.RollHelper?.Runner?.State:X8} roll{roll.RollHelper?.Runner?.Roll.State:X8} verify{roll.RollHelper?.Runner?.Roll.VerifyChild?.State:X8}");
     }
     public void Dispose()=>F.Dispose();
