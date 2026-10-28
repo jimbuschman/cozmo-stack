@@ -7,10 +7,10 @@ Manifest of **711 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 247 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 249 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 7 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 350 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 348 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -36,9 +36,9 @@ remains after both, and they do not go away by working harder on this repository
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 36 | 0 | 1 | no | no |
-| M13-navigation — Planning, charger and block configurations | 40 | 0 | 31 | 0 | 1 | yes | no |
+| M13-navigation — Planning, charger and block configurations | 40 | 0 | 30 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 75 | 4 | 63 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 75 | 4 | 62 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -64,9 +64,9 @@ status.
 | M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
-| M13-navigation | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
+| M13-navigation | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -3012,15 +3012,6 @@ B-M13-11 (2026-10-21), built, awaiting strong verification: empty convexHull and
 * outstanding: build the class footprints for Markerless, Charger, Ramp, HumanHead; the MatPiece/CustomObject corner lists and the numeric result of the base version (cv::Rodrigues renormalisation) stay open in M13-023. B-M3M4-16 check (re-analysis/research/20261013-b-m3m4-16-check.md): Footprint.GetBoundingQuadXY throws for a cube that is not yaw-only (BlockConfigurations.cs:400-402); the cliff intersection filter reaches it when unlocalized. Native always computes it. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The point rotation is M11-065 (R7/R8).
 B-M3M4-19: candidate cube footprint that the existing partial Footprint port cannot compute is explicitly MISSING naming M13-025 and skipped in AddMarkerless. Full tilted-cube/rotation arithmetic remains unbuilt; no source-fidelity status upgrade or claimed native intersection result. OV100 answer (re-analysis/research/overnight/20261016-ov100-101-106-answer.md): incomplete: MarkerlessObject (0x00502C50) and Block (0x004E62C0) re-root atPose first and take R and t from the re-rooted copy; only the base 0x0087713A uses atPose directly.
 
-**M13-027 — TurnTowardsFaceWrapperAction** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
-* effect: a wrapped action is not preceded or followed by the face turns the engine adds
-* rests on: recovered by the R-VIS M13 gap pass 3; no C# wrapper exists
-* best authority: libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q5, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q5): TurnTowardsFaceWrapperAction ctor 0x0054C7DC (Robot&, IActionRunner*, bool A, bool B, Radians, bool C): CompoundActionSequential base with the wrapper vtable (GOT 0x0103EB70); if A: a TurnTowardsLastFacePoseAction (TurnTowardsFaceAction ctor with face id 0, Radians copy and bool C, vtable overwritten with GOT 0x0103EA0C) added with AddAction(action, false, false); then the wrapped action added the same way; if B: a second TurnTowardsLastFacePoseAction added the same way; then SetProxyTag([action+0x60]); order [turn-before if A][wrapped][turn-after if B] (0x0054C7EA..0x0054C8CA). The flag names were read from register order (A = r3, B = [sp+0x60], Radians at [sp+0x64], C at [sp+0x68]); the caller was not read
-* evidence: 0x0054C7DC..0x0054C8FC; re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q5; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q5
-* outstanding: build the wrapper; read its callers to confirm the flag names (behaviour layer, M8).
-
 **M13-028 — FlipBlockAction::Init and DriveAndFlipBlockAction's constructor guards** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Manipulation/FlipBlockAction.cs`
@@ -3338,16 +3329,6 @@ B-M5-18 corrects the OnSelected comment to actual time-store/strategy/public-sta
 * best authority: libcozmoEngine.so
 * evidence: BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C; AIWhiteboard::AddBeacon 0x0056C39C
 * outstanding: built, awaiting strong verification (R-FIX2, 2026-10-03): SelectNewBeacon passes the full copied robot pose (z and rotation included) to AddBeacon (0x005E5F1A..0x005E5F30). Still open: none known.
-
-**M15-012 — Put-down image wait and CantHandleTallStack animation trigger** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs`
-* effect: the post-put-down action sequence and tall-stack reaction animation change
-* rests on: libcozmoEngine.so
-* best authority: libcozmoEngine.so
-* evidence: BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174; BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0
-* outstanding: built, awaiting strong verification (R-FIX2, 2026-10-03): the put-down look: head angle 0xBEB2B8C2 (0x005C81A6..0x005C81AC); head and the -30 mm drive are one parallel compound (0x005C8196..0x005C822A; the 2-argument DriveStraightAction default speed -80 mm/s, 0xC2A00000 at 0x00547268; the first failed child ends it and a failed parallel skips the image wait and the keep-alive: ignoreFailure=0 at 0x005C8220/0x005C8258); the gate at 0x005C818C..0x005C8194 ([[robot+0x284]+8] != -1) skips the parallel and the image wait when nothing is carried; the carried object is released AFTER the look action ends, only if still carrying (std::function 0x005C8480, SetCarriedObjectAsUnattached(false) at 0x005C84CE; the early release is removed). Still open: the 0x199 keep-alive in TurnTowardsFaceWrapperAction (0x005C8264..0x005C82CC) is deferred; what the behaviour's completion callback does with a failed look compound is not in the inventory; framesBefore is captured before the compound while the engine's WaitForImages starts after it; the head move cannot be cancelled when the drive fails.
-B-M12-1 fixture correction: the failed look-down-drive test injects PC Failed; it no longer treats native INTERRUPTED/Ready as failure. Compound expected failure-before-image-wait/keep-alive remains the existing checked source.
 
 **M15-013 — Activity tree construction, desired names and discarded activityPriority** (live path)
 
