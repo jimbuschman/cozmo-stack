@@ -1246,7 +1246,7 @@ The corrections, per record:
 - TransitionToKnockingOverStack 0x005C34A8: TurnTowardsObjectAction(max pi), DriveAndFlipBlockAction with maxTurn = pi/2 on the first attempt (0x005C36BC) and 0.0 once +0x140 > 0 (0x005C36C0); +0xD9 or +0xD8 also forces 0.0 (0x005C34EA..0x005C34F8); WaitAction(0.5); the callback 0x005C3DCE writes AIWhiteboard+0x70 on NoPreActionPoses (0x03000010), re-runs while +0x140 <= 1 on a Retry result and otherwise blind-flips, incrementing +0x140 either way
 - success goes to TransitionToPlayingReaction 0x005C3908: it sets robot->[+0x34]->[+0x94]->[+0xC] = 1 (0x005C3946..0x005C394E), i.e. the BlockWorld's BlockConfigurationManager dirty flag (BlockWorld+0x94 is the manager; BlockConfigurationManager+0xC is read by its Update 0x00616D84) forcing all block configurations to recompute; the tipped-object set size at +0x14C selects the success trigger +0x15C with BehaviorObjectiveAchieved(0xD, true) and NeedActionCompleted(0) (0x005C3950..0x005C3964) or the failure trigger +0x160 (0x005C396E); when +0xD9 or +0xD8 is set the reaction animation is skipped (0x005C3972/0x005C3978)
 - IDriveToInteractWithObject 0x0055B1F4 adds TWO actions when maxTurn > 0 (0x0055B37C..0x0055B392): a TurnTowardsLastFacePoseAction (vtable overwritten from TurnTowardsFaceAction at 0x0055B3C4..0x0055B3D8) and a TurnTowardsObjectAction (0x0055B42E/0x0055B43C), both with failure ignored; the trailing float 20.0 is not read by DriveAndFlipBlockAction ctor 0x0055E208
-- +0xD9 is the JSON config key alwaysStreamline (IBehavior::ReadFromJson 0x005BC208/0x005BC216/0x005BC21E); +0xD8 is computed by IBehavior::Init 0x005BCCAA..0x005BCCC2 as 1 when the behaviour was entered by a soft spark switch and 0 for a hard switch or no current behaviour
+- +0xD9 is the JSON config key alwaysStreamline (IBehavior::ReadFromJson 0x005BC208/0x005BC216/0x005BC21E); +0xD8 is computed by IBehavior::Init 0x005BCCAA..0x005BCCC2 as 1 when the behaviour was entered by a hard spark switch and 0 for a soft switch or no current behaviour (corrected operator 2026-10-28: SetRequestedSpark 0x005A3ED4..0x005A3ED8 maps a non-zero bool to "soft" 0x00BF0B78 and zero to "hard" 0x00BF0B7D)
 - unresolved: compare CubeGameBehaviors.cs against the cited flow, including the second TurnTowardsObjectAction, the BlockConfigurationManager dirty flag and the +0xD8/+0xD9 streamline gate, and settle
 
 ### M13-015 — Pop a wheelie: one retry, the realign or retry animation, and what a failure marks
@@ -1997,8 +1997,8 @@ Both are bytes on the behaviour base class `IBehavior` (not on Robot).
   0x005BCCAE  ldr      r1, [r0, #0x58]     ; current behavior class (0x55 = none/default)
   0x005BCCB0  cmp      r1, #0x55
   0x005BCCB2  itte     ne
-  0x005BCCB4  ldrbne.w r0, [r0, #0x5c]     ; switch mode: 0="soft", 1="hard"
-  0x005BCCB8  eorne    r0, r0, #1          ; +0xD8 = NOT hard  (soft -> 1)
+  0x005BCCB4  ldrbne.w r0, [r0, #0x5c]     ; switch mode: 1="soft", 0="hard"
+  0x005BCCB8  eorne    r0, r0, #1          ; +0xD8 = NOT soft  (hard -> 1)
   0x005BCCBC  moveq    r0, #0             ; no current class -> 0
   0x005BCCC2  strb.w   r0, [r4, #0xd8]
   ```
@@ -2006,7 +2006,7 @@ Both are bytes on the behaviour base class `IBehavior` (not on Robot).
   +0x5C = 0 (line 65). `BehaviorManager::SwitchToRequestedSpark` 0x005A4198 sets
   `+0x58 = +0x60` (0x005A4198 line 49) and `+0x5C = +0x64` (line 50), and logs the two modes as
   the strings at 0x00BF0B78 `"soft"` / 0x00BF0B7D `"hard"`. So +0xD8 = 1 when the behavior was
-  entered by a **soft** spark switch (resume), 0 for a hard switch or no current behavior.
+  entered by a **hard** spark switch, 0 for a soft switch or no current behavior (corrected operator 2026-10-28: SetRequestedSpark 0x005A3ED4..0x005A3ED8 maps a non-zero bool to "soft" 0x00BF0B78 and zero to "hard" 0x00BF0B7D).
   It is not a JSON key; it is derived at Init.
 - **Branches**:
   - `InitInternal` 0x005C31A2: 0x005C31B4 `ldrb.w r0,[r5,#0xd9]`; 0x005C31B8 `cbnz 0x5C31C0`;
