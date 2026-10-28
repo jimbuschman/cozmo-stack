@@ -14,6 +14,7 @@ public sealed partial class BehaviorManager
     private bool _stateLightsFlag;
     internal (byte Class,bool Flag,IReadOnlyList<BehaviorStateLightInfo> Entries) InspectStateLights()
     {lock(_gate)return(_stateLightsClass,_stateLightsFlag,_stateLights.Select(entry=>entry.Copy()).ToArray());}
+    // fidelity: M7-030
     internal void SetBehaviorStateLights(BehaviorClass behaviorClass,IReadOnlyList<BehaviorStateLightInfo> input,bool flag)
     {
         lock(_gate)
@@ -39,6 +40,7 @@ public sealed partial class BehaviorManager
         }
     }
     // Existing MS4 recipient is called ONLY at SetRunningAndResumeInfo, after Init can replace the state vector.
+    // fidelity: M7-030
     private void UpdateStateLightsForRunningInfo(IBehavior? next,IBehavior? oldCurrent,IBehavior? oldResume,ReactionTrigger? oldTrigger,ReactionTrigger? newTrigger)
     {
         lock(_gate)

@@ -2,7 +2,8 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
-// Proposed Roll recovery join PB1-PB4:005B8C1C..005B8E68; common helper owns retirement/cancellation.
+// fidelity: M12-051
+// PB1-PB4:005B8C1C..005B8E68; common helper owns retirement/cancellation.
 internal sealed class NativePlaceBlockHelper:IHelper
 {
     private readonly ManipulationSystem _m;
