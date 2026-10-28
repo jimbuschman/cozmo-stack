@@ -42,3 +42,21 @@ generalisation owned by M12-004; it is outside this settlement. Location moved t
 ## Not settled
 
 M12-007 (above); M12-010/011/017/019/022/034/037, M13-033/034, M13-014, M14-006 as listed in the handoff's leftovers.
+
+## Addendum: M12-007 settled (operator approved the correction, 2026-10-28)
+
+The operator confirmed the corrected contract here. Inventory row 27 and M8 row 175 in `M12-manipulation.md` and the
+record's authority now name the IsMoving motion timestamp; `fidelity.py --approve M12-manipulation` was run.
+
+The record's older MISSING list was re-checked against `PickupObjectAction.VerifyPrefix`/`Verify`/`VerifyAsync`:
+
+- 0x00553BFC..0x00553C2E: `[[+0xCC]+5] == 0` jumps to 0x00553D72 (prefix skipped). `+0xC1 == 0` goes straight to the
+  moving block (a pickup always sets it). `+0xC2 == 2` enters the checks; `!= 0` skips them; `== 0` sets the
+  +0x114 deadline (0x0055404C), stays RUNNING while `now <= deadline`, and after it only warns and stays RUNNING
+  (0x00553C46 -> 0x00554056). The C# matches each branch, including the warn-and-keep-running.
+- Not located: 0x00553C80 -> 0x00553CEE warns, result 0x03000004. `[obj+0x40] < 0` -> 0x00553D72. Both built.
+- The stored-pose turn and the carried check follow the prefix in both paths.
+
+**M12-007 settled EXACT_SOURCE.** Queued cleanup: the `PickupObjectAction` doc comment (DockActions.cs, about
+line 648) still says "last-observed time".
+
