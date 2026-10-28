@@ -1,6 +1,6 @@
 # KNOCKOVER-CUBES-1 — configured native KnockOverCubes
 
-Verified isolated implementation `741cf8bf`; integration and full gate pending. Branch `codex-m13-manager-2`; main `02afceba` already contains Claude's pickup PASS and M12-029/M13-020 settlement. M12-007 remains formally pending. No hardware or whole-behaviour acceptance claim.
+Verified isolated implementation `741cf8bf`, integrated as `ae48b85a`; full gate pending. Branch `codex-m13-manager-2`; main `2377fc5a` contains Claude's pickup PASS and all three settlements (M12-007/M12-029/M13-020), including the operator-approved inventory correction/re-approval. No hardware or whole-behaviour acceptance claim.
 
 - Exact shipped `KnockOverCubes` now binds a native configured owner, weak stack cache, initial member IDs, source reach/knock/retry/blind/reaction phases, score and reaction locks. Reach measures TOP while turning BOTTOM; retry constructs the next child before incrementing the attempt counter. `005C2EA0..005C3E2A`, particularly `005C3290/005C3332..005C33A0`, `005C3E14..005C3E26`.
 - Source runtime +0xD8 means active HARD spark. The operator approved the correction of frozen Q8's reversed wording; official inventory/evidence edits remain Claude's. Common SparkBehaviorDisables uses actual configured unlock and manager spark IDs independently of hard/soft. `005BCCAE..005BCCC2`, `005BCD16..005BCD44`, `005BCFAC..005BCFDE`. See the contract-correction file.

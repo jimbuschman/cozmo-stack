@@ -7,10 +7,10 @@ Manifest of **711 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 251 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 252 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 7 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 346 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 345 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -35,7 +35,7 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 35 | 0 | 1 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 34 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 40 | 0 | 29 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 75 | 4 | 62 | 1 | 1 | no | no |
@@ -63,7 +63,7 @@ status.
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
-| M12-manipulation | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
+| M12-manipulation | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 8 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
@@ -2427,15 +2427,6 @@ B-M11-8 (2026-10-14; fixes from re-analysis/research/20261014-b-m11-1-check.md; 
 B-M11-8 follow-up (2026-10-14, coordinator): until SetCarriedObjectAsUnattached is read, ReleaseCarriedObject applies the check's "or keep the legacy flatten for release": DockingSystem.DetachReleasedFromLift computes the pre-a9425dad world pose (newest history state robot pose and lift angle with ObjectWrtLift or the dock marker; the top object composed with TopWrtCarried) and BlockWorld.DetachFromLift replaces the object's pose and clears NativeCarryingTree under PoseTreeGate, so a placed cube no longer follows the lift. This is a stack stand-in, not the native path; the ReportMissing naming 0x006333D4 / 0x00633442 -> Robot::GetPose 0x004EA398 / AddRobotRelativeObservation 0x00633458 stays. Reopened 2026-10-14 (re-analysis/research/20261014-m12-006-unattach.md): EXACT_SOURCE was not supported (the evidence covered only the entry and call sites; the step was a stack MISSING). Path read: A1-A12 here; UnSet and AddRobotRelativeObservation are M12-045; still unread M12-046. The B-M11-8 legacy-flatten stand-in is live until job B-M12-4 builds this.
 B-M12-4 (2026-10-15), built, awaiting strong verification: replaces the live legacy flatten in DockingSystem.ReleaseCarriedObject with SetCarriedObjectAsUnattached A1-A12 on the existing world/native pose tree. Not-carrying Warning/API1; lookup and GetWithRespectTo failure Error/errG/API1 without UnSet; robot-relative observation Dirty, placed Info, top failure still continues, IDs captured before UnSet, default origin-mode0 allowed-ID delete filter invokes existing DeleteLocatedObjects with M12-046 MISSING. Source errors keep carrying state; no guessed successful detach. C1 successful BlockPlaced calls release(false) then synchronous existing EnableMode(1,true) body even when release fails. C2 warning before false; C3 true/true and direct UnSet(false) preserved; C4 existing true seam not reordered against unread Delocalize; C5 lift calibration true remains after the existing event boundary, exact sEventF payload absent and MISSING; C6 lift auto-disable true now has live Impl subscription/device route before its MISSING game report; C7 removes inferred animation-completion release and puts false at existing EndIteration before ObjectiveAchieved(0x12,true) MISSING then needs; C8 true and C9 UnSet(false) retained. All new tree mutations under FrameGate then PoseTreeGate; no vision-worker release or new thread. BLOCKED on unbound C5 event/C6 E2G sender/C7 objective recipient and full cached-pose lifetime cleanup. Existing DeleteLocatedObjects and other M12-046 bodies remain excluded. Report jobs/status/B-M12-4.md.
 B-M12-4 live-input boundary: a subsequent legacy marker observation can replace NativePose with an unparented flat pose (base SetPose / UpdatePoseInInstance / UseDiscardedObservation). The exact unattach then rejects it at A4 instead of inventing a frame conversion and clearing carrying. Native producer binding is outside these consumer rows; M11-007/M11-044 current IMPLEMENTATION_GAP paths are investigation leads (see status report), not wholesale contradicted/settled claims. M12RFix2StreamATests moving-object timing case explicitly supplies the native origin-parent input after its flat image adapter; it does not verify the whole live vision-to-release path. This input binding is an additional blocker for end-to-end release fidelity.
-
-**M12-007 — The two timed checks a pick-up is verified against** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs`
-* effect: a failed pick-up is not detected, or a good one is discarded
-* rests on: the record had the checks but the dock-action-dependent timeout selection was incomplete
-* best authority: libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and the last-observed time against a dock-action timeout at +0x80 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC
-* evidence: 0x00553BE0 Verify; 0x00553BF8 str.w r5,[r7,#0x10c]; 0x00553C8E blx r2 (IsMoving); 0x00553C98 ldr.w r0,[r7,#0x118]; 0x00553CAA blx 0x4A7B7C; 0x00553D0A ldrb.w r2,[r7,#0x80]; 0x00553D0E add.w r3,r7,#0x120; 0x00553D12; 0x00553D18 addeq.w r3,r7,#0x11c; +0x11C = 500 ms low, +0x120 = 2000 ms high, set at the ctor 0x005536CC
-* outstanding: built, awaiting strong verification (R-FIX2, 2026-10-03): PickupObjectAction::Verify is multi-update: stamp at +0x10C on the first call (0x00553BF8), then `[[+0xCC]+5]` didSucceed (0x00553C06), the moving block (0x00553C72..0x00553D70: RUNNING while now <= firstVerify + 500, unsigned and inclusive; 0x03000004 object not located 0x00553CEE; 0x03000014 still moving 0x00553CEA; 0x03000015 not seen recently 0x00553D6E), the carry check ([[+0xD0]+8] == -1: 0x04000005), UnSetCarryingObjects(false) on seeing the object in its original pose (0x005542BC..0x005542C4 via 0x00554116), a 30.0f timeout over the Verify wait. Still open (reported MISSING): the early [+0xC1]/[+0xC2] gate with its [+0x110]/[+0x114] deadline (0x00553C0E..0x00553C2E), the TurnTowardsPoseAction sub-action at [+0x104] (0x00553D80..0x00553DD8), the carried-object located lookup returning null (0x03000004 at 0x00554008) and `[obj+0x40] < 0` (0x00553C82..0x00553C86), the wait for the next RobotState while RUNNING (the engine's own tick is not modelled), the whole-action 30 s slot; the !Succeeded early path still returns Retry through the +0xCC/+0x104 logic that is MISSING.
 
 **M12-008 — The pose chain that holds a carried object** (live path)
 

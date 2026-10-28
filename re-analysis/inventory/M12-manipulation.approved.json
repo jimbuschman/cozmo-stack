@@ -1,8 +1,8 @@
 {
   "subsystem": "M12-manipulation",
-  "approved": "2026-10-16",
+  "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "e86bb5c90f31788723584ef477aa391e32839b391baf0d75ec30f40b2ae4a9e6",
+  "inventory_sha256": "ecc0f8ddad522bf6261c78e234ea135510c044ad0d6c0cdeca757efc939f5350",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -110,7 +110,7 @@
     "M12-007": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The two timed checks a pick-up is verified against",
-      "authority": "libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and the last-observed time against a dock-action timeout at +0x80 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC",
+      "authority": "libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and, when not moving, the motion-state timestamp IsMoving returns through its out pointer (sp+0x48, read at 0x00553D12; ActiveObject IsMoving 0x004E3860 returns [+8], SetIsMoving 0x004E3874, ctor zero 0x004E0C84) against a dock-action timeout selected by +0x80; corrected from 'last-observed time', operator 2026-10-28 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC",
       "evidence": [
         "0x00553BE0 Verify; 0x00553BF8 str.w r5,[r7,#0x10c]; 0x00553C8E blx r2 (IsMoving); 0x00553C98 ldr.w r0,[r7,#0x118]; 0x00553CAA blx 0x4A7B7C",
         "0x00553D0A ldrb.w r2,[r7,#0x80]; 0x00553D0E add.w r3,r7,#0x120; 0x00553D12; 0x00553D18 addeq.w r3,r7,#0x11c",
@@ -268,7 +268,7 @@
       "hardware_required": false
     },
     "M12-018": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The dock abort path",
       "authority": "libcozmoEngine.so 3.4.0-1204: DockingComponent::AbortDocking 0x0063BE10 builds an AbortDocking and sends it via EngineToRobot(AbortDocking&&) 0x0063BE2A (blx 0x4B94C8) and SendMessage 0x0063BE36 (blx 0x4A5368)",
       "evidence": [
@@ -420,7 +420,7 @@
       "hardware_required": false
     },
     "M12-029": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The default +0x150 pose function, the DriveToHelper functor and RemoveMatchingPredockPose",
       "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q9, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap2.md): the setter 0x005586AC blocks (error) when [this+0x18] == 0x01000000 (the action is running). The default functors 0x0055DB72 / 0x0055DBDE tail-call GetPossiblePoses through veneer 0x008CB63C -> PLT 0x004ABFBC. GetPossiblePoses 0x00558C80: the input struct as in the report; a non-zero GetPreActionPoses result is returned; an empty pose list warns and returns 0x03000010; *inPos is the byte at out+0x1C; if inPos, only a log and no pose is replaced; otherwise every pose is pushed in order; returns 0. The DriveToHelper functor 0x005B61A2 calls RemoveMatchingPredockPose 0x00551418 (Point3(100,100,100), Radians 0x3F060A92; IsSameAs receiver = the vector element, argument = the match pose) and clears *inPos if it removed something",
       "evidence": [
