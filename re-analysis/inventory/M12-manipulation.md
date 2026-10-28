@@ -1056,3 +1056,9 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 ## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
 
 | Ownership notes (bodies/wiring moved from M2-020/M2-023) | M12-017 |
+
+## SPARKS-STACK-1, PlaceRel verify and completion (operator approved 2026-10-28; research/20261028-sparks-stack-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: PlaceRelObjectAction Verify 0x005555B4..0x0055581E and GetCompletionUnion 0x0055515C..0x00555344 (final payload 0x00555324..0x0055533E; setters 0x0075C3F0..0x0075C436 / 0x0075C460..0x0075C4A6; Pack 0x0075B4F0..0x0075B536). The four unused completion ID words are zeroed under an operator-approved compatibility policy (jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md), never EXACT_SOURCE | M12-050 (new) |

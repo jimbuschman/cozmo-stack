@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-27",
+  "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "fd909d6876eb987e7f151d4b2a6f228051fbb2699d2164401b35610bdc934649",
+  "inventory_sha256": "e6cb742ad5d1973bf5e5509cf89725bee49e05e5fc1f717b703310b6a772f9dd",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -146,7 +146,7 @@
       "hardware_required": false
     },
     "M15-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Put-down image wait and CantHandleTallStack animation trigger",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -888,7 +888,7 @@
       "hardware_required": false
     },
     "M15-075": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BehaviorPutDownBlock lifecycle: IsRunnableInternal, Init (reaction lock, random backup, put-down animation, score) and LookDownAtBlock (score, StartActing, carried-object release callback)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -897,6 +897,20 @@
         "LookDownAtBlock 0x005C80E0..0x005C8148: CreateLookAfterPlaceAction(robot, true) 0x005C80F6; IncreaseScoreWhileActing(5.0f) 0x005C80FA..0x005C8104; StartActing(action, std::function) 0x005C811C. Callback 0x005C8480..0x005C84D4: if [[robot+0x284]+8] != -1, sWarningF then CarryingComponent::SetCarriedObjectAsUnattached(false) 0x005C84CE.",
         "Factory binding of the four shipped PutDownBlock IDs 0x0059CEE6..0x0059CF04 (handoff HANDOFF-PUTDOWN-BLOCK-1.md, Codex independent check re-analysis/research/20261027-putdown-block-1-codex-check.md).",
         "re-analysis/research/20261027-putdown-block-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-076": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorStackBlocks, both shipped instances (SparksStackBlock and ordinary StackBlocks): target caches and validity, Init, pickup and PlaceRel helper delegation, one retarget, ground recovery, success objective/animation/needs and stop/reset",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CFE6; class range 0x005C93D0..0x005CA33A: ctor 0x005C93D0, IsRunnableInternal 0x005C9484, Init 0x005C9502, stacking 0x005C9520..0x005C961A, StopInternal 0x005C97F8.",
+        "UpdateInternal 0x005C9844..0x005C9A88 (M7 inventory row 885, corrected 2026-10-28): both targets valid skips the neighbour query (0x005C98BC..0x005C98C2); bottom invalid -> FindObjectOnTopOrUnderneathHelper(bottom, 15.0f, filter, true) must return the top (0x005C99C0, 0x005C9A1E); one GetClosestValidBottom retarget (0x005C9A5E..0x005C9A84).",
+        "Target caches: entries 0x0056F724..0x0056FDA2, dependencies 0x00571040..0x005710CC (5->3) and 0x004D705E..0x004D7072 (4->2), predicates 0x0057052C..0x0057066A / 0x0057154C, entry cadence 0x005711E4..0x005712B6; progression unlock 9 or stackInAnyOrientation selects 5/3, otherwise 4/2 (0x005C94A6..0x005C9500, 0x005C984E..0x005C988C); GetRotatedParentAxis<'Z'> 0x005507A0..0x00550854.",
+        "Success 0x005C9EA4..0x005C9F14: objective 40, optional animation 0x21A with score, then the configured needs action (43 for SparksStackBlock, 42 for StackBlocks).",
+        "Shipped configs: SparksStackBlock (activity 27) and freeplay/stackBlocks.json (behaviorID 0xA0, executable 9, unlock 10). Read packets re-analysis/research/20261028-sparks-stack-1-read.md and 20261028-stack-blocks-1-read.md with their independent checks; HANDOFF-SPARKS-STACK-1.md, HANDOFF-STACK-BLOCKS-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md, re-analysis/research/20261028-stack-blocks-1-claude-check.md."
       ],
       "live_path": true,
       "hardware_required": false

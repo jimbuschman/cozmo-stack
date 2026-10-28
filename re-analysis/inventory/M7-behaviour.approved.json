@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-16",
+  "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "557c9920244e01651d2f5075dd4d2603d1d17cd884ef2a610e0c37a5741736b1",
+  "inventory_sha256": "2d0f70816067d8f6581e2b7d7e072f4b86a433f1cf70d8d4be10ae3053bb4452",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -298,7 +298,7 @@
       "hardware_required": false
     },
     "M7-023": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Mood destruction with already-null ActionList dependency",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -331,7 +331,7 @@
       "hardware_required": false
     },
     "M7-026": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "MoodManager::GetSimpleMood and the mood time MoodManager+0x130 (inputs to the animation group draw)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
