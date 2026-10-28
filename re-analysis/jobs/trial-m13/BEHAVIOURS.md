@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-28. **0 finished · 10 in progress · 168 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks` `Hiking_RollCube` and `RollBlockOnSide` are in progress; other configurations remain not started.
+Whole-behavior scoreboard, 2026-10-28. **0 finished · 10 in progress · 168 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube` and `RollBlockOnSide` are in progress; other configurations remain not started.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
