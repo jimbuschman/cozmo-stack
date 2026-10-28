@@ -120,3 +120,14 @@ No full suite or official record edits; fresh independent changed-diff review/te
 Final J14/J15 raw-byte code/test freeze: 22 C# files, `.scratch/pickup-children-1/frozen-sha256.txt`, aggregateSHA256 `c1c5c5b9e539e6254c43d2e2a813744f7781536843cbcb28f2668be21eb35809`. This supersedes the prior19-file freeze for final independent review. The prior snapshot is preserved separately.
 
 shutdown3 exit0; compiler/MSBuild servers successfully shut down. Final22 hashes verified unchanged after shutdown. `git diff --check` passes; host released to B. No new code/test edits, full suite or commit after this freeze.
+
+
+## Final integration gate teardown fixture correction
+
+Manager integrated candidate997e2908 from isolatedc6477cc0 with identical CozmoStack Git blobs. Manager-reported full gate exit1,6485PASS/2FAIL/0skip,6487total,7m2s: only M10GyroCheckedRowsTests.NativeRemovalReleasesInReverseBeforeStringTreeAndNullsGyroBeforeItsRawDelete and M5X13BuilderTests.ShutdownUnlinksRobotsThenAbortsAndJoinsLoaderBeforeHub omitted the now-canonical Path chooser E1 unlink in their strict expected arrays. This is a stale fixture oracle, not evidence for changing production teardown.
+
+Manager released test-only correction after independent B PRIMARY PASS: filter vector51122A/allocationdelete511248 precede AI264 destructor511276; Path5C null511280/destructor511284 releases chooser handles at649068/6E/72; NV260 retires5112E4; gyro27C raw delete511424. Accordingly M10 exact array adds E1 after filter allocation retirement before gyro; M5 adds E1 after AI A6 before NV6C. Both complete strict arrays, existing observation filters/counts/order and all other assertions stay intact. Production bytes untouched.
+
+`teardown-1.log/.trx`: command `test <project> --no-restore --nologo -v:q --filter 'FullyQualifiedName~M10GyroCheckedRowsTests|FullyQualifiedName~M5X13BuilderTests'` with normal logger/results flags. Actual result exit0,28/28PASS,0skip,610ms. No full suite by builder; manager integration/final gate remains separate.
+
+Test-only teardown2-file freeze `.scratch/pickup-children-1/teardown-frozen-sha256.txt`, aggregateSHA256 `fef1913cdc443d9e6893bb9c23a687a3c3f2bb9d3efffe635befed14d2946b71`. shutdown4 exit0; MSBuild/compiler successfully stopped;2/2 raw hashes stable after shutdown. Diff check passes. Sole host released to independent B; no commit/push.
