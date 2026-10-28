@@ -1077,3 +1077,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | M15-076 now covers both shipped StackBlocks instances: ordinary StackBlocks adds the 4/2 caches (dependency 0x004D705E..0x004D7072), the predicates 0x0057052C..0x0057066A and GetRotatedParentAxis<'Z'> 0x005507A0..0x00550854; needs 42. Still IMPLEMENTATION_GAP | M15-076 |
+
+## HIKING-ROLL-CUBE-1, the Hiking_RollCube lifecycle (operator approved 2026-10-28; research/20261028-hiking-roll-cube-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorRollBlock factory 0x0059CF86, ctor 0x005C8598, class 0x005C867A..0x005C8E3C (TransitionToPerformingAction 0x005C86E8, UpdateInternal 0x005C8A54), cache 0x0056F9B4..0x0056FA18 / 0x005707F0..0x00570902, RollBlockHelper 0x005B98D4..0x005BAC54, DriveToRoll 0x0055C9DC..0x0055CECE, RollObjectAction 0x00556540..0x00556DCE. The attempt limit stays M12-016 | M15-077 (new) |

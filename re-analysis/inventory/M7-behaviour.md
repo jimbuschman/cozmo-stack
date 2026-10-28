@@ -1389,3 +1389,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 ## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
 
 | Ownership notes (bodies/wiring moved from M2-020/M2-023) | M7-027 |
+
+## HIKING-ROLL-CUBE-1, the BehaviorManager state-light setter (operator approved 2026-10-28; research/20261028-hiking-roll-cube-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: SetBehaviorStateLights 0x005A4320..0x005A45F2, wrapper 0x005BEE38, StopAndPlay 0x006396AC..0x00639722, switch cleanup 0x005A2114..0x005A226E | M7-030 (new) |
