@@ -14,6 +14,7 @@ internal sealed class StackFirmwareScene:IDisposable
 {
     internal readonly Fixture F=new();
     internal readonly uint Top,Bottom;
+    private readonly string _behaviorId;
     internal bool Placed,Grounded,GroundProcessedFramesOnly,HideGroundCube;
     private bool _physicalCarry;
     internal int Pickups,Placements,Grounds,FailPlacements;
@@ -25,13 +26,15 @@ internal sealed class StackFirmwareScene:IDisposable
     private readonly HashSet<byte> _animations=new();
     private uint _image;
     internal readonly List<string> Trace=new();
-    internal StackFirmwareScene(bool carrying)
+    internal StackFirmwareScene(bool carrying,string behaviorId="SparksStackBlock",bool rollUnlocked=true)
     {
+        _behaviorId=behaviorId;
         M4ControlTests.ConnectCube(F.Rig,0,ObjectType.Block_LIGHTCUBE1);M4ControlTests.ConnectCube(F.Rig,1,ObjectType.Block_LIGHTCUBE2);
         _physicalCarry=carrying;
         Top=F.M.World.ConnectedObjects.Single(o=>o.Type==ObjectType.Block_LIGHTCUBE1).ObjectId;Bottom=F.M.World.ConnectedObjects.Single(o=>o.Type==ObjectType.Block_LIGHTCUBE2).ObjectId;
         Add(Top,ObjectType.Block_LIGHTCUBE1,150);Add(Bottom,ObjectType.Block_LIGHTCUBE2,400);
-        F.Robot.Progression!.Unlocked.Add(9);F.Robot.Progression.Unlocked.Add(10);
+        if(rollUnlocked)F.Robot.Progression!.Unlocked.Add(9);else F.Robot.Progression!.Unlocked.Remove(9);
+        F.Robot.Progression.Unlocked.Add(10);
         F.Runtime.Configurations.ForceUpdate();F.Runtime.Configurations.Update();F.Rig.Robot.Animations.LoadFrom(F.Rig.Engine.Options.ResourcesPath!);
         if(carrying)
         {
@@ -146,7 +149,7 @@ internal sealed class StackFirmwareScene:IDisposable
         if(Grounded&&GroundProcessedFramesOnly)
         {F.Rig.Engine.AnimationMessages.Deliver(0x43,true,new ProcessedImageReport(F.Robot.StoredState!.Timestamp,new uint[]{1},0));F.Rig.Tick();}
         else Image();
-        Trace.Add($"SCENE x{F.X} y{F.Y} yaw{F.Yaw} head{F.Head} lift{F.Lift} markers{F.M.Vision.LastResult?.Markers.Count}");var stack=(NativeStackBlocksBehavior)F.Runtime.Bound["SparksStackBlock"];
+        Trace.Add($"SCENE x{F.X} y{F.Y} yaw{F.Yaw} head{F.Head} lift{F.Lift} markers{F.M.Vision.LastResult?.Markers.Count}");var stack=(NativeStackBlocksBehavior)F.Runtime.Bound[_behaviorId];
         Trace.Add($"{F.Rig.Engine.Timer.SecondsF} state{stack.State} top{stack.Top}/bottom{stack.Bottom} carry{F.Robot.CarryingOwner!.CarriedObjectId} helper{stack.PlacementHelper?.Status} place{stack.PlacementHelper?.Runner?.State:X8} verify{stack.PlacementHelper?.Runner?.VerifyChild?.State:X8} raised{stack.PlacementHelper?.Runner?.Raised}");
     }
     public void Dispose()=>F.Dispose();

@@ -71,3 +71,15 @@ if it is on drive-off's path; otherwise fold it into the behaviour that needs it
 - Propose settling every complete record's OWN claimed path, independently of neighboring gaps. Partial records get one or two lines saying exactly what remains.
 - Handoffs are short lists of claims/addresses, records to settle and leftovers. Build/push the read scope; do not wait for the whole picture.
 - Binary evidence/no guessing and all approval/status/main/hardware restrictions remain unchanged. Progress is records settled and behaviors finished.
+
+## Earlier worker model trial (superseded before startup)
+
+Starting with the next job after the already running STACK-BLOCKS-1, start the builder with `gpt-6.1-terra`, medium effort, for a **one-job trial**. Start the reader and independent reviewer with `gpt-6.1-sol`, high effort. Do not switch any worker's model or effort in the middle of a job; current workers finish their current job unchanged.
+
+Each handoff records the builder's start model/effort, how many reviewer fix rounds were required, and every MISSING item the builder raised, including how resolved items were settled. Preserve requested startup configuration separately from any actual runtime telemetry available; do not infer model identity from an agent label. See `MODEL-TRIAL-1.md` for the trial register and counting rule. The Terra trial covers one new job and is not silently extended.
+
+## Current worker models (latest operator instruction, 2026-10-28)
+
+This supersedes the preceding unstarted trial. The operator reports that the default subagent model is now `gpt-6.1-terra`. For each new reader/extraction worker, explicitly request `gpt-6.1-sol` with medium effort. Builders and independent reviewers use the configured default: omit model and effort overrides. Log the model requested for **each** worker; distinguish an omitted/default request from independently observed runtime configuration. Do not infer the actual backend from an agent label. Existing in-flight jobs retain their started workers.
+
+Continue logging reviewer fix rounds and all builder-raised MISSING/source questions in handoffs. The counting/audit rules in the superseded trial register remain useful; its old model assignments and one-job limit no longer apply. Pull main first, keep the source/build/review separation, and continue between handoffs without waiting for the operator or Claude.
