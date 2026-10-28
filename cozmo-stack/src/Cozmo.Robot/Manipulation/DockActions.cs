@@ -645,8 +645,8 @@ public abstract class DockActionBase
 /// <list type="bullet">
 /// <item>if the object still reports itself moving, and more than +0x118 = <b>500 ms</b> have passed
 ///   since that stamp, the pick-up failed: "PickupObjectAction.Verify.ObjectStillMoving" (0x00553C98);</item>
-/// <item>otherwise the object must have been seen recently enough - the stamp must not be later than the
-///   object's last-observed time plus a timeout picked by the dock action at +0x80: +0x11C =
+/// <item>otherwise the stamp must not be later than the object's motion-state timestamp plus a timeout
+///   picked by the dock action at +0x80: +0x11C =
 ///   <b>500 ms</b> for a low dock, +0x120 = <b>2000 ms</b> for a high one (0x00553D0A).</item>
 /// </list>
 ///
@@ -659,9 +659,9 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
 
     /// <summary>+0x118: how long the object may still be moving after the verify starts.</summary>
     public const uint StillMovingAllowanceMs = 500;
-    /// <summary>+0x11C: how stale the last sighting may be for a low dock.</summary>
+    /// <summary>+0x11C: the timeout added to the motion-state timestamp for a low dock.</summary>
     public const uint LowDockObservationTimeoutMs = 500;
-    /// <summary>+0x120: and for a high one.</summary>
+    /// <summary>+0x120: the timeout added to the motion-state timestamp for a high dock.</summary>
     public const uint HighDockObservationTimeoutMs = 2000;
 
     private Pose3d? _savedPose;

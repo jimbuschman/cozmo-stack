@@ -17,6 +17,7 @@ Verified isolated implementation `741cf8bf`, integrated as `ae48b85a`; full gate
 - Independent whole changed-diff **PASS**, actual final affected regression **1637/1637 PASS**, zero skips,1m11s,exit0, including all26 new cases and the manual Navigation case. All13 raw C# files unchanged before/after; freeze SHA256 `3a0c3509b2c1699644d9040e1306d133446e31d82c023eb0bec1347c3c4cb49c`. Test-run error/timeout/abort counters zero, servers stopped and host released. No cause has been established for the earlier manual fault; it is neither proved introduced nor proved inherited by passing reruns.
 - Asset-complete full gate: **PENDING**. Queue is VERIFYING, not READY.
 - Main files: new `Behavior/NativeKnockOverCubesBehavior.cs`, `Manipulation/NativeDriveAndFlipRunner.cs`, `NativeFlipBlockRunner.cs`; factory/runtime/common-base inputs, `NativeDriveToObjectRunner.cs`, `Cubes.cs`, `Vision/Faces.cs` and `NativeLastFaceRunner.cs`. Tests are in `KnockOverNativeTests.cs`; `NavigationTests.cs` retains its predicate with fuller failure output. Builder commit contains13 C# files plus its ledger, no assets or official record changes.
+- Queued pickup cleanup: `DockActions.cs` documentation now names the motion-state timestamp in the verify description and timeout summaries, as requested in Claude's pickup check. This is a separate comment-only change; the13-file behavioral/test freeze is unchanged.
 
 ## Records to settle and exact partials
 
