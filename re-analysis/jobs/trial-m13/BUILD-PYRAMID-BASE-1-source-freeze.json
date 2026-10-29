@@ -14,6 +14,14 @@
     {
       "path": "re-analysis/research/20261028-build-pyramid-base-1-admission.md",
       "sha256": "AAAB32655E36B2F0F5EFEDEB8096FAA7A296F50394BA70D6E7FB018F199B74B1"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-pickup-trigger.md",
+      "sha256": "0536926934C3A3C0508E8F76A4815A6C0268F32CBA0F6ADFFECD8057427931FF"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-pickup-trigger-codex-check.md",
+      "sha256": "2EF93A965001A2F935D1D713D5CB3E6F787AD871AC1E7A283D9512142B960879"
     }
   ],
   "currentWholeRecordsCompared": 10
