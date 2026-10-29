@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **718 records** over 16 subsystems.
+Manifest of **720 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 344 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 346 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 77 | 4 | 63 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 79 | 4 | 65 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3808,6 +3808,24 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Factory 0x0059CFE6; class range 0x005C93D0..0x005CA33A: ctor 0x005C93D0, IsRunnableInternal 0x005C9484, Init 0x005C9502, stacking 0x005C9520..0x005C961A, StopInternal 0x005C97F8.; UpdateInternal 0x005C9844..0x005C9A88 (M7 inventory row 885, corrected 2026-10-28): both targets valid skips the neighbour query (0x005C98BC..0x005C98C2); bottom invalid -> FindObjectOnTopOrUnderneathHelper(bottom, 15.0f, filter, true) must return the top (0x005C99C0, 0x005C9A1E); one GetClosestValidBottom retarget (0x005C9A5E..0x005C9A84).; Target caches: entries 0x0056F724..0x0056FDA2, dependencies 0x00571040..0x005710CC (5->3) and 0x004D705E..0x004D7072 (4->2), predicates 0x0057052C..0x0057066A / 0x0057154C, entry cadence 0x005711E4..0x005712B6; progression unlock 9 or stackInAnyOrientation selects 5/3, otherwise 4/2 (0x005C94A6..0x005C9500, 0x005C984E..0x005C988C); GetRotatedParentAxis<'Z'> 0x005507A0..0x00550854.; Success 0x005C9EA4..0x005C9F14: objective 40, optional animation 0x21A with score, then the configured needs action (43 for SparksStackBlock, 42 for StackBlocks).; Shipped configs: SparksStackBlock (activity 27) and freeplay/stackBlocks.json (behaviorID 0xA0, executable 9, unlock 10). Read packets re-analysis/research/20261028-sparks-stack-1-read.md and 20261028-stack-blocks-1-read.md with their independent checks; HANDOFF-SPARKS-STACK-1.md, HANDOFF-STACK-BLOCKS-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md, re-analysis/research/20261028-stack-blocks-1-claude-check.md.
 * outstanding: Built and checked in SPARKS-STACK-1 and STACK-BLOCKS-1 but not settled. Still missing: ordinary StackBlocks reaches the behaviour only through supplied admission; PlayAlone admission/scoring, parent transitions and the executable finder are unbuilt. Not this record: the factory/config binding (M7-018), the PlaceRel helper (M12-042), placement parameter producers (M12-028), the bottom-flat gate (M12-012), the neighbour query body (M13-007), the axis helper's other callers (M12-039), the PlaceRel action's Verify/completion (M12-050), the Sparked activity (M15-059), needs/desired-activity reporting (M15-008).
+
+**M15-078 — BehaviorBuildPyramidBase configured lifecycle (ID 4, also inherited by BuildPyramid): target refresh from intentions 9/10/11, runnable gates, reset, start routing to pickup or placement, base pickup with state light 0x20 and pre-animation 0x16, low placement and its null-static path, Observe, the update timers and stop, and the ID getters** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeBuildPyramidBaseBehavior.cs`
+* effect: when Cozmo starts building a pyramid base, which cube he picks up and where he places it, the backup-and-look after placing, and when the behaviour stops
+* rests on: BUILD-PYRAMID-BASE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-29.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Factory 0x0059C9AC..0x0059C9C6; shipped buildPyramidBase.json; enums 0x0076B578..0x0076B5C8; vtable 0x01029138 (gates 0x005BF04C / 0x0059EC12 / 0x005DDAF4), dispatch 0x005BD750 / 0x005BD864..0x005BD89C.; Target refresh 0x005DCAFA..0x005DCB4E and runnable 0x005DCAAC..0x005DCAEC; reset 0x005DCB58..0x005DCB90; start/pickup 0x005DCBBC..0x005DCC78 with the pickup helper factory 0x005B553C, storage 0x005B7AB8..0x005B7ABC and one-use pre-animation 0x005B7CFC..0x005B7D4E.; Placement 0x005DCDCC..0x005DCECA and offsets 0x005DD150..0x005DD370 (callback vtables 0x01029224 / 0x01029264); Observe 0x005DD4AC..0x005DD56C with callback 0x005DDC62..0x005DDC74; UpdateInternal 0x005DD01C..0x005DD12C (epsilon literal 0x005DD130 = 0x3727C5AC); shared tail 0x005BDA56..0x005BDA62; getters 0x005DD5F4..0x005DD64C / 0x005DDA60..0x005DDAB6.; re-analysis/jobs/trial-m13/HANDOFF-BUILD-PYRAMID-BASE-1.md; re-analysis/research/20261028-build-pyramid-base-1-read.md with its independent check; re-analysis/research/20261028-build-pyramid-base-1-claude-check.md
+* outstanding: Built and checked in BUILD-PYRAMID-BASE-1 but not settled. Inputs owned by other records stay visible MISSING: the intention 9/10/11 and strong +48/+64 cache producers (M12-049), the nonzero-offset PlaceRel/DriveTo tuple (M12-042/M12-022), noncube virtual dimensions (M12-028 geometry). The placement parameters are M12-028's (settled); the shared helpers M8-011/M12-042/M12-022; the enclosing activity M15-051/M15-054.
+
+**M15-079 — BehaviorBuildPyramid derived lifecycle (ID 3, class 2): ctor and the Observe-to-top recipient, runnable with all three IDs, Init routing (full-cache reaction, top or base), top pickup with pre-animation 0x1A, top placement entry and lock, the success and failure reactions** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeBuildPyramidBehavior.cs`
+* effect: when Cozmo finishes a pyramid: which top cube he picks up, how he places it on the base, and what he does on success or failure
+* rests on: BUILD-PYRAMID-1 (Codex read and build, 2026-10-29), checked by Claude 2026-10-29; record added with operator approval 2026-10-29.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Derived ctor 0x005DBC8E..0x005DBCB2, vtables 0x01028F44 / 0x0103F3A0; runnable 0x005DC606..0x005DC61A / 0x005DBED4..0x005DBEFC; Init 0x005DBF04..0x005DBF84.; Top pickup 0x005DBD20..0x005DBD9C, callbacks 0x01029040 / 0x005DC67A; top placement 0x005DC08C..0x005DC304 with lock table 0x00C6C691 (enum 8).; Success 0x005DC78A, 0x005DBFB0..0x005DC00A, 0x005BE228..0x005BE308 / 0x005BE3A8..0x005BE3D6, 0x007285FE / 0x0071BEAE, 0x005BE40C..0x005BE416 (state 6, objective 3, LiftSafe 0x17); failure 0x005DC7F0..0x005DC9A4 (drive -20/20, head 25, lift 0, wait 1, head 15); state-light class 0x005DCBBC / 0x005BEE3E / 0x005BBC90..0x005BBC96.; re-analysis/jobs/trial-m13/HANDOFF-BUILD-PYRAMID-1.md; re-analysis/research/20261028-build-pyramid-1-read.md with its independent check; re-analysis/research/20261029-build-pyramid-1-claude-check.md
+* outstanding: Built and checked in BUILD-PYRAMID-1 but not settled. Inherited Base work is M15-078's; the top loop M12-047 and the placement parameters M12-028 (both settled). Still MISSING: the intention and strong cache producers and callbacks (M12-049), the shared geometry math (M12-043), the nonzero-offset placement (M12-042/M12-022), the downstream needs/objective recipients and the enclosing activity (M15-051/M15-054).
 
 ## What remains after both: blocked externally, or needing hardware
 

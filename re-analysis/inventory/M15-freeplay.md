@@ -1089,3 +1089,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | M15-077 now covers Hiking_RollCube, RollBlockOnSide (99), RollBlockOnSideLowScore (100) and SparksRollBlock (155): adds the shared failure filter 0x00570692..0x005706AC and DetermineAppropriateAction 0x005B9A30. Still IMPLEMENTATION_GAP at this step | M15-077 |
+
+## BUILD-PYRAMID-BASE-1 and BUILD-PYRAMID-1, the pyramid lifecycles (operator approved 2026-10-29; research/20261028-build-pyramid-base-1-claude-check.md, research/20261029-build-pyramid-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: configured BuildPyramidBase lifecycle (factory 0x0059C9AC, targets 0x005DCAFA, start/pickup 0x005DCBBC, placement 0x005DCDCC, Observe 0x005DD4AC, update 0x005DD01C) | M15-078 (new) |
+| New IMPLEMENTATION_GAP: derived BuildPyramid lifecycle (ctor 0x005DBC8E, Init 0x005DBF04, top pickup 0x005DBD20, top placement 0x005DC08C, reactions 0x005DC78A / 0x005DC7F0) | M15-079 (new) |
