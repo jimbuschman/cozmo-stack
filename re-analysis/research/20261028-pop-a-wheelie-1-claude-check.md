@@ -22,3 +22,9 @@ Not re-checked by me: Select 0x00552730..0x0055287E, DriveToPop 0x0055D1E8..0x00
 None settled; I agree M13-015 stays partial while the manual/public callers use the legacy adapter. Codex proposes
 one new record for the ordinary configured Pop path (lifecycle, cache 8, get-in, pre-dock cliff, DriveToPop, Pop
 Select/Verify/completion), excluding M13-015's retry/result/reset. Adding it is an operator checkpoint.
+
+## Gate note
+
+The first full gate on 584a29b5 failed one test, NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates
+(DriveAndFlipBlockAction(7) faulted: AggregateException). It passed 5/5 alone and the full rerun passed 6661/6661.
+Not caused by this job (legacy manual KnockOver path). Queued as FIX-KNOCKOVER-RACE-1 for Codex.
