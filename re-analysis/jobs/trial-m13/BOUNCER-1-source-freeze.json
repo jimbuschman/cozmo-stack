@@ -1,6 +1,6 @@
 {
   "job": "BOUNCER-1",
-  "stage": "All five bounded UNKNOWN supplements checked/frozen; full dependent Bouncer implementation released",
+  "stage": "Six bounded UNKNOWN supplements checked/frozen; first implementation correction batch in progress",
   "sourceFiles": {
     "re-analysis/research/20261029-bouncer-1-read.md": "EDC14B5CB35CB991408F0949BCD179B0DE3B489547A405198362A9D6838E5A24",
     "re-analysis/research/20261029-bouncer-1-codex-check.md": "C13BD9FA0FA89C36D6DB5DF80A269CF1FACC147D11D71CA8F103AF81122C833A"
@@ -40,7 +40,7 @@
     "resources/lib/armeabi-v7a/libcozmoEngine.so": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
     "resources/lib/armeabi-v7a/libopencv_imgproc.so": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830"
   },
-  "sourceSupplementCount": 5,
+  "sourceSupplementCount": 6,
   "sourceArtifactAttributionClarifications": 1,
   "sourceBehaviorCorrections": 0,
   "remainingFrontiers": [
@@ -102,5 +102,16 @@
   "sourceArtifactMetadataCorrections": 1,
   "originMechanism": "Query native computed history at face-observation update; retain selected terminal node as strong managed allocation reference without logical owner increments; compare dynamic root-node identities using existing diagnostic-and-continue helpers. Preserve selected-node identity on copies; release metadata references on removal. Existing final shared-control callback gap not settled.",
   "directPlayType": "0x1A in both native constructors; direct clip uses owned Animation pointer, not trigger/group lookup",
-  "outerAnimationName": "SetFaceImageAnimation"
+  "outerAnimationName": "SetFaceImageAnimation",
+  "idleCountSource": {
+    "re-analysis/research/20261029-bouncer-1-idle-count-unknown.md": "21DA7E2405EF457A108B1CB32145773BBC0E8C2C4437B5F5EE7BC775B541E6A1",
+    "re-analysis/research/20261029-bouncer-1-idle-count-codex-check.md": "884C02AA978A7D522CE1CA78F82BEF362BB5A634B7025B33867B2C72043F3731"
+  },
+  "idleCountCurrentQuotesMatched": [
+    "M5-027",
+    "M8-011"
+  ],
+  "implementationReviewCorrectionBatches": 1,
+  "reviewedOriginalArchive": "Builder .scratch/bouncer-1/pre-review-original: actual48files hashed/copied before edits, no reconstruction",
+  "hostReentryScopeDesign": "Preserve ordinary native name-wide manager cleanup and idle last-match removal; identity/epoch bookkeeping only for cancelled/reentered acquisition/cleanup. No locks held over callbacks, no API/Stop deferral. Narrow guarded never-admitted construction retirement preserves replacement streams, ordinary native destruction unchanged."
 }
