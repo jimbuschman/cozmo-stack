@@ -1,0 +1,29 @@
+{
+  "job": "BUILD-PYRAMID-1",
+  "stage": "source independently passed; bounded builder released",
+  "readerRequestedModel": "gpt-6.1-sol",
+  "readerRequestedEffort": "medium",
+  "builderReviewerRequestedModel": "DEFAULT (override omitted)",
+  "builderReviewerRequestedEffort": "DEFAULT (override omitted)",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-read.md",
+      "sha256": "8B04FC1A597DCC0B1815A4D2E2E7D6A61CD56434D3E88A8362715ED1395D81E9"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-read-codex-check.md",
+      "sha256": "05293816C0539B07CD35E4029C33CCDF52211F015A5FC4EF3291048609E94BF2"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-lookup-family.md",
+      "sha256": "BA500950BA87D9CDC24C021ED2C3641EB9A8229890079AB9465FA42AFE21F8C0"
+    }
+  ],
+  "reusedBasePacket": "re-analysis/jobs/trial-m13/BUILD-PYRAMID-BASE-1-source-freeze.json",
+  "wholeCurrentRecordSnapshotsCompared": 9,
+  "additionalWholeRecordCompared": "M11-004",
+  "sourceWordingClarifications": 1,
+  "sourceWordingClarificationsResolved": 1,
+  "fieldRoleDefect": "Implementation and unresolved prose defect within native address-specified approved scope; official prose correction left to Claude",
+  "implementationReviewerFixRounds": 0
+}
