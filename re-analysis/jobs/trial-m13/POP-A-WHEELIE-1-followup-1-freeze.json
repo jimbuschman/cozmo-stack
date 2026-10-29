@@ -1,0 +1,17 @@
+{
+  "original_source_unchanged": "BBB5628D6B7F7367CABB3BE3EAB36D0AD6C1B806880E4F36B49F7A01CD0E65AF",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-pop-a-wheelie-1-followup-1.md",
+      "raw_sha256": "aaf2eb813530346d6fa834ade8a275132fb217301e81a205e226dd521577e145",
+      "published_lf_sha256": "8b7e864551ee1c3b2fe85914817bfcfdf5389d859e6e1e8e246d79143522cef2",
+      "bytes": 4188
+    },
+    {
+      "path": "re-analysis/research/20261028-pop-a-wheelie-1-followup-1-codex-check.md",
+      "raw_sha256": "b4b1011f962de8043c790830fe6b3e11e42c4146a449cec05c0e0cad9b9af1c6",
+      "published_lf_sha256": "4339e1b6146f05dfff706d8c25b2199fd9ea78b994c856e0409aa21da590d52f",
+      "bytes": 3109
+    }
+  ]
+}

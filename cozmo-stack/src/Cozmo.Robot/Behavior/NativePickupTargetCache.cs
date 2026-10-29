@@ -7,7 +7,7 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
 {
     private sealed class Entry
     {internal float Last=-1f;internal uint Best=uint.MaxValue;internal IReadOnlyList<uint> Valid=Array.Empty<uint>();internal bool Available=true;internal int Rebuilds;}
-    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()},{6,new()},{7,new()}};
+    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()},{6,new()},{7,new()},{8,new()}};
     internal IReadOnlyList<uint> ValidIds=>_entries[0].Valid;
     internal uint Best=>_entries[0].Best;
     internal bool Available=>_entries[0].Available;
@@ -29,7 +29,7 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         try
         {
             var geometry=new NativeConfigurationGeometry(m.World,robot);
-            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj,false),4=>Top(obj,true),3=>Bottom(obj,5,false),2=>Bottom(obj,4,true),6=>RollEligible(obj,false),7=>RollEligible(obj,true),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
+            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj,false),4=>Top(obj,true),3=>Bottom(obj,5,false),2=>Bottom(obj,4,true),6=>RollEligible(obj,false),7=>RollEligible(obj,true),8=>PopEligible(obj),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
             uint best=ids.Contains(entry.Best)?entry.Best:(intention is 6 or 7?SelectRoll(ids):Select(ids));
             entry.Valid=Array.AsReadOnly(ids);entry.Best=best;entry.Available=true;entry.Rebuilds++;return true;
         }
@@ -56,6 +56,12 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         return Select(preferred.Length==0?ids:preferred);
     }
     // Roll's actual CanActionRollObject recipient0063C880: common interaction then(.5,10,0).
+    // POP-A-WHEELIE-1 P5/P6:00570928..980 and0063C880. Intention8 is not axis-filtered.
+    internal bool PopEligible(ObservableObject obj)
+    {
+        if(m.Whiteboard.DidFailToUse(unchecked((int)obj.ObjectId),new[]{(ObjectActionFailure)3},30f,obj.NativePose,60f,Radians.Pi))return false;
+        return CanInteract(obj,.5f,10f,0f);
+    }
     internal bool CanRollFromGround(ObservableObject obj)=>CanInteract(obj,.5f,10f,0f);
     internal bool Top(ObservableObject obj,bool axis)
     {

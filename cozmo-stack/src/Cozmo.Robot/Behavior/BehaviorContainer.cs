@@ -290,6 +290,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
+        [BehaviorClass.PopAWheelie] = (ctx,json)=>new NativePopAWheelieBehavior(ctx,json),
         [BehaviorClass.RollBlock] = (ctx,json)=>new NativeRollBlockBehavior(ctx,json),
         [BehaviorClass.StackBlocks] = (ctx,json)=>new NativeStackBlocksBehavior(ctx,json),
         [BehaviorClass.PickUpCube] = (ctx,json)=>new NativePickUpCubeBehavior(ctx,json),
@@ -345,12 +346,18 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        if((cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
+        // POP-A-WHEELIE-1 releases only the ordinary configured instance. The Sparks sibling remains a recorded gap.
+        if(cls==BehaviorClass.PopAWheelie&&BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.PopAWheelie)
+        {
+            SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie sibling configuration not yet released; SparksPopAWheelie own configuration/admission is the next job");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        if((cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
+        if((cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
@@ -361,7 +368,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior)
+            if(stepped is NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

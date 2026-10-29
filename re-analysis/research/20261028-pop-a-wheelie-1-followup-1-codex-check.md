@@ -1,0 +1,15 @@
+# POP-A-WHEELIE-1 followup1 independent native check
+
+READ PASS source AAF2EB813530346D6FA834ADE8A275132FB217301E81A205E226DD521577E145. Frozen original BBB562 source and A7C9D7C0 independent check untouched. Same DEFAULT-requested reviewer, telemetry unavailable. No .NET, code/tests, official metadata or Git changes.
+
+Builder proactively raised Q1 before a coherent submission: initial untested draft copied Knock false into LastFace, asking whether actual Pop finaltrue means sayName; also asked actual Pop+C0 prefix. This is builder-origin source clarification/self-discovery, not a reviewer-discovered implementation correction. No draft review or required code/test batch has occurred. Preserve actual origin in ledger; don't convert an independently later discovered defect into this category.
+
+Known-first independently checked IDrive,54B754,54B8F0,SetSayName,IDock ctor5502D8,Setup551F9C and actual instruction/data/callsite body:
+
+- Behavior5C7844..4C stores final1 at callerSP+0x0C. Pop wrapper pushes24decimal (0x18) and subtracts0x38 (56decimal), total0x50: incoming entrySP+0x0C therefore becomes newSP+0x5C at55D214. It forwards that bool at outgoing base-callSP+0x14 (20decimal). IDrive55B1F4 pushes32decimal/vpush8decimal/sub0x70 (112decimal), total0x98: incoming entrySP+0x14 therefore becomes newSP+0xAC.55B3B2..C0 forwardsAC at outgoing0 to int-ID TurnTowardsFace overload.
+- Overload54B8F0 push16/sub16, loads callerbool from20 at54B90A and forwards stack0 at910 to SmartFaceID ctor.54B754 push32/sub40 reads48 at54B7A8 ->byte191 at7AA.193 is separately initializedzero at7B6; this is constructor state, not proof that all later framework writers never change it. LastFace vptr installed55B3C4..CC. Thus actual ordinary Pop PI/2 constructs a face child with sayName=true, and existing native Init/Update writers remain intact. Hard/streamlined zero-angle has no such child.
+- SayName setter54B98A reads191 and logs only whenfalse, then unconditionally installs supplied callback. Existing setter forwarding55B8CC..EC applies concrete18B; analogous no-name18C retained. This source confirms constructor semantics, not current speech/face input availability or permission to skip it.
+- Pop55259C..A6 forwards original thirdboolfalse as IDock95. IDock550382 storesr8 at95. Separately5503AC sets1,5503AE stores halfword1 atC0 (C0true,C1false),5503BA stores1 atC8. Pop changes vptr without C0/C8 override. False95 cannot disable the generic verification prefix.
+- Setup551FE6 readsC0; true builds existing empty-space verification above actual target (dimensionZ added, half dimensions), ignore actual targetID, then marker-turn from C8. These are the existing checked generic body on actual Pop; no Roll-only field override is imported. Wait1's success-only B9 clear affects pre-action pose check, not C0.
+
+Current M13-014/M12-017/M12-037 ownership quotations remain original frozen report; this addendum changes no ownership or settlement claim. Source semantics now explicit for both constructor joins. No build release or test verdict is conferred here; root owns release.
