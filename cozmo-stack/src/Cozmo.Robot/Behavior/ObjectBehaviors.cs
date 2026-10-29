@@ -221,7 +221,6 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     internal int ConfigImages { get; private set; } = 2;
     internal AnimationTrigger ConfigReaction { get; private set; } = (AnimationTrigger)0x23F;
     internal bool ConfigAlwaysStreamline { get; private set; }
-    private bool _waitingMissing;
     private bool _highTarget = true; // C2: +0x149 = 1; retained across Stop
     private bool _hardSpark;
     private bool _lookedUp;
@@ -350,17 +349,16 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     protected override bool RunnableGate28(BehaviorContext context) => true;
     public override bool IsRunnable(BehaviorContext context) => IsRunnableBase(context) && IsRunnableInternal(context);
     protected override bool IsRunnableInternal(BehaviorContext context) { lock (_targets) return _targets.Count != 0; }
-    protected override bool KeepsRunningWithoutAction => _beginPending || _waitingMissing || HasCurrentAction;
+    protected override bool KeepsRunningWithoutAction => _beginPending || HasCurrentAction;
 
     protected override void OnStart()
     {
         if (!_ghostIdAllocated) { _ghostId = ObjectIdSpace.Set(); _ghostIdAllocated = true; } // operator N2: once, process-wide
         _beginPending = true;
-        _waitingMissing = false;
         var manager = _configuredManager ?? Context.Robot.Engine.Robot?.BehaviorManagerOwner;
         if (manager is null)
         {
-            _waitingMissing = true;
+            _beginPending = false;
             ReportMissing("ACKNOWLEDGE-OBJECT-1 B7: actual BehaviorManager spark owner unavailable");
             return;
         }
@@ -370,7 +368,7 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     protected override void OnUpdate()
     {
         long generation = HostGeneration;
-        if (_beginPending && !_waitingMissing)
+        if (_beginPending)
         {
             _beginPending = false;
             BeginIteration(generation); // U1: first update, not Init
@@ -405,7 +403,7 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
         var robot = Context.Robot.Engine.Robot;
         if (m is null || robot is null)
         {
-            _waitingMissing = true;
+            _beginPending = false;
             ReportMissing("ACKNOWLEDGE-OBJECT-1 B3..B8: actual manipulation/robot owner unavailable");
             return;
         }
@@ -456,14 +454,14 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             using var flat = target.NativePose.GetWithRespectToRoot();
             height = (float)NativeConfigurationGeometry.Dimensions(target, flat).Z;
         }
-        catch (NativeConfigurationUnavailable e) { MissingGhost("M12-033 target dimensions: " + e.Message); return; }
+        catch (NativeConfigurationUnavailable e) { MissingGhost(generation, "M12-033 target dimensions: " + e.Message); return; }
         if (_highTarget)
         {
-            if (!GhostVisibility(target, -height, out bool belowVisible, out _)) return;
+            if (!GhostVisibility(generation, target, -height, out bool belowVisible, out _)) return;
             if (!IsGeneration(generation)) return;
             _highTarget = !belowVisible;
         }
-        if (!GhostVisibility(target, height, out bool aboveVisible, out bool outside)) return;
+        if (!GhostVisibility(generation, target, height, out bool aboveVisible, out bool outside)) return;
         if (!IsGeneration(generation)) return;
         if (!aboveVisible && outside)
         {
@@ -471,12 +469,12 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             bool backup = _lookedUp;
             if (!backup)
             {
-                if (SuppliedClosestMarker is null) { MissingGhost("M12-033 closest marker/ghost geometry"); return; }
+                if (SuppliedClosestMarker is null) { MissingGhost(generation, "M12-033 closest marker/ghost geometry"); return; }
                 var marker = SuppliedClosestMarker(_ghostPose);
                 if (!IsGeneration(generation)) return;
                 var pose = marker.Success ? marker.Pose : _ghostPose; // L6: actual failure uses ghost pose
-                if (pose is null) { MissingGhost("M12-033 supplied successful closest-marker pose missing"); return; }
-                if (SuppliedHeadAngle is null) { MissingGhost("M13-026 head angle input"); return; }
+                if (pose is null) { MissingGhost(generation, "M12-033 supplied successful closest-marker pose missing"); return; }
+                if (SuppliedHeadAngle is null) { MissingGhost(generation, "M13-026 head angle input"); return; }
                 var head = SuppliedHeadAngle(pose);
                 if (!IsGeneration(generation)) return;
                 _lookedUp = true;
@@ -493,10 +491,13 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
         else FinishIteration(generation);
     }
 
-    private void MissingGhost(string detail)
+    private void ReportGhostUnavailable(string detail) =>
+        ReportMissing("M15-081 M11-010/M12-033/M13-026 stacked-cube look unavailable: " + detail);
+
+    private void MissingGhost(long generation, string detail)
     {
-        _waitingMissing = true;
-        ReportMissing("ACKNOWLEDGE-OBJECT-1 stacked-cube path: " + detail + "; retain iteration without a fabricated result");
+        ReportGhostUnavailable(detail);
+        if (IsGeneration(generation)) FinishIteration(generation);
     }
     private void SetGhostRelative(ObservableObject target, float offset)
     {
@@ -506,10 +507,10 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
         using var next = new Pose3d(flat.Quaternion, new Vec3((float)p.X, (float)p.Y, (float)p.Z + offset), parent: root);
         _ghostPose.Assign(next); GhostPoseState = PoseState.Dirty; // G2/P1
     }
-    private bool GhostVisibility(ObservableObject target, float offset, out bool visible, out bool outside)
+    private bool GhostVisibility(long generation, ObservableObject target, float offset, out bool visible, out bool outside)
     {
         visible = outside = false;
-        if (SuppliedVisibilityReason is null) { MissingGhost("M11-010 ghost visibility reason"); return false; }
+        if (SuppliedVisibilityReason is null) { MissingGhost(generation, "M11-010 ghost visibility reason"); return false; }
         using var saved = new Pose3d(_ghostPose);
         SetGhostRelative(target, offset);
         int reason;
@@ -527,7 +528,7 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             supplied(backup, () => { using var owner = EnterHostExecutionOwner(Context); if (IsGeneration(generation)) continuation(); });
             return;
         }
-        if (_nativeManipulation is not { } m) { MissingGhost("actual ghost action owner"); return; }
+        if (_nativeManipulation is not { } m) { ReportMissing("M15-081 ghost action owner unavailable; ending behavior"); return; }
         var sequence = new GhostLookSequence(m, this, generation);
         sequence.SeedNativeEmptyCompletion();
         if (backup) sequence.AddAction(new DriveStraightAction(m, -25, 100f, false), false, false);
@@ -553,7 +554,17 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             catch (NativeActionUnavailable error)
             {
                 Watcher?.UnwindUnavailableHostUpdate(depth);
-                _missing = true; if (owner.IsGeneration(generation)) owner.MissingGhost(error.Message);
+                _missing = true;
+                if (owner.IsGeneration(generation))
+                {
+                    owner.ReportGhostUnavailable(error.Message);
+                    m.Robot.Engine.Robot!.ActionList.DeferHostCleanup(() =>
+                    {
+                        if (!owner.IsGeneration(generation)) return;
+                        owner.StopActing();
+                        if (owner.IsGeneration(generation)) owner.FinishIteration(generation);
+                    });
+                }
                 return EngineActionResult.Running;
             }
         }
@@ -576,7 +587,7 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             bool more; lock (_targets) more = _targets.Count != 0;
             if (more) { ReportObjective(generation); if (IsGeneration(generation)) BeginIteration(generation); return; }
             var m = _nativeManipulation;
-            if (m is null) { _waitingMissing = true; ReportMissing("ACKNOWLEDGE-OBJECT-1 F1: final turn requires actual manipulation owner"); return; }
+            if (m is null) { CurrentPhase = Phase.Idle; ReportMissing("ACKNOWLEDGE-OBJECT-1 F1: final turn requires actual manipulation owner; ending behavior"); return; }
             CurrentPhase = Phase.Turning;
             var turn = new NativeTurnTowardsObjectRunner(m, id, NativeTurnTowardsObjectRunner.AnyCode, ConfigMaxTurn, false, false);
             StartOwnedAction(generation, turn, _ => { ReportObjective(generation); if (IsGeneration(generation)) BeginIteration(generation); }); // F2 ignores result
@@ -605,7 +616,6 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
         }
         _current = null;
         _beginPending = false;
-        _waitingMissing = false;
         _displayVerify = null; _displayAnimation = null;
         CurrentPhase = Phase.Idle;
         lock (_targets) _targets.Clear();
