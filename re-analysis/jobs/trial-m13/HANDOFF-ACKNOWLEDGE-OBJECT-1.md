@@ -1,5 +1,7 @@
 # ACKNOWLEDGE-OBJECT-1 — READY FOR CLAUDE
 
+Historical handoff. Subsequent authoritative Claude verdict on mainecdbd232 is FIX REQUIRED, not merged: the missing production ghost helper holds the reaction. Priority continuation is FIX-ACKNOWLEDGE-OBJECT-GHOST-1; see its packet and research/20261029-acknowledge-object-1-claude-check.md. M15-081 was added with operator approval on main3aef7206; the proposal below is historical, not a request for a duplicate record. Preserve the passing test evidence and its original scope.
+
 READY FOR CLAUDE. Worker a473de49 integrated as 5791affd; independent source/diff review and exact 608/608 replay PASS. Full gate 6746/6746 PASS, zero failed/skipped (7m6s), on 5791affddaa0cbda74e436e58c6bb1ff4057449e. No hardware run or fidelity settlement is claimed.
 
 The production path is configured ObjectPositionUpdated observation/strategy → the same configured AcknowledgeObject owner → pending Init/first Update → signed ordered targets → native object turn, image verification and lift-safe reaction → listener before target erase → final turn and objective 0x1B. The checked read is research/20261029-acknowledge-object-1-read.md; independent UNKNOWN-only V3 and angle supplements/checks are frozen in ACKNOWLEDGE-OBJECT-1-source-freeze.json. The original 66 known rows were reused. The ghost consumes one real process-wide ObjectID on first Init and retains it; the forced trigger is not built; a turn beyond 45 degrees succeeds without motion and continues.
