@@ -41,3 +41,7 @@ AuthorizedonlynewM7testexpectedBaseentry/sourcecomment (0059C9AC/005DCA40), unch
 ## Oracle final independent release
 
 Build3exit0,ONEfactoryclass36/36PASS0skip; independentONEM7class36/36PASS0skip12.9791s/exactnamemultisetmatch,8prepostrawhashes/statusunchanged. Actualshutdown0/native[]totalown0. Finalsupplement6362AEE77A58EFC6B858F4F7C53D1E5B90A24529FD6733D881F08B9DF08B1F59; v2freeze0BA624F415ACC6EE508BE038BC0A7200237F170E0DDBF8423AE867F471A19A61; verificationB976725479A79633FD9F76E997D7C406518DA48C2BA5DA1C272FD16B7C292837. Worker29e36055 integratedcurrentroot, completecodeTREE66123b2336fac043a36298aa1e525c3b8ce4bfd7matches;6originalcode/testfilesunchanged. Old450and18passesretained/norepeat; onlyM7testoracleandledgerchanged. Rootfull2neededforchangedtest, full1failurepreserved; reviewerorigin0/rootintegrationoracle1/selfdraft1/compilefix1/sourcequestion1resolved.
+
+## Corrected root gate / READY
+
+Full2actual6685/6685PASS0skip6m24s on75e4832974c34f17f248ba7f9098106cb7996056/current718; UTC04:06:16.0681066Z..04:13:37.7260939Z (2026-10-29), exit0/key20d75723ab4647fef78f021399532d0fdf3f6563. Actualpostgateprocesses[]totalown0; all8rawpublishedhashesstable. Failedfull1preserved, no blindretry. HANDOFF-BUILD-PYRAMID-BASE-1.md names actual path/evidence/changes/records/tests/models/fixorigins/allMISSING. READYboundedconsumeronly; nofinished/hardware/wholeexistingrecordclaim. NextBuildPyramidwithoutClaudewait.
