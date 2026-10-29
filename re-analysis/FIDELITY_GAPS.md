@@ -7,10 +7,10 @@ Manifest of **716 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 253 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 255 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 7 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 349 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 347 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -30,12 +30,12 @@ remains after both, and they do not go away by working harder on this repository
 | M4-control — Motion, sensors, lights and cubes | 52 | 0 | 0 | 0 | 3 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 0 | 0 | 1 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 37 | 0 | 0 | no | no |
-| M7-behaviour — Idle, mood and reactions | 30 | 1 | 22 | 0 | 0 | no | no |
+| M7-behaviour — Idle, mood and reactions | 30 | 1 | 21 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 24 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 51 | 1 | 36 | 0 | 1 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 51 | 1 | 35 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 40 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 77 | 4 | 64 | 1 | 1 | no | no |
@@ -58,12 +58,12 @@ status.
 | M4-control | ACCEPTED | 42 | 0 | 0 | 3 |
 | M5-animation | ACCEPTED | 56 | 0 | 0 | 1 |
 | M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M7-behaviour | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
+| M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
 | M8-framework | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
-| M12-manipulation | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
+| M12-manipulation | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
@@ -859,15 +859,6 @@ B-M8-1 (2026-10-15), bounded build, awaiting strong verification; enclosing job 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: states 0x005FADC8..0x005FBBAB and 0x005FBBCC..0x005FBD13; track/pounce 0x005FBE84..0x005FC1D7; observation 0x005FC1D8..0x005FC5CB.; re-analysis/research/overnight/20261015-ov62-64-check.md: callbacks 0x005FC68C..0x005FC6F2, 0x005FC79C..0x005FC8AC, 0x005FC9C6..0x005FC9DE, 0x005FCA44..0x005FCA94; update 0x005FB200..0x005FB32B (TBB 0x005FB218); transitions 0x005FADC8..0x005FAEF4, 0x005FAF70..0x005FB163, 0x005FB380..0x005FB3BF, 0x005FB3E8..0x005FB53F, 0x005FB8D0..0x005FBA09, 0x005FBA50..0x005FBB57, 0x005FBBCC..0x005FBCB7, 0x005FBE84..0x005FC0B3, 0x005FC0D4..0x005FC18B; CheckForTimeout 0x005FB5B0..0x005FB7DD; observation 0x005FC1D8..0x005FC4DC; ctor 0x005FA250..0x005FA31E; SetParamsFromConfig 0x005FA374..0x005FA955; lifecycle InitInternal 0x005FAC10..0x005FAC4C, Resume 0x005FBBAC..0x005FBBC8, Stop 0x005FBD14..0x005FBD3A, Cleanup 0x005FBD40..0x005FBDDA.
 * outstanding: RECOVERABLE_GAP: read the listed ranges. Reachable only through a spark request (see M7-025). Operator decision 2026-10-15 ("yes probably", answering research/overnight/20261015-ov36-37-check.md question 1): the stack API passes the app's spark request (ActivateSpark) to the engine handler, as an app input under the app-boundary rule. So TrackLaser is reachable through Sparked activity SparksTrackLaser. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov62-64-check.md): IMPLEMENTATION_GAP: owns all of TrackLaser except the colour/exposure snapshot and restore (M7-025), including the ctor, SetParamsFromConfig and the non-colour lifecycle rows. With the shipped sparksTrackLaser.json (alwaysStreamline D9=1, skipGetOutAnim=1) InitialSearch, the non-streamlined idle/driving push (0x00C715D4) with Cleanup's 1AD removal, and GetOutBored's 0x105 animation are unreachable: recorded, not built. +0x11C is reset only in the ctor. Handoffs (visible MISSING): ParseFloat PLT 0x004B1BF0, GraphEvaluator2d ReadFromJson/EvaluateY. B+0xD8's meaning (IBehavior::Init 0x005BCCAA..0x005BCCC2) UNKNOWN, irrelevant while D9=1. B-M7-3 (2026-10-16) BLOCKED: re-read current checked OV62 and factory/Freeplay production path. Native constructor calls SetParamsFromConfig at0x005FA2D8 before state0 and observation-word resets; required ParseFloat PLT0x004B1BF0 is reached at0x005FA39A, stores+124 at0x005FA3A2, and its body has no checked equivalent in this clone. Job/check explicitly leaves ParseFloat unread. Json.asFloat, GetSingle, config literals, or a zero/nullable invented config are not substitutes. Existing GraphEvaluator.EvaluateY has bounded checked interpolation under M7-013/M8-003 (inventory M7 row15 and M8 float-width notes); that does not establish ParseFloat or full ReadFromJson. The OV62 report has no ctor/SetParams key-offset table despite the job/check referring to one; constructor/range is checked by manager, but this report discrepancy is recorded, not filled by new extraction. Actual factory still reports M7-025/M7-029 as unbuilt and keeps SparksTrackLaser unbound; no disconnected constructor/state/timeout/callback/observation implementation is claimed. Needed recovery: checked ParseFloat and graph-reader contracts, then real constructor/config/subscription/lifecycle owner. Checked unreachable shipped branches remain excluded and M7-025 camera ownership is not duplicated. Existing gap tests are not native behavioral acceptance; all statuses unchanged.
-
-**M7-030 — BehaviorManager::SetBehaviorStateLights: ordered diff against the previous lights, stop/replacement/new play on cube-light layer 1, retained vector and class, and the switch cleanup after Init** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorStateLights.cs`
-* effect: which cube lights a running behaviour shows, when they are replaced or stopped, and whether they are cleared when behaviours switch
-* rests on: HIKING-ROLL-CUBE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (HANDOFF-HIKING-ROLL-CUBE-1.md).
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: SetBehaviorStateLights 0x005A4320..0x005A45F2; IBehavior wrapper 0x005BEE38..0x005BEE46; manager ctor 0x005A0918..0x005A092A.; Lower calls: StopAndPlay 0x006396AC..0x00639722; PlayLightAnim overload 0x006389FC forwards layer 1 (the trailing integer 0 is not the layer).; Switch cleanup MS4 0x005A2114..0x005A226E inside SetRunningAndResumeInfo after Init.; re-analysis/research/20261028-hiking-roll-cube-1-state-lights-read.md, -state-lights-boundary.md, -lower-light-bindings.md with their independent checks; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md
-* outstanding: Built and checked in HIKING-ROLL-CUBE-1 but not settled. The ApplyAnimModifier body and the cube-light engine stay M4-046/M8-011/M8-012. Producers other than Roll (trigger 25 InteractingBehaviorLock) are not checked here.
 
 ### M8-framework — Behaviour framework and scoring
 
@@ -2786,15 +2777,6 @@ B-M1-3 (2026-10-17), built, awaiting strong verification: fixes Opus B2/Q3. SetC
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Verify 0x005555B4..0x0055581E: selected dock action 2/3 checks, docking success and carry predicates, TurnTowardsObject saved-carried child, first/second Update sequence, failure cleanup, high-place MoveLift child.; GetCompletionUnion 0x0055515C..0x00555344: the chain it builds is overwritten by the final object-interaction payload at 0x00555324..0x0055533E.; Completion setters 0x0075C3F0..0x0075C436 / 0x0075C460..0x0075C4A6 copy the five 32-bit IDs, count and flag; Pack 0x0075B4F0..0x0075B536 serializes all five IDs, count and flag.; Normal located-target path: IDs [target, 0, 0, phone stack address, 0], count 1, flag false (jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md).; Read packet re-analysis/research/20261028-sparks-stack-1-read.md and its independent check; HANDOFF-SPARKS-STACK-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md
 * outstanding: Not supported as exact: the four unused completion ID words. On the normal path (selected dock 2/3, target located) the stack sends [target, 0, 0, 0, 0], count 1, flag false; the original's fourth word is a phone stack address. Decided by the operator 2026-10-28 ("Approve zero unused ID slots"; jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md). That part is COMPATIBILITY_POLICY and never EXACT_SOURCE; at settlement it moves to its own COMPATIBILITY_POLICY record. Paths where the meaningful fields are not established keep the payload unavailable with a visible diagnostic; nothing is invented. Built and checked in SPARKS-STACK-1 but not settled. Not this record: the PlaceRel ctor/Init/handlers/markers (M12-017/025/034/037), the shared IDock, motor and turn bodies, the neighbour query (M13-007).
-
-**M12-051 — PlaceBlockHelper lifecycle: factory and ctor, Init RNG turn, turn-to-Ground delegation, placed callback status, Update and inherited Stop** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativePlaceBlockHelper.cs`
-* effect: how far and which way Cozmo turns before putting a carried cube down, and when the put-down helper reports done
-* rests on: HIKING-ROLL-CUBE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (HANDOFF-HIKING-ROLL-CUBE-1.md).
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Factory 0x005B5588 (allocation 0xF0); ctor 0x005B8C1C..0x005B8C6A; ShouldCancelDelegates 0x005B8CA6..0x005B8CA8.; Init 0x005B8CB0..0x005B8D50: double magnitude PI/4..PI/2 and an independent sign draw, narrowed once to f32, TurnInPlace(angle,false).; RespondToTurnAction 0x005B8DF4..0x005B8E44 ignores the result and starts sequential PlaceObjectOnGround Add(false,true); Update 0x005B8E60 returns status; RespondToPlacedAction 0x005B8E64..0x005B8E68 ignores the result and stores 2.; PB1-PB4 in re-analysis/research/20261007-q17-checked-additions.md; re-analysis/research/20261028-hiking-roll-cube-1-helper-response-clarification.md, -place-helper-proposal.md; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md
-* outstanding: Built and checked in HIKING-ROLL-CUBE-1 but not settled. Not this record: PlaceRelObjectHelper (M12-042), Ground composition (M15-022), the Ground wire (M12-015), Smart delegation (M8-011), the shared RNG/Turn/ActionList runners, and the Ground completion getter (unowned bridge, inherited).
 
 ### M13-navigation — Planning, charger and block configurations
 

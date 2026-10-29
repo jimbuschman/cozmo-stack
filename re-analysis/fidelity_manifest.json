@@ -10236,7 +10236,7 @@
       "subsystem": "M12-manipulation",
       "title": "PlaceBlockHelper lifecycle: factory and ctor, Init RNG turn, turn-to-Ground delegation, placed callback status, Update and inherited Stop",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePlaceBlockHelper.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Factory 0x005B5588 (allocation 0xF0); ctor 0x005B8C1C..0x005B8C6A; ShouldCancelDelegates 0x005B8CA6..0x005B8CA8.",
@@ -10246,7 +10246,7 @@
       ],
       "effect": "how far and which way Cozmo turns before putting a carried cube down, and when the put-down helper reports done",
       "provenance": "HIKING-ROLL-CUBE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (HANDOFF-HIKING-ROLL-CUBE-1.md).",
-      "unresolved": "Built and checked in HIKING-ROLL-CUBE-1 but not settled. Not this record: PlaceRelObjectHelper (M12-042), Ground composition (M15-022), the Ground wire (M12-015), Smart delegation (M8-011), the shared RNG/Turn/ActionList runners, and the Ground completion getter (unowned bridge, inherited).",
+      "unresolved": "Settled EXACT_SOURCE by Claude 2026-10-28 (SPARKS-ROLL-BLOCK-1; re-analysis/research/20261028-sparks-roll-block-1-claude-check.md): Init 0x005B8CB0..0x005B8D50 RandDblInRange(PI/4,PI/2), RandDbl(1.0) < 0.5 negates, one f32 narrowing, TurnInPlace(angle,false); RespondToTurnAction 0x005B8DF4..0x005B8E44 sequential PlaceObjectOnGround Add(false,true); Update 0x005B8E60 returns +0x1C; RespondToPlacedAction 0x005B8E64 stores 2. Matches NativePlaceBlockHelper.cs. The Ground action, its completion getter, the Turn and RNG bodies stay with their own records. Built and checked in HIKING-ROLL-CUBE-1 but not settled. Not this record: PlaceRelObjectHelper (M12-042), Ground composition (M15-022), the Ground wire (M12-015), Smart delegation (M8-011), the shared RNG/Turn/ActionList runners, and the Ground completion getter (unowned bridge, inherited).",
       "hardware_required": false,
       "live_path": true,
       "test": "HikingRollCubeRecoveryTests"
@@ -12242,7 +12242,7 @@
       "subsystem": "M7-behaviour",
       "title": "BehaviorManager::SetBehaviorStateLights: ordered diff against the previous lights, stop/replacement/new play on cube-light layer 1, retained vector and class, and the switch cleanup after Init",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorStateLights.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SetBehaviorStateLights 0x005A4320..0x005A45F2; IBehavior wrapper 0x005BEE38..0x005BEE46; manager ctor 0x005A0918..0x005A092A.",
@@ -12252,7 +12252,7 @@
       ],
       "effect": "which cube lights a running behaviour shows, when they are replaced or stopped, and whether they are cleared when behaviours switch",
       "provenance": "HIKING-ROLL-CUBE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (HANDOFF-HIKING-ROLL-CUBE-1.md).",
-      "unresolved": "Built and checked in HIKING-ROLL-CUBE-1 but not settled. The ApplyAnimModifier body and the cube-light engine stay M4-046/M8-011/M8-012. Producers other than Roll (trigger 25 InteractingBehaviorLock) are not checked here.",
+      "unresolved": "Settled EXACT_SOURCE by Claude 2026-10-28 (SPARKS-ROLL-BLOCK-1; re-analysis/research/20261028-sparks-roll-block-1-claude-check.md): setter 0x005A4320..0x005A45F2 stores the flag +0x85 first, matches each old entry to the first new entry with the same object ID (none: StopLightAnimAndResumePrevious 0x005A43C2; found: StopAndPlayLightAnim with the new entry's modifier 0x005A441A, ID inserted whatever the result), plays the remaining new entries (PlayLightAnim 0x005A4556), logs failed plays, assigns the vector when distinct and stores the class +0x84 last; StopAndPlay 0x006396AC..0x00639722 is StopLightAnim(old, layer 1, id, false) then PlayLightAnim; MS4 0x005A2114..0x005A226E clears (stop-and-resume each, vector emptied, class/flag kept) only when the incoming class differs from +0x84 and either the behaviour is neither the old current nor the old resume, or the old trigger is None, the new one is not, and the flag is false. Matches BehaviorStateLights.cs and Lights.cs. Built and checked in HIKING-ROLL-CUBE-1 but not settled. The ApplyAnimModifier body and the cube-light engine stay M4-046/M8-011/M8-012. Producers other than Roll (trigger 25 InteractingBehaviorLock) are not checked here.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorStateLightsNativeTests"
