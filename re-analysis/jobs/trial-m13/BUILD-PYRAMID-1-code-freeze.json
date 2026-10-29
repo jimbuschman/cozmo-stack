@@ -1,0 +1,77 @@
+{
+  "phase": "final nine-file freeze; ledger-only outcome append after tested code freeze",
+  "files": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBuildPyramidBehavior.cs",
+      "sha256": "3F982814F7E96048057F0546C639AEE6CC2471D18AD4F2EC61A298709C6F3DB7",
+      "publishedLfSha256": "3F982814F7E96048057F0546C639AEE6CC2471D18AD4F2EC61A298709C6F3DB7",
+      "bytes": 5697,
+      "gitBlobRaw": "7d2a74908205d9e8ff3fc51d27d75db1ff2d14c8",
+      "gitBlobStagedEquivalent": "7d2a74908205d9e8ff3fc51d27d75db1ff2d14c8"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBuildPyramidBaseBehavior.cs",
+      "sha256": "0F2E913D2718135FDFC2656C2C4DBA078381F9FAAB0C6DE77BF6ACB130D43689",
+      "publishedLfSha256": "0F2E913D2718135FDFC2656C2C4DBA078381F9FAAB0C6DE77BF6ACB130D43689",
+      "bytes": 7595,
+      "gitBlobRaw": "30fe6d33660d3ea8874faef3f8b86fa68f8ce22f",
+      "gitBlobStagedEquivalent": "30fe6d33660d3ea8874faef3f8b86fa68f8ce22f"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "196BFB39614561BAD674278471F42982A2195935608594BE47A51DFD23448DA7",
+      "publishedLfSha256": "196BFB39614561BAD674278471F42982A2195935608594BE47A51DFD23448DA7",
+      "bytes": 34179,
+      "gitBlobRaw": "92e0be34d8d47aa4f8105d4ab51f6fb28b92d331",
+      "gitBlobStagedEquivalent": "92e0be34d8d47aa4f8105d4ab51f6fb28b92d331"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+      "sha256": "A2C224284A5ACE43B1DEED5E2ADF73B61EE7AEB2DBFCBFF40F8FADD537DED9B9",
+      "publishedLfSha256": "A2C224284A5ACE43B1DEED5E2ADF73B61EE7AEB2DBFCBFF40F8FADD537DED9B9",
+      "bytes": 111872,
+      "gitBlobRaw": "c20a31fdfe7407586f633be2e671e9fa2121b889",
+      "gitBlobStagedEquivalent": "c20a31fdfe7407586f633be2e671e9fa2121b889"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/BuildPyramidNativeTests.cs",
+      "sha256": "BCA0BE0924C3BBE26815C31A70CC0B18839C3F2988EA79DCB32ADD7DE33BBCF4",
+      "publishedLfSha256": "BCA0BE0924C3BBE26815C31A70CC0B18839C3F2988EA79DCB32ADD7DE33BBCF4",
+      "bytes": 12797,
+      "gitBlobRaw": "ef0d9af2020a1f3db456f921359218320e4604ff",
+      "gitBlobStagedEquivalent": "ef0d9af2020a1f3db456f921359218320e4604ff"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/HelperStopAndPyramidLoopTests.cs",
+      "sha256": "3EA8742BC855636EDFA24F33B51321B394936CE608164CDAB59206F6692BB78C",
+      "publishedLfSha256": "3EA8742BC855636EDFA24F33B51321B394936CE608164CDAB59206F6692BB78C",
+      "bytes": 11444,
+      "gitBlobRaw": "bbb98409dfbd93def0a7c5cb3f93363b34997254",
+      "gitBlobStagedEquivalent": "bbb98409dfbd93def0a7c5cb3f93363b34997254"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "65BA82A39B953FB558C3B5EEBB42EFAAFAB152604444B00F0EF09DBA5B58199F",
+      "publishedLfSha256": "65BA82A39B953FB558C3B5EEBB42EFAAFAB152604444B00F0EF09DBA5B58199F",
+      "bytes": 57572,
+      "gitBlobRaw": "f8dd4fa647afbe7814a703f52a893b5eb814423d",
+      "gitBlobStagedEquivalent": "f8dd4fa647afbe7814a703f52a893b5eb814423d"
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/BUILD-PYRAMID-1-builder.md",
+      "sha256": "126EC9A033E48D7A34371345ABFF1342BFBB4A8C2864AF72B40C3E5D066DE1C3",
+      "publishedLfSha256": "126EC9A033E48D7A34371345ABFF1342BFBB4A8C2864AF72B40C3E5D066DE1C3",
+      "bytes": 23513,
+      "gitBlobRaw": "5f01899934e6c3964f3e273e81d678b80781ead2",
+      "gitBlobStagedEquivalent": "5f01899934e6c3964f3e273e81d678b80781ead2"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M12CheckedRowsBuilderTests.cs",
+      "sha256": "D9FC0CFD31B4C880EDFEE4C1A60B1EFF391B4374774573FD0C9734CEDAFC2FC7",
+      "publishedLfSha256": "D9FC0CFD31B4C880EDFEE4C1A60B1EFF391B4374774573FD0C9734CEDAFC2FC7",
+      "bytes": 32120,
+      "gitBlobRaw": "e16e655aee3626c69ebe77befb7df6279ca28a9f",
+      "gitBlobStagedEquivalent": "e16e655aee3626c69ebe77befb7df6279ca28a9f"
+    }
+  ]
+}
