@@ -1,0 +1,12 @@
+{
+  "job": "BUILD-PYRAMID-BASE-1",
+  "stage": "source read awaiting independent review",
+  "baseline": "8c8ae7af64fb8a77755b09cf60c790467a04f496",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-read.md",
+      "sha256": "4DE41CCCE488071ED627EEE01852CD6F440B9B09F3A80BE2F9D181C21410310C"
+    }
+  ],
+  "currentWholeRecordsCompared": 10
+}
