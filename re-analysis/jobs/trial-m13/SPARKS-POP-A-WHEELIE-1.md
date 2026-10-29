@@ -1,4 +1,4 @@
-# SPARKS-POP-A-WHEELIE-1 — READING
+# SPARKS-POP-A-WHEELIE-1 — BUILDING
 
 Next exact scoreboard configuration after ordinary PopAWheelie is SparksPopAWheelie. One combined own path, including its ACTUAL configured Sparked owner/caller and the shared Pop children. Start only after preceding handoff/push, fetch/import main and inspect REVIEW for FIX first. Read PROJECT_STATE first, AGENTS, AUTONOMY, PLAN-BEHAVIOURS, BEHAVIOURS and research README. No source/build claims arise from this planning draft.
 
@@ -27,3 +27,13 @@ Planned fresh /root/sparks_pop_read explicitlygpt-6.1-sol/medium; /root/sparks_p
 | /root/sparks_pop_review | Independent source/code reviewer | DEFAULT; override omitted | DEFAULT; override omitted |
 
 All fresh fork_none starts returned names only; actual runtime telemetry unavailable, no mid-job switch. Builder clean startingHEADb0e5c8e1. Root created ignoredscratch FIRST, OBBjunction to original, directSO/marker copied and expected hashes verified (02263C07F6BB60F4D7F351A3667DCA84FD3E6C0FC6F838E18B5DE7CF4E2989E1 /1B7166AC37B166975F0E5313A3D4486EBAE73010E42FFB89BBD0D4536A29C81D). Builder has sole preparation restore/shutdown release, no implementation release. Reader/reviewer no.NET. Current717-record official files match main0fe4d254; prior full6661 remains historical716snapshot.
+
+## Coherent source approval / implementation release
+
+Root accepts final09B452D0CE7E9E404A40815D52B981A725E2A6C5A551A238EC4D9B2D38542265 + independentB6CC0EAEE1B9558D38F0972DDCA4A63DA1F7853234AC4543916FEA9D7479B577 READPASS; all15 literal current717 title/status/evidence snapshots exactly match. No requested source correction, no builder question/fix round yet. Build EXACT behavior152/activity24/needs34/unlock13/objective22/soft206/min0max60reps1, StrictPriority DriveOff/Knock/PutDown/Pop/Look. Absent executable preserves12Count; absentconsidered-run preserves41, distinctexplicit successobjective22. No othercaller min/max/anim/order copied.
+
+Reuse same actual Pop P/D/F and Sparked A rows onlymatchingreceiver/args. OrdinarydefaultPI/2 realface191sayName=true/genericC0+C8prefix vs activehardD8zeroangle/get-inskip; requestedhard-selection separateactivefields. Pop ALWAYS queues21C on category0 (both hard/soft), thenobjective22→needs34; no Roll1FB suppression imported. Predock/remove lock actualconfiguredId SparksPopAWheelie, static tableName metadata only. Preserve actualcache8/firmware/Radians/Select/proxy/cliff/commonend and ownergetin/end/getout83/84/deselection; no forcedwinner/count/terminal/timer/defaultface. Parent/M8-019/reward/observed/sharedproducer MISSING retained.
+
+Existing ordinary root M1-034 guard at0055268E..269C is unchanged and approved for SAME generic Pop leaf: unavailablefullpayload, preservefullscalar/type1D/actualleaf-proxytag/targetcount1false/typedLOCAL/watcher/proxy/callback, withholdonlyundefinedraw/bodydependentpublicreport, priorpayloadretained. VisibleexistinggenericproposedPopowner/jobD5diagnostic; no fakeID/newperSparkowner/PlaceRelzeros. No Ground introduced; M12-052alreadyownsGroundgetter. CurrentwholeM13-015PARTIALactualmanualAPI, M15-059partialotherbranches; same unownedgenericPopcomplement onlyaddscallercoverage, no newduplicateproposal/status/widening.
+
+Builderprep clean: exactlyoneactualelevatedlocalcache restore0/all5, actualshutdown0, independentlyreadexplicitnative[]total0own0. RootwillFF preservedledgerworker to releasecommit thensoleimplementation/build/test release. DraftreadBEFOREfirstbuild/tests, retainallactualcorrectionorigins/models/questions/commands/exits/failures. Finalallchangedtracked+untracked rawLF/strictUTF8/newfile/stagedequivwhitespacefreeze beforeaffected/shutdown/explicit[]/exclusiveB; no root.NETorpushduringClease. Bexactfilter/prepost/outcomes/shutdown before rootcurrent717 fullgateonce/READYpush/nextimmediate. Noofficialmetadata/Git/HW/featureexclusion/newpolicy changes byworker.

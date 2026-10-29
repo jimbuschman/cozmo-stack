@@ -1,0 +1,17 @@
+{
+  "manifest_records": 717,
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-sparks-pop-a-wheelie-1-read.md",
+      "raw_sha256": "09b452d0ce7e9e404a40815d52b981a725e2a6c5a551a238ec4d9b2d38542265",
+      "published_lf_sha256": "4eec9af1fccbd29c6c0231ab445653aac0d860010b3c1c3cdcdd57629007a8d0",
+      "bytes": 48907
+    },
+    {
+      "path": "re-analysis/research/20261028-sparks-pop-a-wheelie-1-read-codex-check.md",
+      "raw_sha256": "b6cc0eaee1b9558d38f0972ddca4a63da1f7853234ac4543916fea9d7479b577",
+      "published_lf_sha256": "b6cc0eaee1b9558d38f0972ddca4a63da1f7853234ac4543916fea9d7479b577",
+      "bytes": 5892
+    }
+  ]
+}
