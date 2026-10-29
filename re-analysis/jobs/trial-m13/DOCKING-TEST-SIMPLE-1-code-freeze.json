@@ -1,0 +1,1653 @@
+{
+  "job": "DOCKING-TEST-SIMPLE-1",
+  "base": "a046c92d20449362d2cff12aaf66513ab767340b",
+  "stage": "Builder successful bounded diagnostic contract; independent exact combined rerun outstanding",
+  "files": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/ChargerBehaviors.cs",
+      "sha256": "56f3d43c3e3c30f1233193576bc90672e43dd3454de777ffe704bbaf32db4791",
+      "bytes": 17623,
+      "utf8": true,
+      "lf": true,
+      "noBOM": true,
+      "rawBlob": "7bd26c496b1b08f1677ea314f8d25c4c8a1f039c",
+      "stagedEquivalentBlob": "7bd26c496b1b08f1677ea314f8d25c4c8a1f039c"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs",
+      "sha256": "b0cd86d26075f94ce7704ea8185dcaf65e461638adc380c71b72b40ef4d22294",
+      "bytes": 46482,
+      "utf8": true,
+      "lf": true,
+      "noBOM": true,
+      "rawBlob": "c0e62cbccc3259fb1dad406be89aa454ab686ed1",
+      "stagedEquivalentBlob": "c0e62cbccc3259fb1dad406be89aa454ab686ed1"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DockingTestSimpleBoundaryTests.cs",
+      "sha256": "9ad372360e859cedb854fbc168095d45fd3861533c1a3096c6c9cf10ce784251",
+      "bytes": 4244,
+      "utf8": true,
+      "lf": true,
+      "noBOM": true,
+      "rawBlob": "20fe54d5959a1da9a53dde7582269239c0a09e9c",
+      "stagedEquivalentBlob": "20fe54d5959a1da9a53dde7582269239c0a09e9c"
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/DOCKING-TEST-SIMPLE-1-builder.md",
+      "sha256": "d9f6f7bc4fa368375bf76fa7ea4fa069241944e2719ae579f9303dc622af6497",
+      "bytes": 14519,
+      "utf8": true,
+      "lf": true,
+      "noBOM": true,
+      "rawBlob": "571ba3431c150044a72d88832785de9d13aa4892",
+      "stagedEquivalentBlob": "571ba3431c150044a72d88832785de9d13aa4892"
+    }
+  ],
+  "compiled": true,
+  "compiledArtifacts": [
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.msCoverageSourceRootsMapping_Cozmo.Protocol.Tests",
+      "bytes": 7182,
+      "sha256": "85c577ae3f88ebf54e60485b7d9e157fc3acd19c0fdd3931646de5a59df19395"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cozmo-conformance.deps.json",
+      "bytes": 4226,
+      "sha256": "bc547dc8173975e081978421b643d57d1bc139fc97301a18e99b7927f62ac2d6"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cozmo-conformance.dll",
+      "bytes": 1576448,
+      "sha256": "f624a9b6b520bdc7839d42cae8d32bedeb117054d86668c6829cd7f785f91059"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cozmo-conformance.exe",
+      "bytes": 146944,
+      "sha256": "3d3390a9c9ac68cc404cb41fa9e0ab66f6b84a60113f93f5b3866ddff1bb2750"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cozmo-conformance.pdb",
+      "bytes": 268800,
+      "sha256": "6a05a3fb66f474b1fa8f84a1a031fe74421337e1e12c3dbbddfb047b8a1d4a94"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cozmo-conformance.runtimeconfig.json",
+      "bytes": 375,
+      "sha256": "9e50579d4c99dbf6b1e6da29a256d4685a4574d921d6b0be610b7bdd21d61d45"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Protocol.dll",
+      "bytes": 121856,
+      "sha256": "2c1d15022becad96fd12d88a68c8d1b80e352922022b437e09b321044b7cdcb5"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Protocol.pdb",
+      "bytes": 51156,
+      "sha256": "510934ac2d3e1bb0ee99daec7603d91caed0e2dd9e666dfe61073f94d4bf8feb"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Protocol.Tests.deps.json",
+      "bytes": 22939,
+      "sha256": "742e4d0403f221a73bb8b6ae0a19d2fc5619e9618a0989fc91b3f04d7847c490"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Protocol.Tests.dll",
+      "bytes": 38092288,
+      "sha256": "6b6bfcf13a9b2b6c2997fdcd94f3a06dc43614cf0b61bcf0f7a55e5ca76f04bc"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Protocol.Tests.pdb",
+      "bytes": 1586204,
+      "sha256": "e4f94cc8039874d591a4cc3c29c085e6c408694e0b804be039bb2cc7fd370806"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Protocol.Tests.runtimeconfig.json",
+      "bytes": 375,
+      "sha256": "9e50579d4c99dbf6b1e6da29a256d4685a4574d921d6b0be610b7bdd21d61d45"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Robot.dll",
+      "bytes": 5464576,
+      "sha256": "f8dfeb17cadcc88d9085b35e320b92f4e108e184809c062807a7a20f28bf1bc4"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Robot.pdb",
+      "bytes": 1552048,
+      "sha256": "ecfacc074718653318bd4e2968db19a0c45766f3bd0c01d81a8cf1e23451ddd7"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Transport.dll",
+      "bytes": 84992,
+      "sha256": "24ce7b0b2bfcac2a11572721bf37584f227e19d70d960461ced7807e9312b1cc"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Cozmo.Transport.pdb",
+      "bytes": 37620,
+      "sha256": "f5d28fa3c4a3c14a2c40d1f2d79c58b7eaa1e8561f4a79d0370a25d45cecedd8"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cs/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16416,
+      "sha256": "128aa8e74908f49a5083e0bc27f224b98bd147d7a659dbae366f2fdb6a039807"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cs/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16944,
+      "sha256": "5de8139afca2e2b5e9877a825e0a36bf36b63e3056edb97311c0ebffbd1fd90e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cs/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21032,
+      "sha256": "8bd67e0a85120710b44e9e74b39209215eb28b88ce5776097fa233635af72881"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cs/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 20552,
+      "sha256": "410cb810e7c903f9baf5574f980aa37647b735e35ad58e5b486d5428a4e6c727"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/cs/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 23592,
+      "sha256": "96129b4039c313c8464f3ab08e41e302dc257e29d340350da9f778f38820a013"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/de/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16936,
+      "sha256": "e96fd8840c9c39ee7e08171f07df72188f5bd06bfedaa1de35cf8fa53bbe9d0c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/de/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "d15c129599ed80b290517b08b3dbe112697dfa82552f46ba03f2c919ee5f7233"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/de/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21032,
+      "sha256": "299af5f3d6b5052b64e96cc8c7d69f682831482e7a0866ae7091fd4c5e1d1493"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/de/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21024,
+      "sha256": "4063fc9e276110ffa86225a10bde8ae639786a716600b76e151024ef4c92ea11"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/de/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24136,
+      "sha256": "151cef82db530a3ef34d111628f7a82259385d7d7625eae2b7298aa31a85254d"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/es/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16952,
+      "sha256": "fba0d4b694dd5552c3c93d58ebb1be1d80553d67b538459d909bb8cb94d4b908"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/es/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "e82245f3d450d5a078932c274b1d645348cf86fff565b1865e7bdecbf4848b0b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/es/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21032,
+      "sha256": "28347ccd5e1c71f0f712e60b7709293bfa1688e6e38bc39de3f07d46f74dcb7d"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/es/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21032,
+      "sha256": "be59c757d590c3429fc2866f07a740f07bc93c287fdb7b3396b4be15d5b923d3"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/es/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24096,
+      "sha256": "845fe16cb55e8c60b93725dc8ecd83771be0e28d7d6675a64fabea5d5ef49fe4"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/adp_strict_biquad.json",
+      "bytes": 188568,
+      "sha256": "6426a2da95b21690c0ea337f58f8eebd06890fdd5b23164451bf9d0bf7d3448e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/adp_strict_filters.json",
+      "bytes": 86899,
+      "sha256": "5970f4fc376d28e1002a9e06133812ee11870b508e726a12bf4b5037cec71104"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/adp_strict_mixer.json",
+      "bytes": 1625871,
+      "sha256": "a68075b3b8eb456d4819fd164a709a8b64781b4542b1840dd30a1479e7c03ee0"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/combine_native.bin",
+      "bytes": 49452,
+      "sha256": "e647a2c7ed5a8a8b6628e1e1c4533b931d13bcb5f492079f648f93337193d4d2"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/face_images.json",
+      "bytes": 126921,
+      "sha256": "5ecf29b2392884d22a8902825f3b6a450592b5e70ca54e6e69833de1f4b11283"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/float_literal_baseline.txt",
+      "bytes": 22305,
+      "sha256": "4b1cd031721c2760a42e37b4f8c1d8ae207944a2fb752f2408f94c18a777520e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/hw_fw2457_first120.log",
+      "bytes": 25002,
+      "sha256": "80ec638a7dac88da6fe119f3c2e48b3ad23c7620256cbfea8bae77e7869389e4"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/hw_fw2457_full.log",
+      "bytes": 353442,
+      "sha256": "867e66374bf1468be9269b30a3d1aa5b25a47329067f27ca7ba77990cf9ef6f5"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/hw_fw2457_probe.log",
+      "bytes": 680981,
+      "sha256": "88e49f68adb767689ea09d735ea79a6e2590693c50ce77b7cfa4c2cad93cbd38"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/imdct_native_1024.bin",
+      "bytes": 8196,
+      "sha256": "dba684a1a84753ec3c727d8a379df3f57837fb14c0db49d527aca18db80a0f98"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/imdct_native_2048.bin",
+      "bytes": 16388,
+      "sha256": "a393af30b9a0993f450468b392dd11bad90fc0dccbbf82897081082efb1d8c79"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/imdct_native_256.bin",
+      "bytes": 2052,
+      "sha256": "9978c9034bf9bc9f832a2180dcb2b91b5cfcb8e755fb760dc73aa648cfad3af1"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/imdct_native_512.bin",
+      "bytes": 4100,
+      "sha256": "b950c1ec3601e78a6b8bd3ecb3bde7788743f995a17ebc4ddb5fe32bd0c86d44"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/imdecode_dispatch/webp-probe.json",
+      "bytes": 9248,
+      "sha256": "290f07b731790aa90d64db3b3c822262427069a9de471a66d03f76fe3ea80e2a"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/jpeg_decode/coverage.json",
+      "bytes": 16353,
+      "sha256": "b60fde5a7b9c98bd73c1f79dbe2e5b3746b322094214aff501a728269006207e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/jpeg_decode/data.zip",
+      "bytes": 12557540,
+      "sha256": "7d1fb3cb2d097c19d97aa5c7722c5b7edbf1c42ff1f6bcced665aa134d38ac29"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/jpeg_decode/index.json",
+      "bytes": 1327982,
+      "sha256": "e5ba586ac48008b3ef543484d8c9b52fd4be7011d7f44430765c1d810bae136c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/jpeg_decode/README.md",
+      "bytes": 11629,
+      "sha256": "4ba50a59192cd17ce38c673a2c1a780c442b8ddceb594155f6425aaf13846529"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/jpeg_decode/tables.json",
+      "bytes": 5178,
+      "sha256": "eeb42d446de4c772e63e80dbd886325b7048ba8fd5bab421ce07b52ac72e77c2"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/m1-029-integer-fallback.jsonl",
+      "bytes": 1214,
+      "sha256": "e9d7395b62fddb52dd826d440b2060893a6aa3750c8613ac720944cc13fe74f3"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/m1-029-shipped-double.jsonl.gz",
+      "bytes": 1622660,
+      "sha256": "d750df92b0599357630c726b16a9b0b220dd2d7afd09363f04556c6684586690"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/m1-029-shipped-double.md",
+      "bytes": 981,
+      "sha256": "a7464e451390c9f4bc850b8acc29146efb9dc3c07de71414f7bed1cb75ff70cc"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/m11_083_fixed_float_oracle.json",
+      "bytes": 13189,
+      "sha256": "01b6b7a33a5cf5d1e31524fee41a5e8e4a59a3ce24203b942d26c0b47be91e29"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/m1_m5_numeric_oracle.json",
+      "bytes": 1409852,
+      "sha256": "8bbeaa0ada089e8e5f20c6632db6f9880b3a06746e5827d277b569b08a24fdb3"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/m3_041_libcxx_printf_oracle.json",
+      "bytes": 498577,
+      "sha256": "7afdbb3ed033b3bd03a36092d00a8c975cabd4f069eb2cf1077324b21a5c4bea"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/native_pose_charger_reference.py",
+      "bytes": 1916,
+      "sha256": "a08283cda0e38092e0ec53e8db1f236df0365db47c5f192dad8d7c8be2cf31cc"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/needs_unpause_native.json",
+      "bytes": 4850,
+      "sha256": "8d570e917eda97ece424d8b24981daed4d4f3582d796ac2dd6cf8be768afd1e5"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/q11_transforms_oracle.json",
+      "bytes": 133611,
+      "sha256": "f0265c4375700476927fa2a9b36d48d99c23a608ce8e5af3aed8837bc1e06da6"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Fixtures/vorbis_native.txt",
+      "bytes": 844,
+      "sha256": "a720a8825d611bb7d2a7e2b09b31777da361f6f6cc2caf7d2a5edc633c2d3caf"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/fr/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16936,
+      "sha256": "4df1a4c37deea4a3bb79bd15c31132508fe0db17988e8d81d661cfc43d42fc16"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/fr/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "a62dd5e2ce6f137730775a2d49407fd14aa240a871b6c6fd66f294b35b6c6643"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/fr/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21024,
+      "sha256": "f30f71d27a449d3116eb8011a6f1c5c3d2861a3919cac69c9196a79e8b1a0a20"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/fr/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21024,
+      "sha256": "fe69086d2760aae6dd8433705f51633aa7db1d10bae3d7249ed1fc9e1d34065d"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/fr/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24096,
+      "sha256": "446ae9617ae36ae6f476cf7e26c2b8d4049bfeebd2751f18c5b1fd22e2271452"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/it/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16944,
+      "sha256": "f56f5aba8779a19df5c0839b078f2d531448c7bcc2b741bc1a83abe459edd593"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/it/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "03ceda923a4e50dac65d73a6c7a958216eebf542fd67a204a5c65fef15ee59ac"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/it/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21024,
+      "sha256": "238559db73ddec15a15f484b62b6052654f147f3a2e560d528eb9182784a37ad"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/it/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21024,
+      "sha256": "a08da8ad71be1187ed7e1382eef5a918c697e990ca99b83d0833e5bb1caa7a43"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/it/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24096,
+      "sha256": "55e22d3c9aa94270e68839eb000ae4a564ea7201ad15c04fe1c89cf80148bbee"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ja/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "e4d264ba1af39c8a8f8300dc30effd859e3b38c4891448a7fb446e8d8c3f5cc0"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ja/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 17440,
+      "sha256": "d920940b4ab4791eb980251130ebf3ee680154e1fe8c1e6685a405da124876ab"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ja/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 22072,
+      "sha256": "3d7fa3bae1aa771cfea5323539c25a420eb79d854f85fac31c336b05e223e75a"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ja/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21576,
+      "sha256": "d35fc6c89ad2992c2e12cbf2b9818d7dd0292cc69ca009db966206d3d66e03e4"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ja/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24616,
+      "sha256": "aa4fa7a39b8e05ab72df12e702adcd2e4fc5365f6755248c80d2913d9f19d66a"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ko/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16936,
+      "sha256": "69d7291091cb0617a628f38233358a0e1ce74e09ba2c2695d67588f5581ddf9a"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ko/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "0488e9dacdd5fe3c2754e9ad60ab6db15128f0aa600a609c08f91bfb6e548d8b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ko/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21536,
+      "sha256": "a2035361ac696370eac6d8f73f3dd46856d01643c54fa4a664f191083e39a7ae"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ko/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21024,
+      "sha256": "3bd75d24d0488f7e0fa26070dbd005a6d510fe8a87cad6f65b7e8b9953170f87"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ko/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24096,
+      "sha256": "68acf5b45400d138481186363f4df60c76a1ab783ae26971e43498cb243eb6af"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.TestPlatform.CommunicationUtilities.dll",
+      "bytes": 137264,
+      "sha256": "467b1df61023901a09de9a0052ac69e5961c846de0152c4d8d6afdec090cf889"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.TestPlatform.CoreUtilities.dll",
+      "bytes": 97824,
+      "sha256": "a4f6023603d624fbc76b58ab60558320d29f562eef10488e48ed27cc6ceb4b9c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.TestPlatform.CrossPlatEngine.dll",
+      "bytes": 315416,
+      "sha256": "322fbf9184012a02309fa57c6c70fd05c372d761e7f9b8497cc62a4d91f1b9ce"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.TestPlatform.PlatformAbstractions.dll",
+      "bytes": 53280,
+      "sha256": "36e62b27cb37b5587d6acb3533c9bcebb2368edcfd2c8203157faca3aa3fb404"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.TestPlatform.Utilities.dll",
+      "bytes": 67104,
+      "sha256": "23fca5df9a5bdf954a09116547b77e9599484a7bf457d1694bec3cb7392278d2"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll",
+      "bytes": 17328,
+      "sha256": "5619c8dfbd19198780ed0b834b1f79a07310aaef5510f02f9025735e135e0100"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.VisualStudio.TestPlatform.Common.dll",
+      "bytes": 247856,
+      "sha256": "25c6a0465aa98ad84be35c68eb516d95fb86043f1d3066b326cb6e8ae4af3ce9"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Microsoft.VisualStudio.TestPlatform.ObjectModel.dll",
+      "bytes": 334888,
+      "sha256": "28b2cddea8b257785baf77e3c59f80c97c9eb38b616ce41b58b1e99e07ad0a11"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/Newtonsoft.Json.dll",
+      "bytes": 695336,
+      "sha256": "72cf291d4bab0edd08a9b07c6173e1e7ad1abb7ab727fd7044bf6305d7515661"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/NVorbis.dll",
+      "bytes": 81408,
+      "sha256": "d4fd7a6a7b8672b30f77de08c0256dbcbd0d3eee07b78554ebce97741aa7a819"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/packed_codebooks_aoTuV_603.bin",
+      "bytes": 74387,
+      "sha256": "00a93eab267d281401b1efd54e888a2e183299b9e6c446c48d09f701a89d9d27"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pl/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16936,
+      "sha256": "9daa67a740b6fb5c770a510bb693d650cfb1ae7989f099b3ba7726568ccc067d"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pl/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "c0e1b54dda2c57e48388d24b2006cdf45bf7cbd718d74fcfddab114b8742d632"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pl/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21536,
+      "sha256": "e5b8d92390ab03a57c6ebd76d9b651bf9b400be863a5d6d245b2e69a3edcb7ab"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pl/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21056,
+      "sha256": "1ffdf380c314be7f8a411b74d34b7868eb4d3bba4549fbbe9f4f6112f9f1deea"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pl/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24136,
+      "sha256": "9d2e9f2e063f38b342e05bbf96f753261a1a5887f6568cbd415e101a17a4052d"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pt-BR/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16424,
+      "sha256": "0153707a75723d2d2812741f05c9a3df103008aafa8523c054c947132bb46ddf"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pt-BR/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "bb4d952e4d6b640ffa5bf7acc86db63ce0e450a7e1d43e14c0e9119f64c7ec29"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pt-BR/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21024,
+      "sha256": "8a2b377354306fbe939a823dda7645febdac6bc4f2eecf9d0fbbff5f564c8637"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pt-BR/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 21024,
+      "sha256": "1c91f347de98badcfeb5072314efb68f23e7babe8408a035c7a56656f3a8db3f"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/pt-BR/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 24136,
+      "sha256": "4113982a4bb3736024273fdfab6169f285abe1c268722fc60367aaf0ecabe900"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ru/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 17440,
+      "sha256": "7d7fb01983e8c766c5f024c5f3c0573ade3a98aaa8087252ee805fd5350a1aa0"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ru/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 17440,
+      "sha256": "17cd1923a6dfcb14ecca16c75010cd87c1900ce596813627c31ed312bd76c42e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ru/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 23080,
+      "sha256": "cec451b473ad77b8c6ac0f441dadd1415d9466374ee02754c9c527db0925e0e5"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ru/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 23080,
+      "sha256": "e46e2f8cae62da796582b27be6a444ccf074a505f10744937224ac6e41e2962e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/ru/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 26152,
+      "sha256": "7a9299f98ba00c0102b11d33426b09b2474d1f1d60a4b3db01f0a7894b18ba9a"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/StbImageSharp.dll",
+      "bytes": 77312,
+      "sha256": "0ff268f51876e7924192c70a164bac8da402ed0a3ca30e9d2a2840e7f0deda84"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/StbImageWriteSharp.dll",
+      "bytes": 37376,
+      "sha256": "70921000beb9ca762a8acdb93ac6f6c39db8a351a6fa12aca3eddbc652855f04"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/testhost.dll",
+      "bytes": 48672,
+      "sha256": "db1fd507774c7b5a14a5be89faf578d8e8f76ff146d7ff9a179284d01b8c3b9c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/testhost.exe",
+      "bytes": 169528,
+      "sha256": "290a3ae6e296530f1856e28faf6af2bd9895fbcc52981c7949105c38136d882f"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/tr/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16920,
+      "sha256": "15f0599b76d107c4089d6e2233505fcf999e943838ee6612905016403494446c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/tr/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16936,
+      "sha256": "ddea0c91304fe1c6c97f071484ce4787b62899f9885b2ea37bd738a4ab21ef2b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/tr/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 21040,
+      "sha256": "f52b5db020c9dfd303623674923c974fe84699c3a0f14ed083c05b74e34b516b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/tr/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 20520,
+      "sha256": "27a9dad43e64d91d54a80c5707a92a82474c938b1f2129509234334e3cded5f2"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/tr/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 23584,
+      "sha256": "de5d60614207112eb4a2d0996e4363955a4e704a1521378394cc27c1098ed376"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.abstractions.dll",
+      "bytes": 21928,
+      "sha256": "3166dc70323fb30ccf1cedb0fe86f2ad122c46d254542342d90386efc4c9285c"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.assert.dll",
+      "bytes": 185552,
+      "sha256": "50694822851cd81c29adcd0f33e4041d1605befcdc9384c02eadd62218b643b1"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.core.dll",
+      "bytes": 70352,
+      "sha256": "0ed5297c796b0225aab35564319ebb6600738e14e868fddb21c317e35b99513b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.execution.dotnet.dll",
+      "bytes": 279760,
+      "sha256": "d112327a738f816894cdd314b27b141a07d5550bc2a747c08d9cab0659a76887"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.runner.json",
+      "bytes": 104,
+      "sha256": "1a8cf2d08880fb3e5436bb8690773dd29ec709a45487dc2862c722ce112d461e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.runner.reporters.netcoreapp10.dll",
+      "bytes": 84176,
+      "sha256": "194458c816e0ea9ff0c5eac8896c52133fe9205661833b3d0f57e85a4e66936b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.runner.utility.netcoreapp10.dll",
+      "bytes": 255184,
+      "sha256": "ec705ad62e33f31fc46ad5800c9b1694c02d0ec4e1ee704712da9f24ebbea22e"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/xunit.runner.visualstudio.testadapter.dll",
+      "bytes": 180944,
+      "sha256": "c5ac41b36fac0fcef9714fb80fea0175913530fb53dd7bb8e5e1470339667100"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hans/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16416,
+      "sha256": "60e35f97c51c9f6f4e1fe94f1e0c808b6744d6c4766b24fdda951810d6f8a98b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hans/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16928,
+      "sha256": "052af9b6dfcc2c28510939aa2099ef03b606a1fe26cf6527534b67aa94f62e91"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hans/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 20008,
+      "sha256": "f9c4fde6dc987333a3a43d76ded92ea860d585c20dae03fe85cff1cdabef864b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hans/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 20000,
+      "sha256": "df19e3a71363a8976491a799ffbca272a845fb20b04069a0e2a645e2189c740d"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hans/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 23112,
+      "sha256": "0ce6180553245d9408f6d645a873cc3295d6b7c4afaec8026b9b36a6053800d7"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hant/Microsoft.TestPlatform.CommunicationUtilities.resources.dll",
+      "bytes": 16416,
+      "sha256": "85e92f64e73b1ab9cca5de43d9b492f2f9a21897ff05acef6fbb877de1074a82"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hant/Microsoft.TestPlatform.CoreUtilities.resources.dll",
+      "bytes": 16920,
+      "sha256": "3883071526b437531d72c2b359cecca6c15828ac8d265a52302c66f01d0733bf"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hant/Microsoft.TestPlatform.CrossPlatEngine.resources.dll",
+      "bytes": 20520,
+      "sha256": "412d6b317e5e30425e14d1ea4b1a34a2634b5a66da2ef5963a6356fb79291bdf"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hant/Microsoft.VisualStudio.TestPlatform.Common.resources.dll",
+      "bytes": 20000,
+      "sha256": "ef1462c3444408d4f9c1c211dde75928aa8cbd0a2d54c0071782dabc01dd5ba2"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/zh-Hant/Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll",
+      "bytes": 23072,
+      "sha256": "15f42cfc595499f0f2495cfa19959dac8f726105382671d4445fa58ec26ea050"
+    }
+  ],
+  "compiledStableAcrossCombined": true,
+  "rawCodeTestStableAcrossCombined": true,
+  "ledgerOnlyOutcomeAppendAfterCombined": true,
+  "runs": [
+    {
+      "name": "prep-restore",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/prep-restore.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/prep-restore.ps1\n",
+      "commandSHA256": "ffb8745bd9c21837e59a8d7a9dbd52386d3767c9f4c307d8fd29279c1dbf3ef1",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\prep-restore.ps1",
+      "scriptSHA256": "0261f15ea3b6aae5e0535999460ade7bd8c09c8edb53e71dff197021bc9346e4",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\prep-restore.log",
+      "logSHA256": "5a433a19498860389fc41c0f7a5c14f611fda8fa8b5baee2db46f79e6cce8891",
+      "nativeExit": 0,
+      "exitSHA256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "prep-shutdown",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/prep-shutdown.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/prep-shutdown.ps1\n",
+      "commandSHA256": "c928ac0ee8d198fb9a6992ea518287140d93e423531c447c026da6946dfa4939",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\prep-shutdown.ps1",
+      "scriptSHA256": "24b66027d38488ad8a14932f494f4c6b4f06ef303cf5a71d356216e564179607",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\prep-shutdown.log",
+      "logSHA256": "554f3d83f9124651a7726864459c7dc8a54e08d205492927bc08a70c6994fdd1",
+      "nativeExit": 0,
+      "exitSHA256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "build",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/build.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/build.ps1\ndotnet build cozmo-stack/Cozmo.sln --no-restore -m:1 /nodeReuse:false -p:UseSharedCompilation=false\n",
+      "commandSHA256": "122c55f2afe80a2f545263d256b2fc95c3a5df28761676ed4d49347d0cbd62ae",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\build.ps1",
+      "scriptSHA256": "3d7602f4fa85ff5e3508077426e09123af05a1d7c00835476c99d7e65abf1301",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\build.log",
+      "logSHA256": "25d7d77f128c470d3aa650799c0dff7b773f0b261c89dd6ef6a0b231bc6816db",
+      "nativeExit": 1,
+      "exitSHA256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "name": "final-shutdown",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/final-shutdown.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/final-shutdown.ps1\n",
+      "commandSHA256": "b6e58ff1621ed671297e5fb68744375f8ede913e8101e3b9a22638766ed5b19f",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\final-shutdown.ps1",
+      "scriptSHA256": "2550d5930f91a291b7880b948d304d5a39aab3c04be7304501b34f362ebb3b01",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\final-shutdown.log",
+      "logSHA256": "554f3d83f9124651a7726864459c7dc8a54e08d205492927bc08a70c6994fdd1",
+      "nativeExit": 0,
+      "exitSHA256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "build2",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/build2.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/build2.ps1\ndotnet build cozmo-stack/Cozmo.sln --no-restore -m:1 /nodeReuse:false -p:UseSharedCompilation=false\n",
+      "commandSHA256": "31f090e207bf5249d358e6361e10d1712ea1c07d0d6b4dc4f90105f1eeedbd4c",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\build2.ps1",
+      "scriptSHA256": "1d7df3d3e4d327bad0b5ea3bf5d4ea4aeba7cfe703bdccf2c8176b108f799c61",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\build2.log",
+      "logSHA256": "3e57517971a3a3e219957f5994e85da034889f1767099796862798295dde459b",
+      "nativeExit": 0,
+      "exitSHA256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "focused",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/focused.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/focused.ps1\ndotnet test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-build --no-restore --filter \"FullyQualifiedName~DockingTestSimpleBoundaryTests\" --logger \"trx;LogFileName=focused.trx\" --results-directory .scratch/docking-test-simple-1/artifacts/focused-results\n",
+      "commandSHA256": "253a83c4564c3177c1894ceab74fd83ec3508f419cdd7d20123697bfe574931e",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\focused.ps1",
+      "scriptSHA256": "e7f28c1d7f064f0024b6b1f18965fbc1c72eb7d76a1ca34341e1cf814384a6c8",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\focused.log",
+      "logSHA256": "2d04d6357a11b71f4b71f4eed17102404e29392509b54de18c7b6f4665106c2c",
+      "nativeExit": 0,
+      "exitSHA256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "combined",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/combined.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/combined.ps1\ndotnet test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-build --no-restore --filter \"FullyQualifiedName~DockingTestSimpleBoundaryTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~ActionBehaviorDiagnosticTests|FullyQualifiedName~FreeplayTests\" --logger \"trx;LogFileName=combined.trx\" --results-directory .scratch/docking-test-simple-1/artifacts/combined-results\n",
+      "commandSHA256": "02ce73f285cc18e37bc480134f92b23e377679adfa3b1a30946ff12dc2f57605",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\combined.ps1",
+      "scriptSHA256": "518a4a8b7576de29730effc24e49b948b7ddf8b2493bfc1aec3027a5e33064a5",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\combined.log",
+      "logSHA256": "bc355994bf066cabf9aa8800c24989a23ba17ad830d0d57d270e5e76c04dc6d7",
+      "nativeExit": 0,
+      "exitSHA256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "final2-shutdown",
+      "invocation": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/final2-shutdown.ps1",
+      "commandText": "powershell -NoProfile -ExecutionPolicy Bypass -File .scratch/docking-test-simple-1/artifacts/final2-shutdown.ps1\n",
+      "commandSHA256": "120f37be7516e507407ce0056ce8249bf6b2a536ebefa7064781054410922047",
+      "script": ".scratch\\docking-test-simple-1\\artifacts\\final2-shutdown.ps1",
+      "scriptSHA256": "459cfa15d9b5258916d1f0418aa5cd4a4fff01e6891e045dc522efdfac775f05",
+      "log": ".scratch\\docking-test-simple-1\\artifacts\\final2-shutdown.log",
+      "logSHA256": "554f3d83f9124651a7726864459c7dc8a54e08d205492927bc08a70c6994fdd1",
+      "nativeExit": 0,
+      "exitSHA256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    }
+  ],
+  "testResults": {
+    "focused": {
+      "trx": ".scratch\\docking-test-simple-1\\artifacts\\focused-results\\focused.trx",
+      "trxSHA256": "fa0d0a955a351a199af90041e8402c003723524468931cf5320d08e7b75bce68",
+      "nativeExit": 0,
+      "count": 2,
+      "outcomes": {
+        "Passed": 2
+      },
+      "cases": [
+        {
+          "fullName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CanonicalFactoryDoesNotSubstituteTheCustomAdapter",
+          "testName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CanonicalFactoryDoesNotSubstituteTheCustomAdapter",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CustomAdapterReportsBoundaryBeforeLockAndActionAndRetainsBadObjectCompletion",
+          "testName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CustomAdapterReportsBoundaryBeforeLockAndActionAndRetainsBadObjectCompletion",
+          "outcome": "Passed",
+          "multiplicity": 1
+        }
+      ]
+    },
+    "combined": {
+      "trx": ".scratch\\docking-test-simple-1\\artifacts\\combined-results\\combined.trx",
+      "trxSHA256": "277a6551c72f07924edd9668eddd4883f7348a66251d6eb81b4fe418b99f1693",
+      "nativeExit": 0,
+      "count": 128,
+      "outcomes": {
+        "Passed": 128
+      },
+      "cases": [
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.AsyncFaultRetainsActionTypeMessageAndRealStackBeforeTickFallback",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.AsyncFaultRetainsActionTypeMessageAndRealStackBeforeTickFallback",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.CancelledTaskLogsActualCancellationWithLabelledObservationStack",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.CancelledTaskLogsActualCancellationWithLabelledObservationStack",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.LateFaultAfterStopRemainsVisibleWithoutRunningStoppedCallback",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.LateFaultAfterStopRemainsVisibleWithoutRunningStoppedCallback",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.MultipleFaultsRetainEveryAggregateAndNestedInnerDetail",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.MultipleFaultsRetainEveryAggregateAndNestedInnerDetail",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.ReplacementSuppressesStaleCallbackButKeepsItsLateDiagnostic",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.ReplacementSuppressesStaleCallbackButKeepsItsLateDiagnostic",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots(cancelled: False, reactionShape: False)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots(cancelled: False, reactionShape: True)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots(cancelled: True, reactionShape: False)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SharedToolJournalRetainsWorkerDiagnosticsWithConcurrentOrdinaryWritesAndSnapshots(cancelled: True, reactionShape: True)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SuccessRetainsResultAndTickBoundaryWithoutFailureDiagnostic",
+          "testName": "Cozmo.Protocol.Tests.ActionBehaviorDiagnosticTests.SuccessRetainsResultAndTickBoundaryWithoutFailureDiagnostic",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CanonicalFactoryDoesNotSubstituteTheCustomAdapter",
+          "testName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CanonicalFactoryDoesNotSubstituteTheCustomAdapter",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CustomAdapterReportsBoundaryBeforeLockAndActionAndRetainsBadObjectCompletion",
+          "testName": "Cozmo.Protocol.Tests.DockingTestSimpleBoundaryTests.CustomAdapterReportsBoundaryBeforeLockAndActionAndRetainsBadObjectCompletion",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AFullNeedDecaysOnlyTheTimeOutsideItsFullnessCooldown",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AFullNeedDecaysOnlyTheTimeOutsideItsFullnessCooldown",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.APausedNeedIsSkippedByDecay",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.APausedNeedIsSkippedByDecay",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AReRequestedInvalidSparkDropsTheCurrentActivityAndRepicks",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AReRequestedInvalidSparkDropsTheCurrentActivityAndRepicks",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.ARunningBehaviourThatIsNotRunnableStillScores",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.ARunningBehaviourThatIsNotRunnableStillScores",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AScoredEntryUsesItsEmotionScorersInsteadOfItsFlatScore",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AScoredEntryUsesItsEmotionScorersInsteadOfItsFlatScore",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.ASevereNeedTakesPriorityOverFreeplayAndTheGetInPlaysOnce",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.ASevereNeedTakesPriorityOverFreeplayAndTheGetInPlaysOnce",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AVersionZeroBlobIsReadAsZerosWithTheRewriteFlagSet",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AVersionZeroBlobIsReadAsZerosWithTheRewriteFlagSet",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityStrategyWithNoStrategyKeysKeepsTheConstructorDefaults",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityStrategyWithNoStrategyKeysKeepsTheConstructorDefaults",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityThatChoosesNoBehaviourIsDroppedAndNotRepicked",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityThatChoosesNoBehaviourIsDroppedAndNotRepicked",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityThatEndedAsSoonAsItStartedWaitsThreeSeconds",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityThatEndedAsSoonAsItStartedWaitsThreeSeconds",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityWhoseFeatureIsOffDoesNotStart",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AnActivityWhoseFeatureIsOffDoesNotStart",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.AttemptReadFromDeviceLogsMissingReadFailureAndSuccess",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.AttemptReadFromDeviceLogsMissingReadFailureAndSuccess",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.B8_BehaviorConfigWarningReachesProblemsAndSourceLog",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.B8_BehaviorConfigWarningReachesProblemsAndSourceLog",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.CaseFiveClearsTheDisconnectTimestampBeforeApplyingTheRobotCopy",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.CaseFiveClearsTheDisconnectTimestampBeforeApplyingTheRobotCopy",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.DriveInDesperationIdlesDrivesToRandomPointsAndRequests",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.DriveInDesperationIdlesDrivesToRandomPointsAndRequests",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.ExpressNeedsAndTheGetInFollowTheBrackets",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.ExpressNeedsAndTheGetInFollowTheBrackets",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.FinishReadFromRobotFollowsTheCorrectedVersionContract",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.FinishReadFromRobotFollowsTheCorrectedVersionContract",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.FreeplayPicksTheDesiredActivityFromObjectsAndRunsItsBehaviours",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.FreeplayPicksTheDesiredActivityFromObjectsAndRunsItsBehaviours",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.FromObbWithADeviceDirectoryWiresTheWriteSeam",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.FromObbWithADeviceDirectoryWiresTheWriteSeam",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.InitAfterSerialNumberAcquiredKeepsThePreviousSerialAndClearsTheReadFlags",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.InitAfterSerialNumberAcquiredKeepsThePreviousSerialAndClearsTheReadFlags",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.InitInternalReadsTheFixedDeviceFileAndSendsDecay",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.InitInternalReadsTheFixedDeviceFileAndSendsDecay",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.InitInternalWithNoDeviceDirectorySendsNoActionAndRunsTheTail",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.InitInternalWithNoDeviceDirectorySendsNoActionAndRunsTheTail",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.LookAroundInPlaceScansOneFullTurnAndStops",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.LookAroundInPlaceScansOneFullTurnAndStops",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.M10_011_AHardFallRegistersTheFallNeedsActionBeforeTheBroadcast",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.M10_011_AHardFallRegistersTheFallNeedsActionBeforeTheBroadcast",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.M15_013_OnlyTheRequestedSparksBucketIsWalkedInConfigOrder",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.M15_013_OnlyTheRequestedSparksBucketIsWalkedInConfigOrder",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.M15_013_TheDesiredActivityIsTheOnlyOneTakenWithNoStrategyAsked",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.M15_013_TheDesiredActivityIsTheOnlyOneTakenWithNoStrategyAsked",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.M15_015_TheStackTrackerIsSeededWithTheRobotsChargerAndTreadsState",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.M15_015_TheStackTrackerIsSeededWithTheRobotsChargerAndTreadsState",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.NeedsDecayIntoBracketsAndActionsRefillThem",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.NeedsDecayIntoBracketsAndActionsRefillThem",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.NvStorageReadReturnsZeroForAnInvalidTagAndDoesNotSend",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.NvStorageReadReturnsZeroForAnInvalidTagAndDoesNotSend",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.PossiblyStartWriteToRobotThrottlesAndForces",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.PossiblyStartWriteToRobotThrottlesAndForces",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.PossiblyWriteToDeviceIsA61SecondRateLimiter",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.PossiblyWriteToDeviceIsA61SecondRateLimiter",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.StartReadFromRobotQueuesKey194000AndStoresTheCallbackResult",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.StartReadFromRobotQueuesKey194000AndStoresTheCallbackResult",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.StartWriteToRobotAbortsWhileAReadIsOutstanding",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.StartWriteToRobotAbortsWhileAReadIsOutstanding",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.StartWriteToRobotWritesTheVersionFiveBlobToKey194000",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.StartWriteToRobotWritesTheVersionFiveBlobToKey194000",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.StrategiesRespectCooldownsDurationsMoodAndNeeds",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.StrategiesRespectCooldownsDurationsMoodAndNeeds",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheConnectToRobotEdgeAndReplayCallInitAfterConnection",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheConnectToRobotEdgeAndReplayCallInitAfterConnection",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheDecayUsesTheActualElapsedTimeSinceTheNeedLastDecayed",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheDecayUsesTheActualElapsedTimeSinceTheNeedLastDecayed",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheDeviceDirectorySuppliesThePerSerialAlternateFile",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheDeviceDirectorySuppliesThePerSerialAlternateFile",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheDisconnectBracketCheckForcesAllThreeNeedsAndKeepsTheCache",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheDisconnectBracketCheckForcesAllThreeNeedsAndKeepsTheCache",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayDataTrackerEmitsOnlyTheAccumulateDebugWhenTheAccumulatorIsZero",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayDataTrackerEmitsOnlyTheAccumulateDebugWhenTheAccumulatorIsZero",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayDataTrackerErrorsWhenTheRoundedTimeReachesThirtySevenSeconds",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayDataTrackerErrorsWhenTheRoundedTimeReachesThirtySevenSeconds",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayDataTrackerReportsEveryThirtySecondsAndHonoursItsPauseFlags",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayDataTrackerReportsEveryThirtySecondsAndHonoursItsPauseFlags",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayStackConnectsTheNeedsManagerOnTheMfgIdSerialEdge",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayStackConnectsTheNeedsManagerOnTheMfgIdSerialEdge",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayStackDisconnectsTheNeedsManagerOnTheAlwaysFiredRemovalEdge",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheFreeplayStackDisconnectsTheNeedsManagerOnTheAlwaysFiredRemovalEdge",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheInvalidSparkLatchClearsOnEveryPick",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheInvalidSparkLatchClearsOnEveryPick",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsBracketsUseTheFirstThresholdAtOrBelowTheLevel",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsBracketsUseTheFirstThresholdAtOrBelowTheLevel",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsFileNameIsPerSerial",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsFileNameIsPerSerial",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsManagerDisconnectWritesAndSendsDasWithoutAStateBroadcast",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsManagerDisconnectWritesAndSendsDasWithoutAStateBroadcast",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsManagerPauseAndUnpauseFollowTheEngine",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsManagerPauseAndUnpauseFollowTheEngine",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsManagerUpdatesOnTheEngineTickNotTheFreeplayTick",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsManagerUpdatesOnTheEngineTickNotTheFreeplayTick",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsStateOnRobotVersionFiveBlobRoundTrips",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNeedsStateOnRobotVersionFiveBlobRoundTrips",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheNvWriteTerminalDeliversTheReplyResultByte",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheNvWriteTerminalDeliversTheReplyResultByte",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheResolverComparesTheStoredAndIncomingSerialAndSelectsTheCopy",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheResolverComparesTheStoredAndIncomingSerialAndSelectsTheCopy",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheResolverFollowsTheNineCaseWriteSchedulingTable",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheResolverFollowsTheNineCaseWriteSchedulingTable",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheScoredEntryAddsTheRunningBonusAndAppliesTheRunningPenaltyEnable",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheScoredEntryAddsTheRunningBonusAndAppliesTheRunningPenaltyEnable",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheScoredEntrySkipsTheRepetitionPenaltyInsideTheSuppressionWindow",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheScoredEntrySkipsTheRepetitionPenaltyInsideTheSuppressionWindow",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheScoringChooserWeighsFlatScoresPenaltiesAndTheRunningBonus",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheScoringChooserWeighsFlatScoresPenaltiesAndTheRunningBonus",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheSerialEdgeHandlesEachNewMfgIdAcrossAReconnect",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheSerialEdgeHandlesEachNewMfgIdAcrossAReconnect",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheShippedActivityTreeLoadsWithItsPrioritiesAndChoosers",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheShippedActivityTreeLoadsWithItsPrioritiesAndChoosers",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheStackBindsMostOfWhatTheTreeNamesAndReportsTheRest",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheStackBindsMostOfWhatTheTreeNamesAndReportsTheRest",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheUnpauseShiftsTheFullnessCooldownByThePauseDuration",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheUnpauseShiftsTheFullnessCooldownByThePauseDuration",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheUnpauseShiftsThePerNeedPauseStartAndTheBracketChangeClock",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheUnpauseShiftsThePerNeedPauseStartAndTheBracketChangeClock",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive(version: 1)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive(version: 2)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive(version: 3)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheV1ToV4ConversionZeroesTheMissingTailAndForcesVersionFive(version: 4)",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.FreeplayTests.TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees",
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.AChargerInViewIsLocalisedWithoutBeingConnected",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.AChargerInViewIsLocalisedWithoutBeingConnected",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.AFailedAlignEndsTheMountWithoutTurningOrReversing",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.AFailedAlignEndsTheMountWithoutTurningOrReversing",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.AlignWithObjectUsesTheEnginesAlignmentTypeTable",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.AlignWithObjectUsesTheEnginesAlignmentTypeTable",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.AnEmptyWorldPlansAStraightRunOfLongStraights",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.AnEmptyWorldPlansAStraightRunOfLongStraights",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.BeaconsAndFailureMemoryDriveTheHikingBehaviours",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.BeaconsAndFailureMemoryDriveTheHikingBehaviours",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.CantHandleTallStackLooksDownThenUpThenSulks",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.CantHandleTallStackLooksDownThenUpThenSulks",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.CheckForStackAtIntervalLooksAboveTheBlockAndWaitsOutTheInterval",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.CheckForStackAtIntervalLooksAboveTheBlockAndWaitsOutTheInterval",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.DoPlanningReturnsTheEngineResultCodes",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.DoPlanningReturnsTheEngineResultCodes",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerContactsActionFailsWhileStillOnTheContacts",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerContactsActionFailsWhileStillOnTheContacts",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.DriveToObjectWithThePlannerIncludesTheAdmittedTargetPolygon",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.DriveToObjectWithThePlannerIncludesTheAdmittedTargetPolygon",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.DriveToPoseUsesTheLatticePlannerAndTheFakeRobotArrives",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.DriveToPoseUsesTheLatticePlannerAndTheFakeRobotArrives",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_IsLocWithinBeaconIsThreeDimensionalAndMarginReduced",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_IsLocWithinBeaconIsThreeDimensionalAndMarginReduced",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 0, expected: \"success\")",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 16777216, expected: \"none\")",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 33554432, expected: \"none\")",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 50331648, expected: \"failed\")",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 67108864, expected: \"failed\")",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 67108865, expected: \"failed\")",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.M15_011_TheBeaconIsAddedAtTheFullRobotPose",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.M15_011_TheBeaconIsAddedAtTheFullRobotPose",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.MajorFrustrationDrivesToARandomPoseInItsConfiguredRange",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.MajorFrustrationDrivesToARandomPoseInItsConfiguredRange",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieDrivesDocksAndReEnablesStopOnCliff",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieDrivesDocksAndReEnablesStopOnCliff",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieNoAnimationFixtureDriveCompletionDoesNotFabricateFailedAbort",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieNoAnimationFixtureDriveCompletionDoesNotFabricateFailedAbort",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieRetryDecisionWithIsolatedDrivingDependency",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieRetryDecisionWithIsolatedDrivingDependency",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.RamIntoBlockChargesTheCubeAndBacksOff",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.RamIntoBlockChargesTheCubeAndBacksOff",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.ReactToOnChargerPlaysThenAnnouncesSleepAndDisconnectOnItsTimers",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.ReactToOnChargerPlaysThenAnnouncesSleepAndDisconnectOnItsTimers",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.RespondPossiblyRollRespondsToAnUprightCubeAndRollsOneOnItsSide",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.RespondPossiblyRollRespondsToAnUprightCubeAndRollsOneOnItsSide",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.StacksBasesAndPyramidsAreRecognisedFromCubePoses",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.StacksBasesAndPyramidsAreRecognisedFromCubePoses",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheBeaconAndStackConstantsAreTheEnginesOwn",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheBeaconAndStackConstantsAreTheEnginesOwn",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheChargerIsAPassiveObjectWithOneRectangularMarker",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheChargerIsAPassiveObjectWithOneRectangularMarker",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheConfigurationManagerTracksWhatTheWorldSeesAndWhenItFirstSawIt",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheConfigurationManagerTracksWhatTheWorldSeesAndWhenItFirstSawIt",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheMountCarriesTheEnginesOwnNumbers",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheMountCarriesTheEnginesOwnNumbers",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerRoutesAroundACubeInTheWay",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerRoutesAroundACubeInTheWay",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerUsesTheJsonNumAngles",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerUsesTheJsonNumAngles",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheShippedNavigationSetHasTwentyFiveBehavioursWithDistinctIds",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheShippedNavigationSetHasTwentyFiveBehavioursWithDistinctIds",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutBehaviourLiftsStrongThenWeakAndPutsTheCubeDown",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutBehaviourLiftsStrongThenWeakAndPutsTheCubeDown",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutConfigParsesAndScoresLiftsFromConfidence",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutConfigParsesAndScoresLiftsFromConfidence",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside",
+          "outcome": "Passed",
+          "multiplicity": 1
+        },
+        {
+          "fullName": "Cozmo.Protocol.Tests.NavigationTests.TurningPrimitivesBecomeLineAndArcSegmentsThatEndOnTheLattice",
+          "testName": "Cozmo.Protocol.Tests.NavigationTests.TurningPrimitivesBecomeLineAndArcSegmentsThatEndOnTheLattice",
+          "outcome": "Passed",
+          "multiplicity": 1
+        }
+      ]
+    }
+  },
+  "processes": {
+    "ExactNames": [
+      "dotnet.exe",
+      "MSBuild.exe",
+      "VBCSCompiler.exe",
+      "testhost.exe",
+      "testhost.x86.exe",
+      "vstest.console.exe"
+    ],
+    "NativeProcesses": [],
+    "NativeCount": 0,
+    "OwnProcesses": [],
+    "OwnCount": 0,
+    "ShutdownExit": 0
+  },
+  "corrections": {
+    "sourceCitation": 1,
+    "reviewerMetadataTestPlan": 1,
+    "compiler": 1,
+    "behavioral": 0,
+    "selfTest": 0,
+    "rootProduction": 0
+  },
+  "failedBuild1Preserved": true,
+  "restoreAttempts": 1,
+  "buildAttempts": 2,
+  "focusedAttempts": 1,
+  "combinedAttempts": 1,
+  "leaseReturned": true,
+  "builderModelRequest": "DEFAULT/override omitted",
+  "builderEffortRequest": "DEFAULT/override omitted",
+  "backendObserved": false,
+  "unresolved": "Native original DockingTestSimple body/caller remains excluded/unrecovered under existing M7-022; no original-body conformance claimed."
+}
