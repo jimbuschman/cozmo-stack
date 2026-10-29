@@ -14332,6 +14332,26 @@
       "hardware_required": false,
       "live_path": true,
       "test": "WaitNativeTests"
+    },
+    {
+      "id": "M15-084",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorThinkAboutBeacons lifecycle: ctor/LoadConfig (newAreaAnimTrigger, beaconRadius_mm), runnable gates (not off treads, with robot+0x34A or while carrying; runnable iff no beacon), Init (beacon at the robot pose w.r.t. its root with the configured radius, then a plain 60 s trigger animation with no callback, skipped for an empty or unknown trigger), empty Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x35 0x0059D006..0x0059D024; ctor 0x005E5AF8..0x005E5B2C; LoadConfig 0x005E5B6A..0x005E5BFA (newAreaAnimTrigger string +0x11C, beaconRadius_mm f32 +0x128); Hiking_thinkAboutBeacons.json:13-16 (175), sparksThinkAboutBeacons.json:12-15 (75).",
+        "Vtable 0x01029A28: +0x28 0x005E5F4C returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005E5CC2..0x005E5CD8 (GetActiveBeacon == null).",
+        "InitInternal: SelectNewBeacon 0x005E5D98 (0x005E5F0C..0x005E5F3C: Robot::GetPose 0x004EA398, GetWithRespectToRoot 0x004DF628, AddBeacon 0x0056C39C with radius); trigger empty or AnimationTriggerFromString == 0x23F -> no action (0x005E5D9C..0x005E5DF4); TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false) 0x005E5DF6..0x005E5E18; StartActing with an empty callback 0x005E5E1C..0x005E5E3C; returns 0.",
+        "re-analysis/research/20261029-think-about-beacons-1-read.md"
+      ],
+      "effect": "when Cozmo picks a new hiking area (only with no beacon, never off treads or while carrying), where the beacon goes and its radius, and the new-area animation he plays",
+      "provenance": "THINK-ABOUT-BEACONS-1 (Claude-run: cozmo-extractor read, checked by Claude 2026-10-29); record added with operator approval 2026-10-29.",
+      "unresolved": "Being built in THINK-ABOUT-BEACONS-1; not settled. Beacon clearing is outside this record and unbuilt in the stack: AIWhiteboard::OnRobotDelocalized 0x0056A686 (reached from Robot::Delocalize) and ActivityGatherCubes::OnDeselectedInternal 0x005AF830 clear the beacons, but the stack's AIWhiteboard.OnRobotDelocalized has no caller, so after the first beacon TAB never becomes runnable again in production. Owned elsewhere: AddBeacon and the whiteboard (M13-006, M8-014, M15-011), the base gates (M8-001), the animation action (M8-020, M8-021), selection (M8-003, M15-008).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ThinkAboutBeaconsNativeTests"
     }
   ]
 }

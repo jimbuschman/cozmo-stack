@@ -1120,3 +1120,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorWait vtable stubs 0x0059EC00..0x0059EC3C (vtable 0x010242A8) and both shipped configs | M15-083 (new) |
+
+## THINK-ABOUT-BEACONS-1, the ThinkAboutBeacons lifecycle (operator approved 2026-10-29; research/20261029-think-about-beacons-1-read.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorThinkAboutBeacons ctor 0x005E5AF8, LoadConfig, gates (0x005E5F4C, IsRunnableInternal 0x005E5CC2), Init 0x005E5CDC with SelectNewBeacon 0x005E5F0C | M15-084 (new) |

@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **725 records** over 16 subsystems.
+Manifest of **726 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 351 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 352 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 83 | 4 | 69 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 84 | 4 | 70 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3871,6 +3871,15 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Factory class 0x39 0x0059D086..0x0059D0AC (plain IBehavior ctor, BehaviorWait vtable); behaviors/freeplay/needs/needs_Wait.json; behaviors/wait.json (executableBehaviorType Wait).; Vtable 0x010242A8 (slots from 0x010242B0): Update 0x0059EC00 movs r0,#1; +0x20 0x0059EC0E movs r0,#1; +0x24 base 0x0059EC12 movs r0,#0; +0x28 0x0059EC16 movs r0,#1; Init 0x0059EC34 movs r0,#0; IsRunnableInternal 0x0059EC38 movs r0,#1; Stop 0x0059EC3C bx lr; Resume base 0x005BDA94.; re-analysis/research/20261029-wait-1-read.md
 * outstanding: Built in WAIT-1; not settled. Open: the ActivityFeeding (key, behaviour) keys 4 and 7 that receive Wait (0x005AA83A..0x005AA88C, M15-061); FindBehaviorByExecutableType/VerifyExecutableBehaviors bodies (no G2E 0x93 channel in the stack); the name of robot+0x34A. Owned elsewhere: base gates and Resume (M8-001), the choosers (M8-013).
+
+**M15-084 — BehaviorThinkAboutBeacons lifecycle: ctor/LoadConfig (newAreaAnimTrigger, beaconRadius_mm), runnable gates (not off treads, with robot+0x34A or while carrying; runnable iff no beacon), Init (beacon at the robot pose w.r.t. its root with the configured radius, then a plain 60 s trigger animation with no callback, skipped for an empty or unknown trigger), empty Stop** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: when Cozmo picks a new hiking area (only with no beacon, never off treads or while carrying), where the beacon goes and its radius, and the new-area animation he plays
+* rests on: THINK-ABOUT-BEACONS-1 (Claude-run: cozmo-extractor read, checked by Claude 2026-10-29); record added with operator approval 2026-10-29.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Factory class 0x35 0x0059D006..0x0059D024; ctor 0x005E5AF8..0x005E5B2C; LoadConfig 0x005E5B6A..0x005E5BFA (newAreaAnimTrigger string +0x11C, beaconRadius_mm f32 +0x128); Hiking_thinkAboutBeacons.json:13-16 (175), sparksThinkAboutBeacons.json:12-15 (75).; Vtable 0x01029A28: +0x28 0x005E5F4C returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005E5CC2..0x005E5CD8 (GetActiveBeacon == null).; InitInternal: SelectNewBeacon 0x005E5D98 (0x005E5F0C..0x005E5F3C: Robot::GetPose 0x004EA398, GetWithRespectToRoot 0x004DF628, AddBeacon 0x0056C39C with radius); trigger empty or AnimationTriggerFromString == 0x23F -> no action (0x005E5D9C..0x005E5DF4); TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false) 0x005E5DF6..0x005E5E18; StartActing with an empty callback 0x005E5E1C..0x005E5E3C; returns 0.; re-analysis/research/20261029-think-about-beacons-1-read.md
+* outstanding: Being built in THINK-ABOUT-BEACONS-1; not settled. Beacon clearing is outside this record and unbuilt in the stack: AIWhiteboard::OnRobotDelocalized 0x0056A686 (reached from Robot::Delocalize) and ActivityGatherCubes::OnDeselectedInternal 0x005AF830 clear the beacons, but the stack's AIWhiteboard.OnRobotDelocalized has no caller, so after the first beacon TAB never becomes runnable again in production. Owned elsewhere: AddBeacon and the whiteboard (M13-006, M8-014, M15-011), the base gates (M8-001), the animation action (M8-020, M8-021), selection (M8-003, M15-008).
 
 ## What remains after both: blocked externally, or needing hardware
 

@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "7de4cc40d1d2e6a9c4a7b7832669aeb7c601a716722195fbbe4da3bb8cb994b9",
+  "inventory_sha256": "a88c97d42bc0b23296e759bb499a4f6c0ecf814af287b9995684ecb68d597c41",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1008,6 +1008,19 @@
         "Factory class 0x39 0x0059D086..0x0059D0AC (plain IBehavior ctor, BehaviorWait vtable); behaviors/freeplay/needs/needs_Wait.json; behaviors/wait.json (executableBehaviorType Wait).",
         "Vtable 0x010242A8 (slots from 0x010242B0): Update 0x0059EC00 movs r0,#1; +0x20 0x0059EC0E movs r0,#1; +0x24 base 0x0059EC12 movs r0,#0; +0x28 0x0059EC16 movs r0,#1; Init 0x0059EC34 movs r0,#0; IsRunnableInternal 0x0059EC38 movs r0,#1; Stop 0x0059EC3C bx lr; Resume base 0x005BDA94.",
         "re-analysis/research/20261029-wait-1-read.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-084": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorThinkAboutBeacons lifecycle: ctor/LoadConfig (newAreaAnimTrigger, beaconRadius_mm), runnable gates (not off treads, with robot+0x34A or while carrying; runnable iff no beacon), Init (beacon at the robot pose w.r.t. its root with the configured radius, then a plain 60 s trigger animation with no callback, skipped for an empty or unknown trigger), empty Stop",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x35 0x0059D006..0x0059D024; ctor 0x005E5AF8..0x005E5B2C; LoadConfig 0x005E5B6A..0x005E5BFA (newAreaAnimTrigger string +0x11C, beaconRadius_mm f32 +0x128); Hiking_thinkAboutBeacons.json:13-16 (175), sparksThinkAboutBeacons.json:12-15 (75).",
+        "Vtable 0x01029A28: +0x28 0x005E5F4C returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005E5CC2..0x005E5CD8 (GetActiveBeacon == null).",
+        "InitInternal: SelectNewBeacon 0x005E5D98 (0x005E5F0C..0x005E5F3C: Robot::GetPose 0x004EA398, GetWithRespectToRoot 0x004DF628, AddBeacon 0x0056C39C with radius); trigger empty or AnimationTriggerFromString == 0x23F -> no action (0x005E5D9C..0x005E5DF4); TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false) 0x005E5DF6..0x005E5E18; StartActing with an empty callback 0x005E5E1C..0x005E5E3C; returns 0.",
+        "re-analysis/research/20261029-think-about-beacons-1-read.md"
       ],
       "live_path": true,
       "hardware_required": false
