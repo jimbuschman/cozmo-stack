@@ -346,10 +346,10 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        // POP-A-WHEELIE-1 releases only the ordinary configured instance. The Sparks sibling remains a recorded gap.
-        if(cls==BehaviorClass.PopAWheelie&&BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.PopAWheelie)
+        // POP/SPARKS-POP-A-WHEELIE-1 release only these two checked configurations.
+        if(cls==BehaviorClass.PopAWheelie&&BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.PopAWheelie or BehaviorID.SparksPopAWheelie))
         {
-            SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie sibling configuration not yet released; SparksPopAWheelie own configuration/admission is the next job");
+            SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
         if((cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)

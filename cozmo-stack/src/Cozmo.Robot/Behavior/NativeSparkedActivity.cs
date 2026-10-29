@@ -43,6 +43,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         _objectiveId=(activity.Id,config.GetProperty("behaviorObjective").GetString()) switch
         {
             ("SparksKnockOverCubes","KnockedOverBlocks")=>13u,
+            ("SparksPopAWheelie","PoppedWheelie")=>22u, // Sparks Pop S2: exact native objective table01033198.
             ("SparksStackBlock","StackedBlock")=>40u, // S1 actual native objective40, not a generalized parser.
             ("SparksRollBlock","BlockRolled")=>2u, // Sparks Roll S2: actual objective table01033148.
             _=>throw new InvalidOperationException("MISSING: changed configured Spark objective is outside the checked instance mappings")

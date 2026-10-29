@@ -1069,7 +1069,7 @@ public static class ActivityTreeLoader
         var strategy = e.TryGetProperty("activityStrategy", out var st) ? ActivityStrategy.FromJson(st) : new ActivityStrategy();
         if (random is not null) strategy.Random = random;
         // fidelity: M15-059
-        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
+        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");
         // fidelity: M15-008
         if (id == "SparksGatherCubes" || (e.TryGetProperty("activityType", out var gty) && gty.GetString() == "GatherCubes"))
@@ -1087,7 +1087,7 @@ public static class ActivityTreeLoader
         };
         if(owner is not null)
         {
-            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,"SparksKnockOverCubes"=>21,"SparksRollBlock"=>26,"SparksStackBlock"=>27,_=>null};
+            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,"SparksKnockOverCubes"=>21,"SparksPopAWheelie"=>24,"SparksRollBlock"=>26,"SparksStackBlock"=>27,_=>null};
             if(nativeId is {} value)activity.NativePublicStateSelected=()=>owner.BehaviorPublicState.UpdateActivity(value);
             if(activity.Type=="BehaviorsOnly")activity.NativeUpdate20=_=>0; // vtable10252F8 -> 005A7373.
             foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
@@ -1102,7 +1102,7 @@ public static class ActivityTreeLoader
                             &&rawId.ValueKind==JsonValueKind.String &&bound.TryGetValue(rawId.GetString()!,out var candidate)
                             &&candidate is NativeLookForFaceAndCubeBehavior look &&rawEntry.TryGetProperty("scoring",out var rawScoring))
                             look.CheckObjectiveInput(rawScoring,"activity "+id+" "+chooserKey);
-            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
+            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
                 activity.SparkedOwner=new(activity,owner,e,bound);
             else if(activity.Type is "Socialize" or "Sparked")activity.ObjectiveOwner=new(activity,owner,e);
         }
