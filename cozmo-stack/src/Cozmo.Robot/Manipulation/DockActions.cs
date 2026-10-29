@@ -1042,7 +1042,7 @@ public sealed class RollObjectAction : DockActionBase
     protected override ActionResult Verify(ObservableObject? target, DockResult result) => result.Succeeded ? ActionResult.Success : ActionResult.Retry;
 }
 
-/// <summary><c>PopAWheelieAction</c>: <c>PopAWheelie</c> against a cube's face.</summary>
+/// <summary>Legacy public async Pop adapter. Configured native execution uses NativePopAWheelieRunner (Select/Verify/typed completion); this facade is not that production lifecycle.</summary>
 public sealed class PopAWheelieAction : DockActionBase
 {
     public PopAWheelieAction(ManipulationSystem m, uint objectId) : base(m, objectId) { }

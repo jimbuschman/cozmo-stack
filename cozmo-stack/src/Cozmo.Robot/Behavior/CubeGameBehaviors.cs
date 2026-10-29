@@ -222,27 +222,13 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
 }
 
 /// <summary>
-/// <c>BehaviorPopAWheelie</c> (0x005C7430..0x005C7F66): runnable with an upright located cube and nothing carried.
-/// <c>TransitionToReactingToBlock</c> plays 0x18A <see cref="AnimationTrigger.PopAWheelieInitial"/>;
-/// <c>TransitionToPerformingAction</c> runs a <c>DriveToPopAWheelieAction</c> (drive to the docking pose, then the
-/// firmware <c>POP_A_WHEELIE</c> dock); a failure goes through <c>SetupRetryAction</c> ("Retry %d of %d"): the
-/// realign animation 0x18D <see cref="AnimationTrigger.PopAWheelieRealign"/> when the dock did not reach the
-/// pre-action pose, 0x18E <see cref="AnimationTrigger.PopAWheelieRetry"/> otherwise, then the action again.
-/// <c>StopInternal</c> re-enables stop-on-cliff (<c>EnableStopOnCliff</c>): the wheelie lifts the front cliff
-/// sensors. Objective <c>PoppedWheelie</c>.
-///
-/// The completion callback (the <c>StartActing</c> lambda at 0x005C7CBC) splits on the result's category byte
-/// (<c>result &gt;&gt; 24</c>): success plays 0x21C <see cref="AnimationTrigger.SuccessfulWheelie"/> (0x005C7D16..0x005C7D30)
-/// and reports the objective and the needs action (0x005C7E0C, 0x005C7E14); a Retry-category result retries
-/// only while the retry count at this+0x12C is still 0 (0x005C7D44..0x005C7D4A, then <c>SetupRetryAction</c> at
-/// 0x005C7DFA) - the count is bumped by <c>TransitionToPerformingAction(robot, true)</c> (0x005C777E) and zeroed
-/// otherwise (0x005C780C), so one retry at most; a Retry result with the retry used, or a category-3
-/// (Abort) result, marks the cube failed to use for <see cref="ObjectActionFailure.RollOrPopAWheelie"/>
-/// (SetFailedToUse(obj, 3) at 0x005C7DAA); anything else logs BehaviorPopAWheelie.FailedPopAction and ends. <c>SetupRetryAction</c> 0x005C79D0
-/// plays 0x18D when the result is exactly DidNotReachPreActionPose (0x04000001, 0x005C79F8..0x005C7A00) and 0x18E
-/// otherwise, then runs the action again as a retry (0x005C7F66).
+/// Legacy manual adapter, separate from configured NativePopAWheelieBehavior.
+/// This adapter retains partial asynchronous drive/dock semantics and does not reproduce the native class lifecycle,
+/// cache8, pre-dock scope or typed callback. Its checks are unit coverage only.
+/// The current M13-015 native retry/result/reset implementation is NativePopAWheelieBehavior; this adapter's remaining
+/// public/manual gap prevents claiming that every API entry is reproduced by the configured-path work.
 /// </summary>
-// fidelity: M13-015
+// fidelity: M13-015 - current-location pointer to NativePopAWheelieBehavior, not a completeness claim for this adapter.
 public sealed class PopAWheelieBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, ReactingToBlock, PerformingAction, Retrying }
@@ -269,6 +255,7 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
+        ReportMissing("M13-015 legacy public/manual PopAWheelie adapter is partial; native configured lifecycle/cache/typed action is NativePopAWheelieBehavior, no complete native-path claim");
         Scope.DisableReactions();
         TargetObjectId = Target()?.ObjectId;
         if (TargetObjectId is null) { Finish(); return; }
@@ -281,7 +268,6 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
     /// <c>TransitionToPerformingAction(Robot&amp;, bool)</c> 0x005C7758: the retry count is bumped when called as a retry and zeroed otherwise; the action
     /// runs under <c>StartActing</c> and its completion goes to <see cref="OnActionComplete"/> (the lambda 0x005C7CBC).
     /// </summary>
-    // fidelity: M13-015
     private void TransitionToPerformingAction(bool retry)
     {
         CurrentPhase = Phase.PerformingAction;
@@ -317,7 +303,6 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
     /// <c>AIWhiteboard::SetFailedToUse(obj, 3)</c>; 0 stores +0x128 = -1, starts the 0x21C animation, THEN reports objective 0x16 and the needs action; any other category logs
     /// "BehaviorPopAWheelie.FailedPopAction".
     /// </summary>
-    // fidelity: M13-015
     private void OnActionComplete(uint id, ActionResult r)
     {
         if (r != ActionResult.Success)
@@ -353,7 +338,6 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
     /// <c>TriggerLiftSafeAnimationAction(0x18D)</c> when the result is exactly 0x04000001 and <c>(0x18E)</c> otherwise (60.0f timeout), run with <c>StartActing</c> and a callback
     /// that performs the action again as a retry (0x005C7A5E, then the lambda).
     /// </summary>
-    // fidelity: M13-015
     private void SetupRetryAction(ActionResult r)
     {
         SteppedBehavior.ReportMissing("BehaviorPopAWheelie::SetupRetryAction 0x005C79E6: the virtual call through vtable slot +0x90 before the animation is not in the M13 inventory; it is not made");
