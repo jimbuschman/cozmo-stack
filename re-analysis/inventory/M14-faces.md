@@ -464,3 +464,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP: PetWorld::Update's RobotObservedPet game broadcast (0x0050B7F4; ctor 0x0050BA60, Broadcast 0x0050BA68), body and payload unread; PetObserved stays inline | M14-014 (new) |
+
+## M14-002 correction (operator approved 2026-10-29; research/20261029-acknowledge-face-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| Evidence and title corrected: ten frames is the constructor default; AcknowledgeFace overrides TurnTowardsFaceAction+0x188 to 3 (0x00602A98). Status unchanged | M14-002 |

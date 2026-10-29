@@ -1096,3 +1096,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New IMPLEMENTATION_GAP: configured BuildPyramidBase lifecycle (factory 0x0059C9AC, targets 0x005DCAFA, start/pickup 0x005DCBBC, placement 0x005DCDCC, Observe 0x005DD4AC, update 0x005DD01C) | M15-078 (new) |
 | New IMPLEMENTATION_GAP: derived BuildPyramid lifecycle (ctor 0x005DBC8E, Init 0x005DBF04, top pickup 0x005DBD20, top placement 0x005DC08C, reactions 0x005DC78A / 0x005DC7F0) | M15-079 (new) |
+
+## ACKNOWLEDGE-FACE-1, the AcknowledgeFace lifecycle (operator approved 2026-10-29; research/20261029-acknowledge-face-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorAcknowledgeFace ctor 0x00602884, gates, Init/Update, BeginIteration 0x00602950, GetBestFaceToTrack 0x0056C110, FinishIteration 0x00602C34, Stop 0x006028D2 | M15-080 (new) |
