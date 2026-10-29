@@ -15,6 +15,11 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal NativeConfigurationManager Configurations {get;}
     internal AIComponent AI {get;}
     internal NativePickupTargetCache? PickupTargets {get;}
+    // Explicit native-input boundaries. Missing production suppliers stay unavailable;
+    // injected offline inputs are not a claim that the strong-cache/intention producers are recovered.
+    internal Func<int,uint>? PyramidTargetInput {get;set;}
+    internal Func<IReadOnlyList<NativePyramidBase>>? PyramidBaseStrongInput {get;set;}
+    internal Func<IReadOnlyList<NativePyramidConfiguration>>? PyramidFullStrongInput {get;set;}
     internal IReadOnlyDictionary<string,IBehavior> Bound {get;}
     internal IReadOnlyList<Activity> Tree {get;}
     internal FreeplayDataTracker Tracker {get;}

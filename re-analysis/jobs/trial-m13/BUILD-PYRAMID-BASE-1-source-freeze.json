@@ -1,0 +1,28 @@
+{
+  "job": "BUILD-PYRAMID-BASE-1",
+  "stage": "bounded source independently passed; builder released",
+  "baseline": "8c8ae7af64fb8a77755b09cf60c790467a04f496",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-read.md",
+      "sha256": "4DE41CCCE488071ED627EEE01852CD6F440B9B09F3A80BE2F9D181C21410310C"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-read-codex-check.md",
+      "sha256": "AADBCAE4AFB9EC8C8EED0C1ED265A83ABBA557DE1A85B78F03A4FDF6DF7A2649"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-admission.md",
+      "sha256": "AAAB32655E36B2F0F5EFEDEB8096FAA7A296F50394BA70D6E7FB018F199B74B1"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-pickup-trigger.md",
+      "sha256": "0536926934C3A3C0508E8F76A4815A6C0268F32CBA0F6ADFFECD8057427931FF"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-base-1-pickup-trigger-codex-check.md",
+      "sha256": "2EF93A965001A2F935D1D713D5CB3E6F787AD871AC1E7A283D9512142B960879"
+    }
+  ],
+  "currentWholeRecordsCompared": 10
+}
