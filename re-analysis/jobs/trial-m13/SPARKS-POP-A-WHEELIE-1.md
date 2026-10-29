@@ -1,4 +1,4 @@
-# SPARKS-POP-A-WHEELIE-1 — FULL GATE
+# SPARKS-POP-A-WHEELIE-1 — READY FOR CLAUDE
 
 Next exact scoreboard configuration after ordinary PopAWheelie is SparksPopAWheelie. One combined own path, including its ACTUAL configured Sparked owner/caller and the shared Pop children. Start only after preceding handoff/push, fetch/import main and inspect REVIEW for FIX first. Read PROJECT_STATE first, AGENTS, AUTONOMY, PLAN-BEHAVIOURS, BEHAVIOURS and research README. No source/build claims arise from this planning draft.
 
@@ -43,3 +43,7 @@ Builderprep clean: exactlyoneactualelevatedlocalcache restore0/all5, actualshutd
 Worker5404f2715c31740ff3e3717b3427da1626194fda integratedf3a301e9bfb87b8bb8fd7eae7ae45abe778beac2. Entire canonicalcode19b61cfdf8ea240fc1437e49e911e08eef2840f1 and all5 publishedLF blobs match worker. Final codecheck7E59C05006C6EB55E075C3ACEDB61283CB7CA003CEBFD5C20FB2A88C2C24EB14. Cfirstbuild0/focused5PASS/affected140PASS0skip, no prelaunch/compile/startup/test failures. Bsingleelevatedexact8suite140PASS0skip, identicalactualnames/outcomes; all5raw/UTF8/LF/whitespace stable before/after. ActualBshutdown0/nativeprocesses[]ownProcesses[]total0own0, exclusive.NET returned. Requiredreviewerbatch1 protectedcallbackassertionfix; selfpreidle1/sourceQ0/sourcecorrections0. Earlier six-case prose corrected to actual5 beforeexecution, no extra correctivebatch. Bnon.NETaudit script schema/parsing mistakes retained separately, no testrerun.
 
 Main8cc93b12 importedverbatim via112d059b: Pop ordinary ClaudePASS/MERGED584a29b5/no settlement; new FIX-KNOCKOVER-RACE-1 queued for intermittent manualKnockOver testAggregateException underfullsuiteload. No C#orofficialmanifest/inventory difference vs source/current717. Finish current SparksPop fullgate/handoff, then priorityFIX before next newscoreboardbehavior; do not weakenassertion/add retries/timeouts. Currentjobfullresultpending; preserving existingknownrace if itappears. No officialstatuschange or broadrecordcompletion.
+
+## Completed gate / handoff
+
+Single full6666/6666PASS0skip8m32s exit0 on d7868ee9175169188c6bcab4ae12ef7f87fd538d, UTC01:30:35.1041946Z..01:40:14.0565207Z2026-10-29. Key43f7f13d1192c40af8d0557fda48227700315448, actualpostrun01:40:33.7636122Z[]total0. HANDOFF/currentrecord-update file keep allmodels/round1/selfidle1/sourceQ0/actualfirstpass5+140 outcomes and precise gaps. Postgate main1268d9b3 allocates041ordinary; no duplicate/newperSpark record, proposewidenexistingafterimport. Publishtested717 thenimport718 for nextpriorityFIX-KNOCKOVER-RACE-1; gatepassdoesnotsettlethatintermittentrace. Queue READY, no officialmetadataorcodechangeaftergate.
