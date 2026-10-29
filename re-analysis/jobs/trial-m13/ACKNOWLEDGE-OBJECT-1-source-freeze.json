@@ -1,0 +1,19 @@
+{
+  "job": "ACKNOWLEDGE-OBJECT-1",
+  "stage": "Claude-checked read reused; known rows released for draft, UNKNOWN V3 dependent work pending narrow check",
+  "source": {
+    "path": "re-analysis/research/20261029-acknowledge-object-1-read.md",
+    "sha256": "69E894EB191E66418C6B71F5129BB11F03BDF41D09F9FE0DFAA8C0F32FF0FA5F",
+    "acceptedBy": "Claude check recorded in main077c83f5 and operator resume instruction"
+  },
+  "operatorDecisions": {
+    "N2": "One actual process-wide ObjectID consumed at first Init, retained thereafter",
+    "T7": "Forced trigger not built",
+    "W7": "Beyond45deg turn is SUCCESS without motion; verify/animate continue"
+  },
+  "knownRowsMustNotBeReExtracted": true,
+  "independentReadingLimit": "Only actual UNKNOWN row or concrete contradiction",
+  "remainingUnknown": "V3 compound byte+0x56 meaning/relevance; shared helper frontiers remain their records",
+  "newRecordProposal": "One AcknowledgeObject lifecycle, not added by Codex",
+  "officialEditsAuthorized": false
+}

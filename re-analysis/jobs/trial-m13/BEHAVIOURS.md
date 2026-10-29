@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-28. **0 finished · 21 in progress · 157 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube`, `RollBlockOnSide`, `RollBlockOnSideLowScore`, `SparksRollBlock`, `PopAWheelie`, `SparksPopAWheelie`, `BuildPyramidBase`, `BuildPyramid`, `PutDownBlockNothingToDo`, `PyramidPutDownBlock` and `SparksPutDownBlock` are in progress; other configurations remain not started.
+Whole-behavior scoreboard, 2026-10-28. **0 finished · 22 in progress · 156 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `PutDownBlockNothingToDo`, `PyramidPutDownBlock`, `SparksPutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube`, `RollBlockOnSide`, `RollBlockOnSideLowScore`, `SparksRollBlock`, `PopAWheelie`, `SparksPopAWheelie`, `BuildPyramidBase`, `BuildPyramid`, `DockingTestSimple`, `AcknowledgeFace`, `AcknowledgeObject` and `DriveOffCharger` are in progress; other configurations remain not started.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -59,7 +59,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `BuildPyramid` | `BuildPyramid` | in progress | Native derived built; cache/intention, nonzero PlaceRel drive, shared math/activity gaps remain | Native ActivityBuildPyramid caller checked; HANDOFF-BUILD-PYRAMID-1.md READY/full6697 |
 | `DockingTestSimple` | `DockingTestSimple` | in progress | DOCKING-TEST-SIMPLE-1 READY: historical adapter diagnostic/docs, independent128 and resumed full6723 PASS after imported KnockOver root fix. Native body remains unrecovered/non-live under existing M7-022 decision; no settlement/finished claim | No explicit config reference; native/app use UNKNOWN |
 | `AcknowledgeFace` | `AcknowledgeFace` | in progress | UNKNOWN | reaction: FacePositionUpdated. 1 refs; R252+ in map |
-| `AcknowledgeObject` | `AcknowledgeObject` | not started | UNKNOWN | reaction: ObjectPositionUpdated. 1 refs; R267+ in map |
+| `AcknowledgeObject` | `AcknowledgeObject` | in progress | ACKNOWLEDGE-OBJECT-1 building from Claude-checked read; ghost ID/forced-trigger/over45SUCCESS decisions fixed. Shared visibility/head-angle/marker-pose gaps remain explicit; no record added or finished claim | reaction: ObjectPositionUpdated. 1 refs; R267+ in map |
 | `Bouncer` | `Bouncer` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R078+ in map |
 | `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | not started | UNKNOWN | freeplay: Hiking. 1 refs; R025+ in map |
 | `SparksBringCubeToBeacon` | `BringCubeToBeacon` | not started | UNKNOWN | spark: GatherCubes. 1 refs; R200+ in map |
