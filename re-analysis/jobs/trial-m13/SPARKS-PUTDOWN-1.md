@@ -17,3 +17,7 @@ Root integrates, refreshes main/current record snapshots, runs fidelity/queue an
 ## Preparation outcome
 
 Builder verified base and exact SO/marker hashes, completed one actual elevated cache-only solution restore for all5 projects (exit0), actual shutdown0 and native exact-name inventory NativeProcesses[]/OwnProcesses[]/counts0. Literal commands/hashes/logs/native exits retained; prep lease returned. No build/test/production/native extraction by builder. Reviewer orientation complete, complete source inventory and independent primary check pending. Startup settings unchanged.
+
+## Frozen source and test-only release
+
+Coherent source0DAE3173... independently PASS67814F30...; full hashes retained in SPARKS-PUTDOWN-1-source-freeze.json. All18 quoted whole record objects match current720. Native ID154/class44, minimal own config, score0/needs0/empty display, eight direct StrictPriority string references retrieving the same manager-owned receiver without score writes. Timeout replacement and broader Spark admission/input boundaries stay explicit. Common production already matches checked shared lifecycle; only new SparksPutDownNativeTests.cs and builder ledger released, no production change without separate concrete discrepancy approval. No source questions, departures, new owner, widening or settlement proposed. Reviewer source corrections0; two checker inspection/tooling corrections retained separately. Complete coherent draft must pass before compile; no .NET execution release yet.
