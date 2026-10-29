@@ -1,0 +1,29 @@
+# SPARKS-PUTDOWN-1 coherent draft independent check
+
+2026-10-29. **PASS before first compile/test**, bounded two-file test-only draft. Requested reviewer DEFAULT model/effort, overrides omitted; backend unobserved/no switch. Source PASS SHA25667814f30500513f45bc2876d512280baf49ab3250950cd57534a2d0b6584190a remains applicable. No .NET/code/Git mutation/official/HW operation.
+
+Worker root: C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-sparks-putdown-1. Entire new test and ledger read, complete tracked and cached diffs empty; untracked-file inventory exactly these two files. Reopened actual NativePutDownBlockBehavior, NativePutDownActions, StrictPriorityChooser/BuildChooser, fixture Motors/Image, prior common/sibling checked tests. No production delta.
+
+| File | SHA256 | raw and staged-equivalent Git hash |
+|---|---|---|
+| SparksPutDownNativeTests.cs | a1f7680dc7c80c7ea62d5e9bb8e296b3d214f4ec4863dceaae1d2a11d7f1f9c2 |4ce5aa6136bdf82c0ceec115e36b622812b19a6c|
+| SPARKS-PUTDOWN-1-builder.md |145e30b1eb6f92ea714e0f8f444af7415d8f03561b81e757b7657615fb3fa91a|0b70df989a7f588c3c2c75035a7691ccf4f91e37|
+
+Both decode strict UTF8, zero CR/BOM/trailing whitespace, EOF LF. New-file git diff --no-index --check returns1 with empty diagnostics for differing files, no whitespace errors. Hash-object stdin and path-filtered stdin equal independently for each; no objects written/staging. Exact source sizes16645 and6754 bytes.
+
+Four Facts have independent oracles and honest reach:
+
+- ExactMinimalAssetAndEightDirectStrictInputsRetainSameZeroScoreReceiver: configured production factory construction, supplied exact shipped chooser JSON units explicitly distinguished. Own two-key config, nativeID154/class44, manager identity, independent sibling instances, source-backed defaults, eight literal whole ordered direct string arrays and null delegate. Reflection only reads bound dictionary, confirming actual shared receiver without forcing readiness/score or selecting winners. Source enum0076C9FE..CA1A/class0076A894..A89E/factory0059CEE6, defaults005BBCA0..BBD38, caller bridge005B1F94..2006/005B3A6C..94 and strict retained refs0060B108..B194 support expectations. Native activity bridge not asserted as completed C# production admission. No contextual1.1 or Pyramid display copied.
+- AliasStartUsesOneNativeDrawOrdinary19AAndOwnLockThenStopRetiresOnlyOwnedAction: supplied carry/manager admission units, real manager/ActionList. MT5489 words3499211612/581869302 then3890346734/3586334585 from checked independent M5 oracle; f64 range and one f32 cast match source005C7FEC..801E/common RNG packet. Initial100/true,19A arguments, source gated score before action handle, own scope and all21false lock table, stop retires owned action while unrelated real wait survives. Missing M8-012 diagnostic explicitly observed as diagnostic only. No fake typed report/readiness/admission.
+- AliasRunsRealBackupAnimationsAndImageWaitBeforeCurrentCarryRelease: actual configured alias/manager/ActionList/wire/worker-drain43/callback, supplied carry scene/firmware states, ack/path, CA/CB and gray frame inputs. Fixture Motors emits protocol ack/state and Image actually processes/drains; no direct success/goal/result substitute in this test. Native005C8174..82CC explains second-30/default-80, conditional parallel/wait2 then199/face wrapper; actual release005C8486..84CE and source M12-006 recipient explain Dirty. Test does not claim release-owner/public-face/producer completeness or hardware. Two paths/two image inputs and real terminal completion support bounded actual execution.
+- AliasResultlessCallbacksAcceptFailureAndInterruptedCallbackCannotReleaseNewCarry: explicitly supplied typed LOCAL5A unit, not child execution. Native005C840A..841E/005C8480..84D4 ignores result, so failure advances then releases. Common owned callback teardown prevents stale release after Stop. New carry remains. No injected success presented as actual child execution.
+
+Per-record reach: M15-075 configured factory construction is production; start/lifecycle tests supply admission/carry and are units. M15-012/M13-027 receive actual child execution under supplied firmware/image scene, still unit at outer admission boundary. M8-012 diagnostic-only unit observes actual manager switch missing report, never delivery. Broad caller/strategy/inherited-input/release/face owners remain C5/C6 boundaries. No whole record, behavior, readiness or selection completion. Current owner snapshots/source conclusions unchanged; no alias record/widening/settlement/policy/Ground expansion.
+
+Checklist: source finite receivers/args supported, production unchanged, no parallel copy, real common path tested with substitutions labeled, no unsupported no-effect/exclusion, no circular oracle or hidden producer gap found. Required combined affected filter is exactly new alias plus common and other two aliases:
+
+FullyQualifiedName~Cozmo.Protocol.Tests.SparksPutDownNativeTests|FullyQualifiedName~Cozmo.Protocol.Tests.PutDownBlockNativeTests|FullyQualifiedName~Cozmo.Protocol.Tests.PutDownNothingNativeTests|FullyQualifiedName~Cozmo.Protocol.Tests.PyramidPutDownNativeTests
+
+Unchanged manager/factory production does not justify repeating broader classes. Runtime counts/names/outcomes pending authorized execution. Four new Facts are a static fact, not discovered/passed count. Root owns exclusive execution release.
+
+Reviewer-required draft/test correction batches **0**; source correction batches0. Checker source-inspection tooling corrections2 retained separately (python alias denial; invalid helper encoding alias). Builder two guessed nonexistent rg filenames remain inspection tooling mistakes in its ledger, no code/test failure erased. No compiler/self correction inferred. No build/test attempted by checker.

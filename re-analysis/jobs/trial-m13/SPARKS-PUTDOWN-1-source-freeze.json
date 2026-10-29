@@ -1,0 +1,23 @@
+{
+  "job": "SPARKS-PUTDOWN-1",
+  "stage": "bounded source independently passed; test-only draft released",
+  "files": [
+    {
+      "path": "re-analysis/research/20261029-sparks-putdown-1-read.md",
+      "sha256": "0DAE3173369871E6304621AA0135FD149EDDCC89A760CB032FD3A6025D1D0370"
+    },
+    {
+      "path": "re-analysis/research/20261029-sparks-putdown-1-read-codex-check.md",
+      "sha256": "67814F30500513F45BC2876D512280BAF49AB3250950CD57534A2D0B6584190A"
+    }
+  ],
+  "base": "e2e9a4d5e5648f00b22f5a7bf0a655a4a07f1356",
+  "main": "71bb6fd73246bad405baa543aede8a140e438adf",
+  "nativeBehaviorId": 154,
+  "nativeBehaviorClass": 44,
+  "wholeCurrentRecordsCompared": 18,
+  "sourceReviewerCorrections": 0,
+  "recordChangesProposed": 0,
+  "productionChangesAuthorized": false,
+  "inputBoundary": "Eight direct strict chooser bridges; wider Spark admission/strategy/producers and generic M8-012 typed report remain missing"
+}

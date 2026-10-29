@@ -48,6 +48,7 @@ stands. Nothing new starts outside the current layer.
 
 - **Drive-off pilot externally MERGED (main4fb2908b); M7-026/M13-017/M13-040/M7-023/M11-060 settled by Claude.** Test-only clock FIX5c25c9a7 independently passed36/36; two consecutive asset-complete full gates on b273fe62 passed6362/6362 each,0failed/0skipped. REVIEW N3 on main337879ab passes M13-017/040, M7-023/026 and M11-060 for settlement on merge; M12-043/M8-027 stay open. N2 withdrawn; no split. No Codex status/approval edits; no new hardware acceptance. Next: next behavior on BEHAVIOURS.md, not outward pilot-2 reading.
 
+- **SPARKS-PUTDOWN-1 merged; nothing settled (manager, 2026-10-29; `research/20261029-sparks-putdown-1-claude-check.md`).** Test-only: SparksPutDownBlock (8 Spark StrictPriority callers) runs the checked native putdown path (M15-075).
 - **PUTDOWN-PYRAMID-1 merged; nothing settled (manager, 2026-10-29; `research/20261029-putdown-pyramid-1-claude-check.md`).** PyramidPutDownBlock runs the checked native putdown path (M15-075); the unbuilt typed transition report (M8-012) now logs a visible MISSING.
 - **M15-078 and M15-079 added (operator, 2026-10-29).** New IMPLEMENTATION_GAP records for the configured BuildPyramidBase lifecycle and the derived BuildPyramid lifecycle; M15-freeplay re-approved.
 - **PUTDOWN-NOTHING-1 merged; nothing settled (manager, 2026-10-29; `research/20261029-putdown-nothing-1-claude-check.md`).** Test-only: PutDownBlockNothingToDo (score 1.1 from the NothingToDo chooser) runs the checked native putdown path (M15-075).
