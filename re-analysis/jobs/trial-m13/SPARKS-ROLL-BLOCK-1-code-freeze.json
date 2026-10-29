@@ -1,0 +1,59 @@
+{
+  "base": "865354946933975482a5c7886eff1cd17ae242af",
+  "files": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "raw_sha256": "9307b4d18f17bb12dc3d7f04450f143c5738cf9ecaf9f624b86f8690f01d0624",
+      "published_lf_sha256": "9307b4d18f17bb12dc3d7f04450f143c5738cf9ecaf9f624b86f8690f01d0624",
+      "bytes": 72567
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorStateLights.cs",
+      "raw_sha256": "3729488a9289480db6b13659f690cd8760ad324c153eee1503b6d346786df809",
+      "published_lf_sha256": "3729488a9289480db6b13659f690cd8760ad324c153eee1503b6d346786df809",
+      "bytes": 3694
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorBaseInputs.cs",
+      "raw_sha256": "f0e079457119a1473bee0beaf7fe319a75b8ead9deb71a67933c76b4ee2f2e9b",
+      "published_lf_sha256": "f0e079457119a1473bee0beaf7fe319a75b8ead9deb71a67933c76b4ee2f2e9b",
+      "bytes": 3416
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupTargetCache.cs",
+      "raw_sha256": "d74083bec9e4b9aa1e70fed271c9c64ecd5973c595b9bc2a3a693b4d89390ed7",
+      "published_lf_sha256": "d74083bec9e4b9aa1e70fed271c9c64ecd5973c595b9bc2a3a693b4d89390ed7",
+      "bytes": 9610
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePlaceBlockHelper.cs",
+      "raw_sha256": "97e9597cc7b660699792f54005ed44376efa222d7b603b8d6461c42501daa17c",
+      "published_lf_sha256": "97e9597cc7b660699792f54005ed44376efa222d7b603b8d6461c42501daa17c",
+      "bytes": 1643
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeRollBlockBehavior.cs",
+      "raw_sha256": "fbea162edabd628755512939a829a1a19380d5b3301cc00bcf10a5e05a5398bb",
+      "published_lf_sha256": "fbea162edabd628755512939a829a1a19380d5b3301cc00bcf10a5e05a5398bb",
+      "bytes": 5753
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSparkedActivity.cs",
+      "raw_sha256": "6185cbae21d7df65119f799efb9c4ee567bfe82590d1c103eac144e7243a5f61",
+      "published_lf_sha256": "6185cbae21d7df65119f799efb9c4ee567bfe82590d1c103eac144e7243a5f61",
+      "bytes": 11404
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksRollNativeTests.cs",
+      "raw_sha256": "5732eb2a4a16d3379fe67f667b3cec97608ec56729544bd6a2ac6d7d5b11b54a",
+      "published_lf_sha256": "5732eb2a4a16d3379fe67f667b3cec97608ec56729544bd6a2ac6d7d5b11b54a",
+      "bytes": 15959
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-ROLL-BLOCK-1-builder.md",
+      "raw_sha256": "066d4f9deb884005eef46a83eaba8b3fc55750bf1f80cfb4349b2e9240f07e13",
+      "published_lf_sha256": "066d4f9deb884005eef46a83eaba8b3fc55750bf1f80cfb4349b2e9240f07e13",
+      "bytes": 7314
+    }
+  ]
+}

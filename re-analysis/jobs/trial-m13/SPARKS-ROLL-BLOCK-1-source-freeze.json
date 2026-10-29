@@ -1,0 +1,20 @@
+{
+  "note": "FinalcombinedREADPASS.12literalquotes+M8-015encoding-onlyaddendum exactcurrent716. F1corrects inherited reversedfailureconstants30s/60mm; F2family-label/invariantonly, nosecondbehaviorfix. OriginalHiking/Side/Lowpackets untouched.",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-sparks-roll-block-1-read.md",
+      "reviewed_raw_sha256": "1e4afb6ccdf9fa476fa16a9f9f1278da48fa6381621ac736b97d04f033f82f06",
+      "published_lf_sha256": "1e4afb6ccdf9fa476fa16a9f9f1278da48fa6381621ac736b97d04f033f82f06"
+    },
+    {
+      "path": "re-analysis/research/20261028-sparks-roll-block-1-read-codex-check.md",
+      "reviewed_raw_sha256": "7133db8cc92855706f1cb1c56cbe07dde7d5aa1e3fcfa71eaaf7194547c370f6",
+      "published_lf_sha256": "6f6df684f5e0cae1d7750898864bc374f9697aaefff11a417e0128f8be99bf18"
+    },
+    {
+      "path": "re-analysis/research/20261028-sparks-roll-block-1-record-quote-correction.md",
+      "reviewed_raw_sha256": "ff10aa0d3a21f28dd62bfc4f52a2f4439b683e9ba822f0e74da87ff5c345961e",
+      "published_lf_sha256": "ff10aa0d3a21f28dd62bfc4f52a2f4439b683e9ba822f0e74da87ff5c345961e"
+    }
+  ]
+}

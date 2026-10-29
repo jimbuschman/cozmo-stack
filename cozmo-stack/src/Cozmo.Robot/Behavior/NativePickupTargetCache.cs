@@ -40,7 +40,9 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
     internal bool RollEligible(ObservableObject obj,bool axis)
     {
         using var root=axis?obj.NativePose.GetWithRespectToRoot():null; // Only AxisCheck flattens BEFORE NoAxisCheck.
-        if(m.Whiteboard.DidFailToUse(unchecked((int)obj.ObjectId),new[]{(ObjectActionFailure)3},60f,obj.NativePose,30f,Radians.Pi))return false;
+        // Sparks Roll F1:00570692..6AC, wrappers0056BC40/0056BAB4: time30, distance60 (both intentions).
+        if(m.Whiteboard.DidFailToUse(unchecked((int)obj.ObjectId),new[]{(ObjectActionFailure)3},30f,obj.NativePose,60f,Radians.Pi))return false;
+        // Located-world M11-007 invariant: Known/Dirty only; family1/2 is supplied by the query filter.
         if(obj.PoseState is not (PoseState.Known or PoseState.Dirty))return false;
         if(!obj.IsRestingFlat(BitConverter.UInt32BitsToSingle(0x3E32B8C2)))return false;
         using var relative=new Pose3d();if(!Pose3d.GetWithRespectTo(obj.NativePose,robot.GetCheckedMainPose(),relative))return false;

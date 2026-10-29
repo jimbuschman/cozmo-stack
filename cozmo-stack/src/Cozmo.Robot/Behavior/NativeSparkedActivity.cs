@@ -44,6 +44,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         {
             ("SparksKnockOverCubes","KnockedOverBlocks")=>13u,
             ("SparksStackBlock","StackedBlock")=>40u, // S1 actual native objective40, not a generalized parser.
+            ("SparksRollBlock","BlockRolled")=>2u, // Sparks Roll S2: actual objective table01033148.
             _=>throw new InvalidOperationException("MISSING: changed configured Spark objective is outside the checked instance mappings")
         };
         if(config.TryGetProperty("maxTimeoutForActionComplete",out var wait))WaitForAction=wait.GetBoolean();

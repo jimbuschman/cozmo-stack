@@ -4,7 +4,8 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
-// Proposed coherent Roll own-path owner H1-H11 (005C8598..005C8E3C), not M12-016's attempt-only claim.
+// fidelity: M15-077 — current Hiking own path; other checked configurations require title widening.
+// H1-H11 (005C8598..005C8E3C); imported atan2f body alone remains equivalent.
 internal sealed class NativeRollBlockBehavior:SteppedBehavior
 {
     private readonly ManipulationSystem _m;
