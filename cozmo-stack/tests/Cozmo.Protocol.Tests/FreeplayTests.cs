@@ -1289,17 +1289,15 @@ public class FreeplayTests
         double clock = 0;
         var needs = new NeedsManager(() => clock);
         var ctx = Ctx(rig);
+        // EXPRESS-NEEDS-1: ExpressNeeds' cooldown stamp and run are covered by ExpressNeedsNativeTests (stamp only on SUCCESS, I5);
+        // only the bracket gate (R4) stays here.
         var express = new ExpressNeedsBehavior(needs, "Needs_MildLowEnergyRequest", NeedId.Energy, NeedBracketId.Warning, new[] { AnimationTrigger.NeedsMildLowEnergyRequest },
                                                new Graph2d(new[] { (0.0, 20.0), (0.1, 20.0), (0.5, 60.0), (1.0, 60.0) }), rig.Vision);
-        express.Clock = () => clock * 1000;
         Assert.False(Runnable(express, ctx));
         needs.SetLevel(NeedId.Energy, 0.25);
-        Assert.True(Runnable(express, ctx));
         Assert.Equal(35.0, express.CooldownSec, 3);                                          // the graph at level 0.25
-        RunToEnd(rig, express, ctx);
-        Assert.Contains(express.Trace, l => l.Contains("NeedsMildLowEnergyRequest"));
-        Assert.False(Runnable(express, ctx));                                                 // in cooldown
-        clock = 40; Assert.True(Runnable(express, ctx));
+        rig.Robot.Engine.Timer.UpdateTime(35_000_100_000);                                   // R5: 35.0f + 0.0f < now
+        Assert.True(Runnable(express, ctx));
         var getIn = new PlayAnimOnNeedsChangeBehavior(needs, "Needs_SevereLowEnergyGetIn", NeedId.Energy, new[] { AnimationTrigger.NeedsSevereLowEnergyGetIn });
         Assert.False(Runnable(getIn, ctx));
         needs.SetLevel(NeedId.Energy, 0);

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 
@@ -399,24 +400,30 @@ public sealed class DriveInDesperationBehavior : ActionBehavior
 }
 
 /// <summary>
-/// <c>BehaviorExpressNeeds</c> (0x005EE19C..0x005EE8C0; six configs): <c>need</c>, <c>needBracket</c>, <c>animTriggers</c>,
-/// <c>cooldown</c> (a graph from the need's level to seconds), <c>requiredSevereNeedsState</c>,
-/// <c>shouldClearExpressedState</c> / <c>caresAboutExpressedState</c>. <c>IsRunnableInternal</c>:
-/// <c>NeedsState::IsNeedAtBracket(need, bracket)</c> and the cooldown since the last run (<c>GetCooldownSec</c>
-/// evaluates the graph at the need's level). <c>InitInternal</c>: <c>TurnTowardsFaceAction(−1, π, false)</c>
-/// then <c>TriggerAnimationAction</c> for each trigger.
+/// <c>BehaviorExpressNeeds</c> (ctor 0x005EE144; vtable 0x0102A24C; six configs), built from
+/// EXPRESS-NEEDS-1 (re-analysis/research/20261029-express-needs-1-read.md): <c>need</c>, <c>needBracket</c>,
+/// <c>animTriggers</c>, <c>cooldown</c> (a graph from the need's level to seconds), <c>requiredSevereNeedsState</c>,
+/// <c>shouldClearExpressedState</c> / <c>caresAboutExpressedState</c>. <c>IsRunnableInternal</c> 0x005EE570..0x005EE5DC:
+/// the bracket (R4) and the f32 cooldown since the last SUCCESS (R5/R6). <c>InitInternal</c> 0x005EE690..0x005EE788: one
+/// <c>CompoundActionSequential</c> of <c>TurnTowardsLastFacePoseAction</c> (ignoreFailure) then one
+/// <c>TriggerAnimationAction</c> per trigger (I1..I4); the callback stamps +0x138 only on SUCCESS (I5).
 /// </summary>
-public sealed class ExpressNeedsBehavior : ActionBehavior
+public sealed class ExpressNeedsBehavior : SteppedBehavior
 {
-    private readonly VisionSystem? _v;
     private readonly NeedsManager _needs;
-    private double? _lastRunSec;
+    private readonly ManipulationSystem? _m;
+    // C2: +0x138 last-success time, 0.0f from the ctor (0x005EE152..0x005EE18E); written only by the I5 callback.
+    private float _lastSuccessSec;
 
-    public ExpressNeedsBehavior(NeedsManager needs, string id, NeedId need, NeedBracketId bracket, IReadOnlyList<AnimationTrigger> triggers, Graph2d cooldown, VisionSystem? v = null, NeedId? requiredSevereState = null, bool shouldClearExpressedState = false, bool caresAboutExpressedState = false)
+    public ExpressNeedsBehavior(NeedsManager needs, string id, NeedId need, NeedBracketId bracket, IReadOnlyList<AnimationTrigger> triggers, Graph2d cooldown, VisionSystem? v = null, NeedId? requiredSevereState = null, bool shouldClearExpressedState = false, bool caresAboutExpressedState = false, ManipulationSystem? m = null)
         : base(id, "ExpressNeeds")
     {
-        _needs = needs; Need = need; Bracket = bracket; Triggers = triggers; Cooldown = cooldown; _v = v; RequiredSevereState = requiredSevereState;
+        _ = v; // retained constructor boundary; the I2 turn is the native ActionList runner, built from the manipulation owner
+        _needs = needs; Need = need; Bracket = bracket; Triggers = triggers; Cooldown = cooldown; RequiredSevereState = requiredSevereState;
         ShouldClearExpressedState = shouldClearExpressedState; CaresAboutExpressedState = caresAboutExpressedState;
+        _m = m;
+        // I4: StartActing's completion arrives through the IBehavior ctor's RobotCompletedAction subscription (0x005BBD5E..7A).
+        if (m is not null) BindActionCompletionOwner(m.Robot);
     }
 
     public NeedId Need { get; }
@@ -427,42 +434,71 @@ public sealed class ExpressNeedsBehavior : ActionBehavior
     public bool ShouldClearExpressedState { get; }
     public bool CaresAboutExpressedState { get; }
 
-    public double CooldownSec => Cooldown.EvaluateY(_needs.State.GetNeedLevel(Need));
+    /// <summary>R6 GetCooldownSec 0x005EE5E4..0x005EE626: EvaluateY(+0x124, GetNeedLevel(need)), an f32.</summary>
+    public double CooldownSec => (float)Cooldown.EvaluateY(_needs.State.GetNeedLevel(Need));
+
+    /// <summary>C2/I5: +0x138, the BaseStationTimer seconds of the last SUCCESS (0.0f until then).</summary>
+    public float LastSuccessSec => _lastSuccessSec;
+
+    // R1: base +0x20 (0x005BF04C) and +0x24 (0x0059EC12) return 0; EN's +0x28 slot 0x005EE860 returns 0: not runnable while carrying.
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => false;
+    // U1: base IBehavior::UpdateInternal (vtable +0xC): the behaviour ends when its action ends.
+    protected override bool KeepsRunningWithoutAction => HasCurrentAction;
+    // P1: ResumeInternal 0x005EE7D4..0x005EE7D6 `movs r0,#1; bx lr`: resume always fails.
+    protected override int ResumeInternal() => 1;
 
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
-        // 0x005EE57A..0x005EE5B0: selected Critical expressions bypass the current bracket query.
+        // fidelity: M15-072
+        // R4 0x005EE57A..0x005EE5AE: +0x135 && bracket == Critical compares the selected severe need; IsNeedAtBracket is skipped.
         if (CaresAboutExpressedState && Bracket == NeedBracketId.Critical)
         {
             if (_needs.SevereNeeds.Selected != (int)Need) return false;
         }
         else if (!_needs.State.IsNeedAtBracket(Need, Bracket)) return false;
-        // Common required-severe gate, RB2 0x005BD7E6..0x005BD7F6: compare Selected, not that need's bracket.
-        if (RequiredSevereState is { } s && _needs.SevereNeeds.Selected!=(int)s) return false;
-        return _lastRunSec is not { } last || Clock() / 1000.0 - last >= CooldownSec;
+        // R2 0x005BD7E6..0x005BD7F6 is IsRunnableBase's +0x74 test. This loader path sets neither NativeBaseInputs nor the
+        // RobotStateAllowsRun seam, so the base does not apply it here; it is kept as a pure predicate (no side effects, so order is immaterial).
+        if (RequiredSevereState is { } s && _needs.SevereNeeds.Selected != (int)s) return false;
+        // R5 0x005EE5B0..0x005EE5DC: (GetCooldownSec + [+0x138]) < BaseStationTimer seconds, f32 vadd then strict vcmpe.
+        float cooldown = (float)CooldownSec;
+        float sum = cooldown + _lastSuccessSec;
+        return sum < context.Robot.Engine.Timer.SecondsF;
     }
 
     protected override void OnStart()
     {
-        _lastRunSec = Clock() / 1000.0;
-        Log($"expressing {Need} {Bracket} (level {_needs.State.GetNeedLevel(Need):F2}, cooldown {CooldownSec:F0} s)");
-        void Play()
+        if (_m is not { } m)
         {
-            int i = 0;
-            void Next() { if (i >= Triggers.Count) { Finish(); return; } PlayTrigger(Triggers[i++], Next); }
-            Next();
+            ReportMissing("EXPRESS-NEEDS-1 I1..I4 (0x005EE690..0x005EE788): no ManipulationSystem owner for the native TurnTowardsLastFacePose/TriggerAnimation runners; Init not performed");
+            InitFailed = true;
+            return;
         }
-        if (_v is not null && _v.Faces.HasAnyFaces())
-        {
-            using var turn = new TurnTowardsFaceAction(_v, SmartFaceID.Invalid);
-            RunAction("TurnTowardsFace(last)", turn.RunAsync, _ => Play(), FaceActionResult.Abort);
-        }
-        else Play();
+        // I1 0x005EE690..0x005EE69A: new CompoundActionSequential(robot).
+        var sequence = new CompoundActionSequential(() => m.Robot.Engine.Timer.SecondsF);
+        sequence.SeedNativeEmptyCompletion();
+        // I2 0x005EE6A4..0x005EE6E8: TurnTowardsLastFacePoseAction(face 0, Radians(0x40490FDB), sayName false), always added; ignoreFailure 1 (0x005EE6DA).
+        sequence.AddAction(new NativeLastFaceRunner(m, Radians.Pi, false), true, false);
+        // I3 0x005EE6F2..0x005EE748: per trigger, TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false), not lift-safe; ignoreFailure 0 (0x005EE736).
+        foreach (var trigger in Triggers)
+            sequence.AddAction(new TriggerAnimationAction(m.Robot, new(trigger, 1, true, 0, TriggerAnimationTimeoutSec, false)), false, false);
+        // I4 0x005EE74A..0x005EE788: StartActing(compound, $_0); Init returns 0.
+        StartActing(sequence, OnActionCompleted);
     }
+
+    // I5 0x005EE89E..0x005EE8B6: only a SUCCESS category (byte 3 == 0) stamps +0x138 = BaseStationTimer seconds.
+    private void OnActionCompleted(RobotCompletedAction completed)
+    {
+        if ((completed.Result >> 24) != 0) return;
+        _lastSuccessSec = Context.Robot.Engine.Timer.SecondsF;
+    }
+
     protected override void OnStop(BehaviorStopReason reason)
     {
-        base.OnStop(reason); // retain ActionBehavior's cancellation cleanup
-        if (ShouldClearExpressedState) _needs.SevereNeeds.Clear(); // 0x005EE7D8
+        // fidelity: M15-072
+        // S1 0x005EE7D8..0x005EE7E8: +0x134 -> ClearSevereNeedExpression, whatever the reason.
+        if (ShouldClearExpressedState) _needs.SevereNeeds.Clear();
     }
 }
 
@@ -575,7 +611,7 @@ public static class ExplorerBehaviors
                             NeedId? severe = r.TryGetProperty("requiredSevereNeedsState", out var rs) && Enum.TryParse<NeedId>(rs.GetString(), true, out var sn) ? sn : null;
                             list.Add(new ExpressNeedsBehavior(needs, id, need, bracket, Triggers(), cd ?? new Graph2d(new[] { (0.0, 20.0) }), v, severe,
                                 r.TryGetProperty("shouldClearExpressedState", out var clearState) && clearState.GetBoolean(),
-                                r.TryGetProperty("caresAboutExpressedState", out var caresState) && caresState.GetBoolean()));
+                                r.TryGetProperty("caresAboutExpressedState", out var caresState) && caresState.GetBoolean(), m));
                         }
                         else problems?.Add($"{id}: need / needBracket not parsed");
                         break;
