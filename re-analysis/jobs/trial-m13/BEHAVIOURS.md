@@ -158,7 +158,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `ReactToRobotShaken` | `ReactToRobotShaken` | not started | UNKNOWN | reaction: RobotShaken. 1 refs; R263+ in map |
 | `ReactToSparked` | `ReactToSparked` | not started | UNKNOWN | reaction: Sparked. 1 refs; R265+ in map |
 | `ReactToStackOfCubes` | `ReactToStackOfCubes` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
-| `ReactToUnexpectedMovement` | `ReactToUnexpectedMovement` | not started | UNKNOWN | reaction: UnexpectedMovement. 1 refs; R266+ in map |
+| `ReactToUnexpectedMovement` | `ReactToUnexpectedMovement` | in progress | REACT-UNEXPECTED-MOVEMENT-1 MERGED (Claude-run); R2 unwired live, M7-031 open | reaction: UnexpectedMovement. 1 refs; R266+ in map |
 | `RequestCozmoPerforms` | `RequestGameSimple` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R079+ in map |
 | `RequestDroneMode` | `RequestGameSimple` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R080+ in map |
 | `RequestKeepAway` | `RequestGameSimple` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R083+ in map |
