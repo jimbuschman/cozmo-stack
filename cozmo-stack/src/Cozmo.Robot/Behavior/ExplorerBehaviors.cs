@@ -408,6 +408,7 @@ public sealed class DriveInDesperationBehavior : ActionBehavior
 /// <c>CompoundActionSequential</c> of <c>TurnTowardsLastFacePoseAction</c> (ignoreFailure) then one
 /// <c>TriggerAnimationAction</c> per trigger (I1..I4); the callback stamps +0x138 only on SUCCESS (I5).
 /// </summary>
+// fidelity: M15-082
 public sealed class ExpressNeedsBehavior : SteppedBehavior
 {
     private readonly NeedsManager _needs;

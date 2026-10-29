@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **722 records** over 16 subsystems.
+Manifest of **723 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 348 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 349 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 81 | 4 | 67 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 82 | 4 | 68 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3844,6 +3844,15 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Factory class 0x3B 0x0059D0D2..0x0059D0EC; ctor 0x00602FA4..0x0060304A (+0x11C 0x23F, +0x120 pi/4, +0x128/+0x130 5 deg, +0x138 2, +0x140 -1, +0x148/+0x149/+0x14A, sets +0x14C/+0x158); ghost Block_Cube1x1 type 4 0x00603010..0x0060304A; LoadConfig 0x00603118..0x0060334A; behaviors/reactions/acknowledgeObject.json.; IsRunnable: carrying override 0x00604380 returns 1; IsRunnableInternal +0x154 != 0 0x006042C8..0x006042D2; strategy gates and target fill 0x006113E8..0x00611482; AddListener 0x006042D4..0x006042EA; Init 0x00603434..0x00603494 with ghost SetID 0x004EF468..0x004EF4F4 (consumes one ObjectID); Update 0x00603524..0x00603546.; BeginIteration 0x00603560..0x00603730 (NullObject 0x00603742..0x006037A2; high flag z > 33.85 mm 0x006035AA..0x006035F4; TurnTowardsObjectAction + tolerances 0x006035F8..0x0060363E; VisuallyVerifyObjectAction +0x8C = +0x138 0x0060366C..0x006036C0; TriggerLiftSafeAnimationAction unless +0xD9/+0xD8 0x006036C2..0x00603710; result functor 0x0060440E..0x00604424).; LookForStackedCubes 0x006038DA..0x00603B50; CheckIfGhostBlockVisible 0x00603DA8..0x00603F4C; SetGhostBlockPoseRelObject 0x00604054..0x006040C2; LookAtGhostBlock 0x006040D8..0x0060420A.; FinishIteration 0x00603C74..0x00603D6C (listeners slot 0, erase, BehaviorObjectiveAchieved 0x1B, BeginIteration; last target: turn-back TurnTowardsObjectAction then 0x0060465A..0x00604672); StopInternal 0x0060425E..0x006042C6 (listeners slot 1 ClearDesiredTargets).; re-analysis/research/20261029-acknowledge-object-1-read.md
 * outstanding: Not built yet: the build is handed to Codex (ACKNOWLEDGE-OBJECT-1). Manager decisions: the ghost's ObjectID consumption is reproduced; the forced trigger SetupForceTriggerBehavior 0x00611148..0x006111E8 is not built (no stack entry reaches it). Owned elsewhere: TurnTowardsObjectAction body (M15-022, M13-020; ctor 0x00549D78 and UseCustomObject 0x0054A050 RECOVERABLE_GAP), VisuallyVerifyObjectAction body (no record), IsVisibleFromWithReason (M11-010), GetClosestMarkerPose/ComputeHeadAngleToSeePose (M13-026, M12-033), DriveStraightAction (M13-002), the strategy recording (M10-003), the IBehavior base (M8-001), the objective packer (M7-019).
+
+**M15-082 — BehaviorExpressNeeds lifecycle: ctor/LoadConfig (need, bracket, cooldown graph, animTriggers, expressed-state bools), runnable gates (not while carrying/off treads/+0x34A; Critical caresAbout selected-need branch, else IsNeedAtBracket; f32 strict cooldown from the last SUCCESS), Init compound (last-face-pose turn ignoring failure, then plain trigger animations), SUCCESS-only stamp, resume refused and Stop clearing** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs`
+* effect: when Cozmo expresses a low energy, play or repair need (bracket, selected severe need, cooldown at the current need level, never while carrying), what he does (turn to the last face, then the config's animations in order, stopping at a failure), when the cooldown restarts, that an interrupted expression is not resumed, and whether stopping clears the severe-need expression
+* rests on: EXPRESS-NEEDS-1 (Claude-run: cozmo-extractor read, cozmo-implementer build, cozmo-verifier PASS), checked by Claude 2026-10-29; record added with operator approval 2026-10-29.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Factory class 18 0x0059CBA4..0x0059CBBE; ctor 0x005EE144..0x005EE18E (+0x11C 3, +0x120 4, +0x124 graph, +0x128 triggers, +0x134/+0x135 0, +0x138 0.0f); LoadConfig 0x005EE19A..0x005EE3FC (need, needBracket, cooldown, shouldClearExpressedState, caresAboutExpressedState, animTriggers with Count skipped); behaviors/freeplay/needs/*.json (six configs).; Vtable 0x0102A24C: +0x28 0x005EE860 returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005EE570..0x005EE5DC (+0x135 and Critical: need == [[robot+0x264]+0x30]+0x14, else IsNeedAtBracket; GetCooldownSec + [+0x138] < BaseStationTimer seconds, vcmpe.f32/movlt); GetCooldownSec 0x005EE5E4..0x005EE626.; InitInternal 0x005EE690..0x005EE788: CompoundActionSequential; TurnTowardsFaceAction(robot, 0, Radians 0x40490FDB, false) re-vtabled as TurnTowardsLastFacePoseAction, AddAction ignoreFailure 1 (0x005EE6DA); per trigger TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false), AddAction ignoreFailure 0 (0x005EE736); StartActing. Callback 0x005EE89E..0x005EE8B6: category byte 0 -> +0x138 = now.; ResumeInternal 0x005EE7D4 returns 1; StopInternal 0x005EE7D8..0x005EE7E8 (+0x134 -> ClearSevereNeedExpression).; re-analysis/research/20261029-express-needs-1-read.md; re-analysis/research/20261029-express-needs-1-claude-check.md
+* outstanding: Built and checked in EXPRESS-NEEDS-1 but not settled: no test enters the live Freeplay interlude StrictPriority chooser (Activities.cs:357-368); every test is unit. The native container does not build factory row C1 (BehaviorContainer.cs:221); the live path is the standalone FreeplayStack loader. The completion owner is bound only at construction. Open: Needs_SevereLowEnergyForcedGetOut reachability UNKNOWN (no activity, map or native FindBehaviorByID(0x2E) referent); the IBehavior::ReadFromJson +0x74 store (requiredSevereNeedsState) not re-disassembled; the turn child with face 0 (M13-014) and the compound result after an ignored turn failure (M8-017). Owned elsewhere: the base gates and StartActing (M8-001), EvaluateY (M7-013), GetNeedLevel (M15-030), the severe-need selection and Clear (M15-072), the interlude chooser (M15-002, M15-006).
 
 ## What remains after both: blocked externally, or needing hardware
 

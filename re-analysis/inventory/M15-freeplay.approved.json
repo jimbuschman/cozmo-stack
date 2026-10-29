@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "9520a99a941dac6d1e7c6eaddf140ab4b52adebd82c3ed5a08d8a03c33f94e1d",
+  "inventory_sha256": "a1e938a806d6918f44d47e5f9ec9aca4dc08ae20c530cf3b43dc88ff69efa866",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -982,6 +982,20 @@
         "LookForStackedCubes 0x006038DA..0x00603B50; CheckIfGhostBlockVisible 0x00603DA8..0x00603F4C; SetGhostBlockPoseRelObject 0x00604054..0x006040C2; LookAtGhostBlock 0x006040D8..0x0060420A.",
         "FinishIteration 0x00603C74..0x00603D6C (listeners slot 0, erase, BehaviorObjectiveAchieved 0x1B, BeginIteration; last target: turn-back TurnTowardsObjectAction then 0x0060465A..0x00604672); StopInternal 0x0060425E..0x006042C6 (listeners slot 1 ClearDesiredTargets).",
         "re-analysis/research/20261029-acknowledge-object-1-read.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-082": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorExpressNeeds lifecycle: ctor/LoadConfig (need, bracket, cooldown graph, animTriggers, expressed-state bools), runnable gates (not while carrying/off treads/+0x34A; Critical caresAbout selected-need branch, else IsNeedAtBracket; f32 strict cooldown from the last SUCCESS), Init compound (last-face-pose turn ignoring failure, then plain trigger animations), SUCCESS-only stamp, resume refused and Stop clearing",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 18 0x0059CBA4..0x0059CBBE; ctor 0x005EE144..0x005EE18E (+0x11C 3, +0x120 4, +0x124 graph, +0x128 triggers, +0x134/+0x135 0, +0x138 0.0f); LoadConfig 0x005EE19A..0x005EE3FC (need, needBracket, cooldown, shouldClearExpressedState, caresAboutExpressedState, animTriggers with Count skipped); behaviors/freeplay/needs/*.json (six configs).",
+        "Vtable 0x0102A24C: +0x28 0x005EE860 returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005EE570..0x005EE5DC (+0x135 and Critical: need == [[robot+0x264]+0x30]+0x14, else IsNeedAtBracket; GetCooldownSec + [+0x138] < BaseStationTimer seconds, vcmpe.f32/movlt); GetCooldownSec 0x005EE5E4..0x005EE626.",
+        "InitInternal 0x005EE690..0x005EE788: CompoundActionSequential; TurnTowardsFaceAction(robot, 0, Radians 0x40490FDB, false) re-vtabled as TurnTowardsLastFacePoseAction, AddAction ignoreFailure 1 (0x005EE6DA); per trigger TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false), AddAction ignoreFailure 0 (0x005EE736); StartActing. Callback 0x005EE89E..0x005EE8B6: category byte 0 -> +0x138 = now.",
+        "ResumeInternal 0x005EE7D4 returns 1; StopInternal 0x005EE7D8..0x005EE7E8 (+0x134 -> ClearSevereNeedExpression).",
+        "re-analysis/research/20261029-express-needs-1-read.md; re-analysis/research/20261029-express-needs-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false
