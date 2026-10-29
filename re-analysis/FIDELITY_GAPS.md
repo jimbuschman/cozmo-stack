@@ -3,12 +3,12 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **716 records** over 16 subsystems.
+Manifest of **717 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 255 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 7 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 347 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
@@ -35,10 +35,10 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 51 | 1 | 35 | 0 | 1 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 36 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 40 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 77 | 4 | 64 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 77 | 4 | 63 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -2778,6 +2778,15 @@ B-M1-3 (2026-10-17), built, awaiting strong verification: fixes Opus B2/Q3. SetC
 * evidence: Verify 0x005555B4..0x0055581E: selected dock action 2/3 checks, docking success and carry predicates, TurnTowardsObject saved-carried child, first/second Update sequence, failure cleanup, high-place MoveLift child.; GetCompletionUnion 0x0055515C..0x00555344: the chain it builds is overwritten by the final object-interaction payload at 0x00555324..0x0055533E.; Completion setters 0x0075C3F0..0x0075C436 / 0x0075C460..0x0075C4A6 copy the five 32-bit IDs, count and flag; Pack 0x0075B4F0..0x0075B536 serializes all five IDs, count and flag.; Normal located-target path: IDs [target, 0, 0, phone stack address, 0], count 1, flag false (jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md).; Read packet re-analysis/research/20261028-sparks-stack-1-read.md and its independent check; HANDOFF-SPARKS-STACK-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md
 * outstanding: Not supported as exact: the four unused completion ID words. On the normal path (selected dock 2/3, target located) the stack sends [target, 0, 0, 0, 0], count 1, flag false; the original's fourth word is a phone stack address. Decided by the operator 2026-10-28 ("Approve zero unused ID slots"; jobs/trial-m13/SPARKS-STACK-1-COMPLETION-POLICY.md). That part is COMPATIBILITY_POLICY and never EXACT_SOURCE; at settlement it moves to its own COMPATIBILITY_POLICY record. Paths where the meaningful fields are not established keep the payload unavailable with a visible diagnostic; nothing is invented. Built and checked in SPARKS-STACK-1 but not settled. Not this record: the PlaceRel ctor/Init/handlers/markers (M12-017/025/034/037), the shared IDock, motor and turn bodies, the neighbour query (M13-007).
 
+**M12-052 — PlaceObjectOnGroundAction::GetCompletionUnion: the saved carried object as the first ObjectInteraction ID, count 1, flag false** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/NativePlaceGroundRunner.cs`
+* effect: the ActionCompleted payload the C# API delivers when Cozmo puts a cube on the ground
+* rests on: SPARKS-ROLL-BLOCK-1 (Codex proposal, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: GetCompletionUnion 0x00554AE0..0x00554AFA: first ID word = this+0x7C, halfword 0x0001 at +0x14 (count 1, flag false), Set_objectInteractionCompleted 0x00554AF4; the other four ID words are never written.; Saved carried object: ctor 0x00554638..0x0055469C stores +0x7C (0x0055467C); Init 0x00554794. Setter 0x0075C3F0..0x0075C436 copies the 22-byte payload.; re-analysis/research/20261028-sparks-roll-block-1-claude-check.md; SPARKS-ROLL-BLOCK-1 handoff proposal
+* outstanding: Built (NativePlaceGroundRunner.GetObjectInteractionCompletion) but not settled. The four unwritten ID words are uninitialised stack in the original: under the M1-034 standing rule the stack withholds only the full public payload with a visible MISSING, and keeps the defined fields (saved ID, count 1, false) and the scalar result. The PlaceRel zero-padding policy (M12-050) does not apply. Not this record: Ground composition/Init/CheckIfDone (M15-022), the wire (M12-015).
+
 ### M13-navigation — Planning, charger and block configurations
 
 **M13-003 — Obstacle expansion, per-heading C-space polygons, and the primitive collision test** (live path)
@@ -3829,15 +3838,6 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * evidence: Factory 0x0059CFE6; class range 0x005C93D0..0x005CA33A: ctor 0x005C93D0, IsRunnableInternal 0x005C9484, Init 0x005C9502, stacking 0x005C9520..0x005C961A, StopInternal 0x005C97F8.; UpdateInternal 0x005C9844..0x005C9A88 (M7 inventory row 885, corrected 2026-10-28): both targets valid skips the neighbour query (0x005C98BC..0x005C98C2); bottom invalid -> FindObjectOnTopOrUnderneathHelper(bottom, 15.0f, filter, true) must return the top (0x005C99C0, 0x005C9A1E); one GetClosestValidBottom retarget (0x005C9A5E..0x005C9A84).; Target caches: entries 0x0056F724..0x0056FDA2, dependencies 0x00571040..0x005710CC (5->3) and 0x004D705E..0x004D7072 (4->2), predicates 0x0057052C..0x0057066A / 0x0057154C, entry cadence 0x005711E4..0x005712B6; progression unlock 9 or stackInAnyOrientation selects 5/3, otherwise 4/2 (0x005C94A6..0x005C9500, 0x005C984E..0x005C988C); GetRotatedParentAxis<'Z'> 0x005507A0..0x00550854.; Success 0x005C9EA4..0x005C9F14: objective 40, optional animation 0x21A with score, then the configured needs action (43 for SparksStackBlock, 42 for StackBlocks).; Shipped configs: SparksStackBlock (activity 27) and freeplay/stackBlocks.json (behaviorID 0xA0, executable 9, unlock 10). Read packets re-analysis/research/20261028-sparks-stack-1-read.md and 20261028-stack-blocks-1-read.md with their independent checks; HANDOFF-SPARKS-STACK-1.md, HANDOFF-STACK-BLOCKS-1.md; re-analysis/research/20261028-sparks-stack-1-claude-check.md, re-analysis/research/20261028-stack-blocks-1-claude-check.md.
 * outstanding: Built and checked in SPARKS-STACK-1 and STACK-BLOCKS-1 but not settled. Still missing: ordinary StackBlocks reaches the behaviour only through supplied admission; PlayAlone admission/scoring, parent transitions and the executable finder are unbuilt. Not this record: the factory/config binding (M7-018), the PlaceRel helper (M12-042), placement parameter producers (M12-028), the bottom-flat gate (M12-012), the neighbour query body (M13-007), the axis helper's other callers (M12-039), the PlaceRel action's Verify/completion (M12-050), the Sparked activity (M15-059), needs/desired-activity reporting (M15-008).
 
-**M15-077 — BehaviorRollBlock (Hiking_RollCube): cache 7/6 target choice, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeRollBlockBehavior.cs`
-* effect: which cube Cozmo rolls, when it retargets or gives up, the drive/dock/roll it does, and the objective, animation and needs a successful roll produces
-* rests on: HIKING-ROLL-CUBE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (HANDOFF-HIKING-ROLL-CUBE-1.md).
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Factory 0x0059CF86; ctor 0x005C8598 (isBlockRotationImportant default true 0x005C85DC..0x005C85F4); class range 0x005C867A..0x005C8E3C.; TransitionToPerformingAction 0x005C86E8..0x005C8938: target -1 warns and returns; face-turn 0.0f when +0xD9 or +0xD8 set, else 1.5707964f (0x005C8734..0x005C8744, 0x005C8934); CreateRollBlockHelper(...,target,true,params) 0x005C8814; SmartDelegateToHelper 0x005C8850; score 0.8f 0x005C888E; state light {target,25,false} 0x005C88A6..0x005C88CE.; UpdateInternal 0x005C8A54..0x005C8B24: axis change AND ComputeDistanceSQBetween(robot,target) > 14400.0f (0x005C8ABE..0x005C8AD2); StopActing(false,false); pre-dock latch +0x129 -> TransitionToRollSuccess; else refresh and +0x124 == -1 returns 2.; Target cache 0x0056F9B4..0x0056FA18 / 0x005707F0..0x00570902 (intention 7 when rotation is important, else 6); RollBlockHelper 0x005B98D4..0x005BAC54; DriveToRollObjectAction 0x0055C9DC..0x0055CECE with IDriveToInteractWithObject 0x0055B2C8..0x0055E0E6; RollObjectAction 0x00556540..0x00556DCE with shared IDock 0x005514FC/0x005521AC.; Read packets re-analysis/research/20261028-hiking-roll-cube-1-read.md, -drive-joins.md, -reentry-contract.md with their independent checks; HANDOFF-HIKING-ROLL-CUBE-1.md; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md
-* outstanding: Built and checked in HIKING-ROLL-CUBE-1 but not settled. Not this record: the three-attempt limit (M12-016), the PlaceBlockHelper lifecycle (M12-051), the BehaviorManager state-light setter (M7-030), the Ground completion getter (unowned bridge, inherited), and the shared IDock/DriveTo/factory/base records. The full-public undefined RollObject payload is skipped under M1-034 (0x00556744..0x005567EE). The atan2f numeric body is covered only by the existing libm policy. Parent Hiking/GatherCubes admission, competition and light producers are outside it.
-
 ## What remains after both: blocked externally, or needing hardware
 
 | id | subsystem | status | what | why it cannot be settled here |
@@ -3943,4 +3943,5 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M5-061 | M5-animation | COMPATIBILITY_POLICY | Game messages the stack never sends: TransferFile 0xF7, GetJsonDasLogs 0xE0, ReplayLastAnimation 0xAD, RequestDeviceData 0xDB, debug-console 0xDC..0xDF | libcozmoEngine.so 3.4.0-1204. |
 | M3-064 | M3-device | COMPATIBILITY_POLICY | The DataPlatform external path (DataPlatformExternalPath, scope 4; app input: temporaryCachePath) | libcozmoEngine.so 3.4.0-1204; Unity C#. |
 | M4-052 | M4-control | EQUIVALENT_IMPLEMENTATION | Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY | libcozmoEngine.so 3.4.0-1204. |
+| M15-077 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset | libcozmoEngine.so 3.4.0-1204 |
 

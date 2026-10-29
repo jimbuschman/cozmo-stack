@@ -1068,3 +1068,9 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: PlaceBlockHelper factory 0x005B5588, ctor 0x005B8C1C, Init 0x005B8CB0..0x005B8D50, RespondToTurnAction 0x005B8DF4..0x005B8E44, Update 0x005B8E60, RespondToPlacedAction 0x005B8E64..0x005B8E68 | M12-051 (new) |
+
+## SPARKS-ROLL-BLOCK-1, the PlaceObjectOnGround completion getter (operator approved 2026-10-28; research/20261028-roll-records-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: PlaceObjectOnGroundAction::GetCompletionUnion 0x00554AE0..0x00554AFA (saved +0x7C from ctor 0x0055467C; four unwritten ID words under M1-034) | M12-052 (new) |
