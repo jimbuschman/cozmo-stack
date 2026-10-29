@@ -1,23 +1,27 @@
-# DOCKING-TEST-SIMPLE-1 — WIP, NOT READY
+# DOCKING-TEST-SIMPLE-1 — READY FOR CLAUDE
 
-The historical standalone driver exposes a custom MountCharger adapter under the DockingTestSimple label. Its XML incorrectly describes the native developer test, and starting it lacks a visible boundary diagnostic. This job corrects that description and diagnostic; it does not implement the original native state machine.
+The historical standalone driver exposes a custom MountCharger adapter under the DockingTestSimple label. This job corrects its misleading documentation and adds a visible M7-022 boundary diagnostic before the unchanged lock/action sequence. It does not implement the native developer state machine. After merging main077c83f5, the requested full gate passed **6723/6723, zero failed/skipped**.
 
-## Evidence and scope
+## Path, evidence and exact change
 
-- Native ID9/class9: enum-after-string0x0076B632..0x0076B664 and0x0076A430..0x0076A462. Factory entry0x0059CA78..0x0059CA92 allocates0x290 and calls native ctor0x005CAFB0. Exact shipped devBehaviors/dockingTestSimple.json has only class and ID.
-- ExecuteBehaviorByID handler0x0060AA6A..0x0060AA88 accepts a payload ID through manager lookup. This prefix has no SDK guard. Existing M7-022's supported-entry exclusion is a recorded manager decision, not a newly proved instruction-level gate. Cited app files/global caller negatives were unavailable for fresh certification; config-reference absence alone proves no exclusion.
-- Canonical NativeBehaviorRuntime/CreateNative binds configured factory outputs and has no DockingTestSimple constructor. Historical FreeplayStack.Create/CreateStandalone instead includes ShippedBehaviors.Navigation's MountCharger adapter. Public standalone manager/chooser calls can select that legacy label, so the old blanket statement that no arbitrary developer-ID API exists needs this qualification.
-- Finite inactive D3 callback0x005CB368..0x005CB382 changes owner counters/flag only. Its construction/subscription and logger ownership remain separate M7-027/M7-028 live gaps. This does not settle those records or the original state loop.
+- Historical FreeplayStack.Create/CreateStandalone → ShippedBehaviors.Navigation → MountChargerBehavior.OnStart → diagnostic → existing reaction lock/MountChargerAction → completion queue → Update result/Finish. Public type/default ID/class, admission, runnable predicate, action arguments/order/results are preserved. ChargerBehaviors.cs changes XML and one ReportMissing call; Behaviors.cs changes Navigation XML. Two new custom/unit tests and the builder ledger complete the four-file scope.
+- Native ID9/class9: enum-after-string0x0076B632..0x0076B664 and0x0076A430..0x0076A462; factory0x0059CA78..0x0059CA92 calls ctor0x005CAFB0. Canonical NativeBehaviorRuntime/CreateNative has no constructor for this body.
+- ExecuteBehaviorByID0x0060AA6A..0x0060AA88 has no local SDK guard. Existing M7-022's non-live manager ruling is retained as a scope decision; unavailable app/global caller negatives were not freshly certified. Its blanket no-arbitrary-API wording needs the historical standalone caveat above. No new exclusion or policy.
+- Finite inactive D3 callback0x005CB368..0x005CB382 changes owner counters/flag only; its constructor/subscriptions and logger stay separate M7-027/M7-028 live gaps. The diagnostic tests do not certify native behavior. The missing-charger unit's BadObject0x03000004 oracle is separately checked at0x0054E114/0x0054E140/0x0054E166..0x0054E168; no whole M13-008 claim.
 
-Corrected source C44C481A8F1F04E399169736B6393AB4CB6EEC6D7048847C3486D710F6060590; independent bounded PASS7F914A46C7B0D2F5057B30179D71F2E0586968E6C1190091EE1E6272EF0FCB9F. All six whole current record objects match the manifest. One source-report instruction citation correction, semantics unchanged; initial report retained in ignored scratch.
+Checked source C44C481A8F1F04E399169736B6393AB4CB6EEC6D7048847C3486D710F6060590; source check7F914A46C7B0D2F5057B30179D71F2E0586968E6C1190091EE1E6272EF0FCB9F. All six whole source-record snapshots still match current. Workerda30716711810d0742c83e3a73ef9874fde9a418 integrated1322c412. Final code freeze260B0E653C6790959C83B8BCE9017789EAAFE834176069FD5DB9769E20B91D3A; independent final611F1737CBDA6B45FF585647502FC34C73D2664A60993327971472627EFBF0A5.
 
-## Records and remaining uncertainty
+## Checks and retained failure
 
-No new record, widening or settlement proposed. Retain M7-022 RECOVERABLE_GAP/live_pathfalse and its existing decision; no new policy, exclusion or unsupported API decision. Formal reachability wording qualification is for Claude. Original Init/Update/callback/random/action/report/cleanup, PrintStats0x005CD180..0x005CD6DB and RecordAttempt0x005CE3E0..0x005CEAB3 remain unread frontiers. Existing M1-034 points remain recorded, not claimed implemented. M7-018/027/028 and M8-013/M15-002 retain their wider gaps. No behavior finished or hardware claim.
+Corrected build passed; focused2/2 and affected128/128 PASS0skip. Independent one exact128/128 PASS0skip matched full names/outcomes/multiplicities (Boundary2/Navigation47/ActionDiagnostic10/Freeplay69); four files and133compiled artifacts stayed stable, shutdown/native arrays0. Only ledger outcomes differed from its pre-test freeze.
 
-## Change and verification
+The first full gate failed6710P1F/6711 on efee57f5, with the captured M11-066 unrelated-pose-root exception in FlipBlockAction.CheckIfDoneTick. Its complete trace and gate metadata remain committed. Main4ed2f340 fixed the real implementation bug: the engine ignores GetWithRespectTo's result at0x0055F0E0 and reads the zero local. That checked fix and the WwiseSongTests race fix were imported verbatim with main077c83f5; no local speculative fix or acceptance retry.
 
-The released four-file scope is ChargerBehaviors.cs XML and one visible M7-022/custom-adapter diagnostic before the existing lock/action, Behaviors.cs Navigation documentation, a bounded regression file and builder ledger. Public type/IDs/class, standalone admission, runnable predicate, action arguments/order/results and Finish are preserved. Tests must identify custom-adapter coverage, not native conformance. The traced custom path is Navigation entry → OnStart diagnostic → unchanged reaction lock and MountChargerAction → completion queue → Update result/Finish. Two bounded custom/unit regressions verify diagnostic ordering and existing missing-charger BadObject completion, plus canonical factory non-substitution. Narrow M13-008 Init0x0054E114/0x0054E140/0x0054E166..0x0054E168 independently establishes0x03000004; no full M13-008 settlement is claimed.
+Requested full rerun on c8395b0c3968c48111e00058a12c39a1f4bbc943: **6723/6723 PASS0skip**,5m38s, nativeexit0. UTC2026-10-29T18:24:48.9035741Z..18:31:42.6653680Z; fingerprintd1ce10b481296ad4470ec1839a840c8b24906f27. Actual postgate native/own arrays/counts0; original four frozen files unchanged. gate-result.json preserves both attempts.
+
+## Records, models and uncertainty
+
+No new record, widening or settlement proposed. M7-022 stays RECOVERABLE_GAP/live_pathfalse; its original Init/Update/callback/random/action/report/cleanup/PrintStats/RecordAttempt and existing M1-034 frontier remain unrecovered. M7-018/027/028, M8-013/M15-002 and whole M13-008 retain their residuals. Formal M7-022 wording correction is left to Claude. No native body, hardware or finished-behavior claim.
 
 | Worker | Requested model / effort |
 | --- | --- |
@@ -25,16 +29,4 @@ The released four-file scope is ChargerBehaviors.cs XML and one visible M7-022/c
 | docking_simple_build | DEFAULT / DEFAULT; overrides omitted |
 | docking_simple_review | DEFAULT / DEFAULT; overrides omitted |
 
-No worker switches or backend inference. Source-report citation corrections1; reviewer-required metadata/test-plan batch1 (combined filter initially omitted the new class); compiler-origin fix1 (missing Cozmo.Robot.Vision test import). Behavioral/self-test corrections0. Builder newly raised MISSING/source questions0 beyond inherited frontiers. Research/inspection tooling attempts are preserved separately. No official status, approval, inventory, PROJECT_STATE, REVIEW or hardware changes.
-
-Failed first build exit1/2260warnings/one CS0103 retained; no tests launched. One-line import independently checked before corrected build2 exit0/570warnings/zeroerrors. FIRST focused2/2 and FIRST four-class combined128/128 PASS0skip; independent ONE exactcombined128/128 PASS0skip, all full names/outcomes/multiplicities match directly. Actual class counts boundary2/Navigation47/ActionDiagnostic10/Freeplay69. Exact4 raw/staged-equivalent/UTF8LF/noBOM files and133compiled artifacts stable pre/post; only final ledger outcome append differed from pre-test freeze. Actual shutdown0/native+own arrays/counts0 before integration.
-
-Workerda30716711810d0742c83e3a73ef9874fde9a418 integrated1322c412; entire code tree6c3c03dbfea8770035ba13d9adb04be55f55ebb9 matches. Code freeze260B0E653C6790959C83B8BCE9017789EAAFE834176069FD5DB9769E20B91D3A; final independent611F1737CBDA6B45FF585647502FC34C73D2664A60993327971472627EFBF0A5. Current720records, fidelity/queue/protected checks passed. Full gate FAILED as recorded below; not ready for Claude.
-
-## Stop handoff — WIP, NOT READY
-
-Operator requested stopping new work because usage is nearly exhausted. Built: legacy adapter documentation and visible M7-022 boundary diagnostic plus two custom/unit regressions; API/actions and original developer body unchanged. Checked: corrected build, focused2/2, affected128/128 and independent128/128 PASS0skip, fidelity/queue/protected checks. Not passed: the single full gate on efee57f5135a94cf9bc94fca169afd717ab10753 ended exit1, **6710 passed / 1 failed / 0 skipped / 6711 total**,9m10s. UTC2026-10-29T13:57:51.8960917Z..14:08:10.3276944Z. The old passing fingerprint in the wrapper metadata is not a pass for this commit.
-
-Failure: NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates. The retained full inner exception is MISSING M11-066 unrelated pose roots at Pose3d.WithRespectTo → FlipBlockAction.CheckIfDoneTick line142 → DriveAndFlipBlockAction → legacy KnockOverCubesBehavior. This identifies the observed fault, not its cause. The current change has not been blamed or cleared. Full trace/journal/fault snapshot is committed as research/20261029-docking-test-simple-1-knockover-failure.txt; gate-result.json records hashes and counters, original logs remain ignored. Actual postgate native arrays/counts0.
-
-Next step: trace the saved pose-root failure and current M11-066/FlipBlockAction/test setup, classify the defect and review any correction before another gate. No retry, new behavior, hardware run, source/body/status/policy change or additional extraction was started after the stop instruction. AcknowledgeFace remains not started.
+No worker switches/backend inference. Source citation correction1; reviewer-required plan round1 (new class omitted from combined filter); compiler correction1 (missing Vision import, first build1error/2260warnings retained and no tests launched); behavioral/self-test corrections0. Builder new MISSING/source questions0 beyond recorded frontiers. Research/tooling attempts are separately preserved. No official record/inventory/approval/PROJECT_STATE/REVIEW changes locally. Next ACKNOWLEDGE-OBJECT-1, using its checked read and operator decisions.
