@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-28. **0 finished · 15 in progress · 163 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube`, `RollBlockOnSide`, `RollBlockOnSideLowScore`, `SparksRollBlock`, `PopAWheelie`, `SparksPopAWheelie` and `BuildPyramidBase` are in progress; other configurations remain not started.
+Whole-behavior scoreboard, 2026-10-28. **0 finished · 16 in progress · 162 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `DriveOffCharger`, `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube`, `RollBlockOnSide`, `RollBlockOnSideLowScore`, `SparksRollBlock`, `PopAWheelie`, `SparksPopAWheelie`, `BuildPyramidBase` and `BuildPyramid` are in progress; other configurations remain not started.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -52,7 +52,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `PopAWheelie` | `PopAWheelie` | in progress | POP-A-WHEELIE-1 Claude PASS/MERGED main584a29b5: native cache8/get-in/DriveToPop/leaf/verification/retry/needs/cliff/typed completion; independent254/254/full6661/6661 PASS0skip. Reviewer1/sourcequestion1 resolved. Whole M13-015 retains actualmanualAPI differences; unowned complement proposal, no acceptance claim | freeplay: PlayAlone. 1 refs; R066+ in map |
 | `SparksPopAWheelie` | `PopAWheelie` | in progress | SPARKS-POP-A-WHEELIE-1 READY: exact152/owner24/needs34/unlock13/obj22/soft206/max60, realowner+Pop child; independent140/140/full6666/6666PASS0skip. Reviewer1/sourceQ0. M13-015/manual and broader059 remainpartial; postgate M13-041allocatedordinaryscope, proposewidenexisting, no duplicate/new acceptance | spark: SparksPopAWheelie. 1 refs; R220+ in map |
 | `BuildPyramidBase` | `BuildPyramidBase` | in progress | M12 placement producer M12-028; full chain UNKNOWN | No explicit config reference; native/app use UNKNOWN |
-| `BuildPyramid` | `BuildPyramid` | not started | M12 placement/config callbacks M12-028/049; full chain UNKNOWN | No explicit config reference; native/app use UNKNOWN |
+| `BuildPyramid` | `BuildPyramid` | in progress | M12 placement/config callbacks M12-028/049; full chain UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `DockingTestSimple` | `DockingTestSimple` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `AcknowledgeFace` | `AcknowledgeFace` | not started | UNKNOWN | reaction: FacePositionUpdated. 1 refs; R252+ in map |
 | `AcknowledgeObject` | `AcknowledgeObject` | not started | UNKNOWN | reaction: ObjectPositionUpdated. 1 refs; R267+ in map |
