@@ -1,0 +1,23 @@
+{
+  "manifest_records": 716,
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-pop-a-wheelie-1-read.md",
+      "raw_sha256": "bbb5628d6b7f7367cabb3be3eab36d0ad6c1b806880e4f36b49f7a01cd0e65af",
+      "published_lf_sha256": "46e7644f194ba9d1cbd4cda0eea73358183cde2beec9f1f8bbbce761229a5b2c",
+      "bytes": 43408
+    },
+    {
+      "path": "re-analysis/research/20261028-pop-a-wheelie-1-read-codex-check.md",
+      "raw_sha256": "a7c9d7c099555db4f9ea414672e1c7c24709c4235c36aeec708eb832c81aa43a",
+      "published_lf_sha256": "b4a29feeeb9b3172211e76bc2e97b4b605609382d256acbd8972bf8764bddf8d",
+      "bytes": 7995
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/POP-A-WHEELIE-1-source-release.md",
+      "raw_sha256": "d13c9ffb47229ae72493ec33ce168dfb2e82475c498ee8c21416035af4633fb7",
+      "published_lf_sha256": "0d196258401ea25694bfbb3a7060f2f1a2ea021e561e9810fc2dedbf31dcf1f4",
+      "bytes": 6062
+    }
+  ]
+}

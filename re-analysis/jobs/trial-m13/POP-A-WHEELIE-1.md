@@ -1,4 +1,4 @@
-# POP-A-WHEELIE-1 — READING
+# POP-A-WHEELIE-1 — BUILDING
 
 Next exact scoreboard behavior is PopAWheelie (freeplay PlayAlone). One combined own-path job. Read PROJECT_STATE first, AGENTS, AUTONOMY, PLAN-BEHAVIOURS, BEHAVIOURS, research README and this scope. Import current main and check REVIEW for FIX before worker starts. No inference from SparksPopAWheelie; that separate configured behavior is next.
 
@@ -30,3 +30,7 @@ All fresh fork_none startups returned the names above, no runtime telemetry; no 
 ## Preparation result
 
 Builder single actual local-cache solution restore P1b exit0/all5projects, elevated actual shutdown0. Corrected elevated native CIM inventory explicitly[]/total0/own0, independently read by root. P1 failed before launch because scratch log directory was absent (shell0/nullLASTEXITCODE was not a restore result); P3 query included its own pwsh command text and was corrected without stopping a process. Both prep self-corrections retained, no repeated actual restore, no code/source/reviewer-fix batch. Builder relinquished .NET and is waiting; only its ledger untracked, no C#/tests/native/build/test/Git mutations. Source packet and independent check still in progress, no implementation release.
+
+## Coherent source approval and release
+
+Final BBB5628D packet and independent A7C9D7C0 READ PASS accepted; all13 current title/status/evidence strings exactly match716 records. One source-only correction batch retained separately, no builder corrective round. Full concrete source-release.md and source-freeze.json fix the M1-034 public-payload boundary before code; exact local/scalar/proxy preserved, no PlaceRel policy extension. Build bounded ordinary own path and whole narrow015 candidate; broader unowned-scope proposal separate. C prep completed/restored/shutdown0/explicit0hosts, root will FF preserved worker to this release then grant sole build/test window. No official metadata changed.
