@@ -13,7 +13,7 @@
   },
   "knownRowsMustNotBeReExtracted": true,
   "independentReadingLimit": "Only actual UNKNOWN row or concrete contradiction",
-  "remainingUnknown": "V3 resolved as track suppression; existing shared helper/report/timeout frontiers remain",
+  "remainingUnknown": "Ghost marker/visibility helper input frontier; generic JSON lexical/nonfinite/huge conversion edges and inherited report/timeout boundaries remain explicit. Ordinary finite angle operations now resolved.",
   "newRecordProposal": "One AcknowledgeObject lifecycle, not added by Codex",
   "officialEditsAuthorized": false,
   "unknownSupplements": [
@@ -26,7 +26,17 @@
       "sha256": "A8E79E4DF6A964B68C3451B81A43F4667E8335D61A1805570A45DCDE3AE75E40"
     }
   ],
-  "sourceSupplements": 1,
+  "sourceSupplements": 2,
   "sourceReportQuotationCorrections": 1,
-  "nativeBehaviorCorrections": 0
+  "nativeBehaviorCorrections": 0,
+  "angleUnknownSupplement": [
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-angle-unknown.md",
+      "sha256": "728BF9BC0DDBABFFF92B0929F9F5229DE6F96843CEAE4F2B0980988E1F46FE42"
+    },
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-angle-codex-check.md",
+      "sha256": "7646546F1ADFB505905A52AD08C234E7DC55A987996915C452B34448A8177817"
+    }
+  ]
 }
