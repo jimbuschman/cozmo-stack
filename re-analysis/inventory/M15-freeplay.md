@@ -1114,3 +1114,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorExpressNeeds ctor 0x005EE144 and LoadConfig, gates (0x005EE860, IsRunnableInternal 0x005EE570), Init 0x005EE690, callback 0x005EE89E, Resume 0x005EE7D4, Stop 0x005EE7D8 | M15-082 (new) |
+
+## WAIT-1, the Wait lifecycle (operator approved 2026-10-29; research/20261029-wait-1-read.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorWait vtable stubs 0x0059EC00..0x0059EC3C (vtable 0x010242A8) and both shipped configs | M15-083 (new) |

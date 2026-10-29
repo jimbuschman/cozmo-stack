@@ -12278,6 +12278,27 @@
       "test": "BehaviorStateLightsNativeTests"
     },
     {
+      "id": "M7-031",
+      "subsystem": "M7-behaviour",
+      "title": "BehaviorReactToUnexpectedMovement lifecycle: ctor and tag-0x3C subscription, AlwaysHandle movementSide, runnable gates (not off treads or with robot+0x34A, runnable while carrying), Init (emotion event, severe-need trigger choice, BODY lock on BACK, lift-safe 60 s animation), objective 0x25 on any result, empty Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/OffTreadsBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x4E 0x0059D332..0x0059D34C; ctor 0x00609A58..0x00609A9A (+0x11C = 0, SubscribeToTags {0x3C}); vtable 0x0102CAF8 (+0x28 0x00609C1A returns 1, Stop 0x00609C1E bx lr, AlwaysHandle 0x00609BF8).",
+        "AlwaysHandle 0x00609BF8..0x00609C0A: +0x11C = Get_UnexpectedMovement byte +5 (movementSide); CLAD Pack 0x0071251E, tag 0x3C at Set_ 0x007241EA.",
+        "InitInternal 0x00609AC0..0x00609B92: TriggerEmotionEvent ReactToUnexpectedMovement; need = [[robot+0x264]+0x30]+0x14; trigger 0x1AC, 0x1AE if need 0, 0x1AD if need 1 (0x00609B30..0x00609B44); tracksToLock 4 iff side 2 (0x00609B1E..0x00609B22); TriggerLiftSafeAnimationAction(1, true, lock, 60.0f, false) 0x00609B4E; StartActing void().",
+        "Completion lambda 0x00609C5A..0x00609C60: BehaviorObjectiveAchieved(0x25, true), result ignored (wrapper 0x005BF790).",
+        "re-analysis/research/20261029-react-unexpected-movement-1-read.md"
+      ],
+      "effect": "how Cozmo reacts when something moves him unexpectedly: which reaction clip (the severe Repair/Energy variants), whether BODY is locked, that it is lift-safe with a 60 s timeout, when it may run, and the ReactedToUnexpectedMovement objective the C# API delivers",
+      "provenance": "REACT-UNEXPECTED-MOVEMENT-1 (Claude-run: cozmo-extractor read, checked by Claude 2026-10-29); record added with operator approval 2026-10-29.",
+      "unresolved": "Being built in REACT-UNEXPECTED-MOVEMENT-1; not settled. Open: the BehaviorObjectiveAchieved body past 0x005BE2E0 (M7-019); the name of robot+0x34A; MoodManager time vs BaseStationTimer (M7-020); interruptRunning semantics (M8-020); the stack's extra UnexpectedMovementReport API fields (average speeds, count, start timestamp) have no engine counterpart and await a manager decision. Owned elsewhere: the detector and broadcast (M10-002, M10-006, M10-007), the strategy (M10-003), the manager walk and resume counter (M10-004, M10-008, M8-001), the lift-safe action (M8-005, M8-007, M8-020).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ReactToUnexpectedMovementNativeTests"
+    },
+    {
       "id": "M8-018",
       "subsystem": "M8-framework",
       "title": "SDK ResetRobot recipient dispatch",
@@ -14292,6 +14313,25 @@
       "hardware_required": false,
       "live_path": true,
       "test": "ExpressNeedsNativeTests; M15SevereNeedsTests; FreeplayTests.ExpressNeedsAndTheGetInFollowTheBrackets"
+    },
+    {
+      "id": "M15-083",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorWait lifecycle: the seven vtable stubs (never-ending Update, +0x20/+0x28 runnable, base +0x24 not runnable with robot+0x34A, Init starting nothing, IsRunnableInternal true, empty Stop) and both shipped Wait configs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x39 0x0059D086..0x0059D0AC (plain IBehavior ctor, BehaviorWait vtable); behaviors/freeplay/needs/needs_Wait.json; behaviors/wait.json (executableBehaviorType Wait).",
+        "Vtable 0x010242A8 (slots from 0x010242B0): Update 0x0059EC00 movs r0,#1; +0x20 0x0059EC0E movs r0,#1; +0x24 base 0x0059EC12 movs r0,#0; +0x28 0x0059EC16 movs r0,#1; Init 0x0059EC34 movs r0,#0; IsRunnableInternal 0x0059EC38 movs r0,#1; Stop 0x0059EC3C bx lr; Resume base 0x005BDA94.",
+        "re-analysis/research/20261029-wait-1-read.md"
+      ],
+      "effect": "that Wait holds the behaviour slot doing nothing and never ends by itself, and when it may run (off treads and while carrying, not with robot+0x34A), which decides what the severe-needs activities and the Selection chooser fall back to",
+      "provenance": "WAIT-1 (Claude-run: cozmo-extractor read, checked by Claude 2026-10-29); record added with operator approval 2026-10-29.",
+      "unresolved": "Built in WAIT-1; not settled. Open: the ActivityFeeding (key, behaviour) keys 4 and 7 that receive Wait (0x005AA83A..0x005AA88C, M15-061); FindBehaviorByExecutableType/VerifyExecutableBehaviors bodies (no G2E 0x93 channel in the stack); the name of robot+0x34A. Owned elsewhere: base gates and Resume (M8-001), the choosers (M8-013).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WaitNativeTests"
     }
   ]
 }

@@ -533,11 +533,22 @@ public sealed class PlayAnimOnNeedsChangeBehavior : SteppedBehavior
 }
 
 /// <summary><c>BehaviorWait</c> (Needs_Wait): does nothing for as long as it is kept; the last resort of the needs activities' priority lists.</summary>
+/// <summary>
+/// <c>BehaviorWait</c> (class 0x39; WAIT-1, re-analysis/research/20261029-wait-1-read.md). No ctor or LoadConfig of its
+/// own; its vtable 0x010242A8 holds seven stubs: UpdateInternal 0x0059EC00 returns Running (never ends by itself),
+/// +0x20 0x0059EC0E and +0x28 0x0059EC16 return 1 (runnable off treads and while carrying), +0x24 is the base
+/// 0x0059EC12 returning 0 (not runnable with robot+0x34A), InitInternal 0x0059EC34 returns 0 and starts nothing,
+/// IsRunnableInternal 0x0059EC38 returns 1, StopInternal 0x0059EC3C does nothing. Resume is the base one.
+/// </summary>
+// fidelity: M15-083
 public sealed class WaitBehavior : SteppedBehavior
 {
     public WaitBehavior(string id = "Needs_Wait") : base(id, "Wait") { }
-    protected override bool KeepsRunningWithoutAction => true;
-    protected override void OnStart() => Log("waiting");
+    protected override bool KeepsRunningWithoutAction => true; // U1 0x0059EC00
+    protected override bool RunnableGate20(BehaviorContext context) => true;  // R1 0x0059EC0E
+    protected override bool RunnableGate24(BehaviorContext context) => false; // R2 base 0x0059EC12
+    protected override bool RunnableGate28(BehaviorContext context) => true;  // R3 0x0059EC16
+    protected override void OnStart() { } // I1 0x0059EC34: nothing
 }
 
 /// <summary>

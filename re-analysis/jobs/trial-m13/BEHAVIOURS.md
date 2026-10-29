@@ -215,8 +215,8 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `SparksThinkAboutBeacons` | `ThinkAboutBeacons` | not started | UNKNOWN | spark: GatherCubes. 1 refs; R199+ in map |
 | `SparksTrackLaser` | `TrackLaser` | not started | UNKNOWN | spark: SparksTrackLaser. 1 refs; R237+ in map |
 | `Hiking_VisitInterestingEdge` | `VisitInterestingEdge` | not started | UNKNOWN | freeplay: Hiking. 1 refs; R027+ in map |
-| `Needs_Wait` | `Wait` | not started | UNKNOWN | freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowRepair. 2 refs; R038+ in map |
-| `Wait` | `Wait` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
+| `Needs_Wait` | `Wait` | in progress | WAIT-1 MERGED (Claude-run): native gates and stubs; no chooser-reach test, M15-083 open | freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowRepair. 2 refs; R038+ in map |
+| `Wait` | `Wait` | in progress | WAIT-1 MERGED (Claude-run): native gates and stubs; no chooser-reach test, M15-083 open | No explicit config reference; native/app use UNKNOWN |
 
 ## Enclosing activity contexts — not additional behavior rows
 

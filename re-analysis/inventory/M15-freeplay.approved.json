@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "a1e938a806d6918f44d47e5f9ec9aca4dc08ae20c530cf3b43dc88ff69efa866",
+  "inventory_sha256": "7de4cc40d1d2e6a9c4a7b7832669aeb7c601a716722195fbbe4da3bb8cb994b9",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -996,6 +996,18 @@
         "InitInternal 0x005EE690..0x005EE788: CompoundActionSequential; TurnTowardsFaceAction(robot, 0, Radians 0x40490FDB, false) re-vtabled as TurnTowardsLastFacePoseAction, AddAction ignoreFailure 1 (0x005EE6DA); per trigger TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false), AddAction ignoreFailure 0 (0x005EE736); StartActing. Callback 0x005EE89E..0x005EE8B6: category byte 0 -> +0x138 = now.",
         "ResumeInternal 0x005EE7D4 returns 1; StopInternal 0x005EE7D8..0x005EE7E8 (+0x134 -> ClearSevereNeedExpression).",
         "re-analysis/research/20261029-express-needs-1-read.md; re-analysis/research/20261029-express-needs-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-083": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorWait lifecycle: the seven vtable stubs (never-ending Update, +0x20/+0x28 runnable, base +0x24 not runnable with robot+0x34A, Init starting nothing, IsRunnableInternal true, empty Stop) and both shipped Wait configs",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x39 0x0059D086..0x0059D0AC (plain IBehavior ctor, BehaviorWait vtable); behaviors/freeplay/needs/needs_Wait.json; behaviors/wait.json (executableBehaviorType Wait).",
+        "Vtable 0x010242A8 (slots from 0x010242B0): Update 0x0059EC00 movs r0,#1; +0x20 0x0059EC0E movs r0,#1; +0x24 base 0x0059EC12 movs r0,#0; +0x28 0x0059EC16 movs r0,#1; Init 0x0059EC34 movs r0,#0; IsRunnableInternal 0x0059EC38 movs r0,#1; Stop 0x0059EC3C bx lr; Resume base 0x005BDA94.",
+        "re-analysis/research/20261029-wait-1-read.md"
       ],
       "live_path": true,
       "hardware_required": false

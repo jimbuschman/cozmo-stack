@@ -2,7 +2,7 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "f6ee72e001435e3fe6f5bd9cae7013f1bdb152ee64e794c9b02543c307202c7d",
+  "inventory_sha256": "fed5a994ed7483dc213d66b72e4f2a418fbe1597a690c809ae9715bf75606c30",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -383,6 +383,20 @@
         "Lower calls: StopAndPlay 0x006396AC..0x00639722; PlayLightAnim overload 0x006389FC forwards layer 1 (the trailing integer 0 is not the layer).",
         "Switch cleanup MS4 0x005A2114..0x005A226E inside SetRunningAndResumeInfo after Init.",
         "re-analysis/research/20261028-hiking-roll-cube-1-state-lights-read.md, -state-lights-boundary.md, -lower-light-bindings.md with their independent checks; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-031": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorReactToUnexpectedMovement lifecycle: ctor and tag-0x3C subscription, AlwaysHandle movementSide, runnable gates (not off treads or with robot+0x34A, runnable while carrying), Init (emotion event, severe-need trigger choice, BODY lock on BACK, lift-safe 60 s animation), objective 0x25 on any result, empty Stop",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x4E 0x0059D332..0x0059D34C; ctor 0x00609A58..0x00609A9A (+0x11C = 0, SubscribeToTags {0x3C}); vtable 0x0102CAF8 (+0x28 0x00609C1A returns 1, Stop 0x00609C1E bx lr, AlwaysHandle 0x00609BF8).",
+        "AlwaysHandle 0x00609BF8..0x00609C0A: +0x11C = Get_UnexpectedMovement byte +5 (movementSide); CLAD Pack 0x0071251E, tag 0x3C at Set_ 0x007241EA.",
+        "InitInternal 0x00609AC0..0x00609B92: TriggerEmotionEvent ReactToUnexpectedMovement; need = [[robot+0x264]+0x30]+0x14; trigger 0x1AC, 0x1AE if need 0, 0x1AD if need 1 (0x00609B30..0x00609B44); tracksToLock 4 iff side 2 (0x00609B1E..0x00609B22); TriggerLiftSafeAnimationAction(1, true, lock, 60.0f, false) 0x00609B4E; StartActing void().",
+        "Completion lambda 0x00609C5A..0x00609C60: BehaviorObjectiveAchieved(0x25, true), result ignored (wrapper 0x005BF790).",
+        "re-analysis/research/20261029-react-unexpected-movement-1-read.md"
       ],
       "live_path": true,
       "hardware_required": false
