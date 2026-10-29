@@ -217,6 +217,11 @@ public class TurnTowardsFaceAction : IDisposable
     /// its vision mode and lift preset. This stack used 5, which was a guess.
     /// </summary>
     public const int FramesToWaitForFace = 10;
+    /// <summary>
+    /// +0x188, the images CheckIfDone waits for (read at 0x0054C69A into WaitForImagesAction): the ctor's <see cref="FramesToWaitForFace"/>
+    /// unless a caller overwrites it; BehaviorAcknowledgeFace writes 3 (0x00602A94..0x00602A98, ACKNOWLEDGE-FACE-1 B9).
+    /// </summary>
+    public int ImagesToWait { get; set; } = FramesToWaitForFace;
     /// <summary>NeedsActionId SeeFace, registered when the fine tune is created (0x0054C2E0..0x0054C2E6).</summary>
     public const uint NeedsActionSeeFace = 0x2E;
     /// <summary>NeedsActionId SayName, registered when state 3 completes (0x0054C616..0x0054C61E).</summary>
@@ -406,9 +411,9 @@ public class TurnTowardsFaceAction : IDisposable
         if (r5 != FaceActionResult.Success) return r5;
         if (VerifiedFaceId is null)                                                      // 0x0054C640..0x0054C6B8
         {
-            Note($"TurnTowardsFaceAction.CheckIfDone.NoFaceObservedYet: Will wait no more than {FramesToWaitForFace} frames");
-            lock (_gate) _state = 1;                                                     // WaitForImagesAction(robot, 10, VisionMode 2, 0)
-            int target = _v.FramesProcessed + FramesToWaitForFace;
+            Note($"TurnTowardsFaceAction.CheckIfDone.NoFaceObservedYet: Will wait no more than {ImagesToWait} frames");
+            lock (_gate) _state = 1;                                                     // WaitForImagesAction(robot, +0x188 (ctor 10), VisionMode 2, 0)
+            int target = _v.FramesProcessed + ImagesToWait;                              // +0x188 (B9)
             var deadline = UtcNow().AddSeconds(2);                                // local guard, see the summary
             while (VerifiedFaceId is null && _v.FramesProcessed < target && UtcNow() < deadline && !cancel.IsCancellationRequested)
                 await Task.Delay(20, CancellationToken.None);

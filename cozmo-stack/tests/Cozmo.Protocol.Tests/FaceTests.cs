@@ -456,33 +456,9 @@ public class FaceTests
         Assert.InRange(Math.Abs(rig.Angle - Math.Atan2(-150, 400)), 0, 0.05);
     }
 
-    [Fact]
-    public void AcknowledgeFaceGreetsANewFaceAndNotAgainWithinAMinute()
-    {
-        using var signals = SignalTestContext.Install();
-        using var rig = FaceRig((7, new Vec3(350, 150, 250), "Jim"));
-        rig.Frame();
-        var ctx = Ctx(rig);
-        var b = new AcknowledgeFaceBehavior(rig.Vision);
-        b.Clock = () => 1000;
-        Assert.True(Runnable(b, ctx));
-        RunToEnd(rig, b, ctx);
-        Assert.Equal(7, b.TargetFaceId);
-        Assert.True(b.PlayedGreeting);
-        Assert.Contains(b.Trace, l => l.Contains("shouldPlayGreeting:1"));
-        Assert.Contains(b.Trace, l => l.Contains("AcknowledgeFaceNamed"));
-        Assert.Contains(b.Trace, l => l.Contains("SayTextAction(\"Jim\")"));
-        Assert.Contains(b.Trace, l => l.Contains("ReactedAcknowledgedFace"));
-        Assert.False(Runnable(b, ctx));                                               // acknowledged already
-        Assert.True(rig.Vision.Faces.HasTurnedTowardsFace(7));
-        // the face moves (the manager's FacePositionUpdated trigger re-arms the reaction) within 60 s: turn, no greeting
-        b.ReArm(7);
-        b.Clock = () => 31000;
-        RunToEnd(rig, b, ctx);
-        Assert.False(b.PlayedGreeting);
-        Assert.Contains(b.Trace, l => l.Contains("shouldPlayGreeting:0"));
-        Assert.DoesNotContain(b.Trace, l => l.Contains("AcknowledgeFaceNamed"));
-    }
+    // AcknowledgeFaceGreetsANewFaceAndNotAgainWithinAMinute was removed (ACKNOWLEDGE-FACE-1): it expected a greeting for a new face under the
+    // default manager time and a per-face 60 s window, which B4/B5 contradict (BehaviorManager+0x54 is -1.0f with no known writer, so the
+    // default never greets; the window is measured from +0x54, not per face). AcknowledgeFaceNativeTests covers B1..S1.
 
     [Fact]
     public void InteractWithFacesVerifiesDrivesTracksAndFiresTheEmotionEvent()

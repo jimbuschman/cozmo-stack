@@ -57,6 +57,21 @@ public sealed partial class BehaviorManager : IDisposable
     private readonly RepetitionPenalty _penalty;
     private BehaviorContext _context;
     internal CozmoRobot ContextRobot=>_context.Robot;
+    /// <summary>The ctor value of BehaviorManager+0x54, -1.0f (0xBF800000; 0x005A08E4..0x005A08F0).</summary>
+    internal static readonly float GreetingTimeField54Initial=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+    /// <summary>
+    /// BehaviorManager+0x54, the time BehaviorAcknowledgeFace's greeting gate reads at [[robot+0x44]+0x54] (ACKNOWLEDGE-FACE-1 B4).
+    /// MISSING (B5 UNKNOWN): no writer other than the ctor was found, so no production code writes it and it stays -1.0f, which
+    /// never passes B4's t &gt;= 0 test. The setter exists only for tests that supply the input.
+    /// </summary>
+    internal float GreetingTimeField54
+    {
+        get{ReportField54Missing();return _greetingTimeField54;}
+        set=>_greetingTimeField54=value;
+    }
+    private float _greetingTimeField54=GreetingTimeField54Initial;
+    private static void ReportField54Missing()=>SteppedBehavior.ReportMissing(
+        "ACKNOWLEDGE-FACE-1 B5: writers of BehaviorManager+0x54 UNKNOWN (only the ctor's -1.0f at 0x005A08E4..0x005A08F0 is known); the AcknowledgeFace greeting gate reads the ctor value");
     // fidelity: M8-001, M8-012 — manager forwarding 005A42C4..005A4304.
     internal void RequestCurrentBehaviorEndOnNextActionComplete()
     {
