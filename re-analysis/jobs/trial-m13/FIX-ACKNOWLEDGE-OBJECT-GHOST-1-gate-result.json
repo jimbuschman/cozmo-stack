@@ -1,0 +1,26 @@
+{
+  "commit": "b8b35a779f69148e53bf7a428d394bfdbe205451",
+  "startedUtc": "2026-10-29T21:01:52.0925634Z",
+  "endedUtc": "2026-10-29T21:12:00.6715327Z",
+  "state": "COMPLETED",
+  "exitCode": 0,
+  "lastRecordedPassingFingerprint": "a9824ae89ceb59985844a738a401e04a093e84ce",
+  "job": "FIX-ACKNOWLEDGE-OBJECT-GHOST-1",
+  "passed": 6754,
+  "failed": 0,
+  "skipped": 0,
+  "duration": "8m52s",
+  "workerCommit": "89e56c13328545a07e76155146c2a676170a7126",
+  "integratedCommit": "b8b35a779f69148e53bf7a428d394bfdbe205451",
+  "fullGateRuns": 1,
+  "affectedPassed": 239,
+  "independentReplayPassed": 239,
+  "reviewerCorrectionBatches": 1,
+  "compilerCorrections": 0,
+  "harnessCorrections": 1,
+  "newExtraction": 0,
+  "retainedArtifacts": {
+    ".scratch/fix-ack-object-ghost-full-1.log": "2f6eeaf40308722f15a5bd52412f551ce59ef91a23be5c8c2d5ff2715fccef6c",
+    ".scratch/fix-ack-object-ghost-full-1-console.log": "d1100b3d51fb4bb6d925cdce4cb83529d15dd328cf33d83622c18f7cfd5079ec"
+  }
+}
