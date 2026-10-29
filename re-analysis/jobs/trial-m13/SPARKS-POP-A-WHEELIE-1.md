@@ -17,3 +17,13 @@ Builder prep-only until release: scratch/artifact directories FIRST, one actual 
 Ordinary Pop READY pushed/remotelyverifiedad24c6c7f485190002c19a5d0d19858d5789aa71, full6661/6661PASS0skip on tested716 baseline. Current root c55db357 imports metadata-only main0fe4d254 verbatim: widened M15-077 EQUIVALENT_IMPLEMENTATION (importedatan2f body only), M12-052 Ground getter IMPLEMENTATION_GAP,717records. Code tree bdfbc706dc624a97fc1ae392f951571dbaab645b unchanged. M13-015 remains IMPLEMENTATION_GAP actuallegacy/manualAPI, no settlement claim. Current REVIEW has no new FIX. Frozen prior packets/handoffs and all worktrees/artifacts preserved.
 
 Planned fresh /root/sparks_pop_read explicitlygpt-6.1-sol/medium; /root/sparks_pop_build and /root/sparks_pop_review DEFAULT model/effort, overrides omitted; fork_none. Actual startup requests logged after tool returns; no backend telemetry inference. Builder directory codex-sparks-pop-a-wheelie-1, branch codex/sparks-pop-a-wheelie-1, preparation-only until coherent source/check/rootrelease. Scratch directories first; one actual localcache solutionrestore, all .NET require_escalated, shutdown/explicit[]native0 before return. Root will prepare ignored nativeassets. No actual extraction fact is implied by this plan.
+
+## Actual worker startup / preparation
+
+| Actor | Role | Model requested | Effort requested |
+| --- | --- | --- | --- |
+| /root/sparks_pop_read | Reader/extractor | explicit gpt-6.1-sol | medium |
+| /root/sparks_pop_build | Isolated builder | DEFAULT; override omitted | DEFAULT; override omitted |
+| /root/sparks_pop_review | Independent source/code reviewer | DEFAULT; override omitted | DEFAULT; override omitted |
+
+All fresh fork_none starts returned names only; actual runtime telemetry unavailable, no mid-job switch. Builder clean startingHEADb0e5c8e1. Root created ignoredscratch FIRST, OBBjunction to original, directSO/marker copied and expected hashes verified (02263C07F6BB60F4D7F351A3667DCA84FD3E6C0FC6F838E18B5DE7CF4E2989E1 /1B7166AC37B166975F0E5313A3D4486EBAE73010E42FFB89BBD0D4536A29C81D). Builder has sole preparation restore/shutdown release, no implementation release. Reader/reviewer no.NET. Current717-record official files match main0fe4d254; prior full6661 remains historical716snapshot.
