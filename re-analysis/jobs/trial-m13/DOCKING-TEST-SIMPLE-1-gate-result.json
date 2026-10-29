@@ -1,0 +1,35 @@
+{
+  "job": "DOCKING-TEST-SIMPLE-1",
+  "state": "WIP, NOT READY",
+  "fullGate": {
+    "result": "FAILED",
+    "commit": "efee57f5135a94cf9bc94fca169afd717ab10753",
+    "exitCode": 1,
+    "passed": 6710,
+    "failed": 1,
+    "skipped": 0,
+    "total": 6711,
+    "duration": "9m10s",
+    "startedUtc": "2026-10-29T13:57:51.8960917Z",
+    "endedUtc": "2026-10-29T14:08:10.3276944Z",
+    "logSHA256": "a0fb379376163734c00c00d400dc95cfaa51e11529447bfb57c28c3225f5f38d",
+    "failedTest": "Cozmo.Protocol.Tests.NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates",
+    "observedException": "MISSING: M11-066 caller has not handled unrelated pose roots",
+    "observedPath": "Pose3d.WithRespectTo -> FlipBlockAction.CheckIfDoneTick -> DriveAndFlipBlockAction -> legacy KnockOverCubesBehavior",
+    "rootCause": "NOT INVESTIGATED; no fix or retry",
+    "failureArtifact": "re-analysis/research/20261029-docking-test-simple-1-knockover-failure.txt",
+    "failureArtifactSHA256": "dd917cdcf23df0a27f848c4d8593d24d2ff5b5d5e895912290c353782849c5e0",
+    "previousPassingFingerprintIsNotAPassForThisCommit": true,
+    "originalFailureArtifactRawSHA256": "11dcde39168b5d1cdbea1512129148bcd1826133d8459fbf13dcb2da35007875",
+    "failureArtifactPublication": "UTF8 LF; original raw artifact retained under ignored .scratch/fix-knockover-race-1/artifacts"
+  },
+  "checked": {
+    "builderFocused": "2/2 PASS",
+    "builderAffected": "128/128 PASS",
+    "independentAffected": "128/128 PASS",
+    "reviewerRequiredPlanRounds": 1,
+    "sourceCitationCorrections": 1,
+    "compilerCorrections": 1
+  },
+  "nextStep": "Investigate saved unrelated-pose-root failure against M11-066/FlipBlockAction before any correction or gate retry; no next behavior started per operator stop instruction."
+}

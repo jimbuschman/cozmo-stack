@@ -57,7 +57,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `SparksPopAWheelie` | `PopAWheelie` | in progress | SPARKS-POP-A-WHEELIE-1 READY: exact152/owner24/needs34/unlock13/obj22/soft206/max60, realowner+Pop child; independent140/140/full6666/6666PASS0skip. Reviewer1/sourceQ0. M13-015/manual and broader059 remainpartial; postgate M13-041allocatedordinaryscope, proposewidenexisting, no duplicate/new acceptance | spark: SparksPopAWheelie. 1 refs; R220+ in map |
 | `BuildPyramidBase` | `BuildPyramidBase` | in progress | M12 placement producer M12-028; full chain UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `BuildPyramid` | `BuildPyramid` | in progress | Native derived built; cache/intention, nonzero PlaceRel drive, shared math/activity gaps remain | Native ActivityBuildPyramid caller checked; HANDOFF-BUILD-PYRAMID-1.md READY/full6697 |
-| `DockingTestSimple` | `DockingTestSimple` | in progress | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
+| `DockingTestSimple` | `DockingTestSimple` | in progress | WIP, NOT READY: custom MountCharger boundary diagnostic/docs built, focused2/independent128 PASS; full6710P1F saved M11-066 pose-root fault in legacy KnockOver test. Original native body/non-live decision/frontiers unchanged; next classify failure, no new behavior started | No explicit config reference; native/app use UNKNOWN |
 | `AcknowledgeFace` | `AcknowledgeFace` | not started | UNKNOWN | reaction: FacePositionUpdated. 1 refs; R252+ in map |
 | `AcknowledgeObject` | `AcknowledgeObject` | not started | UNKNOWN | reaction: ObjectPositionUpdated. 1 refs; R267+ in map |
 | `Bouncer` | `Bouncer` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R078+ in map |

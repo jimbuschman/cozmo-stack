@@ -1,4 +1,4 @@
-# DOCKING-TEST-SIMPLE-1 — verification in progress
+# DOCKING-TEST-SIMPLE-1 — WIP, NOT READY
 
 The historical standalone driver exposes a custom MountCharger adapter under the DockingTestSimple label. Its XML incorrectly describes the native developer test, and starting it lacks a visible boundary diagnostic. This job corrects that description and diagnostic; it does not implement the original native state machine.
 
@@ -29,4 +29,12 @@ No worker switches or backend inference. Source-report citation corrections1; re
 
 Failed first build exit1/2260warnings/one CS0103 retained; no tests launched. One-line import independently checked before corrected build2 exit0/570warnings/zeroerrors. FIRST focused2/2 and FIRST four-class combined128/128 PASS0skip; independent ONE exactcombined128/128 PASS0skip, all full names/outcomes/multiplicities match directly. Actual class counts boundary2/Navigation47/ActionDiagnostic10/Freeplay69. Exact4 raw/staged-equivalent/UTF8LF/noBOM files and133compiled artifacts stable pre/post; only final ledger outcome append differed from pre-test freeze. Actual shutdown0/native+own arrays/counts0 before integration.
 
-Workerda30716711810d0742c83e3a73ef9874fde9a418 integrated1322c412; entire code tree6c3c03dbfea8770035ba13d9adb04be55f55ebb9 matches. Code freeze260B0E653C6790959C83B8BCE9017789EAAFE834176069FD5DB9769E20B91D3A; final independent611F1737CBDA6B45FF585647502FC34C73D2664A60993327971472627EFBF0A5. Current720records, fidelity/queue/protected checks passed. Root full gate next; no full result claimed yet.
+Workerda30716711810d0742c83e3a73ef9874fde9a418 integrated1322c412; entire code tree6c3c03dbfea8770035ba13d9adb04be55f55ebb9 matches. Code freeze260B0E653C6790959C83B8BCE9017789EAAFE834176069FD5DB9769E20B91D3A; final independent611F1737CBDA6B45FF585647502FC34C73D2664A60993327971472627EFBF0A5. Current720records, fidelity/queue/protected checks passed. Full gate FAILED as recorded below; not ready for Claude.
+
+## Stop handoff — WIP, NOT READY
+
+Operator requested stopping new work because usage is nearly exhausted. Built: legacy adapter documentation and visible M7-022 boundary diagnostic plus two custom/unit regressions; API/actions and original developer body unchanged. Checked: corrected build, focused2/2, affected128/128 and independent128/128 PASS0skip, fidelity/queue/protected checks. Not passed: the single full gate on efee57f5135a94cf9bc94fca169afd717ab10753 ended exit1, **6710 passed / 1 failed / 0 skipped / 6711 total**,9m10s. UTC2026-10-29T13:57:51.8960917Z..14:08:10.3276944Z. The old passing fingerprint in the wrapper metadata is not a pass for this commit.
+
+Failure: NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates. The retained full inner exception is MISSING M11-066 unrelated pose roots at Pose3d.WithRespectTo → FlipBlockAction.CheckIfDoneTick line142 → DriveAndFlipBlockAction → legacy KnockOverCubesBehavior. This identifies the observed fault, not its cause. The current change has not been blamed or cleared. Full trace/journal/fault snapshot is committed as research/20261029-docking-test-simple-1-knockover-failure.txt; gate-result.json records hashes and counters, original logs remain ignored. Actual postgate native arrays/counts0.
+
+Next step: trace the saved pose-root failure and current M11-066/FlipBlockAction/test setup, classify the defect and review any correction before another gate. No retry, new behavior, hardware run, source/body/status/policy change or additional extraction was started after the stop instruction. AcknowledgeFace remains not started.
