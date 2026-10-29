@@ -1,3 +1,7 @@
+## Main moved: priority ghost repair
+
+Imported ecdbd232 at6d98e404: operator-approved existingM15-081 and M7Stopcorrections3aef7206, plus Claude AO FIX REQUIRED/notmerged. Historical READY83b77741/full6746 remain verification facts, not acceptance. Prioritize FIX-ACKNOWLEDGE-OBJECT-GHOST-1 per checked request: skip unavailable ghost look with MISSING, FinishIteration, host-owner gaps end clearly; no invented helper result or official change. Bouncer reader/checker mayfinish; its DEFAULT builder prep restoreall5/shutdown0/native0 completed, implementation held. Same priorAO DEFAULT builder/reviewer resume; no newreader/model switch.
+
 # Autonomous M13 manager trial — 2026-10-26
 
 Operator request: pasted Autonomous Codex Manager Trial instructions. Trial overrides the normal builder queue/lane; at most three justified bounded implementation jobs. No main push/merge, fidelity status changes, approvals, Claude-check edits, or hardware commands. Codex-only reviews remain Claude spot-check pending.
