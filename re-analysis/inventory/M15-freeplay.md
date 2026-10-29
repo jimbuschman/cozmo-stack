@@ -1083,3 +1083,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorRollBlock factory 0x0059CF86, ctor 0x005C8598, class 0x005C867A..0x005C8E3C (TransitionToPerformingAction 0x005C86E8, UpdateInternal 0x005C8A54), cache 0x0056F9B4..0x0056FA18 / 0x005707F0..0x00570902, RollBlockHelper 0x005B98D4..0x005BAC54, DriveToRoll 0x0055C9DC..0x0055CECE, RollObjectAction 0x00556540..0x00556DCE. The attempt limit stays M12-016 | M15-077 (new) |
+
+## ROLL instances, M15-077 widened to all four RollBlock instances (operator approved 2026-10-28; research/20261028-roll-records-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| M15-077 now covers Hiking_RollCube, RollBlockOnSide (99), RollBlockOnSideLowScore (100) and SparksRollBlock (155): adds the shared failure filter 0x00570692..0x005706AC and DetermineAppropriateAction 0x005B9A30. Still IMPLEMENTATION_GAP at this step | M15-077 |

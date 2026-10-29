@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "c55f86969f239ca61a43a35c8c4e24c9d0ab47fa96269d6b90700840943e4cb3",
+  "inventory_sha256": "a2b52c090ba7c3478bba10b7889d277671a90cdd38799a9c7a5111e8866f4d5a",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -674,7 +674,7 @@
       "hardware_required": false
     },
     "M12-051": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PlaceBlockHelper lifecycle: factory and ctor, Init RNG turn, turn-to-Ground delegation, placed callback status, Update and inherited Stop",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -682,6 +682,18 @@
         "Init 0x005B8CB0..0x005B8D50: double magnitude PI/4..PI/2 and an independent sign draw, narrowed once to f32, TurnInPlace(angle,false).",
         "RespondToTurnAction 0x005B8DF4..0x005B8E44 ignores the result and starts sequential PlaceObjectOnGround Add(false,true); Update 0x005B8E60 returns status; RespondToPlacedAction 0x005B8E64..0x005B8E68 ignores the result and stores 2.",
         "PB1-PB4 in re-analysis/research/20261007-q17-checked-additions.md; re-analysis/research/20261028-hiking-roll-cube-1-helper-response-clarification.md, -place-helper-proposal.md; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-052": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlaceObjectOnGroundAction::GetCompletionUnion: the saved carried object as the first ObjectInteraction ID, count 1, flag false",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "GetCompletionUnion 0x00554AE0..0x00554AFA: first ID word = this+0x7C, halfword 0x0001 at +0x14 (count 1, flag false), Set_objectInteractionCompleted 0x00554AF4; the other four ID words are never written.",
+        "Saved carried object: ctor 0x00554638..0x0055469C stores +0x7C (0x0055467C); Init 0x00554794. Setter 0x0075C3F0..0x0075C436 copies the 22-byte payload.",
+        "re-analysis/research/20261028-sparks-roll-block-1-claude-check.md; SPARKS-ROLL-BLOCK-1 handoff proposal"
       ],
       "live_path": true,
       "hardware_required": false

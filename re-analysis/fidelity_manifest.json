@@ -10252,6 +10252,25 @@
       "test": "HikingRollCubeRecoveryTests"
     },
     {
+      "id": "M12-052",
+      "subsystem": "M12-manipulation",
+      "title": "PlaceObjectOnGroundAction::GetCompletionUnion: the saved carried object as the first ObjectInteraction ID, count 1, flag false",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativePlaceGroundRunner.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "GetCompletionUnion 0x00554AE0..0x00554AFA: first ID word = this+0x7C, halfword 0x0001 at +0x14 (count 1, flag false), Set_objectInteractionCompleted 0x00554AF4; the other four ID words are never written.",
+        "Saved carried object: ctor 0x00554638..0x0055469C stores +0x7C (0x0055467C); Init 0x00554794. Setter 0x0075C3F0..0x0075C436 copies the 22-byte payload.",
+        "re-analysis/research/20261028-sparks-roll-block-1-claude-check.md; SPARKS-ROLL-BLOCK-1 handoff proposal"
+      ],
+      "effect": "the ActionCompleted payload the C# API delivers when Cozmo puts a cube on the ground",
+      "provenance": "SPARKS-ROLL-BLOCK-1 (Codex proposal, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28.",
+      "unresolved": "Built (NativePlaceGroundRunner.GetObjectInteractionCompletion) but not settled. The four unwritten ID words are uninitialised stack in the original: under the M1-034 standing rule the stack withholds only the full public payload with a visible MISSING, and keeps the defined fields (saved ID, count 1, false) and the scalar result. The PlaceRel zero-padding policy (M12-050) does not apply. Not this record: Ground composition/Init/CheckIfDone (M15-022), the wire (M12-015).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "SparksRollNativeTests"
+    },
+    {
       "id": "M13-029",
       "subsystem": "M13-navigation",
       "title": "Path/planner abort and destruction",
@@ -14127,20 +14146,22 @@
     {
       "id": "M15-077",
       "subsystem": "M15-freeplay",
-      "title": "BehaviorRollBlock (Hiking_RollCube): cache 7/6 target choice, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset",
+      "title": "BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeRollBlockBehavior.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Factory 0x0059CF86; ctor 0x005C8598 (isBlockRotationImportant default true 0x005C85DC..0x005C85F4); class range 0x005C867A..0x005C8E3C.",
         "TransitionToPerformingAction 0x005C86E8..0x005C8938: target -1 warns and returns; face-turn 0.0f when +0xD9 or +0xD8 set, else 1.5707964f (0x005C8734..0x005C8744, 0x005C8934); CreateRollBlockHelper(...,target,true,params) 0x005C8814; SmartDelegateToHelper 0x005C8850; score 0.8f 0x005C888E; state light {target,25,false} 0x005C88A6..0x005C88CE.",
         "UpdateInternal 0x005C8A54..0x005C8B24: axis change AND ComputeDistanceSQBetween(robot,target) > 14400.0f (0x005C8ABE..0x005C8AD2); StopActing(false,false); pre-dock latch +0x129 -> TransitionToRollSuccess; else refresh and +0x124 == -1 returns 2.",
         "Target cache 0x0056F9B4..0x0056FA18 / 0x005707F0..0x00570902 (intention 7 when rotation is important, else 6); RollBlockHelper 0x005B98D4..0x005BAC54; DriveToRollObjectAction 0x0055C9DC..0x0055CECE with IDriveToInteractWithObject 0x0055B2C8..0x0055E0E6; RollObjectAction 0x00556540..0x00556DCE with shared IDock 0x005514FC/0x005521AC.",
+        "Shared failure filter 0x00570692..0x005706AC: DidFailToUse(id, 3, time 30.0f, pose, distance 60.0f, PI) for both caches; RollBlockHelper::DetermineAppropriateAction 0x005B9A30: carrying -> put down, target absent -> failure, RollObjectAction::CanActionRollObject 0x0055673C (DockingComponent CanPickUpObjectFromGround) false -> UnableToRollDelegate, at pre-action pose -> StartRollingAction, else DriveTo with the roll-to-upright approach angle.",
+        "Shipped configs behaviors/freeplay/rollBlockOnSide.json (ID 99) and rollBlockOnSideLowScore.json (ID 100), with no rotation/streamline keys (ctor default Json(true) 0x005C85DC..0x005C85F4); SparksRollBlock (ID 155, activity 26, needs 40, explicit rotation false -> cache 6). Read packets 20261028-roll-block-on-side-1-read.md, 20261028-roll-block-on-side-low-score-1-read.md and the SPARKS-ROLL-BLOCK-1 packets with their independent checks; re-analysis/research/20261028-roll-block-on-side-1-claude-check.md, re-analysis/research/20261028-sparks-roll-block-1-claude-check.md.",
         "Read packets re-analysis/research/20261028-hiking-roll-cube-1-read.md, -drive-joins.md, -reentry-contract.md with their independent checks; HANDOFF-HIKING-ROLL-CUBE-1.md; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md"
       ],
       "effect": "which cube Cozmo rolls, when it retargets or gives up, the drive/dock/roll it does, and the objective, animation and needs a successful roll produces",
-      "provenance": "HIKING-ROLL-CUBE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (HANDOFF-HIKING-ROLL-CUBE-1.md).",
-      "unresolved": "Built and checked in HIKING-ROLL-CUBE-1 but not settled. Not this record: the three-attempt limit (M12-016), the PlaceBlockHelper lifecycle (M12-051), the BehaviorManager state-light setter (M7-030), the Ground completion getter (unowned bridge, inherited), and the shared IDock/DriveTo/factory/base records. The full-public undefined RollObject payload is skipped under M1-034 (0x00556744..0x005567EE). The atan2f numeric body is covered only by the existing libm policy. Parent Hiking/GatherCubes admission, competition and light producers are outside it.",
+      "provenance": "HIKING-ROLL-CUBE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28 (HANDOFF-HIKING-ROLL-CUBE-1.md). Widened to all four shipped instances with operator approval 2026-10-28 (ROLL-BLOCK-ON-SIDE-1, ROLL-BLOCK-ON-SIDE-LOW-SCORE-1, SPARKS-ROLL-BLOCK-1).",
+      "unresolved": "Settled EQUIVALENT_IMPLEMENTATION by Claude 2026-10-28 (re-analysis/research/20261028-roll-records-claude-check.md), only for the imported atan2f numeric body under the existing libm policy; everything else on the path is exact from source. Checked by Claude: TransitionToPerformingAction 0x005C86E8..0x005C8938, UpdateInternal 0x005C8A54..0x005C8B24, the failure filter 0x005706AC, DetermineAppropriateAction 0x005B9A30..0x005B9BD8, the rotation default 0x005C85DC and flatScore storage 0x005BC4E0; the remaining helper, DriveToRoll and RollObject bodies rest on Codex's independent checks. The undefined full-public RollObject payload stays skipped under M1-034. Built and checked in HIKING-ROLL-CUBE-1 but not settled. Not this record: the three-attempt limit (M12-016), the PlaceBlockHelper lifecycle (M12-051), the BehaviorManager state-light setter (M7-030), the PlaceObjectOnGround completion getter (M12-052), and the shared IDock/DriveTo/factory/base records. The full-public undefined RollObject payload is skipped under M1-034 (0x00556744..0x005567EE). The atan2f numeric body is covered only by the existing libm policy. Parent admission (Hiking/GatherCubes, PlayAlone, Socialize, PlayWithHumans, the Sparked owner M15-059), competition and light producers are outside it.",
       "hardware_required": false,
       "live_path": true,
       "test": "HikingRollCubeNativeTests"
