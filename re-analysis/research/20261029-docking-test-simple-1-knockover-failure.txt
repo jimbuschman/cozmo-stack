@@ -1,0 +1,160 @@
+ORIGINAL TEST FAILURE
+Xunit.Sdk.TrueException: TRACE
+start reach for block 7
+reach for block 7 -> Success
+KnockOverGrabAttempt: no animation assets are loaded
+start DriveAndFlipBlockAction(7)
+DriveAndFlipBlockAction(7) faulted: System.AggregateException: One or more errors occurred. (MISSING: M11-066 caller has not handled unrelated pose roots)
+ ---> System.InvalidOperationException: MISSING: M11-066 caller has not handled unrelated pose roots
+   at Cozmo.Robot.Vision.Pose3d.WithRespectTo(Pose3d frame) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Vision\Geometry.cs:line 398
+   at Cozmo.Robot.Manipulation.FlipBlockAction.CheckIfDoneTick(Nullable`1 compoundResult) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 142
+   at Cozmo.Robot.Manipulation.FlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 195
+   at Cozmo.Robot.Manipulation.DriveAndFlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 417
+   at Cozmo.Robot.Behavior.KnockOverCubesBehavior.<>c__DisplayClass62_0.<<TransitionToKnockingOverStack>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\CubeGameBehaviors.cs:line 135
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Invoke|0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 69
+--- End of stack trace from previous location ---
+   at Cozmo.Protocol.Tests.SignalTestContext.<>c__DisplayClass11_0.<<Schedule>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\tests\Cozmo.Protocol.Tests\SignalTestContext.cs:line 45
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Complete|1>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 72
+   --- End of inner exception stack trace ---
+DriveAndFlipBlockAction(7) -> Abort
+  MISSING: M12-024 | constructor mask 0x0055A25A, head gate +0x79 at 0x0055A9EC and manual-speed +0xA4 have no settled input from this caller; candidate mask 4 and host manual-speed false retained
+  MISSING: M12-024 | M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted
+  MISSING: M12-024 | M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate
+  MISSING: M12-024 | native Success info at 0x0055AE94: Robot ID and float translation-difference log inputs have no checked mapping; source log not fabricated
+  turned towards the object
+  DriveToObjectAction.CheckIfDone: not in position
+  DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound (AddAction ignoreFailure = 1); WaitForLambda not reached/modelled (M8 MISSING)
+  TurnTowardsLastFacePose (max 1.571 rad): Success, ignored
+  TurnTowardsObjectAction (max 1.571 rad): True, ignored
+knock-over failed: Abort
+done
+JOURNAL
+2026-10-29T14:05:30.5506781Z thread=133 Step: start reach for block 7
+2026-10-29T14:05:30.9029757Z thread=133 Step: reach for block 7 -> Success
+2026-10-29T14:05:30.9036537Z thread=133 Step: KnockOverGrabAttempt: no animation assets are loaded
+2026-10-29T14:05:31.0193310Z thread=133 Step: start DriveAndFlipBlockAction(7)
+2026-10-29T14:05:31.8014370Z thread=133 Step: DriveAndFlipBlockAction(7) faulted: System.AggregateException: One or more errors occurred. (MISSING: M11-066 caller has not handled unrelated pose roots)
+ ---> System.InvalidOperationException: MISSING: M11-066 caller has not handled unrelated pose roots
+   at Cozmo.Robot.Vision.Pose3d.WithRespectTo(Pose3d frame) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Vision\Geometry.cs:line 398
+   at Cozmo.Robot.Manipulation.FlipBlockAction.CheckIfDoneTick(Nullable`1 compoundResult) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 142
+   at Cozmo.Robot.Manipulation.FlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 195
+   at Cozmo.Robot.Manipulation.DriveAndFlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 417
+   at Cozmo.Robot.Behavior.KnockOverCubesBehavior.<>c__DisplayClass62_0.<<TransitionToKnockingOverStack>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\CubeGameBehaviors.cs:line 135
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Invoke|0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 69
+--- End of stack trace from previous location ---
+   at Cozmo.Protocol.Tests.SignalTestContext.<>c__DisplayClass11_0.<<Schedule>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\tests\Cozmo.Protocol.Tests\SignalTestContext.cs:line 45
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Complete|1>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 72
+   --- End of inner exception stack trace ---
+2026-10-29T14:05:31.8014767Z thread=133 Step: DriveAndFlipBlockAction(7) -> Abort
+2026-10-29T14:05:31.8019322Z thread=133 Step:   MISSING: M12-024 | constructor mask 0x0055A25A, head gate +0x79 at 0x0055A9EC and manual-speed +0xA4 have no settled input from this caller; candidate mask 4 and host manual-speed false retained
+2026-10-29T14:05:31.8019370Z thread=133 Step:   MISSING: M12-024 | M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted
+2026-10-29T14:05:31.8019380Z thread=133 Step:   MISSING: M12-024 | M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate
+2026-10-29T14:05:31.8019387Z thread=133 Step:   MISSING: M12-024 | native Success info at 0x0055AE94: Robot ID and float translation-difference log inputs have no checked mapping; source log not fabricated
+2026-10-29T14:05:31.8019393Z thread=133 Step:   turned towards the object
+2026-10-29T14:05:31.8019397Z thread=133 Step:   DriveToObjectAction.CheckIfDone: not in position
+2026-10-29T14:05:31.8019402Z thread=133 Step:   DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound (AddAction ignoreFailure = 1); WaitForLambda not reached/modelled (M8 MISSING)
+2026-10-29T14:05:31.8019406Z thread=133 Step:   TurnTowardsLastFacePose (max 1.571 rad): Success, ignored
+2026-10-29T14:05:31.8019409Z thread=133 Step:   TurnTowardsObjectAction (max 1.571 rad): True, ignored
+2026-10-29T14:05:31.8019434Z thread=133 Step: knock-over failed: Abort
+2026-10-29T14:05:31.8019442Z thread=133 Step: done
+firstInvocationWrapperStatus=RanToCompletion firstObservedTask=id=1 status=Faulted
+System.AggregateException: One or more errors occurred. (MISSING: M11-066 caller has not handled unrelated pose roots)
+ ---> System.InvalidOperationException: MISSING: M11-066 caller has not handled unrelated pose roots
+   at Cozmo.Robot.Vision.Pose3d.WithRespectTo(Pose3d frame) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Vision\Geometry.cs:line 398
+   at Cozmo.Robot.Manipulation.FlipBlockAction.CheckIfDoneTick(Nullable`1 compoundResult) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 142
+   at Cozmo.Robot.Manipulation.FlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 195
+   at Cozmo.Robot.Manipulation.DriveAndFlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 417
+   at Cozmo.Robot.Behavior.KnockOverCubesBehavior.<>c__DisplayClass62_0.<<TransitionToKnockingOverStack>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\CubeGameBehaviors.cs:line 135
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Invoke|0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 69
+--- End of stack trace from previous location ---
+   at Cozmo.Protocol.Tests.SignalTestContext.<>c__DisplayClass11_0.<<Schedule>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\tests\Cozmo.Protocol.Tests\SignalTestContext.cs:line 45
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Complete|1>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 72
+   --- End of inner exception stack trace ---
+snapshotUtc=2026-10-29T14:05:31.8036840Z thread=133 phase=Idle transportMs=23500 actionSec=1 engineSec=22.5 robotTimestamp=2122 sentCount=1041 dockResults=0 pathLines=3 driveToPoseStatus=4 plannerStatus=1
+   at Xunit.Assert.True(Nullable`1 condition, String userMessage) in /_/src/xunit.assert/Asserts/BooleanAsserts.cs:line 141
+   at Xunit.Assert.True(Boolean condition, String userMessage) in /_/src/xunit.assert/Asserts/BooleanAsserts.cs:line 123
+   at Cozmo.Protocol.Tests.NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\tests\Cozmo.Protocol.Tests\NavigationTests.cs:line 1091
+TRACE
+start reach for block 7
+reach for block 7 -> Success
+KnockOverGrabAttempt: no animation assets are loaded
+start DriveAndFlipBlockAction(7)
+DriveAndFlipBlockAction(7) faulted: System.AggregateException: One or more errors occurred. (MISSING: M11-066 caller has not handled unrelated pose roots)
+ ---> System.InvalidOperationException: MISSING: M11-066 caller has not handled unrelated pose roots
+   at Cozmo.Robot.Vision.Pose3d.WithRespectTo(Pose3d frame) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Vision\Geometry.cs:line 398
+   at Cozmo.Robot.Manipulation.FlipBlockAction.CheckIfDoneTick(Nullable`1 compoundResult) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 142
+   at Cozmo.Robot.Manipulation.FlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 195
+   at Cozmo.Robot.Manipulation.DriveAndFlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 417
+   at Cozmo.Robot.Behavior.KnockOverCubesBehavior.<>c__DisplayClass62_0.<<TransitionToKnockingOverStack>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\CubeGameBehaviors.cs:line 135
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Invoke|0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 69
+--- End of stack trace from previous location ---
+   at Cozmo.Protocol.Tests.SignalTestContext.<>c__DisplayClass11_0.<<Schedule>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\tests\Cozmo.Protocol.Tests\SignalTestContext.cs:line 45
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Complete|1>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 72
+   --- End of inner exception stack trace ---
+DriveAndFlipBlockAction(7) -> Abort
+  MISSING: M12-024 | constructor mask 0x0055A25A, head gate +0x79 at 0x0055A9EC and manual-speed +0xA4 have no settled input from this caller; candidate mask 4 and host manual-speed false retained
+  MISSING: M12-024 | M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted
+  MISSING: M12-024 | M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate
+  MISSING: M12-024 | native Success info at 0x0055AE94: Robot ID and float translation-difference log inputs have no checked mapping; source log not fabricated
+  turned towards the object
+  DriveToObjectAction.CheckIfDone: not in position
+  DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound (AddAction ignoreFailure = 1); WaitForLambda not reached/modelled (M8 MISSING)
+  TurnTowardsLastFacePose (max 1.571 rad): Success, ignored
+  TurnTowardsObjectAction (max 1.571 rad): True, ignored
+knock-over failed: Abort
+done
+JOURNAL
+2026-10-29T14:05:30.5506781Z thread=133 Step: start reach for block 7
+2026-10-29T14:05:30.9029757Z thread=133 Step: reach for block 7 -> Success
+2026-10-29T14:05:30.9036537Z thread=133 Step: KnockOverGrabAttempt: no animation assets are loaded
+2026-10-29T14:05:31.0193310Z thread=133 Step: start DriveAndFlipBlockAction(7)
+2026-10-29T14:05:31.8014370Z thread=133 Step: DriveAndFlipBlockAction(7) faulted: System.AggregateException: One or more errors occurred. (MISSING: M11-066 caller has not handled unrelated pose roots)
+ ---> System.InvalidOperationException: MISSING: M11-066 caller has not handled unrelated pose roots
+   at Cozmo.Robot.Vision.Pose3d.WithRespectTo(Pose3d frame) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Vision\Geometry.cs:line 398
+   at Cozmo.Robot.Manipulation.FlipBlockAction.CheckIfDoneTick(Nullable`1 compoundResult) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 142
+   at Cozmo.Robot.Manipulation.FlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 195
+   at Cozmo.Robot.Manipulation.DriveAndFlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 417
+   at Cozmo.Robot.Behavior.KnockOverCubesBehavior.<>c__DisplayClass62_0.<<TransitionToKnockingOverStack>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\CubeGameBehaviors.cs:line 135
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Invoke|0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 69
+--- End of stack trace from previous location ---
+   at Cozmo.Protocol.Tests.SignalTestContext.<>c__DisplayClass11_0.<<Schedule>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\tests\Cozmo.Protocol.Tests\SignalTestContext.cs:line 45
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Complete|1>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 72
+   --- End of inner exception stack trace ---
+2026-10-29T14:05:31.8014767Z thread=133 Step: DriveAndFlipBlockAction(7) -> Abort
+2026-10-29T14:05:31.8019322Z thread=133 Step:   MISSING: M12-024 | constructor mask 0x0055A25A, head gate +0x79 at 0x0055A9EC and manual-speed +0xA4 have no settled input from this caller; candidate mask 4 and host manual-speed false retained
+2026-10-29T14:05:31.8019370Z thread=133 Step:   MISSING: M12-024 | M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted
+2026-10-29T14:05:31.8019380Z thread=133 Step:   MISSING: M12-024 | M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate
+2026-10-29T14:05:31.8019387Z thread=133 Step:   MISSING: M12-024 | native Success info at 0x0055AE94: Robot ID and float translation-difference log inputs have no checked mapping; source log not fabricated
+2026-10-29T14:05:31.8019393Z thread=133 Step:   turned towards the object
+2026-10-29T14:05:31.8019397Z thread=133 Step:   DriveToObjectAction.CheckIfDone: not in position
+2026-10-29T14:05:31.8019402Z thread=133 Step:   DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound (AddAction ignoreFailure = 1); WaitForLambda not reached/modelled (M8 MISSING)
+2026-10-29T14:05:31.8019406Z thread=133 Step:   TurnTowardsLastFacePose (max 1.571 rad): Success, ignored
+2026-10-29T14:05:31.8019409Z thread=133 Step:   TurnTowardsObjectAction (max 1.571 rad): True, ignored
+2026-10-29T14:05:31.8019434Z thread=133 Step: knock-over failed: Abort
+2026-10-29T14:05:31.8019442Z thread=133 Step: done
+firstInvocationWrapperStatus=RanToCompletion firstObservedTask=id=1 status=Faulted
+System.AggregateException: One or more errors occurred. (MISSING: M11-066 caller has not handled unrelated pose roots)
+ ---> System.InvalidOperationException: MISSING: M11-066 caller has not handled unrelated pose roots
+   at Cozmo.Robot.Vision.Pose3d.WithRespectTo(Pose3d frame) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Vision\Geometry.cs:line 398
+   at Cozmo.Robot.Manipulation.FlipBlockAction.CheckIfDoneTick(Nullable`1 compoundResult) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 142
+   at Cozmo.Robot.Manipulation.FlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 195
+   at Cozmo.Robot.Manipulation.DriveAndFlipBlockAction.RunAsync(CancellationToken cancel) in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Manipulation\FlipBlockAction.cs:line 417
+   at Cozmo.Robot.Behavior.KnockOverCubesBehavior.<>c__DisplayClass62_0.<<TransitionToKnockingOverStack>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\CubeGameBehaviors.cs:line 135
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Invoke|0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 69
+--- End of stack trace from previous location ---
+   at Cozmo.Protocol.Tests.SignalTestContext.<>c__DisplayClass11_0.<<Schedule>b__0>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\tests\Cozmo.Protocol.Tests\SignalTestContext.cs:line 45
+--- End of stack trace from previous location ---
+   at Cozmo.Robot.Behavior.SteppedBehavior.<>c__DisplayClass45_0`1.<<RunAsyncAction>g__Complete|1>d.MoveNext() in C:\Users\JimBu\source\repos\jimbuschman\cozmo-stack-codex2\.scratch\worktrees\codex-m13-manager-2\cozmo-stack\src\Cozmo.Robot\Behavior\SteppedBehavior.cs:line 72
+   --- End of inner exception stack trace ---
+snapshotUtc=2026-10-29T14:05:31.8058849Z thread=133 phase=Idle transportMs=23500 actionSec=1 engineSec=22.5 robotTimestamp=2122 sentCount=1041 dockResults=0 pathLines=3 driveToPoseStatus=4 plannerStatus=1

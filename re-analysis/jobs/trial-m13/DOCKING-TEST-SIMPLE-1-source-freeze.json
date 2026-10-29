@@ -1,0 +1,22 @@
+{
+  "job": "DOCKING-TEST-SIMPLE-1",
+  "stage": "bounded diagnostic/XML-only source PASS; draft released",
+  "files": [
+    {
+      "path": "re-analysis/research/20261029-docking-test-simple-1-read.md",
+      "sha256": "C44C481A8F1F04E399169736B6393AB4CB6EEC6D7048847C3486D710F6060590"
+    },
+    {
+      "path": "re-analysis/research/20261029-docking-test-simple-1-read-codex-check.md",
+      "sha256": "7F914A46C7B0D2F5057B30179D71F2E0586968E6C1190091EE1E6272EF0FCB9F"
+    }
+  ],
+  "wholeCurrentRecordsCompared": 6,
+  "nativeId": 9,
+  "nativeClass": 9,
+  "sourceReportCorrections": 1,
+  "builderReviewerCorrectionRounds": 0,
+  "newRecordOrSettlementProposed": false,
+  "scope": "Two legacy documentation sites and visible M7-022 boundary before unchanged custom MountCharger start; no native factory/body/API/policy/status change",
+  "limits": "Existing native non-live decision retained; handler has no SDK gate; app negatives unavailable; original state body frontier and M7-027/028 remain"
+}
