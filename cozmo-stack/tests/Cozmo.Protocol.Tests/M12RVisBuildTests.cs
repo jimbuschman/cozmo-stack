@@ -2742,6 +2742,30 @@ public class M12RVisBuildTests : IDisposable
     }
 
     /// <summary>
+    /// M13-028, CheckIfDone 0x0055F074, a root mismatch on a RUNNING tick: the local at 0x0055F0A0..0x0055F0BA is an identity pose with zero translation, and 0x0055F0E0 ignores
+    /// GetWithRespectTo's result. GetWithRespectTo (0x00845A34, research/20261014-pose-rows-recheck.md R35 step 3) returns false with no log and leaves the local untouched when the
+    /// two poses have different roots, so the 3-D norm is 0 &lt; [this+0x138] = 40 and, with [this+0x13C] == -1, the carry lift is queued; the tick is RUNNING (null), no throw.
+    /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    [Fact]
+    public void M13_028_ARootMismatchLeavesTheLocalAtZeroAndQueuesTheCarryLift()
+    {
+        if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
+        using var rig = new Rig();
+        var flip = FlipWithCubeAt(rig, 200.0, out var obj);                           // 201.2 mm away in the robot's tree: no lift if the roots matched
+        using var unrelatedRoot = new Pose3d("unrelated");
+        using var replacement = new Pose3d(obj.NativePose.Quaternion, new Vec3(200, 0, 22), "", unrelatedRoot);
+        obj.Pose = replacement;                                                       // the object's pose now hangs under a root the robot's pose does not share
+        Assert.False(flip.LiftRaised);
+        ActionResult? tick = ActionResult.Abort;
+        Assert.Null(Record.Exception(() => tick = flip.CheckIfDoneTick(null)));      // no throw (the old WithRespectTo threw the M11-066 MISSING here)
+        Assert.Null(tick);                                                            // RUNNING
+        Assert.True(flip.LiftRaised);
+        Assert.Equal(new[] { LiftPresets.CarryMm }, rig.Pump().OfType<SetLiftHeight>().Select(m => m.HeightMm));
+    }
+
+    /// <summary>
     /// M13-028, CheckIfDone 0x0055F074, the object lookup: GetLocatedObjectByIdHelper(id, -1) every tick, before the RUNNING test. RUNNING with the object not located (an Unknown pose state): warn and
     /// 0x03000004 BadObject (0x0055F09C cmp r0,#0; beq 0x55F18C; 0x0055F1C4), no carry lift. NOT RUNNING with no object: warn and return the compound's result (0x0055F17A cbz), nothing marked; NOT RUNNING with the
     /// object: MarkObjectUnknown(obj, true) (0x0055F186) and the compound's result, whatever it is (Retry 0x04000000 here).

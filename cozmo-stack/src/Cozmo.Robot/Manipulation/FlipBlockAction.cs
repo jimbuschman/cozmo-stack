@@ -139,7 +139,10 @@ public sealed class FlipBlockAction
         using var now=LiftRaised?null:_m.CopyPreActionRobotPose();
         if (now is not null)
         {
-            using var relative=obj.NativePose.WithRespectTo(now);
+            // 0x0055F0A0..0x0055F0BA: a local Pose3d with an empty name (identity rotation, zero translation). 0x0055F0E0: GetWithRespectTo's bool is ignored;
+            // on a root mismatch it returns false with no log and leaves the local untouched (R35), so the norm below is 0.
+            using var relative=new Pose3d("");
+            obj.NativePose.TryWithRespectTo(now,relative);
             var t = relative.Translation;                                      // GetWithRespectTo at 0x0055F0E0
             float norm = Norm3(t);                                                                 // [T+0x20]^2, then [T+0x24]^2 and [T+0x28]^2, vsqrt.f32 (binary32)
             if (norm < (float)LiftTriggerDistanceMm)
