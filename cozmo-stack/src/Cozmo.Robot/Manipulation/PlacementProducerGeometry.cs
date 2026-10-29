@@ -35,10 +35,11 @@ internal static class PlacementProducerGeometry
         if (!TryVector(first,second,ref vector)) return false;
         output=NormSquared(vector);return true;
     }
-    private static Vec3 Dimensions(ObservableObject obj)
+    private static Vec3 Dimensions(ObservableObject obj,bool root=false)
     {
-        using var flat=obj.NativePose.GetWithRespectToRoot();
-        var matrix=flat.Rotation;var size=CubeGeometry.SizeOf(obj.Type);
+        using var copy=root?obj.NativePose.GetWithRespectToRoot():new Pose3d(obj.NativePose);
+        if(!root&&!CubeGeometry.IsCube(obj.Type))throw new NativeConfigurationUnavailable("M12-028 Base admitted virtual dimensions unavailable for "+obj.Type);
+        var matrix=copy.Rotation;var size=CubeGeometry.SizeOf(obj.Type);
         double Axis(int axis)=>Math.Abs(RotatedParentAxis.Get(matrix,axis)) switch {3=>size.Z,2=>size.Y,_=>size.X};
         return new Vec3(Axis(0),Axis(1),Axis(2));
     }
@@ -47,7 +48,7 @@ internal static class PlacementProducerGeometry
         using var flat=obj.NativePose.GetWithRespectToRoot();using var root=obj.NativePose.FindRoot();
         // M12-033 preserves local x/y and root-relative z/yaw; scalar argument is +0.
         var local=obj.NativePose.Translation;
-        float z=(float)flat.Translation.Z+(float)Dimensions(obj).Z*0f;
+        float z=(float)flat.Translation.Z+(float)Dimensions(obj,true).Z*0f;
         return new Pose3d(Rotation3d.FromAngleAxis((float)flat.AngleAroundZ,new Vec3(0,0,1)),new Vec3(local.X,local.Y,z),"",root);
     }
     internal static bool CheckBaseBlockPoseIsFree(ManipulationSystem m,uint staticId,uint movingId)
