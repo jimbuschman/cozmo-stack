@@ -1,0 +1,27 @@
+{
+  "job": "PUTDOWN-PYRAMID-1",
+  "stage": "bounded source independently passed; minimal draft released",
+  "files": [
+    {
+      "path": "re-analysis/research/20261029-putdown-pyramid-1-read.md",
+      "sha256": "42A9CF261E9914FB941DF299F3F2D137256C80ED14FA1ECAB89331376A327853"
+    },
+    {
+      "path": "re-analysis/research/20261029-putdown-pyramid-1-display.md",
+      "sha256": "988CA9B67C37CCAFB7AA00045765C4B5DDE13706341C1D62A81D27E4AFD86962"
+    },
+    {
+      "path": "re-analysis/research/20261029-putdown-pyramid-1-read-codex-check.md",
+      "sha256": "CB706579F813BBB87DBD7C452B1ED66C0A11EEBBB4370CAE5514F2EA0384AAD2"
+    }
+  ],
+  "nativeBehaviorId": 68,
+  "nativeBehaviorClass": 44,
+  "wholeRecordsCompared": 19,
+  "additionalDisplayRecordsCompared": 2,
+  "sourceReviewerCorrections": 0,
+  "managerDisplaySupplements": 1,
+  "recordChangesProposed": 0,
+  "displayReportOwner": "M8-012 IMPLEMENTATION_GAP",
+  "inputBoundary": "Automatic caller overrides/admission/strategy and inherited producers; native report body is not implied by hook"
+}
