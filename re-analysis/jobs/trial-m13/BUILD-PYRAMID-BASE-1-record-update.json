@@ -1,0 +1,14 @@
+{
+  "job": "BUILD-PYRAMID-BASE-1",
+  "importedMain": "ee5d2c2bc5a1605d293827daf970f9e62dc122fc",
+  "merge": "2c839bc3",
+  "record": "M12-052",
+  "priorStatus": "IMPLEMENTATION_GAP",
+  "currentStatus": "EXACT_SOURCE",
+  "changedFields": [
+    "status",
+    "unresolved"
+  ],
+  "titleEvidenceBehaviorUnchanged": true,
+  "reason": "Claude settled Ground getter in FIX-KNOCKOVER-RACE-1; frozen Base source quotes preserve historical version, no new Base semantic claim."
+}
