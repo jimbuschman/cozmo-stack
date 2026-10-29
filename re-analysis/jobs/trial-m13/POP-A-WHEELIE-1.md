@@ -1,4 +1,4 @@
-# POP-A-WHEELIE-1 — FULL GATE
+# POP-A-WHEELIE-1 — READY FOR CLAUDE
 
 Next exact scoreboard behavior is PopAWheelie (freeplay PlayAlone). One combined own-path job. Read PROJECT_STATE first, AGENTS, AUTONOMY, PLAN-BEHAVIOURS, BEHAVIOURS, research README and this scope. Import current main and check REVIEW for FIX before worker starts. No inference from SparksPopAWheelie; that separate configured behavior is next.
 
@@ -50,3 +50,7 @@ Finite live legacy finding: ShippedBehaviors.Navigation and Conformance ManipToo
 Worker15b9125af7606369a9c31aaefddb1ea406b5f7e7 integratedb7190188a23a50cf16b11662c9c544fecc4f8062. Entire canonical code treebdfbc706dc624a97fc1ae392f951571dbaab645b and all11 publishedLF files exactlymatch worker; stagednewfilewhitespacePASS. Final independent report3DC46324626462A0B83C5F705FA2083A69A21CB82DD19ADBB9CE452D74858703. One elevated reviewer run254/254PASS0skip2m08s, same254names as builderaffected;253samePASS and soleM7factory expectationFAIL→PASS. Actualshutdown0/native[]total0own0, all11raw/LF stablebefore/afterrun/aftershutdown; root sole.NET returned.
 
 Cfocused20/20PASS after preservedB1compilefail and focused18/20,19/20; T4plannednotrun diagnosticstaticselfcheck. Caffected253PASS1FAIL/254 remainedFAILED (stalefactoryexpectedclass list), pre/post10filesidentical. Source-backedM7testoracleaddition plus2cosmetics thenfinalB6build0 produced11filefreeze; no Ctestrepeat. Final rawfreezeSHAc57062bd43e7e67108bec661f69948cb3302c3cb333274e6ad9e82ed323d26f6. Requiredreviewerbatch1 (draftexacttypeassertion), builderQ1resolvedbeforecoherentdraft; allprep/self/source outcomesretained. WholecurrentM13-015PARTIALactualpublicmanualpaths; no officialstatuschange/proposalsettlingit. Root asset-complete fullgate willrunonceoncommittedintegratedcode/current716metadata; resultpending.
+
+## Completed gate / publication
+
+Single full6661/6661PASS0skip8m16s exit0 on d4791f71d93ebca6b1c212f38a5e1751b7c3d554. UTC00:50:59.5800202Z..01:00:31.1461703Z2026-10-29; key37318ab1cf11e51d17fc336c23dd6ccf38d7b961. Actual postrun inventory01:01:21.5293050Z[]/total0. HANDOFF-POP-A-WHEELIE-1.md lists allmodels/round1/Q1resolved/attempts and actual015manualgap. READYpush then nextSparksPopAWheelie immediately. Freshmain0fe4d254 metadata-only update discovered after gate; import verbatim at nextjob start, retaining this actual tested716baseline and not claiming717 tested.
