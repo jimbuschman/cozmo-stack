@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-28",
+  "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "114d06f5127fdf1beadb1329a7baa79f9ceb501156e89fbaa8b4805eaf818be7",
+  "inventory_sha256": "c8a3a8baf68686deeab673b0d4abac38d43c40ad69f5cbc0f14ab98274b07c63",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -916,7 +916,7 @@
       "hardware_required": false
     },
     "M15-077": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -927,6 +927,32 @@
         "Shared failure filter 0x00570692..0x005706AC: DidFailToUse(id, 3, time 30.0f, pose, distance 60.0f, PI) for both caches; RollBlockHelper::DetermineAppropriateAction 0x005B9A30: carrying -> put down, target absent -> failure, RollObjectAction::CanActionRollObject 0x0055673C (DockingComponent CanPickUpObjectFromGround) false -> UnableToRollDelegate, at pre-action pose -> StartRollingAction, else DriveTo with the roll-to-upright approach angle.",
         "Shipped configs behaviors/freeplay/rollBlockOnSide.json (ID 99) and rollBlockOnSideLowScore.json (ID 100), with no rotation/streamline keys (ctor default Json(true) 0x005C85DC..0x005C85F4); SparksRollBlock (ID 155, activity 26, needs 40, explicit rotation false -> cache 6). Read packets 20261028-roll-block-on-side-1-read.md, 20261028-roll-block-on-side-low-score-1-read.md and the SPARKS-ROLL-BLOCK-1 packets with their independent checks; re-analysis/research/20261028-roll-block-on-side-1-claude-check.md, re-analysis/research/20261028-sparks-roll-block-1-claude-check.md.",
         "Read packets re-analysis/research/20261028-hiking-roll-cube-1-read.md, -drive-joins.md, -reentry-contract.md with their independent checks; HANDOFF-HIKING-ROLL-CUBE-1.md; re-analysis/research/20261028-hiking-roll-cube-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-078": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorBuildPyramidBase configured lifecycle (ID 4, also inherited by BuildPyramid): target refresh from intentions 9/10/11, runnable gates, reset, start routing to pickup or placement, base pickup with state light 0x20 and pre-animation 0x16, low placement and its null-static path, Observe, the update timers and stop, and the ID getters",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059C9AC..0x0059C9C6; shipped buildPyramidBase.json; enums 0x0076B578..0x0076B5C8; vtable 0x01029138 (gates 0x005BF04C / 0x0059EC12 / 0x005DDAF4), dispatch 0x005BD750 / 0x005BD864..0x005BD89C.",
+        "Target refresh 0x005DCAFA..0x005DCB4E and runnable 0x005DCAAC..0x005DCAEC; reset 0x005DCB58..0x005DCB90; start/pickup 0x005DCBBC..0x005DCC78 with the pickup helper factory 0x005B553C, storage 0x005B7AB8..0x005B7ABC and one-use pre-animation 0x005B7CFC..0x005B7D4E.",
+        "Placement 0x005DCDCC..0x005DCECA and offsets 0x005DD150..0x005DD370 (callback vtables 0x01029224 / 0x01029264); Observe 0x005DD4AC..0x005DD56C with callback 0x005DDC62..0x005DDC74; UpdateInternal 0x005DD01C..0x005DD12C (epsilon literal 0x005DD130 = 0x3727C5AC); shared tail 0x005BDA56..0x005BDA62; getters 0x005DD5F4..0x005DD64C / 0x005DDA60..0x005DDAB6.",
+        "re-analysis/jobs/trial-m13/HANDOFF-BUILD-PYRAMID-BASE-1.md; re-analysis/research/20261028-build-pyramid-base-1-read.md with its independent check; re-analysis/research/20261028-build-pyramid-base-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-079": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorBuildPyramid derived lifecycle (ID 3, class 2): ctor and the Observe-to-top recipient, runnable with all three IDs, Init routing (full-cache reaction, top or base), top pickup with pre-animation 0x1A, top placement entry and lock, the success and failure reactions",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Derived ctor 0x005DBC8E..0x005DBCB2, vtables 0x01028F44 / 0x0103F3A0; runnable 0x005DC606..0x005DC61A / 0x005DBED4..0x005DBEFC; Init 0x005DBF04..0x005DBF84.",
+        "Top pickup 0x005DBD20..0x005DBD9C, callbacks 0x01029040 / 0x005DC67A; top placement 0x005DC08C..0x005DC304 with lock table 0x00C6C691 (enum 8).",
+        "Success 0x005DC78A, 0x005DBFB0..0x005DC00A, 0x005BE228..0x005BE308 / 0x005BE3A8..0x005BE3D6, 0x007285FE / 0x0071BEAE, 0x005BE40C..0x005BE416 (state 6, objective 3, LiftSafe 0x17); failure 0x005DC7F0..0x005DC9A4 (drive -20/20, head 25, lift 0, wait 1, head 15); state-light class 0x005DCBBC / 0x005BEE3E / 0x005BBC90..0x005BBC96.",
+        "re-analysis/jobs/trial-m13/HANDOFF-BUILD-PYRAMID-1.md; re-analysis/research/20261028-build-pyramid-1-read.md with its independent check; re-analysis/research/20261029-build-pyramid-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false
