@@ -1,6 +1,6 @@
 {
   "job": "BOUNCER-1",
-  "stage": "Checked finite own-source contract; shared frontiers explicit",
+  "stage": "Own source plus checked UNKNOWN supplement frozen; dependent bounded adapters released",
   "sourceFiles": {
     "re-analysis/research/20261029-bouncer-1-read.md": "EDC14B5CB35CB991408F0949BCD179B0DE3B489547A405198362A9D6838E5A24",
     "re-analysis/research/20261029-bouncer-1-codex-check.md": "C13BD9FA0FA89C36D6DB5DF80A269CF1FACC147D11D71CA8F103AF81122C833A"
@@ -19,10 +19,34 @@
   "readerKnownLookupSequencingMisses": 1,
   "serialization": "CRLF normalized to LF only; original byte copies/hashes retained in .scratch/bouncer-1-source-originals; no claim/text change",
   "frontiers": [
-    "Shared OpenCV raster/font pixels",
-    "Live face +0xDC producer and pose/frame inputs",
-    "SetFeatureToggle host dispatch/persistence",
-    "Shared action/face-stream and manager report lifecycle"
+    "Exact bounded raster/native DC carrier/image-frame contracts now recovered; implementations require review",
+    "Full operator-deferred OKAO detector producer remains M11-016",
+    "SetFeatureToggle host dispatch/persistence and existing M8 action/report gaps remain"
   ],
-  "productionRules": "No guessed face roll, renderer pixels, RNG or callback/timing. Missing shared path is named MISSING; essential availability questions return to manager before dependent implementation. No indefinite hold or fake native success. Shipped feature false is reproduced, not a not-supported decision."
+  "productionRules": "No guessed face roll, renderer pixels, RNG or callback/timing. Missing shared path is named MISSING; essential availability questions return to manager before dependent implementation. No indefinite hold or fake native success. Shipped feature false is reproduced, not a not-supported decision.",
+  "sharedUnknownSupplement": {
+    "re-analysis/research/20261029-bouncer-1-shared-unknown.md": "6ADA46C4B3103FE7C1B38AD5D6B5BCD6F28BFEE8440E9726EB71AEC9B24966CD",
+    "re-analysis/research/20261029-bouncer-1-shared-codex-check.md": "443B87D8E66EC482562D8CE0C62B76555E67B60AF9D039F999681A4CC6248B33"
+  },
+  "sharedCurrentRecordQuotesMatched": [
+    "M5-013",
+    "M5-021",
+    "M11-016",
+    "M14-001",
+    "M14-010",
+    "M8-020"
+  ],
+  "primaryBinaries": {
+    "resources/lib/armeabi-v7a/libcozmoEngine.so": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+    "resources/lib/armeabi-v7a/libopencv_imgproc.so": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830"
+  },
+  "sourceSupplementCount": 1,
+  "sourceArtifactAttributionClarifications": 1,
+  "sourceBehaviorCorrections": 0,
+  "remainingFrontiers": [
+    "Operator-deferred M11-016 OKAO detector implementation; exact DC carrier adapter now recovered",
+    "SetFeatureToggle disk/persistence/host-dispatch tails",
+    "Existing M8-020 completion/union/cached-pointer and broader M8/manager report gaps"
+  ],
+  "pixelReference": "Independent native runtime pixel corpus pending; no guessed raster/font accepted"
 }
