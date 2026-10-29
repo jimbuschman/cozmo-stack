@@ -1,4 +1,4 @@
-# POP-A-WHEELIE-1 — BUILDING
+# POP-A-WHEELIE-1 — FULL GATE
 
 Next exact scoreboard behavior is PopAWheelie (freeplay PlayAlone). One combined own-path job. Read PROJECT_STATE first, AGENTS, AUTONOMY, PLAN-BEHAVIOURS, BEHAVIOURS, research README and this scope. Import current main and check REVIEW for FIX before worker starts. No inference from SparksPopAWheelie; that separate configured behavior is next.
 
@@ -44,3 +44,9 @@ Builder raised ONE source-only constructor question before coherent draft. Accep
 Source packet has a harmless new blank line at EOF reported by staged diff-check at source commit; queued cosmetic only, frozen source not rewritten, no source whitespace-PASS claim. Code/new test whitespace checks remain required at their actual freeze.
 
 Finite live legacy finding: ShippedBehaviors.Navigation and Conformance ManipTool directly instantiate public/manual Pop adapter, whose reset/result/drive joins remain partial despite new configurednative path. No API removal/exclusion or invented bridge is authorized. Current M13-015 settlement must assess this actual claim plus official old code/test pointers; newnative tag alone cannot erase a remaining claimed public path. Builder/reviewer may evaluate source-faithful reuse of existing canonical owner via known explicit admission, without duplicate runtime/newnative assumptions; otherwise precise partial record leftover is acceptable to hand off.
+
+## Frozen integration and independent execution
+
+Worker15b9125af7606369a9c31aaefddb1ea406b5f7e7 integratedb7190188a23a50cf16b11662c9c544fecc4f8062. Entire canonical code treebdfbc706dc624a97fc1ae392f951571dbaab645b and all11 publishedLF files exactlymatch worker; stagednewfilewhitespacePASS. Final independent report3DC46324626462A0B83C5F705FA2083A69A21CB82DD19ADBB9CE452D74858703. One elevated reviewer run254/254PASS0skip2m08s, same254names as builderaffected;253samePASS and soleM7factory expectationFAIL→PASS. Actualshutdown0/native[]total0own0, all11raw/LF stablebefore/afterrun/aftershutdown; root sole.NET returned.
+
+Cfocused20/20PASS after preservedB1compilefail and focused18/20,19/20; T4plannednotrun diagnosticstaticselfcheck. Caffected253PASS1FAIL/254 remainedFAILED (stalefactoryexpectedclass list), pre/post10filesidentical. Source-backedM7testoracleaddition plus2cosmetics thenfinalB6build0 produced11filefreeze; no Ctestrepeat. Final rawfreezeSHAc57062bd43e7e67108bec661f69948cb3302c3cb333274e6ad9e82ed323d26f6. Requiredreviewerbatch1 (draftexacttypeassertion), builderQ1resolvedbeforecoherentdraft; allprep/self/source outcomesretained. WholecurrentM13-015PARTIALactualpublicmanualpaths; no officialstatuschange/proposalsettlingit. Root asset-complete fullgate willrunonceoncommittedintegratedcode/current716metadata; resultpending.
