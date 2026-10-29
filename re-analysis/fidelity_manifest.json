@@ -14041,7 +14041,7 @@
     {
       "id": "M13-041",
       "subsystem": "M13-navigation",
-      "title": "BehaviorPopAWheelie configured lifecycle (ordinary instance): cache 8 target choice, get-in, pre-dock reaction lock and cliff, DriveToPopAWheelieAction, and PopAWheelieAction Select/Verify/completion",
+      "title": "BehaviorPopAWheelie configured lifecycle, both shipped instances (PopAWheelie and SparksPopAWheelie): cache 8 target choice, get-in, pre-dock reaction lock and cliff, DriveToPopAWheelieAction, and PopAWheelieAction Select/Verify/completion",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePopAWheelieBehavior.cs",
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
@@ -14050,11 +14050,12 @@
         "Get-in 0x005C7496..0x005C757A: TurnTowardsObject(PI,false,false) then LiftSafe 0x18A; callback 0x005C7B52..0x005C7B64 updates the previous target only on result 0.",
         "DriveToPopAWheelieAction 0x005C7758..0x005C78D4 / 0x0055D1E8..0x0055D26C: pre-action 4, PI/2, sayName true with 0x18B/0x18C.",
         "Pre-dock reaction table 0x00C6883D and cliff off 0x005C7BC8..0x005C7C10; Select 0x00552730..0x0055287E (height > 33.85 rejects, carrying rejects); Verify 0x0055295C..0x00552A72 (dock action 9, dock success, Radians pitch < 1 -> 0x0400000A); completion getter 0x0055268E..0x0055269C (four unwritten ID words).",
+        "SparksPopAWheelie (behaviour 152, activity 24, needs 34, unlock 13, objective PoppedWheelie 22) runs the same class and children through the native Sparked owner; enum tables cited in re-analysis/research/20261028-sparks-pop-a-wheelie-1-read.md with its independent check; HANDOFF-SPARKS-POP-A-WHEELIE-1.md; re-analysis/research/20261028-sparks-pop-a-wheelie-1-claude-check.md.",
         "Reset 0x005C76B0..0x005C76F0 clears the target and the latch before cliff on. Read packets re-analysis/research/20261028-pop-a-wheelie-1-read.md and -followup-1.md with their independent checks; HANDOFF-POP-A-WHEELIE-1.md; re-analysis/research/20261028-pop-a-wheelie-1-claude-check.md"
       ],
       "effect": "which cube Cozmo pops a wheelie on, how he approaches and docks, whether the pop counts as a success, and the ActionCompleted payload the C# API delivers",
-      "provenance": "POP-A-WHEELIE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28.",
-      "unresolved": "Built and checked in POP-A-WHEELIE-1 but not settled. Not this record: the retry/result/reset path (M13-015, still partial while the manual/public callers use the legacy PopAWheelieBehavior adapter), the shared IDrive/IDock/Turn/animation/ActionList/geometry records. The completion getter's four unwritten ID words are uninitialised in the original: under the M1-034 standing rule the stack withholds only the full public payload with a visible MISSING and keeps the defined fields. SparksPopAWheelie is not built (visible gap); widen this record when it is.",
+      "provenance": "POP-A-WHEELIE-1 (Codex read and build, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28. Widened to SparksPopAWheelie with operator approval 2026-10-28 (SPARKS-POP-A-WHEELIE-1).",
+      "unresolved": "Built and checked in POP-A-WHEELIE-1 but not settled. Not this record: the retry/result/reset path (M13-015, still partial while the manual/public callers use the legacy PopAWheelieBehavior adapter), the shared IDrive/IDock/Turn/animation/ActionList/geometry records. The completion getter's four unwritten ID words are uninitialised in the original: under the M1-034 standing rule the stack withholds only the full public payload with a visible MISSING and keeps the defined fields.",
       "hardware_required": false,
       "live_path": true,
       "test": "PopAWheelieNativeTests"

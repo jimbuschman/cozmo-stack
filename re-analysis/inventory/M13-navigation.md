@@ -2667,3 +2667,9 @@ Manager-authorized correction from `research/20261021-b-m13-9-b-m10-2-claude-che
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorPopAWheelie factory 0x0059CEA6, ctor 0x005C7430, get-in 0x005C7496..0x005C757A, cache 8 predicate 0x00570928..0x00570980, DriveToPop 0x0055D1E8..0x0055D26C, Select 0x00552730..0x0055287E, Verify 0x0055295C..0x00552A72, completion 0x0055268E..0x0055269C. Retry/result/reset stays M13-015 | M13-041 (new) |
+
+## SPARKS-POP-A-WHEELIE-1, M13-041 widened to both Pop instances (operator approved 2026-10-28; research/20261028-sparks-pop-a-wheelie-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| M13-041 now covers PopAWheelie and SparksPopAWheelie (activity 24, objective 22, needs 34). Still IMPLEMENTATION_GAP | M13-041 |
