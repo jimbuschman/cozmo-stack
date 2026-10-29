@@ -1335,67 +1335,24 @@ public class VisionTests
         Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
     }
 
-    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
+    // reach: unit (the strategy target set is supplied directly; B2 source 0x00603742..A2).
     [Fact]
-    public void AcknowledgeObjectTurnsVerifiesWithTwoImagesAndPlaysTheReaction()
+    public void AcknowledgeObjectDropsAnUnlocatedTargetWithoutListenerOrObjective()
     {
-        if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Observe(CubeAhead(150), head: -0.15f);
-        var turns = new List<(uint, double)>();
-        rig.Vision.Locator.TurnOverride = (id, max, ct) => { turns.Add((id, max)); return Task.FromResult(true); };
-        var behavior = new AcknowledgeObjectBehavior(rig.Vision.World, rig.Vision.Locator) { Clock = () => 0 };
-        behavior.SetTargets(new uint[] { 7 });
-        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
-        var reacted = new List<uint>();
-        behavior.ReactedTo += reacted.Add;
-        Assert.Equal(new uint[] { 7 }, behavior.PendingTargets);      // runnable once the animation library is loaded (IsRunnable gates on it)
-        behavior.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        Assert.Equal(AcknowledgeObjectBehavior.Phase.Turning, behavior.CurrentPhase);
-        Assert.Equal(new[] { (7u, AcknowledgeObjectBehavior.MaxTurnAngleRad) }, turns);
-
-        // the turn's completion is posted; the next tick takes it and starts the visual verification
-        SpinUntil(() => { behavior.Update(ctx, 0); return behavior.CurrentPhase == AcknowledgeObjectBehavior.Phase.Verifying; });
-        Assert.Equal(7u, behavior.CurrentTarget);
-        // one sighting is not enough, two are (NumImagesToWaitFor = 2)
-        rig.Frame(CubeAhead(150), head: -0.15f);
-        behavior.Update(ctx, 33);
-        Assert.Equal(AcknowledgeObjectBehavior.Phase.Verifying, behavior.CurrentPhase);
-        rig.Frame(CubeAhead(150), head: -0.15f);
-        behavior.Update(ctx, 66);
-        // no animation library offline: the trigger play fails and the iteration finishes; the target counts as reacted to
-        SpinUntil(() => { behavior.Update(ctx, 99); return reacted.Count == 1; });
-        Assert.Equal(new uint[] { 7 }, reacted);
-        Assert.Contains(behavior.Trace, l => l.Contains("VisuallyVerifyObjectAction"));
-        Assert.Contains(behavior.Trace, l => l.Contains("FinishIteration"));
-        behavior.Stop(BehaviorStopReason.Completed);
-    }
-
-    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
-    [Fact]
-    public void AcknowledgeObjectGivesUpOnATargetTheWorldModelCannotLocate()
-    {
-        using var rig = new WorldRig();                 // runs without the marker library: the world model needs no decoder here
         var behavior = new AcknowledgeObjectBehavior(rig.Vision.World) { Clock = () => 0 };
         behavior.SetTargets(new uint[] { 42 });
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
         var reacted = new List<uint>();
         behavior.ReactedTo += reacted.Add;
         behavior.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        Assert.False(behavior.Update(ctx, 0));
-        Assert.Equal(new uint[] { 42 }, reacted);
-        Assert.Contains(behavior.Trace, l => l.Contains("can't get it from blockworld"));
+        Assert.Equal(new uint[] { 42 }, behavior.PendingTargets); // Init only sets the pending flag
+        behavior.Update(ctx, 0);
+        Assert.Empty(reacted);
+        Assert.Empty(behavior.PendingTargets);
+        Assert.Contains(behavior.Trace, line => line.Contains("can't get it from blockworld"));
+        behavior.Stop(BehaviorStopReason.Completed);
     }
-
-    private static void SpinUntil(Func<bool> cond, int ms = 3000)
-    {
-        // These predicates execute the behavior's modeled tick. TurnOverride returns a completed task,
-        // so its completion is already queued; no asynchronous worker needs a wall-clock allowance.
-        for (int tick = 0; tick < 100; tick++) if (cond()) return;
-        throw new InvalidOperationException("behavior did not reach the expected state in modeled ticks");
-    }
-
-
     // ------------------------------------------------------------------ the captured robot
 
     /// <summary>

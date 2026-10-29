@@ -118,7 +118,7 @@ public sealed class KnockOverNativeTests
     public void FlipTerminalChildResultUsesCanonicalUpwardUnknownAndPreservesOriginalResult(uint result)
     {
         // reach: unit explicitly supplied embedded-child terminal result; actual native Check/world recipient, not full flip execution.
-        using var f=new Fixture();f.Lift=1f;f.Motors();f.Add(7,30);f.Add(8,30,66);var flip=new NativeFlipBlockRunner(f.M,7){CheckPreActionPose=false};
+        using var f=new Fixture();using var executionLease=f.Rig.Engine.EnterSynchronousOwner();f.Lift=1f;f.Motors();f.Add(7,30);f.Add(8,30,66);var flip=new NativeFlipBlockRunner(f.M,7){CheckPreActionPose=false};
         try
         {
             Assert.Equal(0,flip.Init());Assert.Equal(new[]{2,8},flip.Sequence.Children.Select(c=>c.RequiredTrackMask==2?2:c.Type));Assert.True(flip.Sequence.Children[1].Tag<flip.Sequence.Children[0].Tag); //drive constructed beforelift.
@@ -130,7 +130,7 @@ public sealed class KnockOverNativeTests
     [Fact]
     public void FlipMissingAtInitAndWhileRunningAndPendingLiftCancellationAreDistinct()
     {
-        using var f=new Fixture();var missing=new NativeFlipBlockRunner(f.M,7);Assert.Equal(0x03000004,missing.Init());missing.WatcherEnding();
+        using var f=new Fixture();using var executionLease=f.Rig.Engine.EnterSynchronousOwner();var missing=new NativeFlipBlockRunner(f.M,7);Assert.Equal(0x03000004,missing.Init());missing.WatcherEnding();
         f.Add(7,30);var runningMissing=new NativeFlipBlockRunner(f.M,7){CheckPreActionPose=false};
         Assert.Equal(0,runningMissing.Init());var remove=new BlockWorldFilter();remove.AllowedIds.Add(7);f.M.World.DeleteLocatedObjects(remove);
         Assert.Equal(0x03000004u,runningMissing.CheckIfDone());Assert.False(runningMissing.DestructionObserved);Assert.Equal(uint.MaxValue,runningMissing.QueuedLiftTag);
@@ -170,7 +170,7 @@ public sealed class KnockOverNativeTests
     public void CommonSparkLockUsesCanonicalConfiguredUnlockAndReleasesAndResumes(int spark,byte soft,bool matching)
     {
         // reach: configured manager Init/Stop plus explicit scoped Resume unit; checked common K1/K5 lifecycle.
-        using var f=new Fixture();var knock=Stack(f);var manager=f.Robot.BehaviorManagerOwner!;Spark(f,spark,soft);Start(f,knock);
+        using var f=new Fixture();using var executionLease=f.Rig.Engine.EnterSynchronousOwner();var knock=Stack(f);var manager=f.Robot.BehaviorManagerOwner!;Spark(f,spark,soft);Start(f,knock);
         const string key="SparkBehaviorDisables_behaviorLock";
         Assert.Equal(matching,manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated,key));
         manager.Stop(BehaviorStopReason.Interrupted,0);Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated,key));

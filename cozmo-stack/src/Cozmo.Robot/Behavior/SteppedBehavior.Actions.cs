@@ -127,6 +127,9 @@ public abstract partial class SteppedBehavior
     /// <summary>5BE1EC..5BE224: clear matching tag, slot80(false), then invoke the installed callable in place.</summary>
     internal void HandleActionComplete(RobotCompletedAction completed)
     {
+        long hostVersion = CaptureHostExecutionVersion();
+        using var executionLease = EnterHostExecutionOwner(Context);
+        if (!HostExecutionVersionCurrent(hostVersion)) return;
         uint tag = CurrentRunnerTag;
         if (tag == 0 || completed.Tag != tag) return;
         Volatile.Write(ref _currentActionHandle, 0);

@@ -75,10 +75,12 @@ public sealed partial class BehaviorManager : IDisposable
     // fidelity: M8-001, M8-012 — manager forwarding 005A42C4..005A4304.
     internal void RequestCurrentBehaviorEndOnNextActionComplete()
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         if(Current is SteppedBehavior behavior)behavior.StopOnNextActionComplete();
         else if(Current is not null)SteppedBehavior.ReportMissing("M8-001 end-next-action current behavior has no native lifecycle; prior action retained");
     }
     private readonly object _gate = new();
+    private bool _hostDisposed;
 
     private IBehavior? _current;
     private BehaviorScope? _scope;
@@ -103,9 +105,11 @@ public sealed partial class BehaviorManager : IDisposable
 
     private IReadOnlyList<ReactionMapEntry> _nativeReactionRows = Array.Empty<ReactionMapEntry>();
     private bool _nativeReactionMapLoaded;
+    private AcknowledgeObjectBehavior? _configuredAcknowledgeObject;
     // fidelity: M7-014 -- row72: initialize the real map before exposing the robot's AI inputs.
     internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         if (_nativeReactionMapLoaded) return;
         lock (_gate) _map.Clear(); // private construction only; no deferred locks or replay
         Initialized=false;
@@ -118,7 +122,8 @@ public sealed partial class BehaviorManager : IDisposable
         {
             var unbound=new List<string>();
             foreach(var reg in ShippedBehaviors.Reactions(_context.Robot,vision?.Locator,
-                ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound))
+                ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound,
+                acknowledgeObject:_configuredAcknowledgeObject))
             {
                 if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
                 AddReaction(reg.Strategy,reg.Behavior);
@@ -132,8 +137,11 @@ public sealed partial class BehaviorManager : IDisposable
     internal void BindFreeplayInputs(BehaviorContext context,string resources,Cozmo.Robot.Vision.VisionSystem? vision,
         Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,IReadOnlyDictionary<string,IBehavior> bound)
     {
+        using var executionLease = context.Robot.Engine.EnterSynchronousOwner();
         _context=context;context.Penalty=_penalty;
         if(context.Arbiter is {} arb)arb.ManagerDispatchesReactions=true;
+        if (!_nativeReactionMapLoaded && bound.TryGetValue("AcknowledgeObject", out var configured))
+            _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
         InitializeRobotReactions(resources,vision); // explicit late resource input, only if startup map was absent
         foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
             cliff.DriveStraight=manipulation is null?null:(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
@@ -215,6 +223,10 @@ public sealed partial class BehaviorManager : IDisposable
     /// <summary>The trigger map's entries, ascending trigger then JSON order.</summary>
     public IReadOnlyList<ReactionRegistration> Reactions { get { lock (_gate) return _map.Values.SelectMany(i => i.Entries).ToList(); } }
 
+    // AcknowledgeObject T4/T6: the early strategy and the configured container share this owner.
+    internal AcknowledgeObjectBehavior? AcknowledgeObjectReactionOwner() =>
+        Reactions.FirstOrDefault(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated)?.Behavior as AcknowledgeObjectBehavior;
+
     /// <summary>GetCurrentReactionTrigger (0x5A19EC): the reaction that is running; null is NoneTrigger.</summary>
     public ReactionTrigger? CurrentReactionTrigger { get { lock (_gate) return _currentReaction; } }
 
@@ -247,6 +259,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     public void AddReaction(IReactionTriggerStrategy strategy, IBehavior behavior)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         lock (_gate)
         {
             strategy.Manager = this;
@@ -286,6 +299,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     public void DisableReactionsWithLock(string lockName, IReadOnlyList<bool> triggers, bool stopCurrent = true)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         foreach (var (t, info) in Nodes())
         {
             int i = (int)t;
@@ -330,6 +344,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     public void RemoveDisableReactionsLock(string lockName)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         if (lockName == "sdk") lock (_gate) _reactionGateOpen = true;
         foreach (var (t, info) in Nodes())
         {
@@ -371,6 +386,8 @@ public sealed partial class BehaviorManager : IDisposable
     // fidelity: M8-012
     public ReactionSwitch? CheckReactions(double nowSec)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return null;
         if(!HostReactionChecksEnabled)return null;
         // C3
         if (ActionListIsEmpty is { } empty)
@@ -480,6 +497,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     public void SetDefaultHeadAndLiftState(bool enable, float headRad, float liftHeightMm)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         lock (_gate)
         {
             _defaultHeadRad = enable ? headRad : float.MaxValue;
@@ -514,6 +532,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// <summary>Adds a behaviour. Ids are unique; adding the same id twice replaces the first.</summary>
     public void Add(IBehavior behavior)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         lock (_gate)
         {
             _behaviors.RemoveAll(b => b.Id == behavior.Id);
@@ -544,6 +563,8 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     public BehaviorSelection ChooseAndSwitch(double nowSec)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return new BehaviorSelection(null, "behavior manager is disposed");
         var scores = new List<(string, double, string)>();
         IBehavior? best = null;
         double bestScore = 0;
@@ -626,10 +647,17 @@ public sealed partial class BehaviorManager : IDisposable
     }
 
     /// <summary>Starts a behaviour by id, outside scoring. For a caller that wants a specific one.</summary>
-    public async Task<bool> StartAsync(string id, double nowSec, CancellationToken cancel = default)
+    public Task<bool> StartAsync(string id, double nowSec, CancellationToken cancel = default)
     {
-        var b = Find(id);
-        return b is not null && await SwitchToBehaviorBase(b, nowSec, cancel).ConfigureAwait(false);
+        try
+        {
+            using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+            var b = Find(id);
+            return Task.FromResult(b is not null && SwitchToBehaviorBaseCore(new RunningInfo(b, null, null), nowSec, BehaviorStopReason.Interrupted, cancel));
+        }
+        catch (OperationCanceledException error)
+        { return Task.FromCanceled<bool>(error.CancellationToken.IsCancellationRequested ? error.CancellationToken : new CancellationToken(true)); }
+        catch (Exception error) { return Task.FromException<bool>(error); }
     }
 
     // ------------------------------------------------------------------ BehaviorManager::Update (M8-012)
@@ -702,6 +730,8 @@ public sealed partial class BehaviorManager : IDisposable
     // fidelity: M8-012
     public void Update(double nowMs, double nowSec)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return;
         // 0x005a2f70 ldrb r0,[r4]; cbz: the engine logs the error and returns without touching a behaviour.
         if (!Initialized) { Log?.Invoke("BehaviorManager.Update.NotInitialized"); return; }
 
@@ -742,12 +772,16 @@ public sealed partial class BehaviorManager : IDisposable
         ReactionTrigger? trigger;
         lock (_gate) { running = _current; trigger = _currentReaction; }
         if (running is null) return;
+        long? generation = (running as AcknowledgeObjectBehavior)?.HostGeneration;
         bool keep = running.Update(_context, nowMs);
         if (keep) return;
+        bool StillCurrent() => generation is null || (ReferenceEquals(Current, running) && ((AcknowledgeObjectBehavior)running).HostGeneration == generation.Value);
+        if (!StillCurrent()) return;
 
         // 0x005a30e8 BehaviorManager.Update.BehaviorComplete, then FinishCurrentBehavior(behaviour, trigger != 0x16).
         Log?.Invoke($"BehaviorManager.Update.BehaviorComplete: Behavior '{running.Id}' returned  Status::Complete");
-        FinishCurrentBehavior(running, tryToResume: trigger is not null, nowSec);
+        if (!StillCurrent()) return;
+        FinishCurrentBehaviorCore(running, tryToResume: trigger is not null, nowSec, StillCurrent);
     }
 
     /// <summary>
@@ -791,6 +825,8 @@ public sealed partial class BehaviorManager : IDisposable
     private bool SwitchToBehaviorBaseCore(RunningInfo info, double nowSec, BehaviorStopReason stopReason,
                                           CancellationToken cancel = default)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return false;
         // Host availability boundary, not a native false/no-effect result. Do not retire the prior selection.
         if(info.Current is NativePickUpCubeBehavior pickup&&!pickup.CheckExecutionAvailability())return false;
         lock (_gate) StopAndNullifyLocked(stopReason, nowSec);
@@ -810,9 +846,12 @@ public sealed partial class BehaviorManager : IDisposable
             // Init runs with the manager's current behaviour still null (0x005a1e6a nulled it; SetRunningAndResumeInfo is 0x005a1f12), so a
             // lock the behaviour takes in Init that stops "the current behaviour" finds nothing to stop.
             scope = ScopeFor(next);
+            long? startingGeneration = (next as AcknowledgeObjectBehavior)?.HostGeneration;
             try
             {
                 next.StartAsync(_context, scope, cancel).GetAwaiter().GetResult();
+                if (startingGeneration is not null && ((AcknowledgeObjectBehavior)next).HostGeneration != unchecked(startingGeneration.Value + 1))
+                { scope.Dispose(); return false; } // reentrant replacement owns the manager now
                 initFailed = next is SteppedBehavior sb && sb.InitFailed;
                 if (next is not SteppedBehavior) lock (_gate) _resumeState.Remove(next);       // Init zeroes +0x114 (0x005bcd58)
             }
@@ -910,8 +949,16 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     public void FinishCurrentBehavior(IBehavior behavior, bool tryToResume, double nowSec)
     {
-        if (tryToResume) { TryToResumeBehavior(nowSec); return; }
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return;
+        FinishCurrentBehaviorCore(behavior, tryToResume, nowSec, null);
+    }
+    private void FinishCurrentBehaviorCore(IBehavior behavior, bool tryToResume, double nowSec, Func<bool>? stillCurrent)
+    {
+        if (stillCurrent is not null && !stillCurrent()) return;
+        if (tryToResume) { TryToResumeBehavior(nowSec, stillCurrent); return; }
         if (UiGameBehavior is { } ui && ReferenceEquals(ui, behavior)) EnsureRequestGameIsClear?.Invoke();
+        if (stillCurrent is not null && !stillCurrent()) return;
         SwitchToBehaviorBaseCore(new RunningInfo(null, null, null), nowSec, BehaviorStopReason.Completed);
     }
 
@@ -932,8 +979,9 @@ public sealed partial class BehaviorManager : IDisposable
     /// transition is sent, then <c>SetRunningAndResumeInfo</c> (0x005a2d10..0x005a2d94). <c>Init</c> is not called.</item>
     /// </list>
     /// </summary>
-    private void TryToResumeBehavior(double nowSec)
+    private void TryToResumeBehavior(double nowSec, Func<bool>? stillCurrent = null)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         IBehavior? resume;
         ReactionTrigger? trigger;
         float headRad, liftMm;
@@ -950,10 +998,14 @@ public sealed partial class BehaviorManager : IDisposable
         {
             if (ActionListIsEmpty is { } empty)
             {
-                if (empty())
+                bool isEmpty = empty();
+                if (stillCurrent is not null && !stillCurrent()) return;
+                if (isEmpty)
                 {
                     Log?.Invoke($"BehaviorManager.DefaultHeadAnfLiftState.ResumeBehavior: Resuming behavior and don't have an action, so setting head angle {headRad}, lift height {liftMm}");
+                    if (stillCurrent is not null && !stillCurrent()) return;
                     QueueHeadAndLift(headRad, liftMm);
+                    if (stillCurrent is not null && !stillCurrent()) return;
                 }
             }
             else
@@ -964,19 +1016,26 @@ public sealed partial class BehaviorManager : IDisposable
 
         if (resume is null)
         {
+            if (stillCurrent is not null && !stillCurrent()) return;
             SwitchToBehaviorBaseCore(new RunningInfo(null, null, null), nowSec, BehaviorStopReason.Completed);
             return;
         }
 
+        if (stillCurrent is not null && !stillCurrent()) return;
         lock (_gate) StopAndNullifyLocked(BehaviorStopReason.Completed, nowSec);
+        if (stillCurrent is not null && Current is not null) return; // reentrant replacement during Stop
 
         // IBehavior::Resume(trigger) 0x005a2c76: the trigger is the reaction that just ended (info+0x10); null is NoneTrigger.
         var scope = ScopeFor(resume);
         bool failed;
         if (resume is SteppedBehavior stepped)
         {
+            long? startingGeneration = (resume as AcknowledgeObjectBehavior)?.HostGeneration;
             stepped.AttachRun(_context, scope);
             failed = stepped.Resume(trigger, nowSec);
+            if (startingGeneration is not null && ((AcknowledgeObjectBehavior)resume).HostGeneration != startingGeneration.Value &&
+                ((AcknowledgeObjectBehavior)resume).HostGeneration != unchecked(startingGeneration.Value + 1))
+            { scope.Dispose(); return; }
         }
         else failed = ResumeNonStepped(resume, trigger, scope, nowSec);
 
@@ -1040,6 +1099,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// <summary>The engine's FinishCurrentBehavior for a caller that stops what is running.</summary>
     public void Stop(BehaviorStopReason reason, double nowSec)
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         lock (_gate) StopCurrentLocked(reason, nowSec);
     }
 
@@ -1058,8 +1118,11 @@ public sealed partial class BehaviorManager : IDisposable
         bool running = b is not SteppedBehavior sb || sb.EngineRunning;
         if (running)
         {
+            long? generation = (b as AcknowledgeObjectBehavior)?.HostGeneration;
             try { b.Stop(reason); }
             catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
+            if (generation is not null && (!ReferenceEquals(_current, b) || (b is AcknowledgeObjectBehavior current &&
+                current.EngineRunning && current.HostGeneration != unchecked(generation.Value + 1)))) return;
 
             // IBehavior::Stop 0x005bd11a/0x005bd11e stamps the last-run clock +0x30 on every stop, and
             // EvaluateRepetitionPenalty 0x005beee6 reads it. The +0x108 suppression window is NOT written
@@ -1096,17 +1159,25 @@ public sealed partial class BehaviorManager : IDisposable
     /// <summary>Stops what is running and releases the registered strategies' subscriptions.</summary>
     public void Dispose()
     {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return;
+        _hostDisposed = true; // before any Stop/diagnostic callbacks may reenter selection
         SteppedBehavior.ReportMissing("M8-016/M8-023 host BehaviorManager.Dispose still performs host Stop/strategy unsubscribe cleanup; native activity/chooser/strategy shared-control tree ownership and destructor position0x005A0D22..0x005A0DFA are unbuilt; host cleanup is not a native destructor");
         _sparkInput?.Dispose(); // host retained handle cleanup; native destructor position remains M8-023
         Stop(BehaviorStopReason.Cancelled, 0);
         foreach(var behavior in _behaviors.OfType<SteppedBehavior>())behavior.RetireActionCompletionOwner();
         List<IReactionTriggerStrategy> strategies;
+        List<AcknowledgeObjectBehavior> objectOwners;
         lock (_gate)
         {
             strategies = _map.Values.SelectMany(i => i.Entries).Select(r => r.Strategy).Distinct().ToList();
+            objectOwners = _behaviors.OfType<AcknowledgeObjectBehavior>()
+                .Concat(_map.Values.SelectMany(i => i.Entries).Select(r => r.Behavior).OfType<AcknowledgeObjectBehavior>())
+                .Distinct().ToList();
             _map.Clear(); // destruction retires both entries and their per-trigger locks
         }
         foreach (var s in strategies) if (s is IDisposable d) d.Dispose();
+        foreach (var objectOwner in objectOwners) objectOwner.ReleaseHostGhost(); // host cleanup after stop/cancel and unsubscribe
         if(_context.Robot.Sensors.RequestCurrentBehaviorEndImmediately?.Target==this)
             _context.Robot.Sensors.RequestCurrentBehaviorEndImmediately=null;
         var um = _context.Robot.Sensors.UnexpectedMovement;
