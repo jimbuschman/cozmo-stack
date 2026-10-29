@@ -121,16 +121,16 @@ public sealed class HelperStopAndPyramidLoopTests
     {
         var b=new BuildPyramidBaseBehavior(rig.M,"BuildPyramid",true);
         b.AttachRun(new BehaviorContext{Robot=rig.Robot,Triggers=new(),AI=new AIComponent(()=>1)},new BehaviorScope());
-        Ids(b,7,88,8);return b;
+        Ids(b,7,8,88);return b;
     }
     [Fact]
-    public void NullLookupUsesStaticAndTopButWarningAndClearUseMovingBaseId()
+    public void NullLookupUsesStaticAndBaseAndInvalidatesOnlyStatic()
     {
         using var rig=new Rig();var b=Pyramid(rig);Ids(b,700,88,800);
         var logs=new List<EngineLogEntry>();rig.Robot.Engine.LogEntry+=logs.Add;
         b.TransitionToPlacingTopBlock();
-        Assert.Null(b.BaseBlockId);Assert.Equal(700u,b.StaticBlockId);Assert.Equal(800u,b.TopBlockId);
-        Assert.EndsWith("Object 88 is NULL",Assert.Single(logs.Where(e=>e.Name=="BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject")).Text);
+        Assert.Null(b.StaticBlockId);Assert.Equal(88u,b.BaseBlockId);Assert.Equal(800u,b.TopBlockId);
+        Assert.EndsWith("Object 700 is NULL",Assert.Single(logs.Where(e=>e.Name=="BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject")).Text);
     }
     private static void Add(Rig rig,uint id)
     {
@@ -139,7 +139,7 @@ public sealed class HelperStopAndPyramidLoopTests
             {Pose=new Pose3d("obj"),PoseState=PoseState.Known,OriginId=rig.M.World.CurrentOriginId});
     }
     [Fact]
-    public void SnapshotRetainsDuplicatesTestsTopFirstAndContinuesAfterDelegation()
+    public void SnapshotRetainsDuplicatesTestsBaseFirstAndContinuesAfterDelegation()
     {
         using var rig=new Rig();Add(rig,7);Add(rig,8);var b=Pyramid(rig);
         var entry=new NativePyramidBase(7,8);var cache=new List<NativePyramidBase>{new(7,99),entry,entry};
@@ -179,7 +179,7 @@ public sealed class HelperStopAndPyramidLoopTests
         b.TopBaseMidpoint=(_,_,output)=>{using var p=new Pose3d("point",root);output.AssignInputValue(p);return true;};
         b.TopBaseCenter=_=>new Pose3d("center",root);
         int made=0;var contains=new List<uint>();b.TopContainsForTest=(_,id)=>contains.Add(id);
-        b.PlacementHelperCreatedForTest=h=>{made++;h.PrecheckForTest=()=>ActionResult.Running;Ids(b,7,88,9);};
+        b.PlacementHelperCreatedForTest=h=>{made++;h.PrecheckForTest=()=>ActionResult.Running;Ids(b,7,9,88);};
         b.TransitionToPlacingTopBlock();
         Assert.Equal(1,made);Assert.Equal(new uint[]{8,7,9},contains); // 5DC188/198 read fields again on next iteration
     }

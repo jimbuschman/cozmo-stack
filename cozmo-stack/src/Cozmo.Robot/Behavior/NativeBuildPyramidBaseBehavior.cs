@@ -4,30 +4,30 @@ using Cozmo.Robot.Manipulation;
 namespace Cozmo.Robot.Behavior;
 
 // Proposed coherent Base lifecycle owner; no assigned fidelity ID. BUILD-PYRAMID-BASE-1 E1..G2.
-internal sealed class NativeBuildPyramidBaseBehavior:SteppedBehavior
+internal class NativeBuildPyramidBaseBehavior:SteppedBehavior
 {
-    private readonly ManipulationSystem _m;
-    private readonly EngineRobot _robot;
-    internal uint StaticId {get;private set;}=uint.MaxValue;
+    protected readonly ManipulationSystem _m;
+    protected readonly EngineRobot _robot;
+    internal uint StaticId {get;private protected set;}=uint.MaxValue;
     internal uint BaseId {get;private set;}=uint.MaxValue;
     internal uint TopId {get;private set;}=uint.MaxValue;
-    internal int State {get;private set;}
+    internal int State {get;private protected set;}
     internal int PreviousBaseCount {get;private set;}
     internal float Appeared {get;private set;}=-1f;
     internal float Lost {get;private set;}=-1f;
     internal bool StopWhenFull {get;set;}
     internal Action<EngineRobot>? ObservationFinished {get;set;}
-    internal NativePickupBlockHelper? PickupHelper {get;private set;}
-    internal NativePlaceRelObjectHelper? PlacementHelper {get;private set;}
-    internal NativeBuildPyramidBaseBehavior(BehaviorFactoryContext source,JsonElement json)
-        :base(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(),"BuildPyramidBase")
+    internal NativePickupBlockHelper? PickupHelper {get;private protected set;}
+    internal NativePlaceRelObjectHelper? PlacementHelper {get;private protected set;}
+    internal NativeBuildPyramidBaseBehavior(BehaviorFactoryContext source,JsonElement json,string nativeClass="BuildPyramidBase")
+        :base(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(),nativeClass)
     {_m=source.Manipulation!;_robot=source.NativeRobot!;}
     protected override bool RunnableGate20(BehaviorContext context)=>false;
     protected override bool RunnableGate24(BehaviorContext context)=>false;
     protected override bool RunnableGate28(BehaviorContext context)=>true;
     protected override bool KeepsRunningWithoutAction=>HasCurrentAction;
     public override bool IsRunnable(BehaviorContext context)=>IsRunnableBase(context)&&IsRunnableInternal(context);
-    private NativeBehaviorRuntime Runtime=>_robot.NativeBehaviorRuntime??throw new NativeConfigurationUnavailable("BuildPyramidBase actual runtime unavailable");
+    protected NativeBehaviorRuntime Runtime=>_robot.NativeBehaviorRuntime??throw new NativeConfigurationUnavailable("BuildPyramidBase actual runtime unavailable");
     // R1:005DCAFA..CB4E. Input suppliers are explicit; no nearest/all-pairs replacement.
     internal bool RefreshTargets()
     {
@@ -36,9 +36,9 @@ internal sealed class NativeBuildPyramidBaseBehavior:SteppedBehavior
         bool changed=basis!=BaseId||stat!=StaticId||top!=TopId;
         BaseId=basis;StaticId=stat;TopId=top;return changed;
     }
-    private IReadOnlyList<NativePyramidBase> Bases()=>Runtime.PyramidBaseStrongInput?.Invoke()
+    protected IReadOnlyList<NativePyramidBase> Bases()=>Runtime.PyramidBaseStrongInput?.Invoke()
         ??throw new NativeConfigurationUnavailable("M12-049 BuildPyramidBase strong cache+48 producer MISSING (unavailable is not empty)");
-    private IReadOnlyList<NativePyramidConfiguration> Full()=>Runtime.PyramidFullStrongInput?.Invoke()
+    protected IReadOnlyList<NativePyramidConfiguration> Full()=>Runtime.PyramidFullStrongInput?.Invoke()
         ??throw new NativeConfigurationUnavailable("M12-049 BuildPyramidBase strong cache+64 producer MISSING (unavailable is not empty)");
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
@@ -54,11 +54,11 @@ internal sealed class NativeBuildPyramidBaseBehavior:SteppedBehavior
         if((carry.CarriedObjectId??uint.MaxValue)!=uint.MaxValue)Place();else Pickup();
     }
     private BehaviorManager Manager=>_robot.BehaviorManagerOwner??throw new NativeConfigurationUnavailable("BuildPyramidBase actual state-light manager unavailable");
-    private AIComponent AI=>Context.AI??throw new NativeConfigurationUnavailable("BuildPyramidBase actual helper component unavailable");
-    private void Pickup()
+    protected AIComponent AI=>Context.AI??throw new NativeConfigurationUnavailable("BuildPyramidBase actual helper component unavailable");
+    protected void Pickup()
     {
         State=0;SetStateName("DrivingToBaseBlock");
-        Manager.SetBehaviorStateLights(BehaviorClass.BuildPyramidBase,new[]{new BehaviorStateLightInfo(BaseId,0x20,false,BehaviorStateLightInfo.Zero())},false);
+        Manager.SetBehaviorStateLights(Enum.Parse<BehaviorClass>(Class),new[]{new BehaviorStateLightInfo(BaseId,0x20,false,BehaviorStateLightInfo.Zero())},false);
         // D2/D3:005DCC16..CC78 and checked B1 F8 one-use pre-animation.
         PickupHelper=new(_m,this,AI.Helpers.Factory,BaseId,0f,false,false,0x16);
         IHelper? raw=PickupHelper;var handle=AI.Helpers.AddHelperToComponent(ref raw);
@@ -68,7 +68,7 @@ internal sealed class NativeBuildPyramidBaseBehavior:SteppedBehavior
     internal void Place()
     {
         State=1;SetStateName("PlacingBaseBlock");
-        Manager.SetBehaviorStateLights(BehaviorClass.BuildPyramidBase,Array.Empty<BehaviorStateLightInfo>(),false);
+        Manager.SetBehaviorStateLights(Enum.Parse<BehaviorClass>(Class),Array.Empty<BehaviorStateLightInfo>(),false);
         if(_m.World.GetLocatedObjectByIdHelper(StaticId) is null)
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramidBase.TransitionToPlacingBaseBlock.NullObject",$"Object {unchecked((int)StaticId)} is NULL");
