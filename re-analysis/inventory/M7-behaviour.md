@@ -782,11 +782,11 @@ Also, `RequestGameSimple`'s virtuals are named `RequestGame_InitInternal` / `Req
 |---|---|---|---|---|
 | AcknowledgeFace | InitInternal | sets `this+0x12C = 1`; returns 0 | `0x6028c8 movs r1,#1` / `0x6028ca strb.w r1,[r0,#0x12c]` | EXACT_SOURCE |
 | AcknowledgeFace | UpdateInternal | if `+0x12C` set: clear it and `BeginIteration(robot)`; then tail `IBehavior::UpdateInternal` | `0x60292e ldrb.w r0,[r5,#0x12c]` / `0x602938 strb.w r0,[r5,#0x12c]` / `0x60293e blx 0x4b615c` / `0x60294a b.w 0x8cc12c` | EXACT_SOURCE |
-| AcknowledgeFace | StopInternal | walks/destroys the desired-face set at `+0x120..+0x134` | `0x6028d6 add.w r5,r4,#0x134` / `0x602914 blx 0x4a5ce0` | EXACT_SOURCE |
+| AcknowledgeFace | StopInternal | each listener in the set at `+0x130..+0x134`: vslot `+4` ClearDesiredTargets(robot); then destroys and resets the desired-face set at `+0x120..+0x128` (corrected 2026-10-29) | `0x6028d6 add.w r5,r4,#0x134` / `0x602914 blx 0x4a5ce0` | EXACT_SOURCE |
 | AcknowledgeFace | IsRunnableInternal | `+0x128 != 0` | `0x6028bc ldr.w r0,[r0,#0x128]` | EXACT_SOURCE |
 | AcknowledgeObject | InitInternal | `+0x148 = 1`; if the object at `+0x144` has `[obj+0x18] == -1` calls its vtable `+0x24` and logs; returns 0 | `0x603440 strb.w r1,[r4,#0x148]` / `0x60344c ldr r1,[r1,#0x24]` / `0x60346a blx 0x4a5b84` | EXACT_SOURCE |
 | AcknowledgeObject | UpdateInternal | if `+0x148` set: clear it and `BeginIteration`; then tail `IBehavior::UpdateInternal` | `0x60352a ldrb.w r0,[r5,#0x148]` / `0x60353a blx 0x4b6270` / `0x603546 b.w 0x8cc12c` | EXACT_SOURCE |
-| AcknowledgeObject | StopInternal | virtual dtors on `+0x158..+0x15C`, `+0x140 = -1`, destroy tree `+0x14C`, `+0x148 = 0` | `0x6042a2 mov.w r0,#-1` / `0x6042a6 str.w r0,[r4,#0x140]` / `0x6042ae blx 0x4a5ce0` / `0x6042c0 strb.w r1,[r4,#0x148]` | EXACT_SOURCE |
+| AcknowledgeObject | StopInternal | each listener in the set at `+0x158..+0x15C`: vslot `+4` ClearDesiredTargets(robot) (`0x604278 ldr r2,[r1,#4]` / `0x60427c blx r2`; corrected 2026-10-29, not dtors), `+0x140 = -1`, destroy tree `+0x14C`, `+0x148 = 0` | `0x6042a2 mov.w r0,#-1` / `0x6042a6 str.w r0,[r4,#0x140]` / `0x6042ae blx 0x4a5ce0` / `0x6042c0 strb.w r1,[r4,#0x148]` | EXACT_SOURCE |
 | AcknowledgeObject | IsRunnableInternal | `+0x154 != 0` | `0x6042c8 ldr.w r0,[r0,#0x154]` | EXACT_SOURCE |
 | RamIntoBlock | InitInternal | `[[robot+0x284]+8] == -1` (not carrying) -> `TransitionToTurningToBlock`, else `TransitionToPuttingDownBlock` | `0x604766 ldr.w r2,[r1,#0x284]` / `0x60476c adds r2,#1` / `0x604770 blx 0x4b63a8` / `0x604776 blx 0x4b63b4` | EXACT_SOURCE |
 | RamIntoBlock | StopInternal | `+0x11C = -1` | `0x604990 mov.w r1,#-1` / `0x604994 str.w r1,[r0,#0x11c]` | EXACT_SOURCE |
@@ -1395,3 +1395,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: SetBehaviorStateLights 0x005A4320..0x005A45F2, wrapper 0x005BEE38, StopAndPlay 0x006396AC..0x00639722, switch cleanup 0x005A2114..0x005A226E | M7-030 (new) |
+
+## M7-019 Stop rows corrected (operator approved 2026-10-29; research/20261029-acknowledge-object-1-read.md)
+
+| Change | Records |
+| --- | --- |
+| Reactions rows AcknowledgeFace/AcknowledgeObject StopInternal: the listener-set walk calls vslot +4 ClearDesiredTargets(robot) (0x006028EA, 0x0060427C), not virtual dtors; then the target set is destroyed and reset. Status unchanged | M7-019 |

@@ -1102,3 +1102,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorAcknowledgeFace ctor 0x00602884, gates, Init/Update, BeginIteration 0x00602950, GetBestFaceToTrack 0x0056C110, FinishIteration 0x00602C34, Stop 0x006028D2 | M15-080 (new) |
+
+## ACKNOWLEDGE-OBJECT-1, the AcknowledgeObject lifecycle (operator approved 2026-10-29; research/20261029-acknowledge-object-1-read.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorAcknowledgeObject ctor 0x00602FA4 and ghost, gates (0x00604380, 0x006042C8), Init 0x00603434, BeginIteration 0x00603560, LookForStackedCubes 0x006038DA, FinishIteration 0x00603C74, Stop 0x0060425E | M15-081 (new) |

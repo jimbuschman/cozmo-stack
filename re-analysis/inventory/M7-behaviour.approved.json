@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-28",
+  "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "a4aa97441da10d8a6aee893c327895a006db2360a923fed13b6f742064c07db3",
+  "inventory_sha256": "f6ee72e001435e3fe6f5bd9cae7013f1bdb152ee64e794c9b02543c307202c7d",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -249,7 +249,8 @@
         "corrected ReactToCliff mood-event sequence 0x00604d70..0x00604d84",
         "ReactToImpact 0x006061f8..0x0060647c",
         "ReactToOnCharger 0x00606c94..0x00606e86",
-        "ReactToPickup 0x00607750..0x00607d9c"
+        "ReactToPickup 0x00607750..0x00607d9c",
+        "Stop rows corrected with operator approval 2026-10-29 (re-analysis/research/20261029-acknowledge-object-1-read.md, 'Existing records contradicted'): AcknowledgeObject StopInternal 0x0060425E..0x006042C6 and AcknowledgeFace StopInternal 0x006028D2..0x00602926 walk their listener set (+0x158 / +0x130) and call each listener's vslot +4 with the robot (0x00604278..0x0060427C; 0x006028E8..0x006028EA), which for the only listener is the strategy's ClearDesiredTargets (reloc 0x0102D2EC), not a destructor; then they destroy and reset the target set."
       ],
       "live_path": true,
       "hardware_required": false
@@ -374,7 +375,7 @@
       "hardware_required": false
     },
     "M7-030": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BehaviorManager::SetBehaviorStateLights: ordered diff against the previous lights, stop/replacement/new play on cube-light layer 1, retained vector and class, and the switch cleanup after Init",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
