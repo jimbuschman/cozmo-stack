@@ -1,0 +1,18 @@
+[
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/PutDownNothingNativeTests.cs",
+    "size": 13718,
+    "sha256": "ca5aafbe65f6ef2b285215428d69cdd6f1642a4f127e97c9e796db953b2676cd",
+    "publishedLfSha256": "ca5aafbe65f6ef2b285215428d69cdd6f1642a4f127e97c9e796db953b2676cd",
+    "rawGitBlob": "0ab432fbc873b5dc77aa6cfdcef749efda061479",
+    "stagedEquivalentGitBlob": "0ab432fbc873b5dc77aa6cfdcef749efda061479"
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/PUTDOWN-NOTHING-1-builder.md",
+    "size": 11444,
+    "sha256": "7711d6b0866c69a8590d5ad7bc68d81fde82f74b4480d7760c94431ec57b4d8f",
+    "publishedLfSha256": "7711d6b0866c69a8590d5ad7bc68d81fde82f74b4480d7760c94431ec57b4d8f",
+    "rawGitBlob": "2af36d37d496a8337dbe20239a3a167cc665a626",
+    "stagedEquivalentGitBlob": "2af36d37d496a8337dbe20239a3a167cc665a626"
+  }
+]

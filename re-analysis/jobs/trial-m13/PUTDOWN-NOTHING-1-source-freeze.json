@@ -1,0 +1,23 @@
+{
+  "job": "PUTDOWN-NOTHING-1",
+  "stage": "bounded source independently passed",
+  "baseline": "894879dab7f3d038a302e4bef05b36fb7cb86f08",
+  "files": [
+    {
+      "path": "re-analysis/research/20261029-putdown-nothing-1-read.md",
+      "sha256": "225F870D2D01F00D06CBD0D9CDF4F10301A8259ABF2554E095ED85F6767F6629"
+    },
+    {
+      "path": "re-analysis/research/20261029-putdown-nothing-1-read-codex-check.md",
+      "sha256": "8A0D3A48B6697CBE2151A92B446C904E99702922DA04E408859A3E4BEDA7D8F1"
+    }
+  ],
+  "currentWholeRecordsCompared": 19,
+  "nativeBehaviorId": 66,
+  "nativeBehaviorClass": 44,
+  "sourceReviewerCorrections": 0,
+  "newRecordsProposed": 0,
+  "recordWideningsProposed": 0,
+  "wholeSettlementsProposed": 0,
+  "inputBoundary": "P4: broader NothingToDo admission/competition/strategy and inherited producers"
+}
