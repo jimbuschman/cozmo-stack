@@ -292,6 +292,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
         [BehaviorClass.PopAWheelie] = (ctx,json)=>new NativePopAWheelieBehavior(ctx,json),
         [BehaviorClass.RollBlock] = (ctx,json)=>new NativeRollBlockBehavior(ctx,json),
+        [BehaviorClass.BuildPyramid] = (ctx,json)=>new NativeBuildPyramidBehavior(ctx,json),
         [BehaviorClass.BuildPyramidBase] = (ctx,json)=>new NativeBuildPyramidBaseBehavior(ctx,json),
         [BehaviorClass.StackBlocks] = (ctx,json)=>new NativeStackBlocksBehavior(ctx,json),
         [BehaviorClass.PickUpCube] = (ctx,json)=>new NativePickUpCubeBehavior(ctx,json),
@@ -353,12 +354,12 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
+        if((cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
+        if((cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;

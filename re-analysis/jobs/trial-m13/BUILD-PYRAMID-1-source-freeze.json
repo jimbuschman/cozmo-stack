@@ -1,0 +1,47 @@
+{
+  "job": "BUILD-PYRAMID-1",
+  "stage": "source independently passed; bounded builder released",
+  "readerRequestedModel": "gpt-6.1-sol",
+  "readerRequestedEffort": "medium",
+  "builderReviewerRequestedModel": "DEFAULT (override omitted)",
+  "builderReviewerRequestedEffort": "DEFAULT (override omitted)",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-read.md",
+      "sha256": "8B04FC1A597DCC0B1815A4D2E2E7D6A61CD56434D3E88A8362715ED1395D81E9"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-read-codex-check.md",
+      "sha256": "05293816C0539B07CD35E4029C33CCDF52211F015A5FC4EF3291048609E94BF2"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-lookup-family.md",
+      "sha256": "BA500950BA87D9CDC24C021ED2C3641EB9A8229890079AB9465FA42AFE21F8C0"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-motion-arguments.md",
+      "sha256": "367407B7A12F3D7DA680B11769B4ED15B8AE63DB71A1D291705CB303256E4A9A"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-motion-arguments-codex-check.md",
+      "sha256": "B47A959E7F44D1B63A46E5F887D6B78930AE1509180A3D721B2DD11EA58C6E28"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-state-light-owner.md",
+      "sha256": "A139160AFA35B0F4086C1283F7AF471509A3950562D10CF75436B281FCAB1CED"
+    },
+    {
+      "path": "re-analysis/research/20261028-build-pyramid-1-state-light-owner-codex-check.md",
+      "sha256": "0372F4BF5DD71F10F4A818A6C919EAB66ECDA795D7982D3CDAEB7AF2979F7192"
+    }
+  ],
+  "reusedBasePacket": "re-analysis/jobs/trial-m13/BUILD-PYRAMID-BASE-1-source-freeze.json",
+  "wholeCurrentRecordSnapshotsCompared": 9,
+  "additionalWholeRecordCompared": "M11-004",
+  "sourceWordingClarifications": 1,
+  "sourceWordingClarificationsResolved": 1,
+  "fieldRoleDefect": "Implementation and unresolved prose defect within native address-specified approved scope; official prose correction left to Claude",
+  "implementationReviewerFixRounds": 0,
+  "builderSourceQuestionsRaised": 2,
+  "builderSourceQuestionsResolved": 2
+}

@@ -355,7 +355,7 @@ public sealed class M12CheckedRowsBuilderTests
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void TopProducerDoesNotSubstituteTheCachedMidpointForTheUnreadCornerOrder()
+    public void TopProducerUsesNativeInteriorCornersAndIgnoresTheBogusHostCachedMidpoint()
     {
         using var f=new Fixture();f.Add(7,new Vec3(100,0,22));f.Add(8,new Vec3(100,50,22),ObjectType.Block_LIGHTCUBE2);
         var map=new Dictionary<BlockConfigurationType,IReadOnlyList<BlockConfiguration>>
@@ -367,12 +367,20 @@ public sealed class M12CheckedRowsBuilderTests
         typeof(SteppedBehavior).GetProperty("Context",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(behavior,new BehaviorContext{Robot=f.Rig.Robot,Triggers=new AnimationTriggerMap(),AI=new AIComponent(()=>1)});
         typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.StaticBlockId))!.SetValue(behavior,7u);
         typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.BaseBlockId))!.SetValue(behavior,8u);
-        typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.TopBlockId))!.SetValue(behavior,8u);
+        typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.TopBlockId))!.SetValue(behavior,9u);
         // OV74: reach the midpoint recipient via the explicit native strong-cache input, not the host snapshot above.
         f.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{new NativePyramidBase(7,8)};
-        int made=0;behavior.PlacementHelperCreatedForTest=h=>{made++;h.PrecheckForTest=()=>ActionResult.Running;};
+        var made=new List<PlaceRelObjectHelper>();behavior.PlacementHelperCreatedForTest=h=>{made.Add(h);h.PrecheckForTest=()=>ActionResult.Running;};
         typeof(BuildPyramidBaseBehavior).GetMethod("TransitionToPlacingTopBlock",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(behavior,null);
-        Assert.Equal(0,made);Assert.Equal(7u,behavior.StaticBlockId);Assert.Equal(BuildPyramidBaseBehavior.Phase.PlacingTopBlock,behavior.CurrentPhase);
+        // BUILD-PYRAMID-1 G1..G6:00617818..00617BF6, P4/P5:005DC1D4..DC266.
+        // Static(100,0,22), base(100,50,22), physical44mm cube corners nearest the base:
+        // (122,22,44),(78,22,44), midpoint(100,22,44), staticCenter(100,0,22).
+        // Thus relativeXY=(0,22), independent of bogus host cached midpoint(12345,6789,42).
+        // Explicit unit precheck seam above substitutes only helper admission, not success/status/completion.
+        var produced=Assert.Single(made);Assert.Equal(7u,produced.Target);Assert.False(produced.Low);
+        Assert.Equal(0f,produced.A);Assert.Equal(22f,produced.B);Assert.False(produced.SkipTransform);
+        Assert.Equal(7u,behavior.StaticBlockId);Assert.Equal(8u,behavior.BaseBlockId);Assert.Equal(9u,behavior.TopBlockId);
+        Assert.Equal(BuildPyramidBaseBehavior.Phase.PlacingTopBlock,behavior.CurrentPhase);
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]

@@ -266,8 +266,8 @@ public class M7BatchThreeBTests
             Assert.Equal(r.Case, e.CaseAddress);
         }
         // Config-built owners; PopAWheelie case0059CEA6/ctor005C7430 joins the independently checked class bindings.
-        // BUILD-PYRAMID-BASE-1 E1: BuildPyramidBase case0059C9AC/ctor005DCA40 is independently configured.
-        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase }.OrderBy(c=>c).ToArray(),
+        // BUILD-PYRAMID-1 E1: derived case0059C98A/ctor005DBC88; Base E1: BuildPyramidBase case0059C9AC/ctor005DCA40 is independently configured.
+        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 

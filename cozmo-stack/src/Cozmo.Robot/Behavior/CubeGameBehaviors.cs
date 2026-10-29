@@ -675,7 +675,7 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
         });
     }
 
-    // fidelity: M12-047 — checked caller loop; M12-043 owns the missing midpoint recipient.
+    // fidelity: M12-047 — checked caller loop; M12-043 owns the shared native midpoint recipient.
     internal Func<ObservableObject,ObservableObject,Pose3d,bool>? TopBaseMidpoint;
     internal Func<ObservableObject,Pose3d> TopBaseCenter = PlacementProducerGeometry.Center;
     internal Action<NativePyramidBase,uint>? TopContainsForTest;
@@ -684,12 +684,12 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
         CurrentPhase = Phase.PlacingTopBlock;
         SetStateName("PlacingTopBlock");
         SteppedBehavior.ReportMissing("M12-028 SmartDisableReactionsWithLock at 0x005DC0B4..0x005DC0D6: checked wrapper array/name, manager disable-body remains M7-014; no stand-in reaction lock is installed");
-        uint a=StaticBlockId??uint.MaxValue,top=TopBlockId??uint.MaxValue;
-        var targetA=M.World.GetLocatedObjectById(a);var targetB=M.World.GetLocatedObjectById(top);
+        uint a=StaticBlockId??uint.MaxValue,basis=BaseBlockId??uint.MaxValue;
+        var targetA=M.World.GetLocatedObjectByIdHelper(a);var targetB=M.World.GetLocatedObjectByIdHelper(basis);
         if (targetA is null || targetB is null)
         {
-            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject",FormattableString.Invariant($"Object {unchecked((int)(BaseBlockId??uint.MaxValue))} is NULL"));
-            BaseBlockId=null;return; // 5DC114/5DC148 read and clear +120, although lookups use +11C/+124
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject",FormattableString.Invariant($"Object {unchecked((int)(StaticBlockId??uint.MaxValue))} is NULL"));
+            StaticBlockId=null;return; // 005DC114/148 numeric+120, static wrapper+11C.
         }
         var entries=M.Configurations.CopyNativePyramidBaseCache();
         if(entries is null)return;
@@ -697,15 +697,11 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
         foreach(var entry in entries)
         {
             // Native keeps references to +124/+11C, not copies of their ID words across synchronous delegation.
-            uint currentTop=TopBlockId??uint.MaxValue;
-            TopContainsForTest?.Invoke(entry,currentTop); if(!entry.ContainsBlock(currentTop))continue;
+            uint currentBase=BaseBlockId??uint.MaxValue;
+            TopContainsForTest?.Invoke(entry,currentBase); if(!entry.ContainsBlock(currentBase))continue;
             uint currentStatic=StaticBlockId??uint.MaxValue;
             TopContainsForTest?.Invoke(entry,currentStatic); if(!entry.ContainsBlock(currentStatic))continue;
-            if(TopBaseMidpoint is not {} getMidpoint)
-            {
-                SteppedBehavior.ReportMissing("M12-043 GetBaseInteriorMidpoint at 0x005DC1DC -> 0x00617A8C..0x00617C32: corner PoseDistanceSquared/world-origin and midpoint root joins remain unbuilt; checked M12-047 caller stops at this recipient");
-                break;
-            }
+            var getMidpoint=TopBaseMidpoint??new NativeConfigurationGeometry(M.World,M.Robot.Engine.Robot).InteriorMidpoint;
             using var midpoint=new Pose3d();
             Pose3d? center=null,relative=null;
             try
@@ -721,10 +717,10 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
                     if(!Pose3d.GetWithRespectTo(midpoint,center,relative))break;
                     xy=relative.Translation;
                 }
-                SteppedBehavior.ReportMissing("M12-049 BuildPyramid placement callback operators at vtables0x01029068/0x010290A8, passed0x005DC298 are unread; checked M12-047 creates/delegates but callback units only report their missing recipient");
+                SteppedBehavior.ReportMissing("M12-049 manual BuildPyramid wrapper callback binding is not integrated; configured NativeBuildPyramidBehavior owns the checked native callbacks; this manual entry remains partial");
                 DelegatePlacement(StaticBlockId??uint.MaxValue,false,(float)xy.X,(float)xy.Y,false,
-                    _=>SteppedBehavior.ReportMissing("M12-049 BuildPyramid success callback vtable0x01029068: skip unread callback unit"),
-                    _=>SteppedBehavior.ReportMissing("M12-049 BuildPyramid failure callback vtable0x010290A8: skip unread callback unit"));
+                    _=>SteppedBehavior.ReportMissing("M12-049 manual BuildPyramid success callback vtable0x01029068 binding unavailable"),
+                    _=>SteppedBehavior.ReportMissing("M12-049 manual BuildPyramid failure callback vtable0x010290A8 binding unavailable"));
             }
             finally { relative?.Dispose();center?.Dispose(); }
             // 5DC2FE: continue after success or failed SmartDelegate; only geometry failure breaks.
