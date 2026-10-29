@@ -60,7 +60,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `DockingTestSimple` | `DockingTestSimple` | in progress | DOCKING-TEST-SIMPLE-1 READY: historical adapter diagnostic/docs, independent128 and resumed full6723 PASS after imported KnockOver root fix. Native body remains unrecovered/non-live under existing M7-022 decision; no settlement/finished claim | No explicit config reference; native/app use UNKNOWN |
 | `AcknowledgeFace` | `AcknowledgeFace` | in progress | UNKNOWN | reaction: FacePositionUpdated. 1 refs; R252+ in map |
 | `AcknowledgeObject` | `AcknowledgeObject` | in progress | FIX-ACKNOWLEDGE-OBJECT-GHOST-1 READY: unavailable ghost look skips visibly and iteration finishes; independent239/full6754 PASS0skip. Existing M15-081/shared helper gaps remain, no settlement or finished claim | reaction: ObjectPositionUpdated. 1 refs; R267+ in map |
-| `Bouncer` | `Bouncer` | in progress | BOUNCER-1 read open; configured whole own path, no implementation or completion claim | freeplay: PlayWithHumans. 1 refs; R078+ in map |
+| `Bouncer` | `Bouncer` | in progress | BOUNCER-1 checked own read frozen/build open; graphics/live-face/host tails explicit. Same prepared builder resumes after ghost repair READY, no completion claim | freeplay: PlayWithHumans. 1 refs; R078+ in map |
 | `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | not started | UNKNOWN | freeplay: Hiking. 1 refs; R025+ in map |
 | `SparksBringCubeToBeacon` | `BringCubeToBeacon` | not started | UNKNOWN | spark: GatherCubes. 1 refs; R200+ in map |
 | `CantHandleTallStack` | `CantHandleTallStack` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
