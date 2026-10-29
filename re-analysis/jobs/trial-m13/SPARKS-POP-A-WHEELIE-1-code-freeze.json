@@ -1,0 +1,47 @@
+[
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+    "bytes": 72637,
+    "sha256": "BCFE1AA160BA6C3DA94F94AAC1AB9750C960F93594E65F3A82D38955B67AA447",
+    "strictUtf8": true,
+    "rawLf": true,
+    "finalNewline": true,
+    "trailingWhitespace": false
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+    "bytes": 33811,
+    "sha256": "2D5CA5F81E3958D323B7F83AB2F1A5573A47788834A4E74A9F253E2461C16F5A",
+    "strictUtf8": true,
+    "rawLf": true,
+    "finalNewline": true,
+    "trailingWhitespace": false
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSparkedActivity.cs",
+    "bytes": 11516,
+    "sha256": "5BD3943F4F02032DE009700E652EE3A6F58F46B0B83E0BE24AD8BD9FE8D513CB",
+    "strictUtf8": true,
+    "rawLf": true,
+    "finalNewline": true,
+    "trailingWhitespace": false
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksPopAWheelieNativeTests.cs",
+    "bytes": 9236,
+    "sha256": "9B8D78B34B94C6794973E7974536224D8397D31B4AA96452C9D20F7D3358DD39",
+    "strictUtf8": true,
+    "rawLf": true,
+    "finalNewline": true,
+    "trailingWhitespace": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/SPARKS-POP-A-WHEELIE-1-builder.md",
+    "bytes": 5821,
+    "sha256": "73976D41B4D459092A3E2F0C9DC874392DDD18FDEC7AC2EDFADA3EC0260DF8E1",
+    "strictUtf8": true,
+    "rawLf": true,
+    "finalNewline": true,
+    "trailingWhitespace": false
+  }
+]

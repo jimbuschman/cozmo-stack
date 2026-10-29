@@ -1,0 +1,37 @@
+# SPARKS-POP-A-WHEELIE-1 independent implementation review
+
+Reviewer request DEFAULT model/effort, overrides omitted, fork_none; actual runtime telemetry unavailable, no switches. Continues the independent source review of frozen packet09B452D0/checkB6CC0EAE against current717. Read-only worker inspection; this reviewer-owned research report is the only write. No .NET invocation or build release at draft review.
+
+## Coherent draft1 before first build/test
+
+Worker `codex-sparks-pop-a-wheelie-1`, basee315f6ed. Reviewed all three production diffs, the entire new six-case test file and builder ledger including its pre-submission self correction of the hard-only idle expectation. Production diff is limited to guarded two-ID Pop factory admission, actual native Sparked owner/public activity24 and objective22 mapping. Exact assets supply min0/max60/reps1/soft206/needs34/unlock13; absent executable12/considered-run41 remain inherited. Ordinary Pop child/guard/firmware scene are unchanged. Actual Id is used for pre-dock/remove lock, independent of table metadata Name. No new Ground or per-Spark owner; current015 actual public/manual scope and059 other branches remain partial.
+
+**Required correction batch1 (reviewer-origin, draft tests):** objective8B and Needs.Log handlers contain assertions/throwing Assert.IsType before recording notifications. CozmoEngine Robot.Update wraps ActionList.Update in RunIsolated (CozmoEngine.cs1323), and Isolated catches exceptions (2442). In particular, a duplicate objective/needs callback can fail before adding a duplicate, leaving the final expected order intact; handler assertions also interrupt production callback flow. Capture every occurrence/order plus runner type/trigger facts using nonthrowing observation, and assert the full captured list afterwards. This is a required test correction, not a source question or builder self correction.
+
+Other finite draft checks: hard/soft actual configured firmware-scene pipeline, no forced goal/count/status/winner, separate requested-versus-active field cases, PutDown-before-Pop under explicit carry input, unconditional child21C before objective22/needs34, actual objective subscriber count, local undefined-body carrier versus withheld public payload, owner83/84/getout/null-parent/deselection and conditional cliff restore are represented. No production discrepancy established in this draft. Await corrected coherent draft before build/tests. Required reviewer batches so far1; builder source questions0; builder pre-submission self corrections1 (idle assertion).
+
+## Corrected draft1 affected recheck
+
+**COHERENT DRAFT PASS before first build/test.** Re-read corrected handlers and final assertions: each matching objective/needs event is unconditionally appended, and runner type/trigger uses safe null/type observation; all assertions run outside handlers after the pipeline. Final exact event sequence and exact snapshot sequence reject duplicates/out-of-order delivery; every snapshot requires TriggerAnimationAction/21C. No production changes in this correction. Required batches remain1, source questions0, pre-submission self correction1. Builder/root .NET release remains separate; reviewer has not invoked .NET.
+
+Reporting correction only: the file currently defines **five** xUnit cases (one Fact plus two two-case Theories), despite initial builder/root shorthand saying six. Use actual discovered names/counts after execution; this does not require a code/test corrective batch.
+
+## Final independent execution and verdict
+
+**PASS.** Root explicitly granted exclusive reviewer .NET only after builder's real elevated shutdown0 and explicit native empty arrays/counts0. Builder had first build exit0 (0errors/2246warnings), focused5/5PASS and affected140/140PASS0skip; those are builder outcomes, not duplicated reviewer builds. Source packet09B452D0/checkB6CC0EAE remains controlling. Final finite diff matches corrected draft: three production bindings plus new test file and frozen builder ledger; no further code/test correction was needed.
+
+Reviewer independently enumerated **all five actual changed tracked/untracked paths**, checked exact membership, strict UTF-8, raw LF, final newline, no trailing whitespace (including untracked files), `git diff --check`, and SHA256 against builder's full before-freeze. After the sole test invocation all five bytes/hashes and actual changed path set remained identical. Ignored worker artifacts retain `reviewer-freeze-before.json` and `reviewer-freeze-after.json`.
+
+The literal command was saved **before** invocation to `.scratch/sparks-pop-a-wheelie-1/artifacts/reviewer-affected-1.command.ps1`. One actual elevated invocation, no restore/build/rerun:
+
+```text
+dotnet test cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~SparksPopAWheelieNativeTests|FullyQualifiedName~PopAWheelieNativeTests|FullyQualifiedName~SparksRollNativeTests|FullyQualifiedName~SparksStackNativeTests|FullyQualifiedName~SparksKnockOverNativeTests|FullyQualifiedName~SparkManagerInputCheckedRowsTests|FullyQualifiedName~M7BatchThreeBTests|FullyQualifiedName~M7BehaviorTests'
+```
+
+Saved script uses actual absolute `C:/Program Files/dotnet/dotnet.exe`, unique reviewer log/TRX/results directory and actual exit file. Result: **exit0,140passed,0failed,0skipped**. Parsed every TRX test name/outcome and compared the complete sorted multiset against builder's affected results: exact140 match. `reviewer-affected-1-results.json`, `.trx`, `.log`, `.exit` preserve evidence. New configured tests are five discovered cases. No .NET prelaunch, compile, startup or test failure occurred in the reviewer run; no broader or repeated test was planned or run after PASS.
+
+Actual elevated saved `reviewer-shutdown.command.ps1` completed exit0, then a separate elevated CIM invocation saved `reviewer-native-inventory.json` with **processes:[],ownProcesses:[],totalCount:0,ownCount:0**, native-name filter excluding query PID. No process was killed. Exclusive .NET was returned to root immediately after that inventory; reviewer will not run further .NET without a new release.
+
+Two non-.NET audit-script mistakes are preserved here and in tool output, distinct from code/test failures: the initial freeze comparison expected full fields in builder's hash-only after-freeze and raised an assertion; correcting comparison to the full before-freeze produced all-five match. Initial post-run parser had an unmatched closing parenthesis; correcting the parser produced exact140 names/outcomes and all-five unchanged without rerunning tests. Neither changed production/tests/ledger or requires an implementation correction batch.
+
+Final accounting: **one reviewer-required corrective batch**, protected callback capture tests, corrected and checked before first build; **one builder pre-review self correction**, hard-only idle assertion; **zero builder source questions/MISSING raised**, **zero source corrections**. No official manifest/inventory/status/approval/PROJECT_STATE/REVIEW change, Git mutation, commit, hardware run or whole-behavior acceptance by reviewer. M13-015 actual manual/API and M15-059 other branches remain partial; only the same generic unowned Pop complement extends caller coverage, no Ground duplicate or new policy. Root owns integration/current official fidelity/queue/full gate and handoff.
