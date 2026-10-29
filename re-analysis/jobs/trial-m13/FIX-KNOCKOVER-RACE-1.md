@@ -1,4 +1,4 @@
-# FIX-KNOCKOVER-RACE-1 — READING
+# FIX-KNOCKOVER-RACE-1 — DIAGNOSTICS
 
 Priority queued by Claude main8cc93b12 after Pop ordinary merge584a29b5. Start after the already verified SparksPop handoff/fullgate completes; before BuildPyramidBase or any new behavior. Fetch/import main and inspect REVIEW/QUEUE first. Read PROJECT_STATE first, AGENTS and AUTONOMY. This is one bounded intermittent failure, no repository-wide audit.
 
@@ -19,3 +19,19 @@ SparksPop READY pushed/remotelyverified858a747017788cc77e7e7f919eb9f2ad16d081e5,
 Queued nonbehavioral attribution may accompany the eventual verified fix: realM13-041 tag qualifiedCURRENTordinaryscope at NativePopAWheelieBehavior, genericPopguard actualownerattribution withSparkswidening explicitlypending; realM12-052 gettertag/guardattribution insteadofM15-022. Re-read currentwhole title/status/evidence beforeassessingtheseownrecords, preservefrozenpastpackets. No source behavior/protocol/result change from bookkeeping and no unofficialstatus/title/widening/approval. Propose settlement ONLYafterwholecurrentownclaimchecked; otherwiseexactleftover, no extra broadreading. Do notletthis queue replace race diagnosis.
 
 Planned fresh /root/knock_race_read explicitgpt-6.1-sol/medium; /root/knock_race_build and /root/knock_race_review DEFAULT model/effort omitted, fork_none. Actualstartsloggedafterreturn. Builder codex-fix-knockover-race-1 /codex/fix-knockover-race-1; prep-only oneactualrestore/shutdown/native[]0, rootassetsfirst. No semanticproductionedit until concrete tracedcause/independentdiagnosis/rootfixrelease.
+
+## Actual starts / prep / approved Stage D
+
+| Actor | Role | Model requested | Effort requested |
+| --- | --- | --- | --- |
+| /root/knock_race_read | Read-only diagnosis/extraction | explicit gpt-6.1-sol | medium |
+| /root/knock_race_build | Isolated builder | DEFAULT; override omitted | DEFAULT; override omitted |
+| /root/knock_race_review | Independent diagnosis/code reviewer | DEFAULT; override omitted | DEFAULT; override omitted |
+
+Fresh fork_none, names returned/no backendtelemetry/noswitch. Rootpreparedignoredscratch/OBB/nativeSO/marker expectedhashes; builderoneactualelevatedlocalcache restore0/all5, actualshutdown0/nativeexplicit[]total0own0. No prep failure/code/native/build/test; rootobserved onlyuntrackedledger at ee667d7a08003dce5e85e732678d083e2004a441. Read-onlyGitstatus/diff/log allowed; onlyGitmutations prohibitedbybuilder.
+
+Root approves coherent read819B8E26E0C3AD9FA06B8ABE3D74BC7FD0C6DF6D20310D20DD6833484A5BB7DD + independent504BBB3F4DA9FA2A9A5583EF34D2186A75F8526592D98DA49111120863468E38 for STAGE D ONLY. All12 Markdown title/status/full evidence/test quotations exactly match current718. Fullfailinglegacy/test/async/nativeaction/Flip/world/callback/teardownroute traced. R1fullfaultlogger andN5controlledM.ClockSec alreadyexist; nativeIActionEngine.Timer remainsdistinct. HistoricalactualTRX1059abbreviatesfullfault; remotelogmissinginnerstack. No cause proven, no semantic productionfix/sourcebehaviorrelease.
+
+StageD authorizedtest-only diagnostic change in NavigationTests target (smalltest-onlyhelper ifnecessary), retainingEXACT1059 predicate andeveryotherassertion; equivalentAny(predicate)withFULLtracefailuremessage. CaptureStep/HandlerFaulted in existingthreadsafeDiagnosticJournal withTextWriter.Null/inert sink; snapshotTrace/journal throughlockedAPIs. Failure-finally uniqueignoredartifact mayincludephase/thread/availablecounter/clocks/pathstate andcompleted-onlyALREADYexistingAsyncInvocationStarted/task status/Exception. WrappermustIsCompletedSuccessfully BEFOREaccess; taskExceptiononlyIsFaulted. First-only/reset observation maybereachnotDriveAndFlip, label identity/absencehonestly. No waits/newtimeouts/ticks/statusorresultinjection/productionhooks/newscheduling. Detachhandlers andsnapshotbeforeusingvardisposal; artifactfailureseparateandmustNEVERmaskoriginaltestexception. Passingpathaddsno waits/flush/successcriterion. No production/041052bookkeepinginthisstage.
+
+Builderonecoherentdiagnosticdraft toB BEFOREfirstbuild/test; no.NET untilBdraftPASS. Then rootsoleelevateddiagnosticlease: saveeveryliteral/hash/filter BEFOREinvoke; no restore repeat. Buildnofurtherrestore, freezeinstrumentedtest+ledger andrelevantproductionbaseline. FirstONE historicalaffectedfilter from preserved codex-knockover-cubes-1/.scratch/knockover-cubes-1/affected-filter.txt, detailedconsole+TRX. STOPatANYfailure, retainalloutcomes/fullartifacts andreturnforcauseanalysis; no immediate retry. Ifclean, atmost20separateEXACTtargetinvocations/normalsettings, stopFIRSTfailure, uniquecommands/results. ThesearedeclaredreproductionevidenceNOTacceptanceretries;0/20 meansUNKNOWNnotfixed. No extrafullgate tohuntwithoutseparaterootdecision. Afterbudget/capture, actualshutdown/explicitnative[]0 andreturn.NET toreader/revieweranalysis. Concretecause/independentcheck/newrootfixrelease requiredbeforeproductionchange or inventedregression.
