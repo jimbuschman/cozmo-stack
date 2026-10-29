@@ -1,0 +1,17 @@
+{
+  "manifest_records": 718,
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-fix-knockover-race-1-followup-1.md",
+      "raw_sha256": "c39f4109b95f385d0e2b6a4891cc320d791490e49527afb19ecdba7408aeb2f4",
+      "published_lf_sha256": "c39f4109b95f385d0e2b6a4891cc320d791490e49527afb19ecdba7408aeb2f4",
+      "bytes": 10570
+    },
+    {
+      "path": "re-analysis/research/20261028-fix-knockover-race-1-record-check.md",
+      "raw_sha256": "2f7967acfd882bc82af56a99544a78c8e850dafd4cf96c94684fe71070d3dbae",
+      "published_lf_sha256": "2f7967acfd882bc82af56a99544a78c8e850dafd4cf96c94684fe71070d3dbae",
+      "bytes": 11363
+    }
+  ]
+}
