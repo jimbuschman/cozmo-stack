@@ -2661,3 +2661,9 @@ Build scope and source-derived regression requirements are in `jobs/B-M13-9.md`.
 ## B-M13-10 correction (2026-10-21)
 
 Manager-authorized correction from `research/20261021-b-m13-9-b-m10-2-claude-check.md`: obj+0x54 receives VizManager, not a timestamp. The store, CozmoContext constructor and EraseVisualization consumer were re-read in the binary. Historical +0x34A contacts wording is superseded by platform (+0x338 is contacts). Contact observation is built; M13-017 retains animation/action ownership, footprint/rotation/degenerate-hull, shared configuration/map/cache and admitted frame-matched drive-off regression gaps. Neither record settles.
+
+## POP-A-WHEELIE-1, the configured PopAWheelie lifecycle (operator approved 2026-10-28; research/20261028-pop-a-wheelie-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorPopAWheelie factory 0x0059CEA6, ctor 0x005C7430, get-in 0x005C7496..0x005C757A, cache 8 predicate 0x00570928..0x00570980, DriveToPop 0x0055D1E8..0x0055D26C, Select 0x00552730..0x0055287E, Verify 0x0055295C..0x00552A72, completion 0x0055268E..0x0055269C. Retry/result/reset stays M13-015 | M13-041 (new) |

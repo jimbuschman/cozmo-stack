@@ -2,7 +2,7 @@
   "subsystem": "M13-navigation",
   "approved": "2026-10-28",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "edfae8a1e7330a2c6eb4046cc459667955ac826f69f0f5c1e8673ffda670a49a",
+  "inventory_sha256": "45912b876393a56359e2bc48e36985a8aa49b3dcdda9810f5fd915da3611c5fb",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -517,6 +517,20 @@
         "Notifications 0x00506F98/FA8/FB8 world/map/state-change; unchanged return 0x00506296..29A; changed nonzero new state map 0x005062B4 and active light recipient. 0x00639840 compares NEW state r3 with1: Known trigger0x25/layer2, other changed trigger1/layer2; unchanged no request.",
         "Contact edge/store ordering 0x00511A66..ACC, 0x00511B50..0x00511C14; platform setter 0x00511D44..DCA; existing footprint tick 0x00513CD8..0x00513E2A and M4-019 threshold send 0x0063427E, 0x006342C8..CE, 0x00634364..368.",
         "re-analysis/research/20261021-m13-017-located-charger-check.md: independent check of A1-A11/P1-P4 with corrected A9; supplementary mount and exhaustive caller census excluded."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-041": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorPopAWheelie configured lifecycle (ordinary instance): cache 8 target choice, get-in, pre-dock reaction lock and cliff, DriveToPopAWheelieAction, and PopAWheelieAction Select/Verify/completion",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CEA6; ctor 0x005C7430; target refresh 0x005C7734; cache 0x0056FA30/0x0056FC7E/0x0056FE18, predicate 0x00570928..0x00570980 (families 2/1, failure 3 time 30 / distance 60 / PI, then CanPickUpObjectFromGround 0x0063C880).",
+        "Get-in 0x005C7496..0x005C757A: TurnTowardsObject(PI,false,false) then LiftSafe 0x18A; callback 0x005C7B52..0x005C7B64 updates the previous target only on result 0.",
+        "DriveToPopAWheelieAction 0x005C7758..0x005C78D4 / 0x0055D1E8..0x0055D26C: pre-action 4, PI/2, sayName true with 0x18B/0x18C.",
+        "Pre-dock reaction table 0x00C6883D and cliff off 0x005C7BC8..0x005C7C10; Select 0x00552730..0x0055287E (height > 33.85 rejects, carrying rejects); Verify 0x0055295C..0x00552A72 (dock action 9, dock success, Radians pitch < 1 -> 0x0400000A); completion getter 0x0055268E..0x0055269C (four unwritten ID words).",
+        "Reset 0x005C76B0..0x005C76F0 clears the target and the latch before cliff on. Read packets re-analysis/research/20261028-pop-a-wheelie-1-read.md and -followup-1.md with their independent checks; HANDOFF-POP-A-WHEELIE-1.md; re-analysis/research/20261028-pop-a-wheelie-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false
