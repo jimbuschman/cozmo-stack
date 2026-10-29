@@ -1,0 +1,80 @@
+{
+  "stage": "Final diagnostic and nonbehavioral attribution build0/focused2PASS/affected190PASS/shutdown0/native0",
+  "reviewer_required_rounds": 2,
+  "manager_regression": "separate",
+  "cause": "UNKNOWN",
+  "changed_files": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupTargetCache.cs",
+      "raw_sha256": "375582667ba4181689aca1c77d4731bf8c725a2ebee3e101a61dea2c982f195f",
+      "published_lf_sha256": "375582667ba4181689aca1c77d4731bf8c725a2ebee3e101a61dea2c982f195f",
+      "bytes": 10075,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePopAWheelieBehavior.cs",
+      "raw_sha256": "de1ffb1a941dc462269b7227a041ff4da296e3b46db270e23c13bd929e23c611",
+      "published_lf_sha256": "de1ffb1a941dc462269b7227a041ff4da296e3b46db270e23c13bd929e23c611",
+      "bytes": 7294,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativeDriveToPopAWheelieRunner.cs",
+      "raw_sha256": "2d613266d69d76e9dde3c6f07f4922e9749b90ae5b8b7889b6f618181b2f5200",
+      "published_lf_sha256": "2d613266d69d76e9dde3c6f07f4922e9749b90ae5b8b7889b6f618181b2f5200",
+      "bytes": 3001,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativePlaceGroundRunner.cs",
+      "raw_sha256": "30c4d3ea3e6ac912703f9db7285dea841ce33b1ed387e748b5c801d4735e9e81",
+      "published_lf_sha256": "30c4d3ea3e6ac912703f9db7285dea841ce33b1ed387e748b5c801d4735e9e81",
+      "bytes": 3192,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativePopAWheelieRunner.cs",
+      "raw_sha256": "fe1fcf669604454fffd22ff120a5a26aa46efa98c49e03270ccae1de2359cdf6",
+      "published_lf_sha256": "fe1fcf669604454fffd22ff120a5a26aa46efa98c49e03270ccae1de2359cdf6",
+      "bytes": 9584,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NavigationTests.cs",
+      "raw_sha256": "f7f444538469b11e17fd481d9777148c8104a740a15de3228eec9e64eaee7d6b",
+      "published_lf_sha256": "f7f444538469b11e17fd481d9777148c8104a740a15de3228eec9e64eaee7d6b",
+      "bytes": 95345,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/KnockOverDiagnosticSnapshotTests.cs",
+      "raw_sha256": "8e6fc82b77dc15ed9db906e342dea00c1507b62daf3460874fc2bd4bbeb88fc5",
+      "published_lf_sha256": "8e6fc82b77dc15ed9db906e342dea00c1507b62daf3460874fc2bd4bbeb88fc5",
+      "bytes": 2286,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/FIX-KNOCKOVER-RACE-1-builder.md",
+      "raw_sha256": "9f34f34891dee0323baf965325cbb93bb39656456bf0bce52ef7f42e8b95634d",
+      "published_lf_sha256": "9f34f34891dee0323baf965325cbb93bb39656456bf0bce52ef7f42e8b95634d",
+      "bytes": 10285,
+      "utf8": true,
+      "raw_lf": true,
+      "trailing_whitespace": false
+    }
+  ]
+}

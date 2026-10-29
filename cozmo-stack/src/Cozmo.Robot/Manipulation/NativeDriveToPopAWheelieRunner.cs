@@ -1,6 +1,7 @@
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Manipulation;
 
+// fidelity: M13-041 - current ordinary DriveToPop composition; Sparks widening pending.
 // POP-A-WHEELIE-1 D1/D2:0055D1E8..D26C; shared IDrive0055B2C8/AddDock0055B7AC.
 internal sealed class NativeDriveToPopAWheelieRunner:CompoundActionSequential
 {

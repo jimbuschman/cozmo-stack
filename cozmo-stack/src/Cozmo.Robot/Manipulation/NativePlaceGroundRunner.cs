@@ -12,12 +12,13 @@ internal sealed class NativePlaceGroundRunner:NativeVisionRunner
     internal uint SavedObject=>_saved;
     internal NativeTurnTowardsObjectRunner? VerifyChild=>_verify;
     internal NativePlaceGroundRunner(ManipulationSystem m):base(m,0x18,7){}
+    // fidelity: M12-052 - saved carried ID completion projection only; lifecycle/wire owners retained.
     public override byte? GetCompletionVariant()=>0;
     public override ObjectInteractionCompletion GetObjectInteractionCompletion()
     {
         // 00554AE0..4AFA: the other four native stack words were never initialized.
         // M1-034 withholds only the full undefined publication; saved ID/count1/false and scalar callbacks survive.
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M1-034 M15-022 Ground completion 0x00554AE0..00554AFA: four uninitialized objectInteractionCompleted ID slots; full raw/API payload unavailable, defined saved-carry/count1/false and scalar result retained; PlaceRel normalization policy does not apply");
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M1-034 M12-052 Ground completion 0x00554AE0..00554AFA: four uninitialized objectInteractionCompleted ID slots; full raw/API payload unavailable, defined saved-carry/count1/false and scalar result retained; PlaceRel normalization policy does not apply");
         return new(_saved,0,0,0,0,1,false,false);
     }
     internal override ActionWatcher? Watcher{get=>base.Watcher;set{base.Watcher=value;if(_verify is not null)_verify.Watcher=value;}}

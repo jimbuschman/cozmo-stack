@@ -1,0 +1,18 @@
+{
+  "manifest_records": 718,
+  "classification": "UNKNOWN implementation versus harness fault; historical inner exception absent",
+  "files": [
+    {
+      "path": "re-analysis/research/20261028-fix-knockover-race-1-read.md",
+      "raw_sha256": "819b8e26e0c3ad9fa06b8abe3d74bc7fd0c6df6d20310d20dd6833484a5bb7dd",
+      "published_lf_sha256": "819b8e26e0c3ad9fa06b8abe3d74bc7fd0c6df6d20310d20dd6833484a5bb7dd",
+      "bytes": 35155
+    },
+    {
+      "path": "re-analysis/research/20261028-fix-knockover-race-1-read-codex-check.md",
+      "raw_sha256": "504bbb3f4da9fa2a9a5583ef34d2186a75f8526592d98da49111120863468e38",
+      "published_lf_sha256": "504bbb3f4da9fa2a9a5583ef34d2186a75f8526592d98da49111120863468e38",
+      "bytes": 25850
+    }
+  ]
+}
