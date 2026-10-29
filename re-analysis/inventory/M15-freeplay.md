@@ -1108,3 +1108,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorAcknowledgeObject ctor 0x00602FA4 and ghost, gates (0x00604380, 0x006042C8), Init 0x00603434, BeginIteration 0x00603560, LookForStackedCubes 0x006038DA, FinishIteration 0x00603C74, Stop 0x0060425E | M15-081 (new) |
+
+## EXPRESS-NEEDS-1, the ExpressNeeds lifecycle (operator approved 2026-10-29; research/20261029-express-needs-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorExpressNeeds ctor 0x005EE144 and LoadConfig, gates (0x005EE860, IsRunnableInternal 0x005EE570), Init 0x005EE690, callback 0x005EE89E, Resume 0x005EE7D4, Stop 0x005EE7D8 | M15-082 (new) |

@@ -142,6 +142,8 @@ public sealed class M15SevereNeedsTests
             Array.Empty<AnimationTrigger>(),new Graph2d(Array.Empty<(double,double)>()),requiredSevereState:NeedId.Energy);
         var predicate=typeof(ExpressNeedsBehavior).GetMethod("IsRunnableInternal",BindingFlags.NonPublic|BindingFlags.Instance)!;
         var ctx=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap(),Needs=needs};
+        // EXPRESS-NEEDS-1 R5 0x005EE5B0..DC: empty graph c=0 and +0x138=0.0f need engine seconds > 0.0f (strict); supplied input.
+        rig.Robot.Engine.Timer.UpdateTime(1_000_000_000);
         Assert.False((bool)predicate.Invoke(b,new object[]{ctx})!);
         needs.SetSevereExpressed(NeedId.Energy,true);Assert.True((bool)predicate.Invoke(b,new object[]{ctx})!);
     }
@@ -200,6 +202,8 @@ public sealed class M15SevereNeedsTests
         Flag(b,"CaresAboutExpressedState",true);
         var predicate=typeof(ExpressNeedsBehavior).GetMethod("IsRunnableInternal",BindingFlags.NonPublic|BindingFlags.Instance)!;
         var ctx=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap(),Needs=needs};
+        // EXPRESS-NEEDS-1 R5 0x005EE5B0..DC: empty graph c=0 and +0x138=0.0f need engine seconds > 0.0f (strict); supplied input.
+        rig.Robot.Engine.Timer.UpdateTime(1_000_000_000);
         Assert.Equal(selected,(bool)predicate.Invoke(b,new object[]{ctx})!);
         Flag(b,"CaresAboutExpressedState",false);
         Assert.Equal(!selected,(bool)predicate.Invoke(b,new object[]{ctx})!);
