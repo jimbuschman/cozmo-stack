@@ -1,0 +1,93 @@
+{
+  "job": "FIX-ACKNOWLEDGE-OBJECT-GHOST-1",
+  "authority": "Claude checked repair request imported from mainecdbd232; existing checked read reused",
+  "sourceHashes": {
+    "re-analysis/research/20261029-acknowledge-object-1-read.md": "69E894EB191E66418C6B71F5129BB11F03BDF41D09F9FE0DFAA8C0F32FF0FA5F",
+    "re-analysis/research/20261029-acknowledge-object-1-claude-check.md": "122A5DA0B68010BEA86F3D5EA7180E481CBD79EA6CECD1A047B5E1ED905666CE"
+  },
+  "officialEditsAuthorized": false,
+  "newReaderStarted": false,
+  "existingRecords": [
+    {
+      "subsystem": "M11-vision",
+      "title": "Occlusion, the nine visibility reasons, and the two ways an object is forgotten",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Anki::Vision::NotVisibleReasonToString 0x0087E96C is one indexed load from a table of nine string pointers: IS_VISIBLE, CAMERA_NOT_CALIBRATED, POSE_PROBLEM, BEHIND_CAMERA, NORMAL_NOT_ALIGNED, TOO_SMALL, OUTSIDE_FOV, OCCLUDED, NOTHING_BEHIND",
+        "KnownMarker::IsVisibleFrom 0x0087E4A8 writes all nine: 5 TOO_SMALL 0x0087E7B6, 6 OUTSIDE_FOV 0x0087E83A, 7 OCCLUDED 0x0087E836, 8 NOTHING_BEHIND 0x0087E87A",
+        "BlockWorld::UpdateObservedMarkers 0x00624F98 clears the occluder list; BlockWorld::AddAndUpdateObjects 0x006211CC adds one entry per observed marker; the frame sequence itself is M11-037",
+        "BlockWorld::CheckForUnobservedObjects forgets an object either when it should have been visible (0x00622132) or when nothing was behind it and its pose is Dirty (0x0062211E)",
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: visibility bodies from OV49: wrapper/reason 8 0x00876774..0x0087683E, 0x00876678..0x00876710; gates 0x0087E4C2..0x0087E520, 0x0087E64A..0x0087E6C2; corners 0x004DD7D8..0x004DD818, 0x0087E2E8..0x0087E342, 0x0050343C..0x00503520; facing 0x0087E548..0x0087E646, 0x0050E0C0..0x0050E130; projection 0x0085E264..0x0085E536; size/FOV 0x0087E6F2..0x0087E83A, 0x0085E13C..0x0085E1C6; occlusion 0x0087E800..0x0087E836, 0x00878278..0x00878306; behind 0x0087E83E..0x0087E87A, 0x008783C8..0x0087846C, 0x0087855C..0x008785F4, 0x004F67C0..0x004F6888; caller args 0x006220E2..0x0062212A."
+      ],
+      "prior": "occlusion was not modelled and a marker that passed the geometric tests counted as visible; the reason enum's names and values were this stack's own",
+      "live_path": true,
+      "test": "VisionTests.ADirtyCubeThatIsNotWhereItShouldBeIsForgottenAfterTwoMisses, VisionTests.AKnownCubeThatVanishesFromAnEmptyViewIsKept",
+      "id": "M11-010",
+      "hardware_required": false,
+      "effect": "an object is forgotten or kept differently from the engine",
+      "provenance": "the stack BlockWorld.cs occlusion model is to be compared against the instructions above",
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): MarkerVisibility rewritten in binary32 in the engine's order (reason 3 first, MakeUnitLength 0x0050E0C0, acosf(-dot) > max, the diagonals against the minimum size, IsWithinFieldOfView 0x0085E13C with u16 insets and NaN rejected, occlusion p0,p2,p1,p3, NothingBehind at the depth (((z0+z2)+z1)+z3)*0.25f), and the engine's Project3dPoint (z <= 0 gives NaN, distortion terms by coefficient count). Still open: Pose3d/CameraModel/OccluderList are double; acosf/cosf/atan2f use MathF as libm f32 stand-ins; a distortion coefficient count of 1..3 reads heap past the end in the engine (reported MISSING); IsOccluded/IsAnythingBehind bodies (0x00878278 / 0x008783C8) are not the engine's algorithm (MISSING). OV49 check (re-analysis/research/overnight/20261015-ov48-49-check.md): the IsOccluded / IsAnythingBehind bodies previously MISSING are now read (evidence); build them. M1-034 candidate: distortion count 1-3 reads past the vector (0x0085E2B2, 0x0085E33A); the CLAD carries 8 (M11-039 owns the copy). OV121 lead (re-analysis/research/overnight/20261016-ov121-answer.md): CheckForUnobservedObjects excludes the carried C (+8) but not the carried top object (+0x14) (0x00621D6C..0x00621D88); MarkObjectUnknown can delete it while carrying state keeps its ID."
+    },
+    {
+      "id": "M12-033",
+      "subsystem": "M12-manipulation",
+      "title": "The object-pose queries the placement path uses: GetZRotatedPointAboveObjectCenter, GetClosestMarkerPose and the Radians comparisons",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs",
+      "effect": "a placement or a marker choice differs by a frame or a boundary case",
+      "provenance": "recovered by the R-VIS M12 gap pass 2; the C# ObjectPoseQueries default throws",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q1-Q3, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap2.md): GetZRotatedPointAboveObjectCenter(f) 0x00877574: L = the object's pose re-expressed against FindRoot (via 0x004DF628; failure logs 'Could not get pose w.r.t. its own root'); dimZ = GetDimInParentFrame<'Z'> (0x00557794; axis +-3 -> size.z, +-2 -> size.y, else size.x, via vtable +0x2C); yaw = GetAngleAroundZaxis(L); T = (this.pose.x, this.pose.y, L.z + dimZ*f) (x, y are the object's own un-converted values); result Pose3d(yaw, Z_AXIS, T, parent = root); f multiplies the extent (0 = centre, 0.5 = top face); only yaw is kept. GetClosestMarkerPose 0x00877774: copies list<KnownMarker> from this+0x28, requires GetWithRespectTo(markerPose, pose) == 1, distance planar (x^2+y^2) when the flag is 1 else 3-D, strictly smaller wins from 0x7F7FFFFF, stores the marker code with strh, returns 0 (else 0x06000000); the input marker is never read. Radians: rescale 0x0084C87C range (-pi, pi], NaN passes through; IsNear 0x0084CC0A is a strict < on the rescaled difference, the tolerance's sign ignored, NaN false; operator> 0x0084CC90 = diff > 0 and !IsNear(1e-5 = 0x3727C5AC); GetAngleAroundZaxis 0x0084AA1C picks atan2f(R10,R00) if R10^2+R00^2 > R01^2+R11^2 else atan2f(-R01,R11)",
+      "evidence": [
+        "0x00877574, 0x00877774, 0x0084C87C, 0x0084CC0A, 0x0084CC90, 0x0084AA1C, 0x00557794",
+        "re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q1-Q3; re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q1-Q3 (PASS). Caveat: x, y are parent-frame values while z and yaw are root-relative, and the parent is set to root: consistent only when the object's parent is the root"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Built: EngineRadians (Rescale 0x0084C87C, IsNear 0x0084CC0A strict/wrap-aware/|tol|, GetAngleAroundZaxis 0x0084AA1C) and ObjectPoseQueries.Engine (GetZRotatedPointAboveObjectCenter 0x00877574, GetClosestMarkerPose 0x00877774); the throwing default is gone and PreActionPose.cs:389's <= is now the strict compare. Still open, so the record stays IMPLEMENTATION_GAP: the C# has no pose tree, so the root re-expression and the frame mixing of GetZRotatedPointAboveObjectCenter (parent x, y with root-relative z and yaw) coincide and the caveat cannot show; the axis choice of GetDimInParentFrame<'Z'> reuses CubeGeometry.DimInParentFrameZ (M12-012's reading) where M12-033's text selects by GetRotatedParentAxis' signed axis (identical for a 44 mm cube); the float bit patterns of the four pi constants are taken to be the standard floats (the report gives their addresses); operator> (0x0084CC90) is not built (no C# consumer beyond DistanceThresholdMm's existing 1e-5 guard). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The GetAngleAroundZaxis entries are computed in f64 and narrowed to f32 before the squares (R14).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M12RVisBuildTests.M12_033_*"
+    },
+    {
+      "id": "M13-026",
+      "subsystem": "M13-navigation",
+      "title": "GetAbsoluteHeadAngleToLookAtPose and Robot::ComputeHeadAngleToSeePose",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "effect": "a face-fine-tune or pan-and-tilt head angle differs from the engine's",
+      "provenance": "recovered by the R-VIS M13 gap pass 3; the C# TurnTowardsPose.HeadAngleToSee is LOCAL numerics",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3): TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose 0x0054B428: h = z + (-49.0) (0xC2440000); d = sqrt(x*x + y*y) (float vsqrt, NaN falls back to sqrtf); D = d + 13.0; a = (300.0 - D)/150.0 (0x43960000, 0x43160000); b = (0.0 - h)/-10.0; t1 = clamp01(a) * 0.0872664601 (5 degrees) and t2 = clamp01(b) * 0.130899698 (7.5 degrees) (0 for <=0 or NaN, the value for 0<x<1, 1 for >=1); A = atan2f(h, D); result = ((t2 + (A + t1)) + 0.0698131695 (4 degrees, 0x3D8EFA35)) as Radians. Robot::ComputeHeadAngleToSeePose 0x00518344: GetWithRespectTo(pose, robot+0x2CC) failing -> warning and 0x06000000; p = (sqrt(tx*tx+ty*ty), 0, tz); the camera copied from [robot+0x258]+0x24, a null calibration -> error and 1; tol = (float)calibration.nrows * f + 9.99999975e-06; theta = 0, index 1; each iteration: camPose = Robot::GetCameraPose(theta), inv = camPose.GetInverse(), q = T.rotation * p + T.translation; if not q.z > 1e-5f -> 'BadProjectedZ' warning and 1; dv = calibration.focal_y * (q.y/q.z); converged iff tol >= |dv| (writes headAngle = theta via Radians::operator=(float), returns 0 unless the index is 25 -> 'MaxIterations' warning and 1); else theta += -0.8f * atan2f(dv, focal_y); after 25 non-converged iterations the code returns 0 (success) WITHOUT writing headAngle (r0 = 26 passes the 'cmp r0,#0x19; bne' test). Confirmed by reading (register trace) in the verifier; not emulated",
+      "evidence": [
+        "0x0054B428..0x0054B55A, 0x00518344..0x00518780 (pools 0x00518744, 0x00518780)",
+        "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "Settled (Claude check, 2026-10-27; re-analysis/research/20261027-pickup-stack-1-claude-check.md; PICKUP-STACK-1 merge): both bodies match the binary. ComputeHeadAngleToSeePose (VisionSystem.cs native overload, actual live MAIN neck parent): BadProjectedZ is vcmpe/bls 0x00518494 (NaN q.z continues, not 'not q.z > 1e-5' as the authority text says); convergence vcmpe/bge 0x005184B2 (NaN dv iterates); the angle is written through Radians::operator= 0x005185B6 BEFORE the k==25 MaxIterations test 0x005185C6; 25 non-converged iterations return 0 without writing; step atan2f(dv, fy) * -0.8f 0x005184BC..0x005184DA. GetAbsoluteHeadAngleToLookAtPose 0x0054B428..0x0054B55A (PanAndTiltActions.cs AbsoluteHeadAngleToLookAtPose): every it-pl/it-gt pick and its flag source, the sqrtf NaN fallback and the operation order match. Boundary: only the bionic atan2f (0x004A4510) and sqrtf fallback are EQUIVALENT_IMPLEMENTATION (unshipped system library, M13-023 (e), as M5-021/M4-052); operands, widths and order are exact. Pose algebra is the native Transform3d port (M11-065 rows); the public flat-input static adapter is M11-066's labelled gap, not this record's path. Queued cleanup: AbsoluteHeadAngleToLookAtPose's tag still reads M13-021. Previous notes: build both exactly (float32, double atan2 for atan2f is float in the engine: use the float function), including the 25/26 iteration quirk and the result codes; Robot::GetCameraPose(float) and the Robot members at +0x2CC/+0x258 are M13-023 (d).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NavigationTests"
+    },
+    {
+      "id": "M15-081",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorAcknowledgeObject lifecycle: ctor/config state and the ghost cube, runnable gates (runnable while carrying, target set non-empty), Init ghost ID, BeginIteration (lowest-id target, turn/verify/animation compound), stacked-cube ghost look-below/look-above, FinishIteration loop with objective and final turn-back, listener wiring and Stop clearing",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ObjectBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x3B 0x0059D0D2..0x0059D0EC; ctor 0x00602FA4..0x0060304A (+0x11C 0x23F, +0x120 pi/4, +0x128/+0x130 5 deg, +0x138 2, +0x140 -1, +0x148/+0x149/+0x14A, sets +0x14C/+0x158); ghost Block_Cube1x1 type 4 0x00603010..0x0060304A; LoadConfig 0x00603118..0x0060334A; behaviors/reactions/acknowledgeObject.json.",
+        "IsRunnable: carrying override 0x00604380 returns 1; IsRunnableInternal +0x154 != 0 0x006042C8..0x006042D2; strategy gates and target fill 0x006113E8..0x00611482; AddListener 0x006042D4..0x006042EA; Init 0x00603434..0x00603494 with ghost SetID 0x004EF468..0x004EF4F4 (consumes one ObjectID); Update 0x00603524..0x00603546.",
+        "BeginIteration 0x00603560..0x00603730 (NullObject 0x00603742..0x006037A2; high flag z > 33.85 mm 0x006035AA..0x006035F4; TurnTowardsObjectAction + tolerances 0x006035F8..0x0060363E; VisuallyVerifyObjectAction +0x8C = +0x138 0x0060366C..0x006036C0; TriggerLiftSafeAnimationAction unless +0xD9/+0xD8 0x006036C2..0x00603710; result functor 0x0060440E..0x00604424).",
+        "LookForStackedCubes 0x006038DA..0x00603B50; CheckIfGhostBlockVisible 0x00603DA8..0x00603F4C; SetGhostBlockPoseRelObject 0x00604054..0x006040C2; LookAtGhostBlock 0x006040D8..0x0060420A.",
+        "FinishIteration 0x00603C74..0x00603D6C (listeners slot 0, erase, BehaviorObjectiveAchieved 0x1B, BeginIteration; last target: turn-back TurnTowardsObjectAction then 0x0060465A..0x00604672); StopInternal 0x0060425E..0x006042C6 (listeners slot 1 ClearDesiredTargets).",
+        "re-analysis/research/20261029-acknowledge-object-1-read.md"
+      ],
+      "effect": "which cubes Cozmo turns to acknowledge and in what order, the turn, verification wait and reaction animation, whether he looks below or above for a stacked cube (with a short reverse first), the final turn back, when the reaction may run, the ObjectID the ghost consumes, and the ReactedAcknowledgedObject objective the C# API delivers",
+      "provenance": "ACKNOWLEDGE-OBJECT-1 read (cozmo-extractor, checked by Claude 2026-10-29); record added with operator approval 2026-10-29 before the build.",
+      "unresolved": "Not built yet: the build is handed to Codex (ACKNOWLEDGE-OBJECT-1). Manager decisions: the ghost's ObjectID consumption is reproduced; the forced trigger SetupForceTriggerBehavior 0x00611148..0x006111E8 is not built (no stack entry reaches it). Owned elsewhere: TurnTowardsObjectAction body (M15-022, M13-020; ctor 0x00549D78 and UseCustomObject 0x0054A050 RECOVERABLE_GAP), VisuallyVerifyObjectAction body (no record), IsVisibleFromWithReason (M11-010), GetClosestMarkerPose/ComputeHeadAngleToSeePose (M13-026, M12-033), DriveStraightAction (M13-002), the strategy recording (M10-003), the IBehavior base (M8-001), the objective packer (M7-019).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    }
+  ],
+  "gapTreatment": "Unavailable ghost look emits visible MISSING then FinishIteration; no fabricated helper result and no fidelity settlement. Host-owner gaps end clearly. Existing input/helper gaps remain."
+}
