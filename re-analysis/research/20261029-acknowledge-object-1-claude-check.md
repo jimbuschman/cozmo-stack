@@ -69,3 +69,25 @@ unit the stack cannot reproduce. This is the same skip-and-log treatment the sta
    behaviour completes.
 5. **Gate and hand back.** Re-verify the affected diff and tests only, run the full gate once, and hand back as READY
    FOR CLAUDE.
+
+## Re-check of FIX-ACKNOWLEDGE-OBJECT-GHOST-1 (b8b35a77, handoff a546fe07): PASS, merged
+
+- **The hold is gone:** `_waitingMissing` is removed. A missing M11-010 visibility, M12-033 dimension or marker, or
+  M13-026 head-angle input logs `M15-081 M11-010/M12-033/M13-026 stacked-cube look unavailable: ...` and continues to
+  FinishIteration(generation). No visibility reason is invented, and nothing loops back into LookForStackedCubes.
+- **Unavailable custom turn inside the look sequence:** the diagnostic is logged, then deferred ActionList cleanup
+  runs StopActing and then FinishIteration under the generation check.
+- **Host-owner gaps** (no manager, no manipulation/robot) now end the behaviour with a visible diagnostic.
+- **Production-wired regression:**
+  `ConfiguredGroundTargetsSkipMissingGhostThenNotifyAndFinishInOrder` runs the configured container, the registered
+  strategy and the manager with no supplied helpers, on two ground cubes. Its expected order comes from the read (F1):
+  - listener, then objective 0x1B for the first cube;
+  - the second cube's compound, then its listener;
+  - the final turn, whose result is ignored, then objective 0x1B;
+  - the behaviour ends.
+
+  Per-input and reentrant-Stop tests cover the other paths.
+- Codex reported independent 239/239 and full 6754/6754 PASS. The merged main is gated here.
+
+**Nothing settled.** M15-081 stays IMPLEMENTATION_GAP: the stacked-cube look is skipped in production until
+M11-010 ghost visibility and the M12-033 ghost marker geometry are built.
