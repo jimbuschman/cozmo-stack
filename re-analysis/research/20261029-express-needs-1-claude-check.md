@@ -58,3 +58,13 @@ ManipulationSystem to the loader, so the compound runs through the engine Action
 
 **No manifest record owns the EN lifecycle.** A lifecycle record is proposed to the operator: ctor/LoadConfig C2–C8,
 gates R1/R4/R5/R6, Init I1–I4, the callback I5, Resume P1 and Stop S1.
+
+## C3 resolved (Claude, 2026-10-29)
+IBehavior::ReadFromJson stores `requiredSevereNeedsState` into +0x74:
+- `Json::Value[]` with the key literal 0x005BC348 "requiredSevereNeedsState";
+- if the value is not null: asString, then NeedIdFromString, then `str r0,[r5,#0x74]` at 0x005BC13C;
+- if the result is Count (3), a VERIFY is logged (sVerifyFailedReturnFalse 0x005BC17A) and the stored value is kept.
+
+A3 (ForcedGetOut reachability) stays UNKNOWN. A search of the shipped assets and the Unity scripts found only the
+BehaviorID enum entry, and the decomp's `0x2e` FindBehaviorByID hits are class ids (RequestGameSimple), not this
+BehaviorID.
