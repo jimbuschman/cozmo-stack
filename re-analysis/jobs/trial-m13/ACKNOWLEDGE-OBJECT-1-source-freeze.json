@@ -1,6 +1,6 @@
 {
   "job": "ACKNOWLEDGE-OBJECT-1",
-  "stage": "Claude-checked read reused; known rows released for draft, UNKNOWN V3 dependent work pending narrow check",
+  "stage": "Claude-checked read plus independent UNKNOWN V3 supplement frozen; complete draft released",
   "source": {
     "path": "re-analysis/research/20261029-acknowledge-object-1-read.md",
     "sha256": "69E894EB191E66418C6B71F5129BB11F03BDF41D09F9FE0DFAA8C0F32FF0FA5F",
@@ -13,7 +13,20 @@
   },
   "knownRowsMustNotBeReExtracted": true,
   "independentReadingLimit": "Only actual UNKNOWN row or concrete contradiction",
-  "remainingUnknown": "V3 compound byte+0x56 meaning/relevance; shared helper frontiers remain their records",
+  "remainingUnknown": "V3 resolved as track suppression; existing shared helper/report/timeout frontiers remain",
   "newRecordProposal": "One AcknowledgeObject lifecycle, not added by Codex",
-  "officialEditsAuthorized": false
+  "officialEditsAuthorized": false,
+  "unknownSupplements": [
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-unknown.md",
+      "sha256": "6937E22D5C585840A93B56DCF1DF8A7D8404BE72A6C2758DC4C2B13D8E1D024A"
+    },
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-v3-codex-check.md",
+      "sha256": "A8E79E4DF6A964B68C3451B81A43F4667E8335D61A1805570A45DCDE3AE75E40"
+    }
+  ],
+  "sourceSupplements": 1,
+  "sourceReportQuotationCorrections": 1,
+  "nativeBehaviorCorrections": 0
 }
