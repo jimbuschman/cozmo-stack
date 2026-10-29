@@ -51,3 +51,7 @@ Main04aa3784 importedvia47064b0f: SparksPopClaudePASS/MERGED, no newsettlement;F
 ## Final independent release
 
 Builder final build0, focused2/2PASS and affected190/190PASS0skip. Independent reviewer exact same filter190/190PASS0skip, identical names/outcomes, all eight raw hashes stable; actual shutdown0/native[]total0own0 returned execution to root. Complete freeze SHA256 9DCD961B545A146347F361C937A2A42B5449965C7420033C8CE82B183058BB94; final code report SHA256 FEE00412802C8DE2BF0C44DA0828AFC33A5D639168584803CBBDC837BCD1CEB2. Worker commit e4c4b4fdf23f7db9e6ef88cf25ccc4db3cb983e3 integrated as 1b93722d; entire code tree 2c687b6f8c2b4dd4ae1801e7e686d71ed8b4a7c4 matches. Reviewer corrective batches2; no semantic race fix, original cause remains UNKNOWN. Root full gate pending.
+
+## Root full gate / handoff
+
+Single full6667/6667PASS0skip9m8s on7ec275a7434b28fbce4bf671a15e33e40be75f65/current718; nativeexit0, fingerprint3e66156808f7c12e2a08b02697617eddc13f6c81. Actual postgate elevated native[]0. READY means the diagnostic/attribution package is reviewable, not that the original fault is fixed: causal inner exception remains MISSING/UNKNOWN. See HANDOFF-FIX-KNOCKOVER-RACE-1.md; next independent scoreboard scope BuildPyramidBase.
