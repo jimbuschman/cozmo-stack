@@ -817,7 +817,11 @@ public sealed partial class BehaviorManager : IDisposable
         }
 
         SetRunningAndResumeInfo(info with { Current = initFailed ? null : next }, scope, nowSec);
-        if (next is not null) DasTransition?.Invoke(next);   // SendDasTransitionMessage 0x005a1f1c
+        if (next is not null)
+        {
+            SteppedBehavior.ReportMissing("M8-012 BehaviorManager::SendDasTransitionMessage 0x005A22B4..0x005A24AC: typed BehaviorTransition/displayNameKey delivery is unbuilt; DasTransition is only a callback seam");
+            DasTransition?.Invoke(next);   // SendDasTransitionMessage 0x005a1f1c
+        }
         return !initFailed;
     }
 

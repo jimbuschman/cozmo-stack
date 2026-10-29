@@ -1,0 +1,892 @@
+{
+  "files": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+      "sha256": "CAABF2918236FE768FCDA1DAD1E1A021576ADD6C380384DF4319AAFB231FA966",
+      "rawGit": "92400bea946025a5d569e8daa1b0815c7095b288",
+      "stagedEquivalentGit": "92400bea946025a5d569e8daa1b0815c7095b288",
+      "strictUTF8": true,
+      "rawLF": true,
+      "BOM": false,
+      "EOF_LF": true,
+      "whitespaceExit": 1,
+      "whitespaceOutput": []
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/PyramidPutDownNativeTests.cs",
+      "sha256": "7938A53B3DF403066A05E9193577DAA536B4667A9625EB6A85CDC908F75811E0",
+      "rawGit": "acc8e6752d9d1618cd7f3f0fecbed901fc959eeb",
+      "stagedEquivalentGit": "acc8e6752d9d1618cd7f3f0fecbed901fc959eeb",
+      "strictUTF8": true,
+      "rawLF": true,
+      "BOM": false,
+      "EOF_LF": true,
+      "whitespaceExit": 1,
+      "whitespaceOutput": []
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/PUTDOWN-PYRAMID-1-builder.md",
+      "sha256": "D3D27D715F8B4A4AC736759E9E9269FF6E654757BB316069AC7D89AB4396662E",
+      "rawGit": "a7b41886c346a7cbaa762c42ce01757bd96bfd64",
+      "stagedEquivalentGit": "a7b41886c346a7cbaa762c42ce01757bd96bfd64",
+      "strictUTF8": true,
+      "rawLF": true,
+      "BOM": false,
+      "EOF_LF": true,
+      "whitespaceExit": 1,
+      "whitespaceOutput": []
+    }
+  ],
+  "runs": [
+    {
+      "run": "focused-v1",
+      "exit": 0,
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "notExecuted": 0,
+      "classes": [
+        "Cozmo.Protocol.Tests.PyramidPutDownNativeTests"
+      ],
+      "results": [
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.AliasStartUsesOneNativeDrawOrdinary19AAndOwnLockThenStopRetiresOnlyOwnedAction",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.1008391"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.AliasRunsRealBackupAnimationsAndImageWaitBeforeCurrentCarryRelease",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:06.2275999"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.AliasResultlessCallbacksAcceptFailureAndInterruptedCallbackCannotReleaseNewCarry",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.1122050"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.ExactPyramidAssetAndThreeStrictCallerInputsRetainTheSameZeroScoreReceiver",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.1246187"
+        }
+      ],
+      "commandHash": "D12A0AE05DA72C4B4032A69876A72ABB9A2913919085926DCE3E71FAD22F6AC1",
+      "trxHash": "EF4B98D898D24CD454415CB74C7279920F678FD5DF55F381C1082C5A99BD675D"
+    },
+    {
+      "run": "affected-v1",
+      "exit": 0,
+      "total": 126,
+      "passed": 126,
+      "failed": 0,
+      "notExecuted": 0,
+      "classes": [
+        "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+        "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+        "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+        "Cozmo.Protocol.Tests.PutDownNothingNativeTests",
+        "Cozmo.Protocol.Tests.PyramidPutDownNativeTests"
+      ],
+      "results": [
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ChoosingNothingIsReportedRatherThanSilent",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0072141"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.EveryBuiltBehaviourMatchesAShippedConfig",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0331380"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScoredChoiceIsGatedByReactionsTheUiGameBehaviourAndTheRunningTrigger",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0081905"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimBehaviourWithSeveralTriggersTakesThemAll",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.6088751"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RobotStoppedCliffGateKeepsRequestCancelBroadcastOrder(enabled: False)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0050268"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RealEngineTickDrivesTheNamedCompound",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0060612"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.AliasResultlessCallbacksAcceptFailureAndInterruptedCallbackCannotReleaseNewCarry",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0631681"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScoreAppliesNoPenaltyForAZeroStampOrAMissingGraph",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0063393"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.ExactPyramidAssetAndThreeStrictCallerInputsRetainTheSameZeroScoreReceiver",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0696582"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerResumePathPreservesTheResumeCounter",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0641946"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.InitRunsBeforeTheManagerStoresTheRunningInfo",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0061298"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RetryDiagnosticsPrecedeReset(parallel: False)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003994"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeDeletionPublishesBeforeEraseAndResetsVerifiedSoTheRealWaitStillRuns",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0693180"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteMakesUpdateReturnTwoBeforeUpdateInternal",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0053102"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheShippedBehaviorConfigsCarryTheirObjectives",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0313593"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeLifecycleGuardAndCopySubscriptionLifetimeStaySeparateFromPublicSentinel(external: True)",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0668234"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SwitchToBehaviorBaseStillInitialisesWhenNotRunnable",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0072137"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedInitLeavesItsScopeHeldUntilTheNextStop",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0054159"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.HandleBehaviorObjectiveStampsTheLastRunClockOnAMatch",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0071716"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.AliasStartUsesOneNativeDrawOrdinary19AAndOwnLockThenStopRetiresOnlyOwnedAction",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0708761"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownNothingNativeTests.AliasResultlessCallbacksAcceptFailureAndInterruptedCallbackCannotReleaseNewCarry",
+          "class": "Cozmo.Protocol.Tests.PutDownNothingNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0717285"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests.AliasRunsRealBackupAnimationsAndImageWaitBeforeCurrentCarryRelease",
+          "class": "Cozmo.Protocol.Tests.PyramidPutDownNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.6487772"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSmartHelpersRefuseADoubleAcquire",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004289"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimWithNoTriggersIsNotRunnable",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.5694247"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AddBeaconAppendsAndRaisesTheRenderSeam",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0009230"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSelectionChooserReturnsTheRequestedBehaviourUntilItsNumRunsAreSpent",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0060243"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedChildEndsItsSequenceAndTheNextLoopStarts",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0062002"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ALockedActionWhoseInitFailsStillSendsTheLockAndTheRelease",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0113974"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheReactionLocksAreReleasedInNameOrder",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0066455"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.NameReassignmentAndLoggingByteFollowEachAdd",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005954"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHeadCalibrationWaitRunsToThirtySeconds",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0063542"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.IgnoredSequentialFailureUsesTheCapturedClock",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001885"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ReactionsAreConsultedEveryTickAndOnlyAPerTriggerLockSkipsOne",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0065384"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.AnyInitialCallbackFailureStillBuildsLookAndFinalFailureReleasesCurrentCarry",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0766590"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ConfiguredPutDownRunsThroughRealPathAnimationAndImageCompletionBeforeCarryRelease",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.7337321"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AWhiteboardWithNoExternalInterfaceWarnsOnInit",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005590"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ResumeCountsCliffAndMovementAndRefusesFromTheSecondWithTheEmotionEvent",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0241392"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeRunsCustomUndoInReverseOrder",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004490"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.ListOwnershipIsRemovedBeforeChildDestructor",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002250"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SetRunningAndResumeInfoReportsWhatItDoesNotDo",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0131337"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeLazyUpdateUsesCurrentGateButExistingAndCopyKeepTheirCapturedBus",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0668007"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ScoredActingStateChangedClearsTheBonusOnActionStartStopAndCompletion",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0066530"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonPositiveLoopCountOnTheLoopPathPlaysNothing(loops: 0)",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.2078526"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHighestScoringRunnableBehaviourWins",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0109836"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AWhiteboardWithAnExternalInterfaceRegistersItsHandlers",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012558"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.RegisteringAfterDisposalStillReleases",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001658"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SmartRemoveCustomLightPatternWithoutAPatternFails",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0012221"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.InvalidCategoryRepeatsSameChildOnlyInParallel(parallel: False)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001943"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayedAnimationReleasesItsTrackLockWhenStopped",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.5555050"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TwoTrackLocksOnOneScopeAreBothReleased",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001221"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RequestInfoRunsWithoutInitializedOrCurrentGuard(initialized: False)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0083955"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ACompletionCallbackMayStartTheNextAction",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.5791337"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeReleasesEverythingItTook",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029513"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerDoesNotSuppressThePenaltyOnAnInterruptedStop",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0152567"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheCarryingGateIsReadFromTheRobot",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0065701"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimBehaviourResolvesItsTriggerAgainstTheShippedAssets",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.6071327"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheInitTagGuardFlagsOnlyEngineTaggedActionsAndCountsTheMainQueue",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007034"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownNothingNativeTests.AliasRunsRealBackupAnimationsAndImageWaitBeforeCurrentCarryRelease",
+          "class": "Cozmo.Protocol.Tests.PutDownNothingNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.6179661"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SwitchToBehaviorBaseAndFinishFollowTheEngine",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0043659"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ReinitAppends46HandlesSoEarliestRecipientStillPrecedesInterveningObserver",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0777007"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ATrackDeltaScorerSubtractsTheValueSixtyTicksAgoFromTheHistoryRing",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0085939"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheTrackLocksAreReleasedInKeyOrderOnTheWire",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0926495"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHeadAndLiftRestoreRunsEvenWhenNothingIsParked",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0177705"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.NaNMoveDeadlineWaitsImmediatelyAndOnLaterTicks",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007843"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeCopyAlwaysCreatesNewSubscriptionsBeforeRetiringPreviousImpl",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0698148"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AnAnimationActionLocksItsMaskUnderItsActionId",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.5899922"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteDiscardsTheCompletionCallback",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0096674"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.InvalidCategoryRepeatsSameChildOnlyInParallel(parallel: True)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003244"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ActualVisionDrainUpdatesCacheBeforeCountGatedLocal46(external: True)",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.1448595"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimIsNeverResumed",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0048900"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayIsRefusedWhileItsTracksAreLocked",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.4949446"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ABehaviourThatJustRanLosesToOneThatHasNot",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0071866"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimLocksNothingExceptTheLiftWhileCarrying",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.5245872"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteReleasesTheSharedHandle",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001767"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.QueuedLastFaceHasOneCoreTagAndRealWaitPrioritySignedFaceAndFineTune",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0722506"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedInitStillStoresTheRunningInfo",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0061787"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AStampOfZeroOrLessIsNotPenalised",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002176"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ActualVisionDrainUpdatesCacheBeforeCountGatedLocal46(external: False)",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.1333976"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonPositiveLoopCountOnTheLoopPathPlaysNothing(loops: -1)",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0067059"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AMissingRepetitionPenaltyIsAFlatOne",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029407"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RequestInfoRunsWithoutInitializedOrCurrentGuard(initialized: True)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0052473"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeReleasesInTheEnginesFixedCategoryOrder",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0018443"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.InitCallsInitInternalAndItsResultIsInitsFailure",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0057968"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ConfiguredFactoryUsesOneSignedContextDrawAndRealOwnedSequence",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0665208"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheTickRunsTheActivityThenReactionsThenTheScoredChoice",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0054887"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheEmotionScoreIsAFloatMeanWithAFloatVeto",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0081145"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeCacheHasFourthObservationGateIndependentLifetimeAndOriginFallback",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0639728"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.MissingPoseReinitRetainsTheRealWaitAndUsesStateThreeNeeds29OnlyAfterSuccess",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0853470"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AStandaloneWaitIsTheCurrentActionAndAParallelPairIsOne",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0072682"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheGraphEvaluatorIsFloatAndReturnsTheLeftNodeForATinySpan",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001908"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.CompletedChildrenGetTheExactAlreadyPreppedCount(ignored: True, expected: 2)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003217"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheRepetitionPenaltySuppressionIsAtTheScoringSiteNotInTheGraph",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001580"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ForgettingClearsThePenalty",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003771"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ASingleTriggerTimesOutAtSixtySecondsUnlessItLoopsForever",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:01.1041538"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ABehaviourStoppedAtTimeZeroIsNotPenalised",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0087690"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.SequentialFailureAndIgnoreDiagnosticsMatchTheCheckedFormats(ignored: True)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002833"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NoCarryLookSkipsBothPositioningAndWaitAndStopSuppressesStaleRelease",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.1006876"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.OnlyTheBehavioursWhoseInputsExistAreBuilt",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0007894"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.SequentialFailureAndIgnoreDiagnosticsMatchTheCheckedFormats(ignored: False)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002364"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeLifecycleGuardAndCopySubscriptionLifetimeStaySeparateFromPublicSentinel(external: False)",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.1704738"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.IsRunnableBaseConsumesTheRobotStateAndBehaviourGates",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0059017"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownNothingNativeTests.ExactShippedAliasAndParentEntryUseTheActualConfiguredManagerInstance",
+          "class": "Cozmo.Protocol.Tests.PutDownNothingNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0725142"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.DerivedFailureInfoAndNextActionInfoAreUngated",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005356"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.LockFailedChildHasNoAlreadyPreppedAtFirstStore",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0008208"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SmartRemoveIdleAnimationWithoutAnIdleRaisesAVerifyFailure",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003664"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonSteppedBehaviourGetsTheResumeCounterAndRefusal",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0043523"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerStopsABehaviourOnlyWhileItsRunningFlagIsSet",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0114053"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSmartHelpersReleaseThroughTheScope",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0026299"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.SameTimestampUsesDistanceFromActualNonzeroMainNotLocalOrigin",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0771391"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheNeedsWantsToRunStrategiesFollowTheNeedsState",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0101640"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ALockedTrackFailsTheActionAndIsNotRetried",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.5313635"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeChangedAbsentZeroRetargetsRequestedAndUniqueRenameResetsOnlyNewEntries",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0685291"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScorePathIsFloatWithTheEnginesOperationOrder",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0074631"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.CompletedChildrenGetTheExactAlreadyPreppedCount(ignored: False, expected: 1)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0031846"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheFreeplayTickChecksReactionsBeforeTheActivityPick",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0146082"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerResumesWithoutAnIsRunnablePreCheckAndAFailedResumeSwitchesToNothing",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0144781"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopActingHonoursItsViaCallbackAndKeepActionParameters",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0084182"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheBehaviourApiStopsFirstAndThenWritesTheSuppressionWindow",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0066641"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.WithoutAGraphTheManagerAppliesNoRepetitionPenalty",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0077237"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RobotStoppedCliffGateKeepsRequestCancelBroadcastOrder(enabled: True)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0051056"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheShippedBehaviorObjectivesParse",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001455"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.SameStampRoundedSqrtTieRetainsCachedPoseEvenWhenSquaredDistanceIsLarger",
+          "class": "Cozmo.Protocol.Tests.PutDownBlockNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0638965"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RetryDiagnosticsPrecedeReset(parallel: True)",
+          "class": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0013086"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.PutDownNothingNativeTests.AliasStartUsesOneNativeDrawOrdinary19AAndOwnLockThenStopRetiresOnlyOwnedAction",
+          "class": "Cozmo.Protocol.Tests.PutDownNothingNativeTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0695028"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.FinishCurrentBehaviorsSecondArgumentIsTryToResume",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0104280"
+        },
+        {
+          "name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AnUninitialisedManagerTicksNothingAndAUiGameRequestIsSelectedOnce",
+          "class": "Cozmo.Protocol.Tests.BehaviorFrameworkTests",
+          "outcome": "Passed",
+          "duration": "00:00:00.0066694"
+        }
+      ],
+      "commandHash": "896C7E17465DD86EE13A83167C873859CA8E7948BCE43A73197B3609E6FF8371",
+      "trxHash": "303ED48D743AD7EBF99209C95D461246D6AB322550BC72BF1F209CDE7CEEA592"
+    }
+  ],
+  "compiled": [
+    {
+      "Algorithm": "SHA256",
+      "Hash": "B4B5B7BD89D59DB246675E5F9095C0ECA6D7112B9A7DC19309C8D1CC325557DA",
+      "Path": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-putdown-pyramid-1\\cozmo-stack\\src\\Cozmo.Robot\\bin\\Debug\\net9.0\\Cozmo.Robot.dll"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "17859CE9C4FEB937DEF9F6492F8BC30A295196E49C0F96CE2A8CE63D36989234",
+      "Path": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-putdown-pyramid-1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\bin\\Debug\\net9.0\\Cozmo.Protocol.Tests.dll"
+    }
+  ],
+  "buildExit": 0,
+  "buildCommandHash": "52B36D970D6CB654889FC2A9371E095284660B1D4D70E08456B8DD41E379E676",
+  "shutdownExit": 0,
+  "processes": {
+    "nativeNames": [
+      "dotnet.exe",
+      "testhost.exe",
+      "MSBuild.exe",
+      "VBCSCompiler.exe"
+    ],
+    "processes": [],
+    "totalCount": 0,
+    "ownProcesses": [],
+    "ownCount": 0
+  },
+  "corrections": {
+    "compiler": 0,
+    "test": 0,
+    "reviewer": 0,
+    "toolingPrelaunchSelf": 1,
+    "sourceQuestions": 0
+  },
+  "ledgerOnlyOutcomeDelta": true,
+  "leaseReturned": true
+}
