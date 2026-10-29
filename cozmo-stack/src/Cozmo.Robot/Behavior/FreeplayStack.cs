@@ -97,6 +97,7 @@ public sealed class FreeplayStack : IDisposable
         var guardDogDisconnects=new List<GuardDogDisconnectUnit>();
         var factoryContext = new BehaviorFactoryContext
         {
+            ReactionManager=manager,
             RegisterGuardDogDisconnect=guardDogDisconnects.Add,
             SourceLog = (level, channel, key, text) =>
             {

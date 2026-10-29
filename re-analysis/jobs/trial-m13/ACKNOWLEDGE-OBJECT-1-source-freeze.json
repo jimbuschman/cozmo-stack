@@ -1,0 +1,42 @@
+{
+  "job": "ACKNOWLEDGE-OBJECT-1",
+  "stage": "Claude-checked read plus independent UNKNOWN V3 supplement frozen; complete draft released",
+  "source": {
+    "path": "re-analysis/research/20261029-acknowledge-object-1-read.md",
+    "sha256": "69E894EB191E66418C6B71F5129BB11F03BDF41D09F9FE0DFAA8C0F32FF0FA5F",
+    "acceptedBy": "Claude check recorded in main077c83f5 and operator resume instruction"
+  },
+  "operatorDecisions": {
+    "N2": "One actual process-wide ObjectID consumed at first Init, retained thereafter",
+    "T7": "Forced trigger not built",
+    "W7": "Beyond45deg turn is SUCCESS without motion; verify/animate continue"
+  },
+  "knownRowsMustNotBeReExtracted": true,
+  "independentReadingLimit": "Only actual UNKNOWN row or concrete contradiction",
+  "remainingUnknown": "Ghost marker/visibility helper input frontier; generic JSON lexical/nonfinite/huge conversion edges and inherited report/timeout boundaries remain explicit. Ordinary finite angle operations now resolved.",
+  "newRecordProposal": "One AcknowledgeObject lifecycle, not added by Codex",
+  "officialEditsAuthorized": false,
+  "unknownSupplements": [
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-unknown.md",
+      "sha256": "6937E22D5C585840A93B56DCF1DF8A7D8404BE72A6C2758DC4C2B13D8E1D024A"
+    },
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-v3-codex-check.md",
+      "sha256": "A8E79E4DF6A964B68C3451B81A43F4667E8335D61A1805570A45DCDE3AE75E40"
+    }
+  ],
+  "sourceSupplements": 2,
+  "sourceReportQuotationCorrections": 1,
+  "nativeBehaviorCorrections": 0,
+  "angleUnknownSupplement": [
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-angle-unknown.md",
+      "sha256": "728BF9BC0DDBABFFF92B0929F9F5229DE6F96843CEAE4F2B0980988E1F46FE42"
+    },
+    {
+      "path": "re-analysis/research/20261029-acknowledge-object-1-angle-codex-check.md",
+      "sha256": "7646546F1ADFB505905A52AD08C234E7DC55A987996915C452B34448A8177817"
+    }
+  ]
+}

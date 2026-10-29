@@ -14,6 +14,8 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
     internal NativeTurnTowardsObjectRunner(ManipulationSystem m,uint id,short code,float maximum,bool verify,bool track)
         :base(m,Pose3d.Identity,maximum,0x2C)
     {_id=id;_code=code;_verify=verify;_track=track;}
+    internal void SetTolerances(float pan,float tilt)
+    {Parameters.SetPanTolerance(pan);Parameters.SetTiltTolerance(tilt);}
     internal override ActionWatcher? Watcher
     {get=>base.Watcher;set{base.Watcher=value;if(_verification is not null)_verification.Watcher=value;}}
     public override int Init()
@@ -65,8 +67,9 @@ internal sealed class NativeVerifyObjectRunner:NativeVisionRunner
     private CompoundActionParallel? _parallel;
     private RetainedSubscription? _observed;
     private bool _seen,_markerAccepted;
+    private readonly int _images;
     protected override string ActionName=>"VisuallyVerifyObject";
-    internal NativeVerifyObjectRunner(ManipulationSystem m,uint id,short code):base(m,0x2E,1){_id=id;_code=code;}
+    internal NativeVerifyObjectRunner(ManipulationSystem m,uint id,short code,int images=10):base(m,0x2E,1){_id=id;_code=code;_images=images;}
     internal override ActionWatcher? Watcher
     {get=>base.Watcher;set{base.Watcher=value;if(_parallel is not null)_parallel.Watcher=value;}}
     public override int Init()
@@ -74,7 +77,7 @@ internal sealed class NativeVerifyObjectRunner:NativeVisionRunner
         _parallel?.Prep();_parallel?.WatcherEnding();
         _parallel=new CompoundActionParallel(()=>M.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,Watcher=Watcher,SourceLog=SourceLog};
         _parallel.AddAction(M.Robot.Motion.CreateNativeLiftChild(CozmoMotion.OutOfFovHeightMm,5f),false,false);
-        _parallel.AddAction(new NativeWaitForImagesRunner(M,10,(VisionMode)1,0),false,false);
+        _parallel.AddAction(new NativeWaitForImagesRunner(M,_images,(VisionMode)1,0),false,false);
         _seen=false;_markerAccepted=_code==NativeTurnTowardsObjectRunner.AnyCode;
         if(M.Robot.Engine.Robot?.HasExternalInterface!=true)
             throw new NotSupportedException("M1-034 VerifyObject native external owner absent at44 subscription");

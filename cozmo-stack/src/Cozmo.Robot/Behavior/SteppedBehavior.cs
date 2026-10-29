@@ -395,6 +395,7 @@ public abstract partial class SteppedBehavior : IBehavior
     // fidelity: M8-002
     public void StopWithoutImmediateRepetitionPenalty()
     {
+        using var executionLease = EnterHostExecutionOwner(Context);
         double now = Context.ClockSec?.Invoke() ?? Clock() / 1000.0;
         Stop(BehaviorStopReason.Interrupted);               // IBehavior::Stop 0x005beea4
         Context.Penalty?.Ran(Id, now);                      // Stop's +0x30 = now (0x005bd11e)
@@ -413,6 +414,7 @@ public abstract partial class SteppedBehavior : IBehavior
     // fidelity: M8-001
     protected void InitLifecycle(BehaviorContext context, double nowSec, bool sparkDisabled)
     {
+        long hostVersion = CaptureHostExecutionVersion();
         _sparkDisabled = sparkDisabled;          // +0xd8
         _engineActingFlag = false;               // halfword 0x0100 at +0xa0: +0xa0 = 0
         _engineRunning = true;                   //                             +0xa1 = 1
@@ -422,9 +424,11 @@ public abstract partial class SteppedBehavior : IBehavior
         Interlocked.Increment(ref _callbackEpoch);   // +0x98 destroyed (0x005bccc6..0x005bcce6)
         InitFailed = false;
         OnStart();                               // vtable+0x48 InitInternal (0x005bccfe/0x005bcd00)
+        if (!HostExecutionVersionCurrent(hostVersion)) return;
         if (InitFailed) _engineRunning = false;  // non-zero: +0xa1 = 0 (0x005bcd06)
         else _scoreIncreaseCount++;              // zero: +0x80++ (0x005bcd0c)
         SparkBehaviorDisables();                 // the "SparkBehaviorDisables" lock
+        if (!HostExecutionVersionCurrent(hostVersion)) return;
         _resumeCount = 0;                        // +0x114 = 0
     }
 
@@ -517,6 +521,8 @@ public abstract partial class SteppedBehavior : IBehavior
     // fidelity: M8-001
     public bool Resume(ReactionTrigger? trigger, double nowSec)
     {
+        using var executionLease = EnterHostExecutionOwner(Context);
+        long hostVersion = CaptureHostExecutionVersion();
         if (trigger is ReactionTrigger.CliffDetected or ReactionTrigger.UnexpectedMovement)
         {
             int prior = _resumeCount;
@@ -531,6 +537,7 @@ public abstract partial class SteppedBehavior : IBehavior
         _resuming = true;                        // +0xa2 = 1
         _runningPenaltyClockSec = nowSec;        // +0x34 = now
         int result = ResumeInternal();           // vtable+0x4c
+        if (!HostResumeContinuationCurrent(hostVersion)) return true;
         _resuming = false;                       // +0xa2 = 0
         if (result != 0)
         {
@@ -563,12 +570,19 @@ public abstract partial class SteppedBehavior : IBehavior
     // fidelity: M8-001
     protected virtual int ResumeInternal()
     {
+        long entryVersion = CaptureHostExecutionVersion();
         if (!IsRunnableBase(Context)) return 1;
+        if (!HostExecutionVersionCurrent(entryVersion)) return 1;
         if (!IsRunnableInternal(Context)) return 1;
+        if (!HostExecutionVersionCurrent(entryVersion)) return 1;
+        HostRunStarting();
+        long hostVersion = CaptureHostExecutionVersion();
+        if (!HostExecutionVersionCurrent(hostVersion)) return 1;
         _engineRunning = true;                   // +0xa1 = 1 (0x005bdabc)
         BeginRun(Context, Scope);
         InitFailed = false;
         OnStart();                               // tail call vtable+0x48 InitInternal
+        if (!HostExecutionVersionCurrent(hostVersion)) return 1;
         EndOfStart();
         return InitFailed ? 1 : 0;
     }
@@ -582,6 +596,7 @@ public abstract partial class SteppedBehavior : IBehavior
     // fidelity: M8-001
     public void StopOnNextActionComplete()
     {
+        using var executionLease = EnterHostExecutionOwner(Context);
         _engineActingFlag = true;   // +0xa0 = 1 (0x005bd698)
         _sharedHandle = null;
         _runnerCompletion88 = null;
@@ -600,8 +615,17 @@ public abstract partial class SteppedBehavior : IBehavior
 
     public virtual Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
     {
+        using var executionLease = EnterHostExecutionOwner(context);
+        HostRunStarting();
+        long hostVersion = CaptureHostExecutionVersion();
+        if (!HostExecutionVersionCurrent(hostVersion)) return Task.FromException(new ObjectDisposedException(Id));
         BeginRun(context, scope);
-        InitLifecycle(context, context.ClockSec?.Invoke() ?? Clock() / 1000.0, SparkGate?.Invoke() ?? false);
+        double now = context.ClockSec?.Invoke() ?? Clock() / 1000.0;
+        if (!HostExecutionVersionCurrent(hostVersion)) return Task.CompletedTask;
+        bool spark = SparkGate?.Invoke() ?? false;
+        if (!HostExecutionVersionCurrent(hostVersion)) return Task.CompletedTask;
+        InitLifecycle(context, now, spark);
+        if (!HostExecutionVersionCurrent(hostVersion)) return Task.CompletedTask;
         EndOfStart();
         return Task.CompletedTask;
     }
@@ -638,10 +662,20 @@ public abstract partial class SteppedBehavior : IBehavior
 
     /// <summary>The engine's <c>StopInternal</c>.</summary>
     protected virtual void OnStop(BehaviorStopReason reason) { }
+    // Optional host serialization owner; the default preserves existing unowned behavior units.
+    protected virtual IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => null;
+    protected virtual void HostRunStarting() { }
+    protected virtual long CaptureHostExecutionVersion() => 0;
+    protected virtual bool HostExecutionVersionCurrent(long version) => true;
+    protected virtual bool HostStopContinuationCurrent(long version) => true;
+    protected virtual bool HostResumeContinuationCurrent(long version) => true;
 
     // fidelity: M8-001
     public bool Update(BehaviorContext context, double nowMs)
     {
+        long hostVersion = CaptureHostExecutionVersion();
+        using var executionLease = EnterHostExecutionOwner(context);
+        if (!HostExecutionVersionCurrent(hostVersion)) return true;
         // IBehavior::Update 0x005bd074..0x005bd088: +0xa0 set and +0x84 clear returns 2 before UpdateInternal.
         if (UpdateStatus() == 2) return false;
         if (_finished) return false;
@@ -651,7 +685,8 @@ public abstract partial class SteppedBehavior : IBehavior
         // Only the completions already queued when this tick began run now. A callback that starts an
         // action which fails at once re-queues its own completion, and draining that inline would spin.
         int queued = _pending.Count;
-        while (queued-- > 0 && !_finished && _pending.TryDequeue(out var callback)) callback();
+        while (queued-- > 0 && !_finished && _pending.TryDequeue(out var callback))
+        { callback(); if (!HostExecutionVersionCurrent(hostVersion)) return true; }
 
         if (!_finished && _onWaitDone is { } waitDone)
         {
@@ -660,6 +695,7 @@ public abstract partial class SteppedBehavior : IBehavior
             {
                 _onWaitDone = null; _waitDeadlineMs = double.NaN;
                 waitDone();
+                if (!HostExecutionVersionCurrent(hostVersion)) return true;
             }
         }
 
@@ -667,15 +703,18 @@ public abstract partial class SteppedBehavior : IBehavior
         {
             if (double.IsNaN(_conditionDeadlineMs)) _conditionDeadlineMs = nowMs + _conditionTimeoutMs;
             bool met = condition();
+            if (!HostExecutionVersionCurrent(hostVersion)) return true;
             if (met || nowMs >= _conditionDeadlineMs)
             {
                 var done = _onConditionDone;
                 _waitCondition = null; _onConditionDone = null; _conditionDeadlineMs = double.NaN;
                 done?.Invoke(met);
+                if (!HostExecutionVersionCurrent(hostVersion)) return true;
             }
         }
 
         if (!_finished) OnUpdate();
+        if (!HostExecutionVersionCurrent(hostVersion)) return true;
 
         // TriggerAnimationAction's timeout: IAction::IsDone returns true once now passes +0x74. The
         // deadline is armed on the first tick after the play starts.
@@ -695,6 +734,7 @@ public abstract partial class SteppedBehavior : IBehavior
             {
                 // outside _gate: StopActing may reach the helper component, whose lock order is component, then _gate (M8-011)
                 Log("action timed out");
+                if (!HostExecutionVersionCurrent(hostVersion)) return true;
                 StopActing();
                 // the action ended with TIMEOUT 0x03000018 (IAction::UpdateInternal 0x00540d1c)
                 Post(() => timeoutDone(ActionOutcome.Failed(ActionOutcome.TimedOut)));
@@ -707,6 +747,10 @@ public abstract partial class SteppedBehavior : IBehavior
 
     public void Stop(BehaviorStopReason reason)
     {
+        using var executionLease = EnterHostExecutionOwner(Context);
+        long hostVersion = CaptureHostExecutionVersion();
+        uint oldTag = CurrentRunnerTag;
+        var oldList = _runnerActionList;
         _finished = true;
         // fidelity: M8-011
         // IBehavior::Stop's own helper stop, first (0x005bd0f4..0x005bd108: +0xc8 set and [ctl+4]+1 != 0, then IBehavior::StopHelperWithoutCallback, no log), before +0xa1 is
@@ -714,6 +758,11 @@ public abstract partial class SteppedBehavior : IBehavior
         if (HasLiveHelper) StopHelperWithoutCallback();
         _engineRunning = false;                  // IBehavior::Stop clears +0xa1 (0x005bd10c)
         OnStop(reason);                          // vtable+0x54 StopInternal (0x005bd110/0x005bd114)
+        if (!HostStopContinuationCurrent(hostVersion))
+        {
+            if (oldTag != 0) oldList?.Cancel(oldTag); // never cancel a replacement run's handle
+            return;
+        }
         StopActing(keepAction: false, viaCallback: false);   // IBehavior::Stop calls StopActing(0,0) 0x005bd126
     }
 

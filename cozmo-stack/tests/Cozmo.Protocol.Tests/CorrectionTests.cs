@@ -106,7 +106,8 @@ public class CorrectionTests
         var fired = manager.CheckReactions(rig.Clock.NowMs / 1000.0);
         Assert.NotNull(fired);
         Assert.Equal("AcknowledgeObject", fired!.Behavior);
-        Assert.Equal(cubeId, behaviour.CurrentTarget);            // the strategy's target, taken up by the behaviour
+        Assert.Null(behaviour.CurrentTarget);                     // I1/U1: Init defers BeginIteration to Update
+        Assert.Contains(cubeId, behaviour.PendingTargets);         // T6 copied the desired target to this owner
     }
 
     /// <summary>

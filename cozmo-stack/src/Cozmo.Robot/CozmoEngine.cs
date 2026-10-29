@@ -794,7 +794,7 @@ public sealed partial class EngineRobot
         engine.NvStorage?.EnsureBackup(); // M15-038: the new Robot's NV owner precedes Messaging's first C9 subscription.
         NativeRobotId=robotId;
         Idle = new IdleTimeoutComponent(this);
-        _actionList = new ActionList(engine.Log, (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text),NativeRobotId,()=>engine.Timer.SecondsF);
+        _actionList = new ActionList(engine.Log, (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text),NativeRobotId,()=>engine.Timer.SecondsF,engine.EnterSynchronousOwner);
         // D2: initially off until host lifetime binding wires GameSend to the E2G signal (M5-063).
         // The public completed-action payload/union boundary remains owned by M7-020.
         _actionList.Watcher.HasExternalInterface = false;
@@ -2251,6 +2251,23 @@ public sealed partial class CozmoEngine : IDisposable
     // Keep the synchronous host result, without waiting on the engine thread itself.
     internal T InvokeCameraRequest<T>(Func<T> request)
         => InvokeEngineRequest(request);
+
+    // Synchronous host execution ownership: no queue post or synthetic tick. A caller already on
+    // this owner may reenter it; an off-owner caller must not wait while holding the world frame gate.
+    internal Action? SynchronousOwnerWaitingForTest;
+    internal IDisposable EnterSynchronousOwner()
+    {
+        if (!Monitor.IsEntered(_tickLock) && DelocalizationWorld is { } world && Monitor.IsEntered(world.FrameGate))
+            throw new InvalidOperationException("A synchronous engine owner cannot be entered while the caller holds BlockWorld.FrameGate.");
+        if (!Monitor.IsEntered(_tickLock)) SynchronousOwnerWaitingForTest?.Invoke();
+        Monitor.Enter(_tickLock);
+        return new SynchronousOwnerLease(_tickLock);
+    }
+    private sealed class SynchronousOwnerLease(object gate) : IDisposable
+    {
+        private object? _held = gate;
+        public void Dispose() { var held = Interlocked.Exchange(ref _held, null); if (held is not null) Monitor.Exit(held); }
+    }
 
     // fidelity: M4-018, M4-051 — game-facing light commands share the same native engine-thread ingress.
     internal T InvokeEngineRequest<T>(Func<T> request)

@@ -681,7 +681,8 @@ public static class ShippedBehaviors
                                                                                 Func<double>? clockSec = null, Cozmo.Robot.Vision.VisionSystem? vision = null,
                                                                                 RamIntoBlockBehavior? ramIntoBlock = null, Cozmo.Robot.Manipulation.AIWhiteboard? whiteboard = null,
                                                                                 string? obbRoot = null, Cozmo.Robot.Manipulation.ManipulationSystem? m = null,
-                                                                                List<string>? unbound = null)
+                                                                                List<string>? unbound = null,
+                                                                                AcknowledgeObjectBehavior? acknowledgeObject = null)
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
@@ -731,7 +732,7 @@ public static class ShippedBehaviors
         }
         if (vision is not null)
         {
-            var ack = new AcknowledgeObjectBehavior(vision.World, vision.Locator);
+            var ack = acknowledgeObject ?? new AcknowledgeObjectBehavior(vision.World, vision.Locator);
             // PositionUpdate ShouldReactToTarget0x00612584 / RobotReactedToId0x00612A9E call
             // Robot::GetLastImageTimeStamp0x00516EC0 (VC+0xE8). Carried/docking IDs remain M12 inputs.
             built.Add((ack.Id, ReactionTrigger.ObjectPositionUpdated, ack,

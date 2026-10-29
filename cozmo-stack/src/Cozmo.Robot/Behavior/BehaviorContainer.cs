@@ -19,6 +19,7 @@ public sealed class BehaviorFactoryContext
     /// <summary>The manipulation system (the M12/M13 layer), for the classes that dock, place or drive.</summary>
     public ManipulationSystem? Manipulation { get; init; }
     internal EngineRobot? NativeRobot {get;init;}
+    internal BehaviorManager? ReactionManager {get;init;}
     /// <summary>Stack diagnostics and standalone log observation; source calls use the separate typed seam.</summary>
     public Action<string>? Log { get; init; }
     public SourceLogSink? SourceLog { get; init; }
@@ -298,6 +299,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.PickUpCube] = (ctx,json)=>new NativePickUpCubeBehavior(ctx,json),
         [BehaviorClass.PutDownBlock] = (ctx,json)=>new NativePutDownBlockBehavior(ctx,json),
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
+        [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
         // case 0x19: BehaviorFistBump(robot, config), 0x158 bytes (0x0059cc84..0x0059cca2).
         [BehaviorClass.FistBump] = (ctx, json) => FistBumpBehavior.FromConfig(json, ctx.Vision, ctx.Manipulation),
         // case 0x4C: BehaviorReactToSparked(robot, config), 0x120 bytes (0x0059d2f2..0x0059d310).
@@ -309,6 +311,16 @@ public sealed class BehaviorFactory
         var manipulation=ctx.Manipulation??throw new InvalidOperationException("MISSING: DriveOff factory actual manipulation owner");
         return new DriveOffChargerBehavior(manipulation,BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(),
             json.TryGetProperty("extraDistanceToDrive_mm",out var extra)?extra.GetSingle():0f,ctx.NativeRobot??manipulation.Robot.Engine.Robot);
+    }
+
+    private static IBehavior CreateAcknowledgeObject(BehaviorFactoryContext ctx, JsonElement json)
+    {
+        var vision = ctx.Vision ?? throw new InvalidOperationException("MISSING: AcknowledgeObject factory vision owner");
+        var manager = ctx.NativeRobot?.BehaviorManagerOwner ?? ctx.ReactionManager;
+        var behavior = manager?.AcknowledgeObjectReactionOwner() ?? new AcknowledgeObjectBehavior(vision.World, vision.Locator);
+        behavior.BindConfiguredInputs(ctx.Manipulation, json, manager);
+        if (ctx.Manipulation is not null) behavior.BindActionCompletionOwner(vision.Robot, ctx.NativeRobot ?? vision.Robot.Engine.Robot);
+        return behavior;
     }
 
     /// <summary>The 79 cases in ordinal order.</summary>
@@ -364,7 +376,18 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        var behavior = entry.Construct(ctx, config);
+        if (cls == BehaviorClass.AcknowledgeObject && ctx.Vision is null)
+        {
+            SteppedBehavior.ReportMissing("AcknowledgeObject factory: actual vision owner unavailable");
+            status = BehaviorCreateStatus.NotImplemented; return null;
+        }
+        IBehavior behavior;
+        try { behavior = entry.Construct(ctx, config); }
+        catch (NotSupportedException error) when (cls == BehaviorClass.AcknowledgeObject)
+        {
+            SteppedBehavior.ReportMissing(error.Message + "; AcknowledgeObject configuration skipped, prior owner retained");
+            status = BehaviorCreateStatus.NotImplemented; return null;
+        }
         if(behavior is SteppedBehavior stepped && ctx.NativeRobot is {} native && ctx.Manipulation is {} source)
             {
             stepped.BindActionCompletionOwner(source.Robot,native);

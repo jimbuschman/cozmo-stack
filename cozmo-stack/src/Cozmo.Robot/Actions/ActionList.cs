@@ -20,14 +20,16 @@ internal sealed class ActionList : IDisposable
     // mutating _queues while ActionList::Update enumerates it. A SortedDictionary modification during enumeration
     // throws InvalidOperationException; the same lock also serialises the ActionQueue internals and Cancel/Clear.
     private readonly object _gate = new();
+    private readonly Func<IDisposable>? _enterOwner;
     private readonly System.Collections.Concurrent.ConcurrentQueue<Action> _hostCleanup = new();
     // Host availability errors retire their own subtree after queue iteration, independently of app input.
     internal void DeferHostCleanup(Action cleanup) => _hostCleanup.Enqueue(cleanup);
 
-    internal void WithGate(Action action) { lock(_gate) action(); }
+    internal void WithGate(Action action) { using var executionLease = _enterOwner?.Invoke(); lock(_gate) action(); }
 
-    public ActionList(Action<string>? log = null, SourceLogSink? sourceLog = null,uint? robotId=null,Func<float>? clockSeconds=null)
+    public ActionList(Action<string>? log = null, SourceLogSink? sourceLog = null,uint? robotId=null,Func<float>? clockSeconds=null,Func<IDisposable>? enterOwner=null)
     {
+        _enterOwner=enterOwner;
         _log = log; _sourceLog = sourceLog;_watcher.RobotId=robotId;_watcher.SourceLog=sourceLog;_watcher.LegacyLog=log;_watcher.ClockSeconds=clockSeconds;
         // The watcher's D6 broadcast is the local seam; forward it to the game sink when one is set.
         _watcher.RobotCompletedActionBroadcast += r => _gameSend?.Invoke(r);
@@ -50,11 +52,12 @@ internal sealed class ActionList : IDisposable
     /// W12: move a callback into the watcher and return its integer handle. W13: registration is not gated by the
     /// external interface.
     /// </summary>
-    public int RegisterActionEndedCallback(Action<RobotCompletedAction> callback) => _watcher.RegisterCallback(callback);
+    public int RegisterActionEndedCallback(Action<RobotCompletedAction> callback)
+    { using var executionLease = _enterOwner?.Invoke(); return _watcher.RegisterCallback(callback); }
 
     /// <summary>W12: erase the matching callback handle and return whether it was found.</summary>
     internal Action<string>? LifetimeObservedForTest;
-    public bool UnregisterActionEndedCallback(int handle){LifetimeObservedForTest?.Invoke("unregister");return _watcher.UnregisterCallback(handle);}
+    public bool UnregisterActionEndedCallback(int handle){using var executionLease = _enterOwner?.Invoke();LifetimeObservedForTest?.Invoke("unregister");return _watcher.UnregisterCallback(handle);}
 
     /// <summary>
     /// D6: the engine-to-game sink. Setting it turns the D2 game gate on (<see cref="ActionWatcher.HasExternalInterface"/>)
@@ -88,6 +91,7 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public void Clear()
     {
+        using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
         {
             if (_clearing) return;
@@ -120,6 +124,7 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public int Update()
     {
+        using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
         {
             // fidelity: M5-063 — completion callback can queue a driving end animation here.
@@ -158,6 +163,7 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public int QueueAction(QueueActionPosition position, IActionRunner? incoming, byte retries = 0)
     {
+        using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
         {
             if (incoming is null)
@@ -221,6 +227,7 @@ internal sealed class ActionList : IDisposable
     /// <summary>C6 ActionList::Cancel(type) 0x0053DE10..0x0053DE5E: clearing returns true; otherwise OR the queues' results; no erase/tick.</summary>
     public bool Cancel(int type)
     {
+        using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
         {
             if (_clearing) return true;
@@ -231,6 +238,7 @@ internal sealed class ActionList : IDisposable
     /// <summary>C6 ActionList::Cancel(idTag) 0x0053E704..0x0053E83A: as the type overload, comparing current +0x60.</summary>
     public bool Cancel(uint idTag)
     {
+        using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
         {
             if (_clearing) return true;

@@ -13,6 +13,23 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class FreeplayTests
 {
+    // reach: standalone Freeplay manager and shipped config, with a supplied strategy observation (T4/T6).
+    [Fact]
+    public void AcknowledgeObjectReactionUsesTheStandaloneConfiguredOwner()
+    {
+        var obb = ObbRoot(); Assert.NotNull(obb);
+        using var rig = new Rig();
+        var ctx = Ctx(rig);
+        using var stack = FreeplayStack.CreateStandalone(obb!, rig.Robot, ctx, () => 0, rig.Vision, rig.M);
+        var configured = Assert.IsType<AcknowledgeObjectBehavior>(stack.Bound["AcknowledgeObject"]);
+        var entry = Assert.Single(stack.Manager.Reactions.Where(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated));
+        Assert.Same(configured, entry.Behavior);
+        var strategy = Assert.IsType<ObjectPositionUpdatedStrategy>(entry.Strategy);
+        strategy.RecordObservation(23, new Pose3d(Mat3.Identity, new Vec3(200, 0, 22)), 1, true);
+        strategy.ShouldTrigger(ctx, null, 0, configured);
+        Assert.Contains(23u, configured.PendingTargets);
+    }
+
     private static string? ObbRoot()
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);

@@ -274,7 +274,7 @@ public sealed class PickupPyramidNativeExecutionTests
     public void ActualPayloadGetterOverwritesTargetWordZeroWithTheActualCarryingSet()
     {
         //Actual producer component with explicit actual-owner carry input; not firmware pickup proof.
-        using var f=new Fixture();f.Add();var action=new NativePickupObjectRunner(f.M,7);
+        using var f=new Fixture();using var executionLease=f.Rig.Engine.EnterSynchronousOwner();f.Add();var action=new NativePickupObjectRunner(f.M,7);
         try
         {
             Assert.Equal(0,action.Init());

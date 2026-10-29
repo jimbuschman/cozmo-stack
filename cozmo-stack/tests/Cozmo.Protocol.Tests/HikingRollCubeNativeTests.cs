@@ -161,7 +161,7 @@ public sealed class HikingRollCubeNativeTests
     [Fact]
     public void DisabledPreactionUsesCurrentObservedMarkersAndRealVisualPrefix()
     {
-        using var f=new Fixture();var obj=Add(f,7,150);var runner=new NativeRollObjectRunner(f.M,7){CheckPreActionPose=false};
+        using var f=new Fixture();using var executionLease=f.Rig.Engine.EnterSynchronousOwner();var obj=Add(f,7,150);var runner=new NativeRollObjectRunner(f.M,7){CheckPreActionPose=false};
         try{Assert.Equal(0,runner.Init());Assert.Collection(runner.Prepared!.Children,c=>Assert.IsType<NativeVisuallyVerifyNoObjectRunner>(c),c=>Assert.IsType<NativeTurnTowardsObjectRunner>(c));Assert.Empty(f.Rig.SentSince(0).OfType<DockWithObject>());}
         finally{runner.Prep();runner.WatcherEnding();}
         foreach(var marker in obj.Markers)marker.LastObservedTimestamp=0;

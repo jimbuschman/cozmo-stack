@@ -1,0 +1,7 @@
+# ACKNOWLEDGE-OBJECT-1 angle helper independent check
+
+PASS, 2026-10-29. Reviewer requested default model/effort; actual backend unobserved. Checked narrow Q3 supplement SHA256 728BF9BC0DDBABFFF92B0929F9F5229DE6F96843CEAE4F2B0980988E1F46FE42. Ran known.py 0x008405DC first; then inspected local engine Thumb instructions and ELF PLT mappings, without re-reading the checked AO caller.
+
+Optional lookup returns without assignment on null (0x004FA580–9E, 0x008405E6–EE). Json real conversion narrows binary64 to binary32 (0x008E9C4E–52); integer conversions call the corresponding signed/unsigned float helpers. The degree path loads 0x3C8EFA35 and multiplies in binary32 (0x008405F0–606). Radians assignment stores and calls rescale; the comparisons, binary32 add loops, large finite branch arithmetic, and pi/two-pi literal bits match the supplement (0x0084C846–48, 0x0084C87C–936). The decimal decode witness calls istream double extraction and stores a double as type 3 (0x008E22F4–F8, 0x008E2398–B2). The supplied M7-018 snapshot matches current manifest fields.
+
+This establishes the stated already-parsed numeric helper path, not libc++ lexical rounding, locale, integer-token classification, nonfinite or out-of-range conversion behavior; those remain UNKNOWN. No code, official record or Git state changed; no .NET run. No record settlement is proposed.
