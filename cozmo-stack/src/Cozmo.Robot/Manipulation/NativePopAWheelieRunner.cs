@@ -3,7 +3,8 @@ using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Manipulation;
 
-// POP-A-WHEELIE-1 D3-D5:0055256C..00552A72. Proposed Pop owner; shared IDock owners retained.
+// fidelity: M13-041 - current ordinary Pop Select/Verify/completion; Sparks widening pending.
+// POP-A-WHEELIE-1 D3-D5:0055256C..00552A72. Shared IDock owners retained.
 // Native Init metadata/shared recipients retain their existing M12 ownership.
 internal sealed class NativePopAWheelieRunner:NativeVisionRunner
 {
@@ -133,7 +134,7 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     public override byte? GetCompletionVariant()=>0;
     public override ObjectInteractionCompletion GetObjectInteractionCompletion()
     {
-        SteppedBehavior.ReportMissing("M1-034 proposed Pop own-path/completion owner POP-A-WHEELIE-1 D5 GetCompletionUnion0055268E..269C/setter0075C460..4A6 reads four undefined unused IDs: skip full public payload; defined target/count1/false and scalar/local callback retained");
+        SteppedBehavior.ReportMissing("M1-034 M13-041 current ordinary configured Pop completion (Sparks widening pending) POP-A-WHEELIE-1 D5 GetCompletionUnion0055268E..269C/setter0075C460..4A6 reads four undefined unused IDs: skip full public payload; defined target/count1/false and scalar/local callback retained");
         return new(Action.ObjectId,0,0,0,0,1,false,false); // placeholders are unavailable and can never be packed/published.
     }
     public override void WatcherEnding()

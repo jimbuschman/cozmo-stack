@@ -1014,58 +1014,129 @@ public class NavigationTests
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
-        Stack(rig, 260, 0);
-        var r = rig.Frame();
-        Assert.Equal(3, r.Objects.Count);
-        var stack = rig.M.Configurations.GetTallestStack();
-        Assert.NotNull(stack); Assert.Equal(3, stack!.StackHeight);
-        var sourceMain=rig.Robot.Engine.Robot!.MainPose.Translation;
-        var bottom=rig.Vision.World.GetLocatedObjectById(stack.BottomBlockId)!;
-        var relativeBottom=bottom.Pose.Translation-sourceMain;
-        float sourceYaw=(float)Math.Atan2(relativeBottom.Y,relativeBottom.X);
-        float sourceDistance=(float)(Math.Sqrt(relativeBottom.X*relativeBottom.X+relativeBottom.Y*relativeBottom.Y)-85);
-        var ctx = Ctx(rig);
-        Idle(rig);
-        var b = new KnockOverCubesBehavior(rig.M, "KnockOverCubes", 3);
-        Assert.True(Runnable(b, ctx));
-        Assert.False(Runnable(new KnockOverCubesBehavior(rig.M, "x", 4), ctx));
-        // M13-014: the success/failure trigger is selected by the tipped-object set at +0x14C, populated by
-        // HandleObjectUpAxisChanged. The fake rig does not move the cube, so feed the behaviour the
-        // up-axis change once the flip has started.
-        bool tipped = false;
-        RunToEnd(rig, b, ctx, ms: 60000, frames: () =>
-        {
-            rig.Frame(); Idle(rig);                        // a frame, then the state the real robot streams with the lift in position (Frame's own state reports it moving)
-            if (!tipped && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack
-                && rig.Sent.OfType<AppendPathSegmentLine>().Any(line => line.Speed.SpeedMmps == FlipBlockAction.DriveSpeedMmps)
-                && rig.M.World.GetObjectById(7) is { } o7)
+        // Observation only: retain the full worker fault before fixture teardown. No scheduler/clock changes.
+        var journal = new Cozmo.Conformance.DiagnosticJournal<string>(TextWriter.Null);
+        KnockOverCubesBehavior? b = null;
+        Exception? failure = null;
+        bool passed = false;
+        void Record(string kind, string text) => journal.Write(
+            $"{DateTime.UtcNow:O} thread={Environment.CurrentManagedThreadId} {kind}: {text}", "");
+        void OnStep(string text) => Record("Step", text);
+        void OnHandlerFault(Exception error) => Record("HandlerFaulted", error.ToString());
+        rig.Robot.HandlerFaulted += OnHandlerFault;
+        rig.Robot.State.HandlerFaulted += OnHandlerFault;
+        string DiagnosticSnapshot() => KnockOverDiagnosticSnapshot.Format(
+            () => b?.Trace.ToArray() ?? Array.Empty<string>(), // Trace's getter locks its owner.
+            journal.Snapshot,
+            () =>
             {
-                tipped = true;
-                var prev = o7.Pose;
-                o7.Pose = new Pose3d(Mat3.AboutX(Math.PI / 2), prev.Translation);
-                b.OnObserved(new ObjectObservation(o7, 0, o7.LastObservedMarkers, prev, PoseState.Known, false, 0));
+                var invocation = b?.AsyncInvocationStarted;
+                // This existing first-only observation may describe reach, or be reset/absent after Stop.
+                // Never wait for it, and never label it as the DriveAndFlip invocation.
+                Task? observed = invocation is { IsCompletedSuccessfully: true } ? invocation.Result : null;
+                string task = observed is null ? "unavailable" : $"id={observed.Id} status={observed.Status}"
+                    + (observed.IsFaulted ? Environment.NewLine + observed.Exception : "");
+                return $"firstInvocationWrapperStatus={invocation?.Status} firstObservedTask={task}";
+            },
+            () => $"snapshotUtc={DateTime.UtcNow:O} thread={Environment.CurrentManagedThreadId} phase={b?.CurrentPhase}"
+                + $" transportMs={rig.Clock.NowMs} actionSec={rig.ActionClockSec} engineSec={rig.Robot.Engine.Timer.Seconds}"
+                + $" robotTimestamp={rig.T} sentCount={rig.Sent.Count} dockResults={rig.DockResults}"
+                + $" pathLines={rig.Sent.OfType<AppendPathSegmentLine>().Count()}"
+                + $" driveToPoseStatus={rig.Robot.Motion.Path.DriveToPoseStatus} plannerStatus={rig.Robot.Motion.Path.PlannerStatus}");
+        try
+        {
+            Stack(rig, 260, 0);
+            var r = rig.Frame();
+            Assert.Equal(3, r.Objects.Count);
+            var stack = rig.M.Configurations.GetTallestStack();
+            Assert.NotNull(stack); Assert.Equal(3, stack!.StackHeight);
+            var sourceMain=rig.Robot.Engine.Robot!.MainPose.Translation;
+            var bottom=rig.Vision.World.GetLocatedObjectById(stack.BottomBlockId)!;
+            var relativeBottom=bottom.Pose.Translation-sourceMain;
+            float sourceYaw=(float)Math.Atan2(relativeBottom.Y,relativeBottom.X);
+            float sourceDistance=(float)(Math.Sqrt(relativeBottom.X*relativeBottom.X+relativeBottom.Y*relativeBottom.Y)-85);
+            var ctx = Ctx(rig);
+            Idle(rig);
+            b = new KnockOverCubesBehavior(rig.M, "KnockOverCubes", 3);
+            b.Step += OnStep;
+            Assert.True(Runnable(b, ctx));
+            Assert.False(Runnable(new KnockOverCubesBehavior(rig.M, "x", 4), ctx));
+            // M13-014: the success/failure trigger is selected by the tipped-object set at +0x14C, populated by
+            // HandleObjectUpAxisChanged. The fake rig does not move the cube, so feed the behaviour the
+            // up-axis change once the flip has started.
+            bool tipped = false;
+            RunToEnd(rig, b, ctx, ms: 60000, frames: () =>
+            {
+                rig.Frame(); Idle(rig);                        // a frame, then the state the real robot streams with the lift in position (Frame's own state reports it moving)
+                if (!tipped && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack
+                    && rig.Sent.OfType<AppendPathSegmentLine>().Any(line => line.Speed.SpeedMmps == FlipBlockAction.DriveSpeedMmps)
+                    && rig.M.World.GetObjectById(7) is { } o7)
+                {
+                    tipped = true;
+                    var prev = o7.Pose;
+                    o7.Pose = new Pose3d(Mat3.AboutX(Math.PI / 2), prev.Translation);
+                    b.OnObserved(new ObjectObservation(o7, 0, o7.LastObservedMarkers, prev, PoseState.Known, false, 0));
+                }
+                return false;
+            });
+            Assert.Contains(b.Trace, l => l.Contains("reach for block 7"));
+            Assert.Contains(b.Trace, l => l.Contains("KnockOverGrabAttempt"));
+            Assert.Contains(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7)"));
+            // M12-035 / M13-014: the drive inside DriveAndFlipBlockAction ends 0x04000001 (the flip installers leave CheckIfDone's flag 0) but the outer compound ignores it (AddAction(inner, true,
+            // false), 0x0055B370): the flip runs after the FIRST drive, the action's result is the flip's, and the behaviour never sees 0x04000001, so there is no retry and no blind flip.
+            Assert.True(1 == b.Trace.Count(l => l.Contains("start DriveAndFlipBlockAction(7)")), string.Join(" | ", b.Trace));
+            Assert.DoesNotContain(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7) -> DidNotReachPreActionPose"));   // the action's result; the drive's own 0x04000001 is only in the ignored-failure trace line
+            Assert.True(b.Trace.Any(l => l.Contains("DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound")), string.Join(Environment.NewLine,b.Trace));
+            Assert.DoesNotContain(b.Trace, l => l.Contains("start FlipBlockAction (blind)"));
+            Assert.True(b.Trace.Any(l => l.Contains("FlipBlockAction.CheckIfDone: compound result Success; object 7 marked Unknown")), DiagnosticSnapshot());   // 0x0055F186; no carry lift is queued without a RUNNING tick within 40 mm
+            Assert.True(b.KnockedOver, $"tipped={tipped} | " + string.Join(" | ", b.Trace));
+            Assert.Contains(b.Trace, l => l.Contains("KnockOverSuccess"));
+            Assert.Contains(b.Trace, l => l.Contains("KnockedOverBlocks"));
+            // the reach: the block's x in the robot frame less 85 mm, at 60 mm/s (0x005C3346..0x005C33A0); the
+            // block is at 260 and its observed pose carries a few millimetres of vision error
+            var reach = rig.Sent.OfType<AppendPathSegmentLine>().First();
+            Assert.Equal(60f, reach.Speed.SpeedMmps);
+            Assert.InRange(reach.XEndMm-reach.XStartMm, 165, 180);
+            AssertForwardLine(reach,sourceMain,sourceYaw,sourceDistance);
+            passed = true;
+        }
+        catch (Exception error)
+        {
+            failure = error;
+            throw;
+        }
+        finally
+        {
+            // Detach and snapshot while the fixture is alive, before using-var disposal.
+            if (b is not null) b.Step -= OnStep;
+            rig.Robot.HandlerFaulted -= OnHandlerFault;
+            rig.Robot.State.HandlerFaulted -= OnHandlerFault;
+            if (!passed)
+            {
+                string? failureReport = null;
+                try
+                {
+                    failureReport = "ORIGINAL TEST FAILURE" + Environment.NewLine + failure
+                        + Environment.NewLine + DiagnosticSnapshot();
+                    var directory = ObbRoot() is { } obb
+                        ? Path.Combine(Directory.GetParent(obb)!.Parent!.FullName, ".scratch", "fix-knockover-race-1", "artifacts")
+                        : Path.Combine(AppContext.BaseDirectory, ".scratch", "fix-knockover-race-1", "artifacts");
+                    Directory.CreateDirectory(directory);
+                    var path = Path.Combine(directory, $"knockover-failure-{DateTime.UtcNow:yyyyMMddTHHmmssfffffff}-{Environment.ProcessId}-{Guid.NewGuid():N}.txt");
+                    File.WriteAllText(path, failureReport, new System.Text.UTF8Encoding(false));
+                }
+                catch (Exception artifactError)
+                {
+                    // Diagnostics must never replace the original test exception.
+                    try
+                    {
+                        Console.Error.WriteLine("KnockOver failure artifact could not be written: " + artifactError);
+                        Console.Error.WriteLine(failureReport ?? ("ORIGINAL TEST FAILURE" + Environment.NewLine + failure));
+                    }
+                    catch { }
+                }
             }
-            return false;
-        });
-        Assert.Contains(b.Trace, l => l.Contains("reach for block 7"));
-        Assert.Contains(b.Trace, l => l.Contains("KnockOverGrabAttempt"));
-        Assert.Contains(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7)"));
-        // M12-035 / M13-014: the drive inside DriveAndFlipBlockAction ends 0x04000001 (the flip installers leave CheckIfDone's flag 0) but the outer compound ignores it (AddAction(inner, true,
-        // false), 0x0055B370): the flip runs after the FIRST drive, the action's result is the flip's, and the behaviour never sees 0x04000001, so there is no retry and no blind flip.
-        Assert.True(1 == b.Trace.Count(l => l.Contains("start DriveAndFlipBlockAction(7)")), string.Join(" | ", b.Trace));
-        Assert.DoesNotContain(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7) -> DidNotReachPreActionPose"));   // the action's result; the drive's own 0x04000001 is only in the ignored-failure trace line
-        Assert.True(b.Trace.Any(l => l.Contains("DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound")), string.Join(Environment.NewLine,b.Trace));
-        Assert.DoesNotContain(b.Trace, l => l.Contains("start FlipBlockAction (blind)"));
-        Assert.Contains(b.Trace, l => l.Contains("FlipBlockAction.CheckIfDone: compound result Success; object 7 marked Unknown"));   // 0x0055F186; no carry lift is queued without a RUNNING tick within 40 mm
-        Assert.True(b.KnockedOver, $"tipped={tipped} | " + string.Join(" | ", b.Trace));
-        Assert.Contains(b.Trace, l => l.Contains("KnockOverSuccess"));
-        Assert.Contains(b.Trace, l => l.Contains("KnockedOverBlocks"));
-        // the reach: the block's x in the robot frame less 85 mm, at 60 mm/s (0x005C3346..0x005C33A0); the
-        // block is at 260 and its observed pose carries a few millimetres of vision error
-        var reach = rig.Sent.OfType<AppendPathSegmentLine>().First();
-        Assert.Equal(60f, reach.Speed.SpeedMmps);
-        Assert.InRange(reach.XEndMm-reach.XStartMm, 165, 180);
-        AssertForwardLine(reach,sourceMain,sourceYaw,sourceDistance);
+        }
     }
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).

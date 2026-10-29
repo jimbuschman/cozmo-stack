@@ -56,6 +56,7 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         return Select(preferred.Length==0?ids:preferred);
     }
     // Roll's actual CanActionRollObject recipient0063C880: common interaction then(.5,10,0).
+    // fidelity: M13-041 - current ordinary Pop cache8 eligibility; Sparks widening pending.
     // POP-A-WHEELIE-1 P5/P6:00570928..980 and0063C880. Intention8 is not axis-filtered.
     internal bool PopEligible(ObservableObject obj)
     {

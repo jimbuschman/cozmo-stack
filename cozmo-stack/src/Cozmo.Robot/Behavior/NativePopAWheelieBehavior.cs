@@ -5,7 +5,8 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
-// fidelity: M13-015 - retry/result/reset only; proposed Pop lifecycle/cache/leaf complement is separate.
+// fidelity: M13-015 - retry/result/reset only.
+// fidelity: M13-041 - current ordinary configured lifecycle; Sparks widening pending.
 // POP-A-WHEELIE-1 P1-P13:005C7430..005C7F6E; configured instance, actual native action owner.
 internal sealed class NativePopAWheelieBehavior:SteppedBehavior
 {
