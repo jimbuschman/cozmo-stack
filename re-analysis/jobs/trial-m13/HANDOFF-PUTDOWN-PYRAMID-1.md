@@ -1,4 +1,4 @@
-# PUTDOWN-PYRAMID-1 — verification in progress
+# PUTDOWN-PYRAMID-1 — READY FOR CLAUDE
 
 Four source-cited tests cover the shipped PyramidPutDownBlock instance. Its common native PutDownBlock lifecycle already runs. The only production change adds a visible M8-012 diagnostic before the existing non-null manager transition hook; the native typed transition report remains unbuilt.
 
@@ -27,4 +27,6 @@ Changed BehaviorManager.cs only for the diagnostic, plus new PyramidPutDownNativ
 
 No worker switches; actual backend not independently observed. Reviewer-required corrections0, builder source questions0, compiler corrections0, test corrections0. Manager display supplement1 and diagnostic scope addition1 are separate. One builder prelaunch metadata-validator correction misread Git's no-index exit1 despite empty whitespace diagnostics; it occurred before the affected test launched and is retained in the ledger. No passed test was retried.
 
-First build passed; focused4/4 and affected five-class126/126 passed, zero skipped. Independent execution, integration commit and full-gate outcome will be appended after completion. Official records imported verbatim from main; no local status, approval, inventory, PROJECT_STATE, REVIEW or hardware changes.
+First build passed; focused4/4 and affected five-class126/126 passed, zero skipped. Independent five-class126/126 passed with exact names/outcomes/multiplicities matching the builder; source and compiled hashes stayed unchanged. Worker74851850 integrated49166a27; complete code tree91dce8bb42c30224fbcd3bc7b3a7f10b44e19eb8. Final independent report654FF6ED96F7FE5E18CAE46FA7BDD69C67CF8202D06DD2C159E4B4113B32E709. Official records imported verbatim from main; no local status, approval, inventory, PROJECT_STATE, REVIEW or hardware changes.
+
+Full gate: **6705/6705 PASS, zero failures/skips**, duration9m27s, actual exit0 on4d69a39440c8a0415a7e6cfd4af27fa05f012543/current720records. UTC2026-10-29T12:49:09.9146000Z..12:59:52.8888838Z; fingerprint7806265ab195186dcd2c16d6fee7cc52458a3dce. Postgate native process inventory empty and all three frozen raw hashes stable. Main71bb6fd7 imported verbatim before the gate; all19 source plus2 display whole-record snapshots equal current. No rerun. Next SparksPutDownBlock, without waiting for Claude.
