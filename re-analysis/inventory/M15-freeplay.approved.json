@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "21c0778c06bd0d617f8f3801cc41b3b021c5eb3c598a48a08bd765638ed0cd80",
+  "inventory_sha256": "9520a99a941dac6d1e7c6eaddf140ab4b52adebd82c3ed5a08d8a03c33f94e1d",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -967,6 +967,21 @@
         "GetBestFaceToTrack 0x0056C110..0x0056C27E (FLT_MAX start, strict <, GetFace/GetWithRespectTo skips, cost |Radians(head)-robot+0x2FC| + 3*|body| + unnamed surcharge); GetRelativeBodyAngleToLookAtPose 0x0054B584 (atan2f).",
         "FinishIteration 0x00602C34..0x00602C96 (erase, listeners slot 0, BehaviorObjectiveAchieved 0x1A, BeginIteration); strategy listener calls 0x0060D074..0x0060D0E2.",
         "re-analysis/research/20261029-acknowledge-face-1-read.md; re-analysis/research/20261029-acknowledge-face-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-081": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorAcknowledgeObject lifecycle: ctor/config state and the ghost cube, runnable gates (runnable while carrying, target set non-empty), Init ghost ID, BeginIteration (lowest-id target, turn/verify/animation compound), stacked-cube ghost look-below/look-above, FinishIteration loop with objective and final turn-back, listener wiring and Stop clearing",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x3B 0x0059D0D2..0x0059D0EC; ctor 0x00602FA4..0x0060304A (+0x11C 0x23F, +0x120 pi/4, +0x128/+0x130 5 deg, +0x138 2, +0x140 -1, +0x148/+0x149/+0x14A, sets +0x14C/+0x158); ghost Block_Cube1x1 type 4 0x00603010..0x0060304A; LoadConfig 0x00603118..0x0060334A; behaviors/reactions/acknowledgeObject.json.",
+        "IsRunnable: carrying override 0x00604380 returns 1; IsRunnableInternal +0x154 != 0 0x006042C8..0x006042D2; strategy gates and target fill 0x006113E8..0x00611482; AddListener 0x006042D4..0x006042EA; Init 0x00603434..0x00603494 with ghost SetID 0x004EF468..0x004EF4F4 (consumes one ObjectID); Update 0x00603524..0x00603546.",
+        "BeginIteration 0x00603560..0x00603730 (NullObject 0x00603742..0x006037A2; high flag z > 33.85 mm 0x006035AA..0x006035F4; TurnTowardsObjectAction + tolerances 0x006035F8..0x0060363E; VisuallyVerifyObjectAction +0x8C = +0x138 0x0060366C..0x006036C0; TriggerLiftSafeAnimationAction unless +0xD9/+0xD8 0x006036C2..0x00603710; result functor 0x0060440E..0x00604424).",
+        "LookForStackedCubes 0x006038DA..0x00603B50; CheckIfGhostBlockVisible 0x00603DA8..0x00603F4C; SetGhostBlockPoseRelObject 0x00604054..0x006040C2; LookAtGhostBlock 0x006040D8..0x0060420A.",
+        "FinishIteration 0x00603C74..0x00603D6C (listeners slot 0, erase, BehaviorObjectiveAchieved 0x1B, BeginIteration; last target: turn-back TurnTowardsObjectAction then 0x0060465A..0x00604672); StopInternal 0x0060425E..0x006042C6 (listeners slot 1 ClearDesiredTargets).",
+        "re-analysis/research/20261029-acknowledge-object-1-read.md"
       ],
       "live_path": true,
       "hardware_required": false
