@@ -1,0 +1,50 @@
+[
+  {
+    "path": "re-analysis/jobs/trial-m13/BUILD-PYRAMID-BASE-1-builder.md",
+    "rawSha256": "4F4C7FAE2D22F7D80B626E55D53BB3E70E2F51094364A49E71231859238E91C1",
+    "publishedLfSha256": "4F4C7FAE2D22F7D80B626E55D53BB3E70E2F51094364A49E71231859238E91C1",
+    "postOracleTestDocumentDelta": true
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBuildPyramidBaseBehavior.cs",
+    "rawSha256": "66FBFB28E71DB4C38004CCD68D2F8CB98C28E2031FA9A36207A57CE578F8F082",
+    "publishedLfSha256": "66FBFB28E71DB4C38004CCD68D2F8CB98C28E2031FA9A36207A57CE578F8F082",
+    "postOracleTestDocumentDelta": false
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+    "rawSha256": "A6074C8D1E3B493330FA047B9C933DE53C04F4CED27E3F5EC0D647FD7852DB52",
+    "publishedLfSha256": "A6074C8D1E3B493330FA047B9C933DE53C04F4CED27E3F5EC0D647FD7852DB52",
+    "postOracleTestDocumentDelta": false
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+    "rawSha256": "1BD53F5D8C3D975E8684406C8D6D239ECBEACBED77882054F0B9BA15BB363E5D",
+    "publishedLfSha256": "1BD53F5D8C3D975E8684406C8D6D239ECBEACBED77882054F0B9BA15BB363E5D",
+    "postOracleTestDocumentDelta": false
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/PlacementProducerGeometry.cs",
+    "rawSha256": "EFE5E402A0447AB245EF9DBED8FE9C890EB4B63500945E2E9286FA23C01832AC",
+    "publishedLfSha256": "EFE5E402A0447AB245EF9DBED8FE9C890EB4B63500945E2E9286FA23C01832AC",
+    "postOracleTestDocumentDelta": false
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupBlockHelper.cs",
+    "rawSha256": "043A64FE218A2E971E8C31230B4993CA59A468F88D850DAF9319321657577D74",
+    "publishedLfSha256": "043A64FE218A2E971E8C31230B4993CA59A468F88D850DAF9319321657577D74",
+    "postOracleTestDocumentDelta": false
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/BuildPyramidBaseNativeTests.cs",
+    "rawSha256": "F3AF855750E05D6B10C14385B1DCB2F0247BAEDF56FF6F9932461F254B508CCE",
+    "publishedLfSha256": "F3AF855750E05D6B10C14385B1DCB2F0247BAEDF56FF6F9932461F254B508CCE",
+    "postOracleTestDocumentDelta": false
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+    "rawSha256": "0F91132701F36CE5D23D488A744667792C3318D0D31A7453C6A51CB0149B60E5",
+    "publishedLfSha256": "0F91132701F36CE5D23D488A744667792C3318D0D31A7453C6A51CB0149B60E5",
+    "postOracleTestDocumentDelta": false
+  }
+]
