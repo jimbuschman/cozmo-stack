@@ -546,9 +546,10 @@ public static class ShippedBehaviors
     };
 
     /// <summary>
-    /// The M13 behaviours on the planner, the flip action, the block configurations, the whiteboard, the
-    /// workouts and the charger: 24 shipped configs. The workout behaviours are runnable only when
-    /// <see cref="Cozmo.Robot.Manipulation.ManipulationSystem.Workouts"/> is loaded from the OBB.
+    /// Legacy/manual navigation list covering the planner, flip action, block configurations, whiteboard,
+    /// workouts and charger. Includes the custom MountCharger adapter under the historical
+    /// DockingTestSimple label, not the recovered native developer test (M7-022). The workout behaviours
+    /// are runnable only when <see cref="Cozmo.Robot.Manipulation.ManipulationSystem.Workouts"/> is loaded from the OBB.
     /// </summary>
     public static IReadOnlyList<IBehavior> Navigation(Cozmo.Robot.Manipulation.ManipulationSystem m)
     {

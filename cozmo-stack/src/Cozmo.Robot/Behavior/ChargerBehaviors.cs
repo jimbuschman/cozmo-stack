@@ -257,9 +257,9 @@ public sealed class ReactToOnChargerBehavior : SteppedBehavior
 }
 
 /// <summary>
-/// <c>MountCharger</c> as a behaviour: the dev <c>DockingTestSimple</c> config docks with whatever is in
-/// front of the robot; with a located charger the engine's action is <see cref="MountChargerAction"/>. This
-/// wraps it for the manager and the conformance tool (runnable with a located charger, not on it).
+/// Historical/custom adapter wrapping <see cref="MountChargerAction"/> for manual callers and tools.
+/// Its retained default ID and class label are <c>DockingTestSimple</c>; this is not the recovered native
+/// developer-test state machine (M7-022). Runnable with a located charger while the robot is not on it.
 /// </summary>
 public sealed class MountChargerBehavior : ManipulationBehavior
 {
@@ -271,6 +271,7 @@ public sealed class MountChargerBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
+        ReportMissing("M7-022 native DockingTestSimple developer-test body remains excluded/unrecovered; this selected behavior is the historical/custom MountCharger adapter");
         Scope.DisableReactions();
         var act = new MountChargerAction(M, ChargerGeometry.ObjectId);
         RunAction("MountChargerAction", act.RunAsync, r => { foreach (var l in act.Trace) Log("  " + l); Result = r; Finish(); });
