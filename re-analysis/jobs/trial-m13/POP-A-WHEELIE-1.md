@@ -16,3 +16,13 @@ Builder preparation only before release: one missing-dependency restore from loc
 SPARKS-ROLL-BLOCK-1 READY pushed and remotely verified ae6ffa0691ea0be7aaf2b2a3efab6a65b3ea354b, full6641PASS0skip. Fresh main5207f105 is already merged; REVIEW has no outstanding FIX, no later commits. Official716-record files unchanged. Next exact scoreboard configuration PopAWheelie, class PopAWheelie, freeplay PlayAlone caller; no new native claim yet. Existing sources/worktrees/artifacts preserved.
 
 Planned fresh actors /root/pop_wheelie_read (explicit gpt-6.1-sol/medium), /root/pop_wheelie_build and /root/pop_wheelie_review (DEFAULT model and effort, overrides omitted), all fork_none. Actual startups will be recorded after tools return; no runtime model identity is inferred. Builder isolated directory codex-pop-a-wheelie-1, branch codex/pop-a-wheelie-1; prep-only until coherent source/check/rootrelease.
+
+## Actual worker startup / asset preparation
+
+| Actor | Role | Model requested | Effort requested |
+| --- | --- | --- | --- |
+| /root/pop_wheelie_read | Reader/extractor | explicit gpt-6.1-sol | medium |
+| /root/pop_wheelie_build | Isolated builder | DEFAULT; override omitted | DEFAULT; override omitted |
+| /root/pop_wheelie_review | Independent source/code reviewer | DEFAULT; override omitted | DEFAULT; override omitted |
+
+All fresh fork_none startups returned the names above, no runtime telemetry; no worker switched. Builder initial clean HEADa3b8145f4bdc6942531073957af62196dec536d1. Root prepared ignored OBBjunction to original and copied nativeSO/marker; hashes02263C07F6BB60F4D7F351A3667DCA84FD3E6C0FC6F838E18B5DE7CF4E2989E1 /1B7166AC37B166975F0E5313A3D4486EBAE73010E42FFB89BBD0D4536A29C81D match. Builder has sole preparation restore/shutdown release, no implementation release. All actual .NET uses authorized elevated execution for local IPC; final process arrays must explicitly serialize[] and counts. Source and reviewer have no .NET release.
