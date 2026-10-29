@@ -251,7 +251,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M14-faces.md",
-        "approved": "2026-10-18",
+        "approved": "2026-10-29",
         "snapshot": "re-analysis/inventory/M14-faces.approved.json"
       }
     },
@@ -5597,7 +5597,7 @@
     },
     {
       "subsystem": "M14-faces",
-      "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction",
+      "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction (constructor defaults; caller overrides)",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
       "effect": "the number of consecutive observed frames required before face verification succeeds changes",
       "provenance": "the two constructors, read",
@@ -5605,10 +5605,10 @@
       "evidence": [
         "TurnTowardsFaceAction's constructor writes 10 into the action at +0x188: movs r1, #0xa at 0x0054B798, stored at 0x0054B79E, beside the zero and 0xFFFF it puts at +0x180 and +0x184.",
         "IVisuallyVerifyAction's constructor writes the same 10 at +0x8C (movs r1, #0xa / str.w r1, [r4, #0x8c] at 0x0056873E), and VisuallyVerifyFaceAction 0x00568EB8 does not override it - it passes its vision mode (2) and lift preset (0) and nothing else.",
-        "So both wait ten frames, not the five this stack guessed."
+        "So both constructors default to ten frames, not the five this stack guessed. A caller may overwrite TurnTowardsFaceAction+0x188 after construction: BehaviorAcknowledgeFace::BeginIteration writes 3 (movs r1,#3 / str.w r1,[r5,#0x188] at 0x00602A94..0x00602A98), read back into WaitForImagesAction at 0x0054C69A. Corrected with operator approval 2026-10-29 (re-analysis/research/20261029-acknowledge-face-1-claude-check.md)."
       ],
       "status": "EXACT_SOURCE",
-      "unresolved": "Compare the current implementation with this approved source inventory and build every discrepancy.",
+      "unresolved": "Evidence corrected with operator approval 2026-10-29: the ten-frame value is the constructor default; AcknowledgeFace overrides TurnTowardsFaceAction's to 3 (built as TurnTowardsFaceAction.ImagesToWait). Compare the current implementation with this approved source inventory and build every discrepancy.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.TheFaceActionConstantsAreTheEnginesOwn",
@@ -14227,6 +14227,27 @@
       "hardware_required": false,
       "live_path": true,
       "test": "BuildPyramidNativeTests"
+    },
+    {
+      "id": "M15-080",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorAcknowledgeFace lifecycle: ctor state, runnable gates (not while carrying/charger/+0x355, target set non-empty), Init/Update begin, BeginIteration (GetBestFaceToTrack ranking, TurnTowardsFaceAction arguments and triggers, 3-image wait, greeting gate and callback), FinishIteration loop, listener wiring and Stop clearing",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor 0x00602884..0x006028B6; IsRunnableInternal 0x006028BC..0x006028C6; Init 0x006028C8..0x006028D0; Stop 0x006028D2..0x00602926; Update 0x00602928..0x0060294A; vtable 0x0102B834 (+0x28 override 0x00602D20 returns 0; AddListener +0x34).",
+        "BeginIteration 0x00602950..0x00602AA6: GetBestFaceToTrack(+0x120,false); TurnTowardsFaceAction(id, Radians 0x40490FDB, sayName 1); greet = (now - [[robot+0x44]+0x54] <= 60.0f) && t >= 0 && !HasTurnedTowardsFace && !+0x12D; SetSayNameTriggerCallback (lambda 0x00602D8C..0x00602DDE: +0x12D=1, GreetingSayName, trigger 301) else SetSayNameAnimationTrigger(1); SetNoNameAnimationTrigger(2); +0x188 = 3; StartActing(FinishIteration).",
+        "GetBestFaceToTrack 0x0056C110..0x0056C27E (FLT_MAX start, strict <, GetFace/GetWithRespectTo skips, cost |Radians(head)-robot+0x2FC| + 3*|body| + unnamed surcharge); GetRelativeBodyAngleToLookAtPose 0x0054B584 (atan2f).",
+        "FinishIteration 0x00602C34..0x00602C96 (erase, listeners slot 0, BehaviorObjectiveAchieved 0x1A, BeginIteration); strategy listener calls 0x0060D074..0x0060D0E2.",
+        "re-analysis/research/20261029-acknowledge-face-1-read.md; re-analysis/research/20261029-acknowledge-face-1-claude-check.md"
+      ],
+      "effect": "which faces Cozmo turns to acknowledge and in what order, whether he says the name or plays the greeting, how long he waits for the face, when the reaction may run, and the ReactedAcknowledgedFace objective the C# API delivers",
+      "provenance": "ACKNOWLEDGE-FACE-1 (Claude-run: cozmo-extractor read, cozmo-implementer build, cozmo-verifier PASS), checked by Claude 2026-10-29; record added with operator approval 2026-10-29.",
+      "unresolved": "Built and checked in ACKNOWLEDGE-FACE-1 but not settled. B5 UNKNOWN: no writer of BehaviorManager+0x54 besides the ctor's -1.0f is known; the stack keeps -1 and reports MISSING, so the greeting never plays. The body angle uses libm atan2f, so the ranking can settle at most EQUIVALENT_IMPLEMENTATION. Not built: the forced trigger SetupForceTriggerBehavior 0x0060C744..0x0060C888 (no stack entry reaches it). Inherited, owned elsewhere: TurnTowardsFaceAction states (M13-014), text to speech (M14-006), the face strategy fill/cooldown (M10-003), the IBehavior base (M8-001), the objective packer (M7-019), GreetingSayName processing (M7-020), face poses through the M11-066 legacy adapter.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "AcknowledgeFaceNativeTests"
     }
   ]
 }

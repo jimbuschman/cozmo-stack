@@ -711,7 +711,8 @@ public class WwiseSongTests
         b.Update(ctx, 200);                             // 0.25
         b.Update(ctx, 400);                             // 0.125
         b.Update(ctx, 600);                             // 0.0625 drops at 600 ms > 500
-        Assert.Contains(log, l => l.Contains("robot.song_shake_duration_ms"));
+        string[] Snapshot() { lock (log) return log.ToArray(); }    // the offline robot logs from its own thread too
+        Assert.Contains(Snapshot(), l => l.Contains("robot.song_shake_duration_ms"));
 
         // the same shape, dropped at 300 ms, stays quiet
         lock (log) log.Clear();
@@ -720,7 +721,7 @@ public class WwiseSongTests
         b.Update(ctx, 1100);                            // 0.2656
         b.Update(ctx, 1200);                            // 0.1328
         b.Update(ctx, 1300);                            // 0.0664 drops at 300 ms
-        Assert.DoesNotContain(log, l => l.Contains("robot.song_shake_duration_ms"));
+        Assert.DoesNotContain(Snapshot(), l => l.Contains("robot.song_shake_duration_ms"));
     }
 
     /// <summary>

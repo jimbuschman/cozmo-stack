@@ -1,8 +1,8 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-10-18",
+  "approved": "2026-10-29",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "c6ac9631d0edc425ebc69039c73e6b6c3acb0fe182a3e1ca48d5c183109f8f7c",
+  "inventory_sha256": "f91606b8614090fcaae1a26d968f8d6a106d861586646080a6ccc6d58f3f37e1",
   "records": {
     "M14-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -19,12 +19,12 @@
     },
     "M14-002": {
       "status": "EXACT_SOURCE",
-      "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction",
+      "title": "Frame counts waited by VisuallyVerifyFaceAction and TurnTowardsFaceAction (constructor defaults; caller overrides)",
       "authority": "TurnTowardsFaceAction::TurnTowardsFaceAction 0x0054B754 and IVisuallyVerifyAction::IVisuallyVerifyAction 0x005686D8, read",
       "evidence": [
         "TurnTowardsFaceAction's constructor writes 10 into the action at +0x188: movs r1, #0xa at 0x0054B798, stored at 0x0054B79E, beside the zero and 0xFFFF it puts at +0x180 and +0x184.",
         "IVisuallyVerifyAction's constructor writes the same 10 at +0x8C (movs r1, #0xa / str.w r1, [r4, #0x8c] at 0x0056873E), and VisuallyVerifyFaceAction 0x00568EB8 does not override it - it passes its vision mode (2) and lift preset (0) and nothing else.",
-        "So both wait ten frames, not the five this stack guessed."
+        "So both constructors default to ten frames, not the five this stack guessed. A caller may overwrite TurnTowardsFaceAction+0x188 after construction: BehaviorAcknowledgeFace::BeginIteration writes 3 (movs r1,#3 / str.w r1,[r5,#0x188] at 0x00602A94..0x00602A98), read back into WaitForImagesAction at 0x0054C69A. Corrected with operator approval 2026-10-29 (re-analysis/research/20261029-acknowledge-face-1-claude-check.md)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -112,81 +112,232 @@ public sealed class PlayAnimWithFaceBehavior : FaceBehavior
 }
 
 /// <summary>
-/// <c>BehaviorAcknowledgeFace</c> (0x00602950..0x00602CA0; reactions/acknowledgeFace.json): <c>BeginIteration</c>
-/// picks the target with <c>AIWhiteboard::GetBestFaceToTrack</c> (the face nearest the robot's heading; LOCAL:
-/// the most recently seen face not yet acknowledged), runs <c>TurnTowardsFaceAction(id, π, sayName)</c> where
-/// the greeting is skipped when the robot already turned to this face and did so within 60 s
-/// (<c>HasTurnedTowardsFace</c>, 0x42700000: "currTime = %f, alreadyTurned:%d, shouldPlayGreeting:%d"), with the
-/// say-name trigger <see cref="AnimationTrigger.AcknowledgeFaceNamed"/> (1) and the no-name trigger
-/// <see cref="AnimationTrigger.AcknowledgeFaceUnnamed"/> (2). <c>FinishIteration</c> reports the objective
-/// <c>ReactedAcknowledgedFace</c>. The reaction fires on a new face observation (the manager's
-/// <c>FacePositionUpdated</c> trigger).
+/// <c>IReactToFaceListener</c> as <c>BehaviorAcknowledgeFace</c> calls it (inventory ACKNOWLEDGE-FACE-1, research/20261029-acknowledge-face-1-read.md):
+/// slot 0 <c>FinishedReactingToFace(robot, id)</c> from <c>FinishIteration</c> (F1, 0x00602C34..0x00602C96) and slot 1 <c>ClearDesiredTargets</c> from
+/// <c>StopInternal</c> (S1, 0x006028D2..0x00602926). The Robot argument is not modelled.
 /// </summary>
+public interface IReactToFaceListener
+{
+    void FinishedReactingToFace(int faceId);
+    void ClearDesiredTargets();
+}
+
+/// <summary>
+/// <c>AIWhiteboard::GetBestFaceToTrack(targets, bool)</c> 0x0056C110..0x0056C27E (inventory ACKNOWLEDGE-FACE-1 B2; inputs read by the manager
+/// 2026-10-29, with <c>TurnTowardsPoseAction::GetRelativeBodyAngleToLookAtPose</c> 0x0054B584..0x0054B59A). An empty set gives 0; a single
+/// element is returned unchecked; otherwise the set is walked in ascending id order from best = FLT_MAX (0x7F7FFFFF, literal 0x0056C158) and
+/// result 0: a face <c>FaceWorld::GetFace</c> does not have is skipped, as is one whose pose (face+0xF4) cannot be taken with respect to the
+/// robot (0x0056C1AC..0x0056C1BC); the cost (0x0056C1E4..0x0056C22E, all f32) replaces the best on a strict less-than (vcmpe/mi), so a tie keeps
+/// the earlier, lower id. With every face skipped the result stays 0.
+/// </summary>
+internal static class BestFaceToTrack
+{
+    /// <summary>The weight on the body angle in B2's cost.</summary>
+    public const float BodyAngleWeight = 3.0f;
+    /// <summary>s18 when the bool argument is true: the surcharge on a face with an empty name (face+0x14).</summary>
+    public const float UnnamedSurcharge = 1000.0f;
+    /// <summary>The starting best, FLT_MAX (0x7F7FFFFF, 0x0056C158).</summary>
+    public static readonly float InitialBest = BitConverter.Int32BitsToSingle(0x7F7FFFFF);
+
+    /// <summary>
+    /// The f32 cost of one face, given its translation relative to the robot (0x0056C1D0..0x0056C22E):
+    /// head = GetAbsoluteHeadAngleToLookAtPose(p) (M13-026, 0x0054B428); body = Radians(atan2f(p.y, p.x)) (0x0054B588..0x0054B596; atan2f is
+    /// bionic libm, MathF.Atan2 stands in under the existing libm EQUIVALENT policy); headTerm = |Radians(head) - robot+0x2FC| with Radians
+    /// operator- (0x4A5A7C, normalising); bodyTerm = |body| * 3.0f; cost = (headTerm + bodyTerm) + surcharge, the surcharge being 0 for a named
+    /// face and s18 otherwise (1000.0f only when <paramref name="surchargeUnnamed"/>, else 0.0f).
+    /// </summary>
+    public static float Cost(Vec3 relative, float robotHeadAngle, bool hasName, bool surchargeUnnamed)
+    {
+        float head = (float)TurnTowardsPoseCompound.AbsoluteHeadAngleToLookAtPose(relative);
+        var body = new Radians(MathF.Atan2((float)relative.Y, (float)relative.X));
+        float headTerm = MathF.Abs((new Radians(head) - new Radians(robotHeadAngle)).Value);
+        float bodyTerm = MathF.Abs(body.Value) * BodyAngleWeight;
+        float s18 = surchargeUnnamed ? UnnamedSurcharge : 0.0f;
+        float surcharge = hasName ? 0.0f : s18;
+        return (headTerm + bodyTerm) + surcharge;
+    }
+
+    public static int Get(IReadOnlyCollection<int> targets, FaceWorld faces, Pose3d? robotPose, float robotHeadAngle, bool surchargeUnnamed)
+    {
+        if (targets.Count == 0) return 0;                                          // B2: empty -> 0
+        if (targets.Count == 1) return targets.First();                            // B2: one element, returned unchecked
+        int best = 0;
+        float bestCost = InitialBest;
+        foreach (int id in targets.OrderBy(i => i))                                // B2: ascending walk of the std::set<int>
+        {
+            if (faces.GetFace(id) is not { } face) continue;                       // GetFace null -> skip
+            if (robotPose is null) continue;                                       // no robot pose: GetWithRespectTo fails -> skip
+            Pose3d relative;
+            // The stack's face poses are the flat legacy poses the face actions already take relative to the robot this way (M11-066 labelled
+            // adapter inside WithRespectTo); unrelated roots are the engine's GetWithRespectTo false -> skip.
+            try { relative = face.HeadPose.WithRespectTo(robotPose); }
+            catch (InvalidOperationException) { continue; }
+            float cost = Cost(relative.Translation, robotHeadAngle, face.HasName, surchargeUnnamed);
+            if (cost < bestCost) { best = id; bestCost = cost; }                   // strict <: a tie keeps the lower id
+        }
+        return best;
+    }
+}
+
+/// <summary>
+/// <c>BehaviorAcknowledgeFace</c> (factory class 0x3A, ctor 0x00602884; inventory ACKNOWLEDGE-FACE-1, research/20261029-acknowledge-face-1-read.md).
+/// <list type="bullet">
+/// <item>C2: the target set (+0x120), the listener set (+0x130), the begin-pending flag (+0x12C) and the greeting-played flag (+0x12D). No JSON key
+/// is read (C3).</item>
+/// <item>R1: the vtable+0x20/+0x24 gates are the base's false (0x005BF04C, 0x0059EC12) and the class's +0x28 override is false (0x00602D20): not
+/// runnable while carrying. R2: runnable iff the target set is non-empty (0x006028BC..0x006028C6).</item>
+/// <item>I1/U1: Init sets the begin-pending flag and starts nothing (0x006028C8..0x006028D0); the first Update clears it and calls
+/// <c>BeginIteration</c> (0x00602928..0x0060294A).</item>
+/// <item>BeginIteration 0x00602950..0x00602AA6: B1 GetBestFaceToTrack(set, false), 0 starts nothing; B3 <c>TurnTowardsFaceAction(id, pi
+/// 0x40490FDB, sayName 1)</c>; B4 the greeting gate and its info log; B6 the greeting say-name callback or B7 the say-name trigger
+/// AcknowledgeFaceNamed; B8 the no-name trigger AcknowledgeFaceUnnamed; B9 3 images to wait (+0x188); B10 StartActing with FinishIteration on
+/// any result.</item>
+/// <item>F1 FinishIteration 0x00602C34..0x00602C96: erase the id, notify the listeners, BehaviorObjectiveAchieved(ReactedAcknowledgedFace 0x1A,
+/// true), BeginIteration again.</item>
+/// <item>S1 StopInternal 0x006028D2..0x00602926: the listeners' ClearDesiredTargets, the set cleared, the greeting flag kept.</item>
+/// </list>
+/// </summary>
+// fidelity: M7-018
 public sealed class AcknowledgeFaceBehavior : FaceBehavior
 {
-    public const double GreetingCooldownSec = 60.0;
-    private readonly Dictionary<int, double> _lastGreetedSec = new();
-    private readonly HashSet<int> _acknowledged = new();
+    /// <summary>B4: the greeting window, 60.0f (0x42700000).</summary>
+    public static readonly float GreetingWindowSec = BitConverter.Int32BitsToSingle(0x42700000);
+    /// <summary>B3: <c>Radians</c> pi, 0x40490FDB.</summary>
+    public static readonly float MaxTurnAngleRad = BitConverter.Int32BitsToSingle(0x40490FDB);
+    /// <summary>B9: action+0x188 = 3 (0x00602A94..0x00602A98).</summary>
+    public const int ImagesToWait = 3;
+    /// <summary>F1: BehaviorObjective ReactedAcknowledgedFace.</summary>
+    public const uint ObjectiveReactedAcknowledgedFace = 0x1A;
+    /// <summary>B6: the mood event the greeting callback fires (face_events.json:40-46, M7-020).</summary>
+    public const string GreetingEmotionEvent = "GreetingSayName";
 
-    public AcknowledgeFaceBehavior(VisionSystem v, string id = "AcknowledgeFace") : base(id, "AcknowledgeFace", v)
-    {
-        // a face that is forgotten and seen again is a new acknowledgement
-        v.Faces.FaceDeleted += id2 => { lock (_acknowledged) _acknowledged.Remove(id2); };
-    }
-    /// <summary>The face this run acknowledged, for tracing.</summary>
+    private readonly object _setGate = new();
+    private readonly SortedSet<int> _targets = new();                    // +0x120 std::set<int>
+    private readonly List<IReactToFaceListener> _listeners = new();      // +0x130 std::set<IReactToFaceListener*>
+    private bool _beginPending;                                          // +0x12C
+    private volatile bool _greetingPlayed;                               // +0x12D, never reset (S1)
+    private int _currentTarget;                                          // +0x11C (ctor 0)
+    private TurnTowardsFaceAction? _turn;
+
+    public AcknowledgeFaceBehavior(VisionSystem v, string id = "AcknowledgeFace") : base(id, "AcknowledgeFace", v) { }
+
+    /// <summary>The face the current (or last) iteration targets; null before the first.</summary>
     public int? TargetFaceId { get; private set; }
+    /// <summary>+0x12D: the greeting callback has run.</summary>
+    public bool GreetingPlayed => _greetingPlayed;
+    /// <summary>The turn the last iteration built, for inspection.</summary>
+    internal TurnTowardsFaceAction? LastTurn { get; private set; }
+    /// <summary>The manager whose +0x54 B4 reads; null: the robot's native BehaviorManager.</summary>
+    internal BehaviorManager? Manager { get; set; }
 
-    /// <summary>
-    /// The face the strategy asked for, consumed when the behaviour starts. The engine hands the behaviour to
-    /// <c>ShouldTriggerBehavior</c> and the strategy fills it in there; left null the behaviour picks the best
-    /// unacknowledged face itself.
-    /// </summary>
-    public int? RequestedFaceId { get; set; }
-    public bool? PlayedGreeting { get; private set; }
+    /// <summary>The target set +0x120.</summary>
+    public IReadOnlyCollection<int> Targets { get { lock (_setGate) return _targets.ToList(); } }
 
-    /// <summary>A face has been acknowledged: the strategy's <c>FinishedReactingToFace</c>.</summary>
-    public event Action<int>? Acknowledged;
-
-    /// <summary>
-    /// The engine runs this as the reaction to <c>FacePositionUpdated</c> (a face newly seen or moved); this stack
-    /// re-arms it per face: a face is a candidate until acknowledged, and again when <see cref="ReArm"/> is called
-    /// (the caller's position-updated trigger) or the face world forgets and re-learns it. LOCAL_POLICY.
-    /// </summary>
-    public void ReArm(int faceId) { lock (_acknowledged) _acknowledged.Remove(faceId); }
-
-    private FaceEntry? BestFace()
+    /// <summary>T4: the strategy copies its desiredFaces into +0x120 (0x0060CAB0..0x0060CB5E).</summary>
+    public void SetTargets(IEnumerable<int> faces)
     {
-        if (RequestedFaceId is { } wanted && V.Faces.GetFace(wanted) is { } asked) return asked;
-        lock (_acknowledged) return V.Faces.Faces.Where(f => !_acknowledged.Contains(f.Id)).OrderByDescending(f => f.LastObservedTimestamp).FirstOrDefault();
+        lock (_setGate) { _targets.Clear(); foreach (int f in faces) _targets.Add(f); }
     }
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => BestFace() is not null;
+    /// <summary>T3: vslot AP+0x34 AddListener (reloc 0x0102B870), called by the strategy (0x0060D074..0x0060D080).</summary>
+    public void AddListener(IReactToFaceListener listener) { lock (_setGate) if (!_listeners.Contains(listener)) _listeners.Add(listener); }
+    /// <summary>Host teardown only (the strategy's Dispose); the engine's destructor order is not in the inventory.</summary>
+    public void RemoveListener(IReactToFaceListener listener) { lock (_setGate) _listeners.Remove(listener); }
+    private IReactToFaceListener[] Listeners() { lock (_setGate) return _listeners.ToArray(); }
 
-    protected override void OnStart()
+    // fidelity: M8-001 -- R1: the base's +0x20/+0x24 slots return 0 (0x005BF04C, 0x0059EC12); the class's +0x28 slot returns 0 (0x00602D20, vtable 0x0102B834).
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => false;
+
+    /// <summary>R2: +0x128 (the set's size) != 0.</summary>
+    protected override bool IsRunnableInternal(BehaviorContext context) { lock (_setGate) return _targets.Count != 0; }
+
+    protected override bool KeepsRunningWithoutAction => _beginPending || base.KeepsRunningWithoutAction;
+
+    /// <summary>I1: +0x12C = 1, return 0; no action is started.</summary>
+    protected override void OnStart() => _beginPending = true;
+
+    /// <summary>U1: if +0x12C, clear it and BeginIteration; then the base UpdateInternal.</summary>
+    protected override void OnUpdate()
     {
-        var face = BestFace();
-        if (face is null) { Finish(); return; }
-        TargetFaceId = face.Id;
-        RequestedFaceId = null;
-        lock (_acknowledged) _acknowledged.Add(face.Id);
-        double nowSec = Clock() / 1000.0;
-        bool alreadyTurned = V.Faces.HasTurnedTowardsFace(face.Id) && _lastGreetedSec.TryGetValue(face.Id, out var t) && nowSec - t < GreetingCooldownSec;
-        bool greet = !alreadyTurned;
-        Log($"AcknowledgeFace.DoAcknowledgement: currTime = {nowSec:F1}, alreadyTurned:{(alreadyTurned ? 1 : 0)}, shouldPlayGreeting:{(greet ? 1 : 0)}");
-        using var turn = new TurnTowardsFaceAction(V, face.Id, Math.PI, sayName: greet) { SayNameTrigger = AnimationTrigger.AcknowledgeFaceNamed, NoNameTrigger = AnimationTrigger.AcknowledgeFaceUnnamed };
+        if (!_beginPending) return;
+        _beginPending = false;
+        BeginIteration();
+    }
+
+    private float ManagerGreetingTime()
+    {
+        if ((Manager ?? Context.Robot.BehaviorManager) is { } manager) return manager.GreetingTimeField54;
+        // No manager owner: every manager the stack builds holds the ctor value at +0x54, since no writer is known (B5).
+        ReportMissing("ACKNOWLEDGE-FACE-1 B4: no BehaviorManager owner to read +0x54 from; the ctor value -1.0f (0x005A08E4..0x005A08F0) is read");
+        return BehaviorManager.GreetingTimeField54Initial;
+    }
+
+    private void BeginIteration()
+    {
+        int[] targets;
+        lock (_setGate) targets = _targets.ToArray();
+        // B1: GetBestFaceToTrack(set, false); the robot pose is the one the face actions use (TurnTowardsFaceAction.Init), robot+0x2FC is Motion's.
+        int id = BestFaceToTrack.Get(targets, V.Faces, V.History.Latest?.RobotPose, Context.Robot.Motion.HeadAngleRad, surchargeUnnamed: false);
+        if (id == 0) return;                                                       // B1: 0 -> no action
+        _currentTarget = id;
+        TargetFaceId = id;
+        var turn = new TurnTowardsFaceAction(V, id, MaxTurnAngleRad, sayName: true);   // B3: sayName always 1
+        // B4: (now - [mgr+0x54] <= 60.0) && [mgr+0x54] >= 0 && !HasTurnedTowardsFace && !+0x12D
+        float now = (float)(Context.ClockSec?.Invoke() ?? Clock() / 1000.0);
+        float t = ManagerGreetingTime();
+        bool alreadyTurned = V.Faces.HasTurnedTowardsFace(id);
+        bool greet = now - t <= GreetingWindowSec && t >= 0f && !alreadyTurned && !_greetingPlayed;
+        string text = $"currTime = {now:F6}, alreadyTurned:{(alreadyTurned ? 1 : 0)}, shouldPlayGreeting:{(greet ? 1 : 0)}";
+        Log("AcknowledgeFace.DoAcknowledgement: " + text);
+        Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "AcknowledgeFace.DoAcknowledgement", text);
+        if (greet)
+        {
+            // B6: SetSayNameTriggerCallback, lambda 0x00602D8C..0x00602DDE: +0x12D = 1, GreetingSayName, return 301 NamedFaceInitialGreeting.
+            turn.SetSayNameTriggerCallback(_ =>
+            {
+                _greetingPlayed = true;
+                EmotionEvent(GreetingEmotionEvent);
+                return AnimationTrigger.NamedFaceInitialGreeting;
+            });
+        }
+        else turn.SayNameTrigger = AnimationTrigger.AcknowledgeFaceNamed;          // B7 (0x00602A7C..0x00602A80)
+        turn.NoNameTrigger = AnimationTrigger.AcknowledgeFaceUnnamed;              // B8 (0x00602A8C..0x00602A90)
+        turn.ImagesToWait = ImagesToWait;                                          // B9
         turn.EmotionEvent += EmotionEvent;
-        RunFaceAction($"TurnTowardsFace({face.Id})", turn.RunAsync, r =>
+        _turn = turn; LastTurn = turn;
+        // B10: StartActing with FinishIteration, run on any result (the result is ignored).
+        RunFaceAction($"TurnTowardsFace({id})", turn.RunAsync, r =>
         {
             foreach (var l in turn.Trace) Log("  " + l);
-            PlayedGreeting = greet && turn.Reaction is not null;
-            if (greet) _lastGreetedSec[face.Id] = Clock() / 1000.0;
             PlayReaction(turn.Reaction, () =>
             {
-                Log("objective achieved: ReactedAcknowledgedFace");
-                Acknowledged?.Invoke(face.Id);
-                Finish();
+                if (ReferenceEquals(_turn, turn)) _turn = null;
+                turn.Dispose();
+                FinishIteration();
             });
         });
+    }
+
+    /// <summary>F1: erase the id, listeners' FinishedReactingToFace, BehaviorObjectiveAchieved(0x1A, true), BeginIteration.</summary>
+    private void FinishIteration()
+    {
+        int id = _currentTarget;
+        lock (_setGate) _targets.Remove(id);
+        foreach (var l in Listeners()) l.FinishedReactingToFace(id);
+        Context.Robot.Engine.ReportBehaviorObjective(ObjectiveReactedAcknowledgedFace, "ReactedAcknowledgedFace", Id);
+        Log($"BehaviorObjectiveAchieved(0x{ObjectiveReactedAcknowledgedFace:X}, true)");
+        BeginIteration();
+    }
+
+    /// <summary>S1: the listeners' ClearDesiredTargets (slot 1, 0x0060D0CA) and the set cleared; +0x12D is kept.</summary>
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        foreach (var l in Listeners()) l.ClearDesiredTargets();
+        lock (_setGate) _targets.Clear();
+        base.OnStop(reason);
+        _turn?.Dispose(); _turn = null;
     }
 }
 
@@ -470,10 +621,10 @@ public sealed class SearchForFaceBehavior : FaceBehavior
 /// ClearDesiredTargets clears desiredFaces. RobotDelocalized's ResetReactionData changes nothing (3c).</item>
 /// </list>
 /// Seams (M11/M14): FaceWorld, the robot pose, BaseStationTimer seconds.
-/// The M14 AcknowledgeFace behaviour takes one requested face, not the set: the lowest id of the set is passed to it
-/// (<see cref="AcknowledgeFaceBehavior.RequestedFaceId"/>), as this stack did before; the set itself is <see cref="DesiredFaces"/>.
+/// The strategy is the behaviour's <see cref="IReactToFaceListener"/> (ACKNOWLEDGE-FACE-1 T3, F2, S1); STBI copies the whole set into the
+/// behaviour's +0x120 (T4).
 /// </summary>
-public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisposable
+public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisposable, IReactToFaceListener
 {
     public const double CloseMm = 300.0, StayCloseMm = 400.0, CooldownSec = 4.0;
 
@@ -491,7 +642,9 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
     {
         _world = world; _behavior = behavior; _robotPose = robotPose; _clockSec = clockSec;
         world.FaceObserved += OnObserved;
-        behavior.Acknowledged += FinishedReactingToFace;
+        // fidelity: M10-003 -- ACKNOWLEDGE-FACE-1 T3: BehaviorThatStrategyWillTriggerInternal calls the behaviour's AddListener (vslot AP+0x34,
+        // reloc 0x0102B870) with strategy+0x50 (0x0060D074..0x0060D080). The stack binds strategy and behaviour here, at construction.
+        behavior.AddListener(this);
     }
 
     public override ReactionTrigger Trigger => ReactionTrigger.FacePositionUpdated;
@@ -557,7 +710,7 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
         List<int> set;
         lock (_gate) set = _desired.ToList();
         if (set.Count == 0) return false;
-        _behavior.RequestedFaceId = set[0];                                                        // +0x120 = the set
+        _behavior.SetTargets(set);                                                                 // T4: AcknowledgeFace+0x120 = the set
         if (rc.Context.Robot.Sensors.OnChargerPlatform) return false;
         return behavior.IsRunnable(rc.Context);
     }
@@ -582,7 +735,7 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
     public void Dispose()
     {
         _world.FaceObserved -= OnObserved;
-        _behavior.Acknowledged -= FinishedReactingToFace;
+        _behavior.RemoveListener(this);
     }
 }
 
