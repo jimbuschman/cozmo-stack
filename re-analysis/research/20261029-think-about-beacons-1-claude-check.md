@@ -26,9 +26,14 @@ operator asked to wrap up before usage reset. This is queued.
   PROJECT_STATE).
 
 ## Queued
-1. Run an independent cozmo-verifier pass on this diff.
-2. **MISSING:** AnimationTriggerFromString's result for an unknown, non-empty name. Behaviors.cs:65 cites 0 at
-   0x00764798..0x00764810, not Count; read that before settling. No shipped file reaches it.
+1. ~~Run an independent cozmo-verifier pass~~ Done: **PASS**, 0 blocking (static review plus disassembly). Its findings are recorded in M15-084's `unresolved`:
+   - an unknown trigger name plays trigger 0 (0x00764810), not a skip;
+   - the canonical runtime lacks the class 0x35 constructor;
+   - the config is fixed, not parsed.
+
+   It also confirmed that CopyCheckedMainPose followed by GetWithRespectToRoot is the same pose Robot::GetPose returns.
+2. **MISSING, now resolved by the verifier:** AnimationTriggerFromString returns 0 on a miss. The stack still
+   reports MISSING there; building trigger-0 playback is queued. No shipped file reaches it.
 3. **Beacon clearing (W1) is unbuilt in the stack:** AIWhiteboard.OnRobotDelocalized has no caller. In production
    TAB therefore runs only once per session. This is a follow-up job for the whiteboard and delocalization records.
 4. The `AIWhiteboard.cs:397` text still names TAB as an unscanned reader of +0x10. TAB never reads it (R5).
