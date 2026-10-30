@@ -49,5 +49,21 @@
   "hardwareRun": false,
   "implementationBuilt": false,
   "codeReview": "not started",
-  "fullGate": "not run; source approval pending"
+  "fullGate": "not run; source approval pending",
+  "sourceArtifactTransport": [
+    {
+      "path": "re-analysis/research/20261030-cant-handle-tall-stack-1-read.md",
+      "originalWorkingSha256": "889f00e2124deb5c72c87824303e928cf3744bc1e206a4cddf5a77b63ccfd206",
+      "committedLfSha256": "fdff6ef917682550a3d9b09bb2dadb92ff20342907cece00791e85182d4ec551",
+      "gitBlob": "7792040d3fb00c784ce905ffa9abb8dcca752218",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\tall-stack-source-originals\\20261030-cant-handle-tall-stack-1-read.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cant-handle-tall-stack-1-source-codex-check.md",
+      "originalWorkingSha256": "a294a95838ceaa3c3c3dd6429e8a2bb7a745338e5a8558ee00244060f647cca6",
+      "committedLfSha256": "a49a6a54e321de9cf2659633570d00487ac71e7a93cc3009b2803a6d355f8d8f",
+      "gitBlob": "c1421237209d86301db4ab411861d7111f82c5b0",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\tall-stack-source-originals\\20261030-cant-handle-tall-stack-1-source-codex-check.md"
+    }
+  ]
 }
