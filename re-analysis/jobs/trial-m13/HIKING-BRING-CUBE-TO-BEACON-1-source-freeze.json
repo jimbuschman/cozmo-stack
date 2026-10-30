@@ -1,6 +1,6 @@
 {
   "job": "HIKING-BRING-CUBE-TO-BEACON-1",
-  "stage": "Test-only fixture correction; build PASS, first affected attempt ABORTED with observed failures",
+  "stage": "Integrated b204df8e; affected715+independent715 PASS; committed full gate pending",
   "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
   "main": "75891508091abbffadc042a2318ec0128c62c868",
   "sourceFiles": {
@@ -56,7 +56,7 @@
     "M15-020",
     "M11-063"
   ],
-  "checkedUnknownSupplementCount": 4,
+  "checkedUnknownSupplementCount": 6,
   "familyCountContract": "Canonical BlockWorld-lifetime family2 definition counter initialized3 by successful ActiveCube1/2/3 ctor defines. Independent of observations/connections/current origin. Current C# has no builtin redefine API; future reachable redefinition needs native increment semantics, not an always3 invariant.",
   "actionAndDelocalizationSources": {
     "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-native-action-interfaces-unknown.md": "8B71F850DA5199CFBCDD88F4E455B7F081ECF605B98C080C9981BAD0DF388A68",
@@ -110,5 +110,16 @@
       "meaningful native action/profile/fault/cleanup tests"
     ],
     "buildOrTestsRun": false
-  }
+  },
+  "driveTargetIdentitySources": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-drive-target-identity-unknown.md": "6071560E111E104ED3E4AD6D5508866EB1ACE7E52ABBD37F2FEE129FB2C325B6",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-drive-target-identity-codex-check.md": "51BE66B478A7586F3F9F4103EE4C1803C0467DD1248F1216AFE42265FFF85678"
+  },
+  "driveTargetIdentityContract": "InitHelper predicate uses supplied objectID, compares actual native carrying+8 OR+14 including null-normalizedFFFFFFFF. FinalTurn ifneeded usesactiontarget+7C, notcloneID. Derivedfloor retainsfreshclone-1 andstoredrealcarriedID. Alreadyapprovedtwo-slotcontract, no contradiction/departure; do not suppressallturns or mutatecloneID.",
+  "withdrawnReaderInferences": 1,
+  "groundTurnVerifySources": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-ground-turn-verify-unknown.md": "968704945DB4B28AE7D7D7C915D6352F9CA73CBF2B2828D0A50A3983A9E5089B",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-ground-turn-verify-codex-check.md": "F4B34FE3FFCD218875F00C98301CD8A89164CCA9C289D9760F848459CB9034DF"
+  },
+  "groundTurnVerifyContract": "Normal Groundtrue,false -> visualverify180=true,track192=false; clearvisualflagonlycustomID-1branch. Currentcodeandapprovedinventoryrow842+citedtuplealreadycorrect. ObsoleteM15-022unresolvedclear/unreachableannotationproposedClaudeonly, nooperatorcontractchange/codeflagflip."
 }
