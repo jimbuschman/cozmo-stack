@@ -1,0 +1,53 @@
+{
+  "job": "CANT-HANDLE-TALL-STACK-1",
+  "state": "WIP, NOT READY; OPERATOR CONTRACT APPROVAL PENDING",
+  "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
+  "readerRequested": "gpt-6.1-sol/medium/fork_none",
+  "builderRequested": "DEFAULT/model and effort omitted/fork_none",
+  "reviewerRequested": "DEFAULT/model and effort omitted/fork_none",
+  "actualBackend": "unobserved; operator default Terra",
+  "currentRecordSnapshotsMatched": [
+    "M15-012",
+    "M7-019",
+    "M11-072"
+  ],
+  "sourceFiles": {
+    "20261030-cant-handle-tall-stack-1-read.md": "889f00e2124deb5c72c87824303e928cf3744bc1e206a4cddf5a77b63ccfd206",
+    "20261030-cant-handle-tall-stack-1-source-codex-check.md": "a294a95838ceaa3c3c3dd6429e8a2bb7a745338e5a8558ee00244060f647cca6"
+  },
+  "correction": {
+    "approvedInventory": "M7-behaviour.md rows856/857",
+    "old": "Stop tail-calls base stop at vtable+90; runnable else base vtable+94",
+    "native": "derived ClearStack at slot90; derived UpdateTargetStack at slot94",
+    "addresses": [
+      "0x005ED064..6A",
+      "0x0102A070",
+      "0x005ED1E4..F8",
+      "0x005ECD7A..84",
+      "0x0102A074",
+      "0x005ED200..2A"
+    ],
+    "independentChecks": 2,
+    "operatorDecision": "REQUIRED/PENDING; no implementation release"
+  },
+  "missing": [
+    "actual automatic execution caller",
+    "canonical weak target last-owner release/expiry backing, neither GC nor snapshot-membership assumed",
+    "existing generic pose/action/compound/completion helpers and precise recipient retirement"
+  ],
+  "prep": {
+    "cacheOnlyRestoreAll5": 0,
+    "restoreCount": 1,
+    "buildServerShutdown": 0,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "buildOrTest": false
+  },
+  "newLifecycleProposal": "one complementary whole-own lifecycle only; no record added",
+  "existingWholeRecordClosureProposals": [],
+  "officialChanges": false,
+  "hardwareRun": false,
+  "implementationBuilt": false,
+  "codeReview": "not started",
+  "fullGate": "not run; source approval pending"
+}
