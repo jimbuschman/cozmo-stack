@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **726 records** over 16 subsystems.
+Manifest of **727 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 352 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 353 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 84 | 4 | 70 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 85 | 4 | 71 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3880,6 +3880,15 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Factory class 0x35 0x0059D006..0x0059D024; ctor 0x005E5AF8..0x005E5B2C; LoadConfig 0x005E5B6A..0x005E5BFA (newAreaAnimTrigger string +0x11C, beaconRadius_mm f32 +0x128); Hiking_thinkAboutBeacons.json:13-16 (175), sparksThinkAboutBeacons.json:12-15 (75).; Vtable 0x01029A28: +0x28 0x005E5F4C returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005E5CC2..0x005E5CD8 (GetActiveBeacon == null).; InitInternal: SelectNewBeacon 0x005E5D98 (0x005E5F0C..0x005E5F3C: Robot::GetPose 0x004EA398, GetWithRespectToRoot 0x004DF628, AddBeacon 0x0056C39C with radius); trigger empty or AnimationTriggerFromString == 0x23F -> no action (0x005E5D9C..0x005E5DF4); TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false) 0x005E5DF6..0x005E5E18; StartActing with an empty callback 0x005E5E1C..0x005E5E3C; returns 0.; re-analysis/research/20261029-think-about-beacons-1-read.md
 * outstanding: Built in THINK-ABOUT-BEACONS-1, verifier PASS; not settled. (1) The title's 'skipped for an empty or unknown trigger' is too broad: AnimationTriggerFromString returns 0 on a miss (movs r0,#0 at 0x00764810), so the original plays trigger 0 (AcknowledgeFaceInitPause) for an unknown non-empty name; only empty or 'Count' skip. The stack reports MISSING there instead; no input our system produces reaches it. Correcting the frozen title needs the operator. (2) The canonical engine runtime (CozmoRobot.BindNativeBehaviorManager -> NativeBehaviorRuntime -> BehaviorContainer) has no constructor for class 0x35 (F1, factory 0x0059D006) and reports it not implemented; TAB exists only in the standalone FreeplayStack.Create list, and its config values are fixed in Behaviors.cs:573-574 rather than parsed (L2/L3). Beacon clearing is outside this record and unbuilt in the stack: AIWhiteboard::OnRobotDelocalized 0x0056A686 (reached from Robot::Delocalize) and ActivityGatherCubes::OnDeselectedInternal 0x005AF830 clear the beacons, but the stack's AIWhiteboard.OnRobotDelocalized has no caller, so after the first beacon TAB never becomes runnable again in production. Owned elsewhere: AddBeacon and the whiteboard (M13-006, M8-014, M15-011), the base gates (M8-001), the animation action (M8-020, M8-021), selection (M8-003, M15-008).
+
+**M15-085 — BehaviorBouncer lifecycle: feature-8 and face admission, Init (reaction lock table, Count idle, display geometry, three RNG draws), the state machine (entry/exit trigger states, 60 s and face-age exits), the paddle/ball/score game arithmetic and miss sound 521, the per-update face image (paddle, ball, score raster through SetFaceAction 33 ms), empty Stop** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeBouncerBehavior.cs`
+* effect: when Cozmo offers the Bouncer face game (feature enabled, one tracked face), the reaction locks and idle he holds, the intro/outro animations, how the paddle follows the face and the ball moves and scores, the miss sound, the face image he shows every update, and when the game ends (60 s, face lost or too old)
+* rests on: BOUNCER-1 (Codex read, build and review; Claude check 2026-10-29); record added with operator approval 2026-10-29.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Factory class 0 0x0059C946..0x0059C964 (new 0x158); ctor 0x005F12FC; vtable 0x0102A5B8 (+0x20/+0x24 base false, +0x28 false); bouncer.json; PlayWithHumans scoring entry.; IsRunnableInternal 0x005F133C..0x005F139E: IsFeatureEnabled(8) == 1; GetFaceIDs(false); GetBestFaceToTrack(set, true); GetSmartFaceID -> +0x120; IsValid.; InitInternal 0x005F14A0..: SmartDisableReactionsWithLock (table 0x00C6FB90), SmartPushIdleAnimation(0x23F); display 128x64; paddle (W/2, H-4), ball (W/2, H), step 10; RNG RandDbl(1), RandDblInRange(1,3) twice.; UpdateInternal 0x005F19A4..: duration > 60.0f, invalid/missing face, image age >= 5001 (0x1389) -> return 2; states 1..5 triggers 8/10/14/16 with TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false); state 5 UpdatePaddle (face+0xDC degrees, step 10, clamp), UpdateBall (wall reflections, bottom score |dx| < 16), pending miss sound trigger 0x209; states 6..9 exit triggers 15/11/9.; UpdateDisplay: Image(H, W) black; filled rect paddle (+-16, 4 high), circle radius 3, DrawText scores at (4,12) and (W-4-8*len,12) scale 0.5; SetFaceAction(image, 33) (0x005F0F40..0x005F10D0); StopInternal 0x005F1C6C bx lr.; re-analysis/research/20261029-bouncer-1-read.md; re-analysis/research/20261029-bouncer-1-claude-check.md
+* outstanding: Built in BOUNCER-1; not settled. The shipped Bouncer feature is disabled (features.json) and the stack has no host feature-toggle dispatch. With more than one eligible face the stack refuses with a visible MISSING instead of ranking them with GetBestFaceToTrack (built for M15-080, 0x0056C110). Named boundaries from HANDOFF-BOUNCER-1.md: detector DC production (M11-016/M14-010), multi-face geometry (M14-001/M11-066), a historical origin (M14-008), the final shared-allocation callback (M11-077), the M8-020 completion union/destructor gaps, full app reload (M5-052). Owned elsewhere: face RLE/parity (M5-013), eye raster (M5-021), the feature gate (M15-007), reaction locks (M7-014), the idle stack and actions (M8).
 
 ## What remains after both: blocked externally, or needing hardware
 

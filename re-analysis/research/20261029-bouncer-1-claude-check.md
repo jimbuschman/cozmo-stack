@@ -43,6 +43,6 @@ gate passed 6795/6795. Not blocking.
    - the M8-020 union/destructor gaps.
 
 ## Record
-Codex proposes one Bouncer own-path lifecycle record. **This needs the operator's OK.** It would cover the configured
+Codex proposes one Bouncer own-path lifecycle record. Added as **M15-085** with operator approval, 2026-10-29. It would cover the configured
 lifecycle, the state and game arithmetic, and the image-construction and raster steps, without duplicating the shared
 face, RLE, idle or action records.

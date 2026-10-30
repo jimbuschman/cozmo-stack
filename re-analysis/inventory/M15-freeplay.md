@@ -1126,3 +1126,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorThinkAboutBeacons ctor 0x005E5AF8, LoadConfig, gates (0x005E5F4C, IsRunnableInternal 0x005E5CC2), Init 0x005E5CDC with SelectNewBeacon 0x005E5F0C | M15-084 (new) |
+
+## BOUNCER-1, the Bouncer lifecycle (operator approved 2026-10-29; research/20261029-bouncer-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorBouncer admission 0x005F133C, Init 0x005F14A0, Update 0x005F19A4, game and display helpers, Stop 0x005F1C6C | M15-085 (new) |

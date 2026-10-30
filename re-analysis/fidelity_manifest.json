@@ -14352,6 +14352,28 @@
       "hardware_required": false,
       "live_path": true,
       "test": "ThinkAboutBeaconsNativeTests"
+    },
+    {
+      "id": "M15-085",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorBouncer lifecycle: feature-8 and face admission, Init (reaction lock table, Count idle, display geometry, three RNG draws), the state machine (entry/exit trigger states, 60 s and face-age exits), the paddle/ball/score game arithmetic and miss sound 521, the per-update face image (paddle, ball, score raster through SetFaceAction 33 ms), empty Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBouncerBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0 0x0059C946..0x0059C964 (new 0x158); ctor 0x005F12FC; vtable 0x0102A5B8 (+0x20/+0x24 base false, +0x28 false); bouncer.json; PlayWithHumans scoring entry.",
+        "IsRunnableInternal 0x005F133C..0x005F139E: IsFeatureEnabled(8) == 1; GetFaceIDs(false); GetBestFaceToTrack(set, true); GetSmartFaceID -> +0x120; IsValid.",
+        "InitInternal 0x005F14A0..: SmartDisableReactionsWithLock (table 0x00C6FB90), SmartPushIdleAnimation(0x23F); display 128x64; paddle (W/2, H-4), ball (W/2, H), step 10; RNG RandDbl(1), RandDblInRange(1,3) twice.",
+        "UpdateInternal 0x005F19A4..: duration > 60.0f, invalid/missing face, image age >= 5001 (0x1389) -> return 2; states 1..5 triggers 8/10/14/16 with TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false); state 5 UpdatePaddle (face+0xDC degrees, step 10, clamp), UpdateBall (wall reflections, bottom score |dx| < 16), pending miss sound trigger 0x209; states 6..9 exit triggers 15/11/9.",
+        "UpdateDisplay: Image(H, W) black; filled rect paddle (+-16, 4 high), circle radius 3, DrawText scores at (4,12) and (W-4-8*len,12) scale 0.5; SetFaceAction(image, 33) (0x005F0F40..0x005F10D0); StopInternal 0x005F1C6C bx lr.",
+        "re-analysis/research/20261029-bouncer-1-read.md; re-analysis/research/20261029-bouncer-1-claude-check.md"
+      ],
+      "effect": "when Cozmo offers the Bouncer face game (feature enabled, one tracked face), the reaction locks and idle he holds, the intro/outro animations, how the paddle follows the face and the ball moves and scores, the miss sound, the face image he shows every update, and when the game ends (60 s, face lost or too old)",
+      "provenance": "BOUNCER-1 (Codex read, build and review; Claude check 2026-10-29); record added with operator approval 2026-10-29.",
+      "unresolved": "Built in BOUNCER-1; not settled. The shipped Bouncer feature is disabled (features.json) and the stack has no host feature-toggle dispatch. With more than one eligible face the stack refuses with a visible MISSING instead of ranking them with GetBestFaceToTrack (built for M15-080, 0x0056C110). Named boundaries from HANDOFF-BOUNCER-1.md: detector DC production (M11-016/M14-010), multi-face geometry (M14-001/M11-066), a historical origin (M14-008), the final shared-allocation callback (M11-077), the M8-020 completion union/destructor gaps, full app reload (M5-052). Owned elsewhere: face RLE/parity (M5-013), eye raster (M5-021), the feature gate (M15-007), reaction locks (M7-014), the idle stack and actions (M8).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeBouncerControllerTests; NativeBouncerFaceInputTests; NativeBouncerFactoryTests; NativeBouncerFrameTests; NativeBouncerGameTests; NativeBouncerRasterTests; NativeBouncerScopeTests"
     }
   ]
 }
