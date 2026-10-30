@@ -1,0 +1,58 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "state": "BOUNDED SOURCE PASS; IMPLEMENTATION RELEASED, NO COMPILE LEASE",
+  "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
+  "sources": [
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-read.md",
+      "originalSha256": "814685b02e33de506464556d235a3d2cbd6c2063906e5adba0f0c11fa743886b",
+      "storedLfSha256": "814685b02e33de506464556d235a3d2cbd6c2063906e5adba0f0c11fa743886b",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-originals\\20261030-check-for-stack-at-interval-1-read.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-source-codex-check.md",
+      "originalSha256": "16f12cd9125203d7014aec6de85dda98a2631a34db7f0b4031440f2c8dc989b7",
+      "storedLfSha256": "496e99e8b969be55563830150fa4c02434051fe0b0c6e086c53c4b4379059782",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-originals\\20261030-check-for-stack-at-interval-1-source-codex-check.md"
+    }
+  ],
+  "currentRecordSnapshotsMatched": [
+    "M11-004",
+    "M11-010",
+    "M11-013",
+    "M12-033",
+    "M13-020",
+    "M7-018",
+    "M7-019",
+    "M8-001",
+    "M8-023",
+    "M8-024",
+    "M11-066",
+    "M15-059"
+  ],
+  "readerRequested": "gpt-6.1-sol/medium/fork_none",
+  "builderRequested": "DEFAULT/model and effort omitted/fork_none",
+  "reviewerRequested": "DEFAULT/model and effort omitted/fork_none",
+  "actualBackend": "unobserved; operator default Terra",
+  "sourceContradictions": 0,
+  "reviewerRequiredCorrectionBatches": 0,
+  "formalRecordsChanged": false,
+  "prep": {
+    "cacheOnlyRestoreAll5Exit": 0,
+    "restoreCount": 1,
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "compileOrTestsRun": false
+  },
+  "remainingFrontiers": [
+    "custom-object marker geometry M12-033 via UseCustomObject/closest marker",
+    "canonical factory/action callable and ownership joins to verify or visiblyMISSING",
+    "shared pose/action/compound and exact final-release topology",
+    "raw Spark parent picker/admission"
+  ],
+  "wholeExistingRecordClosureProposals": [],
+  "newRecordProposal": "ONE coherent otherwise-unowned CheckForStackAtInterval lifecycle, no ID added",
+  "hardwareRun": false,
+  "CANTContractApproval": "separate REQUIRED/PENDING, no dependentwork authorized"
+}
