@@ -49,3 +49,20 @@ StrictPriority's per-candidate running byte 0x0060B23E..27E; the Bring config an
    - `_hardOutputs` is set before the push, where the engine sets it after StartLooping 0x005B1662;
    - the dropped M15-008 MISSING text no longer names PeekABoo/TrackLaser/GuardDog;
    - extra blank lines at the end of the test file.
+
+## Returned fix (manager, 2026-10-30): PASS
+
+Fix f6206567, handoff 2c32772d (full gate on 61899e72, 6912/6912).
+- **The blocking item is closed.** ResetLightsAndAnimations removes the first entry with the activity's name
+  (`RemoveScoped`), so the hard 20E/20D/20F triplet stays on top. Common deselection then removes the next one. The
+  production-path test `SparkEndKeepsHardDrivingUntilCommonDeselect` asserts the surviving triplet through manager
+  Update/end and handler Init.
+- **The queued items are done:**
+  - `_hardOutputs` is set after StartLooping (0x005B1662);
+  - the M15-008 MISSING again names PeekABoo/TrackLaser/GuardDog;
+  - the tests carry reach labels;
+  - the cooldown epsilon words 42D1FFFE/42D1FFFF/42D20000 are tested;
+  - the finish-flag branches and the external-interface gate are tested.
+- **Nothing is settled:** M15-023 stays open, since admission is still supplied.
+- **Merge timing:** the merge waits for the CHECK-FOR-STACK-AT-INTERVAL-1 fix. The branch already carries that
+  build's code (8a6fa50b), and that code still has its re-selection loop.
