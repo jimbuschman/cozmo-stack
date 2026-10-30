@@ -1,6 +1,6 @@
 {
   "job": "DANCE-MAMBO-1",
-  "state": "HARNESS STATIC PASS; REFERENCE2 PENDING",
+  "state": "REFERENCE4 PASS; INDEPENDENT REPLAY OPEN",
   "managerStart": "34a59d527480c1030d8d28a90834390841949789",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
@@ -27,7 +27,7 @@
       "fork": "none"
     }
   ],
-  "dotnetLease": "none; unknown diagnosticpostPID exited; actualelevatedfollowupnative0",
+  "dotnetLease": "C returned; B exclusivecompiledreplayreleased",
   "builder": "implementation active after checked source5ad5b2fb; no.NET",
   "actualBackends": "unobserved",
   "workerWorktree": "C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1",
@@ -160,10 +160,10 @@
   ],
   "sourceQuestion1Verdict": "A+B PASS, no inventory contradiction/new departure",
   "currentCodePaths": 6,
-  "coherentSource": "DANCE-MAMBO-1-harness1-freeze.json",
+  "coherentSource": "DANCE-MAMBO-1-harness3-freeze.json",
   "reviewerFixRounds": 2,
   "compilerFixRounds": 0,
-  "postTestHarnessFixRounds": 1,
+  "postTestHarnessFixRounds": 3,
   "affectedClasses": 63,
   "failedReference1": {
     "job": "DANCE-MAMBO-1",
@@ -228,5 +228,122 @@
     "logEncoding": "utf-16",
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-diagnostic1\\run"
   },
-  "diagnosticAttempts": 1
+  "diagnosticAttempts": 2,
+  "failedReference2": {
+    "job": "DANCE-MAMBO-1",
+    "attempt": 2,
+    "state": "FAIL",
+    "buildExit": 0,
+    "testExit": 1,
+    "wrapperExit": 1,
+    "shutdownExit": 0,
+    "passed": 1257,
+    "failed": 2,
+    "total": 1259,
+    "skipped": 0,
+    "failures": [
+      "Cozmo.Protocol.Tests.DanceMamboNativeTests.NaturalFadeCompletionStopsOtherCubeEngineLayerAndPreservesStateLayer",
+      "Cozmo.Protocol.Tests.DanceMamboNativeTests.PriorRunCubeCallbackUsesCurrentActiveStateAndFadeStopsAllEngineLights"
+    ],
+    "inputCount": 8827,
+    "allInputsUnchanged": true,
+    "all187ImmutableBinsUnchanged": true,
+    "changedGeneratedOutputs": [
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+    ],
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-reference2"
+  },
+  "diagnostic2": {
+    "job": "DANCE-MAMBO-1",
+    "attempt": "diagnostic2",
+    "state": "EXPECTED_FAILURE_OBSERVED",
+    "passed": 0,
+    "failed": 2,
+    "total": 2,
+    "skipped": 0,
+    "buildExit": 0,
+    "testExit": 1,
+    "wrapperExit": 1,
+    "shutdownExit": 0,
+    "classification": "Harness: source WakeUp refuses override; source first-pop callback and activeD11 requeue after StopAll",
+    "inputCount": 8827,
+    "allInputsUnchanged": true,
+    "all192BinsUnchanged": true,
+    "nativePre": [],
+    "nativePostOriginal": [
+      {
+        "ProcessId": 7308,
+        "Name": "dotnet.exe",
+        "CommandLine": null
+      }
+    ],
+    "checkoutPostOriginal": [],
+    "nativeFollowup": [],
+    "followupInventorySha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "processOwnership": "PID7308 CommandLine null, unknown; no kill. Separate elevated follow-up observes no native process.",
+    "logEncoding": "utf-16",
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-diagnostic2\\run"
+  },
+  "failedReference3": {
+    "job": "DANCE-MAMBO-1",
+    "attempt": 3,
+    "state": "FAIL",
+    "buildExit": 0,
+    "testExit": 1,
+    "wrapperExit": 1,
+    "shutdownExit": 0,
+    "passed": 1258,
+    "failed": 1,
+    "total": 1259,
+    "skipped": 0,
+    "failures": [
+      "Cozmo.Protocol.Tests.DanceMamboNativeTests.PriorRunCubeCallbackUsesCurrentActiveStateAndFadeStopsAllEngineLights"
+    ],
+    "naturalFadeStrictTimingPassed": true,
+    "classification": "harness hardcoded radio slots0/1 as actual world ObjectIDs7/8",
+    "inputCount": 8827,
+    "allInputsUnchanged": true,
+    "all187ImmutableBinsUnchanged": true,
+    "changedGeneratedOutputs": [
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+    ],
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-reference3"
+  },
+  "additionalActualBefore": {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+    "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-harness1\\before\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\M7BatchThreeBTests.cs",
+    "sha256": "1a08b906b87741d0826e1fd9e68de686606f6a1721b6b1f2ae524c733b39ee64",
+    "rawBlob": "0696ebce812aec2bcc90ffb19566609434f0cc78",
+    "baseBlobMatched": true
+  },
+  "currentReference": {
+    "job": "DANCE-MAMBO-1",
+    "attempt": 4,
+    "state": "PASS",
+    "buildExit": 0,
+    "testExit": 0,
+    "wrapperExit": 0,
+    "shutdownExit": 0,
+    "passed": 1259,
+    "failed": 0,
+    "total": 1259,
+    "skipped": 0,
+    "all63ClassesRepresented": true,
+    "inputCount": 8827,
+    "allInputsUnchanged": true,
+    "all187ImmutableBinsUnchanged": true,
+    "changedGeneratedOutputs": [
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+    ],
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-reference4"
+  }
 }
