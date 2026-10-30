@@ -183,7 +183,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         if(_retired||_admissionEpoch!=epoch+1)return;
         _manager.Stop(BehaviorStopReason.Interrupted,_facade.Engine.Timer.SecondsF);
         if(_retired||_admissionEpoch!=epoch+1)return;
-        SteppedBehavior.ReportMissing("M15-059 Gather chooser unavailable input: owned activity retired without native completion");
+        SteppedBehavior.ReportMissing("M15-059 "+activity.Id+" chooser unavailable input: owned activity retired without native completion");
     }
 
     private void WaitForParentPicker(Activity activity)
@@ -277,7 +277,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             return desired;
         }
         public void BehaviorSwitched(IBehavior? desired,bool started,double now){}
-        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null;
+        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null || activity.Id=="SparksWorkout";
         void IHostReadinessOwner.RetireUnavailable()=>retireUnavailable();
     }
 }

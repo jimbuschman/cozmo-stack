@@ -1159,7 +1159,7 @@ public static class ActivityTreeLoader
         var strategy = e.TryGetProperty("activityStrategy", out var st) ? ActivityStrategy.FromJson(st) : new ActivityStrategy();
         if (random is not null) strategy.Random = random;
         // fidelity: M15-059
-        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
+        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes" or "SparksWorkout")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");
         if(id=="SparksGatherCubes")
             SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt");
@@ -1176,7 +1176,7 @@ public static class ActivityTreeLoader
         };
         if(owner is not null)
         {
-            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,"SparksKnockOverCubes"=>21,"SparksPopAWheelie"=>24,"SparksRollBlock"=>26,"SparksStackBlock"=>27,"SparksGatherCubes"=>20,"GatherCubes"=>4,_=>null};
+            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,"SparksKnockOverCubes"=>21,"SparksPopAWheelie"=>24,"SparksRollBlock"=>26,"SparksStackBlock"=>27,"SparksGatherCubes"=>20,"SparksWorkout"=>28,"GatherCubes"=>4,_=>null};
             if(nativeId is {} value)activity.NativePublicStateSelected=()=>owner.BehaviorPublicState.UpdateActivity(value);
             if(activity.Type=="BehaviorsOnly")activity.NativeUpdate20=_=>0; // vtable10252F8 -> 005A7373.
             foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
@@ -1191,7 +1191,7 @@ public static class ActivityTreeLoader
                             &&rawId.ValueKind==JsonValueKind.String &&bound.TryGetValue(rawId.GetString()!,out var candidate)
                             &&candidate is NativeLookForFaceAndCubeBehavior look &&rawEntry.TryGetProperty("scoring",out var rawScoring))
                             look.CheckObjectiveInput(rawScoring,"activity "+id+" "+chooserKey);
-            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
+            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes" or "SparksWorkout")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
             {
                 Activity? nested=null;
                 if(id=="SparksGatherCubes" && e.TryGetProperty("subActivityDelegate",out var nestedConfig))
@@ -1199,8 +1199,10 @@ public static class ActivityTreeLoader
                     nested=Build(nestedConfig,byId,bound,penalty,random,0,owner);
                     if(nested.Chooser is StrictPriorityChooser strict)strict.StopOnUnavailable=true;
                 }
+                // P3: unavailable earlier Spark workout candidates are not sourced false gates.
+                if(id=="SparksWorkout" && activity.Chooser is StrictPriorityChooser workoutChooser)workoutChooser.StopOnUnavailable=true;
                 activity.SparkedOwner=new(activity,owner,e,bound,nested);
-                if(id=="SparksGatherCubes"){activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;}
+                if(id is "SparksGatherCubes" or "SparksWorkout"){activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;}
                 if(id=="SparksGatherCubes" && activity.DriveStartAnim is {} start && activity.DriveLoopAnim is {} loop && activity.DriveEndAnim is {} end)
                 {
                     activity.NativeCommonDrivingPush=()=>activity.PushOwnedDriving(owner,new(start,loop,end));
