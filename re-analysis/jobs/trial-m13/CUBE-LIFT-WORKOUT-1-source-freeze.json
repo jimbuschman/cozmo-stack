@@ -1,6 +1,6 @@
 {
   "job": "CUBE-LIFT-WORKOUT-1",
-  "state": "BOUNDED SOURCE PASS; IMPLEMENTATION HOLD FOR PRIORITY SPARKS FIX",
+  "state": "BOUNDED SOURCE PASS; BUILD RELEASED AFTER CANT HANDOFF",
   "sourceFiles": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-read.md",
@@ -70,5 +70,17 @@
     "needs/objective/public-state/audio and native shared-owner/retirement under existing scopes"
   ],
   "CantApproval": "resolved by formal main288bd07b approval",
-  "hardwareRun": false
+  "hardwareRun": false,
+  "resumptionMain": "1880f337c803fe25cd5da6d1aad56e068db1015a",
+  "resumptionHead": "2cb68fa85316bc2f55a72980b53736a94db67b0e",
+  "ownershipLeadM15045": {
+    "id": "M15-045",
+    "title": "AIComponent teardown recursive recipients: BehaviorHelper IHelper types and callables, ObjectInteraction entries and ProcessInfo callables, BorderSegment release, SevereNeeds/RequestGame/AIWhiteboard handle inventories, Workout/ObjectInteraction/Whiteboard/Analyzer inner bodies",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x00569D38..0x00569D66; 0x0056A0AE..; 0x00569FD2..; 0x00569F9A; the inner bodies named.",
+      "re-analysis/research/overnight/20261016-batch-check.md: member map 0x00569A88..0x00569B3E; BehaviorHelperComponent 0x00569D30..0x00569D7E; ~vector<BorderSegment> 0x00569F86..0x00569FB8; ProcessInfo tree 0x00569FBA..0x0056A006; ObjectInteractionCacheEntry 0x0056A06E..0x0056A13E; SevereNeeds 0x00572A1C..0x00572A36; AIWhiteboard 0x0056A32C..0x0056A37C; RequestGame 0x0056A1DC..0x0056A1FA; Workout 0x0056A140..0x0056A1D8."
+    ]
+  },
+  "resumption": "Prior workout runtime handles unavailable, no implementation started; prepared233f327e clean/restore once retained. Same requested model configurations for replacement roles; log exact handles after actual startup."
 }
