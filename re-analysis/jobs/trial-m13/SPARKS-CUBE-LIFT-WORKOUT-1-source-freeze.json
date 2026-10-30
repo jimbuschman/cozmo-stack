@@ -1,6 +1,6 @@
 {
   "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
-  "state": "BUILD CHECKS OPEN",
+  "state": "CODE VERIFIED; FULL GATE PENDING",
   "managerStart": "3b0f97b051d7f6c3913cf5c3eb56f714307c2b1d",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "ordinaryHandoff": "0a8626dc6480df5e4638c0993582086f6747c0e5",
@@ -147,5 +147,9 @@
     "nativePost": [],
     "checkoutPost": [],
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\spark-workout-replay1"
-  }
+  },
+  "workerCommit": "fb9adfae703331ca0674e30c087cdb90cec7290e",
+  "integrationCommit": "30b99aeba0063072123dcdc0a1dd683a15ddab53",
+  "cozmoStackTree": "e759fb24dbd15d901670f265a31aba867c8d210e",
+  "productionSrcTree": "55e30566c8faf7991638929f8bfb1da8bf09e4ec"
 }
