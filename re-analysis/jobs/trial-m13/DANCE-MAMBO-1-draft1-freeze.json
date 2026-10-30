@@ -1,0 +1,61 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "phase": "initialcoherentdraft",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "38282b0b03503eb2173cd74b219c2a2bf05074e2f89a912d4c9030f5779eb65a",
+      "rawBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "filteredBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\draft1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "16742874fbbd5c4ee9718a1f9158d0a1cc4fa1bc9d30914713f8ebb4cfd7773f",
+      "rawBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "filteredBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\draft1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDanceBehavior.cs",
+      "sha256": "1f8a0bebc3f9b06d7db3638983a1db247597639ec693212f354c0085600be480",
+      "rawBlob": "adbebe78e5f955c30955d3b95a6f54facd6d8326",
+      "filteredBlob": "adbebe78e5f955c30955d3b95a6f54facd6d8326",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\draft1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeDanceBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "sha256": "4c20995a2f02036599c56fefabe30b05001a4c537877335a9da7362c3533b314",
+      "rawBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "filteredBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\draft1\\cozmo-stack\\src\\Cozmo.Robot\\Lights.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs",
+      "sha256": "e429cd673209f3de1d3014ce3976f60efc6fb07886ebdcd7a7a04d8f4b7a0038",
+      "rawBlob": "d7c534a855cf58d8b4552ed803019fbe89842bd1",
+      "filteredBlob": "d7c534a855cf58d8b4552ed803019fbe89842bd1",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\draft1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\DanceMamboNativeTests.cs"
+    }
+  ],
+  "beforeExistingActual": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-prep\\before\\cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+      "sha256": "d1bcd1cccb3cdf5c54cc7b55cf9ce2e46b2f36c2883b660850de07a40c85bee3"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-prep\\before\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs",
+      "sha256": "6e21698f0811c8973b38e6b60c21149d7069fd1a3e12c7d593d5fbc793487493"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-prep\\before\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs",
+      "sha256": "88f93e5ef90729b0b96db3a94e24fa831e61359424aadce46a585820aa39cf23"
+    }
+  ],
+  "newFileBeforeLimitation": "NativeDanceBehavior.cs and DanceMamboNativeTests.cs absence entries were recorded after creation; not contemporaneous file-level absence checks. Initial worker clean status and Git HEAD absence are separate evidence, not reconstructed raw capture.",
+  "staticVerdict": "FAIL one required batch: weakdelegate lifetime + reach/natural globalfade coverage",
+  "dotnetRun": false
+}

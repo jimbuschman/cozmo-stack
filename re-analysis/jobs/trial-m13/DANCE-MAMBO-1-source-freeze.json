@@ -1,6 +1,6 @@
 {
   "job": "DANCE-MAMBO-1",
-  "state": "READ DONE; BUILD OPEN",
+  "state": "CODE STATIC VERIFIED; REFERENCE PENDING",
   "managerStart": "34a59d527480c1030d8d28a90834390841949789",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
@@ -158,5 +158,11 @@
       "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-source-codex-check.4e5ce7a4edf7.raw.md"
     }
   ],
-  "sourceQuestion1Verdict": "A+B PASS, no inventory contradiction/new departure"
+  "sourceQuestion1Verdict": "A+B PASS, no inventory contradiction/new departure",
+  "currentCodePaths": 5,
+  "coherentSource": "DANCE-MAMBO-1-correction2-freeze.json",
+  "reviewerFixRounds": 2,
+  "compilerFixRounds": 0,
+  "postTestHarnessFixRounds": 0,
+  "affectedClasses": 63
 }

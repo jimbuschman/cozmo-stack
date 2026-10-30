@@ -1,0 +1,43 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "phase": "correction1",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "38282b0b03503eb2173cd74b219c2a2bf05074e2f89a912d4c9030f5779eb65a",
+      "rawBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "filteredBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "16742874fbbd5c4ee9718a1f9158d0a1cc4fa1bc9d30914713f8ebb4cfd7773f",
+      "rawBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "filteredBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDanceBehavior.cs",
+      "sha256": "f426c4d5ac200b58a48ecf773c3816be77bbff7e12d6d739bd89316eda1e5458",
+      "rawBlob": "00cd688564627b7e6a6d39d2bb65c094c95696dc",
+      "filteredBlob": "00cd688564627b7e6a6d39d2bb65c094c95696dc",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeDanceBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "sha256": "4c20995a2f02036599c56fefabe30b05001a4c537877335a9da7362c3533b314",
+      "rawBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "filteredBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Lights.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs",
+      "sha256": "df1538d5ca7ea41b25efbc1d7057aa964902a8500ba789c248daed2c39d5be20",
+      "rawBlob": "9e48fb91e53aaece81e0c9cccfaaedb23bee53d0",
+      "filteredBlob": "9e48fb91e53aaece81e0c9cccfaaedb23bee53d0",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\DanceMamboNativeTests.cs"
+    }
+  ],
+  "staticVerdict": "FAIL batch2: unitreach labels and deterministic naturalfade scope proof. Weaklistenerobjectfix PASS.",
+  "dotnetRun": false
+}
