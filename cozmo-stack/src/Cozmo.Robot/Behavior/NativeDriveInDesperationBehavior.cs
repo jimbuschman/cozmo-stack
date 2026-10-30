@@ -91,7 +91,7 @@ internal sealed class NativeDriveInDesperationBehavior : SteppedBehavior
         StartActing(action, _ => {
                 if (!_useCubes) return;
             SetStateName("SearchForCube");
-            ReportMissing("M12-010/M8-011: SearchForBlockHelper sentinel target -1, minimum seen 1, maximum stage 1 is unavailable; no result or callback substituted");
+            ReportMissing("M12-010/M8-011: SearchForBlockHelper sentinel target -1, minimum seen 1, maximum stage 1 is unavailable; search motions skipped, no result or callback substituted", new HashSet<string>());
         });
     }
     private void DriveToCube()
@@ -102,8 +102,20 @@ internal sealed class NativeDriveInDesperationBehavior : SteppedBehavior
         var obj = _m.World.GetLocatedObjectByIdHelper(_target);
         if (obj is null || !(CubeGeometry.IsCube(obj.Type) || obj.Type == ObjectType.Charger_Basic)) { _target = uint.MaxValue; Idle(); return; }
         var main = _robot.GetCheckedMainPose();
-        var pre = DockPreActionPoses.GetNative(new(obj, PreActionType.Rolling, false, 0, BitConverter.UInt32BitsToSingle(0x3E860A92), false, 0),
-            main, _robot.CarryingOwner!.CarriedObjectId, () => _m.NativeObstacles(main), _m.World);
+        PreActionPoseOutput pre;
+        try
+        {
+            pre = DockPreActionPoses.GetNative(new(obj, PreActionType.Rolling, false, 0, BitConverter.UInt32BitsToSingle(0x3E860A92), false, 0),
+                main, _robot.CarryingOwner!.CarriedObjectId, () => _m.NativeObstacles(main), _m.World);
+        }
+        catch (NativeActionUnavailable error)
+        {
+            // fidelity: M12-036
+            // 005D995C: unavailable host geometry is not a native PAP result; skip to the existing 005D9A54 continuation.
+            ReportMissing("M12-036 DriveInDesperation 0x005D995C: " + error.Message + "; unavailable PAP/drive skipped, continuing at 0x005D9A54 LookAtCube", new HashSet<string>());
+            LookAtCube();
+            return;
+        }
         if (pre.Result != ActionResult.Success || pre.InPosition) { LookAtCube(); return; }
         var action = new DriveToPoseAction(_m, false, false) { DistanceToleranceMm = 30, AngleToleranceRad = BitConverter.UInt32BitsToSingle(0x3E860A92) };
         action.SetNativeGoals(pre.Poses.Select(p => p.WorldPose).ToArray());

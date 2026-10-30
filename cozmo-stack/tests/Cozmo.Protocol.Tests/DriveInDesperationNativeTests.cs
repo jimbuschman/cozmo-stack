@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Reflection;
 using Cozmo.Conformance;
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Animation;
@@ -139,6 +140,79 @@ public class DriveInDesperationNativeTests
         var target = (uint)typeof(NativeDriveInDesperationBehavior).GetField("_target", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(behavior)!;
         Assert.Equal(expected, target);
         f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+    }
+    // reach: supplied manager activation, located cube/height-overlapping charger and terminal child results;
+    // actual ActionList D6 broadcast, PAP input and owned turns. 005D995C/9A54, 005D9C22, 005DA51E and 005DA354..A3CE.
+    [Theory]
+    [InlineData(0u, true)]
+    [InlineData(0x03000000u, false)]
+    public void ChargerObstacleSkipsUnavailablePapAndPreservesCompletionDelivery(uint lookResult, bool requests)
+    {
+        using var f = new Fixture();
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        f.Robot.HasExternalInterface = true;
+        f.Add(7, 250);
+        var charger = new ObservableObject(9, ObjectType.Charger_Basic, ChargerGeometry.Markers)
+        { Pose = new Pose3d(Rotation3d.Identity, new Vec3(100, 0, 22), parent: f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)), OriginId = f.Robot.CurrentOriginId, PoseState = PoseState.Known };
+        f.M.World.AddLocatedObject(charger);
+        var messages = new List<string>(); void Observe(string message) => messages.Add(message);
+        SteppedBehavior.MissingReported += Observe;
+        try
+        {
+            var behavior = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyState"]);
+            Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            var wait = Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction());
+            uint waitTag = wait.Tag;
+            var queue = f.Robot.ActionList.QueueAt(0)!;
+            var completions = new List<RobotCompletedAction>();
+            using var later = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A, true, p => { if (p is RobotCompletedAction r) completions.Add(r); });
+            wait.State = 0; f.Robot.ActionList.Update();
+            Assert.Contains(completions, r => r.Tag == waitTag);
+            var deleting = (HashSet<uint>)typeof(ActionQueue).GetField("_deletionTags", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(queue)!;
+            Assert.DoesNotContain(waitTag, deleting);
+            Assert.Equal(7u, f.M.World.SelectedObjectId);
+            Assert.Contains(messages, m => m.Contains("M12-036") && m.Contains("0x005D995C") && m.Contains("footprint") && m.Contains("0x005D9A54"));
+            var look = Assert.IsType<NativeTurnTowardsObjectRunner>(f.Robot.ActionList.GetCurrentAction());
+            Assert.Equal(7u, (uint)typeof(NativeTurnTowardsObjectRunner).GetField("_id", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(look)!);
+            Assert.True((bool)typeof(NativeTurnTowardsObjectRunner).GetField("_verify", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(look)!);
+            Assert.False((bool)typeof(NativeTurnTowardsObjectRunner).GetField("_track", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(look)!);
+            look.State = lookResult; f.Robot.ActionList.Update();
+            if (!requests) Assert.Null(f.Robot.ActionList.GetCurrentAction());
+            else
+            {
+                var request = Assert.IsType<NativeTurnTowardsFaceWrapperRunner>(f.Robot.ActionList.GetCurrentAction());
+                request.State = 0; f.Robot.ActionList.Update();
+                var final = Assert.IsType<NativeTurnTowardsObjectRunner>(f.Robot.ActionList.GetCurrentAction());
+                Assert.Equal(7u, (uint)typeof(NativeTurnTowardsObjectRunner).GetField("_id", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(final)!);
+                Assert.False((bool)typeof(NativeTurnTowardsObjectRunner).GetField("_verify", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(final)!);
+                Assert.Equal(uint.MaxValue, (uint)typeof(NativeDriveInDesperationBehavior).GetField("_target", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(behavior)!);
+            }
+            f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+        }
+        finally { SteppedBehavior.MissingReported -= Observe; }
+    }
+    // reach: supplied initial round count, two manager activations and terminal Wait/Drive results, through actual ActionList callbacks.
+    // 005D970E..9744 has no failure callback; the unavailable sentinel helper and its motions are not fabricated.
+    [Fact]
+    public void EachSentinelSearchOccurrenceReportsSkippedMotions()
+    {
+        using var f = new Fixture();
+        var messages = new List<string>(); void Observe(string message) => messages.Add(message);
+        SteppedBehavior.MissingReported += Observe;
+        try
+        {
+            var behavior = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyState"]);
+            typeof(NativeDriveInDesperationBehavior).GetField("_rounds", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(behavior, 3);
+            for (int i = 0; i < 2; i++)
+            {
+                Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+                Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
+                Assert.IsType<DriveToPoseAction>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
+                f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+            }
+            Assert.Equal(2, messages.Count(m => m.Contains("M12-010/M8-011") && m.Contains("search motions skipped")));
+        }
+        finally { SteppedBehavior.MissingReported -= Observe; }
     }
     // reach: supplied manager activation, empty native world, and real Wait/Drive completion.
     // 0x5d9d8a..9db8 stamps cooldown before the empty query; 0x5da2de calls sentinel search only after drive completion.
