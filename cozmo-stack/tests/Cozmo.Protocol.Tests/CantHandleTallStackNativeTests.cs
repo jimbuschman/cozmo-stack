@@ -16,7 +16,9 @@ public sealed class CantHandleTallStackNativeTests
     {
         internal (uint Bottom, int Height)? Value;
         internal bool Available = true;
-        public bool TryLock(out (uint Bottom, int Height)? value) { value = Value; return Available; }
+        internal Action? OnLock;
+        public bool TryLock(out (uint Bottom, int Height)? value)
+        { var callback = OnLock; OnLock = null; callback?.Invoke(); value = Value; return Available; }
     }
     private static NativeCantHandleTallStackBehavior Configured(Fixture f)
     {
@@ -242,5 +244,75 @@ public sealed class CantHandleTallStackNativeTests
         Assert.False(behavior.HasCurrentAction);
         otherStack.Available = true; f.Runtime.TallStackOwnerInput = null;
         Assert.True(behavior.Resume(null, f.Rig.Engine.Timer.SecondsF));
+    }
+
+    // Reentry uses supplied weak targets and the public Step event; no native caller is implied.
+    private static void AssertReplacement(Fixture f, NativeCantHandleTallStackBehavior behavior,
+        CompoundActionSequential? sequence, uint tag)
+    {
+        Assert.NotNull(sequence); Assert.Same(sequence, behavior.LookingSequence);
+        Assert.Equal(tag, behavior.CurrentRunnerTag); Assert.Same(sequence, behavior.OwnedRunner);
+        Assert.Equal("DebugState::LookingUpAndDown", behavior.StateName);
+        var replacement = f.M.World.GetLocatedObjectByIdHelper(8)!;
+        Assert.True(behavior.State!.StoredPose!.IsSameAs(replacement.NativePose, 0.01, 0.01));
+        Assert.False(behavior.InitFailed);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void SuppliedWeakLockReentryCannotOverwriteReplacement(bool duringInit, bool oldLockUnavailable)
+    {
+        using var f = new Fixture(); var behavior = Configured(f); SupplyRecipient(f);
+        f.Add(7, 150); f.Add(8, 300);
+        var old = new SuppliedWeak { Value = (7, 3) }; var next = new SuppliedWeak { Value = (8, 3) };
+        f.Runtime.TallStackWeakInput = () => old;
+        Assert.True(behavior.IsRunnable(f.Runtime.Context));
+        using var originalScope = new BehaviorScope(); using var replacementScope = new BehaviorScope();
+        if (!duringInit) Begin(f, behavior, originalScope);
+        CompoundActionSequential? replacement = null; uint tag = 0;
+        old.OnLock = () =>
+        {
+            behavior.Stop(BehaviorStopReason.Interrupted); f.Runtime.TallStackWeakInput = () => next;
+            Assert.True(behavior.IsRunnable(f.Runtime.Context)); Begin(f, behavior, replacementScope);
+            replacement = behavior.LookingSequence; tag = behavior.CurrentRunnerTag;
+            old.Available = !oldLockUnavailable; // The old supplied lock returns only after replacement starts.
+        };
+        if (duringInit) Begin(f, behavior, originalScope);
+        else Assert.False(behavior.IsRunnable(f.Runtime.Context));
+        AssertReplacement(f, behavior, replacement, tag);
+        behavior.Stop(BehaviorStopReason.Interrupted);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PublicStepReentryCannotOverwriteReplacement(bool duringDisappointment)
+    {
+        using var f = new Fixture(); var behavior = Configured(f); SupplyRecipient(f);
+        f.Add(7, 150); f.Add(8, 300);
+        var old = new SuppliedWeak { Value = (7, 3) }; var next = new SuppliedWeak { Value = (8, 3) };
+        f.Runtime.TallStackWeakInput = () => old;
+        Assert.True(behavior.IsRunnable(f.Runtime.Context));
+        using var originalScope = new BehaviorScope(); using var replacementScope = new BehaviorScope();
+        CompoundActionSequential? replacement = null; uint tag = 0; bool entered = false;
+        behavior.Step += line =>
+        {
+            string transition = duringDisappointment ? "ToState:DebugState::Disapiontment" : "ToState:DebugState::LookingUpAndDown";
+            if (entered || !line.Contains(transition)) return;
+            entered = true; behavior.Stop(BehaviorStopReason.Interrupted); f.Runtime.TallStackWeakInput = () => next;
+            Assert.True(behavior.IsRunnable(f.Runtime.Context)); Begin(f, behavior, replacementScope);
+            replacement = behavior.LookingSequence; tag = behavior.CurrentRunnerTag;
+        };
+        Begin(f, behavior, originalScope);
+        if (duringDisappointment)
+        {
+            var sequence = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
+            sequence.State = 0x03000018; f.Robot.ActionList.Update();
+        }
+        Assert.True(entered); AssertReplacement(f, behavior, replacement, tag);
+        behavior.Stop(BehaviorStopReason.Interrupted);
     }
 }

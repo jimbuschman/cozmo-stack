@@ -64,10 +64,12 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
         { MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack configured owner to delocalization recipient join unavailable or changed"); return null; }
         return _state ??= supplied;
     }
-    private static bool TryLock(ITallStackWeakTarget? target, out (uint Bottom, int Height)? value)
+    private bool TryLock(ITallStackWeakTarget? target, long generation, out (uint Bottom, int Height)? value)
     {
         if (target is null) { value = null; return true; }
-        if (target.TryLock(out value)) return true;
+        bool available = target.TryLock(out value);
+        if (!HostExecutionVersionCurrent(generation)) return false;
+        if (available) return true;
         MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack selected weak lock unavailable at 005ECD8C/005ECE48"); return false;
     }
     private bool RunnableCore(long generation)
@@ -90,7 +92,7 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
         if (!HostExecutionVersionCurrent(generation)) return false;
         state.Target = target;
         state.TargetKnown = true;
-        if (!TryLock(target, out var locked)) return false;
+        if (!TryLock(target, generation, out var locked)) return false;
         if (locked is not {} stack || stack.Height < _minimum) return false;
         var bottom = _m.World.GetLocatedObjectByIdHelper(stack.Bottom);
         if (bottom is null) return false;
@@ -106,13 +108,15 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
         var state = ResolveState();
         if (state is null || !state.TargetKnown)
         { MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack Init has no supplied canonical weak target; host admission unavailable"); InitFailed = true; return; }
-        if (!TryLock(state.Target, out var locked)) { InitFailed = true; return; }
+        if (!TryLock(state.Target, generation, out var locked))
+        { if (HostExecutionVersionCurrent(generation)) InitFailed = true; return; }
         if (locked is not {} stack || _m.World.GetLocatedObjectByIdHelper(stack.Bottom) is not {} bottom)
         { InitFailed = true; return; }
         state.StoredPose?.Dispose();
         state.StoredPose = new Pose3d(bottom.NativePose);
         state.HasStoredPose = true;
-        SetStateName("DebugState::LookingUpAndDown");
+        if (!SetStateName("DebugState::LookingUpAndDown", () => HostExecutionVersionCurrent(generation))) return;
+        if (!HostExecutionVersionCurrent(generation)) return;
         var sequence = new CompoundActionSequential(() => _robot.Engine.Timer.SecondsF);
         sequence.SeedNativeEmptyCompletion();
         // 00547F14..28 initializes speed 15, acceleration 20, duration 0; the
@@ -129,7 +133,8 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
     private void Disappointment(long generation)
     {
         if (!HostExecutionVersionCurrent(generation)) return;
-        SetStateName("DebugState::Disapiontment");
+        if (!SetStateName("DebugState::Disapiontment", () => HostExecutionVersionCurrent(generation))) return;
+        if (!HostExecutionVersionCurrent(generation)) return;
         StartActing(new TriggerAnimationAction(_m.Robot, new(AnimationTrigger.CantHandleTallStack, 1, true, 0, 60f, false)), null, () => HostExecutionVersionCurrent(generation));
     }
     protected override void OnStop(BehaviorStopReason reason)
