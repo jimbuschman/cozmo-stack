@@ -1,0 +1,39 @@
+{
+  "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
+  "state": "READ OPEN; BUILD NOT RELEASED",
+  "managerStart": "3b0f97b051d7f6c3913cf5c3eb56f714307c2b1d",
+  "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
+  "ordinaryHandoff": "0a8626dc6480df5e4638c0993582086f6747c0e5",
+  "baseM13010Status": "IMPLEMENTATION_GAP; wholeclosureproposed notformal",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/spark_workout_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "builder",
+      "agent": "/root/spark_workout_build",
+      "modelRequested": "DEFAULT overrideomitted",
+      "effortRequested": "DEFAULT overrideomitted",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/spark_workout_review",
+      "modelRequested": "DEFAULT overrideomitted",
+      "effortRequested": "DEFAULT overrideomitted",
+      "fork": "none"
+    }
+  ],
+  "actualBackend": "unobserved; operator reports defaultTerra",
+  "dotnetLease": "C exclusive preparation: ONEofflinecache-onlyrestoreall5, no build/test/code",
+  "reviewerFixRounds": 0,
+  "compilerCorrections": 0,
+  "postTestHarnessCorrections": 0,
+  "sourceQuestions": [],
+  "officialChanges": false,
+  "hardwareRun": false
+}
