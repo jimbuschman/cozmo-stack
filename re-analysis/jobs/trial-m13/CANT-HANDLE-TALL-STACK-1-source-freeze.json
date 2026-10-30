@@ -33,7 +33,8 @@
   "missing": [
     "actual automatic execution caller",
     "canonical weak target last-owner release/expiry backing, neither GC nor snapshot-membership assumed",
-    "existing generic pose/action/compound/completion helpers and precise recipient retirement"
+    "existing generic pose/action/compound/completion helpers and precise recipient retirement",
+    "configured runtime-to-existing recipient/data-owner context join absent; explicit supplied input, no default first-slot assumption"
   ],
   "prep": {
     "cacheOnlyRestoreAll5": 0,
@@ -66,5 +67,36 @@
       "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\tall-stack-source-originals\\20261030-cant-handle-tall-stack-1-source-codex-check.md"
     }
   ],
-  "resumption": "Earlier runtime handles unavailable; same requested configurations for replacement workers; pre-existing source/preparation retained."
+  "resumption": "Earlier runtime handles unavailable; same requested configurations for replacement workers; pre-existing source/preparation retained.",
+  "resumedWorkers": [
+    {
+      "role": "reader",
+      "agent": "/root/tall_stack_read_resume",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "builder",
+      "agent": "/root/tall_stack_build_resume",
+      "modelRequested": "DEFAULT (override omitted)",
+      "effortRequested": "DEFAULT (override omitted)",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/tall_stack_review_resume",
+      "modelRequested": "DEFAULT (override omitted)",
+      "effortRequested": "DEFAULT (override omitted)",
+      "fork": "none"
+    }
+  ],
+  "builderPrepOnlyTurn": "Initial resumption ended without implementation due known lifetime/join questions; SAME worker continued, no model switch, no draft/review/fix round.",
+  "managedInputSupplement": {
+    "path": "re-analysis/research/20261030-cant-handle-tall-stack-1-managed-input-supplement.md",
+    "actualOriginalSha256": "bf5eec3a96e8f26f8e162699d7ac4f96be60fb380c301f164af1175e59beba16",
+    "canonicalLfSha256": "bf5eec3a96e8f26f8e162699d7ac4f96be60fb380c301f164af1175e59beba16",
+    "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\tall-stack-source-originals\\20261030-cant-handle-tall-stack-1-managed-input-supplement.md",
+    "scope": "Candidate managed interfaces only; no new native claim."
+  }
 }
