@@ -1,0 +1,3478 @@
+{
+  "job": "CUBE-LIFT-WORKOUT-1",
+  "state": "CURRENT EXACT862 PASS",
+  "passed": 862,
+  "failed": 0,
+  "skipped": 0,
+  "classes": 32,
+  "namesParametersOutcomesMultiplicityMatched": true,
+  "inputsUnchanged": 3755,
+  "immutableBinsUnchanged": 187,
+  "unfilteredBinCount": 188,
+  "testOutputPath": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\bin\\Debug\\net9.0\\.scratch\\sparks-stack-build\\negative-vision-producer.log",
+  "outputHashesByPhase": [
+    "43D8CDD44AF7C603EC550F68CB008DDA01C04690587D84769DBDE35496DC0109",
+    "B4A96CB6B5EA549DA38E042BE0425D0D7C244AF870FB5CFDB8A7D502AAC0E02D",
+    "B4A96CB6B5EA549DA38E042BE0425D0D7C244AF870FB5CFDB8A7D502AAC0E02D",
+    "A2DAB599CFAA3A3BC6EF939628363AAFEFFB3AD596AA4B20815237C7D0608904"
+  ],
+  "outputIsNotInput": "SparksStackNativeTests233 writer; no repository reader; rawsnapshotsretained",
+  "referenceTrxSha256": "497800d824d48d559202f0b2ba592c000a981f4bacfd55dcfa009bedaaca4002",
+  "replayTrxSha256": "a3368b0706be9bbeb0d615fd7864a211db62105ee311d59ad215aad304d013a5",
+  "replayLogSha256": "486fe4738f8524b22eca59847ee689db5f74feb8478e916ebc79beb622bed163",
+  "actualDotnetPrivilege": "require_escalated",
+  "shutdownExit": 0,
+  "retainedNativePost": [],
+  "preflight": "Actual CIMguard reportedexecuted; empty pipeline did not write snapshotfile. No retainedpreflightartifact claimed or reconstructed.",
+  "checkout": "Onlynewuntrackedfinal-builder-report duringreplay outside3755inputs; no trackedchanges",
+  "namedResults": [
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_OnlyTheFourFlatSideFacePosesSurviveInFaceOrder(type: Flipping)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHeadAndLiftRestoreRunsEvenWhenNothingIsParked",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 8, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.SuppliedManagerChoiceRunsRegularPipelineBothUnlockModesAndReportsNeeds42(carrying: True, rollUnlocked: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AMiddleCancelClearsOnlyTheTop",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.NestedWorkoutUnlockActivatesAThenBThenAWithIndependentOuterSnapshot(eighties: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P2_TheBoolOverloadInstallsTheIgnorePredicate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.ASlowMotorSettleLogsTheEnginesWarning",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksPutDownNativeTests.AliasResultlessCallbacksAcceptFailureAndInterruptedCallbackCannotReleaseNewCarry",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.FailedDockBypassesUnknownLoadPrefixAndHeightUsesCapturedMainParentFrame",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 2, expected: 4039654992)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.OrdinaryEntryInstallsActualDefaultBestStackTieOrderAndSignedValidOrdering",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AStandaloneWaitIsTheCurrentActionAndAParallelPairIsOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AManagerStartedBehaviourDelegatesAndItsStopStopsTheHelperWithoutCallback",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T8_NonRunningQueueResultIsZeroOnlyForSuccessAndCancelled(fullResult: 33554432, expected: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_002_ThePathIdWrapsFromFFFFToZero",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_035_GetPossiblePosesReturnsTheNonZeroResults",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.ReactToSparkedTriggersSparkPendingAndCompletesAtOnce",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.UndefinedPublicPayloadStillDeliversDefinedFlagAndScalarLocally",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_GetPreActionPosesAppliesTheValidityFilterAndTheObstacles",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_030_CheckIfDoneReportsPlacementGoalNotFree",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RobotStoppedCliffGateKeepsRequestCancelBroadcastOrder(enabled: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheFirstUpdateRunsInitAndOnlyRunsInternalWhenThereIsNoDelegate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.DisposedCantCannotStartUpstreamHeadWaitsOrAcquireCompletionLease",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_QuadrilateralIntersectsCornersEdgesAndTouching",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeLifecycleGuardAndCopySubscriptionLifetimeStaySeparateFromPublicSentinel(external: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE010_ADisposedManipulationSystemStopsTouchingTheVisionSystem",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformFailuresHaveTheirOwnResults",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_011_ACheckAtEndOfZeroReturnsSuccessBeforeLookingForTheObject",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.UpAxisTiesUnorderedAndNegativePiUseTheCheckedBranches",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 1065353216, y: 1065353217, z: 1065353218, expected: 3)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.PlacementInitPortsBothPreconditionDiagnosticsAndTheErrorFlag",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_WaitForImagesCountsMatchingImagesAfterTheTimestamp",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_ComputeTakesItsPosesFromGetPreActionPoses",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 9, state: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: True, after: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_OnlyTheFourFlatSideFacePosesSurviveInFaceOrder(type: PlaceOnGround)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.SetterRawAndClampBranchesAreIndependentPerAxis",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.StopEventsUseExactStateMappingAndIntegerDuration(state: 2, active: False, suffix: \"success\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 0, y: 0, z: 0, expected: -1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.StackProducerUsesTheStoredTargetTupleAndRequiresTheCarriedTopId(carried: 7, creates: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.CompositeOwnerRetainsChildLeaseThroughStopReuseAndDisposesIt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheConstructorStopsCheckingPreDockPosesForAnyNonTinyOffset(a: 1.0000000000000001E-05, b: 0, checksPreDockPoses: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheLegacyConstructorKeepsThePreActionCheckAndTheDefaultDockingMethod",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 1, state: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_TheLastFacePoseActionIsATurnTowardsFaceActionWithFaceIdZero",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AStatusThatIsNeither0Nor2RunsNoCallbackButStillClearsThem",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: 100, oy: 50, valid: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: False, after: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.QueuedTurnUsesLiveMainCalibratedHeadAndActualVisionCalibrationWithoutHistory",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformMapsTheOffsetsByTheBlocksAlignment(psi: 1.5707963267948966, expectA: 5, expectB: 10)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q14_NowAndResumeInterruptsCurrentToInterruptedState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.UniquenessUtilityDoesNotAddARunnableGate(basis: 7, stat: 8, top: 7, unique: False, runnable: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.ActualPayloadGetterOverwritesTargetWordZeroWithTheActualCarryingSet",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.NameReassignmentAndLoggingByteFollowEachAdd",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.DisabledPreactionUsesCurrentObservedMarkersAndRealVisualPrefix",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.AlignC5SentinelReturnsBeforePayloadAndWithoutAnAnimationLookup",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_InitWithAPoseStartsStateZeroAndLocksTracks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheCarryLiftIsQueuedByARunningTickWithin40mmInThreeDimensions(cubeX: 39, queued: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T5_QueueIsErasedOnlyWhenEmpty",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_024_TheLivePathReturnsSuccessThroughTheEndLifecycle",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RobotStoppedCliffGateKeepsRequestCancelBroadcastOrder(enabled: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_ACancellingHelperStaysAndEverythingAboveItIsStopped",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SmartRemoveIdleAnimationWithoutAnIdleRaisesAVerifyFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheGatesAroundTheHelperTick",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.HiccupIsTheConfigBuiltPlayAnimAndPlaysTheHiccupTriggerOnce",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.DeletedTargetLogCallbacksDrainAfterReleasingTheActionGate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.SuppliedManagerChoiceRunsRegularPipelineBothUnlockModesAndReportsNeeds42(carrying: False, rollUnlocked: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheLoaderReadsRecursivelySkipsEmptyAndKeepsTheFirstDuplicate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.TrueSayNameUsesActualVerifiedUnnamedPathOrFailsAtNamedProviderFrontier(named: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerContactsActionFailsWhileStillOnTheContacts",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.AnyInitialCallbackFailureStillBuildsLookAndFinalFailureReleasesCurrentCarry",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AWorldOriginChangeFailsEveryHelperAboveTheBottomOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ClassOrdinaryAndHardParametersUseNativeHelperAndZeroCtorFaceChildren(hard: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeRunsCustomUndoInReverseOrder",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_030_TheApproachAngleHelperPicksTheAxisArm",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_TheObjectOnLiftUsesTheThreeDimensionalMarkerNormAndKeepsTheRotation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RobotOwnsTwoInitiallyInactiveClientsAndApiPreservesAllPayloadBits",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_DelegateToHelperOnANonEmptyStackReturnsFalseAfterOverwritingBothCallbacks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieNoAnimationFixtureDriveCompletionDoesNotFabricateFailedAbort",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q1_NullActionAndBadPositionReturnApiOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AStampOfZeroOrLessIsNotPenalised",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_DelegateToHelperPushesRunsTheFirstUpdateAndStoresTheOriginAfterIt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheWeakReferenceIsLiveWhileAnOwnerIsLeft",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.TheNearbySearchBacksOffAndLooksBothWays",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.UnavailableInitialPreactionStopsOnlyCapturedHelperAndDoesNotStopReusedOwner(reuse: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundStoresBeforeUnsignedBoundsButMismatchedUnlockDoesNotStore",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.ChooserUsesOriginalMainRelativeThreeDimensionalNearestAndOneSharedDraw",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_TheApproachAngleFilterErasesAtOrBeyondPointSevenEightFive",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_TheHistoryDoesNotMixOrigins",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.CarriedInitSnapshotsCountsAndFailureContinuesWithCurrentWorkoutTrigger",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PickupUsesActualIntentionTargetAndHelperParametersWithoutSyntheticSuccess",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.WaitHasStrictTimestampModeCountAndRetainsSubscriptionUntilDestructionOnCancel",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_ReadyAtTheGoalIsSuccessAndTheEndAnimationCanKeepItRunning",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_ANanDistanceBuildsANanGoalAndIsAVisibleStub",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_FlipBlockInitCallsGetPreActionPosesWithFlagAAndActsOnTheResultOnly",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.NegativeDurationTruncatesBeforeTheErrorAndStillEmits(start: 1.5, error: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_EveryFrameOfAPlayingSongCarriesSound",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_017_InitInternalRunsAfterThePreActionCheck",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 3, expected: 4039654993)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q6_QueueNowWithPendingDeletesCurrentWithoutCancel",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_TheConstructorsSetTheDocumentedFieldsAndDefaults",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_TheFacingTestIsStrictAndWrapAware",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.ShippedConfiguredPickupApproachesFromOutsidePredockThenTurnsDocksAndDeliversOriginalReports",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M15_012_AFailedLookDownDriveEndsTheCompoundBeforeTheImageWaitAndTheKeepAlive",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.BeforeOrAfterFailureIsNotIgnoredAndWrappedFullProxySurvivesRetirement(beforeFailure: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.TimedWaitUsesEngineBinary32StrictDeadlineAndReinitRatherThanRobotOrHostClock",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ConfiguredFactoryUsesExactStackInstanceAndKnownGetterWithoutOrdinarySubstitution",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.UniquenessUtilityDoesNotAddARunnableGate(basis: 7, stat: 8, top: 4294967295, unique: True, runnable: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ALockedTrackFailsTheActionAndIsNotRetried",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.EitherGeometryFailureBreaksBeforeTheNextCandidate(conversionFailure: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularValidityUsesCurrentModeAndOnlyToleratesTheSavedTopAboveBottom(rollUnlocked: False, related: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheGraphEvaluatorIsFloatAndReturnsTheLeftNodeForATinySpan",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_ZeroDistanceIsNotAnError(distance: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_030_TheCloneKeepsNothingSoTheInnerChainDrivesInsteadOfAnswering0x03000004",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieDrivesDocksAndReEnablesStopOnCliff",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.StoredPoseTurnPrecedesComparisonReparentAndParentCancellationPreventsMutation(cancelParent: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 0, y: 0, z: 3212836864, expected: -3)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheBehaviourApiStopsFirstAndThenWritesTheSuppressionWindow",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PublicLiftCountUsesMeanAndRoundAwayFromZero",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.Unrelated44WithUnknownInitVisibilityStopsOnlyOwnedSearchWithoutGateInversionOrFalseSuccess",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AFaceFoundInTheSearchStartsTheTurnWithNoCallbackAndGoesToState3",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE009_MoodDecaysOnOrdinaryStackTicks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 7, state: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.NativeFactoryPositioningTransitionsBeforeWaitAndActualProcessedImagesCompleteIt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S6_RetryDecrementsResetsChildrenAndReturnsRunning",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R4_RetryResetsTheCompoundAndReturnsRunning",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_ALostObjectEndsARunningFlipWithBadObjectAndNoPathIsSentAfterwards",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_TheSuccessByteIsStoredBeforeTheBranchAndTheAttachReturnIsDiscarded",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_021_TheUnreadHeadAngleLookupsAreRefusedWhenNoSeamIsSupplied",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeCopyAlwaysCreatesNewSubscriptionsBeforeRetiringPreviousImpl",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.CantInteractPreservesRunningAndHasNoFailureMarkOrOwnedAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_TheCubeOnTopFollowsAtOnceWhenThePickupResultArrives",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeReleasesEverythingItTook",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_TurnTowardsPoseInitPanWithinBeyondAndWithoutAMaxTurn",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSmartHelpersRefuseADoubleAcquire",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.Unavailable44BeforeActionPublicationRetiresNewOwnedSequenceWithoutChildMotionOrRng",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.NativeHelperPrecheckSelectsThroughBothBranchesAndUsesFloatTimestampFreshness(type: PlaceRelative)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.StageDiagnosticReentryCannotOverwriteReplacementStageOrAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PutDownUsesSentinelForManualOtherwiseChecksAndSearches(sentinel: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ConfiguredActivityRunsActualPickupPlacementVerifyLiftAndReports(carrying: True, soft: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.C4_CancelByType",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativeHeightUsesRawSyncedLiftEvenWhenOriginIsRejected",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.UniquenessUtilityDoesNotAddARunnableGate(basis: 7, stat: 7, top: 4294967295, unique: False, runnable: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q2_DisabledGateRejectsExternalTagRangesAndBadTag",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.SuppliedWeakLockReentryCannotOverwriteReplacement(duringInit: False, oldLockUnavailable: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RetryDiagnosticsPrecedeReset(parallel: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.WorldCachesStoreBeforePostsAndActivityTwoSkipsAllWorldCacheUpdates",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimWithNoTriggersIsNotRunnable",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S7_MoveToNextDelayHoldsTheNextChildUntilTheDeadline",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ActualDirectorDefersOriginalScalarUntilResponseRegardlessOfResponseResult(result: 33554432, trigger: 505)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_InitCopiesTheMaxSpeedAccelerationAndHeadSpeedBytes",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.ExistingBaseWithoutCarryDelegatesStoredTopWithOneUseTrigger",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.PlaceHelperResponseWritesOnlyTheCheckedStatusOrWhiteboard(result: 0, status: 2)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.ForceHelperCapturesMainOnceAndExcludesOnlyThatOriginalPredockPose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 13, state: 670611050)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: 300, oy: 0, valid: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimBehaviourWithSeveralTriggersTakesThemAll",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_FailedIsPathPlanningFailedWithNoEndAnimation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.SuppliedFailedPlaceResponseRunsActualRecoveryGroundAndNextPickup",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativeDriveNoPreactionFailureMarksWhiteboardOnlyWithoutForce(force: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheRotationConeIsThirtyDegrees(tiltDegrees: 29.899999999999999, valid: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.InheritedAdmissionRejectsOffTreadsAllowsAnyCarriedIdAndRetainsUnlock",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.RollPredicateUsesPoseStateAndActualRootAxis(state: Known, expected: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.TopFourUsesCarriedPointerLocalAxisAndTheLiteralNoCarryUnlockDirection",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.CompletedChildrenGetTheExactAlreadyPreppedCount(ignored: True, expected: 2)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ConfiguredActivityRunsActualPickupPlacementVerifyLiftAndReports(carrying: False, soft: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.HandlerIsolationContinuesToTheSecondClientAfterARecipientThrows",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_NothingRunsBeforeTheFirstFullState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P1_CompoundRunnerTypeMaskAndNullChild",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_TheReturnByteSaysACacheVectorWasGenerated",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T5_FirstNonZeroQueueResultIsRetained",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_ACarriedObjectSurvivesTheTreadsBoundaryDelocalization",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.PublicStepReentryCannotOverwriteReplacement(duringDisappointment: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.EmptyCachesEnterInheritedBaseWithActualDerivedClassIdentity(carried: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_ComputingPathTimesOutAfterFourSecondsByAbortingThePath",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ReactToOnChargerPlaysThenAnnouncesSleepAndDisconnectOnItsTimers",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_037_TheCompoundIsVerifyThenTurnWithTheRecordedArguments",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheTrackLocksAreReleasedInKeyOrderOnTheWire",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NoCarryLookSkipsBothPositioningAndWaitAndStopSuppressesStaleRelease",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_035_TheInstalledFunctionLeavesTheFlipFlagAtOneAndSelectsClosestOnlyForL2",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.PlaceHelperAllowsThreeAttemptsThenMarksTheTargetAndFails",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE001_ALiveBodyKeyframeIsStoppedAtItsDurationWithNobodyDrivingTheScheduler",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheShippedBehaviorObjectivesParse",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_TheCallerToleranceConstants",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativePathOwnedAllGoalProducerRetainsOriginalIdAfterRejectionAndRevalidation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.NegativeDurationTruncatesBeforeTheErrorAndStillEmits(start: 0.5, error: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q15_RefusedInterruptFallsBackToQueueNow",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.NativeHelperPrecheckSelectsThroughBothBranchesAndUsesFloatTimestampFreshness(type: Docking)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PickupHelperOnlyContinuesPostLiftOnSuccess(success: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularValidityUsesCurrentModeAndOnlyToleratesTheSavedTopAboveBottom(rollUnlocked: True, related: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.NearbyUsesSixSharedDrawsSevenRealChildrenNegativeDefaultSpeedAndRetainsPreinitLatch",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.NoExternalInterfaceStillSubscribesToPublicStateAndInitDoesNotReplaceIt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 5, state: 296159617)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T8_NonRunningQueueResultIsZeroOnlyForSuccessAndCancelled(fullResult: 0, expected: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_WithoutTheChildrenBodiesInitIsRefused",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.ResetPreservesTargetsFlagAndOptionalCallback",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M12_047_EmptyStackStopSkipsTheUndefinedReadAndKeepsState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.SuppliedWeakLockReentryCannotOverwriteReplacement(duringInit: True, oldLockUnavailable: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_GetObstaclesKeepsTheObjectsThatOverlapTheRobotsHeightBand",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheEngineTickRunsTheHelperStackBeforeTheActionListAndTheStreamer",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RawDockingBitIsWrittenBeforeUnknownOriginRejectionAndChargerRecipient",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_TheReferenceObjectIsIgnored",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.ActualBoundMoodCompletionOccursBeforeCurrentWorkoutAdvances",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheConstructorStopsCheckingPreDockPosesForAnyNonTinyOffset(a: 0, b: -1.0000000000000001E-05, checksPreDockPoses: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.CompletionReloadsCurrentAfterReentryAndGuardProtectsReplacement",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 4, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.ReinitReplacesRobotHandlesAppendsExternalHandlesAndRetiresInSourceOrder",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ApproachIsFirstBottomMarkerPoseAndFloatAtan2WithSourceVectorOrder",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheRepetitionPenaltySuppressionIsAtTheScoringSiteNotInTheGraph",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheBumpThresholdsAreStrict(which: \"accel\", bits: 1165623296, bump: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSystemsObstaclesIgnoreTheCarriedObject",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_017_WithNoDockActionTheLiftMessagesHaveNoHandler",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.SelectionHeightUsesSavedPoseWithRespectToActualMainParent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.MissingInternalFlagDoesNotGuessSearchDelegation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.StacksBasesAndPyramidsAreRecognisedFromCubePoses",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_035_AKnownFaceDecidesBetweenTheTwoNearestPoses",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 9, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.UnsetSeamsAreReportedMissing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.TurnRunnerUsesItsCurrentSingleTagAndRetiresBothOriginalAndChangedReservations",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopActingHonoursItsViaCallbackAndKeepActionParameters",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonPositiveLoopCountOnTheLoopPathPlaysNothing(loops: -1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheAlignmentCompareIsStrict",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheRotationConeIsThirtyDegrees(tiltDegrees: 0, valid: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_001_TheThresholdIsComputedInBinary32",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ActualFirmwareFailureRetriesBeforeSuccessfulPlacement",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_033_TheZRotatedPointKeepsXyAndYawAndAddsTheExtentTimesF",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.BasePlacementCandidateOrderAndFailedDistanceRetentionUseExistingNativeGeometry",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: 100, oy: 40, valid: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.NearbySpecificTargetNormalCompletionFailsAfterRealBackupHeadAndRelativeTurns",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_010_TrackDeltaWithoutTheHistoryRingBufferIsRefused",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.FinishCurrentBehaviorsSecondArgumentIsTryToResume",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerDoesNotSuppressThePenaltyOnAnInterruptedStop",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T6_WatcherParentActionUpdatingRunsBeforeRunnerUpdate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.PublicStepReentryCannotOverwriteReplacement(duringDisappointment: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.FailedHeadChildEndsSequenceAndStillRunsDisappointment",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedInitLeavesItsScopeHeldUntilTheNextStop",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeRecoveryTests.ManagerStopRetiresOwnedRollOnlyKeepsUnrelatedActionAndRetainedStateLights",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_NotAtTheGoalIsFailedTraversingOrTheInitialResultByThePathIds",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_TheCallbackSettersInstallRegardlessOfSayNameAndOnlyLogWhenItIsZero",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.ClearReloadsEndAfterStopAndEnforcesExactlyOneThousandPasses",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.NativeUnlockWritersAndNeedDirtyGatePublishOnlyAtTheCheckedGates",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_TheCameraFieldsAndTheTwentyMillimetreReductionGiveTheClampedShift",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_ANoFrameWaitEndsNoFaceWhenFlaggedAndSuccessWhenNot",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_ThePoseIsErasedBelowWidthOverT",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 7, expectedPaths: 26)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheConstructorStoresItsArguments",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RetryDiagnosticsPrecedeReset(parallel: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.MixedRealWorkerFrameUsesHistoricalCameraForMarkersWithoutReplacingExistingFaceCameraInput",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.StoppingNativeApproachRetiresOwnedPlanAndChildrenWhileUnrelatedParallelSurvives",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_ARootMismatchLeavesTheLocalAtZeroAndQueuesTheCarryLift",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheFactoryTableIsTheExtractionsTable",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AFreshHelperIsCompleteWithNothingRun",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.SharedCornersUsePhysicalTieOrderAndMidpointUsesFullHeight",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S3_AnEmptySequenceReturnsSuccessWithoutCallbacks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 3, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_037_TheDefaultVerifyNoObjectStubIsCountedAndTraced",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_ATreadsBoundaryDelocalizesAndTakesTheOldFramesCoordinatesOutOfPlay",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheFlipDriveDistanceIsTheThreeDimensionalNorm",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.EntriesFourTwoAreIndependentAndDependencyPrecedesTheirClockGate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.FullCachePersistentFlagReactsThroughRealExternalInterfaceBeforeLiftSafe",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.QueuedPickupUsesRealMotorImagesDockFlagRawLoadAndCarryCompletion",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ActualConfiguredManagerCacheHelperDriveDockVerifyCallbackAndNeedsPipeline",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.CheckForStackAtIntervalLooksAboveTheBlockAndWaitsOutTheInterval",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 11, state: 670611050)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S8_S9_ZeroDelayTicksTwoChildrenOnTheSameTickAndTheThirdNext",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_FreeplayStackWiresTheAIComponentIntoTheEngineTick",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q10_NextWithCurrentAndTwoPendingInsertsBeforeSecond",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.StopEventPrecedesActiveActionCancellationAndVirtualTail(active: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularValidityUsesCurrentModeAndOnlyToleratesTheSavedTopAboveBottom(rollUnlocked: False, related: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 10, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.TheSearchRunsItsThreeStatesAndThenGivesUp",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.OwnedVerifyUsesActualLocal44IdAndSpecificObservedMarkerBeforeTerminalParallelFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerResumePathPreservesTheResumeCounter",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.ObservationOwnsRealDriveThenLiftSafeActionAndCancellationDispatchesActualRecipient",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonPositiveLoopCountOnTheLoopPathPlaysNothing(loops: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_005_ThePlaceDockCarriesPlus0xBBAndPlus0x95",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_ATiltedObstacleIsTheLabelledPlanarStandIn",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.BottomTwoUsesLocalAxisAfterSharedTopExclusionAndCanStack",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AddBeaconAppendsAndRaisesTheRenderSeam",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.InitRunsBeforeTheManagerStoresTheRunningInfo",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.ConfiguredFactoryConstructsIndependentBaseAndAbsentProducersNeverMeanEmpty",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: 100, oy: -50, valid: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE007_FlatGroundLeavesNoEdgeInTheMap",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M15_012_WithACarriedObjectTheLookAfterPlaceBuildsHeadAndAMinusEightyDrive",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheConstructorStopsCheckingPreDockPosesForAnyNonTinyOffset(a: 20, b: 20, checksPreDockPoses: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularExhaustionKeepsThreeCounterUsesTwoDocksAndSourceValidityCancellation(rollUnlocked: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T7_ExactRunningRetainsTheCurrent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveToPoseUsesTheLatticePlannerAndTheFakeRobotArrives",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 10, state: 2890913445)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_ACubeOnTopIsRecordedDirtyAndFollowsTheCarriedOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_028_TheLegacyPlaceRelKeepsTheEarlierStandInAndNeverWaitsForAVisibleMarker",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_OnlyTheFourFlatSideFacePosesSurviveInFaceOrder(type: PlaceRelative)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.AllThreeClassStateCapabilitiesRefuse",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AHelperStillOwnedAfterStopsOwnStopIsStoppedAgainByStopActingWithItsLog",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ASingleTriggerTimesOutAtSixtySecondsUnlessItLoopsForever",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: -40, oy: 0, valid: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.VerifyTailQueriesAllCurrentTypeMatchesAndRepairsDifferentIdBeforeActualUnset(match: False, differentId: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.UnlockPrecedesRefreshAndExpiredWeakRefusesInit",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TurningPrimitivesBecomeLineAndArcSegmentsThatEndOnTheLattice",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.ReinitializationKeepsTheActualLiveMainParentAfterRobotMovement",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheConstructorStopsCheckingPreDockPosesForAnyNonTinyOffset(a: 0, b: 0, checksPreDockPoses: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_023_TheFootprintStubStillThrowsForTiltedCubesAndOtherClasses",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.RegisteringAfterDisposalStillReleases",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_030_TheConstructorPicksActionTypeTwoOrOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.ActualAudioClientsUseRobotOwnedWorkoutDecisionAndPublishStage",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_ALiftFailureReturnsTheEnginesResultCode",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheShippedNavigationSetHasTwentyFourBehavioursWithDistinctIds",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 12, state: 670611050)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AlignWithObjectUsesTheEnginesAlignmentTypeTable",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_ANullOrCarriedObjectIsBadObject",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P7_A_RetainedChildReTakesItsTracksOnTeardown",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.SameStampRoundedSqrtTieRetainsCachedPoseEvenWhenSquaredDistanceIsLarger",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteMakesUpdateReturnTwoBeforeUpdateInternal",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheSuccessCallbackRunsAfterTheStoredCallbacksAreClearedAndMayStartANewStack",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHeadCalibrationWaitRunsToThirtySeconds",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 3212836864, y: 1065353216, z: 1065353216, expected: -1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_017_TheDockMarkerIsTheClosestPreActionPosesMarker",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.MissingCanonicalWorkoutDoesNotInventCountsOrCompletion",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.BaseOffsetsUseAllFourCandidatesAndAllOccupiedKeepsTheFirst",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RealOwnedRetirementAbortsActiveRetainedRequestBeforeLatePickupCannotAttach",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.FiveRealChildrenFailureStillStartsDisappointmentAndDelocalizeDoesNotCancel",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.ActualManagerAvailabilityGuardRetainsPriorActionBeforeUnimplementedPickupExecution",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AChargerInViewIsLocalisedWithoutBeingConnected",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T8_NonRunningQueueResultIsZeroOnlyForSuccessAndCancelled(fullResult: 50331672, expected: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.RadiansClampUsesEpsilonAndCopiesTheAlreadyConstructedOutput(lower: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.InitRechecksBeforeStartingAndAnUnreadDriveDoesNotCreateAStandInAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_TheUnderneathSearchLooksBelowAndTheOnTopSearchDoesNotFindTheCubeBelow",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_TheFoundObjectTestUsesTheCallersToleranceAndHalfTheDimensions",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.PlaceHelperResponseWritesOnlyTheCheckedStatusOrWhiteboard(result: 50331664, status: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.CantHandleTallStackLooksDownThenUpThenSulks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ABehaviourThatJustRanLosesToOneThatHasNot",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_StopHelperWithoutCallbackActsOnlyForTheBottomHelperAndKeepsTheCallbacks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.EmptyCachesEnterInheritedBaseWithActualDerivedClassIdentity(carried: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.SequentialFailureAndIgnoreDiagnosticsMatchTheCheckedFormats(ignored: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_AStrictlyNegativeDistanceIsNoDistanceSet(distance: -0.00100000005)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.OutOfRangeGuardAndFeedingReadsSkipOnlyTheirUndefinedTails",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.QueuedLastFaceHasOneCoreTagAndRealWaitPrioritySignedFaceAndFineTune",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE007_AFrameWithAGroundEdgeReachesTheMapThroughTheProductionPath",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheBBTestReadsThePostTransformB",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.UnavailableInitialPreactionStopsOnlyCapturedHelperAndDoesNotStopReusedOwner(reuse: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_StopActingOnABehaviourThreadAndTheEngineUpdateDoNotDeadlock",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ExhaustedActualAttemptsMarkFailureAndValidityMayStopRecovery",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheDelegateHandlersAreMovedAndTheFailurePathEmptiesTheSuccessHandler",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q12_InParallelChoosesLowestFreePositiveKey",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheFreeplayTickChecksReactionsBeforeTheActivityPick",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_AParameterPostedWhileTheRobotIsStalledStillReachesTheAudio",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheRotationConeIsThirtyDegrees(tiltDegrees: 30.100000000000001, valid: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 4, expected: 4039654998)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 2147483648, y: 0, z: 0, expected: -1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_TheTypeSixDriveGoesToThePointShortOfTheObject",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AfterPushingASubHelperTheNewTopUpdatesAgainInTheSameTickInEveryFrame",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P6_UnionIsReadBeforePrepAndCachedByTag",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularAssetStillUsesActualHardSparkInputsRatherThanForcingFalse(rollUnlocked: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.RollPredicateUsesPoseStateAndActualRootAxis(state: Dirty, expected: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 67108865, expected: \"failed\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheReactionLocksAreReleasedInNameOrder",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_TheGoalTestedIsGoalsAtTheIndex",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 2, state: 2320504975)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerRoutesAroundACubeInTheWay",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.QueuedRealAnimationProxyRetainsNameThroughDeletedWrappedActionAndActiveAfterFace",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_011_TheBeaconIsAddedAtTheFullRobotPose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheBumpThresholdsAreStrict(which: \"accel\", bits: 1165623297, bump: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.AnUnlocatedTargetEndsTheSearchAtOnce",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AFreshComponentHasAnEmptyStackNoCallbacksAndAFactory",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_TheInPositionByteAndTheTooFarResult",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_InitBuildsTheTurnAndTheHeadMoveFromTheFields",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.NativeCacheNeverBorrowsStandaloneFailureMemoryAndRetainsPriorPublicationOnUnknownOwner",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.SuppliedNonterminalResponseWritesOnlyItsSourceStateAndDoesNotRetry(result: 50331664)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.RealScopedLiftLoadStartsUnknownResetsAndUsesRawStoredTimestampEvenWhenOriginIsRejected",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_023_ATiltedOrNonCubeFootprintUsesTheLabelledPlanarStandInAndDoesNotThrow",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutConfigParsesAndScoresLiftsFromConfidence",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheChargerIsAPassiveObjectWithOneRectangularMarker",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.LoopRereadsTheReferencedIdsAfterSynchronousDelegation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.EitherGeometryFailureBreaksBeforeTheNextCandidate(conversionFailure: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_029_TheDriveToHelperFunctorRemovesTheMatchAndClearsInPosition",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.IsRunnableBaseConsumesTheRobotStateAndBehaviourGates",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisSeesFloatMatrixNarrowingBeforeDominance",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.InvalidCategoryRepeatsSameChildOnlyInParallel(parallel: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayIsRefusedWhileItsTracksAreLocked",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweepStepCountIsFloorNotCeil",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.OrdinaryFactoryUsesRobotOwnedShippedWorkoutAndSparkIsSeparate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativeSetGoalsCopiesFullRotationOrderAndEmptyAdmissionBeforePathMutation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.FistBumpRunsThroughTheFreeplayStack",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_012_CanStackNeedsTheHelperChecksAndTheHeightRule",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheCarryLiftRunsWhileTheApproachLiftHoldsTheTrackAndTakesNoLock",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M5_005_SeedZeroTakesOneEntropyWordAndUsesItEvenWhenItIsZero",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 1065353216, y: 1065353216, z: 1065353216, expected: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.SparkCancellationClearsTheClientFieldsWithoutAddingAnAudioStop",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.TheCompoundTicksThroughCozmoEngineUpdate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_017_InitInternalThenTheCompoundThenTheDock",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_019_TheErrorSignalClampIsTheBinary32FortyDegrees",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 1, expected: 4039654995)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AnUnknownAnimTriggerPushesZeroAndCountIsSkipped",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ActualDirectorDefersOriginalScalarUntilResponseRegardlessOfResponseResult(result: 67108867, trigger: 506)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE001_TheToolPathSendsNoDisableAnimTracks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheStatusValuesAre0Failure1Running2Complete",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ForgettingClearsThePenalty",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 14, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.M3_010_CheckedFloatInputReachesTheWireEncoderWithoutScaling",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativePathCustomProfileAndFailedStartDoNotDrawWhileNormalSuccessDrawsAfterStatusOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 12, expectedPaths: 25)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.AbortReturnsSendResultAndKeepsHostPendingAndActiveState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeCacheHasFourthObservationGateIndependentLifetimeAndOriginFallback",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.OwnersAreConstructedDockingThenCarryingAndRawDropSendsNothing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_010_ShouldPlayEightiesMusicScoresRollsAndCaches",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: 100, oy: 0, valid: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.LostTimerRequiresPreviouslyPresentBaseAndStrictDeadline",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteDiscardsTheCompletionCallback",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSelectionChooserReturnsTheRequestedBehaviourUntilItsNumRunsAreSpent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_017_SelectDockActionForAPlaceRel",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.RadiansClampUsesEpsilonAndCopiesTheAlreadyConstructedOutput(lower: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.C5_CancelByTagUsesCurrentTag",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.LockFailedChildHasNoAlreadyPreppedAtFirstStore",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.PublicPutDownUsesRealQueueWaitsForTwoImagesAfterParallelAndReleasesAfterActualKeepAlive",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S5_CallbacksRunBeforeTheIgnorePredicate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.AHandlesBeforeBInExactHandlerOrderAndNeitherActivatesWithMusicStateZero",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_033_RescaleKeepsAngleInMinusPiToPi",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.A7_IsEmptyIsTheMapCountNotCurrentOrPending",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheTickRunsTheActivityThenReactionsThenTheScoredChoice",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_035_TheDriveToFlipBlockPoseInstallersL3AndL4",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.ReentrantReleaseObserverCanQueueReplacementWithoutLosingPublicOwnerLease",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.C6_CancelBeforeTickKeepsIsEmptyFalseUntilT5Erases",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.PickupPreAnimationIsOrdinaryFirstChildAndConsumedBeforeExecutionOnlyOnce",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.PlaceBlockDrawsTwoCanonicalDoublesThenRealTurnAndGroundIgnoringTurnFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_037_TheObservedMarkerNearestTheRobotWinsWithAStrictCompare",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 15, state: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedChildEndsItsSequenceAndTheNextLoopStarts",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE010_ALateDisposalDoesNotClearTheReplacementsCallbacks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_001_TheFlippingCornerIsTheBinary32AtTheEnginesAddress",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_AnOriginChangeInTheStateStreamAloneDoesNotDelocalize",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: True, after: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.ActualConfiguredFactoryUsesNativeTargetAndActualUnlockState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularAssetStillUsesActualHardSparkInputsRatherThanForcingFalse(rollUnlocked: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.WaitsStartAfterTheirPrecedingHeadCompletes",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.NestedDriveUnavailableDiagnosticCannotStopReplacement",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SwitchToBehaviorBaseStillInitialisesWhenNotRunnable",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.ObservedObjectKeepsExposureHistoryCameraParentUntilRootCreationBoundary",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.FullCarrierSurvivesCurrentTagProxyPrepDestructionAndWatcherSnapshot",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_InitMapsSuccessAndRunningToZeroAndCheckIfDoneIsUnchanged",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_StopActingStopsAHelperOnlyWithoutCallbackAndOnlyWhenItIsLive",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheTickLooksTheObjectUpEveryTickAndReturnsTheCompoundsResult",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.PolicyIsOnlyNormalSelectedLocatedPlacementAndGroundUndefinedCarrierStaysUnavailable",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformMapsTheOffsetsByTheBlocksAlignment(psi: 3.1415926535897931, expectA: 10, expectB: -5)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformMapsTheOffsetsByTheBlocksAlignment(psi: -1.3207963267948966, expectA: -5, expectB: -10)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: -30, oy: 0, valid: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_NoFacePoseWithTheFlagSetIsNoFace0x0300000E",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.PanTiltSettersKeepOverrideFlagsOnZeroAndReachActualMotorChildren",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.NativeStopCancelsOwnedTagAndPreservesNestedReplacementOnlyWhenCallbackAdmitted(keep: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ChoosingNothingIsReportedRatherThanSilent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M5_017_ANonzeroEntropyWordIsTheSeedAndANonzeroSeedReadsNone",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.NativeStopCancelsOwnedTagAndPreservesNestedReplacementOnlyWhenCallbackAdmitted(keep: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 10, expected: 4056432581)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.E1TypedBodyRoutesToOneRobotPathChooserAcrossHostViewsAndRetiresWithOwner",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.FinishedActionReportsObjectiveNeedsOptionalObjectiveThenMoodAndAdvance",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_ACarriedObjectAddsNoDriveOrTurnsAndTheMaxTurnUsesTheEpsilon",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.IgnoredSequentialFailureUsesTheCapturedClock",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.AnyCarryEntersRealPlacementAndMissingStaticInvalidatesOnlyStatic",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_TheTypesAreWalkedInAscendingOrderAndTheCodeFilterApplies",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE009_EveryBehaviourIsOnTheStacksClock",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 9, expected: 4039655003)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_033_GetAngleAroundZaxisPicksTheBetterConditionedPair",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ATrackDeltaScorerSubtractsTheValueSixtyTicksAgoFromTheHistoryRing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_NoPosesIsNoPreActionPoses",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayedAnimationReleasesItsTrackLockWhenStopped",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformMapsTheOffsetsByTheBlocksAlignment(psi: 0.20000000000000001, expectA: -10, expectB: 5)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheNeedsWantsToRunStrategiesFollowTheNeedsState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_TheRelativeHeadAngleIsNormalisedByRadiansOperatorPlus",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.C1_TagCounterSeedIncrementAndWrap",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeDeletionPublishesBeforeEraseAndResetsVerifiedSoTheRealWaitStillRuns",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.ConfiguredNoCarryDelegatesActualPickupAndFailureAddsNoPlaceTransition",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q13_NowAndResumeWithNoCurrentAndPendingQueuesNow",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheConfigurationManagerTracksWhatTheWorldSeesAndWhenItFirstSawIt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_NoFacePoseWithTheFlagClearIsSuccessInStateThree",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.SuppliedManagerChoiceRunsRegularPipelineBothUnlockModesAndReportsNeeds42(carrying: False, rollUnlocked: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularRetargetKeepsTiesReplacesOnceAndStopsOnlyOwnedWork(rollUnlocked: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.PresentBaseStopsOnlyStrictlyAfterOrderedFloatDeadlineAndTailNeedsActualAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.OrderedFloatAccumulationAffectsRoundedCount",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveToObjectWithThePlannerIncludesTheAdmittedTargetPolygon",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.AppInputKeepsAReferenceToPublishedUnlockAcrossTheNestedStageEmission",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ActualCacheEntriesEnsureDependencyRetainBestAndGateSameFloatTime",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularSuppliedPlaceFailureBoundaryRunsGroundAndReturnsToPickup(rollUnlocked: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerResumesWithoutAnIsRunnablePreCheckAndAFailedResumeSwitchesToNothing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.FistBumpInitTakesItsLockTablePushesTheIdleTriggerAndStartsAtOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.DriveHelperCategoryFourResponseRetriesOnlyThreeConstructedAttempts",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.PlaceHelperResponseWritesOnlyTheCheckedStatusOrWhiteboard(result: 50331652, status: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 5, expected: 4039654999)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_ATiltedCubeIsFilteredByTheThirtyDegreeCone(pitchDegrees: 25, survivors: 4)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheCountIsTruncatedToOneByte",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PickupHelperOnlyContinuesPostLiftOnSuccess(success: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_011_TypeSixComparesTheDistanceToTheObjectOriginAgainstPlus0x84",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.StageOneRunsAllEightChildrenAndKnownTargetExhaustionClearsDefaultInMemoryWorld(target44DuringDeletion: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheBumpThresholdsAreStrict(which: \"lift\", bits: 1007614517, bump: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheEmotionScoreIsAFloatMeanWithAFloatVeto",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_OnlyTheFourFlatSideFacePosesSurviveInFaceOrder(type: Rolling)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.SourceResponseWrapperUsesRealParentTagActionListAndPreservesSuppliedOriginalPayload",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_035_TheFlipInstallersLeaveTheFlagZeroSoCheckIfDoneEnds0x04000001",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_ThePickedUpObjectHangsAtThePointBelowThePlateWithItsRotationKept",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_AfterTheWaitTheHandlerIsClosedAndAVerifiedFaceIsMarkedTurnedTowards",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.EmissionWalksTheLiveRingAndNestedEventsRetainTheirOwnState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.SnapshotRetainsDuplicatesTestsBaseFirstAndContinuesAfterDelegation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.ObservedClusterConsumerKeepsLocalBinary32SortKeyWhileProducingRootPose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.PlaceHelperResponseWritesOnlyTheCheckedStatusOrWhiteboard(result: 50331648, status: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_017_TheDockSquintIsAddedAfterDockWithObjectNotBefore",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q6_QueueNowAssignsIncomingRetries",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_StopWithFirstTrueStopsTheBehavioursActionButNotItsHelper",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.AxisChangeOnlyRetargetsWhenActualRobotDistanceIsStrictlyOver14400",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.TheSearchCarriesTheEnginesOwnBinary32Numbers",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheWireRoutes",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.LostCarriedObjectStopsAtNextActionCompletionWithoutRewards",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 0, y: 3212836864, z: 0, expected: -2)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ActualGroundRootKeepsScalarAndDefinedFieldsWhileUndefinedPublicPayloadIsWithheld(suppliedProcessedFramesOnly: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerStopsABehaviourOnlyWhileItsRunningFlagIsSet",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_007_AFailedDockSkipsTheMovingBlockAndEndsAtTheCarryCheck",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.PublicLeaseSurvivesStopReuseAndDisposeReleasesOnlyItsOwnBinding",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.HiddenGroundSceneDeletionComesFromAmbientNegativeVisionBeforeGroundClear",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_TheFoundObjectTestIsFootprintIntersection",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.NativeMarkerConstructionAndUnsignedTimestampQueryRetainEarlierNewerMarker",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.WithoutAbortTheSearchEndsInTheRetryAndLeftHangingPath",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_TheRunnableHooksHaveTheConstantDefaults",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheBumpThresholdsAreStrict(which: \"lift\", bits: 1007614518, bump: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_IsLocWithinBeaconIsThreeDimensionalAndMarginReduced",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_TheGotoObjectFactoryPicksTheConstructorByUsePreDockPose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.ActualNativePredicateRejectsObjectOnTopAndHeightRatherThanManualHistoryGate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ActualVisionDrainUpdatesCacheBeforeCountGatedLocal46(external: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_TheObjectDeltaGoalIsBuiltFromTheObjectTheRobotAndTheDistance",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ConfiguredFactoryUsesOneSignedContextDrawAndRealOwnedSequence",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.ActionConstructionReentryCannotReplaceNewRunWithOldSequence",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.PreactionClosestComparisonConvertsToMainParentAndPreservesOriginalOrdinal",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M12_007_AStillMovingObjectKeepsVerifyRunningUntilTheAllowanceThenFails",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.RollPredicateUsesPoseStateAndActualRootAxis(state: Unknown, expected: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.SearchConstructorRetains44OnlyForActualExternalInterface(external: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeReleasesInTheEnginesFixedCategoryOrder",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: False, after: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.ShippedPickupMissingMarkerRunsRealPK9SearchThenWorker44RetriesAndCarriesWithOriginalReport(interruptRetry: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.DelocalizationBetweenAdmissionAndInitLeavesKnownEmptyWeakPair",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.CompletedChildrenGetTheExactAlreadyPreppedCount(ignored: False, expected: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.DimEventsPrecedeActivitySwitchesAndActivityMissHasOnlyItsTwoInfoLogs",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheContainerLoopWarnsOnEmptyReportsUnbuiltClassesAndAddsWhatItBuilds",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PutDownUsesSentinelForManualOtherwiseChecksAndSearches(sentinel: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.UniquenessUtilityDoesNotAddARunnableGate(basis: 4294967295, stat: 8, top: 8, unique: True, runnable: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_StatusFailureRunsTheFailureCallbackOnly",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_TheBoundingQuadIsSortedByAtan2AndStoredS0S3S1S2",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheSweptFootprintHitsAnObstacleOnItsSamples(ox: 100, oy: -40, valid: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_AFailedMarkerQueryErasesThePose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheBeaconAndStackConstantsAreTheEnginesOwn",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_OnlyTheFourFlatSideFacePosesSurviveInFaceOrder(type: Docking)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheFreeplayTickBroadcastsTheNineEmotionsInEmotionTypeOrder",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ALockedActionWhoseInitFailsStillSendsTheLockAndTheRelease",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedInitStillStoresTheRunningInfo",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerUsesTheJsonNumAngles",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.DriveInitFailureStillPlaysDrivingToAndRetirementStopsItsActualCubeLightTrigger",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 0, expected: 4039654994)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.SuppliedManagerChoiceRunsRegularPipelineBothUnlockModesAndReportsNeeds42(carrying: True, rollUnlocked: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.LateNamedFaceFailsClearlyAndRetiresOnlyItsOwnedSubtreeWithoutPickupContinuation(uiEnabled: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_WithoutAnAIComponentSmartDelegateToHelperThrows",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_ANonZeroAttachResultIsRecordedAndLoggedNotDecided",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativePathRejectsKnownNoncurrentRootAndEmptyVectorDoesNotConsumeRngOrChangeState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q11_AtEndAppendsAtTail",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_TheAlignedPoseIsKeptWhenFewerThanThreePosesRemain",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_AZeroLengthSweepSamplesOnlyThePose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_WaitingReturnsRunningAndFollowingPlaysTheStartAnimation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_037_GetObservedMarkersFollowsTheListOrderAndTheSinceTime",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_011_AMissingObjectIsBadObject",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_TheClosestPoseIsPlanarAndTheFirstWinsATie",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularExhaustionKeepsThreeCounterUsesTwoDocksAndSourceValidityCancellation(rollUnlocked: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.MissingInputIsUnavailableRatherThanNativeFalse",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeLifecycleGuardAndCopySubscriptionLifetimeStaySeparateFromPublicSentinel(external: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformMapsTheOffsetsByTheBlocksAlignment(psi: -3.041592653589793, expectA: 10, expectB: -5)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R2_AnEmptyParallelReturnsSuccess",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonSteppedBehaviourGetsTheResumeCounterAndRefusal",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_ARunningHelperKeepsItsCallbacks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeRecoveryTests.ThreeActualHelperAdmissionsCanFailBeforeAnyDockWireAndThenMarkFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.TargetRefreshOrderStoresInvalidsAndGettersPreserveOutput",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_DriveAndFlipBlockForwardsTheCallersSayNameAndKnockOverPassesFalse",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.HandleBehaviorObjectiveStampsTheLastRunClockOnAMatch",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.HistoricalCameraUsesTheSameOwnedComputedPoseAndHeadInsteadOfCurrentMain",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE002_DisconnectingMidAnimationEndsItCleanlyAndLeavesNoTicker",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RealEngineTickDrivesTheNamedCompound",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.RegisteredFailureRecipientWhileStillCarryingDoesNothing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimLocksNothingExceptTheLiftWhileCarrying",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_TheEntryGatesReturnRunning",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.CompletionPublicApiSkipsEmptyEventAndRequiresRealRecipientForNonemptyEvent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AMissingRepetitionPenaltyIsAFlatOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.AcceptedStateMutatesTheSameLiftNodeAndItsCarriedChildWithoutAPoseBroadcast",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieRetryDecisionWithIsolatedDrivingDependency",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RealWorkerReleasesFrameAndPoseGatesBeforePublicFrameAndProcessedImageRecipients",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AnUninitialisedManagerTicksNothingAndAUiGameRequestIsSelectedOnce",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.ShippedPositiveCountsDriveFullTransitionAndFinishAfterSuppliedFailures",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_TheFineTuneMaxTurnIsTheSmallerOfTheMaxAndFortyFiveDegreesAndAnOverlargePanMovesNothing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeTrackerOwnerTests.RealEngineAiRunsAnAdmittedHelperBeforeTheDueTrackerReport",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 16777216, expected: \"none\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ConfiguredActivityRunsActualPickupPlacementVerifyLiftAndReports(carrying: True, soft: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.ANoFaceTurnEntersTheBoundedSearchAndTheTimeoutAborts",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 8, expected: 4039655002)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE004_ConcurrentInstallationsDoNotInterleave",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.MissingPoseReinitRetainsTheRealWaitAndUsesStateThreeNeeds29OnlyAfterSuccess",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.VerifyTailQueriesAllCurrentTypeMatchesAndRepairsDifferentIdBeforeActualUnset(match: True, differentId: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheOwnIdAndTheOwnQuadCentroidAreExempt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.ConstructorDefaultsAndByteTruncationFollowNativeFields",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.NativeAxisUsesLiteralFloatRowTwoStrictTiesAndSign(x: 1065353216, y: 1065353217, z: 1065353217, expected: 2)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.AbsentBottomAndKnownEmptyTargetReturnNativeRefusal",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHighestScoringRunnableBehaviourWins",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE003_ConcurrentTrackedPlaysEachGetTheirOwnToken",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PickupHelperDiagnosticReentryRetiresOldHelperBeforeReplacementRun",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.UndefinedRollFullPublicationPreservesLocalDefinedFieldsThroughActualProxy",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_DriveToPlaceCarriedObjectPassesActionTypeTwo",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R2_AnyRunningIsRunningElseSuccess",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ACompletionCallbackMayStartTheNextAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularValidityUsesCurrentModeAndOnlyToleratesTheSavedTopAboveBottom(rollUnlocked: True, related: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheFistBumpConstantsAreTheEnginesBits",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ScoredActingStateChangedClearsTheBonusOnActionStartStopAndCompletion",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.ApproachCalculationPreservesItsOutputAtEachFailureAndComposesTargetOnTheLeft",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.LateNamedFaceFailsClearlyAndRetiresOnlyItsOwnedSubtreeWithoutPickupContinuation(uiEnabled: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.C2_SetTagRules",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RFix2StreamATests.M15_012_WithNoCarriedObjectOnlyTheKeepAliveRemains",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_ClearStackLifetimeVarsChangesNothing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.RespondPossiblyRollRespondsToAnUprightCubeAndRollsOneOnItsSide",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.AnyCarryRoutesToTopAndNullLookupInvalidatesOnlyStatic",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE003_NoKeyframeOfACancelledAnimationIsEmittedAfterItsEnd",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.ShippedPickupMissingMarkerRunsRealPK9SearchThenWorker44RetriesAndCarriesWithOriginalReport(interruptRetry: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DoPlanningReturnsTheEngineResultCodes",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.NativeDockCallbacksAndRetirementShareTheActionGate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheFlipDrivesOnlyAfterTheLiftMoveCompletes",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.BeaconsAndFailureMemoryDriveTheHikingBehaviours",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.EveryBuiltBehaviourMatchesAShippedConfig",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.ListOwnershipIsRemovedBeforeChildDestructor",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularRetargetKeepsTiesReplacesOnceAndStopsOnlyOwnedWork(rollUnlocked: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE005_TheChargerDockingSignalUsesTheMarkersRealShape",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SetRunningAndResumeInfoReportsWhatItDoesNotDo",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 7, expected: 4039654997)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AnUnknownOrMissingBehaviorIdWritesToCerrAndIsAcknowledgeFace",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.TriggerDiagnosticReentryCannotAppendOldChildToReplacement",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.WrapperLocksItsWeakOwnerAndStopsOnlyTheMatchedBottom",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.RamIntoBlockChargesTheCubeAndBacksOff",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_TurnTowardsPoseInitClampsTheHeadAngleAndFallsBackOnFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ActualShippedFactoryDefaultsTrueAndCarriesUnlockAndNeeds",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.FailedConfigurationCompletionSkipsNullCurrentAndRetainsPriorEntries",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.MajorFrustrationDrivesToARandomPoseInItsConfiguredRange",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.StageDuplicateWarnsWithoutEmissionAndWideStageUsesWrappedMultiplication",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksPutDownNativeTests.ExactMinimalAssetAndEightDirectStrictInputsRetainSameZeroScoreReceiver",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 33554432, expected: \"none\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T5_TheTickRunsThroughCozmoEngineUpdate",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScorePathIsFloatWithTheEnginesOperationOrder",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_AnUnnamedFaceUsesTheNoNameFunction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.BottomFailureWindowComesFromActualWhiteboardAndCanStack",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.NestedWorkoutUnlockActivatesAThenBThenAWithIndependentOuterSnapshot(eighties: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.WithoutVisionTheSearchReportsTheMissingFaceSource",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScoreAppliesNoPenaltyForAZeroStampOrAMissingGraph",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.C3_RunnerCancelRules",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.InvalidBottomIsToleratedOnlyWhenItsActualTopNeighborIsTheSavedTop(related: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.IntentionZeroUsesSignedTieOrderAndRetainsEligibleBestWithinAndBeyondEpsilon",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.NativeUnsignedCountPreservesHighBitThroughActualTriggerAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_020_TheThresholdIsTheThreeDimensionalNormOfTheObjectInTheGoalsFrame",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AFailedAlignEndsTheMountWithoutTurningOrReversing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q9_NowAndClearRemainingCancelsAllThenQueueNext",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AddHelperToComponentWrapsTheRawPointerNullsItAndDoesNotPush",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_ZeroDistanceIsNotAnError(distance: -0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheCarryLiftIsQueuedOnlyWithinFortyMillimetresInThreeDimensions(cubeX: 30, queued: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_AFailedCompoundMarksTheObjectUnknownAndQueuesNoCarryLift",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.NativePreActionSelectsAfterGuardsBeforeObstaclesAndKeepsSelectionOnLaterFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S5_AnUnignoredFailureReturnsTheFullFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_005_RollWritesZeroAndPickupWritesTwoInPlus0xBB",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SwitchToBehaviorBaseAndFinishFollowTheEngine",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.ActualPlaceHelperRetainsNonzeroGeometryAndExposesUnbuiltDriveTuple",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheBumpThresholdsAreStrict(which: \"gyro\", bits: 1043511490, bump: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AddToFactoryIsAUniqueInsertAndADuplicateIsSilent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.LockAndRecipientAvailabilityAreRecheckedAtInit",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TwoTrackLocksOnOneScopeAreBothReleased",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ConstructorNeedsCacheStaysUnknownAndKnownCacheUsesExactEpsilonAndNaNGates",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_InitializeOnStackResetsTheStateButNotTheDelegateProperties",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.OnlyTheBehavioursWhoseInputsExistAreBuilt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheInitTagGuardFlagsOnlyEngineTaggedActionsAndCountsTheMainQueue",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ConfiguredPutDownRunsThroughRealPathAnimationAndImageCompletionBeforeCarryRelease",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.SequentialFailureAndIgnoreDiagnosticsMatchTheCheckedFormats(ignored: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE001_TheLiveKeyframeClockIsTheAnimationSystemsOwn",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.InvalidBottomIsToleratedOnlyWhenItsActualTopNeighborIsTheSavedTop(related: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AnAnimationActionLocksItsMaskUnderItsActionId",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.StrictRetargetCancelsOwnedWorkOnceAndManagerReplacementPreservesUnrelatedQueue",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AWhiteboardWithNoExternalInterfaceWarnsOnInit",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutBehaviourLiftsStrongThenWeakAndPutsTheCubeDown",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 50331648, expected: \"failed\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheBumpThresholdsAreStrict(which: \"gyro\", bits: 1043511491, bump: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_TheSchedulerNeverSendsSamplesThatWereNotRenderedYet",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.StopEventsUseExactStateMappingAndIntegerDuration(state: 1, active: True, suffix: \"cancel\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.VerifyTailQueriesAllCurrentTypeMatchesAndRepairsDifferentIdBeforeActualUnset(match: True, differentId: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_ARefusedDelegationReturnsFalseAndStoresNoReference",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AOneShotSuppressionIsErasedWhenItIsUsed",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 6, expectedPaths: 25)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.StopPreservesPoseAndSameBottomPoseSuppressesReadmission",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.StopEventsUseExactStateMappingAndIntegerDuration(state: 1, active: False, suffix: \"inactive_stop\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.SixAndSevenHaveIndependentLazyValidRetainedBestAndFailureMemory",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_022_TurnInPlaceCheckIfDone",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.RegisteredFailureWithoutCarryBuildsExactRetreatAndKeepsStateAndPersistentFlag",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.DerivedFailureInfoAndNextActionInfoAreUngated",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheCarryLiftIsQueuedByARunningTickWithin40mmInThreeDimensions(cubeX: 30, queued: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ActualGroundRootKeepsScalarAndDefinedFieldsWhileUndefinedPublicPayloadIsWithheld(suppliedProcessedFramesOnly: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_TurnTowardsPoseInitReturnsBadPoseForAnUnsetOrUnreachablePose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeChangedAbsentZeroRetargetsRequestedAndUniqueRenameResetsOnlyNewEntries",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AWhiteboardWithAnExternalInterfaceRegistersItsHandlers",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 67108864, expected: \"failed\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimIsNeverResumed",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ReinitAppends46HandlesSoEarliestRecipientStillPrecedesInterveningObserver",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.ConfiguredDerivedFactoryUsesOwnPredicateAndKeepsUnavailableInputsVisible",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSmartHelpersReleaseThroughTheScope",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RequestInfoRunsWithoutInitializedOrCurrentGuard(initialized: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.RollSelectionDefinedErrorsAndGeometricTopMarkerAreConcrete",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_010_TheChoosersScorerSubtractsTheHistoryRingForTrackDelta",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AHelperThatCompletedInsideThePushLeavesNoLiveReference",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheRotationConeIsThirtyDegrees(tiltDegrees: 45, valid: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.IgnoredNativeMembershipCollectsFreshCandidatesEvenWhenIntentionCacheIsWithinEpsilon",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.A8_GetCurrentActionPrefersCurrentThenFront",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimBehaviourResolvesItsTriggerAgainstTheShippedAssets",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteReleasesTheSharedHandle",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 16, state: 670611050)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 0, expected: \"success\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativeDriveNoPreactionFailureMarksWhiteboardOnlyWithoutForce(force: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.PublicNativeObserverScoringRetainsPriorActionWhenPickupExecutionIsUnavailable",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.ParserRetainsSuccessfulPrefixWithoutPublishingCurrentOnRequiredTriggerFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.CarryingAndReactionStoresHaveTheirExactSourceInfoCalls",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeRecoveryTests.ActualCarryingRollDelegatesPlaceTurnGroundWireAndRealCarryCompletionBeforeReevaluation",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.SameTimestampUsesDistanceFromActualNonzeroMainNotLocalOrigin",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AChangedOriginIsReadTwiceAndStored",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.CacheAvailabilityDuringActualRunStopsVisiblyRatherThanManufacturingCompletion",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_022_TurnInPlaceConstructorAndSetters",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.StackProducerUsesTheStoredTargetTupleAndRequiresTheCarriedTopId(carried: 9, creates: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AFailedReactionMapReadIsLogged",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.GuardDogKeepsItsAsymmetricExitAndFeedingUsesCachedRoundInsteadOfItsStage",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE005_TheMarkersOwnCornersAreWidthByHeight",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_001_ATiltedCubeIsFilteredByTheThirtyDegreeCone(pitchDegrees: 35, survivors: 0)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_AnEmptyStackReadsNoOrigin",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheConstructorStopsCheckingPreDockPosesForAnyNonTinyOffset(a: 9.0000000000000002E-06, b: -9.0000000000000002E-06, checksPreDockPoses: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.BeingLiftedForMoreThanASecondEndsTheBehaviour",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 13, expectedPaths: 26)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularActualFailedDockRetriesAndThenCompletesPlacement(rollUnlocked: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.RealOfflineImageProducerCanOverlapNativeHelperTicksAndRetireWithoutLostTargetState",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_011_TheProductionPathReadsTheInPositionFlagOfThePosesFunction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_033_IsNearIsStrictWrapAwareAndIgnoresTheToleranceSign",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_033_TheClosestMarkerIsPlanarOrThreeDimensionalAndStrictlySmaller",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.NestedSearchPublicationReentryCannotQueueOverReplacement",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.MusicCacheIsSharedWithAudioCallerAndStopInvalidatesIt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.BothFistBumpConfigsAreBuiltByTheContainerWithTheirOwnParameters",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheShippedBehaviorConfigsCarryTheirObjectives",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.SearchConstructorRetains44OnlyForActualExternalInterface(external: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.NothingIsSentWithoutARobot",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.NullLookupUsesStaticAndBaseAndInvalidatesOnlyStatic",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.NativeLazyUpdateUsesCurrentGateButExistingAndCopyKeepTheirCapturedBus",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.OriginalImmutablePayloadSurvivesTheActualResponseAnimationCallback",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.HeightToleranceUsesMaxTimesTheNativeWordAndCopyKeepsIt",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScoredChoiceIsGatedByReactionsTheUiGameBehaviourAndTheRunningTrigger",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksPutDownNativeTests.AliasStartUsesOneNativeDrawOrdinary19AAndOwnLockThenStopRetiresOnlyOwnedAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.ShippedConfiguredPickupRunsManagerHelperFirstTurnsWorker44DockVerifyAndTypedCallback",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R3_FirstFailureLeavesLaterChildrenUntouchedAndRunsCallbacksFirst",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_InitInternalSkipsTheTransformAndStoresTheOffsets",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheCarryLiftIsQueuedByARunningTickWithin40mmInThreeDimensions(cubeX: 200, queued: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeTrackerOwnerTests.ActualRobotRetirementForcesTrackerBeforeAbortAndFreshRobotGetsFreshStorage",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_022_TurnInPlaceInit",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.BaseObservationCompletionUsesInstalledDerivedRecipient",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_IsAtPreActionPoseWithVisualVerificationResults",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidBaseNativeTests.FullCacheFlagStopsImmediatelyWithoutInventedCacheGoal",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ReactionsAreConsultedEveryTickAndOnlyAPerTriggerLockSkipsOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.NativePoseFunctionSetterRejectsOnlyExactlyRunningAndCompletionIsDefinedBeforeInit",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_023_ATiltedLocatedCubeDoesNotAbortTheLiftAttachOrTheStackCheck",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformWorksWithTheEnginesQueries",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.StopEventsUseExactStateMappingAndIntegerDuration(state: 0, active: True, suffix: \"failure\")",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 11, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularActualFailedDockRetriesAndThenCompletesPlacement(rollUnlocked: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.TrueSayNameUsesActualVerifiedUnnamedPathOrFailsAtNamedProviderFrontier(named: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_026_ZeroOffsetsKeepEveryPoseAndFlagTheRobotAtOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.WithoutAGraphTheManagerAppliesNoRepetitionPenalty",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.TopPlacementFeedsActualMidpointRelativeToStaticIntoRealHelper",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ResumeCountsCliffAndMovementAndRefusesFromTheSecondWithTheEmotionEvent",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.PlaceHelperResponseWritesOnlyTheCheckedStatusOrWhiteboard(result: 33554432, status: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheFlipNeverWaitsOnTheQueuedCarryLift",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R3_AnIgnoredFailureContinuesToTheLaterChildren",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AnEmptyWorldPlansAStraightRunOfLongStraights",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_031_IsAtPreActionPoseWithVisualVerificationMapsTheInPositionByteForNonPlaceTypes",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.StopEventPrecedesActiveActionCancellationAndVirtualTail(active: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ABehaviourStoppedAtTimeZeroIsNotPenalised",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.WhileCarryingFistBumpPutsTheObjectDownFirst",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_029_TheDefaultFunctionReturnsEveryPoseAndTheInPositionByte",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.ActualMoodHistoryFeedsWorkoutDeltaScorerAndSharedMusicDecision",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.ConfiguredActivityRunsActualPickupPlacementVerifyLiftAndReports(carrying: False, soft: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.UiDeliveryReleasesItsTopologyGateBeforeCallingAnAction",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_ASecondDelegationWhileTheFirstIsLiveStopsTheFirstAndThenDelegates",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.TopProducerUsesNativeInteriorCornersAndIgnoresTheBogusHostCachedMidpoint",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.InvalidCategoryRepeatsSameChildOnlyInParallel(parallel: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SearchForBlockTests.M12_010_State1ContinuesAfterAnyFailedChild(failOrdinal: 5, expectedPaths: 27)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksStackNativeTests.SuppliedNonterminalResponseWritesOnlyItsSourceStateAndDoesNotRetry(result: 33554432)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_035_GetPossiblePosesKeepsTheNearestTwoAndTheYRule",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheShippedCorpusIs178ConfigsOver76Classes",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HelperStopAndPyramidLoopTests.StopEventsUseExactStateMappingAndIntegerDuration(state: 7, active: True, suffix: null)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ClassOrdinaryAndHardParametersUseNativeHelperAndZeroCtorFaceChildren(hard: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PutDownBlockNativeTests.ActualVisionDrainUpdatesCacheBeforeCountGatedLocal46(external: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_TheConfirmerWritesAreSynchronisedAndTheBroadcastCounterIsAtomic",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.RoundTableHasExactWordsAndObjectOne(round: 6, expected: 4039654996)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.BeforeOrAfterFailureIsNotIgnoredAndWrappedFullProxySurvivesRetirement(beforeFailure: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_029_RemoveMatchingPredockPoseErasesEveryMatchInPlace",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RealNoObjectFailureKeepsInternalFlagAndSuppressesUndefinedPublicPayload",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE011_AThrowingSubscriberDoesNotStarveTheInternalConsumers",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.RegularSuppliedPlaceFailureBoundaryRunsGroundAndReturnsToPickup(rollUnlocked: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AMissingOrEmptyReactionMapRegistersNothing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q7_QueueNowWithEmptyPendingCancelsCurrentThenAtEnd",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.LiveAttachmentAlreadyHasItsLiftParentAtTheBroadcast",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S4_CategoryAboveFourIsSuccess",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.CubePoseCallbackPassesTheNativeIdStateTriggerLayerAndZeroModifier",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.T8_NonRunningQueueResultIsZeroOnlyForSuccessAndCancelled(fullResult: 33554433, expected: 1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_TheSevenArgAndFourArgConstructorsDifferInActionTypeAndDistance",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.StackBlocksNativeTests.ActualRegularMetadataAndPlayAloneFrontierRemainDistinctFromSparked",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SmartRemoveCustomLightPatternWithoutAPatternFails",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE004_AnOldRunsAbortDoesNotClearTheReplacementPath",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.StoredPoseTurnPrecedesComparisonReparentAndParentCancellationPreventsMutation(cancelParent: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.AnUnknownEmptyAbsentOrNonStringClassWritesToCerrAndIsBouncer",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.SuppliedWeakLockReentryCannotOverwriteReplacement(duringInit: False, oldLockUnavailable: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksPutDownNativeTests.AliasRunsRealBackupAnimationsAndImageWaitBeforeCurrentCarryRelease",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheProductionRegistrationDrivesHandleActionEnded",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S6_NoRetryFallsToTheFailurePath",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.QueryRunsWhileWaitingAndMatchOverridesTheWaitResult",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_008_TheEarlyStepsReturnOneAndAttachNothing",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.VectorFailureReturnsZeroButTheOutDistanceKeepsTheAliasedCandidateWord",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M13_028_TheCarryLiftIsQueuedOnlyWithinFortyMillimetresInThreeDimensions(cubeX: 39, queued: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.SuppliedWeakLockReentryCannotOverwriteReplacement(duringInit: True, oldLockUnavailable: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ActualDirectorDefersOriginalScalarUntilResponseRegardlessOfResponseResult(result: 0, trigger: 575)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupSearchNativeTests.RealFactoryHelperTargetHitCancelsOwnedActionBeforeSuccessAndRetires44OnlyAtLastOwner",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_024_RealHandlerInitAndNoAnimationTailDoNotFabricateAbort",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupStackNativeVisionTests.NativeForeignRootFailsConversionWithoutEnteringThePublicFlatAdapter",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_007_BuildTallestStackUsesThirtyBothWays",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_TheRenderStaysWithinALeadOfWhatHasBeenHeard",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeTrackerOwnerTests.ActualChargerTransitionAndEngineAiPhaseUpdateTheCanonicalTracker",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupChildrenNativeTests.StageOneRunsAllEightChildrenAndKnownTargetExhaustionClearsDefaultInMemoryWorld(target44DuringDeletion: True)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.HikingRollCubeNativeTests.ActualDirectorDefersOriginalScalarUntilResponseRegardlessOfResponseResult(result: 50331677, trigger: 505)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_023_TheThresholdPairReplacesTheXAndYTolerance",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_030_IsPlacementGoalFreeIntersectsThePaddedCandidateQuadWithoutAZTest",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidPilotTests.FactoryWithOnlyManualManipulationDoesNotInventNativeRobotInput",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheCarryingGateIsReadFromTheRobot",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheMoodStateMessageIsACountAndNineLittleEndianFloatsUnderTheTag0x0061",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.NaNMoveDeadlineWaitsImmediatelyAndOnLaterTicks",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.QueuedActualPickupProxyPublishesRealCarryPayloadAfterWrappedRetirement",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12CheckedRowsBuilderTests.LiftObservationBroadcastPrecedesConfirmerAndKeepsTheArgumentPose",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_014_TheObservedFaceHandlerChoosesTheStrictlyClosestFaceWhileTheStateIsAtMostOne",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8CompoundCheckedRowsTests.RequestInfoRunsWithoutInitializedOrCurrentGuard(initialized: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M8BatchThreeDTests.M8_011_ACompletedSubHelperIsStoppedAndTheParentIsToldItSucceeded",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P8_TheProxyPrefersTheLiveChildUnion",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheMountCarriesTheEnginesOwnNumbers",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M13RVisBuildTests.M13_020_TurnTowardsPoseInitTakesAParentedPoseWithRespectToTheRobot",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.ActionListTests.Q15_RefusedInterruptWithPendingUsesQueueNowNonEmptyBranch",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_022_AStrictlyNegativeDistanceIsNoDistanceSet(distance: -1)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BuildPyramidNativeTests.DisconnectedCornerDistanceFailurePreservesMidpointOutput",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.InitCallsInitInternalAndItsResultIsInitsFailure",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_025_TheTransformMapsTheOffsetsByTheBlocksAlignment(psi: 0, expectA: -10, expectB: 5)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M12RVisBuildTests.M12_036_TheRotationConeIsThirtyDegrees(tiltDegrees: 180, valid: False)",
+      "Outcome": "Passed"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorAudioClientCheckedRowsTests.ActivityMapTreatsMappedZeroAsAHit(activity: 8, state: 0)",
+      "Outcome": "Passed"
+    }
+  ]
+}

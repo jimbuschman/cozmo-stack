@@ -1,6 +1,6 @@
 {
   "job": "CUBE-LIFT-WORKOUT-1",
-  "state": "SOURCE ADDITIONS4 CHECKED; ORDINARY IMPLEMENTATION IN PROGRESS, NO .NET",
+  "state": "CURRENT19 CODE/REFERENCE862/EXACT862 PASS; INTEGRATION/FULL GATE PENDING",
   "sourceFiles": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-read.md",
@@ -50,7 +50,7 @@
   "readerOwnerLabelCorrections": 1,
   "readerInitialLabelsArchive": ".scratch/workout-read/report-original-before-owner-label-correction.md",
   "reviewerPartialArchive": ".scratch/workout-read/source-codex-check-partial.md",
-  "reviewerRequiredCorrectionBatches": 0,
+  "reviewerRequiredCorrectionBatches": 3,
   "compilerCorrectionBatches": 0,
   "testRuns": 0,
   "prep": {
@@ -61,7 +61,9 @@
     "compileOrTest": false
   },
   "formalRecordsChanged": false,
-  "wholeExistingClosureProposals": [],
+  "wholeExistingClosureProposals": [
+    "M13-010 whole own path; sourcecurrentmanifestreread, bothcallers/history/event andunsignedvaluesbuilt/tested; M1-034573DFC +hostcounter/intview+badhostconfignotes required"
+  ],
   "newLifecycleProposal": "One otherwise-unowned ordinary/class CubeLiftWorkout lifecycle complement; no record added. Spark instance separate.",
   "remainingFrontiers": [
     "actual canonical workout config/mood/RNG and other M13-010 caller/history/stage recipients remain partial until actual joins verified",
@@ -139,20 +141,184 @@
     },
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-resume-source-codex-check.md",
-      "actualWorkingSha256": "7b171a893874854396dc39b15ff61e46ba3137075df70ec5a3296aeb025fa305",
-      "canonicalLfSha256": "64a7989c791127289cdc2241debc6bd0c2a014299e1f29de9328cb1988b6e6e1",
-      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-resume-source-codex-check.7b171a893874.raw.md"
+      "actualWorkingSha256": "3c1f2c36573b0d572694cf82b87f73b9ea91e450e94e2f307cf7efffc9cca7f4",
+      "canonicalLfSha256": "41106e9bf3cabd6cc4db13b02a3407807a813dfc4d6738807bd0ba1f17bb4379",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-resume-source-codex-check.3c1f2c36573b.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-parser-supplement.md",
+      "actualWorkingSha256": "326129b575326f540283ee6c31c8c5b506c7492f3bf2135372dfaf74e306b004",
+      "canonicalLfSha256": "326129b575326f540283ee6c31c8c5b506c7492f3bf2135372dfaf74e306b004",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-parser-supplement.326129b57532.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-completion-edge-supplement.md",
+      "actualWorkingSha256": "abf3216ef65f1d49239d456da5342c8d005f4bb3305e62bac853072d115efad3",
+      "canonicalLfSha256": "abf3216ef65f1d49239d456da5342c8d005f4bb3305e62bac853072d115efad3",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-completion-edge-supplement.abf3216ef65f.raw.md"
     }
   ],
-  "newSourceQuestions": 4,
+  "newSourceQuestions": 6,
   "newSourceQuestionsResolved": [
     "pickup params +0C/+0D -> helper+104/+105 = 0/1",
     "binary32 delta/epsilon/ordered scorer sum/mean; GraphEvaluator alreadyf32",
     "PerformedStrongWorkout objective0x13",
-    "bounded own-body absence of class state-name assignments; diagnosticlabels are not state API"
+    "bounded own-body absence of class state-name assignments; diagnosticlabels are not state API",
+    "Parser optional missing/null retain sentinel; required strong/weak missing/null fail; unknown nonnull triggerstring maps0/true; failed entry keeps prefix but fresh current remains unavailable",
+    "Q6 native Complete: current=end noop, empty event skips clock/mood, callback thenreloadcurrent/end beforeadvance; no native completioncounter; invalidprefixnullread573DFC M1-034skip"
   ],
-  "newSourceAdditionsIndependentVerdict": "PASS all4; no frozeninventory precision contradiction",
+  "newSourceAdditionsIndependentVerdict": "PASS all6; no frozeninventory contradiction",
   "managedCandidateClarification": "Existing Graph2d wrapper already delegates to f32 GraphEvaluator; only WorkoutConfig delta/epsilon/accumulation/mean needed source arithmetic.",
   "builderProvisionalLabelCorrection": "Removed inferred state labels before first coherent draft; no before-archive reconstructed or reviewer/compiler correction claimed.",
-  "dotnetLease": "none; no new restore/build/test allowed"
+  "dotnetLease": "none; B returned shutdown0/postnative0",
+  "sourceAdditionsHistory": [
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-resume-source-codex-check.md",
+      "actualWorkingSha256": "7b171a893874854396dc39b15ff61e46ba3137075df70ec5a3296aeb025fa305",
+      "canonicalLfSha256": "64a7989c791127289cdc2241debc6bd0c2a014299e1f29de9328cb1988b6e6e1",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-resume-source-codex-check.7b171a893874.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-resume-source-codex-check.md",
+      "actualWorkingSha256": "4275e63579a27603d6975cfb3a972c8f4e61270340cac646b197e1a754a3fa3c",
+      "canonicalLfSha256": "88098494f89686a0f1a9b6abfe39b1a95b23a0f466585d8f450a4792e5dc2627",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-resume-source-codex-check.4275e63579a2.raw.md"
+    }
+  ],
+  "wrongKindJsonFrontier": "Native wrong-kind string conversion UNKNOWN; hostloader refuses clearly, no native outcome claim.",
+  "managedGuardFrontierResolved": "Temporary DriveTo/Search restriction was a managed guard gap, not native gap; root/B rejected deferral, C propagated optional owner-current guard through actual helpers/factory/actions/cleanup preserving defaults before coherent draft. Actual existing M12-029/M12-010/M11-042 producer gaps remain.",
+  "coherentFinalSource": "CUBE-LIFT-WORKOUT-1-review3-final-code-freeze.json",
+  "currentCodePaths": 19,
+  "reviewerBatches": [
+    "positive-count whole flow + nested DriveTo/Search coverage",
+    "explicit pickup-intention cache fixture correction"
+  ],
+  "postTestHarnessCorrectionBatches": 1,
+  "currentTestRuns": 1,
+  "firstReference": {
+    "job": "CUBE-LIFT-WORKOUT-1",
+    "referenceAttempt": 1,
+    "state": "FAIL; independently classified test setup, no correction applied",
+    "passed": 852,
+    "failed": 2,
+    "skipped": 0,
+    "total": 854,
+    "classes": 32,
+    "reviewerRounds": 2,
+    "compilerCorrections": 0,
+    "postTestHarnessCorrections": 0,
+    "sourceQuestions": 5,
+    "inputsBeforeAfter": 2665,
+    "changedInputs": 0,
+    "binsBefore": 187,
+    "binsAfter": 188,
+    "changedExistingBins": 0,
+    "additionalTestArtifact": "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log",
+    "extraArtifactSha256": "64a619d09a9b708531cc1b8a08a9769cc2784668063cea776ff1fbe7c6acb9de",
+    "trxSha256": "8efb99d4347c61a495e35a976b510a7dde16de8d253c09bac536b88b905e322c",
+    "logSha256": "148ed01dfdba5e3181208ae020605be67127004e04ee61efcc091bc37a00ee31",
+    "namesSha256": "c9cec7885efb570c7d82f5288603f1c657be7af22a9b2fd0ab7ed27d3c2d1603",
+    "buildLogSha256": "b67bf5ba36f48ecb9fd0c6ea15d34a2516a6b6d6ff5a4f36ea9dc23c84d90598",
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPre": [],
+    "checkoutPost": [],
+    "shutdownExit": 0,
+    "buildExit": 0,
+    "testExit": 1,
+    "privilege": "actual dotnet invocation require_escalated",
+    "detailsDirectory": ".scratch/workout-reference1/",
+    "rootIndependentlyVerified": true,
+    "snapshotScopeLimit": "First inputs selective: src/tests, fullcozmo_resources+engine/marker; no manifest/inventory. Ref2 expands stable inputs.",
+    "classification": "2 diagnostic listener tests depended on process-wide once-only missing report; test setup reset fixes ordering, production unchanged",
+    "failedNames": [
+      "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.TriggerDiagnosticReentryCannotAppendOldChildToReplacement",
+      "Cozmo.Protocol.Tests.CubeLiftWorkoutNativeTests.PickupHelperDiagnosticReentryRetiresOldHelperBeforeReplacementRun"
+    ],
+    "extraBinIsOutput": {
+      "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\bin\\Debug\\net9.0\\.scratch\\sparks-stack-build\\negative-vision-producer.log": "64A619D09A9B708531CC1B8A08A9769CC2784668063CEA776FF1FBE7C6ACB9DE"
+    }
+  },
+  "reference2HistoricalOnly": true,
+  "reference2Historical": {
+    "job": "CUBE-LIFT-WORKOUT-1",
+    "attempt": 2,
+    "state": "HISTORICAL854 PASS; newerreview3 candidate requiresnewreference",
+    "passed": 854,
+    "failed": 0,
+    "skipped": 0,
+    "classes": 32,
+    "inputsUnchanged": 3752,
+    "binsObserved": 188,
+    "immutableBinFilesUnchanged": 187,
+    "testOutputOnlyChanges": {
+      "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\bin\\Debug\\net9.0\\.scratch\\sparks-stack-build\\negative-vision-producer.log": {
+        "before": "64A619D09A9B708531CC1B8A08A9769CC2784668063CEA776FF1FBE7C6ACB9DE",
+        "after": "43D8CDD44AF7C603EC550F68CB008DDA01C04690587D84769DBDE35496DC0109"
+      }
+    },
+    "outputClassification": "SparksStackNativeTests233 File.WriteAllLines, no repository reader; actualversionsretained",
+    "trxSha256": "9bb6e18f8113a4c7ea21d66a96531a0454a09f78130615a4eef19cc650759e4e",
+    "nativePost": [],
+    "checkoutPost": [],
+    "shutdownExit": 0
+  },
+  "completionPolicy": "Standing M1-034: failed-Init nonempty prefix/nullcurrent rawread573DFC skipped as smallest call, priorstatekept+visible diagnostic; no-current=end definednoop, hostmissingrecipient failsclearly noadvance.",
+  "countPolicy": "All finite validuint counts use nativeuintpath and bitpreservingrequest/scheduler. Publicintview ishostcheckedview. Nonfinite/out-of-native-uint count isinvalidhostconfiguration: clearunavailable under existing failurespolicy, no nativeoutcomeclaim orvaliduintfeatureexclusion.",
+  "capacityInterruptions": "Builder+reviewer capacityerrors; sameworkers/defaultrequested resumed, no model switch or duplicate.NET; infrastructureonly.",
+  "currentCodeCompiled": true,
+  "currentReference": {
+    "job": "CUBE-LIFT-WORKOUT-1",
+    "attempt": 3,
+    "state": "CURRENT862 PASS; EXACT REPLAY PENDING",
+    "passed": 862,
+    "failed": 0,
+    "skipped": 0,
+    "classes": 32,
+    "sourceInputsUnchanged": 3755,
+    "immutableBinsUnchanged": 187,
+    "unfilteredBinCount": 188,
+    "outputOnlyChanges": {
+      "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\bin\\Debug\\net9.0\\.scratch\\sparks-stack-build\\negative-vision-producer.log": {
+        "before": "43D8CDD44AF7C603EC550F68CB008DDA01C04690587D84769DBDE35496DC0109",
+        "after": "B4A96CB6B5EA549DA38E042BE0425D0D7C244AF870FB5CFDB8A7D502AAC0E02D"
+      }
+    },
+    "trxSha256": "497800d824d48d559202f0b2ba592c000a981f4bacfd55dcfa009bedaaca4002",
+    "logSha256": "cc8add18fc0260fd8541fb8ae753cb5a99546212e0c7756ddcb1e94dc9e371cb",
+    "namesSha256": "e32a8f73894adfd127c9faa5dd37533f624804260c89a8b57adf50f0ae2c770b",
+    "nativePost": [],
+    "checkoutPost": [],
+    "shutdownExit": 0,
+    "privilege": "actualdotnet require_escalated"
+  },
+  "currentIndependentReplay": {
+    "job": "CUBE-LIFT-WORKOUT-1",
+    "state": "CURRENT EXACT862 PASS",
+    "passed": 862,
+    "failed": 0,
+    "skipped": 0,
+    "classes": 32,
+    "namesParametersOutcomesMultiplicityMatched": true,
+    "inputsUnchanged": 3755,
+    "immutableBinsUnchanged": 187,
+    "unfilteredBinCount": 188,
+    "testOutputPath": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\bin\\Debug\\net9.0\\.scratch\\sparks-stack-build\\negative-vision-producer.log",
+    "outputHashesByPhase": [
+      "43D8CDD44AF7C603EC550F68CB008DDA01C04690587D84769DBDE35496DC0109",
+      "B4A96CB6B5EA549DA38E042BE0425D0D7C244AF870FB5CFDB8A7D502AAC0E02D",
+      "B4A96CB6B5EA549DA38E042BE0425D0D7C244AF870FB5CFDB8A7D502AAC0E02D",
+      "A2DAB599CFAA3A3BC6EF939628363AAFEFFB3AD596AA4B20815237C7D0608904"
+    ],
+    "outputIsNotInput": "SparksStackNativeTests233 writer; no repository reader; rawsnapshotsretained",
+    "referenceTrxSha256": "497800d824d48d559202f0b2ba592c000a981f4bacfd55dcfa009bedaaca4002",
+    "replayTrxSha256": "a3368b0706be9bbeb0d615fd7864a211db62105ee311d59ad215aad304d013a5",
+    "replayLogSha256": "486fe4738f8524b22eca59847ee689db5f74feb8478e916ebc79beb622bed163",
+    "actualDotnetPrivilege": "require_escalated",
+    "shutdownExit": 0,
+    "retainedNativePost": [],
+    "preflight": "Actual CIMguard reportedexecuted; empty pipeline did not write snapshotfile. No retainedpreflightartifact claimed or reconstructed.",
+    "checkout": "Onlynewuntrackedfinal-builder-report duringreplay outside3755inputs; no trackedchanges"
+  },
+  "workerFinalCommit": "2c0f950bdaa1b26bb77a802ddb48cc02a9e3fd1f"
 }

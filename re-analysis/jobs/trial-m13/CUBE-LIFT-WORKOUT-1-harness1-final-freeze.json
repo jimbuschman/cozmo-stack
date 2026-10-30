@@ -1,0 +1,124 @@
+{
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Actions/CompoundActions.cs",
+      "sha256": "57db6436b9885797d0db81363ef57ffe090572b138a6e4a38d0790b550db5e8b",
+      "rawBlob": "df021920bae3df73d626363b7a5520867b6fb904",
+      "filteredBlob": "df021920bae3df73d626363b7a5520867b6fb904",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Actions\\CompoundActions.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs",
+      "sha256": "20bec06f704f3020ce8f94d6c23e4ca125399ec7c9fa2e1850ac6782df9d126a",
+      "rawBlob": "1c3a911eb138d7e753265b60c89a0de0e620ea76",
+      "filteredBlob": "1c3a911eb138d7e753265b60c89a0de0e620ea76",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\AIComponent.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "b4f2856ddc40fe531de8e70a65c915a64ffa0184d09474c674cb9664f24c77ce",
+      "rawBlob": "069d49b98b123d577f5a3db53db997f9165c8eef",
+      "filteredBlob": "069d49b98b123d577f5a3db53db997f9165c8eef",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorHelperComponent.cs",
+      "sha256": "964ba28c9663d3e86f1d71272f94318365cbfb6ee9df6322dbc01afd325aa680",
+      "rawBlob": "85c22d2338c749c68e6bd0316cd9b14f4ed3286d",
+      "filteredBlob": "85c22d2338c749c68e6bd0316cd9b14f4ed3286d",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorHelperComponent.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorPublicState.cs",
+      "sha256": "585bef23f231d9cec7ae22a75e0c3e74d33fd6f3344d8e72900ab54a18e835bb",
+      "rawBlob": "9602183fff3113f9b3397ff522e69695e3584f58",
+      "filteredBlob": "9602183fff3113f9b3397ff522e69695e3584f58",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorPublicState.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+      "sha256": "9a3fdf50226f5e133680801230197dff9fefcef229c93b67ec92002b638518d0",
+      "rawBlob": "13dd997de863bba373ddafe33bb9ce8ef9d23590",
+      "filteredBlob": "13dd997de863bba373ddafe33bb9ce8ef9d23590",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\IBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/IHelper.cs",
+      "sha256": "4d908b45c6065666daa5241ad6ed472cb36d33daa9dbe58f1733ef756699524c",
+      "rawBlob": "b9fecab9fded72157a951c7b598c162602c4a8bb",
+      "filteredBlob": "b9fecab9fded72157a951c7b598c162602c4a8bb",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\IHelper.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "a20c207e923fc569b36681cf690918c5d8033984d7c07941f40fe4cec4265285",
+      "rawBlob": "701b276e5d96bb57047d7c3338647a29fd39fabe",
+      "filteredBlob": "701b276e5d96bb57047d7c3338647a29fd39fabe",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCubeLiftWorkoutBehavior.cs",
+      "sha256": "202a148874d0226ff729987f8485537cbcc1a64bb71d585e315a27db7cd562a2",
+      "rawBlob": "7a59322704f703a6e799204a45ebcf67484b94cf",
+      "filteredBlob": "7a59322704f703a6e799204a45ebcf67484b94cf",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeCubeLiftWorkoutBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDriveToHelper.cs",
+      "sha256": "ae6f5c5cfe1eb4c0a1735c9fa83c9e2107fb525a4acd23bcd1a3ad9e1e652181",
+      "rawBlob": "8255c01a2afbc15db6152459cbf41bff608b6632",
+      "filteredBlob": "8255c01a2afbc15db6152459cbf41bff608b6632",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeDriveToHelper.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupBlockHelper.cs",
+      "sha256": "2657d9d337edd43fa04c64a3134ee83a534a10701195bf73354555ba3325ac9c",
+      "rawBlob": "555d7e5249faecb50e43a94247a04ce90fc09c2c",
+      "filteredBlob": "555d7e5249faecb50e43a94247a04ce90fc09c2c",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativePickupBlockHelper.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSearchForBlockHelper.cs",
+      "sha256": "7665524d6f82de513b61c2f76cea74426dbadb1c1ecc9605597804bcd703f049",
+      "rawBlob": "9b0e5bb106d51adb2aa8b355963771677e590dea",
+      "filteredBlob": "9b0e5bb106d51adb2aa8b355963771677e590dea",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeSearchForBlockHelper.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs",
+      "sha256": "897b4a66675984dadf409d0fc1f971cf711418c9b64fdb0999faf0b971ec845a",
+      "rawBlob": "1d99dbea6e55ab89019eda67b4b984aca7702726",
+      "filteredBlob": "1d99dbea6e55ab89019eda67b4b984aca7702726",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\SteppedBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativePlaceGroundRunner.cs",
+      "sha256": "8b4d30e728326d3645a197132c688527f66ae3dd545d56ff217dcc4c9fbd35cd",
+      "rawBlob": "1f88d5c2cef93f1c6ee7c6a9c2664f05068d2885",
+      "filteredBlob": "1f88d5c2cef93f1c6ee7c6a9c2664f05068d2885",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Manipulation\\NativePlaceGroundRunner.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs",
+      "sha256": "0fd9772f85c1288747e70b6215bf9d379232c64382dd1caac85d9b8f6487752a",
+      "rawBlob": "8c4456be7925b32ec1004f33a2129b9d350635d6",
+      "filteredBlob": "8c4456be7925b32ec1004f33a2129b9d350635d6",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\src\\Cozmo.Robot\\Manipulation\\Workouts.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CubeLiftWorkoutNativeTests.cs",
+      "sha256": "3872d49333681d8a5f41aedcc1a4d6e48cf40e0b433afbe65bf0b776d484d3ef",
+      "rawBlob": "be79fc1a936ad963aeda6b616c4beec9da1d616b",
+      "filteredBlob": "be79fc1a936ad963aeda6b616c4beec9da1d616b",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\CubeLiftWorkoutNativeTests.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "1a08b906b87741d0826e1fd9e68de686606f6a1721b6b1f2ae524c733b39ee64",
+      "rawBlob": "0696ebce812aec2bcc90ffb19566609434f0cc78",
+      "filteredBlob": "0696ebce812aec2bcc90ffb19566609434f0cc78",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-harness1\\filtered\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\M7BatchThreeBTests.cs"
+    }
+  ],
+  "verdict": "Harness1 staticPASS, only2 diagnosticresets; productionunchanged"
+}
