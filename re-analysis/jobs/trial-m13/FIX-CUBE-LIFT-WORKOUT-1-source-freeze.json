@@ -1,6 +1,6 @@
 {
   "job": "FIX-CUBE-LIFT-WORKOUT-1",
-  "state": "WORKER COMMITTED; CUMULATIVE FULL GATE PENDING",
+  "state": "READY FOR CLAUDE",
   "managerStart": "b5844db5301b79f356c0d5754b0fe4e3947fa027",
   "originMain": "6dcc53fbd10af2662302b1dab9797e0a67bec0d6",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-fix-cube-lift-workout-1",
@@ -51,7 +51,7 @@
     "fresh readiness must not use per-run Context before attachment",
     "M13-038.Update and PlayAlone activity admission remain unbound; whole M13-010 proposal withdrawn"
   ],
-  "dotnetLease": "Breturned actual0; rootintegration/fullgate next",
+  "dotnetLease": "returned after full gate; separate final processes empty",
   "existingWholeRecordProposals": [],
   "rootInstructionQualifications": [
     "Public music has no unconditional null-mood guard: valid-current empty scorer follows defined path; only actual dereference fault paths get M1 fallback. No code change needed.",
@@ -154,5 +154,37 @@
     "checkoutPost": [],
     "trxSha256": "6de12a529ed6a7868a4dea9767001a5706cbac315501c3c5414a9b17787eade1",
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-fix-cube-lift-workout-1\\.scratch\\fix-cube-lift-workout-1-review2\\replay2"
-  }
+  },
+  "fullGate": {
+    "jobs": [
+      "FIX-CUBE-LIFT-WORKOUT-1",
+      "DRIVE-IN-DESPERATION-ENERGY-1"
+    ],
+    "state": "PASS",
+    "attempt": 1,
+    "commit": "7be1d7ba43a4297176cc3917ff0b2f7d4a17a308",
+    "cozmoStackTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
+    "startedUtc": "2026-10-30T22:53:43.1075608Z",
+    "endedUtc": "2026-10-30T23:01:27.6406191Z",
+    "exitCode": 0,
+    "passed": 6992,
+    "failed": 0,
+    "skipped": 0,
+    "total": 6992,
+    "duration": "6 m 39 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "fingerprint": "930f10c7cfb3557d9c572b6f37f90eb9cdabb435",
+    "fingerprintIndependentlyRecomputedAndCacheMatched": true,
+    "frozenTrackedSourcePathsMatched": 16,
+    "derivedMarkerMatched": true,
+    "logSha256": "3d036cdae2d2031fa8113cc70edea407932fa88e1141b30e831e4097dd0c0ea6",
+    "consoleSha256": "593c4796b04f7999487f542579ae2c02f6e30f66f6a10841997cf806225e7b67",
+    "nativePre": [],
+    "nativePostOriginal": [],
+    "separateFinalProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
+  },
+  "fullGateAttempts": 1,
+  "integrationCodeTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
+  "integrationOverlay": "Workout ClockSec binding overlays Energy original freeze; current Energy class included in 282/exact282 plus this full gate."
 }

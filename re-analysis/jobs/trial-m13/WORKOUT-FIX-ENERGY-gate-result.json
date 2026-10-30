@@ -1,0 +1,29 @@
+{
+  "jobs": [
+    "FIX-CUBE-LIFT-WORKOUT-1",
+    "DRIVE-IN-DESPERATION-ENERGY-1"
+  ],
+  "state": "PASS",
+  "attempt": 1,
+  "commit": "7be1d7ba43a4297176cc3917ff0b2f7d4a17a308",
+  "cozmoStackTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
+  "startedUtc": "2026-10-30T22:53:43.1075608Z",
+  "endedUtc": "2026-10-30T23:01:27.6406191Z",
+  "exitCode": 0,
+  "passed": 6992,
+  "failed": 0,
+  "skipped": 0,
+  "total": 6992,
+  "duration": "6 m 39 s - Cozmo.Protocol.Tests.dll (net9.0)",
+  "fingerprint": "930f10c7cfb3557d9c572b6f37f90eb9cdabb435",
+  "fingerprintIndependentlyRecomputedAndCacheMatched": true,
+  "frozenTrackedSourcePathsMatched": 16,
+  "derivedMarkerMatched": true,
+  "logSha256": "3d036cdae2d2031fa8113cc70edea407932fa88e1141b30e831e4097dd0c0ea6",
+  "consoleSha256": "593c4796b04f7999487f542579ae2c02f6e30f66f6a10841997cf806225e7b67",
+  "nativePre": [],
+  "nativePostOriginal": [],
+  "separateFinalProcesses": [],
+  "officialChanges": false,
+  "hardwareRun": false
+}
