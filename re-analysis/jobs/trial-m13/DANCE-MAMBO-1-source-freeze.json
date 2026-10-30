@@ -1,6 +1,6 @@
 {
   "job": "DANCE-MAMBO-1",
-  "state": "FULL GATE FAIL; LISTENER SOURCE FIX OPEN",
+  "state": "CORRECTION3 BUILD OPEN",
   "managerStart": "34a59d527480c1030d8d28a90834390841949789",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
@@ -402,5 +402,21 @@
     "separateSourceFinding": "B confirmed listener iteration generation suppression contradicts native005C0272..290, pending correction3"
   },
   "rootSourceFindings": 1,
-  "pendingReviewerFixRound": 3
+  "pendingReviewerFixRound": 3,
+  "gateFailureClassification": {
+    "category": "TEST_HARNESS_DEFECT",
+    "structuralSynchronizationDefectConfirmed": true,
+    "originalInterleaving": "UNKNOWN",
+    "currentSnapshotsMatched": [
+      "M1-015",
+      "M1-025",
+      "M5-027",
+      "M5-057",
+      "M7-017"
+    ],
+    "sourceReport": "re-analysis/research/20261030-dance-mambo-1-gate-failure-read.md",
+    "originalSha256": "06c773adf5bbabc61afa4d9c131dc1b8e43955c0460cc77faafd3f700598c9c9",
+    "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-gate-failure-read.06c773adf5bb.raw.md"
+  },
+  "fullGateHarnessFixRounds": 1
 }
