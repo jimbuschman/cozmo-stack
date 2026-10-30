@@ -1,0 +1,29 @@
+{
+  "job": "BOUNCER-1",
+  "attempt": 1,
+  "state": "FAILED, CLASSIFIED BEFORE CHANGES",
+  "commit": "fa7682c4a1a6d3b32413d3448ae4a3a910e5f046",
+  "cozmoStackTree": "d955a92aa04e0d06955778237381565ddedd645c",
+  "startedUtc": "2026-10-30T00:17:32.4513118Z",
+  "endedUtc": "2026-10-30T00:27:49.7581249Z",
+  "exitCode": 1,
+  "total": 6794,
+  "passed": 6793,
+  "failed": 1,
+  "skipped": 0,
+  "duration": "9m10s test execution",
+  "failure": {
+    "classification": "test internal-field oracle mismatch for host-only monotonic stale-continuation epochs; preserve all source-observable reset checks",
+    "test": "EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed",
+    "source": "M1-025 CC27 0x004ED026..0x004ED07C; M1-015 deletion0x0052F248..0x0052F364; no native obligation for numeric host epoch reset",
+    "message": "Animations._scheduler._idleMutationVersion: as constructed0, after removal3"
+  },
+  "logSha256": "AC14BE7FDE0DA4D825AE6341B85ADF975EF4AC299281121E8FBB92DE916C1F14",
+  "consoleSha256": "913A0C032AE3002F2473A34F31B073ACEB4F5043FD8DB20CF7217CEB31ED0F43",
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "historicalPassingFingerprintNotForThisRun": "a9824ae89ceb59985844a738a401e04a093e84ce",
+  "currentRunPassingFingerprint": null,
+  "hardwareRun": false,
+  "officialRecordChanges": false
+}

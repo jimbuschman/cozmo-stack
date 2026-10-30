@@ -267,7 +267,7 @@ public class M7BatchThreeBTests
         }
         // Config-built owners; PopAWheelie case0059CEA6/ctor005C7430 joins the independently checked class bindings.
         // BUILD-PYRAMID-1 E1: derived case0059C98A/ctor005DBC88; Base E1: BuildPyramidBase case0059C9AC/ctor005DCA40 is independently configured.
-        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
+        Assert.Equal(new[] { BehaviorClass.Bouncer, BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 
@@ -368,7 +368,7 @@ public class M7BatchThreeBTests
             Assert.Equal(new[] { BehaviorID.Hiccup }, container.Behaviors.Keys.ToArray());
             Assert.Single(log, l => l.StartsWith("info: [Unnamed] behaviorContainer::AddToFactory: Added new behavior 'Hiccup' 0x"));
             Assert.DoesNotContain(log, l => l.Contains("Robot.LoadBehavior.CreateFailed"));
-            Assert.Contains(reported, r => r.Contains("class not implemented") && r.Contains("Bouncer") && r.Contains("BehaviorBouncer") && r.Contains("0x5F12FC"));
+            Assert.Contains(reported, r => r.Contains("Bouncer factory") && r.Contains("owners unavailable"));
             Assert.Equal(1, container.NotCreated);
             // the second container (robot+0x48) is named, not built
             Assert.Contains(reported, r => r.Contains("second BehaviorContainer") && r.Contains("robot+0x48"));

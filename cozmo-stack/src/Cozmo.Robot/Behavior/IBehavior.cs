@@ -168,6 +168,15 @@ public interface IBehavior
 /// <see cref="Dispose"/> is what releases everything at once.
 /// </summary>
 // fidelity: M8-011
+internal sealed class ScopedAcquisition
+{
+    private int _active=1;
+    internal bool Active=>Volatile.Read(ref _active)!=0;
+    internal bool Completed;
+    internal long Generation;
+    internal void Cancel()=>Interlocked.Exchange(ref _active,0);
+}
+
 public sealed class BehaviorScope : IDisposable
 {
     // IBehavior::Stop 0x005bd08c releases the scope in this fixed order regardless of acquisition order:
@@ -209,6 +218,42 @@ public sealed class BehaviorScope : IDisposable
     private Animation.AnimationTrack _unnamedLocked;
     private Action? _idleRemove;
     private Action? _motionClear;
+
+    // Host reentry-safe acquisition for Bouncer. The placeholder is installed before
+    // callouts; only an uninterrupted acquisition takes the normal name-wide cleanup.
+    internal bool AcquireScopedReactions(string name,ReactionLockTable table)
+    {
+        var lease=new ScopedAcquisition(); string managerName=name+"_behaviorLock";
+        lock(_gate)
+        {
+            if(_disposed)return false;
+            _undo.Add((OrderReactionLocks,name,()=>{lease.Cancel();_reactionLockNames.Remove(name);ReactionsDisabled=_reactionLockNames.Count!=0;_manager?.RemoveScopedReactions(managerName,lease); }));
+        }
+        bool acquired=_manager?.DisableScopedReactions(managerName,table,lease) ?? true;
+        if(!acquired){lease.Cancel();_manager?.RemoveScopedReactions(managerName,lease);return false;}
+        lock(_gate)
+        {
+            if(_disposed || !lease.Active)return false;
+            _reactionLockNames.Add(name); ReactionsDisabled=true; lease.Completed=true;
+            return true;
+        }
+    }
+
+    internal void AcquireScopedIdle(Animation.AnimationScheduler scheduler,AnimationTrigger trigger,string name,Func<double> nowMs)
+    {
+        var lease=new ScopedAcquisition();
+        lock(_gate)
+        {
+            if(_disposed)return;
+            _undo.Add((OrderIdle,"",()=>{lease.Cancel();IdleAnimationSet=false;_idleRemove=null;scheduler.RemoveScopedIdle(name,lease,nowMs());}));
+        }
+        scheduler.PushScopedIdle(trigger,name,lease);
+        lock(_gate)
+        {
+            if(_disposed || !lease.Active)return;
+            IdleAnimationSet=true; _idleRemove=()=>scheduler.RemoveIdleAnimation(name,nowMs()); lease.Completed=true;
+        }
+    }
 
     /// <summary>
     /// A scope with no arbiter/motion models the locks without enforcing them, which is only useful in

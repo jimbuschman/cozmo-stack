@@ -1,0 +1,344 @@
+[
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Actions/ActionList.cs",
+    "sha256": "a9ebfcce2f773315be3bd41bcad48fd7c07ec591f7401682e1c41a537d1ecbe9",
+    "bytes": 18161,
+    "git_blob": "ccb036e55eaaebc77a20ee7932d90db19c08707d"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Actions/IActionRunner.cs",
+    "sha256": "9b6ae9c51be77c177e09788c75393e526d48e3e7780a796fabfb8a73720906dd",
+    "bytes": 31753,
+    "git_blob": "20e2d37fc15ee86a6bc70799bccd3a555274c901"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationClip.cs",
+    "sha256": "4ff1b1c2df6d16523ade7ebcaffbafce6d9b039a82185dc67f4aebadab0f26f9",
+    "bytes": 19629,
+    "git_blob": "3efce511d9da4265ef26ceda7d5f1fd7f348ca53"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+    "sha256": "35a15bf5dbdb3c5eb9c55e6c1b0183e6fe12efd93f88cb4ec2a9bb152f566047",
+    "bytes": 124344,
+    "git_blob": "22b9af5b696bf4e771d2dd457acea39c2be510e2"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
+    "sha256": "fe094c5819877a92c7dffe59ce8a8fd733ce5718ce20b83a2a428569fe56de23",
+    "bytes": 42815,
+    "git_blob": "2ab42283d4872fa33f27eb5fd905349fca90d317"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/FaceAnimationLibrary.cs",
+    "sha256": "ed04b4e1c9fc3b1863ae333a4b95769794f89fc556026359f9f38299fab93ad9",
+    "bytes": 16673,
+    "git_blob": "32844a7a014c4ea7855d839e99803d8e2a9cbef3"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/NativeSetFaceImageAction.cs",
+    "sha256": "0708ff5321197528f0a126eab8150dcabef2a6b45707a83731329b8eeea7a267",
+    "bytes": 1998,
+    "git_blob": "6146fe288a80eeb6e76e8443476700bfcd768997"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/StreamAnimation.cs",
+    "sha256": "c596e5d22ba818675d9be7c8403f1c33662a4de83532b5ad4bcbdcc172180693",
+    "bytes": 17383,
+    "git_blob": "315832ff2e4bdbf8c8343fb6edbf67cd17ff09bb"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs",
+    "sha256": "548aed19915aa1defd79c35790eca17fa5771410a87873579616058ee455161c",
+    "bytes": 41334,
+    "git_blob": "732794074632d5f10ece5b0581f1672aa0e3f6a8"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Animation/TriggerLiftSafeAnimationAction.cs",
+    "sha256": "38bc18758150715faa8430a7fdab30229cd79513535ef5c37f03ab5865297ead",
+    "bytes": 10880,
+    "git_blob": "846112f7702a7e9a1f3c155a8af9ec3c41f4c2c7"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+    "sha256": "ecc112141393054c0755dbcf1ed842eb09d735a791a56b24e87af64062522dd6",
+    "bytes": 36466,
+    "git_blob": "5e8220b2282a983887ec84e4f93b81f2f20becfd"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+    "sha256": "478abb57be64970e8782d9ce7856b8996c42d70ffa79bc266097608b77b2534f",
+    "bytes": 71790,
+    "git_blob": "27983f6a197443390bee7ef3e93d73fd0eecb97f"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplayStack.cs",
+    "sha256": "35060e73cced9bcafffc22b9e4722719f643975f7b59d8173891cc5bab4ba110",
+    "bytes": 26034,
+    "git_blob": "5720eafb4e38c5a92639489f506445e0166caf4a"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+    "sha256": "c04bb6051abf71a4660bcf18af6fd9305d221ff2e869a3b85d9146d39cc42662",
+    "bytes": 37095,
+    "git_blob": "210ef3efd8ab21532cd2bd768510663aa1383383"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+    "sha256": "984163e1c4c2235903e5a9948e25205ce1aca2f7145a7d86ca7f798c14cfa2ff",
+    "bytes": 14002,
+    "git_blob": "2a3958915b1cc5d8b3be845cc18ca59c3a43261c"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBouncerBehavior.cs",
+    "sha256": "59284f95f3ec274de1531d869ce3ef2b2bf29b3e3993db6e9d5113f08317e097",
+    "bytes": 7848,
+    "git_blob": "b8a0c540a3bd0e71ce7f7b5cea8554d05c6349fd"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBouncerController.cs",
+    "sha256": "6c58e29e9cde29a9023f2e8cce51906bf0cf6366742922697c792f1936731de3",
+    "bytes": 4100,
+    "git_blob": "41a4c81d2a9422a36df00c67413c1c8efefc8ee0"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBouncerGame.cs",
+    "sha256": "a6f58518f4703ba5f7333bb739aaeb4fd7e047aacf577a3a80a983568c66f927",
+    "bytes": 2766,
+    "git_blob": "4e727311ce9c31162a22336a059a00df826b0a04"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBouncerRaster.cs",
+    "sha256": "f112993dfc60bec0757c5ad1556f1eefded394232fa98d9152089838ac032a26",
+    "bytes": 4058,
+    "git_blob": "e3b92aac273f4ab6b3a0a2103625bc9a8ce35e14"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.Actions.cs",
+    "sha256": "e0495e4ac9a15a67ed0895319b5116b4e10821c91a7427b162889e91a17dcc3b",
+    "bytes": 7663,
+    "git_blob": "bba0acbd607dec2d0ee57489a06250d47babb0f4"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+    "sha256": "985093abaf7732f1064c64465d5d2a4336fe8b28b1d6bd55fa9b3b11800d5e52",
+    "bytes": 142740,
+    "git_blob": "eabbce916008be4e00ea59ff7a9fcf8584d61f47"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+    "sha256": "acb908a54ac139dbee3fc469f4e5c38e1c00d0c6b2c9cb5415474ac16e6e94bf",
+    "bytes": 35327,
+    "git_blob": "0ce1866e1e4ca8e9d44d7912b9453bb3780e7564"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Vision/NativeRobotStateHistory.cs",
+    "sha256": "b6733f08513f58212700ebaabf69f4fd9a94f05221591aad812f1bed1c9136bc",
+    "bytes": 21896,
+    "git_blob": "8d6001eab6ba848cfd3c71d3e05263eb754d0c78"
+  },
+  {
+    "path": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+    "sha256": "b07467d6f1ab1d8eec4c234c47da8e01134a7a1e9ff769d4e40fee01a2bea5c1",
+    "bytes": 103890,
+    "git_blob": "018b74cf1bd21654d402f0ac7b1970a5c783a349"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/Cozmo.Protocol.Tests.csproj",
+    "sha256": "76baafcf4c446cf2cb6527c5a7d9f9eccbac173853bff0f8683730bf92057ac9",
+    "bytes": 1533,
+    "git_blob": "08ccce18ecf2c69a71f4e0fc797f4bd52eb4c4c3"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "sha256": "0dffc1a867bcd3d34c4603c017daacb212e2ac5e50a9cca57c4270eefc01bda1",
+    "bytes": 168728,
+    "git_blob": "64d27ec79e55b44c95974d0ef3fbd1892ff627b5"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+    "sha256": "d312a3e6a8896605ed22b2c6b739af16133f020b7ab0de164e253060c2df8d70",
+    "bytes": 57574,
+    "git_blob": "dc833d52e78f6aaef6776dd20b0bbb482b4fb11e"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerControllerTests.cs",
+    "sha256": "4c42ccfbed14a778616aee707e8625a0db551385343fc98e5fc5ccdc78e71c52",
+    "bytes": 4450,
+    "git_blob": "25cfac3a8af1538fa4f832202575c583f6040f9e"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerFaceInputTests.cs",
+    "sha256": "6def574b5514e7c47ace8d3cf2ea316b4f3b8386a245afb6a7784163381dc56a",
+    "bytes": 3344,
+    "git_blob": "1e491b6d87c747f509be9a6704e9fab97e9d5a5c"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerFactoryTests.cs",
+    "sha256": "e686500379f606100845f616785b5c573acfd912d027f33e7b739ea929cd5aa3",
+    "bytes": 9729,
+    "git_blob": "1834c0e98148a9c06d05feb65b80bc6029e4b2dd"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerFrameTests.cs",
+    "sha256": "487aa7aab6cc806b54ee7e1c9a45448a2a18fef74e016e8616074f1139b64555",
+    "bytes": 8901,
+    "git_blob": "de2a16ec52f4281eb448134973f17cc851f0fd0e"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerGameTests.cs",
+    "sha256": "450b01e3ff48567688233e97e95607c0b8c3a30202d5b0ce8a480f35e9978c35",
+    "bytes": 2013,
+    "git_blob": "66e5c693664d25a522c356f0073e86db70fa3fa7"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerRasterTests.cs",
+    "sha256": "17a1797a8ca8abbe2e6f9eeb214d9e68bf3948f1082a1403ca84eab557a42419",
+    "bytes": 1704,
+    "git_blob": "7095735efd55a40eb241f7013a2618053b114697"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerScopeTests.cs",
+    "sha256": "1a7c6e9d7854d6e5bd3a3df3aa78a36b120aaf308f3427a31fd9ad808e422f6d",
+    "bytes": 8946,
+    "git_blob": "9701c08a5f0806cdf07442d69004e54a5f5577ce"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/README.md",
+    "sha256": "ed6a5892b98ce061171dee357a35623cf02fc82270bae93e64bafd888e88dcb9",
+    "bytes": 2492,
+    "git_blob": "dc2c7aaf38eb16c3fc78e72fc91dcb8f49f90181"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/circle_bottom_right.gray",
+    "sha256": "46929fc0cf7ab8c11fe574a24aa5ceb968e9ca83b013e9e8e2fd9936dfec723c",
+    "bytes": 8192,
+    "git_blob": "31024b17d33ef60c400d31f86149804d8026a580"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/circle_center.gray",
+    "sha256": "ec501af0ebecd711893cbd8934419592f4baab9527a546bae9536a285edf451b",
+    "bytes": 8192,
+    "git_blob": "e87733b63eb7cfc81ff5d1b046da779acc7ffb57"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/circle_top_left.gray",
+    "sha256": "41b549a28858524ead43f538875956685d585dfcba72bac846f6b573452f936c",
+    "bytes": 8192,
+    "git_blob": "7e08eac90509811fd2497a5d764dcca3ea8e8b66"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_0.gray",
+    "sha256": "adf805e7c24d32a477aa97c34cf5bde978744d774caaa7e4b604b9483d45b9e0",
+    "bytes": 8192,
+    "git_blob": "232ce426fd7bf491593a2a6bae82873541809188"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_1.gray",
+    "sha256": "f87ffd9989cdce64e3f832012214b7be8550105120e5748ede8723ebfa5874a8",
+    "bytes": 8192,
+    "git_blob": "9b7b6005c2e52202abbcff4f917a63ceb38c10d6"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_2.gray",
+    "sha256": "d0048f3dd4b402ca51d7f3893f017c9dd7584041c74b7f609b4a47c769fd3e3c",
+    "bytes": 8192,
+    "git_blob": "1e59fc4a9c4c57f69a959be19b63761979401bf2"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_3.gray",
+    "sha256": "e4fe0bb2e3d20429f4501a7b910f930205c92eecf0d7a89e2c46855e497375df",
+    "bytes": 8192,
+    "git_blob": "d8c4dd1c937102ec3bc73c716b1f0091080c57f1"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_4.gray",
+    "sha256": "cb4ae64d36ee27f7336a2e1b3d8ce693279528222d1f49de96123b768f891b84",
+    "bytes": 8192,
+    "git_blob": "414ae21f8a5f97c09312801afe56e8ed95a08d6f"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_5.gray",
+    "sha256": "c98d4e8d1051377b7121b1d54788baa1f165288c05920f867dd7d0c9dae8bd71",
+    "bytes": 8192,
+    "git_blob": "41df04c81217a061185930fcd97ff082c5e73541"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_6.gray",
+    "sha256": "51b4362810741ce373c793359be63fa6254004c23044a86b8300817de83a697a",
+    "bytes": 8192,
+    "git_blob": "7b3da8db31ac6b015c051ef6670288dd24127586"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_7.gray",
+    "sha256": "10abe3322f8dfaf11108450a383f11635fbdc28a634c51feb242ac79dafc8136",
+    "bytes": 8192,
+    "git_blob": "325f84bbb16ffac3c294263ecdd7b5af75df1f67"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_8.gray",
+    "sha256": "a13c5c6633f5982ccbb10f7c6a727eb3e42371f6699b35746e44e2a8a5e8e217",
+    "bytes": 8192,
+    "git_blob": "abaa9e18abc761f48c83597f2ec276d518563a2a"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/digit_9.gray",
+    "sha256": "c96c9443f75f5d232d4066f6d076c974cf20c56799d2c732c633124d1872cd65",
+    "bytes": 8192,
+    "git_blob": "a4050541aedb623ea392dca186ac7e24715b68b5"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/frame_edges.gray",
+    "sha256": "71b148f7803bfcfb081584441ad04c50c521f62cdb22c3814e3700d208c6a972",
+    "bytes": 8192,
+    "git_blob": "62b37a277bddd4fd310b4b95e17f37242d627100"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/frame_initial.gray",
+    "sha256": "9ef5868fb8eddb77beb022cc5a2dd101d0d28ffc388afe38cd974a6174ebfc22",
+    "bytes": 8192,
+    "git_blob": "e34f5811a9bc41dee9336665d2679a5abaea15c9"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/frame_multidigit.gray",
+    "sha256": "b809764ac8c09cb21360f58ac670dfd0170ddba5f87d7b885941b93a0e9054d3",
+    "bytes": 8192,
+    "git_blob": "523a39b31794a34b8dba742f0c261e89ea29e2f2"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/manifest.json",
+    "sha256": "ffd4b1df979516403e2c20d3d55e24bc10d9af328719767df86b86030ab12bd5",
+    "bytes": 7348,
+    "git_blob": "94dfb90ac14395edc6c9d4816a3d6de6464ff444"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/multi.gray",
+    "sha256": "e7680b8026f0602ddd16f1199b5a9a2aacf1fc30396e328d85dbc4706e57c228",
+    "bytes": 8192,
+    "git_blob": "8f582035647b29675297913a645bb52f41077e7e"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/rect_clip.gray",
+    "sha256": "e3e53ca3b55989ff8c59e41df7f5a7991e2441f863545cdfac1075f5dbe611e9",
+    "bytes": 8192,
+    "git_blob": "c0edd386a9404118294679795c0bf7497dcb7ab6"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/rect_empty.gray",
+    "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+    "bytes": 8192,
+    "git_blob": "6d17cf9d15fb9f4a2358a2d079f3b8c755d005fa"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/rect_standard.gray",
+    "sha256": "d586d571087cadaf49d170dc540c51553d9a090f3c7ed7dd22ac30df7264bcbe",
+    "bytes": 8192,
+    "git_blob": "a6bfa16eb130d2f1b3c750cb0d92639d17f10c16"
+  },
+  {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/reference.py",
+    "sha256": "b1bab9dddcc205a45d6c95b56a70dd71f602b4675d1d08a0a22107c4ffbcd2a8",
+    "bytes": 3198,
+    "git_blob": "6c1b4bd6d718051b6161d4458a52c7c78ddc58fc"
+  }
+]

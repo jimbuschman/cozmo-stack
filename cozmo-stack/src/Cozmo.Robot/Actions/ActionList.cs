@@ -163,6 +163,7 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public int QueueAction(QueueActionPosition position, IActionRunner? incoming, byte retries = 0)
     {
+        if(incoming is ActionRunner runner)runner.MarkQueueAdmission();
         using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
         {

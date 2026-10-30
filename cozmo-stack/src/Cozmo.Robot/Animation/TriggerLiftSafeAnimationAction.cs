@@ -16,13 +16,16 @@ internal class TriggerAnimationAction : ActionRunner
     private AnimationTicket? _ticket;
     private string _clip="";
     private AnimationClip? _cachedClip;
+    private AnimationClip? _directClip;
+    private Func<bool>? _directOwnerCurrent;
+    private bool _directDiagnosticReported;
     private bool _destroyed;
     private bool _started, _ended, _failed;
     private uint _loops;
     private byte _animationTag;
     private RetainedSubscription? _ca, _cb, _d5, _aborted;
     private readonly Action<string> _missing;
-    internal TriggerAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null, bool liftSafe = false) : base(0x1A, (uint)request.Argument4)
+    internal TriggerAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null, bool liftSafe = false, AnimationClip? directClip = null) : base(0x1A, (uint)request.Argument4)
     {
         _robot=robot;Request=request;_missing=missing??Behavior.SteppedBehavior.ReportMissing;
         _loops = unchecked((uint)request.Argument2);
@@ -33,9 +36,17 @@ internal class TriggerAnimationAction : ActionRunner
         // Checked M8-005/007 lift-safe ctor gate, 0x00544714..0x00544732.
         if(liftSafe && robot.Engine.Robot is {} owner && owner.CarryingOwner is {} carrying &&
             (carrying.CarriedObjectId??uint.MaxValue)!=uint.MaxValue && robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)RequiredTrackMask|=2;
-        SetAnimGroupFromTrigger(request.Trigger);
-        Missing("M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs");
+        _directClip=directClip;
+        if (directClip is null)
+        {
+            SetAnimGroupFromTrigger(request.Trigger);
+            Missing("M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs");
+        }
     }
+    // SetFaceAction's child is PlayAnimationAction with an owned live clip, not a trigger lookup.
+    internal TriggerAnimationAction(CozmoRobot robot, AnimationClip clip, Func<bool> ownerCurrent, Action<string>? missing = null, bool diagnosticReported = false)
+        : this(robot, new DrivingAnimationRequest(default, 1, true, 0, 60f, false), missing, directClip: clip)
+    { _directOwnerCurrent=ownerCurrent;_directDiagnosticReported=diagnosticReported; }
     // TriggerAnimationAction::SetAnimGroupFromTrigger 0x0054432C; shared by constructor and get-out Init.
     protected void SetAnimGroupFromTrigger(AnimationTrigger trigger)
     {
@@ -48,6 +59,13 @@ internal class TriggerAnimationAction : ActionRunner
         }
     }
     private void Missing(string text)=>_missing(text);
+    internal bool RetireStaleConstructor(Func<bool> current)
+    {
+        if(current() || _ticket is not null || _cachedClip is not null || _ca is not null || _cb is not null || _d5 is not null || _aborted is not null)
+        { Missing("M8-020 stale constructor retirement invariants failed; action retained"); return false; }
+        if(!RetireNeverAdmitted())return false;
+        _destroyed=true;return true;
+    }
     protected override string ActionName=>"PlayAnimation"+(_group??"");
     protected override float EngineClockSeconds=>_robot.Engine.Timer.SecondsF;
     public override bool CanInterrupt()=>false;
@@ -57,24 +75,34 @@ internal class TriggerAnimationAction : ActionRunner
     protected override bool AreAllTracksLockedBy(uint mask,string owner)=>_robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
     public override int Init()
     {
-        if(string.IsNullOrEmpty(_group))
+        if(_directClip is not null)
+        {
+            if(!_directDiagnosticReported)Missing("M8-020 direct PlayAnimationAction: completion union and cached Animation pointer/destructor lifecycle remain incomplete");
+            if(_destroyed || _directOwnerCurrent?.Invoke()!=true)return 0x03000000;
+        }
+        if(_directClip is null && string.IsNullOrEmpty(_group))
         {
             if(_robot.Animations.DrivingTriggerMap is null)Missing("M8-021 trigger-map input unavailable; no animation name can be resolved");
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"TriggerAnimationAction.NoAnimationForTrigger",$"Event: {Request.Trigger}");
             return 0x0300000C;
         }
         var library=_robot.Animations.Library;
-        if(library is null){Missing("M8-021 animation-library input unavailable; no playback can be started");return 0x0300000C;}
-        _clip=library.GetAnimationNameFromGroup(_group,Request.Argument6);
-        if(_clip.Length==0)
+        if(_directClip is null && library is null){Missing("M8-021 animation-library input unavailable; no playback can be started");return 0x0300000C;}
+        _clip=_directClip?.Name ?? library!.GetAnimationNameFromGroup(_group!,Request.Argument6);
+        if(_directClip is null && _clip.Length==0)
         {
             return 0x0300000C;
         }
         // fidelity: M8-015, M8-020 — PlayAnimation::Init 0x00543F20..0x00544180.
         _started = _ended = _failed = false;
-        _cachedClip??=library.GetClip(_clip); // 0x00543F6E..7E: first lookup survives retries.
+        _cachedClip??=_directClip ?? library!.GetClip(_clip); // direct live clip or first lookup survives retries.
         _ticket=_robot.Animations.PlayTracked(_cachedClip,Request.Argument3,numLoops:Request.Argument2);
         if (_ticket is null) return 0x03000001;
+        if(_directClip is not null && _directOwnerCurrent?.Invoke()!=true)
+        {
+            _robot.Animations.ClearStreamIfClipMatches(_cachedClip);
+            return 0x03000000;
+        }
         _animationTag = _ticket.Tag;
         var owner = _robot.Engine.Robot!;
         RetainedSubscription.Replace(ref _ca, owner.SubscribeMessage(RobotMessageId.AnimStarted, m => Started(((AnimationStarted)m).AnimId), "PlayAnimation"));

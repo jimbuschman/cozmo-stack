@@ -356,7 +356,7 @@ internal sealed class StreamAnimation
     /// <summary>The container's Animation for a clip, built once from its keyframes in their loaded order.</summary>
     public static StreamAnimation Of(AnimationClip clip) => ForClip.GetValue(clip, c =>
     {
-        var a = new StreamAnimation(c.Name, isLive: false) { Clip = c };
+        var a = new StreamAnimation(c.Name, isLive: c.IsLive) { Clip = c };
         foreach (var k in c.Keyframes) a.Add(k);
         return a;
     });

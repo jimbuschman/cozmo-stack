@@ -1,3 +1,15 @@
+## All bounded Bouncer source supplements released
+
+FiveUNKNOWN-onlysupplementsnowindependentlyPASS/frozen: face/image/raster, timestamp-origin, directplaytype, parentallocationlifetime, outeranimationname. Existingownkernelnotre-extracted. Directtype1A, outernameSetFaceImageAnimation, liveflagtrue, keyframe_PROCEDURAL_. Originselectedatface-updatehistorytimestamp; dynamicnodeidentity withstrongCLRnodeallocationref, no logicalOwnerslease; noM1-034case, globalM11-077finalcallbackgapretained. ExtraNativeHistory/Visionbindings/explicitliveflagflowapprovednarrowly. Native20-imagecorpusalloutputsverified +nativehalf-ties; rawmanifestSHA3256a511ee056f982ab09b77964ef635fa059e4bbdafe6f700be361a04c2dfa6. Rootcaughtreported65charhash typo, reviewercorrectedmetadataonly; artifactmetadata1, nativebehaviorcorrections0, oldartifactbinaryattributionclarification1. FullBouncerdraftstilluncompiled/unreviewed; SAMEworkers, no restoreagain.
+
+## Bouncer actual UNKNOWNs recovered; main PASS imported
+
+Imported mainba210b45 at4716c2a7; AO+ghostrepairClaudePASS/MERGED, nothing settled. QUEUE/BEHAVIOURS conflicts chose main verbatim; privateBouncerworkcontinuesunderpacket. Builder raisedessentialMISSING beforedependentcode; sameSol/mediumreader recoveredDCthirdOKAOoutput+copy, proceduralimageframejoin andboundedLINE8/font fromshippedimgproc3c4e3ff7...; sameDEFAULTreviewercheckedmaterialclaimsPASS. Sixcurrentfullrecordexcerptsmatched, sourcebehaviorcorrections0/binaryattributionclarification1. Freezeupdatedbeforerelease; approvedboundedFaces/FaceAnimationLibrary/CozmoAnimations/newnativeimageaction+raster adapters, no detectorport/policy/status/wholeclaimupgrade. Independentnativepixelcorpusbeingprepared, no C#oracle. Bouncerarithmetic/controllerdrafts uncompiled, no nativebridgeyet atrelease; originalrestorevalid/no repeat.
+
+## Bouncer source frozen/build released
+
+GhostrepairREADYa546fe07d597ff5ada77ca2523ae6bdad7067a0c remotelyverified. BOUNCER-1 wholeownread +boundedmaterialindependentcheck PASS, four currentrecordquotes matched; LFsourceSHAEDC14B5C.../checkC13BD9FA... frozen, originalCRLFpreserved/no textchange, sourcecorrections0/knownlookupsequencingmiss1. Same Sol/medium reader and DEFAULT builder/reviewer, actualbackendunobserved. Preparedbuilderrestoreall5/shutdown/native0 complete, no repeatrestore; release ownkernel/factoryjoins, essentialsharedMISSINGreturnsbeforedependentcode, no fakepixels/faceinput/holds. Maincurrentecdbd232/official722 unchanged.
+
 ## Ghost repair READY; resume Bouncer
 
 FIX-ACKNOWLEDGE-OBJECT-GHOST-1 worker89e56c13 integratedb8b35a77; affected239 and independentexact239 PASS0skip; one full6754/6754 PASS0skip (8m52s), UTC21:01:52..21:12:00, fingerprint a9824ae89ceb59985844a738a401e04a093e84ce. Fixreview1/compiler0/harness1 (237P2F diagnosticdedup expectations retained), no newread/restore/official change. Same DEFAULT AOworkers, backendunobserved. READY handoff/queue prepared; afterpush resume same Bouncerbuilder from completed checked read, no wait.

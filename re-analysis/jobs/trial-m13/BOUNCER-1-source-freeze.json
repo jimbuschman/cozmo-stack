@@ -1,0 +1,134 @@
+{
+  "job": "BOUNCER-1",
+  "stage": "READY FOR CLAUDE: independent969 and reset185 PASS; corrected full6795PASS0skip on1724def8; no official changes or finished-behaviour claim",
+  "sourceFiles": {
+    "re-analysis/research/20261029-bouncer-1-read.md": "EDC14B5CB35CB991408F0949BCD179B0DE3B489547A405198362A9D6838E5A24",
+    "re-analysis/research/20261029-bouncer-1-codex-check.md": "C13BD9FA0FA89C36D6DB5DF80A269CF1FACC147D11D71CA8F103AF81122C833A"
+  },
+  "currentManifestQuotesMatched": [
+    "M15-007",
+    "M7-018",
+    "M7-019",
+    "M7-021"
+  ],
+  "newRecordsAdded": false,
+  "officialChangesAuthorized": false,
+  "readerRequested": "gpt-6.1-sol/medium",
+  "builderReviewerRequested": "DEFAULT model/effort; overrides omitted; backend unobserved",
+  "sourceCorrections": 0,
+  "readerKnownLookupSequencingMisses": 1,
+  "serialization": "CRLF normalized to LF only; original byte copies/hashes retained in .scratch/bouncer-1-source-originals; no claim/text change",
+  "frontiers": [
+    "Exact bounded raster/native DC carrier/image-frame contracts now recovered; implementations require review",
+    "Full operator-deferred OKAO detector producer remains M11-016",
+    "SetFeatureToggle host dispatch/persistence and existing M8 action/report gaps remain"
+  ],
+  "productionRules": "No guessed face roll, renderer pixels, RNG or callback/timing. Missing shared path is named MISSING; essential availability questions return to manager before dependent implementation. No indefinite hold or fake native success. Shipped feature false is reproduced, not a not-supported decision.",
+  "sharedUnknownSupplement": {
+    "re-analysis/research/20261029-bouncer-1-shared-unknown.md": "6ADA46C4B3103FE7C1B38AD5D6B5BCD6F28BFEE8440E9726EB71AEC9B24966CD",
+    "re-analysis/research/20261029-bouncer-1-shared-codex-check.md": "443B87D8E66EC482562D8CE0C62B76555E67B60AF9D039F999681A4CC6248B33"
+  },
+  "sharedCurrentRecordQuotesMatched": [
+    "M5-013",
+    "M5-021",
+    "M11-016",
+    "M14-001",
+    "M14-010",
+    "M8-020"
+  ],
+  "primaryBinaries": {
+    "resources/lib/armeabi-v7a/libcozmoEngine.so": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+    "resources/lib/armeabi-v7a/libopencv_imgproc.so": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830"
+  },
+  "sourceSupplementCount": 8,
+  "sourceArtifactAttributionClarifications": 1,
+  "sourceBehaviorCorrections": 0,
+  "remainingFrontiers": [
+    "Operator-deferred M11-016 OKAO detector implementation; exact DC carrier adapter now recovered",
+    "SetFeatureToggle disk/persistence/host-dispatch tails",
+    "Existing M8-020 completion/union/cached-pointer and broader M8/manager report gaps"
+  ],
+  "pixelReference": {
+    "rawManifestSha256": "3256a511ee056f982ab09b77964ef635fa059e4bbdafe6f700be361a04c2dfa6",
+    "lfManifestSha256": "ffd4b1df979516403e2c20d3d55e24bc10d9af328719767df86b86030ab12bd5",
+    "rawScriptSha256": "6ba28c3f65461dd4256d75d66cd535fa24fe4e9beed6c109a1446055d96636ce",
+    "lfScriptSha256": "b1bab9dddcc205a45d6c95b56a70dd71f602b4675d1d08a0a22107c4ffbcd2a8",
+    "caseCount": 20,
+    "bytesPerCase": 8192,
+    "unicorn": "2.1.4",
+    "wheelSha256": "d7107500c64ce5c168fbff6bef9485b5db1350050036f4cea568650cf8bdbdf5",
+    "libraries": {
+      "libc++_shared.so": "8ac5090bbd0be7401af5fff6044ded6f1e6ced692fcd3581fa3cb937b519a16a",
+      "libopencv_core.so": "8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d",
+      "libopencv_imgproc.so": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830",
+      "libopencv_imgcodecs.so": "4bdf5a45023c7938924f6c0018bf20774ebb5f7c0b2a637c93fe9e61b1f87218",
+      "libcozmoEngine.so": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1"
+    },
+    "nativeHalfTieResults": {
+      "0.5": 0,
+      "1.5": 2,
+      "2.5": 2,
+      "3.5": 4,
+      "15.5": 16,
+      "16.5": 16,
+      "63.5": 64,
+      "64.5": 64,
+      "127.5": 128,
+      "128.5": 128,
+      "-0.5": 0,
+      "-1.5": -2
+    },
+    "limits": "Native raster calls with integer input coordinates; separate actual engine VCVTR half ties. Not end-to-end caller/stream replay; emu_elf libc stand-ins and allocator documented. No C# or host OpenCV expected outputs. 65-character manually reported manifest hash typo corrected before test compilation, all 20 pixels hashes unchanged."
+  },
+  "additionalUnknownSources": {
+    "re-analysis/research/20261029-bouncer-1-origin-unknown.md": "0F796FE9342313F788A083DDBF04C8D3C80C67A42977FF77E8196EE03CA7FDCE",
+    "re-analysis/research/20261029-bouncer-1-play-type-unknown.md": "26875E2F5DE4CC473D37986BEFDAA887A95AF65C1D2CB0BBBB83D6252BBBAB5E",
+    "re-analysis/research/20261029-bouncer-1-origin-play-codex-check.md": "55724C93F5ABB2497A4FF5E992EA72121DD7E990C6DB467927FA4E65218AF9C0",
+    "re-analysis/research/20261029-bouncer-1-origin-lifetime-unknown.md": "B8B8F533AF3A9241071560577B828614BEFEE51B8A080844C314F5D55ECCBF58",
+    "re-analysis/research/20261029-bouncer-1-origin-lifetime-codex-check.md": "2B403444EA954184DBED9D47A386B5CA206B3ADB23645AC17BD5F387ADEE6ADE",
+    "re-analysis/research/20261029-bouncer-1-animation-name-unknown.md": "29754AC8EE62ABBBAA55ED6AA628F9BDA8B75EF77E1D18C4EEA85A87299679B5"
+  },
+  "additionalCurrentQuotesMatched": [
+    "M14-001",
+    "M14-008",
+    "M14-009",
+    "M11-066",
+    "M11-097",
+    "M8-020",
+    "M11-066",
+    "M11-077",
+    "M11-097"
+  ],
+  "sourceArtifactMetadataCorrections": 1,
+  "originMechanism": "Query native computed history at face-observation update; retain selected terminal node as strong managed allocation reference without logical owner increments; compare dynamic root-node identities using existing diagnostic-and-continue helpers. Preserve selected-node identity on copies; release metadata references on removal. Existing final shared-control callback gap not settled.",
+  "directPlayType": "0x1A in both native constructors; direct clip uses owned Animation pointer, not trigger/group lookup",
+  "outerAnimationName": "SetFaceImageAnimation",
+  "idleCountSource": {
+    "re-analysis/research/20261029-bouncer-1-idle-count-unknown.md": "21DA7E2405EF457A108B1CB32145773BBC0E8C2C4437B5F5EE7BC775B541E6A1",
+    "re-analysis/research/20261029-bouncer-1-idle-count-codex-check.md": "884C02AA978A7D522CE1CA78F82BEF362BB5A634B7025B33867B2C72043F3731"
+  },
+  "idleCountCurrentQuotesMatched": [
+    "M5-027",
+    "M8-011"
+  ],
+  "implementationReviewCorrectionBatches": 6,
+  "reviewedOriginalArchive": "Builder .scratch/bouncer-1/pre-review-original: actual48files hashed/copied before edits, no reconstruction",
+  "hostReentryScopeDesign": "Preserve ordinary native name-wide manager cleanup and idle last-match removal; identity/epoch bookkeeping only for cancelled/reentered acquisition/cleanup. No locks held over callbacks, no API/Stop deferral. Narrow guarded never-admitted construction retirement preserves replacement streams, ordinary native destruction unchanged.",
+  "setFaceInterruptSource": {
+    "re-analysis/research/20261029-bouncer-1-setface-interrupt-unknown.md": "DEC81EC3CFF5A275435627DCE74DA4A2E1B559F71F7A280D8DF3CF605B8B3FA4",
+    "re-analysis/research/20261029-bouncer-1-setface-interrupt-codex-check.md": "02B9123828373B2C95DFE1B1B7D2E8EF9466C5AD2A1DCA940178A1FA12AD4373"
+  },
+  "setFaceInterruptContract": "SetFaceAction inherited CanInterrupt returns false at 0x0052B0B2, actual concrete/base vtable slot +0x14 identity independently checked; cancellation is separate",
+  "proceduralLifetimeSource": {
+    "re-analysis/research/20261030-bouncer-1-procedural-lifetime-unknown.md": "A865C06B794C09D2C2BE280D218621497F411912E5D0CF5C05CB9D4E1B8F2C9E",
+    "re-analysis/research/20261030-bouncer-1-procedural-lifetime-codex-check.md": "E7F3DACCB8C275707FF29D49E30455156039DE2DE6F92AF4C5CCDBC32B7496B7"
+  },
+  "proceduralLifetimeCurrentQuotesMatched": [
+    "M1-025",
+    "M5-013",
+    "M5-052",
+    "M5-037",
+    "M5-044"
+  ],
+  "proceduralLifetimeContract": "Ordinary same-process robot removal retains singleton and procedural frames; subsequent named keyframes can consume them until SetFace clears/replaces them. Full app reload/external exported removal remains existing M5-052 UNKNOWN; no product retention change or blanket reflection exemption."
+}

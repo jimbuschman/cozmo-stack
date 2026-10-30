@@ -36,6 +36,36 @@ public sealed class FaceAnimationLibrary
     private readonly Dictionary<string, IReadOnlyList<FaceBitmap>> _cache = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IReadOnlyList<FaceAnimationFrame>> _variants = new(StringComparer.Ordinal);
     private readonly object _gate = new();
+    // FaceAnimationManager constructor pre-registers the procedural name (0057FDE4..FDFC).
+    public FaceAnimationLibrary() => _variants[JsonClipLoader.ProceduralAnimName] = Array.Empty<FaceAnimationFrame>();
+
+    // SetFaceAction clears the existing procedural entry then adds one duration-33 image.
+    internal void SetProceduralFrame33(byte[] pixels)
+    {
+        if (pixels.Length != FaceBitmapCodec.CanvasRows * FaceBitmapCodec.CanvasColumns)
+            throw new ArgumentException("SetFaceAction needs a 128 x 64 grayscale image", nameof(pixels));
+        var thresholded = new byte[pixels.Length];
+        for (int i = 0; i < pixels.Length; i++) thresholded[i] = pixels[i] > Threshold ? (byte)255 : (byte)0;
+        var frame = FaceAnimationFrame.FromCanvas(thresholded);
+        lock (_gate) _variants[JsonClipLoader.ProceduralAnimName] = new[] { frame };
+    }
+
+    // Asset loading updates this manager rather than replacing its procedural entry.
+    internal void ReplaceLoadedAssets(FaceAnimationLibrary loaded)
+    {
+        lock (loaded._gate) lock (_gate)
+        {
+            var procedural = _variants[JsonClipLoader.ProceduralAnimName];
+            _dirs.Clear(); _mtimes.Clear(); _cache.Clear(); _variants.Clear();
+            foreach (var item in loaded._dirs) _dirs.Add(item.Key,item.Value);
+            foreach (var item in loaded._mtimes) _mtimes.Add(item.Key,item.Value);
+            foreach (var item in loaded._cache) _cache.Add(item.Key,item.Value);
+            foreach (var item in loaded._variants)
+                if (item.Key != JsonClipLoader.ProceduralAnimName) _variants.Add(item.Key,item.Value);
+            _variants[JsonClipLoader.ProceduralAnimName] = procedural;
+            _log=loaded._log; _sourceLog=loaded._sourceLog;
+        }
+    }
     private Action<string>? _log;
     private SourceLogSink? _sourceLog;
     public IReadOnlyCollection<string> Names { get { lock (_gate) return _dirs.Keys.ToArray(); } }

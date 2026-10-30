@@ -268,10 +268,13 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     /// new live track: when dur ≥ 1 a copy of the layer's current keyframe at trigger 0, then a default keyframe at
     /// trigger dur; AddLayer("Remove" + name, track, 0); the persistent layer erased.
     /// </summary>
-    public void RemovePersistentLayer(byte tag, int dur)
+    public void RemovePersistentLayer(byte tag, int dur) => RemovePersistentLayerGuarded(tag,dur,null);
+
+    private bool RemovePersistentLayerGuarded(byte tag,int dur,Func<bool>? current)
     {
-        if (!Layers.TryGetValue(tag, out var layer)) return;
+        if (!Layers.TryGetValue(tag, out var layer)) return true;
         SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "ITrackLayerManager.RemovePersistentLayer", $"{layer.Name}, Tag = {tag} (Layers remaining={Layers.Count - 1})");
+        if(current is not null && !current())return false;
         var track = new StreamTrack<FaceFrame> { NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE" };
         if (dur >= 1 && layer.Track.Current is { } cur)
         {
@@ -282,13 +285,17 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
         track.AddKeyFrameToBack(FaceFrame.Default((uint)Math.Max(dur, 0)));
         AddLayer("Remove" + layer.Name, track, 0);
         Layers.Remove(tag);
+        return true;
     }
 
     /// <summary>RemoveKeepFaceAlive(dur) (L7, 0x0058CFAC..0x0058CFBE): RemovePersistentLayer(dart tag, dur), tag = 0.</summary>
     public void RemoveKeepFaceAlive(int dur)
+        => RemoveKeepFaceAliveGuarded(dur,null);
+
+    internal void RemoveKeepFaceAliveGuarded(int dur,Func<bool>? current)
     {
         if (DartTag == 0) return; // OV07 E5: manager+1C guard precedes removal.
-        RemovePersistentLayer(DartTag, dur);
+        if(!RemovePersistentLayerGuarded(DartTag,dur,current))return;
         DartTag = 0;
     }
 
@@ -818,6 +825,7 @@ internal sealed class TrackLayerComponent
 
     /// <summary>InitStream's RemoveKeepFaceAlive(99) and the other removal callers (L7).</summary>
     public void RemoveKeepFaceAlive(int dur) => Face.RemoveKeepFaceAlive(dur);
+    internal void RemoveKeepFaceAliveGuarded(int dur,Func<bool>? current) => Face.RemoveKeepFaceAliveGuarded(dur,current);
 
     /// <summary>FaceLayerManager::KeepFaceAlive (A33).</summary>
     public void KeepFaceAlive(LiveIdleParams p) => Face.KeepFaceAlive(p);

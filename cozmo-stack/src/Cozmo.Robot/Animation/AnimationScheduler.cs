@@ -526,6 +526,8 @@ public sealed class AnimationScheduler
     private int _idleMs;                                 // +0x44
     internal int IdleMsForTest { get { lock (_gate) return _idleMs; } }
     private readonly List<(AnimationTrigger Trigger, string Lock)> _idleStack = new();   // +0x48
+    private readonly List<object?> _idleOwners = new(); // host-only acquisition identity, parallel to _idleStack
+    private long _idleMutationVersion;
     private string _lastStreamedName = "";               // +0x54
     private bool _idleInitialised;                       // +0x64
     private int _numLoops = 1;                           // +0x68
@@ -562,6 +564,7 @@ public sealed class AnimationScheduler
         _tlc = new TrackLayerComponent(_contextRng, _scanLines) { Log = l => Log?.Invoke(l), SourceLog = (level, channel, key, text) => SourceLogDispatch.Write(SourceLog, Log, level, channel, key, text) };
         _live = StreamAnimation.Live();
         _idleStack.Add((IdleCount, DefaultAnimLock));
+        _idleOwners.Add(null);
     }
 
     /// <summary>The engine log.</summary>
@@ -892,28 +895,33 @@ public sealed class AnimationScheduler
         return true;
     }
 
-    private byte SetStreamingAnimationLocked(AnimationClip? clip, int numLoops, bool interrupt)
+    private long _streamMutationEpoch;
+    private byte SetStreamingAnimationLocked(AnimationClip? clip, int numLoops, bool interrupt, Func<bool>? scopedCurrent=null)
     {
         if (clip is not null && RejectCustomSong(clip.Name)) return 0;
+        if(scopedCurrent is not null && !scopedCurrent())return 0;
         var old = _streaming;
         if (old is not null && clip is not null && !interrupt)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "AnimationStreamer.SetStreamingAnimation.NotInterrupting", $"Already streaming {_streamingClip?.Name}, will not interrupt with {clip.Name}");
             return 0;
         }
+        long operation=++_streamMutationEpoch;
+        bool Current()=>scopedCurrent is null || (scopedCurrent() && _streamMutationEpoch==operation);
         if (old is not null)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "AnimationStreamer.SetStreamingAnimation.Aborting", $"Animation {clip?.Name ?? "NULL"} is interrupting animation {old.Name}");
-            AbortLocked();
+            if(!Current() || !AbortLocked(Current))return 0;
         }
         else if (clip is null || _idleAnim is not null)
         {
-            AbortLocked();
+            if(!AbortLocked(Current))return 0;
         }
 
         // the old animation's handle ends here
         if (old is not null)
             EndHandleLocked(clip is null ? AnimationEndReason.Cancelled : AnimationEndReason.Replaced);
+        if(!Current())return 0;
 
         _streaming = clip is null ? null : StreamAnimation.Of(clip);
         _streamingClip = clip;
@@ -927,10 +935,11 @@ public sealed class AnimationScheduler
             _ = VerifyFailedReturnFalse("AnimationStreamer.SetStreamingAnimation.LoopingLiveAnimation",
                 $"VERIFY(numLoops == 1): Animation {clip.Name} is marked 'live' but numLoops={numLoops}. Clamping to 1.");
             numLoops = 1;                                          // A8
+            if(!Current())return 0;
         }
         _lastStreamedName = clip.Name;
         byte tag = IncrementTagCtr();
-        InitStreamLocked(_streaming, tag);
+        if(!InitStreamLocked(_streaming, tag,Current))return 0;
         _numLoops = numLoops;
         _loopCounter = 0;
 
@@ -1014,21 +1023,24 @@ public sealed class AnimationScheduler
     /// startSent = endSent = 0, and the audio animation aborted and cleared. +0x38, +0xA0 and the send buffer are not
     /// cleared, and the streamer sends nothing itself.
     /// </summary>
-    private void AbortLocked()
+    private bool AbortLocked(Func<bool>? current=null)
     {
         if (_tag != 0)
         {
             try { AnimationAborted?.Invoke(_tag); }
             catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
+            if(current is not null && !current())return false;
         }
-        if (_streaming is null && _idleAnim is null) return;
+        if (_streaming is null && _idleAnim is null) return true;
         var anim = _streaming ?? _idleAnim!;
         SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "AnimationStreamer.Abort", $"Tag={_tag} {(_streaming != null ? "Streaming" : "Idle")}:{anim.Name} hasFramesLeft={(anim.HasFramesLeft ? 1 : 0)} audioComplete={(_audio is null || _audio.IsComplete ? 1 : 0)} startSent={(_startSent ? 1 : 0)} endSent={(_endSent ? 1 : 0)} sendBuffer={Stream.TagNames}");
+        if(current is not null && !current())return false;
         if (anim.FaceAnim.Current is { } fa) fa.FaceAnimIndex = 0;
         _startSent = false;
         _endSent = false;
         _audio?.Abort();
         _audio = null;
+        return true;
     }
 
     // ================================================================== InitStream (A10..A12)
@@ -1039,7 +1051,7 @@ public sealed class AnimationScheduler
     /// +0x1C8 = the name; +0x84 = +0x80; a non-empty send buffer dropped with SendBufferNotEmpty; endSent = IsEmpty,
     /// startSent = 0; the audio animation created; for a non-live animation RemoveKeepFaceAlive(99). Nothing is sent.
     /// </summary>
-    private void InitStreamLocked(StreamAnimation anim, byte tag)
+    private bool InitStreamLocked(StreamAnimation anim, byte tag,Func<bool>? current=null)
     {
         anim.Init();
         _tag = tag;
@@ -1055,14 +1067,20 @@ public sealed class AnimationScheduler
         if (!Stream.IsEmpty)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "Animation.Init.SendBufferNotEmpty", "Expecting SendBuffer to be empty. Will clear.");
+            if(current is not null && !current())return false;
             Stream.ClearSendBuffer();      // ClearSendBuffer: dropped, not sent (A12)
+            if(current is not null && !current())return false;
         }
         _endSent = anim.IsEmpty;
         _startSent = false;
-        _audio = CreateAudioAnimationLocked(anim);
+        var audio = CreateAudioAnimationLocked(anim,current);
+        if(current is not null && !current())return false;
+        _audio = audio;
         // M9 owns CreateCustomSong and its "About to play the custom song" info; no M5 custom-song path.
-        if (!anim.IsLive) _tlc.RemoveKeepFaceAlive(99);
+        if (!anim.IsLive) _tlc.RemoveKeepFaceAliveGuarded(99,current);
+        if(current is not null && !current())return false;
         _seamDueMs = _nowMs;
+        return true;
     }
 
     // fidelity: M6-028
@@ -1085,12 +1103,15 @@ public sealed class AnimationScheduler
     private static void SteppedBehavior_ReportPostConstruction() =>
         Behavior.SteppedBehavior.ReportMissing("RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made");
 
-    private AudioAnimation? CreateAudioAnimationLocked(StreamAnimation anim)
+    private AudioAnimation? CreateAudioAnimationLocked(StreamAnimation anim,Func<bool>? current=null)
     {
-        if (_audio is not null) { _audio.Abort(); _audio = null; }
+        if (_audio is not null) { _audio.Abort(); if(current is not null && !current())return null; _audio = null; }
         SteppedBehavior_ReportPostConstruction();
+        if(current is not null && !current())return null;
         if (OutputSource is not { } provider) return anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
-        switch ((byte)(provider() ?? RobotAudioOutputSource.None))
+        var source=provider();
+        if(current is not null && !current())return null;
+        switch ((byte)(source ?? RobotAudioOutputSource.None))
         {
             case 2:
                 return anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
@@ -1120,7 +1141,54 @@ public sealed class AnimationScheduler
         {
             if (trigger == IdleCount) { _idleAnim = null; _idleInitialised = false; }
             _idleStack.Add((trigger, lockName));
+            _idleOwners.Add(null);
+            _idleMutationVersion++;
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationStreamer.PushIdleAnimation", $"Setting idle animation to '{trigger}'.");
+        }
+    }
+
+    internal void PushScopedIdle(AnimationTrigger trigger,string name,ScopedAcquisition lease)
+    {
+        lock(_gate)
+        {
+            if(!lease.Active)return;
+            if(trigger==IdleCount){_idleAnim=null;_idleInitialised=false;}
+            _idleStack.Add((trigger,name));_idleOwners.Add(lease);_idleMutationVersion++;
+        }
+        SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Info,"Animations","AnimationStreamer.PushIdleAnimation",$"Setting idle animation to '{trigger}'.");
+    }
+
+    internal void RemoveScopedIdle(string name,ScopedAcquisition lease,double nowMs)
+    {
+        object selected=new(); string? warning=null; long selectionVersion;
+        lock(_gate)
+        {
+            _nowMs=nowMs;
+            if(_idleStack.Count<=1)return;
+            int index=-1;
+            for(int i=0;i<Math.Min(_idleStack.Count,1000);i++)
+                if(lease.Completed ? _idleStack[i].Lock==name : ReferenceEquals(_idleOwners[i],lease))index=i;
+            if(index<0)return;
+            // Mark the exact entry before a warning callout can stop/restart and change the stack.
+            _idleOwners[index]=selected;
+            selectionVersion=_idleMutationVersion;
+            if(index!=_idleStack.Count-1)
+                warning=$"The animation {_idleStack[index].Lock} was removed with lock name {name}, but other idles were above it";
+        }
+        if(warning is not null)SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Warning,null,"AnimationStreamer.RemoveIdleAnimation.AnimationRemovedFromMiddleOfStack",warning);
+        lock(_gate)
+        {
+            int index=_idleOwners.FindIndex(item=>ReferenceEquals(item,selected));
+            if(index<0 || _idleStack.Count<=1)return;
+            _idleStack.RemoveAt(index);_idleOwners.RemoveAt(index);_idleMutationVersion++;
+            if(_idleMutationVersion!=selectionVersion+1)return;
+            if(TopTrigger==IdleCount)
+            {
+                long version=_idleMutationVersion;
+                if(_idleAnim is not null && _streaming is null)SetStreamingAnimationLocked(_neutral,1,interrupt:true,()=>_idleMutationVersion==version);
+                if(version!=_idleMutationVersion)return;
+                _idleAnim=null;_idleInitialised=false;
+            }
         }
     }
 
@@ -1150,6 +1218,8 @@ public sealed class AnimationScheduler
             if (i != _idleStack.Count - 1)
                 SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.RemoveIdleAnimation.AnimationRemovedFromMiddleOfStack", $"The animation {_idleStack[i].Lock} was removed with lock name {lockName}, but other idles were above it");
             _idleStack.RemoveAt(i);
+            _idleOwners.RemoveAt(i);
+            _idleMutationVersion++;
             if (TopTrigger == IdleCount)
             {
                 if (_idleAnim is not null && _streaming is null)
@@ -1177,6 +1247,7 @@ public sealed class AnimationScheduler
         {
             _ = nowMs;
             if (_streaming is not null) return false;
+            _streamMutationEpoch++;
             _live.Log = Log;
             _live.SourceLog = SourceLog;
             return _live.AddLive(k);
@@ -1194,6 +1265,7 @@ public sealed class AnimationScheduler
         using var clipLog = Eye.UseWarningLog(Log, SourceLog);
         lock (_gate)
         {
+            _streamMutationEpoch++;
             _nowMs = nowMs;
             _live.Log = Log;
             _live.SourceLog = SourceLog;
@@ -2124,6 +2196,7 @@ public sealed class AnimationScheduler
     {
         lock (_gate)
         {
+            _streamMutationEpoch++;
             _handle?.ReleaseHostWaiters(); _handle = null;
             Stream.ClearSendBuffer(); // TD8: helper-owned debug entries; destructor adds no log or send.
             var setupRelease = ReleaseSetupHandlers; ReleaseSetupHandlers = null;
@@ -2132,6 +2205,8 @@ public sealed class AnimationScheduler
             _audio = null;
             _tlc.Destroy();
             _idleStack.Clear();
+            _idleOwners.Clear();
+            _idleMutationVersion++;
             _streaming = null; _streamingClip = null; _idleAnim = null;
             LiveIdleParameters.ResetToConstructed();
             var parameterRelease = ReleaseParameterSubscription; ReleaseParameterSubscription = null;
@@ -2143,6 +2218,7 @@ public sealed class AnimationScheduler
     {
         lock (_gate)
         {
+            _streamMutationEpoch++;
             if (_streaming is not null) EndHandleLocked(AnimationEndReason.Cancelled);
             Stream.ResetToConstructed();
             _streaming = null;
@@ -2151,7 +2227,10 @@ public sealed class AnimationScheduler
             _idleMs = 0;
             _nullIdleSkipReported = false;
             _idleStack.Clear();
+            _idleOwners.Clear();
+            _idleMutationVersion++;
             _idleStack.Add((IdleCount, DefaultAnimLock));
+            _idleOwners.Add(null);
             _lastStreamedName = "";
             _idleInitialised = false;
             _numLoops = 1;

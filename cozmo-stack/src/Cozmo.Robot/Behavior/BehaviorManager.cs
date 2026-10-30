@@ -196,6 +196,21 @@ public sealed partial class BehaviorManager : IDisposable
     {
         public readonly List<ReactionRegistration> Entries = new();
         public readonly SortedSet<string> Locks = new(StringComparer.Ordinal);
+        internal readonly Dictionary<string,ScopedAcquisition> ScopedOwners = new(StringComparer.Ordinal);
+        internal readonly Dictionary<string,long> AdmissionGeneration = new(StringComparer.Ordinal);
+    }
+    private readonly Dictionary<string,long> _reactionGeneration = new(StringComparer.Ordinal);
+    private long _reactionGenerationCounter;
+
+    private long RegisterReactionAdmission(string name,IReadOnlyList<bool> triggers)
+    {
+        lock(_gate)
+        {
+            long generation=++_reactionGenerationCounter;_reactionGeneration[name]=generation;
+            foreach(var (trigger,info) in _map)
+                if((int)trigger<triggers.Count && triggers[(int)trigger])info.AdmissionGeneration[name]=generation;
+            return generation;
+        }
     }
 
     /// <summary>ReactionTrigger::Count.</summary>
@@ -300,6 +315,7 @@ public sealed partial class BehaviorManager : IDisposable
     public void DisableReactionsWithLock(string lockName, IReadOnlyList<bool> triggers, bool stopCurrent = true)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        RegisterReactionAdmission(lockName,triggers);
         foreach (var (t, info) in Nodes())
         {
             int i = (int)t;
@@ -336,6 +352,71 @@ public sealed partial class BehaviorManager : IDisposable
     public void DisableReactionsWithLock(string lockName, ReactionLockTable table, bool stopCurrent = true) =>
         DisableReactionsWithLock(lockName, table.ToMask(), stopCurrent);
 
+    internal bool DisableScopedReactions(string name,ReactionLockTable table,ScopedAcquisition lease)
+    {
+        using var owner=_context.Robot.Engine.EnterSynchronousOwner();
+        var mask=table.ToMask();
+        lease.Generation=RegisterReactionAdmission(name,mask);
+        foreach(var (trigger,info) in Nodes())
+        {
+            int index=(int)trigger;
+            if(index>=mask.Length || !mask[index])continue;
+            bool Current(){lock(_gate)return lease.Active && _reactionGeneration.TryGetValue(name,out var g) && g==lease.Generation;}
+            if(!Current())return false;
+            Log?.Invoke($"BehaviorManager.DisableReactionsWithLock.DisablingWithLock: {trigger} with lock {name}");
+            if(!Current())return false;
+            List<ReactionRegistration> notify;
+            lock(_gate)notify=info.Locks.Count==0?info.Entries.ToList():new();
+            foreach(var registration in notify)
+            { registration.Strategy.EnabledStateChanged(_context,false); if(!Current())return false; }
+            bool stop;
+            lock(_gate)
+            {
+                if(!Current())return false;
+                if(info.Locks.Add(name))info.ScopedOwners[name]=lease;
+                stop=_currentReaction==trigger;
+            }
+            if(stop)
+            {
+                Log?.Invoke("BehaviorManager.DisableReactionsWithLock: Disabling reaction triggers - stopping currently running one");
+                if(!Current())return false;
+                lock(_gate)StopCurrentLocked(BehaviorStopReason.Interrupted,NowSec(_startedSec));
+                if(!Current())return false;
+            }
+        }
+        return true;
+    }
+
+    internal void RemoveScopedReactions(string name,ScopedAcquisition lease)
+    {
+        using var owner=_context.Robot.Engine.EnterSynchronousOwner();
+        long baseline;lock(_gate)baseline=_reactionGeneration.GetValueOrDefault(name);
+        foreach(var (trigger,info) in Nodes())
+        {
+            List<ReactionRegistration>? notify=null;
+            lock(_gate)
+            {
+                long admitted=info.AdmissionGeneration.GetValueOrDefault(name);
+                bool eligible=lease.Completed ? admitted<=baseline : admitted==lease.Generation && info.ScopedOwners.TryGetValue(name,out var acquired) && ReferenceEquals(acquired,lease);
+                if(!eligible)continue;
+                if(!info.Locks.Remove(name))continue;
+                info.ScopedOwners.Remove(name);
+                if(info.Locks.Count==0)notify=info.Entries.ToList();
+            }
+            Log?.Invoke($"BehaviorManager.RemoveDisableReactionsLock: {trigger} lock {name} removed");
+            if(notify is not null)
+            {
+                lock(_gate)if(info.Locks.Count!=0)continue;
+                Log?.Invoke($"BehaviorManager.RemoveDisableReactionsLock.ReactionReEnabled: {trigger}");
+                foreach(var registration in notify)
+                {
+                    lock(_gate)if(info.Locks.Count!=0)break;
+                    registration.Strategy.EnabledStateChanged(_context,true);
+                }
+            }
+        }
+    }
+
     // fidelity: M10-004
     /// <summary>
     /// RemoveDisableReactionsLock(lock) (gap1 4c, 0x5A3A52..0x5A3B94): "sdk" sets the sticky gate (C3); for each node that
@@ -353,6 +434,7 @@ public sealed partial class BehaviorManager : IDisposable
             {
                 if (!info.Locks.Contains(lockName)) continue;
                 info.Locks.Remove(lockName);
+                info.ScopedOwners.Remove(lockName);
                 if (info.Locks.Count == 0) notify = info.Entries.ToList();
             }
             Log?.Invoke($"BehaviorManager.RemoveDisableReactionsLock: {t} lock {lockName} removed");

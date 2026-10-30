@@ -19,6 +19,10 @@ public sealed class BehaviorFactoryContext
     /// <summary>The manipulation system (the M12/M13 layer), for the classes that dock, place or drive.</summary>
     public ManipulationSystem? Manipulation { get; init; }
     internal EngineRobot? NativeRobot {get;init;}
+    // Standalone Freeplay supplies this only to Bouncer; other constructors retain their prior context.
+    internal EngineRobot? BouncerNativeRobot {get;init;}
+    internal EngineRobot? BouncerOwner => NativeRobot ?? BouncerNativeRobot;
+    internal FeatureGates? Features {get;init;}
     internal BehaviorManager? ReactionManager {get;init;}
     /// <summary>Stack diagnostics and standalone log observation; source calls use the separate typed seam.</summary>
     public Action<string>? Log { get; init; }
@@ -283,6 +287,8 @@ public sealed class BehaviorFactory
 
     private static readonly Dictionary<BehaviorClass, Func<BehaviorFactoryContext, JsonElement, IBehavior>> Constructors = new()
     {
+        [BehaviorClass.Bouncer] = (ctx,json)=>new NativeBouncerBehavior(ctx,json,
+            ()=>ctx.Vision!.Faces.GetNativeFaceIds(ctx.BouncerOwner!)),
         // fidelity: M7-018, M8-005
         // case 0x26: BehaviorPlayAnimSequence(robot, config, true): config animTriggers and num_loops (0x005bff24..0x005c004c). This is also
         // the whole of the shipped Hiccup behaviour (reactions/hiccup.json: animTriggers ["Hiccup"]); the timed hiccup/cure logic is the M10
@@ -381,6 +387,11 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("AcknowledgeObject factory: actual vision owner unavailable");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
+        if (cls == BehaviorClass.Bouncer && (ctx.Vision is null || ctx.Manipulation is null || ctx.BouncerOwner is null))
+        {
+            SteppedBehavior.ReportMissing("Bouncer factory: actual vision, manipulation and native Robot owners unavailable");
+            status=BehaviorCreateStatus.NotImplemented; return null;
+        }
         IBehavior behavior;
         try { behavior = entry.Construct(ctx, config); }
         catch (NotSupportedException error) when (cls == BehaviorClass.AcknowledgeObject)
@@ -388,7 +399,8 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing(error.Message + "; AcknowledgeObject configuration skipped, prior owner retained");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
-        if(behavior is SteppedBehavior stepped && ctx.NativeRobot is {} native && ctx.Manipulation is {} source)
+        var completionOwner=cls==BehaviorClass.Bouncer?ctx.BouncerOwner:ctx.NativeRobot;
+        if(behavior is SteppedBehavior stepped && completionOwner is {} native && ctx.Manipulation is {} source)
             {
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);

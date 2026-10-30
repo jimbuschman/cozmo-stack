@@ -28,7 +28,10 @@ public readonly record struct FaceRect(double X, double Y, double Width, double 
 /// expression scores (<c>TrackedFace::SetExpressionValue</c>, one per <see cref="FacialExpression"/>), and the
 /// name when the recogniser knows one.
 /// </summary>
-public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, Vec2? RightEye = null, IReadOnlyList<byte>? ExpressionValues = null, string? Name = null, int Score = 0, double? RollRad = null);
+public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, Vec2? RightEye = null, IReadOnlyList<byte>? ExpressionValues = null, string? Name = null, int Score = 0, double? RollRad = null)
+{
+    public int? NativeFaceDirectionThirdDegrees { get; init; }
+}
 
 /// <summary>
 /// The seam where the engine calls Omron's OKAO Vision library. <c>FaceTracker::Impl::Update</c>
@@ -83,6 +86,9 @@ public sealed class TrackedFace
     public TrackedFace(DetectedFace d, uint timestamp) { Detection = d; Timestamp = timestamp; }
 
     public DetectedFace Detection { get; }
+    // OKAO successful third direction output, native TrackedFace+0xDC (not +0xEC RollRad).
+    public float? NativeDirectionDcRadians => Detection.NativeFaceDirectionThirdDegrees is { } value
+        ? new Radians((float)value * BitConverter.Int32BitsToSingle(0x3C8EFA35)).Value : null;
     public uint Timestamp { get; }
     public int Id => Detection.Id;
     public FaceRect Rect => Detection.Rect;
@@ -242,6 +248,9 @@ public sealed class FaceEntry
     public int Id { get; internal set; }
     public Pose3d HeadPose { get; internal set; }
     public FaceRect Rect { get; internal set; }
+    public float? NativeDirectionDcRadians { get; internal set; }
+    // Strong allocation reference, like native PoseTreeNode's parent edge; no PoseBase owner is added.
+    internal PoseTreeNode? NativeObservationOrigin { get; set; }
     public uint LastObservedTimestamp { get; internal set; }
     public uint FirstObservedTimestamp { get; internal set; }
     public int TimesObserved { get; internal set; }
@@ -261,7 +270,7 @@ public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew,
 /// drops it); a face whose head pose is below the robot is ignored ("IgnoringFaceBelowRobot z=%f"); when the
 /// body turned faster than 0.174533 rad/s or the head faster than 0.523599 the observation is skipped
 /// (<c>WasRotatingTooFast</c>, the same rule as the markers); the observation matches an existing entry by id,
-/// or, when the tracker has no recognition data, by pose within 220 mm (48400 mm², 0x473D1000) and the
+/// or, when the tracker has no recognition data, by pose within 220 mm (48400 mmÃ‚Â², 0x473D1000) and the
 /// rectangle overlap (0.5), otherwise "Added new face with ID=%d at t=%d"; an observation older than the
 /// entry's last is rejected ("Face observed before previous observation"). <c>RobotObservedFace</c> is
 /// broadcast with the pose and the maximum expression. <c>Update()</c> (0x004F52xx): unnamed faces not seen for
@@ -299,6 +308,12 @@ public sealed partial class FaceWorld
     /// <summary>Adds or updates a face seen in a frame; null when it was ignored.</summary>
     // fidelity: M14-008, M14-001
     public FaceObservation? AddOrUpdateFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast)
+        => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,null);
+
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast, PoseTreeNode origin)
+        => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin);
+
+    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast, PoseTreeNode? origin)
     {
         if (face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev;
@@ -335,7 +350,7 @@ public sealed partial class FaceWorld
                 entry.HeadPose=prepared;
             }
             else entry.HeadPose=face.HeadPose;
-            entry.Rect = face.Rect; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
+            entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
         }
@@ -374,8 +389,9 @@ public sealed partial class FaceWorld
                 if(newName is not null)old.Name=newName;
                 if(!_faces.ContainsKey(newId))
                     _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),Rect=old.Rect,
-                        LastObservedTimestamp=old.LastObservedTimestamp,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
+                        LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeObservationOrigin=old.NativeObservationOrigin,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
                         FirstObservedTimestamp=old.FirstObservedTimestamp}); //existing host metadata, NOT native aux114.
+                old.NativeObservationOrigin=null;
                 _faces.Remove(oldId); //native remove(false): no4B, including old==new.
             }
         }
@@ -394,6 +410,21 @@ public sealed partial class FaceWorld
         lock (_gate) return _faces.Values.Where(f => ShouldReturnFace(f, timestamp) && (!namedOnly || f.HasName)).Select(f => f.Id).ToList();
     }
     public IReadOnlyList<int> GetFaceIDs(bool namedOnly = false) => GetFaceIDsObservedSince(0, namedOnly);
+
+    // Bouncer GetFaceIDs(false): native origin ancestry, never the detached legacy pose.
+    internal IReadOnlyList<int> GetNativeFaceIds(EngineRobot robot)
+    {
+        using var mutation=NativePoseScope?.Invoke();
+        lock(robot.PoseTreeGate) lock(_gate)
+        {
+            if(_faces.Count==0)return Array.Empty<int>();
+            if(!robot.TryGetNativeOriginOwner(robot.CurrentOriginId,out var currentOrigin) || currentOrigin is null)
+                throw new InvalidOperationException("MISSING: M14-008 current native world-origin owner unavailable");
+            if (_faces.Values.Any(f=>f.NativeObservationOrigin is null))
+                throw new InvalidOperationException("MISSING: M14-008 face observation has no native historical origin anchor");
+            return _faces.Values.Where(f=>PoseTreeNode.HasSameRoot(f.NativeObservationOrigin,currentOrigin.Node)).Select(f=>f.Id).OrderBy(id=>id).ToArray();
+        }
+    }
     public bool HasAnyFaces(uint seenSinceTimestamp = 0, bool namedOnly = false) => GetFaceIDsObservedSince(seenSinceTimestamp, namedOnly).Count > 0;
 
     // fidelity: M14-009
@@ -450,12 +481,12 @@ public sealed partial class FaceWorld
         using var mutation=NativePoseScope?.Invoke();
         lock(_gate)if(!_faces.ContainsKey(id))return false;
         if(publish)NativePublish?.Invoke(0x4B,new NativeDeletedFace(id)); //found iterator; BEFORE erase.
-        bool removed;lock(_gate)removed=_faces.Remove(id);
+        bool removed;lock(_gate){if(_faces.TryGetValue(id,out var entry))entry.NativeObservationOrigin=null;removed=_faces.Remove(id);}
         if(removed){Log?.Invoke($"FaceWorld.RemoveFaceByID: Removing face {id}");FaceDeleted?.Invoke(id);}
         return removed;
     }
 
-    public void ClearAllFaces() { List<int> ids; lock (_gate) { ids = _faces.Keys.ToList(); _faces.Clear(); } foreach (var id in ids) FaceDeleted?.Invoke(id); }
+    public void ClearAllFaces() { List<int> ids; lock (_gate) { ids = _faces.Keys.ToList(); foreach(var entry in _faces.Values)entry.NativeObservationOrigin=null; _faces.Clear(); } foreach (var id in ids) FaceDeleted?.Invoke(id); }
 
     /// <summary>
     /// <c>FaceWorld::OnRobotDelocalized</c> 0x004F55E4..0x004F563A: for each face whose +0x120 is not the sentinel it
@@ -474,6 +505,7 @@ public sealed partial class FaceWorld
     {
         lock (_gate)
         {
+            foreach(var entry in _faces.Values)entry.NativeObservationOrigin=null;
             _faces.Clear();
             _nativeLastPose?.Dispose();_nativeLastPose=null;_nativeLastStamp=0;
         }
