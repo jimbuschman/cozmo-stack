@@ -1,6 +1,6 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
-  "state": "HARNESS FIX1 STATIC PASS; BUILD3/AFFECTED2 RELEASED",
+  "state": "CODE AND REFERENCE654/EXACT654 PASS; INTEGRATION/FULL GATE PENDING",
   "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
   "sources": [
     {
@@ -59,7 +59,7 @@
   "CANTContractApproval": "separate REQUIRED/PENDING, no dependentwork authorized",
   "sourceProseClarifications": 1,
   "compilerCorrectionBatches": 1,
-  "testRuns": 1,
+  "testRuns": 2,
   "coherentDrafts": [
     "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-freeze.json",
     "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-fix1-freeze.json",
@@ -197,8 +197,81 @@
       "nativeProcesses": [],
       "checkoutProcesses": [],
       "priorBytesPreserved": true
+    },
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "affectedAttempt": 2,
+      "buildAttempt": 3,
+      "state": "PASS",
+      "total": 654,
+      "passed": 654,
+      "failed": 0,
+      "skipped": 0,
+      "classesRepresented": 20,
+      "sourceAndDataInputsUnchanged": 8,
+      "dataDllHashesUnchanged": 255,
+      "trxSha256": "981c41c034d24aedcd528b694029e5a36d64d049eed0c38271999cb2bf2e7f8b",
+      "testLogSha256": "fb46134c127a8ffc8c3ab923e0557c12d6fed10e6542c7c04983f51464f24319",
+      "namedResultsSha256": "8d9388904ff362f8a793a1b7f3c226610b3518c2bcf7eaba861d410a208cd519",
+      "buildAndTestInvocation": "require_escalated explicitly confirmed by builder from actual tool arguments",
+      "shutdownExit": 0,
+      "immediatePostflight": "transient dotnet PID34604 with null commandline; exited without kill, then two elevated native checks empty",
+      "nativeProcesses": [],
+      "checkoutProcesses": []
     }
   ],
   "testFoundHarnessCorrectionBatches": 1,
-  "testFoundProductionCauseGroups": 0
+  "testFoundProductionCauseGroups": 0,
+  "replayAttempts": [
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "replayAttempt": 1,
+      "state": "FAILED BEFORE TESTS; NOT A PASS",
+      "referenceTotal": 654,
+      "executed": 0,
+      "testExit": 1,
+      "error": "VSTest could not connect to testhost after90 seconds, recorded in TRX",
+      "rootCause": "UNKNOWN; no testhost diagnostic/stderr captured",
+      "invocation": "default permissions for actual dotnet command; elevated only process checks and shutdown, verified by reviewer from actual tool call. This deviated from the required elevated launch; causation not proved.",
+      "preflightScriptError": "unnecessary missing input-before-test lookup before correct input-before-build was loaded; actual8 inputs subsequently matched",
+      "sourceAndDataInputsMatched": 8,
+      "dataDllHashesMatched": 255,
+      "trxSha256": "fe04bcdd4ab8acd64d10bbebb6a490c9dccb896c6eb07f4c47a381bb60d092f7",
+      "logSha256": "2bdb980d350fc8b6025a28a76a90ffe802ab6093b57ed451bbe9390a664c4ed8",
+      "commandSha256": "2b58190db3e5e29edd661538667752ba5be5d9698297d902ae0260503c0dc391",
+      "namedComparison": {
+        "reference_total": 654,
+        "replay_total": 0,
+        "identical": false,
+        "missing": 654,
+        "unexpected": 0,
+        "reason": "replay testhost connection timed out; no results"
+      },
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "rerun": "one new exact elevated replay2 explicitly authorized; no product/test edits, build or restore"
+    },
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "attempt": 2,
+      "state": "PASS",
+      "total": 654,
+      "passed": 654,
+      "failed": 0,
+      "skipped": 0,
+      "exactNamedParameterizedOutcomeMultiplicityMatch": true,
+      "sourceFilesUnchanged": 4,
+      "inputsUnchanged": 8,
+      "dataDllUnchanged": 255,
+      "actualDotnetInvocation": "require_escalated, documented in privilege.txt",
+      "trxSha256": "6e9c745ffdeb264049cc48f5debdc1bec87b5a2ba21feb1b085b0c5f3e8e7e9b",
+      "logSha256": "0f11bd7e360c12e30cb3eb1fca236620e2e0b3b5a55f9c941f13f237934fb27a",
+      "commandSha256": "d576b63f133930b39de4c3d19ecf09b513c7d97708169e0ff1dc40fb83e2d1a4",
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "previousReplay1": "0 tests executed, timeout; preserved NOTPASS, rootcauseUNKNOWN"
+    }
+  ]
 }

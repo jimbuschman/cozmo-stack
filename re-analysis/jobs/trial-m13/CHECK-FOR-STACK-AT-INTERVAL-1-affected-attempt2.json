@@ -1,0 +1,21 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "affectedAttempt": 2,
+  "buildAttempt": 3,
+  "state": "PASS",
+  "total": 654,
+  "passed": 654,
+  "failed": 0,
+  "skipped": 0,
+  "classesRepresented": 20,
+  "sourceAndDataInputsUnchanged": 8,
+  "dataDllHashesUnchanged": 255,
+  "trxSha256": "981c41c034d24aedcd528b694029e5a36d64d049eed0c38271999cb2bf2e7f8b",
+  "testLogSha256": "fb46134c127a8ffc8c3ab923e0557c12d6fed10e6542c7c04983f51464f24319",
+  "namedResultsSha256": "8d9388904ff362f8a793a1b7f3c226610b3518c2bcf7eaba861d410a208cd519",
+  "buildAndTestInvocation": "require_escalated explicitly confirmed by builder from actual tool arguments",
+  "shutdownExit": 0,
+  "immediatePostflight": "transient dotnet PID34604 with null commandline; exited without kill, then two elevated native checks empty",
+  "nativeProcesses": [],
+  "checkoutProcesses": []
+}
