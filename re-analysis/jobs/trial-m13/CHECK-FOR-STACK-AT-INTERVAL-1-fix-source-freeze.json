@@ -1,7 +1,7 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "HARNESS1 STATIC PASS; BUILD2/REFERENCE2 RELEASED",
+  "state": "FIX CODE/REFERENCE/EXACT REPLAY PASS; INTEGRATION/FULL GATE PENDING",
   "main": "2567528b782bd338263b404574d5682ef339ea8b",
   "manager": "2c32772d16d8cccac3ad1b123c060a91d4353f5e",
   "sourceFiles": [
@@ -36,7 +36,7 @@
   "claudeReturnCorrectionBatches": 1,
   "newReviewerRequiredCorrectionBatches": 0,
   "newCompilerCorrections": 0,
-  "newTestRuns": 1,
+  "newTestRuns": 2,
   "missingPolicy": "Directed host skip of only unavailable custom-marker above action, visible diagnostic then no-result own continuation; no fabricated ActionResult/deadline/Interrupted. Actual return callback stamps.",
   "separateNativeBranch": "Missing located target above logs/returns with no action or stamp; do not rewrite that branch.",
   "wholeExistingRecordClosureProposals": [],
@@ -133,5 +133,33 @@
       "actualPriorBytesPreserved": true
     }
   ],
-  "currentFreeze": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-harness1-freeze.json"
+  "currentFreeze": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-harness1-freeze.json",
+  "passingReferenceAndReplay": {
+    "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+    "phase": "CLAUDE RETURN FIX1",
+    "state": "REFERENCE672 AND EXACT672 PASS",
+    "classes": 23,
+    "passed": 672,
+    "failed": 0,
+    "skipped": 0,
+    "inputsUnchanged": 8,
+    "affectedSourceFiles": 4,
+    "dataDllUnchanged": 255,
+    "referenceTrxSha256": "c9c0ec8315b26e4e46bf41a0325d2d42acdfbf2ed81e12a0c7d3b9364c162464",
+    "referenceNamedSha256": "330a88810a10b6b97319a887f994b6856fbbf150225446582cc10991ac3de19c",
+    "referenceLogSha256": "25a9467fd7e96c46f6631ddc12dca03f6dd3a74aa348367eaef1103e03a47e5d",
+    "replayTrxSha256": "92d222be35144f01819d1ee0209c87e275fa141e57213a28653cc2ef5d6bec24",
+    "replayLogSha256": "2cebb12798979a6365d3b8ceb2dfd20c0b22fd733e4637b548fea85a224ad451",
+    "actualLaunch": "require_escalated for dotnet itself in reference and replay",
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "newReviewerFixes": 0,
+    "newCompilerFixes": 0,
+    "newHarnessFixes": 1,
+    "newTestFoundProductionCorrections": 0,
+    "requestedProductionRepair": true,
+    "fullGate": "pending integration"
+  },
+  "workerFixCommit": "432f6995c75ea46705b77ed53682d431aa7d88b1"
 }
