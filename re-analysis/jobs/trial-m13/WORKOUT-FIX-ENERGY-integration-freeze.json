@@ -1,0 +1,85 @@
+{
+  "state": "FROZEN BEFORE SINGLE CUMULATIVE FULL GATE",
+  "codeTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/FreeplayTool.cs",
+      "sha256": "aa6fba9a32d457eefd7b5dd61fd3acae0e854d8d8c146096f42e56ab1dddd198",
+      "tracked": true,
+      "rawBlob": "85bc36e7269980a617fa64f6c30637a30a5acd63",
+      "filteredBlob": "85bc36e7269980a617fa64f6c30637a30a5acd63",
+      "headBlob": "85bc36e7269980a617fa64f6c30637a30a5acd63"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs",
+      "sha256": "6db2db84bec1db595f00d1952222a123eec4ae24ac8eba4aa1a5a04a69d41452",
+      "tracked": true,
+      "rawBlob": "9a5b2770d5a6c13e306c61bbc44bceb04eb0c20f",
+      "filteredBlob": "9a5b2770d5a6c13e306c61bbc44bceb04eb0c20f",
+      "headBlob": "9a5b2770d5a6c13e306c61bbc44bceb04eb0c20f"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "8c08894ae0f47463b82a2114cc40c4d3acb217790d796eac8ad6a89fd721d2a7",
+      "tracked": true,
+      "rawBlob": "6f6610b43fffb83b55f226db7a8a0718792a1654",
+      "filteredBlob": "6f6610b43fffb83b55f226db7a8a0718792a1654",
+      "headBlob": "6f6610b43fffb83b55f226db7a8a0718792a1654"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCubeLiftWorkoutBehavior.cs",
+      "sha256": "290dcf3db05a90b2eecc131f7cbc08ed5276128d75cfbab8ba3a001becde5a00",
+      "tracked": true,
+      "rawBlob": "a08653d0c893b804daad8e05af00f4d85ba8f89b",
+      "filteredBlob": "a08653d0c893b804daad8e05af00f4d85ba8f89b",
+      "headBlob": "a08653d0c893b804daad8e05af00f4d85ba8f89b"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupBlockHelper.cs",
+      "sha256": "53934570c50f485ab362d01dbe898f7abd76dbed66040dcd65a4babe3b26aa60",
+      "tracked": true,
+      "rawBlob": "510cad5242c8a7b1ef441aaf0c079f2e683d6486",
+      "filteredBlob": "510cad5242c8a7b1ef441aaf0c079f2e683d6486",
+      "headBlob": "510cad5242c8a7b1ef441aaf0c079f2e683d6486"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs",
+      "sha256": "2c2b8241430cf74f7806af6e68da1bc9f9819f7a3dd35cc05f62bc42ca2c4b62",
+      "tracked": true,
+      "rawBlob": "91a22666ad929d7c04f8c084e2ecd6c94f6a6646",
+      "filteredBlob": "91a22666ad929d7c04f8c084e2ecd6c94f6a6646",
+      "headBlob": "91a22666ad929d7c04f8c084e2ecd6c94f6a6646"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Vision/Data/marker_nn_library.bin",
+      "sha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+      "tracked": false
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CubeLiftWorkoutNativeTests.cs",
+      "sha256": "954662abed912c5405b9474edf599a9c9450af8f5db2e23238bb813cf593c171",
+      "tracked": true,
+      "rawBlob": "10957b428d1716478a2c6663f4f00b6606e099a3",
+      "filteredBlob": "10957b428d1716478a2c6663f4f00b6606e099a3",
+      "headBlob": "10957b428d1716478a2c6663f4f00b6606e099a3"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/PickupChildrenNativeTests.cs",
+      "sha256": "b8ae4cdaabc54740b32bfccce07d7bf47db192cced9fe69ce5c336d878d59960",
+      "tracked": true,
+      "rawBlob": "7219a0efe45e0e3b5b0bf4490c086c4bff60b299",
+      "filteredBlob": "7219a0efe45e0e3b5b0bf4490c086c4bff60b299",
+      "headBlob": "7219a0efe45e0e3b5b0bf4490c086c4bff60b299"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksCubeLiftWorkoutNativeTests.cs",
+      "sha256": "80e409292ea9ab546f6cc5c76e84a6d9c666d369b35f78254b60144130239caf",
+      "tracked": true,
+      "rawBlob": "c23d14a9b961598384a8c6e5da19ad4816990fdd",
+      "filteredBlob": "c23d14a9b961598384a8c6e5da19ad4816990fdd",
+      "headBlob": "c23d14a9b961598384a8c6e5da19ad4816990fdd"
+    }
+  ],
+  "overlay": "Workout fix changes NativeBehaviorRuntime ClockSec only relative to Energy freeze; current Energy tests included in 282-case reference and exact independent replay.",
+  "metadataCaveat": "Worker handoff appended after replay; archived prior metadata retained. Source/test bytes unchanged."
+}
