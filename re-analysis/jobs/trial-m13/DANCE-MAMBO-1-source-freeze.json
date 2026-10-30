@@ -1,6 +1,6 @@
 {
   "job": "DANCE-MAMBO-1",
-  "state": "CODE STATIC VERIFIED; REFERENCE PENDING",
+  "state": "HARNESS STATIC PASS; REFERENCE2 PENDING",
   "managerStart": "34a59d527480c1030d8d28a90834390841949789",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
@@ -27,7 +27,7 @@
       "fork": "none"
     }
   ],
-  "dotnetLease": "C prep returned, none active",
+  "dotnetLease": "none; unknown diagnosticpostPID exited; actualelevatedfollowupnative0",
   "builder": "implementation active after checked source5ad5b2fb; no.NET",
   "actualBackends": "unobserved",
   "workerWorktree": "C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1",
@@ -159,10 +159,74 @@
     }
   ],
   "sourceQuestion1Verdict": "A+B PASS, no inventory contradiction/new departure",
-  "currentCodePaths": 5,
-  "coherentSource": "DANCE-MAMBO-1-correction2-freeze.json",
+  "currentCodePaths": 6,
+  "coherentSource": "DANCE-MAMBO-1-harness1-freeze.json",
   "reviewerFixRounds": 2,
   "compilerFixRounds": 0,
-  "postTestHarnessFixRounds": 0,
-  "affectedClasses": 63
+  "postTestHarnessFixRounds": 1,
+  "affectedClasses": 63,
+  "failedReference1": {
+    "job": "DANCE-MAMBO-1",
+    "attempt": 1,
+    "state": "FAIL",
+    "buildExit": 0,
+    "testExit": 1,
+    "wrapperExit": 1,
+    "shutdownExit": 0,
+    "passed": 1256,
+    "failed": 3,
+    "total": 1259,
+    "skipped": 0,
+    "failures": [
+      "Cozmo.Protocol.Tests.DanceMamboNativeTests.PriorRunCubeCallbackUsesCurrentActiveStateAndFadeStopsAllEngineLights",
+      "Cozmo.Protocol.Tests.M7BatchThreeBTests.TheFactoryTableIsTheExtractionsTable",
+      "Cozmo.Protocol.Tests.DanceMamboNativeTests.NaturalFadeCompletionStopsOtherCubeEngineLayerAndPreservesStateLayer"
+    ],
+    "inputCount": 8827,
+    "allInputsUnchanged": true,
+    "all187ExistingBinsUnchanged": true,
+    "newGeneratedOutputPaths": [
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log",
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log",
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft0.log",
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft1.log",
+      "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+    ],
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-reference1"
+  },
+  "diagnostic1": {
+    "job": "DANCE-MAMBO-1",
+    "attempt": "diagnostic1",
+    "state": "EXPECTED_FAILURE_OBSERVED",
+    "passed": 0,
+    "failed": 1,
+    "total": 1,
+    "skipped": 0,
+    "buildExit": 0,
+    "testExit": 1,
+    "wrapperExit": 1,
+    "shutdownExit": 0,
+    "classification": "Harness conflicts with intentional fade CantBeOverridden gate",
+    "inputCount": 8827,
+    "allInputsUnchanged": true,
+    "all192BinsUnchanged": true,
+    "nativePre": [],
+    "nativePostOriginal": [
+      {
+        "ProcessId": 34964,
+        "Name": "dotnet.exe",
+        "CommandLine": null
+      }
+    ],
+    "checkoutPostOriginal": [],
+    "nativeFollowup": [],
+    "followupInventorySha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "processOwnership": "PID34964 CommandLine null, unknown; no kill. Separate elevated follow-up observes no native process.",
+    "logEncoding": "utf-16",
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-diagnostic1\\run"
+  },
+  "diagnosticAttempts": 1
 }

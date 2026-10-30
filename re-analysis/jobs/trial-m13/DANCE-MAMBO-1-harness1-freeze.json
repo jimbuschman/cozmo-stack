@@ -1,0 +1,55 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "phase": "posttestharness1",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "38282b0b03503eb2173cd74b219c2a2bf05074e2f89a912d4c9030f5779eb65a",
+      "rawBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "filteredBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\harness1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "16742874fbbd5c4ee9718a1f9158d0a1cc4fa1bc9d30914713f8ebb4cfd7773f",
+      "rawBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "filteredBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\harness1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDanceBehavior.cs",
+      "sha256": "f426c4d5ac200b58a48ecf773c3816be77bbff7e12d6d739bd89316eda1e5458",
+      "rawBlob": "00cd688564627b7e6a6d39d2bb65c094c95696dc",
+      "filteredBlob": "00cd688564627b7e6a6d39d2bb65c094c95696dc",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\harness1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeDanceBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "sha256": "4c20995a2f02036599c56fefabe30b05001a4c537877335a9da7362c3533b314",
+      "rawBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "filteredBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\harness1\\cozmo-stack\\src\\Cozmo.Robot\\Lights.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs",
+      "sha256": "dd437446db11dd8fd57860684b6f0753f91573719c9a4fc0b82d68ccb252a74e",
+      "rawBlob": "5ec23afc76c42f46d3b32ef1959e082ac6ad2d44",
+      "filteredBlob": "5ec23afc76c42f46d3b32ef1959e082ac6ad2d44",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\harness1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\DanceMamboNativeTests.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "b5908a67e9a2ebf1e0d435ab2758cae43db5a8b3f616af915725961b91ab5578",
+      "rawBlob": "84d3ef2896f82853e1e1b87994e2f3baec9ce42b",
+      "filteredBlob": "84d3ef2896f82853e1e1b87994e2f3baec9ce42b",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\harness1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\M7BatchThreeBTests.cs"
+    }
+  ],
+  "staticVerdict": "B affected PASS; product unchanged",
+  "reviewerRounds": 2,
+  "sourceQuestions": 1,
+  "postTestHarnessRounds": 1,
+  "diagnosticAttempts": 1,
+  "dotnetRun": false,
+  "actualAdditionalBeforeArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-harness1\\before"
+}
