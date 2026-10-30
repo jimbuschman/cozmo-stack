@@ -1,6 +1,6 @@
 {
   "job": "HIKING-BRING-CUBE-TO-BEACON-1",
-  "stage": "Runtime verified715+715; gate1soleM7fixtureFAIL corrected36+36; integratedba1f5f2d test-only, gate2pending",
+  "stage": "READY FOR CLAUDE: affected715+715, factory36+36, full6866 PASS0skip on ebab4ee0",
   "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
   "main": "75891508091abbffadc042a2318ec0128c62c868",
   "sourceFiles": {
@@ -121,5 +121,7 @@
     "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-ground-turn-verify-unknown.md": "968704945DB4B28AE7D7D7C915D6352F9CA73CBF2B2828D0A50A3983A9E5089B",
     "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-ground-turn-verify-codex-check.md": "F4B34FE3FFCD218875F00C98301CD8A89164CCA9C289D9760F848459CB9034DF"
   },
-  "groundTurnVerifyContract": "Normal Groundtrue,false -> visualverify180=true,track192=false; clearvisualflagonlycustomID-1branch. Currentcodeandapprovedinventoryrow842+citedtuplealreadycorrect. ObsoleteM15-022unresolvedclear/unreachableannotationproposedClaudeonly, nooperatorcontractchange/codeflagflip."
+  "groundTurnVerifyContract": "Normal Groundtrue,false -> visualverify180=true,track192=false; clearvisualflagonlycustomID-1branch. Currentcodeandapprovedinventoryrow842+citedtuplealreadycorrect. ObsoleteM15-022unresolvedclear/unreachableannotationproposedClaudeonly, nooperatorcontractchange/codeflagflip.",
+  "finalSourcePaths": 31,
+  "fullGateFingerprint": "bfd10167c55d97764104d14e60315687c8ee00fa"
 }
