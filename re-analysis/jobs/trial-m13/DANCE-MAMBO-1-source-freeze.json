@@ -1,6 +1,6 @@
 {
   "job": "DANCE-MAMBO-1",
-  "state": "CORRECTION3 REF184/EXACT184 PASS; INTEGRATION PENDING",
+  "state": "CORRECTION3 INTEGRATED; FULL GATE2 PENDING",
   "managerStart": "34a59d527480c1030d8d28a90834390841949789",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
@@ -143,7 +143,7 @@
       "resolution": "L1-L5 finite registration/delivery known and checked; explicit supplied unsigned native identity seam. Actual producer, identity mapping and owner lifetime UNKNOWN remain MISSING; no insertion-order or no-listener claim."
     }
   ],
-  "lastMainCheck": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352 unchanged beforeintegration",
+  "lastMainCheck": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352 unchanged beforegate2",
   "currentSourceArtifacts": [
     {
       "phase": "listenerQ1",
@@ -322,10 +322,10 @@
     "rawBlob": "0696ebce812aec2bcc90ffb19566609434f0cc78",
     "baseBlobMatched": true
   },
-  "workerCommit": "73ffe78f66b142e4a57f169ae2927cf5c979a235",
-  "integrationCommit": "9538ee7324193dc19c9ff5b6227155d1a4ba19b3",
-  "cozmoStackTree": "7c08b18b94ee7d38bd4ded200b3e1518dadf0468",
-  "productionSrcTree": "5064ae8d0ea3afa998e82d162d1b064b671600a2",
+  "workerCommit": "9824eed4790f0f1a7049b4765c3f4c576d105121",
+  "integrationCommit": "3f4549a5b20378e0100107bd1e0c639475fc707b",
+  "cozmoStackTree": "4bd39074fdfa2cfde95a361c604ff040a7d94d28",
+  "productionSrcTree": "f2a7bc394d9e5252e50bb2219c569bf5bd38627f",
   "fullGate1": {
     "job": "DANCE-MAMBO-1",
     "attempt": 1,
@@ -483,5 +483,7 @@
     "processCaveat": "none",
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-correction3-replay1"
   },
-  "replayApprovalInfrastructure": "Automatic review first misread build-server shutdown as build; precise unchanged script evidence approved, no .NET in rejected attempt."
+  "replayApprovalInfrastructure": "Automatic review first misread build-server shutdown as build; precise unchanged script evidence approved, no .NET in rejected attempt.",
+  "originalWorkerCommit": "73ffe78f66b142e4a57f169ae2927cf5c979a235",
+  "originalIntegrationCommit": "9538ee7324193dc19c9ff5b6227155d1a4ba19b3"
 }
