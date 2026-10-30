@@ -1,6 +1,6 @@
 {
   "job": "DRIVE-IN-DESPERATION-ENERGY-1",
-  "state": "READY FOR CLAUDE",
+  "state": "RETURNED FIX; NOT READY",
   "managerStart": "28df4d1da81c5081119c25bc486a48db309cdcad",
   "originMain": "6dcc53fbd10af2662302b1dab9797e0a67bec0d6",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-energy-1",
@@ -277,5 +277,8 @@
     "hardwareRun": false
   },
   "integrationCodeTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
-  "integrationOverlay": "Workout ClockSec binding overlays Energy original freeze; current Energy class included in 282/exact282 plus this full gate."
+  "integrationOverlay": "Workout ClockSec binding overlays Energy original freeze; current Energy class included in 282/exact282 plus this full gate.",
+  "authoritativeMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
+  "returnedFix": "FIX-DRIVE-IN-DESPERATION-ENERGY-1",
+  "historicalFullGate": "6992 PASS remains valid historical test result, not source-fidelity acceptance"
 }

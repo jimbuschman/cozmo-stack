@@ -1,4 +1,4 @@
-# DRIVE-IN-DESPERATION-ENERGY-1 — READY FOR CLAUDE
+# DRIVE-IN-DESPERATION-ENERGY-1 — RETURNED FIX, NOT READY
 
 Configured `Needs_SevereLowEnergyState` now constructs a native owner; Repair remains a separate job. The own gate tuple is off-treads=true, charger-platform=false, carrying=false. Init installs the shipped profile, clears target and enters Idle without resetting rounds, cooldown or the treads latch. Evidence: shipped Energy behavior/activity configs; factory0x0059CA9A, own0x005D8AE0..0x005DA528, Init0x005D8ECA..EEE, gates0x005D90AC/0x005D9F46..4A.
 
@@ -21,3 +21,5 @@ Records: no whole existing settlement proposed. Propose ONE otherwise-unowned na
 Provenance: actual existing-file before archives and genuine new owner/test absence were captured before edits; expanded CLI/test scopes have their own actual-before captures. Frozen phases and raw logs/TRX are retained. Builder report was written after replay, outside the earlier9159-input run set.
 
 Worker7375ec63 integratedab38f9d8; Workout overlay1cc9fb23. No changes to official records.
+
+Authoritative main468d0209 returned FIX: a normal in-height located charger can throw NativeActionUnavailable from NativeObstacles through DriveToCube and the completion broadcast. FIX-DRIVE-IN-DESPERATION-ENERGY-1 is active: owned M12-036 diagnostic and direct LookAtCube gap continuation, no synthetic PAP result; sentinel search diagnostic every occurrence and explicit skipped motions. Earlier gate6992 and replay proofs are historical, not acceptance.
