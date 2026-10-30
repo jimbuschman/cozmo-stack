@@ -480,41 +480,93 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 }
 
 /// <summary>
-/// <c>BehaviorReactToUnexpectedMovement</c> (0x00609A58..0x00609C74). It subscribes to the
-/// <c>UnexpectedMovement</c> message and keeps its <c>movementSide</c> (<c>AlwaysHandle</c>, byte +5 →
-/// <c>+0x11c</c>). <c>InitInternal</c> fires the emotion event <c>"ReactToUnexpectedMovement"</c> on the
-/// mood manager, then plays <see cref="AnimationTrigger.ReactToUnexpectedMovement"/> (0x1AC) with a
-/// <c>TriggerLiftSafeAnimationAction</c>, locking the body track (<c>tracksToLock = 4</c>) when the movement
-/// came from <see cref="UnexpectedMovementSide.Back"/> - a lock, which IActionRunner::Update takes through
-/// <c>MovementComponent::LockTracks</c> before the action runs, so nothing else drives the body while the
-/// reaction plays; when
-/// it ends, objective <c>ReactedToUnexpectedMovement</c>. The severe-needs variants
-/// (<c>_Severe_Energy</c> 0x1AD, <c>_Severe_Repair</c> 0x1AE) depend on the needs system and are not modelled.
+/// <c>BehaviorReactToUnexpectedMovement</c> (class 0x4E, 0x00609A58..0x00609C76; REACT-UNEXPECTED-MOVEMENT-1,
+/// re-analysis/research/20261029-react-unexpected-movement-1-read.md). The ctor sets <c>+0x11C</c> = 0 and subscribes to
+/// tag 0x3C (C1); <c>AlwaysHandle</c> keeps the last broadcast's <c>movementSide</c> in <c>+0x11C</c> whether or not the
+/// behaviour runs (H1/H2). <c>InitInternal</c> fires the emotion event <c>"ReactToUnexpectedMovement"</c> (I1), picks the
+/// trigger from the selected severe need (I2/I3), locks BODY when the side was BACK (I4), and starts one
+/// <c>TriggerLiftSafeAnimationAction(trigger, 1, true, lock, 60.0f, false)</c> (I5/I6); when it ends, with any result, the
+/// objective <c>ReactedToUnexpectedMovement</c> (0x25) is reported (K1/K2) and the behaviour ends with its action (U1).
+/// <c>StopInternal</c> is empty (T1); Resume is the base one (P1).
 /// </summary>
+// fidelity: M7-031
 public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
 {
     public const string EmotionEventName = "ReactToUnexpectedMovement";
+    /// <summary>K2 0x00609C5A: <c>movs r1,#0x25</c>, BehaviorObjective ReactedToUnexpectedMovement.</summary>
+    public const uint ObjectiveReactedToUnexpectedMovement = 0x25;
+    /// <summary>I5: the action timeout 60.0f (0x42700000).</summary>
+    public static readonly float AnimationTimeoutSec = BitConverter.Int32BitsToSingle(0x42700000);
 
+    // C1/H2: +0x11C, 0 from the ctor (0x00609A58..0x00609A9A); written only by AlwaysHandle (0x00609BF8..0x00609C0A), kept across runs.
+    private int _side;
+    private readonly bool _subscribed;
+
+    /// <summary>Unbound: no robot to subscribe to, so <c>AlwaysHandle</c> never runs; Init reports MISSING and fails.</summary>
     public ReactToUnexpectedMovementBehavior() : base("ReactToUnexpectedMovement", "ReactToUnexpectedMovement") { }
 
-    /// <summary>The side the last run reacted to.</summary>
-    public UnexpectedMovementSide Side { get; private set; }
+    /// <summary>C1: subscribes to the UnexpectedMovement broadcast (tag 0x3C) for the behaviour's lifetime.</summary>
+    public ReactToUnexpectedMovementBehavior(CozmoRobot robot) : this()
+    {
+        // H1/H2/H3: AlwaysHandle runs inside the broadcast (Sensors' synchronous in-engine delivery), before the manager's switch.
+        robot.Sensors.UnexpectedMovementDetectedInternal += r => Volatile.Write(ref _side, (byte)r.Side);
+        _subscribed = true;
+        // I6/K1: StartActing's completion arrives through the IBehavior ctor's RobotCompletedAction subscription (0x005BBD5E..7A).
+        BindActionCompletionOwner(robot);
+    }
+
+    /// <summary>H2: <c>+0x11C</c>, the movementSide of the last UnexpectedMovement received (0 = Unknown until then).</summary>
+    public UnexpectedMovementSide Side => (UnexpectedMovementSide)Volatile.Read(ref _side);
+
+    // R1: base +0x20 0x005BF04C returns 0 (not off treads). R2: base +0x24 0x0059EC12 returns 0 (not with robot+0x34A).
+    // R3: +0x28 0x00609C1A returns 1 (runnable while carrying). R5: IsRunnableInternal 0x00609ABC returns 1 (the base default).
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => true;
+    // U1: base IBehavior::UpdateInternal (vtable +0xC): the behaviour ends when its action ends.
+    protected override bool KeepsRunningWithoutAction => HasCurrentAction;
 
     protected override void OnStart()
     {
-        var report = Context.Robot.Sensors.UnexpectedMovement.Last;
-        Side = report?.Side ?? UnexpectedMovementSide.Unknown;
+        var robot = Context.Robot;
+        if (!_subscribed)
+        {
+            ReportMissing("REACT-UNEXPECTED-MOVEMENT-1 C1/H2 (0x00609A58, 0x00609BF8): this instance has no robot UnexpectedMovement subscription, so +0x11C is not maintained; Init not performed");
+            InitFailed = true;
+            return;
+        }
+        if (robot.Engine.Robot is null)
+        {
+            ReportMissing("REACT-UNEXPECTED-MOVEMENT-1 I5/I6 (0x00609B12..0x00609B92): no robot+0x250 ActionList owner for the TriggerLiftSafeAnimationAction; Init not performed");
+            InitFailed = true;
+            return;
+        }
+        if (robot.Engine.Needs is not { } needs)
+        {
+            ReportMissing("REACT-UNEXPECTED-MOVEMENT-1 I2 (0x00609B06..0x00609B10): no SevereNeeds owner for [[robot+0x264]+0x30]+0x14; Init not performed");
+            InitFailed = true;
+            return;
+        }
+        BindActionCompletionOwner(robot); // no-op when the ctor bound it
+        // I1 0x00609ACC..0x00609AF4: TriggerEmotionEvent("ReactToUnexpectedMovement").
         bool known = Context.Mood?.Trigger(EmotionEventName, Clock() / 1000.0) ?? false;
         Log($"emotion event {EmotionEventName}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
-        // tracksToLock = 4, the body, when the movement came from behind: the reaction holds that track
-        // so nothing else drives the wheels while it plays.
-        var alsoLock = Side == UnexpectedMovementSide.Back ? AnimationTrack.Body : AnimationTrack.None;
-        PlayTrigger(AnimationTrigger.ReactToUnexpectedMovement, () =>
-        {
-            Log("objective ReactedToUnexpectedMovement");
-            Finish();
-        }, alsoLock);
+        // I2 0x00609B06..0x00609B10: the selected severe need.
+        int need = needs.SevereNeeds.Selected;
+        // I4 0x00609B1E..0x00609B22: `cmp r7,#2; moveq r2,#4`: BODY iff +0x11C == 2 (BACK).
+        int tracksToLock = Volatile.Read(ref _side) == 2 ? 4 : 0;
+        // I3 0x00609B30..0x00609B44: 0x1AE when need == 0 (Repair), 0x1AD when need == 1 (Energy), else 0x1AC.
+        int trigger = need == 0 ? 0x1AE : need == 1 ? 0x1AD : 0x1AC;
+        // I5 0x00609B12..0x00609B4E: TriggerLiftSafeAnimationAction(robot, trigger, 1, true, lock, 60.0f, false).
+        var action = new TriggerLiftSafeAnimationAction(robot, new((AnimationTrigger)trigger, 1, true, tracksToLock, AnimationTimeoutSec, false));
+        // I6 0x00609B52..0x00609B92: StartActing (the void() callback overload); Init returns 0.
+        StartActing(action, OnActionCompleted);
     }
+
+    // K1 0x005BF790: the wrapper ignores the ActionResult. K2 0x00609C5A..0x00609C60: BehaviorObjectiveAchieved(0x25, true).
+    private void OnActionCompleted(RobotCompletedAction completed) =>
+        Context.Robot.Engine.ReportBehaviorObjective(ObjectiveReactedToUnexpectedMovement, "ReactedToUnexpectedMovement", Id);
+    // T1 0x00609C1E `bx lr`: no StopInternal of its own. P1 0x005BDA94..0x005BDAC8: the base ResumeInternal (Init again).
 }
 
 /// <summary>

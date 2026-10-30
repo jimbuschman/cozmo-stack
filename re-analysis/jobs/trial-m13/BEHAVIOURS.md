@@ -158,7 +158,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `ReactToRobotShaken` | `ReactToRobotShaken` | not started | UNKNOWN | reaction: RobotShaken. 1 refs; R263+ in map |
 | `ReactToSparked` | `ReactToSparked` | not started | UNKNOWN | reaction: Sparked. 1 refs; R265+ in map |
 | `ReactToStackOfCubes` | `ReactToStackOfCubes` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
-| `ReactToUnexpectedMovement` | `ReactToUnexpectedMovement` | not started | UNKNOWN | reaction: UnexpectedMovement. 1 refs; R266+ in map |
+| `ReactToUnexpectedMovement` | `ReactToUnexpectedMovement` | in progress | REACT-UNEXPECTED-MOVEMENT-1 MERGED (Claude-run); R2 unwired live, M7-031 open | reaction: UnexpectedMovement. 1 refs; R266+ in map |
 | `RequestCozmoPerforms` | `RequestGameSimple` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R079+ in map |
 | `RequestDroneMode` | `RequestGameSimple` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R080+ in map |
 | `RequestKeepAway` | `RequestGameSimple` | not started | UNKNOWN | freeplay: PlayWithHumans. 1 refs; R083+ in map |
@@ -211,12 +211,12 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `Singing_WilliamTell` | `Singing` | not started | UNKNOWN | freeplay: Singing; spark: Singing. 2 refs; R118+ in map |
 | `Singing_YankeeDoodle` | `Singing` | not started | UNKNOWN | freeplay: Singing; spark: Singing. 2 refs; R119+ in map |
 | `Singing_YellowRose` | `Singing` | not started | UNKNOWN | freeplay: Singing; spark: Singing. 2 refs; R120+ in map |
-| `Hiking_ThinkAboutBeacons` | `ThinkAboutBeacons` | not started | UNKNOWN | freeplay: Hiking. 1 refs; R024+ in map |
-| `SparksThinkAboutBeacons` | `ThinkAboutBeacons` | not started | UNKNOWN | spark: GatherCubes. 1 refs; R199+ in map |
+| `Hiking_ThinkAboutBeacons` | `ThinkAboutBeacons` | in progress | THINK-ABOUT-BEACONS-1 MERGED (Claude-run); beacon clearing unbuilt, M15-084 open | freeplay: Hiking. 1 refs; R024+ in map |
+| `SparksThinkAboutBeacons` | `ThinkAboutBeacons` | in progress | THINK-ABOUT-BEACONS-1 MERGED (Claude-run); beacon clearing unbuilt, M15-084 open | spark: GatherCubes. 1 refs; R199+ in map |
 | `SparksTrackLaser` | `TrackLaser` | not started | UNKNOWN | spark: SparksTrackLaser. 1 refs; R237+ in map |
 | `Hiking_VisitInterestingEdge` | `VisitInterestingEdge` | not started | UNKNOWN | freeplay: Hiking. 1 refs; R027+ in map |
-| `Needs_Wait` | `Wait` | not started | UNKNOWN | freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowRepair. 2 refs; R038+ in map |
-| `Wait` | `Wait` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
+| `Needs_Wait` | `Wait` | in progress | WAIT-1 MERGED (Claude-run): native gates and stubs; no chooser-reach test, M15-083 open | freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowRepair. 2 refs; R038+ in map |
+| `Wait` | `Wait` | in progress | WAIT-1 MERGED (Claude-run): native gates and stubs; no chooser-reach test, M15-083 open | No explicit config reference; native/app use UNKNOWN |
 
 ## Enclosing activity contexts — not additional behavior rows
 

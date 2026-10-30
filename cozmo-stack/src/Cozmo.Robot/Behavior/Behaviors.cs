@@ -711,7 +711,7 @@ public static class ShippedBehaviors
             ("ReactToPlacedOnSlope", ReactionTrigger.RobotPlacedOnSlope, new ReactToPlacedOnSlopeBehavior(), strategies[ReactionTrigger.RobotPlacedOnSlope]),
             ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, new ReactToReturnedToTreadsBehavior(), strategies[ReactionTrigger.ReturnedToTreads]),
             ("ReactToRobotShaken", ReactionTrigger.RobotShaken, new ReactToRobotShakenBehavior(), strategies[ReactionTrigger.RobotShaken]),
-            ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, new ReactToUnexpectedMovementBehavior(), strategies[ReactionTrigger.UnexpectedMovement]),
+            ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, new ReactToUnexpectedMovementBehavior(robot), strategies[ReactionTrigger.UnexpectedMovement]),
             ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(), strategies[ReactionTrigger.MotorCalibration]),
             ("ReactToFrustrationMinor", ReactionTrigger.Frustration, ReactToFrustrationBehavior.Minor(frustration), frustration),
             ("ReactToImpact", ReactionTrigger.RobotFalling, new ReactToImpactBehavior(robot), strategies[ReactionTrigger.RobotFalling]),

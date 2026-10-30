@@ -1055,36 +1055,91 @@ public sealed class ReactToConfigurationBehavior : ManipulationBehavior
 }
 
 /// <summary>
-/// <c>BehaviorThinkAboutBeacons</c> (config: <c>newAreaAnimTrigger</c> HikingReactToNewArea, <c>beaconRadius_mm</c>
-/// 175 hiking / 75 sparks): runnable when the whiteboard has no active beacon; <c>SelectNewBeacon</c> adds one
-/// at the robot's pose with the configured radius - <c>BehaviorThinkAboutBeacons::SelectNewBeacon</c>
-/// 0x005E5F0C takes the robot's pose, copies it, and calls
-/// <c>AIWhiteboard::AddBeacon(pose, radius)</c> with the float at behaviour+0x128 (0x005E5F28), so the
-/// centre is wherever the robot stood - and the new-area animation
-/// plays.
+/// <c>BehaviorThinkAboutBeacons</c> (THINK-ABOUT-BEACONS-1, re-analysis/research/20261029-think-about-beacons-1-read.md; class range
+/// 0x005E5AF8..0x005E5F4E, vtable 0x01029A28). Config (L2/L3/L4): <c>newAreaAnimTrigger</c> is kept as a name and resolved only at Init;
+/// <c>beaconRadius_mm</c> is an f32 (175 Hiking, 75 Sparks). Runnable iff the whiteboard has no beacon (R5); gates +0x20/+0x24/+0x28 all
+/// refuse (R1..R3). Init logs, SelectNewBeacon adds one beacon at the robot's pose w.r.t. its root with the configured radius (I2, S1..S3),
+/// then plays the trigger once as a plain TriggerAnimationAction with no completion callback (I3..I5). The base Update ends the behaviour
+/// with its action (U1); Stop leaves the beacon (T1); Resume is the base one (P1). Beacon clearing (W1) is not this class's.
 /// </summary>
 // fidelity: M15-011
+// fidelity: M15-084
 public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
 {
-    public ThinkAboutBeaconsBehavior(ManipulationSystem m, string id = "Hiking_ThinkAboutBeacons", double beaconRadiusMm = 175, AnimationTrigger newAreaAnim = AnimationTrigger.HikingReactToNewArea)
-        : base(id, "ThinkAboutBeacons", m) { BeaconRadiusMm = beaconRadiusMm; NewAreaAnim = newAreaAnim; }
+    // I3: the literal AnimationTrigger::Count name; AnimationTriggerFromString yields Count (0x23F) for it and Init starts no action.
+    private const string CountTriggerName = "Count";
 
-    public double BeaconRadiusMm { get; }
-    public AnimationTrigger NewAreaAnim { get; }
+    public ThinkAboutBeaconsBehavior(ManipulationSystem m, string id = "Hiking_ThinkAboutBeacons", float beaconRadiusMm = 175f, string newAreaAnimTrigger = "HikingReactToNewArea")
+        : base(id, "ThinkAboutBeacons", m)
+    {
+        // L2 0x005E5BB4..0x005E5BEA: the trigger string at +0x11C (C1 starts it empty); L3 0x005E5BEC..0x005E5BFA: f32 radius at +0x128.
+        NewAreaAnimTrigger = newAreaAnimTrigger;
+        BeaconRadiusMm = beaconRadiusMm;
+        // I5: StartActing's completion arrives through the IBehavior ctor's RobotCompletedAction subscription (0x005BBD5E..7A).
+        BindActionCompletionOwner(m.Robot);
+    }
+
+    /// <summary>L3: <c>beaconRadius_mm</c>, the f32 at +0x128.</summary>
+    public float BeaconRadiusMm { get; }
+    /// <summary>L2: <c>newAreaAnimTrigger</c>, the string at +0x11C; resolved only at Init (I3).</summary>
+    public string NewAreaAnimTrigger { get; }
+    /// <summary>The beacon the last Init added (S2), for diagnostics.</summary>
     public AIBeacon? Selected { get; private set; }
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => M.Whiteboard.GetActiveBeacon() is null && M.RobotPose() is not null;
+    // R1: base +0x20 0x005BF04C returns 0 (not runnable off treads). R2: base +0x24 0x0059EC12 returns 0 (not runnable while robot+0x34A).
+    // R3: TAB's +0x28 0x005E5F4C returns 0 (not runnable while carrying).
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => false;
+    // U1: base UpdateInternal 0x005BDA56..0x005BDA62: Running while there is an action, else Complete.
+    protected override bool KeepsRunningWithoutAction => HasCurrentAction;
+
+    // R5 0x005E5CC2..0x005E5CD8: runnable iff GetActiveBeacon(whiteboard) is null; nothing else is read.
+    protected override bool IsRunnableInternal(BehaviorContext context) => M.Whiteboard.GetActiveBeacon() is null;
 
     protected override void OnStart()
     {
-        // fidelity: M15-011
-        // SelectNewBeacon 0x005E5F0C: Robot::GetPose, copied (Pose3d::Pose3d 0x005E5F1A), and AddBeacon(copy, [this+0x128]) (0x005E5F28..0x005E5F30): the whole robot pose, rotation and
-        // translation including z, not a planar pose rebuilt from the yaw.
-        using var copy=M.CopyPreActionRobotPose();
-        if(copy is null){Finish();return;}
-        Selected = M.Whiteboard.AddBeacon(copy, BeaconRadiusMm);
-        Log($"SelectNewBeacon: beacon at {Selected.Pose.Translation} radius {BeaconRadiusMm}");
-        PlayTrigger(NewAreaAnim, Finish);
+        // fidelity: M15-011, M15-084
+        // I1 0x005E5CF8..0x005E5D52: Info "Behaviors", name + ".InitInternal", "Selecting new beacon" (best effort).
+        Log($"{Id}.InitInternal: Selecting new beacon");
+        // I2 0x005E5D94..0x005E5D98: SelectNewBeacon, unconditionally.
+        SelectNewBeacon();
+        // I3 0x005E5D9C..0x005E5DF4: an empty string or Count (0x23F) starts no action; Init still returns 0 (I6) and U1 completes on the next Update.
+        if (ResolveTrigger() is { } trigger)
+        {
+            // I4 0x005E5DF6..0x005E5E18: TriggerAnimationAction(robot, trigger, 1, interruptRunning true, tracks 0, 60.0f 0x42700000, false); not lift-safe.
+            var action = new TriggerAnimationAction(M.Robot, new(trigger, 1, true, 0, TriggerAnimationTimeoutSec, false));
+            // I5 0x005E5E1C..0x005E5E3C: the RobotCompletedAction StartActing overload with an empty function: no callback.
+            StartActing(action, null);
+        }
+        // I6 0x005E5E4A..0x005E5E50: Init returns 0 on every path.
+    }
+
+    // S1..S3, SelectNewBeacon 0x005E5F0C..0x005E5F3C: Robot::GetPose (0x004EA398, called at 0x005E5F1A), then GetWithRespectToRoot
+    // (0x004DF628, called at 0x005E5F24), then AddBeacon(wb, pose, [this+0x128]) (0x005E5F28..0x005E5F36); AddBeacon 0x0056C39C stores
+    // failure time 0 at +0x10. S5: no RNG, distance, memory map or limit.
+    private void SelectNewBeacon()
+    {
+        if (M.Robot.Engine.Robot is not { } owner)
+        {
+            ReportMissing("M15-084 S1 Robot::GetPose 0x004EA398 at 0x005E5F1A: no native Robot owner bound to this ManipulationSystem; no beacon added");
+            return;
+        }
+        using var main = owner.CopyCheckedMainPose();
+        using var root = main.GetWithRespectToRoot();
+        Selected = M.Whiteboard.AddBeacon(root, BeaconRadiusMm);
+    }
+
+    private AnimationTrigger? ResolveTrigger()
+    {
+        // I3: empty string -> no action.
+        if (NewAreaAnimTrigger.Length == 0) return null;
+        // I3: Count (0x23F) -> no action.
+        if (NewAreaAnimTrigger == CountTriggerName) return null;
+        if (Enum.IsDefined(typeof(AnimationTrigger), NewAreaAnimTrigger))
+            return Enum.Parse<AnimationTrigger>(NewAreaAnimTrigger);
+        ReportMissing($"M15-084 I3 0x005E5D9C..0x005E5DF4: AnimationTriggerFromString's result for the unknown name '{NewAreaAnimTrigger}' is not settled by the THINK-ABOUT-BEACONS-1 read; no action started");
+        return null;
     }
 }
 

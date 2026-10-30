@@ -133,7 +133,7 @@ public sealed class FreeplayStack : IDisposable
         }
         else
         {
-            all.AddRange(new IBehavior[] { new WaitBehavior("Needs_Wait"), new EarnedSparksBehavior(needs, "EarnedSparks") });
+            all.AddRange(new IBehavior[] { new WaitBehavior("Needs_Wait"), new WaitBehavior("Wait"), new EarnedSparksBehavior(needs, "EarnedSparks") }); // WAIT-1 C3: wait.json ships, so the engine always has Wait (0xB2)
         }
         // the config-free set and the shipped PlayAnim configs overlap (the feeding reactions): the first instance stands
         var bound = new Dictionary<string, IBehavior>(StringComparer.Ordinal);

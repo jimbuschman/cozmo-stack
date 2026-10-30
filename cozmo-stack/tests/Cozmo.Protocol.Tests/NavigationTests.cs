@@ -698,7 +698,7 @@ public class NavigationTests
     }
 
     /// <summary>
-    /// M15-011 / M15-009 / M15-008 / M15-019..M15-025 end to end: the beacon is added at the robot's pose (0x005E5F1A..0x005E5F30); the cube is picked up; TransitionToObjectPickedUp 0x005DF3E4 finds no free
+    /// M15-011 / M15-009 / M15-008 / M15-019..M15-025 end to end: the beacon is added at the robot's pose w.r.t. its root (0x005E5F1A..0x005E5F36); the cube is picked up; TransitionToObjectPickedUp 0x005DF3E4 finds no free
     /// cube to stack on (FindFreeCubeToStackOn, 0x005DF46A, takes the stack branch first when it finds one), reports PickupCube (0x005DF59C, BEFORE the pose search), FindFreePoseInBeacon (0x005E0378) picks
     /// a pose, TryToPlaceAt (0x005DFEF4) runs the compound DriveToPlaceCarriedObjectAction + PlaceObjectOnGroundAction: the drive's path, then the message PlaceObjectOnGround (0x44) with StopAllMotors after it;
     /// the robot's BLOCK_PLACED result releases the carried cube (HandlePickAndPlaceResult 0x00533780 is the only release), the status bit rises and clears, the verify action ends the action, and the
@@ -727,8 +727,9 @@ public class NavigationTests
         RunToEnd(rig, think, ctx);
         var beacon = rig.M.Whiteboard.GetActiveBeacon()!;
         Assert.Equal(175, beacon.RadiusMm);
-        Assert.Equal(rig.M.RobotPose()!.Value.Translation, beacon.Pose.Translation);  // M15-011: the full robot pose, AddBeacon(copy, radius)
-        Assert.Contains(think.Trace, l => l.Contains("HikingReactToNewArea"));
+        using (var robotRoot = rig.Robot.Engine.Robot!.MainPose.GetWithRespectToRoot())
+            Assert.Equal(robotRoot.Translation, beacon.Pose.Translation);            // M15-011/M15-084 S1: Robot::GetPose then GetWithRespectToRoot 0x004DF628 (at 0x005E5F24)
+        Assert.Contains(think.Trace, l => l.Contains("Selecting new beacon"));       // I1 0x005E5CF8..0x005E5D52 (best effort)
         Assert.False(Runnable(think, ctx));
         Assert.True(Runnable(bring, ctx));                                           // the cube at 330 mm is outside the 175 mm beacon
         // The placement drive polls while following its path. An already-completed wait would
@@ -786,8 +787,8 @@ public class NavigationTests
     }
 
     /// <summary>
-    /// M15-011, SelectNewBeacon 0x005E5F0C..0x005E5F30: Robot::GetPose is copied (Pose3d::Pose3d 0x005E5F1A) and handed to AddBeacon with the radius at [this+0x128]: the beacon sits at the
-    /// whole robot pose, z included. Admission preserves the current pose's z rather than taking the packet's z.
+    /// M15-011/M15-084, SelectNewBeacon 0x005E5F0C..0x005E5F36: Robot::GetPose (called at 0x005E5F1A), then GetWithRespectToRoot (0x004DF628, called at 0x005E5F24), handed to AddBeacon
+    /// with the radius at [this+0x128]: the beacon sits at the whole robot pose w.r.t. its root, z included. Admission preserves the current pose's z rather than taking the packet's z.
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]

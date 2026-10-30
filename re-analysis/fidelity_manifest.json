@@ -12278,6 +12278,27 @@
       "test": "BehaviorStateLightsNativeTests"
     },
     {
+      "id": "M7-031",
+      "subsystem": "M7-behaviour",
+      "title": "BehaviorReactToUnexpectedMovement lifecycle: ctor and tag-0x3C subscription, AlwaysHandle movementSide, runnable gates (not off treads or with robot+0x34A, runnable while carrying), Init (emotion event, severe-need trigger choice, BODY lock on BACK, lift-safe 60 s animation), objective 0x25 on any result, empty Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/OffTreadsBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x4E 0x0059D332..0x0059D34C; ctor 0x00609A58..0x00609A9A (+0x11C = 0, SubscribeToTags {0x3C}); vtable 0x0102CAF8 (+0x28 0x00609C1A returns 1, Stop 0x00609C1E bx lr, AlwaysHandle 0x00609BF8).",
+        "AlwaysHandle 0x00609BF8..0x00609C0A: +0x11C = Get_UnexpectedMovement byte +5 (movementSide); CLAD Pack 0x0071251E, tag 0x3C at Set_ 0x007241EA.",
+        "InitInternal 0x00609AC0..0x00609B92: TriggerEmotionEvent ReactToUnexpectedMovement; need = [[robot+0x264]+0x30]+0x14; trigger 0x1AC, 0x1AE if need 0, 0x1AD if need 1 (0x00609B30..0x00609B44); tracksToLock 4 iff side 2 (0x00609B1E..0x00609B22); TriggerLiftSafeAnimationAction(1, true, lock, 60.0f, false) 0x00609B4E; StartActing void().",
+        "Completion lambda 0x00609C5A..0x00609C60: BehaviorObjectiveAchieved(0x25, true), result ignored (wrapper 0x005BF790).",
+        "re-analysis/research/20261029-react-unexpected-movement-1-read.md"
+      ],
+      "effect": "how Cozmo reacts when something moves him unexpectedly: which reaction clip (the severe Repair/Energy variants), whether BODY is locked, that it is lift-safe with a 60 s timeout, when it may run, and the ReactedToUnexpectedMovement objective the C# API delivers",
+      "provenance": "REACT-UNEXPECTED-MOVEMENT-1 (Claude-run: cozmo-extractor read, checked by Claude 2026-10-29); record added with operator approval 2026-10-29.",
+      "unresolved": "Built and checked in REACT-UNEXPECTED-MOVEMENT-1 (verifier PASS); not settled. On the live path the R2 gate (robot+0x34A, base 0x0059EC12) is not consulted: production never fills RobotState34a/NativeBaseInputs for the reaction instance, so IsRunnableBase reports MISSING and RUM stays runnable there; it must be wired before settling. No test reaches the detector-to-reaction path through production (H3 substitutes the broadcast). Open: the BehaviorObjectiveAchieved body past 0x005BE2E0 (M7-019); the name of robot+0x34A; MoodManager time vs BaseStationTimer (M7-020); interruptRunning semantics (M8-020); the stack's extra UnexpectedMovementReport API fields (average speeds, count, start timestamp) have no engine counterpart and await a manager decision. Owned elsewhere: the detector and broadcast (M10-002, M10-006, M10-007), the strategy (M10-003), the manager walk and resume counter (M10-004, M10-008, M8-001), the lift-safe action (M8-005, M8-007, M8-020).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ReactToUnexpectedMovementNativeTests"
+    },
+    {
       "id": "M8-018",
       "subsystem": "M8-framework",
       "title": "SDK ResetRobot recipient dispatch",
@@ -14292,6 +14313,45 @@
       "hardware_required": false,
       "live_path": true,
       "test": "ExpressNeedsNativeTests; M15SevereNeedsTests; FreeplayTests.ExpressNeedsAndTheGetInFollowTheBrackets"
+    },
+    {
+      "id": "M15-083",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorWait lifecycle: the seven vtable stubs (never-ending Update, +0x20/+0x28 runnable, base +0x24 not runnable with robot+0x34A, Init starting nothing, IsRunnableInternal true, empty Stop) and both shipped Wait configs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x39 0x0059D086..0x0059D0AC (plain IBehavior ctor, BehaviorWait vtable); behaviors/freeplay/needs/needs_Wait.json; behaviors/wait.json (executableBehaviorType Wait).",
+        "Vtable 0x010242A8 (slots from 0x010242B0): Update 0x0059EC00 movs r0,#1; +0x20 0x0059EC0E movs r0,#1; +0x24 base 0x0059EC12 movs r0,#0; +0x28 0x0059EC16 movs r0,#1; Init 0x0059EC34 movs r0,#0; IsRunnableInternal 0x0059EC38 movs r0,#1; Stop 0x0059EC3C bx lr; Resume base 0x005BDA94.",
+        "re-analysis/research/20261029-wait-1-read.md"
+      ],
+      "effect": "that Wait holds the behaviour slot doing nothing and never ends by itself, and when it may run (off treads and while carrying, not with robot+0x34A), which decides what the severe-needs activities and the Selection chooser fall back to",
+      "provenance": "WAIT-1 (Claude-run: cozmo-extractor read, checked by Claude 2026-10-29); record added with operator approval 2026-10-29.",
+      "unresolved": "Built in WAIT-1; not settled. Open: the ActivityFeeding (key, behaviour) keys 4 and 7 that receive Wait (0x005AA83A..0x005AA88C, M15-061); FindBehaviorByExecutableType/VerifyExecutableBehaviors bodies (no G2E 0x93 channel in the stack); the name of robot+0x34A. Owned elsewhere: base gates and Resume (M8-001), the choosers (M8-013).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WaitNativeTests"
+    },
+    {
+      "id": "M15-084",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorThinkAboutBeacons lifecycle: ctor/LoadConfig (newAreaAnimTrigger, beaconRadius_mm), runnable gates (not off treads, with robot+0x34A or while carrying; runnable iff no beacon), Init (beacon at the robot pose w.r.t. its root with the configured radius, then a plain 60 s trigger animation with no callback, skipped for an empty or unknown trigger), empty Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 0x35 0x0059D006..0x0059D024; ctor 0x005E5AF8..0x005E5B2C; LoadConfig 0x005E5B6A..0x005E5BFA (newAreaAnimTrigger string +0x11C, beaconRadius_mm f32 +0x128); Hiking_thinkAboutBeacons.json:13-16 (175), sparksThinkAboutBeacons.json:12-15 (75).",
+        "Vtable 0x01029A28: +0x28 0x005E5F4C returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005E5CC2..0x005E5CD8 (GetActiveBeacon == null).",
+        "InitInternal: SelectNewBeacon 0x005E5D98 (0x005E5F0C..0x005E5F3C: Robot::GetPose 0x004EA398, GetWithRespectToRoot 0x004DF628, AddBeacon 0x0056C39C with radius); trigger empty or AnimationTriggerFromString == 0x23F -> no action (0x005E5D9C..0x005E5DF4); TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false) 0x005E5DF6..0x005E5E18; StartActing with an empty callback 0x005E5E1C..0x005E5E3C; returns 0.",
+        "re-analysis/research/20261029-think-about-beacons-1-read.md"
+      ],
+      "effect": "when Cozmo picks a new hiking area (only with no beacon, never off treads or while carrying), where the beacon goes and its radius, and the new-area animation he plays",
+      "provenance": "THINK-ABOUT-BEACONS-1 (Claude-run: cozmo-extractor read, checked by Claude 2026-10-29); record added with operator approval 2026-10-29.",
+      "unresolved": "Being built in THINK-ABOUT-BEACONS-1; not settled. Beacon clearing is outside this record and unbuilt in the stack: AIWhiteboard::OnRobotDelocalized 0x0056A686 (reached from Robot::Delocalize) and ActivityGatherCubes::OnDeselectedInternal 0x005AF830 clear the beacons, but the stack's AIWhiteboard.OnRobotDelocalized has no caller, so after the first beacon TAB never becomes runnable again in production. Owned elsewhere: AddBeacon and the whiteboard (M13-006, M8-014, M15-011), the base gates (M8-001), the animation action (M8-020, M8-021), selection (M8-003, M15-008).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ThinkAboutBeaconsNativeTests"
     }
   ]
 }
