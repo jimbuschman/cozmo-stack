@@ -88,7 +88,7 @@
     "classes": 35,
     "sourcePaths": 16,
     "dataDllHashes": 123,
-    "independentReplay": "pending"
+    "independentReplay": "981/981 PASS, exact names/parameterized outcomes/multiplicity matched"
   },
   "laterArtifactTransport": [
     {
@@ -109,5 +109,13 @@
       "storedSha256": "b46f65216064d182fd893d2a987c1875aa6b52d2cd32c56d247a2b4d0f550742",
       "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-test2-fix\\manifest.json"
     }
-  ]
+  ],
+  "integration": {
+    "worker": "8b712525fa15325d560af270d2ab67d87d0bd254",
+    "commit": "3dada115aa010085e3feb2af85412634cd775016",
+    "cozmoStackTree": "371b755e58bfbae6cc7b596cd22d07487c97acf1",
+    "productionSrcTree": "e21237e8b54b967bcd6e8d45efc1f9544bcd6f46",
+    "frozenPathsMatched": 16,
+    "protectedOfficialChanges": false
+  }
 }
