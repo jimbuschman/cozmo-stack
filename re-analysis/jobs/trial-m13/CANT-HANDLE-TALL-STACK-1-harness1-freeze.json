@@ -1,0 +1,43 @@
+{
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "88761cdf91a665c82befe1698cf60046cbc7ec13798f52f1f6516a27c6ca894b",
+      "rawBlob": "f3982e5e1935765910dfdf0d8a48fea636460db1",
+      "filteredBlob": "f3982e5e1935765910dfdf0d8a48fea636460db1",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-harness-fix1-after\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "5891bcd93d8c04806728fd4e6d2e183efbe76aaebf1f12be6d5a6eb702b38245",
+      "rawBlob": "026db07208d5db9366cad445c28ebc74f1c0446b",
+      "filteredBlob": "026db07208d5db9366cad445c28ebc74f1c0446b",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-harness-fix1-after\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/DelocalizationRecipients.cs",
+      "sha256": "f0fcb1d0dfdd8b87c39be9f2436f0306392ccf2723ed5d456f414c7bda227fc1",
+      "rawBlob": "944a894afc961bcf016d2669876894b06aba844d",
+      "filteredBlob": "944a894afc961bcf016d2669876894b06aba844d",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-harness-fix1-after\\cozmo-stack\\src\\Cozmo.Robot\\DelocalizationRecipients.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCantHandleTallStackBehavior.cs",
+      "sha256": "efa4338cfe90b11325c2a455b5ac24e22cb72576c1f7da69a75f49c2742f63d4",
+      "rawBlob": "8c6a9bbd3999953cf0de12de09e4b52b6f468312",
+      "filteredBlob": "8c6a9bbd3999953cf0de12de09e4b52b6f468312",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-harness-fix1-after\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeCantHandleTallStackBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CantHandleTallStackNativeTests.cs",
+      "sha256": "e6722cba7a9a3bb4eb714259ef9c69a9bdb715c0bbaeb744f3fc444261481029",
+      "rawBlob": "93f96d4a90f7e8c011eeb7b80814ae07d4831db3",
+      "filteredBlob": "93f96d4a90f7e8c011eeb7b80814ae07d4831db3",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-harness-fix1-after\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\CantHandleTallStackNativeTests.cs"
+    }
+  ],
+  "onlyChanged": [
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/CantHandleTallStackNativeTests.cs"
+  ],
+  "codeVerdict": "Harnessfix1 static PASS; production4 unchanged"
+}

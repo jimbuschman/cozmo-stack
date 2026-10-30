@@ -1,0 +1,1862 @@
+{
+  "job": "CANT-HANDLE-TALL-STACK-1",
+  "referenceAttempt": 2,
+  "state": "REFERENCE262 PASS; REPLAY PENDING",
+  "classes": 10,
+  "passed": 262,
+  "failed": 0,
+  "skipped": 0,
+  "sourceAssetsUnchanged": 2803,
+  "binUnchanged": 187,
+  "buildExit": 0,
+  "testExit": 0,
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "trxSha256": "f7c95a0bc076390604af7809dc1dd48bbbe2aa5d39120ade516de321b37d8f56",
+  "logSha256": "6561a61d85238aabdef4b68251bc084b8d6fd68c071e5d1706952984b5850bf6",
+  "namesSha256": "482090f95eccc07e45c94e4a3e520e73c1ad9592658b4d17f3357e21a3126ba7",
+  "namedResults": [
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AlignWithObjectUsesTheEnginesAlignmentTypeTable",
+      "Outcome": "Passed",
+      "TestId": "a20ee4a3-f7fb-61e2-c699-e06b4b3aea42",
+      "ExecutionId": "45f3f779-ae25-47be-9859-50b32b967487",
+      "Duration": "00:00:00.0025069"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE005_TheMarkersOwnCornersAreWidthByHeight",
+      "Outcome": "Passed",
+      "TestId": "c488e9b2-e41b-b912-322f-ea9ea23c52f5",
+      "ExecutionId": "57352e7f-27c3-4c01-b610-6f7bff4a7caa",
+      "Duration": "00:00:00.0011884"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.HistoricalCameraUsesTheSameOwnedComputedPoseAndHeadInsteadOfCurrentMain",
+      "Outcome": "Passed",
+      "TestId": "9fd2c6fe-132b-2452-4589-703d60aa4075",
+      "ExecutionId": "f724389f-fff4-4e24-bfae-3f4e63b01815",
+      "Duration": "00:00:00.0653851"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.PublicPutDownUsesRealQueueWaitsForTwoImagesAfterParallelAndReleasesAfterActualKeepAlive",
+      "Outcome": "Passed",
+      "TestId": "0dda8331-615d-48e3-2508-f347ecd0c1ce",
+      "ExecutionId": "9d92127c-53d9-41cf-8022-8eb874c75f78",
+      "Duration": "00:00:00.9492990"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayIsRefusedWhileItsTracksAreLocked",
+      "Outcome": "Passed",
+      "TestId": "e2cdfe00-b115-8691-3948-a0c771d7468e",
+      "ExecutionId": "b7aaabda-16b4-455d-888c-ab3dfaba04d8",
+      "Duration": "00:00:00.5537647"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_011_TheBeaconIsAddedAtTheFullRobotPose",
+      "Outcome": "Passed",
+      "TestId": "2a8ef8c2-f505-00d1-6a73-654e86455eb5",
+      "ExecutionId": "84ad0878-91bf-4df1-bc57-e7588b522b5d",
+      "Duration": "00:00:00.0092081"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.QueuedActualPickupProxyPublishesRealCarryPayloadAfterWrappedRetirement",
+      "Outcome": "Passed",
+      "TestId": "a9477ab8-2339-0836-f888-62b330ac4459",
+      "ExecutionId": "705491d6-8ae6-4991-973f-afe791a51024",
+      "Duration": "00:00:00.3578432"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S7_MoveToNextDelayHoldsTheNextChildUntilTheDeadline",
+      "Outcome": "Passed",
+      "TestId": "14afaf89-2d1e-a68f-e7d3-16077cfd039e",
+      "ExecutionId": "10209263-5a4f-419d-b4c5-9c7e7da5b0ea",
+      "Duration": "00:00:00.0146171"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedChildEndsItsSequenceAndTheNextLoopStarts",
+      "Outcome": "Passed",
+      "TestId": "f84ba867-8777-6f32-6fd3-f24df1e82884",
+      "ExecutionId": "13728d0a-8e59-49d8-a9f4-62b543b9598c",
+      "Duration": "00:00:00.0056719"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieRetryDecisionWithIsolatedDrivingDependency",
+      "Outcome": "Passed",
+      "TestId": "835e8e61-f17a-abe3-5659-6bb2e60e68cd",
+      "ExecutionId": "fbb96b07-9f58-4390-aeb5-7205b64c24a4",
+      "Duration": "00:00:00.5071849"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheShippedBehaviorObjectivesParse",
+      "Outcome": "Passed",
+      "TestId": "252a53c4-3aab-089b-ca0b-30a545eed6c7",
+      "ExecutionId": "003a65fc-182e-46a4-bc8c-8b55ab236496",
+      "Duration": "00:00:00.0001090"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S6_RetryDecrementsResetsChildrenAndReturnsRunning",
+      "Outcome": "Passed",
+      "TestId": "028723a3-3a27-be95-c895-811d09cf9181",
+      "ExecutionId": "7645257f-a5e5-4ca5-93fb-ca1791fabb4b",
+      "Duration": "00:00:00.0004343"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledZeroDurationPlayRestoresDisplacedLowerEntryUnderReplacement(replacementClears: False)",
+      "Outcome": "Passed",
+      "TestId": "974cfc96-3a7b-b5c1-2f01-1ff2c2d5078d",
+      "ExecutionId": "5dbab54a-be10-4e4f-9ffd-547f69d8221c",
+      "Duration": "00:00:00.0917255"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: False, after: False)",
+      "Outcome": "Passed",
+      "TestId": "c32dbe7a-2e72-bf8e-915f-16d453047d4d",
+      "ExecutionId": "1a24b387-6b7e-457d-950a-f82fd0d94ef3",
+      "Duration": "00:00:00.0747228"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanonicalThinkMissingLibraryIsUnavailableAtScopedChooser",
+      "Outcome": "Passed",
+      "TestId": "c2eb78e2-4045-3f88-29d4-ee1d3f010cef",
+      "ExecutionId": "656dc5e1-cc4f-44c9-8e43-8bcc800a0a84",
+      "Duration": "00:00:00.0822499"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.BeaconsAndFailureMemoryDriveTheHikingBehaviours",
+      "Outcome": "Passed",
+      "TestId": "a36823d1-2699-535d-4a99-5983a14733ca",
+      "ExecutionId": "2a637395-7eda-42c4-887c-81b2b61ad049",
+      "Duration": "00:00:00.0004146"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteMakesUpdateReturnTwoBeforeUpdateInternal",
+      "Outcome": "Passed",
+      "TestId": "ba17f072-edfb-d303-d8ac-6701b27ef6fe",
+      "ExecutionId": "1a81a809-110d-453b-a5f9-e0be0a3f9c1e",
+      "Duration": "00:00:00.0061401"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.PriorityDistinguishesFalseFromUnavailableAndEvaluatesEachEncounterOnce",
+      "Outcome": "Passed",
+      "TestId": "487a8c2c-b676-a524-307e-e03a7e94dee0",
+      "ExecutionId": "b850d3c4-0531-4d5e-9c51-f2cc69539924",
+      "Duration": "00:00:00.0910984"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.StopPreservesPoseAndSameBottomPoseSuppressesReadmission",
+      "Outcome": "Passed",
+      "TestId": "70b6722d-4d43-d1a2-2422-4e470ee56f6e",
+      "ExecutionId": "b3dd0b32-7e49-488a-bf33-5709becc8bd6",
+      "Duration": "00:00:00.6085971"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.CantHandleTallStackLooksDownThenUpThenSulks",
+      "Outcome": "Passed",
+      "TestId": "9c859a83-93f7-b4ac-a63d-918fb6259301",
+      "ExecutionId": "c2e53ec2-900e-4651-b46e-a81d20a0c74c",
+      "Duration": "00:00:00.0940255"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.SparksCooldownUsesExactFloatEpsilon(nowBits: 1121058814, stamp: 100, expected: False)",
+      "Outcome": "Passed",
+      "TestId": "d2a808b7-c626-bb87-78ab-c94063dc1cd0",
+      "ExecutionId": "f7442c13-310a-41e4-85b8-0016fee6a093",
+      "Duration": "00:00:00.0917892"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AWhiteboardWithAnExternalInterfaceRegistersItsHandlers",
+      "Outcome": "Passed",
+      "TestId": "9d837d90-a896-b417-242c-8d35b439e2fd",
+      "ExecutionId": "a43c23e2-68ee-4a91-8586-f1911e17f9f3",
+      "Duration": "00:00:00.0017833"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SwitchToBehaviorBaseStillInitialisesWhenNotRunnable",
+      "Outcome": "Passed",
+      "TestId": "3d8ecbb1-6401-8324-c93b-55d8df408b68",
+      "ExecutionId": "30284c4b-456a-478c-bf50-0e4da4e52717",
+      "Duration": "00:00:00.0068352"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.ActualDelegateReachedUnboundTailRetiresWithoutNativeCompletion",
+      "Outcome": "Passed",
+      "TestId": "f0abdab5-1712-86aa-7e7e-82201a506e37",
+      "ExecutionId": "fafd33fb-9f3b-4dec-81c2-573be57c6b59",
+      "Duration": "00:00:00.6790216"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.MountChargerAlignsTurnsAndBacksOntoTheContacts",
+      "Outcome": "Passed",
+      "TestId": "9b5a2216-951a-f7e5-417d-14b804e40928",
+      "ExecutionId": "24ee1629-ba69-4362-ba87-1ed749680363",
+      "Duration": "00:00:00.2021062"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheConfigurationManagerTracksWhatTheWorldSeesAndWhenItFirstSawIt",
+      "Outcome": "Passed",
+      "TestId": "0f019974-c3c7-b055-4f33-5e5c6e41c0e7",
+      "ExecutionId": "bf0c4a6b-bf62-4a15-b676-d1e597e3e7d6",
+      "Duration": "00:00:00.1352393"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.FullCarrierSurvivesCurrentTagProxyPrepDestructionAndWatcherSnapshot",
+      "Outcome": "Passed",
+      "TestId": "c12be17e-dba2-dec4-88a2-cdc84b82b12f",
+      "ExecutionId": "4c082a8e-57d4-43d6-8035-b1d5ddf89007",
+      "Duration": "00:00:00.0021750"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R2_AnyRunningIsRunningElseSuccess",
+      "Outcome": "Passed",
+      "TestId": "d895dd13-292f-bb34-0642-63460eb9b0fe",
+      "ExecutionId": "3f73a780-c49d-40cc-bac0-6f29f09acd27",
+      "Duration": "00:00:00.0001930"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveToPoseUsesTheLatticePlannerAndTheFakeRobotArrives",
+      "Outcome": "Passed",
+      "TestId": "be84d6ab-d3fc-1ffa-db7a-04b2493b7051",
+      "ExecutionId": "8c5dc02d-40f8-42f0-bfdf-71705a8171b1",
+      "Duration": "00:00:00.0729531"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DoPlanningReturnsTheEngineResultCodes",
+      "Outcome": "Passed",
+      "TestId": "a8a12704-d3d4-a337-b05b-7aa938e712b2",
+      "ExecutionId": "e75587f2-9543-441a-afb8-c2f63fbc1ff0",
+      "Duration": "00:00:00.0139017"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieNoAnimationFixtureDriveCompletionDoesNotFabricateFailedAbort",
+      "Outcome": "Passed",
+      "TestId": "656206d6-5e52-4e06-6b38-2b7d913f5051",
+      "ExecutionId": "52031848-6aff-44dd-8afb-33cedd90da89",
+      "Duration": "00:00:00.4774129"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonPositiveLoopCountOnTheLoopPathPlaysNothing(loops: -1)",
+      "Outcome": "Passed",
+      "TestId": "2f9ef9ff-c08a-c827-7652-3e03c5c907b3",
+      "ExecutionId": "1f9690c4-ebcc-45f3-9317-0c09d71f7514",
+      "Duration": "00:00:00.0065331"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScorePathIsFloatWithTheEnginesOperationOrder",
+      "Outcome": "Passed",
+      "TestId": "4bce5a37-9eb6-47b8-8b95-a57eba2ebddd",
+      "ExecutionId": "5d18a55b-1f7f-4649-9cbc-c71283f22a62",
+      "Duration": "00:00:00.0054848"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE001_ALiveBodyKeyframeIsStoppedAtItsDurationWithNobodyDrivingTheScheduler",
+      "Outcome": "Passed",
+      "TestId": "3d1a890d-16e5-7ba7-4795-90653f6ede72",
+      "ExecutionId": "3abe4ec4-509f-437f-92d1-38002a4532c7",
+      "Duration": "00:00:00.3710034"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayedAnimationReleasesItsTrackLockWhenStopped",
+      "Outcome": "Passed",
+      "TestId": "53391b6b-77f7-e085-ded9-98ca9f4f7afe",
+      "ExecutionId": "6ee733ef-a3a7-44c9-a1b7-faa3c3f18e42",
+      "Duration": "00:00:00.6437792"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeBouncerFactoryTests.StaleTriggerConstructorRetiresTagWithoutTouchingReplacementOrPublishingCompletion",
+      "Outcome": "Passed",
+      "TestId": "6f608a9a-eaf5-b0f4-4994-7929de814173",
+      "ExecutionId": "19f65373-cecf-4439-8f04-fd600807a6ff",
+      "Duration": "00:00:00.0098032"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.UndefinedPublicPayloadStillDeliversDefinedFlagAndScalarLocally",
+      "Outcome": "Passed",
+      "TestId": "f9ba8f18-9986-27c5-fcdf-b08916a3aaa2",
+      "ExecutionId": "025be0e8-f6f0-440d-bc71-5db1586c04aa",
+      "Duration": "00:00:00.0655485"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimBehaviourResolvesItsTriggerAgainstTheShippedAssets",
+      "Outcome": "Passed",
+      "TestId": "282f36c3-505e-557c-26d0-8ccabb04f868",
+      "ExecutionId": "17daade4-227f-4c36-9e44-70d211f0aef8",
+      "Duration": "00:00:00.5463148"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S8_S9_ZeroDelayTicksTwoChildrenOnTheSameTickAndTheThirdNext",
+      "Outcome": "Passed",
+      "TestId": "6e98c8e0-d827-5f47-5fc4-e045f948a1c4",
+      "ExecutionId": "17c7b9b8-2837-43f3-ad1e-05d4e1810c93",
+      "Duration": "00:00:00.0005205"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ABehaviourStoppedAtTimeZeroIsNotPenalised",
+      "Outcome": "Passed",
+      "TestId": "a52d347f-f988-1411-7088-d47a16976352",
+      "ExecutionId": "f4280fee-0f76-45e7-96fd-7aca77f5bc7b",
+      "Duration": "00:00:00.0065214"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose",
+      "Outcome": "Passed",
+      "TestId": "7bf56c49-c0cf-f556-6cae-02832ce76d9b",
+      "ExecutionId": "0bd35889-77a6-4d67-ae64-cbc324674f9d",
+      "Duration": "00:00:00.1595463"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SmartRemoveIdleAnimationWithoutAnIdleRaisesAVerifyFailure",
+      "Outcome": "Passed",
+      "TestId": "890bfd23-daf8-5a68-3703-0fd812cda1c1",
+      "ExecutionId": "eb4be33d-912d-4d55-823b-6808f8166e59",
+      "Duration": "00:00:00.0003462"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.LateNamedFaceFailsClearlyAndRetiresOnlyItsOwnedSubtreeWithoutPickupContinuation(uiEnabled: True)",
+      "Outcome": "Passed",
+      "TestId": "60a7c902-9e59-5d6a-80dc-9be89b49f6cb",
+      "ExecutionId": "a0108f4b-4d5f-4949-9def-225f8c7a90f4",
+      "Duration": "00:00:00.0837653"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ScoredActingStateChangedClearsTheBonusOnActionStartStopAndCompletion",
+      "Outcome": "Passed",
+      "TestId": "044bcaef-ec3c-5e22-c76e-84c6d05de042",
+      "ExecutionId": "af7f443f-41bf-4998-81d5-fb41799f9526",
+      "Duration": "00:00:00.0049578"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.ShippedConfiguredPickupRunsManagerHelperFirstTurnsWorker44DockVerifyAndTypedCallback",
+      "Outcome": "Passed",
+      "TestId": "749d6d04-02b8-2fdc-7112-12ba2d75ea94",
+      "ExecutionId": "c5f047a0-e859-4d37-ad28-47165935ff4a",
+      "Duration": "00:00:00.8679097"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerStopsABehaviourOnlyWhileItsRunningFlagIsSet",
+      "Outcome": "Passed",
+      "TestId": "62a37b56-bdcb-4922-a732-9329b3760a43",
+      "ExecutionId": "dd34fb28-afc3-4275-b7ff-2409196c6ae5",
+      "Duration": "00:00:00.0109582"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.DelocalizationBetweenAdmissionAndInitLeavesKnownEmptyWeakPair",
+      "Outcome": "Passed",
+      "TestId": "b9c3a68b-1d8e-90fc-45f6-33c5f9dadf38",
+      "ExecutionId": "5d5dde5c-4776-4e5d-9684-5a0e6c64c84e",
+      "Duration": "00:00:00.6021537"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheShippedBehaviorConfigsCarryTheirObjectives",
+      "Outcome": "Passed",
+      "TestId": "df5392f2-e7ba-4ee6-63cd-ff136bf46bfe",
+      "ExecutionId": "bc7e47fd-f74f-4348-b1a1-2eab8941b3a6",
+      "Duration": "00:00:00.0296617"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AWhiteboardWithNoExternalInterfaceWarnsOnInit",
+      "Outcome": "Passed",
+      "TestId": "932d0ab1-921b-3417-037f-0d2d9b423f4f",
+      "ExecutionId": "82e317c6-dd70-4fc1-935d-a2936a8b32a0",
+      "Duration": "00:00:00.0003004"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube",
+      "Outcome": "Passed",
+      "TestId": "82f785bc-1d35-f0bf-43bf-fd1ded60c781",
+      "ExecutionId": "d1f3c9fe-6861-4ac2-b2ae-e3eb96139b1b",
+      "Duration": "00:00:00.3798241"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.LockAndRecipientAvailabilityAreRecheckedAtInit",
+      "Outcome": "Passed",
+      "TestId": "47fccb7c-1603-9195-7627-04fc89ef2926",
+      "ExecutionId": "0977556d-8c9e-46ae-b079-c38e90fba8b3",
+      "Duration": "00:00:00.6792182"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeRunsCustomUndoInReverseOrder",
+      "Outcome": "Passed",
+      "TestId": "2760d43e-75be-2e84-c7b0-7bedea0629e5",
+      "ExecutionId": "f44fff9e-039c-467d-a0f2-fb81ae79aec8",
+      "Duration": "00:00:00.0004122"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_TheRenderStaysWithinALeadOfWhatHasBeenHeard",
+      "Outcome": "Passed",
+      "TestId": "19d6c396-48e2-fbe7-ae9d-165c03d0dede",
+      "ExecutionId": "094bf7d2-8afe-4af0-a33c-e90374f8c428",
+      "Duration": "00:00:01.9930321"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S4_CategoryAboveFourIsSuccess",
+      "Outcome": "Passed",
+      "TestId": "12217dbf-17eb-9060-30bb-99bd503e7df6",
+      "ExecutionId": "a4e03ab8-7085-42b8-a6cd-9a0eef58b170",
+      "Duration": "00:00:00.0002074"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M11SmallReadsBuilderTests.FreeplayManagerTallStackFacadeUsesTheClearedNativeContainerFields",
+      "Outcome": "Passed",
+      "TestId": "2c7af015-0169-b6da-ef05-a641eec5ec96",
+      "ExecutionId": "b757dd45-00a5-4b4b-a649-7fd57c3350ec",
+      "Duration": "00:00:00.2540777"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.SparksCooldownUsesExactFloatEpsilon(nowBits: 1121058815, stamp: 100, expected: True)",
+      "Outcome": "Passed",
+      "TestId": "bd9181af-76f2-a488-e446-1f93436d20f1",
+      "ExecutionId": "4e4fc659-3374-4da8-8d0d-9d70e9b3302e",
+      "Duration": "00:00:00.0954854"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHeadAndLiftRestoreRunsEvenWhenNothingIsParked",
+      "Outcome": "Passed",
+      "TestId": "bc5a06d1-2c57-5a9b-106b-78b628db5c70",
+      "ExecutionId": "7b291a15-c3ed-4d16-a891-2b15f2d7304a",
+      "Duration": "00:00:00.0099909"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheShippedMotionPrimitivesParseAsTheEngineReadsThem",
+      "Outcome": "Passed",
+      "TestId": "505513c6-8219-5e46-41b9-a50444fd261b",
+      "ExecutionId": "a086b110-aea3-4e11-bb05-5d2a895c0126",
+      "Duration": "00:00:00.0101584"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TurningPrimitivesBecomeLineAndArcSegmentsThatEndOnTheLattice",
+      "Outcome": "Passed",
+      "TestId": "4e1b58ea-0dc2-52c6-dc08-28683809d7cf",
+      "ExecutionId": "dc9b901d-f38e-45ce-bfb0-4f899e6018d8",
+      "Duration": "00:00:00.0289105"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: False, after: True)",
+      "Outcome": "Passed",
+      "TestId": "fffb45c6-61c8-4f0f-cd7f-612912bc9f4b",
+      "ExecutionId": "9f762dc1-d731-4c75-b1d2-854422008768",
+      "Duration": "00:00:00.0786959"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 33554432, expected: \"none\")",
+      "Outcome": "Passed",
+      "TestId": "9ab95af3-3ddb-0260-6bca-4cdd89d71bb5",
+      "ExecutionId": "932f1d96-24a9-4b40-acbd-0a639e1bd2bf",
+      "Duration": "00:00:00.0786932"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE005_TheChargerDockingSignalUsesTheMarkersRealShape",
+      "Outcome": "Passed",
+      "TestId": "60ccbdf7-ff15-5a32-e5c0-8e0590d40be5",
+      "ExecutionId": "15af9e25-c865-42b0-8331-d605077e8d24",
+      "Duration": "00:00:00.0969563"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonSteppedBehaviourGetsTheResumeCounterAndRefusal",
+      "Outcome": "Passed",
+      "TestId": "bdbcb26f-21e4-962f-609b-7ad60136f8db",
+      "ExecutionId": "3742ee57-6ef7-4df5-ad6a-8880cd166c9b",
+      "Duration": "00:00:00.0056784"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE007_FlatGroundLeavesNoEdgeInTheMap",
+      "Outcome": "Passed",
+      "TestId": "3dbef22c-0f0b-5956-b0d1-293a0353f379",
+      "ExecutionId": "622f6c0b-cdda-40f4-a069-554ba4d11117",
+      "Duration": "00:00:00.0464380"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.RobotRemovalReleasesResourcesThroughOriginalOwners(admitted: True)",
+      "Outcome": "Passed",
+      "TestId": "4c489fde-ced6-1bbc-c757-2588cf37ba05",
+      "ExecutionId": "95ef3c24-b27c-45e3-8a05-05a7c78b3a57",
+      "Duration": "00:00:00.0926780"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanonicalThinkCreatesBeaconConsumedByCanonicalBring",
+      "Outcome": "Passed",
+      "TestId": "13c31e5d-9f6a-81c4-b2e5-bd415837a5cf",
+      "ExecutionId": "c35c9a7d-5839-4d43-91f5-9a1c8138b7d7",
+      "Duration": "00:00:00.7143563"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ReactionsAreConsultedEveryTickAndOnlyAPerTriggerLockSkipsOne",
+      "Outcome": "Passed",
+      "TestId": "765e8b29-971f-aaa4-e6a2-edab2fe4b586",
+      "ExecutionId": "b9317f3d-3b8a-4c80-b446-102865b7e726",
+      "Duration": "00:00:00.0069117"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.TrueSayNameUsesActualVerifiedUnnamedPathOrFailsAtNamedProviderFrontier(named: True)",
+      "Outcome": "Passed",
+      "TestId": "923e367f-46a1-f9cd-f014-8b4f50f49459",
+      "ExecutionId": "ee884c55-1c67-4239-a7d7-e6309df3b80f",
+      "Duration": "00:00:00.0650438"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AStandaloneWaitIsTheCurrentActionAndAParallelPairIsOne",
+      "Outcome": "Passed",
+      "TestId": "64580115-92c2-6f77-3950-466362c47092",
+      "ExecutionId": "f707444e-fcde-49fa-9baa-b2918516e2c9",
+      "Duration": "00:00:00.0068117"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledTransitionRestoresPriorStateWithoutOldLedSend(replacement: False)",
+      "Outcome": "Passed",
+      "TestId": "6d940845-2c59-9d49-6577-1d02727569fc",
+      "ExecutionId": "297ace42-6414-4103-a91c-8ebee0981579",
+      "Duration": "00:00:00.0957203"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheRepetitionPenaltySuppressionIsAtTheScoringSiteNotInTheGraph",
+      "Outcome": "Passed",
+      "TestId": "0c494c80-1d37-51e4-48db-c757dde26d5c",
+      "ExecutionId": "9400f9cb-d410-4f04-a5fd-4b0af5782bc0",
+      "Duration": "00:00:00.0001270"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheMountCarriesTheEnginesOwnNumbers",
+      "Outcome": "Passed",
+      "TestId": "efd1a834-7aa2-e95c-c0cf-f604a8807bc0",
+      "ExecutionId": "c872e68d-cdea-4ed9-a6b5-c66133393e46",
+      "Duration": "00:00:00.0002383"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ASingleTriggerTimesOutAtSixtySecondsUnlessItLoopsForever",
+      "Outcome": "Passed",
+      "TestId": "2345e076-f56f-99a8-500c-ac9593aa8b50",
+      "ExecutionId": "c162f95b-b0d5-42c5-be87-6b4ac02ae24a",
+      "Duration": "00:00:01.1314709"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE010_ADisposedManipulationSystemStopsTouchingTheVisionSystem",
+      "Outcome": "Passed",
+      "TestId": "de6a1dfb-fe84-c126-9a99-12f5e6a8b6d1",
+      "ExecutionId": "1d7ad5c4-0e77-4dca-a97a-9169a51c5c61",
+      "Duration": "00:00:00.1373603"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_EveryFrameOfAPlayingSongCarriesSound",
+      "Outcome": "Passed",
+      "TestId": "65bc1f7e-92eb-b176-4f10-2bf15e7aaed9",
+      "ExecutionId": "fb12edf0-0cd9-410c-a19d-a7e6cb7b6300",
+      "Duration": "00:00:02.0704627"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.RobotRemovalReleasesResourcesThroughOriginalOwners(admitted: False)",
+      "Outcome": "Passed",
+      "TestId": "26987348-f33d-ac54-669a-ed7daee50a6e",
+      "ExecutionId": "bcdb774f-8097-4896-bd61-a373c8aeaf88",
+      "Duration": "00:00:00.0955067"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.GatherReportsObjectiveBeforeNeedsAndLatchesOnce(external: True)",
+      "Outcome": "Passed",
+      "TestId": "a5e42bba-a4c0-bbf6-ab71-39caff028d51",
+      "ExecutionId": "4476919f-499b-49a1-a64d-cbad32a1d8f7",
+      "Duration": "00:00:00.1128945"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AChargerInViewIsLocalisedWithoutBeingConnected",
+      "Outcome": "Passed",
+      "TestId": "c584b020-2aaa-3466-bb88-815988b3f0e4",
+      "ExecutionId": "043d4e22-3e30-49ee-a9d6-7d2a97957f10",
+      "Duration": "00:00:00.0876883"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSelectionChooserReturnsTheRequestedBehaviourUntilItsNumRunsAreSpent",
+      "Outcome": "Passed",
+      "TestId": "e4b53809-aa4e-4451-7880-5ce0d98e8003",
+      "ExecutionId": "703f6b78-2a8d-4a61-8da6-58e2311af316",
+      "Duration": "00:00:00.0060958"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.M3_010_CheckedFloatInputReachesTheWireEncoderWithoutScaling",
+      "Outcome": "Passed",
+      "TestId": "6a22aa58-0652-ab9f-a5db-d988c57206c0",
+      "ExecutionId": "2bb6a5f2-3e8e-4b85-94ed-4251ecece08c",
+      "Duration": "00:00:00.0024630"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.RespondPossiblyRollRespondsToAnUprightCubeAndRollsOneOnItsSide",
+      "Outcome": "Passed",
+      "TestId": "408ccd11-669e-f0ef-7401-30b2dcca7e95",
+      "ExecutionId": "dca7e370-b969-4832-a2b7-3c892fd1ae73",
+      "Duration": "00:00:00.5377537"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P8_TheProxyPrefersTheLiveChildUnion",
+      "Outcome": "Passed",
+      "TestId": "b470cb08-efc9-ff61-f0d6-f77a495bfa7a",
+      "ExecutionId": "e8396880-0172-40f0-a01c-2ef1cde4745a",
+      "Duration": "00:00:00.0001408"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 50331648, expected: \"failed\")",
+      "Outcome": "Passed",
+      "TestId": "277bf52e-05cb-9449-4f72-7f1c3036a50a",
+      "ExecutionId": "83aba509-d501-4b97-beb8-8921bd97d30f",
+      "Duration": "00:00:00.0791591"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther",
+      "Outcome": "Passed",
+      "TestId": "4c75d514-cf1f-eea4-ce90-39c9ac4ebb31",
+      "ExecutionId": "ab1d1d5f-bd2d-46cf-8d9e-aadfba6f94e1",
+      "Duration": "00:00:00.1386843"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.AllThreeClassStateCapabilitiesRefuse",
+      "Outcome": "Passed",
+      "TestId": "4dfdf613-841c-b63e-7214-a0e5fe535baa",
+      "ExecutionId": "4a886bc6-0de6-4466-8263-8214dba016f9",
+      "Duration": "00:00:00.1128205"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AnUninitialisedManagerTicksNothingAndAUiGameRequestIsSelectedOnce",
+      "Outcome": "Passed",
+      "TestId": "aa7ece5b-8785-00f3-475d-3eeb960b1214",
+      "ExecutionId": "65bab956-5fad-42a0-a7db-7c31b10ddb10",
+      "Duration": "00:00:00.0053311"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.StoppedLoopDiagnosticReentryDoesNotMutateReplacement",
+      "Outcome": "Passed",
+      "TestId": "88f53716-ff26-1cff-1f4b-702d5e7402c4",
+      "ExecutionId": "02a92829-426a-4934-bdd5-21d71469ae00",
+      "Duration": "00:00:00.0851668"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside",
+      "Outcome": "Passed",
+      "TestId": "845739b4-affe-98c5-37d0-0258588e7dcd",
+      "ExecutionId": "4ec17d48-43dc-4544-bd86-ebd267ede8a1",
+      "Duration": "00:00:00.5231352"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ANonPositiveLoopCountOnTheLoopPathPlaysNothing(loops: 0)",
+      "Outcome": "Passed",
+      "TestId": "4871dee5-daa5-b62e-d2e6-8ef40817148f",
+      "ExecutionId": "6ac91311-c8a6-4511-8131-4e2f902f30dd",
+      "Duration": "00:00:00.0111098"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.LateNamedFaceFailsClearlyAndRetiresOnlyItsOwnedSubtreeWithoutPickupContinuation(uiEnabled: False)",
+      "Outcome": "Passed",
+      "TestId": "cafc84d3-8756-ae4e-6f20-adf945400fc4",
+      "ExecutionId": "12020f3f-f1f4-4fd7-8bf7-bd636710ac63",
+      "Duration": "00:00:00.0644263"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AFailedAlignEndsTheMountWithoutTurningOrReversing",
+      "Outcome": "Passed",
+      "TestId": "87357cea-68fc-0955-8235-294377936548",
+      "ExecutionId": "7c4594c5-6863-4ffd-a0d3-25f783212a52",
+      "Duration": "00:00:00.1309643"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_AParameterPostedWhileTheRobotIsStalledStillReachesTheAudio",
+      "Outcome": "Passed",
+      "TestId": "77fb7a71-ff3a-312d-cda7-69b304025fdb",
+      "ExecutionId": "1c45df34-2876-4683-9d39-f4560e4e7af5",
+      "Duration": "00:00:02.8433284"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip",
+      "Outcome": "Passed",
+      "TestId": "eeb4c71b-047c-17a9-6ba6-d289f5dc3d94",
+      "ExecutionId": "e7121fea-affe-4efb-a8bf-378c6166d3e6",
+      "Duration": "00:00:00.0946326"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.OriginalImmutablePayloadSurvivesTheActualResponseAnimationCallback",
+      "Outcome": "Passed",
+      "TestId": "61df7b45-dfc7-02aa-5a85-8f264e9cd56e",
+      "ExecutionId": "339b923e-ef45-4d69-9bb5-535dcae0ac89",
+      "Duration": "00:00:00.5882174"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSmartHelpersReleaseThroughTheScope",
+      "Outcome": "Passed",
+      "TestId": "2ffa71bf-7de7-aeea-5833-e4819c35b195",
+      "ExecutionId": "57a4be2b-1afa-45fa-89a1-aa95c31ebf06",
+      "Duration": "00:00:00.0020327"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScoreAppliesNoPenaltyForAZeroStampOrAMissingGraph",
+      "Outcome": "Passed",
+      "TestId": "9818c3e0-62f3-5de3-7b4d-e81dbcb194f7",
+      "ExecutionId": "f1a2efa0-241a-4ebb-8e8d-9ddec805d53c",
+      "Duration": "00:00:00.0060346"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE010_ALateDisposalDoesNotClearTheReplacementsCallbacks",
+      "Outcome": "Passed",
+      "TestId": "3ebc7ea5-e54d-fc54-7b37-68db9b5075fa",
+      "ExecutionId": "f11dc553-8af0-496a-b8e9-e8b84ff6b18d",
+      "Duration": "00:00:00.0079755"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.QueuedPickupUsesRealMotorImagesDockFlagRawLoadAndCarryCompletion",
+      "Outcome": "Passed",
+      "TestId": "7859a07f-b2b2-946b-7b00-0c149afddd4f",
+      "ExecutionId": "f4a9e96d-85ec-4b7d-b86f-e85d0baec46e",
+      "Duration": "00:00:00.3466726"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerResumesWithoutAnIsRunnablePreCheckAndAFailedResumeSwitchesToNothing",
+      "Outcome": "Passed",
+      "TestId": "3eda2406-27ee-8b6f-3653-90c4a0755d6e",
+      "ExecutionId": "22bf14ab-ce3f-46e5-a4ac-e9a501b0f0af",
+      "Duration": "00:00:00.0168851"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AnAnimationActionLocksItsMaskUnderItsActionId",
+      "Outcome": "Passed",
+      "TestId": "b0f83969-8827-3a2d-3087-3aa432e14af1",
+      "ExecutionId": "ca2c36ef-4775-428e-86d9-0497b5069535",
+      "Duration": "00:00:00.6059168"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AMissingRepetitionPenaltyIsAFlatOne",
+      "Outcome": "Passed",
+      "TestId": "4f9f7600-1651-0080-e018-85b2188273e6",
+      "ExecutionId": "c5fc4ee2-1be0-487c-af7b-300446def044",
+      "Duration": "00:00:00.0021691"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.NestedReadinessFramesDoNotOverwriteOuterEvaluation",
+      "Outcome": "Passed",
+      "TestId": "fc9bf0f4-3385-e360-bfbc-f4ab518bf323",
+      "ExecutionId": "282cac9f-ef26-431e-be57-200a3222acfb",
+      "Duration": "00:00:00.0809663"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerContactsActionFailsWhileStillOnTheContacts",
+      "Outcome": "Passed",
+      "TestId": "c3452565-0b05-827f-8032-e80dd6c6a8f8",
+      "ExecutionId": "51b5173d-76fd-4e7b-a705-36267ca8901c",
+      "Duration": "00:00:00.0163993"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeBouncerFactoryTests.RestartDuringIdlePushKeepsNewRunAndOldRunConsumesNoRng",
+      "Outcome": "Passed",
+      "TestId": "ec69fb2b-e7ef-b63d-b620-10a84cb78100",
+      "ExecutionId": "28b3fbeb-c644-4906-8bcc-044667818ed7",
+      "Duration": "00:00:00.0084153"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeReleasesInTheEnginesFixedCategoryOrder",
+      "Outcome": "Passed",
+      "TestId": "672a3959-2f89-1a2a-9a4a-1f44871240c8",
+      "ExecutionId": "73785656-761f-4e2c-be44-a833b8afe3f9",
+      "Duration": "00:00:00.0018467"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P2_TheBoolOverloadInstallsTheIgnorePredicate",
+      "Outcome": "Passed",
+      "TestId": "d18243fb-7282-69c0-0097-7f9d5b4cae94",
+      "ExecutionId": "1b98fa0c-161e-454d-ad70-8ea215fb1bbe",
+      "Duration": "00:00:00.0001482"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: True, after: False)",
+      "Outcome": "Passed",
+      "TestId": "2bd6989d-c937-5225-ea5f-a352b511c40d",
+      "ExecutionId": "cbe8077e-3f2f-46e7-8b45-2f3986229512",
+      "Duration": "00:00:00.0768031"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.OnlyTheBehavioursWhoseInputsExistAreBuilt",
+      "Outcome": "Passed",
+      "TestId": "3251e4a8-663b-12a0-4048-b432769647e0",
+      "ExecutionId": "00580e80-ff38-4007-9af4-64050d89ab1d",
+      "Duration": "00:00:00.0007741"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheInitTagGuardFlagsOnlyEngineTaggedActionsAndCountsTheMainQueue",
+      "Outcome": "Passed",
+      "TestId": "73a01d76-a966-3e30-05a0-89bc6aac3dbd",
+      "ExecutionId": "aed869ec-78e6-4fe5-8592-4cd0ed55b9d0",
+      "Duration": "00:00:00.0004303"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P1_CompoundRunnerTypeMaskAndNullChild",
+      "Outcome": "Passed",
+      "TestId": "6f157fb1-ba49-17d5-80c6-8e866f5528ac",
+      "ExecutionId": "1c2438b7-2e02-4372-90ad-0995974e35a8",
+      "Duration": "00:00:00.0001499"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.DisposedCantCannotStartUpstreamHeadWaitsOrAcquireCompletionLease",
+      "Outcome": "Passed",
+      "TestId": "581444ea-ab9f-2314-93a7-7e98540f848f",
+      "ExecutionId": "5d341085-34b5-47b4-9189-1cde65b226f4",
+      "Duration": "00:00:00.0857106"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates",
+      "Outcome": "Passed",
+      "TestId": "ca93edde-319e-05a5-7e2d-c5c7f36b0311",
+      "ExecutionId": "b457405a-edaa-4913-ae8a-130d27313cdb",
+      "Duration": "00:00:01.4422072"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteReleasesTheSharedHandle",
+      "Outcome": "Passed",
+      "TestId": "c0b5589a-e8c6-905d-6bc8-01d58dcaac7a",
+      "ExecutionId": "a0e00cf3-a4cb-4f8b-ab9b-345c0b43aa7b",
+      "Duration": "00:00:00.0001660"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeBouncerFactoryTests.MissingDetectorDirectionEndsConfiguredOwnerWithoutFakeDisplay",
+      "Outcome": "Passed",
+      "TestId": "3382584a-6857-fcb7-a11b-061602c0653d",
+      "ExecutionId": "f9b49489-2da0-4063-b3dc-c362b87fe3fd",
+      "Duration": "00:00:00.0250981"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.RegisteringAfterDisposalStillReleases",
+      "Outcome": "Passed",
+      "TestId": "22e443bb-d46c-4c60-ab4c-33e148a38f2a",
+      "ExecutionId": "a56e685c-6d66-4217-9412-7505e4e4efb3",
+      "Duration": "00:00:00.0002393"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 67108864, expected: \"failed\")",
+      "Outcome": "Passed",
+      "TestId": "4e5d6e91-8347-47b2-5072-cdf3531184f4",
+      "ExecutionId": "4a8f9192-a755-4cc5-b1c8-6a47912c01e4",
+      "Duration": "00:00:00.0802739"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RealNoObjectFailureKeepsInternalFlagAndSuppressesUndefinedPublicPayload",
+      "Outcome": "Passed",
+      "TestId": "9f39740f-659c-0a2c-0ccd-a63bfbc32e75",
+      "ExecutionId": "3242ce4a-8c07-47f2-9eb7-65a41379a5bf",
+      "Duration": "00:00:00.0658669"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopOnNextActionCompleteDiscardsTheCompletionCallback",
+      "Outcome": "Passed",
+      "TestId": "83354a27-64b1-4549-ed0b-e41b4284493c",
+      "ExecutionId": "92d45938-089d-481e-b008-3710ba4e041b",
+      "Duration": "00:00:00.0076206"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_ACarriedObjectSurvivesTheTreadsBoundaryDelocalization",
+      "Outcome": "Passed",
+      "TestId": "3e0cf8e1-4171-9c44-8b44-1d670c868f33",
+      "ExecutionId": "3a0eb608-fa21-46c9-ac01-2909c2f524a7",
+      "Duration": "00:00:00.0955818"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledShortBlendRespectsFinalReplacementSlot(mode: \"long\")",
+      "Outcome": "Passed",
+      "TestId": "69358dc4-a416-5b93-d6b3-8f5bb1fd8a9a",
+      "ExecutionId": "f1433961-e8b9-4d12-a444-4ef37f72f875",
+      "Duration": "00:00:00.1062200"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.WaitsStartAfterTheirPrecedingHeadCompletes",
+      "Outcome": "Passed",
+      "TestId": "a40acff0-669e-8393-0aa2-d9ca14144ad5",
+      "ExecutionId": "b14a2246-9c0a-4a4f-8bc5-1d4178d6bac7",
+      "Duration": "00:00:00.5893785"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M11SmallReadsBuilderTests.ConstructionHasOnlyR1ThroughR5AndLaterDelocalizationAddsStrategiesInShippedOrder",
+      "Outcome": "Passed",
+      "TestId": "582eaea8-2382-0454-a2a9-7a922af39f80",
+      "ExecutionId": "f11af703-5920-41c7-a60e-3604bc2f9baf",
+      "Duration": "00:00:00.1015208"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheShippedNavigationSetHasTwentyFourBehavioursWithDistinctIds",
+      "Outcome": "Passed",
+      "TestId": "329e3a82-9e07-6393-aaee-db6aec2f47f1",
+      "ExecutionId": "d911caa7-5e85-41ee-b427-5b7fc74cecce",
+      "Duration": "00:00:00.0059066"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.FailedHeadChildEndsSequenceAndStillRunsDisappointment",
+      "Outcome": "Passed",
+      "TestId": "a6e3cf37-77e1-5ba0-01ca-f3427df9f970",
+      "ExecutionId": "f957a8f3-a60a-46f2-b9dc-17b2ea7e60f0",
+      "Duration": "00:00:00.5885096"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheBehaviourApiStopsFirstAndThenWritesTheSuppressionWindow",
+      "Outcome": "Passed",
+      "TestId": "e4d205c9-83c2-fb4c-ddfe-4ba8273393d0",
+      "ExecutionId": "7e844f57-0598-44ca-af34-21e33d711866",
+      "Duration": "00:00:00.0075729"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheScoredChoiceIsGatedByReactionsTheUiGameBehaviourAndTheRunningTrigger",
+      "Outcome": "Passed",
+      "TestId": "4f67e028-7dab-d4e0-48c8-acec8d695344",
+      "ExecutionId": "c7f46cab-d007-475f-b299-b496282c9455",
+      "Duration": "00:00:00.0081237"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_ATreadsBoundaryDelocalizesAndTakesTheOldFramesCoordinatesOutOfPlay",
+      "Outcome": "Passed",
+      "TestId": "fd521968-80d6-5102-c6de-fe91c362e309",
+      "ExecutionId": "3ca7c079-5525-463b-9fc5-7a9a905d05af",
+      "Duration": "00:00:00.4806087"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE009_MoodDecaysOnOrdinaryStackTicks",
+      "Outcome": "Passed",
+      "TestId": "b1d87271-3ca4-d260-acd4-17206781a340",
+      "ExecutionId": "97810930-f790-4564-801b-2f25c7f549de",
+      "Duration": "00:00:00.2308196"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledShortBlendRespectsFinalReplacementSlot(mode: \"clear\")",
+      "Outcome": "Passed",
+      "TestId": "a7f91ac5-3385-2539-bb50-70551744531c",
+      "ExecutionId": "1e3e2adb-6e89-45ac-bfcb-b8411e81edb3",
+      "Duration": "00:00:00.1158052"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerResumePathPreservesTheResumeCounter",
+      "Outcome": "Passed",
+      "TestId": "3b196278-ffa7-af30-40df-e2d300434ac8",
+      "ExecutionId": "99819142-6e2e-4379-8433-c05eee12150a",
+      "Duration": "00:00:00.0308844"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ATrackDeltaScorerSubtractsTheValueSixtyTicksAgoFromTheHistoryRing",
+      "Outcome": "Passed",
+      "TestId": "1c0b82de-077f-18f6-331e-bfac26ff8a5a",
+      "ExecutionId": "3733009d-fd7f-47aa-8a40-63c4d1806368",
+      "Duration": "00:00:00.0065857"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut",
+      "Outcome": "Passed",
+      "TestId": "7063dcbd-ece1-0bba-bad8-2955ba09bcb8",
+      "ExecutionId": "dabe9464-0c42-40fc-afbe-42c8b0069581",
+      "Duration": "00:00:00.0005708"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheFreeplayTickChecksReactionsBeforeTheActivityPick",
+      "Outcome": "Passed",
+      "TestId": "d5274891-38f0-ea10-6809-47e00c8c4bbf",
+      "ExecutionId": "5b48581e-f1cb-44ec-a51b-088cf10d983d",
+      "Duration": "00:00:00.0083765"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S5_CallbacksRunBeforeTheIgnorePredicate",
+      "Outcome": "Passed",
+      "TestId": "c96bee15-aac0-9aee-ef54-43639b7cc73b",
+      "ExecutionId": "12e06eda-e578-4023-b4e1-215edf91b13d",
+      "Duration": "00:00:00.0002938"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ForgettingClearsThePenalty",
+      "Outcome": "Passed",
+      "TestId": "c2e2eb0c-0ae0-5fdd-9862-21311876f369",
+      "ExecutionId": "3a1747ab-8ae8-4777-8206-74f89501d9a1",
+      "Duration": "00:00:00.0004114"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R3_AnIgnoredFailureContinuesToTheLaterChildren",
+      "Outcome": "Passed",
+      "TestId": "fda8839a-67c9-e8da-ab69-7135d417ef0c",
+      "ExecutionId": "24d7800c-922e-48db-b43b-8164e12344cb",
+      "Duration": "00:00:00.0009840"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.InitCallsInitInternalAndItsResultIsInitsFailure",
+      "Outcome": "Passed",
+      "TestId": "30ef0842-416e-3665-ad57-56b5dc418aa7",
+      "ExecutionId": "9bc3af85-9456-4bce-81bd-369ec8aea65e",
+      "Duration": "00:00:00.0053405"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.RuntimeReentrantReplacementKeepsOnlyNewSelectionResources",
+      "Outcome": "Passed",
+      "TestId": "029f42fe-e15e-53a4-d617-8297415885b8",
+      "ExecutionId": "0bfd24db-5870-450a-bbe4-8029c96faaad",
+      "Duration": "00:00:00.0668538"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.SparksCooldownUsesExactFloatEpsilon(nowBits: 1121058816, stamp: 100, expected: True)",
+      "Outcome": "Passed",
+      "TestId": "8e3f3f7d-6c39-8125-2ec1-374754ed8836",
+      "ExecutionId": "b4255736-ae5a-4ac4-99b3-2acd1a1eeb9c",
+      "Duration": "00:00:00.0861558"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.ActualSecondGateMissingLibraryRetiresInsteadOfStartingThink(replace: False)",
+      "Outcome": "Passed",
+      "TestId": "a9112114-11c9-2825-1676-8429306248c4",
+      "ExecutionId": "a346936f-a904-4a1b-a714-b9549f69218a",
+      "Duration": "00:00:00.7515914"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.RamIntoBlockChargesTheCubeAndBacksOff",
+      "Outcome": "Passed",
+      "TestId": "b6862a82-eedf-7f76-3d7d-f64b43898e94",
+      "ExecutionId": "9967bc5c-0c57-483b-b73f-a74ab06e3861",
+      "Duration": "00:00:00.0925300"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.BeforeOrAfterFailureIsNotIgnoredAndWrappedFullProxySurvivesRetirement(beforeFailure: True)",
+      "Outcome": "Passed",
+      "TestId": "e77bcf93-f0b5-5914-5134-af4f615a2dda",
+      "ExecutionId": "40422c2f-9dc6-4054-a366-9c8d8b8157d4",
+      "Duration": "00:00:00.0766701"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 16777216, expected: \"none\")",
+      "Outcome": "Passed",
+      "TestId": "671fbe0b-cb8f-f13d-0ff2-8fdf8850934a",
+      "ExecutionId": "a4452b0e-c75c-43a3-90a3-f79465828421",
+      "Duration": "00:00:00.0882779"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.PriorityUsesEachCandidatesRunningByteBeforeReadiness",
+      "Outcome": "Passed",
+      "TestId": "e86b80c3-1adb-cc5a-67a2-5c55b0113d0c",
+      "ExecutionId": "8fc8b600-1ee5-4250-a9d1-1fa0673a4c73",
+      "Duration": "00:00:00.0955460"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ALockedTrackFailsTheActionAndIsNotRetried",
+      "Outcome": "Passed",
+      "TestId": "04c648f4-6ab3-8fa5-516e-de57b6732b41",
+      "ExecutionId": "eaccd2f5-199b-475e-bfed-f7f64b9c53c4",
+      "Duration": "00:00:00.5491541"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheNeedsWantsToRunStrategiesFollowTheNeedsState",
+      "Outcome": "Passed",
+      "TestId": "75f71d31-a357-09e3-50c1-9428abed4efa",
+      "ExecutionId": "f77a958a-7dd8-43ee-bc12-2ec6b3d147b8",
+      "Duration": "00:00:00.0115514"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHighestScoringRunnableBehaviourWins",
+      "Outcome": "Passed",
+      "TestId": "86eb45ba-1ff1-ab0d-f3bd-d1877172c99f",
+      "ExecutionId": "dcbc7835-b5d3-445e-ae3e-6720d46378e3",
+      "Duration": "00:00:00.0112061"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.WithoutAGraphTheManagerAppliesNoRepetitionPenalty",
+      "Outcome": "Passed",
+      "TestId": "a6388d9e-d915-a78d-b180-decec8d3da60",
+      "ExecutionId": "fc409aa1-f7fe-4e9d-9f54-12a00f4925ea",
+      "Duration": "00:00:00.0089275"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S3_AnEmptySequenceReturnsSuccessWithoutCallbacks",
+      "Outcome": "Passed",
+      "TestId": "126da260-c9ea-4f3b-c475-48ba49158f69",
+      "ExecutionId": "2e29b1ec-a1ed-42c5-b199-b9fa2f328cff",
+      "Duration": "00:00:00.0001853"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheBeaconAndStackConstantsAreTheEnginesOwn",
+      "Outcome": "Passed",
+      "TestId": "ba89382f-643f-263a-c487-177d1a9f9536",
+      "ExecutionId": "b73a35a0-bf72-4f0b-946e-a610217dbece",
+      "Duration": "00:00:00.0001392"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutConfigParsesAndScoresLiftsFromConfidence",
+      "Outcome": "Passed",
+      "TestId": "fc7f8045-2c0f-1223-2ab4-3b01f4684ef0",
+      "ExecutionId": "21b5f8b9-abe0-43ff-861d-6e42971e8f0a",
+      "Duration": "00:00:00.0034677"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.IsRunnableBaseConsumesTheRobotStateAndBehaviourGates",
+      "Outcome": "Passed",
+      "TestId": "aa11522c-4f09-7d69-1618-28d602a8f5de",
+      "ExecutionId": "4d0881fb-3d89-42e8-952b-472a302107c9",
+      "Duration": "00:00:00.0056385"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheGraphEvaluatorIsFloatAndReturnsTheLeftNodeForATinySpan",
+      "Outcome": "Passed",
+      "TestId": "e3a5bfb6-a1ff-b1e0-f439-85782f255189",
+      "ExecutionId": "cb943235-3dd8-497d-9be3-8162c9b3509e",
+      "Duration": "00:00:00.0002166"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimLocksNothingExceptTheLiftWhileCarrying",
+      "Outcome": "Passed",
+      "TestId": "313926e0-f738-4fa1-e901-a8fec6c3fb1f",
+      "ExecutionId": "19ec6e51-bb77-49e2-924a-52b563f249ee",
+      "Duration": "00:00:00.5646340"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R2_AnEmptyParallelReturnsSuccess",
+      "Outcome": "Passed",
+      "TestId": "0b5a07b9-04ad-a462-7aae-2e13298ec9bd",
+      "ExecutionId": "c4154b54-2601-4f0f-a313-c41ad886e830",
+      "Duration": "00:00:00.0001756"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.AnEmptyWorldPlansAStraightRunOfLongStraights",
+      "Outcome": "Passed",
+      "TestId": "246c0950-af53-479e-e96e-09854d1f9d34",
+      "ExecutionId": "f61b4d30-c44c-4e2a-bdad-7049f23e4a33",
+      "Duration": "00:00:00.0112780"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeBouncerFactoryTests.BouncerOnlyNativeOwnerDoesNotEnableSiblingConstructors",
+      "Outcome": "Passed",
+      "TestId": "ae6a8532-ef15-b258-07ab-c0da7739da26",
+      "ExecutionId": "14354dcc-570f-4669-8581-69f40e505382",
+      "Duration": "00:00:00.0071538"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE002_DisconnectingMidAnimationEndsItCleanlyAndLeavesNoTicker",
+      "Outcome": "Passed",
+      "TestId": "aa1fc167-8328-56f1-376f-30213bf8cb24",
+      "ExecutionId": "40d04799-e33a-41d9-acc8-50005b7cca71",
+      "Duration": "00:00:00.0443388"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledBlendRestoresOwnedSlotAndDanglingWithoutOverwritingReplacement",
+      "Outcome": "Passed",
+      "TestId": "4eee58b6-7218-fe77-6321-485f458914cd",
+      "ExecutionId": "67d54d75-0ab5-4935-aa73-a17b4008ef03",
+      "Duration": "00:00:00.1006013"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.FiveRealChildrenFailureStillStartsDisappointmentAndDelocalizeDoesNotCancel",
+      "Outcome": "Passed",
+      "TestId": "ff355fd3-e86f-a277-d929-9291c7dfd6b1",
+      "ExecutionId": "d123f0da-4837-47a3-a30d-df25898b8c86",
+      "Duration": "00:00:00.6023368"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.UnlockPrecedesRefreshAndExpiredWeakRefusesInit",
+      "Outcome": "Passed",
+      "TestId": "0a9bc77c-c729-b279-facc-32bc5c97f831",
+      "ExecutionId": "5021cb16-6b34-4ddd-b123-dc98116b1b14",
+      "Duration": "00:00:00.5980636"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerRoutesAroundACubeInTheWay",
+      "Outcome": "Passed",
+      "TestId": "70fdbce3-8cec-fb45-29be-b7cb9bb78d14",
+      "ExecutionId": "4431f9a2-461e-4390-b641-7bc5da0d1bdc",
+      "Duration": "00:00:00.1084330"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent",
+      "Outcome": "Passed",
+      "TestId": "68ef6a42-4473-170b-9c7a-83744407af81",
+      "ExecutionId": "f46752c3-5695-4fee-85b4-158b22706ab5",
+      "Duration": "00:00:00.0157787"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.CompositeOwnerRetainsChildLeaseThroughStopReuseAndDisposesIt",
+      "Outcome": "Passed",
+      "TestId": "e359e14d-8067-3e37-5dee-39123aee6962",
+      "ExecutionId": "edbfb75b-ec38-4bdf-8d71-42cbdeebaf09",
+      "Duration": "00:00:00.5558800"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RealOwnedRetirementAbortsActiveRetainedRequestBeforeLatePickupCannotAttach",
+      "Outcome": "Passed",
+      "TestId": "8c9f7d98-2db5-c99f-0fc0-56a84f446983",
+      "ExecutionId": "c10be0c9-6cd3-4451-a706-3d756b66854e",
+      "Duration": "00:00:00.0663818"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.ActualPayloadGetterOverwritesTargetWordZeroWithTheActualCarryingSet",
+      "Outcome": "Passed",
+      "TestId": "0f05f5e1-6ffa-baa7-f7b7-aad1d47e5809",
+      "ExecutionId": "f6885ed9-8199-4d52-b39c-1ede6fea936a",
+      "Duration": "00:00:00.0716784"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M11SmallReadsBuilderTests.MissingTargetDeletesTheCorrespondingStrategyAndNoInterfaceRegistersNothing",
+      "Outcome": "Passed",
+      "TestId": "401af98b-eab6-0450-7378-637de3a8e3ab",
+      "ExecutionId": "3956fc5c-d0a6-4669-8c10-c99077d95bd2",
+      "Duration": "00:00:00.0988530"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.EarlyDeselectRemovesOnlyTwoFirstNameMatches",
+      "Outcome": "Passed",
+      "TestId": "5acbde4e-48a4-c1ec-2971-ff4b128380a6",
+      "ExecutionId": "6d9b815f-6ed9-4e71-85e2-e1abee6930f9",
+      "Duration": "00:00:00.0702612"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NativeBouncerFactoryTests.ConfiguredFactoryUsesFeatureGateAndRealFaceOriginSelection",
+      "Outcome": "Passed",
+      "TestId": "1cfda331-349e-5c0a-fce3-953181a7a116",
+      "ExecutionId": "4730abd4-b041-4faf-a319-fbb38e477f46",
+      "Duration": "00:00:00.0455828"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedInitLeavesItsScopeHeldUntilTheNextStop",
+      "Outcome": "Passed",
+      "TestId": "21782880-cff5-37e9-4eab-61f7b7a7bfc4",
+      "ExecutionId": "6ea92023-1e8b-408d-842d-d3fec766b666",
+      "Duration": "00:00:00.0058535"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S6_NoRetryFallsToTheFailurePath",
+      "Outcome": "Passed",
+      "TestId": "72d0c4ac-7aae-68da-a113-1f15383bb352",
+      "ExecutionId": "368329ad-6999-41fc-a721-b8f07949edcd",
+      "Duration": "00:00:00.0005675"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.ConfiguredAliasesUseTheirDifferentCooldownsWithSameCarriedTarget",
+      "Outcome": "Passed",
+      "TestId": "30c84f14-63f5-4ceb-45fb-8c520abb5262",
+      "ExecutionId": "d0a1b2cc-f327-4118-a679-f2d97f223e75",
+      "Duration": "00:00:00.0966044"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_IsLocWithinBeaconIsThreeDimensionalAndMarginReduced",
+      "Outcome": "Passed",
+      "TestId": "92d1b937-416e-24e1-6b24-18475261065d",
+      "ExecutionId": "b131e94d-ca83-48e0-9932-711d21567d0f",
+      "Duration": "00:00:00.0006145"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.StopActingHonoursItsViaCallbackAndKeepActionParameters",
+      "Outcome": "Passed",
+      "TestId": "0928d8d6-e4a7-a758-ff0f-3892cafa1679",
+      "ExecutionId": "ae52cc98-de1c-48b1-8d9e-d7f336ac47d1",
+      "Duration": "00:00:00.0093802"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE011_AThrowingSubscriberDoesNotStarveTheInternalConsumers",
+      "Outcome": "Passed",
+      "TestId": "ffb61d13-b44f-a0db-b0be-668f4e607465",
+      "ExecutionId": "3b492ddb-78cd-446c-bd10-14d5dde9776e",
+      "Duration": "00:00:00.0095285"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M11SmallReadsBuilderTests.FindRootStopsAfterOneThousandStepsAndFlattenFailureReturnsAFreshRoot",
+      "Outcome": "Passed",
+      "TestId": "cc5beabe-f5e9-5dfe-2f63-86ce2930f312",
+      "ExecutionId": "265ccb75-23ba-4b05-86f2-b20fa5abf790",
+      "Duration": "00:00:00.0064332"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P7_A_RetainedChildReTakesItsTracksOnTeardown",
+      "Outcome": "Passed",
+      "TestId": "c2f5704a-76d5-4eeb-6ed2-1b544d8d7588",
+      "ExecutionId": "5c8662f5-18d1-4fa8-80c5-32fa825317be",
+      "Duration": "00:00:00.0020652"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimBehaviourWithSeveralTriggersTakesThemAll",
+      "Outcome": "Passed",
+      "TestId": "8670183f-7a84-7d11-e243-62c580c656b7",
+      "ExecutionId": "915b07b6-a32f-47d2-8927-82e5c50c9d57",
+      "Duration": "00:00:00.5662771"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ACompletionCallbackMayStartTheNextAction",
+      "Outcome": "Passed",
+      "TestId": "0d95aabf-f1d3-1a54-ee67-e062950573a5",
+      "ExecutionId": "bcbe6471-076b-41cf-b777-9951f1dadc01",
+      "Duration": "00:00:00.5744545"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE003_ConcurrentTrackedPlaysEachGetTheirOwnToken",
+      "Outcome": "Passed",
+      "TestId": "8943d951-1bb8-9b41-bef4-0bbe3557e9b1",
+      "ExecutionId": "a5823f65-439f-4da3-946e-d043468f5700",
+      "Duration": "00:00:00.0424950"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R4_RetryResetsTheCompoundAndReturnsRunning",
+      "Outcome": "Passed",
+      "TestId": "e5328a96-80a6-483b-6833-3a752890ae47",
+      "ExecutionId": "1a05e37e-2cd9-4af8-ad99-d74c75140d7c",
+      "Duration": "00:00:00.0003248"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M11SmallReadsBuilderTests.ConfigurationHostDirtyFlagIsIndependentAndRobotRemovalRetiresNativeRecipients",
+      "Outcome": "Passed",
+      "TestId": "d6faf1af-ef9f-3dcf-f3f6-d8de3a65ebfc",
+      "ExecutionId": "a64e5ae2-6142-4511-a518-3cfc94ef5b10",
+      "Duration": "00:00:00.0499420"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ResumeCountsCliffAndMovementAndRefusesFromTheSecondWithTheEmotionEvent",
+      "Outcome": "Passed",
+      "TestId": "945593e7-8c78-091f-d512-68a86c321ce2",
+      "ExecutionId": "e77bccad-09c1-499b-b367-e858467a8262",
+      "Duration": "00:00:00.0338098"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.MajorFrustrationDrivesToARandomPoseInItsConfiguredRange",
+      "Outcome": "Passed",
+      "TestId": "2fec8381-f43e-5782-9d4f-c4ce14d2f55b",
+      "ExecutionId": "46e5fe4a-9e19-4978-a8cf-da4689f3845b",
+      "Duration": "00:00:00.0451077"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 67108865, expected: \"failed\")",
+      "Outcome": "Passed",
+      "TestId": "5c6f16af-9859-59bd-7b61-aa621bc284de",
+      "ExecutionId": "1b0eb350-db0e-4bab-9c12-e7a74894ded8",
+      "Duration": "00:00:00.0844887"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.DeselectionReentryReleasesOnlyOldDrivingAndIdleAcquisitions",
+      "Outcome": "Passed",
+      "TestId": "4b7c40cd-364d-8d17-f5df-88c1944551c3",
+      "ExecutionId": "1cc92d12-c9bb-4a0c-a663-6c4116acc577",
+      "Duration": "00:00:00.0883464"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TwoTrackLocksOnOneScopeAreBothReleased",
+      "Outcome": "Passed",
+      "TestId": "d1ea91f6-13f1-2489-fc3f-39af6724c3f6",
+      "ExecutionId": "2f071773-687d-4019-969c-ae7546724d22",
+      "Duration": "00:00:00.0002133"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.FinishCurrentBehaviorsSecondArgumentIsTryToResume",
+      "Outcome": "Passed",
+      "TestId": "211c2fce-ce4b-e2a8-47be-27dc771f5ea0",
+      "ExecutionId": "035ffc88-6c99-484c-ae54-425c0d714455",
+      "Duration": "00:00:00.0113324"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE006_TheSchedulerNeverSendsSamplesThatWereNotRenderedYet",
+      "Outcome": "Passed",
+      "TestId": "adecd21a-f67f-60f3-e92b-db6a029b4aa4",
+      "ExecutionId": "f32c0e1a-af20-4392-8910-3182a9e8c84a",
+      "Duration": "00:00:00.0021214"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.PublicLeaseSurvivesStopReuseAndDisposeReleasesOnlyItsOwnBinding",
+      "Outcome": "Passed",
+      "TestId": "822e6660-6241-61c7-5f03-eac704c63ffb",
+      "ExecutionId": "eb246d2a-cd3f-44f2-b7c4-e52800fabed1",
+      "Duration": "00:00:00.0649230"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_AnOriginChangeInTheStateStreamAloneDoesNotDelocalize",
+      "Outcome": "Passed",
+      "TestId": "9c324a5f-39c7-d2c5-0b9e-7ce1cd404e64",
+      "ExecutionId": "aeaae84b-a133-454b-9ffe-9d7e35cde008",
+      "Duration": "00:00:00.0962784"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.NativeMarkerConstructionAndUnsignedTimestampQueryRetainEarlierNewerMarker",
+      "Outcome": "Passed",
+      "TestId": "a2d69d8b-e090-07a6-191a-6e41ec1ebaac",
+      "ExecutionId": "4718735f-f175-424a-a412-b78b06426f77",
+      "Duration": "00:00:00.0735207"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SetRunningAndResumeInfoReportsWhatItDoesNotDo",
+      "Outcome": "Passed",
+      "TestId": "fcadc9d4-dfbc-0c0a-3249-7037404a5205",
+      "ExecutionId": "199b5d6a-409d-4907-8f8a-357cdc70e90e",
+      "Duration": "00:00:00.0086654"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE008_TheHistoryDoesNotMixOrigins",
+      "Outcome": "Passed",
+      "TestId": "7494a1fc-f3b9-8d91-679f-03add6525d3d",
+      "ExecutionId": "61bca66b-a9e4-48bb-bcee-3621a2bb07ce",
+      "Duration": "00:00:00.0009031"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.InitRunsBeforeTheManagerStoresTheRunningInfo",
+      "Outcome": "Passed",
+      "TestId": "4b314341-9d5e-e456-4254-b3e4d730c11d",
+      "ExecutionId": "47bc7cbd-15c6-4a74-87ad-16f4dd07b9cc",
+      "Duration": "00:00:00.0050277"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.ConstructorDefaultsAndByteTruncationFollowNativeFields",
+      "Outcome": "Passed",
+      "TestId": "dc56b958-87fc-649a-c9cb-2eb379d9190e",
+      "ExecutionId": "82b07ff7-fc7f-452f-aae2-72ece3b5bc77",
+      "Duration": "00:00:00.0718226"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE007_AFrameWithAGroundEdgeReachesTheMapThroughTheProductionPath",
+      "Outcome": "Passed",
+      "TestId": "75597c3c-1850-1e9c-f314-d5fdce0e15d8",
+      "ExecutionId": "46902ba8-d039-4749-8dc5-76d0c64d8d13",
+      "Duration": "00:00:00.0440619"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.AbsentBottomAndKnownEmptyTargetReturnNativeRefusal",
+      "Outcome": "Passed",
+      "TestId": "4fc7db2c-f7c2-a52e-c0f9-d0035db94bb4",
+      "ExecutionId": "daf81d90-5479-4003-ac9d-a481243e4d0d",
+      "Duration": "00:00:00.6461753"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledTransitionRestoresPriorStateWithoutOldLedSend(replacement: True)",
+      "Outcome": "Passed",
+      "TestId": "1bc03528-3650-9a8f-cd1a-56b4938c044a",
+      "ExecutionId": "584fc2a5-0f9d-4c00-9418-00ef4f6bf001",
+      "Duration": "00:00:00.0978887"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheWorkoutBehaviourLiftsStrongThenWeakAndPutsTheCubeDown",
+      "Outcome": "Passed",
+      "TestId": "5d5ca7d6-db0e-0846-48aa-7d000ec00d10",
+      "ExecutionId": "9d087fc7-cd65-4c38-b4ae-66b0a4f7cfc7",
+      "Duration": "00:00:00.4068714"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.StacksBasesAndPyramidsAreRecognisedFromCubePoses",
+      "Outcome": "Passed",
+      "TestId": "d1354eab-cfea-1b8f-736a-4ce54e2031b1",
+      "ExecutionId": "21447d61-8240-4236-879d-175036744e98",
+      "Duration": "00:00:00.0017866"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ThePlannerUsesTheJsonNumAngles",
+      "Outcome": "Passed",
+      "TestId": "66e4e010-13d3-9f77-fa71-0ad986b2f48d",
+      "ExecutionId": "d0e9e3fa-8a1f-4136-8d7e-861c492898c3",
+      "Duration": "00:00:00.0100508"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.TheCompoundTicksThroughCozmoEngineUpdate",
+      "Outcome": "Passed",
+      "TestId": "025d4abc-a811-79e5-fc7b-c31d602c79ff",
+      "ExecutionId": "fc949368-04a5-452c-9b03-476877f614c3",
+      "Duration": "00:00:00.1985772"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AStampOfZeroOrLessIsNotPenalised",
+      "Outcome": "Passed",
+      "TestId": "2f3dd056-f66a-72ac-1965-f0cbace38ebb",
+      "ExecutionId": "d10eb4a4-1cfb-446e-9f86-acb677439f4e",
+      "Duration": "00:00:00.0001851"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.ConnectedLocatedCubeProgressSurvivesDeselectAndResumesPreviousWhenOutside",
+      "Outcome": "Passed",
+      "TestId": "cf237374-bccb-4a42-01f5-4150f65f6068",
+      "ExecutionId": "191d9dfa-8068-463b-bbdd-8c8649a8d5cb",
+      "Duration": "00:00:00.0846116"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.EveryBuiltBehaviourMatchesAShippedConfig",
+      "Outcome": "Passed",
+      "TestId": "9aa28242-1ddd-89e6-ded0-c83df2a78767",
+      "ExecutionId": "130b4508-707a-4c9b-9918-6c51ccf79277",
+      "Duration": "00:00:00.0354713"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE004_AnOldRunsAbortDoesNotClearTheReplacementPath",
+      "Outcome": "Passed",
+      "TestId": "dab6d900-e15a-ee97-e6d8-c384df3dbeff",
+      "ExecutionId": "6c1dfebb-4564-475b-bd7d-c1aca43f113f",
+      "Duration": "00:00:00.0124976"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.BeforeOrAfterFailureIsNotIgnoredAndWrappedFullProxySurvivesRetirement(beforeFailure: False)",
+      "Outcome": "Passed",
+      "TestId": "df13fd7a-7fed-4769-2c8d-d1a16a2f9cd5",
+      "ExecutionId": "9c7e4569-726d-4eb2-a892-26a43c846009",
+      "Duration": "00:00:00.0943120"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AddBeaconAppendsAndRaisesTheRenderSeam",
+      "Outcome": "Passed",
+      "TestId": "222dbe2c-f3e2-3a81-ff46-a55f2ae1b2b4",
+      "ExecutionId": "50c54fec-1ca1-4345-a936-3c41a68873ec",
+      "Duration": "00:00:00.0011002"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE001_TheToolPathSendsNoDisableAnimTracks",
+      "Outcome": "Passed",
+      "TestId": "a0a25c7a-6cf3-d338-7f2f-79e5f8cf5f3a",
+      "ExecutionId": "0869c1ca-1cab-4e62-b2cb-05a16f763c89",
+      "Duration": "00:00:00.3723894"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.MixedRealWorkerFrameUsesHistoricalCameraForMarkersWithoutReplacingExistingFaceCameraInput",
+      "Outcome": "Passed",
+      "TestId": "fe177f3f-1c4e-4513-8e3d-b9d9b4684a85",
+      "ExecutionId": "95a1d047-e62d-4ef5-a15e-1d112d7ac39d",
+      "Duration": "00:00:00.1441878"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.HandleBehaviorObjectiveStampsTheLastRunClockOnAMatch",
+      "Outcome": "Passed",
+      "TestId": "8888a7da-431c-6dea-9eb1-f268d2deb719",
+      "ExecutionId": "39807f43-2880-454c-a82a-35120bdf6909",
+      "Duration": "00:00:00.0067781"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.OwnedVerifyUsesActualLocal44IdAndSpecificObservedMarkerBeforeTerminalParallelFailure",
+      "Outcome": "Passed",
+      "TestId": "ef6b6f47-2589-d4e9-7c07-ab1894de3d46",
+      "ExecutionId": "178debaf-479b-4913-9841-20e48767d2ee",
+      "Duration": "00:00:00.0613237"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CubeLightCompletionRunsOutsidePrivateGateAndPreservesReentrantReplacement",
+      "Outcome": "Passed",
+      "TestId": "b58e3f0e-7268-8ab9-26cc-2377757a89d1",
+      "ExecutionId": "4d085316-749d-4876-98d0-08235b67b38c",
+      "Duration": "00:00:00.0923401"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE003_NoKeyframeOfACancelledAnimationIsEmittedAfterItsEnd",
+      "Outcome": "Passed",
+      "TestId": "7f913132-ee59-9f86-b25d-247b9a7a3691",
+      "ExecutionId": "7f73f99e-37ed-4b01-9d99-839692a8ad58",
+      "Duration": "00:00:00.0036085"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ABehaviourThatJustRanLosesToOneThatHasNot",
+      "Outcome": "Passed",
+      "TestId": "0905f806-2c63-e470-8d64-6ddbe91d8e06",
+      "ExecutionId": "4397d6a9-69e4-430b-aa35-1ff589787e15",
+      "Duration": "00:00:00.0067133"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.ActualSecondGateMissingLibraryRetiresInsteadOfStartingThink(replace: True)",
+      "Outcome": "Passed",
+      "TestId": "3d04d5dd-2175-e1c6-a7a9-35feabf3a00a",
+      "ExecutionId": "dcf27e8b-2afb-4ff1-bc5e-acbd8280c0e8",
+      "Duration": "00:00:00.6823087"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.QueuedRealAnimationProxyRetainsNameThroughDeletedWrappedActionAndActiveAfterFace",
+      "Outcome": "Passed",
+      "TestId": "2f113249-fd81-30bf-f50d-2eccebab916f",
+      "ExecutionId": "19aa4878-4f17-43c4-8be1-dd5466c926df",
+      "Duration": "00:00:00.6245352"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheEmotionScoreIsAFloatMeanWithAFloatVeto",
+      "Outcome": "Passed",
+      "TestId": "9137c748-a746-a486-719f-51df2c4bdece",
+      "ExecutionId": "8d2419fb-ee1b-418b-a9ae-86b52fb56bc1",
+      "Duration": "00:00:00.0048421"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.GuardedNameRemovalCannotEraseReplacement",
+      "Outcome": "Passed",
+      "TestId": "bb807662-4c0d-78d0-96af-039e5dcfb4be",
+      "ExecutionId": "82d411ae-8d4e-45b4-b803-1a7bfe52b0a1",
+      "Duration": "00:00:00.0858127"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.TrueSayNameUsesActualVerifiedUnnamedPathOrFailsAtNamedProviderFrontier(named: False)",
+      "Outcome": "Passed",
+      "TestId": "daa6cd9a-cdf9-d54d-944c-82f8f5b22822",
+      "ExecutionId": "221df7be-08ec-4c67-8523-dbf85f9dc9a1",
+      "Duration": "00:00:00.0621747"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.SparksCooldownUsesExactFloatEpsilon(nowBits: 1065353216, stamp: 0, expected: True)",
+      "Outcome": "Passed",
+      "TestId": "d416da0b-1ec8-845b-b936-2eb461ee6324",
+      "ExecutionId": "eb565895-cf16-40c9-99d5-88cb67501210",
+      "Duration": "00:00:00.0805174"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheSmartHelpersRefuseADoubleAcquire",
+      "Outcome": "Passed",
+      "TestId": "1772948d-5bac-a778-9902-0e480a5d6aac",
+      "ExecutionId": "6a834a3a-b138-451b-ba3f-bfcb68790fb2",
+      "Duration": "00:00:00.0003423"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimWithNoTriggersIsNotRunnable",
+      "Outcome": "Passed",
+      "TestId": "683f38b4-3a04-6ba1-57eb-a4f8349c6b53",
+      "ExecutionId": "438d4e23-d764-4f2c-a8ca-259229015431",
+      "Duration": "00:00:00.5563971"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SwitchToBehaviorBaseAndFinishFollowTheEngine",
+      "Outcome": "Passed",
+      "TestId": "a8cf62c8-21b6-c5b4-6fca-843a332ccb43",
+      "ExecutionId": "e9259e6d-fa2c-4ddd-bc50-10c40cb94cca",
+      "Duration": "00:00:00.0052600"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.SuppliedAdmissionPublishesOuterThenNestedAndClearsBeaconOnSelection",
+      "Outcome": "Passed",
+      "TestId": "318aca36-4869-8298-2088-5ab4ebe170bf",
+      "ExecutionId": "24c34426-0497-452f-89ea-9f90c7d5a912",
+      "Duration": "00:00:00.0830954"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.PopAWheelieDrivesDocksAndReEnablesStopOnCliff",
+      "Outcome": "Passed",
+      "TestId": "5149cdca-7da1-6676-17b5-9b4a001ec4d6",
+      "ExecutionId": "e5fc7be2-89b0-413c-ade0-a5f623ab795e",
+      "Duration": "00:00:00.3282254"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheHeadCalibrationWaitRunsToThirtySeconds",
+      "Outcome": "Passed",
+      "TestId": "858cb1f8-510f-f6cc-35e2-fd570531de0d",
+      "ExecutionId": "de1e8e73-1a7d-4267-9408-5374c63e1732",
+      "Duration": "00:00:00.0055156"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheTickRunsTheActivityThenReactionsThenTheScoredChoice",
+      "Outcome": "Passed",
+      "TestId": "9ee1e13f-7d70-ad69-e6ce-caf482ad876e",
+      "ExecutionId": "4a7cc851-6310-4a3b-99c5-df37f263e5f8",
+      "Duration": "00:00:00.0048895"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledZeroDurationPlayRestoresDisplacedLowerEntryUnderReplacement(replacementClears: True)",
+      "Outcome": "Passed",
+      "TestId": "7b756a5f-ed00-ba82-3e1f-7685a6b0562e",
+      "ExecutionId": "a834cb25-107c-4fea-b3c6-22bd45d8ea4e",
+      "Duration": "00:00:00.0940560"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.CheckForStackAtIntervalLooksAboveTheBlockAndWaitsOutTheInterval",
+      "Outcome": "Passed",
+      "TestId": "7a9cef9b-e747-55a6-1ec3-1b2ca162f043",
+      "ExecutionId": "ec74fc96-a4b5-4a9e-afd5-3ecd731793de",
+      "Duration": "00:00:00.2618158"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE001_TheLiveKeyframeClockIsTheAnimationSystemsOwn",
+      "Outcome": "Passed",
+      "TestId": "c9f2be75-6dbc-4bd9-3469-b8e42ae09385",
+      "ExecutionId": "57179dc1-1fa7-4f88-b18e-ea338f87b3ca",
+      "Duration": "00:00:00.5760053"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.ActualObjectiveSubscriptionFiltersAndRetires",
+      "Outcome": "Passed",
+      "TestId": "3f1c020e-1783-f56b-bff2-554bb6123876",
+      "ExecutionId": "9c5c6d74-1dd4-49f3-87da-fa5f594a38aa",
+      "Duration": "00:00:00.1035050"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.APlayAnimIsNeverResumed",
+      "Outcome": "Passed",
+      "TestId": "310d4fbe-fea2-2a09-0d14-01c35af02e73",
+      "ExecutionId": "7da273e1-3361-4247-a9bb-00c42ce0f9fc",
+      "Duration": "00:00:00.0061880"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.SparkEndKeepsHardDrivingUntilCommonDeselect",
+      "Outcome": "Passed",
+      "TestId": "254bee65-a56b-b369-0d78-87ca74940430",
+      "ExecutionId": "e9248e9a-e5e8-4a88-a4aa-3cfb51edb2a3",
+      "Duration": "00:00:00.0955989"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(result: 0, expected: \"success\")",
+      "Outcome": "Passed",
+      "TestId": "5996c780-2b8f-8693-22cd-ee2413431085",
+      "ExecutionId": "b42628b3-1b24-4e2c-8b5f-a74a1ec62467",
+      "Duration": "00:00:00.0795687"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.TheChargerIsAPassiveObjectWithOneRectangularMarker",
+      "Outcome": "Passed",
+      "TestId": "7cbb2ed1-6f56-c18a-0ea4-7d455ae60f61",
+      "ExecutionId": "56ad7087-3b98-444c-afe7-47246df4e7f4",
+      "Duration": "00:00:00.0027774"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.GatherReportsObjectiveBeforeNeedsAndLatchesOnce(external: False)",
+      "Outcome": "Passed",
+      "TestId": "335ffb52-9482-0327-8d19-5bbec8796c28",
+      "ExecutionId": "1ff56697-9565-415c-861f-0a41687e652d",
+      "Duration": "00:00:00.0770117"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.S5_AnUnignoredFailureReturnsTheFullFailure",
+      "Outcome": "Passed",
+      "TestId": "46b54d31-fd6f-cdfb-0ead-bd992e7b85ce",
+      "ExecutionId": "4196d3c1-fabc-4e25-9acd-6b15abc69ec6",
+      "Duration": "00:00:00.0003389"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ALockedActionWhoseInitFailsStillSendsTheLockAndTheRelease",
+      "Outcome": "Passed",
+      "TestId": "88a93dc6-30e9-bf01-d0ac-2a57fe042e17",
+      "ExecutionId": "183c8afc-4e00-4673-8027-6a62364fee9e",
+      "Duration": "00:00:00.0124037"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.ExactConfiguredOwnersAndOrderedDelegateAreBound",
+      "Outcome": "Passed",
+      "TestId": "bb8642a9-324d-f074-ef0f-b8d093c4a6a7",
+      "ExecutionId": "98cec3ec-6147-4d0c-8f70-5b4c0ce19cbd",
+      "Duration": "00:00:00.0738666"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheCarryingGateIsReadFromTheRobot",
+      "Outcome": "Passed",
+      "TestId": "6531e04f-dcab-09f1-0cd0-1430393215bf",
+      "ExecutionId": "1629e450-9586-4c56-b3f7-a36cbde47e1c",
+      "Duration": "00:00:00.0045378"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.DriveToObjectWithThePlannerIncludesTheAdmittedTargetPolygon",
+      "Outcome": "Passed",
+      "TestId": "d7f5e1ad-cac4-8e1f-d108-f5dfe30c5d7d",
+      "ExecutionId": "9ede232b-45ab-4b40-9e32-aa66cb7ecfc9",
+      "Duration": "00:00:00.0997629"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.M11SmallReadsBuilderTests.RootGetParentSkipsAndPreservesThePreviousOutputAndPublicFindRootIsSafe",
+      "Outcome": "Passed",
+      "TestId": "4fd9d4e9-dbac-9d60-bfbd-c4c9c3fb1503",
+      "ExecutionId": "5d39e0de-0739-4d3c-b99b-091e3bb4060e",
+      "Duration": "00:00:00.0026751"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SparksGatherNativeTests.CanceledShortBlendRespectsFinalReplacementSlot(mode: \"short\")",
+      "Outcome": "Passed",
+      "TestId": "e88b1c3a-ef1a-558e-d203-bd848930fe48",
+      "ExecutionId": "d3864db2-7099-4714-9efc-6e96795efc1c",
+      "Duration": "00:00:00.1193635"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RealWorkerReleasesFrameAndPoseGatesBeforePublicFrameAndProcessedImageRecipients",
+      "Outcome": "Passed",
+      "TestId": "63353c9a-d7b1-15b4-4666-0d293bc4d0c0",
+      "ExecutionId": "0f746ba7-1b60-4d16-844a-f6c5c6e2d7b8",
+      "Duration": "00:00:00.1062604"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.P6_UnionIsReadBeforePrepAndCachedByTag",
+      "Outcome": "Passed",
+      "TestId": "ab9e36fd-136e-244f-991c-b9ee796f765f",
+      "ExecutionId": "a7a0b0b3-afe7-4d18-a4c1-c2d8d5c32511",
+      "Duration": "00:00:00.0005970"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.NavigationTests.ReactToOnChargerPlaysThenAnnouncesSleepAndDisconnectOnItsTimers",
+      "Outcome": "Passed",
+      "TestId": "1f04eea1-ea04-1c92-ca20-cef648e84048",
+      "ExecutionId": "42ed0569-c869-436b-8ea4-d2584d815e59",
+      "Duration": "00:00:00.0072654"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.ReentrantReleaseObserverCanQueueReplacementWithoutLosingPublicOwnerLease",
+      "Outcome": "Passed",
+      "TestId": "7d97bb59-26fc-f087-9ced-997f689c3ebe",
+      "ExecutionId": "97d2072b-9ce3-4026-9ac0-3585261162c1",
+      "Duration": "00:00:00.0840099"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheManagerDoesNotSuppressThePenaltyOnAnInterruptedStop",
+      "Outcome": "Passed",
+      "TestId": "d817ab3d-6831-1514-8467-aad6c6af53d7",
+      "ExecutionId": "f37356e7-b8cc-4040-8a86-e327c4e792ff",
+      "Duration": "00:00:00.0091251"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE004_ConcurrentInstallationsDoNotInterleave",
+      "Outcome": "Passed",
+      "TestId": "8b00963a-27e5-f61e-b775-d5f13d08e840",
+      "ExecutionId": "2a7a54d1-2a80-4b00-9550-fb537ea28251",
+      "Duration": "00:00:00.0079434"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CompoundActionTests.R3_FirstFailureLeavesLaterChildrenUntouchedAndRunsCallbacksFirst",
+      "Outcome": "Passed",
+      "TestId": "b636b28a-f44b-864d-639b-336f36119d4d",
+      "ExecutionId": "3fa04727-f95e-4723-90af-25de1cedc507",
+      "Duration": "00:00:00.0002054"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.SmartRemoveCustomLightPatternWithoutAPatternFails",
+      "Outcome": "Passed",
+      "TestId": "cbf9f43a-69ec-0e4c-4f50-83f283fcda78",
+      "ExecutionId": "90aa60c5-fea1-43dc-881c-5aa3bd9f3825",
+      "Duration": "00:00:00.0005295"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CantHandleTallStackNativeTests.MissingInputIsUnavailableRatherThanNativeFalse",
+      "Outcome": "Passed",
+      "TestId": "4ee7f096-ec0d-42c2-116d-f6793c1c8d94",
+      "ExecutionId": "01fbdbad-4296-47b0-9f76-d14988a08ee3",
+      "Duration": "00:00:00.5820597"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheReactionLocksAreReleasedInNameOrder",
+      "Outcome": "Passed",
+      "TestId": "001a5b6a-5c7c-1e5f-a6fd-d5c8866edfae",
+      "ExecutionId": "9430a212-08fa-4773-bfaf-e0262bb99634",
+      "Duration": "00:00:00.0074706"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.RawDockingBitIsWrittenBeforeUnknownOriginRejectionAndChargerRecipient",
+      "Outcome": "Passed",
+      "TestId": "382ecdb3-749c-a1e4-a189-0b4f3da6fac6",
+      "ExecutionId": "b2e519f5-81f2-4361-8ae6-d2e1754c33de",
+      "Duration": "00:00:00.0683715"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AFailedInitStillStoresTheRunningInfo",
+      "Outcome": "Passed",
+      "TestId": "f8af9265-7035-b046-5d75-bdd018b48d1d",
+      "ExecutionId": "9249627b-d09a-40d3-89cf-585a749a5854",
+      "Duration": "00:00:00.0053838"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.AScopeReleasesEverythingItTook",
+      "Outcome": "Passed",
+      "TestId": "4bf6382f-6cc7-7c44-b1b7-42eeca6a9c20",
+      "ExecutionId": "6b1b6613-11e6-49da-806b-91d96cb6a2c2",
+      "Duration": "00:00:00.0023606"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.TheTrackLocksAreReleasedInKeyOrderOnTheWire",
+      "Outcome": "Passed",
+      "TestId": "96b1d0c7-6c02-9b8d-18bf-4fd0e87d9fa6",
+      "ExecutionId": "fff83f8a-e101-424e-a5b9-652832b89fe4",
+      "Duration": "00:00:00.0165504"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.SharedChildrenNativeTests.GenericWrapperEagerlyBuildsIndependentFlagsWithCopiedMaximumAndSayName(before: True, after: True)",
+      "Outcome": "Passed",
+      "TestId": "1fdeb463-6a32-33f7-909f-78ee3fee4e48",
+      "ExecutionId": "1e6f084d-5df0-4a94-a246-e8d5806673c9",
+      "Duration": "00:00:00.0726525"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.BehaviorFrameworkTests.ChoosingNothingIsReportedRatherThanSilent",
+      "Outcome": "Passed",
+      "TestId": "e67fc493-2bcc-0ba6-533d-7a25cfc8c58e",
+      "ExecutionId": "12821acd-64c5-40a2-bedc-e202c49afe2c",
+      "Duration": "00:00:00.0068610"
+    },
+    {
+      "Name": "Cozmo.Protocol.Tests.CoreReviewTests.CORE009_EveryBehaviourIsOnTheStacksClock",
+      "Outcome": "Passed",
+      "TestId": "efe52683-c60a-083b-0cc3-a7a8dd85c34c",
+      "ExecutionId": "5d3ddcb8-4f3f-46ad-afcc-404c65d2bcdf",
+      "Duration": "00:00:00.2760857"
+    }
+  ],
+  "reviewerCorrectionBatches": 1,
+  "selfCorrections": 1,
+  "compilerCorrections": 0,
+  "testHarnessCorrections": 1,
+  "testFoundProductionCorrections": 0,
+  "replayInfrastructureCorrections": 1,
+  "privilege": "Actual dotnet require_escalated",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-validation2"
+}

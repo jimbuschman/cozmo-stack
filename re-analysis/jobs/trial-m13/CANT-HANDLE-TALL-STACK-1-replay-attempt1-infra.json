@@ -1,0 +1,12 @@
+{
+  "job": "CANT-HANDLE-TALL-STACK-1",
+  "state": "REPLAY1 INFRASTRUCTURE STOP, ZERO TESTS",
+  "classification": "Reviewer PowerShell JSON-array nesting produced aggregate mismatch; actual maps independently equal by exact path/length/hash.",
+  "sourceAssetsMatched": 2803,
+  "binsMatched": 187,
+  "dotnetInvoked": false,
+  "nativePreflight": [],
+  "sourceEdits": false,
+  "next": "preserve replay1, correct wrapper and use unique replay2 with try/finally shutdown; one actual compiled replay pending",
+  "scriptSha256": "bc9929a262f5fa5898aa235ab5baf2c36dd4143af4a255ea11875e60de617631"
+}
