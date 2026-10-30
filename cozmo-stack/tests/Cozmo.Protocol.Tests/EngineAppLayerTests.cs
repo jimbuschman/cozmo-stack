@@ -2518,6 +2518,8 @@ public class EngineAppLayerTests
     private static readonly HashSet<string> KeptAcrossRemoval = new()
     {
         "AnimationScheduler._generation", "CozmoAudio._removals", "CozmoAudio._clock", "CozmoAudio._scheduled",
+        // Host continuation epochs must remain monotonic across reset to prevent stale work from claiming a replacement.
+        "AnimationScheduler._idleMutationVersion", "AnimationScheduler._streamMutationEpoch",
         "VisionSystem._removals", "VisionSystem.<Enabled>k__BackingField",
         // M5 gap4 R2, R3: IKeyFrame::sRNG is a process static that is never reseeded, and the context RNG belongs to the
         // CozmoContext, not to the Robot; neither is rebuilt with a new Robot

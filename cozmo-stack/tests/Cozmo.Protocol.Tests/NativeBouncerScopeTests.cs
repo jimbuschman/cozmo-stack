@@ -10,6 +10,42 @@ namespace Cozmo.Protocol.Tests;
 public class NativeBouncerScopeTests
 {
     [Fact]
+    public void ResetDuringScopedCleanupPreservesReplacementIdleAndStream()
+    {
+        // Direct host fixture: supply an active idle and reenter reset from the abort log.
+        // The assertions cover reset state and replacement ownership, not native epoch values.
+        using var rig=new Rig(); var scheduler=rig.Robot.Animations.Scheduler;
+        var initialIdle=scheduler.IdleStack.ToArray();
+        using var scope=new BehaviorScope();
+        scope.AcquireScopedIdle(scheduler,(AnimationTrigger)0x23F,"Bouncer",()=>0);
+        const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
+        typeof(AnimationScheduler).GetField("_idleAnim",flags)!.SetValue(scheduler,StreamAnimation.Live());
+        typeof(AnimationScheduler).GetField("_tag",flags)!.SetValue(scheduler,(byte)7);
+        typeof(AnimationScheduler).GetField("_neutral",flags)!.SetValue(scheduler,new AnimationClip{Name="neutral"});
+        var replacement=new AnimationClip { Name="replacement",Tracks=AnimationTrack.Head,
+            Keyframes=new Keyframe[] { new HeadKeyframe(0,100,10,0) },DurationMs=100 };
+        AnimationHandle? ticket=null; bool reentered=false, resetPlaying=true;
+        byte resetTag=255; (AnimationTrigger Trigger,string Lock)[]? resetIdle=null;
+        scheduler.SourceLog=(level,channel,key,text)=>
+        {
+            if(key!="AnimationStreamer.Abort" || reentered)return;
+            reentered=true;
+            scheduler.ResetToConstructed();
+            resetPlaying=scheduler.IsPlaying; resetTag=scheduler.CurrentTag;
+            resetIdle=scheduler.IdleStack.ToArray();
+            scheduler.PushIdleAnimation((AnimationTrigger)0x23F,"replacement");
+            ticket=scheduler.Play(replacement,0);
+        };
+        scope.Dispose();
+        Assert.True(reentered); Assert.NotNull(ticket);
+        Assert.False(resetPlaying); Assert.Equal((byte)0,resetTag);
+        Assert.NotNull(resetIdle); Assert.Equal(initialIdle,resetIdle);
+        Assert.Equal(initialIdle.Length+1,scheduler.IdleStack.Count);
+        Assert.Equal("replacement",scheduler.IdleStack[^1].Lock);
+        Assert.Equal("replacement",scheduler.Playing);
+        Assert.Equal(ticket!.Tag,scheduler.CurrentTag);
+    }
+    [Fact]
     public void CountCleanupAbortLogCannotOverwriteReplacementStream()
     {
         // Supplied active idle/neutral state isolates the checked Count cleanup branch;
