@@ -1,0 +1,41 @@
+{
+  "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+  "phase": "CLAUDE RETURN FIX1",
+  "state": "BOUNDED FIX SOURCE PASS; IMPLEMENTATION RELEASED, NO .NET LEASE",
+  "main": "c7c809afb230680d6bb466b015a4a056106030ab",
+  "managerMerge": "78751aaa8d005827135b346cd2bce45401dd218e",
+  "sourceFiles": [
+    {
+      "path": "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-fix-read.md",
+      "originalSha256": "d1fc7f7e5b28f87e0c94c6f8c919092e2a5ee1038f07b39335a9097027df4eec",
+      "utf8LfSha256": "4697535912aa8cbac3dd2be3d7a0a281028032e38d3ef3d4368bdf2c76fc9c38",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\sparks-fix-source-originals\\20261030-sparks-bring-cube-to-beacon-1-fix-read.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-fix-source-codex-check.md",
+      "originalSha256": "c8d4e22aa832f17b2ee91a4fbf0434fe000d9c1f27f6bc439b74585fe46c8ab6",
+      "utf8LfSha256": "271c82e4934be3bc9869a5bd0026bc73e4a64342b2a6b1963e7edb230cbd9e62",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\sparks-fix-source-originals\\20261030-sparks-bring-cube-to-beacon-1-fix-source-codex-check.md"
+    }
+  ],
+  "currentSnapshotsMatched": [
+    "M5-063",
+    "M15-059",
+    "M15-008",
+    "M15-023",
+    "M15-086"
+  ],
+  "readerRequested": "same original gpt-6.1-sol/medium/fork_none",
+  "builderRequested": "same original DEFAULT/model and effort omitted",
+  "reviewerRequested": "same original DEFAULT/model and effort omitted",
+  "actualBackend": "unobserved; operator default Terra",
+  "originalReviewerCorrectionBatches": 3,
+  "claudeReturnedCorrectionBatches": 1,
+  "newReviewerRequiredCorrectionBatches": 0,
+  "newCompilerCorrections": 0,
+  "newTestRuns": 0,
+  "prep": "old worker merge sole M7 implemented-set conflict resolved to exact manager bytes; an intermediate marker-containing merge commit was corrected in fd05e37e. Final whole code/src trees match manager; no implementation or .NET yet. Do not integrate preparation merge commits, only final fix diff.",
+  "wholeRecordClosures": "None; M15-023 stays open per authoritative Claude, M15-086 already exists; no duplicate lifecycle proposal",
+  "officialEdits": false,
+  "hardwareRun": false
+}
