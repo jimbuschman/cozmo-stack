@@ -1,6 +1,6 @@
 # HIKING-BRING-CUBE-TO-BEACON-1
 
-Status: code and affected checks complete; full gate pending. Worker `dbb5d481`, integrated `b204df8e`; code tree `90d0ee8bb87c2a62be3317f6d6d11994149ab72b`, production tree `15f4e800fd4cece3056d8f89a59542a507b723c8`. Thirty frozen paths: `HIKING-BRING-CUBE-TO-BEACON-1-navigation-fix-freeze.json` (F6467A2F…). No official record, inventory, approval, project-state or Claude-review edits.
+Status: code and affected checks complete; full gate pending. Worker `dbb5d481`, integrated `b204df8e`; code tree `90d0ee8bb87c2a62be3317f6d6d11994149ab72b`, production tree `15f4e800fd4cece3056d8f89a59542a507b723c8`. Worker manifest hashes refer to raw artifacts; Git stores LF. The artifact-transport JSON records both hashes; source-entry bytes/blobs are unchanged. Thirty frozen paths: `HIKING-BRING-CUBE-TO-BEACON-1-navigation-fix-freeze.json` (F6467A2F…). No official record, inventory, approval, project-state or Claude-review edits.
 
 ## Claims for Claude
 
