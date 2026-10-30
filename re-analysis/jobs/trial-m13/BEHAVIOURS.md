@@ -64,7 +64,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | in progress | HIKING-BRING-CUBE-TO-BEACON-1 READY FOR CLAUDE; native own path, full6866 PASS, affected715+36 exact replays. Parent/shared gaps and detector-seam limit remain; no finished/hardware claim | freeplay: Hiking. 1 refs; R025+ in map |
 | `SparksBringCubeToBeacon` | `BringCubeToBeacon` | in progress | SPARKS-BRING-CUBE-TO-BEACON-1 READY; native configured leaf/Gather delegate, affected981+exact981 and full6895 PASS. Upstream/sibling/shared gaps remain, no finished claim | spark: GatherCubes. 1 refs; R200+ in map |
 | `CantHandleTallStack` | `CantHandleTallStack` | in progress | CANT-HANDLE-TALL-STACK-1 claimed; complete native own path/caller read open, no build/test/finished claim | No explicit config reference; native/app use UNKNOWN |
-| `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | in progress | CHECK-FOR-STACK-AT-INTERVAL-1 independent read open while TallStack approval pending; no build/test/finished claim | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
+| `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | in progress | CHECK-FOR-STACK-AT-INTERVAL-1 READY; canonical scan, reference654+exact654 and full6905 PASS. Actual custom-marker/ownership/parent gaps remain, no finished claim | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
 | `CubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | freeplay: PlayAlone. 1 refs; R065+ in map |
 | `SparksCubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | spark: SparksWorkout. 1 refs; R240+ in map |
 | `Dance_Mambo` | `Dance` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |

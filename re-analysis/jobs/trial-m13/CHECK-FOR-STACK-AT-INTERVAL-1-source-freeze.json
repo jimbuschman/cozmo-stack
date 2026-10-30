@@ -1,6 +1,6 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
-  "state": "INTEGRATION VERIFIED; FULL GATE NEXT",
+  "state": "READY FOR CLAUDE",
   "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
   "sources": [
     {
@@ -282,5 +282,30 @@
     "sourceHashesAndBlobsMatched": 4,
     "protectedOfficialChanges": false,
     "originMain": "69e53d714b0c50a8c7f81f6e81391705e3911451"
+  },
+  "fullGate": {
+    "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "e1bb55817c6a98b8259bda22ff6ab3aa6ef50f9b",
+    "cozmoStackTree": "7d28d842b81f72bf88218d366fd18400846b90e4",
+    "productionSrcTree": "861a706d696e74bb2e9eb68c0cf577f3f891df18",
+    "startedUtc": "2026-10-30T12:54:57.1647742Z",
+    "endedUtc": "2026-10-30T13:06:14.5619043Z",
+    "exitCode": 0,
+    "passed": 6905,
+    "total": 6905,
+    "failed": 0,
+    "skipped": 0,
+    "testDuration": "9 m 58 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "10cfbe07d2d2d32c21fdf1d6de8df793ee0bdead",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "421671b09dffda4367115df68e35d19d0827edc9b74558df6d1a1c769dca5c17",
+    "consoleSha256": "76b487286ea12b48b1dee5d1954cbd3cfac8f2b99546670b1f6f83d83c778459",
+    "frozenSourcePathsMatched": 4,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
   }
 }
