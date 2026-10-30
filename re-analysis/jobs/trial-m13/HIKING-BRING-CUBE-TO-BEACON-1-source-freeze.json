@@ -1,6 +1,6 @@
 {
   "job": "HIKING-BRING-CUBE-TO-BEACON-1",
-  "stage": "First21-file implementation review FAIL; consolidated reviewer correction batch1 in progress, no .NET",
+  "stage": "Test-only fixture correction; build PASS, first affected attempt ABORTED with observed failures",
   "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
   "main": "75891508091abbffadc042a2318ec0128c62c868",
   "sourceFiles": {
@@ -93,7 +93,7 @@
   "sourceSnapshotCurrentUpdates": [
     "M15-084.unresolved: main verifier boundary notes updated; native method contracts unchanged; frozen15-record extraction snapshot remains historical726"
   ],
-  "implementationReviewCorrectionBatches": 1,
+  "implementationReviewCorrectionBatches": 2,
   "firstDraft": {
     "files": 21,
     "manifestSha256": "e992c5d8915ecf8231d12dd572494db66eb6a10e9495e1fc0c1bf18732154011",
