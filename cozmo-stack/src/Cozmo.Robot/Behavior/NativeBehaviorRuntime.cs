@@ -72,7 +72,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         if(AI.Workout is {} workout && workout.GetCurrentWorkout() is not null && robot.MoodOwner is {} mood)
         {
             workout.TriggerEmotionEvent=(name,now)=>mood.Trigger(name,now);
-            workout.ClockSec=()=>mood.LastUpdateSeconds;
+            workout.ClockSec=()=>robot.Engine.Timer.SecondsF;
             _workoutMusic=()=>workout.ShouldPlayEightiesMusic(e=>mood[e],e=>mood.GetHistoryValueTicksAgo(e,60),()=>robot.Engine.ContextRandom.RandDbl(1));
             robot.EightiesMusicInput=_workoutMusic;
         }

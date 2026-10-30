@@ -44,7 +44,7 @@ internal sealed class NativePickupBlockHelper: IHelper
     {
         if(!Current())return;
         _hostUnavailable=true;_responseCallback=null;_converter=null;
-        Missing("M12-031 visual pre-action005B7B48 unavailable: "+error.Message);
+        Missing("unavailable: "+error.Message);
         if(!Current())return;
         int epoch=Volatile.Read(ref _availabilityEpoch);uint tag=_parent.CurrentRunnerTag;
         _m.Robot.Engine.Robot?.ActionList.DeferHostCleanup(()=>

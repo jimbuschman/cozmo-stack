@@ -142,9 +142,7 @@ public sealed class WorkoutComponent
             double now=ClockSec();
             if(current is not null && !current()) return;
             TriggerEmotionEvent(finished.EmotionEventOnComplete, now);
-            if(current is not null && !current()) return;
             CompletionEventObservedForTest?.Invoke();
-            if(current is not null && !current()) return;
         }
         CompletedWorkouts++;
         if (CurrentIndex < Workouts.Count - 1) CurrentIndex++;
@@ -166,7 +164,11 @@ public sealed class WorkoutComponent
     {
         if (_eightiesEvaluated) return _eightiesAnswer;
         var workout = GetCurrentWorkout();
-        if(workout is null)throw new NativeActionUnavailable("M13-010 actual current workout unavailable for music decision");
+        if(workout is null)
+        {
+            SteppedBehavior.ReportMissing("M1-034/M13-010: skip uncached music decision null-current read 0x00573B70 via 0x00573E42; no cache or RNG write");
+            return false; // host policy for the skipped native fault, not a native result.
+        }
         uint score = WorkoutConfig.NativeMoodScoreHelper(WorkoutConfig.EvaluateEmotionScore(workout.NumStrongLifts, current, value60TicksAgo,ownerCurrent));
         if(ownerCurrent is not null&&!ownerCurrent())return false;
         bool answer = score != 0 && randDbl() < 0.1;

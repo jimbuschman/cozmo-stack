@@ -34,6 +34,94 @@ public sealed class CubeLiftWorkoutNativeTests
         cube.LastObservedTimestamp=f.Robot.StoredState!.Timestamp;
         foreach(var marker in cube.Markers)marker.LastObservedTimestamp=cube.LastObservedTimestamp;
     }
+    // reach: supplied activity feeding the real StrictPriorityChooser and BehaviorManager; PlayAlone admission is unbound.
+    private sealed class SuppliedChooserActivity(StrictPriorityChooser chooser, BehaviorContext context) : IManagedActivity
+    {
+        public int Decisions, Selections;
+        public void Update(double nowSec) { }
+        public IBehavior? GetDesiredActiveBehavior(IBehavior? current, double nowSec)
+        {
+            Decisions++;
+            var decision=chooser.GetDesiredActiveBehavior(current,0,context,nowSec);
+            if(decision.Behavior is not null)Selections++;
+            return decision.Behavior;
+        }
+        public void BehaviorSwitched(IBehavior? desired,bool started,double nowSec) { }
+    }
+
+    // reach: configured ordinary and Spark aliases, direct readiness; no activity admission.
+    [Fact]
+    public void LibraryGateAndActualRunnablePathRemainAvailable()
+    {
+        using var f=new Fixture();f.Add(7);f.Robot.CarryingOwner!.SetCarrying(7);f.Robot.Progression!.Unlocked.Add(29);
+        foreach(string id in new[]{"CubeLiftWorkout","SparksCubeLiftWorkout"})
+        {
+            var behavior=Assert.IsType<NativeCubeLiftWorkoutBehavior>(f.Runtime.Bound[id]);
+            var readiness=behavior.EvaluateHostReadiness(f.Runtime.Context);
+            Assert.False(readiness.Available);Assert.False(readiness.Runnable);
+        }
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        foreach(string id in new[]{"CubeLiftWorkout","SparksCubeLiftWorkout"})
+            Assert.True(Assert.IsType<NativeCubeLiftWorkoutBehavior>(f.Runtime.Bound[id]).IsRunnable(f.Runtime.Context));
+    }
+
+    // reach: unit/supplied activity, actual chooser and manager, 30 updates; not PlayAlone production admission.
+    [Theory]
+    [InlineData("CubeLiftWorkout",0)] [InlineData("CubeLiftWorkout",1)] [InlineData("CubeLiftWorkout",2)]
+    [InlineData("SparksCubeLiftWorkout",0)] [InlineData("SparksCubeLiftWorkout",1)] [InlineData("SparksCubeLiftWorkout",2)]
+    public void MissingInputsAreUnavailableWithoutInitOrReselection(string id,int missing)
+    {
+        using var f=new Fixture();Configured(f);f.Add(7);f.Robot.CarryingOwner!.SetCarrying(7);f.Robot.Progression!.Unlocked.Add(29);
+        var behavior=Assert.IsType<NativeCubeLiftWorkoutBehavior>(f.Runtime.Bound[id]);
+        Assert.NotNull(f.Runtime.AI.Workout!.GetCurrentWorkout());Assert.NotNull(f.Robot.MoodOwner);
+        Assert.True(behavior.IsRunnableBase(f.Runtime.Context));
+        var valid=behavior.EvaluateHostReadiness(f.Runtime.Context);
+        Assert.True(valid.Available);Assert.True(valid.Runnable);
+        var oldMood=f.Robot.MoodOwner;
+        if(missing==0)f.Runtime.AI.Workout=null;
+        if(missing==1)f.Runtime.AI.Workout=new WorkoutComponent(Array.Empty<WorkoutConfig>());
+        if(missing==2)f.Robot.MoodOwner=null;
+        var chooser=new StrictPriorityChooser(new[]{id},f.Runtime.Bound){StopOnUnavailable=true};
+        var activity=new SuppliedChooserActivity(chooser,f.Runtime.Context);
+        var manager=f.Robot.BehaviorManagerOwner!;manager.Activity=activity;
+        var idleBefore=f.Rig.Robot.Animations.Scheduler.IdleStack.ToArray();
+        var lights=new List<string>();f.Rig.Robot.Lights.Cubes.BehaviorStateCallObservedForTest=(objectId,call,trigger,layer,modifier,data,offset)=>lights.Add(call);
+        var messages=new List<string>();SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=messages.Add;
+        try
+        {
+            var readiness=behavior.EvaluateHostReadiness(f.Runtime.Context);
+            Assert.False(readiness.Available);Assert.False(readiness.Runnable);
+            for(int i=0;i<30;i++)manager.Update(i,i);
+            Assert.Equal(30,activity.Decisions);Assert.Equal(0,activity.Selections);
+            Assert.Null(manager.Current);Assert.False(behavior.InitFailed);Assert.Null(behavior.OwnedRunner);
+            Assert.Empty(lights);Assert.Equal(idleBefore,f.Rig.Robot.Animations.Scheduler.IdleStack);
+            for(int trigger=0;trigger<21;trigger++)Assert.False(manager.HasDisableLock((ReactionTrigger)trigger,id+"_behaviorLock"));
+            Assert.Contains(messages,m=>m.Contains("M1-034/M13-010"));
+        }
+        finally { manager.Activity=null;f.Robot.MoodOwner=oldMood;SteppedBehavior.MissingReported-=messages.Add; }
+    }
+
+    // reach: public component unit call; native 0x00573E34 cache precedes the 0x00573E42 null dereference.
+    [Fact]
+    public void MusicNullCurrentSkipsWithoutMoodRngOrCacheAndRetainsCachedAnswer()
+    {
+        using var f=new Fixture();Configured(f);var config=f.Runtime.AI.Workout!.Workouts[0];
+        var entries=new List<WorkoutConfig>{config};var workout=new WorkoutComponent(entries);
+        Assert.True(workout.ShouldPlayEightiesMusic(_=>0,null,()=>0));
+        entries.Clear();
+        Assert.True(workout.ShouldPlayEightiesMusic(_=>throw new Exception("mood"),null,()=>throw new Exception("rng")));
+        workout.ResetEightiesMusicDecision();
+        var messages=new List<string>();SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=messages.Add;
+        try
+        {
+            Assert.False(workout.ShouldPlayEightiesMusic(_=>throw new Exception("mood"),null,()=>throw new Exception("rng")));
+            Assert.Contains(messages,m=>m.Contains("M1-034/M13-010")&&m.Contains("00573E42"));
+            entries.Add(config);
+            Assert.True(workout.ShouldPlayEightiesMusic(_=>0,null,()=>0));
+        }
+        finally{SteppedBehavior.MissingReported-=messages.Add;}
+    }
+
     [Fact]
     public void OrdinaryFactoryUsesRobotOwnedShippedWorkoutAndSparkIsSeparate()
     {
@@ -126,7 +214,7 @@ public sealed class CubeLiftWorkoutNativeTests
     {
         var empty=new WorkoutComponent(Array.Empty<WorkoutConfig>());empty.CompleteCurrentWorkout();
         Assert.Equal(0,empty.CompletedWorkouts);
-        Assert.Throws<NativeActionUnavailable>(()=>empty.ShouldPlayEightiesMusic(_=>0,null,()=>0));
+        Assert.False(empty.ShouldPlayEightiesMusic(_=>throw new Exception("mood read"),null,()=>throw new Exception("RNG read")));
         using var f=new Fixture();Configured(f);var native=f.Runtime.AI.Workout!.Workouts[0];
         var first=native with{EmotionEventOnComplete=""};var workout=new WorkoutComponent(new[]{first,native});
         workout.ClockSec=()=>throw new InvalidOperationException("empty event must skip clock");
@@ -165,14 +253,19 @@ public sealed class CubeLiftWorkoutNativeTests
         var guarded=new WorkoutComponent(new[]{config,config});bool current=true;
         guarded.ClockSec=()=>9;guarded.TriggerEmotionEvent=(_,_)=>{current=false;return true;};
         guarded.CompleteCurrentWorkout(()=>current);
-        Assert.Equal(0,guarded.CurrentIndex);Assert.Equal(0,guarded.CompletedWorkouts);
+        Assert.Equal(1,guarded.CurrentIndex);Assert.Equal(1,guarded.CompletedWorkouts);
     }
     [Fact]
     public void PickupUsesActualIntentionTargetAndHelperParametersWithoutSyntheticSuccess()
     {
         using var f=new Fixture();var behavior=Configured(f);PreparePickup(f);
         Assert.True(f.Runtime.PickupTargets!.Refresh());Assert.Equal(7u,f.Runtime.PickupTargets.Best);
-        using var scope=new BehaviorScope();Begin(f,behavior,scope);
+        var lights=new List<string>();f.Rig.Robot.Lights.Cubes.BehaviorStateCallObservedForTest=(id,call,trigger,layer,modifier,data,offset)=>lights.Add($"{id}:{call}:{trigger}");
+        using var scope=new BehaviorScope(manager:f.Robot.BehaviorManagerOwner);Begin(f,behavior,scope);
+        Assert.Contains(lights,x=>x.StartsWith("7:Play:"));
+        Assert.Contains(f.Rig.Robot.Animations.Scheduler.IdleStack,x=>x.Lock==behavior.Id && (int)x.Trigger==0x23F);
+        for(int trigger=0;trigger<21;trigger++)
+            Assert.Equal(new[]{1,2,8,10,20}.Contains(trigger),f.Robot.BehaviorManagerOwner!.HasDisableLock((ReactionTrigger)trigger,behavior.Id+"_behaviorLock"));
         var helper=Assert.IsType<NativePickupBlockHelper>(behavior.PickupHelper);
         Assert.Equal(7u,helper.Target);Assert.Equal(0f,helper.MaxTurn);
         Assert.False(helper.Flag104);Assert.True(helper.Flag105);
@@ -186,6 +279,10 @@ public sealed class CubeLiftWorkoutNativeTests
         Assert.Equal(completed,f.Runtime.AI.Workout.CompletedWorkouts);
         Assert.Null(f.Robot.CarryingOwner!.CarriedObjectId);
         behavior.Stop(BehaviorStopReason.Interrupted);
+        scope.Dispose(); // native common cleanup releases the acquired scope locks and idle.
+        Assert.Contains(lights,x=>x.StartsWith("7:StopResume:"));
+        for(int trigger=0;trigger<21;trigger++)Assert.False(f.Robot.BehaviorManagerOwner!.HasDisableLock((ReactionTrigger)trigger,behavior.Id+"_behaviorLock"));
+        Assert.DoesNotContain(f.Rig.Robot.Animations.Scheduler.IdleStack,x=>x.Lock==behavior.Id);
     }
     [Theory]
     [InlineData(true)]
@@ -478,10 +575,16 @@ public sealed class CubeLiftWorkoutNativeTests
             Assert.Equal(AnimationTrigger.WorkoutPutDown_highEnergy,putdown.Request.Trigger);
             Complete(f,0x03000018);
             var check=Assert.IsAssignableFrom<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
-            Assert.Equal(2,check.Children.Count);Assert.IsType<NativeNearbySearchRunner>(check.Children[1]);
+            Assert.Equal(2,check.Children.Count);
+            var lift=check.Children[0];var liftType=lift.GetType();
+            Assert.Equal("MoveAction",liftType.Name);
+            Assert.Equal(32f,(float)liftType.GetField("RequestedHeight")!.GetValue(lift)!);
+            Assert.Equal(5f,(float)liftType.GetField("Tolerance")!.GetValue(lift)!);
+            Assert.IsType<NativeNearbySearchRunner>(check.Children[1]);
         }
-        f.Robot.CarryingOwner.UnsetCarrying();
+        // Still carrying: EndIteration performs the source detach (0x005D89FA).
         Complete(f,0x03000018);
+        Assert.Null(f.Robot.CarryingOwner.CarriedObjectId);
         Assert.Equal(1,workout.CompletedWorkouts);Assert.Equal(0,workout.CurrentIndex);
         behavior.Stop(BehaviorStopReason.Interrupted);
     }
@@ -495,7 +598,7 @@ public sealed class CubeLiftWorkoutNativeTests
         var workout=new WorkoutComponent(new[]{first,first});f.Runtime.AI.Workout=workout;
         var observed=new List<string>();
         workout.TriggerEmotionEvent=(name,_)=>{observed.Add("mood:"+name);return true;};
-        workout.ClockSec=()=>f.Robot.MoodOwner!.LastUpdateSeconds;
+        workout.ClockSec=()=>f.Rig.Engine.Timer.SecondsF;
         using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>observed.Add("objective:"+p));
         void Need(string line){if(line.StartsWith("needs.action_completed Workout:"))observed.Add("needs");}
         f.Rig.Engine.Needs.Log+=Need;

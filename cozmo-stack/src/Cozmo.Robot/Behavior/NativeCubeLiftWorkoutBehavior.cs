@@ -6,6 +6,7 @@ namespace Cozmo.Robot.Behavior;
 
 // Ordinary and Spark configured CubeLiftWorkout: shared class 005D7E50..005D8A54; factory 0059CA12..22.
 // Shared helper, action, carrying, mood, needs and public-state owners retain their own gaps.
+// fidelity: M13-010
 internal sealed class NativeCubeLiftWorkoutBehavior : SteppedBehavior, IDisposable
 {
     private readonly ManipulationSystem _m;
@@ -40,21 +41,23 @@ internal sealed class NativeCubeLiftWorkoutBehavior : SteppedBehavior, IDisposab
     private bool Current(long epoch)=>HostExecutionVersionCurrent(epoch);
     private uint Carry()=>_robot.CarryingOwner is {} carrying?carrying.CarriedObjectId??uint.MaxValue:
         throw new NativeActionUnavailable("actual CarryingComponent unavailable");
-    private WorkoutComponent Workout()=>Context.AI?.Workout is { } workout && workout.GetCurrentWorkout() is not null?workout:
-        throw new NativeActionUnavailable("M13-010 actual AI workout/current configuration unavailable");
+    private WorkoutComponent Workout(BehaviorContext context)=>context.AI?.Workout is { } workout && workout.GetCurrentWorkout() is not null?workout:
+        throw new NativeActionUnavailable("M1-034/M13-010 actual AI workout/current configuration unavailable; skip Init 0x005D7EE6 null-current read 0x00573B70");
+    private WorkoutComponent Workout()=>Workout(Context);
     private WorkoutConfig Config()=>Workout().GetCurrentWorkout()!;
     private uint Best()=>_robot.NativeBehaviorRuntime?.PickupTargets?.GetBest(0)??
         throw new NativeActionUnavailable("actual intention 0 cache unavailable");
     public override bool IsRunnable(BehaviorContext context)
     {
         using var owner=EnterHostExecutionOwner(context); long epoch=CaptureHostExecutionVersion();
+        if(context.Robot.Animations.Library is null){MarkReadinessUnavailable();return false;}
         if(!Current(epoch)||!IsRunnableBase(context)||!Current(epoch))return false;
-        return Runnable(epoch);
+        return Runnable(context,epoch);
     }
-    protected override bool IsRunnableInternal(BehaviorContext context)=>Runnable(CaptureHostExecutionVersion());
-    private bool Runnable(long epoch)
+    protected override bool IsRunnableInternal(BehaviorContext context)=>Runnable(context,CaptureHostExecutionVersion());
+    private bool Runnable(BehaviorContext context,long epoch)
     {
-        try { uint carried=Carry(); if(!Current(epoch))return false; if(carried!=uint.MaxValue)return true; uint best=Best();return Current(epoch)&&best!=uint.MaxValue; }
+        try { _=Workout(context); _=_robot.MoodOwner??throw new NativeActionUnavailable("M1-034/M13-010 actual MoodManager unavailable; count scoring 0x0067C9F0/0x0067CA02"); uint carried=Carry(); if(!Current(epoch))return false; if(carried!=uint.MaxValue)return true; uint best=Best();return Current(epoch)&&best!=uint.MaxValue; }
         catch(Exception error) when(error is NativeActionUnavailable or NativeConfigurationUnavailable)
         { if(Current(epoch)){MarkReadinessUnavailable();ReportMissing("CubeLiftWorkout readiness: "+error.Message);}return false; }
     }
