@@ -1,0 +1,24 @@
+{
+  "job": "HIKING-BRING-CUBE-TO-BEACON-1",
+  "run": "identityclasses",
+  "state": "FAILED_CLASSIFIED",
+  "buildExit": 0,
+  "total": 39,
+  "passed": 38,
+  "failed": 1,
+  "skipped": 0,
+  "failedNames": [
+    "Cozmo.Protocol.Tests.HikingBringBeaconCandidatesTests.CanonicalCarriedFloorRunUsesRealOwnedActionsAndNeedsBeforeGround"
+  ],
+  "sourceFreeze": "8f3cfe816a99068dbfb24046a6d24b0c33c91e48011934cba6f53c7a8a8e78d9",
+  "sourceUnchanged": 29,
+  "dataUnchanged": 3,
+  "dllUnchanged": 118,
+  "classification": "Only carriedfloor terminalNO_MARKERS; groundunavailable/identity/queuecasesPASS. Visualinputcausependingfurtherdiagnostic.",
+  "logSha256": "F6C73B754D7737117BBE9C0857791521B76A26C7079CC3488B98A54A40A70D5A",
+  "trxSha256": "FBF7DCBBC2EB04E3DDA0874EA1415725E2C0B44202C55F2F7D181A52900B509B",
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "fullGateRun": false
+}

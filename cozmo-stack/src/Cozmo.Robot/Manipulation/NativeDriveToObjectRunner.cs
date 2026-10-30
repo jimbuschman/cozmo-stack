@@ -4,7 +4,7 @@ namespace Cozmo.Robot.Manipulation;
 
 // fidelity: M12-029, M12-022, M12-011
 // 55850C/5592C6/559650/559880: ordinary type0 native action; public type6 remains separate.
-internal sealed class NativeDriveToObjectRunner:NativeVisionRunner
+internal class NativeDriveToObjectRunner:NativeVisionRunner
 {
     internal readonly DriveToObjectAction Action;
     private readonly CompoundActionSequential _sequence;
@@ -12,6 +12,7 @@ internal sealed class NativeDriveToObjectRunner:NativeVisionRunner
     private bool _hostUnavailable;
     internal Action<NativeActionUnavailable>? Unavailable;
     internal DriveToPoseAction? Drive {get;private set;}
+    internal Action<IReadOnlyList<ActionRunner>>? BeforeInitialUpdateForTest;
     protected override string ActionName=>"DriveToObject";
     internal CompoundActionSequential Sequence=>_sequence;
     internal NativeDriveToObjectRunner(ManipulationSystem m,uint id):this(m,id,PreActionType.Docking){}
@@ -49,8 +50,9 @@ internal sealed class NativeDriveToObjectRunner:NativeVisionRunner
         if(CozmoCubes.IsLightCube(obj.Type)&&!_light){M.Robot.Lights.Cubes.PlayNativeDrivingTo(Action.ObjectId);_light=true;}
         return result;
     }
-    private int InitHelper(ObservableObject obj)
+    protected int InitHelper(ObservableObject obj)
     {
+        if(M.Robot.Engine.Robot?.CarryingOwner is null)throw new NativeActionUnavailable("M12-022 actual carrying owner unavailable");
         _sequence.ClearActions();Drive=null;
         bool inPosition=false;
         var result=Action.PosesFunction(obj,out var poses,ref inPosition);
@@ -61,8 +63,14 @@ internal sealed class NativeDriveToObjectRunner:NativeVisionRunner
             Drive.SetNativeGoals(poses.Select(p=>p.WorldPose).ToArray());
             _sequence.AddAction(Drive,false,false);
         }
-        if(M.Robot.Engine.Robot!.CarryingOwner!.CarriedObjectId!=obj.ObjectId)
-            _sequence.AddAction(new NativeTurnTowardsObjectRunner(M,obj.ObjectId,NativeTurnTowardsObjectRunner.AnyCode,0,true,false){SuppressTrackLocking=true},false,false);
+        // 00559366..380: predicate receives supplied object's ID. IsCarryingObject
+        // 00633F88 compares both stored slots as raw IDs, including empty -1.
+        var carrying=M.Robot.Engine.Robot?.CarryingOwner ?? throw new NativeActionUnavailable("M12-022 actual carrying owner unavailable");
+        uint bottom=carrying.CarriedObjectId??uint.MaxValue, top=carrying.CarriedOnTopId??uint.MaxValue;
+        if(bottom!=obj.ObjectId&&top!=obj.ObjectId)
+            // 00559392: the turn takes the action's target, not the supplied geometry object's ID.
+            _sequence.AddAction(new NativeTurnTowardsObjectRunner(M,Action.ObjectId,NativeTurnTowardsObjectRunner.AnyCode,0,true,false){SuppressTrackLocking=true},false,false);
+        BeforeInitialUpdateForTest?.Invoke(_sequence.Children);
         uint started=_sequence.Update();
         return started==0||started==EngineActionResult.Running?0:unchecked((int)started);
     }
@@ -78,7 +86,14 @@ internal sealed class NativeDriveToObjectRunner:NativeVisionRunner
     }
     public override byte? GetCompletionVariant()=>0;
     public override ObjectInteractionCompletion GetObjectInteractionCompletion()=>new(Action.ObjectId,uint.MaxValue,uint.MaxValue,uint.MaxValue,uint.MaxValue,1,false);
-    public override void WatcherEnding()
+    internal override bool CanDetachWatcherForRetirement()=>base.CanDetachWatcherForRetirement()&&_sequence.CanDetachWatcherForRetirement();
+    internal override bool CanRetireNeverAdmittedTree()=>base.CanRetireNeverAdmittedTree()&&_sequence.CanRetireNeverAdmittedTree();
+    internal override bool RetireNeverAdmittedTree()
+    {
+        if(!CanRetireNeverAdmittedTree())return false;
+        if(!_sequence.RetireNeverAdmittedTree())return false;
+        return base.RetireNeverAdmittedTree();
+    }    public override void WatcherEnding()
     {
         if(_light){M.Robot.Lights.Cubes.StopNativeDrivingTo(Action.ObjectId);_light=false;}
         _sequence.Prep();

@@ -22,6 +22,7 @@ internal sealed class NativePlaceRelRunner:NativeVisionRunner
     internal uint SavedCarried=>_savedCarry;
     internal ActionRunner? VerifyChild=>_verify;
     internal bool Raised=>_raised;
+    internal bool CheckPreActionPose {get=>Action.CheckPreActionPose;set=>Action.CheckPreActionPose=value;}
     internal CompoundActionSequential? Prepared=>_prepared;
     internal NativePlaceRelRunner(ManipulationSystem m,uint target):base(m,0x15,7)
     {_originalTarget=target;Action=new(m,target,false,0,0,false,true);}
@@ -42,15 +43,21 @@ internal sealed class NativePlaceRelRunner:NativeVisionRunner
         _deadline=-1;_sent=false;owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
         var target=M.World.GetLocatedObjectByIdHelper(Action.ObjectId);if(target is null)return 0x03000004;
         var main=owner.GetCheckedMainPose();
-        var pre=DockPreActionPoses.GetNative(new(target,PreActionType.PlaceRelative,true,DockActionBase.PreActionAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>M.NativeObstacles(main),M.World);
-        if(pre.Result!=ActionResult.Success)return unchecked((int)pre.Result);
-        uint carry=owner.CarryingOwner.CarriedObjectId??uint.MaxValue;if(carry==uint.MaxValue)return 0x03000011;
+        PreActionPoseOutput? pre=null;
+        if(Action.CheckPreActionPose)
+        {
+            pre=DockPreActionPoses.GetNative(new(target,PreActionType.PlaceRelative,true,DockActionBase.PreActionAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>M.NativeObstacles(main),M.World);
+            if(pre.Result!=ActionResult.Success)return unchecked((int)pre.Result);
+        }
+        uint carry=owner.CarryingOwner!.CarriedObjectId??uint.MaxValue;if(carry==uint.MaxValue)return 0x03000011;
         var cache=owner.NativeBehaviorRuntime?.PickupTargets??throw new NativeActionUnavailable("PlaceRel actual native CanStack recipient absent");
         if(!cache.CanStack(target))return 0x03000004;
         Action.SetSelectedDockAction(DockAction.PlaceHigh);Type=0x19;_savedCarry=carry;
         _subscriptions=M.Docking.RegisterActionHandlers(Action,DockAction.PlaceHigh);
-        var marker=pre.Poses[pre.ClosestIndex].Marker;if(marker is null)return 0x03000002;_marker=unchecked((short)marker.Code);
-        _prepared?.Prep();_prepared?.WatcherEnding();
+        KnownMarker? marker;
+        if(pre is not null)marker=pre.Poses[pre.ClosestIndex].Marker;
+        else {uint result=NativeDockMarkerSelection.Observed(target,main,out marker);if(result!=0)return unchecked((int)result);}
+        if(marker is null)return 0x03000002;_marker=unchecked((short)marker.Code);        _prepared?.Prep();_prepared?.WatcherEnding();
         _prepared=new(()=>M.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,Watcher=Watcher,SourceLog=SourceLog};
         _prepared.SetDeleteOnCompletion(false);
         _prepared.AddAction(new NativeTurnTowardsObjectRunner(M,Action.ObjectId,_marker,0,true,false){SuppressTrackLocking=true},false,false);

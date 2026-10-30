@@ -38,7 +38,7 @@ public abstract partial class SteppedBehavior
     }
 
     /// <summary>5BDACC..5BDC12: ownership of incoming passes to this call, including every reject path.</summary>
-    internal bool StartActing(IActionRunner? incoming, Action<RobotCompletedAction>? completion)
+    internal bool StartActing(IActionRunner? incoming, Action<RobotCompletedAction>? completion, Func<bool>? admissionCurrent = null)
     {
         if (incoming is null)
         {
@@ -69,16 +69,34 @@ public abstract partial class SteppedBehavior
         _runnerActionList=QueueOwnedAction is null?list:null;
         Volatile.Write(ref _currentActionHandle, unchecked((int)incoming.Tag));
         ScoredActingStateChanged(true);
-        if (_actionCompletionSubscription is null && Context.Robot.Engine.Robot?.HasExternalInterface==true)
+        bool RetireStaleBeforeQueue()
+        {
+            if(admissionCurrent is null||admissionCurrent())return false;
+            if(ReferenceEquals(_runner,incoming))
+            {
+                _runner=null;_runnerActionList=null;_runnerCompletion88=null;_sharedHandle=null;
+                Volatile.Write(ref _currentActionHandle,0);
+            }
+            if(incoming is ActionRunner stale&&stale.CanDetachWatcherForRetirement()){stale.Watcher=null;stale.RetireNeverAdmittedTree();}
+            return true;
+        }
+        if(RetireStaleBeforeQueue())return false;        if (_actionCompletionSubscription is null && Context.Robot.Engine.Robot?.HasExternalInterface==true)
             ReportMissing("M8-015 IBehavior constructor completion subscription is unavailable for this action owner");
+        if(RetireStaleBeforeQueue())return false;
         int result;
         if (QueueOwnedAction is { } queue) { if(incoming is ActionRunner ownedRunner)ownedRunner.MarkQueueAdmission(); result = queue(QueueActionPosition.Now, incoming, 0); }
-        else if (list is not null) result = list.QueueAction(QueueActionPosition.Now, incoming, 0);
+        else if (list is not null) result = admissionCurrent is null?list.QueueAction(QueueActionPosition.Now,incoming,0):list.QueueActionGuardedNow(incoming,0,admissionCurrent);
         else
         {
             ReportMissing("M8-015 owned StartActing 0x005BDB68: robot+0x250 ActionList owner absent");
             // The native path dereferences null. M1-034 skips the queue call with prior state preserved.
             ReportMissing("M1-034 M8-015: skip null ActionList dereference at 0x005BDB6C; preserve assigned callback/tag");
+            return false;
+        }
+        if(admissionCurrent is not null&&!admissionCurrent())
+        {
+            // Guarded queue admission retires the never-inserted tree itself.
+            if(result!=0 && result!=2 && incoming is ActionRunner {DestructionObserved:false})DeleteRejectedRunner(incoming);
             return false;
         }
         if (result == 0) return true;

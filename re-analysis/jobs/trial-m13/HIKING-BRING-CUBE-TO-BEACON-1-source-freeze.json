@@ -1,0 +1,127 @@
+{
+  "job": "HIKING-BRING-CUBE-TO-BEACON-1",
+  "stage": "READY FOR CLAUDE: affected715+715, factory36+36, full6866 PASS0skip on ebab4ee0",
+  "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
+  "main": "75891508091abbffadc042a2318ec0128c62c868",
+  "sourceFiles": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-read.md": "2D70A36DB14F3B4443E525F2A014400E9118FE525681BDF9DC398702AA7E25A2",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-codex-check.md": "758B4D907FE9213C5DF54E547751994B3624EC358429670F77DCC7524424CC6C",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-beacon-time-codex-check.md": "A2F02A7D9F51F2ABA3EFCA36AB9192955DC2913CA51A7F13D7FCEED15FD15624"
+  },
+  "currentManifestQuotesMatched": [
+    "M13-006",
+    "M15-008",
+    "M15-009",
+    "M15-011",
+    "M15-019",
+    "M15-020",
+    "M15-021",
+    "M15-022",
+    "M15-023",
+    "M15-024",
+    "M15-025",
+    "M15-026",
+    "M8-014",
+    "M11-069",
+    "M15-084"
+  ],
+  "approvalSnapshotsCheckedByReviewer": 4,
+  "readerRequested": "gpt-6.1-sol/medium",
+  "builderReviewerRequested": "DEFAULT model/effort, overrides omitted; operatorconfiguredgpt-6.1-terra, backendunobserved",
+  "workers": {
+    "reader": "/root/bring_beacon_read",
+    "reviewer": "/root/bring_beacon_review",
+    "builder": "/root/bring_beacon_build"
+  },
+  "sourceBehaviorCorrections": 0,
+  "knownPyLocalHelperOrderingExceptions": 1,
+  "beaconTimeContract": "Existing approved M15-023 and M15 inventory CorrectionA4 already f32; currentcodefloat, M13intannotationknownconflictdeferredClaude, no new approval/departure",
+  "pendingUnknown": "No essential native interface UNKNOWN outstanding; existing shared geometry/child/report/progression seams remain explicit",
+  "prep": {
+    "checkoutProcesses": [],
+    "compileOrTestsRun": false,
+    "cacheOnlyRestoreAll5": 0,
+    "shutdownExit": 0,
+    "nativeProcesses": []
+  },
+  "officialEdits": false,
+  "newRecordsAdded": false,
+  "hardwareRun": false,
+  "serialization": "UTF8LF only; original source bytes retained ignored, no text/contract change",
+  "familyCountSource": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-family-count-unknown.md": "4C1F8B35E6CF96B9166999ED3356D8B1FC11475BADE3E2B52E3AA33242396CF4",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-family-count-codex-check.md": "C3F01A076FCF2474DC56DEC03AAE56CECD820319B30B5A8A667C8936EC4E3A06"
+  },
+  "familyCountCurrentQuotesMatched": [
+    "M15-020",
+    "M11-063"
+  ],
+  "checkedUnknownSupplementCount": 6,
+  "familyCountContract": "Canonical BlockWorld-lifetime family2 definition counter initialized3 by successful ActiveCube1/2/3 ctor defines. Independent of observations/connections/current origin. Current C# has no builtin redefine API; future reachable redefinition needs native increment semantics, not an always3 invariant.",
+  "actionAndDelocalizationSources": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-native-action-interfaces-unknown.md": "8B71F850DA5199CFBCDD88F4E455B7F081ECF605B98C080C9981BAD0DF388A68",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-native-action-interfaces-codex-check.md": "EC20EA5C53A14126974777D9C6AE405CEA3E2926A12EF5E3D7DBB62B5422AED2",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-delocalization-predicate-unknown.md": "9B14D5876AA89F583490C39FD6E1CADD77D58EBA648917980E6E0809A0A9300F",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-delocalization-predicate-codex-check.md": "7EF17CB969C73A8521301145B899FEABAEBA1E1469B1B4125491E1ACE522FB5E"
+  },
+  "actionAndDelocalizationCurrentQuotesMatched": [
+    "M12-024",
+    "M12-030",
+    "M15-008",
+    "M15-021",
+    "M15-022",
+    "M15-026",
+    "M13-014",
+    "M8-026",
+    "M11-070"
+  ],
+  "actionInterfaceContract": "Checked shipped ctor tuples/composition/ownership/default profiles; dockB9true until reachedWait1, skipped on ignored drive failure. Carried-floor derived init/helper and inner/destination-only check, no generic postconditions. Preserve existing helper profile defaults.",
+  "delocalizationContract": "Possible pose real GetRootID !=currentorigin AND !AnyRemainingLocalizableObjects(root); erase, unconditional render once, clearbeacons; preserve failures. World->face->AI recipient order. Require real graph/current-origin/render-provider inputs, no default-root predicate.",
+  "predockMarkerSources": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-place-rel-predock-unknown.md": "5E1522E2EAB6E457644705F16DF18B4E5DF4ED3496907AC3D194EA7323E0333E",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-place-rel-predock-codex-check.md": "336906CC97DAFED861E65C83672814A2C4AA28A8C75CF0BD19DB647D8A2376EE"
+  },
+  "predockMarkerCurrentQuotesMatched": [
+    "M12-017"
+  ],
+  "oldNoteFrameCorrections": 1,
+  "predockMarkerContract": "B9false skips preaction poses, observed markers at last-observed stamp, MAIN-frame 3D f32 d2<bestDistance^2 with sqrt storage; no winner native null fault M1-034 skip, not03000002. B9true uses preaction marker with defined null-marker03000002. Old Q6.9 parent-frame note correction does not contradict current approved records.",
+  "m1StandingFaultCase": "M12-017 observed multi-marker no-winner: chosen=null00551AD2/00551BE4 -> GetCodeName0055199A/A0 -> null read0087E1D0. Visible smallest marker-init/action skip, preserve prior state, no invented native result/failure marking or indefinite hold; official unresolved update proposed to Claude.",
+  "currentMain": "69e53d714b0c50a8c7f81f6e81391705e3911451",
+  "currentMainIntegrated": "ad2eb8329bb90094f9bdbeb307017411deba40c7",
+  "currentRecordCount": 727,
+  "sourceSnapshotCurrentUpdates": [
+    "M15-084.unresolved: main verifier boundary notes updated; native method contracts unchanged; frozen15-record extraction snapshot remains historical726"
+  ],
+  "implementationReviewCorrectionBatches": 2,
+  "firstDraft": {
+    "files": 21,
+    "manifestSha256": "e992c5d8915ecf8231d12dd572494db66eb6a10e9495e1fc0c1bf18732154011",
+    "base": "ad2eb8329bb90094f9bdbeb307017411deba40c7",
+    "rawVsFilteredGitEqual": true,
+    "actualArchive": "builder .scratch/hiking-bring-beacon-1/reviewed-draft-lf",
+    "priorRawArchive": "builder reviewed-draft;8 new C# files CRLF normalized before review, no text/behavior changes",
+    "verdict": "FAIL",
+    "consolidatedFindings": [
+      "standalone binding/owner isolation",
+      "reentrant continuation/admission guards",
+      "runtime retirement/retry pose lifetime",
+      "unrelated-root defined false",
+      "meaningful native action/profile/fault/cleanup tests"
+    ],
+    "buildOrTestsRun": false
+  },
+  "driveTargetIdentitySources": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-drive-target-identity-unknown.md": "6071560E111E104ED3E4AD6D5508866EB1ACE7E52ABBD37F2FEE129FB2C325B6",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-drive-target-identity-codex-check.md": "51BE66B478A7586F3F9F4103EE4C1803C0467DD1248F1216AFE42265FFF85678"
+  },
+  "driveTargetIdentityContract": "InitHelper predicate uses supplied objectID, compares actual native carrying+8 OR+14 including null-normalizedFFFFFFFF. FinalTurn ifneeded usesactiontarget+7C, notcloneID. Derivedfloor retainsfreshclone-1 andstoredrealcarriedID. Alreadyapprovedtwo-slotcontract, no contradiction/departure; do not suppressallturns or mutatecloneID.",
+  "withdrawnReaderInferences": 1,
+  "groundTurnVerifySources": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-ground-turn-verify-unknown.md": "968704945DB4B28AE7D7D7C915D6352F9CA73CBF2B2828D0A50A3983A9E5089B",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-ground-turn-verify-codex-check.md": "F4B34FE3FFCD218875F00C98301CD8A89164CCA9C289D9760F848459CB9034DF"
+  },
+  "groundTurnVerifyContract": "Normal Groundtrue,false -> visualverify180=true,track192=false; clearvisualflagonlycustomID-1branch. Currentcodeandapprovedinventoryrow842+citedtuplealreadycorrect. ObsoleteM15-022unresolvedclear/unreachableannotationproposedClaudeonly, nooperatorcontractchange/codeflagflip.",
+  "finalSourcePaths": 31,
+  "fullGateFingerprint": "bfd10167c55d97764104d14e60315687c8ee00fa"
+}

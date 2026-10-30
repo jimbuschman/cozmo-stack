@@ -1469,13 +1469,16 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     /// -1, +1, -2, +2, ..., -N, +N), the first accepted one wins. <c>*out</c> holds the last candidate tested, accepted or not.
     /// </summary>
     // fidelity: M15-019, M15-020
-    internal bool FindFreePoseInBeacon(ObservableObject carried, AIBeacon beacon, Pose3d robotPose, float cooldown, out Pose3d result)
+    internal bool FindFreePoseInBeacon(ObservableObject carried, AIBeacon beacon, Pose3d robotPose, float cooldown, out Pose3d result,
+        Func<AIBeacon,IReadOnlyList<ObservableObject>>? nativeCubes = null, Func<ObservableObject,Pose3d,bool>? nativeFree = null, Func<bool>? current = null)
     {
         Pose3d last = default;
         SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon libm: MathF.Cos/MathF.Sin/MathF.Acos/MathF.Atan2 stand in for bionic cosf 0x004A415C, sinf 0x004A4168, acosf 0x004ACC4C and atan2f 0x004A4510, and re-analysis/evidence/m15-floor-placement/emulate_candidates.py takes the expected bits (e.g. 0x42380001) from Python's libm, not bionic, so a last-bit difference in those functions is not excluded. 0x005E0A96: the candidate pose's rotation matrix is the quaternion-to-matrix of Rotation3d::GetRotationMatrix 0x0084AAE0 WITHOUT its closing RotationMatrix3d::Renormalize 0x008494E0 (unread: its tolerances and RenormalizeUnconditional 0x004CE3C0), and Pose3d::GetWithRespectTo is the stack's double composition narrowed to f32; both can differ from the engine in the last bits");
+        if(current is not null && !current())throw new NativeActionUnavailable("stale Bring floor search");
         var rot = BeaconFloorGeometry.RotationAboutAxis(0.0f, 0.0f, 0.0f, 1.0f);                                  // 0x005E038A..0x005E03A2
         bool haveFrame = false;
-        var cubes = M.Whiteboard.FindCubesInBeacon(beacon);                                                        // 0x005E03AC..0x005E03B6
+        var cubes = nativeCubes?.Invoke(beacon) ?? M.Whiteboard.FindCubesInBeacon(beacon);                                                        // 0x005E03AC..0x005E03B6
+        if(current is not null && !current())throw new NativeActionUnavailable("stale Bring floor search");
         if (cubes.Count > 0 && BeaconFloorGeometry.CalculateDirectionalityClosest(cubes, beacon) is { } closest) { rot = closest; haveFrame = true; }     // 0x005E03BA..0x005E03CC
         float bx = (float)beacon.Pose.Translation.X, by = (float)beacon.Pose.Translation.Y, bz = (float)beacon.Pose.Translation.Z;
         if (!haveFrame) rot = BeaconFloorGeometry.FrameFromRobot(bx, by, bz, (float)robotPose.Translation.X, (float)robotPose.Translation.Y, (float)robotPose.Translation.Z, rot);
@@ -1486,6 +1489,7 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
         int n = BeaconFloorGeometry.TruncToInt(radius / spacing);                                                   // 0x005E0570..0x005E0578
         bool Candidate(int i, int j)
         {
+            if(current is not null && !current())throw new NativeActionUnavailable("stale Bring floor search");
             CandidateLog?.Add((i, j));
             // 0x005E09E0..0x005E0DF2
             var (tx, ty, tz, rotated) = BeaconFloorGeometry.CandidateTranslation(rot, spacing, i, j, bx, by, bz);
@@ -1496,9 +1500,11 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
             d2 += rotated.Z * rotated.Z;
             if (d2 > radius2) return false;                                                                         // 0x005E0ADE..0x005E0AE6 ble: NaN passes
             // 0x005E0B4A..0x005E0B7E: DidFailToUse(-1, PlaceObjectAt = 2, cooldown, *out, 100.0f, Radians(pi))
-            if (M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, cooldown, pose, BeaconFloorGeometry.FarDistance, BeaconFloorGeometry.Pi)) return false;
+            bool failed=M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, cooldown, pose, BeaconFloorGeometry.FarDistance, BeaconFloorGeometry.Pi);
+            if(current is not null && !current())throw new NativeActionUnavailable("stale Bring floor search");
+            if(failed)return false;
             // 0x005E0B84..0x005E0C32: FindLocatedIntersectingObjects(quad of the carried object at *out, padding 10.0f), the carried id ignored; free iff empty
-            return DriveToPlaceCarriedObjectAction.StaticFindLocatedIntersectingObjectsIsEmpty(M, carried, pose, BeaconFloorGeometry.Ten, null);
+            return nativeFree?.Invoke(carried, pose) ?? DriveToPlaceCarriedObjectAction.StaticFindLocatedIntersectingObjectsIsEmpty(M, carried, pose, BeaconFloorGeometry.Ten, null);
         }
         bool Row(int i)
         {

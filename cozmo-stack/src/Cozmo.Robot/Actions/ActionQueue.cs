@@ -121,6 +121,34 @@ internal sealed class ActionQueue : IDisposable
         }
     }
 
+    // Host-only admission guard for a behavior invalidated by synchronous callbacks.
+    // It never inserts or completes an invalidated incoming runner.
+    internal bool QueueNowGuarded(IActionRunner incoming,byte retries,Func<bool> current)
+    {
+        if(!current())return false;
+        if(_pending.Count>0)
+        {
+            if(_current is {} c)
+            {
+                if(c.NativeName is {} oldName&&incoming.NativeName is {} newName)
+                    SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Debug,"Unnamed","ActionQueue.QueueNow.CancelingPrevious",FormattableString.Invariant($"Canceling {oldName} [{unchecked((int)c.Tag)}] in favor of action {newName} [{unchecked((int)incoming.Tag)}]"));
+                else Behavior.SteppedBehavior.ReportMissing("M8-015 QueueNow Debug0x0053E2A6: native action names not supplied");
+                if(!current())return false;
+                DeleteCurrent(c);
+                if(!current())return false;
+            }
+            incoming.RetriesRemain=retries;
+            if(incoming is ActionRunner runner)runner.MarkQueueAdmission();
+            _pending.AddFirst(incoming);return true;
+        }
+        if(_current is {} old)
+        {
+            old.Cancel();if(!current())return false;
+            DeleteCurrent(old);if(!current())return false;
+        }
+        if(incoming is ActionRunner admitted)admitted.MarkQueueAdmission();
+        QueueAtEnd(incoming,retries);return true;
+    }
     /// <summary>Q11 AT_END 0x0053E16C..0x0053E248: append at the tail.</summary>
     public void QueueAtEnd(IActionRunner incoming,byte retries=0){incoming.RetriesRemain=retries;_pending.AddLast(incoming);}
 

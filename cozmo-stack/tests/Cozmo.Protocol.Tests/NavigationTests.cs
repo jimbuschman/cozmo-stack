@@ -899,8 +899,15 @@ public class NavigationTests
     [Fact]
     public void M15_008_IsLocWithinBeaconIsThreeDimensionalAndMarginReduced()
     {
-        var beacon = new AIBeacon(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), 175);
-        Pose3d At(double x, double y, double z) => new(Mat3.Identity, new Vec3(x, y, z));
+        using var root = new Pose3d();
+        var beacon = new AIBeacon(new Pose3d(Rotation3d.Identity, new Vec3(0, 0, 0), parent: root), 175);
+        Assert.True(PoseTreeNode.HasSameRoot(beacon.Pose.Node, root.Node));
+        Pose3d At(double x, double y, double z)
+        {
+            var pose = new Pose3d(Rotation3d.Identity, new Vec3(x, y, z), parent: root);
+            Assert.True(PoseTreeNode.HasSameRoot(pose.Node, root.Node));
+            return pose;
+        }
         Assert.True(beacon.IsLocWithinBeacon(At(121, 0, 0), 54f));                 // d2 = 14641 >= 14641 (limit)
         Assert.False(beacon.IsLocWithinBeacon(At(121.001, 0, 0), 54f));            // 14641.242 > 14641
         Assert.False(beacon.IsLocWithinBeacon(At(70, 0, 100), 54f));               // 4900 + 10000 = 14900 > 14641: z counts (a planar test says 70 <= 121)
@@ -908,9 +915,10 @@ public class NavigationTests
         Assert.True(beacon.IsLocWithinBeacon(At(174, 0, 0), 0f));                  // margin 0: radius itself
         Assert.False(beacon.IsLocWithinBeacon(At(176, 0, 0), 0f));
         // the pose is taken with respect to the beacon's pose: a rotated, offset beacon sees the same distance
-        var rotated = new AIBeacon(new Pose3d(Mat3.AboutZ(1.0), new Vec3(500, -200, 10)), 175);
-        Assert.True(rotated.IsLocWithinBeacon(new Pose3d(Mat3.Identity, new Vec3(500 + 100, -200, 10)), 54f));
-        Assert.False(rotated.IsLocWithinBeacon(new Pose3d(Mat3.Identity, new Vec3(500 + 130, -200, 10)), 54f));
+        var rotated = new AIBeacon(new Pose3d(Rotation3d.FromMatrix(Mat3.AboutZ(1.0)), new Vec3(500, -200, 10), parent: root), 175);
+        Assert.True(PoseTreeNode.HasSameRoot(rotated.Pose.Node, root.Node));
+        Assert.True(rotated.IsLocWithinBeacon(At(500 + 100, -200, 10), 54f));
+        Assert.False(rotated.IsLocWithinBeacon(At(500 + 130, -200, 10), 54f));
     }
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).

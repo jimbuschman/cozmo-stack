@@ -149,8 +149,10 @@ internal sealed class StackFirmwareScene:IDisposable
         if(Grounded&&GroundProcessedFramesOnly)
         {F.Rig.Engine.AnimationMessages.Deliver(0x43,true,new ProcessedImageReport(F.Robot.StoredState!.Timestamp,new uint[]{1},0));F.Rig.Tick();}
         else Image();
-        Trace.Add($"SCENE x{F.X} y{F.Y} yaw{F.Yaw} head{F.Head} lift{F.Lift} markers{F.M.Vision.LastResult?.Markers.Count}");var stack=(NativeStackBlocksBehavior)F.Runtime.Bound[_behaviorId];
-        Trace.Add($"{F.Rig.Engine.Timer.SecondsF} state{stack.State} top{stack.Top}/bottom{stack.Bottom} carry{F.Robot.CarryingOwner!.CarriedObjectId} helper{stack.PlacementHelper?.Status} place{stack.PlacementHelper?.Runner?.State:X8} verify{stack.PlacementHelper?.Runner?.VerifyChild?.State:X8} raised{stack.PlacementHelper?.Runner?.Raised}");
+        Trace.Add($"SCENE x{F.X} y{F.Y} yaw{F.Yaw} head{F.Head} lift{F.Lift} markers{F.M.Vision.LastResult?.Markers.Count}");
+        if(F.Runtime.Bound[_behaviorId] is NativeStackBlocksBehavior stack)
+            Trace.Add($"{F.Rig.Engine.Timer.SecondsF} state{stack.State} top{stack.Top}/bottom{stack.Bottom} carry{F.Robot.CarryingOwner!.CarriedObjectId} helper{stack.PlacementHelper?.Status} place{stack.PlacementHelper?.Runner?.State:X8} verify{stack.PlacementHelper?.Runner?.VerifyChild?.State:X8} raised{stack.PlacementHelper?.Runner?.Raised}");
+        else Trace.Add($"{F.Rig.Engine.Timer.SecondsF} behavior{_behaviorId} carry{F.Robot.CarryingOwner!.CarriedObjectId} placements{Placements}");
     }
     public void Dispose()=>F.Dispose();
 }

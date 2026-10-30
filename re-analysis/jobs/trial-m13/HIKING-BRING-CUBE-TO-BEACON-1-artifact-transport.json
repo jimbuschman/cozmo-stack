@@ -1,0 +1,50 @@
+[
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-correction1-freeze.json",
+    "rawWorkerSha256": "63EC4F29813F61D35C91895787C0791FF3108DE99446CA1EA8217951B0E488B9",
+    "committedLfSha256": "63EC4F29813F61D35C91895787C0791FF3108DE99446CA1EA8217951B0E488B9",
+    "sourceEntryBytesChanged": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-correction2-freeze.json",
+    "rawWorkerSha256": "C830A49C26D51A119D8528FDE8F6F2B27301D33A8385D628537E0BEB31BC1A99",
+    "committedLfSha256": "C830A49C26D51A119D8528FDE8F6F2B27301D33A8385D628537E0BEB31BC1A99",
+    "sourceEntryBytesChanged": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-drive-identity-freeze.json",
+    "rawWorkerSha256": "8F3CFE816A99068DBFB24046A6D24B0C33C91E48011934CBA6F53C7A8A8E78D9",
+    "committedLfSha256": "8F3CFE816A99068DBFB24046A6D24B0C33C91E48011934CBA6F53C7A8A8E78D9",
+    "sourceEntryBytesChanged": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-floor-diagnostic-freeze.json",
+    "rawWorkerSha256": "505436356AEA3B7CF89F19E8D3DC150F3C9903DBDE38D631CF6F69E0DDB017B5",
+    "committedLfSha256": "548F36D9A4295CB7294A3529A2BBB90DC119D959891C2ACB0CDAF9F8F51C5B54",
+    "sourceEntryBytesChanged": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-floor-input-freeze.json",
+    "rawWorkerSha256": "A0276144E8CF30FB6D36442DBD8F0A67D2603698AC943AC0F9AEEBC6E8C57555",
+    "committedLfSha256": "9F7071D0C9E354E808DEEACF4E8E269C7C4B88490A2FB4D248FDCC3606F700BA",
+    "sourceEntryBytesChanged": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-harness-correction1-freeze.json",
+    "rawWorkerSha256": "018F4CDD92DCDD3EE3ADF0F8838ADDB8E5FECE4A1DE845A5EF9F224D17675D47",
+    "committedLfSha256": "018F4CDD92DCDD3EE3ADF0F8838ADDB8E5FECE4A1DE845A5EF9F224D17675D47",
+    "sourceEntryBytesChanged": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-navigation-fix-freeze.json",
+    "rawWorkerSha256": "F6467A2F7165AE84FFE10F0A625C23B801EA5A03E43A805577AAE5F0FCBD2FE9",
+    "committedLfSha256": "88EFE15E199DDBB297EC4555BABD5DBFA2C204FA40D312D8D153F2656A3D00B3",
+    "sourceEntryBytesChanged": false
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/HIKING-BRING-CUBE-TO-BEACON-1-m7-fix-freeze.json",
+    "rawWorkerSha256": "90E058AA834E5D365BAF8863A8A74AFD1712E07953DD91121FE28BA25010696A",
+    "committedLfSha256": "8A560152B4660AFAA400B736B367327E6D22A03562A76271B8FBED957A3D7EB6",
+    "sourceEntryBytesChanged": false
+  }
+]

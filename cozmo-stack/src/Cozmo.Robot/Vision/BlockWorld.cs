@@ -1179,6 +1179,12 @@ public sealed partial class BlockWorld
     private bool OnTreadsNow() => OnTreads?.Invoke() ?? true;
 
     /// <summary>Creates a world with no connected objects; they arrive through <see cref="AddConnectedActiveObject"/>.</summary>
+    // BlockWorld+0x48, family 2: ctor defines ActiveCube1/2/3 successfully
+    // (0061BDD4..0061BE4E, 0061C23C..25A). This is world-lifetime
+    // definition bookkeeping, not a count of located or connected objects.
+    // No current host API redefines built-in cubes; a future one must implement
+    // the native successful-definition increment branch, not treat 3 as universal.
+    internal uint LightCubeDefinitionCount { get; } = 3;
     public BlockWorld() : this(deferMap: false) { }
     private readonly bool _deferMap; // host fixture: production waits for Robot::Delocalize
     internal BlockWorld(bool deferMap) { _deferMap = deferMap; if (!deferMap) CreateLocalizedMemoryMap(1); }

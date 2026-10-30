@@ -44,6 +44,17 @@ public abstract class CompoundAction : ActionRunner
         foreach (var child in children) AppendChild(child);
     }
 
+    // Host-only: dispose a freshly constructed, never queued subtree without
+    // action completion, motion/track operations or watcher callbacks.
+    internal override bool CanDetachWatcherForRetirement()=>base.CanDetachWatcherForRetirement()&&_children.All(child=>child.CanDetachWatcherForRetirement());
+    internal override bool CanRetireNeverAdmittedTree()=>base.CanRetireNeverAdmittedTree()&&_children.All(child=>child.CanRetireNeverAdmittedTree());
+    internal override bool RetireNeverAdmittedTree()
+    {
+        if(!CanRetireNeverAdmittedTree())return false;
+        foreach(var child in _children)if(!child.RetireNeverAdmittedTree())return false;
+        _children.Clear();_ignorePredicates.Clear();_completionCache.Clear();
+        return base.RetireNeverAdmittedTree();
+    }
     /// <summary>Test/inspection: the live child list in insertion order.</summary>
     public IReadOnlyList<ActionRunner> Children => _children;
 

@@ -1,0 +1,14 @@
+# HIKING-BRING-CUBE-TO-BEACON-1 — Ground turn verification independent check
+
+**PASS, narrow constructor/flag contract.** Normal Ground's real carried ID constructs the turn with verification enabled. Do not flip the existing C# flag. The 0x0300001D floor result is not localized by the existing log; its cause remains UNKNOWN pending the requested nested trace. This check does not certify the broader Ground path.
+
+I ran known.py on the four addressed routines before independently inspecting Thumb instructions in resources/lib/armeabi-v7a/libcozmoEngine.so, SHA-256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1.
+
+* 0055483E loads carry marker; 0055484C saves Ground+7C target; 00554862/66 places first bool 1 and second bool 0 on constructor stack, 00554870 calls the six-argument constructor. 00554888/8A writes a separate suppression byte +56.
+* 00549DC0/4 adjusts stack by 0x40; 00549DEE/00549E00 copies incoming first bool from sp+44 directly into +180, and 00549E26/28 copies second from sp+48 to +192. Neither is inverted.
+* 0054A202..226 uses normal located-object lookup for an ID other than -1 and falls to 0054A22A on success. The alternative ID=-1 branch 0054A300..31A checks a custom object and origin, and only that branch 0054A31E..366 clears +180.
+* 0054AECE..D4 gates on +180; nonzero allocates the visual verifier at 0054AED8..FC and updates it at 0054AF1E. Thus the normal Ground tuple enables it; the separate track flag is false.
+
+Current manifest M15-022 title is “PlaceObjectOnGroundAtPoseAction composition and PlaceObjectOnGroundAction Init/CheckIfDone”, status IMPLEMENTATION_GAP. Its evidence says “builds a TurnTowardsObject verify action” and cites re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md sections 2.3..2.8; section 2.6 explicitly records `(robot, ObjectID(+0x7C), short [carrying+0xC], Radians(0.0f), true, false)`. Current unresolved instead says “with the visual-verify byte clear” and calls its VisuallyVerifyObjectAction branch “unreachable”; these annotations contradict the normal Ground instructions and should be reconciled by Claude through normal record maintenance, without silently editing official records here.
+
+Approved M15-freeplay inventory line 842 says “message 0x44, a TurnTowardsObject verify action, StopAllMotors” and does not prescribe a clear flag. Its current SHA-256 fcd16c422144ff55a6cf19315fbcf9bccbf817cf2d99d78aef5571004e126a36 matches M15-freeplay.approved.json dated 2026-10-29. The approved evidence points to the literal true,false extraction. Existing NativePlaceGroundRunner.cs:33 and NativeObjectRunners.cs:14–16,52–54 preserve that tuple and direct mapping. This is an obsolete unresolved annotation, not a newly requested behavior contract or operator departure. No official record, code, or test was modified; no .NET run.

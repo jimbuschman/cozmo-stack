@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-28. **0 finished · 22 in progress · 156 not started.** These states track complete behavior work, independently of fidelity-record status, old code, helper progress or test counts. Exact shipped IDs `SparksPickupSingleCubeForPyramid`, `SparksPickupSingleCubeToStack`, `PutDownBlock`, `PutDownBlockNothingToDo`, `PyramidPutDownBlock`, `SparksPutDownBlock`, `KnockOverCubes`, `SparksKnockOverCubes`, `SparksStackBlock`, `StackBlocks`, `Hiking_RollCube`, `RollBlockOnSide`, `RollBlockOnSideLowScore`, `SparksRollBlock`, `PopAWheelie`, `SparksPopAWheelie`, `BuildPyramidBase`, `BuildPyramid`, `DockingTestSimple`, `AcknowledgeFace`, `AcknowledgeObject` and `DriveOffCharger` are in progress; other configurations remain not started.
+Whole-behavior scoreboard, 2026-10-29. **0 finished · 35 in progress · 143 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -61,7 +61,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `AcknowledgeFace` | `AcknowledgeFace` | in progress | UNKNOWN | reaction: FacePositionUpdated. 1 refs; R252+ in map |
 | `AcknowledgeObject` | `AcknowledgeObject` | in progress | ACKNOWLEDGE-OBJECT-1 + FIX-ACKNOWLEDGE-OBJECT-GHOST-1 MERGED (Claude check PASS). Stacked-cube ghost look skipped with a visible MISSING until M11-010 ghost visibility and M12-033 ghost marker geometry are built; M15-081 open | reaction: ObjectPositionUpdated. 1 refs; R267+ in map |
 | `Bouncer` | `Bouncer` | in progress | BOUNCER-1 MERGED (Claude check PASS); native own lifecycle/game/image path, independent969/reset185 and corrected full6795 PASS0skip; detector/geometry/shared-action/host gaps remain, no finished-behaviour claim | freeplay: PlayWithHumans. 1 refs; R078+ in map |
-| `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | not started | UNKNOWN | freeplay: Hiking. 1 refs; R025+ in map |
+| `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | in progress | HIKING-BRING-CUBE-TO-BEACON-1 MERGED (Claude check PASS); native Hiking own path, delocalization beacon clear, full6866 PASS0skip; parent Hiking admission, shared children and pixel-detector limit remain, nothing settled | freeplay: hiking. Lifecycle record awaits operator |
 | `SparksBringCubeToBeacon` | `BringCubeToBeacon` | not started | UNKNOWN | spark: GatherCubes. 1 refs; R200+ in map |
 | `CantHandleTallStack` | `CantHandleTallStack` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | not started | UNKNOWN | spark: SparksKnockOverCubes. 1 refs; R204+ in map |

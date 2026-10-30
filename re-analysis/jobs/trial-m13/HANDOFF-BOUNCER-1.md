@@ -1,5 +1,7 @@
 # BOUNCER-1 — READY FOR CLAUDE
 
+Authoritative update: Claude PASS/MERGED on main2e6cfb53; operator added existing lifecycle M15-085 on69e53d71, nothing settled. The READY evidence below is historical; its new-record proposal is fulfilled by M15-085 and must not be duplicated. Shared detector/geometry/action gaps and the queued multi-face-helper follow-up remain open.
+
 READY FOR CLAUDE. Worker1eef9fc9 plus test-only correction fa6df082 integrated at26eb9265; complete cozmo-stack tree bef21de0378f54300fc79670414dcdc0bf464820. Independent969 and reset-remediation185 PASS0skip. Corrected full6795/6795 PASS0skip on1724def8a30a01b62924de8bdcef6bcde0af2ef0,8m48s. Fingerprint f1815df8fb6827057f494a1b467abcb846f46909. First manager full gate6793P1F was classified before the test-only correction and is preserved. No hardware or finished-behaviour claim.
 
 ## Path and evidence

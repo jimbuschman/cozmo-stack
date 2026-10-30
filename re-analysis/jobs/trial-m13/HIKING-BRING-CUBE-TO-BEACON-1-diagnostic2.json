@@ -1,0 +1,26 @@
+{
+  "job": "HIKING-BRING-CUBE-TO-BEACON-1",
+  "run": "diagnostic2",
+  "state": "FAILED_CLASSIFIED",
+  "buildExit": 0,
+  "total": 2,
+  "passed": 0,
+  "failed": 2,
+  "skipped": 0,
+  "testNames": [
+    "Cozmo.Protocol.Tests.HikingBringBeaconCandidatesTests.GroundLeafUnavailableRetiresOnlyOwnedRunWithoutFalseCompletionOrFailureMemory",
+    "Cozmo.Protocol.Tests.HikingBringBeaconCandidatesTests.CanonicalCarriedFloorRunUsesRealOwnedActionsAndNeedsBeforeGround"
+  ],
+  "sourceFreeze": "018f4cdd92dcdd3ee3adf0f8838addb8e5fece4a1de845a5ef9f224d17675d47",
+  "sourceUnchanged": 29,
+  "dataUnchanged": 3,
+  "dllUnchanged": 118,
+  "nestedResult": "parent/deriveddrive/inner03000004; Ground02000001 NOT_STARTED; unexpected final Turn toward cloneID",
+  "classification": "Implementation identity join bug confirmed by independent primary check: carrying predicate needs supplied objectID versus both actual native slots includingFFFFFFFF; finalTurn target must be action+7C. Ground unavailability test did not reach leaf. No approved-contract contradiction.",
+  "logSha256": "9AD78E87EE732663DCC98BE4302F23A82EF22E67E19B17B373166A6DEF9D51D1",
+  "trxSha256": "F3636073B89DB9A164583D4D97392BF1396FC340B0D85DDACB49136D0F9B5BA8",
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "fullGateRun": false
+}
