@@ -1,0 +1,74 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "phase": "correction3postintegration",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "38282b0b03503eb2173cd74b219c2a2bf05074e2f89a912d4c9030f5779eb65a",
+      "rawBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "filteredBlob": "d4e8a2f9d67faaef0346f4ba47a89a23f9b111e2",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction3\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "16742874fbbd5c4ee9718a1f9158d0a1cc4fa1bc9d30914713f8ebb4cfd7773f",
+      "rawBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "filteredBlob": "d96e2898723c67a57796320d9762761d5bc36d49",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction3\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDanceBehavior.cs",
+      "sha256": "0a552505de202a9c547d2caee3138ee6ae560b964143a8ca8df59290a676fee5",
+      "rawBlob": "c57b9c12ad9f4d8669f9ad9986dd44b65347c9dd",
+      "filteredBlob": "c57b9c12ad9f4d8669f9ad9986dd44b65347c9dd",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction3\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeDanceBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+      "sha256": "4c20995a2f02036599c56fefabe30b05001a4c537877335a9da7362c3533b314",
+      "rawBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "filteredBlob": "76d5995deb5bdcbd2e110050a14d14563cdc6dde",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction3\\cozmo-stack\\src\\Cozmo.Robot\\Lights.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs",
+      "sha256": "c050e049111d63e8cff224fbec77f9a4bd558d85b46b74a4a18e9491f4ef63a4",
+      "rawBlob": "f1e78de710beebea01ea3ca9ebeba932a5be9177",
+      "filteredBlob": "f1e78de710beebea01ea3ca9ebeba932a5be9177",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction3\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\DanceMamboNativeTests.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "b5908a67e9a2ebf1e0d435ab2758cae43db5a8b3f616af915725961b91ab5578",
+      "rawBlob": "84d3ef2896f82853e1e1b87994e2f3baec9ce42b",
+      "filteredBlob": "84d3ef2896f82853e1e1b87994e2f3baec9ce42b",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction3\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\M7BatchThreeBTests.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+      "sha256": "2ec69bee432377438e2120a86faeb1a78986543ee459b7fdf8e64a2b3ff4d6ab",
+      "rawBlob": "9e5946edca2fbf30966a87798db87ceb791750c2",
+      "filteredBlob": "9e5946edca2fbf30966a87798db87ceb791750c2",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-draft-originals\\correction3\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\EngineAppLayerTests.cs"
+    }
+  ],
+  "changedThreePaths": [
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDanceBehavior.cs",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs"
+  ],
+  "staticVerdict": "B affected PASS; source listener correction plus classified harnesssync",
+  "reviewerFixRounds": 3,
+  "rootSourceFindings": 1,
+  "sourceQuestions": 1,
+  "affectedTestHarnessRounds": 3,
+  "fullGateHarnessRounds": 1,
+  "diagnosticAttempts": 2,
+  "dotnetRun": false,
+  "additionalActualBefore": {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-correction3\\before\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\EngineAppLayerTests.cs",
+    "sha256": "0dffc1a867bcd3d34c4603c017daacb212e2ac5e50a9cca57c4270eefc01bda1",
+    "rawBlob": "64d27ec79e55b44c95974d0ef3fbd1892ff627b5"
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "phase": "correction3",
+  "kind": "replay1",
+  "state": "PASS",
+  "passed": 184,
+  "failed": 0,
+  "total": 184,
+  "skipped": 0,
+  "classes": 2,
+  "allClassesRepresented": true,
+  "fullNameParameterOutcomeMultiplicityExact": true,
+  "inputCount": 8847,
+  "allInputsAnd187ImmutableBinsMatchReference": true,
+  "all192ObservedBinsUnchanged": true,
+  "testExit": 0,
+  "shutdownExit": 0,
+  "wrapperExit": 0,
+  "nativePre": [],
+  "nativePostOriginal": [],
+  "checkoutPost": [],
+  "nativeFollowup": [],
+  "processCaveat": "none",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-correction3-replay1",
+  "files": {
+    "bins-after.json": {
+      "sha256": "fdbffdb6fb1b179249c79d67c18765ae3a6b96741eb747b81e4bb885807166b6",
+      "size": 39497
+    },
+    "bins-after.log": {
+      "sha256": "211dbf7f4ea957ec55119ea95ee4cdcd7f03cc94242926ac5ee7531198b941a2",
+      "size": 10
+    },
+    "bins-before.json": {
+      "sha256": "fdbffdb6fb1b179249c79d67c18765ae3a6b96741eb747b81e4bb885807166b6",
+      "size": 39497
+    },
+    "bins-before.log": {
+      "sha256": "211dbf7f4ea957ec55119ea95ee4cdcd7f03cc94242926ac5ee7531198b941a2",
+      "size": 10
+    },
+    "checkout.json": {
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+      "size": 4
+    },
+    "compare.py": {
+      "sha256": "2d654cf86fd063f5d24fc79b2d25318bab9c78bcfafa9c3ad7dde0b55ce9dfdd",
+      "size": 2205
+    },
+    "comparison.json": {
+      "sha256": "8aa07cc0d5e7248bc6e2f2810cd453afea5e9f9165cac8e82e0eed532c480429",
+      "size": 920
+    },
+    "counts.txt": {
+      "sha256": "ea6f888a28410782f734701558e5c5e6c85506c2ec2972ba62f93df00c2ecee1",
+      "size": 25
+    },
+    "filter.txt": {
+      "sha256": "6ff10e329c516b6c5662aaa6e37cc073e62cf3e992362d43ece126dd1ad84b07",
+      "size": 81
+    },
+    "inputs-after.json": {
+      "sha256": "8c228d0df913de00985d42c07ab6931b4ef128989576df7a01b1f4b12ed44c22",
+      "size": 1580464
+    },
+    "inputs-after.log": {
+      "sha256": "9e154accc6194de10838f1a5d48dd23a7eaab17236721a398069723b8600c913",
+      "size": 13
+    },
+    "inputs-before.json": {
+      "sha256": "8c228d0df913de00985d42c07ab6931b4ef128989576df7a01b1f4b12ed44c22",
+      "size": 1580464
+    },
+    "inputs-before.log": {
+      "sha256": "9e154accc6194de10838f1a5d48dd23a7eaab17236721a398069723b8600c913",
+      "size": 13
+    },
+    "inventory.py": {
+      "sha256": "4c9ac60853cac19333ff63ae975e480bd4126b2c55e44e1911665afacec0a44e",
+      "size": 1566
+    },
+    "plan.json": {
+      "sha256": "907a9dcd20185f8766e5c12f3357dc6a6f40372e9d529cdf1b2480f0a7fa3873",
+      "size": 324
+    },
+    "postflight.json": {
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+      "size": 4
+    },
+    "preflight.json": {
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+      "size": 4
+    },
+    "run.ps1": {
+      "sha256": "3abee6de0ccd5e1517a1fdb1a67cc32e817488a47e21ba224636a181cfb08042",
+      "size": 2836
+    },
+    "shutdown-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "shutdown.log": {
+      "sha256": "b8028200bc3b12a3210641024da80eb85dffe587d8192df519108d0a20cfe822",
+      "size": 160
+    },
+    "test-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "test.log": {
+      "sha256": "3c3830085282feeaf84aea7ca8482c240859d79c9e946532aff1421e78f8f44e",
+      "size": 647
+    },
+    "results/replay1.trx": {
+      "sha256": "60f38b7cdd2437dc7175fd3f2282107c944f30676c16fff5a7792b584c8badc5",
+      "size": 288564
+    },
+    "outputs-before/sparks-roll-build/configured-soft0.log": {
+      "sha256": "c55413900b77ee4fa469bd2d5a4d66daf91055b94fd4e7c538f9c686fe6a0825",
+      "size": 2612
+    },
+    "outputs-before/sparks-roll-build/configured-soft1.log": {
+      "sha256": "1e9c86e45e64d3f1f9b73b3b7976183c7de0a0756952c8261c4303d3dcbdb35c",
+      "size": 2490
+    },
+    "outputs-before/sparks-stack-build/negative-vision-producer.log": {
+      "sha256": "f02696c58273a60204feb794b899b65cfad2f516b13197149a1fe23eca93f84e",
+      "size": 7928
+    },
+    "outputs-before/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log": {
+      "sha256": "d8bfa5682d1690c2093e727e99a26ec01f3b36b14142eaf23748e95527e07ac5",
+      "size": 1861
+    },
+    "outputs-before/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log": {
+      "sha256": "8d1b6c9357ba682613b61a8ba57152a54eecf7e849d869a4bc56a80b104638c5",
+      "size": 1764
+    },
+    "outputs-after/sparks-roll-build/configured-soft0.log": {
+      "sha256": "c55413900b77ee4fa469bd2d5a4d66daf91055b94fd4e7c538f9c686fe6a0825",
+      "size": 2612
+    },
+    "outputs-after/sparks-roll-build/configured-soft1.log": {
+      "sha256": "1e9c86e45e64d3f1f9b73b3b7976183c7de0a0756952c8261c4303d3dcbdb35c",
+      "size": 2490
+    },
+    "outputs-after/sparks-stack-build/negative-vision-producer.log": {
+      "sha256": "f02696c58273a60204feb794b899b65cfad2f516b13197149a1fe23eca93f84e",
+      "size": 7928
+    },
+    "outputs-after/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log": {
+      "sha256": "d8bfa5682d1690c2093e727e99a26ec01f3b36b14142eaf23748e95527e07ac5",
+      "size": 1861
+    },
+    "outputs-after/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log": {
+      "sha256": "8d1b6c9357ba682613b61a8ba57152a54eecf7e849d869a4bc56a80b104638c5",
+      "size": 1764
+    }
+  }
+}
