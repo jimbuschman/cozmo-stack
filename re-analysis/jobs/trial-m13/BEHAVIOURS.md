@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-29. **0 finished · 41 in progress · 137 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
+Whole-behavior scoreboard, 2026-10-29. **0 finished · 42 in progress · 136 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -68,7 +68,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `CubeLiftWorkout` | `CubeLiftWorkout` | in progress | CUBE-LIFT-WORKOUT-1 READY: ownlifecycle/sharedcomponent, ref862/exact862/full6959 PASS. WholeM13-010 proposed; parent/helper/backend gaps remain; no finished claim | freeplay: PlayAlone. 1 refs; R065+ in map |
 | `SparksCubeLiftWorkout` | `CubeLiftWorkout` | in progress | SPARKS-CUBE-LIFT-WORKOUT-1 READY: configured alias/shared class, ref733/exact733/full6965 PASS; parent/shared gaps remain, no finished claim | spark: SparksWorkout. 1 refs; R240+ in map |
 | `Dance_Mambo` | `Dance` | in progress | DANCE-MAMBO-1 READY: ownlifecycle currentref184/exact184/full6972 PASS; caller/listenerproducer/sharedgaps remain, no finished claim | No explicit config reference; native/app use UNKNOWN |
-| `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
+| `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | in progress | DEV-TURN-IN-PLACE-TEST-1 READ OPEN, no finished claim | No explicit config reference; native/app use UNKNOWN |
 | `Needs_SevereLowEnergyState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowEnergy. 1 refs; R037+ in map |
 | `Needs_SevereLowRepairState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowRepair. 1 refs; R045+ in map |
 | `DriveOffCharger` | `DriveOffCharger` | in progress | Driving/contact/action; needs/mood/animation; neighboring vision/audio gaps tracked separately | freeplay: BuildPyramid; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: NothingToDo; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: PutDownDispatch; spark: BuildPyramid; spark: SparksFireTruckAlarm; spark: SparksFistBump; spark: GatherCubes; spark: SparksKnockOverCubes; spark: SparksPeekABoo; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksPounceOnMotion; spark: SparksRollBlock; spark: SparksStackBlock; spark: SparksTrackLaser; spark: SparksWorkout; activity: MeetCozmo; activity: Feeding. 26 refs; R001+ in map |

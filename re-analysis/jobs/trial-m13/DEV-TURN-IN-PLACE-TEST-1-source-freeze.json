@@ -1,0 +1,28 @@
+{
+  "job": "DEV-TURN-IN-PLACE-TEST-1",
+  "state": "READ OPEN",
+  "managerStart": "29dc3a4fbb8e784a659aa52eab033d6a799f0cf7",
+  "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
+  "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/dev_turn_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/dev_turn_review",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "fork": "none"
+    }
+  ],
+  "actualBackends": "unobserved",
+  "dotnetLease": "none, no .NET authorized",
+  "reviewerFixRounds": 0,
+  "sourceQuestions": 0,
+  "builderMissingItems": []
+}
