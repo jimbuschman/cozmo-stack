@@ -1,6 +1,6 @@
 {
   "job": "DANCE-MAMBO-1",
-  "state": "READ OPEN",
+  "state": "READ DONE; BUILD OPEN",
   "managerStart": "34a59d527480c1030d8d28a90834390841949789",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
@@ -94,5 +94,33 @@
     "elevatedActualDotnet": true,
     "buildOrTest": false,
     "cacheOnlyOfflineRestoreOnce": true
-  }
+  },
+  "currentSnapshotsMatched": [
+    "M7-018",
+    "M7-014",
+    "M8-005",
+    "M8-001",
+    "M8-009",
+    "M8-011",
+    "M8-012",
+    "M4-045",
+    "M4-051",
+    "M13-038"
+  ],
+  "sourceArtifacts": [
+    {
+      "path": "re-analysis/research/20261030-dance-mambo-1-read.md",
+      "originalSha256": "a810e22657bbb8ca42ea3cbba1f4a4ec0fab940a325aa46bfa8f636a97fac694",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-read.a810e22657bb.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-dance-mambo-1-source-codex-check.md",
+      "originalSha256": "c574e78c51a3db5c33fc70660f1b34af087083942a91ee3c6de2c958b7cce05f",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-source-codex-check.c574e78c51a3.raw.md"
+    }
+  ],
+  "sourceVerdict": "A+B PASS; exact-ID callback bridge known implementation work, caller UNKNOWN remains",
+  "wholeExistingClosureProposals": [],
+  "lifecycleProposal": "One otherwise-unowned BehaviorDance configured lifecycle; retain caller/shared gaps",
+  "sourceQuestions": 0
 }
