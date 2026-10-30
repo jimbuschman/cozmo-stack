@@ -1,6 +1,6 @@
 {
   "job": "CANT-HANDLE-TALL-STACK-1",
-  "state": "INTEGRATED; FULL GATE PENDING",
+  "state": "WIP, NOT READY: REVIEW3 STATIC PASS, BUILD/TARGETED DIAGNOSTIC/REFERENCE PENDING",
   "main": "1880f337c803fe25cd5da6d1aad56e068db1015a",
   "readerRequested": "gpt-6.1-sol/medium/fork_none",
   "builderRequested": "DEFAULT/model and effort omitted/fork_none",
@@ -99,10 +99,10 @@
     "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\tall-stack-source-originals\\20261030-cant-handle-tall-stack-1-managed-input-supplement.md",
     "scope": "Candidate managed interfaces only; no new native claim."
   },
-  "coherentDraft": "CANT-HANDLE-TALL-STACK-1-correction1-lf-freeze.json",
-  "reviewerCorrectionBatches": 1,
+  "coherentDraft": "CANT-HANDLE-TALL-STACK-1-review3-freeze.json",
+  "reviewerCorrectionBatches": 3,
   "compilerCorrections": 0,
-  "testHarnessCorrections": 1,
+  "testHarnessCorrections": 2,
   "testFoundProductionCorrections": 0,
   "selfDraftCorrections": 1,
   "headSourceQuestion": "Resolved: native third angle variability0; independent ctor15/20/0 and RNGskip supported; no production correction/contract change.",
@@ -115,7 +115,7 @@
     "answer": "0 variability; ctor15/20/0 independent; zero skipsRNG",
     "independentChecks": 2
   },
-  "exclusiveDotnetLease": "root full gate1 after clean metadata commit",
+  "exclusiveDotnetLease": "none; root WIP checkpoint push before C new lease",
   "firstReference": {
     "job": "CANT-HANDLE-TALL-STACK-1",
     "attempt": 1,
@@ -202,5 +202,38 @@
   "workerFinalCommit": "033b38ba4628ed6acc4e80651f88e93061bf39c7",
   "integrationCommit": "046b6c038a0fc86054de423b18723a68fe7df4f4",
   "productionSrcTree": "085bcea858f566e6bf469c2605b9daad99041dbc",
-  "originMain": "1880f337c803fe25cd5da6d1aad56e068db1015a"
+  "originMain": "1880f337c803fe25cd5da6d1aad56e068db1015a",
+  "rootReviewFoundProductionDefects": 1,
+  "failedFullGate1": {
+    "job": "CANT-HANDLE-TALL-STACK-1",
+    "fullGateAttempt": 1,
+    "state": "FAILED, PRESERVED; NOT READY",
+    "commit": "73bf6d1cc3e23e9398b6e208ced903246ded90ed",
+    "startedUtc": "2026-10-30T15:26:48.3668316Z",
+    "endedUtc": "2026-10-30T15:38:13.7057534Z",
+    "exitCode": 1,
+    "passed": 6923,
+    "failed": 2,
+    "skipped": 0,
+    "total": 6925,
+    "failures": [
+      {
+        "name": "M7BatchThreeBTests.TheFactoryTableIsTheExtractionsTable",
+        "classification": "Stale factory Construct expectation; checked native79 table unchanged, class4 now constructed; harness correction required."
+      },
+      {
+        "name": "M7BatchThreeBTests.ASlowMotorSettleLogsTheEnginesWarning",
+        "classification": "UNKNOWN transition state4->5 after animation Stop before any warning assertion; no discriminating intermediate evidence. Diagnostic-only capture authorized, no motor/Fist/timeout/expectation correction assumed."
+      }
+    ],
+    "logSha256": "1b1eaca6cd07b5118fdffb0e368deeeb48b3f44ce7cafd13ea4a42cf62277fb4",
+    "consoleSha256": "f78cb032ba4b66504bad546f2d1f732fb593ec060791ff2aec8edeacb199536f",
+    "reviewedSource5Unchanged": true,
+    "nativePost": [],
+    "checkoutPost": [],
+    "lastRecordedPassingFingerprint": "8ccfb2bab1295259c7e9cfab06f4eb56998af646",
+    "thatFingerprintAppliesToThisGate": false,
+    "separateNewReviewFinding": "Synchronous Step event and supplied weak-lock reentry can mutate replacement; correction batch2 independently verified/released, minimal guarded SetStateName overload and local guards plus tests."
+  },
+  "currentChangedCodePaths": 7
 }
