@@ -55,3 +55,19 @@ SPARKS-BRING-CUBE-TO-BEACON-1 (FIX), so it merges only after that fix passes.
    cleanup.
 4. **The return yaw f32 versus double:** this belongs to the shared M11-066.
 5. **The lifecycle record** Codex proposes goes to the operator, as for M15-086.
+
+## Returned fix (manager, 2026-10-30): PASS, merged
+
+Fix 3be312aa, handoff 15ad5626 (full gate 6914 PASS).
+- **The blocking item is closed.** A missing ghost marker or ghost geometry input now skips only the above action,
+  with a MISSING logged each time, then runs `AboveComplete`. That advances the index, then either faces the next
+  target or starts the real PanAndTilt return. The return's callback stamps f32(now + 15). There is no Interrupted stop
+  and no synthesized result.
+- **The test:** `ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion` shows each cached target
+  faced in order, the deadline 0 until the return, then 115. The chooser does not pick the scan at 114 or 115.
+- **Queued items done:**
+  - the base Library-null readiness check is restored;
+  - the `// fidelity:` tag and the reach labels are added;
+  - the legacy `CheckForStackAtIntervalBehavior` registration is removed.
+- **Nothing settled.** The lifecycle record Codex proposes goes to the operator.
+- **Merged together** with SPARKS-BRING-CUBE-TO-BEACON-1 FIX1.
