@@ -42,7 +42,7 @@ configuration is built through it (the factory row, with a visible MISSING for a
 
 ## Queued (not blocking)
 
-1. **The proposed lifecycle record** (read rows C1/C2, G1, R1–R5, U1/U2, T1) needs the operator's approval.
+1. **The lifecycle record** (read rows C1/C2, G1, R1–R5, U1/U2, T1) was added as M15-086 with the operator's approval (2026-10-30).
 2. **Annotations:**
    - Wording that sits in frozen evidence needs the operator:
      - the M13-006 evidence says "an int at +0x10"; it is an f32 stamp.

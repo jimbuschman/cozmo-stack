@@ -1132,3 +1132,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorBouncer admission 0x005F133C, Init 0x005F14A0, Update 0x005F19A4, game and display helpers, Stop 0x005F1C6C | M15-085 (new) |
+
+## HIKING-BRING-CUBE-TO-BEACON-1, the Hiking BringCubeToBeacon lifecycle (operator approved 2026-10-30; research/20261030-hiking-bring-cube-to-beacon-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorExploreBringCubeToBeacon ctor 0x005DEFB0 and LoadConfig, gates (vtable 0x0102957C, 0x005E0DF0), IsRunnableInternal 0x005DF10C, Init 0x005DF348, Stop 0x005DFD50 | M15-086 (new) |

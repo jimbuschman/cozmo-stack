@@ -3,6 +3,7 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M15-086
 // Checked Hiking own lifecycle, 005DEF B0..005E1D50; shared children retain their records.
 internal sealed class NativeBringCubeToBeaconBehavior:SteppedBehavior,IDisposable
 {
