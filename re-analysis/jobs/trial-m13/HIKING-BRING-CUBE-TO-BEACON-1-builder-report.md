@@ -15,3 +15,9 @@ Test history, with actual retained artifacts under builder `.scratch/hiking-brin
 - Final reference 26 classes: 715 passed, 0 failed, 0 skipped; exact compiled independent reviewer replay 715 passed, named outcome counter identical. Final source30/data3/DLL118 fingerprints unchanged; shutdown exit0 and native/checkout process arrays zero.
 
 Builder implementation and affected checks are complete; manager integration, full gate, official status decisions and hardware remain outside this handoff. No push or hardware run by builder.
+
+## Full-gate fixture follow-up
+
+First manager full gate completed 6865 passed, 1 failed, 0 skipped (6866 total). The sole failure was the M7 factory test's stale exact implemented-constructor set, a separate fixture defect and affected-test-plan miss; native A1 case 0x0059C968, constructor 0x005DEFB0 and the production table agreed. Test-only fix adds BringCubeToBeacon to that exact set, preserving all 79 extraction-row assertions and all other members. The 31-file freeze SHA256 `90e058aa834e5d365baf8863a8a74afd1712e07953dd91121fe28ba25010696a` was independently reviewed; the original pre-edit 31-file archive was preserved. Builder's M7 class run passed 36/36, then reviewer exact compiled replay passed 36/36 with identical named outcome counter, unchanged source31/data3/DLL118 fingerprints and clear shutdown/process inventories. Reviewer-required code correction batches remain 2; compiler defects remain 0. No production code changed.
+
+Test-only commit `a08a02413e40070b39ae413397220263de1e2570`; `cozmo-stack` tree `c608b3f24cc26fff2743009194ead2c821d13f7e`, production `cozmo-stack/src` tree unchanged `15f4e800fd4cece3056d8f89a59542a507b723c8`. Full gate 2 remains for manager integration; no result is claimed here.

@@ -1,6 +1,6 @@
 {
   "job": "HIKING-BRING-CUBE-TO-BEACON-1",
-  "stage": "Integrated b204df8e; affected715+independent715 PASS; committed full gate pending",
+  "stage": "Runtime verified715+715; gate1soleM7fixtureFAIL corrected36+36; integratedba1f5f2d test-only, gate2pending",
   "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
   "main": "75891508091abbffadc042a2318ec0128c62c868",
   "sourceFiles": {

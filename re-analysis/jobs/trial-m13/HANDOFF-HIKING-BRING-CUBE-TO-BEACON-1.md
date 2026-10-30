@@ -1,6 +1,6 @@
 # HIKING-BRING-CUBE-TO-BEACON-1
 
-Status: code and affected checks complete; full gate pending. Worker `dbb5d481`, integrated `b204df8e`; code tree `90d0ee8bb87c2a62be3317f6d6d11994149ab72b`, production tree `15f4e800fd4cece3056d8f89a59542a507b723c8`. Worker manifest hashes refer to raw artifacts; Git stores LF. The artifact-transport JSON records both hashes; source-entry bytes/blobs are unchanged. Thirty frozen paths: `HIKING-BRING-CUBE-TO-BEACON-1-navigation-fix-freeze.json` (F6467A2F…). No official record, inventory, approval, project-state or Claude-review edits.
+Status: code and affected checks complete; full gate pending. Worker `dbb5d481` plus test-only `a08a0241`, integrated `b204df8e`/`ba1f5f2d`; final code tree `c608b3f24cc26fff2743009194ead2c821d13f7e`, production tree `15f4e800fd4cece3056d8f89a59542a507b723c8`. Worker manifest hashes refer to raw artifacts; Git stores LF. The artifact-transport JSON records both hashes; source-entry bytes/blobs are unchanged. Final 31 paths: `HIKING-BRING-CUBE-TO-BEACON-1-m7-fix-freeze.json` (worker raw 90E058AA…); prior 30-file F646 freeze remains intact. No official record, inventory, approval, project-state or Claude-review edits.
 
 ## Claims for Claude
 
@@ -21,7 +21,7 @@ Status: code and affected checks complete; full gate pending. Worker `dbb5d481`,
 ## Checks and limits
 
 - Final affected reference: **715/715 PASS, zero skipped**; independent exact compiled replay **715/715 PASS**. Every named/parameterized result and multiplicity matched. Thirty source, three data and 118 DLL hashes matched before/after; shutdown 0 and actual process arrays empty. See affected-reference JSON and replay/closure check.
-- Full gate: PENDING on committed manager HEAD. All previous aborted/failed runs remain in the attempt JSONs and builder report; none was promoted to a pass.
+- First full gate on b7241828: 6865 passed, 1 failed, 0 skipped. Sole failure was the stale M7 implemented-constructor expected set; all 79 primary table comparisons remain. Classified before the one-entry test-only repair. Corrected M7 class: C36/36 and independent exact B36/36 PASS, with final31 source/data/DLL hashes unchanged. Second full gate: PENDING. All prior attempts remain; no failed run was promoted.
 - Floor success uses explicitly projected detector-result input through real world pose solving/association/event delivery and the real verifier. It is NOT pixel-detector end-to-end or hardware coverage. The earlier image-only NO_MARKERS failures are retained.
 - Reader requested `gpt-6.1-sol`, medium. Builder and independent reviewer requested DEFAULT model/effort omitted; operator default Terra, backend unobserved. Same workers throughout. Two reviewer-required correction batches; compiler defects 0; one test-found production identity correction. Six narrow UNKNOWN supplements checked. All builder MISSING questions and test/setup corrections are in the builder report; no new approved native-contract correction.
 - Remaining MISSING: parent Hiking admission/canonical Think producer, current-origin iteration/readiness where still incomplete, shared pose/libm/footprint limits, native child/planner/firmware/report inputs, and other delocalization recipients. No autonomous Hiking, finished behavior, record settlement, subsystem acceptance or hardware claim.
