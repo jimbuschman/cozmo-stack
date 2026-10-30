@@ -10,10 +10,14 @@ internal sealed class TallStackDelocalizationData
     // Preserve the existing host configuration snapshot lifetime. Native weak-expiry/producer
     // semantics remain a broader M7/M13 gap; the checked ClearStack drop itself is exact.
     internal StackOfCubes? Stack;
+    internal ITallStackWeakTarget? Target;
+    internal bool TargetKnown = true; // constructor creates a known empty weak pair.
+    internal Cozmo.Robot.Vision.Pose3d? StoredPose;
+    internal void ClearStack() { Target = null; TargetKnown = true; Stack = null; }
     internal void Clear()
     {
         HasStoredPose = false; // +0x124, before the virtual ClearStack.
-        Stack = null; // +0x11C/+0x120; releasing the native weak owner invokes no behavior.
+        ClearStack(); // +0x11C/+0x120; no action cancellation.
     }
 }
 
