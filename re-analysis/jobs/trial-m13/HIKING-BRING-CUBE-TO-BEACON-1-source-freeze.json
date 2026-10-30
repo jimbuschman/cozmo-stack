@@ -1,0 +1,51 @@
+{
+  "job": "HIKING-BRING-CUBE-TO-BEACON-1",
+  "stage": "Whole own source independently PASS; essential family2-count producer UNKNOWN investigation pending",
+  "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
+  "main": "75891508091abbffadc042a2318ec0128c62c868",
+  "sourceFiles": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-read.md": "2D70A36DB14F3B4443E525F2A014400E9118FE525681BDF9DC398702AA7E25A2",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-codex-check.md": "758B4D907FE9213C5DF54E547751994B3624EC358429670F77DCC7524424CC6C",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-beacon-time-codex-check.md": "A2F02A7D9F51F2ABA3EFCA36AB9192955DC2913CA51A7F13D7FCEED15FD15624"
+  },
+  "currentManifestQuotesMatched": [
+    "M13-006",
+    "M15-008",
+    "M15-009",
+    "M15-011",
+    "M15-019",
+    "M15-020",
+    "M15-021",
+    "M15-022",
+    "M15-023",
+    "M15-024",
+    "M15-025",
+    "M15-026",
+    "M8-014",
+    "M11-069",
+    "M15-084"
+  ],
+  "approvalSnapshotsCheckedByReviewer": 4,
+  "readerRequested": "gpt-6.1-sol/medium",
+  "builderReviewerRequested": "DEFAULT model/effort, overrides omitted; operatorconfiguredgpt-6.1-terra, backendunobserved",
+  "workers": {
+    "reader": "/root/bring_beacon_read",
+    "reviewer": "/root/bring_beacon_review",
+    "builder": "/root/bring_beacon_build"
+  },
+  "sourceBehaviorCorrections": 0,
+  "knownPyLocalHelperOrderingExceptions": 1,
+  "beaconTimeContract": "Existing approved M15-023 and M15 inventory CorrectionA4 already f32; currentcodefloat, M13intannotationknownconflictdeferredClaude, no new approval/departure",
+  "pendingUnknown": "BlockWorld+0x48 family2 count producer used by AreAllCubesInBeacons; no guessed locatedcount/zero",
+  "prep": {
+    "checkoutProcesses": [],
+    "compileOrTestsRun": false,
+    "cacheOnlyRestoreAll5": 0,
+    "shutdownExit": 0,
+    "nativeProcesses": []
+  },
+  "officialEdits": false,
+  "newRecordsAdded": false,
+  "hardwareRun": false,
+  "serialization": "UTF8LF only; original source bytes retained ignored, no text/contract change"
+}
