@@ -30,13 +30,13 @@
   "actualBackends": "unobserved",
   "dotnetLease": "none",
   "reviewerFixRounds": 0,
-  "sourceQuestions": 0,
+  "sourceQuestions": 1,
   "builderMissingItems": [
     "sentinel SearchForBlockHelper target=-1/minSeen1/maxStage1 unavailable; no unrelated mode or synthetic result",
     "shared turn marker-conversion gap visible; track=false in both requested tuples",
     "automatic parent picker/input and typed report gaps remain their named shared owners"
   ],
-  "builder": "Released after frozen reader5a05bd53/reviewer96016919, no.NET lease",
+  "builder": "Implementation active, finite profile sourceQ1 A+B PASS released, no.NET",
   "readerFrozenSha256": "5a05bd530b926c81fb8c6c6da309c36e74f4a692d23d713524ad1a195280f6d3",
   "currentLiteralRecordSnapshotsMatched": 22,
   "sourceCoverageFollowups": 1,
@@ -56,7 +56,24 @@
       "sha256": "f3c6c817fa5b2008e414e42c5a51e14b8ec9e70dd92bebcdf93e70b970233595",
       "originalSha256": "96016919e84e2ad628108e7f064c74508307814f731d04b47c2095e6fc7daf45",
       "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\sourcecheck-final-original.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-energy-1-motion-profile-read.md",
+      "sha256": "ed50b0a067d7c9d9815bb2a1bc967c1785b03d41d8dace3e38d552d47d254c78",
+      "originalSha256": "9d260fb1631164d079cb7511d07359c03d77557534d3a1f7fa46a2d7c8c5e05e",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\source-question1-motion-profile.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-energy-1-motion-profile-codex-check.md",
+      "sha256": "f3305a6cc53e708f8fe0b6033614ee7f80a0e1d44de84880fc472a73bdb867f8",
+      "originalSha256": "e4a9e22a5f3bc89fc744d7aa3445bd360f6ef8dbf459d9f92f50074b5dfa46d8",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\motion-profile-check.md"
     }
   ],
-  "withdrawnBuilderGapClaim": "Earlier generic M12-031 partial claim withdrawn after root current-record read and C actual GetNative tuple check; no Energy-specific gap identified, no closure claimed"
+  "withdrawnBuilderGapClaim": "Earlier generic M12-031 partial claim withdrawn after root current-record read and C actual GetNative tuple check; no Energy-specific gap identified, no closure claimed",
+  "sourceQuestion1Verdict": "P1..P11 finite recipient/storage/consumption/Stop/clear PASS; 5 current literal snapshots rootmatched; no approvedcontractcontradiction",
+  "sourceQuestion1Resolved": true,
+  "resolvedBuilderMissingItems": [
+    "Q1 actual behavior custom motion-profile recipient: native shared Path profile copy/flag, consumer join, Stop-after-cancel clear recovered and independently checked"
+  ]
 }
