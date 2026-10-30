@@ -1,7 +1,7 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "INTEGRATED; FULL GATE PENDING",
+  "state": "READY FOR CLAUDE",
   "main": "2567528b782bd338263b404574d5682ef339ea8b",
   "manager": "2c32772d16d8cccac3ad1b123c060a91d4353f5e",
   "sourceFiles": [
@@ -164,5 +164,31 @@
   "workerFixCommit": "432f6995c75ea46705b77ed53682d431aa7d88b1",
   "integrationCommit": "3be312aa6b56219075332d6f1332c79fe814a77d",
   "originMain": "1880f337c803fe25cd5da6d1aad56e068db1015a",
-  "productionSrcTree": "ba0d8779aecf7a7dec9fc461c80e03b99a6b2c86"
+  "productionSrcTree": "ba0d8779aecf7a7dec9fc461c80e03b99a6b2c86",
+  "fullGate": {
+    "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+    "phase": "CLAUDE RETURN FIX1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "4a7cf9fefa77041a1788af586739c4a9e506fb5b",
+    "cozmoStackTree": "2a5feda708d4123c022fdd1c07ae3256948eff39",
+    "productionSrcTree": "ba0d8779aecf7a7dec9fc461c80e03b99a6b2c86",
+    "startedUtc": "2026-10-30T14:47:55.2163361Z",
+    "endedUtc": "2026-10-30T14:57:30.5315346Z",
+    "exitCode": 0,
+    "passed": 6914,
+    "total": 6914,
+    "failed": 0,
+    "skipped": 0,
+    "testDuration": "8 m 24 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "8ccfb2bab1295259c7e9cfab06f4eb56998af646",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "bb44adcc6bb21f037f3350dcdb93935fa0181e383591302144173ec05d40d3dc",
+    "consoleSha256": "de4cfbad2083411f8ec36541f2946bf355a2ab38d25390ea754983a268c6696b",
+    "frozenSourcePathsMatched": 4,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
+  }
 }
