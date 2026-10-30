@@ -1,0 +1,79 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "phase": "CLAUDE RETURN FIX1",
+  "attempt": 1,
+  "state": "AFFECTED FAILED CLASSIFIED",
+  "buildExit": 0,
+  "passed": 663,
+  "failed": 9,
+  "skipped": 0,
+  "total": 672,
+  "classes": 23,
+  "failedRows": [
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "ConfiguredOwnerAppendsCanonicalWorldOrderAndRetainsDuplicatesUntilStop",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.ConfiguredOwnerAppendsCanonicalWorldOrderAndRetainsDuplicatesUntilStop",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "LostCachedTargetTakesSourceNullBranchWithoutActionOrDeadline",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.LostCachedTargetTakesSourceNullBranchWithoutActionOrDeadline",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "MissingDiagnosticReentryCannotAdvanceReplacementRun",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingDiagnosticReentryCannotAdvanceReplacementRun(deferred: False)",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "MissingDiagnosticReentryCannotAdvanceReplacementRun",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingDiagnosticReentryCannotAdvanceReplacementRun(deferred: True)",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "MissingHostLibraryMarksReadinessUnavailableWithoutAppendingTargets",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingHostLibraryMarksReadinessUnavailableWithoutAppendingTargets",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 0)",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 50331648)",
+      "outcome": "Failed"
+    },
+    {
+      "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+      "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+      "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 67108865)",
+      "outcome": "Failed"
+    }
+  ],
+  "classification": "Definite missing real public animation library fixture input, explicitly observed in null-library test; consistent readiness/chooser failures from correct restored guard. Later branches remain unobserved until rerun, sole-cause completeness not claimed. C+B independently agree.",
+  "fix": "Test-only local real LoadFrom/assertion helper and null-first gate test; production guard unchanged",
+  "inputsUnchanged": 8,
+  "dataDllUnchanged": 255,
+  "trxSha256": "211d52bb6dce1f6336deca05024217e44ce5256b78c1275a11f4539b8ebb4670",
+  "logSha256": "8658a235caa87117f54a5e2dcb81630090b9d45b58c70abab23a6cef1db4b097",
+  "namedResultsSha256": "8400511434541268ad38c512a0940ac26621a5395936f83ac2d44f696776905c",
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "actualPriorBytesPreserved": true
+}

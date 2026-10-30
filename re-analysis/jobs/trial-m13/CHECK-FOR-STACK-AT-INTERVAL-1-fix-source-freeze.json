@@ -1,7 +1,7 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "RETURNED FIX CODE PASS; BUILD/AFFECTED REFERENCE RELEASED",
+  "state": "HARNESS1 STATIC PASS; BUILD2/REFERENCE2 RELEASED",
   "main": "2567528b782bd338263b404574d5682ef339ea8b",
   "manager": "2c32772d16d8cccac3ad1b123c060a91d4353f5e",
   "sourceFiles": [
@@ -36,7 +36,7 @@
   "claudeReturnCorrectionBatches": 1,
   "newReviewerRequiredCorrectionBatches": 0,
   "newCompilerCorrections": 0,
-  "newTestRuns": 0,
+  "newTestRuns": 1,
   "missingPolicy": "Directed host skip of only unavailable custom-marker above action, visible diagnostic then no-result own continuation; no fabricated ActionResult/deadline/Interrupted. Actual return callback stamps.",
   "separateNativeBranch": "Missing located target above logs/returns with no action or stamp; do not rewrite that branch.",
   "wholeExistingRecordClosureProposals": [],
@@ -49,5 +49,89 @@
     "newReviewerRequiredCorrectionBatches": 0,
     "actualFreeze": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\returned-fix1-draft\\freeze.txt"
   },
-  "affectedPlan": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-affected-plan.json"
+  "affectedPlan": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-affected-plan.json",
+  "newHarnessCorrectionBatches": 1,
+  "newProductionFixes": 0,
+  "affectedAttempts": [
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "phase": "CLAUDE RETURN FIX1",
+      "attempt": 1,
+      "state": "AFFECTED FAILED CLASSIFIED",
+      "buildExit": 0,
+      "passed": 663,
+      "failed": 9,
+      "skipped": 0,
+      "total": 672,
+      "classes": 23,
+      "failedRows": [
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "ConfiguredOwnerAppendsCanonicalWorldOrderAndRetainsDuplicatesUntilStop",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.ConfiguredOwnerAppendsCanonicalWorldOrderAndRetainsDuplicatesUntilStop",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "LostCachedTargetTakesSourceNullBranchWithoutActionOrDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.LostCachedTargetTakesSourceNullBranchWithoutActionOrDeadline",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "MissingDiagnosticReentryCannotAdvanceReplacementRun",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingDiagnosticReentryCannotAdvanceReplacementRun(deferred: False)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "MissingDiagnosticReentryCannotAdvanceReplacementRun",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingDiagnosticReentryCannotAdvanceReplacementRun(deferred: True)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "MissingHostLibraryMarksReadinessUnavailableWithoutAppendingTargets",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingHostLibraryMarksReadinessUnavailableWithoutAppendingTargets",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 0)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 50331648)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 67108865)",
+          "outcome": "Failed"
+        }
+      ],
+      "classification": "Definite missing real public animation library fixture input, explicitly observed in null-library test; consistent readiness/chooser failures from correct restored guard. Later branches remain unobserved until rerun, sole-cause completeness not claimed. C+B independently agree.",
+      "fix": "Test-only local real LoadFrom/assertion helper and null-first gate test; production guard unchanged",
+      "inputsUnchanged": 8,
+      "dataDllUnchanged": 255,
+      "trxSha256": "211d52bb6dce1f6336deca05024217e44ce5256b78c1275a11f4539b8ebb4670",
+      "logSha256": "8658a235caa87117f54a5e2dcb81630090b9d45b58c70abab23a6cef1db4b097",
+      "namedResultsSha256": "8400511434541268ad38c512a0940ac26621a5395936f83ac2d44f696776905c",
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "actualPriorBytesPreserved": true
+    }
+  ],
+  "currentFreeze": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-harness1-freeze.json"
 }
