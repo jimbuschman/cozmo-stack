@@ -1,6 +1,6 @@
 {
   "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
-  "stage": "Whole bounded source PASS; finite build release",
+  "stage": "Affected1 969P10F classified; runtime/test corrections D351 CODEPASS, attempt3 build/reference running",
   "base": "31bf3b1bc2ad9cbee58afccd2c76d72f9bcc429d",
   "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
   "sourceFiles": {
@@ -38,7 +38,7 @@
     "finish": 16
   },
   "sourceBehaviorCorrections": 0,
-  "reviewerRequiredCorrectionBatches": 0,
+  "reviewerRequiredCorrectionBatches": 3,
   "prep": {
     "cacheOnlyRestoreAll5Exit": 0,
     "shutdownExit": 0,
@@ -50,5 +50,64 @@
   "formalRecordsChanged": false,
   "hardwareRun": false,
   "frontiers": "Raw request/picker/capability/active-input sources006/058; reachedunavailableSparksLookInPlace or earlier readiness must be MISSING, notfalse/fallthrough; existing pose/libm/world/child/planner/marker/firmware/report/reward71 interfaces",
-  "wholeRecordCandidates": "M15-023own45/5 afterbinding/tests. Prior025/lifecycleproposalalreadyHiking; no duplicateIDs.008/059partial"
+  "wholeRecordCandidates": "M15-023own45/5 afterbinding/tests. Prior025/lifecycleproposalalreadyHiking; no duplicateIDs.008/059partial",
+  "firstDraft": {
+    "committedLfSha256": "51ACAD696D888B4CF805E8767ADEFACE600CE428B62AC67C9E3BF6538469795B",
+    "verifiedBeforeAfterByReviewer": true,
+    "archive": "worker .scratch/sparks-bring-beacon-1/review-draft-1",
+    "paths": 16,
+    "rawManifestSha256": "C81CB684911BB0621AA4EF3DE01C614A493DAAC76B139FD76AA51276C9B4163C"
+  },
+  "correctionDrafts": [
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-correction1-freeze.json",
+      "rawSha256": "8C21A397C6BAC0974CA1F85E6EEE187DA023F92CE18F4B5F53D8C6B86AE4BF76",
+      "committedLfSha256": "54D522AC9C3ED9749C178305ABB12D576BE5781ABC4C9A66646BFFCA93CFCB6F",
+      "correction": 1
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-correction2-freeze.json",
+      "rawSha256": "E2A76469D562B74C5720A4799BAC2B72D84D55CD5D6C8B0BEC784EEE9B4D3DE7",
+      "committedLfSha256": "C2DB7B5BA05D285B8F2B7D5BA724EBDBB150AF2E8CC74749C169C54EC4C0EE1A",
+      "correction": 2
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-correction3-freeze.json",
+      "rawSha256": "A8AF743E3A788F39CFE080BB2DBC6A728CFE24E0D18D282240274BEA876074EB",
+      "committedLfSha256": "5B0C9E68F60631A2B8E3CCB85B9A309F168D5E74CF8437B4D695035A9E96FF0F",
+      "correction": 3
+    }
+  ],
+  "compilerCorrectionBatches": 1,
+  "testIdentifiedProductionCauseGroups": 2,
+  "affectedReference": {
+    "attempt": 3,
+    "total": 981,
+    "passed": 981,
+    "skipped": 0,
+    "classes": 35,
+    "sourcePaths": 16,
+    "dataDllHashes": 123,
+    "independentReplay": "pending"
+  },
+  "laterArtifactTransport": [
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-compiler-fix-1-freeze.json",
+      "originalSha256": "b54b48d6b10e6b761830072d615647e4bb1c42b01d9cada65e466a0381dfb571",
+      "storedSha256": "b54b48d6b10e6b761830072d615647e4bb1c42b01d9cada65e466a0381dfb571",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-compiler-fix-1\\manifest.json"
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-test1-fix-freeze.json",
+      "originalSha256": "d3519312a26054266dd8036c3e1d1c57828a534c8ff8fa7fa55f6d2b65367f40",
+      "storedSha256": "d3519312a26054266dd8036c3e1d1c57828a534c8ff8fa7fa55f6d2b65367f40",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-test1-fix\\manifest.json"
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-test2-fix-freeze.json",
+      "originalSha256": "b46f65216064d182fd893d2a987c1875aa6b52d2cd32c56d247a2b4d0f550742",
+      "storedSha256": "b46f65216064d182fd893d2a987c1875aa6b52d2cd32c56d247a2b4d0f550742",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-test2-fix\\manifest.json"
+    }
+  ]
 }

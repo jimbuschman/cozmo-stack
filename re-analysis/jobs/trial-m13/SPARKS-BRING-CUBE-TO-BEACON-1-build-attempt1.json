@@ -1,0 +1,22 @@
+{
+  "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+  "attempt": 1,
+  "state": "COMPILE_FAILED_CLASSIFIED",
+  "exitCode": 1,
+  "uniqueErrors": [
+    "CS0122 Activity.PushOwnedDriving inaccessible to ActivityTreeLoader",
+    "CS0122 Activity.RemoveOwnedDriving inaccessible to ActivityTreeLoader"
+  ],
+  "classification": "Assembly visibility only; private→internal for two unchanged helper bodies, root verified exact diff before rebuild",
+  "sourceFreeze": "A8AF743E3A788F39CFE080BB2DBC6A728CFE24E0D18D282240274BEA876074EB",
+  "sourceUnchanged": 16,
+  "dataUnchanged": 5,
+  "buildLogSha256": "C3E10094C940299CFFF5350096161ECD1EFB260D6DB44200C54348EF5877B502",
+  "commandSha256": "A117DB3C07C5F987D5C2AB647DFFEF4B81B305BDDF5A85FDADB20AB0069BB1B0",
+  "testsStarted": false,
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "compilerCorrectionBatches": 1,
+  "reviewerCorrectionBatches": 3
+}

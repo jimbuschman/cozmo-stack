@@ -1,0 +1,23 @@
+{
+  "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+  "attempt": 3,
+  "buildAttempt": 4,
+  "state": "PASS",
+  "buildExit": 0,
+  "testExit": 0,
+  "total": 981,
+  "passed": 981,
+  "failed": 0,
+  "skipped": 0,
+  "selectedClasses": 35,
+  "sourceFreeze": "B46F65216064D182FD893D2A987C1875AA6B52D2CD32C56D247A2B4D0F550742",
+  "sourceUnchanged": 16,
+  "dataDllUnchanged": 123,
+  "resultsSha256": "EEEAFC5949768F55D8E1DA4D7DE6C43F4BC5C463FD31E74E53EEE48803278FAF",
+  "trxSha256": "269E457BC2547E878DBD5A96E1552CDABEEDEF701CC2E5B453629FE456C0D93C",
+  "logSha256": "B22FD9F4A2B0E454434CD261668476FEF0D56679EC32FAE62834F59D2BB42A59",
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "previousFailuresPreserved": true
+}
