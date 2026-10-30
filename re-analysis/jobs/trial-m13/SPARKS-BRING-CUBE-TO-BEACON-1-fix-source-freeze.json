@@ -1,7 +1,7 @@
 {
   "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "FIX CODE/REFERENCE/EXACT REPLAY PASS; INTEGRATION/FULL GATE PENDING",
+  "state": "FIX INTEGRATION VERIFIED; FULL GATE NEXT",
   "main": "c7c809afb230680d6bb466b015a4a056106030ab",
   "managerMerge": "78751aaa8d005827135b346cd2bce45401dd218e",
   "sourceFiles": [
@@ -92,5 +92,14 @@
     "fullGate": "pending integration",
     "hardwareRun": false
   },
-  "workerFixCommit": "d7c5bd85344f63a985d59e681914f95ba7e2018d"
+  "workerFixCommit": "d7c5bd85344f63a985d59e681914f95ba7e2018d",
+  "integration": {
+    "workerFixCommit": "d7c5bd85344f63a985d59e681914f95ba7e2018d",
+    "commit": "f620656772b693d6d36ba204961de84027ce81d6",
+    "cozmoStackTree": "ecdfd307d100f5d907549a37c2628857a2158af7",
+    "productionSrcTree": "0d58d449005b6174db2e8e52ce1c5afc50104cc5",
+    "sourcePathsMatched": 4,
+    "protectedOfficialChanges": false,
+    "originMain": "2567528b782bd338263b404574d5682ef339ea8b"
+  }
 }
