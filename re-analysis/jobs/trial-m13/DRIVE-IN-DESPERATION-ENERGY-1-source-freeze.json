@@ -1,6 +1,6 @@
 {
   "job": "DRIVE-IN-DESPERATION-ENERGY-1",
-  "state": "READ OPEN",
+  "state": "BUILD RELEASED: FINITE OWN CONTRACT A+B PASS",
   "managerStart": "28df4d1da81c5081119c25bc486a48db309cdcad",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-energy-1",
@@ -31,6 +31,32 @@
   "dotnetLease": "none",
   "reviewerFixRounds": 0,
   "sourceQuestions": 0,
-  "builderMissingItems": [],
-  "builder": "Preparation only, checked-source release pending"
+  "builderMissingItems": [
+    "sentinel SearchForBlockHelper target=-1/minSeen1/maxStage1 unavailable; no unrelated mode or synthetic result",
+    "shared turn marker-conversion gap visible; track=false in both requested tuples",
+    "automatic parent picker/input and typed report gaps remain their named shared owners"
+  ],
+  "builder": "Released after frozen reader5a05bd53/reviewer96016919, no.NET lease",
+  "readerFrozenSha256": "5a05bd530b926c81fb8c6c6da309c36e74f4a692d23d713524ad1a195280f6d3",
+  "currentLiteralRecordSnapshotsMatched": 22,
+  "sourceCoverageFollowups": 1,
+  "readerNarrowJoinSupplements": 1,
+  "existingWholeRecordProposals": [],
+  "newRecordProposal": "One otherwise-unowned configured DriveInDesperation own lifecycle, bounded to Energy alias for this job; no new record added",
+  "sourceVerdict": "A+B finite own rows E1..T2 PASS; shared helper mode remains visible MISSING",
+  "reports": [
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-energy-1-read.md",
+      "sha256": "08d7f6e52af5d87900cdcaf8056a15241872190ea702b959a128815e0020aa2f",
+      "originalSha256": "5a05bd530b926c81fb8c6c6da309c36e74f4a692d23d713524ad1a195280f6d3",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\read-final-original.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-energy-1-source-codex-check.md",
+      "sha256": "f3c6c817fa5b2008e414e42c5a51e14b8ec9e70dd92bebcdf93e70b970233595",
+      "originalSha256": "96016919e84e2ad628108e7f064c74508307814f731d04b47c2095e6fc7daf45",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\sourcecheck-final-original.md"
+    }
+  ],
+  "withdrawnBuilderGapClaim": "Earlier generic M12-031 partial claim withdrawn after root current-record read and C actual GetNative tuple check; no Energy-specific gap identified, no closure claimed"
 }
