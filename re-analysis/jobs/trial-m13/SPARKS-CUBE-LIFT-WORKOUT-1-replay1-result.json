@@ -1,0 +1,136 @@
+{
+  "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
+  "state": "PASS",
+  "passed": 733,
+  "total": 733,
+  "skipped": 0,
+  "fullNameOutcomeMultiplicityExact": true,
+  "inputCount": 3827,
+  "immutableBins": 187,
+  "allInputsAndImmutableBinsMatchedReference": true,
+  "generatedOutputPaths": [
+    "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log",
+    "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log",
+    "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft0.log",
+    "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft1.log",
+    "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+  ],
+  "nativePre": [],
+  "nativePost": [],
+  "checkoutPost": [],
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\spark-workout-replay1",
+  "files": {
+    "bins-after.json": {
+      "size": 37193,
+      "sha256": "920581b360b7a141830418df7f2cd8532db3e8d5cc10a1efd33de63a51ca4cd6"
+    },
+    "bins-after.log": {
+      "size": 10,
+      "sha256": "211dbf7f4ea957ec55119ea95ee4cdcd7f03cc94242926ac5ee7531198b941a2"
+    },
+    "bins-before.json": {
+      "size": 37193,
+      "sha256": "8236a1575e57579b9d07353bab00fb9ea3c4e1dc6917bbbb96bd59cef297b51c"
+    },
+    "bins-before.log": {
+      "size": 10,
+      "sha256": "211dbf7f4ea957ec55119ea95ee4cdcd7f03cc94242926ac5ee7531198b941a2"
+    },
+    "checkout.json": {
+      "size": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    "inputs-after.json": {
+      "size": 701316,
+      "sha256": "34f54ac07e1915793deab507a7e2c61fa018f9d2fab556c6cb55226265509009"
+    },
+    "inputs-after.log": {
+      "size": 13,
+      "sha256": "d8e7f1506eb4e5e9f9d5ae514d7155ab79fabfdc940d495eb4ae841f2c06b621"
+    },
+    "inputs-before.json": {
+      "size": 701316,
+      "sha256": "34f54ac07e1915793deab507a7e2c61fa018f9d2fab556c6cb55226265509009"
+    },
+    "inputs-before.log": {
+      "size": 13,
+      "sha256": "d8e7f1506eb4e5e9f9d5ae514d7155ab79fabfdc940d495eb4ae841f2c06b621"
+    },
+    "inventory.py": {
+      "size": 2165,
+      "sha256": "f9f210f774e7ba2f9aae3751efd16278cdb22e71778dd5aaf0e24ddacc394263"
+    },
+    "postflight.json": {
+      "size": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    "preflight.json": {
+      "size": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    "run.ps1": {
+      "size": 2923,
+      "sha256": "b8027c5cbcb6fee6ce7d379858e9663392893c7d99d24c6f806c7766ca19aee9"
+    },
+    "shutdown-exit.txt": {
+      "size": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    "shutdown.log": {
+      "size": 160,
+      "sha256": "b8028200bc3b12a3210641024da80eb85dffe587d8192df519108d0a20cfe822"
+    },
+    "test-exit.txt": {
+      "size": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    "test.log": {
+      "size": 654,
+      "sha256": "0666eaa52140ac6a31e2d9988ee3c1ea555499fb8c580558ff27c6eb33022406"
+    },
+    "results/replay1.trx": {
+      "size": 1174319,
+      "sha256": "43d22001b9084f1ebb91d120c0ae83d79466d0dbfc331e6b988300e91345efc2"
+    },
+    "generated-before/.scratch/sparks-roll-build/configured-soft0.log": {
+      "size": 2612,
+      "sha256": "c55413900b77ee4fa469bd2d5a4d66daf91055b94fd4e7c538f9c686fe6a0825"
+    },
+    "generated-before/.scratch/sparks-roll-build/configured-soft1.log": {
+      "size": 2490,
+      "sha256": "1e9c86e45e64d3f1f9b73b3b7976183c7de0a0756952c8261c4303d3dcbdb35c"
+    },
+    "generated-before/.scratch/sparks-stack-build/negative-vision-producer.log": {
+      "size": 7928,
+      "sha256": "bb222083fb302682f0748243b230b2eb7d1656df3240910b3247fb477d62035b"
+    },
+    "generated-before/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log": {
+      "size": 1861,
+      "sha256": "d8bfa5682d1690c2093e727e99a26ec01f3b36b14142eaf23748e95527e07ac5"
+    },
+    "generated-before/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log": {
+      "size": 1764,
+      "sha256": "8d1b6c9357ba682613b61a8ba57152a54eecf7e849d869a4bc56a80b104638c5"
+    },
+    "generated-after/.scratch/sparks-roll-build/configured-soft0.log": {
+      "size": 2612,
+      "sha256": "c55413900b77ee4fa469bd2d5a4d66daf91055b94fd4e7c538f9c686fe6a0825"
+    },
+    "generated-after/.scratch/sparks-roll-build/configured-soft1.log": {
+      "size": 2490,
+      "sha256": "1e9c86e45e64d3f1f9b73b3b7976183c7de0a0756952c8261c4303d3dcbdb35c"
+    },
+    "generated-after/.scratch/sparks-stack-build/negative-vision-producer.log": {
+      "size": 7928,
+      "sha256": "53a876385f05730296287c0c7954da354424e3707e684c0801169ac6d033ea6e"
+    },
+    "generated-after/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log": {
+      "size": 1861,
+      "sha256": "d8bfa5682d1690c2093e727e99a26ec01f3b36b14142eaf23748e95527e07ac5"
+    },
+    "generated-after/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log": {
+      "size": 1764,
+      "sha256": "8d1b6c9357ba682613b61a8ba57152a54eecf7e849d869a4bc56a80b104638c5"
+    }
+  }
+}

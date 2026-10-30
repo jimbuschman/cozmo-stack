@@ -1,0 +1,103 @@
+{
+  "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
+  "attempt": 1,
+  "classification": "TEST_ORACLE",
+  "buildExit": 0,
+  "actualTestExit": 1,
+  "wrapperExit": 0,
+  "passed": 732,
+  "failed": 1,
+  "skipped": 0,
+  "total": 733,
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\spark-workout-reference1",
+  "files": {
+    "bins-after.json": {
+      "size": 37193,
+      "sha256": "eaed72bac3e1cdce5b5c61167be879acce2ee6092ee13e06eb04343331a6154d"
+    },
+    "bins-after.log": {
+      "size": 10,
+      "sha256": "211dbf7f4ea957ec55119ea95ee4cdcd7f03cc94242926ac5ee7531198b941a2"
+    },
+    "bins-before.json": {
+      "size": 36159,
+      "sha256": "11f0a6cdafb5d107003489e94f854f56f7ed0e0f19a96aad036e626bd629f196"
+    },
+    "bins-before.log": {
+      "size": 10,
+      "sha256": "4364f48288ddf8fb34b14d303026cc649eaa2633703bd8f0b31ee030392c5c75"
+    },
+    "build-exit.txt": {
+      "size": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    "build.log": {
+      "size": 2056279,
+      "sha256": "6d7bdfca7f94f2c334a7bc7ba77b2c5582bcac3cb1808fc8fb32d8495c2b202f"
+    },
+    "checkout.json": {
+      "size": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    "counts.txt": {
+      "size": 19,
+      "sha256": "4404b3777b48a99c0f68808736d741776fa88dca9c753cfd4fe0288e4b26782c"
+    },
+    "filter.txt": {
+      "size": 1597,
+      "sha256": "bd594e57fa185ef99af7328a80d3d45c334240b82b04ff7eff3955a16580efe4"
+    },
+    "inputs-after.json": {
+      "size": 701038,
+      "sha256": "1cfab3161d01f9c36506f8aa0b157da66dc3cd31aed8d4fdcef545e063364a06"
+    },
+    "inputs-after.log": {
+      "size": 13,
+      "sha256": "aa5c26aec0030b50f9ddde86137c966526e54d0fbfed76dce723667b69c0df34"
+    },
+    "inputs-before.json": {
+      "size": 701038,
+      "sha256": "1cfab3161d01f9c36506f8aa0b157da66dc3cd31aed8d4fdcef545e063364a06"
+    },
+    "inputs-before.log": {
+      "size": 13,
+      "sha256": "aa5c26aec0030b50f9ddde86137c966526e54d0fbfed76dce723667b69c0df34"
+    },
+    "inventory.py": {
+      "size": 1966,
+      "sha256": "8856a9d4b9a4e9a1fba1f45bd4181d74d7f516baa6d77952be45e477ff39241b"
+    },
+    "postflight.json": {
+      "size": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    "preflight.json": {
+      "size": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    "run.ps1": {
+      "size": 2705,
+      "sha256": "a9f18c435a855a7646da030a344d3129c97c178fce5b4155934599f9a2eea0a8"
+    },
+    "shutdown-exit.txt": {
+      "size": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    "shutdown.log": {
+      "size": 160,
+      "sha256": "b8028200bc3b12a3210641024da80eb85dffe587d8192df519108d0a20cfe822"
+    },
+    "test-exit.txt": {
+      "size": 3,
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+    },
+    "test.log": {
+      "size": 1593,
+      "sha256": "78f486fc0e99da6451226ba2b97b55763229244bef7b7466f2f2b8b5162e72bc"
+    },
+    "results/reference1.trx": {
+      "size": 1176324,
+      "sha256": "bb8bdb271b079a391214c4bcffcf0aa7a6ed8900b6263851eee759bfad00b04e"
+    }
+  }
+}

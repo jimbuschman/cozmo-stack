@@ -1,0 +1,48 @@
+{
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "sha256": "d0107dcfad5febe231970189634778829320862b31c7c2fbdea9d6111e7d18d6",
+      "rawBlob": "c7e69672b127b84b2e0531b11dcca506eb082c88",
+      "filteredBlob": "c7e69672b127b84b2e0531b11dcca506eb082c88",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-draft\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\Activities.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "6e21698f0811c8973b38e6b60c21149d7069fd1a3e12c7d593d5fbc793487493",
+      "rawBlob": "7264970e4b4735350ee94ad5a9665d713a232516",
+      "filteredBlob": "7264970e4b4735350ee94ad5a9665d713a232516",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-draft\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCubeLiftWorkoutBehavior.cs",
+      "sha256": "091023c5cf56d1954955c5e912ab9fb07276205d09c787f5cda2a7cd03cc6de4",
+      "rawBlob": "dd84a4b8153fcc04f26aa26df853e0a94f1d092f",
+      "filteredBlob": "dd84a4b8153fcc04f26aa26df853e0a94f1d092f",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-draft\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeCubeLiftWorkoutBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSparkedActivity.cs",
+      "sha256": "31cd142418e6d90b159b89f7655f18fc7e164a23b308758a295adc7e2e540b7a",
+      "rawBlob": "a1072c4b14c04a73ac443bed7b3ba71088052ac3",
+      "filteredBlob": "a1072c4b14c04a73ac443bed7b3ba71088052ac3",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-draft\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeSparkedActivity.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksCubeLiftWorkoutNativeTests.cs",
+      "sha256": "c490375b5257450b93e2b1ace525670572dbb16c9a367372115e97787146ab38",
+      "rawBlob": "47716ec3faa6b8f75810b511c1854d82ce3fc417",
+      "filteredBlob": "47716ec3faa6b8f75810b511c1854d82ce3fc417",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-draft\\correction1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\SparksCubeLiftWorkoutNativeTests.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "88f93e5ef90729b0b96db3a94e24fa831e61359424aadce46a585820aa39cf23",
+      "rawBlob": "6b0d1306b5029a319e26c17792e4a6fc0f9ac276",
+      "filteredBlob": "6b0d1306b5029a319e26c17792e4a6fc0f9ac276",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-draft\\correction1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    }
+  ],
+  "metadataActualPath": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-draft\\correction1-metadata.json",
+  "codeVerdict": "STATICPASS correction1; no testsrun"
+}

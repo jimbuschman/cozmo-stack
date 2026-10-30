@@ -1,6 +1,6 @@
 {
   "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
-  "state": "BOUNDED SOURCE PASS; BUILD RELEASED",
+  "state": "BUILD CHECKS OPEN",
   "managerStart": "3b0f97b051d7f6c3913cf5c3eb56f714307c2b1d",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "ordinaryHandoff": "0a8626dc6480df5e4638c0993582086f6747c0e5",
@@ -29,11 +29,11 @@
     }
   ],
   "actualBackend": "unobserved; operator reports defaultTerra",
-  "dotnetLease": "none; prep returned, no build/test untilcoherentCODEPASS",
-  "reviewerFixRounds": 0,
+  "dotnetLease": "B returned; root integration next",
+  "reviewerFixRounds": 1,
   "compilerCorrections": 0,
   "postTestHarnessCorrections": 0,
-  "sourceQuestions": [],
+  "sourceQuestions": 0,
   "officialChanges": false,
   "hardwareRun": false,
   "prep": {
@@ -83,5 +83,69 @@
   ],
   "sourceVerdict": "A+B alias/owner primaryPASS; ordinary/genericbase reused, no newfinitealiasUNKNOWN",
   "wholeExistingClosureProposals": [],
-  "lifecycleProposal": "Reuse/widen pending ordinaryclass proposal tobothIDs; no duplicate"
+  "lifecycleProposal": "Reuse/widen pending ordinaryclass proposal tobothIDs; no duplicate",
+  "currentCodePaths": 6,
+  "coherentSource": "SPARKS-CUBE-LIFT-WORKOUT-1-harness1-freeze.json",
+  "postTestHarnessFixRounds": 1,
+  "compilerFixRounds": 0,
+  "failedReference1": {
+    "directory": "C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/spark-workout-reference1",
+    "passed": 732,
+    "failed": 1,
+    "total": 733,
+    "skipped": 0,
+    "actualTestExit": 1,
+    "wrapperExit": 0,
+    "classification": "test oracle counted needs RNG; independently traced; production unchanged",
+    "inputsBeforeAfter": 3825,
+    "allInputsUnchanged": true,
+    "preexistingBinsUnchanged": 187,
+    "generatedOutputsAdded": 5
+  },
+  "currentReference": {
+    "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
+    "attempt": 2,
+    "state": "PASS",
+    "passed": 733,
+    "total": 733,
+    "skipped": 0,
+    "failed": 0,
+    "inputCount": 3827,
+    "allInputsUnchanged": true,
+    "immutableBins": 187,
+    "allImmutableBinsUnchanged": true,
+    "generatedOutputPaths": [
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft0.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft1.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+    ],
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\spark-workout-reference2"
+  },
+  "currentIndependentReplay": {
+    "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
+    "state": "PASS",
+    "passed": 733,
+    "total": 733,
+    "skipped": 0,
+    "fullNameOutcomeMultiplicityExact": true,
+    "inputCount": 3827,
+    "immutableBins": 187,
+    "allInputsAndImmutableBinsMatchedReference": true,
+    "generatedOutputPaths": [
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft0.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft1.log",
+      "tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+    ],
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\spark-workout-replay1"
+  }
 }
