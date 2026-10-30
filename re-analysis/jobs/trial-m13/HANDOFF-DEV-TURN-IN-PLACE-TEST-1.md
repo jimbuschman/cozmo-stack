@@ -1,4 +1,4 @@
-# DEV-TURN-IN-PLACE-TEST-1 — WIP, NOT READY
+# DEV-TURN-IN-PLACE-TEST-1 — READY FOR CLAUDE
 
 DevTurnInPlaceTest now constructs its checked native owner. It retains the four shipped tests (90,-90,180,-180 degrees; speed150, acceleration300, tolerance2), gap1s, nRuns1 and loop=false. Factory/config: 0x0059CA56 and 0x005CA550..7B4; shipped devTurnInPlaceTest.json.
 
@@ -10,7 +10,7 @@ The result-free callback increments a byte with wrap, advances on run-count rema
 
 Worker442f122d integratedda2174c6; main468d0209 merged01eb8b59 without production changes. Six code/test files: BehaviorContainer, NativeBehaviorRuntime, NativeVisionRunners, new NativeDevTurnInPlaceTestBehavior, new DevTurnInPlaceNativeTests, and M7BatchThreeBTests' expected constructor list. Frozen source review and current reference/independent replay pass119/119 across8 actual classes, zero skipped. Exact class/method/parameter-display/outcome/multiplicity matches; all9197 inputs and187 binaries match and remain unchanged, no exclusions. Native overall pre/post/checkout arrays empty; all restore/build/test/shutdown/wrapper exits0 for reference2, replay test/shutdown/wrapper0. Original per-phase build-server arrays are retained and are not claimed empty.
 
-Full integrated gate has NOT STARTED. New main468d0209 returns Energy FIX before this job can hand off; DevTurn is preserved as WIP NOT READY. Next: close FIX-DRIVE-IN-DESPERATION-ENERGY-1, run one full gate on the combined committed branch, then mark both READY.
+Full gate **7003/7003 PASS, zero skipped** on `2cb53ca195553db0cfca9383d436b4c52084d7c5` (7 m 43 s - Cozmo.Protocol.Tests.dll (net9.0)). Fingerprint `16cb40f8e1dd1ab9fec2b17869790c288f71874b` independently recomputed and cache matched. Eight tracked source/test files match the frozen Git tree; the native library and separately frozen derived marker match their hashes. Native preflight empty, original postflight 0 processes, separate final process capture empty. Exact proof: `ENERGY-FIX-DEV-TURN-gate-result.json`. Returned Energy fix is integrated; the combined current reference/replay173 includes all8 DevTurn consumer classes. DevTurn six source/test bytes remain unchanged from its reviewedv3 freeze.
 
 Eight new tests cover shipped config/arguments, false own/base gates with a loaded real library, Resume refusal, all21 manager lock entries/release, real ActionList cancellation/restart and turn-to-timed-wait, result-agnostic supplied completion, repeated runs/byte wrap/loop retention and host late-callback retirement. Real action tests still substitute Init and motor acknowledgments; they prove neither native admission nor hardware.
 

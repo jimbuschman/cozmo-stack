@@ -1,4 +1,4 @@
-# DRIVE-IN-DESPERATION-ENERGY-1 — RETURNED FIX, NOT READY
+# DRIVE-IN-DESPERATION-ENERGY-1 — READY FOR CLAUDE
 
 Configured `Needs_SevereLowEnergyState` now constructs a native owner; Repair remains a separate job. The own gate tuple is off-treads=true, charger-platform=false, carrying=false. Init installs the shipped profile, clears target and enters Idle without resetting rounds, cooldown or the treads latch. Evidence: shipped Energy behavior/activity configs; factory0x0059CA9A, own0x005D8AE0..0x005DA528, Init0x005D8ECA..EEE, gates0x005D90AC/0x005D9F46..4A.
 
@@ -23,3 +23,5 @@ Provenance: actual existing-file before archives and genuine new owner/test abse
 Worker7375ec63 integratedab38f9d8; Workout overlay1cc9fb23. No changes to official records.
 
 Authoritative main468d0209 returned FIX: a normal in-height located charger can throw NativeActionUnavailable from NativeObstacles through DriveToCube and the completion broadcast. FIX-DRIVE-IN-DESPERATION-ENERGY-1 is active: owned M12-036 diagnostic and direct LookAtCube gap continuation, no synthetic PAP result; sentinel search diagnostic every occurrence and explicit skipped motions. Earlier gate6992 and replay proofs are historical, not acceptance.
+
+Returned fix now READY: Full gate **7003/7003 PASS, zero skipped** on `2cb53ca195553db0cfca9383d436b4c52084d7c5` (7 m 43 s - Cozmo.Protocol.Tests.dll (net9.0)). Fingerprint `16cb40f8e1dd1ab9fec2b17869790c288f71874b` independently recomputed and cache matched. Eight tracked source/test files match the frozen Git tree; the native library and separately frozen derived marker match their hashes. Native preflight empty, original postflight 0 processes, separate final process capture empty. Exact proof: `ENERGY-FIX-DEV-TURN-gate-result.json`. Earlier returned-FIX description and6992 gate above are historical. See HANDOFF-FIX-DRIVE-IN-DESPERATION-ENERGY-1.md for current continuation/diagnostic/tests and remaining gaps; search motions remain skipped.

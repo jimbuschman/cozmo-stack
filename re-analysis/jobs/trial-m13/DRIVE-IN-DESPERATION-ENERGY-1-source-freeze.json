@@ -1,6 +1,6 @@
 {
   "job": "DRIVE-IN-DESPERATION-ENERGY-1",
-  "state": "RETURNED FIX; NOT READY",
+  "state": "READY FOR CLAUDE",
   "managerStart": "28df4d1da81c5081119c25bc486a48db309cdcad",
   "originMain": "6dcc53fbd10af2662302b1dab9797e0a67bec0d6",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-energy-1",
@@ -28,7 +28,7 @@
     }
   ],
   "actualBackends": "unobserved",
-  "dotnetLease": "returned after full gate; separate final processes empty",
+  "dotnetLease": "returned",
   "reviewerFixRounds": 3,
   "sourceQuestions": 2,
   "builderMissingItems": [
@@ -249,6 +249,41 @@
   "fullGateAttempts": 1,
   "fullGate": {
     "jobs": [
+      "DEV-TURN-IN-PLACE-TEST-1",
+      "FIX-DRIVE-IN-DESPERATION-ENERGY-1"
+    ],
+    "state": "PASS",
+    "attempt": 1,
+    "commit": "2cb53ca195553db0cfca9383d436b4c52084d7c5",
+    "cozmoStackTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
+    "startedUtc": "2026-10-30T23:38:20.3494576Z",
+    "endedUtc": "2026-10-30T23:47:11.3141073Z",
+    "exitCode": 0,
+    "passed": 7003,
+    "failed": 0,
+    "skipped": 0,
+    "total": 7003,
+    "duration": "7 m 43 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "fingerprint": "16cb40f8e1dd1ab9fec2b17869790c288f71874b",
+    "fingerprintIndependentlyRecomputedAndCacheMatched": true,
+    "frozenTrackedSourcePathsMatched": 8,
+    "engineAndDerivedMarkerMatched": true,
+    "logSha256": "03e44106d389e41a886d10d26f0ed691526d676decff570d864ce71ced262fb9",
+    "consoleSha256": "561c32687ad2045c18aba564a520f2762425965bed1330f10c452569ca317b90",
+    "nativePre": [],
+    "nativePostOriginal": [],
+    "separateFinalProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false,
+    "authoritativeMainBaseline": "468d02099405a224c4eb1ccd028387a9d58f4c94"
+  },
+  "integrationCodeTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
+  "integrationOverlay": "Workout ClockSec binding overlays Energy original freeze; current Energy class included in 282/exact282 plus this full gate.",
+  "authoritativeMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
+  "returnedFix": "FIX-DRIVE-IN-DESPERATION-ENERGY-1",
+  "historicalFullGate": "6992 PASS remains valid historical test result, not source-fidelity acceptance",
+  "historicalFullGateBeforeReturnedFix": {
+    "jobs": [
       "FIX-CUBE-LIFT-WORKOUT-1",
       "DRIVE-IN-DESPERATION-ENERGY-1"
     ],
@@ -276,9 +311,6 @@
     "officialChanges": false,
     "hardwareRun": false
   },
-  "integrationCodeTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
-  "integrationOverlay": "Workout ClockSec binding overlays Energy original freeze; current Energy class included in 282/exact282 plus this full gate.",
-  "authoritativeMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
-  "returnedFix": "FIX-DRIVE-IN-DESPERATION-ENERGY-1",
-  "historicalFullGate": "6992 PASS remains valid historical test result, not source-fidelity acceptance"
+  "returnedFixStatus": "READY FOR CLAUDE",
+  "returnedFixCode": "821eebba integrated a3b2cc1d"
 }

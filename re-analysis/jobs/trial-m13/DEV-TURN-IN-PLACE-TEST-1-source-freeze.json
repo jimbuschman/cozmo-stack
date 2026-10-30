@@ -1,6 +1,6 @@
 {
   "job": "DEV-TURN-IN-PLACE-TEST-1",
-  "state": "INTEGRATED; ONE CUMULATIVE FULL GATE NEXT",
+  "state": "READY FOR CLAUDE",
   "managerStart": "29dc3a4fbb8e784a659aa52eab033d6a799f0cf7",
   "originMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1",
@@ -28,7 +28,7 @@
     }
   ],
   "actualBackends": "unobserved",
-  "dotnetLease": "root exclusive cumulative full gate; workers idle",
+  "dotnetLease": "returned after full gate; separate final processes empty",
   "reviewerFixRounds": 1,
   "sourceQuestions": 1,
   "builderMissingItems": [
@@ -142,8 +142,38 @@
   },
   "integrationCommit": "da2174c6",
   "afterMainMerge": "01eb8b59cddb1669cef31ab17b9aba8a8805e3e3",
-  "fullGateAttempts": 0,
+  "fullGateAttempts": 1,
   "holdReason": "New authoritative main returns Energy FIX; combine final gate once after bounded repair",
   "integrationCodeTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
-  "integrationFreeze": "ENERGY-FIX-DEV-TURN-integration-freeze.json"
+  "integrationFreeze": "ENERGY-FIX-DEV-TURN-integration-freeze.json",
+  "fullGate": {
+    "jobs": [
+      "DEV-TURN-IN-PLACE-TEST-1",
+      "FIX-DRIVE-IN-DESPERATION-ENERGY-1"
+    ],
+    "state": "PASS",
+    "attempt": 1,
+    "commit": "2cb53ca195553db0cfca9383d436b4c52084d7c5",
+    "cozmoStackTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
+    "startedUtc": "2026-10-30T23:38:20.3494576Z",
+    "endedUtc": "2026-10-30T23:47:11.3141073Z",
+    "exitCode": 0,
+    "passed": 7003,
+    "failed": 0,
+    "skipped": 0,
+    "total": 7003,
+    "duration": "7 m 43 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "fingerprint": "16cb40f8e1dd1ab9fec2b17869790c288f71874b",
+    "fingerprintIndependentlyRecomputedAndCacheMatched": true,
+    "frozenTrackedSourcePathsMatched": 8,
+    "engineAndDerivedMarkerMatched": true,
+    "logSha256": "03e44106d389e41a886d10d26f0ed691526d676decff570d864ce71ced262fb9",
+    "consoleSha256": "561c32687ad2045c18aba564a520f2762425965bed1330f10c452569ca317b90",
+    "nativePre": [],
+    "nativePostOriginal": [],
+    "separateFinalProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false,
+    "authoritativeMainBaseline": "468d02099405a224c4eb1ccd028387a9d58f4c94"
+  }
 }
