@@ -1027,7 +1027,16 @@ public sealed class Activity
             if(!Current())return;
             if (DriveStartAnim is { } drive && (int)drive != 0x23F)
             {
-                if(GuardNativeLifecycle)ReleaseDriving();
+                if(GuardNativeLifecycle)
+                {
+                    var facade=NativeDrivingFacade??throw new InvalidOperationException("MISSING: actual activity driving owner unavailable during retirement");
+                    var result=facade.Animations.DrivingAnimations.RemoveScoped(Id,Current);
+                    if(result.Completed)
+                    {
+                        if(ReferenceEquals(result.Owner,oldDriving))oldDriving=null;
+                        oldSpark?.CommonRemoved(result.Owner);
+                    }
+                }
                 else if(NativeCommonDrivingRemove is {} remove)remove();
                 else ReportDrivingMissing("RemoveDrivingAnimations 0x005B3450", missing);
             }
@@ -1038,6 +1047,7 @@ public sealed class Activity
             else SparkedOwner?.Deselected();
             if(!Current())return;
             GatherOwner?.Deselected();
+            if(Current())oldDriving=null; // Native calls completed; do not add an identity removal.
         }
         finally { ReleaseDriving();oldSpark?.ReleaseAll(); }
     }
@@ -1151,6 +1161,8 @@ public static class ActivityTreeLoader
         // fidelity: M15-059
         if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");
+        if(id=="SparksGatherCubes")
+            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt");
         var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,

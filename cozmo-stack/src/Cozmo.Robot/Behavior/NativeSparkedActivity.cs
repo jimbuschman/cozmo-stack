@@ -19,7 +19,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     private readonly Dictionary<string,ScopedAcquisition> _scopedLocks=new(StringComparer.Ordinal);
     private BodyLightComponent.Locator _lights=new();
     private ScopedAcquisition? _drivingLease,_idleLease;
-    private bool _idle,_hardOutputs,_interrupted;
+    private bool _idle,_hardOutputs,_lightsOwned,_interrupted;
     private long _generation;
     private bool _retired;
     internal bool InputUnavailable { get; private set; }
@@ -76,7 +76,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         Started=_robot.Engine.Timer.SecondsF;Count=0;State=0;_interrupted=false;_hardOutputs=false;_observedIds.Clear();
         if(Manager.RequestedSparkId==0x55||Manager.RequestedSparkSoft==0)
         {
-            if(_delegate is not null){_lights=new();_hardOutputs=true;}
+            if(_delegate is not null){_lights=new();_lightsOwned=true;}
             if(_delegate is not null)
             {
                 var lease=new ScopedAcquisition();_drivingLease=lease;
@@ -86,8 +86,9 @@ internal sealed class NativeSparkedActivity : IDisposable
             if(!Current(generation))return;
             PushIdle((AnimationTrigger)0x213);
             if(!Current(generation))return;
-            if(_delegate is null){_lights=new();_hardOutputs=true;}
+            if(_delegate is null){_lights=new();_lightsOwned=true;}
             Facade.Lights.Body.StartLooping(HardLights(),0,_lights);if(!Current(generation))return;
+            _hardOutputs=true;
             _robot.Engine.ReportHardSparkStarted(Manager.RequestedSparkId);if(!Current(generation))return;
         }
         Lock(_activity.Id,SelectedLock);
@@ -116,11 +117,18 @@ internal sealed class NativeSparkedActivity : IDisposable
     internal void ResetLightsAndAnimations()
     {
         if(!_hardOutputs)return;
-        _hardOutputs=false;
+        long generation=_generation;
         if(_delegate is not null)
-        {var lease=_drivingLease;_drivingLease=null;if(lease is not null){lease.Cancel();Facade.Animations.DrivingAnimations.RemoveOwned(lease);}}
+        {
+            var result=Facade.Animations.DrivingAnimations.RemoveScoped(_activity.Id,()=>Current(generation));
+            if(!result.Completed)return;
+            if(ReferenceEquals(result.Owner,_drivingLease))_drivingLease=null;
+        }
         else Facade.Animations.DrivingAnimations.Remove(_activity.Id);
+        if(!Current(generation))return;
         Facade.Lights.Body.StopLooping(_lights);
+        if(!Current(generation))return;
+        _lightsOwned=false;_hardOutputs=false;
     }
     internal void Deselected()
     {
@@ -158,10 +166,22 @@ internal sealed class NativeSparkedActivity : IDisposable
         private readonly KeyValuePair<string,ScopedAcquisition>[] locks;
         private ScopedAcquisition? idle,driving;
         private BodyLightComponent.Locator? lights;
+        private readonly bool hardOutputs;
         internal readonly long Generation;
         internal GatherRetirement(NativeSparkedActivity source,long generation,KeyValuePair<string,ScopedAcquisition>[] oldLocks,
-            ScopedAcquisition? oldIdle,ScopedAcquisition? oldDriving,BodyLightComponent.Locator? oldLights)
-        {owner=source;Generation=generation;locks=oldLocks;idle=oldIdle;driving=oldDriving;lights=oldLights;}
+            ScopedAcquisition? oldIdle,ScopedAcquisition? oldDriving,BodyLightComponent.Locator? oldLights,bool oldHardOutputs)
+        {owner=source;Generation=generation;locks=oldLocks;idle=oldIdle;driving=oldDriving;lights=oldLights;hardOutputs=oldHardOutputs;}
+        internal void CommonRemoved(object? removedOwner)
+        { if(ReferenceEquals(removedOwner,driving))driving=null; }
+        internal void ResetHard()
+        {
+            if(!hardOutputs){if(lights is null)driving=null;return;}
+            var result=owner.Facade.Animations.DrivingAnimations.RemoveScoped(owner._activity.Id,()=>owner.Current(Generation));
+            if(!result.Completed)return;
+            if(!owner.Current(Generation))return;
+            var locator=lights;lights=null;if(locator is not null)owner.Facade.Lights.Body.StopLooping(locator);
+            if(owner.Current(Generation)){driving=null;owner._hardOutputs=false;}
+        }
         internal void ReleaseLocks()
         {
             Exception? first=null;
@@ -193,8 +213,9 @@ internal sealed class NativeSparkedActivity : IDisposable
         var locks=_scopedLocks.ToArray();_scopedLocks.Clear();
         var idle=_idleLease;_idleLease=null;_idle=false;
         var driving=_drivingLease;_drivingLease=null;
-        var lights=_hardOutputs?_lights:null;_hardOutputs=false;
-        return new(this,generation,locks,idle,driving,lights);
+        var lights=_lightsOwned?_lights:null;_lightsOwned=false;
+        bool hardOutputs=_hardOutputs;
+        return new(this,generation,locks,idle,driving,lights,hardOutputs);
     }
     internal void DeselectedGather(GatherRetirement detached)
     {
@@ -208,7 +229,7 @@ internal sealed class NativeSparkedActivity : IDisposable
             SteppedBehavior.ReportMissing("M15-071 SparksRewardCommunicatedToUser 0x00696E64/0x00696E90: pending flag and existing queued notification delivered; native reward amount +0x3DC and raw FreeplaySparksAwarded broadcast are unbuilt");
         }
         if(!Current(generation))return;
-        detached.ReleaseHard();if(!Current(generation))return;
+        detached.ResetHard();if(!Current(generation))return;
         _delegate!.OnDeselected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);
         if(!Current(generation))return;
         Facade.Lights.Cubes.StopAllAnimsOnLayer(CubeLightComponent.EngineLayer,null,()=>Current(generation));

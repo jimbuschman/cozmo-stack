@@ -1,5 +1,6 @@
 using Cozmo.Protocol;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot;
 using Cozmo.Robot.Vision;
 using Xunit;
@@ -11,7 +12,68 @@ namespace Cozmo.Protocol.Tests;
 public sealed class SparksGatherNativeTests
 {
     private static Activity Spark(Fixture f)=>NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Single(a=>a.Id=="SparksGatherCubes");
+    // reach: supplied parent admission and state-2 seam; actual manager Update/end and handler Init.
     [Fact]
+    public void SparkEndKeepsHardDrivingUntilCommonDeselect()
+    {
+        using var f=new Fixture();var manager=f.Robot.BehaviorManagerOwner!;
+        manager.SparkNameInput=id=>id==38?"SparksGatherCubes":id==0x55?"Count":null;
+        manager.SetNativeRequestedSpark(38,0);f.Runtime.AdmitActivity("SparksGatherCubes");manager.SwitchToNativeRequestedSpark();
+        var spark=Spark(f).SparkedOwner!;var driving=f.Rig.Robot.Animations.DrivingAnimations;
+        Assert.Equal(2,driving.Entries.Count(e=>e.LockName=="SparksGatherCubes"));
+        typeof(NativeSparkedActivity).GetProperty("State",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(spark,2);
+        manager.HandleSparkManagerMessage(new SparkManagerMessage(0,0x55));
+        manager.Update(0,0);
+        var remaining=Assert.Single(driving.Entries.Where(e=>e.LockName=="SparksGatherCubes"));
+        Assert.Equal(new DrivingAnimations((AnimationTrigger)0x20E,(AnimationTrigger)0x20D,(AnimationTrigger)0x20F),remaining.Animations);
+        Assert.True(driving.Init(0,1,false,false));Assert.Equal(remaining.Animations,driving.Current);
+        spark.ResetLightsAndAnimations();Assert.Single(driving.Entries.Where(e=>e.LockName=="SparksGatherCubes"));
+        Spark(f).OnDeselected(f.Rig.Engine.Timer.SecondsF);
+        Assert.DoesNotContain(driving.Entries,e=>e.LockName=="SparksGatherCubes");
+    }
+    // reach: unit/interface; supplied beacon stamp and timer, real configured eligibility gates.
+    [Theory]
+    [InlineData(0x42D1FFFE,100f,false)] [InlineData(0x42D1FFFF,100f,true)] [InlineData(0x42D20000,100f,true)]
+    [InlineData(0x3F800000,0f,true)]
+    public void SparksCooldownUsesExactFloatEpsilon(int nowBits,float stamp,bool expected)
+    {
+        using var f=new Fixture();f.Add(7,200,22);f.Robot.CarryingOwner!.SetCarrying(7);
+        var beacon=f.M.Whiteboard.AddBeacon(f.Robot.GetCheckedMainPose(),75f);beacon.FailedToFindLocation(stamp);
+        float now=BitConverter.Int32BitsToSingle(nowBits);f.Rig.Engine.Timer.UpdateTime((long)(now*1_000_000_000d));
+        var bring=Assert.IsType<NativeBringCubeToBeaconBehavior>(f.Runtime.Bound["SparksBringCubeToBeacon"]);
+        Assert.Equal(expected,bring.IsRunnable(f.Runtime.Context));
+    }
+    // reach: supplied activity admission; normal early deselection with an earlier same-name entry.
+    [Fact]
+    public void EarlyDeselectRemovesOnlyTwoFirstNameMatches()
+    {
+        using var f=new Fixture();var manager=f.Robot.BehaviorManagerOwner!;
+        var driving=f.Rig.Robot.Animations.DrivingAnimations;
+        var prior=new DrivingAnimations((AnimationTrigger)1,(AnimationTrigger)2,(AnimationTrigger)3);
+        driving.Push(prior,"SparksGatherCubes");manager.SetNativeRequestedSpark(38,0);
+        var activity=Spark(f);activity.OnSelected(0);activity.OnDeselected(0);
+        var remaining=Assert.Single(driving.Entries.Where(e=>e.LockName==activity.Id));
+        Assert.Equal(new DrivingAnimations((AnimationTrigger)0x20E,(AnimationTrigger)0x20D,(AnimationTrigger)0x20F),remaining.Animations);
+    }
+    // reach: handler unit seam at the warning continuation; replacement invalidates the old owner.
+    [Fact]
+    public void GuardedNameRemovalCannotEraseReplacement()
+    {
+        using var f=new Fixture();var driving=f.Rig.Robot.Animations.DrivingAnimations;
+        var old=new ScopedAcquisition();var replacement=new ScopedAcquisition();
+        var triplet=new DrivingAnimations((AnimationTrigger)1,(AnimationTrigger)2,(AnimationTrigger)3);
+        driving.PushOwned(triplet,"same",old);Assert.True(driving.Init(0,1,false,false));
+        bool current=true,called=false;
+        driving.RemoveWarningObservedForTest=()=>{called=true;current=false;driving.RemoveOwned(old);driving.PushOwned(triplet,"same",replacement);};
+        var result=driving.RemoveScoped("same",()=>current);
+        driving.RemoveWarningObservedForTest=null;
+        Assert.True(called);
+        Assert.False(result.Completed);Assert.Single(driving.Entries.Where(e=>e.LockName=="same"));
+        driving.RemoveOwned(old);Assert.Single(driving.Entries.Where(e=>e.LockName=="same"));
+        driving.RemoveOwned(replacement);
+    }
+    [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void ExactConfiguredOwnersAndOrderedDelegateAreBound()
     {
         using var f=new Fixture();
@@ -26,6 +88,7 @@ public sealed class SparksGatherNativeTests
         Assert.Equal(new[]{"DriveOffCharger","KnockOverCubes","Hiking_RollCube","SparksThinkAboutBeacons","SparksBringCubeToBeacon","SparksLookInPlace"},nested.Chooser!.BehaviorIds);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void ActualObjectiveSubscriptionFiltersAndRetires()
     {
         using var f=new Fixture();var owner=Spark(f).SparkedOwner!;
@@ -34,6 +97,7 @@ public sealed class SparksGatherNativeTests
         owner.Dispose();f.Rig.Engine.AnimationMessages.Deliver(0x8B,true,11u);Assert.Equal(1u,owner.Count);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void SuppliedAdmissionPublishesOuterThenNestedAndClearsBeaconOnSelection()
     {
         using var f=new Fixture();
@@ -53,6 +117,7 @@ public sealed class SparksGatherNativeTests
         public override bool IsRunnable(BehaviorContext context){Calls++;return ready();}
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void PriorityDistinguishesFalseFromUnavailableAndEvaluatesEachEncounterOnce()
     {
         using var f=new Fixture();
@@ -69,6 +134,7 @@ public sealed class SparksGatherNativeTests
         Assert.True(available.Available);Assert.False(available.Runnable);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void NestedReadinessFramesDoNotOverwriteOuterEvaluation()
     {
         using var f=new Fixture();
@@ -78,6 +144,7 @@ public sealed class SparksGatherNativeTests
         Assert.True(evaluated.Available);Assert.False(evaluated.Runnable);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void ConnectedLocatedCubeProgressSurvivesDeselectAndResumesPreviousWhenOutside()
     {
         using var f=new Fixture();
@@ -95,18 +162,26 @@ public sealed class SparksGatherNativeTests
     }
     [Theory]
     [InlineData(true)] [InlineData(false)]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void GatherReportsObjectiveBeforeNeedsAndLatchesOnce(bool external)
     {
         using var f=new Fixture();var spark=Spark(f).SparkedOwner!;var gather=spark.Delegate!.GatherOwner!;
         var types=new[]{ObjectType.Block_LIGHTCUBE1,ObjectType.Block_LIGHTCUBE2,ObjectType.Block_LIGHTCUBE3};
+        var objects=new List<ObservableObject>();
         for(int i=0;i<3;i++)
         {
             int id=f.M.World.AddConnectedActiveObject(i+1,(uint)(100+i),types[i]);Assert.True(id>=0);
             var obj=new ObservableObject((uint)id,types[i],CubeGeometry.MarkersFor(types[i]))
-            {Pose=new Pose3d(Rotation3d.Identity,new Vec3(10+i*10,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known};
-            f.M.World.AddLocatedObject(obj);
+            {Pose=new Pose3d(Rotation3d.Identity,new Vec3(i==0?10:200+i*10,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known};
+            f.M.World.AddLocatedObject(obj);objects.Add(obj);
         }
         gather.Selected();f.M.Whiteboard.AddBeacon(f.Robot.GetCheckedMainPose(),75f);
+        var lightCalls=new List<(uint,string,string?)>();
+        f.Rig.Robot.Lights.Cubes.BehaviorStateCallObservedForTest=(cube,op,trigger,layer,modifier,lights,offset)=>lightCalls.Add((cube,op,trigger));
+        gather.Update();
+        Assert.True(gather.Progress[objects[0].ObjectId]);
+        foreach(var obj in objects.Skip(1))obj.Pose=new Pose3d(Rotation3d.Identity,new Vec3(20,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
+        lightCalls.Clear();
         f.Robot.HasExternalInterface=external;
         var order=new List<string>();
         using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value&&value==11)order.Add("objective");});
@@ -114,6 +189,11 @@ public sealed class SparksGatherNativeTests
         // Supplied gameplay state; actual Spark update checks its own end before delegate Update.
         typeof(NativeSparkedActivity).GetProperty("State",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(spark,2);
         spark.Update();
+        Assert.Contains(lightCalls,c=>c.Item1==objects[0].ObjectId && c.Item2=="Stop" && c.Item3=="GatherCubesCubeInBeacon");
+        Assert.Equal(3,lightCalls.Count(c=>c.Item2=="Play" && c.Item3=="GatherCubesAllCubesInBeacon"));
+        Assert.Equal(new[]{"Stop","Play"},lightCalls.Where(c=>c.Item1==objects[0].ObjectId).Select(c=>c.Item2));
+        Assert.All(objects.Skip(1),obj=>Assert.Equal(new[]{"Play"},lightCalls.Where(c=>c.Item1==obj.ObjectId).Select(c=>c.Item2)));
+        Assert.All(objects,obj=>Assert.False(gather.Progress[obj.ObjectId]));
         Assert.Equal(2,spark.State);Assert.Equal(external?1u:0u,spark.Count);Assert.True(gather.Completed);
         spark.Update();Assert.Equal(external?3:2,spark.State);
         Assert.Equal(external?new[]{"objective","needs"}:new[]{"needs"},order);
@@ -121,6 +201,7 @@ public sealed class SparksGatherNativeTests
         f.Robot.HasExternalInterface=true;
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void PriorityUsesEachCandidatesRunningByteBeforeReadiness()
     {
         using var f=new Fixture();
@@ -131,6 +212,7 @@ public sealed class SparksGatherNativeTests
         Assert.Same(running,result.Behavior);Assert.False(result.InputUnavailable);Assert.Equal(1,earlier.Calls);Assert.Equal(0,running.Calls);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void CubeLightCompletionRunsOutsidePrivateGateAndPreservesReentrantReplacement()
     {
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);
@@ -148,6 +230,7 @@ public sealed class SparksGatherNativeTests
         Assert.NotNull(lights.PlayingForTest(ObjectType.Block_LIGHTCUBE1,1));
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void DeselectionReentryReleasesOnlyOldDrivingAndIdleAcquisitions()
     {
         using var f=new Fixture();var activity=Spark(f);var manager=f.Robot.BehaviorManagerOwner!;
@@ -165,6 +248,7 @@ public sealed class SparksGatherNativeTests
         activity.OnDeselected(0);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void ConfiguredAliasesUseTheirDifferentCooldownsWithSameCarriedTarget()
     {
         using var f=new Fixture();f.Add(7,200,22);f.Robot.CarryingOwner!.SetCarrying(7);
@@ -175,6 +259,7 @@ public sealed class SparksGatherNativeTests
         Assert.False(hiking.IsRunnable(f.Runtime.Context));Assert.True(sparks.IsRunnable(f.Runtime.Context));
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void CanonicalThinkCreatesBeaconConsumedByCanonicalBring()
     {
         using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);f.Add(7,200,22);
@@ -193,6 +278,7 @@ public sealed class SparksGatherNativeTests
         Assert.True(bring.IsRunnable(f.Runtime.Context));
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void RuntimeReentrantReplacementKeepsOnlyNewSelectionResources()
     {
         using var f=new Fixture();var manager=f.Robot.BehaviorManagerOwner!;
@@ -210,6 +296,7 @@ public sealed class SparksGatherNativeTests
         Assert.Equal("SparksGatherCubes",f.Runtime.Observe().Activity);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void CanonicalThinkMissingLibraryIsUnavailableAtScopedChooser()
     {
         using var f=new Fixture();var think=Assert.IsType<ThinkAboutBeaconsBehavior>(f.Runtime.Bound["SparksThinkAboutBeacons"]);
@@ -224,6 +311,7 @@ public sealed class SparksGatherNativeTests
         finally {library.SetValue(f.Rig.Robot.Animations,prior);}
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void StoppedLoopDiagnosticReentryDoesNotMutateReplacement()
     {
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);var lights=f.Rig.Robot.Lights.Cubes;
@@ -249,6 +337,7 @@ public sealed class SparksGatherNativeTests
     }
     [Theory]
     [InlineData(false)] [InlineData(true)]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void CanceledTransitionRestoresPriorStateWithoutOldLedSend(bool replacement)
     {
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);var lights=f.Rig.Robot.Lights.Cubes;
@@ -269,6 +358,7 @@ public sealed class SparksGatherNativeTests
         Assert.Equal(replacement?1:0,f.Rig.SentSince(mark).Count(m=>m is Cozmo.Protocol.CubeLights));
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void ActualDelegateReachedUnboundTailRetiresWithoutNativeCompletion()
     {
         using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
@@ -290,6 +380,7 @@ public sealed class SparksGatherNativeTests
     }
     [Theory]
     [InlineData(false)] [InlineData(true)]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void ActualSecondGateMissingLibraryRetiresInsteadOfStartingThink(bool replace)
     {
         using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
@@ -336,6 +427,7 @@ public sealed class SparksGatherNativeTests
     }
     [Theory]
     [InlineData(false)] [InlineData(true)]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void CanceledZeroDurationPlayRestoresDisplacedLowerEntryUnderReplacement(bool replacementClears)
     {
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);var lights=f.Rig.Robot.Lights.Cubes;
@@ -357,6 +449,7 @@ public sealed class SparksGatherNativeTests
         else Assert.Equal("sleep",lights.PlayingForTest(ObjectType.Block_LIGHTCUBE1,1)!.Value.Name);
     }
     [Fact]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void CanceledBlendRestoresOwnedSlotAndDanglingWithoutOverwritingReplacement()
     {
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);var lights=f.Rig.Robot.Lights.Cubes;
@@ -387,6 +480,7 @@ public sealed class SparksGatherNativeTests
     // the same short slot, a valid long slot, or clears the buried entry.
     [Theory]
     [InlineData("short")] [InlineData("long")] [InlineData("clear")]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void CanceledShortBlendRespectsFinalReplacementSlot(string mode)
     {
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);var lights=f.Rig.Robot.Lights.Cubes;
@@ -421,6 +515,7 @@ public sealed class SparksGatherNativeTests
     }
     [Theory]
     [InlineData(false)] [InlineData(true)]
+    // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void RobotRemovalReleasesResourcesThroughOriginalOwners(bool admitted)
     {
         var f=new Fixture();var activity=Spark(f);var manager=f.Robot.BehaviorManagerOwner!;
@@ -435,5 +530,3 @@ public sealed class SparksGatherNativeTests
         Assert.DoesNotContain(scheduler.IdleStack,e=>e.Lock=="Activity_"+activity.Id);
     }
 }
-
-

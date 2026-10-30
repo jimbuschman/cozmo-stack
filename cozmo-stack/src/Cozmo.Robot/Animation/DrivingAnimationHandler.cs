@@ -24,6 +24,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     internal Func<bool>? HasPathToFollowForTest;
     internal Func<DrivingAnimationRequest, IActionRunner>? CreateActionForTest;
     internal Action<string, uint>? CallObserved;
+    internal Action? RemoveWarningObservedForTest;
     internal DrivingAnimations? Current { get; private set; } = new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D);
     public int State { get; private set; } = 5;
     internal uint StartId { get; private set; }
@@ -55,19 +56,26 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         int index=_entries.FindIndex(e=>ReferenceEquals(e.Owner,lease));
         if(index>=0)_entries.RemoveAt(index);
     }
-    internal void Remove(string lockName)
+    internal void Remove(string lockName) => RemoveScoped(lockName, null);
+    internal (bool Completed, object? Owner) RemoveScoped(string lockName, Func<bool>? current)
     {
-        if (State != 5) Warning("DrivingAnimationHandler.PopDrivingAnimations", "Popping animations while currently playing");
-        if (_entries.Count == 0) { Warning("DrivingAnimationHandler.PopDrivingAnimations", "Tried to pop animations but the stack is empty!"); return; }
+        if (State != 5)
+        {
+            Warning("DrivingAnimationHandler.PopDrivingAnimations", "Popping animations while currently playing");
+            if(current is not null)RemoveWarningObservedForTest?.Invoke(); // unit seam at warning continuation
+        }
+        if (current is not null && !current()) return (false,null);
+        if (_entries.Count == 0) { Warning("DrivingAnimationHandler.PopDrivingAnimations", "Tried to pop animations but the stack is empty!"); return (true,null); }
         for (int i = 0; i < _entries.Count; ++i)
         {
-            if (string.Equals(_entries[i].LockName, lockName, StringComparison.Ordinal)) { _entries.RemoveAt(i); return; }
+            if (string.Equals(_entries[i].LockName, lockName, StringComparison.Ordinal)) { var owner=_entries[i].Owner; _entries.RemoveAt(i); return (true,owner); }
             if (i + 1 == 1000)
             {
                 robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "LoopBoundOverflow", "../../../../engine/drivingAnimationHandler.cpp:108");
-                EngineErrorState.StoreAndMaybeBreak(); return;
+                EngineErrorState.StoreAndMaybeBreak(); return (true,null);
             }
         }
+        return (true,null);
     }
     public bool Init(byte tracks, uint tag, bool argument3, bool repeatWhilePath)
     {
