@@ -1,7 +1,7 @@
 {
   "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "FIX INTEGRATION VERIFIED; FULL GATE NEXT",
+  "state": "READY FOR CLAUDE AGAIN",
   "main": "c7c809afb230680d6bb466b015a4a056106030ab",
   "managerMerge": "78751aaa8d005827135b346cd2bce45401dd218e",
   "sourceFiles": [
@@ -101,5 +101,31 @@
     "sourcePathsMatched": 4,
     "protectedOfficialChanges": false,
     "originMain": "2567528b782bd338263b404574d5682ef339ea8b"
+  },
+  "fullGate": {
+    "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+    "phase": "CLAUDE RETURN FIX1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "61899e7229b86fba7f9448341610f75c8a5a7c3a",
+    "cozmoStackTree": "ecdfd307d100f5d907549a37c2628857a2158af7",
+    "productionSrcTree": "0d58d449005b6174db2e8e52ce1c5afc50104cc5",
+    "startedUtc": "2026-10-30T13:59:06.8255252Z",
+    "endedUtc": "2026-10-30T14:09:31.7994823Z",
+    "exitCode": 0,
+    "passed": 6912,
+    "total": 6912,
+    "failed": 0,
+    "skipped": 0,
+    "testDuration": "9 m 11 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "556360a9371e77045a64e9191b68025cd890760d",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "0d69f018a8f6db89bab475f23012a9fe4a3cdd713ddd1d0600e5d1a8d32ff41d",
+    "consoleSha256": "6c1fb9763d820d83f33ddfbcd5aa7cf943c6a136a513d913cb21929064fea1a2",
+    "frozenSourcePathsMatched": 4,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "protectedOfficialChanges": false,
+    "hardwareRun": false
   }
 }
