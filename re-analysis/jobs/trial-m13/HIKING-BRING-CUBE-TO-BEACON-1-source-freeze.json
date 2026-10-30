@@ -1,6 +1,6 @@
 {
   "job": "HIKING-BRING-CUBE-TO-BEACON-1",
-  "stage": "Own source plus4 checked UNKNOWN supplements; full native implementation in progress, no .NET",
+  "stage": "First21-file implementation review FAIL; consolidated reviewer correction batch1 in progress, no .NET",
   "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
   "main": "75891508091abbffadc042a2318ec0128c62c868",
   "sourceFiles": {
@@ -86,5 +86,29 @@
   ],
   "oldNoteFrameCorrections": 1,
   "predockMarkerContract": "B9false skips preaction poses, observed markers at last-observed stamp, MAIN-frame 3D f32 d2<bestDistance^2 with sqrt storage; no winner native null fault M1-034 skip, not03000002. B9true uses preaction marker with defined null-marker03000002. Old Q6.9 parent-frame note correction does not contradict current approved records.",
-  "m1StandingFaultCase": "M12-017 observed multi-marker no-winner: chosen=null00551AD2/00551BE4 -> GetCodeName0055199A/A0 -> null read0087E1D0. Visible smallest marker-init/action skip, preserve prior state, no invented native result/failure marking or indefinite hold; official unresolved update proposed to Claude."
+  "m1StandingFaultCase": "M12-017 observed multi-marker no-winner: chosen=null00551AD2/00551BE4 -> GetCodeName0055199A/A0 -> null read0087E1D0. Visible smallest marker-init/action skip, preserve prior state, no invented native result/failure marking or indefinite hold; official unresolved update proposed to Claude.",
+  "currentMain": "69e53d714b0c50a8c7f81f6e81391705e3911451",
+  "currentMainIntegrated": "ad2eb8329bb90094f9bdbeb307017411deba40c7",
+  "currentRecordCount": 727,
+  "sourceSnapshotCurrentUpdates": [
+    "M15-084.unresolved: main verifier boundary notes updated; native method contracts unchanged; frozen15-record extraction snapshot remains historical726"
+  ],
+  "implementationReviewCorrectionBatches": 1,
+  "firstDraft": {
+    "files": 21,
+    "manifestSha256": "e992c5d8915ecf8231d12dd572494db66eb6a10e9495e1fc0c1bf18732154011",
+    "base": "ad2eb8329bb90094f9bdbeb307017411deba40c7",
+    "rawVsFilteredGitEqual": true,
+    "actualArchive": "builder .scratch/hiking-bring-beacon-1/reviewed-draft-lf",
+    "priorRawArchive": "builder reviewed-draft;8 new C# files CRLF normalized before review, no text/behavior changes",
+    "verdict": "FAIL",
+    "consolidatedFindings": [
+      "standalone binding/owner isolation",
+      "reentrant continuation/admission guards",
+      "runtime retirement/retry pose lifetime",
+      "unrelated-root defined false",
+      "meaningful native action/profile/fault/cleanup tests"
+    ],
+    "buildOrTestsRun": false
+  }
 }
