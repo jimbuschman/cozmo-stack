@@ -1,0 +1,43 @@
+{
+  "job": "DEV-TURN-IN-PLACE-TEST-1",
+  "kind": "reference1",
+  "state": "FAIL_CLASSIFIED_TEST_HARNESS",
+  "phaseExits": {
+    "build": 0,
+    "restore": 0,
+    "error": "",
+    "shutdown": 0,
+    "exit": 1,
+    "test": 1
+  },
+  "passed": 117,
+  "failed": 2,
+  "total": 119,
+  "skipped": 0,
+  "classCounts": {
+    "Cozmo.Protocol.Tests.M7BatchThreeBTests": 36,
+    "Cozmo.Protocol.Tests.HikingRollCubeRecoveryTests": 3,
+    "Cozmo.Protocol.Tests.CoreReviewTests": 26,
+    "Cozmo.Protocol.Tests.HikingRollCubeNativeTests": 20,
+    "Cozmo.Protocol.Tests.NativeBouncerFactoryTests": 5,
+    "Cozmo.Protocol.Tests.DriveInDesperationNativeTests": 12,
+    "Cozmo.Protocol.Tests.PickupStackNativeVisionTests": 9,
+    "Cozmo.Protocol.Tests.DevTurnInPlaceNativeTests": 8
+  },
+  "inputCount": 9197,
+  "allObservedBins": 187,
+  "allInputsAndBinsUnchanged": true,
+  "outputExclusions": [],
+  "nativePre": [],
+  "nativePost": [],
+  "checkoutPost": [],
+  "phaseProcessSnapshots": "Original per-phase snapshots retained; test pre/post have resident build servers, not claimed empty.",
+  "trxSha256": "c42ef2c72b45f2f7b7cb64b863cef14be3a1c87a9180c3739fac6d6d78a80d1a",
+  "logSha256": "353d9fdc5349251e56d367b45b78508f6a1db9ec1e60bf5792da378ef06b0e1a",
+  "classification": [
+    "Gate-isolation test has null AnimationLibrary and fails before gates; fixture must load shipped library.",
+    "Factory registration expected list omitted new source-backed DevTurn constructor; separate empty-context count test unchanged."
+  ],
+  "productionChangeNeeded": false,
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1\\.scratch\\dev-turn-in-place-test-1-build\\reference1"
+}
