@@ -1,6 +1,6 @@
 {
   "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
-  "state": "READ OPEN; BUILD NOT RELEASED",
+  "state": "BOUNDED SOURCE PASS; BUILD RELEASED",
   "managerStart": "3b0f97b051d7f6c3913cf5c3eb56f714307c2b1d",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "ordinaryHandoff": "0a8626dc6480df5e4638c0993582086f6747c0e5",
@@ -29,11 +29,59 @@
     }
   ],
   "actualBackend": "unobserved; operator reports defaultTerra",
-  "dotnetLease": "C exclusive preparation: ONEofflinecache-onlyrestoreall5, no build/test/code",
+  "dotnetLease": "none; prep returned, no build/test untilcoherentCODEPASS",
   "reviewerFixRounds": 0,
   "compilerCorrections": 0,
   "postTestHarnessCorrections": 0,
   "sourceQuestions": [],
   "officialChanges": false,
-  "hardwareRun": false
+  "hardwareRun": false,
+  "prep": {
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\sparks-cube-lift-workout-prep",
+    "locationNote": "Actual artifacts are originalcheckoutignoredscratch, not workerrelativepath; absolute restore.log provesall5targetsarecorrect isolatedworker. No artifactrecreated.",
+    "scriptSha256": "dc38e3a5f44e8b584fe12b40f4c00ea398f2c36a074bf564f54bf4b0c2d9ca4e",
+    "restoreLogSha256": "6273c81d22cfaa5b872f0593139317606933d94126ea0c7b55520ce47b3b66c8",
+    "restoreCount": 1,
+    "restoredProjects": 5,
+    "restoreExit": 0,
+    "shutdownExit": 0,
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "elevatedActualDotnet": true,
+    "buildOrTest": false,
+    "assetHashesVerified": "engine02263c07/marker1b7166ac",
+    "junctionRetry": "initialdefaultdenied thenelevatedsuccess; no native/source inference"
+  },
+  "sourceArtifacts": [
+    {
+      "path": "re-analysis/research/20261030-sparks-cube-lift-workout-1-read.md",
+      "originalSha256": "24190f1685d682c08b845bda4c96496a3957b091ee519160135bd4a355bc509c",
+      "canonicalLfSha256": "24190f1685d682c08b845bda4c96496a3957b091ee519160135bd4a355bc509c",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\spark-workout-source-originals\\20261030-sparks-cube-lift-workout-1-read.24190f1685d6.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-sparks-cube-lift-workout-1-source-codex-check.md",
+      "originalSha256": "d82ac46b2172e15b44434b4030c24f9157b9a11e649f65a83bce1b75b9770118",
+      "canonicalLfSha256": "f43ede861d59699a9444543ac4fd3feffbb35d1580949f2844b3e277ce17e84b",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\spark-workout-source-originals\\20261030-sparks-cube-lift-workout-1-source-codex-check.d82ac46b2172.raw.md"
+    }
+  ],
+  "currentSnapshotsMatched": [
+    "M13-010",
+    "M15-059",
+    "M15-008",
+    "M15-006",
+    "M15-058",
+    "M15-071",
+    "M8-001",
+    "M8-012",
+    "M8-013",
+    "M7-014",
+    "M7-018",
+    "M7-002"
+  ],
+  "sourceVerdict": "A+B alias/owner primaryPASS; ordinary/genericbase reused, no newfinitealiasUNKNOWN",
+  "wholeExistingClosureProposals": [],
+  "lifecycleProposal": "Reuse/widen pending ordinaryclass proposal tobothIDs; no duplicate"
 }
