@@ -1,6 +1,6 @@
 {
   "job": "CANT-HANDLE-TALL-STACK-1",
-  "state": "CODE/REFERENCE262/EXACT262 PASS; INTEGRATION/FULL GATE PENDING",
+  "state": "INTEGRATED; FULL GATE PENDING",
   "main": "1880f337c803fe25cd5da6d1aad56e068db1015a",
   "readerRequested": "gpt-6.1-sol/medium/fork_none",
   "builderRequested": "DEFAULT/model and effort omitted/fork_none",
@@ -115,7 +115,7 @@
     "answer": "0 variability; ctor15/20/0 independent; zero skipsRNG",
     "independentChecks": 2
   },
-  "exclusiveDotnetLease": "returned by B; no .NET active",
+  "exclusiveDotnetLease": "root full gate1 after clean metadata commit",
   "firstReference": {
     "job": "CANT-HANDLE-TALL-STACK-1",
     "attempt": 1,
@@ -198,5 +198,9 @@
     "actualDotnetPrivilege": "require_escalated",
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-replay2"
   },
-  "replayInfrastructureCorrections": 1
+  "replayInfrastructureCorrections": 1,
+  "workerFinalCommit": "033b38ba4628ed6acc4e80651f88e93061bf39c7",
+  "integrationCommit": "046b6c038a0fc86054de423b18723a68fe7df4f4",
+  "productionSrcTree": "085bcea858f566e6bf469c2605b9daad99041dbc",
+  "originMain": "1880f337c803fe25cd5da6d1aad56e068db1015a"
 }
