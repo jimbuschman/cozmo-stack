@@ -255,6 +255,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeBringCubeToBeaconBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeCubeLiftWorkoutBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeDanceBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeDevTurnInPlaceTestBehavior>())candidate.Dispose();
         Configurations.Dispose();
         Manipulation?.Dispose();
     }
