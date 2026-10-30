@@ -61,3 +61,16 @@ No regression was found for existing callers of the shared helpers, and no circu
 7. The legacy `CubeLiftWorkoutBehavior` and its `M.Workouts` remain for CreateStandalone only: a retirement candidate.
 8. The handoff's MISSING list should name the M13-038 `Update` caller.
 9. The proposed lifecycle record goes to the operator.
+
+## Returned fix (manager, 2026-10-30): PASS, merge pending
+
+Fix 1cc9fb23, handoff 422d19b1 (full gate on 7be1d7ba, 6992 PASS). I read the production diff.
+- **The blocking item is closed.** `Runnable()` now tests the workout and mood inputs and reports readiness
+  unavailable, so Init is not reached. The test runs both aliases through three missing-input cases for 30 ticks with
+  StopOnUnavailable: no current, no InitFailed, no reaction lock held.
+- **The other null-current points are named under M1-034:** 0x00573B70 via 0x005D7EE6 and via 0x00573E42 (public music
+  now returns a documented host false without an RNG or cache write) and 0x00573DFC.
+- **Queued items done:** `ClockSec` uses `Timer.SecondsF`; the pickup diagnostic keeps the actual reason; the base
+  Library-null check and the `// fidelity:` tag are in. The two removed `current()` guards in `CompleteCurrentWorkout`
+  are correct: the original always advances after the event.
+- **M13-010:** Codex withdrew the settlement proposal. It stays open.
