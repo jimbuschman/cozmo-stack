@@ -1,0 +1,16 @@
+{
+  "classes": [
+    "CantHandleTallStackNativeTests",
+    "M11SmallReadsBuilderTests",
+    "SharedChildrenNativeTests",
+    "NavigationTests",
+    "CompoundActionTests",
+    "BehaviorFrameworkTests",
+    "PickupPyramidNativeExecutionTests",
+    "CoreReviewTests",
+    "NativeBouncerFactoryTests",
+    "SparksGatherNativeTests"
+  ],
+  "filter": "FullyQualifiedName~CantHandleTallStackNativeTests|FullyQualifiedName~M11SmallReadsBuilderTests|FullyQualifiedName~SharedChildrenNativeTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~CompoundActionTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~CoreReviewTests|FullyQualifiedName~NativeBouncerFactoryTests|FullyQualifiedName~SparksGatherNativeTests",
+  "rationale": "Independent reviewer approved ten classes covering changed configured factory/runtime, recipient/legacy integration, sequence/lifecycle, actual configured fixture and unavailable chooser."
+}

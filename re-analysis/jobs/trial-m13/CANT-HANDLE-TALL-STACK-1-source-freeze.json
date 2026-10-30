@@ -1,6 +1,6 @@
 {
   "job": "CANT-HANDLE-TALL-STACK-1",
-  "state": "APPROVED CORRECTED SOURCE; BUILD RELEASED",
+  "state": "STATIC CODE PASS; BUILD AND AFFECTED REFERENCE RELEASED",
   "main": "1880f337c803fe25cd5da6d1aad56e068db1015a",
   "readerRequested": "gpt-6.1-sol/medium/fork_none",
   "builderRequested": "DEFAULT/model and effort omitted/fork_none",
@@ -98,5 +98,22 @@
     "canonicalLfSha256": "bf5eec3a96e8f26f8e162699d7ac4f96be60fb380c301f164af1175e59beba16",
     "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\tall-stack-source-originals\\20261030-cant-handle-tall-stack-1-managed-input-supplement.md",
     "scope": "Candidate managed interfaces only; no new native claim."
-  }
+  },
+  "coherentDraft": "CANT-HANDLE-TALL-STACK-1-correction1-lf-freeze.json",
+  "reviewerCorrectionBatches": 1,
+  "compilerCorrections": 0,
+  "testHarnessCorrections": 0,
+  "testFoundProductionCorrections": 0,
+  "selfDraftCorrections": 1,
+  "headSourceQuestion": "Resolved: native third angle variability0; independent ctor15/20/0 and RNGskip supported; no production correction/contract change.",
+  "headDefaultsSupplement": {
+    "path": "re-analysis/research/20261030-cant-handle-tall-stack-1-head-defaults-supplement.md",
+    "originalSha256": "088e44ae17de5f2dec31c2966058a3f3c0d2498180def309e23536beec3794ad",
+    "canonicalLfSha256": "088e44ae17de5f2dec31c2966058a3f3c0d2498180def309e23536beec3794ad",
+    "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\tall-stack-source-originals\\20261030-cant-handle-tall-stack-1-head-defaults-supplement.md",
+    "question": "thirdRadians0 variability vs helper defaults",
+    "answer": "0 variability; ctor15/20/0 independent; zero skipsRNG",
+    "independentChecks": 2
+  },
+  "exclusiveDotnetLease": "C builder build+10-class referenceattempt1; no overlap"
 }
