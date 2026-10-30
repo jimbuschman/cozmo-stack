@@ -1,8 +1,8 @@
 {
   "job": "DEV-TURN-IN-PLACE-TEST-1",
-  "state": "WORKER COMMITTED; INTEGRATION FULL GATE PENDING",
+  "state": "WIP NOT READY; FULL GATE HELD FOR ENERGY FIX",
   "managerStart": "29dc3a4fbb8e784a659aa52eab033d6a799f0cf7",
-  "originMain": "6dcc53fbd10af2662302b1dab9797e0a67bec0d6",
+  "originMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1",
   "workers": [
     {
@@ -28,7 +28,7 @@
     }
   ],
   "actualBackends": "unobserved",
-  "dotnetLease": "returned after independent replay; no.NETactive",
+  "dotnetLease": "none",
   "reviewerFixRounds": 1,
   "sourceQuestions": 1,
   "builderMissingItems": [
@@ -139,5 +139,9 @@
     "trxSha256": "cb2fd93d47113cf3f25619fbc8f1e16c15ba3773eb003b3a817318cc90315c55",
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1\\.scratch\\dev-turn-in-place-test-1-build\\independent-replay1",
     "reviewerWrapperSha256": "137a765a9e91f46bee7ecf926d582af02569985d96b1fc22cd50cc69a04a3f2f"
-  }
+  },
+  "integrationCommit": "da2174c6",
+  "afterMainMerge": "01eb8b59cddb1669cef31ab17b9aba8a8805e3e3",
+  "fullGateAttempts": 0,
+  "holdReason": "New authoritative main returns Energy FIX; combine final gate once after bounded repair"
 }
