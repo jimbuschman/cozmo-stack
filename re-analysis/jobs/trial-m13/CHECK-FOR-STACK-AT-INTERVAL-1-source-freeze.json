@@ -1,6 +1,6 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
-  "state": "CODE AND REFERENCE654/EXACT654 PASS; INTEGRATION/FULL GATE PENDING",
+  "state": "INTEGRATION VERIFIED; FULL GATE NEXT",
   "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
   "sources": [
     {
@@ -273,5 +273,14 @@
       "checkoutProcesses": [],
       "previousReplay1": "0 tests executed, timeout; preserved NOTPASS, rootcauseUNKNOWN"
     }
-  ]
+  ],
+  "integration": {
+    "worker": "06b267314f89d55d88bb50d72807e1bb67a84e8e",
+    "commit": "c710de6006a5b8f4050e63faf1c48e112ca38d65",
+    "cozmoStackTree": "7d28d842b81f72bf88218d366fd18400846b90e4",
+    "productionSrcTree": "861a706d696e74bb2e9eb68c0cf577f3f891df18",
+    "sourceHashesAndBlobsMatched": 4,
+    "protectedOfficialChanges": false,
+    "originMain": "69e53d714b0c50a8c7f81f6e81391705e3911451"
+  }
 }
