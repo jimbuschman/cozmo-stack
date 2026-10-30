@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-29",
+  "approved": "2026-10-30",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "fcd16c422144ff55a6cf19315fbcf9bccbf817cf2d99d78aef5571004e126a36",
+  "inventory_sha256": "c1a875f65ac0f7fb412a503e63c6243dd84c62ee8500436af34b3027399c6998",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1036,6 +1036,21 @@
         "UpdateInternal 0x005F19A4..: duration > 60.0f, invalid/missing face, image age >= 5001 (0x1389) -> return 2; states 1..5 triggers 8/10/14/16 with TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false); state 5 UpdatePaddle (face+0xDC degrees, step 10, clamp), UpdateBall (wall reflections, bottom score |dx| < 16), pending miss sound trigger 0x209; states 6..9 exit triggers 15/11/9.",
         "UpdateDisplay: Image(H, W) black; filled rect paddle (+-16, 4 high), circle radius 3, DrawText scores at (4,12) and (W-4-8*len,12) scale 0.5; SetFaceAction(image, 33) (0x005F0F40..0x005F10D0); StopInternal 0x005F1C6C bx lr.",
         "re-analysis/research/20261029-bouncer-1-read.md; re-analysis/research/20261029-bouncer-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-086": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorExploreBringCubeToBeacon (Hiking) lifecycle: constructor and recentFailureCooldown_sec config, the three vtable gates, IsRunnableInternal's cached eligibility (f32 beacon cooldown, FindUsableCubesOutOfBeacons, DidFailToUse filter), Init dispatch and its no-action result, base Update/Resume, own Stop",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 1 0x0059C968 (new 0x138); ctor 0x005DEFB0..0x005DEFDA (empty ObjectInfo vector +0x11C, target +0x12C = -1); LoadConfig recentFailureCooldown_sec f32 -> +0x130 (0x005DF082..0x005DF090); Hiking_bringCubeToBeacon.json 45.0.",
+        "Vtable 0x0102957C: +0x20 base 0x005BF04C returns 0, +0x24 base 0x0059EC12 returns 0, +0x28 0x005E0DF0 returns 1.",
+        "IsRunnableInternal 0x005DF10C..0x005DF2D8: clears the cache; no active beacon -> false; |stamp| < 1e-5f skips, else f32(stamp + cooldown) + -1e-5f > timer seconds refuses (0x005DF148..0x005DF194); FindUsableCubesOutOfBeacons 0x005DF1A4; per entry located lookup and DidFailToUse(id, {0,3}, cooldown, pose, 20.0f, pi/8) (0x005DF1E2..0x005DF294); runnable iff the cache is non-empty.",
+        "InitInternal 0x005DF348..0x005DF3DE: target -1; carrying -> target = cache[0].id, TransitionToObjectPickedUp; else TransitionToPickUpObject(1); result 0 with an action, else 1 iff |now - stamp| >= 1e-5f (movpl).",
+        "Update base 0x005BDA56..0x005BDA62; Resume base 0x005BDA94..0x005BDAC8; Stop 0x005DFD50..0x005DFD86 erases debug locations only; dtor 0x005DF020..0x005DF03C.",
+        "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-read.md; re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

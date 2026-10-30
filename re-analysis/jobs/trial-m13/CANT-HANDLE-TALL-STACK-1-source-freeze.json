@@ -1,6 +1,6 @@
 {
   "job": "CANT-HANDLE-TALL-STACK-1",
-  "state": "WIP, NOT READY; OPERATOR CONTRACT APPROVAL PENDING",
+  "state": "CORRECTED CONTRACT APPROVED ON MAIN; BUILD AFTER PRIORITY SPARKS FIX",
   "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
   "readerRequested": "gpt-6.1-sol/medium/fork_none",
   "builderRequested": "DEFAULT/model and effort omitted/fork_none",
@@ -28,7 +28,7 @@
       "0x005ED200..2A"
     ],
     "independentChecks": 2,
-    "operatorDecision": "REQUIRED/PENDING; no implementation release"
+    "operatorDecision": "Formally approved on main288bd07b and REVIEW under standing cited-correction authorisation; M7 re-approved. No further decision pending."
   },
   "missing": [
     "actual automatic execution caller",

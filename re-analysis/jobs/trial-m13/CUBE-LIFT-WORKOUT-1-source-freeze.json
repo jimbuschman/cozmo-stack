@@ -1,6 +1,6 @@
 {
   "job": "CUBE-LIFT-WORKOUT-1",
-  "state": "BOUNDED SOURCE PASS; IMPLEMENTATION RELEASED, NO COMPILE LEASE",
+  "state": "BOUNDED SOURCE PASS; IMPLEMENTATION HOLD FOR PRIORITY SPARKS FIX",
   "sourceFiles": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-read.md",
@@ -69,6 +69,6 @@
     "actual parent admission/scoring/interlude and unavailable siblings",
     "needs/objective/public-state/audio and native shared-owner/retirement under existing scopes"
   ],
-  "CantApproval": "separate required operator decision remains pending; no dependent work",
+  "CantApproval": "resolved by formal main288bd07b approval",
   "hardwareRun": false
 }

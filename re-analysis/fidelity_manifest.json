@@ -160,7 +160,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M7-behaviour.md",
-        "approved": "2026-10-29",
+        "approved": "2026-10-30",
         "snapshot": "re-analysis/inventory/M7-behaviour.approved.json"
       }
     },
@@ -264,7 +264,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-29",
+        "approved": "2026-10-30",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -14374,6 +14374,28 @@
       "hardware_required": false,
       "live_path": true,
       "test": "NativeBouncerControllerTests; NativeBouncerFaceInputTests; NativeBouncerFactoryTests; NativeBouncerFrameTests; NativeBouncerGameTests; NativeBouncerRasterTests; NativeBouncerScopeTests"
+    },
+    {
+      "id": "M15-086",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorExploreBringCubeToBeacon (Hiking) lifecycle: constructor and recentFailureCooldown_sec config, the three vtable gates, IsRunnableInternal's cached eligibility (f32 beacon cooldown, FindUsableCubesOutOfBeacons, DidFailToUse filter), Init dispatch and its no-action result, base Update/Resume, own Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBringCubeToBeaconBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory class 1 0x0059C968 (new 0x138); ctor 0x005DEFB0..0x005DEFDA (empty ObjectInfo vector +0x11C, target +0x12C = -1); LoadConfig recentFailureCooldown_sec f32 -> +0x130 (0x005DF082..0x005DF090); Hiking_bringCubeToBeacon.json 45.0.",
+        "Vtable 0x0102957C: +0x20 base 0x005BF04C returns 0, +0x24 base 0x0059EC12 returns 0, +0x28 0x005E0DF0 returns 1.",
+        "IsRunnableInternal 0x005DF10C..0x005DF2D8: clears the cache; no active beacon -> false; |stamp| < 1e-5f skips, else f32(stamp + cooldown) + -1e-5f > timer seconds refuses (0x005DF148..0x005DF194); FindUsableCubesOutOfBeacons 0x005DF1A4; per entry located lookup and DidFailToUse(id, {0,3}, cooldown, pose, 20.0f, pi/8) (0x005DF1E2..0x005DF294); runnable iff the cache is non-empty.",
+        "InitInternal 0x005DF348..0x005DF3DE: target -1; carrying -> target = cache[0].id, TransitionToObjectPickedUp; else TransitionToPickUpObject(1); result 0 with an action, else 1 iff |now - stamp| >= 1e-5f (movpl).",
+        "Update base 0x005BDA56..0x005BDA62; Resume base 0x005BDA94..0x005BDAC8; Stop 0x005DFD50..0x005DFD86 erases debug locations only; dtor 0x005DF020..0x005DF03C.",
+        "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-read.md; re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-claude-check.md"
+      ],
+      "effect": "when Hiking's BringCubeToBeacon may run (beacon present, cooldown after a failed placement, usable cubes outside beacons not recently failed), which branch Init takes, whether a start with no action counts as success, and that stopping leaves beacons and failure memory intact",
+      "provenance": "HIKING-BRING-CUBE-TO-BEACON-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.",
+      "unresolved": "Built in HIKING-BRING-CUBE-TO-BEACON-1; not settled: Hiking's parent admission (the scoring chooser that picks this behaviour) is MISSING, so no production chooser reaches the owner. Excludes the steps owned elsewhere: pickup selection and callback (M15-026), stacking and needs reporting (M15-008), floor search, placement and NoFreePoses (M15-019..M15-025), emotion events (M15-009), the Think producer (M15-011, M15-084), generic IBehavior gates/Update/Resume/StopActing (M8-001). Only the canonical Hiking_BringCubeToBeacon config is built here; SparksBringCubeToBeacon (5 s cooldown, GatherCubes admission) is not. M1-034 skips: an empty cache when carrying at 0x005DF36A and a null active beacon at 0x005DF396, both visible MISSINGs.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "HikingBringBeaconCandidatesTests; BringBeaconQueueAdmissionTests"
     }
   ]
 }

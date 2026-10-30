@@ -218,7 +218,8 @@ public sealed class M3M4SettlingBuilderTests
             await Task.WhenAll(work).WaitAsync(TimeSpan.FromSeconds(15));
             Assert.True(SpinWait.SpinUntil(()=>pairs.Count>0,TimeSpan.FromSeconds(5)));
             Assert.All(pairs,p=>Assert.Contains(p,new[]{(10,1f),(20,2f),(16,1.5f)}));
-            Assert.True(nativeThreads.Count>=13);Assert.All(nativeThreads,t=>Assert.Equal(engineThread,t));
+            // The injected DefaultCameraParams is handled on a later engine tick; wait for its log entry.
+            Assert.True(SpinWait.SpinUntil(()=>nativeThreads.Count>=13,TimeSpan.FromSeconds(5)));Assert.All(nativeThreads,t=>Assert.Equal(engineThread,t));
         }
         finally{Directory.Delete(root,true);}
     }

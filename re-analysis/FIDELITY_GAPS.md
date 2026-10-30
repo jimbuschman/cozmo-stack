@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **727 records** over 16 subsystems.
+Manifest of **728 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 353 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 354 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 85 | 4 | 71 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 86 | 4 | 72 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3889,6 +3889,15 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Factory class 0 0x0059C946..0x0059C964 (new 0x158); ctor 0x005F12FC; vtable 0x0102A5B8 (+0x20/+0x24 base false, +0x28 false); bouncer.json; PlayWithHumans scoring entry.; IsRunnableInternal 0x005F133C..0x005F139E: IsFeatureEnabled(8) == 1; GetFaceIDs(false); GetBestFaceToTrack(set, true); GetSmartFaceID -> +0x120; IsValid.; InitInternal 0x005F14A0..: SmartDisableReactionsWithLock (table 0x00C6FB90), SmartPushIdleAnimation(0x23F); display 128x64; paddle (W/2, H-4), ball (W/2, H), step 10; RNG RandDbl(1), RandDblInRange(1,3) twice.; UpdateInternal 0x005F19A4..: duration > 60.0f, invalid/missing face, image age >= 5001 (0x1389) -> return 2; states 1..5 triggers 8/10/14/16 with TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false); state 5 UpdatePaddle (face+0xDC degrees, step 10, clamp), UpdateBall (wall reflections, bottom score |dx| < 16), pending miss sound trigger 0x209; states 6..9 exit triggers 15/11/9.; UpdateDisplay: Image(H, W) black; filled rect paddle (+-16, 4 high), circle radius 3, DrawText scores at (4,12) and (W-4-8*len,12) scale 0.5; SetFaceAction(image, 33) (0x005F0F40..0x005F10D0); StopInternal 0x005F1C6C bx lr.; re-analysis/research/20261029-bouncer-1-read.md; re-analysis/research/20261029-bouncer-1-claude-check.md
 * outstanding: Built in BOUNCER-1; not settled. The shipped Bouncer feature is disabled (features.json) and the stack has no host feature-toggle dispatch. With more than one eligible face the stack refuses with a visible MISSING instead of ranking them with GetBestFaceToTrack (built for M15-080, 0x0056C110). Named boundaries from HANDOFF-BOUNCER-1.md: detector DC production (M11-016/M14-010), multi-face geometry (M14-001/M11-066), a historical origin (M14-008), the final shared-allocation callback (M11-077), the M8-020 completion union/destructor gaps, full app reload (M5-052). Owned elsewhere: face RLE/parity (M5-013), eye raster (M5-021), the feature gate (M15-007), reaction locks (M7-014), the idle stack and actions (M8).
+
+**M15-086 — BehaviorExploreBringCubeToBeacon (Hiking) lifecycle: constructor and recentFailureCooldown_sec config, the three vtable gates, IsRunnableInternal's cached eligibility (f32 beacon cooldown, FindUsableCubesOutOfBeacons, DidFailToUse filter), Init dispatch and its no-action result, base Update/Resume, own Stop** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeBringCubeToBeaconBehavior.cs`
+* effect: when Hiking's BringCubeToBeacon may run (beacon present, cooldown after a failed placement, usable cubes outside beacons not recently failed), which branch Init takes, whether a start with no action counts as success, and that stopping leaves beacons and failure memory intact
+* rests on: HIKING-BRING-CUBE-TO-BEACON-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Factory class 1 0x0059C968 (new 0x138); ctor 0x005DEFB0..0x005DEFDA (empty ObjectInfo vector +0x11C, target +0x12C = -1); LoadConfig recentFailureCooldown_sec f32 -> +0x130 (0x005DF082..0x005DF090); Hiking_bringCubeToBeacon.json 45.0.; Vtable 0x0102957C: +0x20 base 0x005BF04C returns 0, +0x24 base 0x0059EC12 returns 0, +0x28 0x005E0DF0 returns 1.; IsRunnableInternal 0x005DF10C..0x005DF2D8: clears the cache; no active beacon -> false; |stamp| < 1e-5f skips, else f32(stamp + cooldown) + -1e-5f > timer seconds refuses (0x005DF148..0x005DF194); FindUsableCubesOutOfBeacons 0x005DF1A4; per entry located lookup and DidFailToUse(id, {0,3}, cooldown, pose, 20.0f, pi/8) (0x005DF1E2..0x005DF294); runnable iff the cache is non-empty.; InitInternal 0x005DF348..0x005DF3DE: target -1; carrying -> target = cache[0].id, TransitionToObjectPickedUp; else TransitionToPickUpObject(1); result 0 with an action, else 1 iff |now - stamp| >= 1e-5f (movpl).; Update base 0x005BDA56..0x005BDA62; Resume base 0x005BDA94..0x005BDAC8; Stop 0x005DFD50..0x005DFD86 erases debug locations only; dtor 0x005DF020..0x005DF03C.; re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-read.md; re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-claude-check.md
+* outstanding: Built in HIKING-BRING-CUBE-TO-BEACON-1; not settled: Hiking's parent admission (the scoring chooser that picks this behaviour) is MISSING, so no production chooser reaches the owner. Excludes the steps owned elsewhere: pickup selection and callback (M15-026), stacking and needs reporting (M15-008), floor search, placement and NoFreePoses (M15-019..M15-025), emotion events (M15-009), the Think producer (M15-011, M15-084), generic IBehavior gates/Update/Resume/StopActing (M8-001). Only the canonical Hiking_BringCubeToBeacon config is built here; SparksBringCubeToBeacon (5 s cooldown, GatherCubes admission) is not. M1-034 skips: an empty cache when carrying at 0x005DF36A and a null active beacon at 0x005DF396, both visible MISSINGs.
 
 ## What remains after both: blocked externally, or needing hardware
 
