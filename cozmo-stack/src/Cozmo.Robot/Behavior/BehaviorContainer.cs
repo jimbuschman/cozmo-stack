@@ -303,6 +303,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
         [BehaviorClass.CantHandleTallStack] = (ctx,json)=>new NativeCantHandleTallStackBehavior(ctx,json),
         [BehaviorClass.CubeLiftWorkout] = (ctx,json)=>new NativeCubeLiftWorkoutBehavior(ctx,json),
+        [BehaviorClass.Dance] = (ctx,json)=>new NativeDanceBehavior(ctx,json),
         [BehaviorClass.CheckForStackAtInterval] = (ctx,json)=>new NativeCheckForStackAtIntervalBehavior(ctx,json),
         [BehaviorClass.PopAWheelie] = (ctx,json)=>new NativePopAWheelieBehavior(ctx,json),
         [BehaviorClass.RollBlock] = (ctx,json)=>new NativeRollBlockBehavior(ctx,json),
@@ -385,12 +386,12 @@ public sealed class BehaviorFactory
         }
         if(cls==BehaviorClass.CubeLiftWorkout && BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.CubeLiftWorkout or BehaviorID.SparksCubeLiftWorkout))
         { SteppedBehavior.ReportMissing("CubeLiftWorkout factory: configuration is outside the checked ordinary/Sparks instances");status=BehaviorCreateStatus.NotImplemented;return null; }
-        if((cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
+        if((cls==BehaviorClass.Dance||cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
+        if((cls==BehaviorClass.Dance||cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;

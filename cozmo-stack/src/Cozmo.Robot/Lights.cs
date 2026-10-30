@@ -1115,7 +1115,7 @@ public sealed class CubeLightComponent
         ObjectType? type=null;lock(_gate)foreach(var entry in _infos)if(entry.Value.ObjectId==id){type=entry.Key;break;}
         if(type is {} value)StopLightAnim("Interacting",EngineLayer,value);
     }
-    private bool PlayLightAnimForObjectId(uint id,string trigger,int layer,bool modifier,CubeLightModifier lights,int offset,Func<bool>? current=null)
+    internal bool PlayLightAnimForObjectId(uint id,string trigger,int layer,bool modifier,CubeLightModifier lights,int offset,Func<bool>? current=null,Action? completed=null)
     {
         ObjectType? type=null;
         lock(_gate) foreach(var entry in _infos) if(entry.Value.ObjectId==id){type=entry.Key;break;}
@@ -1124,7 +1124,7 @@ public sealed class CubeLightComponent
             SourceLog(EngineLogLevel.Info,"CubeLightComponent","CubeLightComponent.PlayLightAnim.InvalidObjectID",$"No object with id {id} exists in _objectInfo map can't play animation");
             return false;
         }
-        return PlayLightAnimCore(found,trigger,layer,0,modifier,lights,offset,id,current:current);
+        return PlayLightAnimCore(found,trigger,layer,0,modifier,lights,offset,id,completed:completed,current:current);
     }
 
     public bool PlayLightAnim(ObjectType type, string trigger, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0, Action? completed = null)
