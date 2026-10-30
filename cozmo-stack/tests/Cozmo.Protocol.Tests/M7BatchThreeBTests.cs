@@ -267,7 +267,8 @@ public class M7BatchThreeBTests
         }
         // Config-built owners; PopAWheelie case0059CEA6/ctor005C7430 joins the independently checked class bindings.
         // BUILD-PYRAMID-1 E1: derived case0059C98A/ctor005DBC88; Base E1: BuildPyramidBase case0059C9AC/ctor005DCA40 is independently configured.
-        Assert.Equal(new[] { BehaviorClass.Bouncer, BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
+        // HIKING-BRING-CUBE-TO-BEACON-1 A1: case0059C968/ctor005DEFB0, bounded to the checked Hiking ID and owners.
+        Assert.Equal(new[] { BehaviorClass.Bouncer, BehaviorClass.BringCubeToBeacon, BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 
