@@ -1,6 +1,6 @@
 {
   "job": "DEV-TURN-IN-PLACE-TEST-1",
-  "state": "READ OPEN",
+  "state": "BLOCKED: CORRECTED CONTRACT APPROVAL PENDING",
   "managerStart": "29dc3a4fbb8e784a659aa52eab033d6a799f0cf7",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1",
@@ -18,11 +18,46 @@
       "modelRequested": "DEFAULT override omitted",
       "effortRequested": "DEFAULT override omitted",
       "fork": "none"
+    },
+    {
+      "role": "builder",
+      "agent": "/root/dev_turn_build",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "fork": "none"
     }
   ],
   "actualBackends": "unobserved",
   "dotnetLease": "none, no .NET authorized",
   "reviewerFixRounds": 0,
-  "sourceQuestions": 0,
-  "builderMissingItems": []
+  "sourceQuestions": 1,
+  "builderMissingItems": [
+    "actual initial caller bypassing native false runnable gate",
+    "shared manager/action/turn lifecycle gaps in existing records"
+  ],
+  "builder": "Preparation only; source approval pending",
+  "sourceVerdict": "A+B bounded own path PASS; approved inventory contradiction requires corrected contract release",
+  "reports": [
+    {
+      "path": "re-analysis/research/20261030-dev-turn-in-place-test-1-read.md",
+      "sha256": "440f8b8d5da08925a3ebe3dce2c7cccb8d2b315f1c0a00c2136206b02b44230b",
+      "originalSha256": "751c381d6391a90cde6db50215456c1c2b83338afad290a2097329c6438d3602",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dev-turn-in-place-source-originals\\read.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-dev-turn-in-place-test-1-source-codex-check.md",
+      "sha256": "6cd4d67cb52da11d9c41b7426cc3222431c98e55b1be4c12ba1fcab831884a08",
+      "originalSha256": "466864c759d628064384862114a06be1b8a285d0b526e8ac09df96c047f9a0ba",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dev-turn-in-place-source-originals\\sourcecheck.md"
+    }
+  ],
+  "currentLiteralRecordSnapshotsMatched": 14,
+  "existingWholeRecordProposals": [],
+  "newRecordProposal": "One otherwise-unowned own lifecycle, caller/shared gaps explicit",
+  "contractContradiction": {
+    "inventory": "re-analysis/inventory/M7-behaviour.md:950",
+    "approvedClaim": "clears vector +0x11c..+0x120, +0x128",
+    "source": "0x005CA902..916 retains vector, zeroes index and every existing run byte",
+    "decision": "operator asynchronous approval requested; no answer yet"
+  }
 }
