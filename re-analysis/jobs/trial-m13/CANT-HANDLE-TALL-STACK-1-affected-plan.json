@@ -1,0 +1,17 @@
+{
+  "classes": [
+    "CantHandleTallStackNativeTests",
+    "M11SmallReadsBuilderTests",
+    "SharedChildrenNativeTests",
+    "NavigationTests",
+    "CompoundActionTests",
+    "BehaviorFrameworkTests",
+    "PickupPyramidNativeExecutionTests",
+    "CoreReviewTests",
+    "NativeBouncerFactoryTests",
+    "SparksGatherNativeTests",
+    "M7BatchThreeBTests"
+  ],
+  "filter": "FullyQualifiedName~CantHandleTallStackNativeTests|FullyQualifiedName~M11SmallReadsBuilderTests|FullyQualifiedName~SharedChildrenNativeTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~CompoundActionTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~CoreReviewTests|FullyQualifiedName~NativeBouncerFactoryTests|FullyQualifiedName~SparksGatherNativeTests|FullyQualifiedName~M7BatchThreeBTests",
+  "rationale": "Independent reviewer approved ten classes covering changed configured factory/runtime, recipient/legacy integration, sequence/lifecycle, actual configured fixture and unavailable chooser. Added M7BatchThreeBTests after actual factory Construct-list omission in fullgate1; native79 table unchanged. Guarded state-name overload only newCant caller; framework coverage retained."
+}

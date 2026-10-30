@@ -268,7 +268,7 @@ public class M7BatchThreeBTests
         // Config-built owners; PopAWheelie case0059CEA6/ctor005C7430 joins the independently checked class bindings.
         // BUILD-PYRAMID-1 E1: derived case0059C98A/ctor005DBC88; Base E1: BuildPyramidBase case0059C9AC/ctor005DCA40 is independently configured.
         // HIKING-BRING-CUBE-TO-BEACON-1 A1: case0059C968/ctor005DEFB0, bounded to the checked Hiking ID and owners.
-        Assert.Equal(new[] { BehaviorClass.Bouncer, BehaviorClass.BringCubeToBeacon, BehaviorClass.ThinkAboutBeacons, BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.CheckForStackAtInterval, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
+        Assert.Equal(new[] { BehaviorClass.Bouncer, BehaviorClass.BringCubeToBeacon, BehaviorClass.ThinkAboutBeacons, BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.CantHandleTallStack, BehaviorClass.CheckForStackAtInterval, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 
@@ -925,7 +925,16 @@ public class M7BatchThreeBTests
         Assert.True(f.StepUntil(() => f.Fist.State == 4));
         f.Rig.State(flags: 0);                                                  // not in position: the lift and head read as moving
         f.Rig.Robot.Animations.Stop();
-        Assert.True(f.StepUntil(() => f.Fist.State == 5));
+        bool reachedSettle = f.StepUntil(() => f.Fist.State == 5);
+        string? detail = null;
+        if (!reachedSettle)
+            detail = $"state={f.Fist.State} stateName={f.Fist.StateName} running={f.Fist.EngineRunning} " +
+                $"runner={f.Fist.OwnedRunner?.GetType().Name ?? "null"} tag={f.Fist.CurrentRunnerTag} hasAction={f.Fist.HasCurrentAction} " +
+                $"posted={f.Fist.HasPostedWork} awaitingAsync={f.Fist.AwaitingAsyncCompletion} asyncStatus={f.Fist.AsyncWorkCompletion.Status} " +
+                $"awaitingAnimationCallback={f.Fist.AwaitingCompletedAnimationCallback} animationCallbackStatus={f.Fist.AnimationCallbackCompletion.Status} " +
+                $"playing={f.Rig.Robot.Animations.IsPlaying} manualPlaying={f.Fist.ManualAnimationInProgress} managerCurrent={f.Manager.Current?.Id ?? "null"} " +
+                $"clockMs={f.Ms} trace={string.Join(" | ", f.Fist.Trace)}";
+        Assert.True(reachedSettle, detail);
         f.Step(8);                                                              // 0.8 s of settling
         Assert.Equal(5, f.Fist.State);
         f.Rig.State();                                                          // at rest

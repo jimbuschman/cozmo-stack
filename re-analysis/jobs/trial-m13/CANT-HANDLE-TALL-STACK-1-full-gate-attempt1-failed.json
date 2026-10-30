@@ -1,0 +1,31 @@
+{
+  "job": "CANT-HANDLE-TALL-STACK-1",
+  "fullGateAttempt": 1,
+  "state": "FAILED, PRESERVED; NOT READY",
+  "commit": "73bf6d1cc3e23e9398b6e208ced903246ded90ed",
+  "startedUtc": "2026-10-30T15:26:48.3668316Z",
+  "endedUtc": "2026-10-30T15:38:13.7057534Z",
+  "exitCode": 1,
+  "passed": 6923,
+  "failed": 2,
+  "skipped": 0,
+  "total": 6925,
+  "failures": [
+    {
+      "name": "M7BatchThreeBTests.TheFactoryTableIsTheExtractionsTable",
+      "classification": "Stale factory Construct expectation; checked native79 table unchanged, class4 now constructed; harness correction required."
+    },
+    {
+      "name": "M7BatchThreeBTests.ASlowMotorSettleLogsTheEnginesWarning",
+      "classification": "UNKNOWN transition state4->5 after animation Stop before any warning assertion; no discriminating intermediate evidence. Diagnostic-only capture authorized, no motor/Fist/timeout/expectation correction assumed."
+    }
+  ],
+  "logSha256": "1b1eaca6cd07b5118fdffb0e368deeeb48b3f44ce7cafd13ea4a42cf62277fb4",
+  "consoleSha256": "f78cb032ba4b66504bad546f2d1f732fb593ec060791ff2aec8edeacb199536f",
+  "reviewedSource5Unchanged": true,
+  "nativePost": [],
+  "checkoutPost": [],
+  "lastRecordedPassingFingerprint": "8ccfb2bab1295259c7e9cfab06f4eb56998af646",
+  "thatFingerprintAppliesToThisGate": false,
+  "separateNewReviewFinding": "Synchronous Step event and supplied weak-lock reentry can mutate replacement; correction batch2 independently verified/released, minimal guarded SetStateName overload and local guards plus tests."
+}

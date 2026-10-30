@@ -1,0 +1,54 @@
+{
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "88761cdf91a665c82befe1698cf60046cbc7ec13798f52f1f6516a27c6ca894b",
+      "rawBlob": "f3982e5e1935765910dfdf0d8a48fea636460db1",
+      "filteredBlob": "f3982e5e1935765910dfdf0d8a48fea636460db1",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-review3-final\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "5891bcd93d8c04806728fd4e6d2e183efbe76aaebf1f12be6d5a6eb702b38245",
+      "rawBlob": "026db07208d5db9366cad445c28ebc74f1c0446b",
+      "filteredBlob": "026db07208d5db9366cad445c28ebc74f1c0446b",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-review3-final\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeBehaviorRuntime.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/DelocalizationRecipients.cs",
+      "sha256": "f0fcb1d0dfdd8b87c39be9f2436f0306392ccf2723ed5d456f414c7bda227fc1",
+      "rawBlob": "944a894afc961bcf016d2669876894b06aba844d",
+      "filteredBlob": "944a894afc961bcf016d2669876894b06aba844d",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-review3-final\\cozmo-stack\\src\\Cozmo.Robot\\DelocalizationRecipients.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCantHandleTallStackBehavior.cs",
+      "sha256": "5af7f31b9158ccfe12c9d9e5e133d020dd96a3a72380881312d4a45fe6a20e69",
+      "rawBlob": "1b642a48749ab4a2b71f98ae319e21cf9c81276a",
+      "filteredBlob": "1b642a48749ab4a2b71f98ae319e21cf9c81276a",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-review3-final\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeCantHandleTallStackBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CantHandleTallStackNativeTests.cs",
+      "sha256": "ff2a2441f921c0779920d5177d2d3af66e15e4151b69ddaeefc08645b1994385",
+      "rawBlob": "4f3319a8ea3e39e83182ed3cc30a36e581698eac",
+      "filteredBlob": "4f3319a8ea3e39e83182ed3cc30a36e581698eac",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-review3-final\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\CantHandleTallStackNativeTests.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs",
+      "sha256": "ea4a6ae3d6c5579ac3eee4fdeea06a51a57d7725ff326276193b68fe92998415",
+      "rawBlob": "e300ff855668e4868aa7834d5b3af4e626b1d974",
+      "filteredBlob": "e300ff855668e4868aa7834d5b3af4e626b1d974",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-review3-final\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\SteppedBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "e176ca7bfc4978823ca124163c545cc2c59d59e23fbf34e15cdc83869b814f44",
+      "rawBlob": "c7ccad15b7e3d60394ef59c9d9529fbebf4c1372",
+      "filteredBlob": "c7ccad15b7e3d60394ef59c9d9529fbebf4c1372",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cant-handle-tall-stack-1\\.scratch\\tall-stack-review3-final\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\M7BatchThreeBTests.cs"
+    }
+  ],
+  "codeVerdict": "STATIC PASS correction3; actual previous drafts/gate retained"
+}

@@ -516,6 +516,20 @@ public abstract partial class SteppedBehavior : IBehavior
         ReportMissing("Robot::Update's behaviour debug string (robot+0x4C = activity + ' ' + BehaviorID + '-' + IBehavior+0x58, 0x00513F6A..0x00513F9C) sent to VizManager::SetText and SetSdkStatus(Behavior): the sender and the SDK-status path are M11/M12 and not built");
     }
 
+    // Host reentry guard for callers whose synchronous observers may replace the active run.
+    // The original one-argument path remains unchanged for other behaviors.
+    protected bool SetStateName(string newState, Func<bool> current)
+    {
+        string text = $"Behavior:{Id}, FromState:{_stateName} ToState:{newState}";
+        Log("info: [Behaviors] Behavior.TransitionToState: " + text);
+        if (!current()) return false;
+        Context?.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "Behavior.TransitionToState", text);
+        if (!current()) return false;
+        _stateName = newState;
+        ReportMissing("Robot::Update's behaviour debug string (robot+0x4C = activity + ' ' + BehaviorID + '-' + IBehavior+0x58, 0x00513F6A..0x00513F9C) sent to VizManager::SetText and SetSdkStatus(Behavior): the sender and the SDK-status path are M11/M12 and not built");
+        return true;
+    }
+
     /// <summary>
     /// <c>IBehavior::Update</c> 0x005bd074 returns 2 - before <c>UpdateInternal</c> runs - when byte +0xa0 is
     /// set and the current-action handle +0x84 is zero (<c>cbz r1</c> 0x005bd078; <c>cbz r1</c> 0x005bd07e;

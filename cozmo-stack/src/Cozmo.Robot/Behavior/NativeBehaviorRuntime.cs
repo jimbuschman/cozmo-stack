@@ -17,6 +17,10 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal NativePickupTargetCache? PickupTargets {get;}
     // Explicit native-input boundaries. Missing production suppliers stay unavailable;
     // injected offline inputs are not a claim that the strong-cache/intention producers are recovered.
+    // Null until the native weak owner and last-strong-release semantics are recovered.
+    internal Func<ITallStackWeakTarget?>? TallStackWeakInput {get;set;}
+    // Explicitly supplied recipient join; no mapping from the two slots is assumed.
+    internal TallStackDelocalizationData? TallStackOwnerInput {get;set;}
     internal Func<int,uint>? PyramidTargetInput {get;set;}
     internal Func<IReadOnlyList<NativePyramidBase>>? PyramidBaseStrongInput {get;set;}
     internal Func<IReadOnlyList<NativePyramidConfiguration>>? PyramidFullStrongInput {get;set;}
