@@ -117,5 +117,30 @@
     "productionSrcTree": "e21237e8b54b967bcd6e8d45efc1f9544bcd6f46",
     "frozenPathsMatched": 16,
     "protectedOfficialChanges": false
+  },
+  "fullGate": {
+    "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "f9cecf1659869273e203e5dc9f4484f889f2fd9c",
+    "cozmoStackTree": "371b755e58bfbae6cc7b596cd22d07487c97acf1",
+    "productionSrcTree": "e21237e8b54b967bcd6e8d45efc1f9544bcd6f46",
+    "startedUtc": "2026-10-30T06:35:18.5608494Z",
+    "endedUtc": "2026-10-30T06:45:24.8457764Z",
+    "exitCode": 0,
+    "total": 6895,
+    "passed": 6895,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "8 m 57 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "0eaee84dc55fc19cf5563ca70b46690e7352b254",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "cfff39dff344334c1f3543ca4d807e915b3d63643c53bd030519454d89de6c43",
+    "consoleSha256": "666150f79a3fd235f33dfa3fd2948b3acc4c290a101604cdb4d57658f6e6ca23",
+    "frozenSourcePathsMatched": 16,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
   }
 }
