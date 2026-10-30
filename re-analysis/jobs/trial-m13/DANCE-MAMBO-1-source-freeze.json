@@ -18,9 +18,81 @@
       "modelRequested": "DEFAULT overrideomitted",
       "effortRequested": "DEFAULT overrideomitted",
       "fork": "none"
+    },
+    {
+      "role": "builder",
+      "agent": "/root/dance_mambo_build",
+      "modelRequested": "DEFAULT overrideomitted",
+      "effortRequested": "DEFAULT overrideomitted",
+      "fork": "none"
     }
   ],
-  "dotnetLease": "none",
-  "builder": "not started; DEFAULT model/effort planned after checked source",
-  "actualBackends": "unobserved"
+  "dotnetLease": "C prep returned, none active",
+  "builder": "prep only; no implementation before checked read",
+  "actualBackends": "unobserved",
+  "workerWorktree": "C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1",
+  "workerPreparedHead": "65259795a973238e44f0e6582cc0857d923137bf",
+  "initialWorktreeHeadCorrection": "Root initially created from originalcheckout a4bbc533 then fastforward652 before worker startup; no implementation/test before correction.",
+  "preparation": {
+    "directory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-prep",
+    "files": {
+      "checkout.json": {
+        "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+        "size": 8
+      },
+      "counts.txt": {
+        "sha256": "ea6f888a28410782f734701558e5c5e6c85506c2ec2972ba62f93df00c2ecee1",
+        "size": 25
+      },
+      "hashes.txt": {
+        "sha256": "9c0cb247e6707cae2c86f72f80b1b63df181580ec179feefd88199c8fbf341af",
+        "size": 530
+      },
+      "postflight.json": {
+        "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+        "size": 8
+      },
+      "preflight.json": {
+        "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+        "size": 8
+      },
+      "prep.ps1": {
+        "sha256": "c7063a4e7ef4bfefe78b42825ebfeac69dfa046d2d15811b34d94df82104b5dd",
+        "size": 1394
+      },
+      "restore-exit.txt": {
+        "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+        "size": 3
+      },
+      "restore.log": {
+        "sha256": "43715333b0867e8b5923e7032483ea30190f54e1eaae003fd3746b0f280b3c9b",
+        "size": 1856
+      },
+      "script-hash.txt": {
+        "sha256": "b373c836ba161cc58094c81971782c37a1bbf217f97976df48199ed603bb4644",
+        "size": 248
+      },
+      "shutdown-exit.txt": {
+        "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+        "size": 3
+      },
+      "shutdown.log": {
+        "sha256": "554f3d83f9124651a7726864459c7dc8a54e08d205492927bc08a70c6994fdd1",
+        "size": 322
+      },
+      "startup.txt": {
+        "sha256": "d8258dbc0fba30d28b4108a4c7e56e70075b4cb952f50480e9d92f8986dfc25c",
+        "size": 326
+      }
+    },
+    "restoreExit": 0,
+    "restoredProjects": 5,
+    "shutdownExit": 0,
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "elevatedActualDotnet": true,
+    "buildOrTest": false,
+    "cacheOnlyOfflineRestoreOnce": true
+  }
 }
