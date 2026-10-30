@@ -1,6 +1,6 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
-  "state": "COMPILER FIX1 VERIFIED; BUILD2/AFFECTED REFERENCE RELEASED",
+  "state": "HARNESS FIX1 STATIC PASS; BUILD3/AFFECTED2 RELEASED",
   "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
   "sources": [
     {
@@ -59,11 +59,12 @@
   "CANTContractApproval": "separate REQUIRED/PENDING, no dependentwork authorized",
   "sourceProseClarifications": 1,
   "compilerCorrectionBatches": 1,
-  "testRuns": 0,
+  "testRuns": 1,
   "coherentDrafts": [
     "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-freeze.json",
     "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-fix1-freeze.json",
-    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-compiler-fix1-freeze.json"
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-compiler-fix1-freeze.json",
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-harness-fix1-freeze.json"
   ],
   "affectedPlan": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-affected-plan.json",
   "currentSourceFiles": [
@@ -153,5 +154,51 @@
       "checkoutProcesses": [],
       "priorBytesPreserved": true
     }
-  ]
+  ],
+  "affectedAttempts": [
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "affectedAttempt": 1,
+      "buildAttempt": 2,
+      "state": "AFFECTED_FAILED_CLASSIFIED",
+      "buildExit": 0,
+      "total": 654,
+      "passed": 651,
+      "failed": 3,
+      "skipped": 0,
+      "classesRepresented": 20,
+      "failures": [
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 0)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 50331648)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 67108865)",
+          "outcome": "Failed"
+        }
+      ],
+      "classification": "test inspects mutable live compound children after real Init/CheckIfDone can retire them. Captured failure does not identify exact remaining count or which child. Two independent traces agree; no production/source defect established. Test-only valid moving-head state and type-based target observation, original tuple/result/deadline assertions retained.",
+      "sourceAndDataInputsUnchanged": 8,
+      "dataDllHashesUnchanged": 255,
+      "trxSha256": "8da5905845fc09f78a1328be56060c51222197c6aed6a0ca74c38be2055b145f",
+      "testLogSha256": "d86fee08121cdd0891a2cd2d274657c484a5833295bc9e300c5c304a427b064d",
+      "namedResultsSha256": "cd9a69f0caf1983ef23b0a25287426236570316ea36904fc76a16fd83dd889f3",
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "priorBytesPreserved": true
+    }
+  ],
+  "testFoundHarnessCorrectionBatches": 1,
+  "testFoundProductionCauseGroups": 0
 }
