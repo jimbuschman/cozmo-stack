@@ -1,6 +1,6 @@
 {
   "job": "HIKING-BRING-CUBE-TO-BEACON-1",
-  "stage": "Own source and definition-count supplement checked; bounded native action interfaces and zombie predicate UNKNOWNs in recovery; implementation drafted, no .NET",
+  "stage": "Whole own source plus3 essential UNKNOWN supplements checked; full bounded implementation released, no .NET",
   "base": "c25a6f352d63747f1f509f8ba0b1f23c59a87ecb",
   "main": "75891508091abbffadc042a2318ec0128c62c868",
   "sourceFiles": {
@@ -36,7 +36,7 @@
   "sourceBehaviorCorrections": 0,
   "knownPyLocalHelperOrderingExceptions": 1,
   "beaconTimeContract": "Existing approved M15-023 and M15 inventory CorrectionA4 already f32; currentcodefloat, M13intannotationknownconflictdeferredClaude, no new approval/departure",
-  "pendingUnknown": "Native pickup/place thin-wrapper interfaces/default profiles and precise possible-object zombie predicate/render ordering",
+  "pendingUnknown": "No essential native interface UNKNOWN outstanding; existing shared geometry/child/report/progression seams remain explicit",
   "prep": {
     "checkoutProcesses": [],
     "compileOrTestsRun": false,
@@ -56,6 +56,25 @@
     "M15-020",
     "M11-063"
   ],
-  "checkedUnknownSupplementCount": 1,
-  "familyCountContract": "Canonical BlockWorld-lifetime family2 definition counter initialized3 by successful ActiveCube1/2/3 ctor defines. Independent of observations/connections/current origin. Current C# has no builtin redefine API; future reachable redefinition needs native increment semantics, not an always3 invariant."
+  "checkedUnknownSupplementCount": 3,
+  "familyCountContract": "Canonical BlockWorld-lifetime family2 definition counter initialized3 by successful ActiveCube1/2/3 ctor defines. Independent of observations/connections/current origin. Current C# has no builtin redefine API; future reachable redefinition needs native increment semantics, not an always3 invariant.",
+  "actionAndDelocalizationSources": {
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-native-action-interfaces-unknown.md": "8B71F850DA5199CFBCDD88F4E455B7F081ECF605B98C080C9981BAD0DF388A68",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-native-action-interfaces-codex-check.md": "EC20EA5C53A14126974777D9C6AE405CEA3E2926A12EF5E3D7DBB62B5422AED2",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-delocalization-predicate-unknown.md": "9B14D5876AA89F583490C39FD6E1CADD77D58EBA648917980E6E0809A0A9300F",
+    "re-analysis/research/20261030-hiking-bring-cube-to-beacon-1-delocalization-predicate-codex-check.md": "7EF17CB969C73A8521301145B899FEABAEBA1E1469B1B4125491E1ACE522FB5E"
+  },
+  "actionAndDelocalizationCurrentQuotesMatched": [
+    "M12-024",
+    "M12-030",
+    "M15-008",
+    "M15-021",
+    "M15-022",
+    "M15-026",
+    "M13-014",
+    "M8-026",
+    "M11-070"
+  ],
+  "actionInterfaceContract": "Checked shipped ctor tuples/composition/ownership/default profiles; dockB9true until reachedWait1, skipped on ignored drive failure. Carried-floor derived init/helper and inner/destination-only check, no generic postconditions. Preserve existing helper profile defaults.",
+  "delocalizationContract": "Possible pose real GetRootID !=currentorigin AND !AnyRemainingLocalizableObjects(root); erase, unconditional render once, clearbeacons; preserve failures. World->face->AI recipient order. Require real graph/current-origin/render-provider inputs, no default-root predicate."
 }
