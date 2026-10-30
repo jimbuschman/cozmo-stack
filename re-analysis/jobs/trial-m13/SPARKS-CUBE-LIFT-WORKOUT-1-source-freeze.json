@@ -1,6 +1,6 @@
 {
   "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
-  "state": "CODE VERIFIED; FULL GATE PENDING",
+  "state": "READY FOR CLAUDE",
   "managerStart": "3b0f97b051d7f6c3913cf5c3eb56f714307c2b1d",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "ordinaryHandoff": "0a8626dc6480df5e4638c0993582086f6747c0e5",
@@ -29,7 +29,7 @@
     }
   ],
   "actualBackend": "unobserved; operator reports defaultTerra",
-  "dotnetLease": "B returned; root integration next",
+  "dotnetLease": "returned after fullgate; native0",
   "reviewerFixRounds": 1,
   "compilerCorrections": 0,
   "postTestHarnessCorrections": 0,
@@ -151,5 +151,33 @@
   "workerCommit": "fb9adfae703331ca0674e30c087cdb90cec7290e",
   "integrationCommit": "30b99aeba0063072123dcdc0a1dd683a15ddab53",
   "cozmoStackTree": "e759fb24dbd15d901670f265a31aba867c8d210e",
-  "productionSrcTree": "55e30566c8faf7991638929f8bfb1da8bf09e4ec"
+  "productionSrcTree": "55e30566c8faf7991638929f8bfb1da8bf09e4ec",
+  "fullGate": {
+    "job": "SPARKS-CUBE-LIFT-WORKOUT-1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "cb3297fc6ea7d642e9f4d5ae33bf1dd23b28eb70",
+    "cozmoStackTree": "e759fb24dbd15d901670f265a31aba867c8d210e",
+    "productionSrcTree": "55e30566c8faf7991638929f8bfb1da8bf09e4ec",
+    "startedUtc": "2026-10-30T18:34:09.8721170Z",
+    "endedUtc": "2026-10-30T18:42:40.8322436Z",
+    "exitCode": 0,
+    "passed": 6965,
+    "total": 6965,
+    "failed": 0,
+    "skipped": 0,
+    "testDuration": "7 m 28 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "4239425b2b2606d3d013a72c09aeb3a19cce5219",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "5a3dea2f3f5696cc57521693596c34c51529b9359e5dd6d45e5433b37871309e",
+    "consoleSha256": "4939ba5c1e73fa6e279ec02924300d1e01f588fe27db6b6fa6510f82206aab70",
+    "frozenSourcePathsMatched": 6,
+    "nativePre": [],
+    "nativePost": [],
+    "officialChanges": false,
+    "hardwareRun": false,
+    "checkoutPost": [],
+    "postProcessInventorySha256": "d816b606a202faa59ed6af4a3523982af1f528e24a264cd117996dc10d70d50f",
+    "finalizerInfrastructure": "Default-permission Git Bash shared-memory helper denied before any writes; elevated finalizer succeeded. Full gate not repeated."
+  }
 }
