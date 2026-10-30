@@ -1,6 +1,6 @@
 {
   "job": "CUBE-LIFT-WORKOUT-1",
-  "state": "BOUNDED SOURCE PASS; BUILD RELEASED AFTER CANT HANDOFF",
+  "state": "SOURCE ADDITIONS4 CHECKED; ORDINARY IMPLEMENTATION IN PROGRESS, NO .NET",
   "sourceFiles": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-read.md",
@@ -82,5 +82,77 @@
       "re-analysis/research/overnight/20261016-batch-check.md: member map 0x00569A88..0x00569B3E; BehaviorHelperComponent 0x00569D30..0x00569D7E; ~vector<BorderSegment> 0x00569F86..0x00569FB8; ProcessInfo tree 0x00569FBA..0x0056A006; ObjectInteractionCacheEntry 0x0056A06E..0x0056A13E; SevereNeeds 0x00572A1C..0x00572A36; AIWhiteboard 0x0056A32C..0x0056A37C; RequestGame 0x0056A1DC..0x0056A1FA; Workout 0x0056A140..0x0056A1D8."
     ]
   },
-  "resumption": "Prior workout runtime handles unavailable, no implementation started; prepared233f327e clean/restore once retained. Same requested model configurations for replacement roles; log exact handles after actual startup."
+  "resumption": "Prior workout runtime handles unavailable, no implementation started; prepared233f327e clean/restore once retained. Same requested model configurations for replacement roles; log exact handles after actual startup.",
+  "resumedWorkers": [
+    {
+      "role": "reader",
+      "agent": "/root/workout_read_resume",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "builder",
+      "agent": "/root/workout_build_resume",
+      "modelRequested": "DEFAULT (override omitted)",
+      "effortRequested": "DEFAULT (override omitted)",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/workout_review_resume",
+      "modelRequested": "DEFAULT (override omitted)",
+      "effortRequested": "DEFAULT (override omitted)",
+      "fork": "none"
+    }
+  ],
+  "resumedSourceAdditions": [
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-pickup-parameter-supplement.md",
+      "actualWorkingSha256": "0d3e97c111915539bc8efc8673edd6fc6a33a3c88a932ea5bd851469ec99cb03",
+      "canonicalLfSha256": "0d3e97c111915539bc8efc8673edd6fc6a33a3c88a932ea5bd851469ec99cb03",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-pickup-parameter-supplement.0d3e97c11191.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-score-arithmetic-supplement.md",
+      "actualWorkingSha256": "1011538ed7d87efa2ff2e5164fc4a3a25887b45d780f16e751f28bc451f680eb",
+      "canonicalLfSha256": "1011538ed7d87efa2ff2e5164fc4a3a25887b45d780f16e751f28bc451f680eb",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-score-arithmetic-supplement.1011538ed7d8.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-managed-score-clarification.md",
+      "actualWorkingSha256": "1ef26135fb6dd098731754aee45af11396eec249255765dddbf640b04312ec6b",
+      "canonicalLfSha256": "1ef26135fb6dd098731754aee45af11396eec249255765dddbf640b04312ec6b",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-managed-score-clarification.1ef26135fb6d.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-strong-objective-supplement.md",
+      "actualWorkingSha256": "f4bb6f7fbed06577d24d79e551635912b8a611277bee0ec984659e5695aed239",
+      "canonicalLfSha256": "f4bb6f7fbed06577d24d79e551635912b8a611277bee0ec984659e5695aed239",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-strong-objective-supplement.f4bb6f7fbed0.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-own-state-name-supplement.md",
+      "actualWorkingSha256": "9786df2312f054e3a1735efe74865c7c6d74c767b9aff72b93849e0c8de2138d",
+      "canonicalLfSha256": "9786df2312f054e3a1735efe74865c7c6d74c767b9aff72b93849e0c8de2138d",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-own-state-name-supplement.9786df2312f0.raw.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-resume-source-codex-check.md",
+      "actualWorkingSha256": "7b171a893874854396dc39b15ff61e46ba3137075df70ec5a3296aeb025fa305",
+      "canonicalLfSha256": "64a7989c791127289cdc2241debc6bd0c2a014299e1f29de9328cb1988b6e6e1",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-resume-source-codex-check.7b171a893874.raw.md"
+    }
+  ],
+  "newSourceQuestions": 4,
+  "newSourceQuestionsResolved": [
+    "pickup params +0C/+0D -> helper+104/+105 = 0/1",
+    "binary32 delta/epsilon/ordered scorer sum/mean; GraphEvaluator alreadyf32",
+    "PerformedStrongWorkout objective0x13",
+    "bounded own-body absence of class state-name assignments; diagnosticlabels are not state API"
+  ],
+  "newSourceAdditionsIndependentVerdict": "PASS all4; no frozeninventory precision contradiction",
+  "managedCandidateClarification": "Existing Graph2d wrapper already delegates to f32 GraphEvaluator; only WorkoutConfig delta/epsilon/accumulation/mean needed source arithmetic.",
+  "builderProvisionalLabelCorrection": "Removed inferred state labels before first coherent draft; no before-archive reconstructed or reviewer/compiler correction claimed.",
+  "dotnetLease": "none; no new restore/build/test allowed"
 }
