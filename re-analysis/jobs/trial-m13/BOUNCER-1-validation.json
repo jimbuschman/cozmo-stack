@@ -1,0 +1,107 @@
+{
+  "job": "BOUNCER-1",
+  "state": "INDEPENDENT969PASS; FULL GATE PENDING, NOT READY",
+  "workerBase": "26b35eeb6cf002a36c0b38bc9b55c94332783c4f",
+  "readerRequested": "gpt-6.1-sol/medium",
+  "builderReviewerRequested": "DEFAULT model/effort, overrides omitted; operator-configured model gpt-6.1-terra, actual backend unobserved",
+  "sameWorkers": true,
+  "reviewerRequiredCorrectionBatches": 5,
+  "sourceBehaviorCorrections": 0,
+  "compilerCorrectionRounds": 0,
+  "buildsReportedPassed": 3,
+  "executedHarnessDefects": 2,
+  "preRunFixtureRaceFindings": 1,
+  "broadFactoryBindingCorrections": 1,
+  "precompileLocalShadowFindings": 1,
+  "precompileAbstractMethodFindings": 1,
+  "nativeCorpusMetadataCorrections": 1,
+  "knownPyNavigationSequencingMisses": 1,
+  "sourceSupplementCount": 7,
+  "builderRuns": [
+    {
+      "id": "combined-1",
+      "sourceFreeze": "D367C2B356E36314A899EEF788E2D31F55F407CEACAE61AE2EC7B4D340772C6F",
+      "total": 968,
+      "passed": 965,
+      "failed": 3,
+      "notExecuted": 0,
+      "trx": ".scratch/bouncer-1/results/bouncer-combined.trx",
+      "trxSha256": "029960B2D251C30CC11E8FA0DC0437AA2D67B39284AD3F1E1DB463B87D983A82",
+      "log": ".scratch/bouncer-1/test.log",
+      "logSha256": "48FC14661C8980D28EE77B1BF5E2B500503B703778515B670AC81536C46C314C",
+      "failures": [
+        {
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees",
+          "message": "Assert.Contains() Failure: Filter not matched in collection\r\nCollection: [FreeplayDecision { AtSec = 0, Activity = PlayAlone, Behavior = DriveOffCharger, Reason = highest score 1000.08 }, FreeplayDecision { AtSec = 0.25, Activity = PlayAlone, Behavior = DriveOffCharger, Reason = keeps running }, FreeplayDecision { AtSec = 0.5, Activity = Hiking, Behavior = Hiking_ThinkAboutBeacons, Reason = highest score 8.06 }, FreeplayDecision { AtSec = 0.75, Activity = NothingToDo, Behavior = NothingToDo_Idle, Reason = highest score 1.08 }, FreeplayDecision { AtSec = 1, Activity = NothingToDo, Behavior = NothingToDo_Idle, Reason = highest score 1.04 }, ···]"
+        },
+        {
+          "testName": "Cozmo.Protocol.Tests.FreeplayTests.ASevereNeedTakesPriorityOverFreeplayAndTheGetInPlaysOnce",
+          "message": "Assert.Contains() Failure: Filter not matched in collection\r\nCollection: [FreeplayDecision { AtSec = 40, Activity = NothingToDo, Behavior = NothingToDo_BoredAnim, Reason = highest score 1.09 }, FreeplayDecision { AtSec = 40.5, Activity = NothingToDo, Behavior = NothingToDo_Idle, Reason = highest score 1.10 }, FreeplayDecision { AtSec = 41, Activity = NothingToDo, Behavior = NothingToDo_Idle, Reason = highest score 1.00 }, FreeplayDecision { AtSec = 41.5, Activity = NothingToDo, Behavior = NothingToDo_Idle, Reason = highest score 1.03 }, FreeplayDecision { AtSec = 42, Activity = NothingToDo, Behavior = NothingToDo_Idle, Reason = highest score 1.10 }, ···]"
+        },
+        {
+          "testName": "Cozmo.Protocol.Tests.NativeBouncerFrameTests.TwoOwnedSetFaceActionsStreamDistinctNativeFramesAndCompleteOnRobotEvents",
+          "message": "Assert.IsType() Failure: Value is null\r\nExpected: typeof(Cozmo.Robot.Animation.TriggerAnimationAction)\r\nActual:   null"
+        }
+      ]
+    },
+    {
+      "id": "combined-2",
+      "sourceFreeze": "F5F5F17593BDFA56C0AD90BD0141C3AB9901F79DDF6106291C2DA50EF430A7DE",
+      "total": 969,
+      "passed": 968,
+      "failed": 1,
+      "notExecuted": 0,
+      "trx": ".scratch/bouncer-1/results-2/bouncer-combined-2.trx",
+      "trxSha256": "11616E382C742F2A0C4FCCF66B53EDF7C45848483BC0DDDFE0288CEF406F4921",
+      "log": ".scratch/bouncer-1/test-2.log",
+      "logSha256": "24579CC607A40F7EFEF2806F4755A1EA5050D5490A69DF07311FB7E866E80BB3",
+      "failures": [
+        {
+          "testName": "Cozmo.Protocol.Tests.NativeBouncerFrameTests.TwoOwnedSetFaceActionsStreamDistinctNativeFramesAndCompleteOnRobotEvents",
+          "message": "Assert.Contains() Failure: Filter not matched in collection\r\nCollection: []"
+        }
+      ]
+    },
+    {
+      "id": "frame-class-3",
+      "sourceFreeze": "E4CDD9F8E2D544C2620099F24B349DDC2E01F2EC30CDD457B016539FED448B34",
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "notExecuted": 0,
+      "trx": ".scratch/bouncer-1/results-3/bouncer-frame-3.trx",
+      "trxSha256": "02574E73D7AC990F703A17622B928D6E8B57566AABD0132164FDD53E556DFE62",
+      "log": ".scratch/bouncer-1/test-frame-3.log",
+      "logSha256": "D87F621839DBFDC11B775ADC1A5D75F6EF1A987035704A23D67F20D814F62AAA",
+      "failures": []
+    }
+  ],
+  "builderExpectedComposite": {
+    "sha256": "0096B604E1F83468012927F4B276AF27BFE4A09B399107F46D0BC3E6D5256FE0",
+    "total": 969,
+    "description": "962 passing combined-2 outcomes outside NativeBouncerFrameTests plus seven corrected frame-class-3 outcomes; NOT a prior single combined pass"
+  },
+  "finalSourceFreeze": "E4CDD9F8E2D544C2620099F24B349DDC2E01F2EC30CDD457B016539FED448B34",
+  "filter": "FullyQualifiedName~NativeBouncerGameTests|FullyQualifiedName~NativeBouncerControllerTests|FullyQualifiedName~NativeBouncerRasterTests|FullyQualifiedName~NativeBouncerFaceInputTests|FullyQualifiedName~NativeBouncerFactoryTests|FullyQualifiedName~NativeBouncerFrameTests|FullyQualifiedName~NativeBouncerScopeTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~BehaviorHardeningTests|FullyQualifiedName~BehaviorRunnerOwnershipTests|FullyQualifiedName~ActionListTests|FullyQualifiedName~ActionCompletionTests|FullyQualifiedName~CompoundActionTests|FullyQualifiedName~M7BatchThreeBTests|FullyQualifiedName~M8BatchThreeCTests|FullyQualifiedName~M8BatchThreeDTests|FullyQualifiedName~IdleFaceTests|FullyQualifiedName~M5FixRowsTests|FullyQualifiedName~M5X9BuilderTests|FullyQualifiedName~M5X11BuilderTests|FullyQualifiedName~M5X12BuilderTests|FullyQualifiedName~M5X17BuilderTests|FullyQualifiedName~M5X19BuilderTests|FullyQualifiedName~M5X20BuilderTests|FullyQualifiedName~M5X23BuilderTests|FullyQualifiedName~M5AnimationTests|FullyQualifiedName~AnimationAssetTests|FullyQualifiedName~AnimationStreamLifecycleTests|FullyQualifiedName~AnimationTests|FullyQualifiedName~FaceTests|FullyQualifiedName~VisionTests|FullyQualifiedName~M14LifetimeCheckedRowsTests|FullyQualifiedName~RobotStateHistoryAdmissionTests|FullyQualifiedName~M11RVisBuildTests|FullyQualifiedName~PoseTreeVerifyBuilderTests|FullyQualifiedName~FreeplayTests|FullyQualifiedName~AcknowledgeFaceNativeTests|FullyQualifiedName~AcknowledgeObjectNativeTests|FullyQualifiedName~M15SevereNeedsTests|FullyQualifiedName~ExpressNeedsNativeTests",
+  "filterSha256": "D919602F861474DCCAB10E29D7B28583FB4436CF7D37093EB4F696F53FD29B88",
+  "fullGate": null,
+  "hardwareRun": false,
+  "officialRecordEdits": false,
+  "workerCommit": "1eef9fc9ece81efe3eeea335be243693f045cb7f",
+  "integratedCozmoStackTree": "d955a92aa04e0d06955778237381565ddedd645c",
+  "independentReplay": {
+    "passed": 969,
+    "failed": 0,
+    "skipped": 0,
+    "allNamedOutcomesMatch": true,
+    "sourceFiles": 1040,
+    "compiledDlls": 103,
+    "sourceFixtureDllHashesUnchanged": true,
+    "trxSha256": "9a02a8906b7df0b37cb6f8c5d6ebb6fd7ca15b972d2e8e89c9b1065d3e32fbb2",
+    "comparisonSha256": "877cefdd73d50f5b584e0002aecaba18e317f7d24f5ba81962f1bc8686f57eea",
+    "prePostSnapshotSha256": "43f53c7d12181795c8cad18b589154f8ea8e05968a9d01784385ba76d1974aad",
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "checkoutProcesses": []
+  }
+}
