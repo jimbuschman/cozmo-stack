@@ -1,6 +1,6 @@
 {
   "job": "DEV-TURN-IN-PLACE-TEST-1",
-  "state": "BLOCKED: CORRECTED CONTRACT APPROVAL PENDING",
+  "state": "CORRECTED CONTRACT APPROVED; BUILD QUEUED AFTER CURRENT ENERGY JOB",
   "managerStart": "29dc3a4fbb8e784a659aa52eab033d6a799f0cf7",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1",
@@ -35,7 +35,7 @@
     "actual initial caller bypassing native false runnable gate",
     "shared manager/action/turn lifecycle gaps in existing records"
   ],
-  "builder": "Preparation only; source approval pending",
+  "builder": "Original DEFAULTworker prepared, notstartedimplementation; resume after current Energy job",
   "sourceVerdict": "A+B bounded own path PASS; approved inventory contradiction requires corrected contract release",
   "reports": [
     {
@@ -58,6 +58,8 @@
     "inventory": "re-analysis/inventory/M7-behaviour.md:950",
     "approvedClaim": "clears vector +0x11c..+0x120, +0x128",
     "source": "0x005CA902..916 retains vector, zeroes index and every existing run byte",
-    "decision": "operator asynchronous approval requested; no answer yet"
-  }
+    "decision": "Operator explicitly approved corrected contract and fix, 2026-10-30 asynchronous reply"
+  },
+  "operatorApproval": "Approve corrected contract and fix",
+  "approvalScope": "Native retains tests; reset only current index and every test run byte. Formal inventory/status edits stay Claude."
 }

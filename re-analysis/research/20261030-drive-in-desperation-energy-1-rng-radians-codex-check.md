@@ -1,0 +1,13 @@
+# Narrow independent RNG and radians join
+
+Native binary SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. known.py GetRNG failed missing decomp index; direct native symbols/disarm and literal bytes used.
+
+GetRandomDrivingPose 0x5d92e2..9338 calls RandDblInRange(40,100), RandDbl(1), RandDblInRange(50,150) in that order. At 0x5d9364 vldr s8,[pc,#0x1f0], aligned address 0x5d9558 contains exactly f32 bits 0x3c8efa35. 0x5d937a narrows first double to f32; 0x5d9380 multiplies factor in f32; 0x5d9388..938e chooses -1 when sign double <0.5, else +1, and multiplies in f32. 0x5d9396 calls Radians(float), which stores f32 and invokes rescale 0x84c832..83e. Yaw + delta at 0x5d93a2 calls operator+ 0x84c860..87a, f32 add and another rescale, before Z rotation and current full quaternion multiplication. No Math.PI-derived literal or skipped normalization.
+
+Rescale 0x84c87c uses f32 constants -pi=0xc0490fdb at 0x84c938, +pi=0x40490fdb at 0x84c93c, +2pi=0x40c90fdb at 0x84c940 and -2pi=0xc0c90fdb at 0x84c944. For values in (-pi,pi] returns unchanged; |v|<10 loops f32 additions/subtractions; otherwise the f32 divide, subtract 0.5, ceilf, convert to signed and f32, multiply, subtract branch. Current `NativeRadians.cs` provides the corresponding float helper; its entire record and libm equivalence remain existing owner scope.
+
+IBehavior::GetRNG 0x5bda4c..54 loads behavior+2c then calls Robot::GetRNG 0x5126b6..ba, which loads Robot+0 then +14. Robot ctor 0x50fbfc..fc0c stores CozmoContext argument at Robot+0. CozmoContext ctor 0x4ea764..776 constructs RandomGenerator(seed0) and stores at context+14. This is shared context RNG; `Engine.ContextRandom` is the existing host shared mapping, no per-behavior draw generator. Seed/reseed, RNG implementation, common consumers and status of their records are not separately closed here.
+
+No code edits, .NET, hardware, git or whole-record closure.
+
+Cross-comparison: reader supplement SHA256 815100205d87c58c9b1d7bab114ecb8d702a8169ce5ba82b0563f37c502a439f, finite R1–R7/G1–G5 PASS against checked source. Additional getter upstream confirmed IBehavior ctor 0x5bbb80/0x5bbbfa stores Robot at +2c. Range helpers 0x82fa48..72 use f64 subtract, multiply, add; 0x82fa96..fac6 signed wrapped range, double multiplication, signed conversion and addition. Four appendix snapshots M5-005/M8-001/M5-045/M11-065 parsed UTF8SIG and compare exactly, all fields, to current manifest. No records changed or settled; source's f32 finite branch, shared context stream, and retained shared RNG/math boundaries match this independent check. Prior report retained as rng-radians-check-v1.md.

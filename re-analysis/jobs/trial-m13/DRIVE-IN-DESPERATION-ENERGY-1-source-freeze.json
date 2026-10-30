@@ -29,8 +29,8 @@
   ],
   "actualBackends": "unobserved",
   "dotnetLease": "none",
-  "reviewerFixRounds": 0,
-  "sourceQuestions": 1,
+  "reviewerFixRounds": 1,
+  "sourceQuestions": 2,
   "builderMissingItems": [
     "sentinel SearchForBlockHelper target=-1/minSeen1/maxStage1 unavailable; no unrelated mode or synthetic result",
     "shared turn marker-conversion gap visible; track=false in both requested tuples",
@@ -68,12 +68,30 @@
       "sha256": "f3305a6cc53e708f8fe0b6033614ee7f80a0e1d44de84880fc472a73bdb867f8",
       "originalSha256": "e4a9e22a5f3bc89fc744d7aa3445bd360f6ef8dbf459d9f92f50074b5dfa46d8",
       "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\motion-profile-check.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-energy-1-rng-radians-read.md",
+      "sha256": "c5df563996f6816f2b15044f6798c628f606ad72444e5964adc8612da5f3f605",
+      "originalSha256": "815100205d87c58c9b1d7bab114ecb8d702a8169ce5ba82b0563f37c502a439f",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\source-question2-rng-radians.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-energy-1-rng-radians-codex-check.md",
+      "sha256": "5aba0edeb1c0aadc49e14780ed48aae016ecbb4f0308075d631860eef3343c73",
+      "originalSha256": "aa1366f239c2caca4440c121736430bae10c17b641d04c2f19388a0374c573a6",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\drive-in-desperation-energy-source-originals\\rng-radians-check.md"
     }
   ],
   "withdrawnBuilderGapClaim": "Earlier generic M12-031 partial claim withdrawn after root current-record read and C actual GetNative tuple check; no Energy-specific gap identified, no closure claimed",
   "sourceQuestion1Verdict": "P1..P11 finite recipient/storage/consumption/Stop/clear PASS; 5 current literal snapshots rootmatched; no approvedcontractcontradiction",
   "sourceQuestion1Resolved": true,
   "resolvedBuilderMissingItems": [
-    "Q1 actual behavior custom motion-profile recipient: native shared Path profile copy/flag, consumer join, Stop-after-cancel clear recovered and independently checked"
-  ]
+    "Q1 actual behavior custom motion-profile recipient: native shared Path profile copy/flag, consumer join, Stop-after-cancel clear recovered and independently checked",
+    "Q2 exact native radians factor/normalization sequence and actual shared Engine.ContextRandom recipient recovered and independently checked"
+  ],
+  "sourceQuestion2Verdict": "A+B finiteR1..R7/G1..G5 PASS, root4literalrecords identical, exactf32constant/normalization/contextRNG owner",
+  "sourceQuestion2Resolved": true,
+  "rootSourceFindings": 1,
+  "earlyDraftReview": "NOT PASS; wrong IsActive-vs-actionable gate, coverage missing, synthetic JSON typo; fix batch1 active",
+  "withdrawnReviewerFinding": "Blanket generation checks preserving replacement target/profile flag were unsupported: same-live canonical owner post-call writes must follow native. Root raised, B withdrew, C removed interim unsupported guards before next coherent freeze."
 }
