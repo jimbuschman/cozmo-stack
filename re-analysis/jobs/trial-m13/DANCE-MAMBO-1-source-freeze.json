@@ -1,0 +1,26 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "state": "READ OPEN",
+  "managerStart": "34a59d527480c1030d8d28a90834390841949789",
+  "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
+  "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/dance_mambo_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/dance_mambo_review",
+      "modelRequested": "DEFAULT overrideomitted",
+      "effortRequested": "DEFAULT overrideomitted",
+      "fork": "none"
+    }
+  ],
+  "dotnetLease": "none",
+  "builder": "not started; DEFAULT model/effort planned after checked source",
+  "actualBackends": "unobserved"
+}
