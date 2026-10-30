@@ -1,8 +1,8 @@
 {
   "job": "DRIVE-IN-DESPERATION-ENERGY-1",
-  "state": "WORKER COMMITTED; INTEGRATION/FULL GATE PENDING",
+  "state": "INTEGRATED; FULL GATE HELD FOR AUTHORITATIVE PRIORITY WORKOUT FIX",
   "managerStart": "28df4d1da81c5081119c25bc486a48db309cdcad",
-  "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
+  "originMain": "6dcc53fbd10af2662302b1dab9797e0a67bec0d6",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-energy-1",
   "workers": [
     {
@@ -242,5 +242,9 @@
   },
   "workerCommit": "7375ec639b84915595f2450713e8781a612f8a74",
   "workerTree": "8e15fbb303629c63a5af9ff88b3028e5826874e0",
-  "builderReportSha256": "2f4277b72fd020ff6fe8917bb946fe9076a67e9ad580bd5852569882aa3ec725"
+  "builderReportSha256": "2f4277b72fd020ff6fe8917bb946fe9076a67e9ad580bd5852569882aa3ec725",
+  "integrationCommit": "ab38f9d880a06a559b0375dc0540baec2dc3a8cd",
+  "afterMainMerge": "b5844db5301b79f356c0d5754b0fe4e3947fa027",
+  "priorOriginMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
+  "fullGateAttempts": 0
 }
