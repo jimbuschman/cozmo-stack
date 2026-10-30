@@ -1,0 +1,26 @@
+{
+  "classes": [
+    "CheckForStackAtIntervalNativeTests",
+    "M7BatchThreeBTests",
+    "SparksKnockOverNativeTests",
+    "SparksPutDownNativeTests",
+    "KnockOverNativeTests",
+    "FreeplayTests",
+    "BehaviorFrameworkTests",
+    "BehaviorRunnerOwnershipTests",
+    "BehaviorTeardownBoundaryTests",
+    "M8ActionCheckedRowsTests",
+    "M8CompoundCheckedRowsTests",
+    "M8TeardownCheckedRowsTests",
+    "EngineAppLayerTests",
+    "NavigationTests",
+    "AcknowledgeObjectNativeTests",
+    "ObservableWalkAndInterestingEdgeTests",
+    "M11SmallReadsBuilderTests",
+    "M11DelocalizationB8Tests",
+    "SharedChildrenNativeTests",
+    "PickupPyramidNativeExecutionTests"
+  ],
+  "filter": "FullyQualifiedName~CheckForStackAtIntervalNativeTests|FullyQualifiedName~M7BatchThreeBTests|FullyQualifiedName~SparksKnockOverNativeTests|FullyQualifiedName~SparksPutDownNativeTests|FullyQualifiedName~KnockOverNativeTests|FullyQualifiedName~FreeplayTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~BehaviorRunnerOwnershipTests|FullyQualifiedName~BehaviorTeardownBoundaryTests|FullyQualifiedName~M8ActionCheckedRowsTests|FullyQualifiedName~M8CompoundCheckedRowsTests|FullyQualifiedName~M8TeardownCheckedRowsTests|FullyQualifiedName~EngineAppLayerTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~AcknowledgeObjectNativeTests|FullyQualifiedName~ObservableWalkAndInterestingEdgeTests|FullyQualifiedName~M11SmallReadsBuilderTests|FullyQualifiedName~M11DelocalizationB8Tests|FullyQualifiedName~SharedChildrenNativeTests|FullyQualifiedName~PickupPyramidNativeExecutionTests",
+  "rationale": "New configured leaf; unchanged 79-row factory and supported set; actual Spark caller/earlier child/sibling, base gates, owned action/completion/teardown, actual native located and return actions, global ghost ID, ordered world walk/delocalization, legacy manual isolation and the reused native fixture. No shared production helper changed; broader consumer repeats are left to full gate."
+}

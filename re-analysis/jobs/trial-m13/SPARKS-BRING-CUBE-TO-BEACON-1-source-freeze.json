@@ -1,0 +1,146 @@
+{
+  "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+  "stage": "Affected1 969P10F classified; runtime/test corrections D351 CODEPASS, attempt3 build/reference running",
+  "base": "31bf3b1bc2ad9cbee58afccd2c76d72f9bcc429d",
+  "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
+  "sourceFiles": {
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-read.md": "6A42944225BCF521671CC63B0E64AC5584760646DA1CD39D35D986AB00D15A01",
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-codex-check.md": "06EA00D467205B4B43A423CE45A96BFB9664C7B346EFE9DC86A7E3E26B82F1BF"
+  },
+  "rawSourceFiles": {
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-read.md": "074BEBA3F7A6D09A350BFA3C0528F7DF84B0FFE6E2BEB4DD8DB40DFB6CE73A62",
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-codex-check.md": "7D80C696878DA9E96B55F391A9B7034445D00C11813C38EEE300136CECA960A0"
+  },
+  "serialization": "UTF8LF/noBOM; actual raw originals retained, no text/contract change",
+  "currentLiteralRecordSnapshotsMatched": 11,
+  "readerRequested": "gpt-6.1-sol/medium",
+  "builderRequested": "DEFAULT model/effort omitted",
+  "reviewerRequested": "DEFAULT model/effort omitted",
+  "actualBackend": "unobserved; operator default Terra",
+  "workers": {
+    "builder": "/root/sparks_bring_build",
+    "reviewer": "/root/sparks_bring_review",
+    "reader": "/root/sparks_bring_read"
+  },
+  "behaviorIds": {
+    "SparksThink": 157,
+    "SparksBring": 140
+  },
+  "activityIds": {
+    "Spark": 20,
+    "GatherDelegate": 4
+  },
+  "unlock": 38,
+  "objective": 11,
+  "needsAction": 20,
+  "lightTriggers": {
+    "progress": 17,
+    "finish": 16
+  },
+  "sourceBehaviorCorrections": 0,
+  "reviewerRequiredCorrectionBatches": 3,
+  "prep": {
+    "cacheOnlyRestoreAll5Exit": 0,
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "compileOrTestRun": false,
+    "restoreCount": 1,
+    "checkoutProcesses": []
+  },
+  "formalRecordsChanged": false,
+  "hardwareRun": false,
+  "frontiers": "Raw request/picker/capability/active-input sources006/058; reachedunavailableSparksLookInPlace or earlier readiness must be MISSING, notfalse/fallthrough; existing pose/libm/world/child/planner/marker/firmware/report/reward71 interfaces",
+  "wholeRecordCandidates": "M15-023own45/5 afterbinding/tests. Prior025/lifecycleproposalalreadyHiking; no duplicateIDs.008/059partial",
+  "firstDraft": {
+    "committedLfSha256": "51ACAD696D888B4CF805E8767ADEFACE600CE428B62AC67C9E3BF6538469795B",
+    "verifiedBeforeAfterByReviewer": true,
+    "archive": "worker .scratch/sparks-bring-beacon-1/review-draft-1",
+    "paths": 16,
+    "rawManifestSha256": "C81CB684911BB0621AA4EF3DE01C614A493DAAC76B139FD76AA51276C9B4163C"
+  },
+  "correctionDrafts": [
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-correction1-freeze.json",
+      "rawSha256": "8C21A397C6BAC0974CA1F85E6EEE187DA023F92CE18F4B5F53D8C6B86AE4BF76",
+      "committedLfSha256": "54D522AC9C3ED9749C178305ABB12D576BE5781ABC4C9A66646BFFCA93CFCB6F",
+      "correction": 1
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-correction2-freeze.json",
+      "rawSha256": "E2A76469D562B74C5720A4799BAC2B72D84D55CD5D6C8B0BEC784EEE9B4D3DE7",
+      "committedLfSha256": "C2DB7B5BA05D285B8F2B7D5BA724EBDBB150AF2E8CC74749C169C54EC4C0EE1A",
+      "correction": 2
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-correction3-freeze.json",
+      "rawSha256": "A8AF743E3A788F39CFE080BB2DBC6A728CFE24E0D18D282240274BEA876074EB",
+      "committedLfSha256": "5B0C9E68F60631A2B8E3CCB85B9A309F168D5E74CF8437B4D695035A9E96FF0F",
+      "correction": 3
+    }
+  ],
+  "compilerCorrectionBatches": 1,
+  "testIdentifiedProductionCauseGroups": 2,
+  "affectedReference": {
+    "attempt": 3,
+    "total": 981,
+    "passed": 981,
+    "skipped": 0,
+    "classes": 35,
+    "sourcePaths": 16,
+    "dataDllHashes": 123,
+    "independentReplay": "981/981 PASS, exact names/parameterized outcomes/multiplicity matched"
+  },
+  "laterArtifactTransport": [
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-compiler-fix-1-freeze.json",
+      "originalSha256": "b54b48d6b10e6b761830072d615647e4bb1c42b01d9cada65e466a0381dfb571",
+      "storedSha256": "b54b48d6b10e6b761830072d615647e4bb1c42b01d9cada65e466a0381dfb571",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-compiler-fix-1\\manifest.json"
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-test1-fix-freeze.json",
+      "originalSha256": "d3519312a26054266dd8036c3e1d1c57828a534c8ff8fa7fa55f6d2b65367f40",
+      "storedSha256": "d3519312a26054266dd8036c3e1d1c57828a534c8ff8fa7fa55f6d2b65367f40",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-test1-fix\\manifest.json"
+    },
+    {
+      "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-test2-fix-freeze.json",
+      "originalSha256": "b46f65216064d182fd893d2a987c1875aa6b52d2cd32c56d247a2b4d0f550742",
+      "storedSha256": "b46f65216064d182fd893d2a987c1875aa6b52d2cd32c56d247a2b4d0f550742",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-test2-fix\\manifest.json"
+    }
+  ],
+  "integration": {
+    "worker": "8b712525fa15325d560af270d2ab67d87d0bd254",
+    "commit": "3dada115aa010085e3feb2af85412634cd775016",
+    "cozmoStackTree": "371b755e58bfbae6cc7b596cd22d07487c97acf1",
+    "productionSrcTree": "e21237e8b54b967bcd6e8d45efc1f9544bcd6f46",
+    "frozenPathsMatched": 16,
+    "protectedOfficialChanges": false
+  },
+  "fullGate": {
+    "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "f9cecf1659869273e203e5dc9f4484f889f2fd9c",
+    "cozmoStackTree": "371b755e58bfbae6cc7b596cd22d07487c97acf1",
+    "productionSrcTree": "e21237e8b54b967bcd6e8d45efc1f9544bcd6f46",
+    "startedUtc": "2026-10-30T06:35:18.5608494Z",
+    "endedUtc": "2026-10-30T06:45:24.8457764Z",
+    "exitCode": 0,
+    "total": 6895,
+    "passed": 6895,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "8 m 57 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "0eaee84dc55fc19cf5563ca70b46690e7352b254",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "cfff39dff344334c1f3543ca4d807e915b3d63643c53bd030519454d89de6c43",
+    "consoleSha256": "666150f79a3fd235f33dfa3fd2948b3acc4c290a101604cdb4d57658f6e6ca23",
+    "frozenSourcePathsMatched": 16,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
+  }
+}

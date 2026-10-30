@@ -1,0 +1,25 @@
+{
+  "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+  "attempt": 2,
+  "state": "AFFECTED_FAILED_CLASSIFIED",
+  "buildExit": 0,
+  "total": 981,
+  "passed": 978,
+  "failed": 3,
+  "skipped": 0,
+  "selectedClasses": 35,
+  "failureNames": [
+    "Cozmo.Protocol.Tests.SparksGatherNativeTests.ActualSecondGateMissingLibraryRetiresInsteadOfStartingThink(replace: False)",
+    "Cozmo.Protocol.Tests.SparksGatherNativeTests.ActualSecondGateMissingLibraryRetiresInsteadOfStartingThink(replace: True)",
+    "Cozmo.Protocol.Tests.SparksGatherNativeTests.ActualDelegateReachedUnboundTailRetiresWithoutNativeCompletion"
+  ],
+  "sourceFreeze": "D3519312A26054266DD8036C3E1D1C57828A534C8FF8FA7FA55F6D2B65367F40",
+  "sourceUnchanged": 16,
+  "dataDllUnchanged": 123,
+  "trxSha256": "149FC3E2EDFD80EA395119618E271A5CD7BF9D27459B633C555D4FDB9916B4FA",
+  "logSha256": "654089E55911CD400C3DAD539CE0F23F2644473BC45A0304200AC619576DD9A8",
+  "classification": "All3fixtures omit SparkNameInput, so requested38/active55 causes correct CheckEnd interruption before intendedchooser/secondgate. Sourcecorrect; laterreadinessgatesremainunproven. Earlierteardownexceptionsfixed,butthese3namedtestsbodiesstillfailed.",
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": []
+}

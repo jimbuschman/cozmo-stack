@@ -289,6 +289,7 @@ public sealed class BehaviorFactory
     private static readonly Dictionary<BehaviorClass, Func<BehaviorFactoryContext, JsonElement, IBehavior>> Constructors = new()
     {
         [BehaviorClass.BringCubeToBeacon] = (ctx,json)=>new NativeBringCubeToBeaconBehavior(ctx,json,ctx.BringBeaconOwner!),
+        [BehaviorClass.ThinkAboutBeacons] = (ctx,json)=>new ThinkAboutBeaconsBehavior(ctx.Manipulation!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(), json.GetProperty("params").GetProperty("beaconRadius_mm").GetSingle(), json.GetProperty("params").GetProperty("newAreaAnimTrigger").GetString()!),
         [BehaviorClass.Bouncer] = (ctx,json)=>new NativeBouncerBehavior(ctx,json,
             ()=>ctx.Vision!.Faces.GetNativeFaceIds(ctx.BouncerOwner!)),
         // fidelity: M7-018, M8-005
@@ -299,6 +300,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
+        [BehaviorClass.CheckForStackAtInterval] = (ctx,json)=>new NativeCheckForStackAtIntervalBehavior(ctx,json),
         [BehaviorClass.PopAWheelie] = (ctx,json)=>new NativePopAWheelieBehavior(ctx,json),
         [BehaviorClass.RollBlock] = (ctx,json)=>new NativeRollBlockBehavior(ctx,json),
         [BehaviorClass.BuildPyramid] = (ctx,json)=>new NativeBuildPyramidBehavior(ctx,json),
@@ -368,9 +370,9 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        if(cls==BehaviorClass.BringCubeToBeacon && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_BringCubeToBeacon || ctx.Manipulation is null || ctx.BringBeaconOwner is null))
+        if(cls==BehaviorClass.BringCubeToBeacon && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Hiking_BringCubeToBeacon or BehaviorID.SparksBringCubeToBeacon) || ctx.Manipulation is null || ctx.BringBeaconOwner is null))
         {
-            SteppedBehavior.ReportMissing("BringCubeToBeacon factory: only checked Hiking configuration with actual manipulation/Robot owner is available");
+            SteppedBehavior.ReportMissing("BringCubeToBeacon factory: only checked Hiking/Sparks configurations with actual manipulation/Robot owner are available");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }        // POP/SPARKS-POP-A-WHEELIE-1 release only these two checked configurations.
         if(cls==BehaviorClass.PopAWheelie&&BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.PopAWheelie or BehaviorID.SparksPopAWheelie))
@@ -378,14 +380,19 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
+        if((cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
+        if((cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        if(cls==BehaviorClass.ThinkAboutBeacons && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksThinkAboutBeacons || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("ThinkAboutBeacons factory: only checked Sparks instance with actual Robot/manipulation owner is available");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
         if (cls == BehaviorClass.AcknowledgeObject && ctx.Vision is null)
@@ -411,7 +418,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
+            if(stepped is NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

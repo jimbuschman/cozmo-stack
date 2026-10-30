@@ -1,0 +1,16 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "attempt": 1,
+  "state": "BUILD_FAILED_CLASSIFIED",
+  "buildExit": 1,
+  "affectedTestsInvoked": false,
+  "error": "CS0534 SuppliedChild test fixture missing abstract ActionRunner.CanInterrupt",
+  "independentReviewerConfirmed": true,
+  "fix": "test-only override => false, one method only",
+  "logSha256": "62353b5eef1ead55609237f21d68afa6ed4d6466ba73802c9ec7af07f4869879",
+  "commandSha256": "9dec216ac741d2f2ec0754dbf0c0da13b4abe9880ad4af3a7247428e9c584273",
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "priorBytesPreserved": true
+}

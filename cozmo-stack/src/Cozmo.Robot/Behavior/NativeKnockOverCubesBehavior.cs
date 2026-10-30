@@ -69,7 +69,7 @@ internal sealed class NativeKnockOverCubesBehavior:SteppedBehavior,IDisposable
             _target=stack is null?null:new WeakReference<NativeStackConfiguration>(stack);
             return stack is not null&&(uint)stack.BlockIds.Count>=MinimumHeight;
         }
-        catch(NativeConfigurationUnavailable error){ReportMissing("M13-014 actual stack cache unavailable: "+error.Message);return false;}
+        catch(NativeConfigurationUnavailable error){MarkReadinessUnavailable();ReportMissing("M13-014 actual stack cache unavailable: "+error.Message);return false;}
     }
     private bool InitializeMembers()
     {

@@ -37,7 +37,7 @@ internal sealed class NativeRollBlockBehavior:SteppedBehavior
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
         try{RefreshTarget();return Target!=uint.MaxValue||HasCurrentAction;}
-        catch(NativeConfigurationUnavailable error){ReportMissing("Roll target refresh unavailable: "+error.Message);return false;}
+        catch(NativeConfigurationUnavailable error){MarkReadinessUnavailable();ReportMissing("Roll target refresh unavailable: "+error.Message);return false;}
     }
     protected override void OnStart()
     {

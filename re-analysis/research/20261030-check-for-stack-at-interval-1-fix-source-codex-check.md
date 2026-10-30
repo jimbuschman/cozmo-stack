@@ -1,0 +1,10 @@
+# CHECK-FOR-STACK-AT-INTERVAL-1 FIX1 narrow source check
+
+**PASS** for the returned bounded source contract, not a code or whole-behavior verdict. The same reviewer was requested with default model and effort; actual backend unobserved. `known.py` preceded direct Capstone reads from the local engine binary.
+
+- 0x005D7CB2–7CD4 loads the captured owner, increments +0x13C and compares it unsigned against the vector count, then branches to return or the next face; it does not inspect an ActionResult. The explicit manager-directed missing-capability policy may skip only the unavailable ghost action and run this continuation without manufacturing a result; it is not a native skip claim.
+- The actual return completion at 0x005D7D36–7D52 reads the then-current clock and uses `vadd.f32` with +0x11C before storing +0x120. Neither skipped ghost nor return admission stamps it. 0x005D7340–7348 uses `vcmpe.f32`/`ble`, rejecting earlier, equal and unordered values; shipped delay is 15f.
+- The located-target-null branch 0x005D7538–753A goes to the log/cleanup/return at 0x005D7618–7674, with no next action or deadline. Inherited update 0x005BDA56–62 depends on action presence. This defined branch is distinct from missing host marker capability, and should not be turned into continuation or Interrupted.
+- Preserving the common Library-null gate and removing the duplicate legacy registration follow the returned host/cleanup instructions; they are not new native clock predicates. Existing relative-head return correction remains in force.
+
+Mechanical comparison against the current manifest found 728 records and exact `id`, `title`, `status`, `evidence`, `unresolved` matches for all four supplement snapshots M8-001, M12-033, M13-020 and M15-086. M15-086 is Hiking BringCubeToBeacon, not this proposed lifecycle. No existing record is proposed settled; marker geometry and shared ownership remain open. No code, tests, .NET, official metadata or hardware changed. Independent review of the actual frozen affected draft remains required.

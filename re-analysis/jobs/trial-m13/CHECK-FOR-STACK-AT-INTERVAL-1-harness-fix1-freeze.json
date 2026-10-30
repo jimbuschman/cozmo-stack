@@ -1,0 +1,36 @@
+{
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "a670a162278ba4c82a1ba11619ae3144911f078439ac071fa78c4e97168b66ab",
+      "rawBlob": "3c193b1a5793d4c6002a6fb3e7a6588dbf78b8f3",
+      "filteredBlob": "3c193b1a5793d4c6002a6fb3e7a6588dbf78b8f3",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft-harness-fix1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCheckForStackAtIntervalBehavior.cs",
+      "sha256": "660ce7ab0c11734a7fa9487719737e7128796f88ebda2dca34d621611b9e2ab2",
+      "rawBlob": "748ab6629b638eb958f214fc6237cba817b1de3c",
+      "filteredBlob": "748ab6629b638eb958f214fc6237cba817b1de3c",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft-harness-fix1\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeCheckForStackAtIntervalBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "9f321e886933ab2f31ac3ffa2699b58526f45901addd054c7e3cf244057fda38",
+      "rawBlob": "f889e8d2fe4937e09dc9b31020664b1f395995df",
+      "filteredBlob": "f889e8d2fe4937e09dc9b31020664b1f395995df",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft-harness-fix1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\M7BatchThreeBTests.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CheckForStackAtIntervalNativeTests.cs",
+      "sha256": "2dd80e530b6ef59f554e3ad25e98eadcc6ef695c7d3bc5e4ad42a50957399fcd",
+      "rawBlob": "ad3bbb4e57878f15bc0f205510cdfb081b6e685c",
+      "filteredBlob": "ad3bbb4e57878f15bc0f205510cdfb081b6e685c",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft-harness-fix1\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\CheckForStackAtIntervalNativeTests.cs"
+    }
+  ],
+  "onlyChanged": [
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/CheckForStackAtIntervalNativeTests.cs"
+  ],
+  "classification": "test-found fixture correction, production unchanged"
+}

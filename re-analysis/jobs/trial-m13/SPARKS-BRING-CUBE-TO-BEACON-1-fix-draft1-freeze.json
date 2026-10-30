@@ -1,0 +1,30 @@
+{
+  "originalManifestSha256": "14ca98761a441bceae5c5520d584ab9d4470bb08649b237acfac8063b9d73464",
+  "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\sparks-bring-beacon-1\\claude-fix-draft1",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Animation/DrivingAnimationHandler.cs",
+      "sha256": "D5E753EE4A7604631F3810CF7C732BB8CA3AE8AB11C46C8E247D026446E2A8A8",
+      "raw": "025756a36c04b20e88302a5ec899b9fad602f004",
+      "filtered": "025756a36c04b20e88302a5ec899b9fad602f004"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "sha256": "8EC5A1A6429357C5B074799E776B96B436E52586815FB19316BD9E067483CBF8",
+      "raw": "8cccce40ae75af9de9c352cc4e185faccbd13937",
+      "filtered": "8cccce40ae75af9de9c352cc4e185faccbd13937"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSparkedActivity.cs",
+      "sha256": "AA7EBCE3B7A983498C4EA52EED1278F09BBD5C7F676D90EE17B3B9974132DA41",
+      "raw": "7229cb91605c10fe4651d99d0c98ab00331e4016",
+      "filtered": "7229cb91605c10fe4651d99d0c98ab00331e4016"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksGatherNativeTests.cs",
+      "sha256": "F97BA403D5FA119417A177FCF769E40F092B1ED53CFD4BC38FF9CAE3FB8DAC99",
+      "raw": "3e1ffdd7df66060001aea9c7568b4c038d3e44c1",
+      "filtered": "3e1ffdd7df66060001aea9c7568b4c038d3e44c1"
+    }
+  ]
+}

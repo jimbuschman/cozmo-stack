@@ -1,0 +1,20 @@
+[
+  {
+    "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-compiler-fix-1-freeze.json",
+    "originalSha256": "b54b48d6b10e6b761830072d615647e4bb1c42b01d9cada65e466a0381dfb571",
+    "storedSha256": "b54b48d6b10e6b761830072d615647e4bb1c42b01d9cada65e466a0381dfb571",
+    "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-compiler-fix-1\\manifest.json"
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-test1-fix-freeze.json",
+    "originalSha256": "d3519312a26054266dd8036c3e1d1c57828a534c8ff8fa7fa55f6d2b65367f40",
+    "storedSha256": "d3519312a26054266dd8036c3e1d1c57828a534c8ff8fa7fa55f6d2b65367f40",
+    "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-test1-fix\\manifest.json"
+  },
+  {
+    "path": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-test2-fix-freeze.json",
+    "originalSha256": "b46f65216064d182fd893d2a987c1875aa6b52d2cd32c56d247a2b4d0f550742",
+    "storedSha256": "b46f65216064d182fd893d2a987c1875aa6b52d2cd32c56d247a2b4d0f550742",
+    "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-sparks-bring-beacon-1\\.scratch\\sparks-bring-beacon-1\\review-test2-fix\\manifest.json"
+  }
+]

@@ -873,6 +873,7 @@ public sealed class CubeLightComponent
         public int TimerOffset;
         public bool Blended;
         public bool Dangling; // A freed native list node stays freed even if a later assign grows the slot.
+        public long DanglingVersion;
         public int Index;
         public uint TimerMs;
         public bool CanBeOverridden;
@@ -888,6 +889,10 @@ public sealed class CubeLightComponent
     private sealed class ObjectInfo
     {
         public uint ObjectId;
+        public long MutationVersion;
+        public readonly long[] ClearVersion = new long[3];
+        public readonly long[] BlendVersion = new long[3];
+        public long LayerVersion;
         public int CurrentLayer = StateLayer;
         public bool GameLayerOnly;
         public readonly List<Playing>[] Layers = { new(), new(), new() };
@@ -1072,11 +1077,12 @@ public sealed class CubeLightComponent
     }
     // Directly required 006396AC..00639722 wrapper: layer1 Stop(false), then overload Play(layer1,int0).
     internal Action<uint,string,string?,int,bool,CubeLightModifier,int>? BehaviorStateCallObservedForTest;
-    internal bool PlayBehaviorStateLight(uint id,uint rawTrigger,bool modifier,CubeLightModifier lights)
+    internal bool PlayBehaviorStateLight(uint id,uint rawTrigger,bool modifier,CubeLightModifier lights,Func<bool>? current=null)
     {
         string? trigger=Behavior.NativeCubeLightTriggers.Name(rawTrigger);
         BehaviorStateCallObservedForTest?.Invoke(id,"Play",trigger,EngineLayer,modifier,lights,0);
-        if(trigger is not null)return PlayLightAnimForObjectId(id,trigger,EngineLayer,modifier,lights,0);
+        if(current is not null&&!current())return false;
+        if(trigger is not null)return PlayLightAnimForObjectId(id,trigger,EngineLayer,modifier,lights,0,current);
         // Unknown raw enum is retained by its caller, never aliased to Count or another playable trigger.
         Animations.EnsureLoaded();
         bool exists;lock(_gate)exists=_infos.Values.Any(info=>info.ObjectId==id);
@@ -1084,16 +1090,18 @@ public sealed class CubeLightComponent
         else SourceLog(EngineLogLevel.Warning,null,"CubeLightComponent.NoAnimForTrigger",$"No animation found for raw trigger {rawTrigger}");
         return false;
     }
-    internal bool StopAndPlayBehaviorStateLight(uint id,uint oldTrigger,uint newTrigger,bool modifier,CubeLightModifier lights)
+    internal bool StopAndPlayBehaviorStateLight(uint id,uint oldTrigger,uint newTrigger,bool modifier,CubeLightModifier lights,Func<bool>? current=null)
     {
-        StopBehaviorStateLight(id,oldTrigger,false);
-        return PlayBehaviorStateLight(id,newTrigger,modifier,lights);
+        StopBehaviorStateLight(id,oldTrigger,false,current);
+        if(current is not null&&!current())return false;
+        return PlayBehaviorStateLight(id,newTrigger,modifier,lights,current);
     }
-    internal void StopBehaviorStateLight(uint id,uint rawTrigger,bool resume)
+    internal void StopBehaviorStateLight(uint id,uint rawTrigger,bool resume,Func<bool>? current=null)
     {
         string? trigger=Behavior.NativeCubeLightTriggers.Name(rawTrigger);
         BehaviorStateCallObservedForTest?.Invoke(id,resume?"StopResume":"Stop",trigger,EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
-        StopLightAnimForObjectId(id,trigger,EngineLayer,resume);
+        if(current is not null&&!current())return;
+        StopLightAnimForObjectId(id,trigger,EngineLayer,resume,current);
     }
     internal bool PlayNativeInteracting(uint id)=>PlayLightAnimForObjectId(id,"Interacting",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
     internal bool PlayNativeDrivingTo(uint id)=>PlayLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
@@ -1107,7 +1115,7 @@ public sealed class CubeLightComponent
         ObjectType? type=null;lock(_gate)foreach(var entry in _infos)if(entry.Value.ObjectId==id){type=entry.Key;break;}
         if(type is {} value)StopLightAnim("Interacting",EngineLayer,value);
     }
-    private bool PlayLightAnimForObjectId(uint id,string trigger,int layer,bool modifier,CubeLightModifier lights,int offset)
+    private bool PlayLightAnimForObjectId(uint id,string trigger,int layer,bool modifier,CubeLightModifier lights,int offset,Func<bool>? current=null)
     {
         ObjectType? type=null;
         lock(_gate) foreach(var entry in _infos) if(entry.Value.ObjectId==id){type=entry.Key;break;}
@@ -1116,7 +1124,7 @@ public sealed class CubeLightComponent
             SourceLog(EngineLogLevel.Info,"CubeLightComponent","CubeLightComponent.PlayLightAnim.InvalidObjectID",$"No object with id {id} exists in _objectInfo map can't play animation");
             return false;
         }
-        return PlayLightAnimCore(found,trigger,layer,0,modifier,lights,offset,id);
+        return PlayLightAnimCore(found,trigger,layer,0,modifier,lights,offset,id,current:current);
     }
 
     public bool PlayLightAnim(ObjectType type, string trigger, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0, Action? completed = null)
@@ -1130,12 +1138,17 @@ public sealed class CubeLightComponent
     // fidelity: M4-051 — 0x00638220..0x00638290: tag is assigned only after generic play succeeds.
     public bool PlayLightAnimFromAction(ObjectType type,string trigger,uint tag,Action? completed=null)
         => _robot.Engine.InvokeEngineRequest(()=>PlayLightAnimCore(type,trigger,UserLayer,0,false,null,0,null,completed,tag));
-    private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId,Action? completed=null,uint actionTag=0)
+    private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId,Action? completed=null,uint actionTag=0,Func<bool>? current=null)
     {
         Animations.EnsureLoaded(); // Standalone host initialization precedes the component state lock.
+        if(current is not null&&!current())return false;
         Playing pushed;
         CubeLightPattern first;
         uint objectId;
+        ObjectInfo? changedInfo=null;Playing[]? oldStack=null;
+        var danglingWrites=new List<(Playing Entry,bool Previous,long Version)>();
+        CubeLightPattern[]? oldBlend=null;int oldLayer=0;
+        long ownClear=-1,ownBlend=-1,ownLayer=-1;bool send=true;
         var logs = new List<Action>();
         void Log(string line) => logs.Add(() => this.Log(line));
         void SourceLog(EngineLogLevel level, string? channel, string key, string text) => logs.Add(() => this.SourceLog(level, channel, key, text));
@@ -1175,23 +1188,28 @@ public sealed class CubeLightComponent
                         $"No active object with id {id} found in block world unable to blend anims");
                 else
                 {
-                    var current = connected.ActiveLedState; // Zero from ActiveObject construction; normalized by SetLEDs later.
-                    blended = BlendAnimWithCurLights(input, current, out blendResult);
+                    var currentLeds = connected.ActiveLedState; // Zero from ActiveObject construction; normalized by SetLEDs later.
+                    blended = BlendAnimWithCurLights(input, currentLeds, out blendResult);
                 }
                 if (backBlended && blendResult) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim", "Can't play a blended anim over already playing blended anim"); return false; }
                 bool useBlended = (modifier || blendResult) && !backBlended;
                 if (useBlended && connected is null)
                 { Log("Stack.CubeLightComponent.SkipNullModifier: M1-034 / M4-045: modifier with NullActiveObject reads past native node at 0x006386DA; push skipped, prior state retained"); return false; }
+                // Snapshot the exact pre-push identities for host-only cancellation.
+                changedInfo=info;oldStack=stack.ToArray();
+                oldBlend=info.BlendedSlots[layer].Patterns;oldLayer=info.CurrentLayer;
+                ++info.MutationVersion;
                 string playingName = name;
                 if (useBlended)
                 {
                     if(blended.Length<info.BlendedSlots[layer].Patterns.Length)
                         foreach(var buried in stack)
-                            if(buried.Blended&&buried.Index>=blended.Length)buried.Dangling=true;
-                    info.BlendedSlots[layer].Patterns = blended;
+                            if(buried.Blended&&buried.Index>=blended.Length)
+                            { bool previous=buried.Dangling;buried.Dangling=true;danglingWrites.Add((buried,previous,++buried.DanglingVersion)); }
+                    info.BlendedSlots[layer].Patterns = blended;ownBlend=++info.BlendVersion[layer];
                     playingName = stack.Count == 0 ? name : stack[^1].Name + "+" + name;
                 }
-                else if (anim[0].DurationMs == 0) stack.Clear();
+                else if (anim[0].DurationMs == 0) { stack.Clear();ownClear=++info.ClearVersion[layer]; }
                 var selected = useBlended ? info.BlendedSlots[layer].Patterns : anim;
                 first = selected[0];
                 uint offset = unchecked(durationMs + (uint)timerOffsetMs);
@@ -1205,17 +1223,58 @@ public sealed class CubeLightComponent
                 // Keeping the store here prevents a concurrent host Update from invoking it with the temporary tag 0.
                 playing.CompletionTag=actionTag;
                 pushed = playing;
-                if (layer > info.CurrentLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.LightsNotSet", $"Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
-                SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.SettingLights", $"Playing trigger {trigger} on layer {layerName} for object {id}");
-                info.CurrentLayer = layer;
-                pushed.PendingSend = true;
+                if (layer > info.CurrentLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.LightsNotSet", $"Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); send=false; }
+                else
+                {
+                    SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.SettingLights", $"Playing trigger {trigger} on layer {layerName} for object {id}");
+                    info.CurrentLayer = layer;ownLayer=++info.LayerVersion;pushed.PendingSend = true;
+                }
 
             }
         }
         finally { foreach (var call in logs) call(); }
+        void Rollback()
+        {
+            lock(_gate)
+            {
+                if(changedInfo is null || !_infos.TryGetValue(type,out var actual) || !ReferenceEquals(actual,changedInfo))return;
+                var stack=actual.Layers[layer];
+                stack.Remove(pushed);
+                // Restore only writes still owned by this operation. Later append
+                // keeps displaced lower entries; a later clear owns their removal.
+                if(ownClear>=0 && actual.ClearVersion[layer]==ownClear)
+                {
+                    int index=0;
+                    foreach(var entry in oldStack!)if(!stack.Contains(entry))stack.Insert(index++,entry);
+                    ++actual.ClearVersion[layer];
+                }
+                if(ownBlend>=0 && actual.BlendVersion[layer]==ownBlend)
+                { actual.BlendedSlots[layer].Patterns=oldBlend!;++actual.BlendVersion[layer]; }
+                foreach(var (entry,previous,version) in danglingWrites)
+                {
+                    if(entry.DanglingVersion!=version || !stack.Contains(entry))continue;
+                    // A later blend can retain a shortened shared slot without
+                    // writing this flag (equal-length assignment). The surviving
+                    // iterator must still skip if its final slot cannot hold it.
+                    bool invalid=entry.Blended && ReferenceEquals(entry.Slot,actual.BlendedSlots[layer])
+                        && entry.Index>=actual.BlendedSlots[layer].Patterns.Length;
+                    entry.Dangling=previous || invalid;++entry.DanglingVersion;
+                }
+                if(ownLayer>=0 && actual.LayerVersion==ownLayer)
+                { actual.CurrentLayer=oldLayer;++actual.LayerVersion; }
+                ++actual.MutationVersion;
+            }
+        }
+        if(current is not null&&!current()){Rollback();return false;}
+        if(!send)return true;
         // Every state/send path takes FrameGate before the light gate and _sendGate; internal reentry preserves that order.
         uint result;
-        try { SendTransitionMessage(objectId); result = SetObjectLights(type, first); }
+        try
+        {
+            SendTransitionMessage(objectId);
+            if(current is not null&&!current()){Rollback();return false;}
+            result = SetObjectLights(type, first);
+        }
         catch { lock (_gate) pushed.PendingSend = false; throw; }
         lock (_gate)
         {
@@ -1241,15 +1300,20 @@ public sealed class CubeLightComponent
     /// </summary>
     internal void Update() => Update(pickDefaultLayer: true);
 
-    internal void Update(bool pickDefaultLayer)
+    internal void Update(bool pickDefaultLayer,Func<bool>? current=null)
     {
         // The vision worker uses World.FrameGate before delivering pose-state callbacks. Preserve that
         // order before taking the light gate, including during reentrant completion sends.
         using var poseRead=_robot.LocalizationWorld.EnterPoseMutation();
-        lock(_gate)UpdateLocked(pickDefaultLayer);
+        UpdateLocked(pickDefaultLayer,current);
     }
-    private void UpdateLocked(bool pickDefaultLayer)
+    internal Action? StoppedLoopObservedForTest;
+    private void UpdateLocked(bool pickDefaultLayer,Func<bool>? current)
     {
+        bool Current()=>current is null||current();
+        bool refresh;lock(_gate)refresh=_refreshRequested;
+        bool localized=refresh && IsLocalized?.Invoke()==true;
+        if(!Current())return;
         var calls = new List<Action>();
         var defaults = new HashSet<ObjectType>();
         // fidelity: M4-051 — copy callback, pop, invoke, then inspect the remaining stack (including reentrant changes).
@@ -1261,14 +1325,23 @@ public sealed class CubeLightComponent
             stack.RemoveAt(stack.Count-1);
             if(callback is null||!invoke)return;
             var pending=calls.ToArray();calls.Clear();
-            foreach(var call in pending)call();
-            if(tag==0 || ActionRunnerTagCounter.Global.IsInUse(tag))_robot.Engine.RunIsolated(callback);
+            // The copied callback must run after the pop and pending calls, outside
+            // the private component gate. Reacquire before inspecting the stack.
+            Monitor.Exit(_gate);
+            try
+            {
+                foreach(var call in pending){if(!Current())break;call();}
+                if(Current() && (tag==0 || ActionRunnerTagCounter.Global.IsInUse(tag)))_robot.Engine.RunIsolated(callback);
+            }
+            finally { Monitor.Enter(_gate); }
         }
         void Send(ObjectType type, CubeLightPattern pattern, bool transition)
         {
             uint? id = TryObjectId(type);
             calls.Add(() => {
+                if(!Current())return;
                 if (transition) SendTransitionMessage(id);
+                if(!Current())return;
                 if (SetObjectLights(type, pattern,out bool skipped) != 0)
                 {
                     if(skipped)Log("Stack.CubeLightComponent.Update.RelativeSendSkipped: M1-034/M4-052 skipped invalid marker access before wire send; prior light state retained");
@@ -1282,7 +1355,7 @@ public sealed class CubeLightComponent
             // S7/C11.2 L6 (0x00637924..0x00637940): a RobotDelocalized refresh request (+0x21) is held while
             // robot+0x2C4 is 0 and applied on the first Update after it returns to 1: clear +0x21 and re-pick the
             // default layer for every object.
-            if (_refreshRequested && IsLocalized?.Invoke() == true)
+            if (_refreshRequested && localized)
             {
                 _refreshRequested = false;
                 foreach (var t in _infos.Keys) defaults.Add(t);
@@ -1290,6 +1363,9 @@ public sealed class CubeLightComponent
             uint now = NowMs;
             foreach (var (type, info) in _infos.ToArray())
             {
+                if(!Current())return;
+                if(!_infos.TryGetValue(type,out var installed) || !ReferenceEquals(info,installed))continue;
+                ++info.MutationVersion;
                 var stack = info.Layers[info.CurrentLayer];
                 if (stack.Count > 0)
                 {
@@ -1317,15 +1393,27 @@ public sealed class CubeLightComponent
                     }
                     // W4: +0x41 set, or the last pattern was reached. Pop, then P2: pop consecutive stopped entries.
                     Pop(stack,invoke:!top.Dangling); // M1-034/M4-045: a fault-retired entry cannot claim normal completion.
+                    if(!Current())return;
+                    if(!_infos.TryGetValue(type,out installed) || !ReferenceEquals(info,installed))continue;
                     // 0x00637A0A / 0x00637A4A: callback may change CurrentLayer; never retain the old list.
                     stack=info.Layers[info.CurrentLayer];
+                    bool replaced=false;
                     while (stack.Count > 0 && stack[^1].Stop)
                     {
                         // Native copies callback/tag from the freed first node here, not this stopped entry.
                         Pop(stack,invoke:false);
-                        Log("Stack.CubeLightComponent.SkipStoppedCallback: M1-034/M4-051 skipped stopped-loop callback; freed first-node reads 0x00637A06/0x00637A0C; entry popped");
+                        Monitor.Exit(_gate);
+                        try
+                        {
+                            Log("Stack.CubeLightComponent.SkipStoppedCallback: M1-034/M4-051 skipped stopped-loop callback; freed first-node reads 0x00637A06/0x00637A0C; entry popped");
+                            StoppedLoopObservedForTest?.Invoke();
+                        }
+                        finally { Monitor.Enter(_gate); }
+                        if(!Current())return;
+                        if(!_infos.TryGetValue(type,out installed) || !ReferenceEquals(info,installed)){replaced=true;break;}
                         stack=info.Layers[info.CurrentLayer];
                     }
+                    if(replaced)continue;
                     if (stack.Count > 0)
                     {
                         // P3: resend the lower animation's current pattern, with no timer or iterator reset.
@@ -1356,14 +1444,14 @@ public sealed class CubeLightComponent
                 }
                 int previousLayer = info.CurrentLayer;
                 uint? objectId = TryObjectId(type);
-                info.CurrentLayer = StateLayer;
+                info.CurrentLayer = StateLayer;++info.LayerVersion;
                 if (objectId is { } emptyId) calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.NoAnimsLeftOnLayer", $"No more animations left on layer {LayerName(previousLayer)} for object {emptyId} going to State layer"));
                 else calls.Add(() => Log("MISSING: M4-018 | Update.NoAnimsLeftOnLayer 0x00637BD6: native ObjectID unavailable"));
                 if (pickDefaultLayer) defaults.Add(type);
             }
         }
-        foreach (var call in calls) call();
-        foreach (var t in defaults) PickNextAnimForDefaultLayer(t);
+        foreach (var call in calls){if(!Current())return;call();}
+        foreach (var t in defaults){if(!Current())return;PickNextAnimForDefaultLayer(t);}
     }
 
     // fidelity: M4-018
@@ -1371,7 +1459,7 @@ public sealed class CubeLightComponent
     /// W2: <c>StopAllAnimsOnLayer(layer, id)</c> (0x00638D80): every entry in that layer's stack gets +0x41 = 1,
     /// then Update runs. For a specific cube type only that object's layer is walked.
     /// </summary>
-    internal void StopAllAnimsOnLayer(int layer, ObjectType? type = null)
+    internal void StopAllAnimsOnLayer(int layer, ObjectType? type = null,Func<bool>? current=null)
     {
         if (type is null) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopAllAnimsOnLayer.AllObjects", $"Stopping all anims for all objects on layer {LayerName(layer)}");
         else
@@ -1385,13 +1473,14 @@ public sealed class CubeLightComponent
                 return;
             }
         }
+        if(current is not null&&!current())return;
         lock (_gate)
         {
             foreach (var (t, info) in _infos)
                 if (type is null || t == type)
-                    foreach (var p in info.Layers[layer]) p.Stop = true;
+                { ++info.MutationVersion;foreach (var p in info.Layers[layer]) p.Stop = true; }
         }
-        Update(pickDefaultLayer: true);
+        Update(pickDefaultLayer: true,current);
     }
 
     // fidelity: M4-018
@@ -1405,21 +1494,26 @@ public sealed class CubeLightComponent
         int? id = type is null ? -1 : TryObjectId(type.Value) is { } value ? unchecked((int)value) : null;
         StopLightAnimCore(trigger,layer,id,pickDefaultLayer);
     }
-    private void StopLightAnimForObjectId(uint id,string? trigger,int layer,bool pickDefaultLayer)
-        =>StopLightAnimCore(trigger,layer,unchecked((int)id),pickDefaultLayer);
-    private void StopLightAnimCore(string? trigger,int layer,int? id,bool pickDefaultLayer)
+    private void StopLightAnimForObjectId(uint id,string? trigger,int layer,bool pickDefaultLayer,Func<bool>? current=null)
+        =>StopLightAnimCore(trigger,layer,unchecked((int)id),pickDefaultLayer,current);
+    private void StopLightAnimCore(string? trigger,int layer,int? id,bool pickDefaultLayer,Func<bool>? current=null)
     {
         if (id is { } objectId) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopLightAnim", $"Stopping {trigger} on object {objectId} on layer {LayerName(layer)}.");
         else Log("MISSING: M4-018 | StopLightAnim 0x00638F9C: type-only caller has no native ObjectID");
+        if(current is not null&&!current())return;
         bool found = false;
         lock (_gate)
         {
             foreach (var (t, info) in _infos)
                 if (id == -1 || unchecked((int)info.ObjectId) == id)
+                {
+                    ++info.MutationVersion;
                     foreach (var p in info.Layers[layer])
                         if (MatchesTrigger(p, trigger)) { p.Stop = true; found = true; }
+                }
         }
-        Update(pickDefaultLayer); // native Update precedes the state-string serialization.
+        Update(pickDefaultLayer,current); // native Update precedes the state-string serialization.
+        if(current is not null&&!current())return;
         string state;
         lock (_gate)
         {
@@ -1510,7 +1604,7 @@ public sealed class CubeLightComponent
                 List<ObjectType> targets;
                 lock (_gate) targets = _infos.Keys.ToList();
                 foreach (var t in targets) SetObjectLights(t, OffLights);
-                lock (_gate) foreach (var t in targets) if (_infos.TryGetValue(t, out var info)) info.GameLayerOnly = true;
+                lock (_gate) foreach (var t in targets) if (_infos.TryGetValue(t, out var info)) { ++info.MutationVersion;info.GameLayerOnly = true; }
                 StopAllAnimsOnLayer(EngineLayer, null);
                 StopAllAnimsOnLayer(StateLayer, null);
                 lock (_gate) _gameLayerOnlyDefault = true;   // comp+0x22 (id −1)
@@ -1521,7 +1615,7 @@ public sealed class CubeLightComponent
                 SetObjectLights(only, OffLights);
                 StopAllAnimsOnLayer(EngineLayer, only);
                 StopAllAnimsOnLayer(StateLayer, only);
-                lock (_gate) if (_infos.TryGetValue(only, out var info)) info.GameLayerOnly = true;
+                lock (_gate) if (_infos.TryGetValue(only, out var info)) { ++info.MutationVersion;info.GameLayerOnly = true; }
             }
             return;
         }
@@ -1546,7 +1640,7 @@ public sealed class CubeLightComponent
             {
                 if (!_infos.TryGetValue(t, out var info)) continue;
                 info.GameLayerOnly = false;
-                info.CurrentLayer = info.Layers[EngineLayer].Count > 0 ? EngineLayer : StateLayer;
+                ++info.MutationVersion;info.CurrentLayer = info.Layers[EngineLayer].Count > 0 ? EngineLayer : StateLayer;++info.LayerVersion;
             }
             // 00639AFA..00639B0E: clear and repick each object before advancing to the next.
             PickNextAnimForDefaultLayer(t);

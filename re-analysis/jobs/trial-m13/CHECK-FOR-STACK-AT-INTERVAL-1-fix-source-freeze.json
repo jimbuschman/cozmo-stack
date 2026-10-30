@@ -1,0 +1,194 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "phase": "CLAUDE RETURN FIX1",
+  "state": "READY FOR CLAUDE",
+  "main": "2567528b782bd338263b404574d5682ef339ea8b",
+  "manager": "2c32772d16d8cccac3ad1b123c060a91d4353f5e",
+  "sourceFiles": [
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-fix-read.md",
+      "originalSha256": "37c0ad4e3f1915acd0241d3a9b491e8f88acbaa5bfe4c409736cba7d4523b7e0",
+      "utf8LfSha256": "cfcaef1151594c973615c1e5f5ac0f135281811badf2a0319db33a57c24f2371",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-fix-source-originals\\20261030-check-for-stack-at-interval-1-fix-read.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-fix-source-codex-check.md",
+      "originalSha256": "2bbffb618dd5e6d31667e19250b34b0f9d512373e7d411187b773fda9bd4ff16",
+      "utf8LfSha256": "2bbffb618dd5e6d31667e19250b34b0f9d512373e7d411187b773fda9bd4ff16",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-fix-source-originals\\20261030-check-for-stack-at-interval-1-fix-source-codex-check.md"
+    }
+  ],
+  "currentSnapshotsMatched": [
+    "M12-033",
+    "M13-020",
+    "M8-001",
+    "M15-086"
+  ],
+  "records": 728,
+  "readerRequested": "same original gpt-6.1-sol/medium",
+  "builderRequested": "same original DEFAULT/model and effort omitted",
+  "reviewerRequested": "same original DEFAULT/model and effort omitted",
+  "actualBackend": "unobserved; operator default Terra",
+  "originalReviewerBatches": 1,
+  "originalCompilerFixes": 1,
+  "originalHarnessFixes": 1,
+  "originalSourceProseClarifications": 1,
+  "claudeReturnCorrectionBatches": 1,
+  "newReviewerRequiredCorrectionBatches": 0,
+  "newCompilerCorrections": 0,
+  "newTestRuns": 2,
+  "missingPolicy": "Directed host skip of only unavailable custom-marker above action, visible diagnostic then no-result own continuation; no fabricated ActionResult/deadline/Interrupted. Actual return callback stamps.",
+  "separateNativeBranch": "Missing located target above logs/returns with no action or stamp; do not rewrite that branch.",
+  "wholeExistingRecordClosureProposals": [],
+  "newRecordProposal": "same one otherwise-unowned lifecycle only; no record added",
+  "officialEdits": false,
+  "hardwareRun": false,
+  "coherentDraft": {
+    "paths": 4,
+    "codeVerdict": "PASS initial returned FIX draft",
+    "newReviewerRequiredCorrectionBatches": 0,
+    "actualFreeze": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\returned-fix1-draft\\freeze.txt"
+  },
+  "affectedPlan": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-affected-plan.json",
+  "newHarnessCorrectionBatches": 1,
+  "newProductionFixes": 0,
+  "affectedAttempts": [
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "phase": "CLAUDE RETURN FIX1",
+      "attempt": 1,
+      "state": "AFFECTED FAILED CLASSIFIED",
+      "buildExit": 0,
+      "passed": 663,
+      "failed": 9,
+      "skipped": 0,
+      "total": 672,
+      "classes": 23,
+      "failedRows": [
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "ConfiguredOwnerAppendsCanonicalWorldOrderAndRetainsDuplicatesUntilStop",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.ConfiguredOwnerAppendsCanonicalWorldOrderAndRetainsDuplicatesUntilStop",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "LostCachedTargetTakesSourceNullBranchWithoutActionOrDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.LostCachedTargetTakesSourceNullBranchWithoutActionOrDeadline",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "MissingDiagnosticReentryCannotAdvanceReplacementRun",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingDiagnosticReentryCannotAdvanceReplacementRun(deferred: False)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "MissingDiagnosticReentryCannotAdvanceReplacementRun",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingDiagnosticReentryCannotAdvanceReplacementRun(deferred: True)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "MissingHostLibraryMarksReadinessUnavailableWithoutAppendingTargets",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.MissingHostLibraryMarksReadinessUnavailableWithoutAppendingTargets",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 0)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 50331648)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 67108865)",
+          "outcome": "Failed"
+        }
+      ],
+      "classification": "Definite missing real public animation library fixture input, explicitly observed in null-library test; consistent readiness/chooser failures from correct restored guard. Later branches remain unobserved until rerun, sole-cause completeness not claimed. C+B independently agree.",
+      "fix": "Test-only local real LoadFrom/assertion helper and null-first gate test; production guard unchanged",
+      "inputsUnchanged": 8,
+      "dataDllUnchanged": 255,
+      "trxSha256": "211d52bb6dce1f6336deca05024217e44ce5256b78c1275a11f4539b8ebb4670",
+      "logSha256": "8658a235caa87117f54a5e2dcb81630090b9d45b58c70abab23a6cef1db4b097",
+      "namedResultsSha256": "8400511434541268ad38c512a0940ac26621a5395936f83ac2d44f696776905c",
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "actualPriorBytesPreserved": true
+    }
+  ],
+  "currentFreeze": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-harness1-freeze.json",
+  "passingReferenceAndReplay": {
+    "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+    "phase": "CLAUDE RETURN FIX1",
+    "state": "REFERENCE672 AND EXACT672 PASS",
+    "classes": 23,
+    "passed": 672,
+    "failed": 0,
+    "skipped": 0,
+    "inputsUnchanged": 8,
+    "affectedSourceFiles": 4,
+    "dataDllUnchanged": 255,
+    "referenceTrxSha256": "c9c0ec8315b26e4e46bf41a0325d2d42acdfbf2ed81e12a0c7d3b9364c162464",
+    "referenceNamedSha256": "330a88810a10b6b97319a887f994b6856fbbf150225446582cc10991ac3de19c",
+    "referenceLogSha256": "25a9467fd7e96c46f6631ddc12dca03f6dd3a74aa348367eaef1103e03a47e5d",
+    "replayTrxSha256": "92d222be35144f01819d1ee0209c87e275fa141e57213a28653cc2ef5d6bec24",
+    "replayLogSha256": "2cebb12798979a6365d3b8ceb2dfd20c0b22fd733e4637b548fea85a224ad451",
+    "actualLaunch": "require_escalated for dotnet itself in reference and replay",
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "newReviewerFixes": 0,
+    "newCompilerFixes": 0,
+    "newHarnessFixes": 1,
+    "newTestFoundProductionCorrections": 0,
+    "requestedProductionRepair": true,
+    "fullGate": "pending integration"
+  },
+  "workerFixCommit": "432f6995c75ea46705b77ed53682d431aa7d88b1",
+  "integrationCommit": "3be312aa6b56219075332d6f1332c79fe814a77d",
+  "originMain": "1880f337c803fe25cd5da6d1aad56e068db1015a",
+  "productionSrcTree": "ba0d8779aecf7a7dec9fc461c80e03b99a6b2c86",
+  "fullGate": {
+    "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+    "phase": "CLAUDE RETURN FIX1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "4a7cf9fefa77041a1788af586739c4a9e506fb5b",
+    "cozmoStackTree": "2a5feda708d4123c022fdd1c07ae3256948eff39",
+    "productionSrcTree": "ba0d8779aecf7a7dec9fc461c80e03b99a6b2c86",
+    "startedUtc": "2026-10-30T14:47:55.2163361Z",
+    "endedUtc": "2026-10-30T14:57:30.5315346Z",
+    "exitCode": 0,
+    "passed": 6914,
+    "total": 6914,
+    "failed": 0,
+    "skipped": 0,
+    "testDuration": "8 m 24 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "8ccfb2bab1295259c7e9cfab06f4eb56998af646",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "bb44adcc6bb21f037f3350dcdb93935fa0181e383591302144173ec05d40d3dc",
+    "consoleSha256": "de4cfbad2083411f8ec36541f2946bf355a2ab38d25390ea754983a268c6696b",
+    "frozenSourcePathsMatched": 4,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "classes": [
+    "CheckForStackAtIntervalNativeTests",
+    "M7BatchThreeBTests",
+    "SparksKnockOverNativeTests",
+    "SparksPutDownNativeTests",
+    "KnockOverNativeTests",
+    "FreeplayTests",
+    "BehaviorFrameworkTests",
+    "BehaviorRunnerOwnershipTests",
+    "BehaviorTeardownBoundaryTests",
+    "M8ActionCheckedRowsTests",
+    "M8CompoundCheckedRowsTests",
+    "M8TeardownCheckedRowsTests",
+    "EngineAppLayerTests",
+    "NavigationTests",
+    "AcknowledgeObjectNativeTests",
+    "ObservableWalkAndInterestingEdgeTests",
+    "M11SmallReadsBuilderTests",
+    "M11DelocalizationB8Tests",
+    "SharedChildrenNativeTests",
+    "PickupPyramidNativeExecutionTests",
+    "DockingTestSimpleBoundaryTests",
+    "M13DriveOffDrivingAnimationBindingTests",
+    "ThinkAboutBeaconsNativeTests"
+  ],
+  "filter": "FullyQualifiedName~CheckForStackAtIntervalNativeTests|FullyQualifiedName~M7BatchThreeBTests|FullyQualifiedName~SparksKnockOverNativeTests|FullyQualifiedName~SparksPutDownNativeTests|FullyQualifiedName~KnockOverNativeTests|FullyQualifiedName~FreeplayTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~BehaviorRunnerOwnershipTests|FullyQualifiedName~BehaviorTeardownBoundaryTests|FullyQualifiedName~M8ActionCheckedRowsTests|FullyQualifiedName~M8CompoundCheckedRowsTests|FullyQualifiedName~M8TeardownCheckedRowsTests|FullyQualifiedName~EngineAppLayerTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~AcknowledgeObjectNativeTests|FullyQualifiedName~ObservableWalkAndInterestingEdgeTests|FullyQualifiedName~M11SmallReadsBuilderTests|FullyQualifiedName~M11DelocalizationB8Tests|FullyQualifiedName~SharedChildrenNativeTests|FullyQualifiedName~PickupPyramidNativeExecutionTests|FullyQualifiedName~DockingTestSimpleBoundaryTests|FullyQualifiedName~M13DriveOffDrivingAnimationBindingTests|FullyQualifiedName~ThinkAboutBeaconsNativeTests",
+  "rationale": "Original20 bounded leaf/caller/gates/action/return/world/ownership/legacy classes plus the three additional actual Behaviors.Navigation catalog consumers. No shared production helper mutated by this fix."
+}

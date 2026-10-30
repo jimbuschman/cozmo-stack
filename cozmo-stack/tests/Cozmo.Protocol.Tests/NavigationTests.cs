@@ -1373,12 +1373,12 @@ public class NavigationTests
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void TheShippedNavigationSetHasTwentyFiveBehavioursWithDistinctIds()
+    public void TheShippedNavigationSetHasTwentyFourBehavioursWithDistinctIds()
     {
         using var rig = new Rig();
         var set = ShippedBehaviors.Navigation(rig.M);
-        Assert.Equal(25, set.Count);
-        Assert.Equal(25, set.Select(b => b.Id).Distinct().Count());
+        Assert.Equal(24, set.Count);
+        Assert.Equal(24, set.Select(b => b.Id).Distinct().Count());
         Assert.Contains(set, b => b.Id == "SparksKnockOverCubes" && b is KnockOverCubesBehavior { MinimumStackHeight: 2 });
         Assert.Contains(set, b => b.Id == "Hiking_DriveOffCharger" && b is DriveOffChargerBehavior { ExtraDistanceMm: 45 });
         Assert.Contains(set, b => b.Id == "SparksThinkAboutBeacons" && b is ThinkAboutBeaconsBehavior { BeaconRadiusMm: 75 });

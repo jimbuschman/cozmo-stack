@@ -1,0 +1,30 @@
+{
+  "classes": [
+    "SparksGatherNativeTests",
+    "M5X15BuilderTests",
+    "M5X16BuilderTests",
+    "M5X20BuilderTests",
+    "M5X21BuilderTests",
+    "M15SevereNeedsTests",
+    "DriveOffPilotDrivingMoodTests",
+    "NavigationTests",
+    "SparksKnockOverNativeTests",
+    "SparksPopAWheelieNativeTests",
+    "SparksRollNativeTests",
+    "SparksStackNativeTests",
+    "SparksPutDownNativeTests",
+    "CheckForStackAtIntervalNativeTests",
+    "FreeplayTests",
+    "M8BatchThreeDTests",
+    "BehaviorFrameworkTests",
+    "BehaviorTeardownBoundaryTests",
+    "EngineAppLayerTests",
+    "BehaviorStateLightsNativeTests",
+    "HikingBringBeaconCandidatesTests",
+    "BringBeaconQueueAdmissionTests",
+    "M13DriveOffDrivingAnimationBindingTests",
+    "DriveOffPilotAnimationTests"
+  ],
+  "filter": "FullyQualifiedName~SparksGatherNativeTests|FullyQualifiedName~M5X15BuilderTests|FullyQualifiedName~M5X16BuilderTests|FullyQualifiedName~M5X20BuilderTests|FullyQualifiedName~M5X21BuilderTests|FullyQualifiedName~M15SevereNeedsTests|FullyQualifiedName~DriveOffPilotDrivingMoodTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~SparksKnockOverNativeTests|FullyQualifiedName~SparksPopAWheelieNativeTests|FullyQualifiedName~SparksRollNativeTests|FullyQualifiedName~SparksStackNativeTests|FullyQualifiedName~SparksPutDownNativeTests|FullyQualifiedName~CheckForStackAtIntervalNativeTests|FullyQualifiedName~FreeplayTests|FullyQualifiedName~M8BatchThreeDTests|FullyQualifiedName~BehaviorFrameworkTests|FullyQualifiedName~BehaviorTeardownBoundaryTests|FullyQualifiedName~EngineAppLayerTests|FullyQualifiedName~BehaviorStateLightsNativeTests|FullyQualifiedName~HikingBringBeaconCandidatesTests|FullyQualifiedName~BringBeaconQueueAdmissionTests|FullyQualifiedName~M13DriveOffDrivingAnimationBindingTests|FullyQualifiedName~DriveOffPilotAnimationTests",
+  "rationale": "Changed Gather/Spark owner and common activity paths; all existing Sparked profiles and actual Check caller; shared driving handler bodies/default callers, severe needs and drive-off; base framework/manager/teardown; hard body outputs and Bring cooldown/admission. No cube-light Update mutation in this fix, broader old light consumer repeat left to full gate."
+}

@@ -1,0 +1,16 @@
+{
+  "total": 981,
+  "outcomes": {
+    "Passed": 981
+  },
+  "exactNamedOutcomeMultiplicityMatch": true,
+  "missing": [],
+  "extra": [],
+  "sourceAndDataMismatches": [],
+  "sourceCount": 16,
+  "dataDllCount": 123,
+  "trxSha256": "e2ef119741cbd09a4b625d6dbc564ca19aead28a93cf4f2f7bd9bb0d55cc14bd",
+  "logSha256": "7aa0aa68e146e2ca03ae5ad23b110ea87b195373aae4038c68639c6d40a2de9c",
+  "testExit": "0",
+  "shutdownExit": "0"
+}

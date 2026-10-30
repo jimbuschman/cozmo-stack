@@ -567,7 +567,6 @@ public static class ShippedBehaviors
         new RespondPossiblyRollBehavior(m, "PyramidRespondPossiblyRoll"),
         OnConfigSeenBehavior.RespondToPyramidBase(m),
         new CantHandleTallStackBehavior(m, "CantHandleTallStack"),
-        new CheckForStackAtIntervalBehavior(m, "SparksCheckForStackAtInterval", 15),
         ReactToConfigurationBehavior.ReactToPyramid(m),
         ReactToConfigurationBehavior.ReactToStackOfCubes(m),
         new ThinkAboutBeaconsBehavior(m, "Hiking_ThinkAboutBeacons", 175),

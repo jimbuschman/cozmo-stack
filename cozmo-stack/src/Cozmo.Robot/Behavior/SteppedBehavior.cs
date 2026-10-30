@@ -199,8 +199,31 @@ public abstract partial class SteppedBehavior : IBehavior
     /// </summary>
     protected virtual bool KeepsRunningWithoutAction => false;
 
-    public virtual bool IsRunnable(BehaviorContext context) =>
-        context.Robot.Animations.Library is not null && IsRunnableBase(context) && IsRunnableInternal(context);
+    // Host-only scoped availability; native false remains distinct from missing input.
+    private sealed class ReadinessFrame { internal bool Unavailable; }
+    private static readonly AsyncLocal<ReadinessFrame?> Readiness = new();
+    internal static Action? ReadinessUnavailableObservedForTest;
+    internal static void MarkReadinessUnavailable()
+    {
+        if(Readiness.Value is not {} frame)return;
+        frame.Unavailable=true;ReadinessUnavailableObservedForTest?.Invoke();
+    }
+    internal (bool Available,bool Runnable) EvaluateHostReadiness(BehaviorContext context)
+    {
+        var prior=Readiness.Value;var frame=new ReadinessFrame();Readiness.Value=frame;
+        try { bool runnable=IsRunnable(context);return (!frame.Unavailable,runnable); }
+        finally { Readiness.Value=prior; }
+    }
+
+    public virtual bool IsRunnable(BehaviorContext context)
+    {
+        if(context.Robot.Animations.Library is null)
+        {
+            MarkReadinessUnavailable();
+            return false;
+        }
+        return IsRunnableBase(context) && IsRunnableInternal(context);
+    }
 
     /// <summary>The engine's <c>IsRunnableInternal</c> (the <c>vtable+0x50</c> gate). Most reaction classes just return true.</summary>
     protected virtual bool IsRunnableInternal(BehaviorContext context) => true;
@@ -226,6 +249,7 @@ public abstract partial class SteppedBehavior : IBehavior
         {
             if (RequiredProcessRunning is null && context.AI is null)
             {
+                MarkReadinessUnavailable();
                 ReportMissing("M8-013 IBehavior::IsRunnableBase 0x005BD7D4: required process has no AIInformationAnalyzer owner");
                 return false;
             }

@@ -1,0 +1,23 @@
+# CHECK-FOR-STACK-AT-INTERVAL-1 — returned FIX1
+
+Status: **READY FOR CLAUDE**. This supersedes the original `8a6fa50b` handoff; earlier passing and failed attempts remain historical evidence. Final reviewed source is `CHECK-FOR-STACK-AT-INTERVAL-1-fix-harness1-freeze.json` (four files). Worker `432f6995`, integrated `3be312aa`; production source tree `ba0d8779aecf7a7dec9fc461c80e03b99a6b2c86`. Official records, approvals and Claude REVIEW unchanged by this repair.
+
+## Changed claims
+
+- Missing M12-033 custom-marker input now skips **only the ghost above action**, emits a diagnostic for each occurrence, checks generation after the outward diagnostic, and invokes the no-result continuation. It advances the cached index, faces the next target or queues the real PanAndTilt return. No ActionResult is fabricated and the missing input causes no early deadline or Interrupted stop. This is the directed host policy in the Claude check, not a claim that native marker geometry is built.
+- The continuation follows native 0x005D7CB2..7CD4; only the actual return completion callback computes f32(current completion time + configured delay), 0x005D7D36..7D52. Thus one scan pass completes before the 15-second cooldown; readiness is still strict `now > deadline`, including unordered rejection (0x005D7340..48). The separate native target-null branch still logs and returns with no action or stamp (0x005D7618..7674).
+- The host Library-null readiness check is restored before target-cache mutation and marks the input unavailable; it adds no duplicate target query. The old manual catalog registration is removed, existing fidelity tags and all test reach labels are added, and the catalog regression is updated. No shared geometry, extra wait, target, timer or parent selection is invented.
+
+## Test reach and limits
+
+The configured chooser regression uses the production missing custom-input path, multiple cached targets, one diagnostic per skipped ghost, queued real return and its completion-time deadline. It checks nonselection at 114 and115 after completion at100, then readiness at the next binary32 time. Parent admission/state2 and terminal action results are supplied; the test does not prove raw Spark admission, physical motor/head completion or custom marker geometry. Direct chooser and readiness checks after the pass are labelled accordingly. Reentry tests prevent stale diagnostic continuation from advancing a replacement; the native target-null path and actual null-library gate have separate tests.
+
+M12-033 geometry, shared pose/action/ownership, parent picker and other recorded boundaries remain MISSING. No whole existing record closure is proposed; retain the single otherwise-unowned lifecycle proposal, adding no record here. M15-086 is Hiking ownership, not a new Check record or duplicate proposal.
+
+## Verification and models
+
+Returned-FIX affected reference2 **672/672 PASS, zero skipped**, all23 classes. Inputs8 and data/DLL255 unchanged; shutdown0 and actual native/checkout arrays empty. Exact independent elevated compiled replay **672/672 PASS**, all23 classes: every name, parameter, outcome and multiplicity matched; source4/input8/dataDLL255 unchanged and shutdown/process0. The first returned-FIX run **663P/9F/672** is retained: the fixture did not load the real public animation library, exposed by the correct restored gate. C and B independently classified it before a local test-only real LoadFrom/assertion helper; the missing-library test still verifies unavailable first. Later assertions passed only in reference2; the production guard was never weakened.
+
+Same original reader **gpt-6.1-sol/medium** and builder/reviewer **DEFAULT** (model/effort omitted), configured Terra/backend unobserved. Original history: reviewer1/compiler1/harness1/source-prose1 and the separately preserved zero-test replay timeout. Returned Claude correction1: reviewer0/compiler0/harness1/test-found production corrections0 (the requested production repair is built). All builder questions, actual prior bytes and complete run artifacts remain in the reports. No hardware, settled status, whole-Spark or finished-behavior claim.
+
+Full gate **6914/6914 PASS, zero skipped**, committed HEAD `4a7cf9fefa77041a1788af586739c4a9e506fb5b`, duration 8 m 24 s - Cozmo.Protocol.Tests.dll (net9.0). Fingerprint `8ccfb2bab1295259c7e9cfab06f4eb56998af646` independently recomputed/cache matched. Source4 bytes/blobs and protected official metadata unchanged; actual post-shutdown native/checkout arrays empty. Artifact hashes and timestamps: `CHECK-FOR-STACK-AT-INTERVAL-1-fix-gate-result.json`.

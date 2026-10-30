@@ -1,0 +1,311 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "state": "READY FOR CLAUDE",
+  "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
+  "sources": [
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-read.md",
+      "originalSha256": "814685b02e33de506464556d235a3d2cbd6c2063906e5adba0f0c11fa743886b",
+      "storedLfSha256": "814685b02e33de506464556d235a3d2cbd6c2063906e5adba0f0c11fa743886b",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-originals\\20261030-check-for-stack-at-interval-1-read.md",
+      "initialCommittedGitSha256": "941742471784607b31327a58f01bdae07070a48ab86014c9eac2b0dbd0ef0e28"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-source-codex-check.md",
+      "originalSha256": "16f12cd9125203d7014aec6de85dda98a2631a34db7f0b4031440f2c8dc989b7",
+      "storedLfSha256": "496e99e8b969be55563830150fa4c02434051fe0b0c6e086c53c4b4379059782",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-originals\\20261030-check-for-stack-at-interval-1-source-codex-check.md",
+      "initialCommittedGitSha256": "16f12cd9125203d7014aec6de85dda98a2631a34db7f0b4031440f2c8dc989b7"
+    }
+  ],
+  "currentRecordSnapshotsMatched": [
+    "M11-004",
+    "M11-010",
+    "M11-013",
+    "M12-033",
+    "M13-020",
+    "M7-018",
+    "M7-019",
+    "M8-001",
+    "M8-023",
+    "M8-024",
+    "M11-066",
+    "M15-059"
+  ],
+  "readerRequested": "gpt-6.1-sol/medium/fork_none",
+  "builderRequested": "DEFAULT/model and effort omitted/fork_none",
+  "reviewerRequested": "DEFAULT/model and effort omitted/fork_none",
+  "actualBackend": "unobserved; operator default Terra",
+  "sourceContradictions": 0,
+  "reviewerRequiredCorrectionBatches": 1,
+  "formalRecordsChanged": false,
+  "prep": {
+    "cacheOnlyRestoreAll5Exit": 0,
+    "restoreCount": 1,
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "compileOrTestsRun": false
+  },
+  "remainingFrontiers": [
+    "custom-object marker geometry M12-033 via UseCustomObject/closest marker",
+    "canonical factory/action callable and ownership joins to verify or visiblyMISSING",
+    "shared pose/action/compound and exact final-release topology",
+    "raw Spark parent picker/admission"
+  ],
+  "wholeExistingRecordClosureProposals": [],
+  "newRecordProposal": "ONE coherent otherwise-unowned CheckForStackAtInterval lifecycle, no ID added",
+  "hardwareRun": false,
+  "CANTContractApproval": "separate REQUIRED/PENDING, no dependentwork authorized",
+  "sourceProseClarifications": 1,
+  "compilerCorrectionBatches": 1,
+  "testRuns": 2,
+  "coherentDrafts": [
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-freeze.json",
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-fix1-freeze.json",
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-compiler-fix1-freeze.json",
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-harness-fix1-freeze.json"
+  ],
+  "affectedPlan": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-affected-plan.json",
+  "currentSourceFiles": [
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-read.md",
+      "workingSha256": "cfbbdaee5c637da6536e972938de4e894263289ab648e6938a05987c99dd4b3d",
+      "gitLfSha256": "cfbbdaee5c637da6536e972938de4e894263289ab648e6938a05987c99dd4b3d"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-return-head-addendum.md",
+      "workingSha256": "c51154b96c2f24a345927aefec63587bdfb99f2f94f198de1906a0a0186958e4",
+      "gitLfSha256": "c51154b96c2f24a345927aefec63587bdfb99f2f94f198de1906a0a0186958e4"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-pan-clarification-codex-check.md",
+      "workingSha256": "53b8268c3633ed9d00d3e6c8fe15d8443e4282cd440e92b2d7d443a149b309a2",
+      "gitLfSha256": "53b8268c3633ed9d00d3e6c8fe15d8443e4282cd440e92b2d7d443a149b309a2"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-draft-codex-check.md",
+      "workingSha256": "06e388d332848c44751608a2117842a38a3d8e3d4035dd8059d71fe8a36d29b4",
+      "gitLfSha256": "06e388d332848c44751608a2117842a38a3d8e3d4035dd8059d71fe8a36d29b4"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-correction1-codex-check.md",
+      "workingSha256": "218133799e4f77222f170dab3306c43cea58c74f304804a538af56d892895f3b",
+      "gitLfSha256": "218133799e4f77222f170dab3306c43cea58c74f304804a538af56d892895f3b"
+    }
+  ],
+  "sourceTransportCorrections": [
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-read.md",
+      "beforeWorkingSha256": "d0c6deb76aa33c757dba044c00f82f3b598e77c62c470f4f1f5bfdc46bd1872d",
+      "beforeOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-transport-before\\20261030-check-for-stack-at-interval-1-read.md",
+      "beforeCRCount": 546,
+      "normalizedUtf8LfSha256": "cfbbdaee5c637da6536e972938de4e894263289ab648e6938a05987c99dd4b3d",
+      "afterCRCount": 0
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-return-head-addendum.md",
+      "beforeWorkingSha256": "2622ac5d7e4bc361e62916ee2909369942f300a4663cb1b70183802be30ade1e",
+      "beforeOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-transport-before\\20261030-check-for-stack-at-interval-1-return-head-addendum.md",
+      "beforeCRCount": 1,
+      "normalizedUtf8LfSha256": "c51154b96c2f24a345927aefec63587bdfb99f2f94f198de1906a0a0186958e4",
+      "afterCRCount": 0
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-pan-clarification-codex-check.md",
+      "beforeWorkingSha256": "53b8268c3633ed9d00d3e6c8fe15d8443e4282cd440e92b2d7d443a149b309a2",
+      "beforeOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-transport-before\\20261030-check-for-stack-at-interval-1-pan-clarification-codex-check.md",
+      "beforeCRCount": 0,
+      "normalizedUtf8LfSha256": "53b8268c3633ed9d00d3e6c8fe15d8443e4282cd440e92b2d7d443a149b309a2",
+      "afterCRCount": 0
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-draft-codex-check.md",
+      "beforeWorkingSha256": "06e388d332848c44751608a2117842a38a3d8e3d4035dd8059d71fe8a36d29b4",
+      "beforeOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-transport-before\\20261030-check-for-stack-at-interval-1-draft-codex-check.md",
+      "beforeCRCount": 0,
+      "normalizedUtf8LfSha256": "06e388d332848c44751608a2117842a38a3d8e3d4035dd8059d71fe8a36d29b4",
+      "afterCRCount": 0
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-correction1-codex-check.md",
+      "beforeWorkingSha256": "218133799e4f77222f170dab3306c43cea58c74f304804a538af56d892895f3b",
+      "beforeOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-source-transport-before\\20261030-check-for-stack-at-interval-1-correction1-codex-check.md",
+      "beforeCRCount": 0,
+      "normalizedUtf8LfSha256": "218133799e4f77222f170dab3306c43cea58c74f304804a538af56d892895f3b",
+      "afterCRCount": 0
+    }
+  ],
+  "sourceTransportNote": "Initial storedLfSha256 fields recorded the then-working report bytes; initialCommittedGitSha256 records actual Git bytes. Return-head report had CRCRLF after its reader edit; exact before bytes are archived, only CR bytes removed. Semantic comparison to initial read changes introduction, R1 and check(g), and adds a correction notice plus blank line, matching the independently checked addendum. No code or test input changed.",
+  "buildAttempts": [
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "attempt": 1,
+      "state": "BUILD_FAILED_CLASSIFIED",
+      "buildExit": 1,
+      "affectedTestsInvoked": false,
+      "error": "CS0534 SuppliedChild test fixture missing abstract ActionRunner.CanInterrupt",
+      "independentReviewerConfirmed": true,
+      "fix": "test-only override => false, one method only",
+      "logSha256": "62353b5eef1ead55609237f21d68afa6ed4d6466ba73802c9ec7af07f4869879",
+      "commandSha256": "9dec216ac741d2f2ec0754dbf0c0da13b4abe9880ad4af3a7247428e9c584273",
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "priorBytesPreserved": true
+    }
+  ],
+  "affectedAttempts": [
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "affectedAttempt": 1,
+      "buildAttempt": 2,
+      "state": "AFFECTED_FAILED_CLASSIFIED",
+      "buildExit": 0,
+      "total": 654,
+      "passed": 651,
+      "failed": 3,
+      "skipped": 0,
+      "classesRepresented": 20,
+      "failures": [
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 0)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 50331648)",
+          "outcome": "Failed"
+        },
+        {
+          "class": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests",
+          "method": "SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline",
+          "name": "Cozmo.Protocol.Tests.CheckForStackAtIntervalNativeTests.SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(result: 67108865)",
+          "outcome": "Failed"
+        }
+      ],
+      "classification": "test inspects mutable live compound children after real Init/CheckIfDone can retire them. Captured failure does not identify exact remaining count or which child. Two independent traces agree; no production/source defect established. Test-only valid moving-head state and type-based target observation, original tuple/result/deadline assertions retained.",
+      "sourceAndDataInputsUnchanged": 8,
+      "dataDllHashesUnchanged": 255,
+      "trxSha256": "8da5905845fc09f78a1328be56060c51222197c6aed6a0ca74c38be2055b145f",
+      "testLogSha256": "d86fee08121cdd0891a2cd2d274657c484a5833295bc9e300c5c304a427b064d",
+      "namedResultsSha256": "cd9a69f0caf1983ef23b0a25287426236570316ea36904fc76a16fd83dd889f3",
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "priorBytesPreserved": true
+    },
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "affectedAttempt": 2,
+      "buildAttempt": 3,
+      "state": "PASS",
+      "total": 654,
+      "passed": 654,
+      "failed": 0,
+      "skipped": 0,
+      "classesRepresented": 20,
+      "sourceAndDataInputsUnchanged": 8,
+      "dataDllHashesUnchanged": 255,
+      "trxSha256": "981c41c034d24aedcd528b694029e5a36d64d049eed0c38271999cb2bf2e7f8b",
+      "testLogSha256": "fb46134c127a8ffc8c3ab923e0557c12d6fed10e6542c7c04983f51464f24319",
+      "namedResultsSha256": "8d9388904ff362f8a793a1b7f3c226610b3518c2bcf7eaba861d410a208cd519",
+      "buildAndTestInvocation": "require_escalated explicitly confirmed by builder from actual tool arguments",
+      "shutdownExit": 0,
+      "immediatePostflight": "transient dotnet PID34604 with null commandline; exited without kill, then two elevated native checks empty",
+      "nativeProcesses": [],
+      "checkoutProcesses": []
+    }
+  ],
+  "testFoundHarnessCorrectionBatches": 1,
+  "testFoundProductionCauseGroups": 0,
+  "replayAttempts": [
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "replayAttempt": 1,
+      "state": "FAILED BEFORE TESTS; NOT A PASS",
+      "referenceTotal": 654,
+      "executed": 0,
+      "testExit": 1,
+      "error": "VSTest could not connect to testhost after90 seconds, recorded in TRX",
+      "rootCause": "UNKNOWN; no testhost diagnostic/stderr captured",
+      "invocation": "default permissions for actual dotnet command; elevated only process checks and shutdown, verified by reviewer from actual tool call. This deviated from the required elevated launch; causation not proved.",
+      "preflightScriptError": "unnecessary missing input-before-test lookup before correct input-before-build was loaded; actual8 inputs subsequently matched",
+      "sourceAndDataInputsMatched": 8,
+      "dataDllHashesMatched": 255,
+      "trxSha256": "fe04bcdd4ab8acd64d10bbebb6a490c9dccb896c6eb07f4c47a381bb60d092f7",
+      "logSha256": "2bdb980d350fc8b6025a28a76a90ffe802ab6093b57ed451bbe9390a664c4ed8",
+      "commandSha256": "2b58190db3e5e29edd661538667752ba5be5d9698297d902ae0260503c0dc391",
+      "namedComparison": {
+        "reference_total": 654,
+        "replay_total": 0,
+        "identical": false,
+        "missing": 654,
+        "unexpected": 0,
+        "reason": "replay testhost connection timed out; no results"
+      },
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "rerun": "one new exact elevated replay2 explicitly authorized; no product/test edits, build or restore"
+    },
+    {
+      "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+      "attempt": 2,
+      "state": "PASS",
+      "total": 654,
+      "passed": 654,
+      "failed": 0,
+      "skipped": 0,
+      "exactNamedParameterizedOutcomeMultiplicityMatch": true,
+      "sourceFilesUnchanged": 4,
+      "inputsUnchanged": 8,
+      "dataDllUnchanged": 255,
+      "actualDotnetInvocation": "require_escalated, documented in privilege.txt",
+      "trxSha256": "6e9c745ffdeb264049cc48f5debdc1bec87b5a2ba21feb1b085b0c5f3e8e7e9b",
+      "logSha256": "0f11bd7e360c12e30cb3eb1fca236620e2e0b3b5a55f9c941f13f237934fb27a",
+      "commandSha256": "d576b63f133930b39de4c3d19ecf09b513c7d97708169e0ff1dc40fb83e2d1a4",
+      "shutdownExit": 0,
+      "nativeProcesses": [],
+      "checkoutProcesses": [],
+      "previousReplay1": "0 tests executed, timeout; preserved NOTPASS, rootcauseUNKNOWN"
+    }
+  ],
+  "integration": {
+    "worker": "06b267314f89d55d88bb50d72807e1bb67a84e8e",
+    "commit": "c710de6006a5b8f4050e63faf1c48e112ca38d65",
+    "cozmoStackTree": "7d28d842b81f72bf88218d366fd18400846b90e4",
+    "productionSrcTree": "861a706d696e74bb2e9eb68c0cf577f3f891df18",
+    "sourceHashesAndBlobsMatched": 4,
+    "protectedOfficialChanges": false,
+    "originMain": "69e53d714b0c50a8c7f81f6e81391705e3911451"
+  },
+  "fullGate": {
+    "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "e1bb55817c6a98b8259bda22ff6ab3aa6ef50f9b",
+    "cozmoStackTree": "7d28d842b81f72bf88218d366fd18400846b90e4",
+    "productionSrcTree": "861a706d696e74bb2e9eb68c0cf577f3f891df18",
+    "startedUtc": "2026-10-30T12:54:57.1647742Z",
+    "endedUtc": "2026-10-30T13:06:14.5619043Z",
+    "exitCode": 0,
+    "passed": 6905,
+    "total": 6905,
+    "failed": 0,
+    "skipped": 0,
+    "testDuration": "9 m 58 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "10cfbe07d2d2d32c21fdf1d6de8df793ee0bdead",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "421671b09dffda4367115df68e35d19d0827edc9b74558df6d1a1c769dca5c17",
+    "consoleSha256": "76b487286ea12b48b1dee5d1954cbd3cfac8f2b99546670b1f6f83d83c778459",
+    "frozenSourcePathsMatched": 4,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
+  }
+}

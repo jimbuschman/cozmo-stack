@@ -1,0 +1,92 @@
+{
+  "head": "f484936b5e8a2a26119b2466904aa220d3b6fcb9",
+  "reviewerRequiredCorrectionBatches": 3,
+  "compilerFixes": 1,
+  "testFoundProductionCauseGroups": 2,
+  "testRuns": 2,
+  "paths": {
+    "cozmo-stack/src/Cozmo.Robot/Animation/DrivingAnimationHandler.cs": {
+      "sha256": "ad91f88cde090f8947f55e1d1014b4e666da63c8bf179b658e401e61f7569850",
+      "rawBlob": "04d6428a69fe8e85aa2efa1c3427d0f54eeba7f8",
+      "filteredBlob": "04d6428a69fe8e85aa2efa1c3427d0f54eeba7f8"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs": {
+      "sha256": "fe3d391e17be90b41433973fce9e78dbed329ce9689db47d38558c3385634753",
+      "rawBlob": "bcd111980a29f1b3d1b975aba90a1455b95528bd",
+      "filteredBlob": "bcd111980a29f1b3d1b975aba90a1455b95528bd"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs": {
+      "sha256": "cc3411c1197144cf42d42c8e5656e82763c1ac31609c596b916100fa6f474c71",
+      "rawBlob": "ee1d595604f066f6d74cdce3b827b1337cbc8feb",
+      "filteredBlob": "ee1d595604f066f6d74cdce3b827b1337cbc8feb"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs": {
+      "sha256": "740431e430180fdf5c02d78a4ae8f98add6bceff1b35bff8e84571247313507c",
+      "rawBlob": "09341f2b2f63e46e9bfff6bd0c1999817d3e86a0",
+      "filteredBlob": "09341f2b2f63e46e9bfff6bd0c1999817d3e86a0"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorBaseInputs.cs": {
+      "sha256": "e685dcf31655872cddfd4194b7307518038da2912066b3c8bfc96934792f1328",
+      "rawBlob": "bd4260018fc98452a956118473b7eb90db90b0e4",
+      "filteredBlob": "bd4260018fc98452a956118473b7eb90db90b0e4"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs": {
+      "sha256": "1c0bae8b332091e301cd6982d76378d212e8a3c4336c553995c11e0e1c48cca9",
+      "rawBlob": "991daf942b244fd464c27db59d56cdd681c27b5d",
+      "filteredBlob": "991daf942b244fd464c27db59d56cdd681c27b5d"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBringCubeToBeaconBehavior.cs": {
+      "sha256": "f8b712c8aec338103c15841547fa9595df5ae760455b20f1c2dccd466b5c33e8",
+      "rawBlob": "0ab6c967276a3dbfca11af7f6e03eb4885262cb3",
+      "filteredBlob": "0ab6c967276a3dbfca11af7f6e03eb4885262cb3"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeKnockOverCubesBehavior.cs": {
+      "sha256": "ed65699980b73c5d9e5ee66666a25ea776da5450ed25e7797630dc83940242aa",
+      "rawBlob": "52a4bcef6e4c0544cd46bcc1fc25d7e00980b7a5",
+      "filteredBlob": "52a4bcef6e4c0544cd46bcc1fc25d7e00980b7a5"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeRollBlockBehavior.cs": {
+      "sha256": "9518b430da30be9b0a8956d5aef999f252b6d86c674b34c9521d908ea2b96ea3",
+      "rawBlob": "098959cd0bfe40456acca7f8f600aba8c66d9162",
+      "filteredBlob": "098959cd0bfe40456acca7f8f600aba8c66d9162"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSparkedActivity.cs": {
+      "sha256": "6cd9d9b918bfb3c35cd53d7f579a8f5fbee050f6eeb1db10650dc4720acc3e37",
+      "rawBlob": "9b9cbe037860f824e18445f1e9076a12b4240d91",
+      "filteredBlob": "9b9cbe037860f824e18445f1e9076a12b4240d91"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs": {
+      "sha256": "7a5868f3c5403a361d1a9997fad543303e30d9683e1c4914fb17e0ff059190f5",
+      "rawBlob": "b5ad6b82175f955e3098489b79bd8e278905c494",
+      "filteredBlob": "b5ad6b82175f955e3098489b79bd8e278905c494"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Lights.cs": {
+      "sha256": "d1bcd1cccb3cdf5c54cc7b55cf9ce2e46b2f36c2883b660850de07a40c85bee3",
+      "rawBlob": "5c714ce7824ce1cb442ca0f93c8b07c3929a5c30",
+      "filteredBlob": "5c714ce7824ce1cb442ca0f93c8b07c3929a5c30"
+    },
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/HikingBringBeaconCandidatesTests.cs": {
+      "sha256": "7b50c8436409630b61ded117c7a4e88c2abccea9a510951eccbda1132b199b01",
+      "rawBlob": "f96faa7e8f5c7f81e76816abe8accd4379e653d5",
+      "filteredBlob": "f96faa7e8f5c7f81e76816abe8accd4379e653d5"
+    },
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs": {
+      "sha256": "ac77ec61d692240687cb454aa31ede5153d37606c818c5b42c26cae3be1a6cb6",
+      "rawBlob": "d9f1534811379e72b3d213a88ba73b281a1e108b",
+      "filteredBlob": "d9f1534811379e72b3d213a88ba73b281a1e108b"
+    },
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeGatherCubesActivity.cs": {
+      "sha256": "922882e9a1bad8b1f07dc8aa94361e120fc9b80e49b43a8e32690300954fca12",
+      "rawBlob": "369ffaad12948bba7e3800fae3cc595ce13edc9c",
+      "filteredBlob": "369ffaad12948bba7e3800fae3cc595ce13edc9c"
+    },
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksGatherNativeTests.cs": {
+      "sha256": "9d50d962e17ed005f9ed20485c173ab347727eef37d45c2c6a3df6e00ab9238c",
+      "rawBlob": "90127662edcc5417a8086a2a20258e9c610bfe18",
+      "filteredBlob": "90127662edcc5417a8086a2a20258e9c610bfe18"
+    }
+  },
+  "changedSinceReview": [
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksGatherNativeTests.cs"
+  ]
+}

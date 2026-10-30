@@ -1,0 +1,29 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "replayAttempt": 1,
+  "state": "FAILED BEFORE TESTS; NOT A PASS",
+  "referenceTotal": 654,
+  "executed": 0,
+  "testExit": 1,
+  "error": "VSTest could not connect to testhost after90 seconds, recorded in TRX",
+  "rootCause": "UNKNOWN; no testhost diagnostic/stderr captured",
+  "invocation": "default permissions for actual dotnet command; elevated only process checks and shutdown, verified by reviewer from actual tool call. This deviated from the required elevated launch; causation not proved.",
+  "preflightScriptError": "unnecessary missing input-before-test lookup before correct input-before-build was loaded; actual8 inputs subsequently matched",
+  "sourceAndDataInputsMatched": 8,
+  "dataDllHashesMatched": 255,
+  "trxSha256": "fe04bcdd4ab8acd64d10bbebb6a490c9dccb896c6eb07f4c47a381bb60d092f7",
+  "logSha256": "2bdb980d350fc8b6025a28a76a90ffe802ab6093b57ed451bbe9390a664c4ed8",
+  "commandSha256": "2b58190db3e5e29edd661538667752ba5be5d9698297d902ae0260503c0dc391",
+  "namedComparison": {
+    "reference_total": 654,
+    "replay_total": 0,
+    "identical": false,
+    "missing": 654,
+    "unexpected": 0,
+    "reason": "replay testhost connection timed out; no results"
+  },
+  "shutdownExit": 0,
+  "nativeProcesses": [],
+  "checkoutProcesses": [],
+  "rerun": "one new exact elevated replay2 explicitly authorized; no product/test edits, build or restore"
+}

@@ -1,0 +1,30 @@
+{
+  "draft": "draft",
+  "freezeTextOriginalSha256": "0a0d4a9f6889332de8e62a3c6e55f4b404b48ca779c3c4d39fe78e5033271abd",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "a670a162278ba4c82a1ba11619ae3144911f078439ac071fa78c4e97168b66ab",
+      "workerListedGitBlob": "3c193b1a5793d4c6002a6fb3e7a6588dbf78b8f3",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\BehaviorContainer.cs"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCheckForStackAtIntervalBehavior.cs",
+      "sha256": "8fbd3e0905df62a4acc1d67dacd3c6121251f16edeeacd5897784c0f838daf8a",
+      "workerListedGitBlob": "748ab6629b638eb958f214fc6237cba817b1de3c",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft\\cozmo-stack\\src\\Cozmo.Robot\\Behavior\\NativeCheckForStackAtIntervalBehavior.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "9f321e886933ab2f31ac3ffa2699b58526f45901addd054c7e3cf244057fda38",
+      "workerListedGitBlob": "f889e8d2fe4937e09dc9b31020664b1f395995df",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\M7BatchThreeBTests.cs"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CheckForStackAtIntervalNativeTests.cs",
+      "sha256": "cc49680a13567f2502cec36aad2cf9c94094f1e8af61c449584a357b91762cff",
+      "workerListedGitBlob": "0e0befd3c4088b7863e3ccd0760a8eb1d91d9d8e",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\draft\\cozmo-stack\\tests\\Cozmo.Protocol.Tests\\CheckForStackAtIntervalNativeTests.cs"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-29. **0 finished · 35 in progress · 143 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
+Whole-behavior scoreboard, 2026-10-29. **0 finished · 39 in progress · 139 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -61,11 +61,11 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `AcknowledgeFace` | `AcknowledgeFace` | in progress | UNKNOWN | reaction: FacePositionUpdated. 1 refs; R252+ in map |
 | `AcknowledgeObject` | `AcknowledgeObject` | in progress | ACKNOWLEDGE-OBJECT-1 + FIX-ACKNOWLEDGE-OBJECT-GHOST-1 MERGED (Claude check PASS). Stacked-cube ghost look skipped with a visible MISSING until M11-010 ghost visibility and M12-033 ghost marker geometry are built; M15-081 open | reaction: ObjectPositionUpdated. 1 refs; R267+ in map |
 | `Bouncer` | `Bouncer` | in progress | BOUNCER-1 MERGED (Claude check PASS); native own lifecycle/game/image path, independent969/reset185 and corrected full6795 PASS0skip; detector/geometry/shared-action/host gaps remain, no finished-behaviour claim | freeplay: PlayWithHumans. 1 refs; R078+ in map |
-| `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | in progress | HIKING-BRING-CUBE-TO-BEACON-1 MERGED (Claude check PASS); native Hiking own path, delocalization beacon clear, full6866 PASS0skip; parent Hiking admission, shared children and pixel-detector limit remain, nothing settled | freeplay: hiking. Lifecycle record awaits operator |
-| `SparksBringCubeToBeacon` | `BringCubeToBeacon` | not started | UNKNOWN | spark: GatherCubes. 1 refs; R200+ in map |
-| `CantHandleTallStack` | `CantHandleTallStack` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
-| `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | not started | UNKNOWN | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
-| `CubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | freeplay: PlayAlone. 1 refs; R065+ in map |
+| `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | in progress | HIKING-BRING-CUBE-TO-BEACON-1 MERGED (Claude check PASS); native Hiking own path, delocalization beacon clear, full6866 PASS0skip; parent Hiking admission, shared children and pixel-detector limit remain, nothing settled | freeplay: hiking. M15-086 added by operator, still open |
+| `SparksBringCubeToBeacon` | `BringCubeToBeacon` | in progress | SPARKS-BRING-CUBE-TO-BEACON-1 returnedFIX READY: native first-name/end-window repair, affected665+exact665 and fresh full6912 PASS. M15-023 open, parent/LookInPlace gaps, no finished claim | spark: GatherCubes. 1 refs; R200+ in map |
+| `CantHandleTallStack` | `CantHandleTallStack` | in progress | CANT-HANDLE-TALL-STACK-1 corrected contract approved on main288bd07b; read done, build after priority Sparks FIX; weak expiry/caller MISSING | No explicit config reference; native/app use UNKNOWN |
+| `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | in progress | CHECK-FOR-STACK-AT-INTERVAL-1 returnedFIX1 READY: skip missing ghost only, real return stamps cooldown; affected672+exact672/full6914 PASS. Marker/parent gaps remain; no finished claim | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
+| `CubeLiftWorkout` | `CubeLiftWorkout` | in progress | CUBE-LIFT-WORKOUT-1 bounded source PASS, implementation held before priority Sparks FIX; no code/test/finished claim | freeplay: PlayAlone. 1 refs; R065+ in map |
 | `SparksCubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | spark: SparksWorkout. 1 refs; R240+ in map |
 | `Dance_Mambo` | `Dance` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
@@ -271,3 +271,6 @@ Paths are relative to shipped `config/engine/behaviorSystem/`; `/` means the ass
 [AGENTS.md](../../../AGENTS.md) remains authoritative: operator2026-10-09 replaces app/Unity/Android/socket machinery while preserving engine API/output/state and named host inputs; SDK mode (including CodeLab/Edu) is not supported. Operator2026-10-14 excludes firmware update; M1-040 accepts firmware per2026-10-09 decision. These exclude named entry paths, not every behavior ID that could share one. All178 asset rows remain, including developer tests and the51 IDs without an explicit config reference. No class/ID is excluded merely for its name, folder or current lack of a caller.
 
 ADP-1 changes only the approved per-sample DSP arithmetic boundary; other audio behavior/RNG/timing remains exact. “No effect” still needs source evidence; “not supported” needs the applicable recorded decision. This scoreboard creates neither.
+
+
+

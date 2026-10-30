@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
@@ -243,7 +244,10 @@ public sealed record EmotionScorer(EmotionType Emotion, Graph2d Graph, bool Trac
 }
 
 /// <summary>Why a chooser picked (or kept, or found nothing).</summary>
-public sealed record ChooserDecision(IBehavior? Behavior, string Reason, IReadOnlyList<(string Id, double Score, string Note)> Scores);
+public sealed record ChooserDecision(IBehavior? Behavior, string Reason, IReadOnlyList<(string Id, double Score, string Note)> Scores)
+{
+    internal bool InputUnavailable { get; init; }
+}
 
 /// <summary><c>Anki::Cozmo::BehaviorChooserType</c> (UNITY): Scoring, Selection, StrictPriority.</summary>
 public enum BehaviorChooserType { Scoring, Selection, StrictPriority }
@@ -349,6 +353,7 @@ public sealed class ScoringChooser : IBehaviorChooser
 public sealed class StrictPriorityChooser : IBehaviorChooser
 {
     private readonly IReadOnlyDictionary<string, IBehavior> _bound;
+    internal bool StopOnUnavailable { get; set; }
     public StrictPriorityChooser(IReadOnlyList<string> ids, IReadOnlyDictionary<string, IBehavior> bound) { BehaviorIds = ids; _bound = bound; }
     public BehaviorChooserType Type => BehaviorChooserType.StrictPriority;
     public IReadOnlyList<string> BehaviorIds { get; }
@@ -359,13 +364,22 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
         var scores = new List<(string, double, string)>();
         foreach (var id in BehaviorIds)
         {
-            if (!_bound.TryGetValue(id, out var b)) { scores.Add((id, 0, "not built")); continue; }
+            if (!_bound.TryGetValue(id, out var b)) { scores.Add((id, 0, "not built")); if(StopOnUnavailable) { SteppedBehavior.ReportMissing("M8-013 strict priority reached unavailable readiness: "+id); return new ChooserDecision(null, "unavailable readiness", scores) { InputUnavailable=true }; } continue; }
             // NATIVE (StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E): the loop reads the
             // candidate's is-running flag (IBehavior +0xA1, the same byte IsRunnableBase logs "Behavior %s is
             // already running" from) at 0x0060B250 and selects it without calling IsRunnable at all. Only a
             // behaviour that is not running is asked whether it is runnable.
-            bool running = current is not null && current.Id == id;
-            if (running || b.IsRunnable(ctx)) { scores.Add((id, 1, running ? "running" : "first runnable")); return new ChooserDecision(b, running ? "already running" : $"first runnable in priority order", scores); }
+            bool running = StopOnUnavailable ? b is SteppedBehavior { EngineRunning:true } : current is not null && current.Id == id;
+            if (running) { scores.Add((id,1,"running"));return new ChooserDecision(b,"already running",scores); }
+            bool runnable;
+            if(StopOnUnavailable && b is SteppedBehavior stepped)
+            {
+                var evaluation=stepped.EvaluateHostReadiness(ctx);
+                if(!evaluation.Available)return new ChooserDecision(null,"unavailable readiness",scores) { InputUnavailable=true };
+                runnable=evaluation.Runnable;
+            }
+            else runnable=b.IsRunnable(ctx);
+            if (runnable) { scores.Add((id, 1, "first runnable")); return new ChooserDecision(b, $"first runnable in priority order", scores); }
             scores.Add((id, 0, "not runnable"));
         }
         return new ChooserDecision(null, "nothing in the priority list is runnable", scores);
@@ -934,6 +948,12 @@ public sealed class Activity
     internal Action? NativePublicStateSelected;
     internal NativeActivityObjectiveOwner? ObjectiveOwner;
     internal NativeSparkedActivity? SparkedOwner;
+    internal NativeGatherCubesActivity? GatherOwner;
+    internal Action? NativeCommonDrivingPush, NativeCommonDrivingRemove;
+    internal CozmoRobot? NativeDrivingFacade;
+    internal bool GuardNativeLifecycle;
+    private long _nativeLifecycleEpoch;
+    private ScopedAcquisition? _nativeDrivingLease;
     // fidelity: M15-055, M15-056 — explicit native delegate and checked Feeding owner; enclosing lifecycle remains M15-061.
     internal Func<EngineRobot,uint>? NativeUpdate20;
     internal FeedingDisconnectUnit? FeedingDisconnect;
@@ -968,24 +988,94 @@ public sealed class Activity
     // fidelity: M5-063, M15-006 — caller triplet/lock inputs remain unread; no unmatched push/remove is fabricated.
     public void OnSelected(double nowSec, Action<string>? missing = null)
     {
+        long epoch=++_nativeLifecycleEpoch;
+        bool Current()=>!GuardNativeLifecycle || epoch==_nativeLifecycleEpoch;
         SelectedAtSec = nowSec; Strategy.OnStarted(nowSec);
+        if(!Current())return;
         if(NativePublicStateSelected is {} publish)publish();
         else ReportActivityMissing("PublicStateBroadcaster::UpdateActivity 0x005B3154", missing);
-        if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing);
+        if(!Current())return;
+        if (DriveStartAnim is { } drive && (int)drive != 0x23F) { if(NativeCommonDrivingPush is {} push)push(); else ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing); }
+        if(!Current())return;
         if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("SmartPushIdleAnimation 0x005B31BC", missing);
-        SetAnalyzerRequest(true);
-        FeedingDisconnect?.OnSelected();
-        ObjectiveOwner?.OnSelectedInternal();
-        SparkedOwner?.Selected();
+        if(!Current())return;
+        SetAnalyzerRequest(true);if(!Current())return;
+        FeedingDisconnect?.OnSelected();if(!Current())return;
+        ObjectiveOwner?.OnSelectedInternal();if(!Current())return;
+        SparkedOwner?.Selected();if(!Current())return;
+        GatherOwner?.Selected();
     }
     public void OnDeselected(double nowSec, Action<string>? missing = null)
     {
-        SelectedAtSec = null; Strategy.OnEnded(nowSec);
-        if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("RemoveIdleAnimation 0x005B340C", missing);
-        if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("RemoveDrivingAnimations 0x005B3450", missing);
-        SetAnalyzerRequest(false);
-        FeedingDisconnect?.OnDeselected();
-        SparkedOwner?.Deselected();
+        long epoch=++_nativeLifecycleEpoch;
+        bool Current()=>!GuardNativeLifecycle || epoch==_nativeLifecycleEpoch;
+        var oldSpark=GuardNativeLifecycle?SparkedOwner?.DetachGather():null;
+        var oldDriving=GuardNativeLifecycle?_nativeDrivingLease:null;
+        if(GuardNativeLifecycle)_nativeDrivingLease=null;
+        void ReleaseDriving()
+        {
+            if(oldDriving is null)return;
+            var lease=oldDriving;oldDriving=null;lease.Cancel();
+            var facade=NativeDrivingFacade??throw new InvalidOperationException("MISSING: actual activity driving owner unavailable during retirement");
+            facade.Animations.DrivingAnimations.RemoveOwned(lease);
+        }
+        try
+        {
+            SelectedAtSec = null; Strategy.OnEnded(nowSec);
+            if(!Current())return;
+            if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("RemoveIdleAnimation 0x005B340C", missing);
+            if(!Current())return;
+            if (DriveStartAnim is { } drive && (int)drive != 0x23F)
+            {
+                if(GuardNativeLifecycle)
+                {
+                    var facade=NativeDrivingFacade??throw new InvalidOperationException("MISSING: actual activity driving owner unavailable during retirement");
+                    var result=facade.Animations.DrivingAnimations.RemoveScoped(Id,Current);
+                    if(result.Completed)
+                    {
+                        if(ReferenceEquals(result.Owner,oldDriving))oldDriving=null;
+                        oldSpark?.CommonRemoved(result.Owner);
+                    }
+                }
+                else if(NativeCommonDrivingRemove is {} remove)remove();
+                else ReportDrivingMissing("RemoveDrivingAnimations 0x005B3450", missing);
+            }
+            if(!Current())return;
+            SetAnalyzerRequest(false);if(!Current())return;
+            FeedingDisconnect?.OnDeselected();if(!Current())return;
+            if(oldSpark is not null)SparkedOwner!.DeselectedGather(oldSpark);
+            else SparkedOwner?.Deselected();
+            if(!Current())return;
+            GatherOwner?.Deselected();
+            if(Current())oldDriving=null; // Native calls completed; do not add an identity removal.
+        }
+        finally { ReleaseDriving();oldSpark?.ReleaseAll(); }
+    }
+    internal void RetireHostResources()
+    {
+        ++_nativeLifecycleEpoch;
+        var oldSpark=SparkedOwner?.DetachGather();
+        var oldDriving=_nativeDrivingLease;_nativeDrivingLease=null;
+        try { oldSpark?.ReleaseAll(); }
+        finally
+        {
+            if(oldDriving is not null)
+            {
+                oldDriving.Cancel();
+                var facade=NativeDrivingFacade??throw new InvalidOperationException("MISSING: actual activity driving owner unavailable during retirement");
+                facade.Animations.DrivingAnimations.RemoveOwned(oldDriving);
+            }
+        }
+    }
+    internal void PushOwnedDriving(EngineRobot owner,DrivingAnimations animations)
+    {
+        var lease=new ScopedAcquisition();_nativeDrivingLease=lease;
+        NativeDrivingFacade!.Animations.DrivingAnimations.PushOwned(animations,Id,lease);
+    }
+    internal void RemoveOwnedDriving(EngineRobot owner)
+    {
+        var lease=_nativeDrivingLease;_nativeDrivingLease=null;
+        if(lease is null)return;lease.Cancel();NativeDrivingFacade!.Animations.DrivingAnimations.RemoveOwned(lease);
     }
     private void SetAnalyzerRequest(bool enable)
     {
@@ -1069,11 +1159,10 @@ public static class ActivityTreeLoader
         var strategy = e.TryGetProperty("activityStrategy", out var st) ? ActivityStrategy.FromJson(st) : new ActivityStrategy();
         if (random is not null) strategy.Random = random;
         // fidelity: M15-059
-        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
+        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");
-        // fidelity: M15-008
-        if (id == "SparksGatherCubes" || (e.TryGetProperty("activityType", out var gty) && gty.GetString() == "GatherCubes"))
-            SteppedBehavior.ReportMissing("ActivityGatherCubes (Update 0x005AF27C) is not built: its Update reports NeedActionCompleted(GatherCubes 0x14) when every cube is in a beacon (0x005AF2EC..0x005AF2F8, 0x005AF2F0) and plays the cube lights; the activity (SparksGatherCubes, feature-gated off in the shipped features.json) has no body, and the behaviours PeekABoo, TrackLaser and GuardDog that report needs actions are unbuilt too (M15-008)");
+        if(id=="SparksGatherCubes")
+            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt");
         var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,
@@ -1087,7 +1176,7 @@ public static class ActivityTreeLoader
         };
         if(owner is not null)
         {
-            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,"SparksKnockOverCubes"=>21,"SparksPopAWheelie"=>24,"SparksRollBlock"=>26,"SparksStackBlock"=>27,_=>null};
+            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,"SparksKnockOverCubes"=>21,"SparksPopAWheelie"=>24,"SparksRollBlock"=>26,"SparksStackBlock"=>27,"SparksGatherCubes"=>20,"GatherCubes"=>4,_=>null};
             if(nativeId is {} value)activity.NativePublicStateSelected=()=>owner.BehaviorPublicState.UpdateActivity(value);
             if(activity.Type=="BehaviorsOnly")activity.NativeUpdate20=_=>0; // vtable10252F8 -> 005A7373.
             foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
@@ -1102,8 +1191,23 @@ public static class ActivityTreeLoader
                             &&rawId.ValueKind==JsonValueKind.String &&bound.TryGetValue(rawId.GetString()!,out var candidate)
                             &&candidate is NativeLookForFaceAndCubeBehavior look &&rawEntry.TryGetProperty("scoring",out var rawScoring))
                             look.CheckObjectiveInput(rawScoring,"activity "+id+" "+chooserKey);
-            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
-                activity.SparkedOwner=new(activity,owner,e,bound);
+            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
+            {
+                Activity? nested=null;
+                if(id=="SparksGatherCubes" && e.TryGetProperty("subActivityDelegate",out var nestedConfig))
+                {
+                    nested=Build(nestedConfig,byId,bound,penalty,random,0,owner);
+                    if(nested.Chooser is StrictPriorityChooser strict)strict.StopOnUnavailable=true;
+                }
+                activity.SparkedOwner=new(activity,owner,e,bound,nested);
+                if(id=="SparksGatherCubes"){activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;}
+                if(id=="SparksGatherCubes" && activity.DriveStartAnim is {} start && activity.DriveLoopAnim is {} loop && activity.DriveEndAnim is {} end)
+                {
+                    activity.NativeCommonDrivingPush=()=>activity.PushOwnedDriving(owner,new(start,loop,end));
+                    activity.NativeCommonDrivingRemove=()=>activity.RemoveOwnedDriving(owner);
+                }
+            }
+            else if(id=="GatherCubes" && activity.Type=="GatherCubes") { activity.GuardNativeLifecycle=true;activity.GatherOwner=new(owner); }
             else if(activity.Type is "Socialize" or "Sparked")activity.ObjectiveOwner=new(activity,owner,e);
         }
         return activity;

@@ -1,0 +1,74 @@
+{
+  "job": "CUBE-LIFT-WORKOUT-1",
+  "state": "BOUNDED SOURCE PASS; IMPLEMENTATION HOLD FOR PRIORITY SPARKS FIX",
+  "sourceFiles": [
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-read.md",
+      "originalSha256": "d325f79f61b520184df75546c28e8602c1d249e34897534fb8cf8e6a88f7cf44",
+      "utf8LfSha256": "d325f79f61b520184df75546c28e8602c1d249e34897534fb8cf8e6a88f7cf44",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-read.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-cube-lift-workout-1-source-codex-check.md",
+      "originalSha256": "cb2ab4bd24d6fcceaa1e9150176ec846810d69e9ace68f59cd7cedd8f2a2dc79",
+      "utf8LfSha256": "cb2ab4bd24d6fcceaa1e9150176ec846810d69e9ace68f59cd7cedd8f2a2dc79",
+      "originalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\workout-source-originals\\20261030-cube-lift-workout-1-source-codex-check.md"
+    }
+  ],
+  "currentManifestSnapshotsMatched": [
+    "M12-006",
+    "M12-027",
+    "M13-010",
+    "M13-020",
+    "M15-002",
+    "M15-003",
+    "M15-006",
+    "M15-008",
+    "M7-018",
+    "M7-019",
+    "M7-020",
+    "M8-001",
+    "M8-011",
+    "M8-013",
+    "M8-017",
+    "M13-038",
+    "M13-039",
+    "M8-023",
+    "M8-024",
+    "M12-009",
+    "M12-010",
+    "M12-015",
+    "M4-016",
+    "M15-022",
+    "M4-028"
+  ],
+  "readerRequested": "gpt-6.1-sol/medium/fork_none",
+  "builderRequested": "DEFAULT/model and effort omitted/fork_none",
+  "reviewerRequested": "DEFAULT/model and effort omitted/fork_none",
+  "actualBackend": "unobserved; operator default Terra",
+  "sourceBehaviorCorrections": 0,
+  "readerOwnerLabelCorrections": 1,
+  "readerInitialLabelsArchive": ".scratch/workout-read/report-original-before-owner-label-correction.md",
+  "reviewerPartialArchive": ".scratch/workout-read/source-codex-check-partial.md",
+  "reviewerRequiredCorrectionBatches": 0,
+  "compilerCorrectionBatches": 0,
+  "testRuns": 0,
+  "prep": {
+    "cacheOnlyRestoreAll5Exit": 0,
+    "restoreCount": 1,
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "compileOrTest": false
+  },
+  "formalRecordsChanged": false,
+  "wholeExistingClosureProposals": [],
+  "newLifecycleProposal": "One otherwise-unowned ordinary/class CubeLiftWorkout lifecycle complement; no record added. Spark instance separate.",
+  "remainingFrontiers": [
+    "actual canonical workout config/mood/RNG and other M13-010 caller/history/stage recipients remain partial until actual joins verified",
+    "canonical target intention0/helper/action/placement/search/carrying state and results",
+    "actual parent admission/scoring/interlude and unavailable siblings",
+    "needs/objective/public-state/audio and native shared-owner/retirement under existing scopes"
+  ],
+  "CantApproval": "resolved by formal main288bd07b approval",
+  "hardwareRun": false
+}
