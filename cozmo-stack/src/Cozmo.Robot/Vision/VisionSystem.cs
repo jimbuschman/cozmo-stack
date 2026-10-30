@@ -1214,7 +1214,23 @@ public sealed partial class VisionSystem : IDisposable
                     var tf = new TrackedFace(d, timestamp);
                     tf.UpdateTranslation(processingCamera);
                     faces.Add(tf);
-                    var observation=Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast);
+                    FaceObservation? observation;
+                    if (offline) observation=Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast);
+                    else
+                    {
+                        using var faceMutation=World.EnterPoseMutation();
+                        if(_robot.Engine.Robot is not { } owner)
+                        {
+                            SteppedBehavior.ReportMissing("M14-008 FaceWorld native Robot origin owner unavailable; face update skipped");
+                            continue;
+                        }
+                        lock(owner.PoseTreeGate)
+                        {
+                            var originNode=ResolveFaceObservationOrigin(History,owner,timestamp);
+                            if(originNode is null)continue;
+                            observation=Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,processingPose.RotatingTooFast,originNode);
+                        }
+                    }
                     if(observation is not null && (observation.Face.TimesObserved>3||observation.Face.HasName) && _robot.Engine.Robot is {HasExternalInterface:true})
                     {
                         Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace full app report fields remain unavailable; no truncated wire report published; delivering checked LOCAL46 ID/timestamp projection only");
@@ -1282,6 +1298,15 @@ public sealed partial class VisionSystem : IDisposable
             }
             return ApplyResult(pd);
         }
+    }
+
+    internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp)
+    {
+        if(!history.ComputeFaceObservationOriginId(timestamp,out uint originId))
+        { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation-time historical pose unavailable; face update skipped"); return null; }
+        if(!owner.TryGetNativeOriginOwner(originId,out var origin) || origin?.Node is not { } node)
+        { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation origin ID has no registered native PoseOriginList owner; face update skipped"); return null; }
+        return node;
     }
 
     /// <summary>

@@ -72,7 +72,7 @@ public abstract partial class SteppedBehavior
         if (_actionCompletionSubscription is null && Context.Robot.Engine.Robot?.HasExternalInterface==true)
             ReportMissing("M8-015 IBehavior constructor completion subscription is unavailable for this action owner");
         int result;
-        if (QueueOwnedAction is { } queue) result = queue(QueueActionPosition.Now, incoming, 0);
+        if (QueueOwnedAction is { } queue) { if(incoming is ActionRunner ownedRunner)ownedRunner.MarkQueueAdmission(); result = queue(QueueActionPosition.Now, incoming, 0); }
         else if (list is not null) result = list.QueueAction(QueueActionPosition.Now, incoming, 0);
         else
         {

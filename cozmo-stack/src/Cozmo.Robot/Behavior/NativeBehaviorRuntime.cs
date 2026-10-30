@@ -76,7 +76,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 _ownedVision=vision;_ownedOverhead=new OverheadEdgesDetector();vision.OverheadEdges=_ownedOverhead;
             }
         }
-        var factory=new BehaviorFactoryContext{Vision=vision,Manipulation=Manipulation,NativeRobot=robot,
+        var factory=new BehaviorFactoryContext{Vision=vision,Manipulation=Manipulation,NativeRobot=robot,Features=facade.Engine.Features,
             SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),Log=facade.Engine.EmitStackLog};
         var container=new BehaviorContainer(new BehaviorFactory(),factory,
             facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>());
@@ -150,7 +150,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     private FreeplaySystem? _observer;
     internal FreeplaySystem FreeplayObserver=>_observer??=new FreeplaySystem(_manager,Context,
         Tree.FirstOrDefault(a=>a.Id=="Freeplay")??throw new InvalidOperationException("Configured Freeplay resources unavailable"),
-        Bound,new FreeplayInputs{Needs=_facade.Engine.Needs,Mood=_robot.MoodOwner},false){ObserveOnly=Observe};
+        Bound,new FreeplayInputs{Needs=_facade.Engine.Needs,Mood=_robot.MoodOwner,Features=_facade.Engine.Features},false){ObserveOnly=Observe};
     internal void UpdateAI()=>AI.Update(_facade);
     // The existing checked 0x006553FC -> 0x0067F7AC recipient belongs to the
     // actual world, independently of a host Freeplay handle and before image E8.
@@ -197,6 +197,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeKnockOverCubesBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeBouncerBehavior>())candidate.Dispose();
         Configurations.Dispose();
         Manipulation?.Dispose();
     }

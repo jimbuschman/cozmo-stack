@@ -1766,6 +1766,7 @@ public sealed partial class CozmoEngine : IDisposable
     internal MessageHandler Handler { get; }
     internal RobotManager Robots { get; }
     internal CozmoEngineOptions Options { get; }
+    internal Behavior.FeatureGates? Features { get; set; }
 
     /// <summary>The engine clock (BaseStationTimer, CD9).</summary>
     public BaseStationTimer Timer { get; } = new();
@@ -1959,6 +1960,7 @@ public sealed partial class CozmoEngine : IDisposable
     {
         _t = transport;
         Options = options ?? new CozmoEngineOptions();
+        Features = Options.ResourcesPath is { } featuresRoot ? Behavior.FeatureGates.Load(featuresRoot) : null;
         // fidelity: M3-052, M3-053
         _logDisplay.Configure(DasLogDisplay.ShippedConfiguration(), line => EmitStackLog(line.Line));
         VerboseLogDisplay = Options.VerboseLogDisplay;

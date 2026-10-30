@@ -1,0 +1,364 @@
+{
+  "unicorn": "2.1.4",
+  "libraries": {
+    "libc++_shared.so": "8ac5090bbd0be7401af5fff6044ded6f1e6ced692fcd3581fa3cb937b519a16a",
+    "libopencv_core.so": "8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d",
+    "libopencv_imgproc.so": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830",
+    "libopencv_imgcodecs.so": "4bdf5a45023c7938924f6c0018bf20774ebb5f7c0b2a637c93fe9e61b1f87218",
+    "libcozmoEngine.so": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1"
+  },
+  "wheel_sha256": "d7107500c64ce5c168fbff6bef9485b5db1350050036f4cea568650cf8bdbdf5",
+  "cases": {
+    "digit_0": {
+      "input": {
+        "text": [
+          [
+            "0",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "adf805e7c24d32a477aa97c34cf5bde978744d774caaa7e4b604b9483d45b9e0",
+      "white_pixels": 36,
+      "nonbinary": 0
+    },
+    "digit_1": {
+      "input": {
+        "text": [
+          [
+            "1",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "f87ffd9989cdce64e3f832012214b7be8550105120e5748ede8723ebfa5874a8",
+      "white_pixels": 24,
+      "nonbinary": 0
+    },
+    "digit_2": {
+      "input": {
+        "text": [
+          [
+            "2",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "d0048f3dd4b402ca51d7f3893f017c9dd7584041c74b7f609b4a47c769fd3e3c",
+      "white_pixels": 33,
+      "nonbinary": 0
+    },
+    "digit_3": {
+      "input": {
+        "text": [
+          [
+            "3",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "e4fe0bb2e3d20429f4501a7b910f930205c92eecf0d7a89e2c46855e497375df",
+      "white_pixels": 31,
+      "nonbinary": 0
+    },
+    "digit_4": {
+      "input": {
+        "text": [
+          [
+            "4",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "cb4ae64d36ee27f7336a2e1b3d8ce693279528222d1f49de96123b768f891b84",
+      "white_pixels": 31,
+      "nonbinary": 0
+    },
+    "digit_5": {
+      "input": {
+        "text": [
+          [
+            "5",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "c98d4e8d1051377b7121b1d54788baa1f165288c05920f867dd7d0c9dae8bd71",
+      "white_pixels": 39,
+      "nonbinary": 0
+    },
+    "digit_6": {
+      "input": {
+        "text": [
+          [
+            "6",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "51b4362810741ce373c793359be63fa6254004c23044a86b8300817de83a697a",
+      "white_pixels": 44,
+      "nonbinary": 0
+    },
+    "digit_7": {
+      "input": {
+        "text": [
+          [
+            "7",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "10abe3322f8dfaf11108450a383f11635fbdc28a634c51feb242ac79dafc8136",
+      "white_pixels": 23,
+      "nonbinary": 0
+    },
+    "digit_8": {
+      "input": {
+        "text": [
+          [
+            "8",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "a13c5c6633f5982ccbb10f7c6a727eb3e42371f6699b35746e44e2a8a5e8e217",
+      "white_pixels": 47,
+      "nonbinary": 0
+    },
+    "digit_9": {
+      "input": {
+        "text": [
+          [
+            "9",
+            4,
+            12
+          ]
+        ]
+      },
+      "sha256": "c96c9443f75f5d232d4066f6d076c974cf20c56799d2c732c633124d1872cd65",
+      "white_pixels": 45,
+      "nonbinary": 0
+    },
+    "multi": {
+      "input": {
+        "text": [
+          [
+            "4294967295",
+            44,
+            12
+          ]
+        ]
+      },
+      "sha256": "e7680b8026f0602ddd16f1199b5a9a2aacf1fc30396e328d85dbc4706e57c228",
+      "white_pixels": 298,
+      "nonbinary": 0
+    },
+    "circle_center": {
+      "input": {
+        "circle": [
+          [
+            64,
+            32
+          ]
+        ]
+      },
+      "sha256": "ec501af0ebecd711893cbd8934419592f4baab9527a546bae9536a285edf451b",
+      "white_pixels": 29,
+      "nonbinary": 0
+    },
+    "circle_top_left": {
+      "input": {
+        "circle": [
+          [
+            0,
+            0
+          ]
+        ]
+      },
+      "sha256": "41b549a28858524ead43f538875956685d585dfcba72bac846f6b573452f936c",
+      "white_pixels": 11,
+      "nonbinary": 0
+    },
+    "circle_bottom_right": {
+      "input": {
+        "circle": [
+          [
+            128,
+            64
+          ]
+        ]
+      },
+      "sha256": "46929fc0cf7ab8c11fe574a24aa5ceb968e9ca83b013e9e8e2fd9936dfec723c",
+      "white_pixels": 4,
+      "nonbinary": 0
+    },
+    "rect_standard": {
+      "input": {
+        "rect": [
+          [
+            48,
+            60,
+            32,
+            4
+          ]
+        ]
+      },
+      "sha256": "d586d571087cadaf49d170dc540c51553d9a090f3c7ed7dd22ac30df7264bcbe",
+      "white_pixels": 128,
+      "nonbinary": 0
+    },
+    "rect_clip": {
+      "input": {
+        "rect": [
+          [
+            -2,
+            62,
+            8,
+            4
+          ]
+        ]
+      },
+      "sha256": "e3e53ca3b55989ff8c59e41df7f5a7991e2441f863545cdfac1075f5dbe611e9",
+      "white_pixels": 12,
+      "nonbinary": 0
+    },
+    "rect_empty": {
+      "input": {
+        "rect": [
+          [
+            5,
+            5,
+            0,
+            4
+          ]
+        ]
+      },
+      "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47",
+      "white_pixels": 0,
+      "nonbinary": 0
+    },
+    "frame_initial": {
+      "input": {
+        "rect": [
+          [
+            48,
+            60,
+            32,
+            4
+          ]
+        ],
+        "circle": [
+          [
+            64,
+            64
+          ]
+        ],
+        "text": [
+          [
+            "0",
+            4,
+            12
+          ],
+          [
+            "0",
+            116,
+            12
+          ]
+        ]
+      },
+      "sha256": "9ef5868fb8eddb77beb022cc5a2dd101d0d28ffc388afe38cd974a6174ebfc22",
+      "white_pixels": 200,
+      "nonbinary": 0
+    },
+    "frame_edges": {
+      "input": {
+        "rect": [
+          [
+            0,
+            60,
+            16,
+            4
+          ]
+        ],
+        "circle": [
+          [
+            128,
+            0
+          ]
+        ],
+        "text": [
+          [
+            "42",
+            4,
+            12
+          ],
+          [
+            "1234",
+            92,
+            12
+          ]
+        ]
+      },
+      "sha256": "71b148f7803bfcfb081584441ad04c50c521f62cdb22c3814e3700d208c6a972",
+      "white_pixels": 238,
+      "nonbinary": 0
+    },
+    "frame_multidigit": {
+      "input": {
+        "rect": [
+          [
+            96,
+            60,
+            32,
+            4
+          ]
+        ],
+        "circle": [
+          [
+            1,
+            63
+          ]
+        ],
+        "text": [
+          [
+            "123456",
+            4,
+            12
+          ],
+          [
+            "99999",
+            84,
+            12
+          ]
+        ]
+      },
+      "sha256": "b809764ac8c09cb21360f58ac670dfd0170ddba5f87d7b885941b93a0e9054d3",
+      "white_pixels": 537,
+      "nonbinary": 0
+    }
+  },
+  "rounding_vcvtr_engine_0x86e610": {
+    "0.5": 0,
+    "1.5": 2,
+    "2.5": 2,
+    "3.5": 4,
+    "15.5": 16,
+    "16.5": 16,
+    "63.5": 64,
+    "64.5": 64,
+    "127.5": 128,
+    "128.5": 128,
+    "-0.5": 0,
+    "-1.5": -2
+  }
+}

@@ -95,9 +95,12 @@ public sealed class FreeplayStack : IDisposable
         // factory can build from its config (PlayAnim, FistBump, ReactToSparked); the rest is reported MISSING per class and built by hand below. The config-built objects come first: where the code-built set
         // below names the same id (Hiccup, the feeding PlayAnims) the first instance stands, so the config's is the one bound.
         var guardDogDisconnects=new List<GuardDogDisconnectUnit>();
+        robot.Engine.Features ??= FeatureGates.Load(obbRoot);
         var factoryContext = new BehaviorFactoryContext
         {
             ReactionManager=manager,
+            BouncerNativeRobot=robot.Engine.Robot,
+            Features=robot.Engine.Features,
             RegisterGuardDogDisconnect=guardDogDisconnects.Add,
             SourceLog = (level, channel, key, text) =>
             {
@@ -200,7 +203,7 @@ public sealed class FreeplayStack : IDisposable
         var freeplayActivity = tree.FirstOrDefault(a => a.Id == "Freeplay") ?? throw new InvalidOperationException("activities_config.json has no Freeplay activity");
         // config/features.json, which WantsToStart consults before anything else when an activity names a
         // featureGate (0x005B52A8).
-        var inputs = new FreeplayInputs { Needs = needs, Mood = ctx.Mood, Features = FeatureGates.Load(obbRoot) };
+        var inputs = new FreeplayInputs { Needs = needs, Mood = ctx.Mood, Features = robot.Engine.Features };
         var system = new FreeplaySystem(manager, ctx, freeplayActivity, bound, inputs);
         // M15-015/M15-027: the native tracker reads the engine's cached nanosecond clock; ForceUpdate is at ~Robot's head.
         var tracker = new FreeplayDataTracker(()=>unchecked((ulong)robot.Engine.Timer.Nanoseconds))

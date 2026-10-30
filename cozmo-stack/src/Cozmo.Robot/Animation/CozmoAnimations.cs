@@ -174,7 +174,7 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-010, M5-065 — loader containers exist empty before files are loaded.
         _emptyLibrary = new AnimationLibrary(robot.Engine.ContextRandom) { Log = robot.Engine.Log, SourceLog = _scheduler.SourceLog };
         _scheduler.CatalogProvider = () => Library ?? _emptyLibrary;
-        _scheduler.FaceAnimationVariants = name => FaceAnimations?.Variants(name);
+        _scheduler.FaceAnimationVariants = name => _faceManager.Variants(name);
         // fidelity: M6-028
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
         // a robot with no firmware version yet has the client constructor's 0 (None).
@@ -391,8 +391,10 @@ public sealed class CozmoAnimations : IDisposable
                 // L0 / M4-036: after groups (0x0051F3BC), lights (0x0051F3C2/3C8), then faces (3CE).
                 // Cube files have just been consumed from the type-2 collect vector; backpack logs remain deferred.
                 _robot.EmitLightLoadingLogs();
-                FaceAnimations = FaceAnimationLibrary.Open(assetsRoot, _robot.Engine.Log,
+                var loadedFaces = FaceAnimationLibrary.Open(assetsRoot, _robot.Engine.Log,
                     (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
+                _faceManager.ReplaceLoadedAssets(loadedFaces);
+                FaceAnimations = _faceManager;
             }, _robot.BeforeAnimationFileStat, lib =>
             {
                 lock (_loaderGate)
@@ -421,6 +423,8 @@ public sealed class CozmoAnimations : IDisposable
     }
 
     /// <summary>The pre-rendered face animations found beside the clips, once <see cref="LoadFrom"/> has run.</summary>
+    private readonly FaceAnimationLibrary _faceManager = new();
+    internal FaceAnimationLibrary ProceduralFaceManager => _faceManager;
     public FaceAnimationLibrary? FaceAnimations { get; private set; }
 
     /// <summary>

@@ -391,6 +391,8 @@ public sealed record FaceKeyframe(uint TriggerTimeMs, ProceduralFacePose Pose) :
 /// </summary>
 public sealed class AnimationClip
 {
+    // SetFaceAction's own Animation uses SetIsLive(true); loaded clips remain false.
+    internal bool IsLive { get; init; }
     public string Name { get; init; } = "";
     public IReadOnlyList<Keyframe> Keyframes { get; init; } = Array.Empty<Keyframe>();
 
