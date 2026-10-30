@@ -40,7 +40,9 @@ public sealed class AIBeacon
     /// </summary>
     public bool IsLocWithinBeacon(Pose3d pose, float margin)
     {
-        var t = pose.WithRespectTo(Pose).Translation;
+        using var relative = new Pose3d();
+        if (!Pose3d.GetWithRespectTo(pose, Pose, relative)) return false;
+        var t = relative.Translation;
         float x = (float)t.X, y = (float)t.Y, z = (float)t.Z;
         float d2 = x * x;
         d2 += y * y;
@@ -227,18 +229,22 @@ public sealed partial class AIWhiteboard
     /// <c>AIWhiteboard::AreAllCubesInBeacons()</c> 0x0056B450..0x0056B61A (M15-020): false with no beacon (0x0056B466) and false while a cube is carried (0x0056B476 <c>bne.w</c> to the return of 0); else the
     /// located objects of family Block or LightCube (table 0x00C57E10) are walked with the predicate 0x0056D20E, which counts those whose pose state byte (+0x24) is 1 (Known) and that lie within some beacon
     /// (<c>IsLocWithinBeacon(pose, 0.0f)</c>), and the answer is whether that count equals the 4-byte value the BlockWorld's map at +0x48 holds for family 2 (LightCube; 0 when there is no entry,
-    /// 0x0056B5C4..0x0056B5F8). The map's identity is NOT read (MISSING): the stack compares with the number of located LightCubes, which is a stand-in.
+    /// 0x0056B5C4..0x0056B5F8). The family-2 value is definition bookkeeping initialized by the three built-in cube definitions (0061BDD4..0061BE4E, 0061C23C..25A), independent of located cubes.
     /// </summary>
     // fidelity: M15-020
-    public bool AreAllCubesInBeacons()
+    public bool AreAllCubesInBeacons() => AreAllCubesInBeacons(null);
+    internal bool AreAllCubesInBeacons(Func<bool>? current)
     {
         if (_beacons.Count == 0) return false;
         if (CarriedObjectId?.Invoke() is not null) return false;
-        int inBeacons = _world.LocatedObjects.Count(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube
-                                                          && o.PoseState == PoseState.Known && _beacons.Any(b => b.IsLocWithinBeacon(o.NativePose, 0.0f)));
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("AIWhiteboard::AreAllCubesInBeacons 0x0056B5C4..0x0056B5F8: the value of the BlockWorld map at +0x48 for family 2 that the count of cubes in beacons is compared with is unidentified (its writers are not read); the stack compares with the number of located LightCubes");
-        int lightCubes = _world.LocatedObjects.Count(o => o.Family == ObjectFamily.LightCube);
-        return inBeacons == lightCubes;
+        var filter = new BlockWorldFilter();
+        filter.AllowedFamilies.Add(ObjectFamily.Block);
+        filter.AllowedFamilies.Add(ObjectFamily.LightCube);
+        filter.Predicates.Add(o => {
+            if(current is not null&&!current() || o.PoseState!=PoseState.Known)return false;
+            foreach(var beacon in _beacons.ToArray()){bool within=beacon.IsLocWithinBeacon(o.NativePose,0f);if(current is not null&&!current())return false;if(within)return true;}return false; });
+        int inBeacons = _world.FindLocatedMatchingObjects(filter).Count;
+        return (current is null||current()) && (uint)inBeacons == _world.LightCubeDefinitionCount;
     }
 
     /// <summary>
@@ -409,7 +415,7 @@ public sealed partial class AIWhiteboard
     }
 
     /// <summary><c>OnRobotDelocalized</c>: beacons live in the old origin, so they are dropped.</summary>
-    public void OnRobotDelocalized() { ClearAllBeacons(); lock (_failureGate) foreach (var t in _failureTables) t.Clear(); }
+    public void OnRobotDelocalized() => RemoveZombiePossibleObjectsAndClearBeacons();
 }
 
 

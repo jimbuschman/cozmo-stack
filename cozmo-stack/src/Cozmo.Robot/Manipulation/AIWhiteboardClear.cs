@@ -107,6 +107,25 @@ public sealed partial class AIWhiteboard
     internal Func<Pose3d, Pose3d, Pose3d, int>? RelativePoseForTest;
     private const string PossibleGroup = "AIWhiteboard.PossibleObjects";
 
+    // 0056A686..69A: list cleanup, unconditional render, then beacon clear.
+    internal void RemoveZombiePossibleObjectsAndClearBeacons()
+    {
+        for (var node = PossibleObjectStorage.Head; node is not null;)
+        {
+            var next = node.Next;
+            if (node.Value.Pose.Node is null)
+                SteppedBehavior.ReportMissing("M11-069/M8-026 possible-object native pose graph unavailable at 0056A6B0; entry retained");
+            else
+            {
+                using var root = node.Value.Pose.FindRoot();
+                if (root.Id != _world.CurrentOriginId && !_world.AnyRemainingLocalizableObjects(root.Id))
+                    PossibleObjectStorage.Erase(node, next);
+            }
+            node = next;
+        }
+        UpdatePossibleObjectRender();
+        ClearAllBeacons();
+    }
     public void ProcessClearQuad(WhiteboardClearQuad quad)
     {
         using var logScope = Pose3d.UseSourceLog((level, channel, key, text) =>

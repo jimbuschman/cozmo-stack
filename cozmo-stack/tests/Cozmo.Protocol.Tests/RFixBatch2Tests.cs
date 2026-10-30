@@ -802,7 +802,7 @@ public class RFixBatch2Tests
         // category 2 (cancelled) goes to the third arm: no marking
         var id = obj.ObjectId;
         var c = Fresh();
-        rig.M.Whiteboard.OnRobotDelocalized();                                  // clears the failure table
+        rig.M.Whiteboard.RetireStandaloneStorage();                                  // explicit fixture storage reset
         Complete(c, id, ActionResult.CancelledWhileRunning);
         Assert.False(rig.M.Whiteboard.DidFailToUse(id, ObjectActionFailure.Any, 1000));
         Assert.Contains(c.Trace, l => l.Contains("BehaviorPopAWheelie.FailedPopAction"));

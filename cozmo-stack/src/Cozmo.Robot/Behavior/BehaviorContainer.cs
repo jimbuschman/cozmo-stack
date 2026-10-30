@@ -22,6 +22,7 @@ public sealed class BehaviorFactoryContext
     // Standalone Freeplay supplies this only to Bouncer; other constructors retain their prior context.
     internal EngineRobot? BouncerNativeRobot {get;init;}
     internal EngineRobot? BouncerOwner => NativeRobot ?? BouncerNativeRobot;
+    internal EngineRobot? BringBeaconOwner => NativeRobot;
     internal FeatureGates? Features {get;init;}
     internal BehaviorManager? ReactionManager {get;init;}
     /// <summary>Stack diagnostics and standalone log observation; source calls use the separate typed seam.</summary>
@@ -287,6 +288,7 @@ public sealed class BehaviorFactory
 
     private static readonly Dictionary<BehaviorClass, Func<BehaviorFactoryContext, JsonElement, IBehavior>> Constructors = new()
     {
+        [BehaviorClass.BringCubeToBeacon] = (ctx,json)=>new NativeBringCubeToBeaconBehavior(ctx,json,ctx.BringBeaconOwner!),
         [BehaviorClass.Bouncer] = (ctx,json)=>new NativeBouncerBehavior(ctx,json,
             ()=>ctx.Vision!.Faces.GetNativeFaceIds(ctx.BouncerOwner!)),
         // fidelity: M7-018, M8-005
@@ -366,7 +368,11 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        // POP/SPARKS-POP-A-WHEELIE-1 release only these two checked configurations.
+        if(cls==BehaviorClass.BringCubeToBeacon && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_BringCubeToBeacon || ctx.Manipulation is null || ctx.BringBeaconOwner is null))
+        {
+            SteppedBehavior.ReportMissing("BringCubeToBeacon factory: only checked Hiking configuration with actual manipulation/Robot owner is available");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }        // POP/SPARKS-POP-A-WHEELIE-1 release only these two checked configurations.
         if(cls==BehaviorClass.PopAWheelie&&BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.PopAWheelie or BehaviorID.SparksPopAWheelie))
         {
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
@@ -399,7 +405,7 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing(error.Message + "; AcknowledgeObject configuration skipped, prior owner retained");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
-        var completionOwner=cls==BehaviorClass.Bouncer?ctx.BouncerOwner:ctx.NativeRobot;
+        var completionOwner=cls==BehaviorClass.Bouncer?ctx.BouncerOwner:cls==BehaviorClass.BringCubeToBeacon?ctx.BringBeaconOwner:ctx.NativeRobot;
         if(behavior is SteppedBehavior stepped && completionOwner is {} native && ctx.Manipulation is {} source)
             {
             stepped.BindActionCompletionOwner(source.Robot,native);

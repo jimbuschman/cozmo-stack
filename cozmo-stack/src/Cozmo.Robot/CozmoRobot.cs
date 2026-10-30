@@ -419,6 +419,13 @@ public sealed partial class CozmoRobot : IDisposable
             // B-M11-8 item 1: FaceWorld::OnRobotDelocalized (0x004F55E4..0x004F563A) only erases each face's viz object
             // (0x004F5614) and stores the sentinel; VizManager produces no output (V1-V6), so nothing observable happens.
             if(stage=="FaceWorld")return;
+            if(stage=="AIComponent" && Engine.Robot is {} native && native.NativeBehaviorRuntime?.Manipulation is {} manipulation)
+            {
+                var whiteboard=manipulation.Whiteboard;
+                whiteboard.ClearQuadWorldOrigin=()=>native.GetNativeOrigin(native.CurrentOriginId);
+                whiteboard.OnRobotDelocalized();
+                // Other AIComponent recipients are still unbuilt.
+            }
             Behavior.SteppedBehavior.ReportMissing("M11-069 "+stage+".OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)");
         };
         // fidelity: M4-018

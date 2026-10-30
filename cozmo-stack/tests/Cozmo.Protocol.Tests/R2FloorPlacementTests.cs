@@ -207,19 +207,19 @@ public class R2FloorPlacementTests : IDisposable
         Assert.Equal(0xC2D80000u, B((float)pose.Translation.Y));                              // 54.0f * -2.0f
         Assert.Equal(0u, B((float)pose.Translation.X) & 0x7FFFFFFFu);
         // the same search with a failure 100 mm from (0,-108) (at (0,-8)): the distance is exactly 100.0f, d2 <= d*d accepts the match (inclusive), so (0,-108) is rejected; (0, 108) is 116 mm away
-        rig.M.Whiteboard.OnRobotDelocalized();
+        rig.M.Whiteboard.RetireStandaloneStorage();
         rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(0, -8)));
         bring.CandidateLog = new();
         Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(InOrigin(rig,At(0, 0)), 175), robot, 45f, out pose));
         Assert.Equal(108.0, pose.Translation.Y, 3);
         Assert.Equal((0, 2), bring.CandidateLog[^1]);
         // a spherical test: (80, 80) apart per axis is 113 mm, outside 100 although every axis is within 100 (a per-axis box would match)
-        rig.M.Whiteboard.OnRobotDelocalized();
+        rig.M.Whiteboard.RetireStandaloneStorage();
         rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(54 - 80, 0 - 80)));            // 80 mm from (54, 0) on each of x and y
         Assert.False(rig.M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(54, 0)), 100.0f, BeaconFloorGeometry.Pi));
         Assert.True(rig.M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, 45f, InOrigin(rig,At(54 - 60, 0 - 80 + 80)), 100.0f, BeaconFloorGeometry.Pi));
         // the failure expires with the cooldown: a candidate that failed 45 s ago is free again (row 4.3.6: strict, 1e-5f slack)
-        rig.M.Whiteboard.OnRobotDelocalized();
+        rig.M.Whiteboard.RetireStandaloneStorage();
         rig.M.Whiteboard.SetFailedToUse(50, ObjectActionFailure.PlaceObjectAt, InOrigin(rig,At(0, 0)));
         clock = 44.9;
         Assert.True(bring.FindFreePoseInBeacon(carried, new AIBeacon(InOrigin(rig,At(0, 0)), 108), robot, 45f, out pose));
@@ -370,10 +370,10 @@ public class R2FloorPlacementTests : IDisposable
         Assert.Same(stackable, bring.FindFreeCubeToStackOn(carried, beacon));
         rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, InOrigin(rig,At(10, 0, 22, 0.1)));                    // 10 mm and 0.1 rad away: within 20.0f and pi/8
         Assert.Null(bring.FindFreeCubeToStackOn(carried, beacon));
-        rig.M.Whiteboard.OnRobotDelocalized();
+        rig.M.Whiteboard.RetireStandaloneStorage();
         rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, InOrigin(rig,At(10, 0, 22, 1.0)));                    // 1.0 rad away: outside pi/8
         Assert.Same(stackable, bring.FindFreeCubeToStackOn(carried, beacon));
-        rig.M.Whiteboard.OnRobotDelocalized();
+        rig.M.Whiteboard.RetireStandaloneStorage();
         rig.M.Whiteboard.SetFailedToUse(8, ObjectActionFailure.StackOnObject, InOrigin(rig,At(30, 0, 22, 0.0)));                    // 30 mm away: outside 20.0f
         Assert.Same(stackable, bring.FindFreeCubeToStackOn(carried, beacon));
     }
@@ -867,7 +867,7 @@ public class R2FloorPlacementTests : IDisposable
         var obj = rig.M.World.LocatedObjects.Single();
         rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175);
         var bring = NewBring(rig);
-        void Reset() { rig.M.Whiteboard.OnRobotDelocalized(); rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175); }       // delocalization drops the beacons too
+        void Reset() { rig.M.Whiteboard.RetireStandaloneStorage(); rig.M.Whiteboard.AddBeacon(InOrigin(rig,At(0, 0)), 175); }       // explicit fixture storage reset
         Assert.True(Runnable(bring, ctx));
         var pose = obj.Pose;
         rig.M.Whiteboard.SetFailedToUse(obj, ObjectActionFailure.PlaceObjectAt, pose);

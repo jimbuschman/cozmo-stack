@@ -449,7 +449,7 @@ public sealed class DriveToObjectAction
         usePreDockPose ? new DriveToObjectAction(m, objectId, PreActionType.Docking)
                        : new DriveToObjectAction(m, objectId, distanceFromObjectOriginMm, useManualSpeed);
 
-    public uint ObjectId { get; }
+    public uint ObjectId { get; internal set; }
     /// <summary><c>+0x80</c>.</summary>
     public PreActionType ActionType { get; }
     public PreActionType Type => ActionType;

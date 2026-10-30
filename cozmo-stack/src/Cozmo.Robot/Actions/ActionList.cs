@@ -161,9 +161,11 @@ internal sealed class ActionList : IDisposable
     /// unsigned) or the BAD_TAG 0x03000006 is discarded through the delete path and returns API 0. Q3: the A9
     /// guard, then dispatch; the incoming +8 retries is assigned the byte argument (Q6/Q10/Q11/Q14).
     /// </summary>
-    public int QueueAction(QueueActionPosition position, IActionRunner? incoming, byte retries = 0)
+    public int QueueAction(QueueActionPosition position, IActionRunner? incoming, byte retries = 0) => QueueActionCore(position,incoming,retries,null);
+    internal int QueueActionGuardedNow(IActionRunner incoming,byte retries,Func<bool> current) => QueueActionCore(QueueActionPosition.Now,incoming,retries,current);
+    private int QueueActionCore(QueueActionPosition position,IActionRunner? incoming,byte retries,Func<bool>? hostAdmissionCurrent)
     {
-        if(incoming is ActionRunner runner)runner.MarkQueueAdmission();
+        if(hostAdmissionCurrent is null&&incoming is ActionRunner runner)runner.MarkQueueAdmission();
         using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
         {
@@ -172,6 +174,11 @@ internal sealed class ActionList : IDisposable
                 SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Error, null, "ActionList.QueueAction.NullAction", "Can't queue null action");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return 1;
+            }
+            if(hostAdmissionCurrent is not null&&!hostAdmissionCurrent())
+            {
+                if(incoming is ActionRunner stale&&stale.CanDetachWatcherForRetirement()){stale.Watcher=null;stale.RetireNeverAdmittedTree();}
+                return 2;
             }
             // The owning robot/watcher exists even on the front-end discard paths.
             if(incoming is ActionRunner owner)owner.Watcher=_watcher;
@@ -186,10 +193,14 @@ internal sealed class ActionList : IDisposable
                     if(type is not null)SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Error,null,"ActionQueue.QueueAction.ActionHasBadTag",$"Failed to set tag, deleting action {type}");
                     Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 }
+                if(hostAdmissionCurrent is not null&&!hostAdmissionCurrent()){if(incoming is ActionRunner stale&&stale.CanDetachWatcherForRetirement()){stale.Watcher=null;stale.RetireNeverAdmittedTree();}return 2;}
+                if(hostAdmissionCurrent is not null&&incoming is ActionRunner discarded)discarded.MarkQueueAdmission();
                 Discard(incoming);return 0;
             }
             if((byte)position>5)return InvalidPosition();
-            if (DuplicateOrClearingGuard(incoming)) return 1;
+            bool duplicateOrClearing=DuplicateOrClearingGuard(incoming);
+            if(hostAdmissionCurrent is not null&&!hostAdmissionCurrent()){if(incoming is ActionRunner stale&&stale.CanDetachWatcherForRetirement()){stale.Watcher=null;stale.RetireNeverAdmittedTree();}return 2;}
+            if(duplicateOrClearing)return 1;
             // fidelity: M8-015
             // W7/W8/W9: the engine reaches the watcher for every runner through the robot (IActionRunner::
             // GetRobotCompletedActionMessage 0x540AC2 [r0,#4] -> robot+0x250 ActionList -> [r0,#0x10] watcher).
@@ -199,7 +210,9 @@ internal sealed class ActionList : IDisposable
             switch (position)
             {
                 case QueueActionPosition.Now:
-                    return QueueNowMain(incoming,retries);
+                    if(hostAdmissionCurrent is null)return QueueNowMain(incoming,retries);
+                    if(MainQueue().QueueNowGuarded(incoming,retries,hostAdmissionCurrent))return 0;
+                    if(incoming is ActionRunner staleRunner&&staleRunner.CanDetachWatcherForRetirement()){staleRunner.Watcher=null;staleRunner.RetireNeverAdmittedTree();}return 2;
                 case QueueActionPosition.NowAndClearRemaining:
                     // Q9: A9 guard, then Cancel(type=-1) across ALL queues, then QueueNext on key 0.
                     Cancel(-1);

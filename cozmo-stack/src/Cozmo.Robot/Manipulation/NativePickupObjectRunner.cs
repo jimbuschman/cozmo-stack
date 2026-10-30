@@ -16,8 +16,9 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
     private byte _squint;
     private float _deadline=-1f;
     protected override string ActionName=>"PickupObject";
-    internal NativePickupObjectRunner(ManipulationSystem m,uint id):base(m,0x15,7)
-    {_target=id;_pickup=new(m,id){CheckPreActionPose=false};}
+    internal NativePickupObjectRunner(ManipulationSystem m,uint id,bool checkPreActionPose=false):base(m,0x15,7)
+    {_target=id;_pickup=new(m,id){CheckPreActionPose=checkPreActionPose};}
+    internal bool CheckPreActionPose { get=>_pickup.CheckPreActionPose; set=>_pickup.CheckPreActionPose=value; }
     internal uint TargetId=>_pickup.ObjectId;
     internal byte LoadState=>_pickup.LiftLoadState;
     internal CompoundActionSequential? Prepared=>_prepared;
@@ -31,25 +32,20 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
         var target=M.World.GetLocatedObjectByIdHelper(_pickup.ObjectId);
         if(target is null||!CubeGeometry.IsCube(target.Type))return 0x03000004;
+        PreActionPoseOutput? pre=null;
+        if(_pickup.CheckPreActionPose)
+        {
+            var main=owner.GetCheckedMainPose();
+            pre=DockPreActionPoses.GetNative(new(target,PreActionType.Docking,true,DockActionBase.PreActionAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>M.NativeObstacles(main),M.World);
+            if(pre.Result!=ActionResult.Success)return unchecked((int)pre.Result);
+        }
         var selected=_pickup.SelectNative(target,out var action);if(selected!=ActionResult.Success)return unchecked((int)selected);
         Type=action==DockAction.PickupLow?0x16:0x17;_pickup.SetSelectedDockAction(action);
         _subscriptions=M.Docking.RegisterActionHandlers(_pickup,action);
-        var observed=NativeObservedMarkers.Get(target,target.LastObservedTimestamp);
-        if(observed.Count==0)return 0x0300001D;
-        KnownMarker? marker=observed.Count==1?observed[0]:null;
-        if(marker is null)
-        {
-            float best=float.MaxValue;using var relative=new Pose3d("");
-            foreach(var candidate in observed)
-            {
-                if(!candidate.PoseOnObject.TryWithRespectTo(owner.GetCheckedMainPose(),relative))continue;
-                var t=relative.Translation;float x=(float)t.X,y=(float)t.Y,z=(float)t.Z;
-                float d=x*x;d=d+y*y;d=d+z*z;
-                if(d<best){best=d;marker=candidate;}
-            }
-        }
-        if(marker is null)return 0x03000002;
-        _marker=unchecked((short)marker.Code);
+        KnownMarker? marker;
+        if(pre is not null)marker=pre.Poses[pre.ClosestIndex].Marker;
+        else {uint result=NativeDockMarkerSelection.Observed(target,owner.GetCheckedMainPose(),out marker);if(result!=0)return unchecked((int)result);}
+        if(marker is null)return 0x03000002;        _marker=unchecked((short)marker.Code);
         _prepared?.Prep();_prepared?.WatcherEnding();
         _prepared=new CompoundActionSequential(()=>M.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,Watcher=Watcher,SourceLog=SourceLog};
         using var flat=target.NativePose.GetWithRespectToRoot();

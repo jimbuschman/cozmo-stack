@@ -256,13 +256,19 @@ public abstract class ActionRunner : IActionRunner
     // Host-only stale constructor retirement: no queue, completion, track or watcher effects.
     protected bool RetireNeverAdmitted()
     {
-        if(DestructionObserved || Volatile.Read(ref _everQueued)!=0 || State!=EngineActionResult.NotStarted || Initialized || Watcher is not null || _prepped)
+        if(!CanRetireNeverAdmitted())
         { Behavior.SteppedBehavior.ReportMissing("M8-015 stale constructor retirement invariants failed; action retained"); return false; }
         DestructionObserved=true;
         ActionRunnerTagCounter.Global.Release(Tag);
         if(OriginalTag!=Tag)ActionRunnerTagCounter.Global.Release(OriginalTag);
         return true;
     }
+
+    private bool CanRetireUnqueued() => !DestructionObserved && Volatile.Read(ref _everQueued)==0 && State==EngineActionResult.NotStarted && !Initialized && !_prepped;
+    private bool CanRetireNeverAdmitted() => CanRetireUnqueued() && Watcher is null;
+    internal virtual bool CanDetachWatcherForRetirement() => CanRetireUnqueued();
+    internal virtual bool CanRetireNeverAdmittedTree() => CanRetireNeverAdmitted();
+    internal virtual bool RetireNeverAdmittedTree() => RetireNeverAdmitted();
 
     // L5/L14/L15: the MovementComponent primitives, overridden by a concrete action that owns a robot.
     protected virtual bool AreAnyTracksLocked(uint mask) => false;
