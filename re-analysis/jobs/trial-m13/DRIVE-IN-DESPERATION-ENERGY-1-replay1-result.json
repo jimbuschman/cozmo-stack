@@ -1,0 +1,23 @@
+{
+  "job": "DRIVE-IN-DESPERATION-ENERGY-1",
+  "kind": "independentReplay1",
+  "state": "PASS_PRE_BOUNDARY_DIAGNOSTIC",
+  "passed": 688,
+  "total": 688,
+  "failed": 0,
+  "skipped": 0,
+  "classes": 20,
+  "fullNameParameterOutcomeMultiplicityExact": true,
+  "inputCount": 9159,
+  "allObservedBins": 187,
+  "allInputsAndBinsMatchReferenceAndUnchanged": true,
+  "outputExclusions": [],
+  "testExit": 0,
+  "shutdownExit": 0,
+  "wrapperExit": 0,
+  "nativePre": [],
+  "nativePost": [],
+  "checkoutPost": [],
+  "trxSha256": "1323e0103f7f9736af7f87d5bc3f0afaad35f848d49b3c3c7c9f6c24a3b34d29",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-energy-1\\.scratch\\drive-in-desperation-energy-1-review\\replay1"
+}
