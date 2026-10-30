@@ -1,6 +1,6 @@
 {
   "job": "FIX-DRIVE-IN-DESPERATION-ENERGY-1",
-  "state": "WORKER COMMITTED; CUMULATIVE FULL GATE PENDING",
+  "state": "INTEGRATED; ONE CUMULATIVE FULL GATE NEXT",
   "managerStart": "01eb8b59cddb1669cef31ab17b9aba8a8805e3e3",
   "originMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
   "workerBaseline": "81ee75bd",
@@ -45,7 +45,7 @@
   "newRecordProposal": "No duplicate; same pending original DriveInDesperation lifecycle proposal",
   "reviewerFixRounds": 0,
   "compilerCorrections": 0,
-  "dotnetLease": "none; code committed, ready for root gate",
+  "dotnetLease": "root exclusive cumulative full gate; workers idle",
   "scope": "Owner catches missing obstacle geometry, direct LookAtCube gap continuation without fabricated PAP result; sentinel MISSING every occurrence states search motions skipped",
   "gapDistinction": "Native result/inposition branches known; host-unavailable skip is explicit manager-authorized gap handling, not a native failed/arrived result",
   "remainingUncertainty": "M12-036 noncube footprint; M12-010/M8-011 sentinel mode; parent admission and concrete retirement/shared owners remain open",
@@ -136,5 +136,8 @@
   "workerTree": "7d89465d186c3f5603853aab4595273b750be6ff",
   "builderReportPath": "re-analysis/research/20261030-fix-drive-in-desperation-energy-1-build.md",
   "builderReportSha256": "a27e161c03f37aa78e2477063416148a0fadf2d7bdd580eba89e915bba5d129d",
-  "builderReportTiming": "New metadata AFTER reference1 and replay1, outside9205inputs"
+  "builderReportTiming": "New metadata AFTER reference1 and replay1, outside9205inputs",
+  "integrationCodeTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
+  "integrationFreeze": "ENERGY-FIX-DEV-TURN-integration-freeze.json",
+  "fullGateAttempts": 0
 }

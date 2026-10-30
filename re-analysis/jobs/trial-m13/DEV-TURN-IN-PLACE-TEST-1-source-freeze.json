@@ -1,6 +1,6 @@
 {
   "job": "DEV-TURN-IN-PLACE-TEST-1",
-  "state": "WIP NOT READY; FULL GATE HELD FOR ENERGY FIX",
+  "state": "INTEGRATED; ONE CUMULATIVE FULL GATE NEXT",
   "managerStart": "29dc3a4fbb8e784a659aa52eab033d6a799f0cf7",
   "originMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1",
@@ -28,7 +28,7 @@
     }
   ],
   "actualBackends": "unobserved",
-  "dotnetLease": "none",
+  "dotnetLease": "root exclusive cumulative full gate; workers idle",
   "reviewerFixRounds": 1,
   "sourceQuestions": 1,
   "builderMissingItems": [
@@ -143,5 +143,7 @@
   "integrationCommit": "da2174c6",
   "afterMainMerge": "01eb8b59cddb1669cef31ab17b9aba8a8805e3e3",
   "fullGateAttempts": 0,
-  "holdReason": "New authoritative main returns Energy FIX; combine final gate once after bounded repair"
+  "holdReason": "New authoritative main returns Energy FIX; combine final gate once after bounded repair",
+  "integrationCodeTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
+  "integrationFreeze": "ENERGY-FIX-DEV-TURN-integration-freeze.json"
 }
