@@ -1,6 +1,6 @@
 {
   "job": "BOUNCER-1",
-  "stage": "Seven bounded UNKNOWN supplements checked/frozen; independent969PASS and worker1eef9fc9 integrated, manager full gate pending",
+  "stage": "Eight bounded UNKNOWN supplements independently checked; reset correction185PASS independently replayed and integrated26eb9265; second manager full gate pending",
   "sourceFiles": {
     "re-analysis/research/20261029-bouncer-1-read.md": "EDC14B5CB35CB991408F0949BCD179B0DE3B489547A405198362A9D6838E5A24",
     "re-analysis/research/20261029-bouncer-1-codex-check.md": "C13BD9FA0FA89C36D6DB5DF80A269CF1FACC147D11D71CA8F103AF81122C833A"
@@ -40,7 +40,7 @@
     "resources/lib/armeabi-v7a/libcozmoEngine.so": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
     "resources/lib/armeabi-v7a/libopencv_imgproc.so": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830"
   },
-  "sourceSupplementCount": 7,
+  "sourceSupplementCount": 8,
   "sourceArtifactAttributionClarifications": 1,
   "sourceBehaviorCorrections": 0,
   "remainingFrontiers": [
@@ -111,12 +111,24 @@
     "M5-027",
     "M8-011"
   ],
-  "implementationReviewCorrectionBatches": 5,
+  "implementationReviewCorrectionBatches": 6,
   "reviewedOriginalArchive": "Builder .scratch/bouncer-1/pre-review-original: actual48files hashed/copied before edits, no reconstruction",
   "hostReentryScopeDesign": "Preserve ordinary native name-wide manager cleanup and idle last-match removal; identity/epoch bookkeeping only for cancelled/reentered acquisition/cleanup. No locks held over callbacks, no API/Stop deferral. Narrow guarded never-admitted construction retirement preserves replacement streams, ordinary native destruction unchanged.",
   "setFaceInterruptSource": {
     "re-analysis/research/20261029-bouncer-1-setface-interrupt-unknown.md": "DEC81EC3CFF5A275435627DCE74DA4A2E1B559F71F7A280D8DF3CF605B8B3FA4",
     "re-analysis/research/20261029-bouncer-1-setface-interrupt-codex-check.md": "02B9123828373B2C95DFE1B1B7D2E8EF9466C5AD2A1DCA940178A1FA12AD4373"
   },
-  "setFaceInterruptContract": "SetFaceAction inherited CanInterrupt returns false at 0x0052B0B2, actual concrete/base vtable slot +0x14 identity independently checked; cancellation is separate"
+  "setFaceInterruptContract": "SetFaceAction inherited CanInterrupt returns false at 0x0052B0B2, actual concrete/base vtable slot +0x14 identity independently checked; cancellation is separate",
+  "proceduralLifetimeSource": {
+    "re-analysis/research/20261030-bouncer-1-procedural-lifetime-unknown.md": "A865C06B794C09D2C2BE280D218621497F411912E5D0CF5C05CB9D4E1B8F2C9E",
+    "re-analysis/research/20261030-bouncer-1-procedural-lifetime-codex-check.md": "E7F3DACCB8C275707FF29D49E30455156039DE2DE6F92AF4C5CCDBC32B7496B7"
+  },
+  "proceduralLifetimeCurrentQuotesMatched": [
+    "M1-025",
+    "M5-013",
+    "M5-052",
+    "M5-037",
+    "M5-044"
+  ],
+  "proceduralLifetimeContract": "Ordinary same-process robot removal retains singleton and procedural frames; subsequent named keyframes can consume them until SetFace clears/replaces them. Full app reload/external exported removal remains existing M5-052 UNKNOWN; no product retention change or blanket reflection exemption."
 }

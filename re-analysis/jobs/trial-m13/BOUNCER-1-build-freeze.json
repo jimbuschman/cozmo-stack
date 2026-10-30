@@ -150,6 +150,12 @@
     "git_blob": "08ccce18ecf2c69a71f4e0fc797f4bd52eb4c4c3"
   },
   {
+    "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "sha256": "0dffc1a867bcd3d34c4603c017daacb212e2ac5e50a9cca57c4270eefc01bda1",
+    "bytes": 168728,
+    "git_blob": "64d27ec79e55b44c95974d0ef3fbd1892ff627b5"
+  },
+  {
     "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
     "sha256": "d312a3e6a8896605ed22b2c6b739af16133f020b7ab0de164e253060c2df8d70",
     "bytes": 57574,
@@ -193,9 +199,9 @@
   },
   {
     "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NativeBouncerScopeTests.cs",
-    "sha256": "5bb65fc73a1142da521e6b29909e9803522526d862f068f7bf863460472bcac8",
-    "bytes": 6717,
-    "git_blob": "2a704b269d0b27f341785a9c22497cec255c9654"
+    "sha256": "1a7c6e9d7854d6e5bd3a3df3aa78a36b120aaf308f3427a31fd9ad808e422f6d",
+    "bytes": 8946,
+    "git_blob": "9701c08a5f0806cdf07442d69004e54a5f5577ce"
   },
   {
     "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/TestData/BouncerNative/README.md",
