@@ -289,6 +289,7 @@ public sealed class BehaviorFactory
 
     private static readonly Dictionary<BehaviorClass, Func<BehaviorFactoryContext, JsonElement, IBehavior>> Constructors = new()
     {
+        [BehaviorClass.DriveInDesperation] = (ctx,json)=>new NativeDriveInDesperationBehavior(ctx,json),
         [BehaviorClass.BringCubeToBeacon] = (ctx,json)=>new NativeBringCubeToBeaconBehavior(ctx,json,ctx.BringBeaconOwner!),
         [BehaviorClass.ThinkAboutBeacons] = (ctx,json)=>new ThinkAboutBeaconsBehavior(ctx.Manipulation!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(), json.GetProperty("params").GetProperty("beaconRadius_mm").GetSingle(), json.GetProperty("params").GetProperty("newAreaAnimTrigger").GetString()!),
         [BehaviorClass.Bouncer] = (ctx,json)=>new NativeBouncerBehavior(ctx,json,
@@ -382,6 +383,11 @@ public sealed class BehaviorFactory
         if(cls==BehaviorClass.PopAWheelie&&BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.PopAWheelie or BehaviorID.SparksPopAWheelie))
         {
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        if(cls==BehaviorClass.DriveInDesperation && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowEnergyState || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("DriveInDesperation factory: only the checked Energy configuration with actual Robot and manipulation owners is available");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
         if(cls==BehaviorClass.CubeLiftWorkout && BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.CubeLiftWorkout or BehaviorID.SparksCubeLiftWorkout))

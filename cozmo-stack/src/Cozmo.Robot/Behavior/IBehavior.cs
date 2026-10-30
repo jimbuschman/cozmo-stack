@@ -426,11 +426,11 @@ public sealed class BehaviorScope : IDisposable
         lock (_gate)
         {
             if (_disposed) return false;
-            if (MotionProfileSet) { Verify("SmartSetMotionProfile: a motion profile is already set"); return false; }
+            if (MotionProfileSet) Verify("SmartSetMotionProfile: a motion profile is already set");
             set();
             MotionProfileSet = true;
             _motionClear = clear;
-            _undo.Add((OrderMotionProfile, "", () => { if (MotionProfileSet) { MotionProfileSet = false; _motionClear = null; clear(); } }));
+            _undo.Add((OrderMotionProfile, "", () => { if (MotionProfileSet) { var current = _motionClear; _motionClear = null; current?.Invoke(); MotionProfileSet = false; } }));
             return true;
         }
     }
@@ -441,10 +441,10 @@ public sealed class BehaviorScope : IDisposable
         lock (_gate)
         {
             if (_disposed) return false;
-            if (!MotionProfileSet) { Verify("SmartClearMotionProfile: no motion profile is set"); return false; }
-            MotionProfileSet = false;
+            if (!MotionProfileSet) Verify("SmartClearMotionProfile: no motion profile is set");
             var clear = _motionClear; _motionClear = null;
             clear?.Invoke();
+            MotionProfileSet = false;
             return true;
         }
     }
