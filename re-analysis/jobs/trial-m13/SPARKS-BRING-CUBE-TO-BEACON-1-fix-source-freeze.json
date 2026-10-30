@@ -1,7 +1,7 @@
 {
   "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "BOUNDED FIX SOURCE PASS; IMPLEMENTATION RELEASED, NO .NET LEASE",
+  "state": "RETURNED FIX CODE PASS; BUILD/AFFECTED REFERENCE RELEASED",
   "main": "c7c809afb230680d6bb466b015a4a056106030ab",
   "managerMerge": "78751aaa8d005827135b346cd2bce45401dd218e",
   "sourceFiles": [
@@ -37,5 +37,12 @@
   "prep": "old worker merge sole M7 implemented-set conflict resolved to exact manager bytes; an intermediate marker-containing merge commit was corrected in fd05e37e. Final whole code/src trees match manager; no implementation or .NET yet. Do not integrate preparation merge commits, only final fix diff.",
   "wholeRecordClosures": "None; M15-023 stays open per authoritative Claude, M15-086 already exists; no duplicate lifecycle proposal",
   "officialEdits": false,
-  "hardwareRun": false
+  "hardwareRun": false,
+  "coherentDraft": {
+    "paths": 4,
+    "manifestOriginalSha256": "14ca98761a441bceae5c5520d584ab9d4470bb08649b237acfac8063b9d73464",
+    "codeVerdict": "PASS, first coherent returned FIX",
+    "newReviewerRequiredCorrectionBatches": 0
+  },
+  "affectedPlan": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-fix-affected-plan.json"
 }
