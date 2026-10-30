@@ -66,7 +66,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `CantHandleTallStack` | `CantHandleTallStack` | in progress | CANT-HANDLE-TALL-STACK-1 READY: own lifecycle/guarded replacement, ref304/exact304/full2 6931 PASS. Weak producer, configured recipient join and automatic caller MISSING; no finished claim | No explicit config reference; native/app use UNKNOWN |
 | `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | in progress | CHECK-FOR-STACK-AT-INTERVAL-1 returnedFIX1 READY: skip missing ghost only, real return stamps cooldown; affected672+exact672/full6914 PASS. Marker/parent gaps remain; no finished claim | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
 | `CubeLiftWorkout` | `CubeLiftWorkout` | in progress | CUBE-LIFT-WORKOUT-1 READY: ownlifecycle/sharedcomponent, ref862/exact862/full6959 PASS. WholeM13-010 proposed; parent/helper/backend gaps remain; no finished claim | freeplay: PlayAlone. 1 refs; R065+ in map |
-| `SparksCubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | spark: SparksWorkout. 1 refs; R240+ in map |
+| `SparksCubeLiftWorkout` | `CubeLiftWorkout` | in progress | SPARKS-CUBE-LIFT-WORKOUT-1 read open; ordinary class/source reused, actual alias/owner differences to verify; no finished claim | spark: SparksWorkout. 1 refs; R240+ in map |
 | `Dance_Mambo` | `Dance` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `Needs_SevereLowEnergyState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowEnergy. 1 refs; R037+ in map |
