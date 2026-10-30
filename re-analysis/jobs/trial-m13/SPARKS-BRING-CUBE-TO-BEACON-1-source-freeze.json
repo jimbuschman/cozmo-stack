@@ -1,0 +1,54 @@
+{
+  "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+  "stage": "Whole bounded source PASS; finite build release",
+  "base": "31bf3b1bc2ad9cbee58afccd2c76d72f9bcc429d",
+  "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
+  "sourceFiles": {
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-read.md": "6A42944225BCF521671CC63B0E64AC5584760646DA1CD39D35D986AB00D15A01",
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-codex-check.md": "06EA00D467205B4B43A423CE45A96BFB9664C7B346EFE9DC86A7E3E26B82F1BF"
+  },
+  "rawSourceFiles": {
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-read.md": "074BEBA3F7A6D09A350BFA3C0528F7DF84B0FFE6E2BEB4DD8DB40DFB6CE73A62",
+    "re-analysis/research/20261030-sparks-bring-cube-to-beacon-1-codex-check.md": "7D80C696878DA9E96B55F391A9B7034445D00C11813C38EEE300136CECA960A0"
+  },
+  "serialization": "UTF8LF/noBOM; actual raw originals retained, no text/contract change",
+  "currentLiteralRecordSnapshotsMatched": 11,
+  "readerRequested": "gpt-6.1-sol/medium",
+  "builderRequested": "DEFAULT model/effort omitted",
+  "reviewerRequested": "DEFAULT model/effort omitted",
+  "actualBackend": "unobserved; operator default Terra",
+  "workers": {
+    "builder": "/root/sparks_bring_build",
+    "reviewer": "/root/sparks_bring_review",
+    "reader": "/root/sparks_bring_read"
+  },
+  "behaviorIds": {
+    "SparksThink": 157,
+    "SparksBring": 140
+  },
+  "activityIds": {
+    "Spark": 20,
+    "GatherDelegate": 4
+  },
+  "unlock": 38,
+  "objective": 11,
+  "needsAction": 20,
+  "lightTriggers": {
+    "progress": 17,
+    "finish": 16
+  },
+  "sourceBehaviorCorrections": 0,
+  "reviewerRequiredCorrectionBatches": 0,
+  "prep": {
+    "cacheOnlyRestoreAll5Exit": 0,
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "compileOrTestRun": false,
+    "restoreCount": 1,
+    "checkoutProcesses": []
+  },
+  "formalRecordsChanged": false,
+  "hardwareRun": false,
+  "frontiers": "Raw request/picker/capability/active-input sources006/058; reachedunavailableSparksLookInPlace or earlier readiness must be MISSING, notfalse/fallthrough; existing pose/libm/world/child/planner/marker/firmware/report/reward71 interfaces",
+  "wholeRecordCandidates": "M15-023own45/5 afterbinding/tests. Prior025/lifecycleproposalalreadyHiking; no duplicateIDs.008/059partial"
+}
