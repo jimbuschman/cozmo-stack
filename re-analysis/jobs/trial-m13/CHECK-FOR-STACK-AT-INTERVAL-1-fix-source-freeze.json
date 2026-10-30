@@ -1,7 +1,7 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "BOUNDED FIX SOURCE PASS; IMPLEMENTATION RELEASED, NO .NET LEASE",
+  "state": "RETURNED FIX CODE PASS; BUILD/AFFECTED REFERENCE RELEASED",
   "main": "2567528b782bd338263b404574d5682ef339ea8b",
   "manager": "2c32772d16d8cccac3ad1b123c060a91d4353f5e",
   "sourceFiles": [
@@ -42,5 +42,12 @@
   "wholeExistingRecordClosureProposals": [],
   "newRecordProposal": "same one otherwise-unowned lifecycle only; no record added",
   "officialEdits": false,
-  "hardwareRun": false
+  "hardwareRun": false,
+  "coherentDraft": {
+    "paths": 4,
+    "codeVerdict": "PASS initial returned FIX draft",
+    "newReviewerRequiredCorrectionBatches": 0,
+    "actualFreeze": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-check-for-stack-at-interval-1\\.scratch\\check-for-stack-preparation\\returned-fix1-draft\\freeze.txt"
+  },
+  "affectedPlan": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-fix-affected-plan.json"
 }
