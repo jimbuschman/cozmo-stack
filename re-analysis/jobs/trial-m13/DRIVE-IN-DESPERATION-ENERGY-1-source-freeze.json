@@ -1,0 +1,36 @@
+{
+  "job": "DRIVE-IN-DESPERATION-ENERGY-1",
+  "state": "READ OPEN",
+  "managerStart": "28df4d1da81c5081119c25bc486a48db309cdcad",
+  "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
+  "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-energy-1",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/desperation_energy_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/desperation_energy_review",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "fork": "none"
+    },
+    {
+      "role": "builder",
+      "agent": "/root/desperation_energy_build",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "fork": "none"
+    }
+  ],
+  "actualBackends": "unobserved",
+  "dotnetLease": "none",
+  "reviewerFixRounds": 0,
+  "sourceQuestions": 0,
+  "builderMissingItems": [],
+  "builder": "Preparation only, checked-source release pending"
+}
