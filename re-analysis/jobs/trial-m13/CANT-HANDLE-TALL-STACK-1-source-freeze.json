@@ -1,6 +1,6 @@
 {
   "job": "CANT-HANDLE-TALL-STACK-1",
-  "state": "WIP, NOT READY: REVIEW3 STATIC PASS, BUILD/TARGETED DIAGNOSTIC/REFERENCE PENDING",
+  "state": "WIP, NOT READY: REVIEW3 INTEGRATED, BUILD/TARGETED/REFERENCE/REPLAY/FULLGATE PENDING",
   "main": "1880f337c803fe25cd5da6d1aad56e068db1015a",
   "readerRequested": "gpt-6.1-sol/medium/fork_none",
   "builderRequested": "DEFAULT/model and effort omitted/fork_none",
@@ -115,7 +115,7 @@
     "answer": "0 variability; ctor15/20/0 independent; zero skipsRNG",
     "independentChecks": 2
   },
-  "exclusiveDotnetLease": "none; root WIP checkpoint push before C new lease",
+  "exclusiveDotnetLease": "none; WIP push before C validation lease",
   "firstReference": {
     "job": "CANT-HANDLE-TALL-STACK-1",
     "attempt": 1,
@@ -235,5 +235,9 @@
     "thatFingerprintAppliesToThisGate": false,
     "separateNewReviewFinding": "Synchronous Step event and supplied weak-lock reentry can mutate replacement; correction batch2 independently verified/released, minimal guarded SetStateName overload and local guards plus tests."
   },
-  "currentChangedCodePaths": 7
+  "currentChangedCodePaths": 7,
+  "workerReview3Commit": "29920c90942968ceb3c0794333fb6c0faf4a992e",
+  "review3IntegrationCommit": "ba4b554d3820d27a2e45374961f27709944c3df6",
+  "currentProductionSrcTree": "6cea36ad352c0e7c4491c4e41dc582e245c8c0a6",
+  "currentCodeCompiled": false
 }
