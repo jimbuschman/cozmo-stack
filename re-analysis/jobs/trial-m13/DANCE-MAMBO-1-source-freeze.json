@@ -1,6 +1,6 @@
 {
   "job": "DANCE-MAMBO-1",
-  "state": "REFERENCE4 AND EXACT REPLAY PASS; INTEGRATION PENDING",
+  "state": "CODE VERIFIED; FULL GATE PENDING",
   "managerStart": "34a59d527480c1030d8d28a90834390841949789",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
   "priorHandoff": "SPARKS-CUBE-LIFT-WORKOUT-1",
@@ -143,7 +143,7 @@
       "resolution": "L1-L5 finite registration/delivery known and checked; explicit supplied unsigned native identity seam. Actual producer, identity mapping and owner lifetime UNKNOWN remain MISSING; no insertion-order or no-listener claim."
     }
   ],
-  "lastMainCheck": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352 unchanged after build release",
+  "lastMainCheck": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352 unchanged beforeintegration",
   "currentSourceArtifacts": [
     {
       "phase": "listenerQ1",
@@ -369,5 +369,9 @@
     "nativePost": [],
     "checkoutPost": [],
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-replay1"
-  }
+  },
+  "workerCommit": "73ffe78f66b142e4a57f169ae2927cf5c979a235",
+  "integrationCommit": "9538ee7324193dc19c9ff5b6227155d1a4ba19b3",
+  "cozmoStackTree": "7c08b18b94ee7d38bd4ded200b3e1518dadf0468",
+  "productionSrcTree": "5064ae8d0ea3afa998e82d162d1b064b671600a2"
 }
