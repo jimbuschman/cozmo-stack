@@ -120,11 +120,11 @@ public sealed class HikingBringBeaconCandidatesTests
         Assert.Equal(0x0300001Du,result);Assert.Null(selected);
     }    // A1/A2/G1: 0059C968, 005DEFB0, vtable 010295A4..AC; reach: shipped native factory.
     [Fact]
-    public void ShippedNativeFactoryBindsOnlyCheckedHikingInstance()
+    public void ShippedNativeFactoryBindsBothCheckedInstances()
     {
         using var f=new Fixture();
         Assert.IsType<NativeBringCubeToBeaconBehavior>(f.Runtime.Bound["Hiking_BringCubeToBeacon"]);
-        Assert.False(f.Runtime.Bound.TryGetValue("SparksBringCubeToBeacon",out var sparks) && sparks is NativeBringCubeToBeaconBehavior);
+        Assert.IsType<NativeBringCubeToBeaconBehavior>(f.Runtime.Bound["SparksBringCubeToBeacon"]);
     }    // 0059C288: valid unrelated roots return false, through the native whiteboard consumer.
     [Fact]
     public void DifferentValidRootIsRejectedWithoutFlatPoseFallback()

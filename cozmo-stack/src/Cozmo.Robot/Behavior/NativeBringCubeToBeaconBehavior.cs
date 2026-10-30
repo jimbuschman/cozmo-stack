@@ -43,7 +43,7 @@ internal sealed class NativeBringCubeToBeaconBehavior:SteppedBehavior,IDisposabl
     private bool RunnableCore(long epoch)
     {
         try{return _candidates.Refresh(()=>HostExecutionVersionCurrent(epoch))&&HostExecutionVersionCurrent(epoch);}
-        catch(NativeConfigurationUnavailable error){if(HostExecutionVersionCurrent(epoch))ReportMissing("BringCubeToBeacon candidate input unavailable: "+error.Message);return false;}
+        catch(NativeConfigurationUnavailable error){if(HostExecutionVersionCurrent(epoch)){MarkReadinessUnavailable();ReportMissing("BringCubeToBeacon candidate input unavailable: "+error.Message);}return false;}
     }
     protected override void OnStart()
     {

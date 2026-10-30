@@ -289,6 +289,7 @@ public sealed class BehaviorFactory
     private static readonly Dictionary<BehaviorClass, Func<BehaviorFactoryContext, JsonElement, IBehavior>> Constructors = new()
     {
         [BehaviorClass.BringCubeToBeacon] = (ctx,json)=>new NativeBringCubeToBeaconBehavior(ctx,json,ctx.BringBeaconOwner!),
+        [BehaviorClass.ThinkAboutBeacons] = (ctx,json)=>new ThinkAboutBeaconsBehavior(ctx.Manipulation!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(), json.GetProperty("params").GetProperty("beaconRadius_mm").GetSingle(), json.GetProperty("params").GetProperty("newAreaAnimTrigger").GetString()!),
         [BehaviorClass.Bouncer] = (ctx,json)=>new NativeBouncerBehavior(ctx,json,
             ()=>ctx.Vision!.Faces.GetNativeFaceIds(ctx.BouncerOwner!)),
         // fidelity: M7-018, M8-005
@@ -368,9 +369,9 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        if(cls==BehaviorClass.BringCubeToBeacon && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_BringCubeToBeacon || ctx.Manipulation is null || ctx.BringBeaconOwner is null))
+        if(cls==BehaviorClass.BringCubeToBeacon && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Hiking_BringCubeToBeacon or BehaviorID.SparksBringCubeToBeacon) || ctx.Manipulation is null || ctx.BringBeaconOwner is null))
         {
-            SteppedBehavior.ReportMissing("BringCubeToBeacon factory: only checked Hiking configuration with actual manipulation/Robot owner is available");
+            SteppedBehavior.ReportMissing("BringCubeToBeacon factory: only checked Hiking/Sparks configurations with actual manipulation/Robot owner are available");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }        // POP/SPARKS-POP-A-WHEELIE-1 release only these two checked configurations.
         if(cls==BehaviorClass.PopAWheelie&&BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.PopAWheelie or BehaviorID.SparksPopAWheelie))
@@ -386,6 +387,11 @@ public sealed class BehaviorFactory
         if((cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        if(cls==BehaviorClass.ThinkAboutBeacons && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksThinkAboutBeacons || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("ThinkAboutBeacons factory: only checked Sparks instance with actual Robot/manipulation owner is available");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
         if (cls == BehaviorClass.AcknowledgeObject && ctx.Vision is null)

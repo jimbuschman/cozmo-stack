@@ -31,6 +31,12 @@ public interface IManagedActivity
     void BehaviorSwitched(IBehavior? desired, bool started, double nowSec);
 }
 
+internal interface IHostReadinessOwner
+{
+    bool ReadinessChecksEnabled { get; }
+    void RetireUnavailable();
+}
+
 /// <summary>
 /// Chooses which behaviour runs, and switches between them.
 ///
@@ -180,7 +186,9 @@ public sealed partial class BehaviorManager : IDisposable
     /// The activity <c>GetCurrentActivity()</c> returns (0x005a2f78): ticked first in <see cref="Update"/> and asked for the
     /// desired behaviour by <c>ChooseNextScoredBehaviorAndSwitch</c>. Null: no activity is attached, so neither happens.
     /// </summary>
-    public IManagedActivity? Activity { get; set; }
+    private IManagedActivity? _activity;
+    private long _hostSelectionEpoch;
+    public IManagedActivity? Activity { get => _activity; set { _activity=value; Interlocked.Increment(ref _hostSelectionEpoch); } }
 
     // ------------------------------------------------------------------ reactions (M10)
 
@@ -714,7 +722,7 @@ public sealed partial class BehaviorManager : IDisposable
             // become current, so no behaviour would ever be recorded as having run and the repetition
             // penalty would never apply.
             scope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion, this);
-            _current = best;
+            _current = best; Interlocked.Increment(ref _hostSelectionEpoch);
             _scope = scope;
             _startedSec = nowSec;
         }
@@ -876,9 +884,13 @@ public sealed partial class BehaviorManager : IDisposable
     {
         if (Activity is not { } activity) return;
         var current = Current;
+        var host=activity is IHostReadinessOwner { ReadinessChecksEnabled:true } scoped ? scoped : null;
+        long epoch=Interlocked.Read(ref _hostSelectionEpoch);
         var desired = activity.GetDesiredActiveBehavior(current, nowSec);
+        if (host is not null && (epoch!=Interlocked.Read(ref _hostSelectionEpoch) || !ReferenceEquals(Current,current) || !ReferenceEquals(Activity,activity))) return;
         if (ReferenceEquals(desired, current)) return;
-        bool started = SwitchToBehaviorBaseCore(new RunningInfo(desired, null, null), nowSec, BehaviorStopReason.Interrupted);
+        bool started = SwitchToBehaviorBaseCore(new RunningInfo(desired, null, null), nowSec, BehaviorStopReason.Interrupted, hostReadiness:host);
+        if(host is not null && !ReferenceEquals(Activity,activity))return;
         activity.BehaviorSwitched(desired, started, nowSec);
     }
 
@@ -905,20 +917,33 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     // fidelity: M8-012
     private bool SwitchToBehaviorBaseCore(RunningInfo info, double nowSec, BehaviorStopReason stopReason,
-                                          CancellationToken cancel = default)
+                                          CancellationToken cancel = default, IHostReadinessOwner? hostReadiness = null)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         if (_hostDisposed) return false;
         // Host availability boundary, not a native false/no-effect result. Do not retire the prior selection.
         if(info.Current is NativePickUpCubeBehavior pickup&&!pickup.CheckExecutionAvailability())return false;
+        long beforeStop=Interlocked.Read(ref _hostSelectionEpoch);
+        bool hadCurrent=Current is not null;
         lock (_gate) StopAndNullifyLocked(stopReason, nowSec);
+        if(hostReadiness is not null && (Interlocked.Read(ref _hostSelectionEpoch)!=beforeStop+(hadCurrent?1:0) || !ReferenceEquals(Activity,hostReadiness)))return false;
 
         var next = info.Current;
         bool initFailed = false;
         BehaviorScope? scope = null;
         if (next is not null)
         {
-            if (!next.IsRunnable(_context))
+            bool runnable;
+            if(hostReadiness is not null && next is SteppedBehavior stepped)
+            {
+                long evaluationEpoch=Interlocked.Read(ref _hostSelectionEpoch);
+                var evaluated=stepped.EvaluateHostReadiness(_context);
+                if(evaluationEpoch!=Interlocked.Read(ref _hostSelectionEpoch) || !ReferenceEquals(Activity,hostReadiness))return false;
+                if(!evaluated.Available){hostReadiness.RetireUnavailable();return false;}
+                runnable=evaluated.Runnable;
+            }
+            else runnable=next.IsRunnable(_context);
+            if (!runnable)
             {
                 // 0x005a1e88 "BehaviorManager.SwitchToBehaviorBase.BehaviorNotRunnable" through
                 // sVerifyFailedReturnFalse (0x005a1e8e); it then falls through to 0x005a1e94 IBehavior::Init.
@@ -978,7 +1003,7 @@ public sealed partial class BehaviorManager : IDisposable
         {
             oldTrigger = _currentReaction;
             oldCurrent = _current;oldResume=_resumeAfterReaction;
-            _current = info.Current;
+            _current = info.Current; Interlocked.Increment(ref _hostSelectionEpoch);
             _scope = info.Current is null ? null : scope;
             if (info.Current is not null) _startedSec = nowSec;
             _resumeAfterReaction = info.Resume;
@@ -1197,12 +1222,14 @@ public sealed partial class BehaviorManager : IDisposable
     private void StopAndNullifyLocked(BehaviorStopReason reason, double nowSec)
     {
         if (_current is not { } b) return;
+        long stoppingEpoch=Interlocked.Read(ref _hostSelectionEpoch);
         bool running = b is not SteppedBehavior sb || sb.EngineRunning;
         if (running)
         {
             long? generation = (b as AcknowledgeObjectBehavior)?.HostGeneration;
             try { b.Stop(reason); }
             catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
+            if(stoppingEpoch!=Interlocked.Read(ref _hostSelectionEpoch) || !ReferenceEquals(_current,b))return;
             if (generation is not null && (!ReferenceEquals(_current, b) || (b is AcknowledgeObjectBehavior current &&
                 current.EngineRunning && current.HostGeneration != unchecked(generation.Value + 1)))) return;
 
@@ -1218,7 +1245,7 @@ public sealed partial class BehaviorManager : IDisposable
         else if (_scope is { } kept) _orphanScopes[b] = kept;
 
         _scope = null;
-        _current = null;
+        _current = null; Interlocked.Increment(ref _hostSelectionEpoch);
     }
 
     /// <summary>

@@ -29,12 +29,12 @@ internal sealed class NativeBehaviorBaseInputs
     internal bool Allows(BehaviorContext context)
     {
         if(!ReferenceEquals(context.Robot.Engine.Robot,_robot) || _robot.CarryingOwner is null)
-        {SteppedBehavior.ReportMissing("IBehavior native base admission: actual Robot/Carrying owner unavailable");return false;}
+        {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior native base admission: actual Robot/Carrying owner unavailable");return false;}
         if(_requiredSevere!=3 && _requiredSevere!=context.Robot.Engine.Needs.SevereNeeds.Selected)return false;
         if(_requiredUnlock!=0x55)
         {
             if(_robot.Progression is not {} progression||!progression.TryIsUnlocked(_requiredUnlock,out bool unlocked))
-            {SteppedBehavior.ReportMissing("IBehavior requiredUnlockId005BD810 actual progression override state unavailable; no hardcoded unlock");return false;}
+            {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior requiredUnlockId005BD810 actual progression override state unavailable; no hardcoded unlock");return false;}
             if(!unlocked)return false;
         }
         float epsilon=BitConverter.UInt32BitsToSingle(0x3727C5AC);
@@ -47,7 +47,7 @@ internal sealed class NativeBehaviorBaseInputs
         // Shipped DriveOff leaves this at -1. A host activity timestamp is not
         // evidence of the native manager+0x50 producer (RB3).
         if(!((double)_recentSwitch < BitConverter.Int64BitsToDouble(unchecked((long)0xBEE4F8B588E368F1))))
-        {SteppedBehavior.ReportMissing("IBehavior requiredRecentSwitchToParent_sec 0x005BD84A: native manager+0x50 writer is not bound");return false;}
+        {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior requiredRecentSwitchToParent_sec 0x005BD84A: native manager+0x50 writer is not bound");return false;}
         return true;
     }
 }

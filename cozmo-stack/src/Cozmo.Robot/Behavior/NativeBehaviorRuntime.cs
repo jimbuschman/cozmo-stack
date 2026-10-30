@@ -42,6 +42,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     // Continuation of the missing parent picker, not an ActivitySparked state/Complete latch.
     internal bool AwaitingParentActivityPick {get;private set;}
     private bool _retired;
+    private long _admissionEpoch;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
     private readonly OverheadEdgesDetector? _ownedOverhead;
@@ -129,16 +130,34 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             SteppedBehavior.ReportMissing("Native PutDownDispatch admission: LookForFaceAndCube explicit objective input lacks checked invalid41 contract; prior activity retained before selection/motion");
             return;
         }
+        long epoch=++_admissionEpoch;
         float now=_facade.Engine.Timer.SecondsF;
         _manager.Stop(BehaviorStopReason.Interrupted,now);
+        if(_retired||epoch!=_admissionEpoch)return;
         _selected?.OnDeselected(now,_facade.Engine.EmitStackLog);
+        if(_retired||epoch!=_admissionEpoch)return;
         _selected=selected;
         AwaitingParentActivityPick=false;
         selected.OnSelected(now,_facade.Engine.EmitStackLog);
+        if(_retired||epoch!=_admissionEpoch||!ReferenceEquals(_selected,selected))return;
         Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,selected.Id!="Freeplay");
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
-        _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick);
+        _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick,()=>RetireUnavailable(selected,epoch));
     }
+    private void RetireUnavailable(Activity activity,long epoch)
+    {
+        if(_retired||epoch!=_admissionEpoch||!ReferenceEquals(_selected,activity))return;
+        ++_admissionEpoch;_selected=null;AwaitingParentActivityPick=false;
+        _manager.Activity=null;
+        // Host-only unsupported evaluation: release the detached old resources
+        // before stopping, so replacement during Stop cannot strand them.
+        activity.OnDeselected(_facade.Engine.Timer.SecondsF,_facade.Engine.EmitStackLog);
+        if(_retired||_admissionEpoch!=epoch+1)return;
+        _manager.Stop(BehaviorStopReason.Interrupted,_facade.Engine.Timer.SecondsF);
+        if(_retired||_admissionEpoch!=epoch+1)return;
+        SteppedBehavior.ReportMissing("M15-059 Gather chooser unavailable input: owned activity retired without native completion");
+    }
+
     private void WaitForParentPicker(Activity activity)
     {
         if(!ReferenceEquals(_selected,activity))return;
@@ -185,11 +204,13 @@ internal sealed class NativeBehaviorRuntime : IDisposable
 
     public void Dispose()
     {
-        if(_retired)return;_retired=true;
+        if(_retired)return;_retired=true;++_admissionEpoch;
         if(ReferenceEquals(_facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads,_offTreadsPause))
             _facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=null;
         _facade.Sensors.OnChargerPlatformChangedInternal-=_chargerPause;
         if(_ownedVision is {} vision&&ReferenceEquals(vision.OverheadEdges,_ownedOverhead))vision.OverheadEdges=null;
+        foreach(var activity in AllActivities(Tree))if(activity.GuardNativeLifecycle)activity.RetireHostResources();
+        _selected=null;
         // The manager is stopped/disposed by its actual lifetime owner first.
         _observer?.DetachHostHandle();
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();
@@ -203,7 +224,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Manipulation?.Dispose();
     }
 
-    private sealed class ConfiguredActivity(Activity activity,EngineRobot robot,BehaviorManager manager,BehaviorContext context,Action waitForParent,Func<bool> waiting):IManagedActivity
+    private sealed class ConfiguredActivity(Activity activity,EngineRobot robot,BehaviorManager manager,BehaviorContext context,Action waitForParent,Func<bool> waiting,Action retireUnavailable):IManagedActivity,IHostReadinessOwner
     {
         public void Update(double now){if(waiting())return;if(activity.SparkedOwner is {} spark)spark.Update();else _=activity.NativeUpdate20!(robot);}
         // No interlude is configured on the admitted MeetCozmo/PutDown routes.
@@ -214,6 +235,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(activity.SparkedOwner is {} spark)
             {
                 var next=spark.Desired(current,now,context);
+                if(spark.InputUnavailable){retireUnavailable();return null;}
                 if(next is null&&spark.State is 4 or 5)waitForParent();
                 return next;
             }
@@ -226,5 +248,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             return desired;
         }
         public void BehaviorSwitched(IBehavior? desired,bool started,double now){}
+        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null;
+        void IHostReadinessOwner.RetireUnavailable()=>retireUnavailable();
     }
 }

@@ -11,7 +11,7 @@ internal sealed record DrivingAnimationRequest(AnimationTrigger Trigger, int Arg
 // The sole per-Robot handler; DriveActions uses its existing IDrivingAnimationHandler interface.
 internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimationHandler
 {
-    private readonly List<(DrivingAnimations Animations, string LockName)> _entries = new();
+    private readonly List<(DrivingAnimations Animations, string LockName, object? Owner)> _entries = new();
     private HashSet<string> _missingMessages=new();
     private EngineRobot? _owner;
     private byte _tracks;
@@ -29,7 +29,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     internal uint StartId { get; private set; }
     internal uint LoopId { get; private set; }
     internal uint EndId { get; private set; }
-    internal IReadOnlyList<(DrivingAnimations Animations, string LockName)> Entries => _entries.ToArray();
+    internal IReadOnlyList<(DrivingAnimations Animations, string LockName)> Entries => _entries.Select(e=>(e.Animations,e.LockName)).ToArray();
     internal void Bind(EngineRobot owner)
     {
         _owner = owner; State = 5;
@@ -42,7 +42,18 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     internal void Push(DrivingAnimations animations, string lockName)
     {
         if (State != 5) Warning("DrivingAnimationHandler.PushDrivingAnimations", "Pushing new animations while currently playing");
-        _entries.Add((animations, lockName)); // does not change Current.
+        _entries.Add((animations, lockName, null)); // does not change Current.
+    }
+    // Scoped host acquisition for an activity that can be replaced by a callback.
+    internal void PushOwned(DrivingAnimations animations,string lockName,Behavior.ScopedAcquisition lease)
+    {
+        if(State!=5)Warning("DrivingAnimationHandler.PushDrivingAnimations","Pushing new animations while currently playing");
+        if(lease.Active)_entries.Add((animations,lockName,lease));
+    }
+    internal void RemoveOwned(Behavior.ScopedAcquisition lease)
+    {
+        int index=_entries.FindIndex(e=>ReferenceEquals(e.Owner,lease));
+        if(index>=0)_entries.RemoveAt(index);
     }
     internal void Remove(string lockName)
     {
