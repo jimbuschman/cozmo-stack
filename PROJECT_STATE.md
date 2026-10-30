@@ -317,6 +317,7 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 - **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
+- Gate flake fixed (manager, 2026-10-30): `M3M4SettlingBuilderTests.CameraHostCommandsAndDefaultsKeepWholePairsOnTheEngineThread` asserted the 13th SetCameraSettings log (from the injected DefaultCameraParams, handled on a later engine tick) without waiting; failed once in a full run, 25/25 alone. Now waits up to 5 s. Test-only.
 
 - **M3M4-HW harness (2026-10-19; bundle README):** answers typed with spaces don't map to hyphenated choices and the PARITY_STEP grader's expected answer is reversed; DAS_EVENTS should attach through `BeforeStart`; DISCONNECT_QUIET should judge "no data after the teardown batch" rather than key on a DisconnectRequest frame (M1-006 pacing can hold it back). Conformance tools set the nominal calibration after construction instead of through `VisionCalibration` (B-M3M4-36 check).
 
