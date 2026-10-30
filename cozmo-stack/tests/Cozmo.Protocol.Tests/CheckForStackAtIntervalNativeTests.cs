@@ -18,6 +18,17 @@ public sealed class CheckForStackAtIntervalNativeTests
         public override uint CheckIfDone() => EngineActionResult.Running;
         public override bool CanInterrupt() => false;
     }
+    private static void LoadLibrary(Fixture f)
+    {
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        Assert.NotNull(f.Rig.Robot.Animations.Library);
+    }
+    private static Fixture ReadyFixture()
+    {
+        var f = new Fixture();
+        try { LoadLibrary(f); return f; }
+        catch { f.Dispose(); throw; }
+    }
     private static void Terminal(Fixture f, uint result)
     {
         Assert.IsAssignableFrom<ActionRunner>(f.Robot.ActionList.GetCurrentAction()).State = result;
@@ -37,6 +48,7 @@ public sealed class CheckForStackAtIntervalNativeTests
         manager.Update(0, f.Rig.Engine.Timer.SecondsF);
         return Assert.IsType<NativeCheckForStackAtIntervalBehavior>(manager.Current);
     }
+    // reach: unit, supplied f32 values.
     [Fact]
     public void StrictFloatComparisonRejectsEqualityAndUnordered()
     {
@@ -46,10 +58,11 @@ public sealed class CheckForStackAtIntervalNativeTests
         Assert.False(NativeCheckForStackAtIntervalBehavior.IsDue(1f, float.NaN));
     }
 
+    // reach: configured instance, direct readiness with supplied located objects.
     [Fact]
     public void ConfiguredOwnerAppendsCanonicalWorldOrderAndRetainsDuplicatesUntilStop()
     {
-        using var f = new Fixture();
+        using var f = ReadyFixture();
         var scan = Assert.IsType<NativeCheckForStackAtIntervalBehavior>(f.Runtime.Bound["SparksCheckForStackAtInterval"]);
         f.Add(20, 350); f.Add(3, 100);
         var filter = new BlockWorldFilter();
@@ -65,6 +78,31 @@ public sealed class CheckForStackAtIntervalNativeTests
         Assert.Equal(-1, scan.Index);
     }
 
+    // reach: configured instance, supplied missing host library and located object.
+    [Fact]
+    public void MissingHostLibraryMarksReadinessUnavailableWithoutAppendingTargets()
+    {
+        using var f = new Fixture(); f.Add();
+        var scan = Assert.IsType<NativeCheckForStackAtIntervalBehavior>(f.Runtime.Bound["SparksCheckForStackAtInterval"]);
+        Assert.Null(f.Rig.Robot.Animations.Library);
+        var readiness = scan.EvaluateHostReadiness(f.Runtime.Context);
+        Assert.False(readiness.Available); Assert.False(readiness.Runnable);
+        Assert.Empty(scan.Targets);
+        LoadLibrary(f);
+        Assert.True(scan.IsRunnable(f.Runtime.Context));
+        Assert.Equal(new uint[] { 7 }, scan.Targets);
+    }
+
+    // reach: manual navigation catalog and actual configured factory, no activity admission.
+    [Fact]
+    public void LegacyNavigationCatalogDoesNotRegisterTheConfiguredScanId()
+    {
+        using var f = new Fixture();
+        Assert.DoesNotContain(ShippedBehaviors.Navigation(f.M), behavior => behavior.Id == "SparksCheckForStackAtInterval");
+        Assert.IsType<NativeCheckForStackAtIntervalBehavior>(f.Runtime.Bound["SparksCheckForStackAtInterval"]);
+    }
+
+    // reach: configured instance, direct Init with an empty cached target vector.
     [Fact]
     public void EmptyDirectInitConsumesSharedIdOnceAndRetainsItAcrossStop()
     {
@@ -81,39 +119,55 @@ public sealed class CheckForStackAtIntervalNativeTests
         Assert.Equal(unchecked(before + 2), ObjectIdSpace.Set());
     }
 
+    // reach: configured Spark chooser with supplied state 2 admission and supplied terminal motor results; no supplied ghost child.
     [Fact]
-    public void ConfiguredSparkChooserBindsScanAndMissingCustomInputDoesNotInventCompletion()
+    public void ConfiguredChooserSkipsEachMissingGhostAndWaitsFromRealReturnCompletion()
     {
-        using var f = new Fixture();
-        var activity = NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Single(a => a.Id == "SparksKnockOverCubes");
-        Assert.NotNull(activity.SparkedOwner);
-        var chooser = Assert.IsType<StrictPriorityChooser>(activity.Chooser);
-        Assert.Contains("SparksCheckForStackAtInterval", chooser.BehaviorIds);
-        Assert.DoesNotContain("SparksCheckForStackAtInterval", chooser.Unbound);
-        f.Add();
-        SteppedBehavior.ResetMissingForTests();
+        using var f = ReadyFixture();
+        f.Add(20, 350); f.Add(3, 100);
         var missing = new List<string>(); SteppedBehavior.MissingReported += missing.Add;
         try
         {
             var scan = SelectScan(f);
-            Assert.IsType<NativeTurnTowardsObjectRunner>(f.Robot.ActionList.GetCurrentAction());
-            Terminal(f, 0x03000000); // native face completion callback ignores the result.
-            Assert.Contains(missing, line => line.Contains("custom ghost marker input"));
+            var cached = scan.Targets.ToArray();
+            Assert.True(cached.Length >= 2);
+            Assert.Equal(new uint[] { 3, 20 }, cached.Take(2));
+            for (int i = 0; i < cached.Length; i++)
+            {
+                var face = Assert.IsType<NativeTurnTowardsObjectRunner>(f.Robot.ActionList.GetCurrentAction());
+                uint id = (uint)typeof(NativeTurnTowardsObjectRunner).GetField("_id", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(face)!;
+                Assert.Equal(cached[i], id);
+                Assert.Equal(0f, scan.Deadline);
+                Terminal(f, 0x03000000);
+                Assert.Equal(i + 1, missing.Count(line => line.Contains("custom ghost marker input")));
+            }
+            Assert.IsType<NativePanTiltRunner>(f.Robot.ActionList.GetCurrentAction());
             Assert.Equal(0f, scan.Deadline);
-            Assert.Equal(-1, scan.Index); // deferred host Stop, not a native above-result advancement.
-            Assert.Empty(scan.Targets);
-            Assert.Null(f.Robot.BehaviorManagerOwner!.Current);
-            Assert.Null(f.Robot.ActionList.GetCurrentAction());
+            f.Rig.Engine.Timer.UpdateTime(100_000_000_000L);
+            Terminal(f, 0x03000000);
+            Assert.Equal(115f, scan.Deadline);
+            var manager = f.Robot.BehaviorManagerOwner!;
+            manager.Stop(BehaviorStopReason.Interrupted, 100);
+            var activity = NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Single(a => a.Id == "SparksKnockOverCubes");
+            var chooser = Assert.IsType<StrictPriorityChooser>(activity.Chooser);
+            f.Rig.Engine.Timer.UpdateTime(114_000_000_000L);
+            Assert.NotSame(scan, chooser.GetDesiredActiveBehavior(null, 0, f.Runtime.Context, 114).Behavior);
+            f.Rig.Engine.Timer.UpdateTime(115_000_000_000L);
+            Assert.NotSame(scan, chooser.GetDesiredActiveBehavior(null, 0, f.Runtime.Context, 115).Behavior);
+            Assert.False(scan.IsRunnable(f.Runtime.Context));
+            f.Rig.Engine.Timer.UpdateTime(115_000_010_000L); // next f32 after 115
+            Assert.True(scan.IsRunnable(f.Runtime.Context));
         }
         finally { SteppedBehavior.MissingReported -= missing.Add; f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted, 0); f.Robot.ActionList.Clear(); }
     }
 
+    // reach: configured instance, direct start and supplied ghost child and terminal results.
     [Theory]
     [InlineData(0u)] [InlineData(0x03000000u)] [InlineData(0x04000001u)]
     public void SuppliedGhostChildResultAdvancesToRealReturnAndReturnResultStampsDeadline(uint result)
     {
         // Supplied child reaches the callback only; it does not establish custom marker geometry or physical head completion.
-        using var f = new Fixture(); f.Add();
+        using var f = ReadyFixture(); f.Add();
         var scan = Assert.IsType<NativeCheckForStackAtIntervalBehavior>(f.Runtime.Bound["SparksCheckForStackAtInterval"]);
         scan.SuppliedGhostChildForTest = (_, _) => new SuppliedChild();
         Assert.True(scan.IsRunnable(f.Runtime.Context));
@@ -147,11 +201,12 @@ public sealed class CheckForStackAtIntervalNativeTests
         finally { scan.Stop(BehaviorStopReason.Interrupted); f.Robot.ActionList.Clear(); }
     }
 
+    // reach: configured Spark chooser with supplied state 2 and diagnostic reentry.
     [Theory]
     [InlineData(false)] [InlineData(true)]
-    public void MissingDiagnosticReentryAndDeferredReplacementCannotStopNewManagerRun(bool deferred)
+    public void MissingDiagnosticReentryCannotAdvanceReplacementRun(bool deferred)
     {
-        using var f = new Fixture(); f.Add();
+        using var f = ReadyFixture(); f.Add();
         var scan = SelectScan(f);
         var manager = f.Robot.BehaviorManagerOwner!;
         bool replaced = false;
@@ -184,10 +239,11 @@ public sealed class CheckForStackAtIntervalNativeTests
         finally { SteppedBehavior.MissingReported -= Diagnostic; manager.Stop(BehaviorStopReason.Interrupted, 0); f.Robot.ActionList.Clear(); }
     }
 
+    // reach: configured instance, direct Init after supplied target deletion.
     [Fact]
     public void LostCachedTargetTakesSourceNullBranchWithoutActionOrDeadline()
     {
-        using var f = new Fixture(); f.Add();
+        using var f = ReadyFixture(); f.Add();
         var scan = Assert.IsType<NativeCheckForStackAtIntervalBehavior>(f.Runtime.Bound["SparksCheckForStackAtInterval"]);
         Assert.True(scan.IsRunnable(f.Runtime.Context));
         var filter = new BlockWorldFilter(); filter.AllowedIds.Add(7);

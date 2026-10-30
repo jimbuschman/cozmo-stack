@@ -4,6 +4,7 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M8-001, M12-033, M13-020
 // Configured BehaviorCheckForStackAtInterval; shared action/geometry frontiers remain MISSING.
 internal sealed class NativeCheckForStackAtIntervalBehavior : SteppedBehavior, IDisposable
 {
@@ -49,6 +50,7 @@ internal sealed class NativeCheckForStackAtIntervalBehavior : SteppedBehavior, I
     {
         using var owner = EnterHostExecutionOwner(context);
         long generation = CaptureHostExecutionVersion();
+        if (context.Robot.Animations.Library is null) { MarkReadinessUnavailable(); return false; }
         return HostExecutionVersionCurrent(generation) && IsRunnableBase(context) && HostExecutionVersionCurrent(generation) && RunnableCore(generation);
     }
     protected override bool IsRunnableInternal(BehaviorContext context) => RunnableCore(CaptureHostExecutionVersion());
@@ -98,14 +100,14 @@ internal sealed class NativeCheckForStackAtIntervalBehavior : SteppedBehavior, I
         var supplied = SuppliedGhostChildForTest;
         if (supplied is null)
         {
-            Unavailable(generation, "M12-033 custom ghost marker input / TurnTowardsObjectAction::UseCustomObject 0054A050 is unavailable");
+            SkipUnavailableGhost(generation, "M12-033 custom ghost marker input / TurnTowardsObjectAction::UseCustomObject 0054A050 is unavailable");
             return;
         }
-        using var mutation = _m.World.EnterPoseMutation();
-        var obj = CurrentObject();
-        if (obj is null) { Above(generation); return; }
         try
         {
+            using var mutation = _m.World.EnterPoseMutation();
+            var obj = CurrentObject();
+            if (obj is null) { Above(generation); return; }
             using var flat = obj.NativePose.GetWithRespectToRoot();
             float height = (float)NativeConfigurationGeometry.Dimensions(obj, flat).Z;
             var t = flat.Translation;
@@ -116,7 +118,7 @@ internal sealed class NativeCheckForStackAtIntervalBehavior : SteppedBehavior, I
             if (!HostExecutionVersionCurrent(generation)) { if (action is ActionRunner stale) stale.RetireNeverAdmittedTree(); return; }
             StartActing(action, _ => AboveComplete(generation), () => HostExecutionVersionCurrent(generation));
         }
-        catch (NativeConfigurationUnavailable error) { Unavailable(generation, error.Message); }
+        catch (NativeConfigurationUnavailable error) { SkipUnavailableGhost(generation, "M12-033 ghost geometry at 005D757E is unavailable: " + error.Message); }
     }
     private void AboveComplete(long generation)
     {
@@ -133,23 +135,12 @@ internal sealed class NativeCheckForStackAtIntervalBehavior : SteppedBehavior, I
         var action = new NativePanTiltRunner(_m, parameters);
         StartActing(action, _ => { if (HostExecutionVersionCurrent(generation)) _deadline = _robot.Engine.Timer.SecondsF + _delay; }, () => HostExecutionVersionCurrent(generation));
     }
-    private void Unavailable(long generation, string detail)
+    private void SkipUnavailableGhost(long generation, string detail)
     {
-        var manager = _robot.BehaviorManagerOwner;
-        uint tag = CurrentRunnerTag;
-        bool originalOwner = ReferenceEquals(manager?.Current, this);
-        ReportMissing("CheckForStackAtInterval: " + detail);
-        if (!HostExecutionVersionCurrent(generation) || CurrentRunnerTag != tag) return;
-        if (originalOwner && !ReferenceEquals(manager?.Current, this)) return;
-        _robot.ActionList.DeferHostCleanup(() =>
-        {
-            if (!HostExecutionVersionCurrent(generation) || CurrentRunnerTag != tag) return;
-            if (originalOwner)
-            {
-                if (ReferenceEquals(_robot.BehaviorManagerOwner, manager) && ReferenceEquals(manager?.Current, this)) manager!.Stop(BehaviorStopReason.Interrupted, _robot.Engine.Timer.SecondsF);
-            }
-            else if (!ReferenceEquals(_robot.BehaviorManagerOwner?.Current, this)) Stop(BehaviorStopReason.Interrupted);
-        });
+        // Each skipped action gets its own visible diagnostic. The source continuation ignores results;
+        // this host missing-capability policy does not manufacture a native completion.
+        ReportMissing("CheckForStackAtInterval: " + detail, new HashSet<string>());
+        if (HostExecutionVersionCurrent(generation)) AboveComplete(generation);
     }
     protected override void OnStop(BehaviorStopReason reason)
     {
