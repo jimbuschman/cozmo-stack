@@ -1,7 +1,7 @@
 {
   "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
   "phase": "CLAUDE RETURN FIX1",
-  "state": "RETURNED FIX CODE PASS; BUILD/AFFECTED REFERENCE RELEASED",
+  "state": "FIX CODE/REFERENCE/EXACT REPLAY PASS; INTEGRATION/FULL GATE PENDING",
   "main": "c7c809afb230680d6bb466b015a4a056106030ab",
   "managerMerge": "78751aaa8d005827135b346cd2bce45401dd218e",
   "sourceFiles": [
@@ -44,5 +44,53 @@
     "codeVerdict": "PASS, first coherent returned FIX",
     "newReviewerRequiredCorrectionBatches": 0
   },
-  "affectedPlan": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-fix-affected-plan.json"
+  "affectedPlan": "re-analysis/jobs/trial-m13/SPARKS-BRING-CUBE-TO-BEACON-1-fix-affected-plan.json",
+  "affectedReference": {
+    "job": "SPARKS-BRING-CUBE-TO-BEACON-1",
+    "phase": "CLAUDE RETURN FIX1",
+    "state": "REFERENCE665 AND EXACT665 PASS",
+    "classes": 24,
+    "passed": 665,
+    "failed": 0,
+    "skipped": 0,
+    "sourceInputDllHashesUnchanged": 127,
+    "sourceFiles": 4,
+    "inputs": 5,
+    "dlls": 118,
+    "referenceResultsSha256": "9f0561966d89ccc42d557b3217e3a9d810bf7307feca88cece40a23630e6eab5",
+    "referenceTrxSha256": "6cd4040467cf62487d82c3636884c12e5d1214924b340aa6d1cdc8a7426e5a55",
+    "buildLogSha256": "08d5e904ae4ab54834a21095abd7f12e8b00de9ac3bd8b915807019d031a1f22",
+    "testLogSha256": "c555b22c8a52f66032a2ea40548c9dcf7a8acec275ee8f36101f60f9b467b6bf",
+    "exactIndependentReplay": {
+      "total": 665,
+      "outcomes": {
+        "Passed": 665
+      },
+      "exactNamedOutcomeMultiplicityMatch": true,
+      "missing": [],
+      "extra": [],
+      "hashMismatch": [],
+      "hashCount": 127,
+      "trxSha256": "eaed320c4b40743b3c3530a7ff5440c5c270a7eae432eb587d1c593f72df8078",
+      "logSha256": "f7c7ba0c6894f55faf32bcbb91c2794e40f686ba68a4c3f7224f22ece49c6644",
+      "referenceResultsSha256": "9f0561966d89ccc42d557b3217e3a9d810bf7307feca88cece40a23630e6eab5",
+      "testExit": "0",
+      "shutdownExit": "0",
+      "privilege": "dotnet test and shutdown invoked with require_escalated"
+    },
+    "buildAndReplayInvocation": "require_escalated confirmed",
+    "shutdownExit": 0,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "newReviewerCorrectionBatches": 0,
+    "newCompilerCorrections": 0,
+    "newTestCorrections": 0,
+    "historicalReviewerBatches": 3,
+    "historicalCompilerFixes": 1,
+    "historicalTestProductionCauseGroups": 2,
+    "claudeReturnCorrectionBatches": 1,
+    "fullGate": "pending integration",
+    "hardwareRun": false
+  },
+  "workerFixCommit": "d7c5bd85344f63a985d59e681914f95ba7e2018d"
 }
