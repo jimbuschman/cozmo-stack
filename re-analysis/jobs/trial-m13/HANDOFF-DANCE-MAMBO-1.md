@@ -1,0 +1,13 @@
+# DANCE-MAMBO-1 — WIP, NOT READY
+
+Built: configured Dance_Mambo factory, native gates/locks, connected-ID light initialization and persistent choice map/RNG, recursive light callbacks, body action/listener seam, Stop stage4/0 and layer1 StopAll callbacks. Six code/test paths from worker73ffe78f integrated9538ee73. No official record/status/inventory/approval changes; propose one otherwise-unowned own lifecycle, no whole existing closure.
+
+Checked: source read plus Q1 and independent check; current affected reference1259/1259 and exact compiled replay1259/1259 PASS across63classes, zero skips. Failed references1256P3F,1257P2F,1258P1F and two diagnostic runs remain preserved with source-backed harness classifications. All8827 run inputs/187 immutable binaries matched; five exact generated output logs retained separately. Models requested: readerSolmedium, builder/reviewerDEFAULT overrides omitted, backend unobserved; completed reviewerrounds2, sourceQ1, post-testharness3, diagnostics2, compiler0.
+
+Not checked/passed: integrated fullgate1 on b4545be0 FAILED6970P1F6971total0skip. Existing EngineAppLayerTests.UseEveryDevice2584 reported inactive live stream despite streamingOpen=True, at first call2659 before disconnect/secondconnect. Narrow reader classification is open; no failing-path edits authorized. Full result: DANCE-MAMBO-1-gate1-result.json. Cached prior Spark pass is NOT the failed current code fingerprint.
+
+Separately, root found and B confirmed a source defect missed by the earlier static review: internal Listeners Current(epoch) checks abort live listener delivery after Stop/re-Init, contrary to005C0272..290 and the persistent listener set. Prior static source PASS is superseded; compiled1259 is evidence of that test run, not source fidelity. Required correction3 is pending. Keep retired-owner safety and outer action/loop generation guards; add a listener that re-enters and verify remaining/new higher-key listeners plus replacement action/scope survive. No fix yet.
+
+Next: classify the stream failure, correct the bounded listener iteration, independently review the affected diff/tests, run reference/exact replay for the changed path, then one fresh full gate on the corrected clean commit. Keep actual request caller/listener producer/identity/owner and shared delivery/lifetime gaps visible. Only after required checks pass mark READY and push, then next behavior without waiting. No hardware run.
+
+Provenance limits remain: four existing files have actual before archives; two new-file absence entries were recorded after creation. Diagnostic native post observations had unknown PID34964/7308, never killed; separate later elevated inventories were empty. Do not substitute those follow-ups for original observations.
