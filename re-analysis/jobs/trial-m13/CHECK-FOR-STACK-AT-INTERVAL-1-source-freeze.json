@@ -1,6 +1,6 @@
 {
   "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
-  "state": "BOUNDED SOURCE PASS; IMPLEMENTATION RELEASED, NO COMPILE LEASE",
+  "state": "CORRECTION1 CODE PASS; BUILD/AFFECTED REFERENCE RELEASED",
   "main": "69e53d714b0c50a8c7f81f6e81391705e3911451",
   "sources": [
     {
@@ -35,7 +35,7 @@
   "reviewerRequested": "DEFAULT/model and effort omitted/fork_none",
   "actualBackend": "unobserved; operator default Terra",
   "sourceContradictions": 0,
-  "reviewerRequiredCorrectionBatches": 0,
+  "reviewerRequiredCorrectionBatches": 1,
   "formalRecordsChanged": false,
   "prep": {
     "cacheOnlyRestoreAll5Exit": 0,
@@ -54,5 +54,40 @@
   "wholeExistingRecordClosureProposals": [],
   "newRecordProposal": "ONE coherent otherwise-unowned CheckForStackAtInterval lifecycle, no ID added",
   "hardwareRun": false,
-  "CANTContractApproval": "separate REQUIRED/PENDING, no dependentwork authorized"
+  "CANTContractApproval": "separate REQUIRED/PENDING, no dependentwork authorized",
+  "sourceProseClarifications": 1,
+  "compilerCorrectionBatches": 0,
+  "testRuns": 0,
+  "coherentDrafts": [
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-freeze.json",
+    "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-draft-fix1-freeze.json"
+  ],
+  "affectedPlan": "re-analysis/jobs/trial-m13/CHECK-FOR-STACK-AT-INTERVAL-1-affected-plan.json",
+  "currentSourceFiles": [
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-read.md",
+      "workingSha256": "d0c6deb76aa33c757dba044c00f82f3b598e77c62c470f4f1f5bfdc46bd1872d",
+      "gitLfSha256": "8bc165f4083f8ac0cf4af00f84b4dffb50e5b260da45ac0b2d1938644c7f9673"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-return-head-addendum.md",
+      "workingSha256": "2622ac5d7e4bc361e62916ee2909369942f300a4663cb1b70183802be30ade1e",
+      "gitLfSha256": "c51154b96c2f24a345927aefec63587bdfb99f2f94f198de1906a0a0186958e4"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-pan-clarification-codex-check.md",
+      "workingSha256": "53b8268c3633ed9d00d3e6c8fe15d8443e4282cd440e92b2d7d443a149b309a2",
+      "gitLfSha256": "53b8268c3633ed9d00d3e6c8fe15d8443e4282cd440e92b2d7d443a149b309a2"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-draft-codex-check.md",
+      "workingSha256": "06e388d332848c44751608a2117842a38a3d8e3d4035dd8059d71fe8a36d29b4",
+      "gitLfSha256": "06e388d332848c44751608a2117842a38a3d8e3d4035dd8059d71fe8a36d29b4"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-correction1-codex-check.md",
+      "workingSha256": "218133799e4f77222f170dab3306c43cea58c74f304804a538af56d892895f3b",
+      "gitLfSha256": "218133799e4f77222f170dab3306c43cea58c74f304804a538af56d892895f3b"
+    }
+  ]
 }
