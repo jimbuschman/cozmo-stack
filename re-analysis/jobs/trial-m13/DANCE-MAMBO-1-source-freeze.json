@@ -28,7 +28,7 @@
     }
   ],
   "dotnetLease": "C prep returned, none active",
-  "builder": "prep only; no implementation before checked read",
+  "builder": "implementation active after checked source5ad5b2fb; no.NET",
   "actualBackends": "unobserved",
   "workerWorktree": "C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1",
   "workerPreparedHead": "65259795a973238e44f0e6582cc0857d923137bf",
@@ -117,10 +117,46 @@
       "path": "re-analysis/research/20261030-dance-mambo-1-source-codex-check.md",
       "originalSha256": "c574e78c51a3db5c33fc70660f1b34af087083942a91ee3c6de2c958b7cce05f",
       "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-source-codex-check.c574e78c51a3.raw.md"
+    },
+    {
+      "phase": "listenerQ1",
+      "path": "re-analysis/research/20261030-dance-mambo-1-read.md",
+      "originalSha256": "d2c2640ab1f6680075b7cb5669813bf0846bbd24fe93c181cb138de3010af3ce",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-read.d2c2640ab1f6.raw.md"
+    },
+    {
+      "phase": "listenerQ1",
+      "path": "re-analysis/research/20261030-dance-mambo-1-source-codex-check.md",
+      "originalSha256": "4e5ce7a4edf702f916a7fac967bac1273486d26d1150ba2b58163b454570afe0",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-source-codex-check.4e5ce7a4edf7.raw.md"
     }
   ],
   "sourceVerdict": "A+B PASS; exact-ID callback bridge known implementation work, caller UNKNOWN remains",
   "wholeExistingClosureProposals": [],
   "lifecycleProposal": "One otherwise-unowned BehaviorDance configured lifecycle; retain caller/shared gaps",
-  "sourceQuestions": 0
+  "sourceQuestions": 1,
+  "builderRaisedMissing": [
+    {
+      "item": "Existing PlayAnimBehavior.CallToListeners is a no-op; actual native listener registration/owner not established",
+      "classification": "known iteration implementation plus shared M8-005 producer/registration gap; narrow reader question1 pending",
+      "codeProvenance": "Behaviors.cs:322 candidate is not evidence",
+      "resolution": "L1-L5 finite registration/delivery known and checked; explicit supplied unsigned native identity seam. Actual producer, identity mapping and owner lifetime UNKNOWN remain MISSING; no insertion-order or no-listener claim."
+    }
+  ],
+  "lastMainCheck": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352 unchanged after build release",
+  "currentSourceArtifacts": [
+    {
+      "phase": "listenerQ1",
+      "path": "re-analysis/research/20261030-dance-mambo-1-read.md",
+      "originalSha256": "d2c2640ab1f6680075b7cb5669813bf0846bbd24fe93c181cb138de3010af3ce",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-read.d2c2640ab1f6.raw.md"
+    },
+    {
+      "phase": "listenerQ1",
+      "path": "re-analysis/research/20261030-dance-mambo-1-source-codex-check.md",
+      "originalSha256": "4e5ce7a4edf702f916a7fac967bac1273486d26d1150ba2b58163b454570afe0",
+      "actualArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\dance-mambo-source-originals\\20261030-dance-mambo-1-source-codex-check.4e5ce7a4edf7.raw.md"
+    }
+  ],
+  "sourceQuestion1Verdict": "A+B PASS, no inventory contradiction/new departure"
 }
