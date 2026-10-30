@@ -1,6 +1,6 @@
 {
   "job": "CUBE-LIFT-WORKOUT-1",
-  "state": "CURRENT19 INTEGRATED; FULL GATE PENDING",
+  "state": "READY FOR CLAUDE",
   "sourceFiles": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-read.md",
@@ -170,7 +170,7 @@
   "newSourceAdditionsIndependentVerdict": "PASS all6; no frozeninventory contradiction",
   "managedCandidateClarification": "Existing Graph2d wrapper already delegates to f32 GraphEvaluator; only WorkoutConfig delta/epsilon/accumulation/mean needed source arithmetic.",
   "builderProvisionalLabelCorrection": "Removed inferred state labels before first coherent draft; no before-archive reconstructed or reviewer/compiler correction claimed.",
-  "dotnetLease": "rootfullgate1 aftercleanmetadata commit",
+  "dotnetLease": "returned after rootfullgate; actualnative/checkout0",
   "sourceAdditionsHistory": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-resume-source-codex-check.md",
@@ -323,5 +323,30 @@
   "workerFinalCommit": "2c0f950bdaa1b26bb77a802ddb48cc02a9e3fd1f",
   "integrationCommit": "b075545f392d478428fab3e908ff50a797d9dd9d",
   "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
-  "productionSrcTree": "95a6909f148d56bc4b8a69908bab1478bfe0e24c"
+  "productionSrcTree": "95a6909f148d56bc4b8a69908bab1478bfe0e24c",
+  "fullGate": {
+    "job": "CUBE-LIFT-WORKOUT-1",
+    "attempt": 1,
+    "state": "PASS",
+    "commit": "211471e9a0262fd5591d9f855f5ed06ea49b4798",
+    "cozmoStackTree": "9767090a5adb5032c6fa3f49eeb27ea3e3151b31",
+    "productionSrcTree": "95a6909f148d56bc4b8a69908bab1478bfe0e24c",
+    "startedUtc": "2026-10-30T17:50:21.3813636Z",
+    "endedUtc": "2026-10-30T17:58:30.9437969Z",
+    "exitCode": 0,
+    "passed": 6959,
+    "total": 6959,
+    "failed": 0,
+    "skipped": 0,
+    "testDuration": "7 m 8 s - Cozmo.Protocol.Tests.dll (net9.0)",
+    "passingFingerprint": "a4b122945e319313daf63da52499bd435d729775",
+    "fingerprintIndependentlyRecomputed": true,
+    "logSha256": "1bed074e5df2bfdafe51601b96c21ac01be95bae80099dd3fec7a48be48d29b4",
+    "consoleSha256": "232b17a8a2c6d9c95d6d429bd5c198979a6f4409ad00d1e258290044e75884b7",
+    "frozenSourcePathsMatched": 19,
+    "nativeProcesses": [],
+    "checkoutProcesses": [],
+    "officialChanges": false,
+    "hardwareRun": false
+  }
 }
