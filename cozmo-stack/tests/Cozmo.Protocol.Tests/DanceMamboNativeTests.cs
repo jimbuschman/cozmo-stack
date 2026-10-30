@@ -67,6 +67,41 @@ public sealed class DanceMamboNativeTests
         dance.Stop(BehaviorStopReason.Interrupted);
     }
 
+    // Reach: unit with supplied listener identities, StartAsync and terminal action result; actual owner and action completion.
+    [Fact]
+    public void ListenerReinitContinuesLiveOrderedSetAndPreservesReplacementAction()
+    {
+        using var f = new Fixture();
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var dance = Assert.IsType<NativeDanceBehavior>(f.Runtime.Bound["Dance_Mambo"]);
+        var visited = new List<uint>();
+        using var originalScope = new BehaviorScope();
+        using var replacementScope = new BehaviorScope();
+        IActionRunner? replacement = null; uint replacementTag = 0;
+        Listener seven = new(robot => { Assert.Same(f.Robot, robot); visited.Add(7); });
+        Listener nine = new(robot => { Assert.Same(f.Robot, robot); visited.Add(9); });
+        Listener three = new(robot =>
+        {
+            Assert.Same(f.Robot, robot); visited.Add(3);
+            dance.AddNativeListener(7, seven);
+            dance.Stop(BehaviorStopReason.Interrupted);
+            dance.StartAsync(f.Runtime.Context, replacementScope, default).GetAwaiter().GetResult();
+            replacement = dance.OwnedRunner; replacementTag = dance.CurrentRunnerTag;
+            Assert.NotNull(replacement); Assert.NotEqual(0u, replacementTag);
+        });
+        dance.AddNativeListener(3, three); dance.AddNativeListener(9, nine);
+        dance.StartAsync(f.Runtime.Context, originalScope, default).GetAwaiter().GetResult();
+        var action = Assert.IsAssignableFrom<ActionRunner>(f.Robot.ActionList.GetCurrentAction());
+        action.State = 0x03000001; f.Robot.ActionList.Update();
+        Assert.Equal(new uint[] { 3, 7, 9 }, visited);
+        Assert.True(dance.EngineRunning); Assert.Same(replacement, dance.OwnedRunner);
+        Assert.Equal(replacementTag, dance.CurrentRunnerTag);
+        Assert.Same(replacement, f.Robot.ActionList.GetCurrentAction());
+        Assert.False(replacementScope.IsDisposed); Assert.True(replacementScope.ReactionsDisabled);
+        GC.KeepAlive(three); GC.KeepAlive(seven); GC.KeepAlive(nine);
+        dance.Stop(BehaviorStopReason.Interrupted);
+    }
+
     // Reach: unit with supplied StartAsync, RNG words and retained callbacks; actual light component and active-state boundaries.
     [Fact]
     public void PriorRunCubeCallbackUsesCurrentActiveStateAndFadeStopsAllEngineLights()

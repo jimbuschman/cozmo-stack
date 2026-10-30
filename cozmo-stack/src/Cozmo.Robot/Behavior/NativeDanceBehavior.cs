@@ -107,9 +107,8 @@ internal sealed class NativeDanceBehavior : SteppedBehavior, IDisposable
     private void Listeners()
     {
         // 0x005C0254..292: unsigned native pointer order, successor read after callback.
-        long epoch = CaptureHostExecutionVersion();
         ReportMissing("M8-005 BehaviorDance: actual native listener producer and pointer identity are unavailable");
-        if (!Current(epoch)) return;
+        if (Volatile.Read(ref _retired) != 0) return;
         uint? previous = null;
         while (true)
         {
@@ -117,9 +116,9 @@ internal sealed class NativeDanceBehavior : SteppedBehavior, IDisposable
             if (next.Value is null) return;
             previous = next.Key;
             if (!next.Value.TryGetTarget(out var listener))
-            { ReportMissing("M1-034 M8-005 listener 0x005C0270: expired listener owner; skip callback"); if (!Current(epoch)) return; continue; }
+            { ReportMissing("M1-034 M8-005 listener 0x005C0270: expired listener owner; skip callback"); if (Volatile.Read(ref _retired) != 0) return; continue; }
             listener.OnDanceAnimationComplete(_robot);
-            if (!Current(epoch)) return;
+            if (Volatile.Read(ref _retired) != 0) return;
         }
     }
     private void NextLoop(long epoch)
