@@ -1,0 +1,46 @@
+{
+  "job": "CHECK-FOR-STACK-AT-INTERVAL-1",
+  "phase": "CLAUDE RETURN FIX1",
+  "state": "BOUNDED FIX SOURCE PASS; IMPLEMENTATION RELEASED, NO .NET LEASE",
+  "main": "2567528b782bd338263b404574d5682ef339ea8b",
+  "manager": "2c32772d16d8cccac3ad1b123c060a91d4353f5e",
+  "sourceFiles": [
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-fix-read.md",
+      "originalSha256": "37c0ad4e3f1915acd0241d3a9b491e8f88acbaa5bfe4c409736cba7d4523b7e0",
+      "utf8LfSha256": "cfcaef1151594c973615c1e5f5ac0f135281811badf2a0319db33a57c24f2371",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-fix-source-originals\\20261030-check-for-stack-at-interval-1-fix-read.md"
+    },
+    {
+      "path": "re-analysis/research/20261030-check-for-stack-at-interval-1-fix-source-codex-check.md",
+      "originalSha256": "2bbffb618dd5e6d31667e19250b34b0f9d512373e7d411187b773fda9bd4ff16",
+      "utf8LfSha256": "2bbffb618dd5e6d31667e19250b34b0f9d512373e7d411187b773fda9bd4ff16",
+      "actualOriginalArchive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\check-stack-fix-source-originals\\20261030-check-for-stack-at-interval-1-fix-source-codex-check.md"
+    }
+  ],
+  "currentSnapshotsMatched": [
+    "M12-033",
+    "M13-020",
+    "M8-001",
+    "M15-086"
+  ],
+  "records": 728,
+  "readerRequested": "same original gpt-6.1-sol/medium",
+  "builderRequested": "same original DEFAULT/model and effort omitted",
+  "reviewerRequested": "same original DEFAULT/model and effort omitted",
+  "actualBackend": "unobserved; operator default Terra",
+  "originalReviewerBatches": 1,
+  "originalCompilerFixes": 1,
+  "originalHarnessFixes": 1,
+  "originalSourceProseClarifications": 1,
+  "claudeReturnCorrectionBatches": 1,
+  "newReviewerRequiredCorrectionBatches": 0,
+  "newCompilerCorrections": 0,
+  "newTestRuns": 0,
+  "missingPolicy": "Directed host skip of only unavailable custom-marker above action, visible diagnostic then no-result own continuation; no fabricated ActionResult/deadline/Interrupted. Actual return callback stamps.",
+  "separateNativeBranch": "Missing located target above logs/returns with no action or stamp; do not rewrite that branch.",
+  "wholeExistingRecordClosureProposals": [],
+  "newRecordProposal": "same one otherwise-unowned lifecycle only; no record added",
+  "officialEdits": false,
+  "hardwareRun": false
+}
