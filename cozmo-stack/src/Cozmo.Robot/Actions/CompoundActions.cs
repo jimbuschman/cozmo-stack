@@ -112,6 +112,24 @@ public abstract class CompoundAction : ActionRunner
         if (ignoreFailure) _ignorePredicates[child] = static (_, _) => true;
     }
 
+    internal bool AddActionGuarded(ActionRunner child, bool ignoreFailure, Func<bool> current)
+    {
+        if(!current())return false;
+        child.Log=Log;child.SourceLog=SourceLog;child.TimeoutWarningEnabled=TimeoutWarningEnabled;child.Watcher=Watcher;
+        string? childName=child.NativeName;
+        if(!current())return false;
+        if(_nativeName is null||childName is null)
+        {
+            _nativeName=null;
+            Behavior.SteppedBehavior.ReportMissing("M8-017 AddAction native child name+0x48 missing; compound name is not derived from a CLR type");
+            if(!current())return false;
+        }
+        else _nativeName=_children.Count==0?"["+childName+"]":_nativeName[..^1]+"+"+childName+"]";
+        _children.Add(child);
+        if(ignoreFailure)_ignorePredicates[child]=static (_,_)=>true;
+        return true;
+    }
+
     /// <summary>P1: append an initial child without an ignore predicate.</summary>
     private void AppendChild(ActionRunner? child)
     {

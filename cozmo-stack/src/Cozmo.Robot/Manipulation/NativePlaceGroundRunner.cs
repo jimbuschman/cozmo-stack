@@ -3,7 +3,7 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Manipulation;
 
 // fidelity: M15-022, M12-015 — P8 actual IAction/ActionList ground recipient, not the async public adapter.
-internal sealed class NativePlaceGroundRunner:NativeVisionRunner
+internal class NativePlaceGroundRunner:NativeVisionRunner
 {
     private bool _latched;
     private uint _saved=uint.MaxValue;

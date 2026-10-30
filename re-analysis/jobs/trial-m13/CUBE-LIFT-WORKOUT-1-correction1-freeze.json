@@ -1,0 +1,17 @@
+{
+  "job": "CUBE-LIFT-WORKOUT-1",
+  "reviewerCorrectionBatch": 1,
+  "kind": "test coverage only",
+  "files": [
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CubeLiftWorkoutNativeTests.cs",
+      "beforeSha256": "f5d138ee43347ef379db89d1487fec2296ba6c8aeba45f833926ed2bafce5f63",
+      "originalAfterSha256": "7b5c9085c2201f5072f3154e3940a1b8d254992bacc8d986a50ba7a98fce1c83",
+      "filteredAfterSha256": "7b5c9085c2201f5072f3154e3940a1b8d254992bacc8d986a50ba7a98fce1c83"
+    }
+  ],
+  "patchSha256": "b716f4b3b21334f7a738c2f1beb275acaddf21da3a59cd205bd6476f899b336d",
+  "archive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-correction1",
+  "testsRun": 0,
+  "dotnetInvocations": 0
+}

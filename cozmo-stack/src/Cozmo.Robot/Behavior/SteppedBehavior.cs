@@ -794,6 +794,11 @@ public abstract partial class SteppedBehavior : IBehavior
         // IBehavior::Stop's own helper stop, first (0x005bd0f4..0x005bd108: +0xc8 set and [ctl+4]+1 != 0, then IBehavior::StopHelperWithoutCallback, no log), before +0xa1 is
         // cleared (0x005bd10c), before StopInternal (0x005bd114) and before StopActing(0,0) (0x005bd126), whose own gate then fires only if the helper is still owned.
         if (HasLiveHelper) StopHelperWithoutCallback();
+        if (!HostExecutionVersionCurrent(hostVersion))
+        {
+            if (oldTag != 0) oldList?.Cancel(oldTag);
+            return;
+        }
         _engineRunning = false;                  // IBehavior::Stop clears +0xa1 (0x005bd10c)
         OnStop(reason);                          // vtable+0x54 StopInternal (0x005bd110/0x005bd114)
         if (!HostStopContinuationCurrent(hostVersion))
@@ -875,18 +880,25 @@ public abstract partial class SteppedBehavior : IBehavior
     /// as the engine's local <c>shared_ptr</c> is destroyed when the caller returns: a helper that already ran to completion inside the push therefore has no owner once
     /// the caller lets go, and the next call skips the warn/stop (extraction 5.2).
     /// </summary>
-    protected bool SmartDelegateToHelper(HelperRef helper, Action<CozmoRobot>? onSuccess, Action<CozmoRobot>? onFailure)
+    protected bool SmartDelegateToHelper(HelperRef helper, Action<CozmoRobot>? onSuccess, Action<CozmoRobot>? onFailure, Func<bool>? current = null)
     {
         var ai = Context?.AI ?? throw new NotSupportedException(
             "IBehavior::SmartDelegateToHelper 0x005bebee..0x005bebf8 reaches the BehaviorHelperComponent through [[[this+0x2c]+0x264]+0x10]; this behaviour's context has no AIComponent");
         var robot = Context.Robot;
         robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", $"{Id}.SmartDelegateToHelper", $"Behavior requesting to delegate to helper {helper.Pointer.Name}");
+        if (current is not null && !current()) return false;
         if (_helperWeak is { IsLive: true })
         {
             robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "IBehavior.SmartDelegateToHelper", $"Attempted to start a handler while handle already running, stopping running helper");
+            if (current is not null && !current()) return false;
             StopHelperWithoutCallback();
+            if (current is not null && !current()) return false;
         }
-        bool delegated = ai.Helpers.DelegateToHelper(robot, helper, onSuccess, onFailure);
+        // A guarded host run must be able to stop its inserted helper during a synchronous
+        // callback before the native call returns and stores +C4/+C8.
+        Action? inserted=current is null?null:()=>{if(current())_helperWeak=new HelperWeakRef(helper);};
+        bool delegated = ai.Helpers.DelegateToHelper(robot, helper, onSuccess, onFailure,current,inserted);
+        if (current is not null && !current()) return delegated;
         if (delegated) _helperWeak = new HelperWeakRef(helper);
         else robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", $"{Id}SmartDelegateToHelper.Failed", $"Failed to delegate to helper");
         return delegated;

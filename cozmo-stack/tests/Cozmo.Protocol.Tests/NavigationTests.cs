@@ -943,6 +943,8 @@ public class NavigationTests
         // already the last (0x00573E24), so the first is current and the last repeats.
         Assert.Equal(high, w.GetCurrentWorkout());
         Assert.Equal(0, w.CurrentIndex);
+        // Supplied unit recipients: a non-empty configured event requires both mood and clock.
+        w.TriggerEmotionEvent=(_,_)=>true;w.ClockSec=()=>0;
         w.CompleteCurrentWorkout();
         Assert.Equal(w.Workouts[1], w.GetCurrentWorkout());
         for (int i = 0; i < 10; i++) w.CompleteCurrentWorkout();

@@ -70,6 +70,8 @@ public abstract class IHelper : BSRunnable
     private bool _initHasRun;                                         // +0x2c
     private Func<CozmoRobot, BehaviorStatus>? _successHandler;        // +0x30 (manager +0x40)
     private Func<CozmoRobot, BehaviorStatus>? _failureHandler;        // +0x48 (manager +0x58)
+    internal Func<bool>? HostCurrent {get;set;}
+    private bool HostIsCurrent()=>HostCurrent is null||HostCurrent();
     private float _startTime;                                         // +0x98
 
     /// <summary><c>IHelper::IHelper(string const&amp; name, Robot&amp;, IBehavior&amp;, BehaviorHelperFactory&amp;)</c> 0x005b6428..0x005b6490.</summary>
@@ -155,20 +157,32 @@ public abstract class IHelper : BSRunnable
     public BehaviorStatus UpdateWhileActive(CozmoRobot robot, out HelperRef? sub)
     {
         sub = null;
+        if(!HostIsCurrent())return _status;
         if (_initHasRun)
         {
-            CommitReturnedStatus(UpdateWhileActiveInternal(robot));
+            var result=UpdateWhileActiveInternal(robot);
+            if(!HostIsCurrent())return _status;
+            CommitReturnedStatus(result);
         }
         else
         {
             Log(EngineLogLevel.Debug, "Events", "robot.behavior_helper.start", Name);       // sEventF (no DAS sink in this stack)
+            if(!HostIsCurrent())return _status;
             Log(EngineLogLevel.Info, "BehaviorHelpers", "IHelper.Init", Name);
+            if(!HostIsCurrent())return _status;
             _initHasRun = true;
             _startTime = robot.Engine.Timer.SecondsF;
-            CommitReturnedStatus(Init(robot));
+            var result=Init(robot);
+            if(!HostIsCurrent())return _status;
+            CommitReturnedStatus(result);
             if (_status == BehaviorStatus.Running && Delegation.Delegate is null)
-                CommitReturnedStatus(UpdateWhileActiveInternal(robot));
+            {
+                result=UpdateWhileActiveInternal(robot);
+                if(!HostIsCurrent())return _status;
+                CommitReturnedStatus(result);
+            }
         }
+        if(!HostIsCurrent())return _status;
         if (Delegation.Delegate is { } delegateRef)
         {
             sub = delegateRef.Copy();
@@ -186,7 +200,8 @@ public abstract class IHelper : BSRunnable
     public BehaviorStatus OnDelegateSuccess(CozmoRobot robot)
     {
         Log(EngineLogLevel.Debug, "BehaviorHelpers", "IHelper.OnDelegateSuccess", Name);
-        if (_successHandler is { } handler) _status = handler(robot);
+        if(!HostIsCurrent())return _status;
+        if (_successHandler is { } handler) {var result=handler(robot);if(!HostIsCurrent())return _status;_status=result;}
         _successHandler = null;
         return _status;
     }
@@ -199,7 +214,8 @@ public abstract class IHelper : BSRunnable
     public BehaviorStatus OnDelegateFailure(CozmoRobot robot)
     {
         Log(EngineLogLevel.Info, "BehaviorHelpers", "IHelper.OnDelegateFailure", Name);
-        if (_failureHandler is { } handler) _status = handler(robot);
+        if(!HostIsCurrent())return _status;
+        if (_failureHandler is { } handler) {var result=handler(robot);if(!HostIsCurrent())return _status;_status=result;}
         _successHandler = null;
         return _status;
     }
@@ -218,8 +234,11 @@ public abstract class IHelper : BSRunnable
     public void Stop(bool first)
     {
         Log(EngineLogLevel.Info, "BehaviorHelpers", "IHelper.Stop", $"{Name} isActive={(first ? 1 : 0)}, IsActing={(IsActing() ? 1 : 0)}");
+        if(!HostIsCurrent())return;
         LogStopEvent(first);
+        if(!HostIsCurrent())return;
         if (first && _behavior.HasCurrentAction) _behavior.StopActingFromHelper(keepAction: false);
+        if(!HostIsCurrent())return;
         OnStopSlot24(first);
     }
 
@@ -245,6 +264,7 @@ public abstract class IHelper : BSRunnable
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "IHelper.Stop.InvalidTime",
                 FormattableString.Invariant($"{Name}: Negative duration {duration} secs (started {(double)_startTime:F6}, stopped {(double)now:F6})"));
+            if(!HostIsCurrent())return;
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             duration = 0;
         }

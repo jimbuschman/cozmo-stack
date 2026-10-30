@@ -8,6 +8,8 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
 {
     private readonly ManipulationSystem _m;
     private readonly SteppedBehavior _parent;
+    private readonly Func<bool>? _hostCurrent;
+    private bool Current()=>_hostCurrent is null||_hostCurrent();
     private bool _useApproach,_specialRetry;
     private float _approach;
     internal void SetApproachAngle(float angle){_useApproach=true;_approach=new Radians(angle).Value;_specialRetry=true;}
@@ -19,20 +21,24 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
     internal uint Attempts {get;private set;}
     internal NativeDriveToObjectRunner? Runner {get;private set;}
     internal NativeSearchForBlockHelper? SearchHelper {get;private set;}
-    internal NativeDriveToHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,bool force,PreActionType type=PreActionType.Docking)
-        :base(m.Robot,"DriveTo",parent,factory){_m=m;_parent=parent;Target=target;Force=force;ActionType=type;}
+    internal NativeDriveToHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,bool force,PreActionType type=PreActionType.Docking,Func<bool>? hostCurrent=null)
+        :base(m.Robot,"DriveTo",parent,factory){_m=m;_parent=parent;_hostCurrent=hostCurrent;HostCurrent=hostCurrent;Target=target;Force=force;ActionType=type;}
     public override bool ShouldCancelDelegates(CozmoRobot robot)=>false;
     protected override BehaviorStatus Init(CozmoRobot robot)
     {
-        var snapshot=_m.NativeMainSnapshot();lock(_snapshotGate){_snapshot?.Dispose();_snapshot=snapshot;}
+        if(!Current())return Status;
+        var snapshot=_m.NativeMainSnapshot();if(!Current()){snapshot.Dispose();return Status;}lock(_snapshotGate){_snapshot?.Dispose();_snapshot=snapshot;}
         Drive();return Status;
     }
     protected override BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot)=>Status;
     private void Drive()
     {
+        if(!Current())return;
         if(Attempts>=3){StoreStatus(BehaviorStatus.Failure);return;}
         Attempts=unchecked(Attempts+1);
-        var runner=new NativeDriveToObjectRunner(_m,Target,ActionType);Runner=runner;
+        var runner=new NativeDriveToObjectRunner(_m,Target,ActionType);
+        if(!Current()){runner.RetireNeverAdmittedTree();return;}
+        Runner=runner;
         runner.Action.UseApproachAngle=_useApproach;runner.Action.ApproachAngleRad=_approach;
         if(Force)
         {
@@ -50,10 +56,11 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
             });
         }
         runner.Unavailable=error=>Unavailable(runner.Tag,error);
-        _parent.StartActing(runner,Respond);
+        _parent.StartActing(runner,Respond,_hostCurrent);
     }
     internal void Respond(RobotCompletedAction completed)
     {
+        if(!Current())return;
         uint result=completed.Result;
         switch(result)
         {
@@ -66,7 +73,8 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
                 if(ActionType==PreActionType.Rolling&&_specialRetry){_specialRetry=false;_useApproach=false;Drive();}return; //005B5C94..5EFF type4 retries once only while104 set.
             case 0x0300001D:
                 if(_m.World.GetLocatedObjectByIdHelper(Target) is null){StoreStatus(BehaviorStatus.Failure);return;}
-                var search=Factory.CreateNativeSearchForBlock(_m,_parent,Target,1);SearchHelper=(NativeSearchForBlockHelper)search.Pointer;
+                var search=Factory.CreateNativeSearchForBlock(_m,_parent,Target,1,_hostCurrent);
+                if(!Current()){search.Release();return;}SearchHelper=(NativeSearchForBlockHelper)search.Pointer;
                 Delegation.Delegate=search;
                 Delegation.OnSuccessHandler=_=>{Drive();return Status;};
                 Delegation.OnFailureHandler=_=>BehaviorStatus.Failure;
@@ -77,10 +85,12 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
     }
     private void Unavailable(uint tag,NativeActionUnavailable error)
     {
+        if(!Current())return;
         SteppedBehavior.ReportMissing(error.ToString());
+        if(!Current())return;
         _m.Robot.Engine.Robot!.ActionList.DeferHostCleanup(()=>
         {
-            if(_parent.CurrentRunnerTag!=tag)return;
+            if(!Current()||_parent.CurrentRunnerTag!=tag)return;
             var manager=_m.Robot.Engine.Robot!.BehaviorManagerOwner;
             if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,_m.Robot.Engine.Timer.SecondsF);
             else _parent.Stop(BehaviorStopReason.Interrupted);

@@ -1,0 +1,3 @@
+# CUBE-LIFT-WORKOUT-1 post-test harness correction 1
+
+Reference1 built successfully and completed 852 passed, 2 failed, 0 skipped. B and root classified the two diagnostic-reentry failures as process-wide dedup test setup. Both tests now clear the static missing-report set immediately before installing their listener; assertions, timing and production code are unchanged. Frozen 17 source/test files retain original and filtered bytes plus git blob hashes; reference1 TRX, names, inputs, binaries and extra test-generated log remain preserved. Reviewer rounds 2, post-test harness corrections 1, compiler corrections 0, source questions 5. B affected test-diff check pending; no rerun or .NET since reference1.

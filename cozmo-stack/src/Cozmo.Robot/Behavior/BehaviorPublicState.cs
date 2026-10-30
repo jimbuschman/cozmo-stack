@@ -87,7 +87,7 @@ internal sealed class BehaviorPublicStateBroadcaster
     internal void UpdateActivity(byte activity){lock(Gate){_state=_state with{Activity=activity};SendUpdatedState();}}
     internal void UpdateRequestingGame(byte value){lock(Gate){_state=_state with{Requesting=value};SendUpdatedState();}}
     internal void UpdateStackHeight(byte value){lock(Gate){if(_state.StackHeight==value)return;_state=_state with{StackHeight=value};SendUpdatedState();}}
-    internal void UpdateBroadcastBehaviorStage(int tag,uint stage)
+    internal void UpdateBroadcastBehaviorStage(int tag,uint stage,Func<bool>? current=null)
     {
         lock(Gate)
         {
@@ -102,6 +102,7 @@ internal sealed class BehaviorPublicStateBroadcaster
                 else Info("PublicStateBroadcaster.UpdateUserFacingBehaviorStage.UpdatingStage",FormattableString.Invariant($"Updating stage type {names(tag)??"(null)"} to stage {unchecked((int)stage)}"));
             }
             else Missing("BehaviorStageTag EnumToString at 0x0064DA72/0x0064DA7A/0x0064DAF6: stage Info name input absent; checked field store/emission proceed");
+            if(current is not null&&!current())return;
             _state=_state with{StageTag=unchecked((byte)tag),Stages=unchecked(stage*0x01010101u)};
             SendUpdatedState();
         }

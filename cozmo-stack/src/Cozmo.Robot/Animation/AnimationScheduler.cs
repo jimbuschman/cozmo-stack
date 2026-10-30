@@ -1297,8 +1297,8 @@ public sealed class AnimationScheduler
                 _idleMs = 0;
                 if (_endSent && !_streaming.HasFramesLeft && Stream.IsEmpty)
                 {
-                    _loopCounter++;
-                    if (unchecked((uint)(_numLoops - 1)) >= (uint)_loopCounter)
+                    _loopCounter=unchecked(_loopCounter+1);
+                    if (unchecked((uint)(_numLoops - 1)) >= unchecked((uint)_loopCounter))
                         { InitStreamLocked(_streaming, _tagCounter); return 0; }
                     else
                     {
