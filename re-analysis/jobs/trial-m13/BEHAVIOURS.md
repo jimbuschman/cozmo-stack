@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-29. **0 finished · 37 in progress · 141 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
+Whole-behavior scoreboard, 2026-10-29. **0 finished · 38 in progress · 140 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -64,7 +64,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `Hiking_BringCubeToBeacon` | `BringCubeToBeacon` | in progress | HIKING-BRING-CUBE-TO-BEACON-1 READY FOR CLAUDE; native own path, full6866 PASS, affected715+36 exact replays. Parent/shared gaps and detector-seam limit remain; no finished/hardware claim | freeplay: Hiking. 1 refs; R025+ in map |
 | `SparksBringCubeToBeacon` | `BringCubeToBeacon` | in progress | SPARKS-BRING-CUBE-TO-BEACON-1 READY; native configured leaf/Gather delegate, affected981+exact981 and full6895 PASS. Upstream/sibling/shared gaps remain, no finished claim | spark: GatherCubes. 1 refs; R200+ in map |
 | `CantHandleTallStack` | `CantHandleTallStack` | in progress | CANT-HANDLE-TALL-STACK-1 claimed; complete native own path/caller read open, no build/test/finished claim | No explicit config reference; native/app use UNKNOWN |
-| `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | not started | UNKNOWN | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
+| `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | in progress | CHECK-FOR-STACK-AT-INTERVAL-1 independent read open while TallStack approval pending; no build/test/finished claim | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
 | `CubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | freeplay: PlayAlone. 1 refs; R065+ in map |
 | `SparksCubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | spark: SparksWorkout. 1 refs; R240+ in map |
 | `Dance_Mambo` | `Dance` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
@@ -271,4 +271,5 @@ Paths are relative to shipped `config/engine/behaviorSystem/`; `/` means the ass
 [AGENTS.md](../../../AGENTS.md) remains authoritative: operator2026-10-09 replaces app/Unity/Android/socket machinery while preserving engine API/output/state and named host inputs; SDK mode (including CodeLab/Edu) is not supported. Operator2026-10-14 excludes firmware update; M1-040 accepts firmware per2026-10-09 decision. These exclude named entry paths, not every behavior ID that could share one. All178 asset rows remain, including developer tests and the51 IDs without an explicit config reference. No class/ID is excluded merely for its name, folder or current lack of a caller.
 
 ADP-1 changes only the approved per-sample DSP arithmetic boundary; other audio behavior/RNG/timing remains exact. “No effect” still needs source evidence; “not supported” needs the applicable recorded decision. This scoreboard creates neither.
+
 
