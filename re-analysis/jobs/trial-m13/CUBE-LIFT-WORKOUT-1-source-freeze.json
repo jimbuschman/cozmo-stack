@@ -1,6 +1,6 @@
 {
   "job": "CUBE-LIFT-WORKOUT-1",
-  "state": "CURRENT19 CODE/REFERENCE862/EXACT862 PASS; INTEGRATION/FULL GATE PENDING",
+  "state": "CURRENT19 INTEGRATED; FULL GATE PENDING",
   "sourceFiles": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-read.md",
@@ -170,7 +170,7 @@
   "newSourceAdditionsIndependentVerdict": "PASS all6; no frozeninventory contradiction",
   "managedCandidateClarification": "Existing Graph2d wrapper already delegates to f32 GraphEvaluator; only WorkoutConfig delta/epsilon/accumulation/mean needed source arithmetic.",
   "builderProvisionalLabelCorrection": "Removed inferred state labels before first coherent draft; no before-archive reconstructed or reviewer/compiler correction claimed.",
-  "dotnetLease": "none; B returned shutdown0/postnative0",
+  "dotnetLease": "rootfullgate1 aftercleanmetadata commit",
   "sourceAdditionsHistory": [
     {
       "path": "re-analysis/research/20261030-cube-lift-workout-1-resume-source-codex-check.md",
@@ -320,5 +320,8 @@
     "preflight": "Actual CIMguard reportedexecuted; empty pipeline did not write snapshotfile. No retainedpreflightartifact claimed or reconstructed.",
     "checkout": "Onlynewuntrackedfinal-builder-report duringreplay outside3755inputs; no trackedchanges"
   },
-  "workerFinalCommit": "2c0f950bdaa1b26bb77a802ddb48cc02a9e3fd1f"
+  "workerFinalCommit": "2c0f950bdaa1b26bb77a802ddb48cc02a9e3fd1f",
+  "integrationCommit": "b075545f392d478428fab3e908ff50a797d9dd9d",
+  "originMain": "e6680b0249bc064dd02e8a9bb9bccd1a8f8e4352",
+  "productionSrcTree": "95a6909f148d56bc4b8a69908bab1478bfe0e24c"
 }
