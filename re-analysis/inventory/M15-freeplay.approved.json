@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-30",
+  "approved": "2026-10-31",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "56375422071ad8e537028984e08b0291968bfb5d33d87f4c93146b2bb21d34e0",
+  "inventory_sha256": "713fc8612ea63b3ac072a5957af20cc0740b8a3d5a5353cc3b3187184b629d7c",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1146,6 +1146,21 @@
         "Callback 0x005CAC54..0x005CACA6: u8 wrap, remainder on the wrapped byte, index reset only on loop, no result branch.",
         "SwitchToBehaviorBase 0x005A1E76..0x005A1E94 logs a non-runnable behaviour and starts it anyway; the chooser route is gated at 0x0060AD92..0x0060AD96.",
         "re-analysis/research/20261030-dev-turn-in-place-test-1-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-093": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "NeedsManager daily star machine: UpdateStarsState, the calendar-day compare, StarUnlocked and StarLevelCompleted, level completion and ProcessLevelRewards",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "UpdateStarsState 0x00696AAC: map entry for key 2 at +0x84 and the bool argument gate 0x00696AB2..0x00696AEC; returns 0 on the early exits and when the local calendar day is unchanged (tm_yday and tm_year, 0x00696B5A..0x00696B6E).",
+        "Day change 0x00696BBA..0x00696BE2: stores the clock at +0x60, increments +0x58, sends StarUnlocked, calls SendStarLevelCompletedToGame when +0x58 >= +0x5C, then PossiblyStartWriteToRobot(true); returns 1.",
+        "StarUnlocked 0x006986DA..0x00698704, MessageEngineToGame tag 103 at 0x00726624..0x00726632: three words from +0x54, +0x5C, +0x58 in that order.",
+        "SendStarLevelCompletedToGame 0x00698758..0x006987D4: ProcessLevelRewards for prior levels, then the current level; NeedsState SetStarLevel 0x0069CBBC..0x0069CBC8; message tag 102 with +0x54, +0x5C and the NeedsReward vector.",
+        "RegisterNeedsActionCompleted calls UpdateStarsState(false) at 0x0069636E and skips the sparks reward when it returns non-zero (0x00696372..0x00696374).",
+        "re-analysis/research/20261031-m15-071-gates-chatgpt-extraction.md; re-analysis/research/20261031-m15-071-gates-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

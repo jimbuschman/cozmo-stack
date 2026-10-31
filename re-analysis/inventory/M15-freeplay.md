@@ -1174,3 +1174,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorDevTurnInPlaceTest gates 0x005CA8F6, Init 0x005CA918, construction 0x005CAA32..0x005CAA9A, callback 0x005CAC54 | M15-092 (new) |
+
+## M15-071 reward gates, the daily star machine (operator approved 2026-10-31; research/20261031-m15-071-gates-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: NeedsManager UpdateStarsState 0x00696AAC, StarUnlocked 0x006986DA (tag 103), level completion 0x00698758 (tag 102), ProcessLevelRewards 0x006993F8 | M15-093 (new) |

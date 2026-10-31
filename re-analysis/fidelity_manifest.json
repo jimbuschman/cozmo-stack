@@ -264,7 +264,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-30",
+        "approved": "2026-10-31",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -13957,7 +13957,7 @@
         "The stack's public SparksRewardAwarded (Needs.cs:828) is queued with no payload and returns early when !SparksRewardPending (Needs.cs:841)."
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "New (manager, 2026-10-18; B-M1-7 census). To read: the three callers' guards (does any call without a pending reward, which the native body would still broadcast?) and the writers of +0x3DC (the amount). Open stack differences: the amount is not carried (the 'app's economy' comment is not a recorded decision), and the early return on !SparksRewardPending has no source. Not an exclusion.",
+      "unresolved": "New (manager, 2026-10-18; B-M1-7 census). To read: the three callers' guards (does any call without a pending reward, which the native body would still broadcast?) and the writers of +0x3DC (the amount). Open stack differences: the amount is not carried (the 'app's economy' comment is not a recorded decision), and the early return on !SparksRewardPending has no source. Not an exclusion. Gates read 2026-10-31 (research/20261031-m15-071-gates-claude-check.md): ChatGPT extractions checked by Claude. The stack's reward gate, amount and display key are still unbuilt; the star machine this record depends on is M15-093.",
       "hardware_required": false,
       "live_path": true,
       "test": "none for the native broadcast.",
@@ -14533,6 +14533,28 @@
       "hardware_required": false,
       "live_path": true,
       "test": "DevTurnInPlaceNativeTests"
+    },
+    {
+      "id": "M15-093",
+      "subsystem": "M15-freeplay",
+      "title": "NeedsManager daily star machine: UpdateStarsState, the calendar-day compare, StarUnlocked and StarLevelCompleted, level completion and ProcessLevelRewards",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "UpdateStarsState 0x00696AAC: map entry for key 2 at +0x84 and the bool argument gate 0x00696AB2..0x00696AEC; returns 0 on the early exits and when the local calendar day is unchanged (tm_yday and tm_year, 0x00696B5A..0x00696B6E).",
+        "Day change 0x00696BBA..0x00696BE2: stores the clock at +0x60, increments +0x58, sends StarUnlocked, calls SendStarLevelCompletedToGame when +0x58 >= +0x5C, then PossiblyStartWriteToRobot(true); returns 1.",
+        "StarUnlocked 0x006986DA..0x00698704, MessageEngineToGame tag 103 at 0x00726624..0x00726632: three words from +0x54, +0x5C, +0x58 in that order.",
+        "SendStarLevelCompletedToGame 0x00698758..0x006987D4: ProcessLevelRewards for prior levels, then the current level; NeedsState SetStarLevel 0x0069CBBC..0x0069CBC8; message tag 102 with +0x54, +0x5C and the NeedsReward vector.",
+        "RegisterNeedsActionCompleted calls UpdateStarsState(false) at 0x0069636E and skips the sparks reward when it returns non-zero (0x00696372..0x00696374).",
+        "re-analysis/research/20261031-m15-071-gates-chatgpt-extraction.md; re-analysis/research/20261031-m15-071-gates-claude-check.md"
+      ],
+      "effect": "when the app-facing star and level-completed reports are delivered and with what payload, the stored star state, the rewards granted at level completion, and whether a sparks reward is skipped on the action that crosses a day",
+      "provenance": "ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.",
+      "unresolved": "Not built. Unread: ProcessLevelRewards 0x006993F8 (reward branches, inventory changes, messages), the helper 0x0069CB20, LocalNotifications::Generate 0x004BD3D4 downstream, and whether +0x54 is updated before the StarLevelCompleted read at 0x006987AC. Needs.cs:632 calling this the app's is contradicted by the native code. Depends on the owner of inventory type 1.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     }
   ]
 }

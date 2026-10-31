@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **734 records** over 16 subsystems.
+Manifest of **735 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 360 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 361 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 92 | 4 | 78 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 93 | 4 | 79 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -297,7 +297,7 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 * rests on: function body read by the B-M1-7 delivery check; callers' guards not read
 * best authority: NeedsManager::SparksRewardCommunicatedToUser 0x00696E64: store 0 at +0x3D8 (0x00696E78), MessageEngineToGame(FreeplaySparksAwarded&&) from +0x3DC (0x00696E82..0x00696E88), external interface vtable +0x1C Broadcast (0x00696E80, call 0x00696E90)
 * evidence: SparksRewardCommunicatedToUser 0x00696E64 clears the pending flag (+0x3D8, 0x00696E78) and builds FreeplaySparksAwarded from the amount at +0x3DC (0x00696E82..0x00696E88), then calls the E2G Broadcast(&&) through the external interface vtable +0x1C (0x00696E90). It has no pending-flag test (research/20261018-b-m1-7-check-delivery.md finding 1).; Callers named in Needs.cs: IActivity::OnDeselected 0x005B3548, BehaviorEarnedSparks::StopInternal 0x005DAF7C, and RegisterNeedsActionCompleted; whether they guard the call on the pending flag is unread.; The stack's public SparksRewardAwarded (Needs.cs:828) is queued with no payload and returns early when !SparksRewardPending (Needs.cs:841).
-* outstanding: New (manager, 2026-10-18; B-M1-7 census). To read: the three callers' guards (does any call without a pending reward, which the native body would still broadcast?) and the writers of +0x3DC (the amount). Open stack differences: the amount is not carried (the 'app's economy' comment is not a recorded decision), and the early return on !SparksRewardPending has no source. Not an exclusion.
+* outstanding: New (manager, 2026-10-18; B-M1-7 census). To read: the three callers' guards (does any call without a pending reward, which the native body would still broadcast?) and the writers of +0x3DC (the amount). Open stack differences: the amount is not carried (the 'app's economy' comment is not a recorded decision), and the early return on !SparksRewardPending has no source. Not an exclusion. Gates read 2026-10-31 (research/20261031-m15-071-gates-claude-check.md): ChatGPT extractions checked by Claude. The stack's reward gate, amount and display key are still unbuilt; the star machine this record depends on is M15-093.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -3952,6 +3952,15 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Ctor defaults runs 1, loop 0 at 0x005CA57A..0x005CA57C; parse 0x005CA598..0x005CA6FE; stores 0x005CA726..0x005CA72C.; Own gate false 0x005CA8F6; vtable +0x20 0x005BF04C, +0x24 0x0059EC12, +0x28 0x005CAD80 return 0; +0x4C base Resume; +0x54 empty Stop 0x005CAD30.; Lock table 0x00C60D40: 21 pairs. Init 0x005CA918..0x005CA946; 0x005CA902..0x005CA916 and Reset 0x005CA94C zero only the index and counters, keeping the vector.; Generate: factor 0x3C8EFA35 (0x005CAB4C); constructs TurnInPlaceAction 0x005CAA32, WaitAction 0x005CAA8C, CompoundActionSequential 0x005CAA9A, then AddAction 0x005CAAB2 and 0x005CAACC. Each ctor draws a tag through IActionRunner 0x0053FDB0.; Callback 0x005CAC54..0x005CACA6: u8 wrap, remainder on the wrapped byte, index reset only on loop, no result branch.; SwitchToBehaviorBase 0x005A1E76..0x005A1E94 logs a non-runnable behaviour and starts it anyway; the chooser route is gated at 0x0060AD92..0x0060AD96.; re-analysis/research/20261030-dev-turn-in-place-test-1-claude-check.md
 * outstanding: Built; not settled: the original app initiator is UNKNOWN; the public manager entry starts it despite a false IsRunnable. M1-034 skip: empty tests read null at 0x005CA984. nRuns 0 reaches imported __aeabi_uidivmod at 0x005CAC60, implemented in the phone's libc (not shipped), so its result is UNKNOWN; the stack logs a MISSING and schedules nothing; shipped nRuns is 1. Excludes the factory (M7-018), reaction locks (M7-014), TurnInPlace (M13-022), and shared action owners (M8-001/015/017). Queued: inventory row 950 says "clears vector"; cite GetSubActionResults 0x0053FA4C..0x0053FA66 for the test's {0} expectation.
+
+**M15-093 — NeedsManager daily star machine: UpdateStarsState, the calendar-day compare, StarUnlocked and StarLevelCompleted, level completion and ProcessLevelRewards** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: when the app-facing star and level-completed reports are delivered and with what payload, the stored star state, the rewards granted at level completion, and whether a sparks reward is skipped on the action that crosses a day
+* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: UpdateStarsState 0x00696AAC: map entry for key 2 at +0x84 and the bool argument gate 0x00696AB2..0x00696AEC; returns 0 on the early exits and when the local calendar day is unchanged (tm_yday and tm_year, 0x00696B5A..0x00696B6E).; Day change 0x00696BBA..0x00696BE2: stores the clock at +0x60, increments +0x58, sends StarUnlocked, calls SendStarLevelCompletedToGame when +0x58 >= +0x5C, then PossiblyStartWriteToRobot(true); returns 1.; StarUnlocked 0x006986DA..0x00698704, MessageEngineToGame tag 103 at 0x00726624..0x00726632: three words from +0x54, +0x5C, +0x58 in that order.; SendStarLevelCompletedToGame 0x00698758..0x006987D4: ProcessLevelRewards for prior levels, then the current level; NeedsState SetStarLevel 0x0069CBBC..0x0069CBC8; message tag 102 with +0x54, +0x5C and the NeedsReward vector.; RegisterNeedsActionCompleted calls UpdateStarsState(false) at 0x0069636E and skips the sparks reward when it returns non-zero (0x00696372..0x00696374).; re-analysis/research/20261031-m15-071-gates-chatgpt-extraction.md; re-analysis/research/20261031-m15-071-gates-claude-check.md
+* outstanding: Not built. Unread: ProcessLevelRewards 0x006993F8 (reward branches, inventory changes, messages), the helper 0x0069CB20, LocalNotifications::Generate 0x004BD3D4 downstream, and whether +0x54 is updated before the StarLevelCompleted read at 0x006987AC. Needs.cs:632 calling this the app's is contradicted by the native code. Depends on the owner of inventory type 1.
 
 ## What remains after both: blocked externally, or needing hardware
 
