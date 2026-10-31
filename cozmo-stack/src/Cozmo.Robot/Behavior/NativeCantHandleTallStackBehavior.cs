@@ -12,6 +12,7 @@ internal interface ITallStackWeakTarget
     bool TryLock(out (uint Bottom, int Height)? value);
 }
 
+// fidelity: M15-087
 // Proposed lifecycle owner; M15-012 owns only the disappointment trigger/update slice.
 internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisposable
 {

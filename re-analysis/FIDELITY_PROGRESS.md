@@ -8,14 +8,14 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 239 |
-| EQUIVALENT_IMPLEMENTATION | 6 |
+| EXACT_SOURCE | 259 |
+| EQUIVALENT_IMPLEMENTATION | 8 |
 | COMPATIBILITY_POLICY | 68 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 358 |
+| IMPLEMENTATION_GAP | 360 |
 | RECOVERABLE_GAP | 23 |
-| **total** | **710** |
+| **total** | **734** |
 
 ## Subsystems
 
@@ -27,15 +27,15 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M4-control | ACCEPTED | 2026-10-19 | 52 | 40 | 9 | 3 | 0 | 0 | 0 |
 | M5-animation | ACCEPTED | 2026-10-19 | 65 | 53 | 11 | 1 | 0 | 0 | 0 |
 | M6-wwise-bank | INVENTORY_APPROVED | 2026-10-18 | 45 | 1 | 2 | 0 | 38 | 4 | 41 |
-| M7-behaviour | INVENTORY_APPROVED | 2026-10-16 | 29 | 4 | 0 | 0 | 23 | 2 | 24 |
+| M7-behaviour | INVENTORY_APPROVED | 2026-10-30 | 31 | 7 | 0 | 0 | 22 | 2 | 23 |
 | M8-framework | INVENTORY_APPROVED | 2026-10-16 | 27 | 0 | 1 | 0 | 24 | 2 | 26 |
 | M9-wwise-music | INVENTORY_APPROVED | 2026-10-16 | 46 | 5 | 2 | 1 | 37 | 1 | 38 |
 | M10-derived | INVENTORY_APPROVED | 2026-10-16 | 17 | 3 | 0 | 0 | 14 | 0 | 14 |
-| M11-vision | INVENTORY_APPROVED | 2026-10-19 | 97 | 14 | 1 | 1 | 75 | 6 | 81 |
-| M12-manipulation | INVENTORY_APPROVED | 2026-10-16 | 49 | 8 | 1 | 1 | 37 | 2 | 38 |
-| M13-navigation | INVENTORY_APPROVED | 2026-10-21 | 40 | 3 | 0 | 1 | 35 | 1 | 34 |
-| M14-faces | INVENTORY_APPROVED | 2026-10-18 | 14 | 1 | 0 | 1 | 11 | 1 | 12 |
-| M15-freeplay | INVENTORY_APPROVED | 2026-10-25 | 74 | 3 | 1 | 2 | 64 | 4 | 68 |
+| M11-vision | INVENTORY_APPROVED | 2026-10-19 | 97 | 15 | 1 | 1 | 74 | 6 | 80 |
+| M12-manipulation | INVENTORY_APPROVED | 2026-10-28 | 52 | 15 | 1 | 1 | 33 | 2 | 34 |
+| M13-navigation | INVENTORY_APPROVED | 2026-10-28 | 41 | 9 | 1 | 1 | 29 | 1 | 28 |
+| M14-faces | INVENTORY_APPROVED | 2026-10-29 | 14 | 1 | 0 | 1 | 11 | 1 | 12 |
+| M15-freeplay | INVENTORY_APPROVED | 2026-10-30 | 92 | 6 | 2 | 2 | 78 | 4 | 82 |
 | tools | UNREVIEWED |  | 5 | 1 | 4 | 0 | 0 | 0 | 0 |
 
 ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M4-control, M5-animation.
@@ -45,4 +45,4 @@ ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M4-control, M5-animat
 | level | records |
 | --- | ---: |
 | HARDWARE_VERIFIED | 11 |
-| NONE | 699 |
+| NONE | 723 |

@@ -4,6 +4,7 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M15-092
 // DEV-TURN-IN-PLACE-TEST-1: own path 0x005CA550..0x005CAD80; caller bypass remains UNKNOWN.
 // Shared reaction, action and completion owners remain M7-014, M8-001/015/017 and M13-022 gaps.
 internal sealed class NativeDevTurnInPlaceTestBehavior : SteppedBehavior, IDisposable

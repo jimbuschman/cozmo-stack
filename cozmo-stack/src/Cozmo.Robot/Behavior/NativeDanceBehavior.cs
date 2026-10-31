@@ -8,6 +8,7 @@ namespace Cozmo.Robot.Behavior;
 
 internal interface INativeDanceListener { void OnDanceAnimationComplete(EngineRobot robot); }
 
+// fidelity: M15-090
 // DANCE-MAMBO-1 D1-D12: 0x005ED438..0x005EDFCA; shared owners retain their gaps.
 internal sealed class NativeDanceBehavior : SteppedBehavior, IDisposable
 {

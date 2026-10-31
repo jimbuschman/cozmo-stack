@@ -1138,3 +1138,39 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: BehaviorExploreBringCubeToBeacon ctor 0x005DEFB0 and LoadConfig, gates (vtable 0x0102957C, 0x005E0DF0), IsRunnableInternal 0x005DF10C, Init 0x005DF348, Stop 0x005DFD50 | M15-086 (new) |
+
+## CANT-HANDLE-TALL-STACK-1, the CantHandleTallStack lifecycle (operator approved 2026-10-30; research/20261030-cant-handle-tall-stack-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorCantHandleTallStack ctor 0x005ECB10, runnable 0x005ECD64, Init 0x005ECE3C, looking 0x005ECEA4, Stop 0x005ED064, AlwaysHandle 0x005ED240 | M15-087 (new) |
+
+## CHECK-FOR-STACK-AT-INTERVAL-1, the CheckForStackAtInterval lifecycle (operator approved 2026-10-30; research/20261030-check-for-stack-at-interval-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorCheckForStackAtInterval ctor 0x005D720C, runnable 0x005D732E, UpdateTargetBlocks 0x005D7934, Init 0x005D736A, callbacks 0x005D7CB2 and 0x005D7D36, Stop 0x005D73BA | M15-088 (new) |
+
+## CUBE-LIFT-WORKOUT-1 and SPARKS-CUBE-LIFT-WORKOUT-1, the workout lifecycle (operator approved 2026-10-30; research/20261030-cube-lift-workout-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorCubeLiftWorkout gates and Init 0x005D7E88, PickingUp 0x005D8064, PostLift 0x005D7F54, triggers 0x005D844C, CheckPutDown 0x005D8866, EndIteration 0x005D89FA, Stop 0x005D8174 | M15-089 (new) |
+
+## DANCE-MAMBO-1, the Dance lifecycle (operator approved 2026-10-30; research/20261030-dance-mambo-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorDance ctor 0x005ED438, Init 0x005ED460, lock table 0x00C6F1C8, body 0x005C0174, fade 0x005EDFCA | M15-090 (new) |
+
+## DRIVE-IN-DESPERATION-ENERGY-1 and DRIVE-IN-DESPERATION-REPAIR-1, the DriveInDesperation lifecycle (operator approved 2026-10-30; research/20261030-drive-in-desperation-energy-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorDriveInDesperation ctor 0x005D8AE0, Init 0x005D8ECA, selection 0x005D9D5C, random pose 0x005D92E2, rounds 0x005D9F14 | M15-091 (new) |
+
+## DEV-TURN-IN-PLACE-TEST-1, the DevTurnInPlaceTest lifecycle (operator approved 2026-10-30; research/20261030-dev-turn-in-place-test-1-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: BehaviorDevTurnInPlaceTest gates 0x005CA8F6, Init 0x005CA918, construction 0x005CAA32..0x005CAA9A, callback 0x005CAC54 | M15-092 (new) |

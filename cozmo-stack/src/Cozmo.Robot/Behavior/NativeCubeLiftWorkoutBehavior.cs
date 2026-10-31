@@ -4,6 +4,7 @@ using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M15-089
 // Ordinary and Spark configured CubeLiftWorkout: shared class 005D7E50..005D8A54; factory 0059CA12..22.
 // Shared helper, action, carrying, mood, needs and public-state owners retain their own gaps.
 // fidelity: M13-010

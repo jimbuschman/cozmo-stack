@@ -4,6 +4,7 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M15-088
 // fidelity: M8-001, M12-033, M13-020
 // Configured BehaviorCheckForStackAtInterval; shared action/geometry frontiers remain MISSING.
 internal sealed class NativeCheckForStackAtIntervalBehavior : SteppedBehavior, IDisposable

@@ -14396,6 +14396,143 @@
       "hardware_required": false,
       "live_path": true,
       "test": "HikingBringBeaconCandidatesTests; BringBeaconQueueAdmissionTests"
+    },
+    {
+      "id": "M15-087",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorCantHandleTallStack lifecycle: constructor and config, the three vtable gates, IsRunnableInternal (unlock 5, derived UpdateTargetStack, weak target, height, stored-pose comparison), Init, the five-child looking sequence, Stop through derived ClearStack, and the delocalization handler",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCantHandleTallStackBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Vtable address point 0x01029FE0: +0x20 0x005BF04C, +0x24 0x0059EC12, +0x28 0x005ED384 all return 0; +0x90 ClearStack 0x005ED1E4 (slot 0x0102A070); +0x94 UpdateTargetStack 0x005ED1FA (slot 0x0102A074).",
+        "Ctor 0x005ECB10: zeroes +0x11C/+0x120/+0x124; four asFloat values to +0x138..+0x144 (lookingInitialWait_s, lookingDownWait_s, lookingUpWait_s, minBlockMovedThreshold_mm); minimumStackHeight asInt into byte +0x134; defaults 3.",
+        "IsRunnableInternal 0x005ECD64: IsUnlocked(5) non-zero returns 0 before any refresh; vtable +0x94 refresh; weak lock, stack pointer, unsigned height compare (bhs), located object; no stored pose returns 1, else !IsSameAs(stored +0x128, pose, (t,t,10.0f), PI).",
+        "InitInternal 0x005ECE3C: locks with no refresh, copies the pose to +0x128, +0x124 = 1, transitions; any missing precondition returns 1.",
+        "TransitionToLookingUpAndDown 0x005ECEA4: Wait(+0x138), head 0xBEDF66F3, Wait(+0x13C), head 0x3F490FDB (clamped to 0x3F46D3F2 at 0x00547FC2..0x00547FD4), Wait(+0x140), sequential; head speed 15, accel 20.",
+        "Stop 0x005ED064 tail-calls vtable +0x90: ClearStack zeroes +0x11C/+0x120 and keeps the stored pose. AlwaysHandle 0x005ED240..0x005ED258: tag 0x32 clears +0x124, then ClearStack, with no action cancel.",
+        "re-analysis/research/20261030-cant-handle-tall-stack-1-read.md; re-analysis/research/20261030-cant-handle-tall-stack-1-claude-check.md"
+      ],
+      "effect": "when Cozmo reacts to a tall stack he cannot handle (unlock, stack height, whether the stack moved since last time), the look up-and-down motion, and that stopping or delocalizing clears the target but differs on the stored pose",
+      "provenance": "CANT-HANDLE-TALL-STACK-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.",
+      "unresolved": "Built; not settled: TallStackWeakInput, TallStackOwnerInput and BehaviorFactoryContext.TallStackData are null in production, and no shipped activity or reaction config names CantHandleTallStack, so its automatic caller is UNKNOWN (visible MISSING). The weak-owner expiry is not faked: no GC WeakReference and no snapshot membership. Excludes the disappointment trigger (M15-012), the recipient census (M11-072), and generic IBehavior gates/Update/Resume (M8-001). Queued: Init/Resume unavailability reaches the manager as an ordinary failure outside a readiness frame; Dispose consistency of StoredPose with HasStoredPose.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "CantHandleTallStackNativeTests"
+    },
+    {
+      "id": "M15-088",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorCheckForStackAtInterval lifecycle: constructor and delay config, strict f32 deadline, UpdateTargetBlocks' retained cache, Init's ObjectID consumption, the face/above/return coordination, the deadline stamp, and Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCheckForStackAtIntervalBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059C9F0..0x0059CA0A (0x148); ctor 0x005D720C zeroes delay +0x11C and deadline +0x120; default 15 at 0x005D7260, config at 0x005D7278..0x005D7290; ghost type 4 at 0x005D724E..0x005D726E.",
+        "IsRunnableInternal 0x005D732E..0x005D735E: f32 clock, vcmpe with ble rejects equality and NaN; vtable +0x90 (slot 0x010286E8) is UpdateTargetBlocks 0x005D7934; then a non-empty cache. Gates 0x01028678/0x0102867C/0x01028680 return 0.",
+        "UpdateTargetBlocks 0x005D7934..0x005D7A3E: families {2,1} from 0x00C6B390, robot frame, appends obj+0x18 at +0x134 with no clear and no dedupe.",
+        "Init 0x005D736A..0x005D7390: ghost ID consumed when +0x18 == -1, even with an empty cache; empty returns 1. Setup 0x005D7398..0x005D73B6. Stop 0x005D73BA..0x005D73E0: index -1, vector reset, deadline and saved pose kept.",
+        "Face 0x005D73F6..0x005D743C: TurnTowardsObject(obj, PI, 0, 0), callback ignores the result. Missing target 0x005D7618..0x005D7674 starts nothing.",
+        "Above callback 0x005D7CB2..0x005D7CD4 ignores the result: index++, next face or return. Return 0x005D785A..0x005D78C8: PanAndTilt(root yaw, 0, true, false) through the void-callback wrapper 0x005BF790. Deadline 0x005D7D36..0x005D7D52: f32(now + delay), on any result.",
+        "re-analysis/research/20261030-check-for-stack-at-interval-1-read.md; re-analysis/research/20261030-check-for-stack-at-interval-1-claude-check.md"
+      ],
+      "effect": "how often Cozmo scans known cubes for a stack, which targets he faces and in what order, and that the 15 s wait starts only from the return turn",
+      "provenance": "CHECK-FOR-STACK-AT-INTERVAL-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.",
+      "unresolved": "Built; not settled: upstream Spark admission is MISSING, so tests supply Spark state 2 by reflection. The custom ghost marker path (M12-033, 0x0054A050) is MISSING: production skips only the above action with a MISSING per occurrence and runs the above callback's own continuation, so the ghost head look does not happen. Native helper ownership and geometry stay gaps. Excludes the factory (M7-018), PanAndTilt (M13-020), the located walker (M11-004) and ObjectID (M11-013).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "CheckForStackAtIntervalNativeTests"
+    },
+    {
+      "id": "M15-089",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorCubeLiftWorkout lifecycle for CubeLiftWorkout and SparksCubeLiftWorkout: gates, count snapshot at Init, pickup, post-lift, lift and put-down triggers, the put-down check, finish reporting, and Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCubeLiftWorkoutBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CA12..0x0059CA22 (0x130, ctor 0x005D7E50); ID 142/class 6 for the alias; needs 44 and 45 through 0x005BE40C..0x005BE416; unlock 29; objective default 0x29 at 0x005BBD26..0x005BBD2C.",
+        "Gate and Init 0x005D7E88..0x005D7F44: lock, idle 0x23F, the two counts before the carry branch, target capture. Vtable +0x20/+0x24 return 0, +0x28/+0x4C return 1.",
+        "PickingUp 0x005D8064..0x005D8104: light 0x27 layer 1 via 0x006389FC; bytes 0/1 to helper +0x104/+0x105 (0x005B7ACA/0x005B7AD0); only helper success continues.",
+        "PostLift 0x005D7F54..0x005D8026: -20/100/true with ignoreFailure, optional trigger, then music stage (3,2) at 0x005D8014..0x005D8022. Strong, transition, weak and put-down triggers 0x005D844C..0x005D8744; ManualPutDown 0x005D8764..0x005D87FE; CheckPutDown 0x005D8866..0x005D8986.",
+        "EndIteration 0x005D89FA..0x005D8A3E: detach, objective 0x12, needs, reload, optional objective unless 0x29, complete. Stop 0x005D8174..0x005D8198: stage (4,0), light, valid byte. Update 0x005D81A8..0x005D8226.",
+        "re-analysis/research/20261030-cube-lift-workout-1-read.md; re-analysis/research/20261030-cube-lift-workout-1-claude-check.md; re-analysis/research/20261030-sparks-cube-lift-workout-1-claude-check.md"
+      ],
+      "effect": "what a cube-lift workout does end to end: which cube, how many strong and weak lifts, the lights, music stage, needs and objective reporting, and how it ends",
+      "provenance": "CUBE-LIFT-WORKOUT-1 and SPARKS-CUBE-LIFT-WORKOUT-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.",
+      "unresolved": "Built; not settled: PlayAlone admission is unbound and Spark admission is supplied in tests. M1-034 skips: a null current workout reads through 0x00573B70 from Init 0x005D7EE6, and mood at 0x0067C9F0/0x0067CA02; both report readiness unavailable. Excludes the workout component and music decision (M13-010, which stays open because neither caller has production reach), the shared pickup, drive and search helpers, and audio delivery (M13-038). Lead to trace: the ordinary instance may stay at objective 41 on the native path where its JSON gives 18 (+0x10C).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "CubeLiftWorkoutNativeTests; SparksCubeLiftWorkoutNativeTests"
+    },
+    {
+      "id": "M15-090",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorDance lifecycle (Dance_Mambo): constructor and config, gates, six-entry reaction lock table, Init, the random cube-light choice, the trigger sequence with listeners, and the fade on Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDanceBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CA34..0x0059CA4E (0x148); ctor 0x005ED438..0x005ED458 and 0x005BFF24..0x005C0046 (animTriggers, Count 0x23F skip, num_loops default 1).",
+        "Vtable address point 0x0102A0E4: +0x20 false, +0x24 false, +0x28 true; Resume 0x005EDDD4 returns 1; IsRunnableInternal 0x005C013A; +0x90 returns 1.",
+        "Lock table 0x00C6F1C8: 1, 2, 3, 8, 10, 20. Init 0x005ED460..0x005ED700, offset step 0x148 at 0x005ED64C.",
+        "Candidates 0x00C6F1B0 are 4..9 (Dance_01..06, names 0x01032F90); RandInt 0x0082FA74 is (int)(dbl*n).",
+        "Body: action tuple 0x005C0174..0x005C0190 (1, 0, 60.0f, 0); sequence tail 0x005C02CA..0x005C0330; lambda 0x005C0552 runs listeners, then the loop; live successor walk 0x005C0254..0x005C0292.",
+        "Stop: fade lambda 0x005EDFCA; StopAllAnims 0x00638D58 (layer 1, id -1).",
+        "re-analysis/research/20261030-dance-mambo-1-read.md; re-analysis/research/20261030-dance-mambo-1-claude-check.md"
+      ],
+      "effect": "what Dance_Mambo does: which reactions are locked, the dance animations and their loops, the cube light choices, and the fade when it stops",
+      "provenance": "DANCE-MAMBO-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.",
+      "unresolved": "Built; not settled: no test reaches Dance through production. The engine ingress is HandleExecuteBehavior 0x0060AA58 (tag 0x94); its sender is the app and SelectionChooser.RequestBehavior has no caller in the stack. LoopBoundOverflow 0x005ED8C8 is reported as a once-per-process MISSING and the native error flag is not stored. Excludes the listener and body parts owned by M8-005 and the factory (M7-018).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DanceMamboNativeTests"
+    },
+    {
+      "id": "M15-091",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorDriveInDesperation lifecycle for Needs_SevereLowEnergyState and Needs_SevereLowRepairState: gates, Init, idle wait, rounds and cube cooldown, target selection, the random pose, drive, look, request and off-treads handling",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDriveInDesperationBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CA9A (0x140); vtable 0x010288D4: +0x20 0x005D9F46 returns 1, +0x24 0x0059EC12 returns 0, +0x28 0x005D9F4A returns 0. Ctor 0x005D8AE0..0x005D8C36.",
+        "Init 0x005D8ECA..0x005D8EEE; Update 0x005D9062..0x005D90A8 (first off-treads edge StopActing, latch); idle and wait 0x005D8F2C..0x005D8FE4, strict f32 deadline 0x0054CA1C..0x0054CA60.",
+        "Cooldown and selection 0x005D9D5C..0x005D9E3A: 15..30 s stamped before the query, farthest valid cube, first tie. Rounds 0x005D9F14..0x005D9F42. useCubes false branch 0x005D9140..0x005D9148.",
+        "Random pose 0x005D92E2..0x005D93FE: angle, sign, distance in that order; literal 0x3C8EFA35 at 0x005D9558; current rotation x Rz(yaw + delta), so a planar pose doubles yaw; TranslateForward 0x0084B92A.",
+        "DriveToCube tuples 0x005D9912..0x005D9A0C; single drive 0x005D91CC..0x005D920E; look and request 0x005D9BEE..0x005D9C42, 0x005D95DA..0x005D9642; callback 0x005DA354..0x005DA3CE; off-treads 0x005DA2DE..0x005DA2F0.",
+        "Motion profile: SmartSet 0x005BE518, SmartClear 0x005BD584, Set 0x0064AB10, Clear 0x0064AC4A, consumption 0x0064ADD2.",
+        "re-analysis/research/20261030-drive-in-desperation-energy-1-claude-check.md; re-analysis/research/20261030-drive-in-desperation-repair-1-claude-check.md"
+      ],
+      "effect": "how Cozmo drives around in severe low energy or repair: idle times, how many random drives, whether he goes to a cube, the odd planar yaw of the random pose, the request animation and the slow motion profile",
+      "provenance": "DRIVE-IN-DESPERATION-ENERGY-1 and DRIVE-IN-DESPERATION-REPAIR-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.",
+      "unresolved": "Built; not settled: NeedsExpression parent admission is refused (M8-013), so nothing reaches this in production; the explicit standalone CLI binds the legacy driver and warns. Energy only: the sentinel search (-1, 1, 1 at 0x005D970E..0x005D9744, M12-010/M8-011) is MISSING, its motions are skipped with a MISSING per occurrence, and the behaviour ends as after a failed search. A located charger has no obstacle footprint (M12-036): the query at 0x005D995C is skipped with a MISSING and execution continues at LookAtCube 0x005D9A54. Excludes shared math, RNG and profile owners. Queued: argument assertions for DriveToCube, and host-execution guards.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DriveInDesperationNativeTests"
+    },
+    {
+      "id": "M15-092",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorDevTurnInPlaceTest lifecycle: config, false gates, reaction lock table, Init, the turn and wait construction order, the result-free callback's run count and index, and Reset",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDevTurnInPlaceTestBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor defaults runs 1, loop 0 at 0x005CA57A..0x005CA57C; parse 0x005CA598..0x005CA6FE; stores 0x005CA726..0x005CA72C.",
+        "Own gate false 0x005CA8F6; vtable +0x20 0x005BF04C, +0x24 0x0059EC12, +0x28 0x005CAD80 return 0; +0x4C base Resume; +0x54 empty Stop 0x005CAD30.",
+        "Lock table 0x00C60D40: 21 pairs. Init 0x005CA918..0x005CA946; 0x005CA902..0x005CA916 and Reset 0x005CA94C zero only the index and counters, keeping the vector.",
+        "Generate: factor 0x3C8EFA35 (0x005CAB4C); constructs TurnInPlaceAction 0x005CAA32, WaitAction 0x005CAA8C, CompoundActionSequential 0x005CAA9A, then AddAction 0x005CAAB2 and 0x005CAACC. Each ctor draws a tag through IActionRunner 0x0053FDB0.",
+        "Callback 0x005CAC54..0x005CACA6: u8 wrap, remainder on the wrapped byte, index reset only on loop, no result branch.",
+        "SwitchToBehaviorBase 0x005A1E76..0x005A1E94 logs a non-runnable behaviour and starts it anyway; the chooser route is gated at 0x0060AD92..0x0060AD96.",
+        "re-analysis/research/20261030-dev-turn-in-place-test-1-claude-check.md"
+      ],
+      "effect": "what the developer turn test does when started through the manager: the turn and wait sequence, its repeat and loop counting, and the tags delivered in the completion report",
+      "provenance": "DEV-TURN-IN-PLACE-TEST-1 (Codex read, build and review; Claude check 2026-10-30); record added with operator approval 2026-10-30.",
+      "unresolved": "Built; not settled: the original app initiator is UNKNOWN; the public manager entry starts it despite a false IsRunnable. M1-034 skip: empty tests read null at 0x005CA984. nRuns 0 reaches imported __aeabi_uidivmod at 0x005CAC60, implemented in the phone's libc (not shipped), so its result is UNKNOWN; the stack logs a MISSING and schedules nothing; shipped nRuns is 1. Excludes the factory (M7-018), reaction locks (M7-014), TurnInPlace (M13-022), and shared action owners (M8-001/015/017). Queued: inventory row 950 says \"clears vector\"; cite GetSubActionResults 0x0053FA4C..0x0053FA66 for the test's {0} expectation.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "DevTurnInPlaceNativeTests"
     }
   ]
 }
