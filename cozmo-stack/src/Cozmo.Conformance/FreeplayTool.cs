@@ -66,8 +66,9 @@ public static class FreeplayTool
 
     private static void WarnStandaloneEnergy(FreeplayStack stack, Action<string> say)
     {
-        if (stack.Bound.TryGetValue("Needs_SevereLowEnergyState", out var behavior) && behavior is DriveInDesperationBehavior)
-            say("MISSING: Needs_SevereLowEnergyState uses the legacy standalone custom driver; its behavior differs from the source-checked Energy path. Native NeedsExpression admission remains unbuilt (M8-013).");
+        foreach (var id in new[] { "Needs_SevereLowEnergyState", "Needs_SevereLowRepairState" })
+            if (stack.Bound.TryGetValue(id, out var behavior) && behavior is DriveInDesperationBehavior)
+                say($"MISSING: {id} uses the legacy standalone custom driver; its behavior differs from the source-checked native path. Native NeedsExpression admission remains unbuilt (M8-013).");
     }
 
     private static int Simulate(string obb, int ticks, string? stateDir)

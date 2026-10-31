@@ -307,17 +307,9 @@ public sealed class FindFacesBehavior : ExploreLookAroundInPlaceBehavior
 }
 
 /// <summary>
-/// Legacy standalone custom-driver candidate for <c>BehaviorDriveInDesperation</c> (0x005D8AE0..0x005D9F60; configs Needs_SevereLowEnergyState /
-/// Needs_SevereLowRepairState: <c>useCubes</c>, <c>minTimeToIdle</c>, <c>maxTimeToIdle</c>, <c>requestAnimTrigger</c>,
-/// <c>motionProfile</c>). <c>TransitionToIdle</c>: "idling for %f sec" (random in the range); then
-/// <c>TransitionFromIdle</c>: with cubes (<c>useCubes</c> and a located cube) → <c>TransitionToDriveToCube</c>
-/// (drive to the closest) → <c>TransitionToLookAtCube</c> → the request; without → <c>RandomizeNumDrivingRounds</c>
-/// (1..3, "driving to %d random points next time we drive") and <c>TransitionToDriveRandom</c> that many times
-/// (<c>GetRandomDrivingPose</c>: 40..100 mm at 50..150° to a random side, "angle=%fdeg, dist=%fmm";
-/// <c>DriveToPoseAction</c> with the config's profile, angle tolerance 0.174533); then <c>TransitionToRequest</c>:
-/// <c>TriggerAnimationAction(requestAnimTrigger)</c> wrapped in a <c>TurnTowardsFaceWrapperAction(π)</c>; then idle
-/// again, for as long as the needs activity keeps it. This candidate is not the source-checked Energy lifecycle:
-/// its selection, random pose and callback flow differ from the native path. Canonical NeedsExpression admission remains MISSING M8-013.
+/// Legacy standalone custom driver for the Energy and Repair configurations. Its selection,
+/// random pose and callback flow differ from the source-checked native lifecycle
+/// (0x005D8AE0..0x005DA528). Canonical NeedsExpression admission remains MISSING M8-013.
 /// </summary>
 public sealed class DriveInDesperationBehavior : ActionBehavior
 {

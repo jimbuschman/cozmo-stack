@@ -149,9 +149,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         }
         if(selected.SparkedOwner is null && (selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null))
         {
-            if(selected.Id=="NeedsSevereLowEnergy")
+            if(selected.Id=="NeedsSevereLowEnergy" || selected.Id=="NeedsSevereLowRepair")
             {
-                SteppedBehavior.ReportMissing("M8-013 NeedsSevereLowEnergy admission: native NeedsExpression activity owner is unbound; prior activity retained");
+                SteppedBehavior.ReportMissing("M8-013 " + selected.Id + " admission: native NeedsExpression activity owner is unbound; prior activity retained");
                 return;
             }
             SteppedBehavior.ReportMissing("Native activity admission "+activityId+": specialized lifecycle/interlude is not bound; prior activity retained (M15-061 for Feeding)");

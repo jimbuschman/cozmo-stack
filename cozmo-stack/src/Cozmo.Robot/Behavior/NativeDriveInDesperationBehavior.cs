@@ -5,7 +5,7 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
-// DRIVE-IN-DESPERATION-ENERGY-1: 005D8AE0..005DA528. Only the checked Energy config.
+// DRIVE-IN-DESPERATION-ENERGY-1: 005D8AE0..005DA528. Checked Energy and Repair configs.
 internal sealed class NativeDriveInDesperationBehavior : SteppedBehavior
 {
     private readonly ManipulationSystem _m;
