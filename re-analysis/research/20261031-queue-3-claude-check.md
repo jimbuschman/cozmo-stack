@@ -101,9 +101,10 @@ Slots +0x20, +0x24 and +0x28 have no symbols, so their meaning comes from these 
     handled in `NurtureRestoration.cs` under M1-034/M15-034.
   - NV_NOT_FOUND: take defaults, SendUnlockStatus, then NotifyGameDefaultUnlocksSet.
   - Any other error: error log, no state change.
-- **Item 2, subscribers:** none found. `Subscribe` (0x0064DDB0) has no PLT entry and no direct or veneer call, the signal map's
-  `operator[]` (0x0064DEA8) has no direct caller, and no Unity code other than the class itself names RobotPublicState. On that
-  evidence the update writes +0x06 and reaches nobody. A subscribe through some other path is not excluded.
+- **Item 2, subscribers:** two, already recorded in M13-038. Each Robot has two BehaviorAudioClient instances (BehaviorManager, then
+  BehaviorSystemManager), and each ctor subscribes unconditionally at 0x00591F08. The stack builds them in `BehaviorAudioOwners.cs`. So a
+  stack-height change reaches both clients synchronously. A by-address call scan for 0x0064DDB0 found nothing, so that scan is not
+  proof that a function has no callers.
 - **Item 4:** `BorderRegion+0` is the region's area sum, per M11-079 (0x006899D0..0x006899F4).
 
 ## Checked and matching
@@ -119,8 +120,8 @@ Slots +0x20, +0x24 and +0x28 have no symbols, so their meaning comes from these 
 
 ## Still open
 
-- **IBehavior +0x1C:** the ctor zeroes it, ReadFromJson doesn't write it, and EProcessFromString's only caller is IActivity::ReadConfig.
-  Its writer is not found. If nothing sets it on a behaviour, gate 2 is dead. Do not assume that yet.
+- **IBehavior +0x1C:** the ctor zeroes it, ReadFromJson doesn't write it, and the only EProcessFromString caller found is IActivity::ReadConfig.
+  Its writer is not found, and the item 2 scan shows that search is not proof. If nothing sets it on a behaviour, gate 2 is dead. Do not assume that yet.
 - ActivityFreeplay::CalculateDesiredActivityFromObjects 0x005ADF4C: not read. It is what item 3's function actually does.
 - StrategyGeneric: config, event tables and AlwaysHandleInternal.
 - BehaviorLookForFaceAndCube keys for +0x14D, +0x178 and +0x179.
