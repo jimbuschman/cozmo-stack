@@ -1,0 +1,8 @@
+{
+  "classes": [
+    "DanceMamboNativeTests",
+    "EngineAppLayerTests"
+  ],
+  "filter": "FullyQualifiedName~DanceMamboNativeTests|FullyQualifiedName~EngineAppLayerTests",
+  "scope": "Only postintegration changed own listener method/test and EngineApp shared class setup; old63class1259 reference/replay remainhistorical"
+}

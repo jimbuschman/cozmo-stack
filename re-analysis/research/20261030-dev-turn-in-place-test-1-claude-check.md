@@ -48,3 +48,18 @@ a3b2cc1d. I read the production diff. DriveToCube catches only NativeActionUnava
 M12-036 MISSING on every occurrence, and continues to LookAtCube with no invented result. The search MISSING now logs
 every occurrence and says the motions are skipped. The tests cover a located charger, a later completion subscriber
 and the deletion tag. Nothing settled.
+
+## Returned fix (manager, 2026-10-30): PASS, merged
+
+Fix c41ca944, handoff ecca481e (full gate 7004 PASS). I read the diff.
+- **The blocking item is closed.** The wait is constructed before the compound, giving turn T, wait T+1, compound T+2.
+- **The test:** `ManagerStartsNonRunnableAndPublishesCompoundTagAndDescendantResults` enters through
+  `manager.StartAsync("DevTurnInPlaceTest")` and asserts the three tags and the delivered report.
+- **The wording is corrected:** the MISSING now says the app initiator is UNKNOWN and the manager entry starts the
+  behaviour despite a false IsRunnable. `reach:` labels are added.
+- **Queued:** the test expects SubActionResults `{0}`, one entry from a two-child compound. The watcher code is unchanged
+  by this job, but that expected value needs a citation (GetSubActionResults 0x0053FA4C..66), so it isn't taken from the
+  stack's own output.
+
+Merged at ecca481e with CUBE-LIFT-WORKOUT-1 and its fix, SPARKS-CUBE-LIFT-WORKOUT-1, DANCE-MAMBO-1 and
+DRIVE-IN-DESPERATION-ENERGY-1 with its fix. Nothing settled. The proposed lifecycle records go to the operator.

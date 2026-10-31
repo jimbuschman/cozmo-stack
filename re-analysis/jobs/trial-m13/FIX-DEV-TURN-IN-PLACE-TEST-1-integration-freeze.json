@@ -1,0 +1,43 @@
+{
+  "job": "FIX-DEV-TURN-IN-PLACE-TEST-1",
+  "state": "FROZEN BEFORE ONE STABLE MERGE-POINT FULL GATE",
+  "stableBase": "e37e847ddf19ba1addf066ad5dcf298097a297e5",
+  "authoritativeMain": "fd4ef169dea1b947874836dbd717caa1c396fda5",
+  "codeTree": "7db5e00e00b752c81e4fd8a8e7afb387c0375b50",
+  "integrationCommit": "c41ca9445230e1e32939168d37639e03c5f99d16",
+  "workerCommit": "3ff4f16989cc9b7f5408f73a6f81f0dc38ae6907",
+  "onlyTwoCodePathsChangedFromStableBase": [
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDevTurnInPlaceTestBehavior.cs",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/DevTurnInPlaceNativeTests.cs"
+  ],
+  "noNewerJobIntegrated": true,
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDevTurnInPlaceTestBehavior.cs",
+      "sha256": "207b8cd898f2321d326f84baf6faeb9ec4c620da89425a184f17f04312c71295",
+      "tracked": true,
+      "rawBlob": "97076597de189ddb99ad3a3faa7dc259e71f143a",
+      "filteredBlob": "97076597de189ddb99ad3a3faa7dc259e71f143a",
+      "headBlob": "97076597de189ddb99ad3a3faa7dc259e71f143a"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DevTurnInPlaceNativeTests.cs",
+      "sha256": "c21779155610a1a30ef5c68241305001f8169fac3489da05ae5af318e515e5d5",
+      "tracked": true,
+      "rawBlob": "3a720b9f05e510c5b33876c4c3651249090ed6e8",
+      "filteredBlob": "3a720b9f05e510c5b33876c4c3651249090ed6e8",
+      "headBlob": "3a720b9f05e510c5b33876c4c3651249090ed6e8"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Vision/Data/marker_nn_library.bin",
+      "sha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+      "tracked": false
+    },
+    {
+      "path": "resources/lib/armeabi-v7a/libcozmoEngine.so",
+      "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+      "tracked": false
+    }
+  ],
+  "metadataTiming": "New builder/code-check reports are post-replay metadata outside9219 worker input set; source/test bytes unchanged."
+}

@@ -23,3 +23,23 @@ Preparation complete at isolated233f327e, trackedclean; engine/marker hashes ver
 ## Checked source release
 
 Bounded A+B source PASS; root mechanically matched25 current literal records. Actual original/source LF hashes in source-freeze JSON; initial owner-label correction and partial reviewer draft preserved, no native behavior correction. Release ordinary configured leaf and necessary actual canonical owner joins only. Strong/weak values are captured unsigned animation loop counts, transitions reload canonical current config; no per-run decrement/timer. Pickup helper success differs from result-ignoring direct action callbacks. Normal putdown -> CheckPutDown; manual only sentinel; any final native result -> ordered detach/objective/configured-needs/optional-objective/current-workout completion. No missing-input cleanup may pretend that callback happened. Resume refuses, Stop stage/light/music-cache reset exactly sourced. Real mood/RNG/target/carry/actions/state recipients required or typed MISSING; no parent/sibling/Spark port. Coherent source-derived tests and actual freeze before independentCODE/compile; no .NET lease yet.
+
+## Resume after Cant handoff
+
+Cant is READY/pushed; roothead 2cb68fa85316bc2f55a72980b53736a94db67b0e, currentmain 1880f337c803fe25cd5da6d1aad56e068db1015a. Source read and independent bounded sourcecheck remain valid; current25 literal manifest snapshots and both report hashes rechecked. BUILD RELEASED ordinary instance only; Spark alias remains separate. Earlier source holds are historical. Prepared worker clean233f327e and one cache-only restore retained: merge latest manager before code; do not restore again. Prior runtime handles unavailable after resumption; no implementation existed. Reader requested Sol/medium; builder/reviewer DEFAULT overrides omitted as before, actual backend unobserved. No running worker model change. Use existing typed unavailable inputs and guarded state-name API with generation checks after outward callbacks; do not repeat the Cant stale replacement defect. Only builder writes implementation, separate source/B checks. No .NET until root leases; actual dotnet elevated, native pre/post inventory, cleanup, no overlaps.
+
+Current ownership lead before any teardown claim (not a new source finding or closure):
+
+```json
+{
+  "id": "M15-045",
+  "title": "AIComponent teardown recursive recipients: BehaviorHelper IHelper types and callables, ObjectInteraction entries and ProcessInfo callables, BorderSegment release, SevereNeeds/RequestGame/AIWhiteboard handle inventories, Workout/ObjectInteraction/Whiteboard/Analyzer inner bodies",
+  "status": "IMPLEMENTATION_GAP",
+  "evidence": [
+    "re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x00569D38..0x00569D66; 0x0056A0AE..; 0x00569FD2..; 0x00569F9A; the inner bodies named.",
+    "re-analysis/research/overnight/20261016-batch-check.md: member map 0x00569A88..0x00569B3E; BehaviorHelperComponent 0x00569D30..0x00569D7E; ~vector<BorderSegment> 0x00569F86..0x00569FB8; ProcessInfo tree 0x00569FBA..0x0056A006; ObjectInteractionCacheEntry 0x0056A06E..0x0056A13E; SevereNeeds 0x00572A1C..0x00572A36; AIWhiteboard 0x0056A32C..0x0056A37C; RequestGame 0x0056A1DC..0x0056A1FA; Workout 0x0056A140..0x0056A1D8."
+  ]
+}
+```
+
+M15-045 concerns AIComponent/Workout inner teardown; compare its precise existing scope with the ordinary behavior lifecycle proposal, retaining shared ownership/retirement gaps. No broad teardown census or duplicate lifecycle ownership. Source packet and25 quoted current records still govern what is built. All MISSING inputs remain visible; do not invent canonical workout/mood/RNG defaults, targets/results/objectives or automatic parent admission. Propose whole existing OWN records only where built fully, otherwise exact leftovers; one unowned lifecycle proposal only where truly uncovered. No status/inventory/approval/PROJECT_STATE/REVIEW/main/hardware changes.

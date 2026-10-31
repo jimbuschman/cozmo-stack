@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-29. **0 finished · 39 in progress · 139 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
+Whole-behavior scoreboard, 2026-10-29. **0 finished · 43 in progress · 135 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -65,11 +65,11 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `SparksBringCubeToBeacon` | `BringCubeToBeacon` | in progress | SPARKS-BRING-CUBE-TO-BEACON-1 returnedFIX READY: native first-name/end-window repair, affected665+exact665 and fresh full6912 PASS. M15-023 open, parent/LookInPlace gaps, no finished claim | spark: GatherCubes. 1 refs; R200+ in map |
 | `CantHandleTallStack` | `CantHandleTallStack` | in progress | CANT-HANDLE-TALL-STACK-1 READY: own lifecycle/guarded replacement, ref304/exact304/full2 6931 PASS. Weak producer, configured recipient join and automatic caller MISSING; no finished claim | No explicit config reference; native/app use UNKNOWN |
 | `SparksCheckForStackAtInterval` | `CheckForStackAtInterval` | in progress | CHECK-FOR-STACK-AT-INTERVAL-1 returnedFIX1 READY: skip missing ghost only, real return stamps cooldown; affected672+exact672/full6914 PASS. Marker/parent gaps remain; no finished claim | spark: SparksKnockOverCubes. 1 refs; R204+ in map |
-| `CubeLiftWorkout` | `CubeLiftWorkout` | in progress | CUBE-LIFT-WORKOUT-1 bounded source PASS, implementation held before priority Sparks FIX; no code/test/finished claim | freeplay: PlayAlone. 1 refs; R065+ in map |
-| `SparksCubeLiftWorkout` | `CubeLiftWorkout` | not started | UNKNOWN | spark: SparksWorkout. 1 refs; R240+ in map |
-| `Dance_Mambo` | `Dance` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
-| `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
-| `Needs_SevereLowEnergyState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowEnergy. 1 refs; R037+ in map |
+| `CubeLiftWorkout` | `CubeLiftWorkout` | in progress | FIX-CUBE-LIFT-WORKOUT-1 READY: readiness guard, ref282/exact282/full6992 PASS; M13-010 proposal withdrawn, caller/shared gaps remain, no finished claim | freeplay: PlayAlone. 1 refs; R065+ in map |
+| `SparksCubeLiftWorkout` | `CubeLiftWorkout` | in progress | Shared Workout FIX READY: aliases ref282/exact282/full6992 PASS; caller/shared gaps remain, no finished claim | spark: SparksWorkout. 1 refs; R240+ in map |
+| `Dance_Mambo` | `Dance` | in progress | DANCE-MAMBO-1 READY: ownlifecycle currentref184/exact184/full6972 PASS; caller/listenerproducer/sharedgaps remain, no finished claim | No explicit config reference; native/app use UNKNOWN |
+| `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | in progress | DEV-TURN-IN-PLACE-TEST-1 returnedFIX READY: actualManagerentry/APIrootTag/results ref172/exact172/full7004 PASS; appinitiator/sharedgaps remain, no finished claim | No explicit config reference; native/app use UNKNOWN |
+| `Needs_SevereLowEnergyState` | `DriveInDesperation` | in progress | DRIVE-IN-DESPERATION-ENERGY-1 returned FIX READY: charger continuation, repeated skipped-search diagnostics; ref173/exact173/full7003 PASS; parent/shared gaps remain, no finished claim | freeplay: NeedsSevereLowEnergy. 1 refs; R037+ in map |
 | `Needs_SevereLowRepairState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowRepair. 1 refs; R045+ in map |
 | `DriveOffCharger` | `DriveOffCharger` | in progress | Driving/contact/action; needs/mood/animation; neighboring vision/audio gaps tracked separately | freeplay: BuildPyramid; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: NothingToDo; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: PutDownDispatch; spark: BuildPyramid; spark: SparksFireTruckAlarm; spark: SparksFistBump; spark: GatherCubes; spark: SparksKnockOverCubes; spark: SparksPeekABoo; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksPounceOnMotion; spark: SparksRollBlock; spark: SparksStackBlock; spark: SparksTrackLaser; spark: SparksWorkout; activity: MeetCozmo; activity: Feeding. 26 refs; R001+ in map |
 | `Hiking_DriveOffCharger` | `DriveOffCharger` | not started | Driving/contact/action; needs/mood/animation; neighboring vision/audio gaps tracked separately | freeplay: Hiking. 1 refs; R020+ in map |

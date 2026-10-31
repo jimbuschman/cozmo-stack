@@ -2559,6 +2559,14 @@ public class EngineAppLayerTests
         rig.Tick();                                        // B-ACTIONS batch 2: NOW is Init'd on the ActionList tick
         lock (rig.Port.Sent) Assert.Contains(rig.Port.Sent, b => b[0] == (byte)new SetHeadAngle(0.1f).Id);
         robot.CubeAccel.AddListener(0, new CubeShakeListener(0.5f, 2.5f, 3.9f, _ => { }));
+        var tickGate = new object();
+        var tickSignal = new AutoResetEvent(false);
+        bool tickDisposed = false; int tickCount = 0; Exception? tickFault = null;
+        void OnTick() { lock (tickGate) { if (!tickDisposed) { tickCount++; tickSignal.Set(); } } }
+        void OnFault(Exception error) { lock (tickGate) { if (!tickDisposed) { tickFault = error; tickSignal.Set(); } } }
+        robot.Animations.TickObserved += OnTick; robot.Animations.Faulted += OnFault;
+        try
+        {
         robot.Animations.Scheduler.PushLiveQuietly();
         Assert.True(robot.Animations.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 5, 0)));
         vision.World.AddMarkerlessObject(Cozmo.Robot.Vision.Pose3d.Identity, ObjectType.CollisionObstacle);
@@ -2578,12 +2586,27 @@ public class EngineAppLayerTests
         Assert.True(robot.Display.FramesSent > 0 && robot.Audio.FramesSent > 0);
         Assert.True(robot.Lights.HeadlightOn);
         Assert.NotEmpty(robot.CubeAccel.Streaming);
-        // LiveStreamActive is the idler's live layer being the streaming one, which the streamer creates on its
-        // Update; tick until it has run (the offline seam has no engine thread).
-        for (int i = 0; i < 5 && !robot.Animations.Scheduler.LiveStreamActive; i++) rig.Tick();
+        // HOST SAFETY watchdog only: TickObserved is the actual offline animation producer's completion signal.
+        // The original failed gate's precise interleaving is UNKNOWN; this establishes a happens-before edge.
+        var watchdog = System.Diagnostics.Stopwatch.StartNew();
+        while (!robot.Animations.Scheduler.LiveStreamActive && watchdog.Elapsed < TimeSpan.FromSeconds(5))
+        {
+            var remaining = TimeSpan.FromSeconds(5) - watchdog.Elapsed;
+            if (remaining <= TimeSpan.Zero || !tickSignal.WaitOne(remaining)) break;
+        }
+        int seen; Exception? failure;
+        lock (tickGate) { seen = tickCount; failure = tickFault; }
         Assert.True(robot.Animations.Scheduler.LiveStreamActive,
-            $"the live stream never became active; streamingOpen={robot.Engine.Robot?.AnimationStreamingOpen}");
+            $"the live stream never became active; streamingOpen={robot.Engine.Robot?.AnimationStreamingOpen}; " +
+            $"ticks={seen}; ticking={robot.Animations.IsTicking}; engineDriven={robot.Animations.EngineDriven}; " +
+            $"clockMs={robot.Engine.Timer.TimeStampMs}; watchdogMs={watchdog.ElapsedMilliseconds}; fault={failure}");
         Assert.True(vision.History.Count > 0 && vision.World.Objects.Count == 1 && vision.Faces.Count == 1 && vision.Pets.Pets.Count == 1);
+        }
+        finally
+        {
+            robot.Animations.TickObserved -= OnTick; robot.Animations.Faulted -= OnFault;
+            lock (tickGate) { tickDisposed = true; tickSignal.Dispose(); }
+        }
     }
 
     /// <summary>

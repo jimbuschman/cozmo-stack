@@ -50,6 +50,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
     private readonly OverheadEdgesDetector? _ownedOverhead;
+    private readonly Func<bool>? _workoutMusic;
 
     internal NativeBehaviorRuntime(CozmoRobot facade,EngineRobot robot,BehaviorManager manager,
         BehaviorContext context,VisionSystem? vision)
@@ -59,6 +60,29 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         AI=new(()=>unchecked((int)robot.CurrentOriginId),facade.Engine.EmitStackLog,
             (l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),facade.Engine.Needs.SevereNeeds);
         Context.AI=AI;
+        if (facade.Engine.Options.ResourcesPath is {} workoutResources)
+        {
+            string path=Path.Combine(workoutResources,"config","engine","behaviorSystem","workout_config.json");
+            try { if(File.Exists(path)) AI.Workout=WorkoutComponent.Parse(File.ReadAllText(path),facade.Engine.EmitStackLog); }
+            catch(WorkoutConfigurationException error)
+            { AI.Workout=error.Partial; SteppedBehavior.ReportMissing("M13-010 canonical workout configuration unavailable: "+error.Message); }
+            catch(Exception error) when(error is IOException or System.Text.Json.JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException or FormatException)
+            { SteppedBehavior.ReportMissing("M13-010 canonical workout configuration unavailable: "+error.Message); }
+        }
+        if(AI.Workout is {} workout && workout.GetCurrentWorkout() is not null && robot.MoodOwner is {} mood)
+        {
+            workout.TriggerEmotionEvent=(name,now)=>mood.Trigger(name,now);
+            workout.ClockSec=()=>robot.Engine.Timer.SecondsF;
+            _workoutMusic=()=>workout.ShouldPlayEightiesMusic(e=>mood[e],e=>mood.GetHistoryValueTicksAgo(e,60),()=>robot.Engine.ContextRandom.RandDbl(1));
+            robot.EightiesMusicInput=_workoutMusic;
+        }
+        else SteppedBehavior.ReportMissing("M13-010 canonical workout configuration or MoodManager unavailable; no workout or music decision substituted");
+        AI.BindDestructionRecipient(0x1C,()=>
+        {
+            if(ReferenceEquals(robot.EightiesMusicInput,_workoutMusic))robot.EightiesMusicInput=null;
+            AI.Workout=null;
+            AI.NativeTeardown.Destroy(0x1C); // remaining native recursive finalizer is still M15-045
+        });
         Tracker=new(()=>unchecked((ulong)facade.Engine.Timer.Nanoseconds))
         {SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t)};
         AI.Tracker=Tracker;
@@ -125,6 +149,11 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         }
         if(selected.SparkedOwner is null && (selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null))
         {
+            if(selected.Id=="NeedsSevereLowEnergy")
+            {
+                SteppedBehavior.ReportMissing("M8-013 NeedsSevereLowEnergy admission: native NeedsExpression activity owner is unbound; prior activity retained");
+                return;
+            }
             SteppedBehavior.ReportMissing("Native activity admission "+activityId+": specialized lifecycle/interlude is not bound; prior activity retained (M15-061 for Feeding)");
             return;
         }
@@ -159,7 +188,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         if(_retired||_admissionEpoch!=epoch+1)return;
         _manager.Stop(BehaviorStopReason.Interrupted,_facade.Engine.Timer.SecondsF);
         if(_retired||_admissionEpoch!=epoch+1)return;
-        SteppedBehavior.ReportMissing("M15-059 Gather chooser unavailable input: owned activity retired without native completion");
+        SteppedBehavior.ReportMissing("M15-059 "+activity.Id+" chooser unavailable input: owned activity retired without native completion");
     }
 
     private void WaitForParentPicker(Activity activity)
@@ -224,6 +253,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeKnockOverCubesBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeBouncerBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeBringCubeToBeaconBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeCubeLiftWorkoutBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeDanceBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeDevTurnInPlaceTestBehavior>())candidate.Dispose();
         Configurations.Dispose();
         Manipulation?.Dispose();
     }
@@ -252,7 +284,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             return desired;
         }
         public void BehaviorSwitched(IBehavior? desired,bool started,double now){}
-        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null;
+        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null || activity.Id=="SparksWorkout";
         void IHostReadinessOwner.RetireUnavailable()=>retireUnavailable();
     }
 }

@@ -1,0 +1,33 @@
+{
+  "job": "FIX-DEV-TURN-IN-PLACE-TEST-1",
+  "state": "PASS",
+  "attempt": 1,
+  "commit": "76dc778fd68b4d191c6429bc958df56a0c660ab0",
+  "stableBase": "e37e847ddf19ba1addf066ad5dcf298097a297e5",
+  "cozmoStackTree": "7db5e00e00b752c81e4fd8a8e7afb387c0375b50",
+  "onlyTwoCodePathsChangedFromStableBase": [
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDevTurnInPlaceTestBehavior.cs",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/DevTurnInPlaceNativeTests.cs"
+  ],
+  "noNewerJobIntegrated": true,
+  "startedUtc": "2026-10-31T00:21:31.6078403Z",
+  "endedUtc": "2026-10-31T00:30:20.0242531Z",
+  "exitCode": 0,
+  "passed": 7004,
+  "failed": 0,
+  "skipped": 0,
+  "total": 7004,
+  "duration": "7 m 41 s - Cozmo.Protocol.Tests.dll (net9.0)",
+  "fingerprint": "9ad9fb84b91a0bded924f00d770ca0a27bec6eb4",
+  "fingerprintIndependentlyRecomputedAndCacheMatched": true,
+  "frozenTrackedSourcePathsMatched": 2,
+  "engineAndDerivedMarkerMatched": true,
+  "logSha256": "1e8bd8d95c2143036ad718508c831967d66022bb4c2436f8746473ea2038bf9e",
+  "consoleSha256": "4c97a3fca75b87e40ba0b217ec0ebab1b41f54a62e96d1dcd2874151a8fa093d",
+  "nativePre": [],
+  "nativePostOriginal": [],
+  "separateFinalProcesses": [],
+  "officialChanges": false,
+  "hardwareRun": false,
+  "authoritativeMainBaseline": "fd4ef169dea1b947874836dbd717caa1c396fda5"
+}

@@ -1,0 +1,153 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "attempt": "diagnostic1",
+  "state": "EXPECTED_FAILURE_OBSERVED",
+  "passed": 0,
+  "failed": 1,
+  "total": 1,
+  "skipped": 0,
+  "buildExit": 0,
+  "testExit": 1,
+  "wrapperExit": 1,
+  "shutdownExit": 0,
+  "classification": "Harness conflicts with intentional fade CantBeOverridden gate",
+  "inputCount": 8827,
+  "allInputsUnchanged": true,
+  "all192BinsUnchanged": true,
+  "nativePre": [],
+  "nativePostOriginal": [
+    {
+      "ProcessId": 34964,
+      "Name": "dotnet.exe",
+      "CommandLine": null
+    }
+  ],
+  "checkoutPostOriginal": [],
+  "nativeFollowup": [],
+  "followupInventorySha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+  "processOwnership": "PID34964 CommandLine null, unknown; no kill. Separate elevated follow-up observes no native process.",
+  "logEncoding": "utf-16",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-diagnostic1\\run",
+  "files": {
+    "after/metadata.txt": {
+      "sha256": "2abb9c60a32dbc547193399399a6a1c78097b19919e860ab887a96aa8f1be6ac",
+      "size": 232
+    },
+    "before/metadata.txt": {
+      "sha256": "70fa52ca87c5761a5a3bc96766d8abd18dacff14db1ae73c7447770679c0eda6",
+      "size": 232
+    },
+    "run/bins-after.json": {
+      "sha256": "57f1cc06d03fac24f9aba0dbae69f4c1c847b26bf0731b2073dc8e0bceb06d31",
+      "size": 39497
+    },
+    "run/bins-after.log": {
+      "sha256": "bace5abcf23ab6f0b7eff6674134c1903cc0aeb3196820e1bd5848c8d84c2c82",
+      "size": 22
+    },
+    "run/bins-before.json": {
+      "sha256": "57f1cc06d03fac24f9aba0dbae69f4c1c847b26bf0731b2073dc8e0bceb06d31",
+      "size": 39497
+    },
+    "run/bins-before.log": {
+      "sha256": "bace5abcf23ab6f0b7eff6674134c1903cc0aeb3196820e1bd5848c8d84c2c82",
+      "size": 22
+    },
+    "run/bins-diff.json": {
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+      "size": 4
+    },
+    "run/build-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "run/build.log": {
+      "sha256": "2e94d111ece15b88a537638a4f5d883d05a994c2e2e9720ea91322b2541605b5",
+      "size": 1385008
+    },
+    "run/checkout.json": {
+      "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+      "size": 8
+    },
+    "run/counts.txt": {
+      "sha256": "a78b84c8b55b9209cc64750dac087830985f4de547a22c1d0e25deee51870bc5",
+      "size": 25
+    },
+    "run/filter.txt": {
+      "sha256": "0c350786124bf10ba889c55f027521bbbad4f8cbea07e0625d9047571a924804",
+      "size": 132
+    },
+    "run/inputs-after.json": {
+      "sha256": "795c43d79b00f3518f44f630d2271ff264973f49c0f4800df398adc8869b7c8c",
+      "size": 1577048
+    },
+    "run/inputs-after.log": {
+      "sha256": "268ba2c3e03dfaa08eaa752999f2a3d3c6622d4a2b31a897e45aa60a437a74f5",
+      "size": 28
+    },
+    "run/inputs-before.json": {
+      "sha256": "795c43d79b00f3518f44f630d2271ff264973f49c0f4800df398adc8869b7c8c",
+      "size": 1577048
+    },
+    "run/inputs-before.log": {
+      "sha256": "268ba2c3e03dfaa08eaa752999f2a3d3c6622d4a2b31a897e45aa60a437a74f5",
+      "size": 28
+    },
+    "run/inputs-diff.json": {
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+      "size": 4
+    },
+    "run/inventory.py": {
+      "sha256": "4c9ac60853cac19333ff63ae975e480bd4126b2c55e44e1911665afacec0a44e",
+      "size": 1566
+    },
+    "run/plan.json": {
+      "sha256": "0b94f661078fe6ae0aaeee57bdebf3705b60ae617c05a2f74acac59a2fcea86a",
+      "size": 4907
+    },
+    "run/postflight.json": {
+      "sha256": "f32e8232ac752ef68eeea59e9d0510f1c3f75e6d188bd9848723f629b53c57ac",
+      "size": 112
+    },
+    "run/preflight.json": {
+      "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+      "size": 8
+    },
+    "run/run.ps1": {
+      "sha256": "4de79b300d75feb00f1292eb2c894e9e64cbe25129112e3a63446f424cf041ab",
+      "size": 2945
+    },
+    "run/script-hashes.txt": {
+      "sha256": "ee674f5794b5d33a8a3366d532fad6d75ae307df555f7fbfc493c6417f0dfddb",
+      "size": 435
+    },
+    "run/shutdown-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "run/shutdown.log": {
+      "sha256": "554f3d83f9124651a7726864459c7dc8a54e08d205492927bc08a70c6994fdd1",
+      "size": 322
+    },
+    "run/test-exit.txt": {
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "size": 3
+    },
+    "run/test.log": {
+      "sha256": "47273802039942d5366bcbb0ad8f4ab0bbfb663b02b4f47236db233b8d5d7788",
+      "size": 1187972
+    },
+    "run/results/diagnostic1.trx": {
+      "sha256": "3d6e8f7fdf6448f34f26a5c66fbacdb18e17d1ae5082c5f29d3e7dee20e182e9",
+      "size": 1188958
+    },
+    "before/cozmo-stack/tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs": {
+      "sha256": "59b62283b2058914dc75f8b6b163881b1e010a47e691195968288f8797f722de",
+      "size": 12288
+    },
+    "after/cozmo-stack/tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs": {
+      "sha256": "f4724b874dd163d2b75d75d355423ed56a96cdb84752aaace617d1f3cfd76d13",
+      "size": 12795
+    }
+  }
+}

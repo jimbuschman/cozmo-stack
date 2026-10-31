@@ -55,6 +55,8 @@ public sealed class AIComponent
     /// <summary><c>AIComponent+0x10</c>.</summary>
     public BehaviorHelperComponent Helpers { get; }
     internal NativePickupResponseDirector PickupResponses {get;}=new();
+    // AI+0x1C. Null means the actual configuration could not be loaded.
+    internal Cozmo.Robot.Manipulation.WorkoutComponent? Workout {get;set;}
     internal FreeplayDataTracker? Tracker {get;set;}
 
     // fidelity: M11-079 — native +8, constructor 0x005741A4..0x005741F6.

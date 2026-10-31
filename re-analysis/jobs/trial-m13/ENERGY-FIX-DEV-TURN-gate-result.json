@@ -1,0 +1,30 @@
+{
+  "jobs": [
+    "DEV-TURN-IN-PLACE-TEST-1",
+    "FIX-DRIVE-IN-DESPERATION-ENERGY-1"
+  ],
+  "state": "PASS",
+  "attempt": 1,
+  "commit": "2cb53ca195553db0cfca9383d436b4c52084d7c5",
+  "cozmoStackTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
+  "startedUtc": "2026-10-30T23:38:20.3494576Z",
+  "endedUtc": "2026-10-30T23:47:11.3141073Z",
+  "exitCode": 0,
+  "passed": 7003,
+  "failed": 0,
+  "skipped": 0,
+  "total": 7003,
+  "duration": "7 m 43 s - Cozmo.Protocol.Tests.dll (net9.0)",
+  "fingerprint": "16cb40f8e1dd1ab9fec2b17869790c288f71874b",
+  "fingerprintIndependentlyRecomputedAndCacheMatched": true,
+  "frozenTrackedSourcePathsMatched": 8,
+  "engineAndDerivedMarkerMatched": true,
+  "logSha256": "03e44106d389e41a886d10d26f0ed691526d676decff570d864ce71ced262fb9",
+  "consoleSha256": "561c32687ad2045c18aba564a520f2762425965bed1330f10c452569ca317b90",
+  "nativePre": [],
+  "nativePostOriginal": [],
+  "separateFinalProcesses": [],
+  "officialChanges": false,
+  "hardwareRun": false,
+  "authoritativeMainBaseline": "468d02099405a224c4eb1ccd028387a9d58f4c94"
+}

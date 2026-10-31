@@ -9,6 +9,8 @@ internal sealed class NativePickupBlockHelper: IHelper
 {
     private readonly ManipulationSystem _m;
     private readonly SteppedBehavior _parent;
+    private readonly Func<bool>? _hostCurrent;
+    private bool Current()=>_hostCurrent is null||_hostCurrent();
     internal uint Target {get;}
     internal float MaxTurn {get;}
     internal bool Flag104 {get;}
@@ -22,9 +24,9 @@ internal sealed class NativePickupBlockHelper: IHelper
     private Func<uint,byte>? _converter;
     private bool _hostUnavailable;
     private int _availabilityEpoch;
-    internal NativePickupBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,float maxTurn,bool flag104,bool flag105,int preAnimationTrigger=0x23F)
+    internal NativePickupBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,float maxTurn,bool flag104,bool flag105,int preAnimationTrigger=0x23F,Func<bool>? hostCurrent=null)
         :base(m.Robot,"PickupBlock",parent,factory)
-    {_m=m;_parent=parent;Target=target;MaxTurn=new Radians(maxTurn).Value;Flag104=flag104;Flag105=flag105;PreAnimationTrigger=preAnimationTrigger;}
+    {_m=m;_parent=parent;_hostCurrent=hostCurrent;HostCurrent=hostCurrent;Target=target;MaxTurn=new Radians(maxTurn).Value;Flag104=flag104;Flag105=flag105;PreAnimationTrigger=preAnimationTrigger;}
     public override bool ShouldCancelDelegates(CozmoRobot robot)=>false;
     protected override void OnInitializeOnStackSlot20(){Interlocked.Increment(ref _availabilityEpoch);_hostUnavailable=false;}
     protected override void OnStopSlot24(bool first)=>Interlocked.Increment(ref _availabilityEpoch);
@@ -34,31 +36,35 @@ internal sealed class NativePickupBlockHelper: IHelper
     private void Missing(string text)=>SteppedBehavior.ReportMissing("PickupBlockHelper "+text);
     internal void StartPickup(bool forceDrive)
     {
-        if(_hostUnavailable)return;
+        if(_hostUnavailable||!Current())return;
         try{StartPickupAvailable(forceDrive);}
-        catch(NativeActionUnavailable error)
+        catch(NativeActionUnavailable error){Unavailable(error);}
+    }
+    private void Unavailable(NativeActionUnavailable error)
+    {
+        if(!Current())return;
+        _hostUnavailable=true;_responseCallback=null;_converter=null;
+        Missing("unavailable: "+error.Message);
+        if(!Current())return;
+        int epoch=Volatile.Read(ref _availabilityEpoch);uint tag=_parent.CurrentRunnerTag;
+        _m.Robot.Engine.Robot?.ActionList.DeferHostCleanup(()=>
         {
-            _hostUnavailable=true;_responseCallback=null;_converter=null;
-            Missing("M12-031 visual pre-action005B7B48 unavailable: "+error.Message);
-            int epoch=Volatile.Read(ref _availabilityEpoch);uint tag=_parent.CurrentRunnerTag;
-            _m.Robot.Engine.Robot?.ActionList.DeferHostCleanup(()=>
-            {
-                if(epoch!=Volatile.Read(ref _availabilityEpoch)||!ReferenceEquals(_parent.HelperWeakReference?.Pointer,this)||!_parent.HasLiveHelper||_parent.CurrentRunnerTag!=tag)return;
-                var manager=_m.Robot.Engine.Robot?.BehaviorManagerOwner;
-                if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,_m.Robot.Engine.Timer.SecondsF);
-                else _parent.Stop(BehaviorStopReason.Interrupted);
-            });
-        }
+            if(!Current()||epoch!=Volatile.Read(ref _availabilityEpoch)||!ReferenceEquals(_parent.HelperWeakReference?.Pointer,this)||!_parent.HasLiveHelper||_parent.CurrentRunnerTag!=tag)return;
+            var manager=_m.Robot.Engine.Robot?.BehaviorManagerOwner;
+            if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,_m.Robot.Engine.Timer.SecondsF);
+            else _parent.Stop(BehaviorStopReason.Interrupted);
+        });
     }
     private void StartPickupAvailable(bool forceDrive)
     {
         if(forceDrive){Drive(true);return;}
         var owner=_m.Robot.Engine.Robot;
         if(owner?.StoredState is not {} state||_m.Vision.Calibration is not {} calibration)
-        {Missing("visual pre-action005B7B48 actual Robot clock/calibration input unavailable; no direct pickup or replacement drive");return;}
+        {if(_hostCurrent is not null)throw new NativeActionUnavailable("visual pre-action actual Robot clock/calibration input unavailable");Missing("visual pre-action005B7B48 actual Robot clock/calibration input unavailable; no direct pickup or replacement drive");return;}
         using var main=new Pose3d(owner.GetCheckedMainPose());
         var pre=PlaceRelObjectOffsetPoses.IsAtPreActionPoseWithVisualVerificationNative(_m.World.GetLocatedObjectByIdHelper(Target),PreActionType.Docking,0,0,state.Timestamp,main,
             owner.CarryingOwner?.CarriedObjectId,calibration,ObjectPoseQueries.Engine,()=>_m.NativeObstacles(main),_m.World);
+        if(!Current())return;
         if(pre!=ActionResult.Success){Drive(false);return;}
         var pickup=new NativePickupObjectRunner(_m,Target);
         NativeLastFaceRunner? face=null;NativeTurnTowardsObjectRunner? turn=null;
@@ -68,7 +74,13 @@ internal sealed class NativePickupBlockHelper: IHelper
             turn=new(_m,Target,NativeTurnTowardsObjectRunner.AnyCode,Radians.Pi,false,false);
         }
         var compound=BuildPickupCompound(pickup,face,turn);
-        StartWithResponse(compound,Respond);Attempts=unchecked(Attempts+1);
+        if(!Current())
+        {
+            bool ownsPickup=compound.Children.Contains(pickup),ownsFace=face is not null&&compound.Children.Contains(face),ownsTurn=turn is not null&&compound.Children.Contains(turn);
+            compound.RetireNeverAdmittedTree();if(!ownsPickup)pickup.RetireNeverAdmittedTree();
+            if(face is not null&&!ownsFace)face.RetireNeverAdmittedTree();if(turn is not null&&!ownsTurn)turn.RetireNeverAdmittedTree();return;
+        }
+        StartWithResponse(compound,Respond);if(Current())Attempts=unchecked(Attempts+1);
 
     }
     internal CompoundActionSequential BuildPickupCompound(ActionRunner pickup,ActionRunner? lastFace,ActionRunner? objectTurn)
@@ -77,7 +89,10 @@ internal sealed class NativePickupBlockHelper: IHelper
         // BUILD-PYRAMID-BASE-1 B1d/e:005B7CFC..7D4E, one-use F8 input before face/turn/pickup.
         if(PreAnimationTrigger!=0x23F)
         {
-            compound.AddAction(new TriggerAnimationAction(_m.Robot,new((AnimationTrigger)PreAnimationTrigger,1,true,0,60f,false)),false,false);
+            var animation=new TriggerAnimationAction(_m.Robot,new((AnimationTrigger)PreAnimationTrigger,1,true,0,60f,false));
+            if(_hostCurrent is not null&&!compound.AddActionGuarded(animation,false,Current)){animation.RetireNeverAdmittedTree();return compound;}
+            if(_hostCurrent is null)compound.AddAction(animation,false,false);
+            if(!Current())return compound;
             PreAnimationTrigger=0x23F;
         }
         if(Attempts==0&&MathF.Abs(MaxTurn)>=BitConverter.UInt32BitsToSingle(0x3727C5AC))
@@ -85,7 +100,9 @@ internal sealed class NativePickupBlockHelper: IHelper
             if(lastFace is null||objectTurn is null)throw new NotSupportedException("Native first-attempt turn runner inputs unavailable");
             compound.AddAction(lastFace,true,false);compound.AddAction(objectTurn,true,false);
         }
-        compound.AddAction(pickup,false,false);compound.SetNativeCompletionProxy(pickup.Tag);
+        if(_hostCurrent is not null){if(!compound.AddActionGuarded(pickup,false,Current))return compound;}
+        else compound.AddAction(pickup,false,false);
+        if(Current())compound.SetNativeCompletionProxy(pickup.Tag);
         return compound;
     }
     private sealed class PickupSequence:CompoundActionSequential
@@ -118,7 +135,9 @@ internal sealed class NativePickupBlockHelper: IHelper
     }
     private void Drive(bool force)
     {
-        var drive=Factory.CreateNativeDriveTo(_m,_parent,Target,force);DriveHelper=(NativeDriveToHelper)drive.Pointer;
+        var drive=Factory.CreateNativeDriveTo(_m,_parent,Target,force,hostCurrent:_hostCurrent);
+        if(!Current()){drive.Release();return;}
+        DriveHelper=(NativeDriveToHelper)drive.Pointer;
         Delegation.Delegate=drive;
         Delegation.OnSuccessHandler=_=>{StartPickup(false);return Status;};
         Delegation.OnFailureHandler=_=>BehaviorStatus.Failure;
@@ -126,25 +145,32 @@ internal sealed class NativePickupBlockHelper: IHelper
     private static byte ConvertResult(uint r)=>r is 0x04000003 or 0x04000004 or 0x04000005 or 0x03000015?(byte)1:r==0?(byte)3:(byte)0;
     internal void StartWithResponse(IActionRunner runner,Action<RobotCompletedAction> callback)
     {
+        if(!Current()){if(runner is ActionRunner discarded)discarded.RetireNeverAdmittedTree();return;}
         _responseCallback=callback;_converter=ConvertResult;
         _parent.StartActing(runner,completed=>
         {
+            if(!Current())return;
             byte result=_converter!(completed.Result);
             var director=_m.Robot.Engine.Robot?.NativeBehaviorRuntime?.AI.PickupResponses;
             if(director is null){Missing("actual AI+C response director unavailable; original callback retained");return;}
             int trigger=result==3?0x23F:director.Trigger(result);
             void Complete()
-            {var saved=_responseCallback;_responseCallback=null;_converter=null;saved?.Invoke(completed);}
+            {
+                if(!Current())return;var saved=_responseCallback;_responseCallback=null;_converter=null;
+                try{saved?.Invoke(completed);}catch(NativeActionUnavailable error){Unavailable(error);}
+            }
             if(trigger==0x23F)Complete();
             else
             {
-                _parent.StartActing(new TriggerAnimationAction(_m.Robot,new((AnimationTrigger)trigger,1,true,0,60f,false)),_=>Complete());
+                _parent.StartActing(new TriggerAnimationAction(_m.Robot,new((AnimationTrigger)trigger,1,true,0,60f,false)),_=>Complete(),_hostCurrent);
+                if(!Current())return;
                 _converter=null; //005B7482..7524: converter cleared after scheduling, before the response ends.
             }
-        });
+        },_hostCurrent);
     }
     internal void Respond(RobotCompletedAction completed)
     {
+        if(!Current())return;
         uint r=completed.Result;
         switch(r)
         {
@@ -156,22 +182,23 @@ internal sealed class NativePickupBlockHelper: IHelper
             case 0x0300001D:
                 if(completed.ObjectInteraction is not {} interaction)
                 {Missing("PK9 defined internal completion flag unavailable; no invented zero/Search delegation");return;}
-                if(interaction.Flag){Mark();StoreStatus(BehaviorStatus.Failure);return;}
-                var search=Factory.CreateNativeSearchForBlock(_m,_parent,Target);
+                if(interaction.Flag){Mark();if(Current())StoreStatus(BehaviorStatus.Failure);return;}
+                var search=Factory.CreateNativeSearchForBlock(_m,_parent,Target,hostCurrent:_hostCurrent);
+                if(!Current()){search.Release();return;}
                 SearchHelper=(NativeSearchForBlockHelper)search.Pointer;
                 Delegation.Delegate=search;
                 Delegation.OnSuccessHandler=_=>{StartPickup(false);return Status;};
-                Delegation.OnFailureHandler=_=>{Mark();return BehaviorStatus.Failure;};
+                Delegation.OnFailureHandler=_=>{Mark();return Current()?BehaviorStatus.Failure:Status;};
                 return;
         }
         if(r is 0x04000003 or 0x04000004 or 0x04000005 or 0x03000015)
         {
             if(Attempts<=1){StartPickup(false);return;}
             if(Flag105&&!AlternateRetry){AlternateRetry=true;Attempts=0;StartPickup(true);return;}
-            Mark();StoreStatus(BehaviorStatus.Failure);return;
+            Mark();if(Current())StoreStatus(BehaviorStatus.Failure);return;
         }
         if((r>>24)==4){StartPickup(false);return;}
-        Mark();StoreStatus(BehaviorStatus.Failure);
+        Mark();if(Current())StoreStatus(BehaviorStatus.Failure);
     }
     private void Mark()
     {if(_m.World.GetLocatedObjectByIdHelper(Target) is {} target)_m.Whiteboard.SetFailedToUse(target,ObjectActionFailure.PickUpObject);}

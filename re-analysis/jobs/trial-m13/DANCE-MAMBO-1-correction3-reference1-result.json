@@ -1,0 +1,138 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "phase": "correction3",
+  "kind": "reference1",
+  "state": "TEST_PASS_POST_UNKNOWN_LATER_CLEARED",
+  "passed": 184,
+  "failed": 0,
+  "total": 184,
+  "skipped": 0,
+  "classes": 2,
+  "allClassesRepresented": true,
+  "fullNameParameterOutcomeMultiplicityExact": true,
+  "inputCount": 8847,
+  "allInputsAnd187ImmutableBinsMatchReference": true,
+  "all192ObservedBinsUnchanged": true,
+  "testExit": 0,
+  "shutdownExit": 0,
+  "wrapperExit": 1,
+  "nativePre": [],
+  "nativePostOriginal": [
+    {
+      "ProcessId": 6948,
+      "Name": "dotnet.exe",
+      "CommandLine": null
+    }
+  ],
+  "checkoutPost": [],
+  "nativeFollowup": [],
+  "processCaveat": "reference PID6948 null CommandLine unknown, no kill, separatefollowup[]",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-correction3-reference1",
+  "files": {
+    "bins-after.json": {
+      "sha256": "fdbffdb6fb1b179249c79d67c18765ae3a6b96741eb747b81e4bb885807166b6",
+      "size": 39497
+    },
+    "bins-after.log": {
+      "sha256": "bace5abcf23ab6f0b7eff6674134c1903cc0aeb3196820e1bd5848c8d84c2c82",
+      "size": 22
+    },
+    "bins-before.json": {
+      "sha256": "fdbffdb6fb1b179249c79d67c18765ae3a6b96741eb747b81e4bb885807166b6",
+      "size": 39497
+    },
+    "bins-before.log": {
+      "sha256": "bace5abcf23ab6f0b7eff6674134c1903cc0aeb3196820e1bd5848c8d84c2c82",
+      "size": 22
+    },
+    "bins-diff.json": {
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+      "size": 4
+    },
+    "build-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "build.log": {
+      "sha256": "9b7995e2617189d54ecb102dbb773f990c5bb9e886530e77cd532e2101c14e64",
+      "size": 3896074
+    },
+    "checkout.json": {
+      "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+      "size": 8
+    },
+    "counts.txt": {
+      "sha256": "a78b84c8b55b9209cc64750dac087830985f4de547a22c1d0e25deee51870bc5",
+      "size": 25
+    },
+    "filter.txt": {
+      "sha256": "6ff10e329c516b6c5662aaa6e37cc073e62cf3e992362d43ece126dd1ad84b07",
+      "size": 81
+    },
+    "inputs-after.json": {
+      "sha256": "8c228d0df913de00985d42c07ab6931b4ef128989576df7a01b1f4b12ed44c22",
+      "size": 1580464
+    },
+    "inputs-after.log": {
+      "sha256": "d245e09accb7cf5ecee7273752550111b1846cf1ae29604d954ac5c2177fcfe4",
+      "size": 28
+    },
+    "inputs-before.json": {
+      "sha256": "8c228d0df913de00985d42c07ab6931b4ef128989576df7a01b1f4b12ed44c22",
+      "size": 1580464
+    },
+    "inputs-before.log": {
+      "sha256": "d245e09accb7cf5ecee7273752550111b1846cf1ae29604d954ac5c2177fcfe4",
+      "size": 28
+    },
+    "inputs-diff.json": {
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+      "size": 4
+    },
+    "inventory.py": {
+      "sha256": "4c9ac60853cac19333ff63ae975e480bd4126b2c55e44e1911665afacec0a44e",
+      "size": 1566
+    },
+    "plan.json": {
+      "sha256": "907a9dcd20185f8766e5c12f3357dc6a6f40372e9d529cdf1b2480f0a7fa3873",
+      "size": 324
+    },
+    "postflight.json": {
+      "sha256": "99b627899ec1ee4437f920e21f40e0a197a91e0eb9f2647b2b01a8800e6a0a3e",
+      "size": 111
+    },
+    "preflight.json": {
+      "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+      "size": 8
+    },
+    "run.ps1": {
+      "sha256": "a9ca166608ce85cfb81b24514e68ecca0f3a621563ecb26ef8ad170ff6e2cb11",
+      "size": 2854
+    },
+    "script-hashes.txt": {
+      "sha256": "ee674f5794b5d33a8a3366d532fad6d75ae307df555f7fbfc493c6417f0dfddb",
+      "size": 435
+    },
+    "shutdown-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "shutdown.log": {
+      "sha256": "554f3d83f9124651a7726864459c7dc8a54e08d205492927bc08a70c6994fdd1",
+      "size": 322
+    },
+    "test-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "test.log": {
+      "sha256": "d7dbd9a0ca2a0d6de10229371e37245e1ccdb1a64f99e6fe00228d6a7f7153b7",
+      "size": 1332
+    },
+    "results/correction3-reference1.trx": {
+      "sha256": "1e4af049c59012edf2aebdd859cebb120bd65649f67df19d1f1705f5b8392b04",
+      "size": 288564
+    }
+  },
+  "followupInventorySha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+}

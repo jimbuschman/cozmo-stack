@@ -35,6 +35,13 @@ internal sealed class NativeTurnInPlaceRunner : NativeVisionRunner
         _turn.SetTolerance((float)spec.ToleranceRad);_turn.Byte0xD8=spec.Byte0xD8;
         if(spec.MaxSpeedSet){_turn.SetMaxSpeed((float)spec.MaxSpeedRadPerSec);_turn.SetAccel((float)spec.AccelRadPerSec2);}
     }
+    // DevTurn GenerateTestAction 0x005CAA2A..7A: setters are unconditional and ordered.
+    internal NativeTurnInPlaceRunner(ManipulationSystem m,float angle,float accel,float speed,float tolerance):base(m,0x28,4)
+    {
+        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,true),angle,false,Tag);
+        _turn.SetAccel(accel); _turn.SetMaxSpeed(speed); _turn.SetTolerance(tolerance); _turn.Variability0xB8=0;
+    }
+    internal TurnInPlaceAction Parameters => _turn;
     public override int Init(){_turn.BindOwnedRunnerTag(Tag);return unchecked((int)_turn.Init());}
     public override uint CheckIfDone()=>_turn.CheckIfDone();
     public override void WatcherEnding(){_turn.Dispose();base.WatcherEnding();}

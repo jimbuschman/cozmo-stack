@@ -36,6 +36,7 @@ public static class FreeplayTool
         using var m = new ManipulationSystem(robot, vision);
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
         using var stack = FreeplayStack.Create(obb, robot, ctx, () => 0, vision, m, withReactions: false);
+        WarnStandaloneEnergy(stack, Console.WriteLine);
         foreach (var act in stack.Tree) Print(act, stack, 0);
         Console.WriteLine($"\nbound behaviours: {stack.Bound.Count}; named by the tree but not built: {stack.UnboundIds.Count}");
         foreach (var id in stack.UnboundIds) Console.WriteLine($"  - {id}");
@@ -63,6 +64,12 @@ public static class FreeplayTool
         foreach (var s in act.SubActivities) Print(s, stack, depth + 1);
     }
 
+    private static void WarnStandaloneEnergy(FreeplayStack stack, Action<string> say)
+    {
+        if (stack.Bound.TryGetValue("Needs_SevereLowEnergyState", out var behavior) && behavior is DriveInDesperationBehavior)
+            say("MISSING: Needs_SevereLowEnergyState uses the legacy standalone custom driver; its behavior differs from the source-checked Energy path. Native NeedsExpression admission remains unbuilt (M8-013).");
+    }
+
     private static int Simulate(string obb, int ticks, string? stateDir)
     {
         using var robot = CozmoRobot.CreateOffline(engineOptions:EngineStartupResources.OptionsForRoot(obb,stateDir));
@@ -74,6 +81,7 @@ public static class FreeplayTool
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Mood = new MoodState(MoodModel.Load(obb)) };
         double clock = 0;
         using var stack = FreeplayStack.Create(obb, robot, ctx, () => clock, vision, m, withReactions: false, needsDirectory: stateDir);
+        WarnStandaloneEnergy(stack, Console.WriteLine);
         stack.Freeplay.Log += l => Console.WriteLine("  " + l);
         stack.Needs.Log += l => Console.WriteLine("  needs: " + l);
         Console.WriteLine($"offline robot, {stack.Bound.Count} behaviours bound; ticking {ticks} times at 0.5 s");
@@ -129,6 +137,7 @@ public static class FreeplayTool
         var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Arbiter = arbiter, Mood = new MoodState(MoodModel.Load(obb)) };
         var sw = System.Diagnostics.Stopwatch.StartNew();
         using var stack = FreeplayStack.Create(obb, robot, ctx, () => sw.Elapsed.TotalSeconds, vision, m, needsDirectory: Arg(a, "--state-dir"));
+        WarnStandaloneEnergy(stack, Say);
         bool noActivityError = false;
         var behaviorStarts = new List<(double AtSec, string Behavior)>();
         var moodSamples = new List<(double AtSec, Dictionary<EmotionType, double> Values)>();

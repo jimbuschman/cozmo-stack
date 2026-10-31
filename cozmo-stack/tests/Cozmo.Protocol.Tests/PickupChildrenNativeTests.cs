@@ -244,7 +244,7 @@ public sealed class PickupChildrenNativeTests
         {
             SteppedBehavior.ResetMissingForTests(); // each serialized theory case must observe its own diagnostic, despite process-wide deduplication.
             Assert.True(manager.StartAsync(parent.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-            Assert.Contains(missing,s=>s.Contains("M12-031")&&s.Contains("footprint"));Assert.Equal(0u,helper.Attempts);Assert.False(callback);
+            Assert.Contains(missing,s=>s.Contains("M12-036")&&s.Contains("footprint"));Assert.Equal(0u,helper.Attempts);Assert.False(callback);
             if(reuse)
             {
                 manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);

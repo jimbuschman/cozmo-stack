@@ -1,0 +1,12 @@
+{
+  "job": "CUBE-LIFT-WORKOUT-1",
+  "reviewerCorrectionBatch": 1,
+  "adjustment": "precompile test fixture cache refresh, same review batch",
+  "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/CubeLiftWorkoutNativeTests.cs",
+  "beforeSha256": "7b5c9085c2201f5072f3154e3940a1b8d254992bacc8d986a50ba7a98fce1c83",
+  "afterOriginalSha256": "33968ed3d4b7598aaf4c55c97de5284a83f2ebdda09a70af1e99f894f502b7ec",
+  "afterFilteredSha256": "33968ed3d4b7598aaf4c55c97de5284a83f2ebdda09a70af1e99f894f502b7ec",
+  "patchSha256": "e2e41530634381c33c0f0f819f2cfc4504d2b4723de0175bc1f097532ac90f1f",
+  "archive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-correction1a",
+  "testsRun": 0
+}

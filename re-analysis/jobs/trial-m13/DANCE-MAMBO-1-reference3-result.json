@@ -1,0 +1,134 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "attempt": 3,
+  "state": "FAIL",
+  "buildExit": 0,
+  "testExit": 1,
+  "wrapperExit": 1,
+  "shutdownExit": 0,
+  "passed": 1258,
+  "failed": 1,
+  "total": 1259,
+  "skipped": 0,
+  "failures": [
+    "Cozmo.Protocol.Tests.DanceMamboNativeTests.PriorRunCubeCallbackUsesCurrentActiveStateAndFadeStopsAllEngineLights"
+  ],
+  "naturalFadeStrictTimingPassed": true,
+  "classification": "harness hardcoded radio slots0/1 as actual world ObjectIDs7/8",
+  "inputCount": 8827,
+  "allInputsUnchanged": true,
+  "all187ImmutableBinsUnchanged": true,
+  "changedGeneratedOutputs": [
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+  ],
+  "nativePre": [],
+  "nativePost": [],
+  "checkoutPost": [],
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-reference3",
+  "files": {
+    "bins-after.json": {
+      "sha256": "96471f6bae50315e61e65d1dd1a33669c7f19c79fb82167595e56669214c97db",
+      "size": 39497
+    },
+    "bins-after.log": {
+      "sha256": "bace5abcf23ab6f0b7eff6674134c1903cc0aeb3196820e1bd5848c8d84c2c82",
+      "size": 22
+    },
+    "bins-before.json": {
+      "sha256": "2dab1f23ee24b94a0e314ae3cc50b62f023c6ff41ab9122a763fabb8631af858",
+      "size": 39497
+    },
+    "bins-before.log": {
+      "sha256": "bace5abcf23ab6f0b7eff6674134c1903cc0aeb3196820e1bd5848c8d84c2c82",
+      "size": 22
+    },
+    "bins-diff.json": {
+      "sha256": "051d88b3b6479b9ebde779e6df915a9be108646d1ef69ccb41d8fad6ce12eaf3",
+      "size": 390
+    },
+    "build-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "build.log": {
+      "sha256": "7b61d068d373e0199a4b415e51fb8f44f61d6de970c75ce6e5be0a9d827e080f",
+      "size": 1385008
+    },
+    "checkout.json": {
+      "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+      "size": 8
+    },
+    "counts.txt": {
+      "sha256": "ea6f888a28410782f734701558e5c5e6c85506c2ec2972ba62f93df00c2ecee1",
+      "size": 25
+    },
+    "filter.txt": {
+      "sha256": "4d8e9bbc11290a85c7564280a48ab614a0f181b5a9cc035e494e7f4acfca81b3",
+      "size": 2772
+    },
+    "inputs-after.json": {
+      "sha256": "7bbd05675a03d0d051e4ea656e48487bd37dca44c8d6b06a9701e541d4e6fe5e",
+      "size": 1577048
+    },
+    "inputs-after.log": {
+      "sha256": "268ba2c3e03dfaa08eaa752999f2a3d3c6622d4a2b31a897e45aa60a437a74f5",
+      "size": 28
+    },
+    "inputs-before.json": {
+      "sha256": "7bbd05675a03d0d051e4ea656e48487bd37dca44c8d6b06a9701e541d4e6fe5e",
+      "size": 1577048
+    },
+    "inputs-before.log": {
+      "sha256": "268ba2c3e03dfaa08eaa752999f2a3d3c6622d4a2b31a897e45aa60a437a74f5",
+      "size": 28
+    },
+    "inputs-diff.json": {
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+      "size": 4
+    },
+    "inventory.py": {
+      "sha256": "4c9ac60853cac19333ff63ae975e480bd4126b2c55e44e1911665afacec0a44e",
+      "size": 1566
+    },
+    "plan.json": {
+      "sha256": "0b94f661078fe6ae0aaeee57bdebf3705b60ae617c05a2f74acac59a2fcea86a",
+      "size": 4907
+    },
+    "postflight.json": {
+      "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+      "size": 8
+    },
+    "preflight.json": {
+      "sha256": "285386bcbda5b2338822b19266a2b90c6d87e9da18401f9148c69e469c11bcb7",
+      "size": 8
+    },
+    "run.ps1": {
+      "sha256": "064ffa863762f625a32bcd7f52416a7c6448ace268a65509b335aea1a46b154e",
+      "size": 2830
+    },
+    "script-hashes.txt": {
+      "sha256": "ee674f5794b5d33a8a3366d532fad6d75ae307df555f7fbfc493c6417f0dfddb",
+      "size": 435
+    },
+    "shutdown-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "shutdown.log": {
+      "sha256": "554f3d83f9124651a7726864459c7dc8a54e08d205492927bc08a70c6994fdd1",
+      "size": 322
+    },
+    "test-exit.txt": {
+      "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+      "size": 3
+    },
+    "test.log": {
+      "sha256": "2a07a15e4b2f8cc9bcbc854a2a1345cc5a833248225c055a6002f06514aecf85",
+      "size": 4672
+    },
+    "results/reference3.trx": {
+      "sha256": "26535c26274bfbe28d3de811b24aed2900a7e06f7f6293a719dffd99ae63070f",
+      "size": 1988419
+    }
+  }
+}

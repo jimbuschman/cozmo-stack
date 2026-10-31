@@ -289,6 +289,8 @@ public sealed class BehaviorFactory
 
     private static readonly Dictionary<BehaviorClass, Func<BehaviorFactoryContext, JsonElement, IBehavior>> Constructors = new()
     {
+        [BehaviorClass.DevTurnInPlaceTest] = (ctx,json)=>new NativeDevTurnInPlaceTestBehavior(ctx,json),
+        [BehaviorClass.DriveInDesperation] = (ctx,json)=>new NativeDriveInDesperationBehavior(ctx,json),
         [BehaviorClass.BringCubeToBeacon] = (ctx,json)=>new NativeBringCubeToBeaconBehavior(ctx,json,ctx.BringBeaconOwner!),
         [BehaviorClass.ThinkAboutBeacons] = (ctx,json)=>new ThinkAboutBeaconsBehavior(ctx.Manipulation!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(), json.GetProperty("params").GetProperty("beaconRadius_mm").GetSingle(), json.GetProperty("params").GetProperty("newAreaAnimTrigger").GetString()!),
         [BehaviorClass.Bouncer] = (ctx,json)=>new NativeBouncerBehavior(ctx,json,
@@ -302,6 +304,8 @@ public sealed class BehaviorFactory
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
         [BehaviorClass.CantHandleTallStack] = (ctx,json)=>new NativeCantHandleTallStackBehavior(ctx,json),
+        [BehaviorClass.CubeLiftWorkout] = (ctx,json)=>new NativeCubeLiftWorkoutBehavior(ctx,json),
+        [BehaviorClass.Dance] = (ctx,json)=>new NativeDanceBehavior(ctx,json),
         [BehaviorClass.CheckForStackAtInterval] = (ctx,json)=>new NativeCheckForStackAtIntervalBehavior(ctx,json),
         [BehaviorClass.PopAWheelie] = (ctx,json)=>new NativePopAWheelieBehavior(ctx,json),
         [BehaviorClass.RollBlock] = (ctx,json)=>new NativeRollBlockBehavior(ctx,json),
@@ -382,12 +386,19 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
+        if(cls==BehaviorClass.DriveInDesperation && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowEnergyState || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("DriveInDesperation factory: only the checked Energy configuration with actual Robot and manipulation owners is available");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        if(cls==BehaviorClass.CubeLiftWorkout && BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.CubeLiftWorkout or BehaviorID.SparksCubeLiftWorkout))
+        { SteppedBehavior.ReportMissing("CubeLiftWorkout factory: configuration is outside the checked ordinary/Sparks instances");status=BehaviorCreateStatus.NotImplemented;return null; }
+        if((cls==BehaviorClass.DevTurnInPlaceTest||cls==BehaviorClass.Dance||cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if((cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
+        if((cls==BehaviorClass.DevTurnInPlaceTest||cls==BehaviorClass.Dance||cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes)&&ctx.NativeRobot is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
@@ -420,7 +431,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
+            if(stepped is NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

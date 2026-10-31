@@ -1,0 +1,9 @@
+{
+  "phase": "early incomplete draft",
+  "beforeExistingArchivesMatched": 6,
+  "newFileAbsences": 2,
+  "newAbsenceContemporaneity": "C recorded before edits in tool/message sequence; baseline HEAD absence independently available",
+  "frozenActualDraftArchivesMatched": 6,
+  "coherentCompletionClaim": false,
+  "dotnetRun": false
+}

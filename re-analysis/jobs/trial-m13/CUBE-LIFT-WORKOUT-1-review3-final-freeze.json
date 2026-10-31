@@ -1,0 +1,194 @@
+{
+  "job": "CUBE-LIFT-WORKOUT-1",
+  "phase": "review follow-up 3 final coherent draft before independent affected review",
+  "reviewerRounds": 3,
+  "postTestHarnessCorrections": 1,
+  "compilerCorrections": 0,
+  "sourceQuestions": 6,
+  "reference2HistoricalOnly": true,
+  "archive": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-cube-lift-workout-1\\.scratch\\cube-lift-workout-review3-final",
+  "priorIntermediateFreeze": "CUBE-LIFT-WORKOUT-1-review3-freeze.json",
+  "files": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Actions/CompoundActions.cs",
+      "beforeSha256": "57db6436b9885797d0db81363ef57ffe090572b138a6e4a38d0790b550db5e8b",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "57db6436b9885797d0db81363ef57ffe090572b138a6e4a38d0790b550db5e8b",
+      "filteredSha256": "57db6436b9885797d0db81363ef57ffe090572b138a6e4a38d0790b550db5e8b",
+      "gitBlob": "df021920bae3df73d626363b7a5520867b6fb904",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "beforeSha256": "35a15bf5dbdb3c5eb9c55e6c1b0183e6fe12efd93f88cb4ec2a9bb152f566047",
+      "beforeSource": "Git-filtered clean HEAD reconstruction; SHA matches actual reference2 pre-edit input; raw pre-edit bytes were not separately archived",
+      "originalSha256": "78bacd638bf7d9182678948e219e78ea7af005d83bb54a58b4b248c7aa71397e",
+      "filteredSha256": "78bacd638bf7d9182678948e219e78ea7af005d83bb54a58b4b248c7aa71397e",
+      "gitBlob": "a434588cafdbb280d11c9c252b2a172292ac5ce3",
+      "changed": true
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs",
+      "beforeSha256": "20bec06f704f3020ce8f94d6c23e4ca125399ec7c9fa2e1850ac6782df9d126a",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "20bec06f704f3020ce8f94d6c23e4ca125399ec7c9fa2e1850ac6782df9d126a",
+      "filteredSha256": "20bec06f704f3020ce8f94d6c23e4ca125399ec7c9fa2e1850ac6782df9d126a",
+      "gitBlob": "1c3a911eb138d7e753265b60c89a0de0e620ea76",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "beforeSha256": "b4f2856ddc40fe531de8e70a65c915a64ffa0184d09474c674cb9664f24c77ce",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "b4f2856ddc40fe531de8e70a65c915a64ffa0184d09474c674cb9664f24c77ce",
+      "filteredSha256": "b4f2856ddc40fe531de8e70a65c915a64ffa0184d09474c674cb9664f24c77ce",
+      "gitBlob": "069d49b98b123d577f5a3db53db997f9165c8eef",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorHelperComponent.cs",
+      "beforeSha256": "964ba28c9663d3e86f1d71272f94318365cbfb6ee9df6322dbc01afd325aa680",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "964ba28c9663d3e86f1d71272f94318365cbfb6ee9df6322dbc01afd325aa680",
+      "filteredSha256": "964ba28c9663d3e86f1d71272f94318365cbfb6ee9df6322dbc01afd325aa680",
+      "gitBlob": "85c22d2338c749c68e6bd0316cd9b14f4ed3286d",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorPublicState.cs",
+      "beforeSha256": "585bef23f231d9cec7ae22a75e0c3e74d33fd6f3344d8e72900ab54a18e835bb",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "585bef23f231d9cec7ae22a75e0c3e74d33fd6f3344d8e72900ab54a18e835bb",
+      "filteredSha256": "585bef23f231d9cec7ae22a75e0c3e74d33fd6f3344d8e72900ab54a18e835bb",
+      "gitBlob": "9602183fff3113f9b3397ff522e69695e3584f58",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+      "beforeSha256": "9a3fdf50226f5e133680801230197dff9fefcef229c93b67ec92002b638518d0",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "9a3fdf50226f5e133680801230197dff9fefcef229c93b67ec92002b638518d0",
+      "filteredSha256": "9a3fdf50226f5e133680801230197dff9fefcef229c93b67ec92002b638518d0",
+      "gitBlob": "13dd997de863bba373ddafe33bb9ce8ef9d23590",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/IHelper.cs",
+      "beforeSha256": "4d908b45c6065666daa5241ad6ed472cb36d33daa9dbe58f1733ef756699524c",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "4d908b45c6065666daa5241ad6ed472cb36d33daa9dbe58f1733ef756699524c",
+      "filteredSha256": "4d908b45c6065666daa5241ad6ed472cb36d33daa9dbe58f1733ef756699524c",
+      "gitBlob": "b9fecab9fded72157a951c7b598c162602c4a8bb",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "beforeSha256": "a20c207e923fc569b36681cf690918c5d8033984d7c07941f40fe4cec4265285",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "a20c207e923fc569b36681cf690918c5d8033984d7c07941f40fe4cec4265285",
+      "filteredSha256": "a20c207e923fc569b36681cf690918c5d8033984d7c07941f40fe4cec4265285",
+      "gitBlob": "701b276e5d96bb57047d7c3338647a29fd39fabe",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCubeLiftWorkoutBehavior.cs",
+      "beforeSha256": "202a148874d0226ff729987f8485537cbcc1a64bb71d585e315a27db7cd562a2",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "e294b6dcd0352685c87cce117fba8c6b6e77950e55576fcb2f51e19844e37e25",
+      "filteredSha256": "e294b6dcd0352685c87cce117fba8c6b6e77950e55576fcb2f51e19844e37e25",
+      "gitBlob": "2950b5f5221cf01a8bc0ab6375b7f5ae4957a971",
+      "changed": true
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDriveToHelper.cs",
+      "beforeSha256": "ae6f5c5cfe1eb4c0a1735c9fa83c9e2107fb525a4acd23bcd1a3ad9e1e652181",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "ae6f5c5cfe1eb4c0a1735c9fa83c9e2107fb525a4acd23bcd1a3ad9e1e652181",
+      "filteredSha256": "ae6f5c5cfe1eb4c0a1735c9fa83c9e2107fb525a4acd23bcd1a3ad9e1e652181",
+      "gitBlob": "8255c01a2afbc15db6152459cbf41bff608b6632",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupBlockHelper.cs",
+      "beforeSha256": "2657d9d337edd43fa04c64a3134ee83a534a10701195bf73354555ba3325ac9c",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "2657d9d337edd43fa04c64a3134ee83a534a10701195bf73354555ba3325ac9c",
+      "filteredSha256": "2657d9d337edd43fa04c64a3134ee83a534a10701195bf73354555ba3325ac9c",
+      "gitBlob": "555d7e5249faecb50e43a94247a04ce90fc09c2c",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSearchForBlockHelper.cs",
+      "beforeSha256": "7665524d6f82de513b61c2f76cea74426dbadb1c1ecc9605597804bcd703f049",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "7665524d6f82de513b61c2f76cea74426dbadb1c1ecc9605597804bcd703f049",
+      "filteredSha256": "7665524d6f82de513b61c2f76cea74426dbadb1c1ecc9605597804bcd703f049",
+      "gitBlob": "9b0e5bb106d51adb2aa8b355963771677e590dea",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/SteppedBehavior.cs",
+      "beforeSha256": "897b4a66675984dadf409d0fc1f971cf711418c9b64fdb0999faf0b971ec845a",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "897b4a66675984dadf409d0fc1f971cf711418c9b64fdb0999faf0b971ec845a",
+      "filteredSha256": "897b4a66675984dadf409d0fc1f971cf711418c9b64fdb0999faf0b971ec845a",
+      "gitBlob": "1d99dbea6e55ab89019eda67b4b984aca7702726",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativePlaceGroundRunner.cs",
+      "beforeSha256": "8b4d30e728326d3645a197132c688527f66ae3dd545d56ff217dcc4c9fbd35cd",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "8b4d30e728326d3645a197132c688527f66ae3dd545d56ff217dcc4c9fbd35cd",
+      "filteredSha256": "8b4d30e728326d3645a197132c688527f66ae3dd545d56ff217dcc4c9fbd35cd",
+      "gitBlob": "1f88d5c2cef93f1c6ee7c6a9c2664f05068d2885",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs",
+      "beforeSha256": "0fd9772f85c1288747e70b6215bf9d379232c64382dd1caac85d9b8f6487752a",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "27d534411ccf4509b593ae8780316c59f3bc04d762484d5392968c75f8cd3c80",
+      "filteredSha256": "27d534411ccf4509b593ae8780316c59f3bc04d762484d5392968c75f8cd3c80",
+      "gitBlob": "2a40879b64f176b2fdb45745e21fdb14e509f57c",
+      "changed": true
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CubeLiftWorkoutNativeTests.cs",
+      "beforeSha256": "3872d49333681d8a5f41aedcc1a4d6e48cf40e0b433afbe65bf0b776d484d3ef",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "15ea558ebf8611b90fb73ada652eb08393092a40f7156a90861d540e3197140e",
+      "filteredSha256": "15ea558ebf8611b90fb73ada652eb08393092a40f7156a90861d540e3197140e",
+      "gitBlob": "c70739912625415aa417fb07fdb9175ec3fd32a8",
+      "changed": true
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "beforeSha256": "1a08b906b87741d0826e1fd9e68de686606f6a1721b6b1f2ae524c733b39ee64",
+      "beforeSource": "actual pre-follow-up archive",
+      "originalSha256": "1a08b906b87741d0826e1fd9e68de686606f6a1721b6b1f2ae524c733b39ee64",
+      "filteredSha256": "1a08b906b87741d0826e1fd9e68de686606f6a1721b6b1f2ae524c733b39ee64",
+      "gitBlob": "0696ebce812aec2bcc90ffb19566609434f0cc78",
+      "changed": false
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/NavigationTests.cs",
+      "beforeSha256": "59f9f92642a6d101239f0d35497a6ae281a171ef357f517fe802dab282f377d3",
+      "beforeSource": "Git-filtered clean HEAD reconstruction; SHA matches actual reference2 pre-edit input; raw pre-edit bytes were not separately archived",
+      "originalSha256": "a667fb481d4e74c631a36c947a41ba33a6099811d283f5ad275dfc641286ddbe",
+      "filteredSha256": "a667fb481d4e74c631a36c947a41ba33a6099811d283f5ad275dfc641286ddbe",
+      "gitBlob": "e7cdcbd0591cc7e7fd4f47b99b30aae22eb18268",
+      "changed": true
+    }
+  ],
+  "reconstructedBeforeLimitations": [
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/NavigationTests.cs",
+    "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs"
+  ],
+  "remaining": [
+    "public int count view reports typed unavailable above int.MaxValue",
+    "non-finite and outside-u32 scores unavailable pending native/input policy",
+    "M15-045 workout recursive teardown and M12/M15/M8/audio recipients per existing records"
+  ],
+  "dotnetSinceReference2": 0
+}

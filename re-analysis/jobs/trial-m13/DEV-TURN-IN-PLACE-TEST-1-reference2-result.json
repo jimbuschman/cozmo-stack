@@ -1,0 +1,38 @@
+{
+  "job": "DEV-TURN-IN-PLACE-TEST-1",
+  "kind": "reference2",
+  "state": "PASS",
+  "phaseExits": {
+    "build": 0,
+    "restore": 0,
+    "error": "",
+    "shutdown": 0,
+    "exit": 0,
+    "test": 0
+  },
+  "passed": 119,
+  "failed": 0,
+  "total": 119,
+  "skipped": 0,
+  "classCounts": {
+    "Cozmo.Protocol.Tests.CoreReviewTests": 26,
+    "Cozmo.Protocol.Tests.DriveInDesperationNativeTests": 12,
+    "Cozmo.Protocol.Tests.M7BatchThreeBTests": 36,
+    "Cozmo.Protocol.Tests.HikingRollCubeNativeTests": 20,
+    "Cozmo.Protocol.Tests.DevTurnInPlaceNativeTests": 8,
+    "Cozmo.Protocol.Tests.PickupStackNativeVisionTests": 9,
+    "Cozmo.Protocol.Tests.NativeBouncerFactoryTests": 5,
+    "Cozmo.Protocol.Tests.HikingRollCubeRecoveryTests": 3
+  },
+  "inputCount": 9197,
+  "allObservedBins": 187,
+  "allInputsAndBinsUnchanged": true,
+  "outputExclusions": [],
+  "frozenEntriesMatched": 8,
+  "nativePre": [],
+  "nativePost": [],
+  "checkoutPost": [],
+  "trxSha256": "8557a6cc0814616677e90db603ee13bd68b16c3b955fa4c0720603f53416c7b1",
+  "logSha256": "011031ea2a19359dc6b7b489ea12d6bc023964fe1324e4d075741dc20eec63ad",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1\\.scratch\\dev-turn-in-place-test-1-build\\reference2"
+}

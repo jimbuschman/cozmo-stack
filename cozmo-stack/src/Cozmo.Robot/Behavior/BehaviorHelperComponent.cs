@@ -93,10 +93,10 @@ public sealed class BehaviorHelperFactory
 {
     internal BehaviorHelperFactory(BehaviorHelperComponent component) { Component = component; }
     public BehaviorHelperComponent Component { get; }
-    internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,int maxStage=0)
-    {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target,maxStage);return Component.AddHelperToComponent(ref helper);}
-    internal HelperRef CreateNativeDriveTo(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,bool force,Manipulation.PreActionType type=Manipulation.PreActionType.Docking)
-    {IHelper? helper=new NativeDriveToHelper(m,parent,this,target,force,type);return Component.AddHelperToComponent(ref helper);}
+    internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,int maxStage=0,Func<bool>? hostCurrent=null)
+    {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target,maxStage,hostCurrent);return Component.AddHelperToComponent(ref helper);}
+    internal HelperRef CreateNativeDriveTo(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,bool force,Manipulation.PreActionType type=Manipulation.PreActionType.Docking,Func<bool>? hostCurrent=null)
+    {IHelper? helper=new NativeDriveToHelper(m,parent,this,target,force,type,hostCurrent);return Component.AddHelperToComponent(ref helper);}
 }
 
 // fidelity: M8-011
@@ -123,6 +123,7 @@ public sealed class BehaviorHelperComponent
     private readonly SourceLogSink? _sourceLog;
     private Action<CozmoRobot>? _success;      // +0x10 (manager +0x20)
     private Action<CozmoRobot>? _failure;      // +0x28 (manager +0x38)
+    private Func<bool>? _hostCurrent;
     private int _storedWorldOriginId;          // +0x40
     private int _depth;                        // how many times the owning thread holds _gate (only read or written while it is held)
 
@@ -188,18 +189,23 @@ public sealed class BehaviorHelperComponent
     /// <c>PushHelperOntoStackAndUpdate</c> (0x0056dbdc; the call is at 0x0056db1e), the copy released, and only then +0x40 = <c>Robot::GetWorldOriginID</c> (0x0056db2c/0x0056db30),
     /// and it returns true.
     /// </summary>
-    public bool DelegateToHelper(CozmoRobot robot, HelperRef helper, Action<CozmoRobot>? onSuccess, Action<CozmoRobot>? onFailure)
+    public bool DelegateToHelper(CozmoRobot robot, HelperRef helper, Action<CozmoRobot>? onSuccess, Action<CozmoRobot>? onFailure, Func<bool>? hostCurrent=null,Action? hostInserted=null)
     {
         using (Enter())
         {
             ClearStackMaintenanceVars();
+            if(hostCurrent is not null&&!hostCurrent())return false;
             _success = onSuccess;
             _failure = onFailure;
+            _hostCurrent = hostCurrent;
             if (_stack.Count != 0) return false;
             var copy = helper.Copy();
-            PushHelperOntoStackAndUpdate(robot, copy);
-            copy.Release();
-            _storedWorldOriginId = _worldOriginId();
+            try { PushHelperOntoStackAndUpdate(robot, copy,hostCurrent,hostInserted); }
+            finally { copy.Release(); }
+            if(hostCurrent is not null&&!hostCurrent())return false;
+            int origin=_worldOriginId();
+            if(hostCurrent is not null&&!hostCurrent())return false;
+            _storedWorldOriginId = origin;
             return true;
         }
     }
@@ -209,14 +215,18 @@ public sealed class BehaviorHelperComponent
     /// (2) <c>IHelper::InitializeOnStack</c> (0x0056dc34); (3) appends the handle (a copy: the pointer and the control block with one more owner,
     /// 0x0056dc38..0x0056dc5a); (4) <c>UpdateActiveHelper</c> (0x0056dc62).
     /// </summary>
-    internal void PushHelperOntoStackAndUpdate(CozmoRobot robot, HelperRef helper)
+    internal void PushHelperOntoStackAndUpdate(CozmoRobot robot, HelperRef helper,Func<bool>? hostCurrent=null,Action? hostInserted=null)
     {
         using (Enter())
         {
             Info("HelperComponent.StartNewHelper", helper.Pointer.Name);
+            if(hostCurrent is not null&&!hostCurrent())return;
             helper.Pointer.InitializeOnStack();
+            if(hostCurrent is not null&&!hostCurrent())return;
             _stack.Add(helper.Copy());
-            UpdateActiveHelper(robot);
+            hostInserted?.Invoke();
+            if(hostCurrent is not null&&!hostCurrent())return;
+            UpdateActiveHelper(robot,hostCurrent);
         }
     }
 
@@ -226,7 +236,7 @@ public sealed class BehaviorHelperComponent
     /// </summary>
     public void ClearStackMaintenanceVars()
     {
-        using (Enter()) { _success = null; _failure = null; }
+        using (Enter()) { _success = null; _failure = null; _hostCurrent=null; }
     }
 
     /// <summary><c>ClearStackLifetimeVars</c> 0x0056dcdc is <c>bx lr</c>; the call-site scan finds no caller.</summary>
@@ -285,6 +295,19 @@ public sealed class BehaviorHelperComponent
                 var target = _stack[iteratorIndex].Pointer; // captured iterator's value is re-read on every pass
                 var top = _stack[^1];
                 bool firstPass = first;
+                var current=_hostCurrent;
+                if(current is not null)
+                {
+                    // Detach this host run's retained entry before its Stop can synchronously
+                    // admit a replacement. The local handle pins it through the call.
+                    _stack.RemoveAt(_stack.Count-1);
+                    try { OutsideLock(() => top.Pointer.Stop(firstPass)); }
+                    finally { top.Release(); }
+                    if(!current())return;
+                    first=false;
+                    if(ReferenceEquals(top.Pointer,target))return;
+                    continue;
+                }
                 OutsideLock(() => top.Pointer.Stop(firstPass));
                 if (_stack.Count == 0)
                 {
@@ -306,7 +329,7 @@ public sealed class BehaviorHelperComponent
     /// <c>ClearStackFromTopToIter</c> with the iterator at the NEXT element (0x0056de64..0x0056de66), which stops and pops everything above the cancelling
     /// helper, then returns; the cancelling helper stays.
     /// </summary>
-    internal void CheckInactiveStackHelpers(CozmoRobot robot)
+    internal void CheckInactiveStackHelpers(CozmoRobot robot,Func<bool>? hostCurrent=null)
     {
         using (Enter())
         {
@@ -316,7 +339,9 @@ public sealed class BehaviorHelperComponent
             {
                 var helper = _stack[i].Pointer;
                 i++;
-                if (helper.ShouldCancelDelegates(robot))
+                bool cancel=helper.ShouldCancelDelegates(robot);
+                if(hostCurrent is not null&&!hostCurrent())return;
+                if (cancel)
                 {
                     ClearStackFromTopToIter(i);
                     return;
@@ -335,8 +360,10 @@ public sealed class BehaviorHelperComponent
     {
         using (Enter())
         {
-            CheckInactiveStackHelpers(robot);
-            UpdateActiveHelper(robot);
+            var current=_hostCurrent;
+            CheckInactiveStackHelpers(robot,current);
+            if(current is not null&&!current())return;
+            UpdateActiveHelper(robot,current);
         }
     }
 
@@ -361,17 +388,23 @@ public sealed class BehaviorHelperComponent
     ///   callback, none for anything else), both stored callbacks are cleared, and then the chosen one is called with the robot (0x0056e0fa..0x0056e15a).</item>
     /// </list>
     /// </summary>
-    internal void UpdateActiveHelper(CozmoRobot robot)
+    internal void UpdateActiveHelper(CozmoRobot robot,Func<bool>? hostCurrent=null)
     {
         using (Enter())
         {
+            hostCurrent??=_hostCurrent;
+            bool Current()=>hostCurrent is null||hostCurrent();
+            if(!Current())return;
             if (_stack.Count == 0) return;                                   // 0x0056de8e
             int current = _worldOriginId();                                  // 0x0056de94
+            if(!Current())return;
             bool originChanged;
             if (current != _storedWorldOriginId)                             // 0x0056de9a
             {
                 originChanged = true;                                        // 0x0056dea4
-                _storedWorldOriginId = _worldOriginId();                     // second read, 0x0056deae
+                int nextOrigin = _worldOriginId();                            // second read, 0x0056deae
+                if(!Current())return;
+                _storedWorldOriginId = nextOrigin;
             }
             else originChanged = false;                                      // 0x0056de9e
             if (_stack.Count == 0) return;                                   // 0x0056deb6
@@ -382,6 +415,7 @@ public sealed class BehaviorHelperComponent
                 var top = _stack[^1].Pointer;
                 if (carried == 0) carried = (int)top.OnDelegateFailure(robot);       // 0x0056dee2..0x0056deec
                 else if (carried == 2) carried = (int)top.OnDelegateSuccess(robot);  // 0x0056ded6..0x0056dedc
+                if(!Current())return;
 
                 HelperRef? sub = null;                                       // 0x0056def4
                 bool flag = false;                                           // r4
@@ -396,6 +430,7 @@ public sealed class BehaviorHelperComponent
                 else
                 {
                     int r = (int)top.UpdateWhileActive(robot, out sub);      // 0x0056df1c
+                    if(!Current()){sub?.Release();return;}
                     if (r != 1) { stop = true; stopStatus = r; }             // 0x0056df22
                     else stop = false;
                 }
@@ -404,8 +439,10 @@ public sealed class BehaviorHelperComponent
                 {
                     if (sub is null) { carried = 1; originChanged = flag; break; }   // 0x0056df28 -> 0x0056e0e6: r8 = end, so the loop ends
                     Info("HelperComponent.UpdateActive.SubHelper", $"Helper {top.Name} delegated to helper {sub.Pointer.Name}");   // 0x0056df6a
-                    PushHelperOntoStackAndUpdate(robot, sub);                // 0x0056dfac
+                    if(!Current()){sub.Release();return;}
+                    PushHelperOntoStackAndUpdate(robot, sub,hostCurrent);    // 0x0056dfac
                     sub.Release();
+                    if(!Current())return;
                     carried = 1;                                             // 0x0056e0ea
                     originChanged = flag;                                    // 0x0056e0ee
                     continue;
@@ -413,12 +450,24 @@ public sealed class BehaviorHelperComponent
 
                 // the stop step
                 Info("HelperComponent.UpdateActive.Complete", $"{top.Name} no longer running");   // 0x0056dfec
+                if(!Current()){sub?.Release();return;}
                 var popped = _stack[^1];
-                OutsideLock(() => top.Stop(true));                           // 0x0056e018
-                _stack.Remove(popped);                                       // 0x0056e028..0x0056e066
-                popped.Release();
+                if(hostCurrent is not null)
+                {
+                    _stack.Remove(popped);
+                    try { OutsideLock(() => top.Stop(true)); }
+                    finally { popped.Release(); }
+                    if(!Current()){sub?.Release();return;}
+                }
+                else
+                {
+                    OutsideLock(() => top.Stop(true));                       // 0x0056e018
+                    _stack.Remove(popped);                                   // 0x0056e028..0x0056e066
+                    popped.Release();
+                }
                 if (_stack.Count != 0)
                     Info("HelperComponent.UpdateActive.ReturningToPrevious", $"returning to helper: {_stack[^1].Pointer.Name}");   // 0x0056e0a6
+                if(!Current()){sub?.Release();return;}
                 originChanged = flag;                                        // 0x0056e0cc: sb = the parked r4
                 carried = stopStatus;                                        // 0x0056e0ce
                 sub?.Release();

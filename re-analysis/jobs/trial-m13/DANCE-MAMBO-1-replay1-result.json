@@ -1,0 +1,158 @@
+{
+  "job": "DANCE-MAMBO-1",
+  "state": "PASS",
+  "passed": 1259,
+  "total": 1259,
+  "skipped": 0,
+  "fullNameParameterOutcomeMultiplicityExact": true,
+  "all63ClassesRepresented": true,
+  "inputCount": 8827,
+  "immutableBins": 187,
+  "allInputsAndImmutableBinsMatchedReference": true,
+  "generatedOutputPaths": [
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft0.log",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft1.log",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log"
+  ],
+  "outputExclusionProof": "20261030-sparks-cube-lift-workout-1-code-codex-check.md; current same writerfiles; exact five paths only",
+  "nativePre": [],
+  "nativePost": [],
+  "checkoutPost": [],
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dance-mambo-1\\.scratch\\dance-mambo-replay1",
+  "files": {
+    "bins-after.json": {
+      "sha256": "9431f5fc1bc94e97286c428524aa8807cea4efa4bdd47ccc8894cc76b990d717",
+      "size": 39497
+    },
+    "bins-after.log": {
+      "sha256": "211dbf7f4ea957ec55119ea95ee4cdcd7f03cc94242926ac5ee7531198b941a2",
+      "size": 10
+    },
+    "bins-before.json": {
+      "sha256": "5e1da9379b3c7e14fd811b4119e40001d920b6cf7117124469d772102b06bc96",
+      "size": 39497
+    },
+    "bins-before.log": {
+      "sha256": "211dbf7f4ea957ec55119ea95ee4cdcd7f03cc94242926ac5ee7531198b941a2",
+      "size": 10
+    },
+    "checkout.json": {
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+      "size": 4
+    },
+    "compare.py": {
+      "sha256": "bb362d2752e540118b3ad23ecf14eaf4586f40711cb68016b98a1b0a5b39a1f6",
+      "size": 2167
+    },
+    "comparison.json": {
+      "sha256": "55cae6a1ef2321014698f32647f9d1961a3c20cdb5804e73efc7f6d6c72ae98e",
+      "size": 1312
+    },
+    "counts.txt": {
+      "sha256": "ea6f888a28410782f734701558e5c5e6c85506c2ec2972ba62f93df00c2ecee1",
+      "size": 25
+    },
+    "filter.txt": {
+      "sha256": "4d8e9bbc11290a85c7564280a48ab614a0f181b5a9cc035e494e7f4acfca81b3",
+      "size": 2772
+    },
+    "inputs-after.json": {
+      "sha256": "b32da36c705eb1632f7eea1e8b00163e612c7e33ae69ba74c51cf9c416e9b814",
+      "size": 1577048
+    },
+    "inputs-after.log": {
+      "sha256": "8ec6b6571ebdf045e0c42e6c39b8ff21e258df9f7918ca05a3f2669264aff75d",
+      "size": 13
+    },
+    "inputs-before.json": {
+      "sha256": "b32da36c705eb1632f7eea1e8b00163e612c7e33ae69ba74c51cf9c416e9b814",
+      "size": 1577048
+    },
+    "inputs-before.log": {
+      "sha256": "8ec6b6571ebdf045e0c42e6c39b8ff21e258df9f7918ca05a3f2669264aff75d",
+      "size": 13
+    },
+    "inventory.py": {
+      "sha256": "4c9ac60853cac19333ff63ae975e480bd4126b2c55e44e1911665afacec0a44e",
+      "size": 1566
+    },
+    "plan.json": {
+      "sha256": "0b94f661078fe6ae0aaeee57bdebf3705b60ae617c05a2f74acac59a2fcea86a",
+      "size": 4907
+    },
+    "postflight.json": {
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+      "size": 4
+    },
+    "preflight.json": {
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+      "size": 4
+    },
+    "run.ps1": {
+      "sha256": "e636c0200a08ec60ee38510015e14ca71e07a7c078bf361f936c33e29be3255d",
+      "size": 2822
+    },
+    "shutdown-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "shutdown.log": {
+      "sha256": "b8028200bc3b12a3210641024da80eb85dffe587d8192df519108d0a20cfe822",
+      "size": 160
+    },
+    "test-exit.txt": {
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    "test.log": {
+      "sha256": "e5633e8f7481347dc4996e138e336417a422609f8c1dcc2e77ef7d1e170aa6fc",
+      "size": 640
+    },
+    "results/replay1.trx": {
+      "sha256": "665ffd30e4de60ad634620fa0cf9d9f3c2f6f4d019bb6f2741a01750f11d72cd",
+      "size": 1985837
+    },
+    "outputs-before/sparks-roll-build/configured-soft0.log": {
+      "sha256": "c55413900b77ee4fa469bd2d5a4d66daf91055b94fd4e7c538f9c686fe6a0825",
+      "size": 2612
+    },
+    "outputs-before/sparks-roll-build/configured-soft1.log": {
+      "sha256": "1e9c86e45e64d3f1f9b73b3b7976183c7de0a0756952c8261c4303d3dcbdb35c",
+      "size": 2490
+    },
+    "outputs-before/sparks-stack-build/negative-vision-producer.log": {
+      "sha256": "f0fd3b3f5fd4730ce1b469b5ab20158f9921d6eff120462ea3f1b45173a4a6cc",
+      "size": 7928
+    },
+    "outputs-before/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log": {
+      "sha256": "d8bfa5682d1690c2093e727e99a26ec01f3b36b14142eaf23748e95527e07ac5",
+      "size": 1861
+    },
+    "outputs-before/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log": {
+      "sha256": "8d1b6c9357ba682613b61a8ba57152a54eecf7e849d869a4bc56a80b104638c5",
+      "size": 1764
+    },
+    "outputs-after/sparks-roll-build/configured-soft0.log": {
+      "sha256": "c55413900b77ee4fa469bd2d5a4d66daf91055b94fd4e7c538f9c686fe6a0825",
+      "size": 2612
+    },
+    "outputs-after/sparks-roll-build/configured-soft1.log": {
+      "sha256": "1e9c86e45e64d3f1f9b73b3b7976183c7de0a0756952c8261c4303d3dcbdb35c",
+      "size": 2490
+    },
+    "outputs-after/sparks-stack-build/negative-vision-producer.log": {
+      "sha256": "f02696c58273a60204feb794b899b65cfad2f516b13197149a1fe23eca93f84e",
+      "size": 7928
+    },
+    "outputs-after/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log": {
+      "sha256": "d8bfa5682d1690c2093e727e99a26ec01f3b36b14142eaf23748e95527e07ac5",
+      "size": 1861
+    },
+    "outputs-after/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log": {
+      "sha256": "8d1b6c9357ba682613b61a8ba57152a54eecf7e849d869a4bc56a80b104638c5",
+      "size": 1764
+    }
+  }
+}

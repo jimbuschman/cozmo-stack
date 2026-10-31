@@ -1,0 +1,33 @@
+{
+  "job": "DRIVE-IN-DESPERATION-ENERGY-1",
+  "kind": "reference3",
+  "state": "TEST_PASS_POST_UNKNOWN_LATER_CLEARED",
+  "buildExit": 0,
+  "testExit": 0,
+  "shutdownExit": 0,
+  "wrapperExit": 1,
+  "passed": 12,
+  "failed": 0,
+  "total": 12,
+  "skipped": 0,
+  "classes": 1,
+  "inputCount": 9159,
+  "allObservedBins": 187,
+  "allInputsAndBinsUnchanged": true,
+  "outputExclusions": [],
+  "frozenSourcePathsMatched": 10,
+  "nativePre": [],
+  "nativePostOriginal": [
+    {
+      "ProcessId": 15708,
+      "ParentProcessId": 22688,
+      "Name": "dotnet.exe",
+      "CommandLine": null
+    }
+  ],
+  "checkoutPost": [],
+  "separateFollowup": [],
+  "followupSha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+  "trxSha256": "224757f10382492bfac7eb7ea8c478986013d865f5269a5596caa91725a7bdc4",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-energy-1\\.scratch\\drive-in-desperation-energy-1-build\\reference3"
+}

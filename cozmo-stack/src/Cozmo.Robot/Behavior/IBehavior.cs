@@ -388,6 +388,20 @@ public sealed class BehaviorScope : IDisposable
         }
     }
 
+    internal bool SmartPushIdleAnimationGuarded(Action push, Action remove, Func<bool> current)
+    {
+        lock (_gate)
+        {
+            if (_disposed || !current()) return false;
+            if (IdleAnimationSet) { Verify("SmartPushIdleAnimation: an idle is already set"); return false; }
+            IdleAnimationSet = true;
+            _idleRemove = remove;
+            _undo.Add((OrderIdle, "", () => { if (IdleAnimationSet) { IdleAnimationSet = false; _idleRemove = null; remove(); } }));
+            push();
+            return current();
+        }
+    }
+
     /// <summary>
     /// <c>IBehavior::SmartRemoveIdleAnimation</c> 0x005bd4c8: when +0xb0 is clear it raises
     /// <c>VERIFY(%s): Behavior %s is trying to remove an idle, but none is currently set</c> through
@@ -412,11 +426,11 @@ public sealed class BehaviorScope : IDisposable
         lock (_gate)
         {
             if (_disposed) return false;
-            if (MotionProfileSet) { Verify("SmartSetMotionProfile: a motion profile is already set"); return false; }
+            if (MotionProfileSet) Verify("SmartSetMotionProfile: a motion profile is already set");
             set();
             MotionProfileSet = true;
             _motionClear = clear;
-            _undo.Add((OrderMotionProfile, "", () => { if (MotionProfileSet) { MotionProfileSet = false; _motionClear = null; clear(); } }));
+            _undo.Add((OrderMotionProfile, "", () => { if (MotionProfileSet) { var current = _motionClear; _motionClear = null; current?.Invoke(); MotionProfileSet = false; } }));
             return true;
         }
     }
@@ -427,10 +441,10 @@ public sealed class BehaviorScope : IDisposable
         lock (_gate)
         {
             if (_disposed) return false;
-            if (!MotionProfileSet) { Verify("SmartClearMotionProfile: no motion profile is set"); return false; }
-            MotionProfileSet = false;
+            if (!MotionProfileSet) Verify("SmartClearMotionProfile: no motion profile is set");
             var clear = _motionClear; _motionClear = null;
             clear?.Invoke();
+            MotionProfileSet = false;
             return true;
         }
     }
@@ -566,6 +580,27 @@ public sealed class BehaviorScope : IDisposable
                 }
             }));
             return true;
+        }
+    }
+
+    internal bool SmartDisableReactionsWithLockGuarded(string name, ReactionLockTable table, Func<bool> current)
+    {
+        lock (_gate)
+        {
+            if (_disposed || !current()) return false;
+            if (!_reactionLockNames.Add(name)) { Verify($"SmartDisableReactionsWithLock: '{name}' is already held"); return false; }
+            ReactionsDisabled = true;
+            string managerName = name + "_behaviorLock";
+            _undo.Add((OrderReactionLocks, name, () =>
+            {
+                if (_reactionLockNames.Remove(name))
+                {
+                    _manager?.RemoveDisableReactionsLock(managerName);
+                    if (_reactionLockNames.Count == 0) ReactionsDisabled = false;
+                }
+            }));
+            _manager?.DisableReactionsWithLock(managerName, table, stopCurrent: true);
+            return current();
         }
     }
 

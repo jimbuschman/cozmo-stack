@@ -1,0 +1,50 @@
+# DANCE-MAMBO-1 builder handoff
+
+Builder startup requested default model and omitted effort; actual backend unobserved. Reviewer fix rounds 3; root source correction 1; source question 1 (listener registration/iteration, source checked); affected-test harness batches 3; full-gate harness batches 1; diagnostic attempts 2; compiler failures 0. No model switch.
+
+## Changed files and source
+
+- `Behavior/BehaviorContainer.cs`: canonical Dance class-7 configured construction (0x0059CA34..4E), actual Robot and manipulation owner, no invented automatic admission.
+- `Behavior/NativeDanceBehavior.cs`: configured sequence, gates and resume (0x005ED438..456, 0x0102A104..174); six reaction locks (0x005ED476..47C / 0x00C6F1C8); connected family-2 cube enumeration, persistent per-ID selection, real Robot RNG and 100th-draw edge (0x005ED4DC..674, 0x005ED82C..914); lift-safe body action and listener delivery (0x005C0158..01A6, 0x005C0254..292, 0x005C0590); recursive active-byte callback (0x005EDC46..D00); Stop stage4/0, fades, unconditional global layer1 stop (0x005ED996..AB2, 0x005EDFCA..D0, 0x00638D58..74). Native listener pointer order and uniqueness are modelled on explicit supplied identities with weak listener-object ownership; expired owners log the M1-034 smallest skip.
+- `Lights.cs`: exact-ID helper preserves callback and raw signed offset into duration-zero layer call (0x006389FC..0x00638A34); existing callers preserved.
+- `Behavior/NativeBehaviorRuntime.cs`: retire this managed owner on runtime disposal; no claim that shared M15-045 retirement is complete.
+- `tests/Cozmo.Protocol.Tests/DanceMamboNativeTests.cs`: supplied admissions and inputs exercise the configured owner, connected world, real light engine, native action and callbacks, 100th draw, historical IDs, re-entry, listener identity/order/forced GC, and natural fade. Reach labels distinguish supplied selection from unknown actual producer.
+- `tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs`: checked factory class list includes Dance (case 0x0059CA34).
+
+For V1, all four production files remained unchanged after the initial production static check. The four files first touched in V1 (BehaviorContainer, Lights, NativeBehaviorRuntime, M7BatchThreeBTests) each have actual before bytes plus SHA256 and raw/filtered git blobs captured before their first edit; correction3 separately captured the existing EngineAppLayerTests before editing. The two newly created files (NativeDanceBehavior and DanceMamboNativeTests) were absent initially; absence metadata was entered only after creation, a provenance limitation. Each freeze and correction preserves actual raw file versions, SHA256 and raw/filtered blobs in the worker `.scratch/dance-mambo-*` directories; final six-file freeze is `dance-mambo-harness3/after/metadata.txt`.
+
+## Explicit gaps and record proposal
+
+The actual Dance_Mambo voice/request/automatic selection caller remains UNKNOWN and is visibly MISSING. Native listener finite registration/iteration and result-ignoring callback behavior are source-backed; actual listener producer, pointer identity mapping, and owner lifetime remain UNKNOWN/MISSING. Supplying listener identities and calling StartAsync in tests does not establish a native producer. Shared M8-005 and M8-012 lifecycle/report/input gaps remain. No existing whole-record closure is proposed. Propose one new otherwise-unowned Dance configured lifecycle record covering D1–D12, with these caller and shared-owner leftovers explicitly retained; no official record/status/inventory approval changed.
+
+## Validation history
+
+All actual Windows .NET invocations elevated. One offline cached restore only, five projects; exit0, shutdown0, pre/post/checkout0/0/0. Reference and diagnostic raw logs, TRX, before/after inventories and process arrays remain under the worker `.scratch/` paths.
+
+- Reference1: build0, 1256 passed / 3 failed / 0 skipped / 1259 total, test1. Failures: stale M7 factory list; secondary stopped-pop hook incorrectly assumed universal stop notification; attempting Flash over non-overridable fade.
+- Diagnostic1: build0, 0 passed / 1 failed / 0 skipped; test1 expected. `CubeLightComponent.PlayLightAnim.CantBeOverridden`, cube2 engine stack `dancing_03+fadeOff_1sec`, timer3040, count2. Post process array contained PID34964 dotnet with null command line, ownership unknown; no kill. Separate root actual follow-up recorded empty.
+- Reference2: build0, 1257 passed / 2 failed / 0 skipped / 1259 total, test1. Layer2 Interacting play was refused; post-fade null oracle ignored active D11 callbacks that re-queue.
+- Diagnostic2: build0, 0 passed / 2 failed / 0 skipped; test1 expected. Layer2 `wakeUp` was non-overridable; logs and callback IDs established current Dance callbacks re-queued after StopAll. Post process array contained PID7308 dotnet with null command line, ownership unknown; no kill. Separate root actual follow-up recorded empty.
+- Reference3: build0, 1258 passed / 1 failed / 0 skipped / 1259 total, test1. Test asserted radio slots 0/1 instead of actual BlockWorld IDs 7/8; natural fade and fixed deadline preconditions passed. Actual object IDs now come from the connected world, not from the callbacks under test.
+- Reference4: build0, 1259 passed / 0 failed / 0 skipped / 1259 total, test0, shutdown0, pre/post/checkout0/0/0. Input snapshot 8827 files before and after unchanged; 187 immutable binaries unchanged. Of 192 bin-area files, only `cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log` changed, a previously identified generated output.
+
+The five exact generated log names tracked separately are:
+`cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft0.log`,
+`cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-pop-a-wheelie-1/artifacts/scene-soft1.log`,
+`cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft0.log`,
+`cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-roll-build/configured-soft1.log`,
+`cozmo-stack/tests/Cozmo.Protocol.Tests/bin/Debug/net9.0/.scratch/sparks-stack-build/negative-vision-producer.log`.
+
+Independent B compiled replay passed 1259/1259, 0 failed, 0 skipped; exact artifacts: C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1/.scratch/dance-mambo-replay1 (comparison.json, TRX and process arrays). Root independently compared the 63 classes, 8827 input files and 187 immutable binaries. This builder report was created after replay as metadata; it was not part of the replay input snapshot. Integrated full gate remains pending. No hardware, commit, or push. Earlier failed attempts and diagnostic outputs are not relabelled as passes.
+
+## Correction3 after integrated full gate
+
+The integrated first full gate failed: 6970 passed, 1 failed, 0 skipped, total6971. The failing EngineAppLayerTests live-stream assertion occurred before the second connection. The precise failure interleaving remains UNKNOWN. The offline animation producer runs on its own TickLoop; the test now observes its TickObserved completion through a bounded host-safety watchdog, preserving the actual LiveStreamActive assertion and reporting gate, tick, clock and fault state. The watchdog is not a native timing oracle. The original gate failure is retained.
+
+Source 0x005C0272..290 establishes that listener iteration reads the live successor after each callback without a generation or active-state gate. The corrected NativeDanceBehavior listener loop only stops for retired-owner protection; outer action/NextLoop generation guards remain. A supplied-identity regression adds a higher listener then Stops and re-Initializes the same live Dance instance, verifying later ordered listeners with the same Robot and the replacement action tag, runner and scope. The producer and native identity mapping remain MISSING.
+
+Correction3 touches three files: NativeDanceBehavior.cs, DanceMamboNativeTests.cs and EngineAppLayerTests.cs. The complete job now contains seven code/test paths: four production and three test files. Five existing files had actual before bytes, SHA256 and raw/filtered Git blobs captured before first edit, including newly touched EngineAppLayerTests; two new files' initial absence was recorded after their creation, as stated above. Actual correction3 before and after archives and seven-file hashes are at C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1/.scratch/dance-mambo-correction3/.
+
+Correction3 reference1: build0, test0, shutdown0; 184 passed / 0 failed / 0 skipped, total184 across DanceMamboNativeTests and EngineAppLayerTests. Inputs 8847 before/after unchanged, bins192 before/after unchanged. Actual native pre0/post1/checkout0: PID6948 dotnet command line unavailable, ownership unknown; no process killed. Wrapper exit1 preserved because postflight was nonempty; root's separate actual follow-up found no process and recorded that result. Earlier diagnostic postflights similarly recorded PIDs34964 and7308 with unknown ownership and separate empty follow-ups; no original postflight is reclassified empty. Exact artifacts: C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1/.scratch/dance-mambo-correction3-reference1/.
+
+The earlier 1259-test reference and independent replay are historical V1 evidence; they did not test the correction. Correction3 independent compiled replay passed 184/184 with 0 failures and 0 skips; its exact artifacts are C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dance-mambo-1/.scratch/dance-mambo-correction3-replay1. Root independently compared all 184 test outcomes, both classes, 8847 inputs and all 192 bin-area files. This report update was made after replay as metadata and is outside that input snapshot. The corrected integrated full gate remains pending. No new status or closure claim.

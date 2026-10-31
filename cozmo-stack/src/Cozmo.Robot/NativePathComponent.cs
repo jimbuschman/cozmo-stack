@@ -54,6 +54,15 @@ internal sealed partial class PathComponent
     private void ModelGap(){if(_nativePlanners?.Current is null)_modelMissing?.Invoke("M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate");}
     internal void SetNativePlanners(NativePlannerSet planners)=>_nativePlanners=planners;
     internal PathMotionProfile NativeMotionProfile=PathMotionProfile.Default;
+    // 0x0064AB10 / 0x0064AC4A: copy the shared slot before enabling; clear only the flag.
+    internal void SetNativeCustomMotionProfile(PathMotionProfile profile)
+    {
+        if(Field48) _robot.Engine.EmitStackLog("PathComponent.SetCustomMotionProfile: profile already set");
+        if(!profile.IsCustom) _robot.Engine.EmitStackLog("PathComponent.SetCustomMotionProfile: profile is not custom");
+        NativeMotionProfile=profile with {};
+        Field48=true;
+    }
+    internal void ClearNativeCustomMotionProfile()=>Field48=false;
     internal int StartNativeDrivingToPose(ManipulationSystem m,IReadOnlyList<Vision.Pose3d> originalGoals,PathGoalIndex index,bool manual,IEnumerable<uint>? ignore)
     {
         // 64ACC4: the empty-vector failure precedes every write/old-plan cancellation.

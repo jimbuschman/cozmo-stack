@@ -32,6 +32,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     internal byte Repetitions {get;set;}
     internal bool WaitForAction {get;set;}=true;
     private readonly bool _hasDelegate;
+    private bool ScopedOwner=>_delegate is not null || _activity.Id=="SparksWorkout";
     private readonly Activity? _delegate;
     internal Activity? Delegate => _delegate;
     internal bool CanExecute=>WaitForAction&&(!_hasDelegate || _delegate?.GatherOwner is not null);
@@ -58,6 +59,7 @@ internal sealed class NativeSparkedActivity : IDisposable
             ("SparksPopAWheelie","PoppedWheelie")=>22u, // Sparks Pop S2: exact native objective table01033198.
             ("SparksStackBlock","StackedBlock")=>40u, // S1 actual native objective40, not a generalized parser.
             ("SparksGatherCubes","GatheredCubes")=>11u,
+            ("SparksWorkout","PerformedWorkout")=>18u, // Spark workout P1/A13: asset and 005B181E..32.
             ("SparksRollBlock","BlockRolled")=>2u, // Sparks Roll S2: actual objective table01033148.
             _=>throw new InvalidOperationException("MISSING: changed configured Spark objective is outside the checked instance mappings")
         };
@@ -76,8 +78,8 @@ internal sealed class NativeSparkedActivity : IDisposable
         Started=_robot.Engine.Timer.SecondsF;Count=0;State=0;_interrupted=false;_hardOutputs=false;_observedIds.Clear();
         if(Manager.RequestedSparkId==0x55||Manager.RequestedSparkSoft==0)
         {
-            if(_delegate is not null){_lights=new();_lightsOwned=true;}
-            if(_delegate is not null)
+            if(ScopedOwner){_lights=new();_lightsOwned=true;}
+            if(ScopedOwner)
             {
                 var lease=new ScopedAcquisition();_drivingLease=lease;
                 Facade.Animations.DrivingAnimations.PushOwned(new((AnimationTrigger)0x20E,(AnimationTrigger)0x20D,(AnimationTrigger)0x20F),_activity.Id,lease);
@@ -86,7 +88,7 @@ internal sealed class NativeSparkedActivity : IDisposable
             if(!Current(generation))return;
             PushIdle((AnimationTrigger)0x213);
             if(!Current(generation))return;
-            if(_delegate is null){_lights=new();_lightsOwned=true;}
+            if(!ScopedOwner){_lights=new();_lightsOwned=true;}
             Facade.Lights.Body.StartLooping(HardLights(),0,_lights);if(!Current(generation))return;
             _hardOutputs=true;
             _robot.Engine.ReportHardSparkStarted(Manager.RequestedSparkId);if(!Current(generation))return;
@@ -99,7 +101,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         i is 0 or 4?0u:360u,i is 0 or 4?0u:1110u,0,0,i==2?120:i==3?240:0)).ToArray();
     private void Lock(string name,ReactionLockTable table)
     {
-        if(_delegate is null){Manager.DisableReactionsWithLock(name+"_activityLock",table,true);_locks.Add(name);return;}
+        if(!ScopedOwner){Manager.DisableReactionsWithLock(name+"_activityLock",table,true);_locks.Add(name);return;}
         var lease=new ScopedAcquisition();_scopedLocks[name]=lease;
         if(!Manager.DisableScopedReactions(name+"_activityLock",table,lease))
         { lease.Cancel();Manager.RemoveScopedReactions(name+"_activityLock",lease);return; }
@@ -107,7 +109,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     private void PushIdle(AnimationTrigger trigger)
     {
         if(_idle){_robot.Engine.EmitStackLog("VERIFY: IActivity.SmartPushIdleAnimation: idle already set for "+_activity.Id);return;}
-        if(_delegate is not null)
+        if(ScopedOwner)
         {
             var lease=new ScopedAcquisition();_idleLease=lease;_idle=true;
             Facade.Animations.Scheduler.PushScopedIdle(trigger,"Activity_"+_activity.Id,lease);
@@ -118,7 +120,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     {
         if(!_hardOutputs)return;
         long generation=_generation;
-        if(_delegate is not null)
+        if(ScopedOwner)
         {
             var result=Facade.Animations.DrivingAnimations.RemoveScoped(_activity.Id,()=>Current(generation));
             if(!result.Completed)return;
@@ -132,7 +134,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     }
     internal void Deselected()
     {
-        if(_delegate is not null){var detached=DetachGather()!;try{DeselectedGather(detached);}finally{detached.ReleaseAll();}return;}
+        if(ScopedOwner){var detached=DetachGather()!;try{DeselectedGather(detached);}finally{detached.ReleaseAll();}return;}
         long generation=++_generation;
         foreach(var (name,lease) in _scopedLocks.ToArray())
         { _scopedLocks.Remove(name);lease.Cancel();Manager.RemoveScopedReactions(name+"_activityLock",lease);if(!Current(generation))return; }
@@ -208,7 +210,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     }
     internal GatherRetirement? DetachGather()
     {
-        if(_delegate is null)return null;
+        if(!ScopedOwner)return null;
         long generation=++_generation;
         var locks=_scopedLocks.ToArray();_scopedLocks.Clear();
         var idle=_idleLease;_idleLease=null;_idle=false;
@@ -230,7 +232,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         }
         if(!Current(generation))return;
         detached.ResetHard();if(!Current(generation))return;
-        _delegate!.OnDeselected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);
+        _delegate?.OnDeselected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);
         if(!Current(generation))return;
         Facade.Lights.Cubes.StopAllAnimsOnLayer(CubeLightComponent.EngineLayer,null,()=>Current(generation));
     }

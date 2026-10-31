@@ -16,9 +16,9 @@ public sealed record WorkoutConfig(AnimationTrigger PreLift, AnimationTrigger Po
                                    IReadOnlyList<EmotionScorer> NumWeakLifts,
                                    string EmotionEventOnComplete, string AdditionalObjectiveOnComplete)
 {
-    /// <summary><c>WorkoutConfig::GetNumStrongLifts</c>: the graphs summed over the current mood, rounded.</summary>
-    public int GetNumStrongLifts(Func<EmotionType, double> mood) => (int)Math.Round(NumStrongLifts.Sum(g => g.Graph.EvaluateY(mood(g.Emotion))));
-    public int GetNumWeakLifts(Func<EmotionType, double> mood) => (int)Math.Round(NumWeakLifts.Sum(g => g.Graph.EvaluateY(mood(g.Emotion))));
+    /// <summary>The source MoodScorer mean and roundf; delta entries require a supplied history source.</summary>
+    public int GetNumStrongLifts(Func<EmotionType, double> mood) => MoodScoreHelper(EvaluateEmotionScore(NumStrongLifts,mood,null));
+    public int GetNumWeakLifts(Func<EmotionType, double> mood) => MoodScoreHelper(EvaluateEmotionScore(NumWeakLifts,mood,null));
 
     /// <summary>
     /// <c>MoodScorer::EvaluateEmotionScore</c> 0x0067C9B8: for each entry <c>x</c> is the emotion's current
@@ -28,23 +28,23 @@ public sealed record WorkoutConfig(AnimationTrigger PreLift, AnimationTrigger Po
     /// </summary>
     // fidelity: M13-010
     public static double EvaluateEmotionScore(IReadOnlyList<EmotionScorer> entries,
-                                              Func<EmotionType, double> current, Func<EmotionType, double>? value60TicksAgo)
+                                              Func<EmotionType, double> current, Func<EmotionType, double>? value60TicksAgo, Func<bool>? ownerCurrent = null)
     {
         if (entries.Count == 0) return 0.0;
-        double sum = 0;
+        float sum = 0f;
         foreach (var e in entries)
         {
-            // M13-010 / M7-mood: Emotion::GetHistoryValueTicksAgo 0x006794F8 needs the per-emotion ring buffer
-            // (capacity 0x80, initial {0,0} sample, one sample per Emotion::Update), which this stack's MoodState
-            // does not keep. No caller may pass a stand-in: a trackDelta entry without the source is refused.
+            // A caller without the actual 60-tick history must not substitute a fabricated value.
             if (e.TrackDelta && value60TicksAgo is null)
-                throw new NotSupportedException("M13-010: trackDelta needs Emotion::GetHistoryValueTicksAgo (0x006794F8), the M7-mood history ring buffer, which is not built");
-            double x = e.TrackDelta ? current(e.Emotion) - value60TicksAgo!(e.Emotion) : current(e.Emotion);
-            double y = e.Graph.EvaluateY(x);
-            if (Math.Abs(y) < 1e-5) return 0.0;
+                throw new NotSupportedException("M13-010: trackDelta needs the actual Emotion::GetHistoryValueTicksAgo (0x006794F8) input");
+            float x = (float)current(e.Emotion);
+            if(ownerCurrent is not null&&!ownerCurrent())return 0;
+            if (e.TrackDelta) { x -= (float)value60TicksAgo!(e.Emotion); if(ownerCurrent is not null&&!ownerCurrent())return 0; }
+            float y = (float)e.Graph.EvaluateY(x);
+            if (MathF.Abs(y) < GraphEvaluator.Epsilon) return 0.0;
             sum += y;
         }
-        return sum / entries.Count;
+        return sum / (float)entries.Count;
     }
 
     /// <summary>
@@ -52,7 +52,20 @@ public sealed record WorkoutConfig(AnimationTrigger PreLift, AnimationTrigger Po
     /// <c>max(0, round(EvaluateEmotionScore))</c> (the native <c>roundf</c> then <c>vcvt.u32.f32</c>).
     /// </summary>
     // fidelity: M13-010
-    public static int MoodScoreHelper(double score) => Math.Max(0, (int)Math.Round(score, MidpointRounding.AwayFromZero));
+    public static int MoodScoreHelper(double score)
+    {
+        uint result=NativeMoodScoreHelper(score);
+        if(result>int.MaxValue)
+            throw new NativeActionUnavailable("M13-010 native unsigned workout count exceeds the public signed count view");
+        return (int)result;
+    }
+    internal static uint NativeMoodScoreHelper(double score)
+    {
+        float value=(float)score;
+        if(!float.IsFinite(value)||value>=4294967296f)
+            throw new NativeActionUnavailable("M13-010 workout score is outside the checked finite unsigned count range");
+        return value<=0f?0u:(uint)MathF.Round(value,MidpointRounding.AwayFromZero);
+    }
 }
 
 /// <summary>
@@ -71,13 +84,21 @@ public sealed record WorkoutConfig(AnimationTrigger PreLift, AnimationTrigger Po
 /// asked it scores the current workout's mood scorer and, if that passes, rolls <c>RandDbl(1.0)</c>
 /// against a constant.
 /// </summary>
+internal sealed class WorkoutConfigurationException(string message, WorkoutComponent partial, Exception inner):Exception(message,inner)
+{
+    internal WorkoutComponent Partial {get;}=partial;
+}
+
 public sealed class WorkoutComponent
 {
     public static string ObbRelativePath => Path.Combine("assets", "cozmo_resources", "config", "engine", "behaviorSystem", "workout_config.json");
 
-    public WorkoutComponent(IReadOnlyList<WorkoutConfig> workouts) => Workouts = workouts;
+    public WorkoutComponent(IReadOnlyList<WorkoutConfig> workouts) : this(workouts,true) {}
+    private WorkoutComponent(IReadOnlyList<WorkoutConfig> workouts,bool currentValid){Workouts=workouts;_currentValid=currentValid;}
+    private readonly bool _currentValid;
 
     public IReadOnlyList<WorkoutConfig> Workouts { get; }
+    /// <summary>Host observation of valid completion calls; not a native WorkoutComponent field.</summary>
     public int CompletedWorkouts { get; private set; }
 
     /// <summary>Which entry is current: the engine starts at the first and never goes back.</summary>
@@ -86,14 +107,15 @@ public sealed class WorkoutComponent
     /// <summary>
     /// The mood hook <c>CompleteCurrentWorkout</c> uses to fire the finished workout's emotion event
     /// (<c>MoodManager::TriggerEmotionEvent</c> 0x00573E1C, M13-010). The engine's component owns this
-    /// call; the C# component has no mood, so the caller wires it. Null means the event is not fired.
+    /// call; the C# component has no mood, so the caller wires it. A non-empty event requires this recipient.
     /// </summary>
     public Func<string, double, bool>? TriggerEmotionEvent { get; set; }
 
     /// <summary>The clock the emotion event is stamped with.</summary>
-    public Func<double> ClockSec { get; set; } = () => 0;
+    public Func<double>? ClockSec { get; set; }
+    internal Action? CompletionEventObservedForTest;
 
-    public WorkoutConfig? GetCurrentWorkout() => Workouts.Count == 0 ? null : Workouts[CurrentIndex];
+    public WorkoutConfig? GetCurrentWorkout() => !_currentValid || Workouts.Count == 0 ? null : Workouts[CurrentIndex];
 
     /// <summary>
     /// Finishes the current workout: trigger the finished workout's emotion event
@@ -102,11 +124,27 @@ public sealed class WorkoutComponent
     /// </summary>
     // fidelity: M13-010
     public void CompleteCurrentWorkout()
+        => CompleteCurrentWorkout(null);
+
+    internal void CompleteCurrentWorkout(Func<bool>? current)
     {
         var finished = GetCurrentWorkout();
+        if (finished is null)
+        {
+            if(!_currentValid && Workouts.Count!=0)
+                SteppedBehavior.ReportMissing("M1-034/M13-010: skip CompleteCurrentWorkout null-current dereference at 0x00573DFC after failed configuration; prior state retained");
+            return;
+        }
+        if (finished.EmotionEventOnComplete.Length != 0)
+        {
+            if (TriggerEmotionEvent is null) throw new NativeActionUnavailable("M13-010 actual workout completion MoodManager recipient unavailable");
+            if (ClockSec is null) throw new NativeActionUnavailable("M13-010 actual workout completion MoodManager clock unavailable");
+            double now=ClockSec();
+            if(current is not null && !current()) return;
+            TriggerEmotionEvent(finished.EmotionEventOnComplete, now);
+            CompletionEventObservedForTest?.Invoke();
+        }
         CompletedWorkouts++;
-        if (finished is not null && TriggerEmotionEvent is not null)
-            TriggerEmotionEvent(finished.EmotionEventOnComplete, ClockSec());
         if (CurrentIndex < Workouts.Count - 1) CurrentIndex++;
     }
 
@@ -117,20 +155,24 @@ public sealed class WorkoutComponent
     /// score is 0, otherwise <c>RandDbl(1.0) &lt; 0.1</c>; cache the answer at +0x10 and the evaluated flag
     /// at +0x11 (M13-010 / Appendix G R3-1..R3-6).
     ///
-    /// <paramref name="current"/> and <paramref name="value60TicksAgo"/> are the emotion values the scorer
-    /// reads; the stack's <c>MoodState</c> keeps no history, so the 60-ticks-ago source is M7-mood's ring buffer
-    /// and is null here: a workout whose scorer has <c>trackDelta</c> then throws <see cref="NotSupportedException"/>
-    /// (no shipped workout scorer has it). The engine's two callers - <c>Audio::BehaviorAudioClient::HandleSparkUpdates</c>
-    /// 0x00592416 and <c>BehaviorCubeLiftWorkout::TransitionToPostLiftAnim</c> 0x005D8014 - are not wired: each
-    /// feeds <c>PublicStateBroadcaster::UpdateBroadcastBehaviorStage(3, ...)</c>, which does not exist here.
+    /// <paramref name="current"/> and <paramref name="value60TicksAgo"/> are the actual MoodState values and
+    /// history when called by the robot-owned component. The audio-client and ordinary workout callers share
+    /// this cache and publish their respective stage values through the native public-state owner.
     /// </summary>
     // fidelity: M13-010
-    public bool ShouldPlayEightiesMusic(Func<EmotionType, double> current, Func<EmotionType, double>? value60TicksAgo, Func<double> randDbl)
+    public bool ShouldPlayEightiesMusic(Func<EmotionType, double> current, Func<EmotionType, double>? value60TicksAgo, Func<double> randDbl, Func<bool>? ownerCurrent = null)
     {
         if (_eightiesEvaluated) return _eightiesAnswer;
         var workout = GetCurrentWorkout();
-        int score = workout is null ? 0 : WorkoutConfig.MoodScoreHelper(WorkoutConfig.EvaluateEmotionScore(workout.NumStrongLifts, current, value60TicksAgo));
+        if(workout is null)
+        {
+            SteppedBehavior.ReportMissing("M1-034/M13-010: skip uncached music decision null-current read 0x00573B70 via 0x00573E42; no cache or RNG write");
+            return false; // host policy for the skipped native fault, not a native result.
+        }
+        uint score = WorkoutConfig.NativeMoodScoreHelper(WorkoutConfig.EvaluateEmotionScore(workout.NumStrongLifts, current, value60TicksAgo,ownerCurrent));
+        if(ownerCurrent is not null&&!ownerCurrent())return false;
         bool answer = score != 0 && randDbl() < 0.1;
+        if(ownerCurrent is not null&&!ownerCurrent())return answer;
         _eightiesAnswer = answer;
         _eightiesEvaluated = true;
         return answer;
@@ -139,27 +181,49 @@ public sealed class WorkoutComponent
     private bool _eightiesEvaluated;
     private bool _eightiesAnswer;
 
+    // 005D8198 clears only the cache-valid byte.
+    internal void ResetEightiesMusicDecision() => _eightiesEvaluated = false;
+
     public static WorkoutComponent? FromObb(string obbRoot)
     {
         var p = Path.Combine(obbRoot, ObbRelativePath);
         return File.Exists(p) ? Parse(File.ReadAllText(p)) : null;
     }
 
-    public static WorkoutComponent Parse(string json)
+    public static WorkoutComponent Parse(string json,Action<string>? diagnostic=null)
     {
         using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
         var list = new List<WorkoutConfig>();
         foreach (var w in doc.RootElement.GetProperty("workouts").EnumerateArray())
         {
-            AnimationTrigger T(string k) => Enum.Parse<AnimationTrigger>(w.GetProperty(k).GetString()!);
+            AnimationTrigger T(string k,bool required=false)
+            {
+                if(!w.TryGetProperty(k,out var value)||value.ValueKind==JsonValueKind.Null)
+                {
+                    if(required)throw new JsonException("Workout required animation trigger missing: "+k);
+                    return (AnimationTrigger)0x23F;
+                }
+                string? name=value.GetString();
+                if(name is not null&&Enum.TryParse<AnimationTrigger>(name,false,out var parsed)&&Enum.GetName(parsed)==name)return parsed;
+                diagnostic?.Invoke("Workout configuration has unknown animation trigger '"+name+"' for "+k+"; native enum conversion returns 0");
+                return (AnimationTrigger)0;
+            }
             IReadOnlyList<EmotionScorer> Graphs(string k) => w.GetProperty(k).EnumerateArray().Select(g =>
                 new EmotionScorer(Enum.Parse<EmotionType>(g.GetProperty("emotionType").GetString()!),
                     Graph2d.FromJson(g.GetProperty("scoreGraph")) ?? new Graph2d(Array.Empty<(double, double)>()),
                     g.TryGetProperty("trackDelta", out var td) && td.GetBoolean())).ToList();
-            list.Add(new WorkoutConfig(T("preLiftAnim"), T("postLiftAnim"), T("strongLiftAnim"), T("transitionAnim"), T("weakLiftAnim"), T("putDownAnim"),
-                                       Graphs("numStrongLifts"), Graphs("numWeakLifts"),
+            try
+            {
+                var pre=T("preLiftAnim");var post=T("postLiftAnim");var transition=T("transitionAnim");var putDown=T("putDownAnim");
+                var strong=T("strongLiftAnim",true);var weak=T("weakLiftAnim",true);
+                list.Add(new WorkoutConfig(pre,post,strong,transition,weak,putDown,Graphs("numStrongLifts"), Graphs("numWeakLifts"),
                                        w.TryGetProperty("emotionEventOnComplete", out var ev) ? ev.GetString() ?? "" : "",
                                        w.TryGetProperty("additionalBehaviorObjectiveOnComplete", out var ob) ? ob.GetString() ?? "" : ""));
+            }
+            catch(Exception error) when(error is JsonException or InvalidOperationException or KeyNotFoundException or ArgumentException or FormatException)
+            {
+                throw new WorkoutConfigurationException("Workout configuration entry failed; prior entries retained without a current workout",new WorkoutComponent(list.ToArray(),false),error);
+            }
         }
         return new WorkoutComponent(list);
     }

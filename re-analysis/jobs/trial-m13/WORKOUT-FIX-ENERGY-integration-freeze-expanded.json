@@ -1,0 +1,142 @@
+{
+  "state": "FROZEN BEFORE SINGLE CUMULATIVE FULL GATE",
+  "codeTree": "af058c0c991e760d3ca8a5113557b9e5210223fd",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/FreeplayTool.cs",
+      "sha256": "aa6fba9a32d457eefd7b5dd61fd3acae0e854d8d8c146096f42e56ab1dddd198",
+      "tracked": true,
+      "rawBlob": "85bc36e7269980a617fa64f6c30637a30a5acd63",
+      "filteredBlob": "85bc36e7269980a617fa64f6c30637a30a5acd63",
+      "headBlob": "85bc36e7269980a617fa64f6c30637a30a5acd63"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs",
+      "sha256": "6db2db84bec1db595f00d1952222a123eec4ae24ac8eba4aa1a5a04a69d41452",
+      "tracked": true,
+      "rawBlob": "9a5b2770d5a6c13e306c61bbc44bceb04eb0c20f",
+      "filteredBlob": "9a5b2770d5a6c13e306c61bbc44bceb04eb0c20f",
+      "headBlob": "9a5b2770d5a6c13e306c61bbc44bceb04eb0c20f"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "8c08894ae0f47463b82a2114cc40c4d3acb217790d796eac8ad6a89fd721d2a7",
+      "tracked": true,
+      "rawBlob": "6f6610b43fffb83b55f226db7a8a0718792a1654",
+      "filteredBlob": "6f6610b43fffb83b55f226db7a8a0718792a1654",
+      "headBlob": "6f6610b43fffb83b55f226db7a8a0718792a1654"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeCubeLiftWorkoutBehavior.cs",
+      "sha256": "290dcf3db05a90b2eecc131f7cbc08ed5276128d75cfbab8ba3a001becde5a00",
+      "tracked": true,
+      "rawBlob": "a08653d0c893b804daad8e05af00f4d85ba8f89b",
+      "filteredBlob": "a08653d0c893b804daad8e05af00f4d85ba8f89b",
+      "headBlob": "a08653d0c893b804daad8e05af00f4d85ba8f89b"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativePickupBlockHelper.cs",
+      "sha256": "53934570c50f485ab362d01dbe898f7abd76dbed66040dcd65a4babe3b26aa60",
+      "tracked": true,
+      "rawBlob": "510cad5242c8a7b1ef441aaf0c079f2e683d6486",
+      "filteredBlob": "510cad5242c8a7b1ef441aaf0c079f2e683d6486",
+      "headBlob": "510cad5242c8a7b1ef441aaf0c079f2e683d6486"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs",
+      "sha256": "2c2b8241430cf74f7806af6e68da1bc9f9819f7a3dd35cc05f62bc42ca2c4b62",
+      "tracked": true,
+      "rawBlob": "91a22666ad929d7c04f8c084e2ecd6c94f6a6646",
+      "filteredBlob": "91a22666ad929d7c04f8c084e2ecd6c94f6a6646",
+      "headBlob": "91a22666ad929d7c04f8c084e2ecd6c94f6a6646"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Vision/Data/marker_nn_library.bin",
+      "sha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+      "tracked": false
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/CubeLiftWorkoutNativeTests.cs",
+      "sha256": "954662abed912c5405b9474edf599a9c9450af8f5db2e23238bb813cf593c171",
+      "tracked": true,
+      "rawBlob": "10957b428d1716478a2c6663f4f00b6606e099a3",
+      "filteredBlob": "10957b428d1716478a2c6663f4f00b6606e099a3",
+      "headBlob": "10957b428d1716478a2c6663f4f00b6606e099a3"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/PickupChildrenNativeTests.cs",
+      "sha256": "b8ae4cdaabc54740b32bfccce07d7bf47db192cced9fe69ce5c336d878d59960",
+      "tracked": true,
+      "rawBlob": "7219a0efe45e0e3b5b0bf4490c086c4bff60b299",
+      "filteredBlob": "7219a0efe45e0e3b5b0bf4490c086c4bff60b299",
+      "headBlob": "7219a0efe45e0e3b5b0bf4490c086c4bff60b299"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/SparksCubeLiftWorkoutNativeTests.cs",
+      "sha256": "80e409292ea9ab546f6cc5c76e84a6d9c666d369b35f78254b60144130239caf",
+      "tracked": true,
+      "rawBlob": "c23d14a9b961598384a8c6e5da19ad4816990fdd",
+      "filteredBlob": "c23d14a9b961598384a8c6e5da19ad4816990fdd",
+      "headBlob": "c23d14a9b961598384a8c6e5da19ad4816990fdd"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "5c087317aca46164b7133318b8315ffc7790bad03d28d9b9bd1d4ed64b8d6f73",
+      "tracked": true,
+      "rawBlob": "2cbe58135a699838e82e007afa2867ccaab0af15",
+      "filteredBlob": "2cbe58135a699838e82e007afa2867ccaab0af15",
+      "headBlob": "2cbe58135a699838e82e007afa2867ccaab0af15"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+      "sha256": "d9e197124a2ae69e3214b29251ee5483f7d098d53924ddad9edb1c2e0c2efe21",
+      "tracked": true,
+      "rawBlob": "b897e29674bc3ac52cc66ac3debccec0ad65c969",
+      "filteredBlob": "b897e29674bc3ac52cc66ac3debccec0ad65c969",
+      "headBlob": "b897e29674bc3ac52cc66ac3debccec0ad65c969"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/NativePathComponent.cs",
+      "sha256": "cbbb08dda75e21532c78e0a0b466d05bc1c791cd91e8b85192d79ae14fba4a72",
+      "tracked": true,
+      "rawBlob": "2375d1910cfc4689e24f884a38b2372ef5e7fec7",
+      "filteredBlob": "2375d1910cfc4689e24f884a38b2372ef5e7fec7",
+      "headBlob": "2375d1910cfc4689e24f884a38b2372ef5e7fec7"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs",
+      "sha256": "ccafbe17daa4287ca79a7a65a496879082697c291017c76ac6f03f4769a372d5",
+      "tracked": true,
+      "rawBlob": "5a0a0606551667d8bc198ab3ba9eac3f501fbce7",
+      "filteredBlob": "5a0a0606551667d8bc198ab3ba9eac3f501fbce7",
+      "headBlob": "5a0a0606551667d8bc198ab3ba9eac3f501fbce7"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDriveInDesperationBehavior.cs",
+      "sha256": "2de78015399ff321ec3ab304271edb86595039d8842b14b9be72740b880e6d48",
+      "tracked": true,
+      "rawBlob": "fb98b5f081b644b0ad88eb31b66d2a271fe242ab",
+      "filteredBlob": "fb98b5f081b644b0ad88eb31b66d2a271fe242ab",
+      "headBlob": "fb98b5f081b644b0ad88eb31b66d2a271fe242ab"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DriveInDesperationNativeTests.cs",
+      "sha256": "1d0e5404609a08934b9ab089cc62687ad0e00bbb48f3499f7bc9437a712d4fff",
+      "tracked": true,
+      "rawBlob": "e425d0fca57cef71c6802fdc34ed9187fcc79281",
+      "filteredBlob": "e425d0fca57cef71c6802fdc34ed9187fcc79281",
+      "headBlob": "e425d0fca57cef71c6802fdc34ed9187fcc79281"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "7529dfe6afc9f93db2dd557aa639708cc47564c40a7c02332d9fd9f11e7ea083",
+      "tracked": true,
+      "rawBlob": "586aff76ac29104d92b062fbae25fe5278858d2b",
+      "filteredBlob": "586aff76ac29104d92b062fbae25fe5278858d2b",
+      "headBlob": "586aff76ac29104d92b062fbae25fe5278858d2b"
+    }
+  ],
+  "overlay": "Workout fix changes NativeBehaviorRuntime ClockSec only relative to Energy freeze; current Energy tests included in 282-case reference and exact independent replay.",
+  "metadataCaveat": "Worker handoff appended after replay; archived prior metadata retained. Source/test bytes unchanged.",
+  "freezePreparationCorrection": "Energy freeze has mixed Windows separators. Expanded union normalized separators, preserving first committed partial snapshot; full cozmo-stack Git tree was already correctly frozen before the gate."
+}

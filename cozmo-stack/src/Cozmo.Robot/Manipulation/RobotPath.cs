@@ -25,6 +25,7 @@ public sealed record PathMotionProfile
     public float DockAccelMmps2 { get; init; } = 200f;
     public float DockDecelMmps2 { get; init; } = 500f;
     public float ReverseSpeedMmps { get; init; } = 80f;
+    public bool IsCustom { get; init; }
     public static readonly PathMotionProfile Default = new();
 }
 

@@ -1,0 +1,32 @@
+{
+  "job": "FIX-CUBE-LIFT-WORKOUT-1",
+  "kind": "reference2",
+  "state": "TEST_PASS_POST_UNKNOWN_LATER_CLEARED",
+  "restoreExit": 0,
+  "buildExit": 0,
+  "testExit": 0,
+  "shutdownExit": 0,
+  "wrapperExit": 1,
+  "passed": 282,
+  "failed": 0,
+  "total": 282,
+  "skipped": 0,
+  "classes": 12,
+  "inputCount": 9183,
+  "allObservedBins": 187,
+  "allInputsAndBinsUnchanged": true,
+  "outputExclusions": [],
+  "nativePre": [],
+  "nativePostOriginal": [
+    {
+      "ProcessId": 15144,
+      "ParentProcessId": 14152,
+      "Name": "dotnet.exe",
+      "CommandLine": null
+    }
+  ],
+  "checkoutPost": [],
+  "separateFollowup": [],
+  "trxSha256": "59a57359c48dad37adfa4e6602a3aa0fcd7496601ea8d3843ba35f7dce9de9b3",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-fix-cube-lift-workout-1\\.scratch\\fix-cube-lift-workout-1-build\\reference2"
+}

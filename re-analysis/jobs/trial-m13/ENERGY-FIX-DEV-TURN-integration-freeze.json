@@ -1,0 +1,86 @@
+{
+  "state": "FROZEN BEFORE SINGLE CUMULATIVE FULL GATE",
+  "jobs": [
+    "DEV-TURN-IN-PLACE-TEST-1",
+    "FIX-DRIVE-IN-DESPERATION-ENERGY-1"
+  ],
+  "codeTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
+  "workerFixCommit": "821eebba0e2ae62db20b4b8021a643dd3329b2d3",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "f48bf74d362b5ee5e0d5d6ac44c7efca1ee18a855798f08477477899045a117f",
+      "tracked": true,
+      "rawBlob": "52e379b2734ed34dae2cd8956df52553beefb3ca",
+      "filteredBlob": "52e379b2734ed34dae2cd8956df52553beefb3ca",
+      "headBlob": "52e379b2734ed34dae2cd8956df52553beefb3ca"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "2cb21c8fbc342581e45d18b39b7179629253694c4457f559a59e92114df6f0e7",
+      "tracked": true,
+      "rawBlob": "7a14acfbc738f42b15caee9f64ec76716ad0328c",
+      "filteredBlob": "7a14acfbc738f42b15caee9f64ec76716ad0328c",
+      "headBlob": "7a14acfbc738f42b15caee9f64ec76716ad0328c"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDevTurnInPlaceTestBehavior.cs",
+      "sha256": "082a94fa21d41c7e5677d01396f76f47f0e83c4b81dd438b659e9938ffcf560f",
+      "tracked": true,
+      "rawBlob": "79b3d728b101011cfcc82791e7d7605c7f64cbae",
+      "filteredBlob": "79b3d728b101011cfcc82791e7d7605c7f64cbae",
+      "headBlob": "79b3d728b101011cfcc82791e7d7605c7f64cbae"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDriveInDesperationBehavior.cs",
+      "sha256": "a512a61c339cb328b9720a92f22b0b797ce09273d9e5650f516e0b364f57d8d9",
+      "tracked": true,
+      "rawBlob": "21d8f5a7e2897300b9a02109ced9f2662c1e923e",
+      "filteredBlob": "21d8f5a7e2897300b9a02109ced9f2662c1e923e",
+      "headBlob": "21d8f5a7e2897300b9a02109ced9f2662c1e923e"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Vision/Data/marker_nn_library.bin",
+      "sha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+      "tracked": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Vision/NativeVisionRunners.cs",
+      "sha256": "3023cc519eeea959dc2819d8946df959ce1df7ce5e65523d9e8af6397a58a841",
+      "tracked": true,
+      "rawBlob": "615bacba4c40c591b28568089f378a46d6e24525",
+      "filteredBlob": "615bacba4c40c591b28568089f378a46d6e24525",
+      "headBlob": "615bacba4c40c591b28568089f378a46d6e24525"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DevTurnInPlaceNativeTests.cs",
+      "sha256": "efc86018ee1e61280002608917cd7ea68d291f428cd9959e0d7bbb051d36a764",
+      "tracked": true,
+      "rawBlob": "df4399fdc67c8537a5bb9375ef683c5b098db95b",
+      "filteredBlob": "df4399fdc67c8537a5bb9375ef683c5b098db95b",
+      "headBlob": "df4399fdc67c8537a5bb9375ef683c5b098db95b"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DriveInDesperationNativeTests.cs",
+      "sha256": "abfde60a944eb51b8b2cbf2b925fca465cfa77ad8d64efe5df189d76a91a77ae",
+      "tracked": true,
+      "rawBlob": "6037bc1fe5f10718b85faae196b5c36a075aef71",
+      "filteredBlob": "6037bc1fe5f10718b85faae196b5c36a075aef71",
+      "headBlob": "6037bc1fe5f10718b85faae196b5c36a075aef71"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/M7BatchThreeBTests.cs",
+      "sha256": "5831d3012b6a544fa86301af8415645f994495bb1f3540fd42110e6cb0b745ab",
+      "tracked": true,
+      "rawBlob": "17e5acd46b4a00e038339418cbb95a2de43105f1",
+      "filteredBlob": "17e5acd46b4a00e038339418cbb95a2de43105f1",
+      "headBlob": "17e5acd46b4a00e038339418cbb95a2de43105f1"
+    },
+    {
+      "path": "resources/lib/armeabi-v7a/libcozmoEngine.so",
+      "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+      "tracked": false
+    }
+  ],
+  "metadataTiming": "Builder and code-check reports are post-replay metadata; source/test bytes remain frozen. Root has additional handoff/status metadata versus worker phases."
+}
