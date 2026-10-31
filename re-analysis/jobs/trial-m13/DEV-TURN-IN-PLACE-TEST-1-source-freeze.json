@@ -1,6 +1,6 @@
 {
   "job": "DEV-TURN-IN-PLACE-TEST-1",
-  "state": "READY FOR CLAUDE",
+  "state": "RETURNED FIX; NOT READY",
   "managerStart": "29dc3a4fbb8e784a659aa52eab033d6a799f0cf7",
   "originMain": "468d02099405a224c4eb1ccd028387a9d58f4c94",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1",
@@ -28,7 +28,7 @@
     }
   ],
   "actualBackends": "unobserved",
-  "dotnetLease": "returned after full gate; separate final processes empty",
+  "dotnetLease": "none",
   "reviewerFixRounds": 1,
   "sourceQuestions": 1,
   "builderMissingItems": [
@@ -175,5 +175,9 @@
     "officialChanges": false,
     "hardwareRun": false,
     "authoritativeMainBaseline": "468d02099405a224c4eb1ccd028387a9d58f4c94"
-  }
+  },
+  "returnedFix": "FIX-DEV-TURN-IN-PLACE-TEST-1",
+  "authoritativeMain": "fd4ef169dea1b947874836dbd717caa1c396fda5",
+  "stableMergePoint": "e37e847ddf19ba1addf066ad5dcf298097a297e5",
+  "noNewerJobIntegrated": true
 }

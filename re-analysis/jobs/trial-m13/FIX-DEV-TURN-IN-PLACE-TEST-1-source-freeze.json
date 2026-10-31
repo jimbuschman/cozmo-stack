@@ -1,0 +1,126 @@
+{
+  "job": "FIX-DEV-TURN-IN-PLACE-TEST-1",
+  "state": "WORKER COMMITTED; STABLE MERGE-POINT FULL GATE PENDING",
+  "stableCodeBaseline": "e37e847ddf19ba1addf066ad5dcf298097a297e5",
+  "managerStart": "c764beace2fd248851070f06e7a36a1c7b0619d4",
+  "originMain": "fd4ef169dea1b947874836dbd717caa1c396fda5",
+  "workerBaseline": "c6e50970c122830969aa1a95ca26c67c56a29e4f",
+  "baselineCodeTree": "776f283d2871f53c4c6f2cb2e377da6c1598158c",
+  "noNewerJobIntegrated": true,
+  "heldRepair": "Isolated v2 six-file staticPASS; prepared13classreference, no.NET; root7metadatafiles archived .scratch/repair-hold-for-devturn-mergepoint, restoreselectivelyafterstablehandoff",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/dev_turn_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "sameOriginalWorker": true
+    },
+    {
+      "role": "builder",
+      "agent": "/root/dev_turn_build",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "sameOriginalWorker": true
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/dev_turn_review",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "sameOriginalWorker": true
+    }
+  ],
+  "actualBackends": "unobserved",
+  "reports": [
+    {
+      "path": "re-analysis/research/20261030-fix-dev-turn-in-place-test-1-read.md",
+      "sha256": "0eae51d35fb97325a91a7853329b6e20b5b7e77bad4b993bb513d03b74b03a43"
+    },
+    {
+      "path": "re-analysis/research/20261030-fix-dev-turn-in-place-test-1-source-codex-check.md",
+      "sha256": "504e2d756dd35afd6d913181e5ab1f3e504c8f5c6aa44457763e6e622eb411b0"
+    }
+  ],
+  "currentLiteralRecordSnapshotsMatched": 7,
+  "rootIndependentlyMatchedLiteralRecords": true,
+  "sourceClarification": "Public completion vector is sortedunique descendant ActionResults, NOT childtags. Primary native collector543918/541F18..38/report540AC4/AD0/AE6 andapprovedM8inventory324 agree; fixmainproseoraclewithoutofficialedits or operator departure. RootTagwrong duectororder; directchildtagscheckedseparately withcounterpreconditions.",
+  "operatorApprovalReopened": false,
+  "recordClosureProposals": [],
+  "newRecordProposal": "No duplicate; same pending original DevTurn lifecycle proposal",
+  "reviewerFixRounds": 0,
+  "compilerCorrections": 0,
+  "dotnetLease": "returned after replay, rootstablefullgate next",
+  "candidateFreeze": "C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dev-turn-in-place-test-1/.scratch/fix-dev-turn-in-place-test-1-build/freeze-c6e-v1/manifest.json",
+  "candidateFiles": 2,
+  "primaryAssetEntries": 2,
+  "workerCommit": "3ff4f16989cc9b7f5408f73a6f81f0dc38ae6907",
+  "workerTree": "f3b7187f413983a9a47151b15a6ccc9d2cc2e716",
+  "builderReportPath": "re-analysis/research/20261030-fix-dev-turn-in-place-test-1-build.md",
+  "builderReportSha256": "1b2e7d274c0b1224e27e0a43eabf0a4f5aa4eeb7b29460dddd258315711e0458",
+  "builderReportTiming": "New metadata AFTER172reference/replay, outside9219inputs",
+  "codeCheckPath": "re-analysis/research/20261030-fix-dev-turn-in-place-test-1-code-codex-check.md",
+  "codeCheckSha256": "5c348ecb9769cc108d58de14b98f0cde547a06703c83fffc0e15ee18e8cdd5d8",
+  "currentReference": {
+    "job": "FIX-DEV-TURN-IN-PLACE-TEST-1",
+    "kind": "reference1",
+    "state": "PASS",
+    "phaseExits": {
+      "build": 0,
+      "restore": 0,
+      "error": "",
+      "shutdown": 0,
+      "exit": 0,
+      "test": 0
+    },
+    "passed": 172,
+    "failed": 0,
+    "total": 172,
+    "skipped": 0,
+    "classCounts": {
+      "Cozmo.Protocol.Tests.M7BatchThreeBTests": 36,
+      "Cozmo.Protocol.Tests.BehaviorFrameworkTests": 81,
+      "Cozmo.Protocol.Tests.ActionCompletionTests": 12,
+      "Cozmo.Protocol.Tests.M8ActionCheckedRowsTests": 30,
+      "Cozmo.Protocol.Tests.DevTurnInPlaceNativeTests": 9,
+      "Cozmo.Protocol.Tests.ReportOrderingRegressionTests": 4
+    },
+    "inputCount": 9219,
+    "allObservedBins": 187,
+    "allInputsAndBinsUnchanged": true,
+    "outputExclusions": [],
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "trxSha256": "74843726ca7c63b1f55815c1ff45c6aa5567d1e1dc173b16f9b54f908a6614c7",
+    "logSha256": "acf3aefaf064b4788ed5e78dba48a854389a83d74848c3ee53d4582642a4c62e",
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1\\.scratch\\fix-dev-turn-in-place-test-1-build\\reference1",
+    "wrapperSha256": "7d9e464a6cb42dfc6c75b98109a79fa021c4fa8022058950ba1c65ac265e3899",
+    "planSha256": "94a9c2690f339c096361f0a502b9b3a9992ccc157cc5ffc933a2de7432dbb043"
+  },
+  "currentIndependentReplay": {
+    "job": "FIX-DEV-TURN-IN-PLACE-TEST-1",
+    "kind": "independentReplay1",
+    "state": "PASS",
+    "passed": 172,
+    "failed": 0,
+    "total": 172,
+    "skipped": 0,
+    "classes": 6,
+    "fullNameParameterOutcomeMultiplicityExact": true,
+    "inputCount": 9219,
+    "allObservedBins": 187,
+    "allInputsAndBinsMatchReferenceAndUnchanged": true,
+    "rootLiveBinHashCheck": true,
+    "outputExclusions": [],
+    "testExit": 0,
+    "shutdownExit": 0,
+    "wrapperExit": 0,
+    "nativePre": [],
+    "nativePost": [],
+    "checkoutPost": [],
+    "trxSha256": "953d3542a2d5cd8111e7998b61aed1fb5be54644f03840eb4bc912ca3169e54f",
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1\\.scratch\\fix-dev-turn-in-place-test-1-build\\independent-replay1",
+    "reviewerWrapperSha256": "2d3655db966bc1cb90048d32d79f49e638bd7c148d9f14df1ade44318e67c9ac"
+  }
+}

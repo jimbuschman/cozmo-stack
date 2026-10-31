@@ -1,4 +1,4 @@
-# DEV-TURN-IN-PLACE-TEST-1 — READY FOR CLAUDE
+# DEV-TURN-IN-PLACE-TEST-1 — RETURNED FIX, NOT READY
 
 DevTurnInPlaceTest now constructs its checked native owner. It retains the four shipped tests (90,-90,180,-180 degrees; speed150, acceleration300, tolerance2), gap1s, nRuns1 and loop=false. Factory/config: 0x0059CA56 and 0x005CA550..7B4; shipped devTurnInPlaceTest.json.
 
@@ -19,3 +19,5 @@ Reference1 117P/2F/119 is preserved: null fixture AnimationLibrary prevented gat
 No existing record's whole path is proposed settled. Propose ONE otherwise-unowned DevTurn lifecycle record; existing M7-018, M7-014, M13-022, M8-001/009/011/012/013/015/016/017 remain partial. MISSING: actual initial caller, shared manager/turn/compound/cancellation and concrete retirement ownership. Empty tests skip unchecked read0x005CA984 under M1-034; nRuns0 progression at0x005CAC60 remains explicitly UNKNOWN, with no synthetic result. The approved retained-vector contradiction is resolved for this build. No official manifest/inventory/status/approval edits, subsystem acceptance, hardware run or finished-behavior claim.
 
 Actual before bytes and raw/filtered Git identities were captured on422d19b1, including genuine absence of the new files; Runtime and M7 test expansions have actual-before captures. Revision archives and all failed/successful phase logs/TRX remain. The ignored derived marker was staged after the initial capture and separately hashed. The builder report is new metadata written after replay and is outside the earlier9197-input run set.
+
+Authoritative mainfd4ef169 returns FIX: action constructor order must be turn/wait/compound so API payload tags match. Manager.StartAsync already follows native start-even-if-nonrunnable; only chooser gate refuses. Correct current diagnostic/handoff, add actual public entry and delivered-tag regression. Earlier UNKNOWNinitial-entry wording is superseded for this API route; native app caller remains unrecovered. No newer job integrated before this stablee37 merge point.
