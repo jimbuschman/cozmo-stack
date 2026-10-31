@@ -1,0 +1,65 @@
+{
+  "job": "HIKING-DRIVE-OFF-CHARGER-1",
+  "state": "STATIC TWO-FILE PASS; VALIDATION PREPARATION",
+  "managerStart": "02023553f8581e66477f41c0cb56a21189f11641",
+  "originMain": "e0cfea093a73a95decb22b518403ecec96572941",
+  "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-hiking-drive-off-charger-1",
+  "workerBranch": "codex/hiking-drive-off-charger-1",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/hiking_driveoff_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/hiking_driveoff_review",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "fork": "none"
+    },
+    {
+      "role": "builder",
+      "state": "STARTED",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "agent": "/root/hiking_driveoff_build",
+      "fork": "none"
+    }
+  ],
+  "actualBackends": "unobserved",
+  "assetStaging": "Resources/OBB junctions read only by protocol; native engine and derived marker hashes verified before all new worker captures.",
+  "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "markerSha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+  "dotnetLease": "none; wrapper preparation only",
+  "reviewerFixRounds": 0,
+  "compilerCorrections": 0,
+  "recordProposals": "Determine current literal ownership first; reuse existing drive-off lifecycle record/proposal, no duplicate.",
+  "reports": [
+    {
+      "path": "re-analysis/research/20261030-hiking-drive-off-charger-1-read.md",
+      "sha256": "a3b1006002be48d95cdc2c1d5e87ca5e6930e9c3de9f8cddd018439339213f0d"
+    },
+    {
+      "path": "re-analysis/research/20261030-hiking-drive-off-charger-1-source-codex-check.md",
+      "sha256": "9a90abaf3ccd40bf925c6cf17557d206e5a2f891fd87cfb7c4fc14f17c473689"
+    }
+  ],
+  "currentLiteralRecordSnapshotsMatched": 22,
+  "rootIndependentlyMatchedLiteralRecords": true,
+  "recordClosureProposals": [],
+  "newRecordProposal": "None: settled M13-017 already owns class lifecycle; no duplicate",
+  "remainingUncertainty": "Specialized Hiking parent admission/interlude and M15-006/008 producers, shared readiness/action/report inputs remain explicit",
+  "builderMissingItems": [
+    "Hiking parent admission/interlude M15-006/008 remains unavailable; no new source question.",
+    "Existing helper, mood, typed-report and readiness-input gaps remain under their current owners."
+  ],
+  "candidateCodeFiles": 2,
+  "candidateSourceHashes": {
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs": "08ff4c55da945e7fd387cc45d2423e4860b9543ec9a6226197ab46a1709b47a9",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/DriveOffPilotTests.cs": "12652baa08dede4a987b2fda07a8ab3030f06547167d1d32c0eda12dd52bbf7d"
+  },
+  "postTestHarnessCorrections": 0
+}
