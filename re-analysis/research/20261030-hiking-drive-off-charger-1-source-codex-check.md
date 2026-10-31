@@ -1,0 +1,22 @@
+# Independent Hiking drive-off source check
+
+2026-10-30. Requested DEFAULT model/effort, overrides omitted; actual backend unobserved. Read PROJECT_STATE, AGENTS, verifier role, AUTONOMY, job and REVIEW. Read-only check; no code, tests, .NET, hardware, official records or git mutations. Engine SHA-256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1.
+
+`known.py BehaviorDriveOffCharger` attempted before fresh native read; it fails because re-analysis/decomp/libcozmoEngine/index.tsv is absent. Direct LIEF virtual-address reads and Capstone Thumb disassembly of the real ELF used instead; no index fabricated.
+
+## Independent primary checks
+
+* Shipped `obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/hiking/Hiking_driveOffCharger.json`: class DriveOffCharger, ID Hiking_DriveOffCharger, display behavior.DriveOffCharger, extraDistanceToDrive_mm 45.0, no other keys. The actual `activities/freeplay/hiking.json` is BehaviorsOnly; Scoring list places this ID at flatScore 10.0 following ReactToObstacle 30 and KnockOverCubes 20, current-behavior bonus 1.0. It supplies Hiking driving triplet, CalculateInterestingRegions, StrictPriority interlude, Simple 60 s/15 s strategy. These are config inputs; they do not prove admission or a chooser win.
+* Direct ELF 0x0059CABC..CADA allocates 0x128 and passes the existing robot and JSON to constructor. 0x005C0980..09E6 reads the JSON value then adds f32 literal at 0x005C0AAC and stores +0x11C; previously checked common pilot identifies that literal as 96.0. Thus explicit 45.0 produces 141.0 mm; no inference from ordinary alias.
+* 0x005C0B10 returns robot+0x34A. 0x005C0B18..0B54 clears +0x120, tests severe state == 3 before animation push and marks +0x120; 0x005C0B54 tests +0x355. Transition 0x005C0BF4..0C26 checks platform, constructs action with +0x11C and starts it with callback. 0x005C0DA8..0E1E checks platform, off-treads, active action, stamps whiteboard+0x44 only when off platform and no action; Stop 0x005C0D90 removes animation only if +0x120. Callback 0x005C0E9C..0EF4 checks full result word zero, emits objective 4 before mood event. 0x005C0E4A/4E/52 returns 1/1/0 for virtual eligibility gates; checked pilot maps these to off-treads/platform/carry gates. Reuse pilot and shared framework for remaining lifecycle rather than treating the selected instructions as independent proof of all helpers.
+* Hiking admission and competition, supported API/custom entry and shared dependent gaps must retain their own real inputs; do not synthesize parent selection or action results. No exclusion or no-effect inference follows.
+
+## Ownership and comparison
+
+Current manifest literal M13-017 title is `BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update`, status EXACT_SOURCE; evidence names ctor 0x005C0980, runnable 0x005C0B10, Init 0x005C0B18, transition 0x005C0BB8 and Update 0x005C0DA8. Its unresolved begins `Settled 2026-10-26 ... ctor ... IsRunnableInternal ... Init ... TransitionToDrivingForward ... Update ... Stop ... and completion ... match ChargerBehaviors.cs`, followed by explicitly historical earlier notes. This is the existing own lifecycle owner; do not propose a duplicate on the basis of this alias. This conclusion does not make all base/parent/action/vision paths settled. M13-040 separately owns contact-true charger observation, EXACT_SOURCE, not all charger or admission behavior.
+
+A report comparison and final finite verdict follow below.
+
+## Frozen A comparison and verdict
+
+READ PASS for finite packet `.scratch/hiking-drive-off-charger-1-read/read.md` SHA256 a3b1006002be48d95cdc2c1d5e87ca5e6930e9c3de9f8cddd018439339213f0d, subject to its explicitly named parent-admission and shared gaps. Compared all 22 snapshot records' literal title/status/evidence/unresolved against current manifest: no differences. Direct ELF checks of 0x0060A032..05A confirm lookup, scored read on returned owner and insertion; 0x005B3140..314A invokes +0x24 object's vtable slot20, not a strategy claim; 0x005B3158..319A supplies parent animation push; 0x005BDA94..C8 rechecks base and derived before reinitializing; 0x005A1E76..94 shows manager proceeds to Init even after failed runnable check. This supports A's separate manual entry and parent boundary. No current-scope contradiction found. This is not approval of untraced parent admission, a helper outcome, a whole wider record, or a hardware claim.
