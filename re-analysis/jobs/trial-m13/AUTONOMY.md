@@ -83,3 +83,25 @@ Each handoff records the builder's start model/effort, how many reviewer fix rou
 This supersedes the preceding unstarted trial. The operator reports that the default subagent model is now `gpt-6.1-terra`. For each new reader/extraction worker, explicitly request `gpt-6.1-sol` with medium effort. Builders and independent reviewers use the configured default: omit model and effort overrides. Log the model requested for **each** worker; distinguish an omitted/default request from independently observed runtime configuration. Do not infer the actual backend from an agent label. Existing in-flight jobs retain their started workers.
 
 Continue logging reviewer fix rounds and all builder-raised MISSING/source questions in handoffs. The counting/audit rules in the superseded trial register remain useful; its old model assignments and one-job limit no longer apply. Pull main first, keep the source/build/review separation, and continue between handoffs without waiting for the operator or Claude.
+
+## Job order and repeat-pattern checks (operator, 2026-10-30)
+
+This takes priority over the standing scope above and over the row order of `BEHAVIOURS.md`.
+
+**The method stays:** one whole job at a time, with the same handoffs, Claude checks, citations and MISSING rules.
+
+**1. Build the shared start path next.** Before starting another individual behaviour, take the parts that let built
+behaviours start in production: M15-006 (freeplay activity selection and the selected/deselected lifecycle), M8-013
+(the behaviour choosers and activity selection dispatch), then the rest of the admission path that the earlier
+handoffs name as missing (PlayAlone, NeedsExpression, Spark admission, M15-059). Scope these as whole jobs. Queued FIX
+items still come first.
+
+**2. Trial measure.** Settling had fallen to 11, 2 and 0 records a day (2026-10-28 to 2026-10-30) with 9 to 14 jobs
+merged a day. If settling does not pick up soon after the start path lands, this ordering goes back to the operator.
+
+**3. Repeat-pattern jobs get a lighter check.** A repeat-pattern job adds only a configuration, alias or ID of a
+behaviour class whose body has already passed a Claude check, and the production change only widens a factory or
+config binding. Mark it REPEAT PATTERN in the handoff and name the job that verified the body. Its handoff covers the
+differing config values and any branch the earlier job did not exercise, each with its citation. Claude checks those
+itself, with no separate verifier, as for DRIVE-IN-DESPERATION-REPAIR-1. If a new branch or behaviour-changing body
+change appears, it is an ordinary job. The evidence rule does not change.
