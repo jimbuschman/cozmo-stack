@@ -1187,3 +1187,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New IMPLEMENTATION_GAP: InventoryComponent Add 0x0063D05C, Set 0x0063CE9C, TryWrite 0x0063CDE0, Write 0x0063D3A4 (tag 0x195000), completion 0x0063D974 | M15-094 (new) |
 | New IMPLEMENTATION_GAP: ProgressionUnlockComponent RequestSetUnlock 0x0064C8B8, SetUnlock 0x0064C200, Write 0x0064C4D0 (tag 0x182000), completion 0x0064CBE8, UnlockedDefaults 0x0064C0FC | M15-095 (new) |
+
+## Concrete activity strategies (operator approved 2026-10-31; research/20261031-queue-5-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: ActivityStrategyFPPlayWithHumans ctor 0x005B3E0C, start 0x005B40D4, end 0x005B40EC, RequestGameStart 0x005B4128, DenyGameStart 0x005B4138 | M15-096 (new) |
+| New IMPLEMENTATION_GAP: ActivityStrategyPyramid start 0x005B4970, end 0x005B4C90, BehaviorObjectiveAchieved 0x005B4C96 | M15-097 (new) |
+| New IMPLEMENTATION_GAP: ActivityStrategyNeedBasedCooldown ctor 0x005B4298, NeedsState 0x005B4504, SetCooldown 0x005B54E4 | M15-098 (new) |
+| New IMPLEMENTATION_GAP: ActivityStrategyNeeds 0x005B4718, 0x005B4768 and SevereNeedsTransition 0x005B4D88, 0x005B4DE8 | M15-099 (new) |

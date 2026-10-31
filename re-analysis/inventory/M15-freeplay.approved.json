@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-31",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "24dcfe24ee2f959ecd2479d4d7bf3b3874c8c1b5d5d3d17e1e2090e6b6592081",
+  "inventory_sha256": "a85f5afaee76a3867d7b426938efd6ff47fb3e7b9794dcd4b56b7a48f70d19ea",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1191,6 +1191,63 @@
         "Write completion operator() 0x0064CBE8 (closure vtable 0x0102F678, slot +0x18; closure +0x04 component, +0x08 UnlockId, +0x0C bool): NVResult > -1 and HasExternalInterface sends RequestSetUnlockResult through vtable +0x1C 0x0064CC00..0x0064CC88; otherwise logs, sends nothing, no rollback.",
         "NotifyGameDefaultUnlocksSet 0x0064C0FC: sends UnlockedDefaults built from the default set, with no HasExternalInterface gate.",
         "re-analysis/research/20261031-queue-2-chatgpt-extraction.md; re-analysis/research/20261031-queue-2-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-096": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor 0x005B3E0C: +0x3C and +0x48 0, +0x4C [Robot+0x264]+0x18, required keys cooldownRejectionBaseSecs +0x40 and cooldownRejectionExponent +0x44 (0x005B3E72, 0x005B3EA4).",
+        "WantsToStartInternal 0x005B40D4: IdentifyNextGameTypeToRequest on [Robot+0x264]+0x20 != 0x55 (UnlockId Count).",
+        "WantsToEndInternal 0x005B40EC: selected + 1e-5 < +0x3C, or no next game.",
+        "HandleMessage<RequestGameStart> 0x005B4128 stores now at +0x3C.",
+        "HandleMessage<DenyGameStart> 0x005B4138: if [+0x4C]+0x75 is nonzero nothing; otherwise +0x48 += 1, then SetCooldown(+0x40 x pow(+0x48, +0x44), 0) through veneer 0x008CBE6C.",
+        "re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-097": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivityStrategyPyramid: start predicate, the 40% roll every 300 s, and the BuiltPyramid end",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "WantsToStartInternal 0x005B4970: false unless UnlockId 3 is unlocked ([Robot+0x448], 0x005B498A); FindLocatedMatchingObjects with families from table 0x00C63260 (0x005B4A40).",
+        "If now > +0x3C: +0x40 = RandDbl(1.0) < 0.4 and +0x3C = now + 300 (0x005B4A52..0x005B4A94; literals 0x005B4C18, 0x005B4C24).",
+        "A full pyramid gives false; a pyramid base, or +0x40 with at least 3 objects, clears +0x41 and gives true; otherwise false (0x005B4AD0..0x005B4B00).",
+        "WantsToEndInternal 0x005B4C90 returns +0x41; HandleMessage<BehaviorObjectiveAchieved> 0x005B4C96 sets it for objective 3 (BuiltPyramid).",
+        "re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-098": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivityStrategyNeedBasedCooldown: cooldown graphs driven by the NeedsState message",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor 0x005B4298: needId default 3 at +0x54 (0x005B42CE..0x005B4338); needCooldownGraph +0x3C and needCooldownRandomnessGraph +0x48, read from JSON or AddNode(0, base value) when absent (0x005B4340..0x005B4392).",
+        "HandleMessage<NeedsState> 0x005B4504: level from message array [+0x54], then SetCooldown(graph1(level), graph2(level)) through veneer 0x008CBE6C.",
+        "SetCooldown 0x005B54E4 writes +0x1C and +0x20 with the cooldown and +0x24 with the randomness.",
+        "Start 1 and end 0: vtable 0x0102590C, 0x005B45A8, 0x005B45AC.",
+        "re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-099": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivityStrategyNeeds and SevereNeedsTransition predicates, including ClearSevereNeedExpression on the Needs end path",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Needs start 0x005B4718 and SevereNeedsTransition start 0x005B4D88: IActivityStrategy +0x04 (IWantsToRunStrategy from wantsToRunStrategyConfig, 0x005B50F8..0x005B5104) WantsToRun; null warns and gives false.",
+        "Needs end 0x005B4768: null strategy warns and gives true; with no higher-priority strategy (+0x3C) not WantsToRun; if the higher-priority strategy wants to run: when [Robot+0x264]+0x30 +0x14 != 3 call ClearSevereNeedExpression 0x004AAEDC, then true; otherwise not WantsToRun.",
+        "SevereNeedsTransition end 0x005B4DE8: not WantsToRun; null warns and gives true.",
+        "higherPriorityStrategyConfig built through the wants-to-run factory, stored at +0x3C (0x005B4642..0x005B4660).",
+        "re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **737 records** over 16 subsystems.
+Manifest of **741 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 367 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 95 | 4 | 81 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 99 | 4 | 85 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3979,6 +3979,42 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: HandleMessage<RequestSetUnlock> 0x0064C8B8: id - 1 < 0x54 unsigned (0x0064C902..0x0064C906), then SetUnlock 0x0064C948.; SetUnlock 0x0064C200: id 1 loops 0..84 with the supplied bool 0x0064C29C..0x0064C2BA; id 2 loops with membership in the default set 0x0064C234..0x0064C292, then NotifyGameDefaultUnlocksSet 0x0064C296; other ids need id - 3 <= 0x51 and a name 0x0064C2BE..0x0064C2CE. Insert or erase on the tree at +0x04; only a real change calls WriteCurrentUnlocksToRobot 0x0064C36A. Also called by NeedsManager::ProcessLevelRewards 0x006995CA.; WriteCurrentUnlocksToRobot 0x0064C4D0: copies the whole tree into UnlockedIdsList 0x0064C4FC..0x0064C532, packs it, NVStorageComponent::Write tag 0x00182000 at 0x0064C586..0x0064C58A; a refused write logs.; Write completion operator() 0x0064CBE8 (closure vtable 0x0102F678, slot +0x18; closure +0x04 component, +0x08 UnlockId, +0x0C bool): NVResult > -1 and HasExternalInterface sends RequestSetUnlockResult through vtable +0x1C 0x0064CC00..0x0064CC88; otherwise logs, sends nothing, no rollback.; NotifyGameDefaultUnlocksSet 0x0064C0FC: sends UnlockedDefaults built from the default set, with no HasExternalInterface gate.; re-analysis/research/20261031-queue-2-chatgpt-extraction.md; re-analysis/research/20261031-queue-2-claude-check.md
 * outstanding: Not built; the stack has the read side only (M15-034). UnlockedIdsList's wire form is unread. The two SendUnlockStatus lambdas 0x0064CF58 and 0x0064D05E are in the next ChatGPT queue. Ids 1 and 2 pass the handler gate and take the loops.
+
+**M15-096 — ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: when the PlayWithHumans activity starts and ends, and how long it stays away after a game request is denied
+* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Ctor 0x005B3E0C: +0x3C and +0x48 0, +0x4C [Robot+0x264]+0x18, required keys cooldownRejectionBaseSecs +0x40 and cooldownRejectionExponent +0x44 (0x005B3E72, 0x005B3EA4).; WantsToStartInternal 0x005B40D4: IdentifyNextGameTypeToRequest on [Robot+0x264]+0x20 != 0x55 (UnlockId Count).; WantsToEndInternal 0x005B40EC: selected + 1e-5 < +0x3C, or no next game.; HandleMessage<RequestGameStart> 0x005B4128 stores now at +0x3C.; HandleMessage<DenyGameStart> 0x005B4138: if [+0x4C]+0x75 is nonzero nothing; otherwise +0x48 += 1, then SetCooldown(+0x40 x pow(+0x48, +0x44), 0) through veneer 0x008CBE6C.; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
+* outstanding: Confirm or build against the stack. Open: the byte [+0x4C]+0x75 and any reset of +0x48. JSON type name is PlayWithHumans.
+
+**M15-097 — ActivityStrategyPyramid: start predicate, the 40% roll every 300 s, and the BuiltPyramid end** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: when the BuildPyramid activity starts and ends, including one RNG draw per 300 s window
+* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: WantsToStartInternal 0x005B4970: false unless UnlockId 3 is unlocked ([Robot+0x448], 0x005B498A); FindLocatedMatchingObjects with families from table 0x00C63260 (0x005B4A40).; If now > +0x3C: +0x40 = RandDbl(1.0) < 0.4 and +0x3C = now + 300 (0x005B4A52..0x005B4A94; literals 0x005B4C18, 0x005B4C24).; A full pyramid gives false; a pyramid base, or +0x40 with at least 3 objects, clears +0x41 and gives true; otherwise false (0x005B4AD0..0x005B4B00).; WantsToEndInternal 0x005B4C90 returns +0x41; HandleMessage<BehaviorObjectiveAchieved> 0x005B4C96 sets it for objective 3 (BuiltPyramid).; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
+* outstanding: Confirm or build against the stack. Open: which BlockWorldFilter set holds the families (filter +0x3C).
+
+**M15-098 — ActivityStrategyNeedBasedCooldown: cooldown graphs driven by the NeedsState message** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: how long the activity using this strategy cools down, as a function of the live need level
+* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Ctor 0x005B4298: needId default 3 at +0x54 (0x005B42CE..0x005B4338); needCooldownGraph +0x3C and needCooldownRandomnessGraph +0x48, read from JSON or AddNode(0, base value) when absent (0x005B4340..0x005B4392).; HandleMessage<NeedsState> 0x005B4504: level from message array [+0x54], then SetCooldown(graph1(level), graph2(level)) through veneer 0x008CBE6C.; SetCooldown 0x005B54E4 writes +0x1C and +0x20 with the cooldown and +0x24 with the randomness.; Start 1 and end 0: vtable 0x0102590C, 0x005B45A8, 0x005B45AC.; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
+* outstanding: Confirm or build against the stack.
+
+**M15-099 — ActivityStrategyNeeds and SevereNeedsTransition predicates, including ClearSevereNeedExpression on the Needs end path** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: when the needs activities start and end, and clearing the severe need expression, which later selection reads
+* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Needs start 0x005B4718 and SevereNeedsTransition start 0x005B4D88: IActivityStrategy +0x04 (IWantsToRunStrategy from wantsToRunStrategyConfig, 0x005B50F8..0x005B5104) WantsToRun; null warns and gives false.; Needs end 0x005B4768: null strategy warns and gives true; with no higher-priority strategy (+0x3C) not WantsToRun; if the higher-priority strategy wants to run: when [Robot+0x264]+0x30 +0x14 != 3 call ClearSevereNeedExpression 0x004AAEDC, then true; otherwise not WantsToRun.; SevereNeedsTransition end 0x005B4DE8: not WantsToRun; null warns and gives true.; higherPriorityStrategyConfig built through the wants-to-run factory, stored at +0x3C (0x005B4642..0x005B4660).; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
+* outstanding: Confirm or build against the stack. JSON type name is SevereNeedTransition. The higherPriorityStrategyConfig row is ChatGPT's, not re-read in the Claude check.
 
 ## What remains after both: blocked externally, or needing hardware
 
