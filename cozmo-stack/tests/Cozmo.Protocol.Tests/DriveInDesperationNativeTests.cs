@@ -14,12 +14,12 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class DriveInDesperationNativeTests
 {
-    private static string Config()
+    private static string Config(string need = "Energy")
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
         while (d is not null)
         {
-            var path = Path.Combine(d.FullName, "re-analysis", "obb", "assets", "cozmo_resources", "config", "engine", "behaviorSystem", "behaviors", "freeplay", "needs", "needs_SevereLowEnergyState.json");
+            var path = Path.Combine(d.FullName, "re-analysis", "obb", "assets", "cozmo_resources", "config", "engine", "behaviorSystem", "behaviors", "freeplay", "needs", "needs_SevereLow" + need + "State.json");
             if (File.Exists(path)) return File.ReadAllText(path);
             d = d.Parent;
         }
@@ -75,11 +75,12 @@ public class DriveInDesperationNativeTests
         }
         finally { Console.SetOut(previous); }
         Assert.Contains("MISSING: Needs_SevereLowEnergyState uses the legacy standalone custom driver", output.ToString());
+        Assert.Contains("MISSING: Needs_SevereLowRepairState uses the legacy standalone custom driver", output.ToString());
         Assert.Contains("Native NeedsExpression admission remains unbuilt (M8-013)", output.ToString());
     }
     // reach: unit; supplied factory inputs and canonical carrying/platform state. Native vtable cells 0x10288f4/f8/fc and runnable 0x5d90ac.
     [Fact]
-    public void EnergyFactoryUsesOwnGatesAndRejectsRepair()
+    public void EnergyFactoryUsesOwnGatesAndAcceptsRepair()
     {
         using var rig = new Rig();
         using var doc = JsonDocument.Parse(Config());
@@ -96,9 +97,9 @@ public class DriveInDesperationNativeTests
         rig.Robot.Engine.Robot.CarryingOwner.ClearNativeCarryingFields(false);
         rig.Robot.Sensors.SetOnChargerPlatform(true); Assert.False(b.IsRunnableBase(inputs));
         rig.Robot.Sensors.SetOnChargerPlatform(false);
-        using var repair = JsonDocument.Parse(Config().Replace("Needs_SevereLowEnergyState", "Needs_SevereLowRepairState"));
-        Assert.Null(factory.CreateBehavior(container, BehaviorClass.DriveInDesperation, ctx, repair.RootElement, out status));
-        Assert.Equal(BehaviorCreateStatus.NotImplemented, status);
+        using var repair = JsonDocument.Parse(Config("Repair"));
+        Assert.IsType<NativeDriveInDesperationBehavior>(factory.CreateBehavior(container, BehaviorClass.DriveInDesperation, ctx, repair.RootElement, out status));
+        Assert.Equal(BehaviorCreateStatus.Created, status);
     }
     // reach: unit; direct actual path owner. Setter 0x64ab90..a0 copies then enables; clear 0x64ac4a only clears flag.
     [Fact]
@@ -111,6 +112,140 @@ public class DriveInDesperationNativeTests
         path.ClearNativeCustomMotionProfile();
         Assert.False(path.Field48); Assert.Equal(40f, path.NativeMotionProfile.SpeedMmps);
     }
+
+    // reach: shipped binding and supplied admission; actual NeedsExpression parent is unbound (M8-013).
+    [Fact]
+    public void RepairBindingAndParentRefusalPreserveSelectedOwner()
+    {
+        using var f = new Fixture();
+        Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowRepairState"]);
+        var activity = Assert.Single(NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Where(a => a.Id == "NeedsSevereLowRepair"));
+        Assert.Equal(new[] { "DriveOffCharger", "PutDownBlock", "Needs_SevereLowRepairGetIn", "Needs_SevereLowRepairState", "Needs_Wait" }, activity.Chooser!.BehaviorIds);
+        var messages = new List<string>(); void Observe(string message) => messages.Add(message);
+        SteppedBehavior.MissingReported += Observe;
+        try
+        {
+            var prior = f.Robot.BehaviorManagerOwner!.Activity;
+            f.Runtime.AdmitActivity("NeedsSevereLowRepair");
+            Assert.Same(prior, f.Robot.BehaviorManagerOwner.Activity);
+            Assert.Contains(messages, m => m.Contains("NeedsSevereLowRepair") && m.Contains("M8-013") && m.Contains("NeedsExpression"));
+        }
+        finally { SteppedBehavior.MissingReported -= Observe; }
+    }
+    // reach: supplied direct activation and RNG words, actual Repair JSON and PathComponent; 005D8ECA..8FE4.
+    [Fact]
+    public async Task RepairInitInstallsActualProfileAndWaitThenClearsSlot()
+    {
+        using var rig = new Rig(); using var doc = JsonDocument.Parse(Config("Repair"));
+        var ctx = new BehaviorFactoryContext { Manipulation = rig.M, NativeRobot = rig.Robot.Engine.Robot };
+        var factory = new BehaviorFactory();
+        var container = new BehaviorContainer(factory, ctx, Array.Empty<KeyValuePair<BehaviorID, JsonElement>>());
+        int words = 0; rig.Robot.Engine.ContextRandom.WordSourceForTest = () => { words++; return 0; };
+        var b = Assert.IsType<NativeDriveInDesperationBehavior>(factory.CreateBehavior(container, BehaviorClass.DriveInDesperation, ctx, doc.RootElement, out _));
+        Assert.Equal(2, words); // ctor rounds draw, 005D8C36
+        using var scope = new BehaviorScope();
+        await b.StartAsync(new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() }, scope, default);
+        Assert.Equal(4, words); // idle draw, 005D8F12
+        var profile = rig.Robot.Motion.Path.NativeMotionProfile;
+        Assert.True(rig.Robot.Motion.Path.Field48);
+        Assert.Equal(50f, profile.SpeedMmps); Assert.Equal(500f, profile.AccelMmps2); Assert.Equal(50f, profile.DecelMmps2);
+        Assert.Equal(1.5f, profile.PointTurnSpeedRadPerSec); Assert.Equal(10f, profile.PointTurnAccelRadPerSec2); Assert.Equal(2f, profile.PointTurnDecelRadPerSec2);
+        Assert.Equal(60f, profile.DockSpeedMmps); Assert.Equal(200f, profile.DockAccelMmps2); Assert.Equal(500f, profile.DockDecelMmps2);
+        Assert.Equal(120f, profile.ReverseSpeedMmps); Assert.True(profile.IsCustom);
+        Assert.Equal(5f, Assert.IsType<NativeTimedWaitRunner>(rig.Robot.Engine.Robot!.ActionList.GetCurrentAction()).Duration);
+        b.Stop(BehaviorStopReason.Interrupted); scope.Dispose();
+        Assert.False(rig.Robot.Motion.Path.Field48);
+        rig.Robot.Engine.ContextRandom.WordSourceForTest = null;
+    }
+    // reach: supplied manager activation and terminal results through real ActionList; cube/charger present.
+    // 005D9140..914E, 005DA2DE..A2F0: false useCubes goes straight to random drive, whose callback returns for either result.
+    [Theory]
+    [InlineData(0u)]
+    [InlineData(0x03000000u)]
+    public void RepairDriveCompletionDoesNotSearchOrSelectCube(uint result)
+    {
+        using var f = new Fixture(); f.Add(7, 250);
+        var charger = new ObservableObject(9, ObjectType.Charger_Basic, ChargerGeometry.Markers)
+        { Pose = new Pose3d(Rotation3d.Identity, new Vec3(100, 0, 22), parent: f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)), OriginId = f.Robot.CurrentOriginId, PoseState = PoseState.Known };
+        f.M.World.AddLocatedObject(charger);
+        var b = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowRepairState"]);
+        typeof(NativeDriveInDesperationBehavior).GetField("_rounds", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(b, 1);
+        var messages = new List<string>(); void Observe(string message) => messages.Add(message);
+        SteppedBehavior.MissingReported += Observe;
+        try
+        {
+            Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(b.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            int words = 0; f.Rig.Engine.ContextRandom.WordSourceForTest = () => { words++; return 0; };
+            Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
+            Assert.Equal(6, words); // angle, sign, distance; no cooldown draw
+            Assert.IsType<DriveToPoseAction>(f.Robot.ActionList.GetCurrentAction()).State = result; f.Robot.ActionList.Update();
+            Assert.Null(f.Robot.ActionList.GetCurrentAction()); Assert.Equal(6, words);
+            Assert.DoesNotContain(messages, m => m.Contains("SearchForBlockHelper") || m.Contains("M12-036"));
+            Assert.Equal(uint.MaxValue, (uint)typeof(NativeDriveInDesperationBehavior).GetField("_target", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(b)!);
+            f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+        }
+        finally { f.Rig.Engine.ContextRandom.WordSourceForTest = null; SteppedBehavior.MissingReported -= Observe; }
+    }
+
+    // reach: supplied initial rounds and manager activations/terminal results; actual ActionList callbacks.
+    // 005D9F14..42 and 005DA354..A36C: persistent round, then Repair request and -1 target guard.
+    [Theory]
+    [InlineData(0u)]
+    [InlineData(0x03000000u)]
+    public void RepairRoundsPersistAcrossActivationsThenRequestWithoutFinalTurn(uint result)
+    {
+        using var f = new Fixture();
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var b = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowRepairState"]);
+        var rounds = typeof(NativeDriveInDesperationBehavior).GetField("_rounds", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        rounds.SetValue(b, 1);
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(b.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
+        Assert.Equal(0, (int)rounds.GetValue(b)!);
+        Assert.IsType<DriveToPoseAction>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
+        Assert.Null(f.Robot.ActionList.GetCurrentAction());
+        f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+        Assert.True(f.Robot.BehaviorManagerOwner.StartAsync(b.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
+        var wrapper = Assert.IsType<NativeTurnTowardsFaceWrapperRunner>(f.Robot.ActionList.GetCurrentAction());
+        Assert.Equal(2, wrapper.Children.Count);
+        var face = Assert.IsType<NativeLastFaceRunner>(wrapper.Children[0]);
+        Assert.Equal(Radians.Pi, face.MaximumTurn); Assert.False(face.SayName);
+        var trigger = Assert.IsType<TriggerAnimationAction>(wrapper.Children[1]);
+        Assert.Equal(new DrivingAnimationRequest(AnimationTrigger.NeedsSevereLowRepairRequest, 1, true, 0, 60f, false), trigger.Request);
+        var needsBefore = f.Rig.Engine.Needs.SevereNeeds.Selected;
+        wrapper.State = result; f.Robot.ActionList.Update();
+        Assert.Equal(needsBefore, f.Rig.Engine.Needs.SevereNeeds.Selected);
+        Assert.Null(f.Robot.ActionList.GetCurrentAction());
+        Assert.Equal(uint.MaxValue, (uint)typeof(NativeDriveInDesperationBehavior).GetField("_target", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(b)!);
+        f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+    }
+
+    // reach: canonical factory-bound Repair with actual base inputs and supplied fixture state; no parent admission.
+    // 0x010288F4..FC: off-treads allowed, charger platform and carrying refused.
+    [Fact]
+    public void RepairCanonicalGatesUseRobotOwnersAndSensors()
+    {
+        using var f = new Fixture();
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var b = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowRepairState"]);
+        Assert.NotNull(f.Rig.Robot.Animations.Library); Assert.NotNull(b.NativeBaseInputs);
+        Assert.Null(f.Robot.CarryingOwner!.CarriedObjectId); Assert.False(f.Rig.Robot.Sensors.OnChargerPlatform);
+        Assert.Equal(OffTreadsState.OnTreads, f.Rig.Robot.Sensors.OffTreadsState);
+        Assert.True(b.IsRunnableBase(f.Runtime.Context));
+        f.Rig.Robot.Sensors.SetOnChargerPlatform(true);
+        Assert.False(b.IsRunnableBase(f.Runtime.Context));
+        f.Rig.Robot.Sensors.SetOnChargerPlatform(false);
+        Assert.True(b.IsRunnableBase(f.Runtime.Context));
+        f.Robot.CarryingOwner.SetCarrying(7);
+        Assert.False(b.IsRunnableBase(f.Runtime.Context));
+        f.Robot.CarryingOwner.ClearNativeCarryingFields(false);
+        Assert.True(b.IsRunnableBase(f.Runtime.Context));
+        var current = typeof(OffTreadsClassifier).GetProperty("Current")!;
+        current.SetValue(f.Rig.Robot.Sensors.OffTreads, OffTreadsState.InAir);
+        Assert.True(b.IsRunnableBase(f.Runtime.Context));
+    }
+
     // reach: unit; actual native wait and supplied engine clock. 0x54ca1c..60 uses f32 now+duration and strict greater-than.
     [Fact]
     public void WaitAtDeadlineRemainsRunning()
@@ -267,11 +402,13 @@ public class DriveInDesperationNativeTests
     }
     // reach: supplied manager activation and classifier state; real action cancellation and re-entry wait.
     // 0x5d9062..90a8 cancels once on the edge and resets ID/latch before starting Idle on return.
-    [Fact]
-    public void OffTreadsCancelsWaitOnceAndReturnStartsNewWait()
+    [Theory]
+    [InlineData("Needs_SevereLowEnergyState")]
+    [InlineData("Needs_SevereLowRepairState")]
+    public void OffTreadsCancelsWaitOnceAndReturnStartsNewWait(string id)
     {
         using var f = new Fixture();
-        var behavior = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyState"]);
+        var behavior = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound[id]);
         Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         var first = Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction());
         var current = typeof(OffTreadsClassifier).GetProperty("Current")!;

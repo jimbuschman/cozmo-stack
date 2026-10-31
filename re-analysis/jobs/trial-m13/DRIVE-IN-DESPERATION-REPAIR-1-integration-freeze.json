@@ -1,0 +1,70 @@
+{
+  "job": "DRIVE-IN-DESPERATION-REPAIR-1",
+  "state": "FROZEN BEFORE ONE FULL GATE",
+  "codeTree": "dc39037cd8c3dba9500deb416cb83f74a1dc66b3",
+  "workerCommit": "642777927ed23a3bb1d0282a2980bdefbe950d34",
+  "integrationCommit": "66c8d014fe6b15ca44d871faeece4e58cccbdb03",
+  "originMain": "b4b5c91856c6454e77aa1f1f64d0bf29b11c9f5c",
+  "priorStableBatchHandoff": "ecca481e480af620cc9e3a1bfaf73882f0b54ed0",
+  "entries": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "sha256": "032bea9c9467285467e42907bbff0e11707c079cb4d50a5cbe3ba269adcb0daf",
+      "tracked": true,
+      "rawBlob": "0f821305319a0ae13a4fd65f6ab508ee75bcbaa8",
+      "filteredBlob": "0f821305319a0ae13a4fd65f6ab508ee75bcbaa8",
+      "headBlob": "0f821305319a0ae13a4fd65f6ab508ee75bcbaa8"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs",
+      "sha256": "dbf8115b7460dc4bfcb0987b4e619ed4116e29c7e198123c5604171dd6421916",
+      "tracked": true,
+      "rawBlob": "75122b2ea679dfbe387a6529bb641c28ea40d852",
+      "filteredBlob": "75122b2ea679dfbe387a6529bb641c28ea40d852",
+      "headBlob": "75122b2ea679dfbe387a6529bb641c28ea40d852"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeDriveInDesperationBehavior.cs",
+      "sha256": "801fcad156221929e25a1c04303c8df8003d24b2f4bd4a786f0aa8cd7d93d18f",
+      "tracked": true,
+      "rawBlob": "d57811b61b1ba663004ffd1d24859f2c76dfebeb",
+      "filteredBlob": "d57811b61b1ba663004ffd1d24859f2c76dfebeb",
+      "headBlob": "d57811b61b1ba663004ffd1d24859f2c76dfebeb"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs",
+      "sha256": "3009ec816b7a36b3ebdce0521e7fec6a40b95ff57b675b40919fed110eaa55b4",
+      "tracked": true,
+      "rawBlob": "20cdf2271e14092a19b629aee5a5c5d81b830a41",
+      "filteredBlob": "20cdf2271e14092a19b629aee5a5c5d81b830a41",
+      "headBlob": "20cdf2271e14092a19b629aee5a5c5d81b830a41"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/FreeplayTool.cs",
+      "sha256": "1eb1668c06bb8267a331ceb9726ee597d4708562bd6e5741c7a26650542732ff",
+      "tracked": true,
+      "rawBlob": "1b2c15f1d91423abcb7e342790d4942bacb8957d",
+      "filteredBlob": "1b2c15f1d91423abcb7e342790d4942bacb8957d",
+      "headBlob": "1b2c15f1d91423abcb7e342790d4942bacb8957d"
+    },
+    {
+      "path": "cozmo-stack/tests/Cozmo.Protocol.Tests/DriveInDesperationNativeTests.cs",
+      "sha256": "9c2aaab3701d34c3ac0fd11a245422961e0065fd12e67c3743b1c786fc34c24b",
+      "tracked": true,
+      "rawBlob": "ece8eaaac5ba3c335e6834f5b8bb97fce6a23ad1",
+      "filteredBlob": "ece8eaaac5ba3c335e6834f5b8bb97fce6a23ad1",
+      "headBlob": "ece8eaaac5ba3c335e6834f5b8bb97fce6a23ad1"
+    },
+    {
+      "path": "resources/lib/armeabi-v7a/libcozmoEngine.so",
+      "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+      "tracked": false
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Robot/Vision/Data/marker_nn_library.bin",
+      "sha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+      "tracked": false
+    }
+  ],
+  "metadataTiming": "New builder and final-code-check reports created after replay, outside9252 worker input set; builder working CRLF and committed LF hashes separately recorded."
+}

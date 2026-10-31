@@ -386,9 +386,9 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if(cls==BehaviorClass.DriveInDesperation && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowEnergyState || ctx.Manipulation is null || ctx.NativeRobot is null))
+        if(cls==BehaviorClass.DriveInDesperation && ((BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowEnergyState && BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowRepairState) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {
-            SteppedBehavior.ReportMissing("DriveInDesperation factory: only the checked Energy configuration with actual Robot and manipulation owners is available");
+            SteppedBehavior.ReportMissing("DriveInDesperation factory: only the checked Energy and Repair configurations with actual Robot and manipulation owners are available");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
         if(cls==BehaviorClass.CubeLiftWorkout && BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.CubeLiftWorkout or BehaviorID.SparksCubeLiftWorkout))
