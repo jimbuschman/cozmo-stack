@@ -1,6 +1,6 @@
 {
   "job": "DRIVE-IN-DESPERATION-REPAIR-1",
-  "state": "WORKER COMMITTED; INTEGRATION FULL GATE PENDING",
+  "state": "INTEGRATED; ONE FULL GATE NEXT",
   "managerStart": "e37e847ddf19ba1addf066ad5dcf298097a297e5",
   "originMain": "b4b5c91856c6454e77aa1f1f64d0bf29b11c9f5c",
   "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-repair-1",
@@ -33,7 +33,7 @@
   "assetStaging": "Original resources/OBB junctions are read-only by task protocol; ignored marker staged and primary hashes checked before first new worker/capture. Initial unprivileged junction creation denied; elevated create succeeded without asset changes.",
   "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
   "markerSha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
-  "dotnetLease": "none; rootfullgate next",
+  "dotnetLease": "rootexclusive fullgate, workersidle",
   "reviewerFixRounds": 1,
   "compilerCorrections": 0,
   "recordProposals": "Widen pending original DriveInDesperation lifecycle only as supported; current existing whole records must be checked literally, no duplicate.",
@@ -153,5 +153,9 @@
   "builderReportWorkingSha256": "bd655e175b6bf5274c8b9f47bed5bf59fad55b9c7a3a1cd68e0d7e83275d299b",
   "builderReportCommittedSha256": "53433a61a29866c84166fcfc7fe9ae52bca1ca03fbc00a785a855bd38f9b9f55",
   "builderReportNormalization": "Working CRLF metadata normalizes to LF in committed blob; both versions preserved, no source/test change.",
-  "builderReportTiming": "New metadata AFTER333reference/replay, outside9252 captured phase inputs"
+  "builderReportTiming": "New metadata AFTER333reference/replay, outside9252 captured phase inputs",
+  "integrationCommit": "66c8d014fe6b15ca44d871faeece4e58cccbdb03",
+  "integrationCodeTree": "dc39037cd8c3dba9500deb416cb83f74a1dc66b3",
+  "integrationFreeze": "DRIVE-IN-DESPERATION-REPAIR-1-integration-freeze.json",
+  "fullGateAttempts": 0
 }
