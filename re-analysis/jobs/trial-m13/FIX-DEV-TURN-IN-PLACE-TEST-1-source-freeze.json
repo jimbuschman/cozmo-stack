@@ -1,6 +1,6 @@
 {
   "job": "FIX-DEV-TURN-IN-PLACE-TEST-1",
-  "state": "WORKER COMMITTED; STABLE MERGE-POINT FULL GATE PENDING",
+  "state": "INTEGRATED; ONE STABLE FULL GATE NEXT",
   "stableCodeBaseline": "e37e847ddf19ba1addf066ad5dcf298097a297e5",
   "managerStart": "c764beace2fd248851070f06e7a36a1c7b0619d4",
   "originMain": "fd4ef169dea1b947874836dbd717caa1c396fda5",
@@ -50,7 +50,7 @@
   "newRecordProposal": "No duplicate; same pending original DevTurn lifecycle proposal",
   "reviewerFixRounds": 0,
   "compilerCorrections": 0,
-  "dotnetLease": "returned after replay, rootstablefullgate next",
+  "dotnetLease": "rootexclusivefullgate, allworkersidle",
   "candidateFreeze": "C:/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex2/.scratch/worktrees/codex-dev-turn-in-place-test-1/.scratch/fix-dev-turn-in-place-test-1-build/freeze-c6e-v1/manifest.json",
   "candidateFiles": 2,
   "primaryAssetEntries": 2,
@@ -122,5 +122,9 @@
     "trxSha256": "953d3542a2d5cd8111e7998b61aed1fb5be54644f03840eb4bc912ca3169e54f",
     "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-dev-turn-in-place-test-1\\.scratch\\fix-dev-turn-in-place-test-1-build\\independent-replay1",
     "reviewerWrapperSha256": "2d3655db966bc1cb90048d32d79f49e638bd7c148d9f14df1ade44318e67c9ac"
-  }
+  },
+  "integrationCommit": "c41ca9445230e1e32939168d37639e03c5f99d16",
+  "integrationCodeTree": "7db5e00e00b752c81e4fd8a8e7afb387c0375b50",
+  "integrationFreeze": "FIX-DEV-TURN-IN-PLACE-TEST-1-integration-freeze.json",
+  "fullGateAttempts": 0
 }
