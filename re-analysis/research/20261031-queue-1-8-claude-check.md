@@ -33,7 +33,7 @@ The report's UNKNOWN for +0x04 and +0x0C is closed by this.
 
 ## Checked and matching
 
-- **Item 2:** filter data 0x00C77770; operator== 0x006174F8..0x00617518 (ordered ids; a base with two equal ids never matches); the
+- **Item 2:** filter data 0x00C77770 (wrong: the table is 0x00C77784, see `20261031-queue-2-claude-check.md`); operator== 0x006174F8..0x00617518 (ordered ids; a base with two equal ids never matches); the
   CastNewEntry compare loop 0x0062C690..0x0062C6AC. The prune body and layout tables were not re-read.
 - **Item 3:** dispatch 0x00699448..0x0069945A; level fields 0x00699476..0x006994CE (r5 holds the manager there, r7 the level); the type 2
   write +0x68 and the optional counter 0x006995F8..0x00699612.
