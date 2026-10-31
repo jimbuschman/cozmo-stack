@@ -1180,3 +1180,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: NeedsManager UpdateStarsState 0x00696AAC, StarUnlocked 0x006986DA (tag 103), level completion 0x00698758 (tag 102), ProcessLevelRewards 0x006993F8 | M15-093 (new) |
+
+## Inventory and unlock write paths (operator approved 2026-10-31; research/20261031-queue-2-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: InventoryComponent Add 0x0063D05C, Set 0x0063CE9C, TryWrite 0x0063CDE0, Write 0x0063D3A4 (tag 0x195000), completion 0x0063D974 | M15-094 (new) |
+| New IMPLEMENTATION_GAP: ProgressionUnlockComponent RequestSetUnlock 0x0064C8B8, SetUnlock 0x0064C200, Write 0x0064C4D0 (tag 0x182000), completion 0x0064CBE8, UnlockedDefaults 0x0064C0FC | M15-095 (new) |

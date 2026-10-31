@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **735 records** over 16 subsystems.
+Manifest of **737 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 259 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 361 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 68 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 93 | 4 | 79 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 95 | 4 | 81 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3961,6 +3961,24 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: UpdateStarsState 0x00696AAC: map entry for key 2 at +0x84 and the bool argument gate 0x00696AB2..0x00696AEC; returns 0 on the early exits and when the local calendar day is unchanged (tm_yday and tm_year, 0x00696B5A..0x00696B6E).; Day change 0x00696BBA..0x00696BE2: stores the clock at +0x60, increments +0x58, sends StarUnlocked, calls SendStarLevelCompletedToGame when +0x58 >= +0x5C, then PossiblyStartWriteToRobot(true); returns 1.; StarUnlocked 0x006986DA..0x00698704, MessageEngineToGame tag 103 at 0x00726624..0x00726632: three words from +0x54, +0x5C, +0x58 in that order.; SendStarLevelCompletedToGame 0x00698758..0x006987D4: ProcessLevelRewards for prior levels, then the current level; NeedsState SetStarLevel 0x0069CBBC..0x0069CBC8; message tag 102 with +0x54, +0x5C and the NeedsReward vector.; RegisterNeedsActionCompleted calls UpdateStarsState(false) at 0x0069636E and skips the sparks reward when it returns non-zero (0x00696372..0x00696374).; re-analysis/research/20261031-m15-071-gates-chatgpt-extraction.md; re-analysis/research/20261031-m15-071-gates-claude-check.md
 * outstanding: Not built. Unread: ProcessLevelRewards 0x006993F8 (reward branches, inventory changes, messages), the helper 0x0069CB20, LocalNotifications::Generate 0x004BD3D4 downstream, and whether +0x54 is updated before the StarLevelCompleted read at 0x006987AC. Needs.cs:632 calling this the app's is contradicted by the native code. Depends on the owner of inventory type 1.
+
+**M15-094 — InventoryComponent write path: Add and Set, the cap, the 5 second throttle, the NV write to tag 0x195000 and its completion** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the NV write traffic to the robot for inventory, when it is throttled or lost, the stored amounts and cap, and the InventoryStatus sent after a successful write
+* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: AddInventoryAmount 0x0063D05C calls SetInventoryAmount at 0x0063D072 with current + delta. Callers: NeedsManager::AwardSparks 0x00697180, InventoryRequestAdd 0x0063D392, BehaviorManager::SelectUIRequestGameBehavior 0x005A33E2, BehaviorManager::HandleMessage 0x005A3CCA.; SetInventoryAmount 0x0063CE9C: a change before the read completes (+0x104 clear) is dropped 0x0063CEF4..0x0063CEF8; otherwise stores min(amount, cap), no cap when cap is -1, 0x0063CEFE..0x0063CF12, then TryWrite 0x0063CF14.; TryWriteCurrentInventoryToRobot 0x0063CDE0: elapsed against 4,999,999 at 0x0063CDEC..0x0063CE0E; too early sets +0x110 at 0x0063CE1C; otherwise stores the clock at +0x108 and calls Write 0x0063CE54..0x0063CE5E. Update 0x0063CDCC retries only when +0x111 is clear and +0x110 is set.; WriteCurrentInventoryToRobot 0x0063D3A4: sets +0x111 at 0x0063D3C4, packs InventoryList, NVStorageComponent::Write tag 0x00195000 at 0x0063D44E..0x0063D456; a refused write clears +0x111 at 0x0063D4BE.; Write completion operator() 0x0063D974 (closure vtable 0x0102EF7C, slot +0x18): clears +0x110 and +0x111 at 0x0063D984 whatever the result; NVResult > -1 tail-calls SendInventoryAllToGame 0x0063D992; otherwise logs and sends nothing.; re-analysis/research/20261031-queue-2-chatgpt-extraction.md; re-analysis/research/20261031-queue-2-claude-check.md
+* outstanding: Not built; the stack has the read side only (M15-035). A change throttled while a write is in flight is cleared by the completion and is not written until the next change: reproduce as read. Unread: Init's subscriptions, the lambda at 0x0063D6B8, the BehaviorManager::HandleMessage caller's case.
+
+**M15-095 — ProgressionUnlockComponent write path: RequestSetUnlock, SetUnlock, the NV write to tag 0x182000, RequestSetUnlockResult and UnlockedDefaults** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the NV write traffic to the robot for unlocks, the live unlocked set, and the RequestSetUnlockResult and UnlockedDefaults messages delivered to the API
+* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: HandleMessage<RequestSetUnlock> 0x0064C8B8: id - 1 < 0x54 unsigned (0x0064C902..0x0064C906), then SetUnlock 0x0064C948.; SetUnlock 0x0064C200: id 1 loops 0..84 with the supplied bool 0x0064C29C..0x0064C2BA; id 2 loops with membership in the default set 0x0064C234..0x0064C292, then NotifyGameDefaultUnlocksSet 0x0064C296; other ids need id - 3 <= 0x51 and a name 0x0064C2BE..0x0064C2CE. Insert or erase on the tree at +0x04; only a real change calls WriteCurrentUnlocksToRobot 0x0064C36A. Also called by NeedsManager::ProcessLevelRewards 0x006995CA.; WriteCurrentUnlocksToRobot 0x0064C4D0: copies the whole tree into UnlockedIdsList 0x0064C4FC..0x0064C532, packs it, NVStorageComponent::Write tag 0x00182000 at 0x0064C586..0x0064C58A; a refused write logs.; Write completion operator() 0x0064CBE8 (closure vtable 0x0102F678, slot +0x18; closure +0x04 component, +0x08 UnlockId, +0x0C bool): NVResult > -1 and HasExternalInterface sends RequestSetUnlockResult through vtable +0x1C 0x0064CC00..0x0064CC88; otherwise logs, sends nothing, no rollback.; NotifyGameDefaultUnlocksSet 0x0064C0FC: sends UnlockedDefaults built from the default set, with no HasExternalInterface gate.; re-analysis/research/20261031-queue-2-chatgpt-extraction.md; re-analysis/research/20261031-queue-2-claude-check.md
+* outstanding: Not built; the stack has the read side only (M15-034). UnlockedIdsList's wire form is unread. The two SendUnlockStatus lambdas 0x0064CF58 and 0x0064D05E are in the next ChatGPT queue. Ids 1 and 2 pass the handler gate and take the loops.
 
 ## What remains after both: blocked externally, or needing hardware
 

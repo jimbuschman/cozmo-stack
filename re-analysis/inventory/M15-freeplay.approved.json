@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-31",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "713fc8612ea63b3ac072a5957af20cc0740b8a3d5a5353cc3b3187184b629d7c",
+  "inventory_sha256": "24dcfe24ee2f959ecd2479d4d7bf3b3874c8c1b5d5d3d17e1e2090e6b6592081",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1161,6 +1161,36 @@
         "SendStarLevelCompletedToGame 0x00698758..0x006987D4: ProcessLevelRewards for prior levels, then the current level; NeedsState SetStarLevel 0x0069CBBC..0x0069CBC8; message tag 102 with +0x54, +0x5C and the NeedsReward vector.",
         "RegisterNeedsActionCompleted calls UpdateStarsState(false) at 0x0069636E and skips the sparks reward when it returns non-zero (0x00696372..0x00696374).",
         "re-analysis/research/20261031-m15-071-gates-chatgpt-extraction.md; re-analysis/research/20261031-m15-071-gates-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-094": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "InventoryComponent write path: Add and Set, the cap, the 5 second throttle, the NV write to tag 0x195000 and its completion",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "AddInventoryAmount 0x0063D05C calls SetInventoryAmount at 0x0063D072 with current + delta. Callers: NeedsManager::AwardSparks 0x00697180, InventoryRequestAdd 0x0063D392, BehaviorManager::SelectUIRequestGameBehavior 0x005A33E2, BehaviorManager::HandleMessage 0x005A3CCA.",
+        "SetInventoryAmount 0x0063CE9C: a change before the read completes (+0x104 clear) is dropped 0x0063CEF4..0x0063CEF8; otherwise stores min(amount, cap), no cap when cap is -1, 0x0063CEFE..0x0063CF12, then TryWrite 0x0063CF14.",
+        "TryWriteCurrentInventoryToRobot 0x0063CDE0: elapsed against 4,999,999 at 0x0063CDEC..0x0063CE0E; too early sets +0x110 at 0x0063CE1C; otherwise stores the clock at +0x108 and calls Write 0x0063CE54..0x0063CE5E. Update 0x0063CDCC retries only when +0x111 is clear and +0x110 is set.",
+        "WriteCurrentInventoryToRobot 0x0063D3A4: sets +0x111 at 0x0063D3C4, packs InventoryList, NVStorageComponent::Write tag 0x00195000 at 0x0063D44E..0x0063D456; a refused write clears +0x111 at 0x0063D4BE.",
+        "Write completion operator() 0x0063D974 (closure vtable 0x0102EF7C, slot +0x18): clears +0x110 and +0x111 at 0x0063D984 whatever the result; NVResult > -1 tail-calls SendInventoryAllToGame 0x0063D992; otherwise logs and sends nothing.",
+        "re-analysis/research/20261031-queue-2-chatgpt-extraction.md; re-analysis/research/20261031-queue-2-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-095": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ProgressionUnlockComponent write path: RequestSetUnlock, SetUnlock, the NV write to tag 0x182000, RequestSetUnlockResult and UnlockedDefaults",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "HandleMessage<RequestSetUnlock> 0x0064C8B8: id - 1 < 0x54 unsigned (0x0064C902..0x0064C906), then SetUnlock 0x0064C948.",
+        "SetUnlock 0x0064C200: id 1 loops 0..84 with the supplied bool 0x0064C29C..0x0064C2BA; id 2 loops with membership in the default set 0x0064C234..0x0064C292, then NotifyGameDefaultUnlocksSet 0x0064C296; other ids need id - 3 <= 0x51 and a name 0x0064C2BE..0x0064C2CE. Insert or erase on the tree at +0x04; only a real change calls WriteCurrentUnlocksToRobot 0x0064C36A. Also called by NeedsManager::ProcessLevelRewards 0x006995CA.",
+        "WriteCurrentUnlocksToRobot 0x0064C4D0: copies the whole tree into UnlockedIdsList 0x0064C4FC..0x0064C532, packs it, NVStorageComponent::Write tag 0x00182000 at 0x0064C586..0x0064C58A; a refused write logs.",
+        "Write completion operator() 0x0064CBE8 (closure vtable 0x0102F678, slot +0x18; closure +0x04 component, +0x08 UnlockId, +0x0C bool): NVResult > -1 and HasExternalInterface sends RequestSetUnlockResult through vtable +0x1C 0x0064CC00..0x0064CC88; otherwise logs, sends nothing, no rollback.",
+        "NotifyGameDefaultUnlocksSet 0x0064C0FC: sends UnlockedDefaults built from the default set, with no HasExternalInterface gate.",
+        "re-analysis/research/20261031-queue-2-chatgpt-extraction.md; re-analysis/research/20261031-queue-2-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false
