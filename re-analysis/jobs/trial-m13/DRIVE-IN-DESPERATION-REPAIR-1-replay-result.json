@@ -1,0 +1,36 @@
+{
+  "job": "DRIVE-IN-DESPERATION-REPAIR-1",
+  "kind": "firstExecutedIndependentReplay_nestedAttempt2",
+  "state": "PASS",
+  "passed": 333,
+  "failed": 0,
+  "total": 333,
+  "skipped": 0,
+  "classes": 13,
+  "fullNameParameterOutcomeMultiplicityExact": true,
+  "inputCount": 9252,
+  "allObservedBinAndObjFiles": 288,
+  "allInputsAndBinObjMatchReferenceAndUnchanged": true,
+  "rootLiveBinObjHashCheck": true,
+  "outputExclusions": [],
+  "testExit": 0,
+  "shutdownExit": 0,
+  "wrapperExit": 0,
+  "nativePre": [],
+  "nativePost": [],
+  "checkoutPost": [],
+  "trxSha256": "a5da8b48d95945f087773c6c1421c8ac02bf6a8d5f7de75f469d38a75a48bb32",
+  "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-repair-1\\.scratch\\drive-in-desperation-repair-1-build\\independent-replay1\\attempt2",
+  "reviewerWrapperSha256": "b1c60424890a546878c4d57b97607eb68c75ba2616723e04e3cf22d80ae4781d",
+  "firstUnexecutedWrapperFailure": {
+    "status": {
+      "shutdown": -1,
+      "error": "Compare-Object : A positional parameter cannot be found that accepts argument 'inputs-reference-before-diff.json'.\r\nAt C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-repair-1\\.s\r\ncratch\\drive-in-desperation-repair-1-build\\independent-replay1.ps1:17 char:41\r\n+ ... fore.json'; Compare (Join-Path $ref 'inputs-before.json') (Join-Path  ...\r\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Compare-Object], ParameterBindingException\r\n    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.CompareObjectCommand\r\n \r\nCompare-Object : A positional parameter cannot be found that accepts argument 'inputs-after-reference-diff.json'.\r\nAt C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-repair-1\\.s\r\ncratch\\drive-in-desperation-repair-1-build\\independent-replay1.ps1:32 char:44\r\n+ ... after.json';Compare (Join-Path $ref 'inputs-before.json') (Join-Path  ...\r\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Compare-Object], ParameterBindingException\r\n    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.CompareObjectCommand\r\n \r\n",
+      "exit": 1,
+      "test": -1
+    },
+    "reason": "PowerShell Compare alias shadowed function before any .NET call",
+    "originalWrapperSha256": "2b4c3e367f1df1b96658080057c361c08d41e44ec6e50362381c998f8fa4dcf9",
+    "artifactDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-repair-1\\.scratch\\drive-in-desperation-repair-1-build\\independent-replay1"
+  }
+}
