@@ -74,7 +74,9 @@ failure in that order: 0x01029068 at r3, 0x010290A8 on the stack (0x005DC27A..0x
     CompoundActionParallel[MoveHeadToAngleAction(-0.3491 rad, tol 0.0349, 0), DriveStraightAction(-30)], then
     WaitForImagesAction(2, VisionMode 1, 0). Then, since the argument is true: TurnTowardsFaceWrapperAction wrapping
     TriggerAnimationAction(PutDownBlockKeepAlive (409), 1, true, 0, 60, false), with angle pi.
-  - The final closure only warns if still carrying (0x005C8480..0x005C84A0).
+  - The final closure, if still carrying, warns and then calls `CarryingComponent::SetCarriedObjectAsUnattached(false)`
+    (0x005C8480..0x005C84CE). An earlier version of this note said it only warned; that was a short disassembly window. Found during
+    ChatGPT check 1.
   - Reaction table 0xC68B20 is 21 (trigger, flag) byte pairs, triggers 0..20, every flag 0. What flag 0 means in
     SmartDisableReactionsWithLock was not read.
 
@@ -83,6 +85,17 @@ failure in that order: 0x01029068 at r3, 0x010290A8 on the stack (0x005DC27A..0x
 Partly useful. It correctly refused to invent a wire trace, but that left an action list, not robot traffic, and it stopped before the
 last two steps. The first two actions match `NativePutDownActions.cs:13-16` (range, speed, trigger). **Decision: ask for action-level
 scripts only, with values, and do not ask it for wire traces.** Wire traffic belongs to the action layers already covered.
+
+## ChatGPT check 1 (built code against the engine, 2026-10-31)
+
+ChatGPT compared PutDownBlock's C# with the engine. The paste was cut off in its secondary-failure row, so it is not saved as a report.
+About 30 rows came back SAME or UNKNOWN, with none DIFFERENT. Spot checks held:
+- **Reaction lock:** DisableReactionsWithLock skips a trigger whose table flag is 0 (0x005A283E..0x005A2846), so the empty set in
+  `ReactiveBehavior.cs` is right. This closes the question left open above.
+- **RNG:** IBehavior::GetRNG reaches [Robot+0]+0x14, the context RNG, and RandDblInRange is (b - a) x u + a (0x0082FA56..0x0082FA66).
+- **Open:** whether `ReleaseCarriedObject(forget:false)` equals SetCarriedObjectAsUnattached(false).
+
+It read the C# from the public GitHub repo, not an upload.
 
 ## Checked and matching
 
