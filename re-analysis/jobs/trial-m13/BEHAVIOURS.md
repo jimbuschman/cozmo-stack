@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-29. **0 finished · 43 in progress · 135 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
+Whole-behavior scoreboard, 2026-10-29. **0 finished · 44 in progress · 134 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -70,7 +70,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `Dance_Mambo` | `Dance` | in progress | DANCE-MAMBO-1 READY: ownlifecycle currentref184/exact184/full6972 PASS; caller/listenerproducer/sharedgaps remain, no finished claim | No explicit config reference; native/app use UNKNOWN |
 | `DevTurnInPlaceTest` | `DevTurnInPlaceTest` | in progress | DEV-TURN-IN-PLACE-TEST-1 returnedFIX READY: actualManagerentry/APIrootTag/results ref172/exact172/full7004 PASS; appinitiator/sharedgaps remain, no finished claim | No explicit config reference; native/app use UNKNOWN |
 | `Needs_SevereLowEnergyState` | `DriveInDesperation` | in progress | DRIVE-IN-DESPERATION-ENERGY-1 returned FIX READY: charger continuation, repeated skipped-search diagnostics; ref173/exact173/full7003 PASS; parent/shared gaps remain, no finished claim | freeplay: NeedsSevereLowEnergy. 1 refs; R037+ in map |
-| `Needs_SevereLowRepairState` | `DriveInDesperation` | not started | UNKNOWN | freeplay: NeedsSevereLowRepair. 1 refs; R045+ in map |
+| `Needs_SevereLowRepairState` | `DriveInDesperation` | in progress | DRIVE-IN-DESPERATION-REPAIR-1 staticPASS/validation resumed after stableDevhandoff, no finished claim | freeplay: NeedsSevereLowRepair. 1 refs; R045+ in map |
 | `DriveOffCharger` | `DriveOffCharger` | in progress | Driving/contact/action; needs/mood/animation; neighboring vision/audio gaps tracked separately | freeplay: BuildPyramid; freeplay: NeedsSevereLowEnergy; freeplay: NeedsSevereLowPlayGetIn; freeplay: NeedsSevereLowRepair; freeplay: NothingToDo; freeplay: PlayAlone; freeplay: PlayWithHumans; freeplay: Socialize; activity: PutDownDispatch; spark: BuildPyramid; spark: SparksFireTruckAlarm; spark: SparksFistBump; spark: GatherCubes; spark: SparksKnockOverCubes; spark: SparksPeekABoo; spark: SparksPickUpCube; spark: SparksPopAWheelie; spark: SparksPounceOnMotion; spark: SparksRollBlock; spark: SparksStackBlock; spark: SparksTrackLaser; spark: SparksWorkout; activity: MeetCozmo; activity: Feeding. 26 refs; R001+ in map |
 | `Hiking_DriveOffCharger` | `DriveOffCharger` | not started | Driving/contact/action; needs/mood/animation; neighboring vision/audio gaps tracked separately | freeplay: Hiking. 1 refs; R020+ in map |
 | `VC_ComeHere` | `DriveToFace` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |

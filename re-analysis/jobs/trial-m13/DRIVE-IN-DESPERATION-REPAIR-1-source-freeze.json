@@ -1,0 +1,66 @@
+{
+  "job": "DRIVE-IN-DESPERATION-REPAIR-1",
+  "state": "STATIC V2 PASS; REFERENCE1 EXCLUSIVE C LEASE ACTIVE",
+  "managerStart": "e37e847ddf19ba1addf066ad5dcf298097a297e5",
+  "originMain": "fd4ef169dea1b947874836dbd717caa1c396fda5",
+  "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-drive-in-desperation-repair-1",
+  "workerBranch": "codex/drive-in-desperation-repair-1",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/repair_desperation_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/repair_desperation_review",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "fork": "none"
+    },
+    {
+      "role": "builder",
+      "state": "STARTED",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "agent": "/root/repair_desperation_build",
+      "fork": "none"
+    }
+  ],
+  "actualBackends": "unobserved",
+  "assetStaging": "Original resources/OBB junctions are read-only by task protocol; ignored marker staged and primary hashes checked before first new worker/capture. Initial unprivileged junction creation denied; elevated create succeeded without asset changes.",
+  "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "markerSha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+  "dotnetLease": "exclusive original C reference1; all source/read/review dirs frozen; B/rootno.NET",
+  "reviewerFixRounds": 1,
+  "compilerCorrections": 0,
+  "recordProposals": "Widen pending original DriveInDesperation lifecycle only as supported; current existing whole records must be checked literally, no duplicate.",
+  "reports": [
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-repair-1-read.md",
+      "sha256": "221152418af2aa401886cad18b2f08f869d3efb36f17d4c1fcc0a551462935e9"
+    },
+    {
+      "path": "re-analysis/research/20261030-drive-in-desperation-repair-1-source-codex-check.md",
+      "sha256": "4d92d4768d84e36e7dd89ea5351d444749de2970a2249d62a6b1b76b26e77bdb"
+    }
+  ],
+  "currentLiteralRecordSnapshotsMatched": 11,
+  "rootIndependentlyMatchedLiteralRecords": true,
+  "recordClosureProposals": [],
+  "newRecordProposal": "Widen pending original DriveInDesperation lifecycle to Energy+Repair; no duplicate",
+  "remainingUncertainty": "NeedsExpression parent admission, shared face/path/report inputs and concrete retirement; Energy search/PAP source-gated out for Repair useCubes=false",
+  "stableDevTurnHandoff": "ecca481e480af620cc9e3a1bfaf73882f0b54ed0",
+  "postTestHarnessCorrections": 0,
+  "restoredRootMetadataFrom": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-m13-manager-2\\.scratch\\repair-hold-for-devturn-mergepoint",
+  "workerSyncRequired": false,
+  "workerValidationBaseline": "ecca481e480af620cc9e3a1bfaf73882f0b54ed0",
+  "resumeProofSha256": "d348fef35dac9815929ce41b343eefe6905a9317b237e5aa8cebce2d1d60eee8",
+  "resumedInputCount": 9252,
+  "resumedInputBaselineSha256": "a9c804b42778766ae6e4de76773446294080b1ca62d569d8b6aac38313e495ae",
+  "referencePlanSha256": "a4a8b6b5d13ba90f59b1352859b8ddc8afdd923a36607c77044db9c8c2a64dc1",
+  "referenceWrapperSha256": "3c3e4e3407bf73a9a70f93f574d71114eccb156d74cb9580e07236193fc51ef6",
+  "originalBeforeCapture": "Actual e37 before6 captures remain valid: all6 baseline bytes/index blobs match neweccaHEAD; no pretend recapture"
+}
