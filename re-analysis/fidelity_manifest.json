@@ -14605,7 +14605,7 @@
       "subsystem": "M15-freeplay",
       "title": "ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Ctor 0x005B3E0C: +0x3C and +0x48 0, +0x4C [Robot+0x264]+0x18, required keys cooldownRejectionBaseSecs +0x40 and cooldownRejectionExponent +0x44 (0x005B3E72, 0x005B3EA4).",
@@ -14615,11 +14615,11 @@
         "HandleMessage<DenyGameStart> 0x005B4138: if [+0x4C]+0x75 is nonzero nothing; otherwise +0x48 += 1, then SetCooldown(+0x40 x pow(+0x48, +0x44), 0) through veneer 0x008CBE6C.",
         "re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md"
       ],
-      "effect": "when the PlayWithHumans activity starts and ends, and how long it stays away after a game request is denied",
+      "effect": "not reproduced: the PlayWithHumans activity never starts in this stack",
       "provenance": "ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.",
-      "unresolved": "Confirm or build against the stack. Open: the byte [+0x4C]+0x75 and any reset of +0x48. JSON type name is PlayWithHumans.",
+      "unresolved": "Not supported: the game request flow needs the app's mini-games, which the stack replaces (AGENTS.md, app boundary), decided by the operator 2026-10-31. The stack's PlayWithHumans strategy always refuses to start (Activities.cs). This includes BehaviorManager's UI game request (+0x30, +0x38; research/20261031-check-4-claude-check.md rows 10, 11). Reversible; the evidence stays. If reversed, read the byte [+0x4C]+0x75 and any reset of +0x48. JSON type name is PlayWithHumans.",
       "hardware_required": false,
-      "live_path": true,
+      "live_path": false,
       "test": ""
     },
     {
@@ -14681,6 +14681,25 @@
       "effect": "when the needs activities start and end, and clearing the severe need expression, which later selection reads",
       "provenance": "ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.",
       "unresolved": "Confirm or build against the stack. JSON type name is SevereNeedTransition. The higherPriorityStrategyConfig row is ChatGPT's, not re-read in the Claude check.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-100",
+      "subsystem": "M15-freeplay",
+      "title": "ActivityStrategySpark: no should-end limit, start true, end false",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Spark ctor 0x005B4E90: after the base parse, +0x18 = 0x7F7FFFFF (FLT_MAX) (0x005B4E98..0x005B4EA2), overriding activityShouldEndDurationSecs; no shipped spark config sets the key.",
+        "WantsToStartInternal 0x005B4EBE returns 1 and WantsToEndInternal 0x005B4EC2 returns 0 (vtable 0x01025A40).",
+        "re-analysis/research/20261031-check-2-chatgpt-extraction.md; re-analysis/research/20261031-check-2-claude-check.md"
+      ],
+      "effect": "how long a spark activity may run: the stack ends one older than 60 s once its behaviour finishes, and the engine has no time limit",
+      "provenance": "ChatGPT check 2, Claude check 2026-10-31; record added with operator approval 2026-10-31.",
+      "unresolved": "The stack keeps the default 60 s (Activities.cs). Fix in STRATEGIES-FIX-1.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

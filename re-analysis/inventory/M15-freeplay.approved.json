@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-31",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "a85f5afaee76a3867d7b426938efd6ff47fb3e7b9794dcd4b56b7a48f70d19ea",
+  "inventory_sha256": "e0444b9374c8512cc2931650068c0ade9eee9db6c134cb35f273b95ec89767b7",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1196,7 +1196,7 @@
       "hardware_required": false
     },
     "M15-096": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -1207,7 +1207,7 @@
         "HandleMessage<DenyGameStart> 0x005B4138: if [+0x4C]+0x75 is nonzero nothing; otherwise +0x48 += 1, then SetCooldown(+0x40 x pow(+0x48, +0x44), 0) through veneer 0x008CBE6C.",
         "re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md"
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M15-097": {
@@ -1248,6 +1248,18 @@
         "SevereNeedsTransition end 0x005B4DE8: not WantsToRun; null warns and gives true.",
         "higherPriorityStrategyConfig built through the wants-to-run factory, stored at +0x3C (0x005B4642..0x005B4660).",
         "re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-100": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivityStrategySpark: no should-end limit, start true, end false",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Spark ctor 0x005B4E90: after the base parse, +0x18 = 0x7F7FFFFF (FLT_MAX) (0x005B4E98..0x005B4EA2), overriding activityShouldEndDurationSecs; no shipped spark config sets the key.",
+        "WantsToStartInternal 0x005B4EBE returns 1 and WantsToEndInternal 0x005B4EC2 returns 0 (vtable 0x01025A40).",
+        "re-analysis/research/20261031-check-2-chatgpt-extraction.md; re-analysis/research/20261031-check-2-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

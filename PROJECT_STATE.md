@@ -48,6 +48,8 @@ stands. Nothing new starts outside the current layer.
 
 - **Drive-off pilot externally MERGED (main4fb2908b); M7-026/M13-017/M13-040/M7-023/M11-060 settled by Claude.** Test-only clock FIX5c25c9a7 independently passed36/36; two consecutive asset-complete full gates on b273fe62 passed6362/6362 each,0failed/0skipped. REVIEW N3 on main337879ab passes M13-017/040, M7-023/026 and M11-060 for settlement on merge; M12-043/M8-027 stay open. N2 withdrawn; no split. No Codex status/approval edits; no new hardware acceptance. Next: next behavior on BEHAVIOURS.md, not outward pilot-2 reading.
 
+- **PlayWithHumans not supported; M15-100 added (operator, 2026-10-31).** M15-096 is COMPATIBILITY_POLICY: the game request flow needs the app's mini-games, including BehaviorManager's UI game request. Reversible. M15-100 is a new IMPLEMENTATION_GAP for the Spark strategy's missing time limit. M15-freeplay re-approved; 742 records. See `research/20261031-check-2-claude-check.md`.
+
 - **M15-096..M15-099 added (operator, 2026-10-31).** New IMPLEMENTATION_GAP records for the concrete activity strategies (PlayWithHumans, Pyramid, NeedBasedCooldown, Needs and SevereNeedsTransition), which had no records of their own; M15-freeplay re-approved; 741 records. Reads are in `research/20261031-queue-5-claude-check.md`. Nothing settled.
 
 - **M15-094 and M15-095 added (operator, 2026-10-31).** New IMPLEMENTATION_GAP records for the inventory and unlock write paths, both robot NV traffic, found while reading ChatGPT queue 2; M15-freeplay re-approved; 737 records. Reads are in `research/20261031-queue-2-claude-check.md`. Nothing settled.

@@ -1196,3 +1196,5 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP: ActivityStrategyPyramid start 0x005B4970, end 0x005B4C90, BehaviorObjectiveAchieved 0x005B4C96 | M15-097 (new) |
 | New IMPLEMENTATION_GAP: ActivityStrategyNeedBasedCooldown ctor 0x005B4298, NeedsState 0x005B4504, SetCooldown 0x005B54E4 | M15-098 (new) |
 | New IMPLEMENTATION_GAP: ActivityStrategyNeeds 0x005B4718, 0x005B4768 and SevereNeedsTransition 0x005B4D88, 0x005B4DE8 | M15-099 (new) |
+| New IMPLEMENTATION_GAP: ActivityStrategySpark ctor 0x005B4E90, start 0x005B4EBE, end 0x005B4EC2 (research/20261031-check-2-claude-check.md) | M15-100 (new) |
+| IMPLEMENTATION_GAP to COMPATIBILITY_POLICY: not supported, the game request flow needs the app's mini-games, decided by the operator 2026-10-31 | M15-096 |

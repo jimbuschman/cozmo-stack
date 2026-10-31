@@ -830,6 +830,7 @@ public sealed class ActivityStrategy
                 if (inputs.LocatedCubes < 3) { reason = $"{inputs.LocatedCubes} cube(s) located, a pyramid needs 3"; return false; }
                 if (inputs.PyramidBuilt) { reason = "a pyramid stands"; return false; }
                 reason = "three cubes and no pyramid"; return true;
+            // fidelity: M15-096
             case "PlayWithHumans" or "FPPlayWithHumans":
                 reason = "the game request component is the app's"; return false;
             case "Spark":

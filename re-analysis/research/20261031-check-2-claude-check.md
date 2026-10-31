@@ -29,7 +29,7 @@ start result is the same.
 
 Rows 18..22, PlayWithHumans: no rejection keys, RequestGameStart, DenyGameStart or predicates; `Activities.cs:834` always returns false
 with the comment "the game request component is the app's". That is an unrecorded exclusion of a robot behaviour, which needs the
-operator. M15-096 stays open until then.
+operator. M15-096 stays open until then. **Decided 2026-10-31: not supported.** M15-096 is COMPATIBILITY_POLICY with live_path false, on this check's evidence.
 
 ## Not blockers
 
@@ -49,7 +49,7 @@ operator. M15-096 stays open until then.
 
 ## Records
 
-Row 32 has no record of its own. Proposed for the operator: M15-100, the Spark strategy.
+Row 32 has no record of its own. M15-100, the Spark strategy, was added with operator approval on 2026-10-31.
 
 ## Method note
 
