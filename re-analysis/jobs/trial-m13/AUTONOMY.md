@@ -105,3 +105,31 @@ config binding. Mark it REPEAT PATTERN in the handoff and name the job that veri
 differing config values and any branch the earlier job did not exercise, each with its citation. Claude checks those
 itself, with no separate verifier, as for DRIVE-IN-DESPERATION-REPAIR-1. If a new branch or behaviour-changing body
 change appears, it is an ordinary job. The evidence rule does not change.
+
+## Speed changes (operator, 2026-10-30)
+
+These add to "Job order and repeat-pattern checks" above and take priority over any earlier instruction here that
+conflicts, including the full-gate step under "Usage and hardware". The evidence rule does not change: every
+behaviour-changing step has a citation or a recorded MISSING.
+
+**1. Dev and factory behaviours are deferred.** Do not start `FactoryCentroidExtractor`, `FactoryTest` or
+`LiftLoadTest`, and do no further work on `DevTurnInPlaceTest` or `DockingTestSimple`. Code already built stays. This
+is a deferral by the operator, not an exclusion: their records keep their status and the work can be picked up again.
+`ReactToMotorCalibration` is a normal reaction and is not deferred.
+
+**2. Order after the start path.** Take behaviours by their use in shipped freeplay: those with references in shipped
+activity, freeplay, reaction or spark configs first, most referenced first. Behaviours with no explicit config
+reference come last, unless a job finds a real caller. No reference is not evidence of no effect, and nothing is
+dropped.
+
+**3. Less paperwork.** Each job produces one `HANDOFF-<job>.md`, including its affected-test result and any builder
+questions. Stop writing per-step freeze, attempt, plan and reference JSON files. No tool requires them. One gate result
+per batch is enough, and commits stay at the level of a job or a real correction.
+
+**4. Full suite per batch.** Run only the affected tests for each job. Run `scripts/test-full.sh` once on the tip after
+about five jobs, or when stopping, then mark those jobs READY FOR CLAUDE at that commit. Nothing merges to main without
+a full pass. A correction to a failed gate is part of the same batch.
+
+**5. Robot runs.** Claude writes the first hardware script after the start path lands, for one behaviour run end to
+end, and then one whenever a useful group of behaviours is ready. Robot runs still hold nothing up, and a pass does not
+replace a citation.
