@@ -37,7 +37,7 @@ internal sealed class NativeDevTurnInPlaceTestBehavior : SteppedBehavior, IDispo
             _tests.Add(new(item.GetProperty("angle_deg").GetSingle(), item.GetProperty("speed_deg_per_sec").GetSingle(),
                 item.GetProperty("accel_deg_per_sec2").GetSingle(), item.GetProperty("tol_deg").GetSingle()));
         _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Behaviors","BehaviorDevTurnInPlaceTest.LoadFromJson",$"Loaded {_tests.Count} tests from config file.");
-        ReportMissing("DevTurnInPlaceTest: actual initial caller bypassing IsRunnable is UNKNOWN; shared reaction/action completion owners remain M7-014/M8-001/M8-015/M8-017/M13-022 gaps");
+        ReportMissing("DevTurnInPlaceTest: original app initiator is UNKNOWN; manager entry starts despite false IsRunnable; shared reaction/action completion owners remain M7-014/M8-001/M8-015/M8-017/M13-022 gaps");
     }
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => _m.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
@@ -74,9 +74,10 @@ internal sealed class NativeDevTurnInPlaceTestBehavior : SteppedBehavior, IDispo
         var test = _tests[_index];
         float factor = BitConverter.UInt32BitsToSingle(0x3C8EFA35);
         var turn = new NativeTurnInPlaceRunner(_m, test.Angle * factor, test.Accel * factor, test.Speed * factor, test.Tolerance * factor);
+        var wait = new NativeTimedWaitRunner(_m, _gap);
         var sequence = new CompoundActionSequential(() => _robot.Engine.Timer.SecondsF);
         sequence.AddAction(turn, false, false);
-        sequence.AddAction(new NativeTimedWaitRunner(_m, _gap), false, false);
+        sequence.AddAction(wait, false, false);
         ActionConstructedForTest?.Invoke(sequence);
         StartActing(sequence, _ => Completed(epoch), () => HostExecutionVersionCurrent(epoch));
     }

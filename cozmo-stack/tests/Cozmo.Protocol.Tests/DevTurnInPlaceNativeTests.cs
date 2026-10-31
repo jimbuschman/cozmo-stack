@@ -31,7 +31,7 @@ public sealed class DevTurnInPlaceNativeTests
         Assert.Equal(BehaviorCreateStatus.Created, status);
         return b;
     }
-    // reach: unit; factory supplies actual Robot and shipped config, admission bypass remains UNKNOWN. 005CA550..756, 005CA8F6.
+    // reach: unit; factory supplies actual Robot and shipped config, original app initiator remains UNKNOWN. 005CA550..756, 005CA8F6.
     [Fact]
     public void FactoryRetainsShippedTestsAndOwnGateRejects()
     {
@@ -41,7 +41,7 @@ public sealed class DevTurnInPlaceNativeTests
         var ctx = new BehaviorContext { Robot = f.Rig.Robot, Triggers = new AnimationTriggerMap() };
         Assert.False(b.IsRunnable(ctx));
     }
-    // reach: unit; direct Init and completion reports substitute UNKNOWN admission and action execution. 005CA902..946, 005CAA1A..ACC, 005CABD4..CACCA.
+    // reach: unit; direct Init and completion reports substitute the manager entry and action execution. 005CA902..946, 005CAA1A..ACC, 005CABD4..CACCA.
     [Fact]
     public void InitBuildsTurnThenWaitAndResultFreeCallbacksAdvance()
     {
@@ -70,7 +70,7 @@ public sealed class DevTurnInPlaceNativeTests
         b.ResetTests(); Assert.Equal(0, b.Index); Assert.Equal(4, b.Tests.Count); Assert.All(b.Tests, t => Assert.Equal((byte)0, t.Runs));
         b.Stop(BehaviorStopReason.Interrupted);
     }
-    // reach: unit; direct Init and completion reports substitute UNKNOWN admission and action execution. Loop resets index only, 005CAC70..8E.
+    // reach: unit; direct Init and completion reports substitute the manager entry and action execution. Loop resets index only, 005CAC70..8E.
     [Fact]
     public void LoopPreservesRunCounters()
     {
@@ -81,7 +81,7 @@ public sealed class DevTurnInPlaceNativeTests
         Assert.Equal(5, created.Count); Assert.Equal(0, b.Index); Assert.All(b.Tests, t => Assert.Equal((byte)1, t.Runs));
         b.Stop(BehaviorStopReason.Interrupted);
     }
-    // reach: unit; direct Init bypasses UNKNOWN caller. Real configured base inputs and the three native gates are exercised.
+    // reach: unit; direct Init substitutes the manager entry. Real configured base inputs and the three native gates are exercised.
     [Fact]
     public void FalseOwnGateAndBaseGatesRefuseAdmissionAndResume()
     {
@@ -100,7 +100,7 @@ public sealed class DevTurnInPlaceNativeTests
         using var next = new BehaviorScope(); b.AttachRun(ctx, next);
         Assert.True(b.Resume(null, f.Rig.Engine.Timer.SecondsF)); Assert.False(b.HasCurrentAction);
     }
-    // reach: unit; direct Init substitutes UNKNOWN caller. Actual ActionList and manager reaction table; 005CA918..940, 005CAD30.
+    // reach: unit; direct Init substitutes the manager entry. Actual ActionList and manager reaction table; 005CA918..940, 005CAD30.
     [Fact]
     public void StopCancelsRealActionAndScopeReleaseAllowsRestart()
     {
@@ -120,7 +120,7 @@ public sealed class DevTurnInPlaceNativeTests
         Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         Assert.NotEqual(0u, b.CurrentRunnerTag); b.Stop(BehaviorStopReason.Interrupted);
     }
-    // reach: unit; direct Init substitutes UNKNOWN caller; real turn, sequential compound and engine clock wait.
+    // reach: unit; direct Init substitutes the manager entry; real turn, sequential compound and engine clock wait.
     [Fact]
     public void RealActionListRunsTurnThenTimedWait()
     {
@@ -137,7 +137,7 @@ public sealed class DevTurnInPlaceNativeTests
         Assert.Equal(1, b.Index); Assert.NotSame(seq, f.Robot.ActionList.GetCurrentAction());
         b.Stop(BehaviorStopReason.Interrupted);
     }
-    // reach: unit; supplied completions and direct Init replace UNKNOWN caller/action execution. 005CAC54..8E.
+    // reach: unit; supplied completions and direct Init replace manager entry/action execution. 005CAC54..8E.
     [Fact]
     public void RepetitionsUseByteRemainderAndWrapBeforeAdvancing()
     {
@@ -163,6 +163,46 @@ public sealed class DevTurnInPlaceNativeTests
         uint tag = actions[0].Tag; b.Dispose();
         b.HandleActionComplete(new RobotCompletedAction(tag, 0, 0, Array.Empty<uint>(), 0));
         Assert.Single(actions); Assert.Equal((byte)0, b.Tests[0].Runs);
+    }
+
+    // reach: production manager entry and actual ActionList/watcher/typed completion; fixture supplies motor acknowledgements, state and clock.
+    // Original app initiator remains UNKNOWN. Native 005A1E76..94, 005CAA32/8C/9A, 00540AC4..AF4 and 00541F10..38.
+    [Fact]
+    public void ManagerStartsNonRunnableAndPublishesCompoundTagAndDescendantResults()
+    {
+        using var f = new Fixture();
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var b = Assert.IsType<NativeDevTurnInPlaceTestBehavior>(f.Runtime.Bound["DevTurnInPlaceTest"]);
+        Assert.True(b.IsRunnableBase(f.Runtime.Context)); Assert.False(b.IsRunnable(f.Runtime.Context));
+        var reports = new List<ActionCompletionReport>();
+        var local = new List<RobotCompletedAction>();
+        f.Rig.Engine.ActionCompleted += reports.Add;
+        using var subscription = f.Rig.Engine.AnimationMessages.SubscribeMessage(RobotCompletedAction.UnionTag, true,
+            payload => { if (payload is RobotCompletedAction completion) local.Add(completion); });
+        // Fixture precondition: no counter wrap or occupied tags, with xUnit's nonparallel collection.
+        var counter = ActionRunnerTagCounter.Global;
+        uint next = (uint)typeof(ActionRunnerTagCounter).GetField("_next", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(counter)!;
+        Assert.InRange(next, 1u, uint.MaxValue - 2);
+        Assert.False(counter.IsInUse(next)); Assert.False(counter.IsInUse(next + 1)); Assert.False(counter.IsInUse(next + 2));
+        Assert.True(manager.StartAsync("DevTurnInPlaceTest", f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.Same(b, manager.Current);
+        var root = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
+        var turn = Assert.IsType<NativeTurnInPlaceRunner>(root.Children[0]);
+        var wait = Assert.IsType<NativeTimedWaitRunner>(root.Children[1]);
+        Assert.Equal(next, turn.Tag); Assert.Equal(next + 1, wait.Tag); Assert.Equal(next + 2, root.Tag);
+        uint tag = root.Tag;
+        f.Rig.Tick();
+        for (int i = 0; i < 40 && wait.Deadline < 0; i++) f.Motors();
+        Assert.True(turn.DestructionObserved); Assert.True(wait.Deadline >= 0);
+        f.Rig.Tick(1100);
+        for (int i = 0; i < 8 && !reports.Any(r => r.Tag == tag); i++) f.Rig.Tick();
+        Assert.True(wait.DestructionObserved);
+        var report = Assert.Single(reports.Where(r => r.Tag == tag));
+        Assert.Equal(0u, report.Result); Assert.Equal(new uint[] { 0 }, report.SubActionResults);
+        var actual = Assert.Single(local.Where(r => r.Tag == tag));
+        Assert.Equal(report.Tag, actual.Tag); Assert.Equal(0u, actual.Result); Assert.Equal(new uint[] { 0 }, actual.SubActionResults);
+        manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
     }
 
 }
