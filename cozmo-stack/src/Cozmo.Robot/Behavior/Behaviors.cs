@@ -98,7 +98,7 @@ public sealed class PlayAnimBehavior : SteppedBehavior
         };
     }
 
-    private readonly IReadOnlyList<AnimationTrigger> _triggers;
+    private readonly List<AnimationTrigger> _triggers;
     /// <summary>BehaviorPlayAnimSequence +0x12c: how many times <c>StartSequenceLoop</c> has built the sequence this run.</summary>
     private int _loopIndex;
 
@@ -233,6 +233,14 @@ public sealed class PlayAnimBehavior : SteppedBehavior
 
     /// <summary>The triggers this behaviour plays, in the order the config lists them.</summary>
     public IReadOnlyList<AnimationTrigger> Triggers => _triggers;
+
+    // Hiccup's vector assignment 0x00610802..0x0061081C replaces the sequence,
+    // without resetting the PlayAnim loop index.
+    internal void ReplaceTriggers(IEnumerable<AnimationTrigger> triggers)
+    {
+        _triggers.Clear();
+        _triggers.AddRange(triggers);
+    }
 
     /// <summary><c>BehaviorPlayAnimSequence::ResumeInternal</c> (<c>vtable+0x4c</c>) 0x005BFF1E: <c>movs r0,#1</c>. The engine never resumes a PlayAnim.</summary>
     protected override int ResumeInternal() => 1;
@@ -681,7 +689,8 @@ public static class ShippedBehaviors
                                                                                 RamIntoBlockBehavior? ramIntoBlock = null, Cozmo.Robot.Manipulation.AIWhiteboard? whiteboard = null,
                                                                                 string? obbRoot = null, Cozmo.Robot.Manipulation.ManipulationSystem? m = null,
                                                                                 List<string>? unbound = null,
-                                                                                AcknowledgeObjectBehavior? acknowledgeObject = null)
+                                                                                AcknowledgeObjectBehavior? acknowledgeObject = null,
+                                                                                Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null)
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
@@ -770,6 +779,13 @@ public static class ShippedBehaviors
         var registrations = new List<BehaviorManager.ReactionRegistration>();
         foreach (var e in map)
         {
+            if (e.Trigger == ReactionTrigger.Hiccup && nativeHiccup is not null)
+            {
+                var hiccup = nativeHiccup(e);
+                if (hiccup is not null) registrations.Add(hiccup);
+                else unbound?.Add($"{e.Trigger} -> {e.BehaviorId}");
+                continue;
+            }
             var match = byId.TryGetValue(e.BehaviorId, out var candidates)
                 ? candidates.FirstOrDefault(c => c.Trigger == e.Trigger)
                 : default;

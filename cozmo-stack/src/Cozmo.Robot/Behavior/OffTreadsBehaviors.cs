@@ -14,6 +14,7 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 {
+    internal Cozmo.Robot.Manipulation.AIWhiteboard? Whiteboard { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
@@ -43,7 +44,11 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
         }
         var raw = sensors.CliffSensorsRaw;
         int front = raw is { Length: > 0 } ? raw[0] : 0;
-        if ((front >> 4) <= 0x18) PlayTrigger(AnimationTrigger.FlipDownFromBack, DelayThenFlipDown);
+        if ((front >> 4) <= 0x18)
+        {
+            if (Whiteboard is null) ReportMissing("M10-003 ReactToRobotOnBack 0x00608806: AIWhiteboard+0x74 unavailable");
+            PlayTrigger(Whiteboard?.HiccupsActive == true ? AnimationTrigger.HiccupRobotOnBack : AnimationTrigger.FlipDownFromBack, DelayThenFlipDown);
+        }
         else
         {
             Log($"cliff sensor 0 reads {front} (>= {CliffRawCalibrateAt}): calibrating the head instead of flipping");
@@ -82,6 +87,7 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
 {
+    internal Cozmo.Robot.Manipulation.AIWhiteboard? Whiteboard { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
@@ -98,6 +104,8 @@ public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnFace) { Log("not on face"); Finish(); return; }
         float liftAngle = Context.Robot.Sensors.LiftAngleRad ?? 0f;
         var roll = liftAngle < 45f ? AnimationTrigger.FacePlantRoll : AnimationTrigger.FacePlantRollArmUp;
+        if (Whiteboard is null) ReportMissing("M10-003 ReactToRobotOnFace 0x00608ADA: AIWhiteboard+0x74 unavailable");
+        else if (Whiteboard.HiccupsActive) roll = AnimationTrigger.HiccupRobotOnFace;
         PlayTrigger(roll, DelayThenCheckState);
     }
 

@@ -104,6 +104,9 @@ public sealed partial class AIWhiteboard
     internal (float Timestamp,float Distance)? OverheadEdgeState {get;private set;}
     internal void SetOverheadEdgeState(float timestamp,float distance)=>OverheadEdgeState=(timestamp,distance);
 
+    // AIWhiteboard+0x74, initialized clear at 0x0056A2DA and owned by Hiccup.
+    internal bool HiccupsActive { get; set; }
+
     public IReadOnlyList<AIBeacon> Beacons => _beacons;
     /// <summary>The first beacon, as <c>GetActiveBeacon</c> 0x0056C404 returns begin rather than back.</summary>
     public AIBeacon? GetActiveBeacon() => _beacons.Count > 0 ? _beacons[0] : null;

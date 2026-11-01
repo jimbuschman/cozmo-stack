@@ -121,10 +121,14 @@ public sealed partial class BehaviorManager : IDisposable
     private long _reactionBindingGeneration;
     private AcknowledgeObjectBehavior? _configuredAcknowledgeObject;
     // fidelity: M7-014 -- row72: initialize the real map before exposing the robot's AI inputs.
-    internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision)
+    internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision,
+        Cozmo.Robot.Manipulation.ManipulationSystem? manipulation = null, IReadOnlyDictionary<string,IBehavior>? bound = null,
+        EngineRobot? nativeOwner = null)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
-        if (_nativeReactionMapLoaded) return;
+        if (_hostDisposed || _nativeReactionMapLoaded) return;
+        if (bound is not null && bound.TryGetValue("AcknowledgeObject", out var configured))
+            _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
         lock (_gate) _map.Clear(); // private construction only; no deferred locks or replay
         Initialized=false;
         _nativeReactionRows=resources is null?Array.Empty<ReactionMapEntry>():ReactionTriggerMap.Load(resources);
@@ -137,11 +141,14 @@ public sealed partial class BehaviorManager : IDisposable
             var unbound=new List<string>();
             foreach(var reg in ShippedBehaviors.Reactions(_context.Robot,vision?.Locator,
                 ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound,
-                acknowledgeObject:_configuredAcknowledgeObject))
+                acknowledgeObject:_configuredAcknowledgeObject,
+                nativeHiccup: row => CreateNativeHiccup(row,manipulation,bound,nativeOwner ?? _context.Robot.Engine.Robot)))
             {
+                if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
                 if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
                 AddReaction(reg.Strategy,reg.Behavior);
             }
+            if (_hostDisposed) return;
             foreach(var entry in unbound)
                 SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior");
             if (_nativeReactionRows.Any(row => row.Trigger == ReactionTrigger.FistBump && row.BehaviorId == "FistBump"))
@@ -159,7 +166,7 @@ public sealed partial class BehaviorManager : IDisposable
         if(context.Arbiter is {} arb)arb.ManagerDispatchesReactions=true;
         if (!_nativeReactionMapLoaded && bound.TryGetValue("AcknowledgeObject", out var configured))
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
-        InitializeRobotReactions(resources,vision); // explicit late resource input, only if startup map was absent
+        InitializeRobotReactions(resources,vision,manipulation,bound); // explicit late resource input, only if startup map was absent
         BindReactionDependencies(manipulation,bound);
     }
 
@@ -176,6 +183,12 @@ public sealed partial class BehaviorManager : IDisposable
         }
         foreach(var motor in Reactions.Select(r=>r.Behavior).OfType<ReactToMotorCalibrationBehavior>())
             motor.BindManipulation(manipulation);
+        foreach (var pickup in Reactions.Select(r => r.Behavior).OfType<ReactToPickupBehavior>())
+            pickup.WhiteboardHiccupByte = () => manipulation.Whiteboard.HiccupsActive;
+        foreach (var back in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnBackBehavior>())
+            back.Whiteboard = manipulation.Whiteboard;
+        foreach (var face in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnFaceBehavior>())
+            face.Whiteboard = manipulation.Whiteboard;
         foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
             cliff.DriveStraight=(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
         foreach (var strategy in Reactions.Select(r => r.Strategy).OfType<ObjectPositionUpdatedStrategy>())
