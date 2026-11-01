@@ -1207,3 +1207,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New: ActivitySocialize lifecycle: objective population, phase machine, objective recipient, deselect | M15-102 |
 | New: BehaviorFindFaces with its inherited ExploreLookAroundInPlace scan core, for FindFaces_socialize | M15-103 |
 | New: BehaviorPlayAnimOnNeedsChange GetIn: three shipped aliases, readiness, WithFace Init, lift-safe animation, Stop severe-need Set | M15-104 |
+
+## Freeplay follow-through owners (manager, 2026-11-01; research/20261101-freeplay-follow-through-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New: BehaviorExploreLookAroundInPlace configured for SparksLookInPlace: config, gates, Init, sweep S1 to S7, focus-zero finish | M15-105 |
+| New: BehaviorLookInPlaceMemoryMap configured for Hiking: admission, Init, sector search, children, visit history | M15-106 |
+| New: BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop | M15-107 |

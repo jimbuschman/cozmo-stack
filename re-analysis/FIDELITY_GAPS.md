@@ -3,11 +3,11 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **746 records** over 16 subsystems.
+Manifest of **749 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 265 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 268 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 365 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
@@ -31,14 +31,14 @@ remains after both, and they do not go away by working harder on this repository
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 0 | 0 | 1 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 37 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 31 | 1 | 22 | 0 | 0 | no | no |
-| M8-framework — Behaviour framework and scoring | 27 | 2 | 24 | 0 | 0 | no | no |
+| M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 13 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 104 | 4 | 84 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 107 | 4 | 85 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -59,14 +59,14 @@ status.
 | M5-animation | ACCEPTED | 56 | 0 | 0 | 1 |
 | M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 1 |
-| M8-framework | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
+| M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -1036,17 +1036,6 @@ M8-019-END-1 adds only a conditional original-container live-root proof: retaine
 * evidence: 0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt; re-analysis/research/20261012-m8-play-animation-actions-check.md addition 4..5: AddAction(IActionRunner*, bool, bool) 0x0054EC7C -> AddAction(function, bool) 0x0054ED90 (empty predicate; child inherits +0x57; compound name appended); the trailing boolean is never loaded.; re-analysis/research/overnight/20261014-ov20-21-check.md: C1 0x0052CECA..0x0052CFA2; C2 0x0054E990..0x0054EA86; C3 0x0053FDB8..0x0053FE1C; C4 0x0054EC7C..0x0054EEAC; C5 0x0054F4F8..0x0054F54C; S1-S8 0x0054F70C..0x0054F992, 0x0054F5A0..0x0054F696, 0x0054F560..0x0054F59E; P1-P5 0x0054FAB0..0x0054FBCC, 0x0054EC56..0x0054EC7A; D1-D4 0x0054F050..0x0054F130, 0x0054F170..0x0054F1BC, 0x0054F270..0x0054F3EA, 0x0054EB78..0x0054EC2A, 0x0054FC2C..0x0054FC66; the seven log sites; AlreadyPrepped call sites 0x0054F0C0, 0x0054FB3C.
 * outstanding: S14: M1-045 keeps factory handoff/QueueAction NOW retries0; compound execution, child order/failure belongs here. Factory 0x0052CEA2..0x0052CFC0; general queue lifecycle -> M8-015. Source: re-analysis/research/20261006-M1M2-missing-triage.md. OV20/21 check (re-analysis/research/overnight/20261014-ov20-21-check.md): retitled to the generic compound runtime (ten records rely on it); IMPLEMENTATION_GAP. Contradicted evidence: the AddAction wrapper loads and forwards its trailing bool (0x0054ECD4/0x0054ECD8); the compound name is reassigned to "[child(+child)...]" (assign 0x004E4652), not appended. New: every completed child emits the M8-015 Debug IActionRunner.PrepForCompletion.AlreadyPrepped at Store (twice on Parallel's ignored-failure path), except a lock-failed child. The c > 4 paths (Parallel re-update 0x0054FB48, Sequential returns 0) are defined and stay exact. Cannot settle before M8-015.
 B-M8-3 (2026-10-15), built, awaiting strong verification: checked C1-C5/S1-S8/P1-P5/D1-D4 comparison on existing CompoundActions production classes. Compound native name is reassigned [a+b], +0x57 copied per add, empty predicates do not erase existing map entries, constructor null uses exact Warning; raw-null add uses visible M1-034 skip at 0x0054EE14. NaN deadline waits at both gates; sequence captures clock after derived/iterator/child suppression gates and reuses it for ignored failure, retry state=N before child Reset, move addition delay+now; status strings copied only on checked paths. Seven checked log sites built when native child/result names supplied, no local +0x57 gate. Parallel ignored failure adds explicit Prep before Store; real runner tests assert one AlreadyPrepped for completion, two for ignored failure, none for initial lock failure. Defined c>4 paths preserved (no artificial loop guard). Child list ownership removed before destructor invocation. BLOCKED: native external shared-control retention/last-release graph is unbound; existing direct child destruction remains candidate sole-owner cleanup with visible MISSING, not complete shared lifetime fidelity. Full result-name table beyond M8-015 seven checked names and missing concrete child names stay MISSING. Base default completion union/raw tagged payload remains existing M8-015 boundary, not newly certified. See jobs/status/B-M8-3.md. Log-key check (2026-10-16, re-analysis/research/20261016-logkey-sites-check.md L2): GetCompletionUnion InvalidProxyTag warning (0x0054F3BE) has the wrong key and text in the stack (CompoundActions.cs:187, mis-tagged M7-020); the two UsingProxy Debug logs (0x0054F2F2, 0x0054F37E) are missing. Fix: B-LOG-1.
-
-**M8-019 — BehaviorManager::RequestCurrentBehaviorEndImmediately, as HandleRobotStopped calls it** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
-* effect: a robot stop with the cliff sensor enabled does not end the current behaviour, or ends it differently
-* rests on: Cross-layer split (manager, 2026-10-10): S-7 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M4-019 H4.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Called at 0x00535454 (blx 0x4AA1C8) from Robot::HandleRobotStopped when the cliff sensor is enabled (gate 0x00535436..0x00535438; M4-019 H4 0x00535432..0x00535480); re-analysis/research/overnight/20261014-ov20-21-check.md: R2/R3 0x005A3930..0x005A39A6; caller R1 0x00535432..0x00535486 (interface to M4-019 H4).
-* outstanding: RECOVERABLE_GAP: read the body; no record covers it (M8-012 is BehaviorManager::Update's tick). The stack leaves the call unwired with a comment only (Sensors.cs). OV20/21 check (re-analysis/research/overnight/20261014-ov20-21-check.md): IMPLEMENTATION_GAP: the request logs Info "Behaviors" BehaviorManager.RequestCurrentBehaviorEndImmediately "Forcing current behavior to stop: %s" with no guard, then SwitchToBehaviorBase({null,null,0x16}) with the result discarded, then releases +0x14 then +0xC. A second caller exists (ActivitySparked::CheckIfSparkShouldEnd 0x005B19F0), owned by the activity record.
-B-M8-3 (2026-10-15), bounded build, awaiting strong verification; BLOCKED for request body: actual manager entry now emits unconditional checked Info/Behaviors BehaviorManager.RequestCurrentBehaviorEndImmediately / Forcing current behavior to stop: reason, even uninitialized/null current. Actual FreeplayStack binds this entry to Sensors; cliff-enabled handler calls request then ActionList.Cancel(-1) then RobotStopped. Request stops at explicit stack MISSING; no invocation of known-wrong SwitchToBehaviorBaseCore is presented as recovered. Existing helper stores running fields before ReactionTriggerTransition, omits empty-target DAS/BehaviorTransition, and lacks native shared-control retention/release graph. Thus R3 switch/result-discard/resume-before-current release remain unbuilt. No generic Stop/Finish substitution, no stopping activities/UI request or fabricated transition success. Fixtures verify entry Info and caller order only.
-M8-019-END-1 (2026-11-01): unconditional Info now invokes the recovered dedicated null switch, without a generic Stop/Finish or chooser/activity/UI reset. Snapshot old current/resume; A1-gated Stop; reload live current after Stop; reaction88 before flags/commit with post-report live-trigger reload; null target preserves state-light vector; actual DAS/typed+raw87 includes null-to-null. Request-local controls are source-proven zero on this path, retaining the native resume-before-current conditional release order without invented counts. Actual primary container entry, not copied Bound, supplies only a live-root no-final-destroy proof through report. Unrooted/removed/retiring native release effects remain explicitly M8-016/027, so no whole settlement proposed. Source-derived resource D4/DriveOff, payload/order, inactive, noEI, reentry, map identity and second Spark caller regressions pass; full batch gate pending. HANDOFF-M8-019-END-1.md.
 
 **M8-020 — PlayAnimationAction: construction, Init, robot/game animation handlers, CheckIfDone, animationCompleted, destructor streamer stop** (live path)
 
@@ -3285,16 +3274,6 @@ PLAYALONE-MOVES-ON-1: the actual no-pickup ordinary parent loop now leaves FindF
 * evidence: BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C
 * outstanding: built, awaiting strong verification (R-FIX2, 2026-10-04): the local free-pose search and the invented stand pose are removed; FireEmotionEvents (0x005E002C..0x005E0096) is kept; the route to it is built (M15-019..M15-025: FindFreePoseInBeacon, TryToPlaceAt, PlaceObjectOnGroundAction, the NoFreePoses branch, the failure memory). Still open: the floor path's open items are in those records; the pick-up phase is M15-026.
 
-**M15-011 — Freeplay beacon is centered on the robot pose** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
-* effect: the location used for subsequent cube gathering changes
-* rests on: libcozmoEngine.so
-* best authority: libcozmoEngine.so
-* evidence: BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C; AIWhiteboard::AddBeacon 0x0056C39C
-* outstanding: built, awaiting strong verification (R-FIX2, 2026-10-03): SelectNewBeacon passes the full copied robot pose (z and rotation included) to AddBeacon (0x005E5F1A..0x005E5F30). Still open: none known.
-PLAYALONE-MOVES-ON-1: actual canonical Hiking Think is bound and its full root-relative XYZ/rotation pose/radius is tested. Primary Init005E5CE6 retains original Robot across log; Select005E5F12..30 retains its whiteboard before original GetPose/root copy/AddBeacon. Fixed a real C# Step-callback defect that previously fetched replacement Robot with old whiteboard; constructor capture, lifecycle epochs and retirement checks now preserve the original owner across Step/render callbacks. Both configured IDs have actual Stop/replacement/late-completion regressions, with no native-crash/departure claim. Whole OWN center record proposed after full gate/Claude; not whole Think/animation/beacon-clearing acceptance.
-
 **M15-013 — Activity tree construction, desired names and discarded activityPriority** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
@@ -3696,16 +3675,6 @@ B-M1-11 (2026-10-18), built, awaiting strong verification: the B-M1-10 resolver 
 * outstanding: IMPLEMENTATION_GAP. RandInt and IsUnlocked bodies are handoffs. Which union cases the stack API exposes is an operator question (ActivateSpark already yes). SparkUnlocked has no Unity sender. B-M15-6 (2026-10-16), built, awaiting strong verification: actual FreeplayStack.ActivateSpark(int32) queues internal tag0096/case0 carrier to existing engine game queue and manager-owned retained subscription. No validation, truncation, inventory charge or immediate selection. Manager case0 stores hard request and latches cancel only ID55; other IDs preserve latch. Internal case1 stores soft request and never changes latch; no public API/Unity sender, unreachable via supported stack app inputs. Native setter/name boundary remains visibly MISSING, no authority2 names fabricated. Case2 remains visibly MISSING: checked EngineRandom.RandInt exists, but native selector/configured weight/progression IsUnlocked owner and unconditional AddInventoryAmount(1,-3) inventory recipient do not; no default-unlocked or uniform draw. Case3 remains visibly MISSING at absent manager game-request +30/running input, not guessed null. Bad-tag caller Error/errG built only with explicit lower tag-name test input; native TagToString recipient remains unbuilt. Public API exposes only ActivateSpark pending further operator input decisions. Existing host Dispose retires actual handle while native capture/lifetime/destructor position remains explicit M8-023 gap. Operator decision 2026-10-16 (app inputs the stack API exposes, COMPATIBILITY_POLICY under the app-boundary rule): EXPOSED: ActivateSpark, ActivateHighLevelActivity (Freeplay, Feeding, ...), DoATrickRequest (union 2), PlayAGameRequest (union 3), SetSparkedMusicState (G2E 0xA3). NOT EXPOSED: SparkUnlocked (union 1, no app sender), TrackToObject with a real ID / headTrackWhenDone, the memory-map broadcast frequency.
 Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfigs (0x00522280..0x00523042) loads game_request_weights.json (+0x238) and do_a_trick_weights.json (+0x250), via the helper 0x00522074..0x005221F8; this record owns its consumer (M1-054 keeps the load order).
 
-**M15-058 — BehaviorManager spark fields: init, SetRequestedSpark, SwitchToRequestedSpark, high-level-activity adapter clear** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
-* effect: Which spark is active and requested.
-* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: field init 0x005A08DA..0x005A0900; setter 0x005A3EAC..0x005A3F0E ("BehaviorManager.SetRequestedSpark" "requested %s spark is '%s'"); switch 0x005A4198..0x005A422C (Info first; +0x60 not cleared); adapter 0x005A4FA2..0x005A4FE0 (SetCurrentActivity body 0x005A106C unread, overlaps M15-031); writers ctor, 0x005A3C9A, 0x005A3EB2/0x005A3EB6, 0x005A4220/0x005A4224/0x005A4226, 0x005A4FDC/0x005A4FDE.
-* outstanding: IMPLEMENTATION_GAP. SetCurrentActivity 0x005A106C unread (M15-031). B-M15-6 (2026-10-16), built, awaiting strong verification: actual partial BehaviorManager owns full i32 active/requested IDs55, raw soft bytes0, cancel byte0, f32 timestamp+50/+54 BF800000. SetNativeRequestedSpark stores soft then ID before name/Info; SPARK-JOIN-1 binds the native nullable UnlockId EnumToString projection (0x00794D6C, table0x010340C0) in every manager constructor: all81 named pairs match existing data; holes and unsigned out-of-range return null, which is diagnostic text and does not reject defined state writes. SwitchToNativeRequestedSpark leaf has Info before f32 clock/store/latch clear/copies, requested fields retained; the raw successful-pick caller is now built at the standalone supplied-manager boundary, including changed-to-null. Canonical queued ingress still cannot admit the Freeplay parent and logs that request-specific MISSING; no invented bridge to the separate standalone manager. Legacy string mapping remains a separate visible gap. High-level-activity adapter remains unbuilt because SetCurrentActivity5A106C is unread; no API exposed and no clearing through an invented successful activity transition. Operator decision 2026-10-16 (app inputs the stack API exposes, COMPATIBILITY_POLICY under the app-boundary rule): EXPOSED: ActivateSpark, ActivateHighLevelActivity (Freeplay, Feeding, ...), DoATrickRequest (union 2), PlayAGameRequest (union 3), SetSparkedMusicState (G2E 0xA3). NOT EXPOSED: SparkUnlocked (union 1, no app sender), TrackToObject with a real ID / headTrackWhenDone, the memory-map broadcast frequency. OV108 answer (re-analysis/research/overnight/20261016-ov105-107-108-answer.md): the adapter also stamps +0x54 for v == 1 when +0x54 < 0 (0x005A4FBE..0x005A4FD6), and the v != 1 clear (+0x60 then +0x58) runs even after SetCurrentActivity returned "already set".
-PLAYALONE-MOVES-ON-1 supersedes earlier unread-SetCurrentActivity/no-canonical-adapter statements: shared+50 and separate+54 are now joined in native callback order. The queued four-name semantic HLA adapter retains captured request/original Robot, runs one post-return tail, handles same Selection and clears native nonFreeplay IDs even while Feeding/Meet lifecycles remain visibly unavailable. Host subactivity names remain separate; raw92 ingress/unbuilt HLA bodies stay M15-031/M15-061 gaps. Original owner retirement and nested callbacks are tested. Whole OWN field-management record is proposed for Claude after full batch gate, not settled here; no raw-ingress/all-activities completion claim.
-
 **M15-059 — ActivitySparked lifecycle: OnSelected (HardSparkStartedByEngine tag 131), OnDeselected (StopAllAnims), objective/observed, Update/checks/end/interrupt, get-in/out, Complete (meta.upgrade_replay_* events, HardSparkEndedByEngine tag 132)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
@@ -4012,6 +3981,33 @@ PLAYALONE-MOVES-ON-1 binds Hiking as well as Sparks for the same shipped Think b
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Factory 0x0059CE46; ctor 0x005BFDD4, 0x005BFDDC, 0x005C0634; gates 0x005BFF1A, 0x005BFF1E; readiness 0x005C013A, 0x005BFECA; Init 0x005C0648..0x005C06D4; callback 0x005C075A, 0x005C0158..0x005C01A6; Stop 0x005BFEF8..0x005BFF16.; re-analysis/jobs/trial-m13/HANDOFF-NEEDS-EXPRESSION-ADMISSION-1.md
 * outstanding: Built, NativeNeedsExpressionAdmissionTests. Not settled: the Claude check did not read this path. Multi-trigger and nonempty-listener paths stay unavailable.
+
+**M15-105 — BehaviorExploreLookAroundInPlace configured for SparksLookInPlace: config, gates, Init, sweep S1 to S7, focus-zero finish** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeSparksLookInPlace.cs`
+* effect: the head and body sweep Cozmo runs under most Sparks when no cube is known
+* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Factory 0x0059CB64; ctor 0x005E1D80; config 0x005E1EC0; focus bypass 0x005E1F58..0x005E1F8E; predicate 0x005E259C..0x005E2654; Init 0x005E2684; Begin 0x005E289C; S1 0x005E28A0; S2 0x005E2AE8; S3 0x005E2C34; S6 0x005E3128; S7 0x005E3568..0x005E392A; tag35 0x005E297C.; re-analysis/jobs/trial-m13/HANDOFF-SPARKS-LOOK-IN-PLACE-1.md
+* outstanding: Built, SparksLookInPlaceNativeTests. Not settled: config and predicate not read in the Claude check, and the sweep has not run on a robot. Other aliases, changed profiles, positive focus and head-count branches stay unavailable.
+
+**M15-106 — BehaviorLookInPlaceMemoryMap configured for Hiking: admission, Init, sector search, children, visit history** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeHikingLookInPlace.cs`
+* effect: the look around Cozmo does while Hiking, aimed at the least-known map sector
+* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Ctor and admission 0x005E482C, 0x005E4C6C; Init 0x005E4CE0; lifecycle through 0x005E5A6C.; re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md
+* outstanding: Built, NativeHikingLookInPlaceTests. Not settled: the body was not read in the Claude check and it has not run on a robot. A missing live map holds visibly.
+
+**M15-107 — BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeHikingPounce.cs`
+* effect: the pounce Cozmo does while Hiking when something moves
+* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Normal path 0x005F7F90..0x005FA194; running score 0x005F83BE; movement helper 0x00640634, 0x00640654; pack 0x007A4C24.; re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md
+* outstanding: Partly built, NativeHikingPounceTests. Not settled: the body was not read in the Claude check. Real frame, motion and cliff history and an unrecovered rotation branch stay MISSING.
 
 ## What remains after both: blocked externally, or needing hardware
 

@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-11-01",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "2fc163f859916381c05bda6ad4baec447060b93bc84bb40682e5f7a656100287",
+  "inventory_sha256": "f72d007bbed1c1c70880afb2d513c5386c7ed637c695d92349463c001678b32a",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -135,7 +135,7 @@
       "hardware_required": false
     },
     "M15-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Freeplay beacon is centered on the robot pose",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -696,7 +696,7 @@
       "hardware_required": false
     },
     "M15-058": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BehaviorManager spark fields: init, SetRequestedSpark, SwitchToRequestedSpark, high-level-activity adapter clear",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -1304,6 +1304,39 @@
       "evidence": [
         "Factory 0x0059CE46; ctor 0x005BFDD4, 0x005BFDDC, 0x005C0634; gates 0x005BFF1A, 0x005BFF1E; readiness 0x005C013A, 0x005BFECA; Init 0x005C0648..0x005C06D4; callback 0x005C075A, 0x005C0158..0x005C01A6; Stop 0x005BFEF8..0x005BFF16.",
         "re-analysis/jobs/trial-m13/HANDOFF-NEEDS-EXPRESSION-ADMISSION-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-105": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorExploreLookAroundInPlace configured for SparksLookInPlace: config, gates, Init, sweep S1 to S7, focus-zero finish",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CB64; ctor 0x005E1D80; config 0x005E1EC0; focus bypass 0x005E1F58..0x005E1F8E; predicate 0x005E259C..0x005E2654; Init 0x005E2684; Begin 0x005E289C; S1 0x005E28A0; S2 0x005E2AE8; S3 0x005E2C34; S6 0x005E3128; S7 0x005E3568..0x005E392A; tag35 0x005E297C.",
+        "re-analysis/jobs/trial-m13/HANDOFF-SPARKS-LOOK-IN-PLACE-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-106": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorLookInPlaceMemoryMap configured for Hiking: admission, Init, sector search, children, visit history",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor and admission 0x005E482C, 0x005E4C6C; Init 0x005E4CE0; lifecycle through 0x005E5A6C.",
+        "re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-107": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Normal path 0x005F7F90..0x005FA194; running score 0x005F83BE; movement helper 0x00640634, 0x00640654; pack 0x007A4C24.",
+        "re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md"
       ],
       "live_path": true,
       "hardware_required": false

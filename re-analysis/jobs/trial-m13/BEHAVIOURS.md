@@ -16,6 +16,7 @@ This is the operator-requested asset-based planning document, checked by the man
 | 2026-10-29 | 0 | 68 (+0 from configured PutDown aliases) | PUTDOWN-PYRAMID-1 and SPARKS-PUTDOWN-1 READY | Exact configured receivers covered; independent126/30 and full6705/6709 PASS. Current720 records; whole-repo live implementation gaps344/recoverable20. Typed transition and inherited admission/input gaps remain. |
 | 2026-11-01 | 0 | total +5 over 18 start-path jobs (M15-098, M15-100, M15-097, M15-060, M10-016) | start-path fix batch, five follow-ups, HICCUP-STRATEGY-1, CANONICAL-FREEPLAY-PARENT-1, PYRAMID-RUNTIME-INPUTS-1, TALLSTACK-RUNTIME-INPUTS-1 | Canonical parent runs PutDownDispatch and Sparks; ordinary children hold at M8-013. Full 7187/7187. |
 | 2026-11-01 | 1 (DriveOffCharger) | total +6 over 23 start-path jobs (adds M15-082) | LOOK-FACE-CUBE-EXECUTION-1, M8-CHOOSER-DISPATCH-1, ORDINARY-FREEPLAY-1, NEEDS-EXPRESSION-ADMISSION-1, SPARKED-LIFECYCLE-1; full 7314/7314 | Left alone, Cozmo now starts FindFaces, then holds in PlayAlone on unbuilt SparksFireTruckAlarm. First robot run through Freeplay passed. |
+| 2026-11-01 | 1 (DriveOffCharger) | total +9 over 26 start-path jobs (adds M8-019, M15-058, M15-011) | SPARKS-LOOK-IN-PLACE-1, PLAYALONE-MOVES-ON-1, M8-019-END-1; Codex full 7395/7395 | Left alone, Cozmo now cycles through Freeplay for 5 minutes on the production load order. A test-rig load-order defect is ordered as TRIGGER-MAP-BIND-1. |
 
 ## Sources and interpretation
 

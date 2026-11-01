@@ -6031,11 +6031,11 @@
         "BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C",
         "AIWhiteboard::AddBeacon 0x0056C39C"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): SelectNewBeacon passes the full copied robot pose (z and rotation included) to AddBeacon (0x005E5F1A..0x005E5F30). Still open: none known.\nPLAYALONE-MOVES-ON-1: actual canonical Hiking Think is bound and its full root-relative XYZ/rotation pose/radius is tested. Primary Init005E5CE6 retains original Robot across log; Select005E5F12..30 retains its whiteboard before original GetPose/root copy/AddBeacon. Fixed a real C# Step-callback defect that previously fetched replacement Robot with old whiteboard; constructor capture, lifecycle epochs and retirement checks now preserve the original owner across Step/render callbacks. Both configured IDs have actual Stop/replacement/late-completion regressions, with no native-crash/departure claim. Whole OWN center record proposed after full gate/Claude; not whole Think/animation/beacon-clearing acceptance.",
+      "status": "EXACT_SOURCE",
+      "unresolved": "Settled on the centre only, Claude check re-analysis/research/20261101-freeplay-follow-through-claude-check.md: SelectNewBeacon 0x005E5F12..0x005E5F30 reads the whiteboard, GetPose, the GetWithRespectToRoot helper 0x004DF628, then AddBeacon with radius +0x128; the C# passes the root pose on both configured IDs. Owned elsewhere: Think's lifecycle (M15-084), AddBeacon (M8-014), the pose tree (M11-066), beacon clearing.",
       "hardware_required": false,
       "live_path": true,
-      "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside"
+      "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside; ThinkAboutBeaconsNativeTests"
     },
     {
       "id": "M15-012",
@@ -12332,7 +12332,7 @@
       "subsystem": "M8-framework",
       "title": "BehaviorManager::RequestCurrentBehaviorEndImmediately, as HandleRobotStopped calls it",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "effect": "a robot stop with the cliff sensor enabled does not end the current behaviour, or ends it differently",
       "provenance": "Cross-layer split (manager, 2026-10-10): S-7 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M4-019 H4.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
@@ -12340,10 +12340,10 @@
         "Called at 0x00535454 (blx 0x4AA1C8) from Robot::HandleRobotStopped when the cliff sensor is enabled (gate 0x00535436..0x00535438; M4-019 H4 0x00535432..0x00535480)",
         "re-analysis/research/overnight/20261014-ov20-21-check.md: R2/R3 0x005A3930..0x005A39A6; caller R1 0x00535432..0x00535486 (interface to M4-019 H4)."
       ],
-      "unresolved": "RECOVERABLE_GAP: read the body; no record covers it (M8-012 is BehaviorManager::Update's tick). The stack leaves the call unwired with a comment only (Sensors.cs). OV20/21 check (re-analysis/research/overnight/20261014-ov20-21-check.md): IMPLEMENTATION_GAP: the request logs Info \"Behaviors\" BehaviorManager.RequestCurrentBehaviorEndImmediately \"Forcing current behavior to stop: %s\" with no guard, then SwitchToBehaviorBase({null,null,0x16}) with the result discarded, then releases +0x14 then +0xC. A second caller exists (ActivitySparked::CheckIfSparkShouldEnd 0x005B19F0), owned by the activity record.\nB-M8-3 (2026-10-15), bounded build, awaiting strong verification; BLOCKED for request body: actual manager entry now emits unconditional checked Info/Behaviors BehaviorManager.RequestCurrentBehaviorEndImmediately / Forcing current behavior to stop: reason, even uninitialized/null current. Actual FreeplayStack binds this entry to Sensors; cliff-enabled handler calls request then ActionList.Cancel(-1) then RobotStopped. Request stops at explicit stack MISSING; no invocation of known-wrong SwitchToBehaviorBaseCore is presented as recovered. Existing helper stores running fields before ReactionTriggerTransition, omits empty-target DAS/BehaviorTransition, and lacks native shared-control retention/release graph. Thus R3 switch/result-discard/resume-before-current release remain unbuilt. No generic Stop/Finish substitution, no stopping activities/UI request or fabricated transition success. Fixtures verify entry Info and caller order only.\nM8-019-END-1 (2026-11-01): unconditional Info now invokes the recovered dedicated null switch, without a generic Stop/Finish or chooser/activity/UI reset. Snapshot old current/resume; A1-gated Stop; reload live current after Stop; reaction88 before flags/commit with post-report live-trigger reload; null target preserves state-light vector; actual DAS/typed+raw87 includes null-to-null. Request-local controls are source-proven zero on this path, retaining the native resume-before-current conditional release order without invented counts. Actual primary container entry, not copied Bound, supplies only a live-root no-final-destroy proof through report. Unrooted/removed/retiring native release effects remain explicitly M8-016/027, so no whole settlement proposed. Source-derived resource D4/DriveOff, payload/order, inactive, noEI, reentry, map identity and second Spark caller regressions pass; full batch gate pending. HANDOFF-M8-019-END-1.md.",
+      "unresolved": "Settled on its own path, Claude check re-analysis/research/20261101-freeplay-follow-through-claude-check.md: request 0x005A3930..0x005A39A6, caller 0x00535432..0x00535486, null switch 0x005A1E20..0x005A1F44, StopAndNullify 0x005A2028..0x005A206A, SetRunningAndResumeInfo 0x005A20D6..0x005A2158. SwitchToEmptyForEndRequest is a dedicated body for the null incoming case. Owned elsewhere: other switching paths (M8-012), common Stop (M8-001), the caller's sensor gate (M4-019), native destruction after an owner retires (M8-016, M8-027; a visible MISSING, stack lifetime is otherwise an implementation choice). Why the robot stopped in run 4 is not established. No robot run has yet reached this path since it was built.",
       "hardware_required": false,
       "live_path": true,
-      "test": "; M8CompoundCheckedRowsTests; CompoundActionTests"
+      "test": "; M8CompoundCheckedRowsTests; CompoundActionTests; NativeBehaviorEndRequestTests"
     },
     {
       "id": "M8-020",
@@ -13731,18 +13731,18 @@
       "id": "M15-058",
       "subsystem": "M15-freeplay",
       "title": "BehaviorManager spark fields: init, SetRequestedSpark, SwitchToRequestedSpark, high-level-activity adapter clear",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/SparkManagerInput.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov65-67-check.md: field init 0x005A08DA..0x005A0900; setter 0x005A3EAC..0x005A3F0E (\"BehaviorManager.SetRequestedSpark\" \"requested %s spark is '%s'\"); switch 0x005A4198..0x005A422C (Info first; +0x60 not cleared); adapter 0x005A4FA2..0x005A4FE0 (SetCurrentActivity body 0x005A106C unread, overlaps M15-031); writers ctor, 0x005A3C9A, 0x005A3EB2/0x005A3EB6, 0x005A4220/0x005A4224/0x005A4226, 0x005A4FDC/0x005A4FDE."
       ],
       "effect": "Which spark is active and requested.",
       "provenance": "Opus check of OV65-OV67 (2026-10-15), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP. SetCurrentActivity 0x005A106C unread (M15-031). B-M15-6 (2026-10-16), built, awaiting strong verification: actual partial BehaviorManager owns full i32 active/requested IDs55, raw soft bytes0, cancel byte0, f32 timestamp+50/+54 BF800000. SetNativeRequestedSpark stores soft then ID before name/Info; SPARK-JOIN-1 binds the native nullable UnlockId EnumToString projection (0x00794D6C, table0x010340C0) in every manager constructor: all81 named pairs match existing data; holes and unsigned out-of-range return null, which is diagnostic text and does not reject defined state writes. SwitchToNativeRequestedSpark leaf has Info before f32 clock/store/latch clear/copies, requested fields retained; the raw successful-pick caller is now built at the standalone supplied-manager boundary, including changed-to-null. Canonical queued ingress still cannot admit the Freeplay parent and logs that request-specific MISSING; no invented bridge to the separate standalone manager. Legacy string mapping remains a separate visible gap. High-level-activity adapter remains unbuilt because SetCurrentActivity5A106C is unread; no API exposed and no clearing through an invented successful activity transition. Operator decision 2026-10-16 (app inputs the stack API exposes, COMPATIBILITY_POLICY under the app-boundary rule): EXPOSED: ActivateSpark, ActivateHighLevelActivity (Freeplay, Feeding, ...), DoATrickRequest (union 2), PlayAGameRequest (union 3), SetSparkedMusicState (G2E 0xA3). NOT EXPOSED: SparkUnlocked (union 1, no app sender), TrackToObject with a real ID / headTrackWhenDone, the memory-map broadcast frequency. OV108 answer (re-analysis/research/overnight/20261016-ov105-107-108-answer.md): the adapter also stamps +0x54 for v == 1 when +0x54 < 0 (0x005A4FBE..0x005A4FD6), and the v != 1 clear (+0x60 then +0x58) runs even after SetCurrentActivity returned \"already set\".\nPLAYALONE-MOVES-ON-1 supersedes earlier unread-SetCurrentActivity/no-canonical-adapter statements: shared+50 and separate+54 are now joined in native callback order. The queued four-name semantic HLA adapter retains captured request/original Robot, runs one post-return tail, handles same Selection and clears native nonFreeplay IDs even while Feeding/Meet lifecycles remain visibly unavailable. Host subactivity names remain separate; raw92 ingress/unbuilt HLA bodies stay M15-031/M15-061 gaps. Original owner retirement and nested callbacks are tested. Whole OWN field-management record is proposed for Claude after full batch gate, not settled here; no raw-ingress/all-activities completion claim.",
+      "unresolved": "Settled, Claude check re-analysis/research/20261101-freeplay-follow-through-claude-check.md: init 0x005A08DA..0x005A0900, setter 0x005A3EB2..0x005A3EE6, switch 0x005A41A6..0x005A4226, adapter tail 0x005A4FB6..0x005A4FDE, shared clock +0x50 with the recent-parent read 0x005BD848..0x005BD862. Operator decision 2026-10-16 on exposed inputs stands: ActivateSpark, ActivateHighLevelActivity, DoATrickRequest, PlayAGameRequest and SetSparkedMusicState are exposed; SparkUnlocked, TrackToObject with a real ID and headTrackWhenDone, and the memory-map broadcast frequency are not. Owned elsewhere: the message dispatch (M15-057), SetCurrentActivity and raw 92 ingress (M15-031), the unbuilt high-level activity bodies (M15-061).",
       "hardware_required": false,
       "live_path": true,
-      "test": "; SparkManagerInputCheckedRowsTests (12 cases: actual FreeplayStack API->engine queue->manager subscription; native inputs/names and leaf tests explicitly bounded; no lifecycle/lookup producer acceptance)"
+      "test": "; SparkManagerInputCheckedRowsTests (12 cases: actual FreeplayStack API->engine queue->manager subscription; native inputs/names and leaf tests explicitly bounded; no lifecycle/lookup producer acceptance); NativeParentSwitchTimeTests"
     },
     {
       "id": "M15-059",
@@ -14793,6 +14793,60 @@
       "hardware_required": false,
       "live_path": true,
       "test": ""
+    },
+    {
+      "id": "M15-105",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorExploreLookAroundInPlace configured for SparksLookInPlace: config, gates, Init, sweep S1 to S7, focus-zero finish",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeSparksLookInPlace.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CB64; ctor 0x005E1D80; config 0x005E1EC0; focus bypass 0x005E1F58..0x005E1F8E; predicate 0x005E259C..0x005E2654; Init 0x005E2684; Begin 0x005E289C; S1 0x005E28A0; S2 0x005E2AE8; S3 0x005E2C34; S6 0x005E3128; S7 0x005E3568..0x005E392A; tag35 0x005E297C.",
+        "re-analysis/jobs/trial-m13/HANDOFF-SPARKS-LOOK-IN-PLACE-1.md"
+      ],
+      "effect": "the head and body sweep Cozmo runs under most Sparks when no cube is known",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Built, SparksLookInPlaceNativeTests. Not settled: config and predicate not read in the Claude check, and the sweep has not run on a robot. Other aliases, changed profiles, positive focus and head-count branches stay unavailable.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "SparksLookInPlaceNativeTests"
+    },
+    {
+      "id": "M15-106",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorLookInPlaceMemoryMap configured for Hiking: admission, Init, sector search, children, visit history",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeHikingLookInPlace.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor and admission 0x005E482C, 0x005E4C6C; Init 0x005E4CE0; lifecycle through 0x005E5A6C.",
+        "re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md"
+      ],
+      "effect": "the look around Cozmo does while Hiking, aimed at the least-known map sector",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Built, NativeHikingLookInPlaceTests. Not settled: the body was not read in the Claude check and it has not run on a robot. A missing live map holds visibly.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeHikingLookInPlaceTests"
+    },
+    {
+      "id": "M15-107",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeHikingPounce.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Normal path 0x005F7F90..0x005FA194; running score 0x005F83BE; movement helper 0x00640634, 0x00640654; pack 0x007A4C24.",
+        "re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md"
+      ],
+      "effect": "the pounce Cozmo does while Hiking when something moves",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Partly built, NativeHikingPounceTests. Not settled: the body was not read in the Claude check. Real frame, motion and cliff history and an unrecovered rotation branch stay MISSING.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeHikingPounceTests"
     }
   ]
 }
