@@ -152,15 +152,20 @@ public sealed class SparksKnockOverNativeTests
         Assert.Null(owner.Desired(null,0,f.Runtime.Context));Assert.Equal(new[]{false},ended);Assert.Equal(4,owner.State);
     }
     [Fact]
-    public void InvalidActiveIdDoesNotUseStaleSoftByteAndInterruptionRetainsNativeSwitchGap()
+    public void InvalidActiveIdIgnoresStaleSoftByteAndInterruptionReportsEmptySwitch()
     {
-        // S20/S21/S23: supplied canonical leaf values; no fake immediate Stop for existing M8-019 gap.
+        // S20/S21/S23: supplied canonical leaf values; 005B19F0 requests the actual empty switch.
         using var f=new Fixture();var manager=f.Robot.BehaviorManagerOwner!;manager.SparkNameInput=_=>"input";
         manager.SetNativeRequestedSpark(0x55,1);f.Runtime.AdmitActivity("SparksKnockOverCubes");manager.SwitchToNativeRequestedSpark();
         var owner=Owner(f);var child=Assert.IsType<NativePlayArbitraryAnimBehavior>(owner.Desired(null,0,f.Runtime.Context));Assert.Equal(new[]{(AnimationTrigger)0x211},child.Triggers);
         SourceField(owner,"State",3);Assert.Same(child,owner.Desired(null,0,f.Runtime.Context));Assert.Equal(new[]{(AnimationTrigger)0x210,(AnimationTrigger)0x212},child.Triggers);
         manager.SetNativeRequestedSpark(5,0);manager.SwitchToNativeRequestedSpark();manager.SetNativeRequestedSpark(6,0);SourceField(owner,"State",2);
+        var transitions=new List<BehaviorTransitionReport>();
+        using var transition=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x87,true,p=>transitions.Add(Assert.IsType<BehaviorTransitionReport>(p)));
         owner.Update();Assert.Equal(4,owner.State);Assert.Null(manager.Current);Assert.Equal(6,manager.RequestedSparkId);
+        var report=Assert.Single(transitions);Assert.Equal((byte)0xB2,report.OldId);Assert.Equal((byte)0xB2,report.NewId);
+        Assert.Equal((byte)0x39,report.OldClass);Assert.Equal((byte)0x0B,report.OldExecutable);
+        Assert.Equal((byte)0x39,report.NewClass);Assert.Equal((byte)0x0B,report.NewExecutable);Assert.Equal("",report.DisplayKey);
         var ended=new List<bool>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x84,true,p=>ended.Add((bool)p!));owner.Desired(null,0,f.Runtime.Context);Assert.Empty(ended);
     }
     [Fact]

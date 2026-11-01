@@ -12,11 +12,13 @@ internal sealed class NativeBehaviorBaseInputs
     internal uint RequiredUnlock=>_requiredUnlock;
     // Common +6C uses the native executable name table and Count constructor default.
     internal byte? CheckedExecutableType {get;}
+    internal byte CheckedBehaviorClass {get;}
     private readonly int _requiredSevere;
     private readonly float _recentDriveOff, _recentSwitch;
     internal NativeBehaviorBaseInputs(EngineRobot robot,JsonElement config)
     {
         _robot=robot;
+        CheckedBehaviorClass=(byte)BehaviorClassNames.ExtractFromConfig(config);
         _manager=robot.BehaviorManagerOwner;
         CheckedExecutableType=ExecutableBehaviorNames.FromConfig(config);
         _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)&&unlock.ValueKind!=JsonValueKind.Null?NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(unlock.GetString()!)):0x55;

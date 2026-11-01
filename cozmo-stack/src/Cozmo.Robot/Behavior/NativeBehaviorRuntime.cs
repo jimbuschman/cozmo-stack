@@ -14,6 +14,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal ManipulationSystem? Manipulation {get;}
     internal NativeConfigurationManager Configurations {get;}
     internal AIComponent AI {get;}
+    internal BehaviorContainer Container {get;}
     internal NativePickupTargetCache? PickupTargets {get;}
     // Native input boundaries; canonical pyramid suppliers resolve the live owner at each call.
     // Tests can replace these delegates for isolated lifecycle checks.
@@ -67,6 +68,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     // Continuation of the missing parent picker, not an ActivitySparked state/Complete latch.
     internal bool AwaitingParentActivityPick {get;private set;}
     private bool _retired;
+    internal bool IsRetired=>_retired;
     private long _admissionEpoch;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
@@ -134,7 +136,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         var factory=new BehaviorFactoryContext{Vision=vision,Manipulation=Manipulation,NativeRobot=robot,Features=facade.Engine.Features,
             TallStackData=robot.TallStackContainers.Length == 2 ? robot.TallStackContainers[0] : null,
             SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),Log=facade.Engine.EmitStackLog};
-        var container=new BehaviorContainer(new BehaviorFactory(),factory,
+        var container=Container=new BehaviorContainer(new BehaviorFactory(),factory,
             facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>());
         // fidelity: M15-008 -- 005BBAE8/005BBC9C uses the container's retained config winner.
         Context.NeedsActionIds=BehaviorNeedsActions.FromConfiguredMap(
@@ -177,7 +179,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var entry in facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>())
             _executableMetadata[entry.Key]=bound.TryGetValue(entry.Key.ToString(),out var b) && b is SteppedBehavior {NativeBaseInputs.CheckedExecutableType: {} value}
                 ? value : ExecutableBehaviorNames.FromConfig(entry.Value);
-        manager.BindConfiguredBehaviors(Bound);
+        manager.BindConfiguredBehaviors(Bound,robot);
         // Manager's container is constructed before the BSM container (0050FCAC/BE).
         if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is NativeCantHandleTallStackBehavior && robot.TallStackContainers.Length == 2)
             TallStackOwnerInput=robot.TallStackContainers[0];
