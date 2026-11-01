@@ -345,6 +345,8 @@ public sealed record NeedsActionDelta(string ActionId, double RepairDelta, doubl
 /// </summary>
 public sealed partial class NeedsState
 {
+    // NeedsState+0x60 (manager+0x68): raw UnlockId. Positive reward and persistence inputs remain M15-014 gaps.
+    internal int ForceNextSong { get; set; } // ctor 0x0069BF38..42 initializes to zero
     private readonly NeedsConfig _cfg;
     private readonly SortedDictionary<int,float> _levels = new();
     /// <summary>
@@ -1879,13 +1881,17 @@ public sealed class NeedsManager
     /// <summary><c>RegisterNeedsActionCompleted</c>: the action's deltas (± range) applied; unknown actions are ignored and logged.</summary>
     public bool RegisterNeedsActionCompleted(string actionId)
     {
-        if (!Actions.TryGetValue(actionId, out var d)) { Log?.Invoke($"needs.action_completed_ignored {actionId}"); return false; }
         lock (_gate)
         {
         if (_paused || !_robotConnected) return false; // 0x006960E0..0x006960F8
+        // The +0x39C whitelist defaults off; its Unity onboarding input is outside the standalone app boundary.
         if (!Enum.TryParse<NeedsActionId>(actionId, false, out var action) || Enum.GetName(action) != actionId)
         { SteppedBehavior.ReportMissing("M15-046 host action has no supplied native NeedsActionId: " + actionId); return false; }
+        if (action is NeedsActionId.CozmoSings or NeedsActionId.CozmoSingsCompleted_Sparked)
+            State.ForceNextSong = 0; // 0x00696138..0x00696142, before cooldown
         if (_nowSec < _actionDeadlineSec.GetValueOrDefault(action)) return false; // 0x00696146..0x0069615A
+        if (!Actions.TryGetValue(actionId, out var d))
+        { Log?.Invoke($"M15-046 MISSING host needs action config: {actionId}"); SteppedBehavior.ReportMissing("M15-046 host needs action config missing: " + actionId); return false; }
         float cooldown = (float)d.CooldownSec;
         if (!(MathF.Abs(cooldown) < BitConverter.Int32BitsToSingle(0x3727C5AC)))
             _actionDeadlineSec[action] = _nowSec + cooldown; // 0x006961A6..0x006961DA

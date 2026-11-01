@@ -1,0 +1,21 @@
+# NEEDS-FIX-2 — READY FOR CLAUDE
+
+Live NeedsState now models the raw ForceNextSong UnlockId word, initially0, and actions0x0D/CozmoSings and0x55/CozmoSingsCompleted_Sparked clear it in the native order. No dirty flag, message, persistence or song output is added. Positive ProcessLevelRewards/restored input remains a gap; tests label seeded raw state as a lower input boundary, not a recovered producer.
+
+Primary facts confirmed in actual ELF/CIL before building:
+
+- Field identity: WriteToDevice0x00693E7A..E96 reads manager+68 and converts UnlockId under keyForceNextSong; ReadFromDevice0x00699B46..5E converts that key and stores+68. State constructor0x0069BF38..42 and Init0x0069C11C initialize0; manager embeds state+8, so this is state+60. Positive reward interface0x006995F8..0x00699602 is named but not built here.
+- Native order: pause0x006960E0..EE → robot pointer0x006960F2..F8 → optional whitelist0x006960FA..0x00696136 → clear only0D/55 at0x00696138..42 → deadline rejection0x00696146..5A → action config/cooldown0x0069619C..DA → existing deltas/RNG. Cooldown-rejected song still clears. Guard-rejected actions retain. The native fixed table has no dictionary-missing rejection prefix; host missing config now reports an explicit gap after the native clear/deadline prefix.
+- Whitelist flag+39C defaults0 by ctor0x00692178..188 bulk clear. Only setter0x0069846C writes it, subscribed as app G2E0xCD at0x00692F0C..36; callback0x0069B06A..7E. Direct caller/writer scan found no autonomous engine producer. Shipped Assembly-CSharp OnboardingBaseStage.SetNeedsActionWhitelist token060042BB/RVADCD98 sends it, called by OnEnable/OnDisable only with serialized UI fields. Supported stack API has no such sender.
+
+Manager app-boundary decision2026-11-01: **not supported: Unity onboarding-stage needs-action whitelist, app machinery replaced by the standalone stack**. Keep native default-disabled behavior. No new whitelist/UI/validator/API or robot/API feature exclusion, no status/approval change. Native evidence remains recorded and this decision is reversible.
+
+Changed Needs.cs: raw state slot, two-ID clear, host lookup moved after source prefix. Added NeedsFix1Tests cases for both songs/neighbor/ordinary actions, paused/disconnected guards, cooldown rejection/equality, six native MT words for admitted zero deltas, no RNG on rejection and explicit missing-config boundary. The public action method is exercised; no song or persistence completion claim.
+
+Validation: initial compile failed because a new test assigned a Log event; test-only += correction. Affected **201/201 PASS,0 failed,0 skipped**, test/shutdown0, `.scratch/needs-fix-2/affected-2.log`; original compile log1 preserved. Transient dotnet28588/parent5004 unavailable command retained, separate follow-up0. Independent bounded source/diff PASS. Fidelity and whitespace checks follow metadata refresh. Full five-job batch gate next on committed tip.
+
+Records: M15-046 stays IMPLEMENTATION_GAP, M15-029 unchanged; no whole-record settlement or new record proposed. Positive reward/device/robot adoption, persistenceM15-014 and singing selection/output remain visible gaps. Only M15-046 unresolved prose/generated report refreshed; protected statuses/titles/evidence/approvals equal current main. No hardware run.
+
+Requested workers: needs_fix2_read gpt-6.1-sol medium; builder/reviewer DEFAULT model/effort omitted; actual backends unobserved, configurations unchanged. Reviewer0/compiler1/fixture0. Builder MISSING: unbuilt positive slot inputs/persistence/song output and explicit host config absence, all retained; whitelist scope resolved from native and Unity caller evidence. No production correction required after initial source review. After the shared gate/handoff, next behavior starts without Claude wait.
+
+Full follow-up batch gate **7138/7138 PASS,0 failed,0 skipped** at `a04a9f466b400c4fc962f6e855a461b4f5bf073f`. Logs `.scratch/start-path-followup-batch-gate-1{,-console}.log`; gate/shutdown0. Covers all five jobs; only M15-097 own canonical strategy path is proposed for Claude settlement. All named parent/body/producer/persistence gaps remain; FistBump is an isolated implementation with live row unbound. Protected statuses/evidence/titles/approvals unchanged from main. No hardware claim.

@@ -24,6 +24,9 @@ public sealed class FreeplaySystem : IManagedActivity
     private string? _desiredActivity;
     // Explicit test seam for the recovered cache byte. The canonical Look state-6 producer remains unbound.
     internal void SetDesiredActivityCacheForTest(string? id) => _desiredActivity = ActivityIdOrNull(id);
+    internal string? DesiredActivityCacheForTest => _desiredActivity;
+    internal byte? SelectedChildActivityId { get; private set; }
+    internal string? SelectedChildActivityName { get; private set; }
     /// <summary><c>BehaviorManager+0x65</c>: the invalid-spark latch (C1 §1).</summary>
     private bool _requestedSparkInvalid;
 
@@ -56,6 +59,7 @@ public sealed class FreeplaySystem : IManagedActivity
     public Activity Freeplay { get; }
     public FreeplayInputs Inputs { get; }
     public Activity? Current { get; private set; }
+    private bool _changingActivity;
     public IReadOnlyList<FreeplayDecision> Decisions => _decisions;
     private readonly List<FreeplayDecision> _decisions = new();
     public event Action<FreeplayDecision>? Decided;
@@ -79,10 +83,15 @@ public sealed class FreeplaySystem : IManagedActivity
     /// <summary>The robot was put back on its treads: the activity is kicked out and re-picked from what is around.</summary>
     public void OnRobotPutDown(double nowSec)
     {
-        if (Current is not { } activity || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" ||
+        if (_changingActivity || Current is not { } activity || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" ||
             activity.Id == ActivityIdOrNull(ForcedActivity) || activity.RequireSpark is not null) return;
-        Log?.Invoke($"ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown: Kicking out '{activity.Id}' on put down so we pick up a new one");
-        EndActivity(nowSec);
+        _changingActivity = true;
+        try
+        {
+            Log?.Invoke($"ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown: Kicking out '{activity.Id}' on put down so we pick up a new one");
+            EndActivity(nowSec);
+        }
+        finally { _changingActivity = false; }
     }
 
     /// <summary>
@@ -98,8 +107,7 @@ public sealed class FreeplaySystem : IManagedActivity
     /// It mirrors the invalid-spark latch at <c>BehaviorManager+0x65</c> (C1 §1): <c>HandleMessage</c> case tag 0
     /// sets <c>+0x65 = 1</c> only when <c>UnlockId == 0x55</c> (0x005A3C92..0x005A3C9A); the stack's
     /// <c>null</c> is that invalid spark. A non-null request does not clear the host latch.
-    /// The native ActivateSpark input now reaches BehaviorManager's separate checked fields;
-    /// its raw-ID picker/specialized activity join is still MISSING and does not call this string seam.
+    /// The native raw-ID picker reads BehaviorManager fields; this legacy string seam is only used by the public host picker.
     /// </summary>
     // fidelity: M15-006
     public void SetRequestedSpark(string? spark)
@@ -183,6 +191,7 @@ public sealed class FreeplaySystem : IManagedActivity
     // fidelity: M15-002
     IBehavior? IManagedActivity.GetDesiredActiveBehavior(IBehavior? current, double nowSec)
     {
+        if (_changingActivity) return current; // host callback reentry cannot nest an activity transition
         _switchedFromId = null;
         Activity? barred = null;
         bool pick = Current is null;
@@ -215,44 +224,65 @@ public sealed class FreeplaySystem : IManagedActivity
 
         if (pick)
         {
-            if (_manager.RequestedSparkId != 0x55 || Inputs.RequestedSpark is not null)
+            if (Inputs.RequestedSpark is not null)
             {
-                ReportActivityMissing("MISSING: M15-006 raw requested Spark ID to activity bucket join; retaining current selection");
+                ReportActivityMissing("MISSING: M15-006 legacy host Spark string to native raw request join; retaining current selection");
                 return current;
             }
-            if (_manager.SparkCancelLatch != 0 && _manager.ActiveSparkId == _manager.RequestedSparkId) barred = Current;
-            // The absent bucket returns unchanged (0x005ADCD8..CF6); the outer initial/retry path still applies.
-            bool hasBucket = Freeplay.SubActivities.Any(a => a.Type != "Missing" && a.RequireSpark is null);
+            int requested = _manager.RequestedSparkId; // picker and pause snapshot, 0x005AE40E/005AE4E8
+            if (_manager.SparkCancelLatch != 0 && _manager.ActiveSparkId == requested) barred = Current;
+            // Unknown configured members may change the native bucket's result; do not guess past them.
+            if (Freeplay.SubActivities.Any(a => a.Type == "Missing"))
+            {
+                ReportActivityMissing("MISSING: M15-006 configured activity has unknown Spark bucket and type; selection retained");
+                return current;
+            }
+            // A missing map key retains the current activity; an exhausted bucket selects null.
+            bool hasBucket = Freeplay.SubActivities.Any(a => a.Type != "Missing" && a.RequiredSparkId == requested);
             string pickReason;
             Activity? picked;
-            if (hasBucket) picked = PickNewActivity(nowSec, out pickReason, barred);
+            if (hasBucket) picked = PickNewActivityForId(nowSec, requested, out pickReason, barred);
             else { picked = Current; pickReason = "no activities for requested spark"; Log?.Invoke("ActivityFreeplay.PickNewActivityForSpark: " + pickReason); }
-            _desiredActivity = null;
+            if (picked is { Type: "Sparked", SparkedOwner: not { CanExecute: true } } && !ReferenceEquals(picked, Current))
+            {
+                ReportActivityMissing($"MISSING: M15-059 Sparked activity '{picked.Id}' native lifecycle owner is unavailable or cannot execute; selection retained");
+                return current;
+            }
             bool changed = !ReferenceEquals(picked, Current);
             if (changed)
             {
-                EndActivity(nowSec);
-                Current = picked;
-                if (picked is not null)
+                _changingActivity = true;
+                try
                 {
-                    picked.OnSelected(nowSec, ReportActivityMissing);
-                    _ctx.LastActivitySwitchSec = nowSec;
-                    Log?.Invoke($"robot.freeplay_goal_started {picked.Id}: {pickReason}");
+                    EndActivity(nowSec);
+                    Current = picked;
+                    if (picked is not null)
+                    {
+                        SelectedChildActivityId = ActivityIdNames.FromName(picked.Id);
+                        SelectedChildActivityName = ActivityIdNames.Name(ActivityIdNames.FromName(Freeplay.Id)) + "_" + ActivityIdNames.Name(SelectedChildActivityId.Value);
+                        ReportActivityMissing("MISSING: M15-006 SetActivityIDFromSubActivity 0x005AD8C8 parent+92/+94 downstream owner/consumers are unbound");
+                        picked.OnSelected(nowSec, ReportActivityMissing);
+                        _ctx.LastActivitySwitchSec = nowSec;
+                        Log?.Invoke($"robot.freeplay_goal_started {picked.Id}: {pickReason}");
+                    }
                 }
+                finally { _changingActivity = false; }
             }
             if (changed)
             {
                 _manager.SwitchToNativeRequestedSpark();
                 _requestedSparkInvalid = false;
-                SparkPauseChanged?.Invoke(_manager.RequestedSparkId != 0x55);
+                SparkPauseChanged?.Invoke(requested != 0x55);
             }
             if (Current is null)
             {
                 Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})");
+                _desiredActivity = null; // normal pick tail follows the no-current log (0x005AE5A4..5E8)
                 _recordedThisTick = true;
                 return null;
             }
             if (initialPick || changed) decision = ChooseActivityBehavior(Current, current, nowSec);
+            _desiredActivity = null; // after lifecycle, switch, pause and chooser (0x005AE5E0)
         }
 
         var desired = decision.Behavior;
@@ -312,13 +342,14 @@ public sealed class FreeplaySystem : IManagedActivity
     private void EndActivity(double nowSec)
     {
         if (Current is null) return;
-        double ranSec = Current.RunningSec(nowSec);
-        Current.OnDeselected(nowSec, ReportActivityMissing, Inputs.Needs);
+        var ending = Current;
+        double ranSec = ending.RunningSec(nowSec);
+        ending.OnDeselected(nowSec, ReportActivityMissing, Inputs.Needs);
         // No needs action is reported here. An activity's needsActionID is stored at IActivity+0x1C
         // (ReadConfig, 0x005B2A9C) and never read again anywhere in the engine; the behaviours report their
         // own (IBehavior::NeedActionCompleted 0x005BE40C, see BehaviorNeedsActions). An earlier version of
         // this stack reported the activity's id when the activity ended, which the engine never does.
-        Log?.Invoke($"robot.freeplay_goal_ended {Current.Id}: ran {(int)ranSec} s");
+        Log?.Invoke($"robot.freeplay_goal_ended {ending.Id}: ran {(int)ranSec} s");
         Current = null;
         // The engine only touches the Spark pause flag (flag 1) after a pick (row 20), never here.
     }
@@ -346,8 +377,16 @@ public sealed class FreeplaySystem : IManagedActivity
     // fidelity: M15-013
     public Activity? PickNewActivity(double nowSec, out string reason, Activity? barred = null)
     {
-        string? desiredId = _desiredActivity; // The canonical state-6 supplier is not yet bound.
         var bucket = Freeplay.SubActivities.Where(a => a.Type != "Missing" && a.RequireSpark == Inputs.RequestedSpark).ToList();
+        return PickFromBucket(nowSec, bucket, out reason, barred);
+    }
+
+    private Activity? PickNewActivityForId(double nowSec, int requested, out string reason, Activity? barred) =>
+        PickFromBucket(nowSec, Freeplay.SubActivities.Where(a => a.Type != "Missing" && a.RequiredSparkId == requested).ToList(), out reason, barred);
+
+    private Activity? PickFromBucket(double nowSec, List<Activity> bucket, out string reason, Activity? barred)
+    {
+        string? desiredId = _desiredActivity; // The canonical state-6 supplier is not yet bound.
         if (bucket.Count == 0) { reason = $"no activities for the requested spark '{Inputs.RequestedSpark ?? "none"}'"; return null; }
         var notes = new List<string>();
         // +0x91 first, then +0x90 (0x005ADC6A..0x005ADC76); a name the ActivityID enum does not know is 0 and forces nothing (ActivityIDFromString 0x0076706C..0x007670D4)

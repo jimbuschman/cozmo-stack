@@ -142,7 +142,7 @@ public class FreeplayTests
         var bound = new Dictionary<string,IBehavior> { ["b"] = behavior };
         var first = Act("PlayAlone", 1, "b", bound); var hiking = Act("Hiking", 2, "b", bound);
         var fp = new FreeplaySystem(new BehaviorManager(ctx), ctx, FpNamed(("Hiking","Hiking","Hiking","Hiking"), first, hiking), bound,
-            new FreeplayInputs { FaceKnown = true, LocatedCubes = 1 });
+            new FreeplayInputs { FaceKnown = true });
         Assert.Equal("PlayAlone", fp.Tick(1, 1000).Activity);
     }
 
@@ -215,7 +215,7 @@ public class FreeplayTests
         typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old); fp.ForcedActivity="Hiking";
         Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(running,1)); Assert.Same(old,fp.Current);
         manager.SetNativeRequestedSpark(17,0);
-        Assert.Same(running,((IManagedActivity)fp).GetDesiredActiveBehavior(running,2)); Assert.Same(old,fp.Current);
+        Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(running,2)); Assert.Same(old,fp.Current);
         var candidate=new Fake("candidate"); int calls=0;
         var retry=new Activity { Id="PlayAlone", Strategy=new ActivityStrategy { WantsToEndForTest=()=>true },
             Chooser=new OracleChooser(_=>{calls++;return candidate;}) };
@@ -1657,6 +1657,163 @@ public class FreeplayTests
     /// A freeplay tree of the given sub-activities. Its desired-activity names map to no ActivityID (<c>ActivityIDFromString</c> 0x00766C68 returns 0 for a name it does not know,
     /// 0x0076706C..0x007670D4), so the first pick is not forced to any activity (<c>PickNewActivityForSpark</c> takes the +0x90 id only when it is non-zero, 0x005ADC72..0x005ADC76).
     /// </summary>
+    // Reach: unit native table and configured bucket keys (0x00794D6C, 0x005B2B02).
+    [Fact]
+    public void SparkRawNamesAndConfigKeysFollowNativeTable()
+    {
+        Assert.Equal("Invalid",NativeUnlockNames.Lookup(0)); Assert.Equal("FistBump",NativeUnlockNames.Lookup(35));
+        Assert.Equal("Singing_EntryOfTheGladiators",NativeUnlockNames.Lookup(55)); Assert.Equal("Count",NativeUnlockNames.Lookup(85));
+        foreach(var id in new[]{4,7,8,58,60,86,-1,int.MinValue,int.MaxValue}) Assert.Null(NativeUnlockNames.Lookup(id));
+        Assert.Equal(85,new Activity{Id="a",Strategy=new()}.RequiredSparkId);
+        Assert.Equal(35,new Activity{Id="b",Strategy=new(),RequireSpark="FistBump"}.RequiredSparkId);
+        var errors=new List<byte[]>(); NativeUnlockNames.StderrForTest=errors.Add;
+        try { Assert.Equal(0,new Activity{Id="c",Strategy=new(),RequireSpark="unknown"}.RequiredSparkId); Assert.Single(errors); }
+        finally { NativeUnlockNames.StderrForTest=null; }
+    }
+
+    // Reach: synthetic configured picker via actual IManagedActivity entry; no canonical parent admission.
+    [Fact]
+    public void SparkRawPickerDistinguishesMissingBucketAndExhaustedBucket()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx);
+        var old=new Activity { Id="PlayAlone", Strategy=new() }; var running=new Fake("running");
+        var rejected=new Activity { Id="SparksFistBump",RequireSpark="FistBump",Strategy=new ActivityStrategy() };
+        var fp=new FreeplaySystem(manager,ctx,Fp(rejected),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old); old.OnSelected(0);
+        bool? pause=null; fp.SparkPauseChanged=v=>pause=v; fp.ForcedActivity="Hiking";
+        manager.HandleSparkManagerMessage(new(0,0x55)); manager.SetNativeRequestedSpark(256,0);
+        Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(running,1));
+        Assert.Same(old,fp.Current); Assert.Equal(85,manager.ActiveSparkId); Assert.Equal(1,manager.SparkCancelLatch); Assert.Null(pause);
+        manager.SetNativeRequestedSpark(35,0);
+        Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(running,2));
+        Assert.Null(fp.Current); Assert.Equal(35,manager.ActiveSparkId); Assert.Equal(0,manager.SparkCancelLatch); Assert.True(pause);
+    }
+
+    // Reach: picker lifecycle callback changes request after picker snapshot; pause uses snapshot and switch reloads.
+    [Fact]
+    public void SparkPickerPauseUsesSnapshotWhileSwitchReloadsRequest()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
+        var old=new Activity { Id="PlayAlone",Strategy=new() }; var next=new Activity { Id="SparksFistBump",RequireSpark="FistBump",Strategy=new() };
+        var fp=new FreeplaySystem(manager,ctx,Fp(next),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old); old.OnSelected(0);
+        bool? pause=null; fp.SparkPauseChanged=v=>pause=v;
+        fp.Log+=line=>{if(line.StartsWith("robot.freeplay_goal_ended"))manager.SetNativeRequestedSpark(85,1);};
+        manager.SetNativeRequestedSpark(35,0);
+        ((IManagedActivity)fp).GetDesiredActiveBehavior(running,1);
+        Assert.Same(next,fp.Current); Assert.Equal(85,manager.ActiveSparkId); Assert.Equal(1,manager.ActiveSparkSoft); Assert.True(pause);
+    }
+
+    // Reach: synthetic missing config entry; its key is unknown, so no native absence is inferred.
+    [Fact]
+    public void SparkUnknownConfiguredBucketHoldsSelection()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
+        var old=new Activity{Id="PlayAlone",Strategy=new()};
+        var unknown=new Activity{Id="unknown",Type="Missing",Strategy=new()};
+        var fp=new FreeplaySystem(manager,ctx,Fp(unknown),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old);
+        var lines=new List<string>(); rig.Robot.Engine.StackLogLine+=lines.Add;
+        manager.SetNativeRequestedSpark(35,0);
+        Assert.Same(running,((IManagedActivity)fp).GetDesiredActiveBehavior(running,1));
+        Assert.Same(old,fp.Current); Assert.Equal(85,manager.ActiveSparkId);
+        Assert.Contains(lines,x=>x.Contains("unknown Spark bucket"));
+    }
+
+    // Reach: supplied raw manager state and ordinary configured candidates, including cancel latch.
+    [Fact]
+    public void SparkCancelLatchBarsCurrentButForcedCurrentBypassesIt()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
+        int ends=0; var old=new Activity{Id="PlayAlone",Strategy=new ActivityStrategy{WantsToEndForTest=()=>{ends++;return false;}}};
+        var next=new Activity{Id="Hiking",Strategy=new()};
+        var fp=new FreeplaySystem(manager,ctx,Fp(old,next),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old); old.OnSelected(0);
+        manager.HandleSparkManagerMessage(new(0,85)); fp.RequestNewActivity();
+        ((IManagedActivity)fp).GetDesiredActiveBehavior(running,1);
+        Assert.Same(next,fp.Current); Assert.Equal(0,ends); Assert.Equal(0,manager.SparkCancelLatch);
+        manager.HandleSparkManagerMessage(new(0,85)); fp.ForcedActivity="Hiking"; fp.RequestNewActivity();
+        ((IManagedActivity)fp).GetDesiredActiveBehavior(running,2);
+        Assert.Same(next,fp.Current); Assert.Equal(1,manager.SparkCancelLatch);
+    }
+
+    // Reach: legacy host seam; its unestablished mapping continues to hold selection visibly.
+    [Fact]
+    public void LegacySparkStringDoesNotBecomeARawRequest()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
+        var fp=new FreeplaySystem(manager,ctx,Fp(new Activity{Id="Hiking",Strategy=new()}),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        fp.SetRequestedSpark("FistBump");
+        Assert.Same(running,((IManagedActivity)fp).GetDesiredActiveBehavior(running,1));
+        Assert.Null(fp.Current); Assert.Equal(85,manager.RequestedSparkId);
+    }
+
+    // Reach: standalone host callback reentry during deselection; no recursive transition.
+    [Fact]
+    public void SparkSelectionIgnoresReentrantPutdownDuringLifecycle()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
+        var old=new Activity{Id="PlayAlone",Strategy=new()}; var next=new Activity{Id="SparksFistBump",RequireSpark="FistBump",Strategy=new()};
+        var fp=new FreeplaySystem(manager,ctx,Fp(next),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old); old.OnSelected(0);
+        int ended=0; fp.Log+=line=>{if(line.StartsWith("robot.freeplay_goal_ended")){ended++;fp.OnRobotPutDown(1);}};
+        manager.SetNativeRequestedSpark(35,0); ((IManagedActivity)fp).GetDesiredActiveBehavior(running,1);
+        Assert.Equal(1,ended); Assert.Same(next,fp.Current); Assert.Equal(35,manager.ActiveSparkId);
+    }
+
+    // Reach: synthetic standalone picker; 0x005AD8CE..72 metadata and 0x005ADE0C null retention.
+    [Fact]
+    public void SparkSelectionWritesNativeMetadataAndNullRetainsIt()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
+        var unknown=new Activity{Id="unknown-name",RequireSpark="FistBump",Strategy=new()};
+        var fp=new FreeplaySystem(manager,ctx,Fp(unknown),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        Assert.Null(fp.SelectedChildActivityId); Assert.Null(fp.SelectedChildActivityName);
+        manager.SetNativeRequestedSpark(35,0); ((IManagedActivity)fp).GetDesiredActiveBehavior(running,1);
+        Assert.Same(unknown,fp.Current); Assert.Equal((byte)0,fp.SelectedChildActivityId); Assert.Equal("Freeplay_Invalid",fp.SelectedChildActivityName);
+        fp.ForcedActivity="Hiking"; ((IManagedActivity)fp).GetDesiredActiveBehavior(running,2);
+        Assert.Null(fp.Current); Assert.Equal((byte)0,fp.SelectedChildActivityId); Assert.Equal("Freeplay_Invalid",fp.SelectedChildActivityName);
+    }
+
+    // Reach: synthetic desired cache observed during selected activity chooser, then cleared at normal tail.
+    [Fact]
+    public void SparkPickClearsDesiredCacheAfterLifecycleAndChooser()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
+        FreeplaySystem? fp=null; string? observed=null;
+        var next=new Activity{Id="Hiking",Strategy=new(),Chooser=new OracleChooser(_=>{observed=fp!.DesiredActivityCacheForTest;return null;})};
+        fp=new FreeplaySystem(manager,ctx,Fp(next),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        fp.SetDesiredActivityCacheForTest("Hiking"); ((IManagedActivity)fp).GetDesiredActiveBehavior(running,1);
+        Assert.Equal("Hiking",observed); Assert.Null(fp.DesiredActivityCacheForTest);
+    }
+
+    // Reach: shipped standalone activity tree with supplied manager request; public canonical ingress is separate.
+    [Fact]
+    public void ShippedStandaloneSparkWithoutOwnerDoesNotRunGenericLifecycle()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); using var stack=FreeplayStack.CreateStandalone(ObbRoot()!,rig.Robot,ctx,()=>0,rig.Vision,rig.M,withReactions:false);
+        var fp=stack.Freeplay; var spark=fp.Freeplay.SubActivities.First(a=>a.Type=="Sparked" && a.SparkedOwner is null && a.RequireSpark is not null);
+        var lines=new List<string>(); rig.Robot.Engine.StackLogLine+=lines.Add;
+        var running=new Fake("running"); stack.Manager.SetNativeRequestedSpark(spark.RequiredSparkId,0); fp.ForcedActivity=spark.Id;
+        Assert.Same(running,((IManagedActivity)fp).GetDesiredActiveBehavior(running,1));
+        Assert.Null(fp.Current); Assert.Null(spark.SelectedAtSec); Assert.Null(stack.Manager.Current);
+        Assert.Equal(85,stack.Manager.ActiveSparkId); Assert.Equal(spark.RequiredSparkId,stack.Manager.RequestedSparkId);
+        Assert.Contains(lines,line=>line.Contains("M15-059") && line.Contains("native lifecycle owner is unavailable or cannot execute"));
+    }
+
+    // Reach: synthetic host Decided callback observes the no-current record before the native cache-clear tail.
+    // The host callback itself is not a native API claim; 0x005AE5A4..5E8 establishes the ordering.
+    [Fact]
+    public void NoCurrentRecordPrecedesDesiredCacheClear()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx);
+        var fp=new FreeplaySystem(manager,ctx,Fp(),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        string? observed=null; fp.SetDesiredActivityCacheForTest("Hiking");
+        fp.Decided+=_=>observed=fp.DesiredActivityCacheForTest;
+        Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(null,1));
+        Assert.Equal("Hiking",observed); Assert.Null(fp.DesiredActivityCacheForTest);
+    }
+
     private static Activity Fp(params Activity[] subs) => FpNamed(("", "", "", ""), subs);
 
     /// <summary>A freeplay tree whose <c>desiredActivityNames</c> are the shipped ones (faces and cube, face, cube, neither).</summary>

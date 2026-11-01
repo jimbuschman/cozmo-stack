@@ -50,15 +50,17 @@ public sealed class SparkManagerInputCheckedRowsTests
         var manager=robot.Engine.Robot!.BehaviorManagerOwner!;
         Assert.Equal(int.MinValue,manager.RequestedSparkId);Assert.Equal((byte)0,manager.RequestedSparkSoft);
         Assert.Equal(0x55,manager.ActiveSparkId);Assert.Null(stack.Freeplay.Inputs.RequestedSpark);
-        Assert.Contains(missing,s=>s.Contains("native UnlockId EnumToString"));
-        Assert.Contains(missing,s=>s.Contains("raw-ID Freeplay pick/switch"));
+
+
+        Assert.Contains(missing,s=>s.Contains("canonical Freeplay parent admission"));
         Assert.Contains(missing,s=>s.Contains("M15-059")&&s.Contains("SparksTrackLaser"));
-        Assert.DoesNotContain("BehaviorManager.SetRequestedSpark",keys); // no invented name
+        Assert.Contains("BehaviorManager.SetRequestedSpark",keys);
         stack.ActivateSpark(0x55);robot.Engine.Tick();Assert.Equal((byte)1,manager.SparkCancelLatch);
         stack.ActivateSpark(0x40);robot.Engine.Tick();Assert.Equal((byte)1,manager.SparkCancelLatch);
     }
 
     [Fact]
+    // Reach: actual canonical and explicit fixture subscriptions on the same dispatcher.
     public void SetterStoresBeforeInfoAndUnlockedCaseDoesNotTouchCancelLatch()
     {
         using var robot=CozmoRobot.CreateOffline();using var manager=new BehaviorManager(Context(robot));manager.AttachSparkInput();
@@ -66,12 +68,13 @@ public sealed class SparkManagerInputCheckedRowsTests
         var logs=new List<string>();robot.Engine.LogEntry+=e=>{
             if(e.Name!="BehaviorManager.SetRequestedSpark")return;
             Assert.Equal(EngineLogLevel.Info,e.Level);Assert.Equal("Behaviors",e.Channel);Assert.Empty(e.Data);
-            Assert.Equal(e.Text.Contains("soft")?(byte)1:(byte)0,manager.RequestedSparkSoft);logs.Add(e.Text);
+            if(e.Text.Contains("-input")) Assert.Equal(e.Text.Contains("soft")?(byte)1:(byte)0,manager.RequestedSparkSoft);
+            logs.Add(e.Text);
         };
         robot.Engine.AnimationMessages.Deliver(0x96,false,new SparkManagerMessage(0,0x55));
         robot.Engine.AnimationMessages.Deliver(0x96,false,new SparkManagerMessage(1,0));
         Assert.Equal(0,manager.RequestedSparkId);Assert.Equal((byte)1,manager.RequestedSparkSoft);Assert.Equal((byte)1,manager.SparkCancelLatch);
-        Assert.Equal(new[]{"requested hard spark is 'count-input'","requested soft spark is 'name-input'"},logs);
+        Assert.Equal(new[]{"requested hard spark is 'Count'","requested hard spark is 'count-input'","requested soft spark is 'Invalid'","requested soft spark is 'name-input'"},logs);
     }
 
     [Fact]
@@ -92,12 +95,12 @@ public sealed class SparkManagerInputCheckedRowsTests
     }
 
     [Fact]
-    public void MissingSwitchNameKeepsEveryStateField()
+    public void NullLookupNameDoesNotBlockSwitch()
     {
         using var robot=CozmoRobot.CreateOffline();using var manager=new BehaviorManager(Context(robot));
-        manager.HandleSparkManagerMessage(new(0,0x55));manager.SetNativeRequestedSpark(3,1);manager.SwitchToNativeRequestedSpark();
-        Assert.Equal(0x55,manager.ActiveSparkId);Assert.Equal((byte)0,manager.ActiveSparkSoft);Assert.Equal((byte)1,manager.SparkCancelLatch);
-        Assert.Equal(unchecked((int)0xBF800000),BitConverter.SingleToInt32Bits(manager.SparkSwitchTime));
+        manager.HandleSparkManagerMessage(new(0,0x55));manager.SetNativeRequestedSpark(4,1);manager.SwitchToNativeRequestedSpark();
+        Assert.Equal(4,manager.ActiveSparkId);Assert.Equal((byte)1,manager.ActiveSparkSoft);Assert.Equal((byte)0,manager.SparkCancelLatch);
+        Assert.Equal(0,BitConverter.SingleToInt32Bits(manager.SparkSwitchTime));
     }
 
     [Fact]

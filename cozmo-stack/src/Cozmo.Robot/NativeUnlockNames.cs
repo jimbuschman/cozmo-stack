@@ -15,5 +15,7 @@ internal static class NativeUnlockNames
         else { using var stderr=Console.OpenStandardError();stderr.Write(line);stderr.Flush(); }
         return 0;
     }
-    internal static string NameOf(uint id)=>Enum.GetName((UnityUnlockId)id)??"(null)";
+    // 0x00794D6C: nullable table, including holes and unsigned out-of-range.
+    internal static string? Lookup(int id)=>unchecked((uint)id) <= 0x55 ? Enum.GetName((UnityUnlockId)(uint)id) : null;
+    internal static string NameOf(uint id)=>Lookup(unchecked((int)id))??"(null)";
 }
