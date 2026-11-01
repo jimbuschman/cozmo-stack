@@ -299,7 +299,7 @@ public sealed class BehaviorFactory
         // case 0x26: BehaviorPlayAnimSequence(robot, config, true): config animTriggers and num_loops (0x005bff24..0x005c004c). This is also
         // the whole of the shipped Hiccup behaviour (reactions/hiccup.json: animTriggers ["Hiccup"]); the timed hiccup/cure logic is the M10
         // strategy ReactionTriggerStrategyHiccup, which is not this class.
-        [BehaviorClass.PlayAnim] = (ctx, json) => PlayAnimBehavior.FromConfig(json, ctx.Log),
+        [BehaviorClass.PlayAnim] = CreatePlayAnim,
         [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
         [BehaviorClass.Wait] = (ctx,json)=>new NativeWaitBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
@@ -330,6 +330,12 @@ public sealed class BehaviorFactory
         [BehaviorClass.VisitInterestingEdge] = (ctx, json) => VisitInterestingEdgeBehavior.FromConfig(json,ctx.NativeRobot),
         [BehaviorClass.ReactToSparked] = (ctx, json) => new ReactToSparkedBehavior(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
     };
+    private static IBehavior CreatePlayAnim(BehaviorFactoryContext ctx,JsonElement json)
+    {
+        var behavior=PlayAnimBehavior.FromConfig(json,ctx.Log);
+        if(behavior.Id=="ReactToObstacle" && ctx.NativeRobot is not null)behavior.BindNativeReact(ctx,json);
+        return behavior;
+    }
     private static IBehavior CreateDriveOff(BehaviorFactoryContext ctx,JsonElement json)
     {
         var manipulation=ctx.Manipulation??throw new InvalidOperationException("MISSING: DriveOff factory actual manipulation owner");
