@@ -5,11 +5,19 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
-// A supplier represents the native weak pair and its lock operation. It must not retain a
-// managed snapshot or infer expiry from GC. Production has no supplier until that join is read.
+// The canonical supplier represents the native weak pair and explicit strong lock lease;
+// managed snapshots do not own it and GC never determines expiry.
 internal interface ITallStackWeakTarget
 {
-    bool TryLock(out (uint Bottom, int Height)? value);
+    bool TryLock(out TallStackLease? lease);
+}
+
+internal sealed class TallStackLease : IDisposable
+{
+    private Action? _release;
+    internal (uint Bottom, int Height) Value { get; }
+    internal TallStackLease((uint Bottom, int Height) value, Action? release = null) { Value = value; _release = release; }
+    public void Dispose() => Interlocked.Exchange(ref _release, null)?.Invoke();
 }
 
 // fidelity: M15-087
@@ -65,12 +73,13 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
         { MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack configured owner to delocalization recipient join unavailable or changed"); return null; }
         return _state ??= supplied;
     }
-    private bool TryLock(ITallStackWeakTarget? target, long generation, out (uint Bottom, int Height)? value)
+    private bool TryLock(ITallStackWeakTarget? target, long generation, out TallStackLease? value)
     {
         if (target is null) { value = null; return true; }
         bool available = target.TryLock(out value);
-        if (!HostExecutionVersionCurrent(generation)) return false;
+        if (!HostExecutionVersionCurrent(generation)) { value?.Dispose(); value = null; return false; }
         if (available) return true;
+        value?.Dispose(); value = null;
         MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack selected weak lock unavailable at 005ECD8C/005ECE48"); return false;
     }
     private bool RunnableCore(long generation)
@@ -89,13 +98,17 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
             MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack canonical weak-lock and last-strong-owner input unavailable at 005ED200; no GC or snapshot expiry substituted"); return false;
         }
         using var mutation = _m.World.EnterPoseMutation();
-        var target = supplier();
+        ITallStackWeakTarget? target;
+        try { target = supplier(); }
+        catch (NativeConfigurationUnavailable error)
+        { state.TargetKnown = false; MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack canonical input unavailable: " + error.Message); return false; }
         if (!HostExecutionVersionCurrent(generation)) return false;
         state.Target = target;
         state.TargetKnown = true;
         if (!TryLock(target, generation, out var locked)) return false;
-        if (locked is not {} stack || stack.Height < _minimum) return false;
-        var bottom = _m.World.GetLocatedObjectByIdHelper(stack.Bottom);
+        using var lease = locked;
+        if (lease is null || lease.Value.Height < _minimum) return false;
+        var bottom = _m.World.GetLocatedObjectByIdHelper(lease.Value.Bottom);
         if (bottom is null) return false;
         if (!state.HasStoredPose) return true;
         if (state.StoredPose is not {} pose)
@@ -111,7 +124,8 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
         { MarkReadinessUnavailable(); ReportMissing("CantHandleTallStack Init has no supplied canonical weak target; host admission unavailable"); InitFailed = true; return; }
         if (!TryLock(state.Target, generation, out var locked))
         { if (HostExecutionVersionCurrent(generation)) InitFailed = true; return; }
-        if (locked is not {} stack || _m.World.GetLocatedObjectByIdHelper(stack.Bottom) is not {} bottom)
+        using var lease = locked;
+        if (lease is null || _m.World.GetLocatedObjectByIdHelper(lease.Value.Bottom) is not {} bottom)
         { InitFailed = true; return; }
         state.StoredPose?.Dispose();
         state.StoredPose = new Pose3d(bottom.NativePose);
@@ -148,7 +162,7 @@ internal sealed class NativeCantHandleTallStackBehavior : SteppedBehavior, IDisp
         if (Interlocked.Exchange(ref _retired, 1) != 0) return;
         Interlocked.Increment(ref _generation);
         _state?.ClearStack();
-        if (_state is {} state) { state.StoredPose?.Dispose(); state.StoredPose = null; }
+        if (_state is {} state) { state.StoredPose?.Dispose(); state.StoredPose = null; state.HasStoredPose = false; }
         RetireActionCompletionOwner();
     }
 }

@@ -1,4 +1,5 @@
 using Cozmo.Robot.Vision;
+using Cozmo.Robot.Behavior;
 namespace Cozmo.Robot.Manipulation;
 
 // fidelity: M12-049 -- CM13-05 rows4-14,27-29. No host time, midpoint, retained pose or global identity registry.
@@ -15,6 +16,25 @@ internal sealed class NativeStackConfiguration(uint bottom,uint middle,uint top)
     internal uint Bottom { get; }=bottom;
     internal uint Middle { get; }=middle;
     internal uint Top { get; }=top;
+    private readonly object _lifetimeGate = new();
+    private int _strong;
+    private bool _expired;
+    internal void RetainNative() { lock (_lifetimeGate) { if (_expired) throw new InvalidOperationException("Expired stack cannot be retained"); ++_strong; } }
+    internal void ReleaseNative() { lock (_lifetimeGate) { if (--_strong == 0) _expired = true; } }
+    internal ITallStackWeakTarget WeakTarget => new StackWeakTarget(this);
+    private sealed class StackWeakTarget(NativeStackConfiguration owner) : ITallStackWeakTarget
+    {
+        public bool TryLock(out TallStackLease? lease)
+        {
+            lock (owner._lifetimeGate)
+            {
+                if (owner._expired || owner._strong == 0) { lease = null; return true; }
+                ++owner._strong;
+                lease = new TallStackLease((owner.Bottom, owner.BlockIds.Count), owner.ReleaseNative);
+                return true;
+            }
+        }
+    }
     internal StackOfCubes View { get; }=new(Array.AsReadOnly(middle==uint.MaxValue?new[]{bottom,top}:new[]{bottom,middle,top}));
     internal override bool SourceEquals(NativeBlockConfiguration other)=>other is NativeStackConfiguration s&&Bottom==s.Bottom&&Middle==s.Middle&&Top==s.Top;
 }

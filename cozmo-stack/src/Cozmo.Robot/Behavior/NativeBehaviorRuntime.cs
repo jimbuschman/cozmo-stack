@@ -17,10 +17,18 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal NativePickupTargetCache? PickupTargets {get;}
     // Native input boundaries; canonical pyramid suppliers resolve the live owner at each call.
     // Tests can replace these delegates for isolated lifecycle checks.
-    // Null until the native weak owner and last-strong-release semantics are recovered.
+    // Bound below to the actual configuration owner; tests may replace this seam.
     internal Func<ITallStackWeakTarget?>? TallStackWeakInput {get;set;}
-    // Explicitly supplied recipient join; no mapping from the two slots is assumed.
+    // The manager's configured behavior owns the first recipient (0050FCAC/BE).
     internal TallStackDelocalizationData? TallStackOwnerInput {get;set;}
+    private sealed class CheckedTallStackWeak(ITallStackWeakTarget target, Func<bool> available) : ITallStackWeakTarget
+    {
+        public bool TryLock(out TallStackLease? lease)
+        {
+            if (!available()) { lease=null; return false; }
+            return target.TryLock(out lease);
+        }
+    }
     internal Func<int,uint>? PyramidTargetInput {get;set;}
     internal Func<IReadOnlyList<NativePyramidBase>>? PyramidBaseStrongInput {get;set;}
     internal Func<IReadOnlyList<NativePyramidConfiguration>>? PyramidFullStrongInput {get;set;}
@@ -121,6 +129,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             }
         }
         var factory=new BehaviorFactoryContext{Vision=vision,Manipulation=Manipulation,NativeRobot=robot,Features=facade.Engine.Features,
+            TallStackData=robot.TallStackContainers.Length == 2 ? robot.TallStackContainers[0] : null,
             SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),Log=facade.Engine.EmitStackLog};
         var container=new BehaviorContainer(new BehaviorFactory(),factory,
             facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>());
@@ -135,6 +144,20 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(manager.Find(behavior.Id) is null)manager.Add(behavior);
         }
         Bound=bound;
+        // Manager's container is constructed before the BSM container (0050FCAC/BE).
+        if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is NativeCantHandleTallStackBehavior && robot.TallStackContainers.Length == 2)
+            TallStackOwnerInput=robot.TallStackContainers[0];
+        bool TallStackAvailable() =>
+            !_retired && ReferenceEquals(robot.Engine.Robot,robot) && ReferenceEquals(robot.NativeBehaviorRuntime,this) &&
+            Manipulation is {} m && ReferenceEquals(m.World,facade.LocalizationWorld) &&
+            ReferenceEquals(m.World.NativeConfigurations,Configurations) && !Configurations.Retired && Configurations.InputsAvailable;
+        TallStackWeakInput=()=>
+        {
+            if (!TallStackAvailable())
+                throw new NativeConfigurationUnavailable("actual TallStack configuration owner or inputs unavailable");
+            var target=Configurations.Tallest()?.WeakTarget;
+            return target is null ? null : new CheckedTallStackWeak(target,TallStackAvailable);
+        };
         string? resources=facade.Engine.Options.ResourcesPath;
         if(resources is not null && Directory.Exists(Path.Combine(resources,"config","engine","behaviorSystem","activities"))
             &&File.Exists(Path.Combine(resources,"config","engine","behaviorSystem","activities_config.json")))
