@@ -9,8 +9,8 @@ public sealed record FreeplayDecision(double AtSec, string? Activity, string? Be
 /// <summary>
 /// The bounded ActivityFreeplay chooser (0x005AE29C), called by BehaviorManager after reactions.
 /// A kept activity may cause one re-pick; the newly picked activity is asked once. Putdown immediately deselects
-/// eligible activities but does not calculate the object-derived desired cache. The Look state-6 cache supplier
-/// and filtered located-object query remain missing.
+/// eligible activities but does not calculate the object-derived desired cache. The canonical Look state-6
+/// path calculates it through the retained parent; standalone callers still lack that owner join.
 /// </summary>
 // fidelity: M15-002
 // fidelity: M15-006
@@ -22,9 +22,29 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
     private readonly IReadOnlyDictionary<string, IBehavior> _bound;
     private bool _requestPending;
     private string? _desiredActivity;
-    // Explicit test seam for the recovered cache byte. The canonical Look state-6 producer remains unbound.
+    // Explicit standalone test seam; canonical Look state6 writes the retained parent directly.
     internal void SetDesiredActivityCacheForTest(string? id) => _desiredActivity = ActivityIdOrNull(id);
     internal string? DesiredActivityCacheForTest => _desiredActivity;
+    // 005ADF4C: called by retained Freeplay, independent of current high-level selection.
+    internal bool CalculateNativeDesired(EngineRobot owner, ManipulationSystem manipulation,Func<bool> stillCurrent)
+    {
+        if (Freeplay.DesiredActivityNames is not {} names || !ReferenceEquals(owner.Engine.Robot,owner) ||
+            !ReferenceEquals(manipulation.Robot.LocalizationWorld,manipulation.World))
+        { ReportActivityMissing("M15-008 retained Freeplay desired calculation actual owner/config unavailable"); return false; }
+        using var mutation=manipulation.World.EnterPoseMutation();
+        uint originId=owner.CurrentOriginId;
+        if(!owner.TryGetNativeOriginOwner(originId,out var origin) || origin?.Node is null)
+        { ReportActivityMissing("M15-008 desired calculation current origin unavailable; prior cache retained"); return false; }
+        using var pose=new Pose3d("");
+        bool face=manipulation.Vision.Faces.CopyNativeLastFace(origin,true,pose);
+        if(face) { using var root=pose.FindRoot();face=ReferenceEquals(root.Node,origin.Node); }
+        var filter=new BlockWorldFilter();filter.AllowedFamilies.Add((ObjectFamily)1);filter.AllowedFamilies.Add((ObjectFamily)2);
+        bool cube=manipulation.World.FindLocatedObjectHelper(filter,null,true) is not null;
+        if(!stillCurrent() || owner.CurrentOriginId!=originId || !owner.TryGetNativeOriginOwner(originId,out var current) || !ReferenceEquals(current,origin))
+        { ReportActivityMissing("M15-008 desired calculation owner changed; prior cache retained");return false; }
+        _desiredActivity=ActivityIdOrNull(face ? (cube ? names.FaceAndCube : names.FaceOnly) : (cube ? names.CubeOnly : names.None));
+        return true;
+    }
     internal byte? SelectedChildActivityId { get; private set; }
     internal string? SelectedChildActivityName { get; private set; }
     /// <summary><c>BehaviorManager+0x65</c>: the invalid-spark latch (C1 §1).</summary>
@@ -128,7 +148,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
     /// <summary><c>CalculateDesiredActivityFromObjects</c>: the configured activity for the faces and cubes known.</summary>
     public string? DesiredActivityFromObjects()
     {
-        ReportActivityMissing("MISSING: M15-006 filtered object count and Look state-6 desired supplier are unbound");
+        ReportActivityMissing("MISSING: M15-008 standalone DesiredActivityFromObjects has no retained native Robot/world input; canonical Look state6 uses its actual owner");
         return null;
     }
 
@@ -307,9 +327,9 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
         }
 
         var desired = decision.Behavior;
-        if(NativeOwner && desired is NativeLookForFaceAndCubeBehavior)
+        if(NativeOwner && desired is NativeLookForFaceAndCubeBehavior look && !look.ExecutionAvailable)
         {
-            ReportActivityMissing("MISSING: M15-006 LookForFaceAndCube native lifecycle unavailable; retaining current behavior");
+            ReportActivityMissing("MISSING: M15-006 LookForFaceAndCube actual input owner unavailable; retaining current behavior");
             desired=current;
         }
         _switchReason = decision.Reason;
@@ -438,7 +458,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
 
     private Activity? PickFromBucket(double nowSec, List<Activity> bucket, out string reason, Activity? barred)
     {
-        string? desiredId = _desiredActivity; // The canonical state-6 supplier is not yet bound.
+        string? desiredId = _desiredActivity; // Canonical state6 or the explicit standalone test seam.
         if (bucket.Count == 0) { reason = $"no activities for the requested spark '{Inputs.RequestedSpark ?? "none"}'"; return null; }
         var notes = new List<string>();
         // +0x91 first, then +0x90 (0x005ADC6A..0x005ADC76); a name the ActivityID enum does not know is 0 and forces nothing (ActivityIDFromString 0x0076706C..0x007670D4)

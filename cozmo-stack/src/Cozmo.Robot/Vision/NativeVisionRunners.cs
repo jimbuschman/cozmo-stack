@@ -115,6 +115,8 @@ internal sealed class NativeWaitForImagesRunner : NativeVisionRunner
     internal NativeWaitForImagesRunner(ManipulationSystem m,int count,VisionMode mode,uint after):base(m,0x32,0)
     {_wait=new(count,mode,after);}
     internal int Count=>_wait.Count;
+    internal int RequiredFrames=>_wait.NumFrames;
+    internal VisionMode Mode=>_wait.VisionMode;
     internal bool Subscribed=>_subscription is not null;
     public override int Init()
     {

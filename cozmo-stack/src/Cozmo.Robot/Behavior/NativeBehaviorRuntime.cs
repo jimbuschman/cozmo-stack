@@ -315,6 +315,16 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Tree.FirstOrDefault(a=>a.Id=="Freeplay")??throw new InvalidOperationException("Configured Freeplay resources unavailable"),
         Bound,new FreeplayInputs{Needs=_facade.Engine.Needs,Mood=_robot.MoodOwner,Features=_facade.Engine.Features},false)
         {ObserveOnly=Observe,NativeOwner=true,NativeStillCurrent=()=>!_retired && _selected?.Id=="Freeplay" && ReferenceEquals(_manager.Activity,_observer),SparkPauseChanged=p=>Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark,p)};
+    internal bool LookInputsAvailable(NativeLookForFaceAndCubeBehavior look)=>
+        !_retired && ReferenceEquals(_robot.Engine.Robot,_robot) && ReferenceEquals(_robot.NativeBehaviorRuntime,this) &&
+        Manipulation is {} m && _vision is not null && ReferenceEquals(m.Vision,_vision) &&
+        ReferenceEquals(m.World,_facade.LocalizationWorld) && _observer is not null &&
+        _robot.TryGetNativeOriginOwner(_robot.CurrentOriginId,out var origin) && origin?.Node is not null && _robot.MainPose.Node is not null &&
+        _observer.Freeplay.DesiredActivityNames is not null &&
+        ReferenceEquals(_observer.Freeplay,Tree.FirstOrDefault(a=>a.Id=="Freeplay")) &&
+        Bound.TryGetValue(look.Id,out var bound) && ReferenceEquals(bound,look);
+    internal bool CalculateLookDesired(NativeLookForFaceAndCubeBehavior look)=>
+        LookInputsAvailable(look) && _observer!.CalculateNativeDesired(_robot,Manipulation!,()=>LookInputsAvailable(look));
     private void RefreshFreeplayInputs(float now)=>FreeplayObserver.RefreshInputs(_facade,_vision,Manipulation,now,_robot);
     internal void UpdateAI()=>AI.Update(_facade);
     // The existing checked 0x006553FC -> 0x0067F7AC recipient belongs to the
@@ -392,9 +402,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 return next;
             }
             var desired=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now).Behavior;
-            if(desired is NativeLookForFaceAndCubeBehavior)
+            if(desired is NativeLookForFaceAndCubeBehavior look && !look.ExecutionAvailable)
             {
-                SteppedBehavior.ReportMissing("PutDownDispatch LookForFaceAndCube selected Init/Resume/action body unavailable; scored candidate retained, prior execution retained");
+                SteppedBehavior.ReportMissing("PutDownDispatch LookForFaceAndCube actual input owner unavailable; prior execution retained");
                 return current;
             }
             return desired;

@@ -24,8 +24,8 @@ internal sealed class NativeSmartFaceReference:IDisposable
     private readonly CozmoRobot _robot;
     private readonly EngineRobot? _owner;
     private Impl? _impl;
-    internal NativeSmartFaceReference(CozmoRobot robot,int? requested=null)
-    {_robot=robot;_owner=robot.Engine.Robot;if(requested is {} id&&_owner?.HasExternalInterface==true)_impl=new(robot,id,true);}
+    internal NativeSmartFaceReference(CozmoRobot robot,int? requested=null,EngineRobot? owner=null)
+    {_robot=robot;_owner=owner??robot.Engine.Robot;if(requested is {} id&&_owner?.HasExternalInterface==true)_impl=new(robot,id,true);}
     internal bool HasImpl=>_impl is not null;
     internal int Id=>_impl?.Id??0;
     internal bool IsValid=>_impl is not null&&_impl.Id!=0;
@@ -53,6 +53,8 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,float maximum,bool sayName,int sayTrigger=0x23F,int noNameTrigger=0x23F):base(m,Pose3d.Identity,maximum,0x29,0,true)
     {_requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;}
+    internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,EngineRobot owner,int rawId):base(m,Pose3d.Identity,Radians.Pi,0x29,0,true)
+    {_requested=new(m.Robot,rawId,owner);_verified=new(m.Robot,owner:owner);_maximum=Radians.Pi;_sayName=false;_sayTrigger=_noNameTrigger=0x23F;}
     internal void SetNativeNameTriggers(int named,int unnamed)
     {
         if(!_sayName)M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,"Actions","TurnTowardsFaceAction.SetSayNameTriggerWithoutSayingName","Installing name triggers while sayName is false");
