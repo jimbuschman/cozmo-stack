@@ -14771,7 +14771,7 @@
       ],
       "effect": "the head and body scan Cozmo runs when left alone with no face known",
       "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
-      "unresolved": "Built, OrdinaryFreeplayNativeTests. Look-up age test, S1 and S3 direction, draw order and S7 count checked by Claude. Not settled: the scan has not run on a robot; other FindFaces aliases and roaming are unbuilt; sensor phase 2 order open.",
+      "unresolved": "Built, OrdinaryFreeplayNativeTests. Look-up age test, S1 and S3 direction, draw order and S7 count checked by Claude. Not settled: the scan has not run on a robot; other FindFaces aliases and roaming are unbuilt; sensor phase 2 order open. SPARKS-LOOK-IN-PLACE-1 (2026-11-01): narrow inherited/own scan caller check confirms GetPose004EA398/GetTransform0084499A reads local MAIN rotation; existing helper root-flattening contradicted that input at ownLookUp005C1A7A, Begin005C1CE6, inheritedInit/S1/S4/S7/tag35. One-line local-yaw correction plus accepted same-root SetPose LookUp regression, actual RobotState integration and affected148/148 PASS; full new-batch gate pending. Whole own-record settlement is not proposed: valid changed profile/focus/scan-count/pause-trigger/carry/reset variants remain unavailable in this implementation. Other aliases/roaming, phone subscriber order and hardware are separate neighboring uncertainties, not evidence for narrowing this record without approval. No status, protected evidence, hardware flag or approval change.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
