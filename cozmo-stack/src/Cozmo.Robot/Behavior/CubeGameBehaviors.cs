@@ -372,6 +372,7 @@ public sealed class RamIntoBlockBehavior : ManipulationBehavior
     public const double BackUpMm = -100.0;
 
     public RamIntoBlockBehavior(ManipulationSystem m, string id = "RamIntoBlock") : base(id, "RamIntoBlock", m) { }
+    internal void BindManipulation(ManipulationSystem manipulation) => M = manipulation;
 
     public Phase CurrentPhase { get; private set; }
     public uint? TargetObjectId { get; private set; }

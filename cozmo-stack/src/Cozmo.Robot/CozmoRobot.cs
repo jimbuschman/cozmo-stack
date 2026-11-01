@@ -213,6 +213,7 @@ public sealed partial class CozmoRobot : IDisposable
         if(native.HasExternalInterface) { manager.AttachSparkInput(); manager.AttachDefaultPostureInput(); }
         native.BehaviorManagerOwner=manager;
         native.NativeBehaviorRuntime=new(this,native,manager,context,_vision);
+        manager.BindReactionDependencies(native.NativeBehaviorRuntime.Manipulation,native.NativeBehaviorRuntime.Bound);
         Sensors.RequestCurrentBehaviorEndImmediately=manager.RequestCurrentBehaviorEndImmediately;
     }
     private Behavior.SevereNeedsComponent? _boundSevereNeeds;

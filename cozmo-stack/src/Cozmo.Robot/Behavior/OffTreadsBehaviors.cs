@@ -626,6 +626,7 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
 public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 {
     private long _generation;
+    protected override bool KeepsRunningWithoutAction => HasCurrentAction;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
     protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
@@ -633,7 +634,8 @@ public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
     protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     public const double TimeoutSec = 5.0;
 
-    private readonly Cozmo.Robot.Manipulation.ManipulationSystem? _manipulation;
+    private Cozmo.Robot.Manipulation.ManipulationSystem? _manipulation;
+    internal void BindManipulation(Cozmo.Robot.Manipulation.ManipulationSystem manipulation) => _manipulation = manipulation;
     private Action? _completionLease;
     public ReactToMotorCalibrationBehavior(Cozmo.Robot.Manipulation.ManipulationSystem? manipulation = null) : base("ReactToMotorCalibration", "ReactToMotorCalibration")
     {
@@ -712,6 +714,7 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
         new("ReactToFrustrationMajor", AnimationTrigger.FrustratedByFailureMajor, "FinishedMajorFrustration", strategy)
             { _m = m, RandomDriveMinDistMm = 150, RandomDriveMaxDistMm = 400, RandomDriveMinAngleDeg = 80, RandomDriveMaxAngleDeg = 180 };
 
+    internal void BindManipulation(Cozmo.Robot.Manipulation.ManipulationSystem manipulation) => _m = manipulation;
     public double RandomDriveMinDistMm { get; init; }
     public double RandomDriveMaxDistMm { get; init; }
     public double RandomDriveMinAngleDeg { get; init; }

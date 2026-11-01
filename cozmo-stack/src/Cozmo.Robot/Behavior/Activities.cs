@@ -680,6 +680,7 @@ public sealed class ActivityStrategy : IDisposable
     private bool _hasCurrentCooldown;
     private double _currentCooldownSec;
     internal string? HigherType, HigherNeed, HigherBracket;
+    // fidelity: M15-098
     internal void BindNative(EngineRobot owner)
     {
         _defaultBase=(float)CooldownBaseSec; _defaultRandomness=(float)CooldownRandomnessSec;
@@ -690,6 +691,7 @@ public sealed class ActivityStrategy : IDisposable
         if(Type=="NeedBasedCooldown") _needsSubscription=owner.Engine.AnimationMessages.SubscribeMessage(0x62,true,ReceiveNeeds);
         if(Type=="Pyramid") _objectiveSubscription=owner.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value && value==3)_built=true;});
     }
+    // fidelity: M15-098
     private void ReceiveNeeds(object? payload)
     {
         if(payload is not IReadOnlyList<uint> words || Need is not {} n || (uint)n>=3)
@@ -776,6 +778,7 @@ public sealed class ActivityStrategy : IDisposable
             // JsonTools::GetValueOptional<float> 0x004FA580 overwrites only when the member exists, so an
             // absent key keeps the IActivityStrategy constructor default (row 25): canEnd -1, shouldEnd 60,
             // cooldownBase -1, cooldownRandomness 0, requiredRecentOnTreads -1, requiredMinStartMoodScore -1.
+            // fidelity: M15-100
             CanEndDurationSec = D("activityCanEndDurationSecs", -1), ShouldEndDurationSec = e.TryGetProperty("type",out var sparkType) && sparkType.GetString()=="Spark" ? float.MaxValue : D("activityShouldEndDurationSecs", 60),
             CooldownBaseSec = D("cooldownBaseSecs", -1), CooldownRandomnessSec = D("cooldownRandomnessSecs", 0),
             StartInCooldown = e.TryGetProperty("startInCooldown", out var sic) && sic.ValueKind == JsonValueKind.True,
@@ -813,7 +816,7 @@ public sealed class ActivityStrategy : IDisposable
     /// <paramref name="randomnessSec"/>. This is the explicit cooldown setter beside
     /// <see cref="RandomizeCooldown"/>.
     /// </summary>
-    // fidelity: M15-003
+    // fidelity: M15-003, M15-098
     public void SetCooldown(double baseSec, double randomnessSec)
     {
         CooldownBaseSec = (float)baseSec;
@@ -916,6 +919,7 @@ public sealed class ActivityStrategy : IDisposable
             // fidelity: M15-096
             case "PlayWithHumans" or "FPPlayWithHumans":
                 reason = "the game request component is the app's"; return false;
+            // fidelity: M15-100
             case "Spark":
                 reason = "spark strategy starts"; return true;
             default:
@@ -955,6 +959,7 @@ public sealed class ActivityStrategy : IDisposable
                 reason="transition predicate";return !(inputs.Needs.State.IsNeedAtBracket(sn,NeedBracketId.Critical) && inputs.Needs.SevereNeeds.Selected!=(int)sn);
             case "Pyramid": reason="pyramid objective";return _built;
         }
+        // fidelity: M15-100 -- Spark's internal end predicate returns false.
         reason = "keeps running"; return false;
     }
 }

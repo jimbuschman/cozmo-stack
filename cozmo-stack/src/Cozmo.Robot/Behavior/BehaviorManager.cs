@@ -117,6 +117,7 @@ public sealed partial class BehaviorManager : IDisposable
 
     private IReadOnlyList<ReactionMapEntry> _nativeReactionRows = Array.Empty<ReactionMapEntry>();
     private bool _nativeReactionMapLoaded;
+    private long _reactionBindingGeneration;
     private AcknowledgeObjectBehavior? _configuredAcknowledgeObject;
     // fidelity: M7-014 -- row72: initialize the real map before exposing the robot's AI inputs.
     internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision)
@@ -141,7 +142,7 @@ public sealed partial class BehaviorManager : IDisposable
                 AddReaction(reg.Strategy,reg.Behavior);
             }
             foreach(var entry in unbound)
-                SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding before Freeplay; trigger entry retained, no placeholder behavior");
+                SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior");
             _nativeReactionMapLoaded=true;
         }
         Initialized=true;
@@ -150,29 +151,91 @@ public sealed partial class BehaviorManager : IDisposable
         Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,IReadOnlyDictionary<string,IBehavior> bound)
     {
         using var executionLease = context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return;
         _context=context;context.Penalty=_penalty;
         if(context.Arbiter is {} arb)arb.ManagerDispatchesReactions=true;
         if (!_nativeReactionMapLoaded && bound.TryGetValue("AcknowledgeObject", out var configured))
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
         InitializeRobotReactions(resources,vision); // explicit late resource input, only if startup map was absent
+        BindReactionDependencies(manipulation,bound);
+    }
+
+    internal void BindReactionDependencies(Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,
+        IReadOnlyDictionary<string,IBehavior> bound)
+    {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return;
+        long bindingGeneration=++_reactionBindingGeneration;
+        if (manipulation is null)
+        {
+            SteppedBehavior.ReportMissing("M7-019 reaction manipulation owner unavailable");
+            return;
+        }
+        foreach(var motor in Reactions.Select(r=>r.Behavior).OfType<ReactToMotorCalibrationBehavior>())
+            motor.BindManipulation(manipulation);
         foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
-            cliff.DriveStraight=manipulation is null?null:(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
-        if(manipulation is null)return;
+            cliff.DriveStraight=(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
         foreach (var strategy in Reactions.Select(r => r.Strategy).OfType<ObjectPositionUpdatedStrategy>())
         {
             strategy.CarriedObjectId = () => manipulation.Docking.Carrying.CarriedObjectId;
             strategy.DockingObjectId = () => manipulation.Docking.DockTargetObjectId;
         }
-        if(_nativeReactionRows.Any(r=>r.BehaviorId=="ReactToFrustrationMajor")&&!Reactions.Any(r=>r.Behavior.Id=="ReactToFrustrationMajor"))
+        foreach(var row in _nativeReactionRows)
         {
-            var strategy=new FrustrationStrategy(-0.9f,0f,()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
-            var behavior=ReactToFrustrationBehavior.Major(manipulation,strategy);
-            behavior.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
-            AddReaction(strategy,behavior); // shipped order is Minor then Major; same existing trigger's lock set
+            if(row.Trigger==ReactionTrigger.Frustration && row.BehaviorId=="ReactToFrustrationMajor")
+            {
+                var existing=Reactions.FirstOrDefault(r=>r.Strategy.Trigger==row.Trigger && r.Behavior.Id==row.BehaviorId);
+                if(existing?.Behavior is ReactToFrustrationBehavior major) major.BindManipulation(manipulation);
+                else if(existing is null)
+                {
+                    var strategy=new FrustrationStrategy((float)(row.FrustrationMaxConfidence??0),(float)(row.FrustrationCooldownSec??0),()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+                    var behavior=ReactToFrustrationBehavior.Major(manipulation,strategy);
+                    behavior.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+                    AddOrderedNativeReaction(strategy,behavior,bindingGeneration);
+                }
+            }
+            if(row.Trigger==ReactionTrigger.NoPreDockPoses && row.BehaviorId=="RamIntoBlock")
+            {
+                var existing=Reactions.FirstOrDefault(r=>r.Strategy.Trigger==row.Trigger && r.Behavior.Id==row.BehaviorId);
+                if(existing?.Behavior is RamIntoBlockBehavior ram && existing.Strategy is NoPreDockPosesStrategy noPreDock)
+                { ram.BindManipulation(manipulation); noPreDock.BindWhiteboard(manipulation.Whiteboard); }
+                else if(existing is null)
+                {
+                    RamIntoBlockBehavior recipient;
+                    if(bound.TryGetValue(row.BehaviorId,out var candidate) && candidate is RamIntoBlockBehavior supplied)
+                        recipient=supplied;
+                    else
+                    {
+                        SteppedBehavior.ReportMissing("M7-019 RamIntoBlock configured factory owner unavailable; reaction-owned existing adapter supplies the strategy recipient, not the native factory identity or a recovered Ram body");
+                        if (_hostDisposed || _reactionBindingGeneration!=bindingGeneration) return;
+                        recipient=new RamIntoBlockBehavior(manipulation);
+                    }
+                    recipient.BindManipulation(manipulation);
+                    AddOrderedNativeReaction(new NoPreDockPosesStrategy(manipulation.Whiteboard,recipient),recipient,bindingGeneration);
+                }
+            }
         }
-        if(_nativeReactionRows.Any(r=>r.BehaviorId=="RamIntoBlock")&&!Reactions.Any(r=>r.Behavior.Id=="RamIntoBlock")
-            &&bound.TryGetValue("RamIntoBlock",out var candidate)&&candidate is RamIntoBlockBehavior ram)
-            AddReaction(new NoPreDockPosesStrategy(manipulation.Whiteboard,ram),ram);
+    }
+
+    private void AddOrderedNativeReaction(IReactionTriggerStrategy strategy,IBehavior behavior,long bindingGeneration)
+    {
+        lock (_gate)
+        {
+            if(_hostDisposed || _reactionBindingGeneration!=bindingGeneration || !_map.TryGetValue(strategy.Trigger,out var info)) return;
+            if(info.Entries.Any(entry=>entry.Behavior.Id==behavior.Id)) return;
+            strategy.Manager=this;
+            _behaviors.RemoveAll(b=>b.Id==behavior.Id);
+            var entries=info.Entries;
+            int RowIndex(ReactionRegistration entry)
+            {
+                for(int i=0;i<_nativeReactionRows.Count;i++)
+                    if(_nativeReactionRows[i].Trigger==strategy.Trigger && _nativeReactionRows[i].BehaviorId==entry.Behavior.Id) return i;
+                return int.MaxValue;
+            }
+            var added=new ReactionRegistration(strategy,behavior);
+            int index=entries.FindIndex(entry=>RowIndex(entry)>RowIndex(added));
+            if(index<0) entries.Add(added); else entries.Insert(index,added);
+        }
     }
 
     private readonly Func<bool> _unexpectedMovementGate;

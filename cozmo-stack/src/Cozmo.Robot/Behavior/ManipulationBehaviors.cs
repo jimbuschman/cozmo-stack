@@ -12,7 +12,7 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public abstract class ManipulationBehavior : ActionBehavior
 {
-    protected readonly ManipulationSystem M;
+    protected ManipulationSystem M;
 
     protected ManipulationBehavior(string id, string behaviorClass, ManipulationSystem m) : base(id, behaviorClass) => M = m;
 
