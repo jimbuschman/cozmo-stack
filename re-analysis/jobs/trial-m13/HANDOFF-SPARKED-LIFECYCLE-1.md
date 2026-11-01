@@ -1,4 +1,6 @@
-# SPARKED-LIFECYCLE-1 — BUILD DONE, BATCH GATE PENDING
+# SPARKED-LIFECYCLE-1 — READY FOR CLAUDE
+
+**Final batch verdict:** READY FOR CLAUDE. Full gate2 on `ff6c717b`: **7314/7314 PASS**,0 skipped/compiler0/gate0/shutdown0/postflight0. Independent affected correction93/93 PASS; earlier failure and classification history below is preserved. Protected statuses/evidence/approvals unchanged. Logs `.scratch/start-path-followthrough-batch-full-2.log` and `-console.log`.
 
 Actual configured Sparked owners now implement the recovered lifecycle rather than six hard-coded objective tuples. Independent draft source/diff review passed after seven returned correction batches/seven resubmissions. Final affected checks passed426/426,0skip/compiler0/shutdown0/postflight0. Full batch gate pending; NOT READY.
 
@@ -27,3 +29,5 @@ Expanded affected3:214/228 PASS,14fail,0skip/compiler0/shutdown0/postflight0. Al
 Batch full gate1 on e6fba11d:7299/7314 PASS,15fail,0skip/compiler0, gate1/shutdown0/postflight0. Failures classified before edits:13 existing integration fixtures directly start then tick under real Selection without queued94; one NothingToDo shared-scoring oracle expected0 instead of native f32 1.1; one resource-less tracker fixture assumed configured boot. Correction preserves all original motion/image/carry/needs/cancellation/result/timing assertions. Tracker normal configured boot is tested with shipped assets; native null-JSON pause input005A0E40..56 versus host missing-resource mapping remains explicit M15-031 frontier, not declared source-equivalent. Test-only corrections and final full gate pending; NOT READY. Logs .scratch/start-path-followthrough-batch-full-1{,-console}.log.
 
 Full-batch correction1: independent source/diff PASS, test-only admission/resource/shared-score changes; affected93/93 PASS0skip/compiler0/test0/shutdown0, transient postflight1 exited on follow-up0. Every previously blocked tail passed. Reader confirmed Dev running-A1 bypass0x0060AD7E..88/same-pointer no-switch0x005A2A74..76 and native null-config flag0x005A0E56; no new deferred Dev body work or guessed resource-less semantics. One batch correction group, separate from seven Sparked draft review batches. Full gate2 pending.
+
+Final verdict supersedes the earlier pending/NOT READY run notes. Scope, settlement proposals and remaining MISSING items above are unchanged; no hardware or subsystem acceptance claim.
