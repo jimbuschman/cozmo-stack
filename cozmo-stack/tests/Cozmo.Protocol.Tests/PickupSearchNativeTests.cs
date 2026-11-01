@@ -195,18 +195,18 @@ public sealed class PickupSearchNativeTests
     {
         //Controlled recipient race unit; real offline publisher and configured worker path are separate tests.
         using var f=new Fixture();f.Add();var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
-        NativeSearchForBlockHelper? search=null;HelperRef? held=null;int draws=0;var rng=f.Rig.Engine.ContextRandom;
+        NativeSearchForBlockHelper? search=null;HelperRef? held=null;int draws=0,hiccupDraws=0;var rng=f.Rig.Engine.ContextRandom;
         parent.Entry=p=>{var h=f.Runtime.AI.Helpers.Factory.CreateNativeSearchForBlock(f.M,p,7);held=h.Copy();search=(NativeSearchForBlockHelper)h.Pointer;
             search.BeforeActionPublicationForTest=()=>f.Rig.Engine.AnimationMessages.Deliver(0x44,true,new NativeObservedObject(1,2,1,8));
             try{p.Delegate(h,null,null);}finally{h.Release();}};
-        var manager=f.Robot.BehaviorManagerOwner!;manager.Add(parent);rng.WordSourceForTest=()=>{draws++;return 0;};
+        var manager=f.Robot.BehaviorManagerOwner!;manager.Add(parent);rng.WordSourceForTest=()=>{draws++;if(Environment.StackTrace.Contains("HiccupReactionStrategy.ShouldTriggerBehavior"))hiccupDraws++;return 0;};
         try
         {
             var unrelated=new NativeTimedWaitRunner(f.M,100);f.Robot.ActionList.QueueAction(QueueActionPosition.InParallel,unrelated);
             Assert.True(manager.StartAsync(parent.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
             var sequence=Assert.IsAssignableFrom<CompoundActionSequential>(parent.OwnedRunner);var nearby=search!.Nearby!;
             f.Rig.Tick();Assert.True(sequence.DestructionObserved);Assert.Equal(0u,parent.CurrentRunnerTag);
-            Assert.False(nearby.Initialized);Assert.Equal(0,draws);Assert.Empty(f.Rig.SentSince(0).OfType<AppendPathSegmentLine>());Assert.Empty(f.Rig.SentSince(0).OfType<SetHeadAngle>());
+            Assert.False(nearby.Initialized);Assert.Equal(4,hiccupDraws);Assert.Equal(0,draws-hiccupDraws);Assert.Empty(f.Rig.SentSince(0).OfType<AppendPathSegmentLine>());Assert.Empty(f.Rig.SentSince(0).OfType<SetHeadAngle>());
             Assert.Equal(BehaviorStatus.Running,search.Status);Assert.False(unrelated.DestructionObserved);Assert.Equal(EngineActionResult.Running,unrelated.State);
             held!.Release();held=null;Assert.True(search.Retired);
         }

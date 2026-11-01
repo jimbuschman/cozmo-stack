@@ -3,11 +3,11 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 // Actual shared object-intention owner. 0:00570398; proposed Stack entry bindings C1-C5:0056F724/57154C.
-internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot robot)
+internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot robot,Func<NativeConfigurationSnapshot> pyramidSnapshot)
 {
     private sealed class Entry
     {internal float Last=-1f;internal uint Best=uint.MaxValue;internal IReadOnlyList<uint> Valid=Array.Empty<uint>();internal bool Available=true;internal int Rebuilds;}
-    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()},{6,new()},{7,new()},{8,new()}};
+    private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()},{6,new()},{7,new()},{8,new()},{9,new()},{10,new()},{11,new()}};
     internal IReadOnlyList<uint> ValidIds=>_entries[0].Valid;
     internal uint Best=>_entries[0].Best;
     internal bool Available=>_entries[0].Available;
@@ -21,6 +21,9 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
     {
         using var mutation=m.World.EnterPoseMutation(); //retain candidate poses through collection AND DefaultBest conversion.
         if(!_entries.TryGetValue(intention,out var entry))throw new NativeConfigurationUnavailable("ordinary intention "+intention+" is not built; no 5/3 substitution");
+        if(intention is 9 or 10 or 11)_ = pyramidSnapshot();
+        if(intention==10&&!Refresh(9))return false;
+        if(intention==11&&(!Refresh(9)||!Refresh(10)))return false;
         if(intention==3&&!Refresh(5))return false; // source dependency, BEFORE this entry's timestamp gate.
         if(intention==2&&!Refresh(4))return false; // O2: independent ordinary dependency, also before its own stamp.
         float now=robot.Engine.Timer.SecondsF;
@@ -29,12 +32,39 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         try
         {
             var geometry=new NativeConfigurationGeometry(m.World,robot);
-            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj,false),4=>Top(obj,true),3=>Bottom(obj,5,false),2=>Bottom(obj,4,true),6=>RollEligible(obj,false),7=>RollEligible(obj,true),8=>PopEligible(obj),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
+            var ids=geometry.Query(obj=>intention switch{0=>Eligible(obj),5=>Top(obj,false),4=>Top(obj,true),3=>Bottom(obj,5,false),2=>Bottom(obj,4,true),6=>RollEligible(obj,false),7=>RollEligible(obj,true),8=>PopEligible(obj),9=>PyramidBase(obj),10=>PyramidStatic(obj),11=>PyramidTop(obj),_=>false}).Select(o=>o.ObjectId).Distinct().OrderBy(id=>unchecked((int)id)).ToArray();
             uint best=ids.Contains(entry.Best)?entry.Best:(intention is 6 or 7?SelectRoll(ids):Select(ids));
             entry.Valid=Array.AsReadOnly(ids);entry.Best=best;entry.Available=true;entry.Rebuilds++;return true;
         }
         catch(NativeConfigurationUnavailable error)
         {entry.Available=false;SteppedBehavior.ReportMissing("Intention"+intention+" target cache unavailable; prior complete IDs/best retained: "+error.Message);return false;}
+    }
+    // 00570988..00570B40: strong vectors, signed Min/Max slots and branch precedence.
+    private uint Carried()=>robot.CarryingOwner is {} carry?carry.CarriedObjectId??uint.MaxValue
+        :throw new NativeConfigurationUnavailable("actual carry owner absent");
+    private bool PyramidBase(ObservableObject obj)
+    {
+        var snapshot=pyramidSnapshot();uint id=obj.ObjectId;
+        if(snapshot.Pyramids.Count!=0)return snapshot.Pyramids.Any(p=>p.Base.MinId==id);
+        if(snapshot.Bases.Count!=0)return snapshot.Bases.Any(b=>b.MinId==id);
+        if(snapshot.Stacks.Any(s=>s.BlockIds.Count==2&&s.Top==id))return CanPick(obj);
+        uint carried=Carried();if(carried!=uint.MaxValue)return id==carried;
+        if(snapshot.Stacks.Count!=0)return false;
+        return CanPick(obj);
+    }
+    private bool PyramidStatic(ObservableObject obj)
+    {
+        uint best=GetBest(9),id=obj.ObjectId;if(best==uint.MaxValue||id==best)return false;
+        var snapshot=pyramidSnapshot();
+        if(snapshot.Pyramids.Count!=0)return snapshot.Pyramids.Any(p=>p.Base.MinId==best&&p.Base.MaxId==id);
+        if(snapshot.Bases.Count!=0)return snapshot.Bases.Any(b=>b.MinId==best&&b.MaxId==id);
+        return NativeConfigurationGeometry.RestingAtHeight(obj,0f,30f);
+    }
+    private bool PyramidTop(ObservableObject obj)
+    {
+        uint basis=GetBest(9),stat=GetBest(10),id=obj.ObjectId;
+        if(basis==uint.MaxValue||stat==uint.MaxValue||id==basis||id==stat)return false;
+        uint carried=Carried();return carried!=uint.MaxValue&&id==carried || CanPick(obj);
     }
     // Proposed Roll own-path H4/H5:00570676..00570902; generic cache clock/retained-best above is unchanged.
     internal bool RollEligible(ObservableObject obj,bool axis)

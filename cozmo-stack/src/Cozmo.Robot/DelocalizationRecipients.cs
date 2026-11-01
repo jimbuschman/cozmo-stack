@@ -7,8 +7,7 @@ namespace Cozmo.Robot;
 internal sealed class TallStackDelocalizationData
 {
     internal bool HasStoredPose;
-    // Preserve the existing host configuration snapshot lifetime. Native weak-expiry/producer
-    // semantics remain a broader M7/M13 gap; the checked ClearStack drop itself is exact.
+    // Legacy host facade snapshot; native target lifetime uses its own explicit control block.
     internal StackOfCubes? Stack;
     internal ITallStackWeakTarget? Target;
     internal bool TargetKnown = true; // constructor creates a known empty weak pair.
@@ -39,12 +38,15 @@ public sealed partial class EngineRobot
 
     // R2..R5 construction order. Host input replaces the already loaded native config map.
     // fidelity: M11-072 — 0x0050FC66/0x0050FCAC/0x0050FCBE/0x0050FDDE.
-    internal void InitDelocalizationRecipients()
+    internal void InitTallStackRecipientStorage()
     {
         if (Engine.HostBehaviorMap?.TryGetValue(BehaviorID.CantHandleTallStack, out var config) == true
             && config.TryGetProperty("behaviorClass", out var type) && type.ValueKind == System.Text.Json.JsonValueKind.String
             && type.GetString() == "CantHandleTallStack")
             TallStackContainers = new[] { new TallStackDelocalizationData(), new TallStackDelocalizationData() };
+    }
+    internal void InitDelocalizationRecipients()
+    {
         Engine.BeforeConstructorDelocalizeForTest?.Invoke(this);
         if (!HasExternalInterface) return;
         AddDelocalizationRecipient("BlockConfigurationManager", () =>

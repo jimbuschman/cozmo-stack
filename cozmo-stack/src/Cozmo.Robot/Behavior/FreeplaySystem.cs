@@ -7,14 +7,14 @@ namespace Cozmo.Robot.Behavior;
 public sealed record FreeplayDecision(double AtSec, string? Activity, string? Behavior, string Reason);
 
 /// <summary>
-/// The standalone host's bounded ActivityFreeplay chooser (0x005AE29C), called by BehaviorManager after reactions.
+/// The bounded ActivityFreeplay chooser (0x005AE29C), called by BehaviorManager after reactions.
 /// A kept activity may cause one re-pick; the newly picked activity is asked once. Putdown immediately deselects
-/// eligible activities but does not calculate the object-derived desired cache. The canonical parent admission,
-/// Look state-6 cache supplier, filtered object count, and raw Spark-to-activity join remain missing.
+/// eligible activities but does not calculate the object-derived desired cache. The Look state-6 cache supplier
+/// and filtered located-object query remain missing.
 /// </summary>
 // fidelity: M15-002
 // fidelity: M15-006
-public sealed class FreeplaySystem : IManagedActivity
+public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
 {
     private readonly BehaviorManager _manager;
     private readonly Action<BehaviorManager.ReactionSwitch> _reactionObserver;
@@ -60,6 +60,7 @@ public sealed class FreeplaySystem : IManagedActivity
     public FreeplayInputs Inputs { get; }
     public Activity? Current { get; private set; }
     private bool _changingActivity;
+    private bool _childUnavailable;
     public IReadOnlyList<FreeplayDecision> Decisions => _decisions;
     private readonly List<FreeplayDecision> _decisions = new();
     public event Action<FreeplayDecision>? Decided;
@@ -80,11 +81,14 @@ public sealed class FreeplaySystem : IManagedActivity
     // fidelity: M15-015
     public Action<bool>? SparkPauseChanged { get; set; }
 
+    internal void ParentDeselected(double nowSec) => EndActivity(nowSec);
+
     /// <summary>The robot was put back on its treads: the activity is kicked out and re-picked from what is around.</summary>
+    // fidelity: M15-060
     public void OnRobotPutDown(double nowSec)
     {
         if (_changingActivity || Current is not { } activity || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" ||
-            activity.Id == ActivityIdOrNull(ForcedActivity) || activity.RequireSpark is not null) return;
+            activity.Id == ActivityIdOrNull(ForcedActivity) || activity.RequiredSparkId != 0x55) return;
         _changingActivity = true;
         try
         {
@@ -137,6 +141,16 @@ public sealed class FreeplaySystem : IManagedActivity
     /// </summary>
     // fidelity: M8-012
     internal Func<FreeplayDecision>? ObserveOnly;
+    internal bool NativeOwner;
+    internal Func<bool>? NativeStillCurrent;
+    private bool OwnerCurrent()=>!NativeOwner || NativeStillCurrent?.Invoke()==true;
+    bool IHostReadinessOwner.ReadinessChecksEnabled=>NativeOwner;
+    bool IHostReadinessOwner.EvaluateCandidateReadiness=>Current?.SparkedOwner?.Delegate is not null || Current?.Id=="SparksWorkout";
+    void IHostReadinessOwner.RetireUnavailable()
+    {
+        _childUnavailable=true;
+        ReportActivityMissing("MISSING: M15-059 Sparked behavior readiness unavailable; parent and child retained without native completion");
+    }
     public FreeplayDecision Tick(double nowSec, double nowMs)
     {
         if(ObserveOnly is {} observe)return observe();
@@ -178,6 +192,7 @@ public sealed class FreeplaySystem : IManagedActivity
     {
         var current=Current; // reload +80 each call
         if(current is null)return 0;
+        if(current.SparkedOwner is {} spark){spark.Update();return 0;}
         if(current.NativeUpdate20 is {} update)return update(robot);
         SteppedBehavior.ReportMissing("M15-055 ActivityFreeplay delegate vt+20 at0x005AD9DE for "+current.Id+"; native owner unbound, forwarding unit built");return null;
     }
@@ -211,6 +226,7 @@ public sealed class FreeplaySystem : IManagedActivity
         if (!pick)
         {
             decision = ChooseActivityBehavior(Current!, current, nowSec);
+            if(_childUnavailable)return current;
             bool retry = decision.Behavior is null;
             if (retry) { Log?.Invoke("ActivityFreeplay.ChooseNextBehavior.NoBehaviorChosenWhileRunning: activity is not allowed to be repicked"); barred = Current; } // askCurrent=false
             if (!retry && !_manager.IsRunning(decision.Behavior!) && !(Inputs.Needs?.SparksRewardPending ?? false))
@@ -255,15 +271,19 @@ public sealed class FreeplaySystem : IManagedActivity
                 try
                 {
                     EndActivity(nowSec);
+                    if(!OwnerCurrent())return current;
                     Current = picked;
                     if (picked is not null)
                     {
                         SelectedChildActivityId = ActivityIdNames.FromName(picked.Id);
                         SelectedChildActivityName = ActivityIdNames.Name(ActivityIdNames.FromName(Freeplay.Id)) + "_" + ActivityIdNames.Name(SelectedChildActivityId.Value);
                         ReportActivityMissing("MISSING: M15-006 SetActivityIDFromSubActivity 0x005AD8C8 parent+92/+94 downstream owner/consumers are unbound");
+                        if(!OwnerCurrent() || !ReferenceEquals(Current,picked))return current;
                         picked.OnSelected(nowSec, ReportActivityMissing);
+                        if(!OwnerCurrent() || !ReferenceEquals(Current,picked))return current;
                         _ctx.LastActivitySwitchSec = nowSec;
                         Log?.Invoke($"robot.freeplay_goal_started {picked.Id}: {pickReason}");
+                        if(!OwnerCurrent() || !ReferenceEquals(Current,picked))return current;
                     }
                 }
                 finally { _changingActivity = false; }
@@ -273,6 +293,7 @@ public sealed class FreeplaySystem : IManagedActivity
                 _manager.SwitchToNativeRequestedSpark();
                 _requestedSparkInvalid = false;
                 SparkPauseChanged?.Invoke(requested != 0x55);
+                if(!OwnerCurrent())return current;
             }
             if (Current is null)
             {
@@ -286,6 +307,11 @@ public sealed class FreeplaySystem : IManagedActivity
         }
 
         var desired = decision.Behavior;
+        if(NativeOwner && desired is NativeLookForFaceAndCubeBehavior)
+        {
+            ReportActivityMissing("MISSING: M15-006 LookForFaceAndCube native lifecycle unavailable; retaining current behavior");
+            desired=current;
+        }
         _switchReason = decision.Reason;
         if (desired is null && current is not null) _switchedFromId = current.Id;
         if (ReferenceEquals(desired, current))
@@ -299,6 +325,31 @@ public sealed class FreeplaySystem : IManagedActivity
     // IActivity::GetDesiredActiveBehavior 0x005B387C caches the interlude itself.
     private ChooserDecision ChooseActivityBehavior(Activity activity, IBehavior? current, double nowSec)
     {
+        _childUnavailable=false;
+        if (activity.SparkedOwner is {} spark)
+        {
+            var desired=spark.Desired(current,nowSec,_ctx);
+            if(spark.InputUnavailable)
+            {
+                ReportActivityMissing("MISSING: M15-059 Sparked child input unavailable; current behavior retained");
+                _childUnavailable=true;
+                return new ChooserDecision(current,"Sparked input unavailable",Array.Empty<(string,double,string)>());
+            }
+            return new ChooserDecision(desired,"Sparked child",Array.Empty<(string,double,string)>());
+        }
+        if (NativeOwner && (activity.Type!="BehaviorsOnly" || activity.Id=="PlayAlone" || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
+        {
+            ReportActivityMissing("MISSING: M8-013 specialized child desired lifecycle "+activity.Id);
+            _childUnavailable=true;
+            return new ChooserDecision(current,"specialized child unavailable",Array.Empty<(string,double,string)>());
+        }
+        if(NativeOwner && activity.Chooser?.BehaviorIds.Any(id=>_bound.TryGetValue(id,out var candidate)
+            && candidate is NativeLookForFaceAndCubeBehavior look && !look.HasCheckedObjective41)==true)
+        {
+            ReportActivityMissing("MISSING: M15-006 changed LookForFaceAndCube objective input; retaining current behavior");
+            _childUnavailable=true;
+            return new ChooserDecision(current,"Look objective unavailable",Array.Empty<(string,double,string)>());
+        }
         if (activity.CachedInterlude is not null && ReferenceEquals(activity.CachedInterlude, current))
             return new ChooserDecision(activity.CachedInterlude, "cached interlude", Array.Empty<(string, double, string)>());
         activity.CachedInterlude = null;
@@ -345,6 +396,7 @@ public sealed class FreeplaySystem : IManagedActivity
         var ending = Current;
         double ranSec = ending.RunningSec(nowSec);
         ending.OnDeselected(nowSec, ReportActivityMissing, Inputs.Needs);
+        if(!OwnerCurrent() || !ReferenceEquals(Current,ending))return;
         // No needs action is reported here. An activity's needsActionID is stored at IActivity+0x1C
         // (ReadConfig, 0x005B2A9C) and never read again anywhere in the engine; the behaviours report their
         // own (IBehavior::NeedActionCompleted 0x005BE40C, see BehaviorNeedsActions). An earlier version of
@@ -424,10 +476,12 @@ public sealed class FreeplaySystem : IManagedActivity
     /// its components each tick).
     /// </summary>
     public void RefreshInputs(CozmoRobot robot, VisionSystem? vision, ManipulationSystem? m, double nowSec)
+        =>RefreshInputs(robot,vision,m,nowSec,robot.Engine.Robot);
+    internal void RefreshInputs(CozmoRobot robot, VisionSystem? vision, ManipulationSystem? m, double nowSec,EngineRobot? originalRobot)
     {
         // (the drive-off-charger stamp is written only by BehaviorDriveOffCharger::UpdateInternal 0x005C0E08; the former LOCAL stamp on the contacts flag falling had no engine counterpart)
         Inputs.OnCharger = robot.Sensors.OnCharger;
-        if (vision is not null && robot.Engine.Robot is { } native &&
+        if (vision is not null && originalRobot is { } native &&
             native.TryGetNativeOriginOwner(native.CurrentOriginId, out var origin) && origin is not null &&
             vision.Faces.NativePoseScope is not null)
         {

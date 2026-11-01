@@ -19,6 +19,160 @@ public sealed class DriveOffPilotTests
         throw new InvalidOperationException("Required shipped pilot fixture assets are absent");
     }
 
+    [Fact]
+    public void CanonicalConfiguredNeedsActionsUseTheActualBehaviorMap()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());rig.ToSynced();rig.State();
+        var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;var ids=Assert.IsAssignableFrom<IReadOnlyDictionary<string,string>>(runtime.Context.NeedsActionIds);
+        var expected=new (string Behavior,string Action,int Raw)[] {
+            ("CubeLiftWorkout","Workout",44),("FPPeekABoo","PeekAboo",29),("KnockOverCubes","KnockDownCubes",27),
+            ("PopAWheelie","PopAWheelie",33),("PounceOnMotion_Socialize","Pounce",35),("RollBlockOnSide","RollACube",39),
+            ("RollBlockOnSideLowScore","RollACube",39),("StackBlocks","StackCube",42),("Hiking_PounceOnMotion","Pounce",35),
+            ("Hiking_RollCube","RollACube",39),("SparksCubeLiftWorkout","Workout_Sparked",45),("SparksFireTruckAlarm","FireTruckAlarm",84),
+            ("SparksFistBump","FistBump_Sparked",19),("SparksKnockOverCubes","KnockDownCubes_Sparked",28),("SparksPeekABoo","PeekAboo_Sparked",30),
+            ("SparksPickUpCube","PickupCube_Sparked",32),("SparksPopAWheelie","PopAWheelie_Sparked",34),("SparksPounceOnMotion","Pounce_Sparked",36),
+            ("SparksRollBlock","RollACube_Sparked",40),("SparksStackBlock","StackCube_Sparked",43),("SparksTrackLaser","Laser_Sparked",49),
+            ("FistBump","FistBump",18)};
+        Assert.Equal(expected.Length,ids.Count);
+        foreach(var row in expected){Assert.Equal(row.Action,ids[row.Behavior]);Assert.Equal(row.Raw,(int)Enum.Parse<NeedsActionId>(row.Action));}
+        // Explicit helper boundary: actual configured owner/context and engine Needs recipient.
+        var reports=new List<string>();rig.Engine.Needs.Log+=reports.Add;
+        var behavior=runtime.Bound["SparksRollBlock"];
+        Assert.Equal("PickupCube",BehaviorNeedsActions.Complete(behavior,runtime.Context,"PickupCube"));
+        Assert.Equal("RollACube_Sparked",BehaviorNeedsActions.Complete(behavior,runtime.Context));
+        Assert.Contains(reports,line=>line.StartsWith("needs.action_completed PickupCube:"));
+        Assert.Contains(reports,line=>line.StartsWith("needs.action_completed RollACube_Sparked:"));
+        Assert.Null(BehaviorNeedsActions.Complete(runtime.Bound["DriveOffCharger"],runtime.Context));
+    }
+
+    [Fact]
+    public void CanonicalSelectionChooserUsesTheActualAnalyzer()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());rig.ToSynced();rig.State();
+        var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
+        var selection=Assert.IsType<SelectionChooser>(runtime.Tree.Single(a=>a.Id=="Selection").Chooser);
+        var edge=Assert.IsType<VisitInterestingEdgeBehavior>(runtime.Bound["Hiking_VisitInterestingEdge"]);
+        Assert.Equal(1,edge.RequiredProcessId);Assert.False(runtime.AI.Analyzer.IsProcessRunning(1));
+        selection.HandleExecuteBehavior(new ExecuteBehaviorByIDMessage((byte)BehaviorID.Hiking_VisitInterestingEdge,-1));
+        Assert.True(runtime.AI.Analyzer.IsProcessRunning(1));
+        selection.HandleExecuteBehavior(new ExecuteBehaviorByIDMessage((byte)BehaviorID.Wait,-1));
+        Assert.False(runtime.AI.Analyzer.IsProcessRunning(1));
+    }
+
+    [Fact]
+    public void CanonicalNeedsProjectionUsesTheContainerFirstConfigWinner()
+    {
+        string temporary=Directory.CreateTempSubdirectory("needs-config-winner-").FullName;
+        try
+        {
+            string source=Path.Combine(ShippedResources(),"config","engine","behaviorSystem");
+            string destination=Path.Combine(temporary,"config","engine","behaviorSystem");
+            foreach(string path in Directory.EnumerateFiles(source,"*.json",SearchOption.AllDirectories))
+            {
+                string target=Path.Combine(destination,Path.GetRelativePath(source,path));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(path,target);
+            }
+            string original=Path.Combine(destination,"behaviors","freeplay","sparkable","sparksRollBlock.json");
+            var json=System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(original),
+                documentOptions:new System.Text.Json.JsonDocumentOptions{CommentHandling=System.Text.Json.JsonCommentHandling.Skip,AllowTrailingCommas=true})!;
+            json["needsActionID"]="PickupCube";
+            File.WriteAllText(Path.Combine(destination,"behaviors","000-first.json"),json.ToJsonString());
+            using var rig=new M4ControlTests.Rig(temporary);rig.ToSynced();rig.State();
+            var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
+            Assert.IsType<NativeRollBlockBehavior>(runtime.Bound["SparksRollBlock"]);
+            Assert.Equal("PickupCube",runtime.Context.NeedsActionIds!["SparksRollBlock"]);
+            Assert.Equal("PickupCube",rig.Engine.HostBehaviorMap![BehaviorID.SparksRollBlock].GetProperty("needsActionID").GetString());
+        }
+        finally{Directory.Delete(temporary,true);}
+    }
+
+    [Fact]
+    public void CanonicalFreeplayPicksShippedPutDownAndStartsDriveOff()
+    {
+        // Queued host string semantic adapter -> 005A106C -> 005AE29C configured parent.
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources());
+        rig.ToSynced();rig.Calibrate();
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp);
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
+        var robot=rig.Engine.Robot!;var runtime=robot.NativeBehaviorRuntime!;
+        rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger,
+            origin:robot.CurrentOriginId,frame:robot.PoseFrameId));rig.Tick(10);
+        using var observer=FreeplayStack.CreateNative(rig.Robot);
+        Assert.Same(runtime.Tree,observer.Tree);Assert.Same(runtime.Tracker,observer.DataTracker);
+        var behavior=Assert.IsType<DriveOffChargerBehavior>(runtime.Bound["DriveOffCharger"]);
+        int mark=rig.Mark();
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        Assert.Same(runtime.FreeplayObserver,robot.BehaviorManagerOwner!.Activity);
+        Assert.Equal("PutDownDispatch",runtime.FreeplayObserver.Current?.Id);
+        // Real ReturnedToTreads may preempt the immediate start; allow its source
+        // wait and the normal chooser/resume path to run inside the 5 s window.
+        for(int i=0;i<30 && !rig.SentSince(mark).OfType<AppendPathSegmentLine>().Any();i++)rig.Tick(50);
+        Assert.Contains(rig.SentSince(mark),message=>message is AppendPathSegmentLine);
+        Assert.Same(behavior,robot.BehaviorManagerOwner.Current);
+        var before=robot.BehaviorManagerOwner.Current;
+        _=observer.Tick(999,999000,rig.Robot,null,null);
+        Assert.Same(before,robot.BehaviorManagerOwner.Current);
+        float entry=runtime.HighLevelEntryTime,first=robot.BehaviorManagerOwner.FreeplayStartTime;
+        var pauses=runtime.Tracker.PausedFlags.ToHashSet();
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        Assert.Same(before,robot.BehaviorManagerOwner.Current);
+        Assert.Equal(entry,runtime.HighLevelEntryTime);Assert.Equal(first,robot.BehaviorManagerOwner.FreeplayStartTime);
+        Assert.True(pauses.SetEquals(runtime.Tracker.PausedFlags));
+        // The public queued Spark input is consumed by the same manager and parent.
+        observer.ActivateSpark(9);rig.Tick(10);
+        Assert.Equal(9,robot.BehaviorManagerOwner.RequestedSparkId);
+        Assert.Equal(9,robot.BehaviorManagerOwner.ActiveSparkId);
+        Assert.Equal("SparksRollBlock",runtime.FreeplayObserver.Current?.Id);
+        var spark=runtime.FreeplayObserver.Current!;Assert.NotNull(spark.SparkedOwner);
+        rig.Robot.ActivateHighLevelActivity("PutDownDispatch");rig.Tick(10);
+        Assert.Null(runtime.FreeplayObserver.Current);Assert.Null(spark.SelectedAtSec);
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        Assert.Same(runtime.FreeplayObserver,robot.BehaviorManagerOwner.Activity);
+    }
+
+    [Fact]
+    public void ParentSelectionCallbackCannotOverwriteReentrantReplacement()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources());rig.ToSynced();rig.Calibrate();
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp);
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
+        var native=rig.Engine.Robot!;var runtime=native.NativeBehaviorRuntime!;bool replaced=false;
+        void OnLog(string text)
+        {
+            if(replaced || !text.Contains("SetActivityIDFromSubActivity"))return;
+            replaced=true;runtime.AdmitActivity("PutDownDispatch");
+        }
+        rig.Engine.StackLogLine+=OnLog;
+        try
+        {
+            rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+            Assert.True(replaced);
+            Assert.NotSame(runtime.FreeplayObserver,native.BehaviorManagerOwner!.Activity);
+            Assert.Null(runtime.FreeplayObserver.Current);
+        }
+        finally {rig.Engine.StackLogLine-=OnLog;}
+    }
+
+    [Fact]
+    public void CanonicalParentKeepsPutdownSubscriptionAfterObserverDispose()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources());rig.ToSynced();rig.Calibrate();
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp);
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
+        var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        var child=Assert.IsType<Activity>(runtime.FreeplayObserver.Current);
+        Assert.Equal("PutDownDispatch",child.Id);
+        using(var observer=FreeplayStack.CreateNative(rig.Robot))Assert.Same(runtime.FreeplayObserver,observer.Freeplay);
+        // Supplied committed off-treads event, through the actual sensor subscriber.
+        rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnBack,OffTreadsState.OnTreads);
+        Assert.Null(runtime.FreeplayObserver.Current);Assert.Null(child.SelectedAtSec);
+        Assert.Same(runtime.FreeplayObserver,rig.Engine.Robot.BehaviorManagerOwner!.Activity);
+    }
+
     [Theory]
     [InlineData(true,"DroveAsIntended")] [InlineData(false,"DroveAsIntended")]
     [InlineData(true,null)] [InlineData(false,null)]

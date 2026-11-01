@@ -34,6 +34,7 @@ public interface IManagedActivity
 internal interface IHostReadinessOwner
 {
     bool ReadinessChecksEnabled { get; }
+    bool EvaluateCandidateReadiness { get; }
     void RetireUnavailable();
 }
 
@@ -86,6 +87,10 @@ public sealed partial class BehaviorManager : IDisposable
         else if(Current is not null)SteppedBehavior.ReportMissing("M8-001 end-next-action current behavior has no native lifecycle; prior action retained");
     }
     private readonly object _gate = new();
+    private IReadOnlyDictionary<string,IBehavior>? _configuredBehaviors;
+    // 005A4178/005A4182 delegate to the retained configured container, not the host scoring list.
+    internal void BindConfiguredBehaviors(IReadOnlyDictionary<string,IBehavior> configured)
+    { lock (_gate) _configuredBehaviors=configured; }
     private bool _hostDisposed;
     private RetainedSubscription? _defaultPostureInput;
     internal void AttachDefaultPostureInput()
@@ -121,10 +126,14 @@ public sealed partial class BehaviorManager : IDisposable
     private long _reactionBindingGeneration;
     private AcknowledgeObjectBehavior? _configuredAcknowledgeObject;
     // fidelity: M7-014 -- row72: initialize the real map before exposing the robot's AI inputs.
-    internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision)
+    internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision,
+        Cozmo.Robot.Manipulation.ManipulationSystem? manipulation = null, IReadOnlyDictionary<string,IBehavior>? bound = null,
+        EngineRobot? nativeOwner = null)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
-        if (_nativeReactionMapLoaded) return;
+        if (_hostDisposed || _nativeReactionMapLoaded) return;
+        if (bound is not null && bound.TryGetValue("AcknowledgeObject", out var configured))
+            _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
         lock (_gate) _map.Clear(); // private construction only; no deferred locks or replay
         Initialized=false;
         _nativeReactionRows=resources is null?Array.Empty<ReactionMapEntry>():ReactionTriggerMap.Load(resources);
@@ -137,11 +146,14 @@ public sealed partial class BehaviorManager : IDisposable
             var unbound=new List<string>();
             foreach(var reg in ShippedBehaviors.Reactions(_context.Robot,vision?.Locator,
                 ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound,
-                acknowledgeObject:_configuredAcknowledgeObject))
+                acknowledgeObject:_configuredAcknowledgeObject,
+                nativeHiccup: row => CreateNativeHiccup(row,manipulation,bound,nativeOwner ?? _context.Robot.Engine.Robot)))
             {
+                if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
                 if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
                 AddReaction(reg.Strategy,reg.Behavior);
             }
+            if (_hostDisposed) return;
             foreach(var entry in unbound)
                 SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior");
             if (_nativeReactionRows.Any(row => row.Trigger == ReactionTrigger.FistBump && row.BehaviorId == "FistBump"))
@@ -159,7 +171,7 @@ public sealed partial class BehaviorManager : IDisposable
         if(context.Arbiter is {} arb)arb.ManagerDispatchesReactions=true;
         if (!_nativeReactionMapLoaded && bound.TryGetValue("AcknowledgeObject", out var configured))
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
-        InitializeRobotReactions(resources,vision); // explicit late resource input, only if startup map was absent
+        InitializeRobotReactions(resources,vision,manipulation,bound); // explicit late resource input, only if startup map was absent
         BindReactionDependencies(manipulation,bound);
     }
 
@@ -176,6 +188,12 @@ public sealed partial class BehaviorManager : IDisposable
         }
         foreach(var motor in Reactions.Select(r=>r.Behavior).OfType<ReactToMotorCalibrationBehavior>())
             motor.BindManipulation(manipulation);
+        foreach (var pickup in Reactions.Select(r => r.Behavior).OfType<ReactToPickupBehavior>())
+            pickup.WhiteboardHiccupByte = () => manipulation.Whiteboard.HiccupsActive;
+        foreach (var back in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnBackBehavior>())
+            back.Whiteboard = manipulation.Whiteboard;
+        foreach (var face in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnFaceBehavior>())
+            face.Whiteboard = manipulation.Whiteboard;
         foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
             cliff.DriveStraight=(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
         foreach (var strategy in Reactions.Select(r => r.Strategy).OfType<ObjectPositionUpdatedStrategy>())
@@ -708,13 +726,26 @@ public sealed partial class BehaviorManager : IDisposable
     /// <summary>The engine's FindBehaviorByID.</summary>
     public IBehavior? Find(string id)
     {
-        lock (_gate) return _behaviors.FirstOrDefault(b => b.Id == id);
+        lock (_gate)
+        {
+            if (_configuredBehaviors is {} configured)
+            {
+                if (configured.TryGetValue(id,out var behavior)) return behavior;
+                if (Enum.TryParse<BehaviorID>(id,false,out _)) return null;
+            }
+            return _behaviors.FirstOrDefault(b => b.Id == id);
+        }
     }
 
     /// <summary>The engine's FindBehaviorsByClass.</summary>
     public IReadOnlyList<IBehavior> FindByClass(string behaviorClass)
     {
-        lock (_gate) return _behaviors.Where(b => b.Class == behaviorClass).ToList();
+        lock (_gate)
+        {
+            if (_configuredBehaviors is not {} configured) return _behaviors.Where(b => b.Class == behaviorClass).ToList();
+            return configured.Values.Where(b => b.Class == behaviorClass)
+                .Concat(_behaviors.Where(b => b.Class == behaviorClass && !Enum.TryParse<BehaviorID>(b.Id,false,out _))).ToList();
+        }
     }
 
     /// <summary>
@@ -955,6 +986,16 @@ public sealed partial class BehaviorManager : IDisposable
     /// <c>SwitchToBehaviorBase</c> with the info {desired, none, NoneTrigger} (0x005a2ab4).
     /// </summary>
     // fidelity: M8-012
+    // SetCurrentActivity 005A119E..122A retains a reaction and clears its resume owner.
+    internal bool PrepareHighLevelChange(double nowSec)
+    {
+        bool ordinary=CurrentReactionTrigger is null;
+        if(ordinary) SwitchToBehaviorBaseCore(new RunningInfo(null,null,null),nowSec,BehaviorStopReason.Interrupted);
+        else lock(_gate) _resumeAfterReaction=null;
+        return ordinary;
+    }
+    internal void ChooseAfterHighLevelChange(double nowSec) => ChooseNextScoredBehaviorAndSwitch(nowSec);
+
     private void ChooseNextScoredBehaviorAndSwitch(double nowSec)
     {
         if (Activity is not { } activity) return;
@@ -1012,7 +1053,7 @@ public sealed partial class BehaviorManager : IDisposable
         if (next is not null)
         {
             bool runnable;
-            if(hostReadiness is not null && next is SteppedBehavior stepped)
+            if(hostReadiness is { EvaluateCandidateReadiness:true } && next is SteppedBehavior stepped)
             {
                 long evaluationEpoch=Interlocked.Read(ref _hostSelectionEpoch);
                 var evaluated=stepped.EvaluateHostReadiness(_context);

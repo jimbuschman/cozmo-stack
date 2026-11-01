@@ -799,6 +799,8 @@ public sealed partial class EngineRobot
         // The public completed-action payload/union boundary remains owned by M7-020.
         _actionList.Watcher.HasExternalInterface = false;
         InitDockingCarryingOwners();
+        // Manager factory is reached inside InitLifetime; its recipient fields must already exist.
+        InitTallStackRecipientStorage();
         InitLifetime();
         InitNurtureOwners();
         Engine.ConstructorMapCreated?.Invoke(); // M13-032 new MapComponent owner, before first Delocalize

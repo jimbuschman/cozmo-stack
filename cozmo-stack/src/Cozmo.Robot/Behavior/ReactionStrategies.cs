@@ -83,7 +83,7 @@ public abstract class ReactionTriggerStrategy : IReactionTriggerStrategy
     /// <summary>+0x29, the forced flag (C6).</summary>
     public bool Forced { get; set; }
 
-    public bool ShouldTriggerBehavior(ReactionContext rc, IBehavior behavior)
+    public virtual bool ShouldTriggerBehavior(ReactionContext rc, IBehavior behavior)
     {
         if (Forced)
         {

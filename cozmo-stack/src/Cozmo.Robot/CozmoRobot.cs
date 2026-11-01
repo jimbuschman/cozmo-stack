@@ -209,10 +209,10 @@ public sealed partial class CozmoRobot : IDisposable
         if(native.HasExternalInterface)
             manager.ReactionTriggerTransitionSender=(oldTrigger,newTrigger)=>Engine.BroadcastReactionTransition(oldTrigger,newTrigger);
         manager.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
-        manager.InitializeRobotReactions(Engine.Options.ResourcesPath,_vision);
-        if(native.HasExternalInterface) { manager.AttachSparkInput(); manager.AttachDefaultPostureInput(); }
         native.BehaviorManagerOwner=manager;
         native.NativeBehaviorRuntime=new(this,native,manager,context,_vision);
+        manager.InitializeRobotReactions(Engine.Options.ResourcesPath,_vision,native.NativeBehaviorRuntime.Manipulation,native.NativeBehaviorRuntime.Bound,native);
+        if(native.HasExternalInterface) { manager.AttachSparkInput(); manager.AttachDefaultPostureInput(); }
         manager.BindReactionDependencies(native.NativeBehaviorRuntime.Manipulation,native.NativeBehaviorRuntime.Bound);
         Sensors.RequestCurrentBehaviorEndImmediately=manager.RequestCurrentBehaviorEndImmediately;
     }

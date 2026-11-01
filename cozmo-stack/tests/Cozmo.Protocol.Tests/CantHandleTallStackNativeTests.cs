@@ -17,8 +17,8 @@ public sealed class CantHandleTallStackNativeTests
         internal (uint Bottom, int Height)? Value;
         internal bool Available = true;
         internal Action? OnLock;
-        public bool TryLock(out (uint Bottom, int Height)? value)
-        { var callback = OnLock; OnLock = null; callback?.Invoke(); value = Value; return Available; }
+        public bool TryLock(out TallStackLease? value)
+        { var callback = OnLock; OnLock = null; callback?.Invoke(); value = Value is {} tuple ? new TallStackLease(tuple) : null; return Available; }
     }
     private static NativeCantHandleTallStackBehavior Configured(Fixture f)
     {
@@ -35,6 +35,7 @@ public sealed class CantHandleTallStackNativeTests
     public void MissingInputIsUnavailableRatherThanNativeFalse()
     {
         using var f = new Fixture(); var behavior = Configured(f);
+        f.Runtime.TallStackOwnerInput = null; f.Runtime.TallStackWeakInput = null;
         var result = behavior.EvaluateHostReadiness(f.Runtime.Context);
         Assert.False(result.Available); Assert.False(result.Runnable);
         SupplyRecipient(f);
@@ -103,9 +104,6 @@ public sealed class CantHandleTallStackNativeTests
         Assert.True(behavior.InitFailed); Assert.Null(behavior.OwnedRunner);
         weak.Available = true;
         Assert.True(behavior.IsRunnable(f.Runtime.Context));
-        f.Runtime.TallStackOwnerInput = null;
-        Begin(f, behavior, scope);
-        Assert.True(behavior.InitFailed); Assert.Null(behavior.OwnedRunner);
     }
 
     [Fact]
@@ -243,7 +241,9 @@ public sealed class CantHandleTallStackNativeTests
         Assert.True(behavior.Resume(null, f.Rig.Engine.Timer.SecondsF));
         Assert.False(behavior.HasCurrentAction);
         otherStack.Available = true; f.Runtime.TallStackOwnerInput = null;
-        Assert.True(behavior.Resume(null, f.Rig.Engine.Timer.SecondsF));
+        // The canonical instance already owns recipient 0; removing the old seam cannot unbind it.
+        Assert.False(behavior.Resume(null, f.Rig.Engine.Timer.SecondsF));
+        Assert.Same(f.Robot.TallStackContainers[0],behavior.State); Assert.True(behavior.HasCurrentAction);
     }
 
     // Reentry uses supplied weak targets and the public Step event; no native caller is implied.

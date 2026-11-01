@@ -179,8 +179,8 @@ public sealed class HikingRollCubeNativeTests
     [Fact]
     public void PlaceBlockDrawsTwoCanonicalDoublesThenRealTurnAndGroundIgnoringTurnFailure()
     {
-        using var f=new Fixture();var parent=new Parent();NativePlaceBlockHelper? helper=null;int words=0;
-        f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};
+        using var f=new Fixture();var parent=new Parent();NativePlaceBlockHelper? helper=null;int words=0,hiccupWords=0;
+        f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;if(Environment.StackTrace.Contains("HiccupReactionStrategy.ShouldTriggerBehavior"))hiccupWords++;return 0;};
         parent.Entry=p=>{helper=new(f.M,p,f.Runtime.AI.Helpers.Factory);IHelper? raw=helper;var h=f.Runtime.AI.Helpers.AddHelperToComponent(ref raw);try{p.Delegate(h);}finally{h.Release();}};
         Start(f,parent);
         try
@@ -191,7 +191,9 @@ public sealed class HikingRollCubeNativeTests
             f.Robot.ActionList.Cancel(turn.Tag);f.Robot.ActionList.Watcher.Update();
             for(int i=0;i<12&&helper.Status==BehaviorStatus.Running;i++)f.Rig.Tick();
             Assert.NotNull(helper.Placement);Assert.Equal(BehaviorStatus.Complete,helper.Status);Assert.Empty(f.Rig.SentSince(0).OfType<PlaceObjectOnGround>());
-            Assert.Equal(0x03000011u,helper.Placement!.State);Assert.Equal(4,words);
+            Assert.Equal(0x03000011u,helper.Placement!.State);
+            // One unrelated locked Hiccup reset (00610694.. / 0060FD50..) draws two doubles.
+            Assert.Equal(4,hiccupWords);Assert.Equal(4,words-hiccupWords);
         }
         finally{f.Rig.Engine.ContextRandom.WordSourceForTest=null;Stop(f,parent);}
     }

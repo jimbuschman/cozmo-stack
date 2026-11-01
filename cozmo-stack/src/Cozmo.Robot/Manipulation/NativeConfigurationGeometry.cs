@@ -33,12 +33,13 @@ internal sealed class NativeConfigurationGeometry
         float Axis(int axis)=>(float)(Math.Abs(RotatedParentAxis.Get(r,axis)) switch{3=>size.Z,2=>size.Y,_=>size.X});
         return new(Axis(0),Axis(1),Axis(2));
     }
-    private static bool Ground(ObservableObject obj)
+    private static bool Ground(ObservableObject obj)=>RestingAtHeight(obj,0f,20f);
+    internal static bool RestingAtHeight(ObservableObject obj,float height,float tolerance)
     {
         Require(obj.NativePose);using var flat=obj.NativePose.GetWithRespectToRoot();
         float dim=(float)Dimensions(obj,flat).Z,half=dim*0.5f;
         float surface=(float)flat.Translation.Z-half;
-        return MathF.Abs(0f-surface)<20f; // 0x0087767C, strict, no epsilon
+        return MathF.Abs(height-surface)<tolerance; // 0x0087767C, strict, no epsilon
     }
     private static Quadrilateral Quad(ObservableObject obj,Pose3d pose)
     {

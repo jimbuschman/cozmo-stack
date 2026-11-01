@@ -26,6 +26,11 @@ public sealed partial class BehaviorManager
     internal byte SparkCancelLatch {get;private set;}
     internal float SparkSwitchTime {get;private set;}=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
     internal float FreeplayStartTime {get;private set;}=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+    internal void HighLevelAdapterTail(bool freeplay,float now)
+    {
+        if(freeplay) { if(FreeplayStartTime<0) FreeplayStartTime=now; }
+        else { ActiveSparkId=0x55; RequestedSparkId=0x55; }
+    }
     private RetainedSubscription? _sparkInput;
     private readonly HashSet<string> _sparkMissing=new();
     // Native table is bound in each manager constructor; tests may inject observations.
@@ -49,7 +54,8 @@ public sealed partial class BehaviorManager
             case 0:
                 SetNativeRequestedSpark(message.UnlockId,0);
                 if(message.UnlockId==0x55)SparkCancelLatch=1; // never cleared by a noncancel request
-                SparkMissing("M15-006 ActivateSpark raw request stored; canonical Freeplay parent admission remains MISSING, so the native picker is not reached through this manager until that owner is built.");
+                if(Activity is not FreeplaySystem { NativeOwner:true })
+                    SparkMissing("M15-006 ActivateSpark raw request stored; canonical Freeplay parent is not selected, so the native picker is not reached through this manager until that owner is admitted.");
                 break;
             case 1: // no Unity sender; no public stack API exposes SparkUnlocked
                 SetNativeRequestedSpark(message.UnlockId,1);
@@ -77,7 +83,7 @@ public sealed partial class BehaviorManager
     }
 
     // fidelity: M15-058
-    // Checked leaf; canonical Freeplay parent admission remains unbuilt.
+    // Checked leaf; the canonical Freeplay parent calls it on a changed pick.
     internal void SwitchToNativeRequestedSpark()
     {
         if(SparkNameInput is not {} name){SparkMissing("M15-058 SwitchToRequestedSpark0x005A41A8/0x005A41B0: native UnlockId names missing before Info/state writes; switch withheld. Its successful native Freeplay picker caller remains M15-006.");return;}

@@ -1091,6 +1091,8 @@ public sealed class Activity
     internal IBehavior? CachedInterlude;
     internal NativeActivityObjectiveOwner? ObjectiveOwner;
     internal NativeSparkedActivity? SparkedOwner;
+    // Common OnDeselected's derived virtual hook, after common cleanup (005B3658).
+    internal Action<double>? NativeDeselectedHook;
     internal NativeGatherCubesActivity? GatherOwner;
     internal Action? NativeCommonDrivingPush, NativeCommonDrivingRemove;
     internal CozmoRobot? NativeDrivingFacade;
@@ -1200,6 +1202,7 @@ public sealed class Activity
             else SparkedOwner?.Deselected();
             if(!Current())return;
             GatherOwner?.Deselected();
+            if(Current())NativeDeselectedHook?.Invoke(nowSec);
             if(Current())oldDriving=null; // Native calls completed; do not add an identity removal.
         }
         finally { ReleaseDriving();oldSpark?.ReleaseAll(); }

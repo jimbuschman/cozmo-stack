@@ -177,17 +177,28 @@ public sealed class CozmoSensors
     public event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChangedInternal;
     internal event Action<OffTreadsState, OffTreadsState>? FreeplayOffTreadsStateChanged;
+    internal event Action<OffTreadsState, OffTreadsState>? HiccupOffTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? ReturnedToTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? WhiteboardOffTreadsStateChanged;
     internal void DispatchOffTreadsStateChanged(OffTreadsState from, OffTreadsState to)
     {
         _robot.Engine.QueueAppEvent(_robot.Engine.CaptureAppEvent(OffTreadsStateChanged,from,to));
-        // M15-066 phase-1/2 behavior and Hiccup tag-53 subscribers are unbound; M15-068 remains open.
+        // M15-066 phase-1/2 behavior subscribers remain unbound; M15-068 remains open.
         FreeplayOffTreadsStateChanged?.Invoke(from,to);
+        HiccupOffTreadsStateChanged?.Invoke(from,to);
         ReturnedToTreadsStateChanged?.Invoke(from,to);
         WhiteboardOffTreadsStateChanged?.Invoke(from,to);
         // Custom host reaction adapter, not a native tag-53 subscriber.
         OffTreadsStateChangedInternal?.Invoke(from,to);
+    }
+
+    /// <summary>Engine RobotHiccupsChanged report (E2G tag 0x38).</summary>
+    public event Action<bool>? RobotHiccupsChanged;
+    internal void BroadcastHiccupsChanged(bool value)
+    {
+        _robot.Engine.DeliverAnimationReportToApp(0x38, new[] { value ? (byte)1 : (byte)0 },
+            _robot.Engine.CaptureAppEvent(RobotHiccupsChanged,value));
+        _robot.Engine.AnimationMessages.Deliver(0x38,true,value);
     }
 
     /// <summary>|accelerometer| after the engine's 0.95/0.05 filter, the value its shaken strategies compare.</summary>

@@ -14,7 +14,9 @@ internal sealed class NativeConfigurationManager : IDisposable
     private Dictionary<uint,Pose3d> _rootCache=new();
     private NativeConfigurationSnapshot _snapshot=NativeConfigurationSnapshot.Empty;
     private bool _retired;
+    private bool _updating, _rerunRequested;
     internal NativeConfigurationSnapshot Snapshot=>Volatile.Read(ref _snapshot);
+    internal bool Retired => _retired;
     internal int RebuildCount {get;private set;}
     internal int NotifyCount {get;private set;}
     internal uint[] Pending {get {lock(_gate)return _pending.ToArray();}}
@@ -26,11 +28,16 @@ internal sealed class NativeConfigurationManager : IDisposable
         lock(_world.FrameGate)lock(_gate)
         {
             if(_retired)return;
+            if(_updating)_rerunRequested=true;
             _pending.Add(id);
             if(state==PoseState.Unknown && _rootCache.Remove(id,out var pose))lock(_robot.PoseTreeGate)pose.Dispose();
         }
     }
-    internal void ForceUpdate()=>_robot.BlockConfigurationForceUpdate=true;
+    internal void ForceUpdate()
+    {
+        lock(_world.FrameGate)lock(_gate)
+        { if(_updating)_rerunRequested=true; _robot.BlockConfigurationForceUpdate=true; }
+    }
     internal bool Contains(uint id,BlockConfigurationType type)=>Snapshot.Cache(type).Any(c=>c.ContainsBlock(id));
     internal NativeStackConfiguration? Tallest()
     {
@@ -59,6 +66,16 @@ internal sealed class NativeConfigurationManager : IDisposable
         if(_retired || !ReferenceEquals(_robot.Engine.Robot,_robot))throw new NativeConfigurationUnavailable("actual current Robot owner unavailable");
     }
     internal void Update()
+    {
+        lock(_world.FrameGate)lock(_gate)
+        {
+            if(_updating) { _rerunRequested=true; return; }
+            _updating=true; _rerunRequested=false;
+            try { UpdateCore(); }
+            finally { _updating=false; }
+        }
+    }
+    private void UpdateCore()
     {
         lock(_world.FrameGate)lock(_gate)
         {
@@ -99,15 +116,20 @@ internal sealed class NativeConfigurationManager : IDisposable
             if(next is not null)
             {
                 var oldRoots=_rootCache;
+                var oldSnapshot=Snapshot;
+                // Current and old vector owners overlap through publication (T5-T7).
+                foreach(var stack in next.Stacks)stack.RetainNative();
                 _rootCache=stagedRoots!;
                 Volatile.Write(ref _snapshot,next);
+                foreach(var stack in oldSnapshot.Stacks)stack.ReleaseNative();
                 RebuildCount++;
                 DisposeRoots(oldRoots.Values);
                 NotifyCount++;
                 _robot.BehaviorPublicState.UpdateStackHeight(unchecked((byte)(Tallest()?.BlockIds.Count??0)));
             }
             // Native notification occurs before these resets (0x00616DD0..DDC).
-            _robot.BlockConfigurationForceUpdate=false;_pending.Clear();
+            if(_rerunRequested) _robot.BlockConfigurationForceUpdate=true;
+            else { _robot.BlockConfigurationForceUpdate=false;_pending.Clear(); }
         }
     }
     private void DisposeRoots(IEnumerable<Pose3d> roots)
@@ -120,6 +142,7 @@ internal sealed class NativeConfigurationManager : IDisposable
             DisposeRoots(_rootCache.Values);
             _rootCache.Clear();_pending.Clear();
             if(ReferenceEquals(_world.NativeConfigurations,this))_world.NativeConfigurations=null;
+            foreach(var stack in Snapshot.Stacks)stack.ReleaseNative();
         }
     }
 }
