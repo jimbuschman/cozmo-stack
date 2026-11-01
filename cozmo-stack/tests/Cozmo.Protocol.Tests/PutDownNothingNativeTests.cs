@@ -76,7 +76,9 @@ public sealed class PutDownNothingNativeTests
         Assert.Equal((byte?)0x0C, behavior.NativeBaseInputs.CheckedExecutableType);
         Assert.Equal(BehaviorObjective.Invalid, behavior.BehaviorObjective);
         Assert.Equal(0, behavior.RequiredProcessId);
-        Assert.Equal(0, behavior.Score); // own config has no flatScore; contextual entry below owns it.
+        // Native shared reload 005BC4CA..4E0: NothingToDo's shipped flat 1.1 updates this retained owner.
+        Assert.Equal(0x3F8CCCCDu,BitConverter.SingleToUInt32Bits((float)behavior.Score));
+        Assert.Same(behavior.NativeScoredFields,f.Robot.NativeConfiguredScoreFields![Id]);
         var parent = Assert.Single(NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Where(a => a.Id == "NothingToDo"));
         Assert.Equal("BehaviorsOnly", parent.Type);
         var chooser = Assert.IsType<ScoringChooser>(parent.Chooser);
@@ -155,6 +157,7 @@ public sealed class PutDownNothingNativeTests
         using var sub = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A, true,
             p => { if (p is RobotCompletedAction done) completions.Add(done); });
         Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        QueuedSelection.Keep(f.Rig.Robot,manager,Id);
         var initial = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         uint firstTag = initial.Tag;
         var paths = new HashSet<ushort>();

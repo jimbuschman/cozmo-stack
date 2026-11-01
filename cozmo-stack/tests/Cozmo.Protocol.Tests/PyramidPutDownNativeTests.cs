@@ -189,6 +189,7 @@ public sealed class PyramidPutDownNativeTests
         using var sub = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A, true,
             p => { if (p is RobotCompletedAction done) completions.Add(done); });
         Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        QueuedSelection.Keep(f.Rig.Robot,manager,Id);
         var initial = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         uint firstTag = initial.Tag;
         var paths = new HashSet<ushort>();
