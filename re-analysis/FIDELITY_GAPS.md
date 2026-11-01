@@ -7,10 +7,10 @@ Manifest of **742 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 261 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 262 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 365 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 364 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 69 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 100 | 4 | 83 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 100 | 4 | 82 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -3977,15 +3977,6 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: HandleMessage<RequestSetUnlock> 0x0064C8B8: id - 1 < 0x54 unsigned (0x0064C902..0x0064C906), then SetUnlock 0x0064C948.; SetUnlock 0x0064C200: id 1 loops 0..84 with the supplied bool 0x0064C29C..0x0064C2BA; id 2 loops with membership in the default set 0x0064C234..0x0064C292, then NotifyGameDefaultUnlocksSet 0x0064C296; other ids need id - 3 <= 0x51 and a name 0x0064C2BE..0x0064C2CE. Insert or erase on the tree at +0x04; only a real change calls WriteCurrentUnlocksToRobot 0x0064C36A. Also called by NeedsManager::ProcessLevelRewards 0x006995CA.; WriteCurrentUnlocksToRobot 0x0064C4D0: copies the whole tree into UnlockedIdsList 0x0064C4FC..0x0064C532, packs it, NVStorageComponent::Write tag 0x00182000 at 0x0064C586..0x0064C58A; a refused write logs.; Write completion operator() 0x0064CBE8 (closure vtable 0x0102F678, slot +0x18; closure +0x04 component, +0x08 UnlockId, +0x0C bool): NVResult > -1 and HasExternalInterface sends RequestSetUnlockResult through vtable +0x1C 0x0064CC00..0x0064CC88; otherwise logs, sends nothing, no rollback.; NotifyGameDefaultUnlocksSet 0x0064C0FC: sends UnlockedDefaults built from the default set, with no HasExternalInterface gate.; re-analysis/research/20261031-queue-2-chatgpt-extraction.md; re-analysis/research/20261031-queue-2-claude-check.md
 * outstanding: Not built; the stack has the read side only (M15-034). UnlockedIdsList's wire form is unread. The two SendUnlockStatus lambdas 0x0064CF58 and 0x0064D05E are in the next ChatGPT queue. Ids 1 and 2 pass the handler gate and take the loops.
-
-**M15-097 — ActivityStrategyPyramid: start predicate, the 40% roll every 300 s, and the BuiltPyramid end** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
-* effect: when the BuildPyramid activity starts and ends, including one RNG draw per 300 s window
-* rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: WantsToStartInternal 0x005B4970: false unless UnlockId 3 is unlocked ([Robot+0x448], 0x005B498A); FindLocatedMatchingObjects with families from table 0x00C63260 (0x005B4A40).; If now > +0x3C: +0x40 = RandDbl(1.0) < 0.4 and +0x3C = now + 300 (0x005B4A52..0x005B4A94; literals 0x005B4C18, 0x005B4C24).; A full pyramid gives false; a pyramid base, or +0x40 with at least 3 objects, clears +0x41 and gives true; otherwise false (0x005B4AD0..0x005B4B00).; WantsToEndInternal 0x005B4C90 returns +0x41; HandleMessage<BehaviorObjectiveAchieved> 0x005B4C96 sets it for objective 3 (BuiltPyramid).; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
-* outstanding: PYRAMID-STRATEGY-BIND-1 (2026-11-01), affected verified, full gate and Claude pending: canonical configured strategy now binds real native world/configuration providers. Candidate filter is AllowedFamilies {2 LightCube,1 Block}, current origin, latest=false, other sets/predicates empty (0x005B4994..0x005B4A40, family table0x00C63260; helper0x0061EB92..0x0061EC92). Query remains before timed roll; base then full native getter counts copy every strong entry without extra expiry/geometry filters (0x0062C4F8/0x0062CEAC). Actual current Robot/world/configuration identity and producer availability are checked; missing/failed producer gives nullable unavailable with MISSING, not complete empty/stale input. Dead LocatedCubes proxy removed. Native objective registration is now cited at ctor0x005B484C, interface gate0x005B4876..7C, factory0x005B48B0 tag0x8B and retained handle; callback0x005B4D32..46 sets built only for objective3, end0x005B4C90 returns it and true admission clears it0x005B4ADE..E2. Propose own canonical strategy path to Claude only; status/approval unchanged. M12-049 still owns producer/cache uncertainty and M15-006 the unadmitted canonical parent. Standalone custom tree remains unbound/MISSING and is not claimed fixed. Family1 inclusion is source-verified but its ingress cannot be exercised by the current object model. No whole BuildPyramid or hardware claim. HANDOFF-PYRAMID-STRATEGY-BIND-1.md records final checks.
 
 **M15-099 — ActivityStrategyNeeds and SevereNeedsTransition predicates, including ClearSevereNeedExpression on the Needs end path** (live path)
 
