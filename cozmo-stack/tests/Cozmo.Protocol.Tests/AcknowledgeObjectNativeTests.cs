@@ -27,6 +27,17 @@ public class AcknowledgeObjectNativeTests
         public override bool CanInterrupt() => false;
         public override uint CheckIfDone() => 0;
     }
+    // Unit admission fixture: the manager's native M8-012 first-action gate opens on a real queued action.
+    private static void OpenReactionGate(EngineRobot native, BehaviorManager manager, double now)
+    {
+        Assert.True(native.ActionList.IsEmpty);
+        Assert.Null(manager.CheckReactions(now));
+        Assert.Equal(0, native.ActionList.QueueAction(QueueActionPosition.Now, new ImmediateAction(), 0));
+        Assert.False(native.ActionList.IsEmpty);
+        Assert.Null(manager.CheckReactions(now)); // no target yet; the nonempty list opens the sticky gate.
+        native.ActionList.Clear();
+        Assert.True(native.ActionList.IsEmpty);
+    }
     // Explicit unit-entry adapter: production enters through Update or a tagged ActionList completion.
     private static bool InvokeInEpoch(AcknowledgeObjectBehavior behavior, string method)
     {
@@ -73,6 +84,7 @@ public class AcknowledgeObjectNativeTests
         var previous = M10Support.RunnableBehaviour("object-previous");
         manager.Add(previous);
         Assert.True(manager.StartAsync(previous.Id, 0).GetAwaiter().GetResult());
+        OpenReactionGate(native, manager, rig.Clock.NowMs / 1000.0);
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22));
         uint id = Assert.Single(rig.Frame().Objects).Object.ObjectId;
         var fired = manager.CheckReactions(rig.Clock.NowMs / 1000.0);
@@ -107,6 +119,7 @@ public class AcknowledgeObjectNativeTests
         Assert.Null(behavior.SuppliedHeadAngle); Assert.Null(behavior.SuppliedGhostLook);
         var previous = M10Support.RunnableBehaviour("ghost-previous"); manager.Add(previous);
         Assert.True(manager.StartAsync(previous.Id, 0).GetAwaiter().GetResult());
+        OpenReactionGate(native, manager, rig.Clock.NowMs / 1000.0);
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22));
         uint first = Assert.Single(rig.Frame().Objects).Object.ObjectId;
         uint second = first + 1000;

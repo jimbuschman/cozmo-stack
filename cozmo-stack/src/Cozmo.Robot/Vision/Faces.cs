@@ -486,7 +486,7 @@ public sealed partial class FaceWorld
         return removed;
     }
 
-    public void ClearAllFaces() { List<int> ids; lock (_gate) { ids = _faces.Keys.ToList(); foreach(var entry in _faces.Values)entry.NativeObservationOrigin=null; _faces.Clear(); } foreach (var id in ids) FaceDeleted?.Invoke(id); }
+    public void ClearAllFaces() { List<int> ids; lock (_gate) { ids = _faces.Keys.ToList(); foreach(var entry in _faces.Values)entry.NativeObservationOrigin=null; _faces.Clear(); _nativeLastStamp=0; } foreach (var id in ids) FaceDeleted?.Invoke(id); }
 
     /// <summary>
     /// <c>FaceWorld::OnRobotDelocalized</c> 0x004F55E4..0x004F563A: for each face whose +0x120 is not the sentinel it

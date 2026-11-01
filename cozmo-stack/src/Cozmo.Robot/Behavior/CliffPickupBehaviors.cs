@@ -26,6 +26,12 @@ namespace Cozmo.Robot.Behavior;
 // fidelity: M7-019, M7-021
 public sealed class ReactToCliffBehavior : SteppedBehavior
 {
+    private long _generation;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     /// <summary>The cliff animation's timeout, 60.0f (<c>movt r0,#0x4270</c> 0x00604FD4; 0x42700000).</summary>
     public static readonly float AnimationTimeout = BitConverter.Int32BitsToSingle(0x42700000);
     /// <summary>The stop reaction's wait-for-lambda timeout, 0.55f (<c>movw r3,#0xcccd</c> 0x00605026, <c>movt r3,#0x3f0c</c> 0x0060502C: 0x3F0CCCCD).</summary>
@@ -296,9 +302,12 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default));
             return;
         }
+        long runEpoch = CaptureHostExecutionVersion();
         SendFinishedReactToCliffMessage();
+        if (!EngineRunning || !HostExecutionVersionCurrent(runEpoch)) return;
         Log($"BehaviorObjectiveAchieved(0x{ObjectiveReactedToCliff:X}, true)");
-        ReportMissing("IBehavior::BehaviorObjectiveAchieved(BehaviorObjective, bool) body (veneer 0x008CC10C to PLT 0x4B2C64) is not in the inventory; ReactToCliff only logs the call");
+        if (!EngineRunning || !HostExecutionVersionCurrent(runEpoch)) return;
+        Context.Robot.Engine.ReportBehaviorObjective(ObjectiveReactedToCliff, "ReactedToCliff", Id);
     }
 
     /// <summary>SendFinishedReactToCliffMessage 0x006052BC: queue the empty host report before the local seam.</summary>
@@ -323,11 +332,12 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// <summary><c>StopInternal</c> 0x006053FC: +0x11C = 0 and the halfword at +0x120 = 0 (+0x120 and +0x121). +0x122, +0x124 and +0x125 are left.</summary>
     protected override void OnStop(BehaviorStopReason reason)
     {
-        _driveCancel?.Cancel();
-        _driveCancel = null;
+        Interlocked.Increment(ref _generation);
+        var drive = _driveCancel; _driveCancel = null;
         _state = 0;
         _reactNow = 0;
         _cliffDetected = 0;
+        drive?.Cancel();
     }
 }
 

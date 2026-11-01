@@ -474,7 +474,7 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
         CurrentPhase = Phase.TriggerEmotionEvent;
         var face = V.Faces.GetFace(TargetFaceId!.Value);
         EmotionEvent(face is { HasName: true } ? "InteractWithNamedFace" : "InteractWithUnnamedFace");
-        Log("objective achieved: InteractedWithFace");
+        ReportMissing("M7-019 InteractedWithFace objective 0x0C belongs to the native timer-expiry boundary before StopActing; the full native face owner is not recovered");
         CurrentPhase = Phase.Idle;
         Finish();
     }

@@ -1,0 +1,61 @@
+{
+  "job": "HIKING-DRIVE-OFF-CHARGER-1",
+  "state": "WIP, NOT READY",
+  "workerCommit": "428a2e06",
+  "integratedCommit": "d32b1ef8",
+  "referenceCounts": {
+    "Passed": 396,
+    "Failed": 1
+  },
+  "total": 397,
+  "failedTests": [
+    "Cozmo.Protocol.Tests.DriveOffPilotTests.HikingAliasManualEntryUsesRealActionAndCompletion"
+  ],
+  "failureClassification": "UNCLASSIFIED; startup returned false; no correction attempted",
+  "referenceDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-hiking-drive-off-charger-1\\.scratch\\hiking-drive-off-charger-1-reference1",
+  "inputsStable": true,
+  "binObjStable": true,
+  "fullGateRun": false,
+  "independentReplayRun": false,
+  "officialChanges": false,
+  "hardwareRun": false,
+  "originalOverallPreAndPostEmpty": true,
+  "separateResumeProcessesEmpty": true,
+  "wrapperStatus": {
+    "wrapper": "failed",
+    "dotnetCalled": true,
+    "phases": {
+      "restore": 0,
+      "build": 0,
+      "test": 1,
+      "shutdown": 0
+    },
+    "checks": {
+      "gitBefore": 0,
+      "inputsBefore": 0,
+      "binsBefore": 0,
+      "binsAfter": 0,
+      "binsCompare": 0,
+      "inputsAfter": 0,
+      "inputsCompare": 0,
+      "gitAfter": 0,
+      "trx": 1
+    },
+    "errors": [
+      "test failed 1",
+      "TRX validation failed"
+    ],
+    "overallPre": 0,
+    "overallPost": 0
+  },
+  "evidenceSha256": {
+    "wrapper-status.json": "aef15831444a79bd284a95c25da5a51d4f62a5eb9e4c77c168c5e8732a9833d7",
+    "test.log": "0f886a566c74474dcb642b31fe490aae4921c6a261253520d53a2ef167c9c7d7",
+    "results/reference1.trx": "b9d1b4dd19c535d11a54930ba13973a045296f1d09544cc27210c23b82f7a478",
+    "trx-summary.json": "e2b8fb38299b6df9e8834970338e6c3c59d78e364fc78614df4d781e8013632a",
+    "inputs-before.json": "6457c8378f118c4859793cf6d4fff25b217c25bd0d8fac8b0a0697bdf9da1446",
+    "inputs-after.json": "6457c8378f118c4859793cf6d4fff25b217c25bd0d8fac8b0a0697bdf9da1446",
+    "bins-before.json": "e04538b691ccb280968e459abc2a0f9d2f1b0cc7aa482c05a2c96f0307a88056",
+    "bins-after.json": "e04538b691ccb280968e459abc2a0f9d2f1b0cc7aa482c05a2c96f0307a88056"
+  }
+}

@@ -12,7 +12,8 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public sealed class NoPreDockPosesStrategy : ReactionTriggerStrategy
 {
-    private readonly AIWhiteboard _whiteboard;
+    private AIWhiteboard _whiteboard;
+    internal void BindWhiteboard(AIWhiteboard whiteboard) => _whiteboard = whiteboard;
     private readonly RamIntoBlockBehavior _behavior;
 
     public NoPreDockPosesStrategy(AIWhiteboard whiteboard, RamIntoBlockBehavior behavior) { _whiteboard = whiteboard; _behavior = behavior; }

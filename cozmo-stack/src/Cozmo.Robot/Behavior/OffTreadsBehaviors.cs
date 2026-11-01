@@ -14,6 +14,13 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 {
+    private long _generation;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
+    protected override void OnStop(BehaviorStopReason reason) => Interlocked.Increment(ref _generation);
     /// <summary>The cliff-sensor test: <c>(raw &gt;&gt; 4) &gt; 0x18</c>, i.e. raw ≥ 400, means calibrate rather than flip.</summary>
     public const int CliffRawCalibrateAt = 400;
 
@@ -26,7 +33,11 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
         var sensors = Context.Robot.Sensors;
         if (sensors.OffTreadsState != OffTreadsState.OnBack)
         {
+            long epoch = CaptureHostExecutionVersion();
             Log("not on back: objective ReactedToRobotOnBack");
+            if (!HostExecutionVersionCurrent(epoch)) return;
+            Context.Robot.Engine.ReportBehaviorObjective(0x21, "ReactedToRobotOnBack", Id);
+            if (!HostExecutionVersionCurrent(epoch)) return;
             Finish();
             return;
         }
@@ -44,7 +55,11 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
     {
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnBack)
         {
+            long epoch = CaptureHostExecutionVersion();
             Log("back on treads: objective ReactedToRobotOnBack");
+            if (!HostExecutionVersionCurrent(epoch)) return;
+            Context.Robot.Engine.ReportBehaviorObjective(0x21, "ReactedToRobotOnBack", Id);
+            if (!HostExecutionVersionCurrent(epoch)) return;
             Finish();
             return;
         }
@@ -67,6 +82,13 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
 {
+    private long _generation;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
+    protected override void OnStop(BehaviorStopReason reason) => Interlocked.Increment(ref _generation);
     public ReactToRobotOnFaceBehavior() : base("ReactToRobotOnFace", "ReactToRobotOnFace") { }
 
     protected override void OnStart() => FlipOverIfNeeded();
@@ -91,7 +113,11 @@ public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
             PlayTrigger(AnimationTrigger.FailedToRightFromFace, FlipOverIfNeeded);
         else
         {
+            long epoch = CaptureHostExecutionVersion();
             Log("righted: objective ReactedToRobotOnFace");
+            if (!HostExecutionVersionCurrent(epoch)) return;
+            Context.Robot.Engine.ReportBehaviorObjective(0x22, "ReactedToRobotOnFace", Id);
+            if (!HostExecutionVersionCurrent(epoch)) return;
             Finish();
         }
     }
@@ -305,7 +331,11 @@ public sealed class ReactToPlacedOnSlopeBehavior : SteppedBehavior
             Log($"placed on a slope again within 10 s with the pitch still high ({deg:F1} deg): calibrating the head");
             CalibrateHead(() => { PitchWasHigh = false; Finish(); });
         }
-        else PlayTrigger(AnimationTrigger.ReactToPerchedOnBlock, CheckPitch);
+        else
+        {
+            int selected = (Context.Needs ?? Context.Robot.Engine.Needs).SevereNeeds.Selected;
+            PlayTrigger((AnimationTrigger)(selected == 0 ? 0x145 : selected == 1 ? 0x139 : 0x1A8), CheckPitch);
+        }
         _lastRunMs = now;
     }
 
@@ -377,6 +407,13 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 {
+    private Action? _completionLease;
+    private long _generation;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     public enum Phase { Shaking, Stopping, Waiting, Choosing, Finishing }
     public enum Reaction : byte { None = 0, Soft = 1, Medium = 2, Hard = 3, NotBackOnTreads = 4 }
 
@@ -396,7 +433,11 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
     protected override void OnStart()
     {
         // fidelity: M7-014
-        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToRobotShaken);
+        long epoch = CaptureHostExecutionVersion();
+        if (!Scope.SmartDisableReactionsWithLockGuarded(Id, ReactionLockTables.ReactToRobotShaken, () => HostExecutionVersionCurrent(epoch))) return;
+        var severe = (Context.Needs ?? Context.Robot.Engine.Needs).SevereNeeds;
+        if (severe.Selected != 3) severe.Clear();
+        if (!HostExecutionVersionCurrent(epoch)) return;
         CurrentPhase = Phase.Shaking;
         MaxAccelMagnitude = 0;
         ShakenDurationSec = 0;
@@ -404,17 +445,14 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
         LoopShake();
     }
 
-    /// <summary>
-    /// FIDELITY GAP (DERIVED_STATE.md §5): the engine starts DizzyShakeLoop once with <c>numLoops = 0</c> and its
-    /// streamer loops the clip seamlessly. This scheduler plays a clip once, so the loop is restarted from the
-    /// completion callback: every pass closes the animation (EndOfAnimation, a silence frame) and opens a new
-    /// one, a gap of a frame or two at each loop boundary. Looping natively would reopen the frozen M5
-    /// timeline; recorded rather than done.
-    /// </summary>
     private void LoopShake()
     {
         if (CurrentPhase != Phase.Shaking) return;
-        PlayTrigger(AnimationTrigger.DizzyShakeLoop, LoopShake);
+        long epoch = CaptureHostExecutionVersion();
+        _completionLease ??= AcquireActionCompletionOwner(Context.Robot);
+        var action = new TriggerAnimationAction(Context.Robot, new(AnimationTrigger.DizzyShakeLoop, 0, true, 0, 60f, false));
+        if (!HostExecutionVersionCurrent(epoch)) { action.RetireStaleConstructor(() => false); return; }
+        StartActing(action, _ => { }, () => HostExecutionVersionCurrent(epoch));
     }
 
     protected override void OnUpdate()
@@ -442,7 +480,7 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 
             case Phase.Waiting:
                 if (sensors.OffTreadsState == OffTreadsState.OnTreads) CurrentPhase = Phase.Choosing;
-                else if (!Busy)
+                else if (!HasCurrentAction && !Busy)
                 {
                     Played = Reaction.NotBackOnTreads;
                     Log("still off treads after the shake sequence: no dizzy reaction");
@@ -466,17 +504,25 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
                 break;
             }
             case Phase.Finishing:
-                if (!Busy)
+                if (!HasCurrentAction && !Busy)
                 {
+                    long epoch = CaptureHostExecutionVersion();
                     Log("objective ReactedToRobotShaken");
+                    if (!HostExecutionVersionCurrent(epoch)) return;
+                    Context.Robot.Engine.ReportBehaviorObjective(0x24, "ReactedToRobotShaken", Id);
+                    if (!HostExecutionVersionCurrent(epoch)) return;
                     Finish();
                 }
                 break;
         }
     }
 
-    protected override void OnStop(BehaviorStopReason reason) =>
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Interlocked.Increment(ref _generation);
+        _completionLease?.Invoke(); _completionLease = null;
         Log($"DAS robot.dizzy_reaction: shakenDuration = {ShakenDurationSec:F3}s, maxShakingAccelMag = {MaxAccelMagnitude:F1}, reactionPlayed = '{Played}'");
+    }
 }
 
 /// <summary>
@@ -579,27 +625,59 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 {
+    private long _generation;
+    protected override bool KeepsRunningWithoutAction => HasCurrentAction;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     public const double TimeoutSec = 5.0;
 
-    public ReactToMotorCalibrationBehavior() : base("ReactToMotorCalibration", "ReactToMotorCalibration") { }
+    private Cozmo.Robot.Manipulation.ManipulationSystem? _manipulation;
+    internal void BindManipulation(Cozmo.Robot.Manipulation.ManipulationSystem manipulation) => _manipulation = manipulation;
+    private Action? _completionLease;
+    public ReactToMotorCalibrationBehavior(Cozmo.Robot.Manipulation.ManipulationSystem? manipulation = null) : base("ReactToMotorCalibration", "ReactToMotorCalibration")
+    {
+        _manipulation = manipulation;
+    }
 
     /// <summary>Whether the last run saw both motors calibrated before the timeout.</summary>
     public bool Completed { get; private set; }
+    private Action<Cozmo.Protocol.MotorCalibration>? _calibrationHandler;
 
     protected override void OnStart()
     {
         // fidelity: M7-014
         Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToMotorCalibration);
-        var state = Context.Robot.State;
+        _completionLease = AcquireActionCompletionOwner(Context.Robot);
         Completed = false;
-        WaitUntil(() => !state.HeadCalibrating && !state.LiftCalibrating && state.HeadCalibrated && state.LiftCalibrated,
-            TimeoutSec, ok =>
-            {
-                Completed = ok;
-                Log(ok ? "head and lift report calibrated"
-                       : $"Calibration didn't complete (lift: {(state.LiftCalibrated && !state.LiftCalibrating ? 1 : 0)}, head: {(state.HeadCalibrated && !state.HeadCalibrating ? 1 : 0)})");
-                Finish();
-            }, "both motors calibrated");
+        long epoch = CaptureHostExecutionVersion();
+        _calibrationHandler = _ =>
+        {
+            using var owner = Context.Robot.Engine.EnterSynchronousOwner();
+            var state = Context.Robot.State;
+            if (!EngineRunning || !HostExecutionVersionCurrent(epoch) || !state.HeadCalibrated || !state.LiftCalibrated) return;
+            Completed = true;
+            StopActing(true, false);
+        };
+        Context.Robot.Sensors.MotorCalibrationReportedInternal += _calibrationHandler;
+        if (_manipulation is null)
+        {
+            ReportMissing("M7-019 ReactToMotorCalibration WaitAction requires the manipulation/action-list owner");
+            InitFailed = true;
+            return;
+        }
+        StartActing(new Cozmo.Robot.Manipulation.NativeTimedWaitRunner(_manipulation, (float)TimeoutSec), _ => { });
+    }
+
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Interlocked.Increment(ref _generation);
+        if (_calibrationHandler is { } handler)
+            Context.Robot.Sensors.MotorCalibrationReportedInternal -= handler;
+        _calibrationHandler = null;
+        _completionLease?.Invoke(); _completionLease = null;
     }
 }
 
@@ -617,22 +695,32 @@ public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToFrustrationBehavior : SteppedBehavior
 {
+    private Action? _completionLease;
+    private long _generation;
+    private ScopedAcquisition? _drivingLease;
+    private readonly Dictionary<long, (Cozmo.Robot.Vision.Pose3d? Goal, Cozmo.Robot.Vision.Pose3d? Parent)> _retiredPoses = new();
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
+    protected override bool KeepsRunningWithoutAction => HasCurrentAction;
+    private Cozmo.Robot.Vision.Pose3d? _driveParent;
     private readonly FrustrationStrategy? _strategy;
     private Cozmo.Robot.Manipulation.ManipulationSystem? _m;
-    private CancellationTokenSource? _driveCancel;
 
     /// <summary>The shipped Major configuration, with its random drive on the manipulation system's paths.</summary>
     public static ReactToFrustrationBehavior Major(Cozmo.Robot.Manipulation.ManipulationSystem m, FrustrationStrategy? strategy = null) =>
         new("ReactToFrustrationMajor", AnimationTrigger.FrustratedByFailureMajor, "FinishedMajorFrustration", strategy)
             { _m = m, RandomDriveMinDistMm = 150, RandomDriveMaxDistMm = 400, RandomDriveMinAngleDeg = 80, RandomDriveMaxAngleDeg = 180 };
 
+    internal void BindManipulation(Cozmo.Robot.Manipulation.ManipulationSystem manipulation) => _m = manipulation;
     public double RandomDriveMinDistMm { get; init; }
     public double RandomDriveMaxDistMm { get; init; }
     public double RandomDriveMinAngleDeg { get; init; }
     public double RandomDriveMaxAngleDeg { get; init; }
     /// <summary>The random goal of the last drive, for tests and the log.</summary>
     public Cozmo.Robot.Vision.Pose3d? DriveGoal { get; private set; }
-    protected override bool KeepsRunningWithoutAction => _driveCancel is not null;
 
     public ReactToFrustrationBehavior(string id, AnimationTrigger animation, string finalEmotionEvent,
                                       FrustrationStrategy? strategy = null)
@@ -650,15 +738,36 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
     public AnimationTrigger Animation { get; }
     public string FinalEmotionEvent { get; }
 
+    internal static (float radians, float distance) RandomDriveScalars(float minAngle, float maxAngle, float minDistance, float maxDistance, Func<double> draw)
+    {
+        float angle = (float)(((double)maxAngle - minAngle) * draw() + minAngle);
+        if (draw() < 0.5) angle = -angle;
+        float radians = angle * BitConverter.Int32BitsToSingle(0x3C8EFA35);
+        float distance = (float)(((double)maxDistance - minDistance) * draw() + minDistance);
+        return (radians, distance);
+    }
+
     protected override void OnStart()
     {
-        // fidelity: M5-063 — M7 checked caller gives the pointer, but explicitly leaves its triplet undecoded.
-        ReportMissing("M5-063 ReactToFrustration PushDrivingAnimations (M7, 0x00605C20, triplet 0x00C73C00) arguments not decoded in the checked row; no animation triggers invented");
-        PlayTrigger(Animation, () =>
+        long epoch = CaptureHostExecutionVersion();
+        DriveGoal?.Dispose(); DriveGoal = null;
+        _driveParent?.Dispose(); _driveParent = null;
+        var driving = _drivingLease = new ScopedAcquisition();
+        Context.Robot.Animations.DrivingAnimations.PushOwned(new DrivingAnimations((AnimationTrigger)0x94, (AnimationTrigger)0x90, (AnimationTrigger)0x8C), Id, driving);
+        if (!HostExecutionVersionCurrent(epoch)) return;
+        _completionLease = AcquireActionCompletionOwner(Context.Robot);
+        if ((int)Animation == 0x23F) { InitFailed = true; return; }
+        var reaction = new TriggerLiftSafeAnimationAction(Context.Robot, new(Animation, 1, true, 0, 60f, false));
+        if (!HostExecutionVersionCurrent(epoch)) { reaction.RetireStaleConstructor(() => false); return; }
+        StartActing(reaction, _ =>
         {
             double nowSec = Clock() / 1000.0;
-            bool known = Context.Mood?.Trigger(FinalEmotionEvent, nowSec) ?? false;
-            Log($"emotion event {FinalEmotionEvent}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
+            if (!string.IsNullOrEmpty(FinalEmotionEvent))
+            {
+                bool known = Context.Mood?.Trigger(FinalEmotionEvent, nowSec) ?? false;
+                Log($"emotion event {FinalEmotionEvent}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
+            }
+            if (!HostExecutionVersionCurrent(epoch)) return;
             // The strategy stamps the clock it also evaluates the cooldown on (ShippedReactionStrategies hands
             // one clock to every strategy); a strategy built without one is stamped with this behaviour's
             // clock in seconds, and its caller must drive the manager from that same clock.
@@ -666,39 +775,57 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
             {
                 if (_strategy.HasClock) _strategy.AnimationComplete(); else _strategy.AnimationComplete(nowSec);
             }
-            if (RandomDriveMaxDistMm > 1e-5 && _m is not null && _m.RobotPose() is { } robot)
+            if (!HostExecutionVersionCurrent(epoch)) return;
+            bool driveEnabled = (float)RandomDriveMaxDistMm > BitConverter.Int32BitsToSingle(0x3727C5AC);
+            float ang = 0f, dist = 0f;
+            if (driveEnabled)
             {
-                var rnd = Context.Random;
-                double dist = RandomDriveMinDistMm + rnd.NextDouble() * (RandomDriveMaxDistMm - RandomDriveMinDistMm);
-                double ang = (RandomDriveMinAngleDeg + rnd.NextDouble() * (RandomDriveMaxAngleDeg - RandomDriveMinAngleDeg)) * Math.PI / 180 * (rnd.Next(2) == 0 ? 1 : -1);
-                double heading = robot.AngleAroundZ + ang;
-                var goal = new Cozmo.Robot.Vision.Pose3d(Cozmo.Robot.Vision.Mat3.AboutZ(heading),
-                    robot.Translation + new Cozmo.Robot.Vision.Vec3(Math.Cos(heading) * dist, Math.Sin(heading) * dist, 0));
+                var rnd = Context.Robot.Engine.ContextRandom;
+                (ang, dist) = RandomDriveScalars((float)RandomDriveMinAngleDeg, (float)RandomDriveMaxAngleDeg,
+                    (float)RandomDriveMinDistMm, (float)RandomDriveMaxDistMm, rnd.GetNextDbl);
+            }
+            if (driveEnabled && _m is not null && Context.Robot.Engine.Robot is { } robot)
+            {
+                _driveParent = new Cozmo.Robot.Vision.Pose3d(Cozmo.Robot.Vision.Rotation3d.FromAngleAxis(ang, new(0, 0, 1)), Cozmo.Robot.Vision.Vec3.Zero, "", robot.MainPose);
+                var goal = new Cozmo.Robot.Vision.Pose3d(Cozmo.Robot.Vision.Rotation3d.Identity, new(dist, 0, 0), "", _driveParent);
                 DriveGoal = goal;
                 Log($"random drive: {dist:F0} mm at {ang * 180 / Math.PI:F0} deg");
-                var cts = _driveCancel = new CancellationTokenSource();
-                var drive = new Cozmo.Robot.Manipulation.DriveToPoseAction(_m) { Goal = goal };
-                ObserveAsyncWork(RunAsyncAction(() => drive.RunAsync(cts.Token)).ContinueWith(t =>
-                {
-                    var r = t.Status == TaskStatus.RanToCompletion ? t.Result : Cozmo.Robot.Manipulation.ActionResult.Abort;
-                    Post(() =>
-                    {
-                        if (_driveCancel != cts) return;
-                        _driveCancel = null;
-                        foreach (var l in drive.Trace) Log("  " + l);
-                        Log($"random drive -> {r}");
-                        Finish();
-                    });
-                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default));
+                if (!HostExecutionVersionCurrent(epoch)) return;
+                var drive = new Cozmo.Robot.Manipulation.DriveToPoseAction(_m, false, false);
+                drive.SetNativeGoals(new[] { goal });
+                StartActing(drive, _ => { }, () => HostExecutionVersionCurrent(epoch));
+                if (!HostExecutionVersionCurrent(epoch)) return;
+                Context.Robot.Engine.ReportBehaviorObjective(0x1D, "ReactedToFrustration", Id);
                 return;
             }
+            if (driveEnabled)
+                ReportMissing("M7-019 ReactToFrustration random drive requires its manipulation and robot-pose owners");
+            if (!HostExecutionVersionCurrent(epoch)) return;
+            Context.Robot.Engine.ReportBehaviorObjective(0x1D, "ReactedToFrustration", Id);
+            if (!HostExecutionVersionCurrent(epoch)) return;
             Finish();
-        });
+        }, () => HostExecutionVersionCurrent(epoch));
     }
 
     protected override void OnStop(BehaviorStopReason reason)
     {
-        ReportMissing("M5-063 ReactToFrustration RemoveDrivingAnimations (M7, 0x00605D8E) waits for its unbuilt paired Push/triplet; no unmatched removal or extra empty-stack warning fabricated");
-        _driveCancel?.Cancel(); _driveCancel = null;
+        long old = CaptureHostExecutionVersion();
+        long stopped = Interlocked.Increment(ref _generation);
+        var goal = DriveGoal; var parent = _driveParent; DriveGoal = null; _driveParent = null;
+        _retiredPoses[old] = (goal, parent);
+        var lease = _completionLease; _completionLease = null; lease?.Invoke();
+        var driving = _drivingLease; _drivingLease = null;
+        if (driving is not null)
+        {
+            var handler = Context.Robot.Animations.DrivingAnimations;
+            var removed = handler.RemoveScoped(Id, () => Interlocked.Read(ref _generation) == stopped);
+            if (!removed.Completed) handler.RemoveOwned(driving);
+            driving.Cancel();
+        }
+    }
+
+    protected override void OnStopped(BehaviorStopReason reason, long runVersion)
+    {
+        if (_retiredPoses.Remove(runVersion, out var poses)) { poses.Goal?.Dispose(); poses.Parent?.Dispose(); }
     }
 }

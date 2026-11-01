@@ -7,34 +7,10 @@ namespace Cozmo.Robot.Behavior;
 public sealed record FreeplayDecision(double AtSec, string? Activity, string? Behavior, string Reason);
 
 /// <summary>
-/// The engine's freeplay decision layer, as <c>BehaviorManager::Update</c> (0x005A2F60) runs it: reactions first
-/// (<c>CheckReactionTriggerStrategies</c>), then the current activity's <c>GetDesiredActiveBehavior</c>
-/// (<c>ChooseNextScoredBehaviorAndSwitch</c> 0x005A2A20 → <c>SwitchToBehaviorBase</c>), then the behaviour's own
-/// <c>Update</c>. The activity comes from <c>ActivityFreeplay</c> (0x005AE2xx, "ActivityFreeplay.ChooseNextBehavior"):
-/// the current one stays until its strategy wants to end and its behaviour has finished ("Picking new activity
-/// because '%s' wants to end, and behavior finished"), a spark is requested, or the robot was put down
-/// (<c>RobotOffTreadsStateChanged</c>: "Kicking out '%s' on put down so we pick up a new one", then
-/// <c>CalculateDesiredActivityFromObjects</c> picks the <c>desiredActivityNames</c> entry for faces and cubes:
-/// "robot.goal_from_face_and_cube"); a new activity is the first sub-activity, in priority order, whose strategy
-/// wants to start and whose chooser yields a behaviour ("The new activity '%s' picked no behavior"); after a
-/// put-down the desired-from-objects activity is tried first (the config calls <c>desiredActivityNames</c>
-/// "parameters to decide between activities on put down"); "There was no activity, and no activity was selected" is an
-/// error the engine logs and this reports. An activity's <c>needsActionID</c> is <b>not</b> reported when it
-/// ends - it is read into <c>IActivity+0x1C</c> and never looked at again; the behaviours report their own
-/// (<see cref="BehaviorNeedsActions"/>).
-///
-/// <c>GetDesiredActiveBehaviorInternal</c> 0x005AE29C decides twice. Before asking, in order: a debug-forced
-/// activity (+0x91) that is not the current one, the requested activity (+0x90) that is not the current one, a
-/// spark change or no current activity at all, then - only when no behaviour is running and no sparks reward is
-/// waiting - the strategy's <c>WantsToEnd</c>. Then it asks the activity
-/// (<c>IActivity::GetDesiredActiveBehavior</c> 0x005B387C) and decides again on what came back
-/// (0x005AE68C..0x005AE704): a null pick ends the activity and bars it from the re-pick
-/// ("NoBehaviorChosenWhileRunning: ... This activity is not allowed to be repicked", the third argument of
-/// <c>PickNewActivityForSpark</c> going false at 0x005AE75C), and a pick that is <b>not</b> the behaviour
-/// already running (<c>IBehavior+0xa1</c>, the running flag <c>Init</c> sets and <c>Stop</c> clears) ends it
-/// too when the strategy wants to end ("NewBehaviorChosenWhileRunning"), unless the needs manager has a sparks
-/// reward still to communicate (+0x3d8). Both loop back to the activity pick, which is why the tick's middle is
-/// a loop.
+/// The standalone host's bounded ActivityFreeplay chooser (0x005AE29C), called by BehaviorManager after reactions.
+/// A kept activity may cause one re-pick; the newly picked activity is asked once. Putdown immediately deselects
+/// eligible activities but does not calculate the object-derived desired cache. The canonical parent admission,
+/// Look state-6 cache supplier, filtered object count, and raw Spark-to-activity join remain missing.
 /// </summary>
 // fidelity: M15-002
 // fidelity: M15-006
@@ -44,9 +20,10 @@ public sealed class FreeplaySystem : IManagedActivity
     private readonly Action<BehaviorManager.ReactionSwitch> _reactionObserver;
     private readonly BehaviorContext _ctx;
     private readonly IReadOnlyDictionary<string, IBehavior> _bound;
-    private IBehavior? _pendingInterlude;
-    private string? _lastBehaviorId, _interludeAfter;
-    private bool _putDownPending, _pickDesiredFirst = true, _requestPending;
+    private bool _requestPending;
+    private string? _desiredActivity;
+    // Explicit test seam for the recovered cache byte. The canonical Look state-6 producer remains unbound.
+    internal void SetDesiredActivityCacheForTest(string? id) => _desiredActivity = ActivityIdOrNull(id);
     /// <summary><c>BehaviorManager+0x65</c>: the invalid-spark latch (C1 §1).</summary>
     private bool _requestedSparkInvalid;
 
@@ -93,10 +70,8 @@ public sealed class FreeplaySystem : IManagedActivity
     public string? ForcedActivity { get; set; }
 
     /// <summary>
-    /// The Spark freeplay-pause flag (<c>FreeplayDataTracker</c> flag 1). Set after a pick as
-    /// <c>GetDesiredActiveBehaviorInternal</c> does: <c>SetFreeplayPauseFlag(spark != 0x55, 1)</c>
-    /// (0x005AE4E2..0x005AE4F2), where a null <see cref="Activity.RequireSpark"/> is the engine's invalid
-    /// spark 0x55. The host points this at the tracker.
+    /// The Spark freeplay-pause flag, set from the manager's requested raw ID after a changed pick
+    /// (0x005AE4E2..0x005AE4F2). The host points this at the tracker.
     /// </summary>
     // fidelity: M15-015
     public Action<bool>? SparkPauseChanged { get; set; }
@@ -104,9 +79,10 @@ public sealed class FreeplaySystem : IManagedActivity
     /// <summary>The robot was put back on its treads: the activity is kicked out and re-picked from what is around.</summary>
     public void OnRobotPutDown(double nowSec)
     {
-        Inputs.LastOnTreadsEventSec = nowSec; _ctx.LastOnTreadsEventSec = nowSec;
-        if (Current is not null) Log?.Invoke($"ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown: Kicking out '{Current.Id}' on put down so we pick up a new one");
-        _putDownPending = true;
+        if (Current is not { } activity || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" ||
+            activity.Id == ActivityIdOrNull(ForcedActivity) || activity.RequireSpark is not null) return;
+        Log?.Invoke($"ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown: Kicking out '{activity.Id}' on put down so we pick up a new one");
+        EndActivity(nowSec);
     }
 
     /// <summary>
@@ -130,6 +106,7 @@ public sealed class FreeplaySystem : IManagedActivity
     {
         Inputs.RequestedSpark = spark;
         if (spark is null) _requestedSparkInvalid = true;
+        ReportActivityMissing("MISSING: M15-006 host Spark name to native manager raw requested ID join");
     }
 
     /// <summary>The invalid-spark latch (<c>BehaviorManager+0x65</c>).</summary>
@@ -139,11 +116,8 @@ public sealed class FreeplaySystem : IManagedActivity
     /// <summary><c>CalculateDesiredActivityFromObjects</c>: the configured activity for the faces and cubes known.</summary>
     public string? DesiredActivityFromObjects()
     {
-        if (Freeplay.DesiredActivityNames is not { } names) return null;
-        bool face = Inputs.FaceKnown, cube = Inputs.LocatedCubes > 0;
-        var pick = face && cube ? names.FaceAndCube : face ? names.FaceOnly : cube ? names.CubeOnly : names.None;
-        Log?.Invoke($"robot.goal_from_face_and_cube {(face ? 1 : 0)}:{(cube ? 1 : 0)} -> {pick}");
-        return pick;
+        ReportActivityMissing("MISSING: M15-006 filtered object count and Look state-6 desired supplier are unbound");
+        return null;
     }
 
     /// <summary>
@@ -210,122 +184,103 @@ public sealed class FreeplaySystem : IManagedActivity
     IBehavior? IManagedActivity.GetDesiredActiveBehavior(IBehavior? current, double nowSec)
     {
         _switchedFromId = null;
-        // The activity that the reselect branch must not let the re-pick choose again (C1 §1): the engine's
-        // PickNewActivityForSpark(..., 0) skips the current activity (0x005ADC70..0x005ADC74).
         Activity? barred = null;
-        // the activity: keep, end, or pick
-        if (Current is not null)
+        bool pick = Current is null;
+        if (Current is { } existing)
         {
-            bool wantsEnd = Current.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out var endReason);
-            bool behaviorFinished = current is null;
-            // C1 §1 (0x005AE40C..0x005AE46E): when the current activity already carries the requested spark
-            // and BehaviorManager+0x65 (the invalid-spark latch) is set, the engine logs SparkReselected and
-            // calls PickNewActivityForSpark with arg 0 - the "ask the current activity WantsToEnd" flag is
-            // cleared, so the activity is dropped whatever WantsToEnd says.
-            bool sparkReselected = _requestedSparkInvalid && Current.RequireSpark == Inputs.RequestedSpark;
-            if (sparkReselected)
-            {
-                Log?.Invoke("ActivityFreeplay.ChooseNextBehavior.SparkReselected: Spark re-selected: none behavior will be selected");
-                barred = Current;                             // the re-pick cannot choose it again
-                EndActivity(nowSec);
-            }
-            else if (_putDownPending || _requestPending || (wantsEnd && behaviorFinished) || (Inputs.RequestedSpark is not null && Current.RequireSpark != Inputs.RequestedSpark) || (ForcedActivity is not null && ForcedActivity != Current.Id))
-            {
-                var why = _putDownPending ? "put down" : _requestPending ? $"'{Current.Id}' was requested" : ForcedActivity is not null ? $"debug is forcing '{ForcedActivity}'" : Inputs.RequestedSpark is not null ? $"to match spark '{Inputs.RequestedSpark}'" : $"'{Current.Id}' wants to end ({endReason}), and behavior finished";
-                Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior: Picking new activity because {why}");
-                EndActivity(nowSec);
-            }
+            var wanted = ActivityIdOrNull(ForcedActivity) ?? _desiredActivity;
+            if (wanted is not null) pick = wanted != existing.Id;
+            else if (_requestPending || (_manager.ActiveSparkId == 0x55 && _manager.RequestedSparkId != 0x55)) pick = true;
+            else if (current is null && !(Inputs.Needs?.SparksRewardPending ?? false))
+                pick = existing.Strategy.WantsToEnd(Inputs, existing.RunningSec(nowSec), out _, nowSec);
         }
-        if (_putDownPending) _pickDesiredFirst = true;
-        _putDownPending = false; _requestPending = false;
+        _requestPending = false;
+        bool initialPick = pick;
 
-        // Pick an activity, ask it for a behaviour, and decide again on the answer - the engine's second gate
-        // (0x005AE68C..0x005AE704), which sends both of its outcomes back to the activity pick. The bound is
-        // the tree: each pass either settles or ends an activity.
+        // Only the existing-activity path may return to the picker (0x005AE656..762).
         ChooserDecision decision;
-        IBehavior? desired;
-        for (int pass = 0; ; pass++)
+        if (!pick)
         {
-            if (Current is null)
+            decision = ChooseActivityBehavior(Current!, current, nowSec);
+            bool retry = decision.Behavior is null;
+            if (retry) { Log?.Invoke("ActivityFreeplay.ChooseNextBehavior.NoBehaviorChosenWhileRunning: activity is not allowed to be repicked"); barred = Current; } // askCurrent=false
+            if (!retry && !_manager.IsRunning(decision.Behavior!) && !(Inputs.Needs?.SparksRewardPending ?? false))
             {
-                var picked = PickNewActivity(nowSec, out var pickReason, barred);
-                if (picked is null) { Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})"); _recordedThisTick = true; return null; }
-                Current = picked; Current.OnSelected(nowSec, ReportActivityMissing); _ctx.LastActivitySwitchSec = nowSec;
-                // BehaviorManager::SwitchToRequestedSpark 0x005A4220 runs after every pick and clears the
-                // invalid-spark latch at +0x65 (C1 §1), so any new selection clears it.
-                _requestedSparkInvalid = false;
-                // 0x005AE4E2: SetFreeplayPauseFlag(spark != 0x55, 1); a null RequireSpark is spark 0x55.
-                SparkPauseChanged?.Invoke(Current.RequireSpark is not null);
-                Log?.Invoke($"robot.freeplay_goal_started {Current.Id}: {pickReason}");
-                // EndActivity stopped whatever was running, so the local snapshot taken above is stale. Handing it
-                // to the new activity's chooser would present a stopped behaviour as running, and a behaviour id
-                // that both activities name would be treated as "already running" while the manager has nothing.
-                current = _manager.Current;
+                retry = Current!.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out _, nowSec);
+                if (retry) Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: '{Current.Id}' wants to end");
             }
-
-            // the behaviour the activity wants
-            decision = Current.Chooser?.GetDesiredActiveBehavior(current, _manager.RunningDurationSec(nowSec), _ctx, nowSec) ?? new ChooserDecision(null, "no chooser", Array.Empty<(string, double, string)>());
-            desired = decision.Behavior;
-            if (pass >= Freeplay.SubActivities.Count) break;                       // the tree is finite; settle
-
-            if (desired is null)
-            {
-                Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NoBehaviorChosenWhileRunning: Picking new activity because '{Current.Id}' chose behavior 'NULL'. This activity is not allowed to be repicked.");
-                if (current is not null && !current.IsRunnable(_ctx) && Current.Chooser is ScoringChooser ran) ran.Ran(current.Id, nowSec);
-                barred = Current;
-                EndActivity(nowSec);
-                current = _manager.Current;
-                continue;
-            }
-            // the activity that chose a behaviour it is not already running ends instead, if it wants to end
-            bool rewardPending = Inputs.Needs?.SparksRewardPending ?? false;
-            if (!rewardPending && (current is null || current.Id != desired.Id)
-                && Current.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out var switchEndReason))
-            {
-                Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: Picking new activity because '{Current.Id}' wants to end ({switchEndReason}), and behavior finished");
-                // PickNewActivityForSpark only re-picks the activity that is still running when its strategy
-                // does *not* want to end (0x005ADCA2..0x005ADCB0). EndActivity has already let go of it here,
-                // so that exclusion has to be said out loud.
-                barred = Current;
-                EndActivity(nowSec);
-                current = _manager.Current;
-                continue;
-            }
-            break;
+            if (retry) pick = true; // non-running candidate: askCurrent=true
         }
+        else decision = new ChooserDecision(null, "no chooser", Array.Empty<(string, double, string)>());
 
-
-        _switchReason = decision.Reason;
-        if (desired is not null && (current is null || current.Id != desired.Id))
+        if (pick)
         {
-            // IActivity::ChooseInterludeBehavior: between two different behaviours the interlude chooser gets a turn, once
-            string? previous = current?.Id ?? _lastBehaviorId;
-            if (Current!.InterludeChooser is not null && _pendingInterlude is null && previous is not null && previous != desired.Id && _interludeAfter != previous)
+            if (_manager.RequestedSparkId != 0x55 || Inputs.RequestedSpark is not null)
             {
-                var interlude = Current.InterludeChooser.GetDesiredActiveBehavior(null, 0, _ctx, nowSec).Behavior;
-                if (interlude is not null && interlude.Id != desired.Id && interlude.Id != previous)
+                ReportActivityMissing("MISSING: M15-006 raw requested Spark ID to activity bucket join; retaining current selection");
+                return current;
+            }
+            if (_manager.SparkCancelLatch != 0 && _manager.ActiveSparkId == _manager.RequestedSparkId) barred = Current;
+            // The absent bucket returns unchanged (0x005ADCD8..CF6); the outer initial/retry path still applies.
+            bool hasBucket = Freeplay.SubActivities.Any(a => a.Type != "Missing" && a.RequireSpark is null);
+            string pickReason;
+            Activity? picked;
+            if (hasBucket) picked = PickNewActivity(nowSec, out pickReason, barred);
+            else { picked = Current; pickReason = "no activities for requested spark"; Log?.Invoke("ActivityFreeplay.PickNewActivityForSpark: " + pickReason); }
+            _desiredActivity = null;
+            bool changed = !ReferenceEquals(picked, Current);
+            if (changed)
+            {
+                EndActivity(nowSec);
+                Current = picked;
+                if (picked is not null)
                 {
-                    Log?.Invoke($"IActivity.ChooseInterludeBehavior: Activity {Current.Id} is inserting interlude {interlude.Id} between behaviors {previous} and {desired.Id}");
-                    _pendingInterlude = desired; _interludeAfter = previous; desired = interlude;
+                    picked.OnSelected(nowSec, ReportActivityMissing);
+                    _ctx.LastActivitySwitchSec = nowSec;
+                    Log?.Invoke($"robot.freeplay_goal_started {picked.Id}: {pickReason}");
                 }
             }
-            if (_pendingInterlude is not null && desired.Id == _pendingInterlude.Id) _pendingInterlude = null;
-            return desired;
+            if (changed)
+            {
+                _manager.SwitchToNativeRequestedSpark();
+                _requestedSparkInvalid = false;
+                SparkPauseChanged?.Invoke(_manager.RequestedSparkId != 0x55);
+            }
+            if (Current is null)
+            {
+                Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})");
+                _recordedThisTick = true;
+                return null;
+            }
+            if (initialPick || changed) decision = ChooseActivityBehavior(Current, current, nowSec);
         }
-        if (desired is null && current is not null)
+
+        var desired = decision.Behavior;
+        _switchReason = decision.Reason;
+        if (desired is null && current is not null) _switchedFromId = current.Id;
+        if (ReferenceEquals(desired, current))
         {
-            // ChooseNextScoredBehaviorAndSwitch (0x005A2A74) switches whenever the chooser's pick differs from the
-            // running behaviour, a null pick included, so the manager stops it.
-            Log?.Invoke($"BehaviorManager.ChooseNextScoredBehaviorAndSwitch: '{current.Id}' is no longer runnable and the chooser picked nothing; stopping it");
-            if (Current!.Chooser is ScoringChooser sc3) sc3.Ran(current.Id, nowSec);
-            _switchedFromId = current.Id;
-            return null;
+            Record(nowSec, Current!.Id, current?.Id, current is null ? decision.Reason : "keeps running");
+            _recordedThisTick = true;
         }
-        Record(nowSec, Current!.Id, current?.Id, current is null ? decision.Reason : "keeps running");
-        _recordedThisTick = true;
-        return current;
+        return desired;
     }
 
+    // IActivity::GetDesiredActiveBehavior 0x005B387C caches the interlude itself.
+    private ChooserDecision ChooseActivityBehavior(Activity activity, IBehavior? current, double nowSec)
+    {
+        if (activity.CachedInterlude is not null && ReferenceEquals(activity.CachedInterlude, current))
+            return new ChooserDecision(activity.CachedInterlude, "cached interlude", Array.Empty<(string, double, string)>());
+        activity.CachedInterlude = null;
+        var decision = activity.Chooser?.GetDesiredActiveBehavior(current, _manager.RunningDurationSec(nowSec), _ctx, nowSec)
+            ?? new ChooserDecision(null, "no chooser", Array.Empty<(string, double, string)>());
+        if (activity.InterludeChooser is not null && !ReferenceEquals(decision.Behavior, current))
+        {
+            activity.CachedInterlude = activity.InterludeChooser.GetDesiredActiveBehavior(decision.Behavior, 0, _ctx, nowSec).Behavior;
+            if (activity.CachedInterlude is not null) return decision with { Behavior = activity.CachedInterlude };
+        }
+        return decision;
+    }
     /// <summary>
     /// What the manager's switch did, recorded as the activity's decision. The interrupted behaviour is NOT recorded as
     /// having run here: the engine keeps StopWithoutImmediateRepetitionPenalty for exactly that case, and the manager
@@ -339,7 +294,6 @@ public sealed class FreeplaySystem : IManagedActivity
             Record(nowSec, Current?.Id, null, $"{_switchedFromId} no longer runnable");
             return;
         }
-        if (_pendingInterlude is null) _lastBehaviorId = desired.Id;
         Record(nowSec, Current?.Id, started ? desired.Id : null, started ? _switchReason : $"{desired.Id} refused to start");
     }
 
@@ -358,20 +312,14 @@ public sealed class FreeplaySystem : IManagedActivity
     private void EndActivity(double nowSec)
     {
         if (Current is null) return;
-        if (_manager.Current is not null) _manager.Stop(BehaviorStopReason.Interrupted, nowSec);
         double ranSec = Current.RunningSec(nowSec);
-        Current.OnDeselected(nowSec, ReportActivityMissing);
-        if (Inputs.Needs is { SparksRewardPending: true } needs)
-        {
-            Log?.Invoke($"IActivity.Exit.SparksRewardCommunicated {Current.Id}");
-            needs.SparksRewardCommunicatedToUser();
-        }
+        Current.OnDeselected(nowSec, ReportActivityMissing, Inputs.Needs);
         // No needs action is reported here. An activity's needsActionID is stored at IActivity+0x1C
         // (ReadConfig, 0x005B2A9C) and never read again anywhere in the engine; the behaviours report their
         // own (IBehavior::NeedActionCompleted 0x005BE40C, see BehaviorNeedsActions). An earlier version of
         // this stack reported the activity's id when the activity ended, which the engine never does.
         Log?.Invoke($"robot.freeplay_goal_ended {Current.Id}: ran {(int)ranSec} s");
-        Current = null; _pendingInterlude = null;
+        Current = null;
         // The engine only touches the Spark pause flag (flag 1) after a pick (row 20), never here.
     }
 
@@ -393,15 +341,12 @@ public sealed class FreeplaySystem : IManagedActivity
     /// (0x005ADCD8). When the debug-forced id (+0x91, <see cref="ForcedActivity"/>) or the desired-from-objects id (+0x90, <c>CalculateDesiredActivityFromObjects</c> 0x005ADF4C: the
     /// activity <c>desiredActivityNames</c> names for the faces and cubes known) is set, the only activity taken is the one with that id, +0x91 first (0x005ADC6A..0x005ADC7E): no
     /// strategy is asked. Otherwise an activity other than the current one is taken when its strategy <c>WantsToStart</c> (0x005ADC8C..0x005ADC9E). The engine's fourth argument (askCurrent) is not a
-    /// parameter here: with it false the current activity is skipped (0x005ADCA2..0x005ADCA4), which is <paramref name="barred"/>; the true case (the current activity kept when its strategy does not
-    /// <c>WantsToEnd</c>, 0x005ADCA6..0x005ADCB0) is decided by the caller's keep/end logic before it asks for a pick. The chooser is not consulted: its null pick is the caller's "chose no behaviour" branch. The desired-from-objects id is computed here on the first
-    /// pick and after a put-down and cleared by the pick (0x005AE5E0..0x005AE5E8).
+    /// parameter here: with it false the current activity is skipped (0x005ADCA2..0x005ADCA4), which is <paramref name="barred"/>; otherwise the current activity is retained if it does not want to end. The canonical desired-from-objects supplier remains unbound.
     /// </summary>
     // fidelity: M15-013
     public Activity? PickNewActivity(double nowSec, out string reason, Activity? barred = null)
     {
-        var desiredId = _pickDesiredFirst ? DesiredActivityFromObjects() : null;
-        _pickDesiredFirst = false;
+        string? desiredId = _desiredActivity; // The canonical state-6 supplier is not yet bound.
         var bucket = Freeplay.SubActivities.Where(a => a.Type != "Missing" && a.RequireSpark == Inputs.RequestedSpark).ToList();
         if (bucket.Count == 0) { reason = $"no activities for the requested spark '{Inputs.RequestedSpark ?? "none"}'"; return null; }
         var notes = new List<string>();
@@ -414,7 +359,12 @@ public sealed class FreeplaySystem : IManagedActivity
                 if (a.Id == wanted) { reason = (ForcedActivity is not null ? $"debug is forcing '{wanted}'" : "desired from faces and cubes") + "; " + string.Join(", ", notes); return a; }
                 continue;
             }
-            if (a == barred) { notes.Add($"{a.Id}: chose no behaviour and may not be repicked"); continue; }
+            if (a == barred) { notes.Add($"{a.Id}: may not be repicked"); continue; }
+            if (ReferenceEquals(a, Current))
+            {
+                if (!a.Strategy.WantsToEnd(Inputs, a.RunningSec(nowSec), out _, nowSec)) { reason = "current activity continues"; return a; }
+                continue;
+            }
             if (!a.Strategy.WantsToStart(Inputs, nowSec, out var why)) { notes.Add($"{a.Id}: {why}"); continue; }
             reason = $"priority {a.Priority}; " + why + "; " + string.Join(", ", notes);
             return a;
@@ -438,11 +388,17 @@ public sealed class FreeplaySystem : IManagedActivity
     {
         // (the drive-off-charger stamp is written only by BehaviorDriveOffCharger::UpdateInternal 0x005C0E08; the former LOCAL stamp on the contacts flag falling had no engine counterpart)
         Inputs.OnCharger = robot.Sensors.OnCharger;
-        if (vision is not null)
+        if (vision is not null && robot.Engine.Robot is { } native &&
+            native.TryGetNativeOriginOwner(native.CurrentOriginId, out var origin) && origin is not null &&
+            vision.Faces.NativePoseScope is not null)
         {
-            Inputs.LocatedCubes = vision.World.LocatedObjects.Count(o => CubeGeometry.IsCube(o.Type));
-            Inputs.FaceKnown = vision.Faces.HasAnyFaces();
+            using var mutation = vision.World.EnterPoseMutation();
+            using var face = new Pose3d("");
+            Inputs.FaceKnown = vision.Faces.CopyNativeLastFace(origin, true, face);
         }
+        else ReportActivityMissing("MISSING: M14-001/M14-008 and M15-006 native face cache/current-origin provider unavailable");
+        if (m is not null) { Inputs.LastOnTreadsEventSec = m.Whiteboard.OffTreadsStateChangedAtSec; _ctx.LastOnTreadsEventSec = Inputs.LastOnTreadsEventSec; }
+        else ReportActivityMissing("MISSING: M15-006 shared whiteboard on-treads timestamp unavailable");
         if (m is not null) Inputs.PyramidBuilt = m.NativePyramids.Count > 0;
     }
 }

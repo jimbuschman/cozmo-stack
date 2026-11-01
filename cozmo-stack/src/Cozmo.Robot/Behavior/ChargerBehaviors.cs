@@ -195,6 +195,14 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
 /// </summary>
 public sealed class ReactToOnChargerBehavior : SteppedBehavior
 {
+    private Action? _completionLease;
+    private Action? _cancelHandler;
+    private long _generation;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     public enum Phase { Idle, PlayingReaction, WaitingOnCharger, SleepAnnounced, DisconnectAnnounced }
 
     public ReactToOnChargerBehavior(string id = "ReactToOnCharger", double timeTilSleepAnimationSec = 300, double timeTilDisconnectionSec = 330, bool triggeredFromVoiceCommand = false)
@@ -211,49 +219,61 @@ public sealed class ReactToOnChargerBehavior : SteppedBehavior
     public Phase CurrentPhase { get; private set; }
     public IReadOnlyList<string> Broadcasts => _broadcasts;
     private readonly List<string> _broadcasts = new();
-    private double _startMs;
+    private bool _cancelled;
+    private EngineRobot? _messageOwner;
 
     protected override bool KeepsRunningWithoutAction => true;
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => TriggeredFromVoiceCommand ? Requested : context.Robot.Sensors.OnCharger;
+    protected override bool IsRunnableInternal(BehaviorContext context) => true;
 
     protected override void OnStart()
     {
         // fidelity: M7-014
         // BehaviorReactToOnCharger::InitInternal 0x00606C9C..0x00606CB0: SmartDisableReactionsWithLock(own name, table 0x00C74182), first.
-        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToOnCharger);
+        long epoch = CaptureHostExecutionVersion();
+        bool Current() => EngineRunning && HostExecutionVersionCurrent(epoch);
+        if (!Scope.SmartDisableReactionsWithLockGuarded(Id, ReactionLockTables.ReactToOnCharger, Current)) return;
         Requested = false;
         _broadcasts.Clear();
-        _startMs = NowMs;
-        CurrentPhase = Phase.PlayingReaction;
-        Log("SmartPushIdleAnimation(Count): no idle while on the charger");
-        PlayTrigger(AnimationTrigger.PlacedOnCharger, () =>
+        _cancelled = false;
+        _messageOwner = Context.Robot.Engine.Robot;
+        _cancelHandler = () =>
         {
-            Log("objective achieved: ReactedToOnCharger");
-            CurrentPhase = Phase.WaitingOnCharger;
-        });
+            using var owner = Context.Robot.Engine.EnterSynchronousOwner();
+            if (Current()) _cancelled = true;
+        };
+        if (_messageOwner is { } owner) owner.CancelIdleTimeoutDelivered += _cancelHandler;
+        CurrentPhase = Phase.PlayingReaction;
+        ReportMissing("M7-019 GoingToSleep E2G 0x2D typed host recipient is not bound; bool payload is not delivered");
+        if (!Current()) return;
+        var scheduler = Context.Robot.Animations.Scheduler;
+        ReportMissing("M7-019 SmartPushIdleAnimation native owner prefix at 0x005BE44C remains unknown; existing scope owner is used");
+        if (!Current()) return;
+        if (!Scope.SmartPushIdleAnimationGuarded(() => scheduler.PushIdleAnimation((AnimationTrigger)0x23F, Id),
+            () => scheduler.RemoveIdleAnimation(Id, Context.Robot.Engine.Timer.TimeStampMs), Current)) return;
+        _completionLease = AcquireActionCompletionOwner(Context.Robot);
+        StartActing(new Animation.TriggerLiftSafeAnimationAction(Context.Robot, new(AnimationTrigger.PlacedOnCharger, 1, true, 0, 60f, false)), _ => { }, Current);
+        if (!Current()) return;
+        Context.Robot.Engine.Rcm.Reason = RobotDisconnectReason.SleepPlacedOnCharger;
+        if (_messageOwner is { } robot) robot.Idle.Start((float)TimeTilSleepSec, (float)TimeTilDisconnectionSec);
+        else ReportMissing("M7-019 StartIdleTimeout 0x53 has no engine robot recipient");
     }
 
     protected override void OnUpdate()
     {
-        if (CurrentPhase is Phase.Idle or Phase.PlayingReaction) return;
-        if (!Context.Robot.Sensors.OnCharger && !TriggeredFromVoiceCommand) { Log("off the charger"); CurrentPhase = Phase.Idle; Finish(); return; }
-        double elapsed = (NowMs - _startMs) / 1000.0;
-        if (CurrentPhase == Phase.WaitingOnCharger && elapsed >= TimeTilSleepSec)
-        {
-            CurrentPhase = Phase.SleepAnnounced;
-            _broadcasts.Add("GoingToSleep");
-            Log($"GoingToSleep broadcast at {elapsed:F0} s (engine-to-app; the app plays the sleep animation)");
-        }
-        if (CurrentPhase == Phase.SleepAnnounced && elapsed >= TimeTilDisconnectionSec)
-        {
-            CurrentPhase = Phase.DisconnectAnnounced;
-            _broadcasts.Add("StartIdleTimeout");
-            Log($"StartIdleTimeout broadcast at {elapsed:F0} s (engine-to-app; the app disconnects)");
-        }
+        if (_cancelled) { _cancelled = false; Finish(); }
     }
 
-    protected override void OnStop(BehaviorStopReason reason) => CurrentPhase = Phase.Idle;
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Interlocked.Increment(ref _generation);
+        if (_messageOwner is { } owner && _cancelHandler is { } handler) owner.CancelIdleTimeoutDelivered -= handler;
+        _cancelHandler = null;
+        _messageOwner = null;
+        _completionLease?.Invoke(); _completionLease = null;
+        _cancelled = false;
+        CurrentPhase = Phase.Idle;
+    }
 }
 
 /// <summary>

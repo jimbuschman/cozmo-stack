@@ -60,7 +60,7 @@ public sealed record DecayGraph(string EmotionType, IReadOnlyList<(double Second
 // fidelity: M7-012
 public sealed class MoodModel
 {
-    private readonly Dictionary<string, EmotionEvent> _events = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, EmotionEvent> _events = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DecayGraph> _decay = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<(string ActionType, string ResultCategory), string> _actionResultEvents = new();
 

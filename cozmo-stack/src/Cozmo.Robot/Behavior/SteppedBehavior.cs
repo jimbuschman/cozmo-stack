@@ -804,10 +804,15 @@ public abstract partial class SteppedBehavior : IBehavior
         if (!HostStopContinuationCurrent(hostVersion))
         {
             if (oldTag != 0) oldList?.Cancel(oldTag); // never cancel a replacement run's handle
+            OnStopped(reason, hostVersion);
             return;
         }
         StopActing(keepAction: false, viaCallback: false);   // IBehavior::Stop calls StopActing(0,0) 0x005bd126
+        OnStopped(reason, hostVersion);
     }
+
+    /// <summary>Release host resources whose lifetime must extend through action cancellation.</summary>
+    protected virtual void OnStopped(BehaviorStopReason reason, long runVersion) { }
 
     /// <summary>Ends the behaviour of its own accord: the engine's behaviour running out of actions.</summary>
     protected void Finish()

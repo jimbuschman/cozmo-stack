@@ -76,11 +76,7 @@ public sealed class CozmoSensors
         // CheckAndUpdateTreadsState's commit consequences in the engine's order (A10, A13): the broadcast, then
         // SetOnChargerPlatform(false) for any state but OnTreads (C8 P6, with the contacts flag from the previous state).
         OffTreads.HostEngine=robot.Engine;
-        OffTreads.StateChangedInternal += (from,to)=>
-        {
-            robot.Engine.QueueAppEvent(robot.Engine.CaptureAppEvent(OffTreadsStateChanged,from,to));
-            OffTreadsStateChangedInternal?.Invoke(from,to);
-        };
+        OffTreads.StateChangedInternal += DispatchOffTreadsStateChanged;
         OffTreads.ClearOnChargerPlatform = () => SetOnChargerPlatform(false);
         OffTreads.Log += l => _robot.Engine.Log(l);
         UnexpectedMovement.HostEngine=robot.Engine;
@@ -180,6 +176,19 @@ public sealed class CozmoSensors
     /// <summary>Raised when the classified off-treads state changes: the engine's <c>RobotOffTreadsStateChanged</c>.</summary>
     public event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChangedInternal;
+    internal event Action<OffTreadsState, OffTreadsState>? FreeplayOffTreadsStateChanged;
+    internal event Action<OffTreadsState, OffTreadsState>? ReturnedToTreadsStateChanged;
+    internal event Action<OffTreadsState, OffTreadsState>? WhiteboardOffTreadsStateChanged;
+    internal void DispatchOffTreadsStateChanged(OffTreadsState from, OffTreadsState to)
+    {
+        _robot.Engine.QueueAppEvent(_robot.Engine.CaptureAppEvent(OffTreadsStateChanged,from,to));
+        // M15-066 phase-1/2 behavior and Hiccup tag-53 subscribers are unbound; M15-068 remains open.
+        FreeplayOffTreadsStateChanged?.Invoke(from,to);
+        ReturnedToTreadsStateChanged?.Invoke(from,to);
+        WhiteboardOffTreadsStateChanged?.Invoke(from,to);
+        // Custom host reaction adapter, not a native tag-53 subscriber.
+        OffTreadsStateChangedInternal?.Invoke(from,to);
+    }
 
     /// <summary>|accelerometer| after the engine's 0.95/0.05 filter, the value its shaken strategies compare.</summary>
     public float FilteredAccelMagnitude => OffTreads.FilteredAccelMagnitude;

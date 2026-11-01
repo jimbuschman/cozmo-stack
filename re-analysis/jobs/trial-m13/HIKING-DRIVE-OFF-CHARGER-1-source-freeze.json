@@ -1,0 +1,127 @@
+{
+  "job": "HIKING-DRIVE-OFF-CHARGER-1",
+  "state": "WIP, NOT READY",
+  "managerStart": "02023553f8581e66477f41c0cb56a21189f11641",
+  "originMain": "e0cfea093a73a95decb22b518403ecec96572941",
+  "workerWorktree": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-hiking-drive-off-charger-1",
+  "workerBranch": "codex/hiking-drive-off-charger-1",
+  "workers": [
+    {
+      "role": "reader",
+      "agent": "/root/hiking_driveoff_read",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "medium",
+      "fork": "none"
+    },
+    {
+      "role": "reviewer",
+      "agent": "/root/hiking_driveoff_review",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "fork": "none"
+    },
+    {
+      "role": "builder",
+      "state": "STARTED",
+      "modelRequested": "DEFAULT override omitted",
+      "effortRequested": "DEFAULT override omitted",
+      "agent": "/root/hiking_driveoff_build",
+      "fork": "none"
+    }
+  ],
+  "actualBackends": "unobserved",
+  "assetStaging": "Resources/OBB junctions read only by protocol; native engine and derived marker hashes verified before all new worker captures.",
+  "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "markerSha256": "1b7166ac37b166975f0e5313a3d4486ebae73010e42ffb89bbd0d4536a29c81d",
+  "dotnetLease": "returned; original and separate resume process captures empty",
+  "reviewerFixRounds": 0,
+  "compilerCorrections": 0,
+  "recordProposals": "Determine current literal ownership first; reuse existing drive-off lifecycle record/proposal, no duplicate.",
+  "reports": [
+    {
+      "path": "re-analysis/research/20261030-hiking-drive-off-charger-1-read.md",
+      "sha256": "a3b1006002be48d95cdc2c1d5e87ca5e6930e9c3de9f8cddd018439339213f0d"
+    },
+    {
+      "path": "re-analysis/research/20261030-hiking-drive-off-charger-1-source-codex-check.md",
+      "sha256": "9a90abaf3ccd40bf925c6cf17557d206e5a2f891fd87cfb7c4fc14f17c473689"
+    }
+  ],
+  "currentLiteralRecordSnapshotsMatched": 22,
+  "rootIndependentlyMatchedLiteralRecords": true,
+  "recordClosureProposals": [],
+  "newRecordProposal": "None: settled M13-017 already owns class lifecycle; no duplicate",
+  "remainingUncertainty": "Specialized Hiking parent admission/interlude and M15-006/008 producers, shared readiness/action/report inputs remain explicit",
+  "builderMissingItems": [
+    "Hiking parent admission/interlude M15-006/008 remains unavailable; no new source question.",
+    "Existing helper, mood, typed-report and readiness-input gaps remain under their current owners."
+  ],
+  "candidateCodeFiles": 2,
+  "candidateSourceHashes": {
+    "cozmo-stack/src/Cozmo.Robot/Behavior/NativeBehaviorRuntime.cs": "08ff4c55da945e7fd387cc45d2423e4860b9543ec9a6226197ab46a1709b47a9",
+    "cozmo-stack/tests/Cozmo.Protocol.Tests/DriveOffPilotTests.cs": "12652baa08dede4a987b2fda07a8ab3030f06547167d1d32c0eda12dd52bbf7d"
+  },
+  "postTestHarnessCorrections": 0,
+  "referenceResult": {
+    "job": "HIKING-DRIVE-OFF-CHARGER-1",
+    "state": "WIP, NOT READY",
+    "workerCommit": "428a2e06",
+    "integratedCommit": "d32b1ef8",
+    "referenceCounts": {
+      "Passed": 396,
+      "Failed": 1
+    },
+    "total": 397,
+    "failedTests": [
+      "Cozmo.Protocol.Tests.DriveOffPilotTests.HikingAliasManualEntryUsesRealActionAndCompletion"
+    ],
+    "failureClassification": "UNCLASSIFIED; startup returned false; no correction attempted",
+    "referenceDirectory": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack-codex2\\.scratch\\worktrees\\codex-hiking-drive-off-charger-1\\.scratch\\hiking-drive-off-charger-1-reference1",
+    "inputsStable": true,
+    "binObjStable": true,
+    "fullGateRun": false,
+    "independentReplayRun": false,
+    "officialChanges": false,
+    "hardwareRun": false,
+    "originalOverallPreAndPostEmpty": true,
+    "separateResumeProcessesEmpty": true,
+    "wrapperStatus": {
+      "wrapper": "failed",
+      "dotnetCalled": true,
+      "phases": {
+        "restore": 0,
+        "build": 0,
+        "test": 1,
+        "shutdown": 0
+      },
+      "checks": {
+        "gitBefore": 0,
+        "inputsBefore": 0,
+        "binsBefore": 0,
+        "binsAfter": 0,
+        "binsCompare": 0,
+        "inputsAfter": 0,
+        "inputsCompare": 0,
+        "gitAfter": 0,
+        "trx": 1
+      },
+      "errors": [
+        "test failed 1",
+        "TRX validation failed"
+      ],
+      "overallPre": 0,
+      "overallPost": 0
+    },
+    "evidenceSha256": {
+      "wrapper-status.json": "aef15831444a79bd284a95c25da5a51d4f62a5eb9e4c77c168c5e8732a9833d7",
+      "test.log": "0f886a566c74474dcb642b31fe490aae4921c6a261253520d53a2ef167c9c7d7",
+      "results/reference1.trx": "b9d1b4dd19c535d11a54930ba13973a045296f1d09544cc27210c23b82f7a478",
+      "trx-summary.json": "e2b8fb38299b6df9e8834970338e6c3c59d78e364fc78614df4d781e8013632a",
+      "inputs-before.json": "6457c8378f118c4859793cf6d4fff25b217c25bd0d8fac8b0a0697bdf9da1446",
+      "inputs-after.json": "6457c8378f118c4859793cf6d4fff25b217c25bd0d8fac8b0a0697bdf9da1446",
+      "bins-before.json": "e04538b691ccb280968e459abc2a0f9d2f1b0cc7aa482c05a2c96f0307a88056",
+      "bins-after.json": "e04538b691ccb280968e459abc2a0f9d2f1b0cc7aa482c05a2c96f0307a88056"
+    }
+  },
+  "unexecutedWrapperSetupCorrections": 1
+}

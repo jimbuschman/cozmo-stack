@@ -338,15 +338,25 @@ public sealed class FrustrationStrategy : ReactionTriggerStrategy
 /// IsRunnable. StrategyPlacedOnCharger: latch +0x15 = 0, deadline +0x18 = −1.0; on ChargerEvent (tag 57) latch =
 /// msg.onCharger; WantsToRunInternal sets the deadline to now + 20.0 s on its first call, returns now ≥ deadline &amp;&amp;
 /// latch, and clears the latch on every call. EnabledStateChanged is a no-op (0x60B73A).
-/// MISSING: when the engine broadcasts ChargerEvent (SetOnCharger, M4 SC9) and with what onCharger value is not in the
-/// M4 or M10 rows, so nothing in this stack calls <see cref="HandleChargerEvent"/> and the reaction cannot fire.
 /// </summary>
-public sealed class PlacedOnChargerStrategy : ReactionTriggerStrategy
+public sealed class PlacedOnChargerStrategy : ReactionTriggerStrategy, IDisposable
 {
     public const double FirstCallDelaySec = 20.0;
     private readonly object _gate = new();
     private bool _latch;
     private double _deadline = -1.0;
+    private readonly CozmoRobot? _robot;
+
+    public PlacedOnChargerStrategy(CozmoRobot? robot = null)
+    {
+        _robot = robot;
+        if (robot is not null) robot.Sensors.ChargerEventInternal += HandleChargerEvent;
+    }
+
+    public void Dispose()
+    {
+        if (_robot is not null) _robot.Sensors.ChargerEventInternal -= HandleChargerEvent;
+    }
 
     public override ReactionTrigger Trigger => ReactionTrigger.PlacedOnCharger;
     public override string Basis => "ReactionTriggerStrategy 0x6120D0..0x6120E8 over StrategyPlacedOnCharger 0x6143F8..0x6144D0: " +
@@ -355,7 +365,7 @@ public sealed class PlacedOnChargerStrategy : ReactionTriggerStrategy
     public override bool CanInterruptOtherTriggeredBehavior => true;
     public override bool CanInterruptSelf => false;
 
-    /// <summary>The ChargerEvent handler (vtable 0x102D688 slot +0xC): latch = onCharger.</summary>
+    /// <summary>The ChargerEvent handler (vtable address point 0x102D690 slot +0xC): latch = onCharger.</summary>
     public void HandleChargerEvent(bool onCharger) { lock (_gate) _latch = onCharger; }
 
     /// <summary>WantsToRunInternal (0x614474..0x6144B6).</summary>
@@ -381,8 +391,6 @@ public sealed class PlacedOnChargerStrategy : ReactionTriggerStrategy
 /// purpose-built ones, each with the map's genericStrategyParams.shouldResumeLast (reactionTrigger_behavior_map.json).
 /// E2G tags: CliffEvent 34, RobotStopped 52, MotorCalibration 30, FallingStarted 58, RobotOffTreadsStateChanged 53,
 /// UnexpectedMovement 60.
-/// MISSING (C12): CliffDetected also subscribes RobotStopped (52); where the engine broadcasts it (HandleRobotStopped,
-/// M4 SC4a) is not in the rows, so only CliffEvent reaches the strategy.
 /// </summary>
 public static class ShippedReactionStrategies
 {
@@ -409,8 +417,14 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(CliffReport c) => handle(TagCliffEvent, c);
+                void stopped() => handle(TagRobotStopped, null);
                 robot.Sensors.CliffDetectedInternal += on;
-                return () => robot.Sensors.CliffDetectedInternal -= on;
+                robot.Sensors.RobotStoppedInternal += stopped;
+                return () =>
+                {
+                    robot.Sensors.CliffDetectedInternal -= on;
+                    robot.Sensors.RobotStoppedInternal -= stopped;
+                };
             });
         self = s;
         return s;
@@ -461,8 +475,8 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(OffTreadsState from, OffTreadsState to) => handle(TagRobotOffTreadsStateChanged, to);
-                robot.Sensors.OffTreadsStateChangedInternal += on;
-                return () => robot.Sensors.OffTreadsStateChangedInternal -= on;
+                robot.Sensors.ReturnedToTreadsStateChanged += on;
+                return () => robot.Sensors.ReturnedToTreadsStateChanged -= on;
             });
         self = s;
         return s;
@@ -516,6 +530,6 @@ public static class ShippedReactionStrategies
         ReturnedToTreads(robot), MotorCalibration(robot), UnexpectedMovement(robot), Cliff(robot), Falling(robot),
         new RobotShakenStrategy(), new PlacedOnSlopeStrategy(),
         new FrustrationStrategy(maxConfidence: -0.6f, cooldownSec: 60f, clockSec),
-        new PlacedOnChargerStrategy(),
+        new PlacedOnChargerStrategy(robot),
     };
 }

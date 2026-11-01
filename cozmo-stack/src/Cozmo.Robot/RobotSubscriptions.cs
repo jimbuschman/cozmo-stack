@@ -221,7 +221,12 @@ public sealed partial class EngineRobot
         _robotMessages.Deliver((int)message.Id, message);
         return _lastStateHandled;
     }
-    internal void DeliverCancelIdleTimeout() => _idleMessages.Deliver(0x54, 0);
+    internal event Action? CancelIdleTimeoutDelivered;
+    internal void DeliverCancelIdleTimeout()
+    {
+        _idleMessages.Deliver(0x54, 0);
+        CancelIdleTimeoutDelivered?.Invoke();
+    }
 }
 
 public sealed partial class CozmoEngine

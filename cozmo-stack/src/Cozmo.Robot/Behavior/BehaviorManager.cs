@@ -87,6 +87,12 @@ public sealed partial class BehaviorManager : IDisposable
     }
     private readonly object _gate = new();
     private bool _hostDisposed;
+    private RetainedSubscription? _defaultPostureInput;
+    internal void AttachDefaultPostureInput()
+    {
+        _defaultPostureInput ??= _context.Robot.Engine.AnimationMessages.SubscribeMessage(0xA2, false,
+            value => { if (value is DefaultHeadAndLiftState input) SetDefaultHeadAndLiftState(input.Enable, input.HeadRadians, input.LiftHeightMm); });
+    }
 
     private IBehavior? _current;
     private BehaviorScope? _scope;
@@ -111,6 +117,7 @@ public sealed partial class BehaviorManager : IDisposable
 
     private IReadOnlyList<ReactionMapEntry> _nativeReactionRows = Array.Empty<ReactionMapEntry>();
     private bool _nativeReactionMapLoaded;
+    private long _reactionBindingGeneration;
     private AcknowledgeObjectBehavior? _configuredAcknowledgeObject;
     // fidelity: M7-014 -- row72: initialize the real map before exposing the robot's AI inputs.
     internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision)
@@ -135,7 +142,7 @@ public sealed partial class BehaviorManager : IDisposable
                 AddReaction(reg.Strategy,reg.Behavior);
             }
             foreach(var entry in unbound)
-                SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding before Freeplay; trigger entry retained, no placeholder behavior");
+                SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior");
             _nativeReactionMapLoaded=true;
         }
         Initialized=true;
@@ -144,24 +151,91 @@ public sealed partial class BehaviorManager : IDisposable
         Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,IReadOnlyDictionary<string,IBehavior> bound)
     {
         using var executionLease = context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return;
         _context=context;context.Penalty=_penalty;
         if(context.Arbiter is {} arb)arb.ManagerDispatchesReactions=true;
         if (!_nativeReactionMapLoaded && bound.TryGetValue("AcknowledgeObject", out var configured))
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
         InitializeRobotReactions(resources,vision); // explicit late resource input, only if startup map was absent
-        foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
-            cliff.DriveStraight=manipulation is null?null:(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
-        if(manipulation is null)return;
-        if(_nativeReactionRows.Any(r=>r.BehaviorId=="ReactToFrustrationMajor")&&!Reactions.Any(r=>r.Behavior.Id=="ReactToFrustrationMajor"))
+        BindReactionDependencies(manipulation,bound);
+    }
+
+    internal void BindReactionDependencies(Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,
+        IReadOnlyDictionary<string,IBehavior> bound)
+    {
+        using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if (_hostDisposed) return;
+        long bindingGeneration=++_reactionBindingGeneration;
+        if (manipulation is null)
         {
-            var strategy=new FrustrationStrategy(-0.9f,0f,()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
-            var behavior=ReactToFrustrationBehavior.Major(manipulation,strategy);
-            behavior.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
-            AddReaction(strategy,behavior); // shipped order is Minor then Major; same existing trigger's lock set
+            SteppedBehavior.ReportMissing("M7-019 reaction manipulation owner unavailable");
+            return;
         }
-        if(_nativeReactionRows.Any(r=>r.BehaviorId=="RamIntoBlock")&&!Reactions.Any(r=>r.Behavior.Id=="RamIntoBlock")
-            &&bound.TryGetValue("RamIntoBlock",out var candidate)&&candidate is RamIntoBlockBehavior ram)
-            AddReaction(new NoPreDockPosesStrategy(manipulation.Whiteboard,ram),ram);
+        foreach(var motor in Reactions.Select(r=>r.Behavior).OfType<ReactToMotorCalibrationBehavior>())
+            motor.BindManipulation(manipulation);
+        foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
+            cliff.DriveStraight=(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
+        foreach (var strategy in Reactions.Select(r => r.Strategy).OfType<ObjectPositionUpdatedStrategy>())
+        {
+            strategy.CarriedObjectId = () => manipulation.Docking.Carrying.CarriedObjectId;
+            strategy.DockingObjectId = () => manipulation.Docking.DockTargetObjectId;
+        }
+        foreach(var row in _nativeReactionRows)
+        {
+            if(row.Trigger==ReactionTrigger.Frustration && row.BehaviorId=="ReactToFrustrationMajor")
+            {
+                var existing=Reactions.FirstOrDefault(r=>r.Strategy.Trigger==row.Trigger && r.Behavior.Id==row.BehaviorId);
+                if(existing?.Behavior is ReactToFrustrationBehavior major) major.BindManipulation(manipulation);
+                else if(existing is null)
+                {
+                    var strategy=new FrustrationStrategy((float)(row.FrustrationMaxConfidence??0),(float)(row.FrustrationCooldownSec??0),()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+                    var behavior=ReactToFrustrationBehavior.Major(manipulation,strategy);
+                    behavior.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+                    AddOrderedNativeReaction(strategy,behavior,bindingGeneration);
+                }
+            }
+            if(row.Trigger==ReactionTrigger.NoPreDockPoses && row.BehaviorId=="RamIntoBlock")
+            {
+                var existing=Reactions.FirstOrDefault(r=>r.Strategy.Trigger==row.Trigger && r.Behavior.Id==row.BehaviorId);
+                if(existing?.Behavior is RamIntoBlockBehavior ram && existing.Strategy is NoPreDockPosesStrategy noPreDock)
+                { ram.BindManipulation(manipulation); noPreDock.BindWhiteboard(manipulation.Whiteboard); }
+                else if(existing is null)
+                {
+                    RamIntoBlockBehavior recipient;
+                    if(bound.TryGetValue(row.BehaviorId,out var candidate) && candidate is RamIntoBlockBehavior supplied)
+                        recipient=supplied;
+                    else
+                    {
+                        SteppedBehavior.ReportMissing("M7-019 RamIntoBlock configured factory owner unavailable; reaction-owned existing adapter supplies the strategy recipient, not the native factory identity or a recovered Ram body");
+                        if (_hostDisposed || _reactionBindingGeneration!=bindingGeneration) return;
+                        recipient=new RamIntoBlockBehavior(manipulation);
+                    }
+                    recipient.BindManipulation(manipulation);
+                    AddOrderedNativeReaction(new NoPreDockPosesStrategy(manipulation.Whiteboard,recipient),recipient,bindingGeneration);
+                }
+            }
+        }
+    }
+
+    private void AddOrderedNativeReaction(IReactionTriggerStrategy strategy,IBehavior behavior,long bindingGeneration)
+    {
+        lock (_gate)
+        {
+            if(_hostDisposed || _reactionBindingGeneration!=bindingGeneration || !_map.TryGetValue(strategy.Trigger,out var info)) return;
+            if(info.Entries.Any(entry=>entry.Behavior.Id==behavior.Id)) return;
+            strategy.Manager=this;
+            _behaviors.RemoveAll(b=>b.Id==behavior.Id);
+            var entries=info.Entries;
+            int RowIndex(ReactionRegistration entry)
+            {
+                for(int i=0;i<_nativeReactionRows.Count;i++)
+                    if(_nativeReactionRows[i].Trigger==strategy.Trigger && _nativeReactionRows[i].BehaviorId==entry.Behavior.Id) return i;
+                return int.MaxValue;
+            }
+            var added=new ReactionRegistration(strategy,behavior);
+            int index=entries.FindIndex(entry=>RowIndex(entry)>RowIndex(added));
+            if(index<0) entries.Add(added); else entries.Insert(index,added);
+        }
     }
 
     private readonly Func<bool> _unexpectedMovementGate;
@@ -543,8 +617,6 @@ public sealed partial class BehaviorManager : IDisposable
     {
         var motion = _context.Robot.Motion;
         motion.StopAllMotors();
-        // The "|| MC+0xD4" half (0x005a3642..0x005a3646) reads a flag nothing here ever sets (its writer is SetRunningAndResumeInfo's
-        // UpdateRobotPropertiesForReaction, MISSING), so it is always false.
         if (motion.LockedTracks != 0 && (!motion.DirectDriveHoldsAnyTrack || motion.DirectDriveDisabled))
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "BehaviorManager.CheckReactionTriggerStrategies", "Some tracks are locked, unlocking them");
@@ -926,7 +998,10 @@ public sealed partial class BehaviorManager : IDisposable
         long beforeStop=Interlocked.Read(ref _hostSelectionEpoch);
         bool hadCurrent=Current is not null;
         lock (_gate) StopAndNullifyLocked(stopReason, nowSec);
-        if(hostReadiness is not null && (Interlocked.Read(ref _hostSelectionEpoch)!=beforeStop+(hadCurrent?1:0) || !ReferenceEquals(Activity,hostReadiness)))return false;
+        // A Stop callback can synchronously replace the current behavior. Its selection owns the manager;
+        // the outer switch must not overwrite it, including when switching to an empty running-info.
+        if (Interlocked.Read(ref _hostSelectionEpoch) != beforeStop + (hadCurrent ? 1 : 0)) return false;
+        if (hostReadiness is not null && !ReferenceEquals(Activity,hostReadiness)) return false;
 
         var next = info.Current;
         bool initFailed = false;
@@ -990,9 +1065,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// <c>BehaviorManager::SetRunningAndResumeInfo</c> 0x005a209e..0x005a22ae: stores the three fields, and also (a) when the trigger
     /// changes sends the game message <c>ReactionTriggerTransition{old, new}</c> (0x005a20ba..0x005a2ee8), (b) calls
     /// <c>UpdateRobotPropertiesForReaction</c> (0x005a2102..0x005a2110, helper 0x005a2f54: <c>robot+0x2c7</c> and the movement component's +0xd4,
-    /// from <c>new trigger != NoneTrigger</c>) and (c) on a behaviour change walks the vector at manager+0x78 calling
-    /// <c>CubeLightComponent::StopLightAnimAndResumePrevious</c> (0x005a2230..0x005a223e). No inventory row covers (a)..(c); each is a seam that is
-    /// reported MISSING while nothing is attached, so this method stores the info and does not claim the rest.
+    /// on reaction entry or exit) and (c) processes the state-light vector at manager+0x78 before committing the info.
     /// </summary>
     // fidelity: M8-012
     private void SetRunningAndResumeInfo(RunningInfo info, BehaviorScope? scope, double nowSec)
@@ -1003,25 +1076,31 @@ public sealed partial class BehaviorManager : IDisposable
         {
             oldTrigger = _currentReaction;
             oldCurrent = _current;oldResume=_resumeAfterReaction;
+        }
+        if (oldTrigger is not null || info.Trigger is not null)
+        {
+            if (ReactionTriggerTransitionSender is { } send) send(oldTrigger, info.Trigger);
+            else SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
+        }
+        if ((oldTrigger is null) != (info.Trigger is null))
+        {
+            if (UpdateRobotPropertiesForReaction is { } update) update(info.Trigger is not null);
+            else SteppedBehavior.ReportMissing("M8-012 UpdateRobotPropertiesForReaction: robot state owner unavailable");
+        }
+        UpdateStateLightsForRunningInfo(info.Current,oldCurrent,oldResume,oldTrigger,info.Trigger);
+        lock (_gate)
+        {
             _current = info.Current; Interlocked.Increment(ref _hostSelectionEpoch);
             _scope = info.Current is null ? null : scope;
             if (info.Current is not null) _startedSec = nowSec;
             _resumeAfterReaction = info.Resume;
             _currentReaction = info.Trigger;
         }
-        if (oldTrigger != info.Trigger)
-        {
-            if (ReactionTriggerTransitionSender is { } send) send(oldTrigger, info.Trigger);
-            else SteppedBehavior.ReportMissing("BehaviorManager::SetRunningAndResumeInfo sends ReactionTriggerTransition{old,new} (0x005a20ba..0x005a2ee8): no game-message sender attached");
-            if (UpdateRobotPropertiesForReaction is { } update) update(info.Trigger is not null);
-            else SteppedBehavior.ReportMissing("BehaviorManager::UpdateRobotPropertiesForReaction (0x005a2102, 0x005a2f54) writes robot+0x2c7 and MC+0xd4: not built (MC+0xd4 has no writer here)");
-        }
-        UpdateStateLightsForRunningInfo(info.Current,oldCurrent,oldResume,oldTrigger,info.Trigger);
     }
 
-    /// <summary>The <c>ReactionTriggerTransition</c> game message (0x005a2ee8). MISSING: nothing sends it.</summary>
+    /// <summary>The <c>ReactionTriggerTransition</c> game message (0x005a2ee8).</summary>
     public Action<ReactionTrigger?, ReactionTrigger?>? ReactionTriggerTransitionSender { get; set; }
-    /// <summary><c>UpdateRobotPropertiesForReaction</c> (0x005a2f54); the argument is <c>new trigger != NoneTrigger</c>. MISSING: robot+0x2c7 and MC+0xd4 have no stack counterpart.</summary>
+    /// <summary><c>UpdateRobotPropertiesForReaction</c> (0x005a2f54), called on entry or exit.</summary>
     public Action<bool>? UpdateRobotPropertiesForReaction { get; set; }
     /// <summary>The cube light stop on a behaviour change (0x005a2230..0x005a223e). MISSING.</summary>
     public Action? StopLightAnimsOnBehaviorChange { get; set; }
@@ -1207,7 +1286,9 @@ public sealed partial class BehaviorManager : IDisposable
     public void Stop(BehaviorStopReason reason, double nowSec)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
-        lock (_gate) StopCurrentLocked(reason, nowSec);
+        if (_hostDisposed) return;
+        // fidelity: M8-012 — empty-info switch 0x005A1E68..1F12; report and entry/exit stores precede the final info.
+        SwitchToBehaviorBaseCore(new RunningInfo(null, null, null), nowSec, reason);
     }
 
     /// <summary>
@@ -1273,7 +1354,8 @@ public sealed partial class BehaviorManager : IDisposable
         _hostDisposed = true; // before any Stop/diagnostic callbacks may reenter selection
         SteppedBehavior.ReportMissing("M8-016/M8-023 host BehaviorManager.Dispose still performs host Stop/strategy unsubscribe cleanup; native activity/chooser/strategy shared-control tree ownership and destructor position0x005A0D22..0x005A0DFA are unbuilt; host cleanup is not a native destructor");
         _sparkInput?.Dispose(); // host retained handle cleanup; native destructor position remains M8-023
-        Stop(BehaviorStopReason.Cancelled, 0);
+        _defaultPostureInput?.Dispose();
+        lock (_gate) StopCurrentLocked(BehaviorStopReason.Cancelled, 0); // host cleanup, not a native transition broadcast
         foreach(var behavior in _behaviors.OfType<SteppedBehavior>())behavior.RetireActionCompletionOwner();
         List<IReactionTriggerStrategy> strategies;
         List<AcknowledgeObjectBehavior> objectOwners;

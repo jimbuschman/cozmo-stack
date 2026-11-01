@@ -36,6 +36,16 @@ public sealed class ManipulationSystem : IDisposable
         if(_ownsSharedServices)Docking.Configurations = Configurations; // host extension belongs only to the owned service
         // M11-072: the native R2 callback owns +0xC even before this host facade exists.
         Whiteboard = standalone?new AIWhiteboard(vision.World,()=>ClockSec()):shared?.Whiteboard??new AIWhiteboard(vision.World, () => ClockSec());
+        if (_ownsWhiteboard)
+        {
+            void onTreads(OffTreadsState from, OffTreadsState to)
+            {
+                if (to == OffTreadsState.OnTreads)
+                    Whiteboard.RecordOffTreadsStateChanged(standalone ? (float)ClockSec() : robot.Engine.Timer.SecondsF);
+            }
+            robot.Sensors.WhiteboardOffTreadsStateChanged += onTreads;
+            _installedCallbacks.Add(() => robot.Sensors.WhiteboardOffTreadsStateChanged -= onTreads);
+        }
         if(_ownsSharedServices)vision.World.MapClearQuad=Whiteboard.ProcessClearQuad;
         // fidelity: M8-026
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built");

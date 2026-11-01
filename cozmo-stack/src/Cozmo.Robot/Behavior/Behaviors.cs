@@ -711,7 +711,7 @@ public static class ShippedBehaviors
             ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, new ReactToReturnedToTreadsBehavior(), strategies[ReactionTrigger.ReturnedToTreads]),
             ("ReactToRobotShaken", ReactionTrigger.RobotShaken, new ReactToRobotShakenBehavior(), strategies[ReactionTrigger.RobotShaken]),
             ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, new ReactToUnexpectedMovementBehavior(robot), strategies[ReactionTrigger.UnexpectedMovement]),
-            ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(), strategies[ReactionTrigger.MotorCalibration]),
+            ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(m), strategies[ReactionTrigger.MotorCalibration]),
             ("ReactToFrustrationMinor", ReactionTrigger.Frustration, ReactToFrustrationBehavior.Minor(frustration), frustration),
             ("ReactToImpact", ReactionTrigger.RobotFalling, new ReactToImpactBehavior(robot), strategies[ReactionTrigger.RobotFalling]),
             ("ReactToOnCharger", ReactionTrigger.PlacedOnCharger, new ReactToOnChargerBehavior(), strategies[ReactionTrigger.PlacedOnCharger]),
@@ -761,6 +761,7 @@ public static class ShippedBehaviors
         {
             // sErrorF "Failed to read '%s'" (0x00520c54); the engine's event name is not in the inventory, so the line carries none
             robot.Engine.Log($"error: Failed to read '{ReactionTriggerMap.RelativePath}'");
+            ((PlacedOnChargerStrategy)strategies[ReactionTrigger.PlacedOnCharger]).Dispose();
             return new List<BehaviorManager.ReactionRegistration>();
         }
 
@@ -777,6 +778,8 @@ public static class ShippedBehaviors
             else
                 unbound?.Add($"{e.Trigger} -> {e.BehaviorId}");
         }
+        var charger = strategies[ReactionTrigger.PlacedOnCharger];
+        if (!registrations.Any(r => ReferenceEquals(r.Strategy, charger))) ((IDisposable)charger).Dispose();
         return registrations;
     }
 }
