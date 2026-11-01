@@ -651,6 +651,7 @@ public sealed class NeedsManager
     /// (<c>deadline - start</c>) is added to <c>+0x1E4</c> so only the time outside it decays
     /// (0x00695D5A..0x00695D6A, 0x00695D84).
     /// </summary>
+    private readonly Dictionary<NeedsActionId, float> _actionDeadlineSec = new();
     private readonly Dictionary<NeedId, float> _fullnessStartSec = new();
     private readonly Dictionary<NeedId, float> _fullnessDeadlineSec = new();
     /// <summary>
@@ -778,6 +779,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     private void InitReset(double nowSec)
     {
+        _actionDeadlineSec.Clear(); // 0x006935D6 clears the action deadline array
         _nextDecaySec = (float)(nowSec + Config.DecayPeriodSeconds);
         // +0x1E4 is initialised here, so the first decay is one period's worth.
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
@@ -1879,17 +1881,26 @@ public sealed class NeedsManager
         if (!Actions.TryGetValue(actionId, out var d)) { Log?.Invoke($"needs.action_completed_ignored {actionId}"); return false; }
         lock (_gate)
         {
+        if (_paused || !_robotConnected) return false; // 0x006960E0..0x006960F8
+        if (!Enum.TryParse<NeedsActionId>(actionId, false, out var action) || Enum.GetName(action) != actionId)
+        { SteppedBehavior.ReportMissing("M15-046 host action has no supplied native NeedsActionId: " + actionId); return false; }
+        if (_nowSec < _actionDeadlineSec.GetValueOrDefault(action)) return false; // 0x00696146..0x0069615A
+        float cooldown = (float)d.CooldownSec;
+        if (!(MathF.Abs(cooldown) < BitConverter.Int32BitsToSingle(0x3727C5AC)))
+            _actionDeadlineSec[action] = _nowSec + cooldown; // 0x006961A6..0x006961DA
+        if (action is NeedsActionId.RepairHead or NeedsActionId.RepairLift or NeedsActionId.RepairTreads)
+            State.ClearPartDamage((int)action - (int)NeedsActionId.RepairHead); // 0x006967DE..0x00696878
         void Apply(NeedId n, double delta, double range)
         {
-            if (delta == 0 && range == 0) return;
-            if(!Enum.TryParse<NeedsActionId>(actionId,false,out var action)||Enum.GetName(action)!=actionId)
-            {SteppedBehavior.ReportMissing("M15-046 host action has no supplied native NeedsActionId: "+actionId);return;}
-            State.ApplyDelta(n,(float)delta,(float)range,action);
-            SteppedBehavior.ReportMissing("M15-046 RegisterNeedsActionCompletedInternal return consumer 0x006968DE.. is unread; no inferred fullness-cooldown/severe-needs mutation. Existing outer action-loop gates remain M15-008, not claimed recovered here");
+            if (!State.ApplyDelta(n, (float)delta, (float)range, action)) return;
+            if (_fullnessStartSec.GetValueOrDefault(n) == 0f) _fullnessStartSec[n] = _nowSec;
+            _fullnessDeadlineSec[n] = _nowSec + (float)Config.FullnessDecayCooldownSec[n]; // 0x006970AC..0x00697100
         }
         Apply(NeedId.Repair, d.RepairDelta, d.RepairRange);
         Apply(NeedId.Energy, d.EnergyDelta, d.EnergyRange);
         Apply(NeedId.Play, d.PlayDelta, d.PlayRange);
+        if ((action is NeedsActionId.RepairHead or NeedsActionId.RepairLift or NeedsActionId.RepairTreads) && State.NumDamagedParts() == 0)
+            State.StoreLevel(NeedId.Repair, (float)Config.MaximumNeedLevel); // 0x00696906..0x0069693E
         Log?.Invoke($"needs.action_completed {actionId}: repair {State.GetNeedLevel(NeedId.Repair):F3} energy {State.GetNeedLevel(NeedId.Energy):F3} play {State.GetNeedLevel(NeedId.Play):F3}");
         if (d.FreeplaySparksRewardWeight > 0)
         {

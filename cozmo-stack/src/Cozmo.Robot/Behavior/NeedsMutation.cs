@@ -8,6 +8,7 @@ public sealed partial class NeedsState
     private readonly SortedDictionary<int,byte> _partDamage=new(){{0,0},{1,0},{2,0}};
     internal IReadOnlyDictionary<int,byte> PartDamage=>_partDamage;
     internal void SetPartDamageForTest(int part,byte value)=>_partDamage[part]=value;
+    internal void ClearPartDamage(int part)=>_partDamage[part]=0;
     public EngineRandom? ContextRandom {get;set;}
     internal Action<string,IReadOnlyDictionary<string,string>>? PartDamageLog;
     private static readonly float RepairEpsilon=BitConverter.Int32BitsToSingle(0x3727C5AC);
