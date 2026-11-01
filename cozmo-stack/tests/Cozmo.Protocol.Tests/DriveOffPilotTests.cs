@@ -200,6 +200,110 @@ public sealed class DriveOffPilotTests
         finally{rig.Engine.ContextRandom.WordSourceForTest=null;native.BehaviorManagerOwner.Stop(BehaviorStopReason.Cancelled,rig.Engine.Timer.SecondsF);native.ActionList.Clear();}
     }
 
+    [Fact]
+    public void HikingAliasManualEntryUsesRealActionAndCompletion()
+    {
+        // Reach: actual configured factory and explicit public manager entry,
+        // real action/path and CA/CB/C6 delivery. Firmware motion is represented by
+        // explicitly admitted full states; no physical robot result is asserted.
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources()); // real loader, joined before admission.
+        rig.ToSynced();rig.Calibrate();
+        var native=rig.Engine.Robot!;
+        var runtime=Assert.IsType<NativeBehaviorRuntime>(native.NativeBehaviorRuntime);
+        Assert.Null(native.BehaviorManagerOwner!.Activity); // construction invents no app selection.
+        var behavior=Assert.IsType<DriveOffChargerBehavior>(runtime.Bound["Hiking_DriveOffCharger"]);
+        Assert.Same(behavior,native.BehaviorManagerOwner.Find("Hiking_DriveOffCharger"));
+        Assert.Equal(141f,behavior.DriveDistanceMm); // shipped45 + native96.
+        rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger,
+            origin:native.CurrentOriginId,frame:native.PoseFrameId));rig.Tick(10);
+        Assert.Equal(0u,native.LastFullStateResult);Assert.True(rig.Robot.Sensors.OnChargerPlatform);
+        int mark=rig.Mark();var order=new List<string>();
+        using var objectives=rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{Assert.Equal(4u,Assert.IsType<uint>(p));order.Add("objective");});
+        behavior.Step+=line=>{if(line=="emotion event DriveOffCharger")order.Add("mood");};
+        try
+        {
+            Assert.True(native.BehaviorManagerOwner.StartAsync("Hiking_DriveOffCharger",rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());rig.Tick(10);
+            Assert.Same(behavior,native.BehaviorManagerOwner.Current);
+            Assert.Equal(1,behavior.DrivingAnimationsFlag);
+            Assert.True(native.BehaviorManagerOwner.HasDisableLock((ReactionTrigger)0,"Hiking_DriveOffCharger"));
+            Assert.Contains(rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="Hiking_DriveOffCharger");
+            Assert.True(behavior.CurrentRunnerTag!=0);
+            var line=Assert.Single(rig.SentSince(mark).OfType<AppendPathSegmentLine>());
+            Assert.Equal(new[]{-20f,0f,121f,0f,100f,200f,500f},
+                new[]{line.XStartMm,line.YStartMm,line.XEndMm,line.YEndMm,line.Speed.SpeedMmps,line.Speed.AccelMmps2,line.Speed.DecelMmps2});
+            ushort id=rig.Robot.Motion.Path.Field42;
+            rig.Data(rig.MakeState(origin:native.CurrentOriginId,frame:native.PoseFrameId,x:200));rig.Tick(10);
+            Assert.Same(behavior,native.BehaviorManagerOwner.Current);
+            rig.Data(new PathFollowingEvent{EventId=id,EventType=0});rig.Tick(10);
+            var reported=new HashSet<byte>();
+            void CompleteNewAnimation()
+            {
+                byte tag=rig.Robot.Animations.CurrentTag;
+                if(tag!=0 && reported.Add(tag))
+                {rig.Data(new AnimationStarted{AnimId=tag});rig.Data(new AnimationEnded{AnimId=tag});}
+                rig.Tick(10);
+            }
+            for(int i=0;i<3;i++)CompleteNewAnimation();
+            rig.Data(rig.MakeState(origin:native.CurrentOriginId,frame:native.PoseFrameId,x:200));rig.Tick(10);
+            rig.Data(new PathFollowingEvent{EventId=id,EventType=2});rig.Tick(10);
+            for(int i=0;i<12 && behavior.DriveResult is null;i++)CompleteNewAnimation();
+            Assert.Equal(ActionResult.Success,behavior.DriveResult);
+            Assert.Equal(new[]{"objective","mood"},order);
+            Assert.False(behavior.HasCurrentAction); // synchronous 5A clears before callback.
+            rig.Tick(10);
+            Assert.NotNull(behavior.DroveOffAtSec);
+            Assert.Equal((float)behavior.DroveOffAtSec!,runtime.Context.LastDriveOffChargerSec);
+            native.BehaviorManagerOwner.Stop(BehaviorStopReason.Cancelled,rig.Engine.Timer.SecondsF);
+            Assert.False(native.BehaviorManagerOwner.HasDisableLock((ReactionTrigger)0,"Hiking_DriveOffCharger"));
+            Assert.DoesNotContain(rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="Hiking_DriveOffCharger");
+        }
+        finally{native.BehaviorManagerOwner.Stop(BehaviorStopReason.Cancelled,rig.Engine.Timer.SecondsF);native.ActionList.Clear();}
+    }
+
+    [Fact]
+    public void HikingConfiguredAliasAndParentRemainDistinctFromAdmission()
+    {
+        // Shipped asset and retained owners only; no chooser victory is asserted.
+        using var rig=new M4ControlTests.Rig(ShippedResources());rig.ToSynced();
+        var native=rig.Engine.Robot!;var runtime=native.NativeBehaviorRuntime!;
+        var alias=Assert.IsType<DriveOffChargerBehavior>(runtime.Bound["Hiking_DriveOffCharger"]);
+        Assert.Same(alias,native.BehaviorManagerOwner!.Find("Hiking_DriveOffCharger"));
+        Assert.Equal(141f,alias.DriveDistanceMm);
+        Assert.Equal(156f,Assert.IsType<DriveOffChargerBehavior>(runtime.Bound["DriveOffCharger"]).DriveDistanceMm);
+        var hiking=NativeBehaviorRuntime.AllActivities(runtime.Tree).Single(a=>a.Id=="Hiking");
+        var chooser=Assert.IsType<ScoringChooser>(hiking.Chooser);
+        Assert.Equal(new[]{"ReactToObstacle","KnockOverCubes","Hiking_DriveOffCharger"},chooser.Entries.Take(3).Select(e=>e.BehaviorId));
+        Assert.Equal(new[]{30d,20d,10d},chooser.Entries.Take(3).Select(e=>e.FlatScore));
+        Assert.Equal(1d,chooser.ScoreBonusForCurrent!.EvaluateY(0));
+        Assert.Equal(BehaviorChooserType.StrictPriority,hiking.InterludeChooser!.Type);
+        Assert.Equal("Simple",hiking.Strategy.Type);Assert.Equal(60d,hiking.Strategy.ShouldEndDurationSec);Assert.Equal(15d,hiking.Strategy.CooldownBaseSec);
+        rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger,origin:native.CurrentOriginId,frame:native.PoseFrameId));rig.Tick(10);
+        Assert.True(alias.IsRunnable(runtime.Context));
+        Assert.Null(native.ActionList.GetCurrentAction());
+    }
+
+    [Fact]
+    public void UnavailableHikingAdmissionRetainsPriorActivityWithoutMotion()
+    {
+        // Explicit host activity requests; no native Hiking parent selection is claimed.
+        using var rig=new M4ControlTests.Rig(ShippedResources());rig.ToSynced();rig.State();
+        var native=rig.Engine.Robot!;var missing=new List<string>();
+        void Observe(string message)=>missing.Add(message);
+        SteppedBehavior.MissingReported+=Observe;
+        try
+        {
+            rig.Robot.ActivateHighLevelActivity("PutDownDispatch");rig.Tick(10);
+            var prior=Assert.IsAssignableFrom<IManagedActivity>(native.BehaviorManagerOwner!.Activity);
+            int mark=rig.Mark();
+            rig.Robot.ActivateHighLevelActivity("Hiking");rig.Tick(10);
+            Assert.Same(prior,native.BehaviorManagerOwner.Activity);
+            Assert.DoesNotContain(rig.SentSince(mark),m=>m is AppendPathSegmentLine || m is ExecutePath);
+            Assert.Contains(missing,m=>m.Contains("admission Hiking") && m.Contains("M15-006/M15-008") && m.Contains("prior activity retained"));
+        }
+        finally{SteppedBehavior.MissingReported-=Observe;}
+    }
+
     [Theory]
     [InlineData(96f,176f,100f)]
     [InlineData(-96f,-16f,-80f)]

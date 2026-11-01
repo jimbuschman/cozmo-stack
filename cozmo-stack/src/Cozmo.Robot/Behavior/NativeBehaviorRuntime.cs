@@ -154,7 +154,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 SteppedBehavior.ReportMissing("M8-013 " + selected.Id + " admission: native NeedsExpression activity owner is unbound; prior activity retained");
                 return;
             }
-            SteppedBehavior.ReportMissing("Native activity admission "+activityId+": specialized lifecycle/interlude is not bound; prior activity retained (M15-061 for Feeding)");
+            SteppedBehavior.ReportMissing(selected.Id=="Hiking"
+                ? "Native activity admission Hiking: specialized lifecycle/interlude is not bound; prior activity retained (M15-006/M15-008)"
+                : "Native activity admission "+activityId+": specialized lifecycle/interlude is not bound; prior activity retained (M15-061 for Feeding)");
             return;
         }
         if(selected.Chooser?.BehaviorIds.Any(id=>Bound.TryGetValue(id,out var candidate)
