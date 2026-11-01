@@ -89,7 +89,7 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, ISocializeFind
     protected override bool RunnableGate20(BehaviorContext context)=>false;
     protected override bool RunnableGate24(BehaviorContext context)=>false;
     protected override bool RunnableGate28(BehaviorContext context)=>false;
-    private float Yaw(){using var mutation=_m.World.EnterPoseMutation();using var flat=_robot.GetCheckedMainPose().GetWithRespectToRoot();return (float)flat.AngleAroundZ;}
+    private float Yaw(){using var mutation=_m.World.EnterPoseMutation();return (float)_robot.GetCheckedMainPose().AngleAroundZ;}
     protected override void OnStart()
     {
         if(!Available){MarkReadinessUnavailable();InitFailed=true;ReportMissing("FindFaces_socialize actual input unavailable");return;}
