@@ -461,8 +461,8 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(OffTreadsState from, OffTreadsState to) => handle(TagRobotOffTreadsStateChanged, to);
-                robot.Sensors.OffTreadsStateChangedInternal += on;
-                return () => robot.Sensors.OffTreadsStateChangedInternal -= on;
+                robot.Sensors.ReturnedToTreadsStateChanged += on;
+                return () => robot.Sensors.ReturnedToTreadsStateChanged -= on;
             });
         self = s;
         return s;

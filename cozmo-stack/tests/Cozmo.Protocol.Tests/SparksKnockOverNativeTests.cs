@@ -179,7 +179,7 @@ public sealed class SparksKnockOverNativeTests
         mark=f.Rig.Mark();body.Update(f.Robot.StoredState!,_=>{});Assert.All(Assert.Single(f.Rig.SentSince(mark).OfType<BackpackLightsMiddle>()).Field0,led=>Assert.Equal((ushort)0x83E0,led.OnColor));
     }
     [Fact]
-    public void DeselectionReleasesActivityScopesThenPendingRewardBeforeOwnEngineLayerCleanup()
+    public void DeselectionCommunicatesRewardBeforeSubclassEngineLayerCleanup()
     {
         // S27/H4,H5,H12: actual selected owner and existing Needs recipient. M15-071 amount/raw award stays a named gap.
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);Entry(f);Assert.Equal((byte)21,f.Robot.BehaviorPublicState.State.Activity);
@@ -188,11 +188,12 @@ public sealed class SparksKnockOverNativeTests
         f.Rig.Engine.Needs.Log+=line=>
         {
             if(line!="needs.freeplay_sparks_awarded")return;recipient=true;
-            Assert.False(manager.HasDisableLock(ReactionTrigger.CubeMoved,"SparksKnockOverCubes_activityLock"));
-            Assert.DoesNotContain(f.Rig.Robot.Animations.Scheduler.IdleStack,e=>e.Lock=="Activity_SparksKnockOverCubes");
+            Assert.True(manager.HasDisableLock(ReactionTrigger.CubeMoved,"SparksKnockOverCubes_activityLock"));
+            Assert.Contains(f.Rig.Robot.Animations.Scheduler.IdleStack,e=>e.Lock=="Activity_SparksKnockOverCubes");
             Assert.Contains(f.Rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="SparksKnockOverCubes");Assert.Empty(names);Assert.False(notified);
         };
         Activity(f).OnDeselected(0);Assert.True(recipient);Assert.False(f.Rig.Engine.Needs.SparksRewardPending);Assert.False(notified);
+        Assert.False(manager.HasDisableLock(ReactionTrigger.CubeMoved,"SparksKnockOverCubes_activityLock"));
         Assert.Equal(new[]{"Stopping all anims for all objects on layer Engine"},names);
         f.Rig.Engine.DrainAppDelivery();Assert.True(notified);
     }

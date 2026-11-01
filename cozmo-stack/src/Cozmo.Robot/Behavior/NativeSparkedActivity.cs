@@ -146,15 +146,6 @@ internal sealed class NativeSparkedActivity : IDisposable
             else Facade.Animations.Scheduler.RemoveIdleAnimation("Activity_"+_activity.Id,_robot.Engine.Timer.TimeStampMs);
         }
         if(!Current(generation))return;
-        // S27 005B3548: common pending reward precedes specialized virtual cleanup.
-        // M15-071 still owns the missing native amount/raw award in this existing recipient.
-        if(_robot.Engine.Needs.SparksRewardPending)
-        {
-            _robot.Engine.Needs.SparksRewardCommunicatedToUser();
-            if(!Current(generation))return;
-            SteppedBehavior.ReportMissing("M15-071 SparksRewardCommunicatedToUser 0x00696E64/0x00696E90: pending flag and existing queued notification delivered; native reward amount +0x3DC and raw FreeplaySparksAwarded broadcast are unbuilt");
-        }
-        if(!Current(generation))return;
         ResetLightsAndAnimations();
         if(!Current(generation))return;
         _delegate?.OnDeselected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);
@@ -223,13 +214,6 @@ internal sealed class NativeSparkedActivity : IDisposable
     {
         long generation=detached.Generation;
         detached.ReleaseLocks();detached.ReleaseIdle();
-        if(!Current(generation))return;
-        if(_robot.Engine.Needs.SparksRewardPending)
-        {
-            _robot.Engine.Needs.SparksRewardCommunicatedToUser();
-            if(!Current(generation))return;
-            SteppedBehavior.ReportMissing("M15-071 SparksRewardCommunicatedToUser 0x00696E64/0x00696E90: pending flag and existing queued notification delivered; native reward amount +0x3DC and raw FreeplaySparksAwarded broadcast are unbuilt");
-        }
         if(!Current(generation))return;
         detached.ResetHard();if(!Current(generation))return;
         _delegate?.OnDeselected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);

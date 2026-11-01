@@ -667,6 +667,8 @@ public sealed class SelectionChooser : IBehaviorChooser
 // fidelity: M15-003
 public sealed class ActivityStrategy : IDisposable
 {
+    // Test-only collaborator for exercising distinct native picker calls; never set by production configuration.
+    internal Func<bool>? WantsToEndForTest;
     private IDisposable? _needsSubscription, _objectiveSubscription;
     internal Func<double,double>? Draw;
     internal Func<float>? TickDuration;
@@ -930,6 +932,7 @@ public sealed class ActivityStrategy : IDisposable
     /// </summary>
     public bool WantsToEnd(FreeplayInputs inputs, double runningSec, out string reason, double? absoluteNow=null)
     {
+        if (WantsToEndForTest is { } supplied) { reason="supplied test predicate"; return supplied(); }
         float selected=(float)(LastStartedSec??0), now=absoluteNow is {} t?(float)t:(float)((float)runningSec+selected);
         float can=(float)CanEndDurationSec, should=(float)ShouldEndDurationSec;
         if(can>Epsilon && (can+selected)-Epsilon>now){reason="minimum duration";return false;}
@@ -1035,6 +1038,8 @@ public sealed class FeatureGates
 public sealed class Activity
 {
     internal Action? NativePublicStateSelected;
+    internal NeedsManager? NativeNeeds;
+    internal IBehavior? CachedInterlude;
     internal NativeActivityObjectiveOwner? ObjectiveOwner;
     internal NativeSparkedActivity? SparkedOwner;
     internal NativeGatherCubesActivity? GatherOwner;
@@ -1094,7 +1099,7 @@ public sealed class Activity
         SparkedOwner?.Selected();if(!Current())return;
         GatherOwner?.Selected();
     }
-    public void OnDeselected(double nowSec, Action<string>? missing = null)
+    public void OnDeselected(double nowSec, Action<string>? missing = null, NeedsManager? needs = null)
     {
         long epoch=++_nativeLifecycleEpoch;
         bool Current()=>!GuardNativeLifecycle || epoch==_nativeLifecycleEpoch;
@@ -1131,6 +1136,14 @@ public sealed class Activity
             }
             if(!Current())return;
             SetAnalyzerRequest(false);if(!Current())return;
+            CachedInterlude = null;
+            var reward = needs ?? NativeNeeds;
+            if (reward is { SparksRewardPending: true })
+            {
+                reward.SparksRewardCommunicatedToUser();
+                SteppedBehavior.ReportMissing("M15-071 SparksRewardCommunicatedToUser 0x00696E64/0x00696E90: pending flag and existing queued notification delivered; native reward amount +0x3DC and raw FreeplaySparksAwarded broadcast are unbuilt");
+            }
+            if(!Current())return;
             FeedingDisconnect?.OnDeselected();if(!Current())return;
             if(oldSpark is not null)SparkedOwner!.DeselectedGather(oldSpark);
             else SparkedOwner?.Deselected();
@@ -1266,8 +1279,18 @@ public static class ActivityTreeLoader
         };
         if(owner is not null)
         {
-            byte? nativeId=id switch{"Feeding"=>2,"MeetCozmo"=>6,"PutDownDispatch"=>13,"SparksKnockOverCubes"=>21,"SparksPopAWheelie"=>24,"SparksRollBlock"=>26,"SparksStackBlock"=>27,"SparksGatherCubes"=>20,"SparksWorkout"=>28,"GatherCubes"=>4,_=>null};
+            string[] nativeNames = { "Invalid", "BuildPyramid", "Feeding", "Freeplay", "GatherCubes", "Hiking", "MeetCozmo", "NeedsSevereLowEnergy", "NeedsSevereLowRepair", "NeedsSevereLowPlayGetIn", "NothingToDo", "PlayAlone", "PlayWithHumans", "PutDownDispatch", "Selection", "Singing", "Socialize", "SparksBuildPyramid", "SparksCozmoSings", "SparksFistBump", "SparksGatherCubes", "SparksKnockOverCubes", "SparksPeekABoo", "SparksPickUpCube", "SparksPopAWheelie", "SparksPounceOnMotion", "SparksRollBlock", "SparksStackBlock", "SparksWorkout", "StrictPriorityFreeplay", "SparksTrackLaser", "SparksFireTruckAlarm" };
+            int nativeIndex = Array.IndexOf(nativeNames, id);
+            byte? nativeId = nativeIndex >= 0 ? (byte)nativeIndex : null;
             if(nativeId is {} value)activity.NativePublicStateSelected=()=>owner.BehaviorPublicState.UpdateActivity(value);
+            activity.NativeNeeds = owner.Engine.Needs;
+            if (id == "Hiking" && activity.DriveStartAnim is {} hikingStart && activity.DriveLoopAnim is {} hikingLoop && activity.DriveEndAnim is {} hikingEnd)
+            {
+                activity.GuardNativeLifecycle = true;
+                activity.NativeDrivingFacade = owner.BehaviorManagerOwner!.ContextRobot;
+                activity.NativeCommonDrivingPush = () => activity.PushOwnedDriving(owner, new(hikingStart, hikingLoop, hikingEnd));
+                activity.NativeCommonDrivingRemove = () => activity.RemoveOwnedDriving(owner);
+            }
             if(activity.Type=="BehaviorsOnly")activity.NativeUpdate20=_=>0; // vtable10252F8 -> 005A7373.
             foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
                 if(chooser is ScoringChooser scoring)scoring.ContextRandom=owner.Engine.ContextRandom;

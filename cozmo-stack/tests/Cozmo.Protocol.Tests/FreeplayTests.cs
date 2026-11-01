@@ -1,5 +1,6 @@
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 using System.Text.Json;
@@ -62,12 +63,259 @@ public class FreeplayTests
         public string Class => "Fake";
         public bool Runnable { get; set; }
         public int Ticks { get; set; }
-        public int Started, Left;
+        public int Started, Left, Stopped;
         public bool IsRunnable(BehaviorContext c) => Runnable;
         public double EvaluateScore(BehaviorContext c) => 1;
         public Task StartAsync(BehaviorContext c, BehaviorScope s, CancellationToken t) { Started++; Left = Ticks; return Task.CompletedTask; }
         public bool Update(BehaviorContext c, double nowMs) => --Left > 0;
-        public void Stop(BehaviorStopReason r) { }
+        public void Stop(BehaviorStopReason r) { Stopped++; }
+    }
+
+    private sealed class OracleChooser : IBehaviorChooser
+    {
+        private readonly Func<IBehavior?, IBehavior?> _choose;
+        public OracleChooser(Func<IBehavior?, IBehavior?> choose) => _choose = choose;
+        public BehaviorChooserType Type => BehaviorChooserType.StrictPriority;
+        public IReadOnlyList<string> BehaviorIds => Array.Empty<string>();
+        public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double running, BehaviorContext context, double now)
+            => new(_choose(current), "oracle", Array.Empty<(string, double, string)>());
+    }
+
+    // M15-006 0x005B3886..396C: current=null still invokes interlude with the candidate;
+    // on the next call a cached interlude equal to current bypasses both choosers.
+    [Fact]
+    public void M15_006_InterludeReceivesCandidateAndCachesItself()
+    {
+        using var rig = new Rig(); var ctx = Ctx(rig);
+        var candidate = new Fake("candidate"); var interlude = new Fake("interlude");
+        int mainCalls = 0, interludeCalls = 0; IBehavior? argument = null;
+        var activity = new Activity { Id = "Hiking", Strategy = new ActivityStrategy(),
+            Chooser = new OracleChooser(_ => { mainCalls++; return candidate; }),
+            InterludeChooser = new OracleChooser(x => { interludeCalls++; argument = x; return interlude; }) };
+        var fp = new FreeplaySystem(new BehaviorManager(ctx), ctx, Fp(activity), new Dictionary<string,IBehavior>(), new FreeplayInputs());
+        var managed = (IManagedActivity)fp;
+        Assert.Same(interlude, managed.GetDesiredActiveBehavior(null, 1));
+        Assert.Same(candidate, argument);
+        Assert.Same(interlude, managed.GetDesiredActiveBehavior(interlude, 2));
+        Assert.Equal(1, mainCalls); Assert.Equal(1, interludeCalls);
+        // New activity fixture supplies null candidate with a nonnull current behavior.
+        IBehavior? nullArgument=candidate; int nullCalls=0;
+        var nullActivity=new Activity { Id="PlayAlone", Strategy=new(), Chooser=new OracleChooser(_=>null),
+            InterludeChooser=new OracleChooser(x=>{nullArgument=x;nullCalls++;return interlude;}) };
+        var fp2=new FreeplaySystem(new BehaviorManager(ctx),ctx,Fp(nullActivity),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        Assert.Same(interlude,((IManagedActivity)fp2).GetDesiredActiveBehavior(candidate,3));
+        Assert.Null(nullArgument); Assert.Equal(1,nullCalls);
+    }
+
+    // M15-060 0x005AD9FE..7A: immediate ordinary kickout; severe activities survive.
+    [Fact]
+    public void M15_060_PutdownImmediatelyDeselectsOrdinaryButNotSevere()
+    {
+        using var rig = new Rig(); var ctx = Ctx(rig);
+        var ordinary = new Activity { Id = "Hiking", Strategy = new ActivityStrategy() };
+        var severe = new Activity { Id = "NeedsSevereLowEnergy", Strategy = new ActivityStrategy() };
+        var fp = new FreeplaySystem(new BehaviorManager(ctx), ctx, Fp(ordinary, severe), new Dictionary<string,IBehavior>(), new FreeplayInputs());
+        var current = typeof(FreeplaySystem).GetProperty("Current")!;
+        current.SetValue(fp, ordinary); ordinary.OnSelected(1);
+        fp.OnRobotPutDown(2); Assert.Null(fp.Current); Assert.Null(ordinary.SelectedAtSec);
+        current.SetValue(fp, severe); severe.OnSelected(3);
+        fp.OnRobotPutDown(4); Assert.Same(severe, fp.Current); Assert.Equal(3d, severe.SelectedAtSec);
+        var repair=new Activity { Id="NeedsSevereLowRepair", Strategy=new() };
+        current.SetValue(fp,repair); fp.OnRobotPutDown(5); Assert.Same(repair,fp.Current);
+        var spark=new Activity { Id="SparksFistBump", Strategy=new(), RequireSpark="FistBump" };
+        current.SetValue(fp,spark); fp.OnRobotPutDown(6); Assert.Same(spark,fp.Current);
+        current.SetValue(fp,ordinary); fp.ForcedActivity="Hiking"; fp.OnRobotPutDown(7); Assert.Same(ordinary,fp.Current);
+    }
+
+    // M15-006 0x005AE29C/005ADC44: fresh cache is invalid; synthetic object inputs do not trigger its supplier.
+    [Fact]
+    public void M15_006_FirstPickUsesPriorityWithoutObjectSynthesis()
+    {
+        using var rig = new Rig(); var ctx = Ctx(rig); var behavior = new Fake("b", ticks: 20);
+        var bound = new Dictionary<string,IBehavior> { ["b"] = behavior };
+        var first = Act("PlayAlone", 1, "b", bound); var hiking = Act("Hiking", 2, "b", bound);
+        var fp = new FreeplaySystem(new BehaviorManager(ctx), ctx, FpNamed(("Hiking","Hiking","Hiking","Hiking"), first, hiking), bound,
+            new FreeplayInputs { FaceKnown = true, LocatedCubes = 1 });
+        Assert.Equal("PlayAlone", fp.Tick(1, 1000).Activity);
+    }
+
+    // M15-006 0x005AE68C..762: a null existing choice bars that activity; the newly chosen null is returned without another pick.
+    [Fact]
+    public void M15_006_ExistingNullAllowsOnlyOneRepick()
+    {
+        using var rig = new Rig(); var ctx = Ctx(rig); int firstCalls=0, secondCalls=0, thirdCalls=0;
+        Activity A(string id, int priority, Action count) => new() { Id=id, Priority=priority, Strategy=new ActivityStrategy(),
+            Chooser=new OracleChooser(_ => { count(); return null; }) };
+        var first=A("First",1,()=>firstCalls++); var second=A("Second",2,()=>secondCalls++); var third=A("Third",3,()=>thirdCalls++);
+        var fp=new FreeplaySystem(new BehaviorManager(ctx),ctx,Fp(first,second,third),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,first); first.OnSelected(1);
+        Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(new Fake("running"),2));
+        Assert.Same(second,fp.Current); Assert.Equal(1,firstCalls); Assert.Equal(1,secondCalls); Assert.Equal(0,thirdCalls);
+    }
+
+    // M15-006/071 0x005B34F0..3548: cache is clear by the reward callback.
+    // Reach: common lifecycle with standalone Needs callback; subclass cleanup is exercised by native owner tests.
+    [Fact]
+    public void M15_006_CommonDeselectClearsCacheBeforeReward()
+    {
+        var needs=new NeedsManager(()=>1); var activity=new Activity { Id="Hiking", Strategy=new() };
+        activity.CachedInterlude=new Fake("interlude"); needs.SparksRewardPending=true;
+        bool observed=false; needs.SparksRewardAwarded+=()=>{observed=true; Assert.Null(activity.CachedInterlude);};
+        activity.OnDeselected(2,needs:needs);
+        Assert.True(observed); Assert.False(needs.SparksRewardPending);
+    }
+
+    // M15-006 0x005AE704..708: non-running candidate + WantsToEnd enters picker with askCurrent=true.
+    // Reach: synthetic duration strategy and chooser, with an explicitly supplied current behavior.
+    [Fact]
+    public void M15_006_NonrunningCandidateRepicksOnceWhenStrategyWantsEnd()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var candidate=new Fake("new"); var current=new Fake("old");
+        int pickedCalls=0;
+        var first=new Activity { Id="First", Priority=1, Strategy=new ActivityStrategy { ShouldEndDurationSec=1 },
+            Chooser=new OracleChooser(_=>candidate) };
+        var second=new Activity { Id="Second", Priority=2, Strategy=new(),
+            Chooser=new OracleChooser(_=>{pickedCalls++;return null;}) };
+        var fp=new FreeplaySystem(new BehaviorManager(ctx),ctx,Fp(first,second),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,first); first.OnSelected(0);
+        Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(current,3));
+        Assert.Same(second,fp.Current); Assert.Equal(1,pickedCalls);
+    }
+
+    // M15-006 0x005AE704..708/005ADCA2..B0: supplied stateful strategy distinguishes askCurrent=true.
+    [Fact]
+    public void M15_006_UnchangedRetryKeepsFirstCandidateWithoutReaskingOrPause()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var old=new Fake("old"); var next=new Fake("next");
+        int endCalls=0, chooserCalls=0, pauseCalls=0;
+        var strategy=new ActivityStrategy { WantsToEndForTest=()=>++endCalls==1 };
+        var activity=new Activity { Id="PlayAlone", Strategy=strategy, Chooser=new OracleChooser(_=>{chooserCalls++;return next;}) };
+        var fp=new FreeplaySystem(new BehaviorManager(ctx),ctx,Fp(activity),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        fp.SparkPauseChanged=_=>pauseCalls++;
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,activity); activity.OnSelected(1);
+        Assert.Same(next,((IManagedActivity)fp).GetDesiredActiveBehavior(old,2));
+        Assert.Same(activity,fp.Current); Assert.Equal(2,endCalls); Assert.Equal(1,chooserCalls); Assert.Equal(0,pauseCalls);
+    }
+
+    // M15-006 0x005AE40C and 0x005ADCD8..CF6: unavailable raw bucket and absent None bucket preserve selection.
+    [Fact]
+    public void M15_006_UnavailableOrAbsentSparkBucketRetainsCurrent()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var running=new Fake("running");
+        var old=new Activity { Id="PlayAlone", Strategy=new() };
+        var spark=new Activity { Id="SparksFistBump", Strategy=new(), RequireSpark="FistBump" };
+        var manager=new BehaviorManager(ctx); var fp=new FreeplaySystem(manager,ctx,Fp(spark),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old); fp.ForcedActivity="Hiking";
+        Assert.Null(((IManagedActivity)fp).GetDesiredActiveBehavior(running,1)); Assert.Same(old,fp.Current);
+        manager.SetNativeRequestedSpark(17,0);
+        Assert.Same(running,((IManagedActivity)fp).GetDesiredActiveBehavior(running,2)); Assert.Same(old,fp.Current);
+        var candidate=new Fake("candidate"); int calls=0;
+        var retry=new Activity { Id="PlayAlone", Strategy=new ActivityStrategy { WantsToEndForTest=()=>true },
+            Chooser=new OracleChooser(_=>{calls++;return candidate;}) };
+        var other=new FreeplaySystem(new BehaviorManager(ctx),ctx,Fp(spark),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(other,retry);
+        Assert.Same(candidate,((IManagedActivity)other).GetDesiredActiveBehavior(running,3));
+        Assert.Same(retry,other.Current); Assert.Equal(1,calls);
+    }
+
+    // M15-006 0x005ADDFA..1E and 005A2A4A..80: selected activity asks with the old behavior still live.
+    [Fact]
+    public void M15_006_ActivitySwitchPreservesSharedBehavior()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var shared=new Fake("shared",ticks:100);
+        IBehavior? observed=null;
+        var first=new Activity { Id="PlayAlone", Priority=1, Strategy=new(), Chooser=new OracleChooser(_=>shared) };
+        var next=new Activity { Id="Hiking", Priority=2, Strategy=new(), Chooser=new OracleChooser(x=>{observed=x;return shared;}) };
+        var manager=new BehaviorManager(ctx); var fp=new FreeplaySystem(manager,ctx,Fp(first,next),new Dictionary<string,IBehavior>{{"shared",shared}},new FreeplayInputs());
+        fp.Tick(1,1000); Assert.Equal(1,shared.Started);
+        fp.ForcedActivity="Hiking"; fp.Tick(2,2000);
+        Assert.Same(shared,observed); Assert.Same(shared,manager.Current); Assert.Equal(1,shared.Started); Assert.Equal(0,shared.Stopped);
+        Assert.Null(first.SelectedAtSec); Assert.Equal(2d,next.SelectedAtSec);
+    }
+
+    // M15-006/063 0x005B3154..319A/005B3450: shipped activities, actual broadcaster and driving handler.
+    // Reach: loaded native activity instances; canonical Freeplay admission is not exercised.
+    [Fact]
+    public void M15_006_ShippedPublicIdsAndHikingDrivingTriplet()
+    {
+        using var fixture=new PickupPyramidNativeExecutionTests.Fixture();
+        var robot=fixture.Rig.Engine.Robot!;
+        var activities=NativeBehaviorRuntime.AllActivities(fixture.Runtime.Tree).ToArray();
+        foreach (var pair in new[] { ("Hiking",(byte)5), ("Socialize",(byte)16), ("BuildPyramid",(byte)1) })
+        {
+            var activity=activities.First(a=>a.Id==pair.Item1);
+            activity.OnSelected(1);
+            Assert.Equal(pair.Item2,robot.BehaviorPublicState.State.Activity);
+            if (pair.Item1=="Hiking")
+                Assert.Contains(fixture.Rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="Hiking" &&
+                    e.Animations==new DrivingAnimations((AnimationTrigger)234,(AnimationTrigger)233,(AnimationTrigger)232));
+            activity.OnDeselected(2);
+            if (pair.Item1=="Hiking") Assert.DoesNotContain(fixture.Rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="Hiking");
+        }
+    }
+
+    // M14-001/008 0x004F4956..4A38, 004F5AE2, 004F3C08 and 004F3CCA.
+    // Reach: actual FaceWorld cache with synthetic observations and actual robot origin.
+    [Fact]
+    public void M15_006_LastFaceSurvivesRemovalButNotClearAndRequiresCurrentRoot()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        Assert.Equal(-1d,new AIWhiteboard(f.M.World,()=>0).OffTreadsStateChangedAtSec);
+        var faces=f.M.Vision.Faces; var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        using var output=new Pose3d("");
+        var weak=new TrackedFace(new DetectedFace(87,new FaceRect(0,0,10,10)),1)
+            { HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60),parent:origin) };
+        faces.AddOrUpdateFace(weak,f.Robot.GetCheckedMainPose(),false);
+        Assert.False(faces.CopyNativeLastFace(origin,true,output));
+        var tracked=new TrackedFace(new DetectedFace(88,new FaceRect(0,0,10,10),Name:"Ada"),1)
+            { HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60),parent:origin) };
+        faces.AddOrUpdateFace(tracked,f.Robot.GetCheckedMainPose(),false);
+        Assert.True(faces.CopyNativeLastFace(origin,true,output));
+        using var foreign=new Pose3d("foreign"); Assert.False(faces.CopyNativeLastFace(foreign,true,output));
+        faces.RemoveFaceByID(88); Assert.True(faces.CopyNativeLastFace(origin,true,output));
+        faces.ClearAllFaces(); Assert.False(faces.CopyNativeLastFace(origin,true,output));
+    }
+
+    // M14-001/008 and M15-006: absence of the cache provider is reported, not turned into a false observation.
+    [Fact]
+    public void M15_006_UnavailableFaceProviderIsNotFalseEvidence()
+    {
+        using var rig=new Rig(); var ctx=Ctx(rig); var inputs=new FreeplayInputs { FaceKnown=true };
+        var fp=new FreeplaySystem(new BehaviorManager(ctx),ctx,Fp(),new Dictionary<string,IBehavior>(),inputs);
+        var messages=new List<string>(); rig.Robot.Engine.StackLogLine+=messages.Add;
+        fp.RefreshInputs(rig.Robot,null,null,1);
+        Assert.True(inputs.FaceKnown);
+        Assert.Contains(messages,line=>line.Contains("M14-001/M14-008") && line.Contains("unavailable"));
+    }
+
+    // M15-060/066 0x005AD9F8/0056CCDC: explicit committed-event entry; actual shared whiteboard and timer.
+    [Fact]
+    public void M15_060_PutdownDeliveryPrecedesSharedWhiteboardStamp()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        using var second=new ManipulationSystem(f.Rig.Robot,f.M.Vision);
+        Assert.Same(f.M.Whiteboard,second.Whiteboard);
+        f.M.ClockSec=()=>900; // public owner clock override does not replace the native whiteboard timer
+        Assert.Throws<InvalidOperationException>(()=>second.ClockSec=()=>901);
+        var whiteboard=f.M.Whiteboard; double prior=whiteboard.OffTreadsStateChangedAtSec;
+        f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnTreads,OffTreadsState.OnBack);
+        Assert.Equal(prior,whiteboard.OffTreadsStateChangedAtSec);
+        double seen=double.NaN; var order=new List<string>();
+        void Kick(OffTreadsState from,OffTreadsState to) { if(to==OffTreadsState.OnTreads) { order.Add("freeplay"); seen=whiteboard.OffTreadsStateChangedAtSec; } }
+        void Returned(OffTreadsState from,OffTreadsState to) { order.Add("returned"); Assert.Equal(prior,whiteboard.OffTreadsStateChangedAtSec); }
+        void Whiteboard(OffTreadsState from,OffTreadsState to) { order.Add("whiteboard"); Assert.Equal(42d,whiteboard.OffTreadsStateChangedAtSec); }
+        f.Rig.Robot.Sensors.FreeplayOffTreadsStateChanged+=Kick;
+        f.Rig.Robot.Sensors.ReturnedToTreadsStateChanged+=Returned;
+        f.Rig.Robot.Sensors.WhiteboardOffTreadsStateChanged+=Whiteboard;
+        try
+        {
+            f.Rig.Engine.Timer.UpdateTime(42_000_000_000L);
+            f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnBack,OffTreadsState.OnTreads);
+            Assert.Equal(prior,seen); Assert.Equal(42f,whiteboard.OffTreadsStateChangedAtSec);
+            Assert.Equal(42f,second.Whiteboard.OffTreadsStateChangedAtSec);
+            Assert.Equal(new[]{"freeplay","returned","whiteboard"},order);
+        }
+        finally { f.Rig.Robot.Sensors.FreeplayOffTreadsStateChanged-=Kick; f.Rig.Robot.Sensors.ReturnedToTreadsStateChanged-=Returned; f.Rig.Robot.Sensors.WhiteboardOffTreadsStateChanged-=Whiteboard; }
     }
 
     private sealed class PounceScoreFixture : Fake, IPounceScoreState
@@ -676,7 +924,7 @@ public class FreeplayTests
 
         using var rig2 = new Rig();
         var fp2 = PickRig(rig2, Fp(Act("PlayAlone", 1, "plain", bound), Act("SparksFistBump", 2, "sparked", bound, spark: "FistBump")), bound, new FreeplayInputs { RequestedSpark = "FistBump" });
-        Assert.Equal("SparksFistBump", fp2.Tick(0, 0).Activity);                       // PlayAlone (no spark) is not in the FistBump bucket
+        Assert.Null(fp2.Tick(0, 0).Activity); // raw-ID bucket join is unbuilt; the host string does not admit a Spark
     }
 
     /// <summary>
@@ -696,14 +944,17 @@ public class FreeplayTests
         };
         using var rig = new Rig();
         var forced = PickRig(rig, FpNamed(("Hiking", "Hiking", "Hiking", "Hiking"), Subs()), bound);
+        forced.SetDesiredActivityCacheForTest("Hiking"); // supplied cache byte; native state-6 supplier is unbound
         Assert.Equal("Hiking", forced.Tick(0, 0).Activity);                              // the desired id, though its strategy refuses
 
         using var rig2 = new Rig();
         var unknown = PickRig(rig2, FpNamed(("NoSuchActivity", "x", "y", "z"), Subs()), bound);
+        unknown.SetDesiredActivityCacheForTest("NoSuchActivity");
         Assert.Equal("NothingToDo", unknown.Tick(0, 0).Activity);                        // an unknown name is ActivityID 0: nothing forced, the normal walk
 
         using var rig3 = new Rig();
         var absent = PickRig(rig3, FpNamed(("PlayAlone", "PlayAlone", "PlayAlone", "PlayAlone"), Subs()), bound);
+        absent.SetDesiredActivityCacheForTest("PlayAlone");
         Assert.Null(absent.Tick(0, 0).Activity);                                         // a known id with no activity in the bucket picks nothing (0x005ADE26)
     }
 
@@ -1408,54 +1659,19 @@ public class FreeplayTests
         DesiredActivityNames = names,
     };
 
+    // M15-006 0x005ADF96/005AE5E0: desired cache is supplied explicitly; putdown does not calculate it.
     [Fact]
-    public void FreeplayPicksTheDesiredActivityFromObjectsAndRunsItsBehaviours()
+    public void FreeplayUsesExplicitDesiredCacheAndPutdownDoesNotRecalculateIt()
     {
-        using var rig = new Rig();
-        var ctx = Ctx(rig);
-        var hikeA = new Fake("hikeA", ticks: 2); var hikeB = new Fake("hikeB", ticks: 2); var playA = new Fake("playA", ticks: 2); var interlude = new Fake("interlude", ticks: 1);
-        var bound = new Dictionary<string, IBehavior> { ["hikeA"] = hikeA, ["hikeB"] = hikeB, ["playA"] = playA, ["interlude"] = interlude };
-        // one repetition history for the whole tree, the manager's, as FreeplayStack wires it
-        var manager = new BehaviorManager(ctx);
-        var penalty = manager.Penalty;
-        var hiking = new Activity
-        {
-            Id = "Hiking", Priority = 16, Strategy = new ActivityStrategy { ShouldEndDurationSec = 60, CooldownBaseSec = 15 },
-            Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("hikeA", 2, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<EmotionScorer>()),
-                                                 new ScoredBehaviorEntry("hikeB", 1, null, null, null, Array.Empty<EmotionScorer>()) }, bound, penalty: penalty),
-            InterludeChooser = new StrictPriorityChooser(new[] { "interlude" }, bound),
-        };
-        var playAlone = new Activity { Id = "PlayAlone", Priority = 15, Strategy = new ActivityStrategy { ShouldEndDurationSec = 25, CooldownBaseSec = 30 },
-                                       Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("playA", 1, null, null, null, Array.Empty<EmotionScorer>()) }, bound, penalty: penalty) };
-        var nothing = new Activity { Id = "NothingToDo", Priority = 17, Strategy = new ActivityStrategy(), Chooser = new StrictPriorityChooser(new[] { "hikeB" }, bound) };
-        var inputs = new FreeplayInputs();
-        var fp = new FreeplaySystem(manager, ctx, FpNamed(("Socialize", "Socialize", "PlayAlone", "Hiking"), hiking, playAlone, nothing), bound, inputs);
-        var log = new List<string>(); fp.Log += log.Add;
-
-        // no face, no cube: Hiking is the desired activity; hikeA (2) runs first
-        var d = fp.Tick(0, 0);
-        Assert.Equal("Hiking", d.Activity); Assert.Equal("hikeA", d.Behavior);
-        Assert.Equal(1, hikeA.Started);
-        fp.Tick(1, 1000);                                                                     // hikeA finishes (2 ticks)
-        var d3 = fp.Tick(2, 2000);
-        // hikeA just ran (penalty 0): the interlude is inserted, then hikeB
-        Assert.Contains(log, l => l.Contains("inserting interlude interlude"));
-        Assert.True(d3.Behavior is "interlude" or "hikeB", d3.ToString());
-        for (int i = 3; i < 8; i++) fp.Tick(i, i * 1000);
-        Assert.True(hikeB.Started >= 1, string.Join(" | ", fp.Decisions.Select(x => $"{x.AtSec}:{x.Activity}/{x.Behavior}")));
-        // a cube appears and the robot is put down: Hiking is kicked out and PlayAlone (cube only) picked
-        inputs.LocatedCubes = 1;
-        fp.OnRobotPutDown(10);
-        var d10 = fp.Tick(10, 10000);
-        Assert.Contains(log, l => l.Contains("Kicking out 'Hiking' on put down"));
-        Assert.Equal("PlayAlone", d10.Activity); Assert.Equal("playA", d10.Behavior);
-        // PlayAlone should end after 25 s; once playA finishes the next pick happens, and Hiking is in cooldown
-        for (int i = 11; i < 40; i++) fp.Tick(i, i * 1000);
-        Assert.Contains(log, l => l.Contains("'PlayAlone' wants to end"));
-        Assert.Contains(fp.Decisions, x => x.Activity == "Hiking" && x.AtSec > 25);       // Hiking's 15 s cooldown from t=10 has passed
-        Assert.Contains(log, l => l.Contains("robot.freeplay_goal_started PlayAlone"));
+        using var rig=new Rig(); var ctx=Ctx(rig); var a=new Fake("a",ticks:100); var b=new Fake("b",ticks:100);
+        var bound=new Dictionary<string,IBehavior>{{"a",a},{"b",b}};
+        var first=Act("PlayAlone",1,"a",bound); var hike=Act("Hiking",2,"b",bound);
+        var fp=new FreeplaySystem(new BehaviorManager(ctx),ctx,FpNamed(("Hiking","Hiking","Hiking","Hiking"),first,hike),bound,new FreeplayInputs());
+        fp.SetDesiredActivityCacheForTest("Hiking");
+        Assert.Equal("Hiking",fp.Tick(1,1000).Activity);
+        fp.OnRobotPutDown(2); Assert.Null(fp.Current);
+        Assert.Equal("PlayAlone",fp.Tick(2,2000).Activity);
     }
-
     /// <summary>
     /// The second gate on the activity, <c>GetDesiredActiveBehaviorInternal</c> 0x005AE68C..0x005AE704.
     /// An activity that chooses no behaviour is dropped and barred from the re-pick
@@ -1512,8 +1728,7 @@ public class FreeplayTests
         fp.Tick(4, 4000);
         Assert.True(log.Any(l => l.Contains("NewBehaviorChosenWhileRunning") && l.Contains("'Second'")), string.Join(" | ", log));
         // (the former 'nothing else can be picked' assertion rested on the pick consulting First's chooser, which PickNewActivityForSpark 0x005ADC44 does not do: First's strategy starts it)
-        // c.Started is not asserted: what runs after the end depends on the second gate's re-pick loop (GetDesiredActiveBehaviorInternal 0x005AE40C..0x005AE762 re-picks at most once per tick,
-        // the stack's tick loops over the tree: M15-002's, not this record's)
+        // The second gate re-picks at most once (0x005AE40C..0x005AE762).
     }
 
     [Fact]
@@ -1551,7 +1766,7 @@ public class FreeplayTests
         Assert.Contains("left Critical", endReason);
         stack.Freeplay.RequestNewActivity();
         for (int i = 80; i < 90; i++) { clock = i * 0.5; decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M)); rig.Pump(); foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) SignalTestContext.AdvanceBehavior(behavior); }
-        Assert.Contains(log, l => l.Contains("'NeedsSevereLowEnergy' was requested"));
+        // The host request is an explicit synthetic input; canonical parent admission remains missing.
         Assert.Contains(decisions.Where(d => d.AtSec >= 20), d => d.Activity == "Hiking");
     }
 
@@ -1575,6 +1790,7 @@ public class FreeplayTests
         Assert.Single(rig.Frame().Objects);
         rig.DockOutcome = BlockStatus.NoBlock;
         var decisions = new List<FreeplayDecision>();
+        stack.Freeplay.SetDesiredActivityCacheForTest("PlayAlone"); // explicit cache input; Look state-6 producer is unbound
         for (int i = 0; i < 400; i++)
         {
             clock = i * 0.25;
@@ -1591,103 +1807,45 @@ public class FreeplayTests
         Assert.False(rig.OnCharger, summary);
         Assert.Contains(decisions, d => d.Behavior == "RollBlockOnSide");
         Assert.Contains(rig.Sent, m => m is DockWithObject);
-        Assert.Contains(log, l => l.Contains("robot.goal_from_face_and_cube 0:1 -> PlayAlone"));
+        Assert.DoesNotContain(log, l => l.Contains("robot.goal_from_face_and_cube"));
     }
 
     /// <summary>
     /// The spark re-selection (correction C1 §1). The invalid-spark latch at <c>BehaviorManager+0x65</c> is
-    /// set only by an <c>ActivateSpark</c> whose <c>UnlockId == 0x55</c> (the stack's null) and cleared by
-    /// <c>SwitchToRequestedSpark</c>. When the current activity's spark equals the requested spark and the
+    /// set only by an <c>ActivateSpark</c> whose <c>UnlockId == 0x55</c> and cleared by
+    /// <c>SwitchToRequestedSpark</c>. When the manager's current spark equals the requested spark and the
     /// latch is set, <c>GetDesiredActiveBehaviorInternal</c> 0x005AE40C..0x005AE46E logs
     /// <c>ActivityFreeplay.ChooseNextBehavior.SparkReselected</c> and re-picks with the "ask the current
     /// activity WantsToEnd" flag cleared (arg 0).
     /// </summary>
+    // M15-006 0x005AE2AC..34A: a forced match keeps the activity before the picker examines +65.
     [Fact]
-    public void AReRequestedInvalidSparkDropsTheCurrentActivityAndRepicks()
+    public void MatchingForcedActivityKeepsCurrentDespiteCancelLatch()
     {
-        using var rig = new Rig();
-        var ctx = Ctx(rig);
-        var a = new Fake("a", ticks: 100);
-        var b = new Fake("b", ticks: 100);
-        var bound = new Dictionary<string, IBehavior> { ["a"] = a, ["b"] = b };
-        var manager = new BehaviorManager(ctx);
-        var first = new Activity
-        {
-            Id = "First", Priority = 1, RequireSpark = null,
-            // Cooldown 0, so only the reselect exclusion keeps First from being chosen again.
-            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
-            Chooser = new StrictPriorityChooser(new[] { "a" }, bound),
-        };
-        var second = new Activity
-        {
-            Id = "Second", Priority = 2, RequireSpark = null,
-            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
-            Chooser = new StrictPriorityChooser(new[] { "b" }, bound),
-        };
-        var fp = new FreeplaySystem(manager, ctx, Fp(first, second), bound, new FreeplayInputs());
-        var log = new List<string>(); fp.Log += log.Add;
-
-        Assert.Equal("First", fp.Tick(0, 0).Activity);
-        Assert.False(fp.RequestedSparkInvalid);
-
-        // a real spark request does not set the latch
-        fp.SetRequestedSpark("SparksFireTruckAlarm");
-        Assert.False(fp.RequestedSparkInvalid);
-        // the invalid unlock 0x55 (the stack's null) sets it
-        fp.SetRequestedSpark(null);
-        Assert.True(fp.RequestedSparkInvalid);
-
-        var d = fp.Tick(1, 1000);
-        Assert.Contains(log, l => l.Contains("ActivityFreeplay.ChooseNextBehavior.SparkReselected: Spark re-selected: none behavior will be selected"));
-        Assert.False(fp.RequestedSparkInvalid);              // SwitchToRequestedSpark cleared it
-        Assert.Equal("Second", d.Activity);
-        Assert.Equal("b", d.Behavior);
+        using var rig=new Rig(); var ctx=Ctx(rig); var b=new Fake("b",ticks:100);
+        var bound=new Dictionary<string,IBehavior>{{"b",b}};
+        var activity=Act("Hiking",1,"b",bound); var manager=new BehaviorManager(ctx);
+        manager.SparkNameInput=_=>"supplied";
+        var fp=new FreeplaySystem(manager,ctx,Fp(activity),bound,new FreeplayInputs());
+        fp.Tick(1,1000); manager.HandleSparkManagerMessage(new SparkManagerMessage(0,0x55));
+        fp.ForcedActivity="Hiking"; fp.Tick(2,2000);
+        Assert.Same(activity,fp.Current); Assert.Equal(1,manager.SparkCancelLatch); Assert.Equal(1,b.Started);
     }
-
-    /// <summary>
-    /// The invalid-spark latch <c>BehaviorManager+0x65</c> is cleared by <c>SwitchToRequestedSpark</c>
-    /// 0x005A4220 after <b>every</b> pick (C1 §1), not only the reselect branch. A requested-activity pick
-    /// that never reselects still clears it.
-    /// </summary>
+    // M15-006 0x005AE474..4F6: unchanged initial picker asks current but does not switch Spark or pause.
     [Fact]
-    public void TheInvalidSparkLatchClearsOnEveryPick()
+    public void UnchangedInitialPickerKeepsCancelLatchAndAsksChooser()
     {
-        using var rig = new Rig();
-        var ctx = Ctx(rig);
-        var a = new Fake("a", ticks: 100);
-        var b = new Fake("b", ticks: 100);
-        var bound = new Dictionary<string, IBehavior> { ["a"] = a, ["b"] = b };
-        var manager = new BehaviorManager(ctx);
-        var first = new Activity
-        {
-            Id = "First", Priority = 1, RequireSpark = "FireTruckAlarm",
-            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
-            Chooser = new StrictPriorityChooser(new[] { "a" }, bound),
-        };
-        var second = new Activity
-        {
-            Id = "Second", Priority = 2, RequireSpark = null,
-            Strategy = new ActivityStrategy { ShouldEndDurationSec = 1000, CooldownBaseSec = 0 },
-            Chooser = new StrictPriorityChooser(new[] { "b" }, bound),
-        };
-        var fp = new FreeplaySystem(manager, ctx, Fp(first, second), bound, new FreeplayInputs());
-        var log = new List<string>(); fp.Log += log.Add;
-
-        // First requires FireTruckAlarm; requesting it picks First and does not set the latch
-        fp.SetRequestedSpark("FireTruckAlarm");
-        Assert.False(fp.RequestedSparkInvalid);
-        Assert.Equal("First", fp.Tick(0, 0).Activity);
-
-        // the invalid unlock 0x55 (null) sets the latch, but First's spark is not null, so it is not a reselect
-        fp.SetRequestedSpark(null);
-        Assert.True(fp.RequestedSparkInvalid);
-        fp.RequestNewActivity();
-        var d = fp.Tick(1, 1000);
-        Assert.Equal("Second", d.Activity);
-        Assert.False(fp.RequestedSparkInvalid);              // the pick cleared +0x65
-        Assert.DoesNotContain(log, l => l.Contains("SparkReselected"));
+        using var rig=new Rig(); var ctx=Ctx(rig); var running=new Fake("running"); var candidate=new Fake("candidate");
+        int calls=0, pauses=0; var old=new Activity { Id="PlayAlone", Strategy=new(), Chooser=new OracleChooser(_=>{calls++;return candidate;}) };
+        var spark=new Activity { Id="SparksFistBump", Strategy=new(), RequireSpark="FistBump" };
+        var manager=new BehaviorManager(ctx); manager.SparkNameInput=_=>"supplied";
+        manager.HandleSparkManagerMessage(new SparkManagerMessage(0,0x55));
+        var fp=new FreeplaySystem(manager,ctx,Fp(spark),new Dictionary<string,IBehavior>(),new FreeplayInputs());
+        fp.SparkPauseChanged=_=>pauses++; fp.ForcedActivity="Hiking";
+        typeof(FreeplaySystem).GetProperty("Current")!.SetValue(fp,old);
+        Assert.Same(candidate,((IManagedActivity)fp).GetDesiredActiveBehavior(running,1));
+        Assert.Same(old,fp.Current); Assert.Equal(1,calls); Assert.Equal(0,pauses); Assert.Equal(1,manager.SparkCancelLatch);
     }
-
     /// <summary>
     /// <c>DetectBracketChangeForDas(force)</c> 0x00695958 enters the event branch when
     /// <c>cached != current || force</c>. On <c>force</c> it emits for all three needs even when unchanged

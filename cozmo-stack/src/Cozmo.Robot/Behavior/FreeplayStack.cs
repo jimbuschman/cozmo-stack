@@ -306,8 +306,8 @@ public sealed class FreeplayStack : IDisposable
         {
             if (to == OffTreadsState.OnTreads && from != OffTreadsState.OnTreads) system.OnRobotPutDown(clockSec());
         }
-        robot.Sensors.OffTreadsStateChangedInternal += onTreads;
-        stack._unsubscribe.Add(() => robot.Sensors.OffTreadsStateChangedInternal -= onTreads);
+        robot.Sensors.FreeplayOffTreadsStateChanged += onTreads;
+        stack._unsubscribe.Add(() => robot.Sensors.FreeplayOffTreadsStateChanged -= onTreads);
 
         stack._unsubscribe.Add(()=>robot.Engine.InvokeEngineRequest(()=>{system.DetachHostHandle();return 0;}));
         return stack;

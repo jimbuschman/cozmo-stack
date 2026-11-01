@@ -136,7 +136,7 @@ public sealed partial class AIWhiteboard
     /// AIWhiteboard +0x48: the time the tag-53 handler recorded when the robot went off treads
     /// (<c>str r0,[r4,#0x48]</c> 0x0056ccf6). The handler body is M11/M12; this is where it writes.
     /// </summary>
-    public double OffTreadsStateChangedAtSec { get; private set; }
+    public double OffTreadsStateChangedAtSec { get; private set; } = -1.0;
 
     /// <summary>The tag-53 handler's write (BaseStationTimer::GetCurrentTimeInSeconds at 0x0056ccf2).</summary>
     public void RecordOffTreadsStateChanged(double nowSec) => OffTreadsStateChangedAtSec = nowSec;
