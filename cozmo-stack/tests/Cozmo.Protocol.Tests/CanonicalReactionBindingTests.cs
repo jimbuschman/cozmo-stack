@@ -124,6 +124,25 @@ public sealed class CanonicalReactionBindingTests
         rig.Tick(1);rig.Tick(4999);Assert.Same(wait,behavior.OwnedRunner);
         rig.Tick(2);Assert.Null(behavior.OwnedRunner);Assert.False(behavior.Completed);
     }
+
+    [Fact]
+    public void FreeplayAdmissionRetainsRunningReaction()
+    {
+        using var rig=new M4ControlTests.Rig(Resources());LoadAnimations(rig);rig.ToSynced();rig.Calibrate();
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
+        var native=rig.Engine.Robot!;var manager=native.BehaviorManagerOwner!;OpenGate(native,manager);
+        rig.Robot.ActivateHighLevelActivity("PutDownDispatch");rig.Tick(10);
+        var previous=Assert.IsType<DriveOffChargerBehavior>(manager.Current);
+        rig.Data(new MotorCalibration{MotorID=MotorID.MOTOR_HEAD,CalibStarted=true,AutoStarted=true});
+        rig.Tick(0);manager.CheckReactions(rig.Engine.Timer.Seconds);
+        var reaction=Assert.IsType<ReactToMotorCalibrationBehavior>(manager.Current);
+        Assert.Same(previous,manager.ParkedBehavior);
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(0);
+        Assert.Same(reaction,manager.Current);
+        Assert.Equal(ReactionTrigger.MotorCalibration,manager.CurrentReactionTrigger);
+        Assert.Null(manager.ParkedBehavior);
+        Assert.Same(native.NativeBehaviorRuntime!.FreeplayObserver,manager.Activity);
+    }
     // 0x0060532A..53A0: the retained canonical behavior queues the real drive, or
     // broadcasts finished before the objective when the event byte is clear.
     [Theory] [InlineData(false)] [InlineData(true)]

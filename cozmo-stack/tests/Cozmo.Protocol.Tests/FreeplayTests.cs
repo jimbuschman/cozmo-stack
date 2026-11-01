@@ -132,6 +132,11 @@ public class FreeplayTests
         var spark=new Activity { Id="SparksFistBump", Strategy=new(), RequireSpark="FistBump" };
         current.SetValue(fp,spark); fp.OnRobotPutDown(6); Assert.Same(spark,fp.Current);
         current.SetValue(fp,ordinary); fp.ForcedActivity="Hiking"; fp.OnRobotPutDown(7); Assert.Same(ordinary,fp.Current);
+        fp.ForcedActivity=null;
+        var invalid=new Activity {Id="Hiking",Strategy=new(),RequireSpark="Count"};
+        Assert.Equal(0x55,invalid.RequiredSparkId);
+        current.SetValue(fp,invalid);invalid.OnSelected(8);fp.OnRobotPutDown(9);
+        Assert.Null(fp.Current);Assert.Null(invalid.SelectedAtSec);
     }
 
     // M15-006 0x005AE29C/005ADC44: fresh cache is invalid; synthetic object inputs do not trigger its supplier.

@@ -43,19 +43,22 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     }
 
     private Activity? _selected;
+    private int _highLevel=4; // constructor Count, then configured boot selects Selection
+    internal float HighLevelEntryTime {get;private set;}=-1f;
     // Continuation of the missing parent picker, not an ActivitySparked state/Complete latch.
     internal bool AwaitingParentActivityPick {get;private set;}
     private bool _retired;
     private long _admissionEpoch;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
+    private readonly VisionSystem? _vision;
     private readonly OverheadEdgesDetector? _ownedOverhead;
     private readonly Func<bool>? _workoutMusic;
 
     internal NativeBehaviorRuntime(CozmoRobot facade,EngineRobot robot,BehaviorManager manager,
         BehaviorContext context,VisionSystem? vision)
     {
-        _facade=facade;_robot=robot;_manager=manager;Context=context;
+        _facade=facade;_robot=robot;_manager=manager;Context=context;_vision=vision;
         Context.Mood=robot.MoodOwner;
         AI=new(()=>unchecked((int)robot.CurrentOriginId),facade.Engine.EmitStackLog,
             (l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),facade.Engine.Needs.SevereNeeds);
@@ -124,6 +127,21 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             Tree=ActivityTreeLoader.LoadResources(resources,Bound,manager.Penalty,robot);
             foreach(var activity in AllActivities(Tree))activity.Analyzer=AI.Analyzer;
             robot.NativeActivityRecipientsConstructed=true;
+            if(Tree.Any(a=>a.Id=="Freeplay"))
+            {
+                _ = FreeplayObserver;
+                FreeplayObserver.Freeplay.NativeDeselectedHook=FreeplayObserver.ParentDeselected;
+                // fidelity: M15-060 -- ctor005AD3B4 subscribes only with external interface.
+                if(robot.HasExternalInterface)facade.Sensors.FreeplayOffTreadsStateChanged += OnFreeplayTreads;
+            }
+            _selected=Tree.FirstOrDefault(a=>a.Id=="Selection");
+            if(_selected is {} selection)
+            {
+                _highLevel=2;
+                selection.OnSelected(facade.Engine.Timer.SecondsF,facade.Engine.EmitStackLog);
+                HighLevelEntryTime=facade.Engine.Timer.SecondsF;
+                SteppedBehavior.ReportMissing("M15-031 boot Selection chooser/process execution remains unbuilt");
+            }
         }
         else
         {
@@ -140,6 +158,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
 
     internal void AdmitActivity(string activityId)
     {
+        if(activityId=="Freeplay") { AdmitFreeplay(); return; }
         var selected=AllActivities(Tree).FirstOrDefault(a=>a.Id==activityId)
             ??throw new ArgumentException("No configured activity named "+activityId,nameof(activityId));
         if(selected.SparkedOwner is {CanExecute:false})
@@ -167,11 +186,18 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         }
         long epoch=++_admissionEpoch;
         float now=_facade.Engine.Timer.SecondsF;
+        if(_selected?.Id=="Freeplay")
+        {
+            _selected.OnDeselected(now,_facade.Engine.EmitStackLog);
+            if(_retired||epoch!=_admissionEpoch)return;
+            _selected=null;
+        }
         _manager.Stop(BehaviorStopReason.Interrupted,now);
         if(_retired||epoch!=_admissionEpoch)return;
         _selected?.OnDeselected(now,_facade.Engine.EmitStackLog);
         if(_retired||epoch!=_admissionEpoch)return;
         _selected=selected;
+        _highLevel=-1; // explicit host subactivity admission is not a high-level enum
         AwaitingParentActivityPick=false;
         selected.OnSelected(now,_facade.Engine.EmitStackLog);
         if(_retired||epoch!=_admissionEpoch||!ReferenceEquals(_selected,selected))return;
@@ -179,6 +205,38 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
         _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick,()=>RetireUnavailable(selected,epoch));
     }
+    private void OnFreeplayTreads(OffTreadsState from,OffTreadsState to)
+    {
+        if(to==OffTreadsState.OnTreads && from!=OffTreadsState.OnTreads)
+            FreeplayObserver.OnRobotPutDown(_facade.Engine.Timer.SecondsF);
+    }
+
+    private void AdmitFreeplay()
+    {
+        float now=_facade.Engine.Timer.SecondsF;
+        if(_highLevel!=1)
+        {
+            long epoch=++_admissionEpoch;
+            if(_selected is {} old)
+            {
+                old.OnDeselected(now,_facade.Engine.EmitStackLog);
+            }
+            else SteppedBehavior.ReportMissing("M15-031 boot Selection lifecycle remains unbound before Freeplay admission");
+            if(_retired||epoch!=_admissionEpoch)return;
+            bool ordinary=_manager.PrepareHighLevelChange(now);
+            if(_retired||epoch!=_admissionEpoch)return;
+            _selected=FreeplayObserver.Freeplay;_highLevel=1;AwaitingParentActivityPick=false;
+            _selected.OnSelected(now,_facade.Engine.EmitStackLog);
+            if(_retired||epoch!=_admissionEpoch)return;
+            HighLevelEntryTime=now;
+            Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,false);
+            _manager.Activity=FreeplayObserver;
+            RefreshFreeplayInputs(now);
+            if(ordinary)_manager.ChooseAfterHighLevelChange(now);
+        }
+        _manager.HighLevelAdapterTail(true,now);
+    }
+
     private void RetireUnavailable(Activity activity,long epoch)
     {
         if(_retired||epoch!=_admissionEpoch||!ReferenceEquals(_selected,activity))return;
@@ -200,11 +258,13 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         SteppedBehavior.ReportMissing("M15-006 Sparked desired returned null: native Freeplay PickNewActivityForSpark 0x005AE70A..005AE760 is unbuilt; actual selected owner/manager activity/state retained at parent continuation. OnDeselected requires a changed selected candidate (0x005ADE02); explicit supplied next admission may resume this boundary; no fallback or repeated Complete");
     }
 
-    internal FreeplayDecision Observe()=>new(_facade.Engine.Timer.SecondsF,_selected?.Id,_manager.Current?.Id,"native engine observation");
+    internal FreeplayDecision Observe()=>new(_facade.Engine.Timer.SecondsF,_selected?.Id=="Freeplay"?_observer?.Current?.Id:_selected?.Id,_manager.Current?.Id,"native engine observation");
     private FreeplaySystem? _observer;
     internal FreeplaySystem FreeplayObserver=>_observer??=new FreeplaySystem(_manager,Context,
         Tree.FirstOrDefault(a=>a.Id=="Freeplay")??throw new InvalidOperationException("Configured Freeplay resources unavailable"),
-        Bound,new FreeplayInputs{Needs=_facade.Engine.Needs,Mood=_robot.MoodOwner,Features=_facade.Engine.Features},false){ObserveOnly=Observe};
+        Bound,new FreeplayInputs{Needs=_facade.Engine.Needs,Mood=_robot.MoodOwner,Features=_facade.Engine.Features},false)
+        {ObserveOnly=Observe,NativeOwner=true,NativeStillCurrent=()=>!_retired && _selected?.Id=="Freeplay" && ReferenceEquals(_manager.Activity,_observer),SparkPauseChanged=p=>Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark,p)};
+    private void RefreshFreeplayInputs(float now)=>FreeplayObserver.RefreshInputs(_facade,_vision,Manipulation,now,_robot);
     internal void UpdateAI()=>AI.Update(_facade);
     // The existing checked 0x006553FC -> 0x0067F7AC recipient belongs to the
     // actual world, independently of a host Freeplay handle and before image E8.
@@ -234,12 +294,14 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     {
         if(AwaitingParentActivityPick)return;
         Context.Map=_facade.LocalizationWorld.Maps.Current;
+        if(_observer is not null && ReferenceEquals(_manager.Activity,_observer))RefreshFreeplayInputs(capturedNow);
         _manager.Update(capturedNow*1000.0,capturedNow);
     }
 
     public void Dispose()
     {
         if(_retired)return;_retired=true;++_admissionEpoch;
+        _facade.Sensors.FreeplayOffTreadsStateChanged -= OnFreeplayTreads;
         if(ReferenceEquals(_facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads,_offTreadsPause))
             _facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=null;
         _facade.Sensors.OnChargerPlatformChangedInternal-=_chargerPause;
@@ -288,6 +350,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         }
         public void BehaviorSwitched(IBehavior? desired,bool started,double now){}
         bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null || activity.Id=="SparksWorkout";
+        bool IHostReadinessOwner.EvaluateCandidateReadiness=>true;
         void IHostReadinessOwner.RetireUnavailable()=>retireUnavailable();
     }
 }

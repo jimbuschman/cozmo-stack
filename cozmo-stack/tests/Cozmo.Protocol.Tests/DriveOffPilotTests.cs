@@ -19,6 +19,93 @@ public sealed class DriveOffPilotTests
         throw new InvalidOperationException("Required shipped pilot fixture assets are absent");
     }
 
+    [Fact]
+    public void CanonicalFreeplayPicksShippedPutDownAndStartsDriveOff()
+    {
+        // Queued host string semantic adapter -> 005A106C -> 005AE29C configured parent.
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources());
+        rig.ToSynced();rig.Calibrate();
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp);
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
+        var robot=rig.Engine.Robot!;var runtime=robot.NativeBehaviorRuntime!;
+        rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger,
+            origin:robot.CurrentOriginId,frame:robot.PoseFrameId));rig.Tick(10);
+        using var observer=FreeplayStack.CreateNative(rig.Robot);
+        Assert.Same(runtime.Tree,observer.Tree);Assert.Same(runtime.Tracker,observer.DataTracker);
+        var behavior=Assert.IsType<DriveOffChargerBehavior>(runtime.Bound["DriveOffCharger"]);
+        int mark=rig.Mark();
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        Assert.Same(runtime.FreeplayObserver,robot.BehaviorManagerOwner!.Activity);
+        Assert.Equal("PutDownDispatch",runtime.FreeplayObserver.Current?.Id);
+        // Real ReturnedToTreads may preempt the immediate start; allow its source
+        // wait and the normal chooser/resume path to run inside the 5 s window.
+        for(int i=0;i<30 && !rig.SentSince(mark).OfType<AppendPathSegmentLine>().Any();i++)rig.Tick(50);
+        Assert.Contains(rig.SentSince(mark),message=>message is AppendPathSegmentLine);
+        Assert.Same(behavior,robot.BehaviorManagerOwner.Current);
+        var before=robot.BehaviorManagerOwner.Current;
+        _=observer.Tick(999,999000,rig.Robot,null,null);
+        Assert.Same(before,robot.BehaviorManagerOwner.Current);
+        float entry=runtime.HighLevelEntryTime,first=robot.BehaviorManagerOwner.FreeplayStartTime;
+        var pauses=runtime.Tracker.PausedFlags.ToHashSet();
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        Assert.Same(before,robot.BehaviorManagerOwner.Current);
+        Assert.Equal(entry,runtime.HighLevelEntryTime);Assert.Equal(first,robot.BehaviorManagerOwner.FreeplayStartTime);
+        Assert.True(pauses.SetEquals(runtime.Tracker.PausedFlags));
+        // The public queued Spark input is consumed by the same manager and parent.
+        observer.ActivateSpark(9);rig.Tick(10);
+        Assert.Equal(9,robot.BehaviorManagerOwner.RequestedSparkId);
+        Assert.Equal(9,robot.BehaviorManagerOwner.ActiveSparkId);
+        Assert.Equal("SparksRollBlock",runtime.FreeplayObserver.Current?.Id);
+        var spark=runtime.FreeplayObserver.Current!;Assert.NotNull(spark.SparkedOwner);
+        rig.Robot.ActivateHighLevelActivity("PutDownDispatch");rig.Tick(10);
+        Assert.Null(runtime.FreeplayObserver.Current);Assert.Null(spark.SelectedAtSec);
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        Assert.Same(runtime.FreeplayObserver,robot.BehaviorManagerOwner.Activity);
+    }
+
+    [Fact]
+    public void ParentSelectionCallbackCannotOverwriteReentrantReplacement()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources());rig.ToSynced();rig.Calibrate();
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp);
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
+        var native=rig.Engine.Robot!;var runtime=native.NativeBehaviorRuntime!;bool replaced=false;
+        void OnLog(string text)
+        {
+            if(replaced || !text.Contains("SetActivityIDFromSubActivity"))return;
+            replaced=true;runtime.AdmitActivity("PutDownDispatch");
+        }
+        rig.Engine.StackLogLine+=OnLog;
+        try
+        {
+            rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+            Assert.True(replaced);
+            Assert.NotSame(runtime.FreeplayObserver,native.BehaviorManagerOwner!.Activity);
+            Assert.Null(runtime.FreeplayObserver.Current);
+        }
+        finally {rig.Engine.StackLogLine-=OnLog;}
+    }
+
+    [Fact]
+    public void CanonicalParentKeepsPutdownSubscriptionAfterObserverDispose()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources());rig.ToSynced();rig.Calibrate();
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp);
+        rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
+        var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        var child=Assert.IsType<Activity>(runtime.FreeplayObserver.Current);
+        Assert.Equal("PutDownDispatch",child.Id);
+        using(var observer=FreeplayStack.CreateNative(rig.Robot))Assert.Same(runtime.FreeplayObserver,observer.Freeplay);
+        // Supplied committed off-treads event, through the actual sensor subscriber.
+        rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnBack,OffTreadsState.OnTreads);
+        Assert.Null(runtime.FreeplayObserver.Current);Assert.Null(child.SelectedAtSec);
+        Assert.Same(runtime.FreeplayObserver,rig.Engine.Robot.BehaviorManagerOwner!.Activity);
+    }
+
     [Theory]
     [InlineData(true,"DroveAsIntended")] [InlineData(false,"DroveAsIntended")]
     [InlineData(true,null)] [InlineData(false,null)]

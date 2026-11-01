@@ -52,7 +52,7 @@ public sealed class SparkManagerInputCheckedRowsTests
         Assert.Equal(0x55,manager.ActiveSparkId);Assert.Null(stack.Freeplay.Inputs.RequestedSpark);
 
 
-        Assert.Contains(missing,s=>s.Contains("canonical Freeplay parent admission"));
+        Assert.Contains(missing,s=>s.Contains("canonical Freeplay parent is not selected"));
         Assert.Contains(missing,s=>s.Contains("M15-059")&&s.Contains("SparksTrackLaser"));
         Assert.Contains("BehaviorManager.SetRequestedSpark",keys);
         stack.ActivateSpark(0x55);robot.Engine.Tick();Assert.Equal((byte)1,manager.SparkCancelLatch);

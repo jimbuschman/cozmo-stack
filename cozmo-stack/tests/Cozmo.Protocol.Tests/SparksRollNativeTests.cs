@@ -22,6 +22,32 @@ public sealed class SparksRollNativeTests
         manager.SetNativeRequestedSpark(9,soft);f.Runtime.AdmitActivity(Id);manager.SwitchToNativeRequestedSpark();
     }
     [Fact]
+    public void CanonicalParentRepicksAfterActualSparkRollCompletion()
+    {
+        // Supplied offline scene, firmware and image inputs are RollFirmwareScene's;
+        // the configured owner, queued request, actions and completion are real.
+        using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;
+        var manager=f.Robot.BehaviorManagerOwner!;var parent=f.Runtime.FreeplayObserver;
+        var spark=Activity(f);var owner=Assert.IsType<NativeSparkedActivity>(spark.SparkedOwner);
+        using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
+        f.Rig.Robot.ActivateHighLevelActivity("Freeplay");f.Rig.Tick();
+        observer.ActivateSpark(9);f.Rig.Tick();
+        Assert.Same(parent,manager.Activity);Assert.Same(spark,parent.Current);
+        bool sawCompletion=false;
+        for(int i=0;i<250;i++)
+        {
+            if(owner.Count>0 && owner.State is 4 or 5)sawCompletion=true;
+            if(sawCompletion && !ReferenceEquals(parent.Current,spark))break;
+            scene.Step();
+        }
+        Assert.True(sawCompletion,string.Join(" | ",scene.Trace.TakeLast(25)));
+        Assert.Equal(1,scene.Rolls);
+        Assert.Same(parent,manager.Activity);
+        Assert.NotSame(spark,parent.Current);
+        Assert.False(f.Runtime.AwaitingParentActivityPick);
+        Assert.Equal(0x55,manager.ActiveSparkId);
+    }
+    [Fact]
     public void ExactFactoryOwnerAndCacheSixKeepUprightFallbackAndSidePreference()
     {
         // S1-S6: literal native tables/config:155,26,40,8,9,2; cache6 NoAxis, own-parent Z preference.

@@ -34,6 +34,7 @@ public interface IManagedActivity
 internal interface IHostReadinessOwner
 {
     bool ReadinessChecksEnabled { get; }
+    bool EvaluateCandidateReadiness { get; }
     void RetireUnavailable();
 }
 
@@ -968,6 +969,16 @@ public sealed partial class BehaviorManager : IDisposable
     /// <c>SwitchToBehaviorBase</c> with the info {desired, none, NoneTrigger} (0x005a2ab4).
     /// </summary>
     // fidelity: M8-012
+    // SetCurrentActivity 005A119E..122A retains a reaction and clears its resume owner.
+    internal bool PrepareHighLevelChange(double nowSec)
+    {
+        bool ordinary=CurrentReactionTrigger is null;
+        if(ordinary) SwitchToBehaviorBaseCore(new RunningInfo(null,null,null),nowSec,BehaviorStopReason.Interrupted);
+        else lock(_gate) _resumeAfterReaction=null;
+        return ordinary;
+    }
+    internal void ChooseAfterHighLevelChange(double nowSec) => ChooseNextScoredBehaviorAndSwitch(nowSec);
+
     private void ChooseNextScoredBehaviorAndSwitch(double nowSec)
     {
         if (Activity is not { } activity) return;
@@ -1025,7 +1036,7 @@ public sealed partial class BehaviorManager : IDisposable
         if (next is not null)
         {
             bool runnable;
-            if(hostReadiness is not null && next is SteppedBehavior stepped)
+            if(hostReadiness is { EvaluateCandidateReadiness:true } && next is SteppedBehavior stepped)
             {
                 long evaluationEpoch=Interlocked.Read(ref _hostSelectionEpoch);
                 var evaluated=stepped.EvaluateHostReadiness(_context);
