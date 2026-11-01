@@ -87,6 +87,12 @@ public sealed partial class BehaviorManager : IDisposable
     }
     private readonly object _gate = new();
     private bool _hostDisposed;
+    private RetainedSubscription? _defaultPostureInput;
+    internal void AttachDefaultPostureInput()
+    {
+        _defaultPostureInput ??= _context.Robot.Engine.AnimationMessages.SubscribeMessage(0xA2, false,
+            value => { if (value is DefaultHeadAndLiftState input) SetDefaultHeadAndLiftState(input.Enable, input.HeadRadians, input.LiftHeightMm); });
+    }
 
     private IBehavior? _current;
     private BehaviorScope? _scope;
@@ -543,8 +549,6 @@ public sealed partial class BehaviorManager : IDisposable
     {
         var motion = _context.Robot.Motion;
         motion.StopAllMotors();
-        // The "|| MC+0xD4" half (0x005a3642..0x005a3646) reads a flag nothing here ever sets (its writer is SetRunningAndResumeInfo's
-        // UpdateRobotPropertiesForReaction, MISSING), so it is always false.
         if (motion.LockedTracks != 0 && (!motion.DirectDriveHoldsAnyTrack || motion.DirectDriveDisabled))
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "BehaviorManager.CheckReactionTriggerStrategies", "Some tracks are locked, unlocking them");
@@ -990,9 +994,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// <c>BehaviorManager::SetRunningAndResumeInfo</c> 0x005a209e..0x005a22ae: stores the three fields, and also (a) when the trigger
     /// changes sends the game message <c>ReactionTriggerTransition{old, new}</c> (0x005a20ba..0x005a2ee8), (b) calls
     /// <c>UpdateRobotPropertiesForReaction</c> (0x005a2102..0x005a2110, helper 0x005a2f54: <c>robot+0x2c7</c> and the movement component's +0xd4,
-    /// from <c>new trigger != NoneTrigger</c>) and (c) on a behaviour change walks the vector at manager+0x78 calling
-    /// <c>CubeLightComponent::StopLightAnimAndResumePrevious</c> (0x005a2230..0x005a223e). No inventory row covers (a)..(c); each is a seam that is
-    /// reported MISSING while nothing is attached, so this method stores the info and does not claim the rest.
+    /// on reaction entry or exit) and (c) processes the state-light vector at manager+0x78 before committing the info.
     /// </summary>
     // fidelity: M8-012
     private void SetRunningAndResumeInfo(RunningInfo info, BehaviorScope? scope, double nowSec)
@@ -1003,25 +1005,31 @@ public sealed partial class BehaviorManager : IDisposable
         {
             oldTrigger = _currentReaction;
             oldCurrent = _current;oldResume=_resumeAfterReaction;
+        }
+        if (oldTrigger is not null || info.Trigger is not null)
+        {
+            if (ReactionTriggerTransitionSender is { } send) send(oldTrigger, info.Trigger);
+            else SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
+        }
+        if ((oldTrigger is null) != (info.Trigger is null))
+        {
+            if (UpdateRobotPropertiesForReaction is { } update) update(info.Trigger is not null);
+            else SteppedBehavior.ReportMissing("M8-012 UpdateRobotPropertiesForReaction: robot state owner unavailable");
+        }
+        UpdateStateLightsForRunningInfo(info.Current,oldCurrent,oldResume,oldTrigger,info.Trigger);
+        lock (_gate)
+        {
             _current = info.Current; Interlocked.Increment(ref _hostSelectionEpoch);
             _scope = info.Current is null ? null : scope;
             if (info.Current is not null) _startedSec = nowSec;
             _resumeAfterReaction = info.Resume;
             _currentReaction = info.Trigger;
         }
-        if (oldTrigger != info.Trigger)
-        {
-            if (ReactionTriggerTransitionSender is { } send) send(oldTrigger, info.Trigger);
-            else SteppedBehavior.ReportMissing("BehaviorManager::SetRunningAndResumeInfo sends ReactionTriggerTransition{old,new} (0x005a20ba..0x005a2ee8): no game-message sender attached");
-            if (UpdateRobotPropertiesForReaction is { } update) update(info.Trigger is not null);
-            else SteppedBehavior.ReportMissing("BehaviorManager::UpdateRobotPropertiesForReaction (0x005a2102, 0x005a2f54) writes robot+0x2c7 and MC+0xd4: not built (MC+0xd4 has no writer here)");
-        }
-        UpdateStateLightsForRunningInfo(info.Current,oldCurrent,oldResume,oldTrigger,info.Trigger);
     }
 
-    /// <summary>The <c>ReactionTriggerTransition</c> game message (0x005a2ee8). MISSING: nothing sends it.</summary>
+    /// <summary>The <c>ReactionTriggerTransition</c> game message (0x005a2ee8).</summary>
     public Action<ReactionTrigger?, ReactionTrigger?>? ReactionTriggerTransitionSender { get; set; }
-    /// <summary><c>UpdateRobotPropertiesForReaction</c> (0x005a2f54); the argument is <c>new trigger != NoneTrigger</c>. MISSING: robot+0x2c7 and MC+0xd4 have no stack counterpart.</summary>
+    /// <summary><c>UpdateRobotPropertiesForReaction</c> (0x005a2f54), called on entry or exit.</summary>
     public Action<bool>? UpdateRobotPropertiesForReaction { get; set; }
     /// <summary>The cube light stop on a behaviour change (0x005a2230..0x005a223e). MISSING.</summary>
     public Action? StopLightAnimsOnBehaviorChange { get; set; }
@@ -1207,7 +1215,9 @@ public sealed partial class BehaviorManager : IDisposable
     public void Stop(BehaviorStopReason reason, double nowSec)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
-        lock (_gate) StopCurrentLocked(reason, nowSec);
+        if (_hostDisposed) return;
+        // fidelity: M8-012 — empty-info switch 0x005A1E68..1F12; report and entry/exit stores precede the final info.
+        SwitchToBehaviorBaseCore(new RunningInfo(null, null, null), nowSec, reason);
     }
 
     /// <summary>
@@ -1273,7 +1283,8 @@ public sealed partial class BehaviorManager : IDisposable
         _hostDisposed = true; // before any Stop/diagnostic callbacks may reenter selection
         SteppedBehavior.ReportMissing("M8-016/M8-023 host BehaviorManager.Dispose still performs host Stop/strategy unsubscribe cleanup; native activity/chooser/strategy shared-control tree ownership and destructor position0x005A0D22..0x005A0DFA are unbuilt; host cleanup is not a native destructor");
         _sparkInput?.Dispose(); // host retained handle cleanup; native destructor position remains M8-023
-        Stop(BehaviorStopReason.Cancelled, 0);
+        _defaultPostureInput?.Dispose();
+        lock (_gate) StopCurrentLocked(BehaviorStopReason.Cancelled, 0); // host cleanup, not a native transition broadcast
         foreach(var behavior in _behaviors.OfType<SteppedBehavior>())behavior.RetireActionCompletionOwner();
         List<IReactionTriggerStrategy> strategies;
         List<AcknowledgeObjectBehavior> objectOwners;
