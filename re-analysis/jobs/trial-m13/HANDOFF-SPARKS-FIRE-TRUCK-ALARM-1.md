@@ -1,4 +1,4 @@
-# SPARKS-FIRE-TRUCK-ALARM-1 — BUILD DONE, BATCH GATE PENDING
+# SPARKS-FIRE-TRUCK-ALARM-1 — READY FOR CLAUDE
 
 The actual configured FireTruckAlarm owner now performs its native engine handoff: set the original Robot trick flag and emit empty API tag143. It creates no action. Unknown StopTrick ingress remains visible; no physical trick, inferred timeout, objective or needs completion is substituted. Ordinary job, no statuses/approvals/hardware changes.
 
@@ -14,6 +14,9 @@ Records: propose ONE coherent FireTruck configured lifecycle/original flag/API h
 
 Workers unchanged: reader tallstack_runtime_read requested gpt-6.1-sol medium; builder tallstack_runtime_build/reviewer pyramid_runtime_review DEFAULT model/effort omitted, actual backends unobserved. **1 returned review batch/1 resubmission** removed an unsupported animation-library prerequisite; independent source/diff static PASS. Builder MISSING: actual StopTrick ingress and later app-supplied flag/objective/needs events remain; source flag/helper/report/common Resume questions resolved at cited addresses. No worker .NET runs.
 
-Affected tests **219/219 PASS**,0failed/0skip/compiler0/test0/shutdown0/postflight0; log `.scratch/sparks-fire-truck-alarm-1/affected-1.log`. Fidelity check PASS746/current counts unchanged; protected manifest equals origin/main excluding unresolved prose only. Third current-batch job; full gate pending, not READY FOR CLAUDE.
+Affected tests **219/219 PASS**,0failed/0skip/compiler0/test0/shutdown0/postflight0; log `.scratch/sparks-fire-truck-alarm-1/affected-1.log`. Fidelity check PASS746/current counts unchanged; protected manifest equals origin/main excluding unresolved prose only. Third current-batch job; full gate pending, READY FOR CLAUDE as recorded below.
 
-Reviewable job source cutoff after preserved reordering: `602c144e`; subsequent jobs need not merge to review this corrected job. Final batch gate is still pending.
+Reviewable job source cutoff after preserved reordering: `602c144e`; subsequent jobs need not merge to review this corrected job. Final batch gate passed as recorded below.
+
+
+**READY FOR CLAUDE — final batch gate:** committed9298bf6d553e24faafe90d59fea8875c51085b40, **7430/7430 PASS,0failed,0skipped**,12m28s. Gate/shutdown exits0; postflight processes0. Preserved `.scratch/trigger-earned-react-fire-batch-full-2.log` and `-console.log`; failed first gate and every diagnostic/affected attempt remain retained. This is the shared full gate for TriggerMap, Earned, React and Fire, in that review/merge order. Current749-record protected manifest equals origin/main except unresolved prose; no statuses, approvals, protected evidence or hardware verdicts changed.

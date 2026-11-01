@@ -1,4 +1,4 @@
-# REACT-TO-OBSTACLE-1 — BUILD DONE, BATCH GATE PENDING
+# REACT-TO-OBSTACLE-1 — READY FOR CLAUDE
 
 The retained configured PlayAnim owner now uses the recovered concrete action on explicit Start, while ordinary obstacle readiness retains its source input. Ordinary job, not REPEAT PATTERN: its action body changed. No statuses, approvals, hardware verdicts or records added.
 
@@ -12,6 +12,9 @@ Records: existing M8-005 owns this class/action/listener path, so no new record.
 
 Workers unchanged: reader tallstack_runtime_read requested gpt-6.1-sol medium; builder tallstack_runtime_build and reviewer pyramid_runtime_review DEFAULT model/effort omitted; actual backends unobserved. Independent primary/source/diff PASS, **0 returned review batches/0 resubmissions**. Builder MISSING: general listener identity/order/lifetime, other PlayAnim profiles and broader native obstacle-writer census remain; own tuple/completion/original-owner contracts were resolved at the cited addresses. No worker .NET runs.
 
-Affected tests **418/418 PASS**,0failed/0skip/compiler0/test0/shutdown0/postflight0; log `.scratch/react-to-obstacle-1/affected-1.log`. Fidelity check PASS746/current counts unchanged; protected manifest equals origin/main excluding unresolved prose only. Full suite belongs to the current batch; not READY FOR CLAUDE yet.
+Affected tests **418/418 PASS**,0failed/0skip/compiler0/test0/shutdown0/postflight0; log `.scratch/react-to-obstacle-1/affected-1.log`. Fidelity check PASS746/current counts unchanged; protected manifest equals origin/main excluding unresolved prose only. Full suite belongs to the current batch; READY FOR CLAUDE as recorded below.
 
-Reviewable job source cutoff after preserved reordering: `7682f721`; subsequent jobs need not merge to review this corrected job. Final batch gate is still pending.
+Reviewable job source cutoff after preserved reordering: `7682f721`; subsequent jobs need not merge to review this corrected job. Final batch gate passed as recorded below.
+
+
+**READY FOR CLAUDE — final batch gate:** committed9298bf6d553e24faafe90d59fea8875c51085b40, **7430/7430 PASS,0failed,0skipped**,12m28s. Gate/shutdown exits0; postflight processes0. Preserved `.scratch/trigger-earned-react-fire-batch-full-2.log` and `-console.log`; failed first gate and every diagnostic/affected attempt remain retained. This is the shared full gate for TriggerMap, Earned, React and Fire, in that review/merge order. Current749-record protected manifest equals origin/main except unresolved prose; no statuses, approvals, protected evidence or hardware verdicts changed.
