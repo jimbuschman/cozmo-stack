@@ -322,6 +322,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
         [BehaviorClass.EarnedSparks] = (ctx,json)=>new NativeEarnedSparksBehavior(ctx,json),
         [BehaviorClass.FireTruckAlarm] = (ctx,json)=>new NativeFireTruckAlarmBehavior(ctx,json),
+        [BehaviorClass.OnConfigSeen] = (ctx,json)=>new NativeRespondToPyramidBaseBehavior(ctx,json),
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
@@ -424,6 +425,12 @@ public sealed class BehaviorFactory
         {SteppedBehavior.ReportMissing("EarnedSparks factory needs the actual configured Robot and manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.FireTruckAlarm && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksFireTruckAlarm || ctx.NativeRobot is null || ctx.Manipulation is null))
         {SteppedBehavior.ReportMissing("FireTruckAlarm factory needs the actual configured Robot and manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.OnConfigSeen && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.RespondToPyramidBase || ctx.NativeRobot is null || ctx.Manipulation is null ||
+            !config.TryGetProperty("requiredUnlockId",out var pyramidUnlock) || pyramidUnlock.ValueKind!=JsonValueKind.String || pyramidUnlock.GetString()!="BuildPyramid" ||
+            config.EnumerateObject().Any(p=>p.Name is not ("behaviorClass" or "behaviorID" or "requiredUnlockId" or "configTriggers" or "animTriggers")) ||
+            !config.TryGetProperty("configTriggers",out var configTriggers) || configTriggers.ValueKind!=JsonValueKind.Array || configTriggers.GetArrayLength()!=1 || configTriggers[0].ValueKind!=JsonValueKind.String || configTriggers[0].GetString()!="PyramidBase" ||
+            !config.TryGetProperty("animTriggers",out var animTriggers) || animTriggers.ValueKind!=JsonValueKind.Array || animTriggers.GetArrayLength()!=1 || animTriggers[0].ValueKind!=JsonValueKind.String || animTriggers[0].GetString()!="BuildPyramidReactToBase"))
+        {SteppedBehavior.ReportMissing("OnConfigSeen factory supports only the source-checked RespondToPyramidBase profile and actual owners");status=BehaviorCreateStatus.NotImplemented;return null;}
         if((cls==BehaviorClass.DevTurnInPlaceTest||cls==BehaviorClass.Dance||cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
@@ -463,7 +470,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
+            if(stepped is NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
