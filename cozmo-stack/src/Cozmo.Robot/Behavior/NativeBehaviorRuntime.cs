@@ -249,6 +249,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         // The manager is stopped/disposed by its actual lifetime owner first.
         _observer?.DetachHostHandle();
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();
+        foreach(var activity in AllActivities(Tree))activity.Strategy.Dispose();
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();

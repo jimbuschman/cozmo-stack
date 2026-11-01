@@ -665,8 +665,39 @@ public sealed class SelectionChooser : IBehaviorChooser
 /// finds a game: the app's, so never here), Spark (the app requested the spark: never here).
 /// </summary>
 // fidelity: M15-003
-public sealed class ActivityStrategy
+public sealed class ActivityStrategy : IDisposable
 {
+    private IDisposable? _needsSubscription, _objectiveSubscription;
+    internal Func<double,double>? Draw;
+    internal Func<float>? TickDuration;
+    internal Func<bool?>? PyramidUnlocked;
+    internal Func<int?>? PyramidCandidates, PyramidBases, PyramidFull;
+    private float _nextRoll;
+    private float _defaultBase, _defaultRandomness;
+    private bool _rollLatch, _built;
+    private bool _hasCurrentCooldown;
+    private double _currentCooldownSec;
+    internal string? HigherType, HigherNeed, HigherBracket;
+    internal void BindNative(EngineRobot owner)
+    {
+        _defaultBase=(float)CooldownBaseSec; _defaultRandomness=(float)CooldownRandomnessSec;
+        Draw=x=>owner.Engine.ContextRandom.RandDbl(x);
+        TickDuration=()=> (float)owner.Engine.Timer.DeltaSeconds;
+        PyramidUnlocked=()=>owner.Progression is {} p && p.TryIsUnlocked(3,out bool unlocked) ? unlocked : null;
+        if(!owner.HasExternalInterface)return;
+        if(Type=="NeedBasedCooldown") _needsSubscription=owner.Engine.AnimationMessages.SubscribeMessage(0x62,true,ReceiveNeeds);
+        if(Type=="Pyramid") _objectiveSubscription=owner.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value && value==3)_built=true;});
+    }
+    private void ReceiveNeeds(object? payload)
+    {
+        if(payload is not IReadOnlyList<uint> words || Need is not {} n || (uint)n>=3)
+        {SteppedBehavior.ReportMissing("M15-098 needs level projection or needId unavailable");return;}
+        float level=BitConverter.Int32BitsToSingle(unchecked((int)words[(int)n]));
+        float baseValue=NeedCooldownGraph is {} graph ? (float)graph.EvaluateY(level) : _defaultBase;
+        float randomValue=NeedCooldownRandomnessGraph is {} randomGraph ? (float)randomGraph.EvaluateY(level) : _defaultRandomness;
+        SetCooldown(baseValue,randomValue);
+    }
+    public void Dispose(){_needsSubscription?.Dispose();_needsSubscription=null;_objectiveSubscription?.Dispose();_objectiveSubscription=null;}
     public string Type { get; init; } = "Simple";
     public double CanEndDurationSec { get; init; } = -1;
     public double ShouldEndDurationSec { get; init; } = 60;
@@ -709,11 +740,15 @@ public sealed class ActivityStrategy
     /// <c>RandomizeCooldown</c>, 0x005B5336..0x005B5360) every time the cooldown check passes — not when the
     /// activity ends.
     /// </summary>
-    public double CurrentCooldownSec { get; private set; } = double.NaN;
+    public double CurrentCooldownSec
+    {
+        get => _hasCurrentCooldown ? _currentCooldownSec : (float)CooldownBaseSec;
+        private set { _currentCooldownSec=value; _hasCurrentCooldown=true; }
+    }
     public Random Random { get; set; } = new();
 
     /// <summary>The engine's float epsilon in these comparisons (0x3727C5AC).</summary>
-    public const double Epsilon = 1e-5;
+    public static readonly float Epsilon = BitConverter.Int32BitsToSingle(0x3727C5AC);
 
     public static ActivityStrategy FromJson(JsonElement e)
     {
@@ -733,13 +768,13 @@ public sealed class ActivityStrategy
         if (e.TryGetProperty("needId", out var nidEl) && Enum.TryParse<NeedId>(nidEl.GetString(), true, out var nid2)) need ??= nid2;
         Graph2d? cd = e.TryGetProperty("needCooldownGraph", out var cdg) ? Graph2d.FromJson(cdg) : null;
         Graph2d? cdr = e.TryGetProperty("needCooldownRandomnessGraph", out var cdrg) ? Graph2d.FromJson(cdrg) : null;
-        return new ActivityStrategy
+        var result = new ActivityStrategy
         {
             Type = e.TryGetProperty("type", out var t) ? t.GetString() ?? "Simple" : "Simple",
             // JsonTools::GetValueOptional<float> 0x004FA580 overwrites only when the member exists, so an
             // absent key keeps the IActivityStrategy constructor default (row 25): canEnd -1, shouldEnd 60,
             // cooldownBase -1, cooldownRandomness 0, requiredRecentOnTreads -1, requiredMinStartMoodScore -1.
-            CanEndDurationSec = D("activityCanEndDurationSecs", -1), ShouldEndDurationSec = D("activityShouldEndDurationSecs", 60),
+            CanEndDurationSec = D("activityCanEndDurationSecs", -1), ShouldEndDurationSec = e.TryGetProperty("type",out var sparkType) && sparkType.GetString()=="Spark" ? float.MaxValue : D("activityShouldEndDurationSecs", 60),
             CooldownBaseSec = D("cooldownBaseSecs", -1), CooldownRandomnessSec = D("cooldownRandomnessSecs", 0),
             StartInCooldown = e.TryGetProperty("startInCooldown", out var sic) && sic.ValueKind == JsonValueKind.True,
             RequiredRecentOnTreadsEventSec = D("requiredRecentOnTreadsEventSecs", -1), RequiredMinStartMoodScore = D("requiredMinStartMoodScore", -1),
@@ -747,26 +782,28 @@ public sealed class ActivityStrategy
             FeatureGate = e.TryGetProperty("featureGate", out var fg) ? fg.GetString() : null,
             NeedCooldownGraph = cd, NeedCooldownRandomnessGraph = cdr,
         };
+        if(e.TryGetProperty("higherPriorityStrategyConfig",out var hcfg) && hcfg.ValueKind==JsonValueKind.Object)
+        {
+            result.HigherType=hcfg.TryGetProperty("strategyType",out var ht)?ht.GetString():null;
+            result.HigherNeed=hcfg.TryGetProperty("need",out var hneed)?hneed.GetString():null;
+            result.HigherBracket=hcfg.TryGetProperty("needBracket",out var hb)?hb.GetString():null;
+        }
+        return result;
     }
 
     /// <summary>The activity ended: only the end time is recorded (the engine re-randomises on the next start).</summary>
-    public void OnEnded(double nowSec) => LastEndedSec = nowSec;
+    public void OnEnded(double nowSec) => LastEndedSec = (float)nowSec;
 
     /// <summary><c>RandomizeCooldown</c> (0x005B5408): base plus a random share of the randomness.</summary>
     public void RandomizeCooldown()
     {
-        double baseSec = CooldownBaseSec, randSec = CooldownRandomnessSec;
-        if (Type == "NeedBasedCooldown" && Need is { } n && NeedLevels is { } levels)
-        {
-            double level = levels(n);
-            if (NeedCooldownGraph is { } g) baseSec = g.EvaluateY(level);
-            if (NeedCooldownRandomnessGraph is { } r) randSec = r.EvaluateY(level);
-        }
-        CurrentCooldownSec = baseSec + Random.NextDouble() * randSec;
+        float baseSec=(float)CooldownBaseSec, randomness=(float)CooldownRandomnessSec;
+        double draw=Draw is {} native ? native(randomness) : Random.NextDouble()*randomness;
+        CurrentCooldownSec=(float)((double)baseSec+draw);
     }
 
     /// <summary>The cooldown in force, the constructor's <c>cooldownBaseSecs</c> until the first randomisation.</summary>
-    public double EffectiveCooldownSec => double.IsNaN(CurrentCooldownSec) ? CooldownBaseSec : CurrentCooldownSec;
+    public double EffectiveCooldownSec => CurrentCooldownSec;
 
     /// <summary>
     /// <c>IActivityStrategy::SetCooldown</c> 0x005B54E4: <c>+0x1c</c> (the base) and <c>+0x20</c> (the current
@@ -777,9 +814,9 @@ public sealed class ActivityStrategy
     // fidelity: M15-003
     public void SetCooldown(double baseSec, double randomnessSec)
     {
-        CooldownBaseSec = baseSec;
-        CurrentCooldownSec = baseSec;
-        CooldownRandomnessSec = randomnessSec;
+        CooldownBaseSec = (float)baseSec;
+        CurrentCooldownSec = (float)baseSec;
+        CooldownRandomnessSec = (float)randomnessSec;
     }
 
     /// <summary>
@@ -799,7 +836,7 @@ public sealed class ActivityStrategy
     public double? LastStartedSec { get; private set; }
 
     /// <summary>The activity started: the engine keeps this at +0x54 beside the end time at +0x58.</summary>
-    public void OnStarted(double nowSec) => LastStartedSec = nowSec;
+    public void OnStarted(double nowSec) => LastStartedSec = (float)nowSec;
 
     /// <summary>
     /// <c>WantsToStart</c>'s cooldown test (0x005B52C8..0x005B5334). It applies while the cooldown is above
@@ -817,14 +854,11 @@ public sealed class ActivityStrategy
     // fidelity: M15-005
     public bool InCooldown(double nowSec)
     {
-        double cooldown = EffectiveCooldownSec;
-        if (cooldown <= Epsilon) return false;
-        double ended = LastEndedSec ?? 0;
-        if (ended <= Epsilon && !StartInCooldown) return false;
-        double ran = ended - (LastStartedSec ?? 0);
-        // 0x005B5312: a run of at most two basestation ticks gets the flat 3.0 s cooldown (M15-005).
-        if (ran > 0 && ran <= 2 * TickSec) cooldown = ShortRunCooldownSec;
-        return nowSec < ended + cooldown;
+        float cooldown=(float)EffectiveCooldownSec, ended=(float)(LastEndedSec??0);
+        if (!(cooldown>Epsilon) || (!(ended>Epsilon) && !StartInCooldown)) return false;
+        float ran=ended-(float)(LastStartedSec??0), tick=TickDuration?.Invoke()??(float)TickSec;
+        if(ran>0 && ran<=tick+tick)cooldown=3f;
+        return (float)nowSec < ended+cooldown;
     }
 
     public bool WantsToStart(FreeplayInputs inputs, double nowSec, out string reason)
@@ -837,19 +871,25 @@ public sealed class ActivityStrategy
             return false;
         }
         if (InCooldown(nowSec)) { reason = $"in cooldown ({EffectiveCooldownSec:F0} s)"; return false; }
-        RandomizeCooldown();     // the engine randomises here, once the cooldown has passed
-        if (RequiredRecentOnTreadsEventSec > 0 && (inputs.LastOnTreadsEventSec is not { } t || nowSec - t > RequiredRecentOnTreadsEventSec)) { reason = "no recent on-treads event"; return false; }
+        float ended=(float)(LastEndedSec??0);
+        if((float)EffectiveCooldownSec>Epsilon && (ended>Epsilon || StartInCooldown))RandomizeCooldown();
         if (StartMoodScorer.Count > 0)
         {
             double score = inputs.Mood is { } mood ? StartMoodScorer.Sum(s => s.Graph.EvaluateY(mood[s.Emotion])) : 0;
-            if (score < RequiredMinStartMoodScore) { reason = $"mood score {score:F2} below {RequiredMinStartMoodScore:F2}"; return false; }
+            if (!((float)score >= (float)RequiredMinStartMoodScore-Epsilon)) { reason = $"mood score {score:F2} below {RequiredMinStartMoodScore:F2}"; return false; }
+        }
+        float window=(float)RequiredRecentOnTreadsEventSec;
+        if(window>Epsilon)
+        {
+            float t=(float)(inputs.LastOnTreadsEventSec??0), selected=(float)(LastStartedSec??0), now=(float)nowSec;
+            if(!(t>Epsilon) || t-Epsilon<=selected || window-Epsilon<=now-t)
+            {reason="no recent on-treads event";return false;}
         }
         switch (Type)
         {
             case "Needs":
                 if (Need is not { } n || NeedBracket is not { } b || inputs.Needs is null) { reason = "no needs state"; return false; }
                 if (!inputs.Needs.State.IsNeedAtBracket(n, b)) { reason = $"{n} not {b}"; return false; }
-                if (HigherPriorityStrategy is { } h && Enum.TryParse<NeedId>(h, true, out var hn) && inputs.Needs.State.IsNeedAtBracket(hn, NeedBracketId.Critical)) { reason = $"{hn} is Critical and takes priority"; return false; }
                 reason = $"{n} is {b}"; return true;
             case "SevereNeedTransition":
                 if (Need is not { } sn || inputs.Needs is null) { reason = "no needs state"; return false; }
@@ -858,15 +898,24 @@ public sealed class ActivityStrategy
                 if (inputs.Needs.SevereNeeds.Selected==(int)sn) { reason = $"{sn} severe state already expressed"; return false; }
                 reason = $"{sn} just became Critical"; return true;
             case "Pyramid":
-                if (inputs.LocatedCubes < 3) { reason = $"{inputs.LocatedCubes} cube(s) located, a pyramid needs 3"; return false; }
-                if (inputs.PyramidBuilt) { reason = "a pyramid stands"; return false; }
-                reason = "three cubes and no pyramid"; return true;
+                bool? unlocked=PyramidUnlocked?.Invoke();
+                if(unlocked is null){SteppedBehavior.ReportMissing("M15-097 progression unlock3 unavailable");reason="pyramid unlock unavailable";return false;}
+                if(!unlocked.Value){reason="pyramid locked";return false;}
+                int? candidates=PyramidCandidates?.Invoke();
+                if(candidates is null)SteppedBehavior.ReportMissing("M15-097/M12-049 pyramid located filter unavailable");
+                float now=(float)nowSec;
+                if(now>_nextRoll){double draw=Draw is {} native?native(1d):Random.NextDouble();_rollLatch=draw<0.4;_nextRoll=now+300f;}
+                int? bases=PyramidBases?.Invoke(), full=PyramidFull?.Invoke();
+                if(bases is null || full is null){SteppedBehavior.ReportMissing("M15-097/M12-049 pyramid weak caches unavailable");reason="pyramid caches unavailable";return false;}
+                if(candidates is null && full==0 && bases==0 && _rollLatch){SteppedBehavior.ReportMissing("M15-097/M12-049 pyramid located filter unavailable");reason="pyramid candidates unavailable";return false;}
+                bool allowed=full==0 && (bases>0 || (_rollLatch && candidates>=3));
+                if(allowed)_built=false;
+                reason=allowed?"pyramid eligible":"pyramid ineligible";return allowed;
             // fidelity: M15-096
             case "PlayWithHumans" or "FPPlayWithHumans":
                 reason = "the game request component is the app's"; return false;
             case "Spark":
-                if (inputs.RequestedSpark is { } spark) { reason = $"spark '{spark}' requested"; return true; }
-                reason = "no spark requested"; return false;
+                reason = "spark strategy starts"; return true;
             default:
                 reason = "wants to start"; return true;
         }
@@ -879,21 +928,29 @@ public sealed class ActivityStrategy
     /// does (0x005B548C..0x005B54BC); in between, the subclass's <c>WantsToEndInternal</c> decides
     /// (the vtable +0x0C tail call at 0x005B54C0).
     /// </summary>
-    public bool WantsToEnd(FreeplayInputs inputs, double runningSec, out string reason)
+    public bool WantsToEnd(FreeplayInputs inputs, double runningSec, out string reason, double? absoluteNow=null)
     {
-        if (CanEndDurationSec > Epsilon && runningSec < CanEndDurationSec - Epsilon)
-        { reason = $"ran {runningSec:F0} s, cannot end before {CanEndDurationSec:F0}"; return false; }
-        if (ShouldEndDurationSec > Epsilon && runningSec > ShouldEndDurationSec + Epsilon) { reason = $"ran {runningSec:F0} s, should end after {ShouldEndDurationSec:F0}"; return true; }
+        float selected=(float)(LastStartedSec??0), now=absoluteNow is {} t?(float)t:(float)((float)runningSec+selected);
+        float can=(float)CanEndDurationSec, should=(float)ShouldEndDurationSec;
+        if(can>Epsilon && (can+selected)-Epsilon>now){reason="minimum duration";return false;}
+        if(should>Epsilon && (should+selected)+Epsilon<now){reason=$"ran {runningSec:F0} s, should end after {ShouldEndDurationSec:F0}";return true;}
         switch (Type)
         {
             case "Needs":
-                if (Need is { } n && NeedBracket is { } b && inputs.Needs is not null && !inputs.Needs.State.IsNeedAtBracket(n, b)) { reason = $"{n} left {b}"; return true; }
-                break;
+                if(Need is not {} n || NeedBracket is not {} b || inputs.Needs is null){reason="missing primary needs strategy";return true;}
+                if(HigherType is not null)
+                {
+                    if(HigherType!="InNeedsBracket" || !Enum.TryParse<NeedId>(HigherNeed,true,out var hn) || !Enum.TryParse<NeedBracketId>(HigherBracket,true,out var hb))
+                    {SteppedBehavior.ReportMissing("M15-099 higher priority strategy recipient unavailable");reason="higher strategy unavailable";return false;}
+                    if(inputs.Needs.State.IsNeedAtBracket(hn,hb))
+                    {if(inputs.Needs.SevereNeeds.Selected!=3)inputs.Needs.SevereNeeds.Clear();reason="higher priority";return true;}
+                }
+                bool atBracket=inputs.Needs.State.IsNeedAtBracket(n,b);
+                reason=atBracket?$"{n} remains {b}":$"{n} left {b}";return !atBracket;
             case "SevereNeedTransition":
-                reason = "the transition is a get-in"; return true;
-            case "Spark":
-                if (inputs.RequestedSpark is null) { reason = "the spark ended"; return true; }
-                break;
+                if(Need is not {} sn || inputs.Needs is null){reason="missing primary transition strategy";return true;}
+                reason="transition predicate";return !(inputs.Needs.State.IsNeedAtBracket(sn,NeedBracketId.Critical) && inputs.Needs.SevereNeeds.Selected!=(int)sn);
+            case "Pyramid": reason="pyramid objective";return _built;
         }
         reason = "keeps running"; return false;
     }
@@ -1190,6 +1247,7 @@ public static class ActivityTreeLoader
             desired = (dn.GetProperty("faceAndCubeActivityName").GetString()!, dn.GetProperty("faceOnlyActivityName").GetString()!, dn.GetProperty("cubeOnlyActivityName").GetString()!, dn.GetProperty("noFaceNoCubeActivityName").GetString()!);
         var strategy = e.TryGetProperty("activityStrategy", out var st) ? ActivityStrategy.FromJson(st) : new ActivityStrategy();
         if (random is not null) strategy.Random = random;
+        if(owner is not null)strategy.BindNative(owner);
         // fidelity: M15-059
         if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes" or "SparksWorkout")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");

@@ -3231,7 +3231,7 @@ B-M1-10 (2026-10-18), built, awaiting strong verification: production Needs read
 * rests on: libcozmoEngine.so
 * best authority: libcozmoEngine.so
 * evidence: IActivityStrategy constructor 0x005B4EC8; IActivityStrategy::WantsToStart 0x005B529C; IActivityStrategy::RandomizeCooldown 0x005B5408; IActivityStrategy::WantsToEnd 0x005B5444; IActivityStrategy::SetCooldown 0x005B54E4
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. InCooldown uses the same fixed TickSec as M15-005.
+* outstanding: STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Native-loader strategies now bind shared Robot RNG and actual timer delta; conditional cooldown draws, f32 boundaries, absolute duration arithmetic and newer on-treads predicate are built (005B529C..54EA). Canonical on-treads event input remains a FREEPLAY-FIX-1/M15-060 join; host-only loader retains its explicitly separate Random/fixed-tick fixture fallback. Whole start path is not claimed complete. Earlier unresolved history: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. InCooldown uses the same fixed TickSec as M15-005.
 
 **M15-004 — Needs decay modifiers and damaged-part thresholds** (live path)
 
@@ -3987,7 +3987,7 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: WantsToStartInternal 0x005B4970: false unless UnlockId 3 is unlocked ([Robot+0x448], 0x005B498A); FindLocatedMatchingObjects with families from table 0x00C63260 (0x005B4A40).; If now > +0x3C: +0x40 = RandDbl(1.0) < 0.4 and +0x3C = now + 300 (0x005B4A52..0x005B4A94; literals 0x005B4C18, 0x005B4C24).; A full pyramid gives false; a pyramid base, or +0x40 with at least 3 objects, clears +0x41 and gives true; otherwise false (0x005B4AD0..0x005B4B00).; WantsToEndInternal 0x005B4C90 returns +0x41; HandleMessage<BehaviorObjectiveAchieved> 0x005B4C96 sets it for objective 3 (BuiltPyramid).; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
-* outstanding: Confirm or build against the stack. Open: which BlockWorldFilter set holds the families (filter +0x3C).
+* outstanding: STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Checked unlock3, query-before-timed-roll, double0.4/300f latch, full/base/candidate decision and scoped objective3 end/reset are built (005B4980..4B00,005B4C90..4CA2). Actual filter+3C meaning and M12-049 candidate/weak-cache suppliers remain visibly MISSING; no LocatedCubes/PyramidBuilt substitute is claimed. An unavailable candidate count still preserves the timed RNG draw and cache-query order. Earlier unresolved history: Confirm or build against the stack. Open: which BlockWorldFilter set holds the families (filter +0x3C).
 
 **M15-098 — ActivityStrategyNeedBasedCooldown: cooldown graphs driven by the NeedsState message** (live path)
 
@@ -3996,7 +3996,7 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Ctor 0x005B4298: needId default 3 at +0x54 (0x005B42CE..0x005B4338); needCooldownGraph +0x3C and needCooldownRandomnessGraph +0x48, read from JSON or AddNode(0, base value) when absent (0x005B4340..0x005B4392).; HandleMessage<NeedsState> 0x005B4504: level from message array [+0x54], then SetCooldown(graph1(level), graph2(level)) through veneer 0x008CBE6C.; SetCooldown 0x005B54E4 writes +0x1C and +0x20 with the cooldown and +0x24 with the randomness.; Start 1 and end 0: vtable 0x0102590C, 0x005B45A8, 0x005B45AC.; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
-* outstanding: Confirm or build against the stack.
+* outstanding: STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Native strategy construction subscribes synchronously to local E2G0x62 only with an external interface; the selected three-level snapshot drives graph1 then graph2 and SetCooldown, including overwrite while unselected, with runtime-owned handle disposal (005B42DC..42F2,005B4504..4530). Actual Needs send queues app invocation before inline local delivery (006625CE..FA); action completion sends before rewards (00696366). This local projection is not the full public NeedsState packet, which remains M15-001 MISSING. Earlier unresolved history: Confirm or build against the stack.
 
 **M15-099 — ActivityStrategyNeeds and SevereNeedsTransition predicates, including ClearSevereNeedExpression on the Needs end path** (live path)
 
@@ -4005,7 +4005,7 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * rests on: ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Needs start 0x005B4718 and SevereNeedsTransition start 0x005B4D88: IActivityStrategy +0x04 (IWantsToRunStrategy from wantsToRunStrategyConfig, 0x005B50F8..0x005B5104) WantsToRun; null warns and gives false.; Needs end 0x005B4768: null strategy warns and gives true; with no higher-priority strategy (+0x3C) not WantsToRun; if the higher-priority strategy wants to run: when [Robot+0x264]+0x30 +0x14 != 3 call ClearSevereNeedExpression 0x004AAEDC, then true; otherwise not WantsToRun.; SevereNeedsTransition end 0x005B4DE8: not WantsToRun; null warns and gives true.; higherPriorityStrategyConfig built through the wants-to-run factory, stored at +0x3C (0x005B4642..0x005B4660).; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
-* outstanding: Confirm or build against the stack. JSON type name is SevereNeedTransition. The higherPriorityStrategyConfig row is ChatGPT's, not re-read in the Claude check.
+* outstanding: STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Shipped Needs primary start and higher-priority InNeedsBracket end/conditional ClearSevereNeedExpression, full nested JSON fields and SevereNeedTransition negation are built from005B4642..4660,005B4718..47B0,005B4DE8..4E08. Unimplemented higher-priority factory types report MISSING. Broader native activity admission remains open; no whole factory or caller completion claimed. Earlier unresolved history: Confirm or build against the stack. JSON type name is SevereNeedTransition. The higherPriorityStrategyConfig row is ChatGPT's, not re-read in the Claude check.
 
 **M15-100 — ActivityStrategySpark: no should-end limit, start true, end false** (live path)
 
@@ -4014,7 +4014,7 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * rests on: ChatGPT check 2, Claude check 2026-10-31; record added with operator approval 2026-10-31.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Spark ctor 0x005B4E90: after the base parse, +0x18 = 0x7F7FFFFF (FLT_MAX) (0x005B4E98..0x005B4EA2), overriding activityShouldEndDurationSecs; no shipped spark config sets the key.; WantsToStartInternal 0x005B4EBE returns 1 and WantsToEndInternal 0x005B4EC2 returns 0 (vtable 0x01025A40).; re-analysis/research/20261031-check-2-chatgpt-extraction.md; re-analysis/research/20261031-check-2-claude-check.md
-* outstanding: The stack keeps the default 60 s (Activities.cs). Fix in STRATEGIES-FIX-1.
+* outstanding: STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Configured Spark constructor now overwrites the should-end field with0x7F7FFFFF even after an explicit config value, with internal start true/end false (005B4E98..4EA2,005B4EBE/4EC2). Strategy code/tests built; actual Spark activity admission remains separately open. No status or approval changed. Earlier unresolved history: The stack keeps the default 60 s (Activities.cs). Fix in STRATEGIES-FIX-1.
 
 ## What remains after both: blocked externally, or needing hardware
 
