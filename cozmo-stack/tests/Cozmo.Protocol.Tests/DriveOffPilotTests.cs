@@ -226,7 +226,7 @@ public sealed class DriveOffPilotTests
             Assert.True(native.BehaviorManagerOwner.StartAsync("Hiking_DriveOffCharger",rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());rig.Tick(10);
             Assert.Same(behavior,native.BehaviorManagerOwner.Current);
             Assert.Equal(1,behavior.DrivingAnimationsFlag);
-            Assert.True(native.BehaviorManagerOwner.HasDisableLock((ReactionTrigger)0,"Hiking_DriveOffCharger"));
+            Assert.True(native.BehaviorManagerOwner.HasDisableLock((ReactionTrigger)0,"Hiking_DriveOffCharger_behaviorLock"));
             Assert.Contains(rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="Hiking_DriveOffCharger");
             Assert.True(behavior.CurrentRunnerTag!=0);
             var line=Assert.Single(rig.SentSince(mark).OfType<AppendPathSegmentLine>());
@@ -255,7 +255,7 @@ public sealed class DriveOffPilotTests
             Assert.NotNull(behavior.DroveOffAtSec);
             Assert.Equal((float)behavior.DroveOffAtSec!,runtime.Context.LastDriveOffChargerSec);
             native.BehaviorManagerOwner.Stop(BehaviorStopReason.Cancelled,rig.Engine.Timer.SecondsF);
-            Assert.False(native.BehaviorManagerOwner.HasDisableLock((ReactionTrigger)0,"Hiking_DriveOffCharger"));
+            Assert.False(native.BehaviorManagerOwner.HasDisableLock((ReactionTrigger)0,"Hiking_DriveOffCharger_behaviorLock"));
             Assert.DoesNotContain(rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="Hiking_DriveOffCharger");
         }
         finally{native.BehaviorManagerOwner.Stop(BehaviorStopReason.Cancelled,rig.Engine.Timer.SecondsF);native.ActionList.Clear();}
