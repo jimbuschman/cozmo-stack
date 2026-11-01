@@ -144,6 +144,8 @@ public sealed partial class BehaviorManager : IDisposable
             }
             foreach(var entry in unbound)
                 SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior");
+            if (_nativeReactionRows.Any(row => row.Trigger == ReactionTrigger.FistBump && row.BehaviorId == "FistBump"))
+                SteppedBehavior.ReportMissing("M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription");
             _nativeReactionMapLoaded=true;
         }
         Initialized=true;
