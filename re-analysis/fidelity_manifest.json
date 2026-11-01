@@ -9985,18 +9985,18 @@
       "id": "M10-016",
       "subsystem": "M10-derived",
       "title": "ReactionTriggerStrategyHiccup destructor: robot.hiccups.ended SELF_CURED DAS event when hiccups are active, and the _this clear",
-      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactionStrategies.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/HiccupReactionStrategy.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: D1 0x0061024C..0x00610280 (test 0x00610264..0x00610266, global clear 0x00610278, base 0x0060B6F4); SendDasEvent 0x006102B8..0x0061035C (key 0x006103BC, $data 0x00610398, format 0x006103D0, SELF_CURED 0x006103A0); reached from ~BehaviorManager M1 via 0x005A47FE."
       ],
       "effect": "A DAS event during robot teardown when Cozmo has hiccups.",
       "provenance": "Opus check of OV19 (2026-10-14), manager record.",
-      "unresolved": "HICCUP-STRATEGY-1 (2026-11-01), built pending full batch gate and Claude own-path settlement proposal; status unchanged. The actual canonical map retains HiccupReactionStrategy with source constructor/runtime threshold and first-success writers. Actual Robot lifetime +0x44 removal reaches manager-owned disposal: unsigned now>occurrence emits Event robot.hiccups.ended, SELF_CURED, structured $data as unsigned decimal milliseconds (0 if first stamp0, otherwise wrapping subtraction); then unconditional native global clear and retained base158/derived53/164 subscription release. No Reset, RNG, false HiccupsChanged or whiteboard clear is added by this destructor. Actual RemoveRobot regressions verify inactive/no-event, active $data0, successful runnable then5ms, global clear and G2E node unlink; sensor delegate removal is checked directly. Proposed whole own record only after full gate/Claude. Broader M8 manager shared-control/captured-callable teardown remains unbuilt under its existing records; no full manager destructor claim. Upstream missing second native behavior container/other constructors keep global RNG equivalence unavailable, without inventing state or draws. Prior B-M8-1 lack of a live strategy is superseded by this canonical binding. See HANDOFF-HICCUP-STRATEGY-1.md.",
+      "unresolved": "Settled on its own destructor path, Claude check re-analysis/research/20261101-runtime-batch-claude-check.md: unsigned now > threshold sends the DAS event, then global clear, then base, 0x0061024C..0x00610280, on the retained canonical strategy. M10-003 owns the wider strategy. HICCUP-STRATEGY-1 (2026-11-01), built pending full batch gate and Claude own-path settlement proposal; status unchanged. The actual canonical map retains HiccupReactionStrategy with source constructor/runtime threshold and first-success writers. Actual Robot lifetime +0x44 removal reaches manager-owned disposal: unsigned now>occurrence emits Event robot.hiccups.ended, SELF_CURED, structured $data as unsigned decimal milliseconds (0 if first stamp0, otherwise wrapping subtraction); then unconditional native global clear and retained base158/derived53/164 subscription release. No Reset, RNG, false HiccupsChanged or whiteboard clear is added by this destructor. Actual RemoveRobot regressions verify inactive/no-event, active $data0, successful runnable then5ms, global clear and G2E node unlink; sensor delegate removal is checked directly. Proposed whole own record only after full gate/Claude. Broader M8 manager shared-control/captured-callable teardown remains unbuilt under its existing records; no full manager destructor claim. Upstream missing second native behavior container/other constructors keep global RNG equivalence unavailable, without inventing state or draws. Prior B-M8-1 lack of a live strategy is superseded by this canonical binding. See HANDOFF-HICCUP-STRATEGY-1.md.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "HiccupStrategyTests"
     },
     {
       "id": "M10-017",
@@ -13753,8 +13753,8 @@
       "id": "M15-060",
       "subsystem": "M15-freeplay",
       "title": "ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) and its subscription",
-      "location": "cozmo-stack/src/Cozmo.Robot/Lights.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261016-batch-check.md: body 0x005AD9F8..0x005ADA7E (Info Behaviors ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown \"Kicking out '%s' on put down so we pick up a new one\"; gates treads byte0 != 0, no sub-activity, id 7/8 or == this+0x91, sub+0x4C != 0x55; then OnDeselected and +0x80 = 0).",
@@ -13762,10 +13762,10 @@
       ],
       "effect": "Freeplay re-picks its activity when Cozmo is put down.",
       "provenance": "Opus checks of 2026-10-16 (batch), manager record.",
-      "unresolved": "CANONICAL-FREEPLAY-PARENT-1 (2026-11-01), built pending full batch gate/Claude own-record settlement proposal; status unchanged. Actual canonical ActivityFreeplay lifetime now installs its put-down subscription only when original Robot.HasExternalInterface (005AD3B4..3BC), not with observer creation or global Robot membership. Callback occupies the source Freeplay phase before Hiccup/ReturnedToTreads/Whiteboard. Handler005AD9F8..ADA7E checks new treads byte0, selected child, IDs7/8, forced ID and RAW RequiredSparkId!=0x55, then full child OnDeselected before clearing current. Explicit Count string is raw0x55 and does not bar kick-out. No behavior stop, picker, desired-object calculation or pause change is added. Native dtor005AD89A..8B0 releases subscription before child owners; actual runtime cleanup unsubscribes first. Real canonical test verifies observer disposal does not retire subscription and treads event clears selected child; Count sentinel regression and broader callback lifetime/reentry checks pass. The actual Robot-removal route into runtime cleanup and direct sensor delegate removal are code-inspected rather than a separate subscription-node-count assertion. Preconstruction no-interface=false branch is native/code inspected, not runtime exercised because production constructs synchronously with interface present; no artificial test-only production seam introduced. Proposed whole own handler/subscription record only after gates/Claude. Other parent Look/lifecycle/phase gaps remain their current records; no status/approval change.",
+      "unresolved": "Settled on its own path, Claude check re-analysis/research/20261101-runtime-batch-claude-check.md: constructor subscription with the external interface, handler gates and full child deselect 0x005AD9F8..0x005ADA7E, teardown release. M15-066 owns the wider subscriber order; M15-006 owns the parent picker. CANONICAL-FREEPLAY-PARENT-1 (2026-11-01), built pending full batch gate/Claude own-record settlement proposal; status unchanged. Actual canonical ActivityFreeplay lifetime now installs its put-down subscription only when original Robot.HasExternalInterface (005AD3B4..3BC), not with observer creation or global Robot membership. Callback occupies the source Freeplay phase before Hiccup/ReturnedToTreads/Whiteboard. Handler005AD9F8..ADA7E checks new treads byte0, selected child, IDs7/8, forced ID and RAW RequiredSparkId!=0x55, then full child OnDeselected before clearing current. Explicit Count string is raw0x55 and does not bar kick-out. No behavior stop, picker, desired-object calculation or pause change is added. Native dtor005AD89A..8B0 releases subscription before child owners; actual runtime cleanup unsubscribes first. Real canonical test verifies observer disposal does not retire subscription and treads event clears selected child; Count sentinel regression and broader callback lifetime/reentry checks pass. The actual Robot-removal route into runtime cleanup and direct sensor delegate removal are code-inspected rather than a separate subscription-node-count assertion. Preconstruction no-interface=false branch is native/code inspected, not runtime exercised because production constructs synchronously with interface present; no artificial test-only production seam introduced. Proposed whole own handler/subscription record only after gates/Claude. Other parent Look/lifecycle/phase gaps remain their current records; no status/approval change.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "DriveOffPilotTests.CanonicalParentKeepsPutdownSubscriptionAfterObserverDispose"
     },
     {
       "id": "M15-061",

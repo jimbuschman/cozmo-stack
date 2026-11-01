@@ -410,6 +410,7 @@ public static class M13DriveOffHw
                     case "--validate": validate = true; break;
                     case "--preview": preview = true; break;
                     case "--yes": yes = true; break;
+                    case "--freeplay": break; // read by the run from argv
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
@@ -421,7 +422,7 @@ public static class M13DriveOffHw
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + TestId + "-" + Guid.NewGuid().ToString("N")[..6]);
             return new M13DriveOffRun(root, bundle, ip, options.ResourcesPath!, records, args, yes).Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m13-driveoff-hw: " + e.Message + "\nusage: m13-driveoff-hw [robot-ip] --resources <dir> [--yes] [--out <parent>] | --validate | --preview"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m13-driveoff-hw: " + e.Message + "\nusage: m13-driveoff-hw [robot-ip] --resources <dir> [--freeplay] [--yes] [--out <parent>] | --validate | --preview"); return 2; }
     }
 }
 
@@ -521,7 +522,7 @@ internal sealed class M13DriveOffRun
                 var window = new JsonObject { ["check"] = "DRIVE_OFF", ["phase"] = "DRIVE", ["watch"] = M13DriveOffHw.DrivePlan.Watch, ["fromMs"] = Now };
                 Console.WriteLine($">>> WATCH NOW: {M13DriveOffHw.DrivePlan.Watch} ({M13DriveOffHw.DrivePlan.HowLong}) <<<");
                 Event("observation-window-start", (JsonObject)window.DeepClone());
-                run = DriveOff(r, out driveStart); driveEnd = Now;
+                run = argv.Contains("--freeplay") ? FreeplayDriveOff(r, out driveStart) : DriveOff(r, out driveStart); driveEnd = Now;
                 window["toMs"] = Now; Console.WriteLine(">>> STOP WATCHING. Answer about what you just saw. <<<");
                 Event("observation-window-end", (JsonObject)window.DeepClone());
                 observation = window;
@@ -613,6 +614,33 @@ internal sealed class M13DriveOffRun
         if (timedOut) r.Motion.StopAllMotors();
         Wait(1500); // trailing threshold sends and reports
         return new(true, true, ended, timedOut, platform, action, b.DriveResult?.ToString());
+    }
+
+    /// <summary>Canonical route: Freeplay, then the RollCube spark (9) on the contacts, through public inputs only. The
+    /// engine picks SparksRollBlock and its StrictPriority chooser's first entry, DriveOffCharger. The behaviour's
+    /// action and driving-animation calls are not public, so DRIVING_ANIMATIONS cannot be checked on this route.</summary>
+    M13DriveOffHw.BehaviourRun FreeplayDriveOff(CozmoRobot r, out double driveStart)
+    {
+        using var stack = FreeplayStack.CreateNative(r);
+        driveStart = Now;
+        r.ActivateHighLevelActivity("Freeplay");
+        stack.ActivateSpark(9);
+        string last = ""; bool started = false, ended = false;
+        double limit = Now + 30000;
+        while (Now <= limit && !cancel.IsCancellationRequested)
+        {
+            var seen = stack.Tick(0, 0, r, null, null);
+            string now = (seen.Activity ?? "-") + " / " + (seen.Behavior ?? "-");
+            if (now != last) { last = now; Event("freeplay-state", new() { ["activity"] = seen.Activity, ["behaviour"] = seen.Behavior }); }
+            if (seen.Behavior == "DriveOffCharger") started = true;
+            else if (started) { ended = true; break; }
+            Thread.Sleep(33);
+        }
+        bool timedOut = !ended, platform = r.Sensors.OnChargerPlatform;
+        Event("behaviour-ended", new() { ["started"] = started, ["endedOnItsOwn"] = ended, ["timedOut"] = timedOut, ["platform"] = platform });
+        if (timedOut) r.Motion.StopAllMotors();
+        Wait(1500); // trailing threshold sends and reports
+        return new(true, started, ended, timedOut, platform, false, null);
     }
 
     JsonObject Observations(List<M5Hw.WireMessage> wire, double driveStart, JsonObject? window)

@@ -156,6 +156,35 @@ public sealed class DriveOffPilotTests
     }
 
     [Fact]
+    public void SparkOnChargerDrivesOffThroughCanonicalFreeplay()
+    {
+        // The m13-driveoff-hw --freeplay route: no pickup, public inputs only. sparksRollBlock.json lists
+        // DriveOffCharger first; the rig supplies AnimationStarted/Ended for the spark get-in.
+        using var rig=new M4ControlTests.Rig(ShippedResources());
+        rig.Robot.Animations.LoadFrom(ShippedResources());rig.ToSynced();rig.Calibrate();
+        var flags=RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger;
+        rig.State(flags);
+        var robot=rig.Engine.Robot!;var runtime=robot.NativeBehaviorRuntime!;var manager=robot.BehaviorManagerOwner!;
+        rig.Data(rig.MakeState(flags,origin:robot.CurrentOriginId,frame:robot.PoseFrameId));rig.Tick(10);
+        Assert.True(rig.Robot.Sensors.OnChargerPlatform);
+        using var observer=FreeplayStack.CreateNative(rig.Robot);
+        int mark=rig.Mark();
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        observer.ActivateSpark(9);rig.Tick(10);
+        var seen=new HashSet<byte>();
+        for(int i=0;i<300 && !rig.SentSince(mark).OfType<AppendPathSegmentLine>().Any();i++)
+        {
+            byte tag=rig.Robot.Animations.CurrentTag;
+            if(tag!=0&&seen.Add(tag)){rig.Data(new AnimationStarted{AnimId=tag});rig.Data(new AnimationEnded{AnimId=tag});}
+            rig.Data(rig.MakeState(flags,origin:robot.CurrentOriginId,frame:robot.PoseFrameId));rig.Tick(50);
+        }
+        Assert.Contains(rig.SentSince(mark),message=>message is AppendPathSegmentLine);
+        Assert.Equal("SparksRollBlock",runtime.FreeplayObserver.Current?.Id);
+        Assert.Same(runtime.Bound["DriveOffCharger"],manager.Current);
+        Assert.Equal("DriveOffCharger",observer.Tick(0,0,rig.Robot,null,null).Behavior);
+    }
+
+    [Fact]
     public void CanonicalParentKeepsPutdownSubscriptionAfterObserverDispose()
     {
         using var rig=new M4ControlTests.Rig(ShippedResources());

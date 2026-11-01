@@ -7,10 +7,10 @@ Manifest of **742 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 262 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 264 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 364 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 362 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 69 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -33,12 +33,12 @@ remains after both, and they do not go away by working harder on this repository
 | M7-behaviour — Idle, mood and reactions | 31 | 1 | 22 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 24 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
-| M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
+| M10-derived — Derived robot state and reaction strategies | 17 | 0 | 13 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 100 | 4 | 82 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 100 | 4 | 81 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -61,12 +61,12 @@ status.
 | M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
 | M8-framework | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
-| M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
+| M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -1564,15 +1564,6 @@ B-M10-1 (2026-10-15), built, awaiting strong verification: each EngineRobot owns
 * evidence: UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4; re-analysis/research/overnight/20261014-ov23-24-check.md: R1 hook 0x00512FB4..0x00512FCE; R2 DetectGyroDrift 0x0052C568..0x0052C770; R3 DetectBias 0x0052C804..0x0052CB24; inputs MovementComponent 0x0063E31A, HandleCliffEvent 0x005356C6..0x005356D4.
 * outstanding: RECOVERABLE_GAP: read both bodies and their effects; M10-014 covers only the detector's destruction. The stack has no hook. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov23-24-check.md): IMPLEMENTATION_GAP. The hook is gated by UFRS H1 and M4-019 C12.4/C13.2, including the GetLastStateWithFrameID failure (0x0051307A..0x00513110) that skips both detectors. Dependencies cited, not re-owned: M11-065 yaw, NativeRadians, GetPose verifies, libm; the to_string(float) text is M11-083 (visible MISSING until it settles). The raw magnitude input is M10-017. The ctor min = 0 / reset max = 0 asymmetry is kept as the original.
 B-M10-1 (2026-10-15), built, awaiting strong verification: checked DetectGyroDrift/DetectBias state machines now exist on the native EngineRobot-owned detector, with ctor-zero minima, reset +inf minima/+0 maxima, u32 timestamp wrap, signed bias-count comparison, bit-pattern constants, ordered/unordered gates, native current-pose yaw through GetCheckedMainPose/M11-065 and Radians, exact f32 association, triggering-sample exclusion/inclusion and independent latches. NOT BUILT LIVE: Sensors still has no native history-add result / GetLastStateWithFrameID admission and its treads Delocalize/current-pose update occurs later in the host Vision route. The sensor tail remains a visible MISSING and does not invoke these methods or infer history success; body regressions explicitly supply native detector inputs and are not a complete production-path claim. The GetLastStateWithFrameID failure log/skip cannot be reached faithfully without that producer and is blocked, not simulated as recovered. M11-083 text is also not built: the drift warning with unknown $data and the bias Event with unknown value are withheld with stack-channel numeric-bit diagnostics; the independent bias Warning is built with exact level/key/format/axis/widened-f32 arguments. No MISSING placeholder enters engine logs. No correction command, pose write, game report or sensor-event API is introduced. M11-051/053 and M11-083 remain separately open; see jobs/status/B-M10-1.md. B-M11-10 (2026-10-16), built, awaiting strong verification: prior withheld drift Warning $data and bias Event min,max now use checked M11-083 formatter; exact keys/levels/KVs and Event-before-Warning ordering retained from adopted OV24. Native UFRS admission/history/frame input remains missing, so isolated detector completion is not whole live-path settlement.
-
-**M10-016 — ReactionTriggerStrategyHiccup destructor: robot.hiccups.ended SELF_CURED DAS event when hiccups are active, and the _this clear** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ReactionStrategies.cs`
-* effect: A DAS event during robot teardown when Cozmo has hiccups.
-* rests on: Opus check of OV19 (2026-10-14), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261014-ov19-m8-016-check.md: D1 0x0061024C..0x00610280 (test 0x00610264..0x00610266, global clear 0x00610278, base 0x0060B6F4); SendDasEvent 0x006102B8..0x0061035C (key 0x006103BC, $data 0x00610398, format 0x006103D0, SELF_CURED 0x006103A0); reached from ~BehaviorManager M1 via 0x005A47FE.
-* outstanding: HICCUP-STRATEGY-1 (2026-11-01), built pending full batch gate and Claude own-path settlement proposal; status unchanged. The actual canonical map retains HiccupReactionStrategy with source constructor/runtime threshold and first-success writers. Actual Robot lifetime +0x44 removal reaches manager-owned disposal: unsigned now>occurrence emits Event robot.hiccups.ended, SELF_CURED, structured $data as unsigned decimal milliseconds (0 if first stamp0, otherwise wrapping subtraction); then unconditional native global clear and retained base158/derived53/164 subscription release. No Reset, RNG, false HiccupsChanged or whiteboard clear is added by this destructor. Actual RemoveRobot regressions verify inactive/no-event, active $data0, successful runnable then5ms, global clear and G2E node unlink; sensor delegate removal is checked directly. Proposed whole own record only after full gate/Claude. Broader M8 manager shared-control/captured-callable teardown remains unbuilt under its existing records; no full manager destructor claim. Upstream missing second native behavior container/other constructors keep global RNG equivalence unavailable, without inventing state or draws. Prior B-M8-1 lack of a live strategy is superseded by this canonical binding. See HANDOFF-HICCUP-STRATEGY-1.md.
 
 **M10-017 — The raw IMU magnitude at R+0x378 in UpdateFullRobotState: vsqrt((x2+y2)+z2) with the sqrtf fallback on NaN** (live path)
 
@@ -3707,15 +3698,6 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: OnSelected 0x005B1518..0x005B16DC, 0x005B171C; OnDeselected 0x005B1780..0x005B179E; objective/observed 0x005B181E..0x005B1866; Update/check/end/interrupt 0x005B186C..0x005B1A16; get-in/out 0x005B1D18..0x005B1F2A, hard max 0x005B1F94..0x005B2066; Complete 0x005B1A90..0x005B1C2E, 0x005B2094.
 * outstanding: IMPLEMENTATION_GAP. Unread: ResetLightsAndAnimations 0x005B17A2..0x005B181D, the ReloadFromConfig exception tail 0x005B11AA..0x005B1255. B-M15-6 (2026-10-16): actual ActivityTreeLoader Sparked construction now visibly reports specialized owner/config/state/lifecycle absent; retained generic Activity is not native ActivitySparked. OnSelected/start reply131, OnDeselected/StopAllAnims, objective/observed set, Update/check/end/interrupt, get-in/out and Complete/events/end reply132 remain unbuilt. ResetLightsAndAnimations5B17A2 and ReloadFromConfig exception tail5B11AA..1255 remain unread, not silently skipped or rebuilt from generic fields. Actual app-input path also names missing owner/raw-ID selection join. No orphan state-machine/E2G acknowledgments added.
-
-**M15-060 — ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) and its subscription** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
-* effect: Freeplay re-picks its activity when Cozmo is put down.
-* rests on: Opus checks of 2026-10-16 (batch), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261016-batch-check.md: body 0x005AD9F8..0x005ADA7E (Info Behaviors ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown "Kicking out '%s' on put down so we pick up a new one"; gates treads byte0 != 0, no sub-activity, id 7/8 or == this+0x91, sub+0x4C != 0x55; then OnDeselected and +0x80 = 0).; re-analysis/research/overnight/20261016-ov102-104-answer.md: ctor 0x005AD3B4..0x005AD3E0; subscribe helper 0x005AD7BC..0x005AD846 (tag 0x35); dtor 0x005AD87C..0x005AD8B0; dispatch 0x005120A0..0x005120AA, 0x00662508..0x006625AE, 0x005AEDFA..0x005AEE0E; handler 0x005AD9F8..0x005ADA7E; +0x91 ctor memclr 0x005AD390..0x005AD39E; +0x4C default 0x005B28F8/0x005B2904, requireSpark 0x005B2AAE..0x005B2B06.
-* outstanding: CANONICAL-FREEPLAY-PARENT-1 (2026-11-01), built pending full batch gate/Claude own-record settlement proposal; status unchanged. Actual canonical ActivityFreeplay lifetime now installs its put-down subscription only when original Robot.HasExternalInterface (005AD3B4..3BC), not with observer creation or global Robot membership. Callback occupies the source Freeplay phase before Hiccup/ReturnedToTreads/Whiteboard. Handler005AD9F8..ADA7E checks new treads byte0, selected child, IDs7/8, forced ID and RAW RequiredSparkId!=0x55, then full child OnDeselected before clearing current. Explicit Count string is raw0x55 and does not bar kick-out. No behavior stop, picker, desired-object calculation or pause change is added. Native dtor005AD89A..8B0 releases subscription before child owners; actual runtime cleanup unsubscribes first. Real canonical test verifies observer disposal does not retire subscription and treads event clears selected child; Count sentinel regression and broader callback lifetime/reentry checks pass. The actual Robot-removal route into runtime cleanup and direct sensor delegate removal are code-inspected rather than a separate subscription-node-count assertion. Preconstruction no-interface=false branch is native/code inspected, not runtime exercised because production constructs synchronously with interface present; no artificial test-only production seam introduced. Proposed whole own handler/subscription record only after gates/Claude. Other parent Look/lifecycle/phase gaps remain their current records; no status/approval change.
 
 **M15-061 — ActivityFeeding lifecycle beyond the cube-connection subscription, SetCubeLights, and CubeAccel RemoveListener 0x006356AC** (live path)
 

@@ -27,6 +27,20 @@ PC on Cozmo's Wi-Fi. From the repository root:
 dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m13-driveoff-hw --resources re-analysis/obb/assets/cozmo_resources
 ```
 
+**The Freeplay run (first run through the real engine path).** Same setup, same watching, one extra flag:
+
+```powershell
+dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m13-driveoff-hw --freeplay --resources re-analysis/obb/assets/cozmo_resources
+```
+
+Here nothing starts the drive by hand. The program turns on Freeplay and asks for the Roll Cube spark, and the engine
+chooses to drive off. Cozmo plays a short spark animation on the charger first, so he may take a few seconds to move.
+No cubes are needed. When he stops on the floor the run ends; if he starts looking around first, that's expected.
+
+Expected result: DRIVING_ANIMATIONS shows COULD NOT CHECK on this run, because those calls can't be seen from outside
+the engine. In BEHAVIOUR_END, "no action running" isn't observed on this run; only the platform end is. Both are
+covered by the plain run above, which stays as it was.
+
 To see what the run will show you, without a robot:
 
 ```powershell
@@ -70,8 +84,8 @@ MoveRobotPoseForward(pose, −20 mm) between states, in f32, from the identity p
 | DRIVING_ANIMATIONS | With no severe need selected (3) at Init, exactly one push (DriveOffCharger, 0x97,0x93,0x8F), +0x120 = 1, and one remove by name at stop; with a need selected (for example Repair or Energy Critical at connection, through the automatic wakeup), no push, flag 0, no remove. The push/remove calls are recorded where the behaviour makes them. | M13-017 0x005C0B34..0x005C0B50, 0x005C0D90..0x005C0DA4; M15-072 (selected need); M5-063 (what then plays, recorded only) |
 | DRIVE_OBSERVATIONS | Recorded only: path lines (expected 156 mm = 96.0 + 60.0), robot cliff/stop reports, API events, your answers. | M13-017 0x005C09D4..0x005C09E6, 0x005C0C02..0x005C0C08, `driveOffCharger.json`; M13-013; M4-019 SC7 |
 
-**Limits.** The behaviour is started and ticked by the harness (every 33 ms), not chosen by freeplay; its selection
-is not covered. Grading stops 1.5 s after the behaviour ends (or at Ctrl+C), so later evidence is saved but not graded; the
+**Limits.** In the plain run the behaviour is started and ticked by the harness (every 33 ms), not chosen by freeplay; its
+selection is covered only by `--freeplay`. Grading stops 1.5 s after the behaviour ends (or at Ctrl+C), so later evidence is saved but not graded; the
 operator is still asked not to touch Cozmo until TEST FINISHED. A
 RobotStopped during the drive would end the behaviour in the engine (H4, RequestCurrentBehaviorEndImmediately
 0x00535432..0x00535480); the harness-ticked behaviour keeps re-driving, so such a run is judged from the bundle. A check is COULD NOT CHECK when the robot's pose frame or origin changes (a localization), when a
