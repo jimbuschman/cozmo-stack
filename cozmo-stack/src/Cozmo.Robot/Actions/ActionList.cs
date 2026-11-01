@@ -75,9 +75,7 @@ internal sealed class ActionList : IDisposable
     }
 
     /// <summary>
-    /// Q2: robot+0x2C7. The row settles the gate's ranges and its discard path, not what sets the byte; its only
-    /// native writer is <c>BehaviorManager::UpdateRobotPropertiesForReaction</c> (0x005A2F54, M8-012/M10), which
-    /// this stack does not build yet, so it is false in production and settable for the queue tests.
+    /// Q2: robot+0x2C7, written by the native manager's reaction entry/exit path (0x005A210A..2110).
     /// </summary>
     public bool ExternalActionsDisabled { get; set; }
 

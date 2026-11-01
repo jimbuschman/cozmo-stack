@@ -1346,6 +1346,231 @@ public class BehaviorFrameworkTests
         public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
     }
 
+    private sealed class ReactionQueueProbe : IActionRunner
+    {
+        public uint State { get; set; } = EngineActionResult.NotStarted;
+        public byte RetriesRemain { get; set; }
+        public uint OriginalTag { get; set; }
+        public uint Tag { get; set; }
+        public int Type { get; set; }
+        public uint RequiredTrackMask { get; set; }
+        public bool SuppressTrackLocking { get; set; }
+        public bool Ended;
+        public uint Update() => EngineActionResult.Running;
+        public void Cancel() { }
+        public void Reset(bool unlockTracks) { }
+        public bool CanInterrupt() => true;
+        public void Prep() { }
+        public void WatcherEnding() => Ended = true;
+        public void UnlockTracks() { }
+        public bool SetTag(uint tag) { Tag = tag; return true; }
+    }
+
+    private sealed class ReactionMapFixture : IDisposable
+    {
+        public readonly string Root = Path.Combine(Path.GetTempPath(), "cozmo-reaction-" + Guid.NewGuid());
+        public ReactionMapFixture()
+        {
+            Directory.CreateDirectory(Root);
+            File.WriteAllText(Path.Combine(Root, "reactionTrigger_behavior_map.json"),
+                "{\"reactionTriggerBehaviorMap\":[{\"reactionTrigger\":\"CliffDetected\",\"behaviorID\":\"fixture\"},{\"reactionTrigger\":\"RobotPickedUp\",\"behaviorID\":\"fixture2\"}]}");
+        }
+        public void Dispose() => Directory.Delete(Root, true);
+    }
+
+    // reach: unit; supplies a fixture reaction-map row and strategy but drives the engine-owned manager,
+    // real ActionList and message hub. M10-004 0x5A3558..357A; M8-012 0x5A20AA..2110;
+    // M8-015 0x53D94E..D982. Source-time local report precedes writes and running-info commit.
+    [Fact]
+    public void NativeManagerUsesItsRealActionListAndReactionPropertyConsumers()
+    {
+        using var files = new ReactionMapFixture();
+        using var rig = new M4ControlTests.Rig(resources: files.Root);
+        rig.ToSynced();
+        var owner = rig.Engine.Robot!;
+        var m = owner.BehaviorManagerOwner!;
+        var list = owner.ActionList;
+        list.Clear();
+        var strategy = new AlwaysTriggerStrategy { Fire = false };
+        m.AddReaction(strategy, new OneShotBehavior("test-reaction"));
+        var other = new AlwaysTriggerStrategy(ReactionTrigger.RobotPickedUp) { Fire = false };
+        m.AddReaction(other, new OneShotBehavior("test-reaction-2"));
+        m.CheckReactions(1); Assert.Equal(0, strategy.Checks);
+        list.QueueAction(QueueActionPosition.AtEnd, new ReactionQueueProbe { Tag = 3000001 });
+        m.CheckReactions(2); Assert.Equal(1, strategy.Checks);
+        list.Clear(); m.CheckReactions(3); Assert.Equal(2, strategy.Checks);
+
+        var local = new List<(byte, byte, ReactionTrigger?, bool, bool)>();
+        var typed = new List<ReactionTransitionReport>();
+        var raw = new List<byte[]>();
+        rig.Engine.ReactionTransition += typed.Add;
+        rig.Engine.EngineToGameMessage += (tag, body) => { if (tag == 0x88) raw.Add(body.ToArray()); };
+        using var subscription = rig.Engine.AnimationMessages.SubscribeMessage(0x88, true, payload =>
+        {
+            var report = Assert.IsType<ReactionTransitionReport>(payload);
+            local.Add((report.OldTrigger, report.NewTrigger, m.CurrentReactionTrigger,
+                rig.Robot.Motion.DirectDriveDisabled, list.ExternalActionsDisabled));
+        });
+        strategy.Fire = true;
+        Assert.NotNull(m.CheckReactions(4));
+        Assert.True(rig.Robot.Motion.DirectDriveDisabled);
+        Assert.True(list.ExternalActionsDisabled);
+        var rejected = new ReactionQueueProbe { Tag = 1 };
+        list.QueueAction(QueueActionPosition.AtEnd, rejected); Assert.True(rejected.Ended);
+        var admitted = new ReactionQueueProbe { Tag = 3000001 };
+        list.QueueAction(QueueActionPosition.AtEnd, admitted); Assert.False(admitted.Ended);
+        Assert.NotNull(m.CheckReactions(5)); // same active trigger still reports; flags remain set
+        strategy.Fire = false;
+        other.Fire = true;
+        Assert.NotNull(m.CheckReactions(5.5)); // active-to-different-active does not clear the flags
+        Assert.True(rig.Robot.Motion.DirectDriveDisabled);
+        Assert.True(list.ExternalActionsDisabled);
+        other.Fire = false;
+        m.Update(0, 6);
+        Assert.False(rig.Robot.Motion.DirectDriveDisabled);
+        Assert.False(list.ExternalActionsDisabled);
+        var after = new ReactionQueueProbe { Tag = 1 };
+        list.QueueAction(QueueActionPosition.AtEnd, after); Assert.False(after.Ended);
+        Assert.Equal(((byte)0x16, (byte)ReactionTrigger.CliffDetected, (ReactionTrigger?)null, false, false), local[0]);
+        Assert.Equal(((byte)ReactionTrigger.CliffDetected, (byte)ReactionTrigger.CliffDetected, (ReactionTrigger?)ReactionTrigger.CliffDetected, true, true), local[1]);
+        Assert.Equal(((byte)ReactionTrigger.CliffDetected, (byte)ReactionTrigger.RobotPickedUp, (ReactionTrigger?)ReactionTrigger.CliffDetected, true, true), local[2]);
+        Assert.Equal(((byte)ReactionTrigger.RobotPickedUp, (byte)0x16, (ReactionTrigger?)ReactionTrigger.RobotPickedUp, true, true), local[3]);
+        rig.Tick();
+        Assert.Equal(new byte[] { 0x16, (byte)ReactionTrigger.CliffDetected }, raw[0]);
+        Assert.Equal(new byte[] { (byte)ReactionTrigger.CliffDetected, (byte)ReactionTrigger.CliffDetected }, raw[1]);
+        Assert.Equal(new byte[] { (byte)ReactionTrigger.CliffDetected, (byte)ReactionTrigger.RobotPickedUp }, raw[2]);
+        Assert.Equal(new byte[] { (byte)ReactionTrigger.RobotPickedUp, 0x16 }, raw[3]);
+        Assert.Equal(raw.Select(b => (b[0], b[1])), typed.Select(r => (r.OldTrigger, r.NewTrigger)));
+    }
+
+    // reach: unit; sends a typed G2E 0xA2 on the real hub, substituting the app input.
+    // M10-008 0x5A5042..506A, 0x5A1BAC..1D26: empty map queues one parallel head/lift action.
+    [Fact]
+    public void NativePostureInputQueuesTheRealCompoundOnlyWhenEmpty()
+    {
+        using var rig = new M4ControlTests.Rig(); rig.ToSynced();
+        var list = rig.Engine.Robot!.ActionList;
+        list.Clear();
+        rig.Engine.AnimationMessages.Deliver(0xA2, false, new DefaultHeadAndLiftState(true, 0.3f, 60f));
+        var compound = Assert.IsType<CompoundActionParallel>(list.GetCurrentAction());
+        Assert.Equal(2, compound.Children.Count);
+        Assert.Equal(0, compound.RetriesRemain);
+        Assert.Same(compound, list.QueueAt(0)!.Front);
+        rig.Engine.AnimationMessages.Deliver(0xA2, false, new DefaultHeadAndLiftState(true, 0.2f, 50f));
+        Assert.Same(compound, list.GetCurrentAction());
+        Assert.Equal(1, list.QueueAt(0)!.PendingCount);
+        rig.Engine.AnimationMessages.Deliver(0xA2, false, new DefaultHeadAndLiftState(false, 0, 0));
+        Assert.Same(compound, list.GetCurrentAction());
+        Assert.Equal(1, list.QueueAt(0)!.PendingCount);
+        list.Clear();
+        DefaultHeadAndLiftState? received = null;
+        using var input = rig.Engine.AnimationMessages.SubscribeMessage(0xA2, false, value => received = (DefaultHeadAndLiftState)value!);
+        rig.Robot.SetDefaultHeadAndLiftState(true, 0.25f, 55f);
+        rig.Tick();
+        Assert.Equal(new DefaultHeadAndLiftState(true, 0.25f, 55f), received);
+        Assert.IsType<CompoundActionParallel>(list.GetCurrentAction());
+    }
+
+    // reach: unit; construction profile supplies absent external interface, with fixture map/strategy.
+    // M1-034/M8-012: skip the 0x5A2EFA null dereference, then retain the entry writes at 0x5A210A..2110.
+    [Fact]
+    public void NativeManagerWithoutExternalInterfaceSkipsOnlyTheTransitionReport()
+    {
+        using var files = new ReactionMapFixture();
+        using var rig = new M4ControlTests.Rig(resources: files.Root);
+        rig.Engine.BeforeDerivedConstructionForTest = native => native.HasExternalInterface = false;
+        rig.ToSynced();
+        var owner = rig.Engine.Robot!;
+        var manager = owner.BehaviorManagerOwner!;
+        owner.ActionList.Clear();
+        owner.ActionList.QueueAction(QueueActionPosition.AtEnd, new ReactionQueueProbe { Tag = 3000001 });
+        manager.AddReaction(new AlwaysTriggerStrategy(), new OneShotBehavior("absent-interface-reaction"));
+        var missing = new List<string>();
+        var typed = new List<ReactionTransitionReport>();
+        var raw = new List<byte[]>();
+        var local = new List<object?>();
+        void OnMissing(string text) => missing.Add(text);
+        SteppedBehavior.ResetMissingForTests();
+        SteppedBehavior.MissingReported += OnMissing;
+        rig.Engine.ReactionTransition += typed.Add;
+        rig.Engine.EngineToGameMessage += (tag, body) => { if (tag == 0x88) raw.Add(body.ToArray()); };
+        using var sub = rig.Engine.AnimationMessages.SubscribeMessage(0x88, true, local.Add);
+        try
+        {
+            Assert.NotNull(manager.CheckReactions(1));
+            Assert.True(rig.Robot.Motion.DirectDriveDisabled);
+            Assert.True(owner.ActionList.ExternalActionsDisabled);
+            Assert.Equal(ReactionTrigger.CliffDetected, manager.CurrentReactionTrigger);
+            rig.Engine.DrainAppDelivery();
+            Assert.Contains(missing, line => line.Contains("M1-034 M8-012") && line.Contains("0x005A2EFA"));
+            Assert.Empty(local); Assert.Empty(raw); Assert.Empty(typed);
+        }
+        finally { SteppedBehavior.MissingReported -= OnMissing; }
+    }
+
+    // reach: unit; fixture reaction strategy, actual engine-owned manager and ActionList.
+    // M8-012 0x005A1E68..1F12 and 0x005A20AA..2110: public Stop switches to empty info,
+    // publishing the old trigger before clearing MC+D4 and robot+2C7.
+    [Fact]
+    public void PublicStopLeavesTheRealReactionFlagsAndActionGateClear()
+    {
+        using var files = new ReactionMapFixture();
+        using var rig = new M4ControlTests.Rig(resources: files.Root); rig.ToSynced();
+        var owner = rig.Engine.Robot!;
+        var manager = owner.BehaviorManagerOwner!;
+        var list = owner.ActionList;
+        list.Clear(); list.QueueAction(QueueActionPosition.AtEnd, new ReactionQueueProbe { Tag = 3000001 });
+        manager.AddReaction(new AlwaysTriggerStrategy(), new OneShotBehavior("stop-reaction"));
+        Assert.NotNull(manager.CheckReactions(1));
+        Assert.True(rig.Robot.Motion.DirectDriveDisabled);
+        Assert.True(list.ExternalActionsDisabled);
+        rig.Engine.DrainAppDelivery();
+        var local = new List<(byte, byte, ReactionTrigger?, bool, bool)>();
+        var raw = new List<byte[]>();
+        using var subscription = rig.Engine.AnimationMessages.SubscribeMessage(0x88, true, payload =>
+        {
+            var report = Assert.IsType<ReactionTransitionReport>(payload);
+            local.Add((report.OldTrigger, report.NewTrigger, manager.CurrentReactionTrigger,
+                rig.Robot.Motion.DirectDriveDisabled, list.ExternalActionsDisabled));
+        });
+        rig.Engine.EngineToGameMessage += (tag, body) => { if (tag == 0x88) raw.Add(body.ToArray()); };
+        manager.Stop(BehaviorStopReason.Cancelled, 2);
+        Assert.Equal(((byte)ReactionTrigger.CliffDetected, (byte)0x16, (ReactionTrigger?)ReactionTrigger.CliffDetected, true, true), Assert.Single(local));
+        Assert.Null(manager.CurrentReactionTrigger);
+        Assert.False(rig.Robot.Motion.DirectDriveDisabled);
+        Assert.False(list.ExternalActionsDisabled);
+        var external = new ReactionQueueProbe { Tag = 1 };
+        list.QueueAction(QueueActionPosition.AtEnd, external);
+        Assert.False(external.Ended);
+        rig.Engine.DrainAppDelivery();
+        Assert.Equal(new byte[] { (byte)ReactionTrigger.CliffDetected, 0x16 }, Assert.Single(raw));
+    }
+
+    // reach: unit; substitutes an active-reaction direct-drive-held state to exercise the native
+    // MC+D4 consumer. M10-004 0x5A3616..3682 and M4-007 0x63FBE2..FBFE.
+    [Fact]
+    public void NestedReactionUsesTheRealDirectDriveDisabledFlagForUnlock()
+    {
+        using var files = new ReactionMapFixture();
+        using var rig = new M4ControlTests.Rig(resources: files.Root); rig.ToSynced();
+        var m = rig.Engine.Robot!.BehaviorManagerOwner!;
+        var list = rig.Engine.Robot.ActionList;
+        list.Clear(); list.QueueAction(QueueActionPosition.AtEnd, new ReactionQueueProbe { Tag = 3000001 });
+        var strategy = new AlwaysTriggerStrategy();
+        m.AddReaction(strategy, new OneShotBehavior("test-reaction"));
+        Assert.NotNull(m.CheckReactions(1));
+        Assert.True(rig.Robot.Motion.DirectDriveDisabled);
+        // Construct the reachable consumer state without inventing an engine producer for the fixture.
+        rig.Robot.Motion.DirectDriveDisabled = false;
+        rig.Robot.Motion.MoveHead(1f);
+        Assert.True(rig.Robot.Motion.DirectDriveHoldsAnyTrack);
+        Assert.NotEqual(0, rig.Robot.Motion.LockedTracks);
+        rig.Robot.Motion.DirectDriveDisabled = true;
+        Assert.NotNull(m.CheckReactions(2));
+        Assert.Equal(0, rig.Robot.Motion.LockedTracks);
+        Assert.True(rig.Robot.Motion.DirectDriveHoldsAnyTrack); // StopAllMotors skipped its release preamble
+    }
+
     // ------------------------------------------------------------------ M8-007: the action's track lock
 
     /// <summary>
@@ -1988,6 +2213,49 @@ public class BehaviorFrameworkTests
             Assert.DoesNotContain(seen, l => l.Contains("cube light")); // empty manager state-light vector has no MS4 work.
         }
         finally { SteppedBehavior.MissingReported -= On; }
+    }
+
+    // reach: unit; substitutes the action-list emptiness input and reaction strategy.
+    // M10-004 0x005A3558..357A: admission is sticky after the first nonempty map.
+    [Fact]
+    public void ReactionAdmissionRemainsOpenAfterTheFirstAction()
+    {
+        using var offline = Offline();
+        var (_, ctx) = offline;
+        bool empty = true;
+        using var m = new BehaviorManager(ctx) { ActionListIsEmpty = () => empty };
+        var strategy = new AlwaysTriggerStrategy { Fire = false };
+        m.AddReaction(strategy, new OneShotBehavior("react"));
+        m.CheckReactions(0); Assert.Equal(0, strategy.Checks);
+        empty = false; m.CheckReactions(1); Assert.Equal(1, strategy.Checks);
+        empty = true; m.CheckReactions(2); Assert.Equal(2, strategy.Checks);
+    }
+
+    // reach: unit; substitutes a strategy, list input and the two native property writers.
+    // M8-012 0x005A20AA..2110, 0x005A2282..22AA: report precedes entry/exit stores;
+    // active-to-active, including the same trigger, reports without writing flags.
+    [Fact]
+    public void ReactionReportsPrecedePropertyAndRunningInfoStores()
+    {
+        using var offline = Offline();
+        var (_, ctx) = offline;
+        using var m = new BehaviorManager(ctx) { ActionListIsEmpty = () => false };
+        var strategy = new AlwaysTriggerStrategy();
+        m.AddReaction(strategy, new OneShotBehavior("react"));
+        bool flag = false;
+        var writes = new List<bool>();
+        var reports = new List<(ReactionTrigger?, ReactionTrigger?, ReactionTrigger?, bool)>();
+        m.UpdateRobotPropertiesForReaction = value => { flag = value; writes.Add(value); };
+        m.ReactionTriggerTransitionSender = (old, next) => reports.Add((old, next, m.CurrentReactionTrigger, flag));
+        Assert.NotNull(m.CheckReactions(1));
+        Assert.NotNull(m.CheckReactions(2));
+        strategy.Fire = false;
+        m.Update(0, 3);
+        Assert.Equal(3, reports.Count);
+        Assert.Equal(((ReactionTrigger?)null, (ReactionTrigger?)ReactionTrigger.CliffDetected, (ReactionTrigger?)null, false), reports[0]);
+        Assert.Equal(((ReactionTrigger?)ReactionTrigger.CliffDetected, (ReactionTrigger?)ReactionTrigger.CliffDetected, (ReactionTrigger?)ReactionTrigger.CliffDetected, true), reports[1]);
+        Assert.Equal(((ReactionTrigger?)ReactionTrigger.CliffDetected, (ReactionTrigger?)null, (ReactionTrigger?)ReactionTrigger.CliffDetected, true), reports[2]);
+        Assert.Equal(new[] { true, false }, writes);
     }
 
     /// <summary>M8-007 B8: IActionRunner::Update takes the lock before the action's Init (0x00540584..0x0054058e, then 0x00540592), so an action that cannot resolve its trigger still sends DisableAnimTracks and then EnableAnimTracks.</summary>
