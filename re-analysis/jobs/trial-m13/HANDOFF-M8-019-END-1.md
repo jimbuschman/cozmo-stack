@@ -1,6 +1,6 @@
-# M8-019-END-1 — BUILD DONE, BATCH GATE PENDING
+# M8-019-END-1 — READY FOR CLAUDE
 
-RobotStopped now takes the recovered end-request/null-switch path on the original primary manager before outer Cancel(-1) and RobotStopped publication. Resource-backed DriveOff tests exercise the actual packet, owned action, literal transition bytes and handler-boundary ordering; no hardware run was performed. Full batch gate is pending.
+RobotStopped now takes the recovered end-request/null-switch path on the original primary manager before outer Cancel(-1) and RobotStopped publication. Resource-backed DriveOff tests exercise the actual packet, owned action, literal transition bytes and handler-boundary ordering; no hardware run was performed. Full batch gate passed7395/7395 with no skips; see the final validation below.
 
 Failure classification: run4 bundle20261101-084109-M13-DRIVEOFF-HW-a0fbc7 shows a stop at14896ms, the M8-019 stub, cancellation02000000 and a second156mm line. The defect was an implementation gap: the stub left DriveOff running. Stop cause remains unknown. The bundle's existing graded end condition supports eventual off-platform completion, not a source-faithful interrupted path; no historical verdict or fidelity status is changed.
 

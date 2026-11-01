@@ -1,6 +1,6 @@
-# SPARKS-LOOK-IN-PLACE-1 — BUILD DONE, BATCH GATE PENDING
+# SPARKS-LOOK-IN-PLACE-1 — READY FOR CLAUDE
 
-Configured SparksLookInPlace now has its actual native factory owner and scan sequence. Independent source/diff review passed four returned correction batches/four resubmissions; final affected **148/148 PASS**,0skip/compiler0/test0/shutdown0, transient postflight1 exited on follow-up0. First job of the next batch; not READY before a full batch gate.
+Configured SparksLookInPlace now has its actual native factory owner and scan sequence. Independent source/diff review passed four returned correction batches/four resubmissions; final affected **148/148 PASS**,0skip/compiler0/test0/shutdown0, transient postflight1 exited on follow-up0. First job of the completed batch; full7395/7395 PASS is recorded below.
 
 Primary facts confirmed before implementation:
 

@@ -1,4 +1,4 @@
-# PLAYALONE-MOVES-ON-1 — BUILD DONE, BATCH GATE PENDING
+# PLAYALONE-MOVES-ON-1 — READY FOR CLAUDE
 
 The resource-backed canonical five-minute Freeplay probe passes: no pickup/forced activity, off charger/no objects, actual motor and animation recipients. FindFaces stops, PlayAlone ends, and at 2.82 simulated seconds Hiking owns **Hiking_ThinkAboutBeacons / TriggerAnimationAction**. The strengthened probe requires a retained configured owner with a concrete action, not just a running flag. This is not a claim that every later path or real camera input is built. Full batch gate is still required before READY FOR CLAUDE.
 
@@ -22,7 +22,7 @@ Checks: affected7 **553/553 PASS**, strengthened probe8 **1/1 PASS** with actual
 
 Workers unchanged: reader tallstack_runtime_read requested gpt-6.1-sol medium; builder tallstack_runtime_build and independent reviewer pyramid_runtime_review DEFAULT model/effort omitted. Backends unobserved. **9 returned reviewer batches / 9 resubmissions**: prior common/map corrections1–4; Pounce send ownership5, source-case coverage6; analyzer owner/map7 and history8; actual Think original-owner correction9. Separate source corrections2 (changed-child clock writer; literal Pounce keys), fixture groups5 (library, map/lookup, actual transport, preflight native entry, closed Gather frontier), and manager probe-evidence correction1. Builder MISSING questions were resolved from the native contracts above; unrecovered inputs remain explicitly listed, not replaced with guesses.
 
-Preservation checkpoint0b1e6723 was pushed WIP. This handoff completes that same job, pending batch gate. M8-019-END-1 is next, before any other behavior, per authoritative main15e3f9e9. No Claude wait.
+Preservation checkpoint0b1e6723 was pushed WIP. This handoff completes that same job. The shared full gate, also covering the subsequent M8-019-END-1, passed7395/7395 as recorded below. No Claude wait.
 
 
 Batch gate completed 2026-11-01 on committed HEAD a3816235da2bebebf5584da017331554a10e6e38: **7395/7395 PASS, 0 failed, 0 skipped**, duration12m15s. Gate/shutdown exits0, postflight processes0. Logs `.scratch/native-freeplay-followthrough-batch-full-1.log` and `-console.log`. This shared full run covers SparksLook, PlayAlone and M8-019; this job is **READY FOR CLAUDE**. Earlier failed affected attempts and their classifications remain recorded above. No fidelity status, approval or hardware verdict changed.
