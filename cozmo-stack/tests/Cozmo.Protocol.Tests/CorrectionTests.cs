@@ -15,6 +15,50 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class CorrectionTests
 {
+    // Unit: rendered fixture cubes and supplied World.ObjectObserved boundary with real Freeplay binding and owner IDs.
+    // 0x6114D8..150C records carry/dock matches with enabled=false, rather than dropping the observation.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void BoundObjectObservationRecordsCurrentCarryOrDockAsReacted(bool docking)
+    {
+        using var signals = SignalTestContext.Install();
+        var obb = ObbRoot(); Assert.NotNull(obb);
+        Assert.NotNull(MarkerLibrary.EmbeddedOrNull);
+        using var rig = new Rig(); var ctx = Ctx(rig);
+        using var stack = FreeplayStack.CreateStandalone(obb!, rig.Robot, ctx, () => rig.Clock.NowMs / 1000.0, rig.Vision, rig.M);
+        var strategy = Assert.IsType<ObjectPositionUpdatedStrategy>(stack.Manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated).Strategy);
+        strategy.LastImageTimestamp = () => rig.T;
+        rig.Cube = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22));
+        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(200, -65, 22))));
+        var observations = rig.Frame().Objects.ToDictionary(o => o.Object.ObjectId);
+        Assert.Contains(7u, observations.Keys); Assert.Contains(8u, observations.Keys);
+        var current = M10Support.RunnableBehaviour("reaction-fix-object-current");
+        stack.Manager.Add(current);
+        Assert.True(stack.Manager.StartAsync(current.Id, 0).GetAwaiter().GetResult());
+        var observedField = typeof(BlockWorld).GetField("ObjectObserved", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        void Deliver(uint target) => ((Action<ObjectObservation>)observedField.GetValue(rig.Vision.World)!)(observations[target]);
+        const uint id = 7; // Rig seeds LIGHTCUBE1's ID.
+        var dockProperty = typeof(DockingSystem).GetProperty(nameof(DockingSystem.DockTargetObjectId))!;
+        if (docking) dockProperty.SetValue(rig.M.Docking, (uint?)id);
+        else rig.M.Docking.Carrying.SetCarrying(id);
+        Deliver(id); Deliver(8);
+        var records = (System.Collections.IDictionary)typeof(ObjectPositionUpdatedStrategy)
+            .GetField("_records", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(strategy)!;
+        Assert.True(records.Contains(id)); // false below must mean recorded-as-reacted, not absent.
+        Assert.True(records.Contains(8u));
+        Assert.True(strategy.ShouldReactToTarget(8)); // nonmatching observation stays eligible.
+        if (docking) dockProperty.SetValue(rig.M.Docking, null);
+        else rig.M.Docking.Carrying.UnsetCarrying();
+        Assert.False(strategy.ShouldReactToTarget(id));
+        // Change the actual owner after binding; the next observation of 8 must use its new identity.
+        if (docking) dockProperty.SetValue(rig.M.Docking, (uint?)8);
+        else rig.M.Docking.Carrying.SetCarrying(8);
+        Deliver(8);
+        if (docking) dockProperty.SetValue(rig.M.Docking, null);
+        else rig.M.Docking.Carrying.UnsetCarrying();
+        Assert.False(strategy.ShouldReactToTarget(8));
+    }
     private static string? ObbRoot()
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
@@ -129,9 +173,7 @@ public class CorrectionTests
 
     /// <summary>
     /// A fall plays ReactToImpact through the manager: the RobotFalling strategy watches FallingStarted (C1, C12),
-    /// WithTimeout 3000. Being put on the charger plays ReactToOnCharger once its ChargerEvent latch is set. Where
-    /// the engine broadcasts ChargerEvent and with what onCharger value is not in the M4/M10 rows (gap2 1), so the
-    /// latch is driven directly here rather than through an invented broadcaster.
+    /// WithTimeout 3000. Being put on the charger plays ReactToOnCharger once its ChargerEvent latch is set.
     /// </summary>
     [Fact]
     public void TheWholeStackKeepsTheImpactAndChargerReactions()
@@ -170,7 +212,6 @@ public class CorrectionTests
         var charger = (PlacedOnChargerStrategy)stack.Manager.Reactions
             .Single(r => r.Strategy.Trigger == ReactionTrigger.PlacedOnCharger).Strategy;
         charger.WantsToRun(clock);              // the first call starts the 20 s deadline (gap2 1d)
-        charger.HandleChargerEvent(true);       // vtable +0xC on tag 57 ChargerEvent
         // SwitchToReactionTrigger now calls SwitchToBehaviorBase (0x005a26da), which gates on
         // IBehavior::IsRunnable (0x005a1e76); ReactToOnCharger's IsRunnableInternal reads the robot's
         // on-charger state, so report it before the reaction is checked.
@@ -617,7 +658,7 @@ public class CorrectionTests
         // singing's shape: can end and should end at the same 5 s
         var s = new ActivityStrategy { Type = "Simple", CanEndDurationSec = 5, ShouldEndDurationSec = 5 };
         Assert.False(s.WantsToEnd(inputs, 1, out var early));
-        Assert.Contains("cannot end before", early);
+        Assert.Equal("minimum duration", early);
         Assert.False(s.WantsToEnd(inputs, 5, out _));            // at the floor, not yet past the ceiling
         Assert.True(s.WantsToEnd(inputs, 6, out var late));
         Assert.Contains("should end", late);
@@ -628,7 +669,7 @@ public class CorrectionTests
         var n = new ActivityStrategy { Type = "Needs", Need = NeedId.Energy, NeedBracket = NeedBracketId.Critical, CanEndDurationSec = 20, ShouldEndDurationSec = -1 };
         needs.SetLevel(NeedId.Energy, 1);                         // no longer Critical: the subclass wants to end
         Assert.False(n.WantsToEnd(withNeeds, 5, out var floored));
-        Assert.Contains("cannot end before", floored);
+        Assert.Equal("minimum duration", floored);
         Assert.True(n.WantsToEnd(withNeeds, 25, out _));
     }
 
@@ -645,10 +686,13 @@ public class CorrectionTests
         var free = new ActivityStrategy { Type = "Simple", CooldownBaseSec = 10 };
         Assert.True(free.WantsToStart(inputs, 0, out _));
 
-        // the cooldown is re-randomised when the check passes, not when the activity ends
+        // An activity that has never run and did not start in cooldown does not randomise yet.
         var random = new ActivityStrategy { Type = "Simple", CooldownBaseSec = 10, CooldownRandomnessSec = 100, Random = new Random(7) };
         Assert.Equal(10.0, random.EffectiveCooldownSec, 3);
         Assert.True(random.WantsToStart(inputs, 0, out _));
+        Assert.Equal(10.0, random.EffectiveCooldownSec, 3);
+        random.OnStarted(1); random.OnEnded(2);
+        Assert.True(random.WantsToStart(inputs, 13, out _));
         Assert.True(random.EffectiveCooldownSec > 10);
     }
 

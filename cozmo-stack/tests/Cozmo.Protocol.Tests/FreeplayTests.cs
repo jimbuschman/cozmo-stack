@@ -27,6 +27,13 @@ public class FreeplayTests
         Assert.Same(configured, entry.Behavior);
         var strategy = Assert.IsType<ObjectPositionUpdatedStrategy>(entry.Strategy);
         strategy.RecordObservation(23, new Pose3d(Mat3.Identity, new Vec3(200, 0, 22)), 1, true);
+        // Unit fixture: the observed target is synthetic. 0x6113F2..FC gates on the actual carry ID.
+        rig.M.Docking.Carrying.SetCarrying(23);
+        Assert.Equal(23u, strategy.CarriedObjectId!());
+        Assert.False(strategy.ShouldTrigger(ctx, null, 0, configured));
+        rig.M.Docking.Carrying.UnsetCarrying();
+        Assert.Null(strategy.CarriedObjectId!());
+        Assert.Equal(rig.M.Docking.DockTargetObjectId, strategy.DockingObjectId!());
         strategy.ShouldTrigger(ctx, null, 0, configured);
         Assert.Contains(23u, configured.PendingTargets);
     }

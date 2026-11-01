@@ -158,6 +158,11 @@ public sealed partial class BehaviorManager : IDisposable
         foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
             cliff.DriveStraight=manipulation is null?null:(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
         if(manipulation is null)return;
+        foreach (var strategy in Reactions.Select(r => r.Strategy).OfType<ObjectPositionUpdatedStrategy>())
+        {
+            strategy.CarriedObjectId = () => manipulation.Docking.Carrying.CarriedObjectId;
+            strategy.DockingObjectId = () => manipulation.Docking.DockTargetObjectId;
+        }
         if(_nativeReactionRows.Any(r=>r.BehaviorId=="ReactToFrustrationMajor")&&!Reactions.Any(r=>r.Behavior.Id=="ReactToFrustrationMajor"))
         {
             var strategy=new FrustrationStrategy(-0.9f,0f,()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
@@ -930,7 +935,10 @@ public sealed partial class BehaviorManager : IDisposable
         long beforeStop=Interlocked.Read(ref _hostSelectionEpoch);
         bool hadCurrent=Current is not null;
         lock (_gate) StopAndNullifyLocked(stopReason, nowSec);
-        if(hostReadiness is not null && (Interlocked.Read(ref _hostSelectionEpoch)!=beforeStop+(hadCurrent?1:0) || !ReferenceEquals(Activity,hostReadiness)))return false;
+        // A Stop callback can synchronously replace the current behavior. Its selection owns the manager;
+        // the outer switch must not overwrite it, including when switching to an empty running-info.
+        if (Interlocked.Read(ref _hostSelectionEpoch) != beforeStop + (hadCurrent ? 1 : 0)) return false;
+        if (hostReadiness is not null && !ReferenceEquals(Activity,hostReadiness)) return false;
 
         var next = info.Current;
         bool initFailed = false;

@@ -761,6 +761,7 @@ public static class ShippedBehaviors
         {
             // sErrorF "Failed to read '%s'" (0x00520c54); the engine's event name is not in the inventory, so the line carries none
             robot.Engine.Log($"error: Failed to read '{ReactionTriggerMap.RelativePath}'");
+            ((PlacedOnChargerStrategy)strategies[ReactionTrigger.PlacedOnCharger]).Dispose();
             return new List<BehaviorManager.ReactionRegistration>();
         }
 
@@ -777,6 +778,8 @@ public static class ShippedBehaviors
             else
                 unbound?.Add($"{e.Trigger} -> {e.BehaviorId}");
         }
+        var charger = strategies[ReactionTrigger.PlacedOnCharger];
+        if (!registrations.Any(r => ReferenceEquals(r.Strategy, charger))) ((IDisposable)charger).Dispose();
         return registrations;
     }
 }
