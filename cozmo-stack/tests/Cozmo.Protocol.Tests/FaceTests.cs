@@ -477,7 +477,8 @@ public class FaceTests
         Assert.InRange(b.TrackSeconds!.Value / b.TrackTimeScale, 8, 15);
         Assert.Contains(b.Trace, l => l.Contains("InteractWithFaceTrackingIdle"));
         Assert.Contains(b.Trace, l => l.Contains("emotion event InteractWithUnnamedFace"));
-        Assert.Contains(b.Trace, l => l.Contains("InteractedWithFace"));
+        // Objective 0x0C belongs to the separate, still-MISSING timer owner (0x005C235A..0x005C2388);
+        // the mood callback at 0x005C2930..0x005C29D6 does not report it.
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine l && Math.Abs(l.XEndMm - l.XStartMm) is > 39 and < 41);
     }
 

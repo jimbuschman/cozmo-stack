@@ -450,13 +450,17 @@ public class M8BatchThreeCTests
         var wb = Whiteboard();
         double now = 12345.678;                                     // not representable as a float
         var h = Handlers(wb, () => now);
+        // AIWhiteboard constructor 0x0056A2AE..B6 initializes +0x48 to -1.0f.
+        Assert.Equal(unchecked((int)0xBF800000), BitConverter.SingleToInt32Bits((float)wb.OffTreadsStateChangedAtSec));
         h.HandleRobotOffTreadsStateChanged(2);
-        Assert.Equal(0.0, wb.OffTreadsStateChangedAtSec);
+        Assert.Equal(unchecked((int)0xBF800000), BitConverter.SingleToInt32Bits((float)wb.OffTreadsStateChangedAtSec));
         h.HandleRobotOffTreadsStateChanged(0);
         // GetCurrentTimeInSeconds returns a float and the store is `str r0,[r4,#0x48]` (0x0056ccee..0x0056ccf6): 12345.678f = 0x4640E6B6
         Assert.Equal(0x4640E6B6, BitConverter.SingleToInt32Bits((float)wb.OffTreadsStateChangedAtSec));
         Assert.Equal((double)BitConverter.Int32BitsToSingle(0x4640E6B6), wb.OffTreadsStateChangedAtSec);
         Assert.NotEqual(now, wb.OffTreadsStateChangedAtSec);
+        h.HandleRobotOffTreadsStateChanged(2);
+        Assert.Equal(0x4640E6B6, BitConverter.SingleToInt32Bits((float)wb.OffTreadsStateChangedAtSec));
     }
 
     private sealed class FakeViz : IBeaconVizSink
