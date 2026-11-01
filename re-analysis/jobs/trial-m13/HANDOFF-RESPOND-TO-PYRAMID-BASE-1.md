@@ -1,4 +1,4 @@
-# RESPOND-TO-PYRAMID-BASE-1 — BUILD DONE, BATCH GATE PENDING
+# RESPOND-TO-PYRAMID-BASE-1 — BUILD DONE, REVIEW DEFERRED FOR PRIORITY
 
 The exact configured OnConfigSeen owner now reads actual strong pyramid-base counts and uses its recovered one-action lifecycle. Public legacy OnConfigSeen/Seen extension remains separate. Ordinary job; no statuses, approvals or hardware verdicts changed.
 
@@ -14,4 +14,4 @@ Records: propose ONE coherent OnConfigSeen/Respond configured count-readiness/fi
 
 Workers unchanged: reader tallstack_runtime_read requested gpt-6.1-sol medium; builder tallstack_runtime_build/reviewer pyramid_runtime_review DEFAULT model/effort omitted; actual backends unobserved. **0 blocking behavioral review fix rounds;1 feedback batch/1 resubmission** tightened a Resume generation guard. The initial callback-race hypothesis was withdrawn as unproved; no artificial callback seam was added. Separate harness corrections: disposed-owner oracle, fresh no-seed canonical coverage, real NV startup. Builder MISSING: count/common-history uncertainty and upstream natural chooser/producer frontier remain; cache/count/Resume0/action questions resolved at primary addresses above. Reader's preliminary Resume1 lead was corrected before inventory/build; approved M7 rows899/900 agree. No worker .NET or hardware runs.
 
-First job in the next batch; full gate pending. Not READY FOR CLAUDE yet.
+Source cutoff after current main rebase: `bca36dc1`. Full batch gate pending; not READY FOR CLAUDE yet. Authoritative main `c458f3f2` orders NEEDS-PROOF-1, then POUNCE-REAL-FRAMES-1 before any other behavior. This already built job is preserved and its review stays behind those priorities.
