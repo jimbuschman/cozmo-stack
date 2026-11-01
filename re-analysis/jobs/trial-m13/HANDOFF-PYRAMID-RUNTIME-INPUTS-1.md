@@ -1,4 +1,6 @@
-# PYRAMID-RUNTIME-INPUTS-1 — BUILD DONE, BATCH GATE PENDING
+# PYRAMID-RUNTIME-INPUTS-1 — READY FOR CLAUDE
+
+Full batch gate **7187/7187 PASS**,0 failed/skipped, on **971be5cf337a32160baabc536d5de5cfcb9a9406**; gate/shutdown0, postflight inventory0. Logs `.scratch/runtime-input-batch-2{,-console}.log`. The earlier failed run at b5aedac4 and its three classified corrections remain documented in HANDOFF-HICCUP-STRATEGY-1.md. Earlier pending-gate statements below describe interim checks; this final result supersedes them. No statuses or approvals changed.
 
 The configured Pyramid behaviors now read actual canonical targets and strong caches. The missing intention9/10/11 producers were implemented; the three runtime delegates share the real world/configuration/cache owners. Independent source/diff review PASS; affected **113/113 PASS,0 skipped**. Full batch gate pending; not READY yet.
 

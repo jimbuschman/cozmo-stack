@@ -1,4 +1,6 @@
-# TALLSTACK-RUNTIME-INPUTS-1 — BUILD DONE, BATCH GATE PENDING
+# TALLSTACK-RUNTIME-INPUTS-1 — READY FOR CLAUDE
+
+Full batch gate **7187/7187 PASS**,0 failed/skipped, on **971be5cf337a32160baabc536d5de5cfcb9a9406**; gate/shutdown0, postflight inventory0. Logs `.scratch/runtime-input-batch-2{,-console}.log`. The earlier failed run at b5aedac4 and its three classified corrections remain documented in HANDOFF-HICCUP-STRATEGY-1.md. Earlier pending-gate statements below describe interim checks; this final result supersedes them. No statuses or approvals changed.
 
 Canonical CantHandleTallStack now receives the real stack weak target and its own first delocalization recipient state. Independent source/diff review PASS after two fix groups. Affected **58/58 PASS,0 skipped**. Full batch gate pending; not READY yet.
 

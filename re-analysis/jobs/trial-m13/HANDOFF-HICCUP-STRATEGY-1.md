@@ -1,4 +1,6 @@
-# HICCUP-STRATEGY-1 — BUILD DONE, BATCH GATE PENDING
+# HICCUP-STRATEGY-1 — READY FOR CLAUDE
+
+Full batch gate **7187/7187 PASS**,0 failed/skipped, on **971be5cf337a32160baabc536d5de5cfcb9a9406**; gate/shutdown0, postflight inventory0. Logs `.scratch/runtime-input-batch-2{,-console}.log`. The earlier failed run at b5aedac4 and its three classified corrections remain documented in HANDOFF-HICCUP-STRATEGY-1.md. Earlier pending-gate statements below describe interim checks; this final result supersedes them. No statuses or approvals changed.
 
 Canonical Hiccup now uses the actual configured PlayAnim target, shared whiteboard and map-owned native strategy. Independent source/diff review PASS; affected **325/325 PASS, 0 skipped**. Full batch gate is pending; this is not READY FOR CLAUDE yet.
 

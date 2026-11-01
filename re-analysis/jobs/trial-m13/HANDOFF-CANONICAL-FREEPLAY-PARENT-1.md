@@ -1,4 +1,6 @@
-# CANONICAL-FREEPLAY-PARENT-1 — BUILD DONE, BATCH GATE PENDING
+# CANONICAL-FREEPLAY-PARENT-1 — READY FOR CLAUDE
+
+Full batch gate **7187/7187 PASS**,0 failed/skipped, on **971be5cf337a32160baabc536d5de5cfcb9a9406**; gate/shutdown0, postflight inventory0. Logs `.scratch/runtime-input-batch-2{,-console}.log`. The earlier failed run at b5aedac4 and its three classified corrections remain documented in HANDOFF-HICCUP-STRATEGY-1.md. Earlier pending-gate statements below describe interim checks; this final result supersedes them. No statuses or approvals changed.
 
 Actual canonical Freeplay now uses the SAME configured tree, behavior instances, context, manager, AI and tracker as the robot. A resource-backed CozmoRobot naturally picks shipped PutDownDispatch and starts DriveOffCharger with actual path traffic; queued public ActivateSpark9 reaches the actual Roll owner and its supplied firmware/scene completion returns to the same parent picker. CreateNative is still observation only. Canonical needs-action mapping and Selection analyzer bindings are included. Source/diff review PASS; latest affected **157/157 PASS,0 skipped** (parent core147/147 retained). Full batch gate pending, not READY yet.
 
