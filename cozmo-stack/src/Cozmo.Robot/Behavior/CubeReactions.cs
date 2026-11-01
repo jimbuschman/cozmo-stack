@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -287,6 +288,13 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
 /// </summary>
 public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
 {
+    private Action? _completionLease;
+    private long _generation;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     public enum Phase { Idle, TurningToLastLocation, PlayingSenseReaction, ReactingToBlockPresence, ReactingToBlockAbsence }
 
     private readonly ICubeLocator? _locator;
@@ -301,7 +309,7 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     public Phase CurrentPhase { get; private set; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) => TargetObjectId is not null;
-    protected override bool KeepsRunningWithoutAction => CurrentPhase == Phase.TurningToLastLocation;
+    protected override bool KeepsRunningWithoutAction => CurrentPhase == Phase.TurningToLastLocation || HasCurrentAction;
 
     /// <summary>The engine's <c>HandleObservedObject</c>: a sighting of the target while running.</summary>
     public void ObjectObserved(uint objectId)
@@ -378,22 +386,27 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
 
     private void TransitionToReactingToBlockAbsence()
     {
+        long epoch = CaptureHostExecutionVersion();
         if (CurrentPhase == Phase.ReactingToBlockPresence) return;
         CurrentPhase = Phase.ReactingToBlockAbsence;
         Log("ReactingToBlockAbsence");
         SetStateName("ReactingToBlockAbsence");        // fidelity: M7-021 (helper 0x005C0CA8 at 0x006026D8)
-        PlayTrigger(AnimationTrigger.CubeMovedUpset, () =>
-        {
-            Log("objective achieved (cube moved and not found)");
-            CurrentPhase = Phase.Idle;
-            Finish();
-        });
+        if (!HostExecutionVersionCurrent(epoch)) return;
+        _completionLease = AcquireActionCompletionOwner(Context.Robot);
+        var action = new TriggerLiftSafeAnimationAction(Context.Robot, new(AnimationTrigger.CubeMovedUpset, 1, true, 0, 60f, false));
+        if (!HostExecutionVersionCurrent(epoch)) { action.RetireStaleConstructor(() => false); return; }
+        StartActing(action, _ => { }, () => HostExecutionVersionCurrent(epoch));
+        if (!HostExecutionVersionCurrent(epoch)) return;
+        Context.Robot.Engine.ReportBehaviorObjective(0x19, "ReactedToCubeMoved", Id);
     }
 
     protected override void OnStop(BehaviorStopReason reason)
     {
-        _turnCancel?.Cancel();
+        Interlocked.Increment(ref _generation);
+        var turn = _turnCancel; _turnCancel = null;
+        _completionLease?.Invoke(); _completionLease = null;
         if (reason != BehaviorStopReason.Completed && CurrentPhase != Phase.TurningToLastLocation) CurrentPhase = Phase.Idle;
-        if (reason == BehaviorStopReason.Completed) TargetObjectId = null;
+        TargetObjectId = null;
+        turn?.Cancel();
     }
 }

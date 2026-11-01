@@ -501,7 +501,7 @@ public class NavigationTests
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void ReactToOnChargerPlaysThenAnnouncesSleepAndDisconnectOnItsTimers()
+    public void ReactToOnChargerDoesNotFinishFromContactOrBehaviorClock()
     {
         using var signals = SignalTestContext.Install();
         using var rig = new Rig();
@@ -518,14 +518,13 @@ public class NavigationTests
         for (t = 33; t < 299_000; t += 1000) Assert.True(b.Update(ctx, t));
         Assert.Empty(b.Broadcasts);
         Assert.True(b.Update(ctx, 301_000));
-        Assert.Equal(new[] { "GoingToSleep" }, b.Broadcasts);
+        Assert.Empty(b.Broadcasts);
         Assert.True(b.Update(ctx, 331_000));
-        Assert.Equal(new[] { "GoingToSleep", "StartIdleTimeout" }, b.Broadcasts);
+        Assert.Empty(b.Broadcasts);
         rig.OnCharger = false; rig.State();
-        Assert.False(b.Update(ctx, 332_000));
-        Assert.Contains(b.Trace, l => l.Contains("PlacedOnCharger"));
+        Assert.True(b.Update(ctx, 332_000));
         var vc = new ReactToOnChargerBehavior("VC_GoToSleep", 300, 330, triggeredFromVoiceCommand: true);
-        Assert.False(Runnable(vc, ctx));
+        Assert.True(Runnable(vc, ctx));
         vc.Requested = true;
         Assert.True(Runnable(vc, ctx));
     }
@@ -1358,19 +1357,36 @@ public class NavigationTests
     {
         using var signals = SignalTestContext.Install();
         using var rig = new Rig();
+        var obb = ObbRoot();
+        Assert.NotNull(obb);
+        Assert.True(rig.M.LoadPlanner(obb!));
+        rig.HoldPath = true;
         var ctx = Ctx(rig);
         var b = ReactToFrustrationBehavior.Major(rig.M);
         Assert.Equal("ReactToFrustrationMajor", b.Id);
-        RunToEnd(rig, b, ctx);
-        Assert.NotNull(b.DriveGoal);
-        var d = b.DriveGoal!.Value.Translation;
-        double dist = Math.Sqrt(d.X * d.X + d.Y * d.Y);
-        Assert.InRange(dist, 150, 400);
-        double ang = Math.Abs(StraightLinePlanner.Wrap(b.DriveGoal.Value.AngleAroundZ));
-        Assert.InRange(ang, 80 * Math.PI / 180 - 1e-6, Math.PI + 1e-6);
-        Assert.Contains(b.Trace, l => l.Contains("random drive ->"));
-        Assert.Contains(b.Trace, l => l.Contains("FrustratedByFailureMajor"));
+        bool reported = false;
+        using var objective = rig.Robot.Engine.AnimationMessages.SubscribeMessage(0x8B, true, payload =>
+        {
+            if (payload is not uint id || id != 0x1D) return;
+            Assert.IsType<DriveToPoseAction>(b.OwnedRunner);
+            reported = true;
+        });
+        b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+        SignalTestContext.Until(() => reported, () => rig.Pump(1));
+        var goal = Assert.IsType<Pose3d>(b.DriveGoal);
+        Assert.InRange(goal.Translation.X, 150f, 400f);
+        Assert.Equal(0f, goal.Translation.Y);
+        Pose3d parent = null!;
+        Assert.True(goal.TryGetParent(ref parent));
+        using (parent)
+        {
+            Assert.True(parent.HasParent);
+            double angle = Math.Abs(StraightLinePlanner.Wrap(parent.AngleAroundZ));
+            Assert.InRange(angle, 80 * Math.PI / 180 - 1e-6, Math.PI + 1e-6);
+        }
+        SignalTestContext.Until(() => rig.Sent.OfType<ExecutePath>().Any(), () => rig.Pump(1));
         Assert.Contains(rig.Sent, m => m is ExecutePath);
+        b.Stop(BehaviorStopReason.Cancelled);
     }
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).

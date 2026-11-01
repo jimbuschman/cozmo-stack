@@ -10,6 +10,27 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class BehaviorObjectiveReportTests
 {
+    [Fact]
+    public void BackReactionAlreadyRightedDeliversObjectiveLocallyThenToQueuedHost()
+    {
+        using var rig = new M4ControlTests.Rig(); rig.ToSynced();
+        var context = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
+        var host = new List<byte[]>(); int local = 0;
+        rig.Engine.EngineToGameMessage += (tag, payload) => { if (tag == 0x8B) host.Add(payload.ToArray()); };
+        using var sub = rig.Engine.AnimationMessages.SubscribeMessage(0x8B, true, payload =>
+        {
+            Assert.Equal(0x21u, Assert.IsType<uint>(payload));
+            Assert.Empty(host);
+            local++;
+        });
+        var behavior = new ReactToRobotOnBackBehavior();
+        behavior.StartAsync(context, new BehaviorScope(), default).GetAwaiter().GetResult();
+        Assert.Equal(1, local);
+        Assert.Empty(host);
+        rig.Engine.DrainAppDelivery();
+        Assert.Equal(new byte[] { 0x21, 0, 0, 0 }, Assert.Single(host));
+    }
+
     [Theory]
     [InlineData((byte)1,true,true)] [InlineData((byte)0,true,false)]
     [InlineData((byte)2,true,false)] [InlineData((byte)255,true,false)] [InlineData((byte)1,false,false)]

@@ -913,28 +913,37 @@ public class DerivedStateTests
     [Fact]
     public void MotorCalibrationReactionEndsWhenBothMotorsReportOrOnTimeout()
     {
-        using var rig = new Rig();
-        var ctx = rig.Context();
-        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = true });
-        var b = new ReactToMotorCalibrationBehavior();
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        using var manipulation = new Cozmo.Robot.Manipulation.ManipulationSystem(rig.Robot, rig.Robot.Vision);
+        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
+        var b = new ReactToMotorCalibrationBehavior(manipulation);
         using var scope = new BehaviorScope();
         b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
         Assert.True(scope.ReactionsDisabled);
-        Assert.True(b.Update(ctx, 0));
-        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false, AutoStarted = true });
-        Assert.True(b.Update(ctx, 100));            // the lift has never reported
-        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false, AutoStarted = false });
-        Assert.False(b.Update(ctx, 200));
+        Assert.IsType<Cozmo.Robot.Manipulation.NativeTimedWaitRunner>(b.OwnedRunner);
+        b.StopOnNextActionComplete();
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
+        rig.Tick();
+        Assert.False(b.Completed);
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
+        // A later report cannot erase the cancellation caused by the preceding tag.
+        rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
+        rig.Tick();
         Assert.True(b.Completed);
+        b.Stop(BehaviorStopReason.Completed);
+    }
 
-        var slow = new ReactToMotorCalibrationBehavior();
-        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true, AutoStarted = true });
-        slow.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        Assert.True(slow.Update(ctx, 0));
-        Assert.True(slow.Update(ctx, 4999));
-        Assert.False(slow.Update(ctx, 5000));
-        Assert.False(slow.Completed);
-        Assert.Contains(slow.Trace, l => l.StartsWith("Calibration didn't complete"));
+    [Theory]
+    [InlineData(0.25, unchecked((int)0xBEBD38BB))]
+    [InlineData(0.5, 0x3EBD38BB)]
+    public void FrustrationDriveUsesNativeDrawOrderAndFloatBoundaries(double sign, int expectedRadians)
+    {
+        var draws = new Queue<double>(new[] { 0.25, sign, 0.75 });
+        var (radians, distance) = ReactToFrustrationBehavior.RandomDriveScalars(12.3f, 47.8f, 100.3f, 200.7f, draws.Dequeue);
+        Assert.Equal(expectedRadians, BitConverter.SingleToInt32Bits(radians));
+        Assert.Equal(0x432F999A, BitConverter.SingleToInt32Bits(distance));
+        Assert.Empty(draws);
     }
 
     /// <summary>The shaken state machine against the shipped assets, driven by the fed accelerometer.</summary>
@@ -1290,6 +1299,17 @@ public class DerivedStateTests
         var ctx = rig.Context(obb);
         var locator = new FakeLocator { Located = { 7 } };
         var b = new AcknowledgeCubeMovedBehavior(locator) { TargetObjectId = 7 };
+        var reports = new List<uint>();
+        using var objective = rig.Robot.Engine.AnimationMessages.SubscribeMessage(0x8B, true, payload =>
+        {
+            var id = Assert.IsType<uint>(payload);
+            if (id == 0x19)
+            {
+                var owned = Assert.IsType<TriggerLiftSafeAnimationAction>(b.OwnedRunner);
+                Assert.Equal(AnimationTrigger.CubeMovedUpset, owned.Request.Trigger);
+            }
+            reports.Add(id);
+        });
         Assert.True(b.IsRunnable(ctx));
         using var scope = new BehaviorScope();
         b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
@@ -1314,8 +1334,12 @@ public class DerivedStateTests
         locator.CompleteTurn();
         BehaviorTestSignals.WaitForPostedWork(b);
         AdvanceModelUntil(() => { t += 33; b.Update(ctx, t); return b.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.ReactingToBlockAbsence; });
-        Assert.Contains(b.Trace, l => l.StartsWith("play CubeMovedUpset"));
-        Assert.False(Step(rig, b, ctx, ref t));
+        var absence = Assert.IsType<TriggerLiftSafeAnimationAction>(b.OwnedRunner);
+        Assert.Equal(AnimationTrigger.CubeMovedUpset, absence.Request.Trigger);
+        Assert.Equal(new uint[] { 0x19 }, reports);
+        // Explicit cancellation is a terminal action result; the native absence callback is empty.
+        Assert.True(rig.Robot.Engine.Robot!.ActionList.Cancel(absence.Tag));
+        Assert.False(b.Update(ctx, t + 33));
         b.Stop(BehaviorStopReason.Completed);      // what the manager does when Update returns false
         Assert.Null(b.TargetObjectId);
 
@@ -1332,8 +1356,10 @@ public class DerivedStateTests
         seen.Update(ctx, t + 33);
         Assert.Equal(AcknowledgeCubeMovedBehavior.Phase.ReactingToBlockPresence, seen.CurrentPhase);
         Assert.Contains(seen.Trace, l => l.StartsWith("play AcknowledgeObject"));
+        Assert.Equal(new uint[] { 0x19 }, reports);
         seen.Stop(BehaviorStopReason.Cancelled);
         Assert.False(rig.Robot.Animations.IsPlaying);
+        Assert.Null(seen.TargetObjectId);
     }
 
     /// <summary>
