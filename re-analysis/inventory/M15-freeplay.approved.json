@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-11-01",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "b237d1fdf6f5961d314cd26a31b40a791d106d0990a6c67974c0070f33a397e1",
+  "inventory_sha256": "62910764baddb8db95a365a31cd564606077ece5366c84e120040ef9299b8673",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1359,6 +1359,17 @@
       "evidence": [
         "Factory 0x0059CC64..0x0059CC82; ctor 0x005DAF88; predicate 0x005DAFA4; Init 0x005DAFB4..0x005DB026; flag 0x0051379A..0x005137AE; Robot::Broadcast 0x00511DE8..0x00511DFC; StopTrick 0x005DB0CC; carry gate 0x005DB0E2.",
         "re-analysis/jobs/trial-m13/HANDOFF-SPARKS-FIRE-TRUCK-ALARM-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-110": {
+      "status": "EXACT_SOURCE",
+      "title": "BehaviorOnConfigSeen configured for RespondToPyramidBase: count readiness, first lift-safe action, Resume 0",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CD84..0x0059CDA2; ctor 0x005DB0E8; readiness 0x005DB2D4..0x005DB396; Init 0x005DB3AC; TransitionToPlayAnimationSequence 0x005DB3BC..0x005DB414; Resume 0x005DB4DC; trigger table 0x010326E0.",
+        "re-analysis/jobs/trial-m13/HANDOFF-RESPOND-TO-PYRAMID-BASE-1.md"
       ],
       "live_path": true,
       "hardware_required": false

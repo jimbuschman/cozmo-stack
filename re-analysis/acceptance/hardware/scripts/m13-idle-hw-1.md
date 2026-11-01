@@ -12,7 +12,7 @@ afterwards. This is the first robot run of the whole idle loop: looking for face
 2. Put his cubes well away or out of sight.
 3. Keep people and pets out from in front of him if you can. A face he sees can change what he does; that isn't a
    failure, but it makes the run harder to read.
-   **Known problem:** if he sees a face or falls, he will probably go still and stay that way. That is a known stack defect (NEEDS-PROOF-1), not a new failure, so keep faces out of his view.
+   **Known problem:** until POUNCE-REAL-FRAMES-1 and REWARD-GATE-1 land, he will sit still during Hiking, and a rolled or stacked cube can stop him changing behaviour.
 4. Don't touch Cozmo from the start until `TEST FINISHED` is printed. If he heads for an edge or gets stuck, press
    Ctrl+C. The run is still saved.
 

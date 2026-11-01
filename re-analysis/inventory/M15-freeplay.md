@@ -1222,3 +1222,4 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New: BehaviorEarnedSparks configured lifecycle: live pending predicate, lift-safe A4 Init, Resume, pending-guarded Stop, carry gate | M15-108 |
 | New: BehaviorFireTruckAlarm configured lifecycle: Robot +0x354 flag predicate, Init flag set and CSharpTrickStarted broadcast, no action | M15-109 |
+| New: BehaviorOnConfigSeen configured for RespondToPyramidBase: count readiness, first lift-safe action, Resume 0 | M15-110 |

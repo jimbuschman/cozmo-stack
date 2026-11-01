@@ -14883,6 +14883,24 @@
       "hardware_required": false,
       "live_path": true,
       "test": "NativeFireTruckAlarmTests"
+    },
+    {
+      "id": "M15-110",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorOnConfigSeen configured for RespondToPyramidBase: count readiness, first lift-safe action, Resume 0",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeRespondToPyramidBaseBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CD84..0x0059CDA2; ctor 0x005DB0E8; readiness 0x005DB2D4..0x005DB396; Init 0x005DB3AC; TransitionToPlayAnimationSequence 0x005DB3BC..0x005DB414; Resume 0x005DB4DC; trigger table 0x010326E0.",
+        "re-analysis/jobs/trial-m13/HANDOFF-RESPOND-TO-PYRAMID-BASE-1.md"
+      ],
+      "effect": "the reaction animation Cozmo plays when he sees a new pyramid base",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Settled on the lifecycle only, Claude check re-analysis/research/20261101-needs-proof-claude-check.md. Only the shipped RespondToPyramidBase profile is admitted; other OnConfigSeen profiles report NotImplemented. A missed count evaluation has no source recovery, so readiness stays unavailable until a new owner. Natural BuildPyramid selection is not claimed. Owned elsewhere: the configuration producer (M11-037, M12-049), common Update and Stop (M8-001).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeRespondToPyramidBaseTests"
     }
   ]
 }

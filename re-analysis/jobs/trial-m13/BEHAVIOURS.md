@@ -19,6 +19,7 @@ This is the operator-requested asset-based planning document, checked by the man
 | 2026-11-01 | 1 (DriveOffCharger) | total +9 over 26 start-path jobs (adds M8-019, M15-058, M15-011) | SPARKS-LOOK-IN-PLACE-1, PLAYALONE-MOVES-ON-1, M8-019-END-1; Codex full 7395/7395 | Left alone, Cozmo now cycles through Freeplay for 5 minutes on the production load order. A test-rig load-order defect is ordered as TRIGGER-MAP-BIND-1. |
 | 2026-11-01 | 1 (DriveOffCharger) | total +11 over 30 start-path jobs (adds M15-108, M15-109) | TRIGGER-MAP-BIND-1, EARNED-SPARKS-1, REACT-TO-OBSTACLE-1, SPARKS-FIRE-TRUCK-ALARM-1; Codex full 7430/7430 | Left alone, 97.8% busy with real clip times. One needs action still stalls the loop: NEEDS-PROOF-1 is next. |
 | 2026-11-01 | 1 (DriveOffCharger) | total +11 over 30 start-path jobs | First left-alone robot run | Idle 176 of 240 s: Hiking holds on real camera frames, which the simulation has none of. POUNCE-REAL-FRAMES-1 ordered after NEEDS-PROOF-1. |
+| 2026-11-01 | 1 (DriveOffCharger) | total +12 over 32 start-path jobs (adds M15-110) | NEEDS-PROOF-1, RESPOND-TO-PYRAMID-BASE-1; Codex full 7461/7461 | SeeFace and Fall no longer stall the loop. A rewarded action still does: REWARD-GATE-1 ordered after POUNCE-REAL-FRAMES-1. |
 
 ## Sources and interpretation
 

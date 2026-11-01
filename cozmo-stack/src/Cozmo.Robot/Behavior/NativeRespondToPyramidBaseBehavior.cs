@@ -4,6 +4,7 @@ using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M15-110
 // 005DB0E8..005DB4DC: configured OnConfigSeen. Unknown count history cannot be reconstructed.
 internal sealed class NativeRespondToPyramidBaseBehavior : SteppedBehavior, IDisposable
 {
