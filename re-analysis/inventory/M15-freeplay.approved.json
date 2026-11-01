@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-31",
+  "approved": "2026-11-01",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "e0444b9374c8512cc2931650068c0ade9eee9db6c134cb35f273b95ec89767b7",
+  "inventory_sha256": "2fc163f859916381c05bda6ad4baec447060b93bc84bb40682e5f7a656100287",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -716,7 +716,7 @@
       "hardware_required": false
     },
     "M15-060": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) and its subscription",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -987,7 +987,7 @@
       "hardware_required": false
     },
     "M15-082": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BehaviorExpressNeeds lifecycle: ctor/LoadConfig (need, bracket, cooldown graph, animTriggers, expressed-state bools), runnable gates (not while carrying/off treads/+0x34A; Critical caresAbout selected-need branch, else IsNeedAtBracket; f32 strict cooldown from the last SUCCESS), Init compound (last-face-pose turn ignoring failure, then plain trigger animations), SUCCESS-only stamp, resume refused and Stop clearing",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -1211,7 +1211,7 @@
       "hardware_required": false
     },
     "M15-097": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ActivityStrategyPyramid: start predicate, the 40% roll every 300 s, and the BuiltPyramid end",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -1225,7 +1225,7 @@
       "hardware_required": false
     },
     "M15-098": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ActivityStrategyNeedBasedCooldown: cooldown graphs driven by the NeedsState message",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -1253,13 +1253,57 @@
       "hardware_required": false
     },
     "M15-100": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ActivityStrategySpark: no should-end limit, start true, end false",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Spark ctor 0x005B4E90: after the base parse, +0x18 = 0x7F7FFFFF (FLT_MAX) (0x005B4E98..0x005B4EA2), overriding activityShouldEndDurationSecs; no shipped spark config sets the key.",
         "WantsToStartInternal 0x005B4EBE returns 1 and WantsToEndInternal 0x005B4EC2 returns 0 (vtable 0x01025A40).",
         "re-analysis/research/20261031-check-2-chatgpt-extraction.md; re-analysis/research/20261031-check-2-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-101": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorLookForFaceAndCube lifecycle: params, gates, Init RNG, phases, Resume table, active face verification and stop, Stop, state6 desired-activity call",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Params 0x005EF950..0x005EFB42; Init 0x005EFDC4..0x005EFEC0; RNG 0x005EFF5C..0x005F0006; phases 0x005F00AC..0x005F0824; Resume 0x005F0204..0x005F032C; Stop 0x005F0878; tag46 gates 0x005F0882..0x005F08E6; verification 0x005F0A20..0x005F0B18; callback 0x005F0ED6; terminal 0x005F0DB4, 0x005F0C66.",
+        "re-analysis/jobs/trial-m13/HANDOFF-LOOK-FACE-CUBE-EXECUTION-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-102": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivitySocialize lifecycle: objective population, phase machine, objective recipient, deselect",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor 0x005AFD1C; OnSelected 0x005AFF60, 0x005AFF6C..0x005B0170; desired 0x005B023C..0x005B0682 with phase table at 0x005B02E6; objective recipient 0x005B07BC; run count +0x80 0x005BCD0C..0x005BCD12; FindFaces iterations +0x1D0.",
+        "re-analysis/research/20261101-start-path-batch-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-103": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorFindFaces with its inherited ExploreLookAroundInPlace scan core, for FindFaces_socialize",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor 0x005C1914; runnable 0x005C1A34; look-up callback 0x005C1DB6..0x005C1E0E; Init 0x005E2684; S1 0x005E28D2..0x005E2942; helpers 0x005E29B8, 0x005E3298; S2 0x005E2B20; S3 0x005E2C66..0x005E2CD2; S4 0x005E2E28; S5 0x005E3212; S6 0x005E315A; S7 0x005E35A2..0x005E380C.",
+        "re-analysis/research/20261101-start-path-batch-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-104": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorPlayAnimOnNeedsChange GetIn: three shipped aliases, readiness, WithFace Init, lift-safe animation, Stop severe-need Set",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CE46; ctor 0x005BFDD4, 0x005BFDDC, 0x005C0634; gates 0x005BFF1A, 0x005BFF1E; readiness 0x005C013A, 0x005BFECA; Init 0x005C0648..0x005C06D4; callback 0x005C075A, 0x005C0158..0x005C01A6; Stop 0x005BFEF8..0x005BFF16.",
+        "re-analysis/jobs/trial-m13/HANDOFF-NEEDS-EXPRESSION-ADMISSION-1.md"
       ],
       "live_path": true,
       "hardware_required": false

@@ -371,7 +371,8 @@ public static class M13DriveOffHw
     // StopInternal 0x005C0D90..0x005C0DA4: remove by name only when +0x120 is set.
     public static JsonObject GradeDrivingAnimations(DrivingRun? d, bool started)
     {
-        if (!started || d is null) return Row("INCONCLUSIVE", "The behaviour did not start.");
+        if (!started) return Row("INCONCLUSIVE", "The behaviour did not start.");
+        if (d is null) return Row("INCONCLUSIVE", "The behaviour started, but this route cannot see its driving-animation calls.");
         JsonObject row;
         if (d.SelectedBefore != d.SelectedAfter)
             row = Row("INCONCLUSIVE", $"The selected severe need changed during Init ({d.SelectedBefore} -> {d.SelectedAfter}).");

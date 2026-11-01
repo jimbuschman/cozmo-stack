@@ -264,7 +264,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-31",
+        "approved": "2026-11-01",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -5351,7 +5351,13 @@
       "unresolved": "Settled 2026-10-26 (Claude check, research/20261026-driveoff-pilot-claude-check.md): ctor 0x005C0980, IsRunnableInternal 0x005C0B10, Init 0x005C0B18, TransitionToDrivingForward 0x005C0BB8, Update 0x005C0DA8, Stop 0x005C0D90 and completion 0x005C0E9C match ChargerBehaviors.cs. The null-seam ReportMissing guards are host fallbacks; the constructor always binds them.\nEarlier notes: built, awaiting strong verification (R-FIX, 2026-10-03): BehaviorDriveOffCharger per the binary: runnable on OnChargerPlatform (+0x34A, 0x005C0B10, 0x005C0DA8), redrives until the platform flag clears, no 5 s timeout, the whiteboard +0x44 stamp is float and written only by the behaviour (0x005C0E02..0x005C0E08; the local FreeplaySystem writer is removed), IsRunnableBase reads it in float (0x005BD826..0x005BD962); the Robot::Update platform step (0x00513CD8..0x00513E2A) clears the flag from the charger and robot quads (minAreaRect built from the validated float32 port). Contact-true located-charger observation is built by B-M13-9, corrected by B-M13-10 (M13-040); shared-owner gaps remain. Still open: PushDrivingAnimations and WaitForOnTreads action ownership; Markerless/Ramp/HumanHead footprints; GetBoundingQuad catch-all 0x004E65C6; shared SetObjectPoseChanged 0x00624892, M11-074 map continuations and M12-001/M12-045 cached-pose destructor ownership; a drive-off regression through admitted, frame-matched RobotStates. No hardware verification or settlement. B-M13-11 builds the shared row2 height selector and n<=2 minAreaRect results. The old double-rotation-cast description is stale: the current quaternion getter creates Mat3 with f32 storage; shared pose arithmetic retains its own verification boundary. Codex review; Claude spot-check pending. These units do not close drive-off ownership or live input gaps.",
       "hardware_required": false,
       "live_path": true,
-      "test": "NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent"
+      "test": "NavigationTests.DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent",
+      "verification": {
+        "level": "HARDWARE_VERIFIED",
+        "bundles": [
+          "re-analysis/acceptance/hardware/20261101-084109-M13-DRIVEOFF-HW-a0fbc7"
+        ]
+      }
     },
     {
       "id": "M13-018",
@@ -12201,7 +12207,13 @@
       "unresolved": "Settled 2026-10-26 (Claude check, research/20261026-driveoff-pilot-claude-check.md). The Mood owner, GetSimpleMood and the +0x130 clock are bound for the animation group draw and the driving handler. When no Mood owner is bound, AnimationLibrary reports MISSING: M7-026 and uses Default (host input guard, not engine behaviour). Mood schema/events stay with their own M7 records.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M5X19BuilderTests; M5X15BuilderTests; M5X17BuilderTests; M5X18BuilderTests; NavigationTests; FreeplayTests; ActionListTests"
+      "test": "M5X19BuilderTests; M5X15BuilderTests; M5X17BuilderTests; M5X18BuilderTests; NavigationTests; FreeplayTests; ActionListTests",
+      "verification": {
+        "level": "HARDWARE_VERIFIED",
+        "bundles": [
+          "re-analysis/acceptance/hardware/20261101-084109-M13-DRIVEOFF-HW-a0fbc7"
+        ]
+      }
     },
     {
       "id": "M7-027",
@@ -14058,7 +14070,13 @@
       "unresolved": "Settled 2026-10-26 (Claude check, research/20261026-driveoff-pilot-claude-check.md): the contact-true branch of SetOnCharger 0x00511990 (located find, create/ID, AddRobotRelativeObservation on every true input, then the rising edge) matches Sensors.cs and BlockWorld.ObserveChargerFromContacts.\nEarlier notes: built, awaiting strong verification: B-M13-9 wires synchronized contact-true ingress to the shared BlockWorld charger factory/identity owner, native ChargerDockPose parent/flatten, Known existing/new observation, actionable cache clearing and ordered existing world/map/light recipients before contact edges. Received-state regressions in M13ContactChargerTests cover identity, current origin, nontrivial pose, repeated true, distance/timestamp/localization, recipient order and footprint exit. MISSING shared BlockConfigurationManager::SetObjectPoseChanged 0x00624892, M11-074 map height/cache continuations and M12-001/M12-045 cached-pose destructor ownership retain their existing boundaries; no bypass or invented map insertion. Prior scope note (before this build): Unbuilt live contact-observation join. B-M13-9 builds checked A1-A11/P1-P4 with A9 corrected to NEW state. Shared pose/map/obstacle/light implementation gaps remain visible; existence of helpers is not proof of whole-path fidelity. No mount implementation or exhaustive caller census is claimed. No hardware verification or M13-017 settlement. B-M13-10 removes the false insertion timestamp claim; obj+0x54 is VizManager, per the Claude check 2026-10-21.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M13ContactChargerTests (received RobotState/real world recipients; isolated actionable-cache fixture explicitly labelled)"
+      "test": "M13ContactChargerTests (received RobotState/real world recipients; isolated actionable-cache fixture explicitly labelled)",
+      "verification": {
+        "level": "HARDWARE_VERIFIED",
+        "bundles": [
+          "re-analysis/acceptance/hardware/20261101-084109-M13-DRIVEOFF-HW-a0fbc7"
+        ]
+      }
     },
     {
       "id": "M13-041",
@@ -14298,7 +14316,7 @@
       "subsystem": "M15-freeplay",
       "title": "BehaviorExpressNeeds lifecycle: ctor/LoadConfig (need, bracket, cooldown graph, animTriggers, expressed-state bools), runnable gates (not while carrying/off treads/+0x34A; Critical caresAbout selected-need branch, else IsNeedAtBracket; f32 strict cooldown from the last SUCCESS), Init compound (last-face-pose turn ignoring failure, then plain trigger animations), SUCCESS-only stamp, resume refused and Stop clearing",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Factory class 18 0x0059CBA4..0x0059CBBE; ctor 0x005EE144..0x005EE18E (+0x11C 3, +0x120 4, +0x124 graph, +0x128 triggers, +0x134/+0x135 0, +0x138 0.0f); LoadConfig 0x005EE19A..0x005EE3FC (need, needBracket, cooldown, shouldClearExpressedState, caresAboutExpressedState, animTriggers with Count skipped); behaviors/freeplay/needs/*.json (six configs).",
@@ -14309,10 +14327,10 @@
       ],
       "effect": "when Cozmo expresses a low energy, play or repair need (bracket, selected severe need, cooldown at the current need level, never while carrying), what he does (turn to the last face, then the config's animations in order, stopping at a failure), when the cooldown restarts, that an interrupted expression is not resumed, and whether stopping clears the severe-need expression",
       "provenance": "EXPRESS-NEEDS-1 (Claude-run: cozmo-extractor read, cozmo-implementer build, cozmo-verifier PASS), checked by Claude 2026-10-29; record added with operator approval 2026-10-29.",
-      "unresolved": "C3 resolved by Claude 2026-10-29: IBehavior::ReadFromJson reads key requiredSevereNeedsState (literal 0x005BC348) when non-null, asString, NeedIdFromString, str r0,[r5,#0x74] at 0x005BC13C; a Count result only logs a VERIFY (0x005BC14E..0x005BC17A). Built and checked in EXPRESS-NEEDS-1 but not settled: no test enters the live Freeplay interlude StrictPriority chooser (Activities.cs:357-368); every test is unit. The native container does not build factory row C1 (BehaviorContainer.cs:221); the live path is the standalone FreeplayStack loader. The completion owner is bound only at construction. Open: Needs_SevereLowEnergyForcedGetOut reachability UNKNOWN (no activity, map or native FindBehaviorByID(0x2E) referent); the turn child with face 0 (M13-014) and the compound result after an ignored turn failure (M8-017). Owned elsewhere: the base gates and StartActing (M8-001), EvaluateY (M7-013), GetNeedLevel (M15-030), the severe-need selection and Clear (M15-072), the interlude chooser (M15-002, M15-006). NEEDS-EXPRESSION-ADMISSION-1 (2026-11-01), independent source/diff PASS and affected449/449 PASS0skip, pending full batch gate/Claude: six canonical configured ExpressNeeds owners now execute through actual ordinary parent/common interlude, capturing original EngineRobot before publication and shared Needs/SevereNeeds. Raw0/PI/no-name ignored-turn then ordered plain-trigger compound, strict f32 cooldown, SUCCESS-only stamp, refused Resume and flag-only Stop Clear are built/tested. Existing legacy ExplorerBehaviors own path is also corrected: captured original owner/raw0, common +74 before own bracket, actual charger-platform +34A seam, generation guards and disposal of all standalone-stack constructed Express leases including duplicates/unselected instances. Direct loader callers own IDisposable results; missing original manipulation/owner fails visibly. No further legacy-own divergence identified by independent review. Propose whole M15-082 own lifecycle after batch gate/Claude, including both locations/tests; no official location/status/approval edited. ForcedGetOut automatic native activity caller remains UNKNOWN; retained ID is reachable by existing generic queued94 API, not an invented activity reference. Wider common teardown/cancel-survivor gaps remain separately M8-015/016/023/024/027; no whole shared-layer claim. See HANDOFF-NEEDS-EXPRESSION-ADMISSION-1.md.",
+      "unresolved": "Settled on its own lifecycle, Claude check re-analysis/research/20261101-start-path-batch-claude-check.md: ctor and loader 0x005EE144..0x005EE3FC, predicate and cooldown 0x005EE570..0x005EE626, Init compound 0x005EE690..0x005EE788, Resume 0x005EE7D4, Stop 0x005EE7D8, destructor 0x005EE7EC, SUCCESS stamp 0x005EE89E..0x005EE8B6. Canonical owner NativeExpressNeedsBehavior.cs and the legacy ExpressNeedsBehavior both. Owned elsewhere: base gates and StartActing (M8-001), the face child (M13-014), the compound result (M8-017), severe-need selection and Clear (M15-072), the interlude chooser (M15-002, M15-006). Needs_SevereLowEnergyForcedGetOut has no shipped automatic caller found; its ID is reachable through the existing request 94 path.",
       "hardware_required": false,
       "live_path": true,
-      "test": "ExpressNeedsNativeTests; M15SevereNeedsTests; FreeplayTests.ExpressNeedsAndTheGetInFollowTheBrackets"
+      "test": "ExpressNeedsNativeTests; M15SevereNeedsTests; FreeplayTests.ExpressNeedsAndTheGetInFollowTheBrackets; NativeExpressNeedsAdmissionTests; NativeNeedsExpressionAdmissionTests"
     },
     {
       "id": "M15-083",
@@ -14700,6 +14718,78 @@
       "effect": "how long a spark activity may run: the stack ends one older than 60 s once its behaviour finishes, and the engine has no time limit",
       "provenance": "ChatGPT check 2, Claude check 2026-10-31; record added with operator approval 2026-10-31.",
       "unresolved": "Settled by Claude 2026-10-31 (research/20261031-fix-batch-claude-check.md): ctor FLT_MAX override and start/end predicates hold on main. Admission of a Spark activity is M15-006, not this record. STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Configured Spark constructor now overwrites the should-end field with0x7F7FFFFF even after an explicit config value, with internal start true/end false (005B4E98..4EA2,005B4EBE/4EC2). Strategy code/tests built; actual Spark activity admission remains separately open. No status or approval changed. Earlier unresolved history: The stack keeps the default 60 s (Activities.cs). Fix in STRATEGIES-FIX-1.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-101",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorLookForFaceAndCube lifecycle: params, gates, Init RNG, phases, Resume table, active face verification and stop, Stop, state6 desired-activity call",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeLookForFaceAndCubeBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Params 0x005EF950..0x005EFB42; Init 0x005EFDC4..0x005EFEC0; RNG 0x005EFF5C..0x005F0006; phases 0x005F00AC..0x005F0824; Resume 0x005F0204..0x005F032C; Stop 0x005F0878; tag46 gates 0x005F0882..0x005F08E6; verification 0x005F0A20..0x005F0B18; callback 0x005F0ED6; terminal 0x005F0DB4, 0x005F0C66.",
+        "re-analysis/jobs/trial-m13/HANDOFF-LOOK-FACE-CUBE-EXECUTION-1.md"
+      ],
+      "effect": "how Cozmo looks for faces and cubes after a put-down, and the activity it asks for next",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Built, LookForFaceAndCubeNativeTests. Not settled: the Claude check did not read this path in full. Changed objective and non-shipped params stay unavailable.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-102",
+      "subsystem": "M15-freeplay",
+      "title": "ActivitySocialize lifecycle: objective population, phase machine, objective recipient, deselect",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeActivityObjectiveOwner.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor 0x005AFD1C; OnSelected 0x005AFF60, 0x005AFF6C..0x005B0170; desired 0x005B023C..0x005B0682 with phase table at 0x005B02E6; objective recipient 0x005B07BC; run count +0x80 0x005BCD0C..0x005BCD12; FindFaces iterations +0x1D0.",
+        "re-analysis/research/20261101-start-path-batch-claude-check.md"
+      ],
+      "effect": "what Socialize asks for in each phase and when it gives up and lets Freeplay move on",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Built, OrdinaryFreeplayNativeTests. Phase table, population and recipient checked by Claude against the .so. Not settled: nonempty-face Interact, Pounce and Peek bodies are unavailable, so phases 2 to 5 cannot run with faces or objectives.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-103",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorFindFaces with its inherited ExploreLookAroundInPlace scan core, for FindFaces_socialize",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeFindFacesSocialize.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Ctor 0x005C1914; runnable 0x005C1A34; look-up callback 0x005C1DB6..0x005C1E0E; Init 0x005E2684; S1 0x005E28D2..0x005E2942; helpers 0x005E29B8, 0x005E3298; S2 0x005E2B20; S3 0x005E2C66..0x005E2CD2; S4 0x005E2E28; S5 0x005E3212; S6 0x005E315A; S7 0x005E35A2..0x005E380C.",
+        "re-analysis/research/20261101-start-path-batch-claude-check.md"
+      ],
+      "effect": "the head and body scan Cozmo runs when left alone with no face known",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Built, OrdinaryFreeplayNativeTests. Look-up age test, S1 and S3 direction, draw order and S7 count checked by Claude. Not settled: the scan has not run on a robot; other FindFaces aliases and roaming are unbuilt; sensor phase 2 order open.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-104",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorPlayAnimOnNeedsChange GetIn: three shipped aliases, readiness, WithFace Init, lift-safe animation, Stop severe-need Set",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeNeedsGetInBehavior.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CE46; ctor 0x005BFDD4, 0x005BFDDC, 0x005C0634; gates 0x005BFF1A, 0x005BFF1E; readiness 0x005C013A, 0x005BFECA; Init 0x005C0648..0x005C06D4; callback 0x005C075A, 0x005C0158..0x005C01A6; Stop 0x005BFEF8..0x005BFF16.",
+        "re-analysis/jobs/trial-m13/HANDOFF-NEEDS-EXPRESSION-ADMISSION-1.md"
+      ],
+      "effect": "the animation that starts a severe need and when the severe state is set",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Built, NativeNeedsExpressionAdmissionTests. Not settled: the Claude check did not read this path. Multi-trigger and nonempty-listener paths stay unavailable.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

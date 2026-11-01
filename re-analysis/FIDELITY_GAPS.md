@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **742 records** over 16 subsystems.
+Manifest of **746 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 264 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 265 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 362 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 365 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 69 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 100 | 4 | 81 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 104 | 4 | 84 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -58,15 +58,15 @@ status.
 | M4-control | ACCEPTED | 42 | 0 | 0 | 3 |
 | M5-animation | ACCEPTED | 56 | 0 | 0 | 1 |
 | M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
+| M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 1 |
 | M8-framework | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
-| M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
+| M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -3834,15 +3834,6 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * evidence: Factory class 0x3B 0x0059D0D2..0x0059D0EC; ctor 0x00602FA4..0x0060304A (+0x11C 0x23F, +0x120 pi/4, +0x128/+0x130 5 deg, +0x138 2, +0x140 -1, +0x148/+0x149/+0x14A, sets +0x14C/+0x158); ghost Block_Cube1x1 type 4 0x00603010..0x0060304A; LoadConfig 0x00603118..0x0060334A; behaviors/reactions/acknowledgeObject.json.; IsRunnable: carrying override 0x00604380 returns 1; IsRunnableInternal +0x154 != 0 0x006042C8..0x006042D2; strategy gates and target fill 0x006113E8..0x00611482; AddListener 0x006042D4..0x006042EA; Init 0x00603434..0x00603494 with ghost SetID 0x004EF468..0x004EF4F4 (consumes one ObjectID); Update 0x00603524..0x00603546.; BeginIteration 0x00603560..0x00603730 (NullObject 0x00603742..0x006037A2; high flag z > 33.85 mm 0x006035AA..0x006035F4; TurnTowardsObjectAction + tolerances 0x006035F8..0x0060363E; VisuallyVerifyObjectAction +0x8C = +0x138 0x0060366C..0x006036C0; TriggerLiftSafeAnimationAction unless +0xD9/+0xD8 0x006036C2..0x00603710; result functor 0x0060440E..0x00604424).; LookForStackedCubes 0x006038DA..0x00603B50; CheckIfGhostBlockVisible 0x00603DA8..0x00603F4C; SetGhostBlockPoseRelObject 0x00604054..0x006040C2; LookAtGhostBlock 0x006040D8..0x0060420A.; FinishIteration 0x00603C74..0x00603D6C (listeners slot 0, erase, BehaviorObjectiveAchieved 0x1B, BeginIteration; last target: turn-back TurnTowardsObjectAction then 0x0060465A..0x00604672); StopInternal 0x0060425E..0x006042C6 (listeners slot 1 ClearDesiredTargets).; re-analysis/research/20261029-acknowledge-object-1-read.md
 * outstanding: Not built yet: the build is handed to Codex (ACKNOWLEDGE-OBJECT-1). Manager decisions: the ghost's ObjectID consumption is reproduced; the forced trigger SetupForceTriggerBehavior 0x00611148..0x006111E8 is not built (no stack entry reaches it). Owned elsewhere: TurnTowardsObjectAction body (M15-022, M13-020; ctor 0x00549D78 and UseCustomObject 0x0054A050 RECOVERABLE_GAP), VisuallyVerifyObjectAction body (no record), IsVisibleFromWithReason (M11-010), GetClosestMarkerPose/ComputeHeadAngleToSeePose (M13-026, M12-033), DriveStraightAction (M13-002), the strategy recording (M10-003), the IBehavior base (M8-001), the objective packer (M7-019).
 
-**M15-082 — BehaviorExpressNeeds lifecycle: ctor/LoadConfig (need, bracket, cooldown graph, animTriggers, expressed-state bools), runnable gates (not while carrying/off treads/+0x34A; Critical caresAbout selected-need branch, else IsNeedAtBracket; f32 strict cooldown from the last SUCCESS), Init compound (last-face-pose turn ignoring failure, then plain trigger animations), SUCCESS-only stamp, resume refused and Stop clearing** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs`
-* effect: when Cozmo expresses a low energy, play or repair need (bracket, selected severe need, cooldown at the current need level, never while carrying), what he does (turn to the last face, then the config's animations in order, stopping at a failure), when the cooldown restarts, that an interrupted expression is not resumed, and whether stopping clears the severe-need expression
-* rests on: EXPRESS-NEEDS-1 (Claude-run: cozmo-extractor read, cozmo-implementer build, cozmo-verifier PASS), checked by Claude 2026-10-29; record added with operator approval 2026-10-29.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Factory class 18 0x0059CBA4..0x0059CBBE; ctor 0x005EE144..0x005EE18E (+0x11C 3, +0x120 4, +0x124 graph, +0x128 triggers, +0x134/+0x135 0, +0x138 0.0f); LoadConfig 0x005EE19A..0x005EE3FC (need, needBracket, cooldown, shouldClearExpressedState, caresAboutExpressedState, animTriggers with Count skipped); behaviors/freeplay/needs/*.json (six configs).; Vtable 0x0102A24C: +0x28 0x005EE860 returns 0; base +0x20 0x005BF04C and +0x24 0x0059EC12 return 0; IsRunnableInternal 0x005EE570..0x005EE5DC (+0x135 and Critical: need == [[robot+0x264]+0x30]+0x14, else IsNeedAtBracket; GetCooldownSec + [+0x138] < BaseStationTimer seconds, vcmpe.f32/movlt); GetCooldownSec 0x005EE5E4..0x005EE626.; InitInternal 0x005EE690..0x005EE788: CompoundActionSequential; TurnTowardsFaceAction(robot, 0, Radians 0x40490FDB, false) re-vtabled as TurnTowardsLastFacePoseAction, AddAction ignoreFailure 1 (0x005EE6DA); per trigger TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false), AddAction ignoreFailure 0 (0x005EE736); StartActing. Callback 0x005EE89E..0x005EE8B6: category byte 0 -> +0x138 = now.; ResumeInternal 0x005EE7D4 returns 1; StopInternal 0x005EE7D8..0x005EE7E8 (+0x134 -> ClearSevereNeedExpression).; re-analysis/research/20261029-express-needs-1-read.md; re-analysis/research/20261029-express-needs-1-claude-check.md
-* outstanding: C3 resolved by Claude 2026-10-29: IBehavior::ReadFromJson reads key requiredSevereNeedsState (literal 0x005BC348) when non-null, asString, NeedIdFromString, str r0,[r5,#0x74] at 0x005BC13C; a Count result only logs a VERIFY (0x005BC14E..0x005BC17A). Built and checked in EXPRESS-NEEDS-1 but not settled: no test enters the live Freeplay interlude StrictPriority chooser (Activities.cs:357-368); every test is unit. The native container does not build factory row C1 (BehaviorContainer.cs:221); the live path is the standalone FreeplayStack loader. The completion owner is bound only at construction. Open: Needs_SevereLowEnergyForcedGetOut reachability UNKNOWN (no activity, map or native FindBehaviorByID(0x2E) referent); the turn child with face 0 (M13-014) and the compound result after an ignored turn failure (M8-017). Owned elsewhere: the base gates and StartActing (M8-001), EvaluateY (M7-013), GetNeedLevel (M15-030), the severe-need selection and Clear (M15-072), the interlude chooser (M15-002, M15-006). NEEDS-EXPRESSION-ADMISSION-1 (2026-11-01), independent source/diff PASS and affected449/449 PASS0skip, pending full batch gate/Claude: six canonical configured ExpressNeeds owners now execute through actual ordinary parent/common interlude, capturing original EngineRobot before publication and shared Needs/SevereNeeds. Raw0/PI/no-name ignored-turn then ordered plain-trigger compound, strict f32 cooldown, SUCCESS-only stamp, refused Resume and flag-only Stop Clear are built/tested. Existing legacy ExplorerBehaviors own path is also corrected: captured original owner/raw0, common +74 before own bracket, actual charger-platform +34A seam, generation guards and disposal of all standalone-stack constructed Express leases including duplicates/unselected instances. Direct loader callers own IDisposable results; missing original manipulation/owner fails visibly. No further legacy-own divergence identified by independent review. Propose whole M15-082 own lifecycle after batch gate/Claude, including both locations/tests; no official location/status/approval edited. ForcedGetOut automatic native activity caller remains UNKNOWN; retained ID is reachable by existing generic queued94 API, not an invented activity reference. Wider common teardown/cancel-survivor gaps remain separately M8-015/016/023/024/027; no whole shared-layer claim. See HANDOFF-NEEDS-EXPRESSION-ADMISSION-1.md.
-
 **M15-083 — BehaviorWait lifecycle: the seven vtable stubs (never-ending Update, +0x20/+0x28 runnable, base +0x24 not runnable with robot+0x34A, Init starting nothing, IsRunnableInternal true, empty Stop) and both shipped Wait configs** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/ExplorerBehaviors.cs`
@@ -3968,6 +3959,42 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Needs start 0x005B4718 and SevereNeedsTransition start 0x005B4D88: IActivityStrategy +0x04 (IWantsToRunStrategy from wantsToRunStrategyConfig, 0x005B50F8..0x005B5104) WantsToRun; null warns and gives false.; Needs end 0x005B4768: null strategy warns and gives true; with no higher-priority strategy (+0x3C) not WantsToRun; if the higher-priority strategy wants to run: when [Robot+0x264]+0x30 +0x14 != 3 call ClearSevereNeedExpression 0x004AAEDC, then true; otherwise not WantsToRun.; SevereNeedsTransition end 0x005B4DE8: not WantsToRun; null warns and gives true.; higherPriorityStrategyConfig built through the wants-to-run factory, stored at +0x3C (0x005B4642..0x005B4660).; re-analysis/research/20261031-queue-5-chatgpt-extraction.md; re-analysis/research/20261031-queue-5-claude-check.md
 * outstanding: STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Shipped Needs primary start and higher-priority InNeedsBracket end/conditional ClearSevereNeedExpression, full nested JSON fields and SevereNeedTransition negation are built from005B4642..4660,005B4718..47B0,005B4DE8..4E08. Unimplemented higher-priority factory types report MISSING. Broader native activity admission remains open; no whole factory or caller completion claimed. Earlier unresolved history: Confirm or build against the stack. JSON type name is SevereNeedTransition. The higherPriorityStrategyConfig row is ChatGPT's, not re-read in the Claude check.
+
+**M15-101 — BehaviorLookForFaceAndCube lifecycle: params, gates, Init RNG, phases, Resume table, active face verification and stop, Stop, state6 desired-activity call** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeLookForFaceAndCubeBehavior.cs`
+* effect: how Cozmo looks for faces and cubes after a put-down, and the activity it asks for next
+* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Params 0x005EF950..0x005EFB42; Init 0x005EFDC4..0x005EFEC0; RNG 0x005EFF5C..0x005F0006; phases 0x005F00AC..0x005F0824; Resume 0x005F0204..0x005F032C; Stop 0x005F0878; tag46 gates 0x005F0882..0x005F08E6; verification 0x005F0A20..0x005F0B18; callback 0x005F0ED6; terminal 0x005F0DB4, 0x005F0C66.; re-analysis/jobs/trial-m13/HANDOFF-LOOK-FACE-CUBE-EXECUTION-1.md
+* outstanding: Built, LookForFaceAndCubeNativeTests. Not settled: the Claude check did not read this path in full. Changed objective and non-shipped params stay unavailable.
+
+**M15-102 — ActivitySocialize lifecycle: objective population, phase machine, objective recipient, deselect** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeActivityObjectiveOwner.cs`
+* effect: what Socialize asks for in each phase and when it gives up and lets Freeplay move on
+* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Ctor 0x005AFD1C; OnSelected 0x005AFF60, 0x005AFF6C..0x005B0170; desired 0x005B023C..0x005B0682 with phase table at 0x005B02E6; objective recipient 0x005B07BC; run count +0x80 0x005BCD0C..0x005BCD12; FindFaces iterations +0x1D0.; re-analysis/research/20261101-start-path-batch-claude-check.md
+* outstanding: Built, OrdinaryFreeplayNativeTests. Phase table, population and recipient checked by Claude against the .so. Not settled: nonempty-face Interact, Pounce and Peek bodies are unavailable, so phases 2 to 5 cannot run with faces or objectives.
+
+**M15-103 — BehaviorFindFaces with its inherited ExploreLookAroundInPlace scan core, for FindFaces_socialize** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeFindFacesSocialize.cs`
+* effect: the head and body scan Cozmo runs when left alone with no face known
+* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Ctor 0x005C1914; runnable 0x005C1A34; look-up callback 0x005C1DB6..0x005C1E0E; Init 0x005E2684; S1 0x005E28D2..0x005E2942; helpers 0x005E29B8, 0x005E3298; S2 0x005E2B20; S3 0x005E2C66..0x005E2CD2; S4 0x005E2E28; S5 0x005E3212; S6 0x005E315A; S7 0x005E35A2..0x005E380C.; re-analysis/research/20261101-start-path-batch-claude-check.md
+* outstanding: Built, OrdinaryFreeplayNativeTests. Look-up age test, S1 and S3 direction, draw order and S7 count checked by Claude. Not settled: the scan has not run on a robot; other FindFaces aliases and roaming are unbuilt; sensor phase 2 order open.
+
+**M15-104 — BehaviorPlayAnimOnNeedsChange GetIn: three shipped aliases, readiness, WithFace Init, lift-safe animation, Stop severe-need Set** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeNeedsGetInBehavior.cs`
+* effect: the animation that starts a severe need and when the severe state is set
+* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Factory 0x0059CE46; ctor 0x005BFDD4, 0x005BFDDC, 0x005C0634; gates 0x005BFF1A, 0x005BFF1E; readiness 0x005C013A, 0x005BFECA; Init 0x005C0648..0x005C06D4; callback 0x005C075A, 0x005C0158..0x005C01A6; Stop 0x005BFEF8..0x005BFF16.; re-analysis/jobs/trial-m13/HANDOFF-NEEDS-EXPRESSION-ADMISSION-1.md
+* outstanding: Built, NativeNeedsExpressionAdmissionTests. Not settled: the Claude check did not read this path. Multi-trigger and nonempty-listener paths stay unavailable.
 
 ## What remains after both: blocked externally, or needing hardware
 

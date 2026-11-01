@@ -1198,3 +1198,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP: ActivityStrategyNeeds 0x005B4718, 0x005B4768 and SevereNeedsTransition 0x005B4D88, 0x005B4DE8 | M15-099 (new) |
 | New IMPLEMENTATION_GAP: ActivityStrategySpark ctor 0x005B4E90, start 0x005B4EBE, end 0x005B4EC2 (research/20261031-check-2-claude-check.md) | M15-100 (new) |
 | IMPLEMENTATION_GAP to COMPATIBILITY_POLICY: not supported, the game request flow needs the app's mini-games, decided by the operator 2026-10-31 | M15-096 |
+
+## Start-path batch owners (manager, 2026-11-01; research/20261101-start-path-batch-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New: BehaviorLookForFaceAndCube lifecycle: params, gates, Init RNG, phases, Resume table, active face verification and stop, Stop, state6 desired-activity call | M15-101 |
+| New: ActivitySocialize lifecycle: objective population, phase machine, objective recipient, deselect | M15-102 |
+| New: BehaviorFindFaces with its inherited ExploreLookAroundInPlace scan core, for FindFaces_socialize | M15-103 |
+| New: BehaviorPlayAnimOnNeedsChange GetIn: three shipped aliases, readiness, WithFace Init, lift-safe animation, Stop severe-need Set | M15-104 |
