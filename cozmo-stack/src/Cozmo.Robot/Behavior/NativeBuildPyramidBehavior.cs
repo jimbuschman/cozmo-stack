@@ -71,7 +71,7 @@ internal sealed class NativeBuildPyramidBehavior:NativeBuildPyramidBaseBehavior
             // DC2FE..304 continues after every normal delegate return, no winner/dedup rule.
         }
     }
-    // fidelity: M12-049 -- actual callback recipients C1..C6; cache producers remain absent.
+    // fidelity: M12-049 -- actual callback recipients C1..C6; broader cache producer review remains open.
     internal void PlacementSucceeded()=>React();
     internal void PlacementFailed()
     {

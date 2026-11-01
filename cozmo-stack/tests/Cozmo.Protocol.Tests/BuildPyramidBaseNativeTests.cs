@@ -39,6 +39,9 @@ public sealed class BuildPyramidBaseNativeTests
         Assert.Equal("BuildPyramidBase",b.Class);var missing=new List<string>();SteppedBehavior.MissingReported+=missing.Add;
         try
         {
+            Assert.False(b.IsRunnable(f.Runtime.Context)); // canonical empty world is available but has no targets
+            Assert.DoesNotContain(missing,s=>s.Contains("intention9/10/11"));
+            f.Runtime.PyramidTargetInput=null;f.Runtime.PyramidBaseStrongInput=null;
             Assert.False(b.IsRunnable(f.Runtime.Context));Assert.Contains(missing,s=>s.Contains("intention9/10/11"));
             f.Runtime.PyramidTargetInput=i=>i==11?uint.MaxValue:(uint)i;
             Assert.False(b.IsRunnable(f.Runtime.Context));Assert.Contains(missing,s=>s.Contains("cache+48"));

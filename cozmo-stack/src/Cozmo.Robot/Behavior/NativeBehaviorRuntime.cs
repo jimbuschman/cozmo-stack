@@ -15,8 +15,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal NativeConfigurationManager Configurations {get;}
     internal AIComponent AI {get;}
     internal NativePickupTargetCache? PickupTargets {get;}
-    // Explicit native-input boundaries. Missing production suppliers stay unavailable;
-    // injected offline inputs are not a claim that the strong-cache/intention producers are recovered.
+    // Native input boundaries; canonical pyramid suppliers resolve the live owner at each call.
+    // Tests can replace these delegates for isolated lifecycle checks.
     // Null until the native weak owner and last-strong-release semantics are recovered.
     internal Func<ITallStackWeakTarget?>? TallStackWeakInput {get;set;}
     // Explicitly supplied recipient join; no mapping from the two slots is assumed.
@@ -40,6 +40,15 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         using var raised=new Pose3d(flat.Quaternion,new Vec3((float)t.X,(float)t.Y,z),parent:root);
         var child=new NativeVisuallyVerifyNoObjectRunner(m,raised,new Vec3((float)dimensions.X*0.5f,(float)dimensions.Y*0.5f,(float)dimensions.Z*0.5f));
         child.AddIgnoreId(targetId);return child;
+    }
+
+    private NativeConfigurationSnapshot RequirePyramidSnapshot()
+    {
+        if(_retired || !ReferenceEquals(_robot.Engine.Robot,_robot) || Manipulation is not {} m ||
+            !ReferenceEquals(m.World,_facade.LocalizationWorld) ||
+            !ReferenceEquals(m.World.NativeConfigurations,Configurations) || !Configurations.InputsAvailable)
+            throw new NativeConfigurationUnavailable("M12-049 pyramid actual configuration owner or inputs unavailable");
+        return Configurations.Snapshot;
     }
 
     private Activity? _selected;
@@ -102,7 +111,10 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         {
             Manipulation=new(facade,vision,robot){ClockSec=()=>facade.Engine.Timer.SecondsF};
             if(facade.Engine.Options.ResourcesPath is {} plannerResources)Manipulation.LoadNativePlanner(plannerResources);
-            PickupTargets=new NativePickupTargetCache(Manipulation,robot);
+            PickupTargets=new NativePickupTargetCache(Manipulation,robot,RequirePyramidSnapshot);
+            PyramidTargetInput=PickupTargets.GetBest;
+            PyramidBaseStrongInput=()=>RequirePyramidSnapshot().Bases;
+            PyramidFullStrongInput=()=>RequirePyramidSnapshot().Pyramids;
             if(vision.OverheadEdges is null)
             {
                 _ownedVision=vision;_ownedOverhead=new OverheadEdgesDetector();vision.OverheadEdges=_ownedOverhead;
