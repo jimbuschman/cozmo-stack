@@ -278,6 +278,60 @@ public sealed class SparksGatherNativeTests
         Assert.True(bring.IsRunnable(f.Runtime.Context));
     }
     [Fact]
+    public void CanonicalHikingThinkRetainsRootPoseAndBeaconAfterStop()
+    {
+        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        using var pose=new Pose3d(Rotation3d.FromAngleAxis(.5f,new Vec3(0,0,1)),new Vec3(100,50,25),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
+        f.Robot.SetPose(pose);
+        var think=Assert.IsType<ThinkAboutBeaconsBehavior>(f.Runtime.Bound["Hiking_ThinkAboutBeacons"]);
+        Assert.Equal(175f,think.BeaconRadiusMm);Assert.Null(f.M.Whiteboard.GetActiveBeacon());
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(think.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        var beacon=Assert.Single(f.M.Whiteboard.Beacons);Assert.Same(beacon,f.M.Whiteboard.GetActiveBeacon());
+        using var root=f.Robot.GetCheckedMainPose().FindRoot();Assert.Same(root.Node,beacon.Pose.Node!.Parent);
+        Assert.Equal(100,beacon.Pose.Translation.X,3);Assert.Equal(50,beacon.Pose.Translation.Y,3);Assert.Equal(25,beacon.Pose.Translation.Z,3);
+        var action=Assert.IsType<TriggerAnimationAction>(think.OwnedRunner);Assert.Equal((AnimationTrigger)0xF0,action.Request.Trigger);
+        Assert.Equal(1,action.Request.Argument2);Assert.True(action.Request.Argument3);Assert.Equal(0,action.Request.Argument4);
+        Assert.Equal(60f,action.Request.Argument5);Assert.False(action.Request.Argument6);
+        f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
+        Assert.Same(beacon,f.M.Whiteboard.GetActiveBeacon());
+    }
+    [Theory]
+    [InlineData("Hiking_ThinkAboutBeacons")]
+    [InlineData("SparksThinkAboutBeacons")]
+    public void ThinkStepStopPreventsBeaconAndAnimation(string id)
+    {
+        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var think=Assert.IsType<ThinkAboutBeaconsBehavior>(f.Runtime.Bound[id]);bool stopped=false;
+        think.Step+=line=>{if(!stopped && line.Contains("Selecting new beacon")){stopped=true;think.Stop(BehaviorStopReason.Interrupted);}};
+        f.Robot.BehaviorManagerOwner!.StartAsync(id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult();
+        Assert.True(stopped);Assert.Empty(f.M.Whiteboard.Beacons);Assert.Null(think.Selected);Assert.Null(think.OwnedRunner);Assert.False(think.EngineRunning);
+    }
+    [Theory]
+    [InlineData("Hiking_ThinkAboutBeacons")]
+    [InlineData("SparksThinkAboutBeacons")]
+    public void ThinkStepReplacementCannotMutateEitherWhiteboardOrSendNewAction(string id)
+    {
+        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var original=f.Robot;var oldWhiteboard=f.M.Whiteboard;var think=Assert.IsType<ThinkAboutBeaconsBehavior>(f.Runtime.Bound[id]);
+        Assert.True(original.BehaviorManagerOwner!.StartAsync(id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        var priorAction=Assert.IsAssignableFrom<ActionRunner>(think.OwnedRunner);uint priorTag=think.CurrentRunnerTag;var priorSelected=think.Selected;
+        original.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);oldWhiteboard.ClearAllBeacons();
+        EngineRobot? replacement=null;int sentAfterReplacement=-1;
+        think.Step+=line=>
+        {
+            if(replacement is not null || !line.Contains("Selecting new beacon"))return;
+            f.Rig.Engine.Robots.RemoveRobot(1,false);replacement=f.Rig.Engine.Robots.AddRobot(1,withRic:false)!;
+            sentAfterReplacement=f.Rig.Mark();
+        };
+        original.BehaviorManagerOwner!.StartAsync(id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult();
+        Assert.NotNull(replacement);var newRuntime=replacement!.NativeBehaviorRuntime!;
+        var next=Assert.IsType<ThinkAboutBeaconsBehavior>(newRuntime.Bound[id]);
+        Assert.Empty(oldWhiteboard.Beacons);Assert.Empty(newRuntime.Manipulation!.Whiteboard.Beacons);
+        Assert.Same(priorSelected,think.Selected);Assert.Null(think.OwnedRunner);Assert.Null(next.OwnedRunner);Assert.False(next.EngineRunning);
+        f.Rig.Engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(priorTag,priorAction.Type,0,Array.Empty<uint>(),0)); // supplied late completion of the prior admitted action
+        Assert.Null(next.OwnedRunner);Assert.Empty(newRuntime.Manipulation.Whiteboard.Beacons);Assert.Equal(sentAfterReplacement,f.Rig.Mark());
+    }
+    [Fact]
     // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
     public void RuntimeReentrantReplacementKeepsOnlyNewSelectionResources()
     {
@@ -359,7 +413,7 @@ public sealed class SparksGatherNativeTests
     }
     [Fact]
     // reach: unit/interface with supplied fixture inputs; no parent-admission claim.
-    public void ActualDelegateReachedUnboundTailRetiresWithoutNativeCompletion()
+    public void ActualDelegateReachesBuiltScanWithoutNativeCompletion()
     {
         using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
         // Supplied native UnlockId name input for the checked picker-success leaf.
@@ -373,9 +427,14 @@ public sealed class SparksGatherNativeTests
         f.M.Whiteboard.AddBeacon(f.Robot.GetCheckedMainPose(),75f); // supplied existing beacon makes Think false
         var spark=Spark(f).SparkedOwner!;
         typeof(NativeSparkedActivity).GetProperty("State",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(spark,2);
+        var priorActivity=manager.Activity;
         var reports=new List<bool>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x84,true,p=>{if(p is bool value)reports.Add(value);});
         manager.Update(0,0);
-        Assert.True(spark.InputUnavailable);Assert.Null(manager.Activity);Assert.Null(f.Runtime.Observe().Activity);
+        var scan=Assert.IsType<NativeSparksLookInPlace>(f.Runtime.Bound["SparksLookInPlace"]);
+        Assert.False(spark.InputUnavailable);Assert.Same(priorActivity,manager.Activity);Assert.Equal("SparksGatherCubes",f.Runtime.Observe().Activity);
+        Assert.Same(scan,manager.Current);Assert.True(scan.EngineRunning);Assert.Equal(2,spark.State);Assert.False(f.Runtime.AwaitingParentActivityPick);
+        var lift=Assert.IsAssignableFrom<ActionRunner>(scan.OwnedRunner);Assert.Equal(32f,Assert.IsType<float>(lift.GetType().GetField("Target")!.GetValue(lift)));
+        Assert.Equal(5f,Assert.IsType<float>(lift.GetType().GetField("Tolerance")!.GetValue(lift)));
         Assert.Empty(reports);Assert.Equal(0u,spark.Count);
     }
     [Theory]

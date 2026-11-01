@@ -129,6 +129,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 _ownedVision=vision;_ownedOverhead=new OverheadEdgesDetector();vision.OverheadEdges=_ownedOverhead;
             }
         }
+        AI.Analyzer.BindOriginalMap(()=>Manipulation?.World.Maps.Current,
+            ()=>!_retired && ReferenceEquals(facade.Engine.Robot,robot) && ReferenceEquals(robot.NativeBehaviorRuntime,this));
         var factory=new BehaviorFactoryContext{Vision=vision,Manipulation=Manipulation,NativeRobot=robot,Features=facade.Engine.Features,
             TallStackData=robot.TallStackContainers.Length == 2 ? robot.TallStackContainers[0] : null,
             SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),Log=facade.Engine.EmitStackLog};
@@ -160,7 +162,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                    entry.Value.TryGetProperty("behaviorClass",out var interludeClass) && interludeClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
                     ((id is "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" or "Needs_MildLowRepairRequest" or "Needs_MildLowEnergyRequest" or "Needs_MildLowPlayRequest") && interludeClass.GetString()=="ExpressNeeds")))
-                    fields.MarkPristine();
+                {fields.MarkPristine();if(id=="EarnedSparks")fields.EarnedSparksConfig=entry.Value;}
                 if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
                    entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
@@ -306,6 +308,22 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
         _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick,()=>RetireUnavailable(selected,epoch));
     }
+    internal void AdmitNativeHighLevel(string requested)
+    {
+        if(_retired || !ReferenceEquals(_facade.Engine.Robot,_robot) || !ReferenceEquals(_robot.NativeBehaviorRuntime,this))return;
+        switch(requested)
+        {
+            case "Freeplay": AdmitFreeplay(); break;
+            case "Selection": AdmitSelection(); break;
+            case "Feeding":
+            case "MeetCozmoFindFaces":
+                SteppedBehavior.ReportMissing("M15-031 native high-level activity "+requested+" lifecycle unavailable; prior activity retained");break;
+            default: throw new ArgumentOutOfRangeException(nameof(requested));
+        }
+        // The adapter tail uses the captured input even if a callback nested another request.
+        if(!_retired && ReferenceEquals(_facade.Engine.Robot,_robot) && ReferenceEquals(_robot.NativeBehaviorRuntime,this))
+            _manager.HighLevelAdapterTail(requested=="Freeplay");
+    }
     private void AdmitSelection()
     {
         if(_highLevel==2)return;
@@ -323,7 +341,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
         if(ordinary)_manager.ChooseAfterHighLevelChange(now);
         if(_retired||epoch!=_admissionEpoch)return;
-        _manager.HighLevelAdapterTail(false);
     }
     private void OnFreeplayTreads(OffTreadsState from,OffTreadsState to)
     {
@@ -355,8 +372,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(ordinary)_manager.ChooseAfterHighLevelChange(now);
             if(_retired||epoch!=_admissionEpoch)return;
         }
-        if(_retired)return;
-        _manager.HighLevelAdapterTail(true);
     }
 
     private void RetireUnavailable(Activity activity,long epoch)
@@ -451,6 +466,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeSparksLookInPlace>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeHikingLookInPlace>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeHikingPounce>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<ThinkAboutBeaconsBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeExpressNeedsBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeNeedsGetInBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();

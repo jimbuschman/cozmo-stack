@@ -218,6 +218,9 @@ public sealed class CozmoMotion
         id = NextActionId();
         return _robot.SendMessage(new SetHeadAngle(angle, speed, accel, duration, id), reliable: true) ? 0u : 1u;
     }
+    // MovementComponent::EnableLiftPower 0x00640634/0x00640654; exact tag 0x50 payload [motor 2, bool].
+    internal bool SetNativeLiftPower(EngineRobot owner,bool enable)
+        =>ReferenceEquals(_robot.Engine.Robot,owner) && _robot.SendMessage(new EnableMotorPower{Field0=2,Field1=enable?(byte)1:(byte)0},reliable:true,flush:false);
     internal uint TurnInPlace(float angle, float speed, float accel, float tolerance, ushort halfRevs, bool absolute, out byte id)
     {
         id = NextActionId();

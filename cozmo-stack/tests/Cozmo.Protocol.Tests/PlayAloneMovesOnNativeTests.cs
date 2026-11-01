@@ -2,6 +2,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Xunit;
+using Xunit.Abstractions;
 using Fixture=Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.Fixture;
 
 namespace Cozmo.Protocol.Tests;
@@ -9,6 +10,8 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class PlayAloneMovesOnNativeTests
 {
+    private readonly ITestOutputHelper _output;
+    public PlayAloneMovesOnNativeTests(ITestOutputHelper output)=>_output=output;
     [Fact]
     public void CanonicalEmptyWorldFreeplayMovesPastPlayAloneOverFiveMinutes()
     {
@@ -20,7 +23,7 @@ public sealed class PlayAloneMovesOnNativeTests
         var transitions=new List<string>();var missing=new List<string>();void Observe(string value)=>missing.Add($"t={f.Rig.Engine.Timer.Seconds-start:F2} child={parent.Current?.Id} behavior={manager.Current?.Id} {value}");
         SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Observe;
         bool sawSocialize=false,sawPlayAlone=false,sawLater=false,sawFind=false,findStopped=false;
-        byte priorAnimation=0;string previous="";
+        byte priorAnimation=0;string previous="";string? firstLater=null;
         try
         {
             f.Rig.Robot.ActivateHighLevelActivity("Freeplay");
@@ -36,12 +39,14 @@ public sealed class PlayAloneMovesOnNativeTests
                 sawSocialize|=child=="Socialize";sawPlayAlone|=child=="PlayAlone";
                 sawFind|=ReferenceEquals(manager.Current,find);if(sawFind&&!find.EngineRunning)findStopped=true;
                 // Require a real running configured candidate owned by the later selected child's chooser.
-                if(sawPlayAlone && findStopped && child!="PlayAlone" && parent.Current is {} selected && manager.Current is SteppedBehavior {EngineRunning:true} running &&
+                if(sawPlayAlone && findStopped && child!="PlayAlone" && parent.Current is {} selected && manager.Current is SteppedBehavior {EngineRunning:true,OwnedRunner: {} runner} running &&
                    (selected.Chooser?.BehaviorIds.Contains(running.Id)==true || selected.InterludeChooser?.BehaviorIds.Contains(running.Id)==true) &&
-                   f.Runtime.Bound.TryGetValue(running.Id,out var actual) && ReferenceEquals(actual,running))sawLater=true;
+                   f.Runtime.Bound.TryGetValue(running.Id,out var actual) && ReferenceEquals(actual,running))
+                {sawLater=true;firstLater ??= $"t={f.Rig.Engine.Timer.Seconds-start:F2} child={child} behavior={running.Id} runner={runner.GetType().Name}";}
             }
             string evidence="transitions="+string.Join(" | ",transitions)+"; decisions="+string.Join(" | ",parent.Decisions.TakeLast(30))+"; missing="+string.Join(" | ",missing);
             Assert.True(sawSocialize && sawFind,evidence);Assert.True(sawPlayAlone,evidence);Assert.True(findStopped,evidence);Assert.True(sawLater,evidence);
+            _output.WriteLine("First later owned action: "+firstLater);
         }
         finally {SteppedBehavior.MissingReported-=Observe;}
     }

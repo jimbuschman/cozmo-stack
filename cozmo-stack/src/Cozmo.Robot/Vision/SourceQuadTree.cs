@@ -371,6 +371,19 @@ internal sealed class SourceQuadTree
 {
     private static readonly object MergeGate=new(); // serializes two-tree lock acquisition; normal writers take one geometry gate
     private readonly object _geometryGate = new();
+    // The empty-seed branch of GetBorders refreshes both real cached combinations
+    // under the same geometry lock as the type sets it consults.
+    internal bool RefreshEmptyInterestingBorders()
+    {
+        lock(_geometryGate)
+        {
+            var edge=(MemoryMapContentType)9;var obstacle=(MemoryMapContentType)6;
+            if((Processor.TypeSets.TryGetValue(edge,out var a)&&a.Count!=0) ||
+               (Processor.TypeSets.TryGetValue(obstacle,out var b)&&b.Count!=0))return false;
+            var first=Processor.RefreshBorders(edge,7);var second=Processor.RefreshBorders(obstacle,7);
+            return !first.Dirty && first.Waypoints.Count==0 && !second.Dirty && second.Waypoints.Count==0;
+        }
+    }
     internal bool HasContentType(MemoryMapContentType type)
     {
         lock(_geometryGate)return Processor.TypeSets.TryGetValue(type,out var nodes)&&nodes.Count!=0;

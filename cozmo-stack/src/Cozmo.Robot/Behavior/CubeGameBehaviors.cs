@@ -1065,20 +1065,34 @@ public sealed class ReactToConfigurationBehavior : ManipulationBehavior
 /// </summary>
 // fidelity: M15-011
 // fidelity: M15-084
-public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
+public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior, IDisposable
 {
     // I3: the literal AnimationTrigger::Count name; AnimationTriggerFromString yields Count (0x23F) for it and Init starts no action.
     private const string CountTriggerName = "Count";
 
+    private readonly EngineRobot? _originalRobot;
+    private long _generation;
+    private int _retired;
     public ThinkAboutBeaconsBehavior(ManipulationSystem m, string id = "Hiking_ThinkAboutBeacons", float beaconRadiusMm = 175f, string newAreaAnimTrigger = "HikingReactToNewArea")
+        :this(m,id,beaconRadiusMm,newAreaAnimTrigger,m.Robot.Engine.Robot) {}
+    internal ThinkAboutBeaconsBehavior(ManipulationSystem m,string id,float beaconRadiusMm,string newAreaAnimTrigger,EngineRobot? originalRobot)
         : base(id, "ThinkAboutBeacons", m)
     {
+        _originalRobot=originalRobot;
         // L2 0x005E5BB4..0x005E5BEA: the trigger string at +0x11C (C1 starts it empty); L3 0x005E5BEC..0x005E5BFA: f32 radius at +0x128.
         NewAreaAnimTrigger = newAreaAnimTrigger;
         BeaconRadiusMm = beaconRadiusMm;
         // I5: StartActing's completion arrives through the IBehavior ctor's RobotCompletedAction subscription (0x005BBD5E..7A).
-        BindActionCompletionOwner(m.Robot);
+        if(originalRobot is not null)BindActionCompletionOwner(m.Robot,originalRobot);
     }
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>M.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting()=>Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion()=>Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version)=>Volatile.Read(ref _retired)==0 && Interlocked.Read(ref _generation)==version && _originalRobot is not null && ReferenceEquals(M.Robot.Engine.Robot,_originalRobot);
+    protected override bool HostStopContinuationCurrent(long version)=>Volatile.Read(ref _retired)==0 && Interlocked.Read(ref _generation)==unchecked(version+1) && ReferenceEquals(M.Robot.Engine.Robot,_originalRobot);
+    protected override bool HostResumeContinuationCurrent(long version)=>Volatile.Read(ref _retired)==0 && (Interlocked.Read(ref _generation)==version || Interlocked.Read(ref _generation)==unchecked(version+1)) && ReferenceEquals(M.Robot.Engine.Robot,_originalRobot);
+    protected override void OnStop(BehaviorStopReason reason)=>Interlocked.Increment(ref _generation);
+    public void Dispose(){if(Interlocked.Exchange(ref _retired,1)!=0)return;Interlocked.Increment(ref _generation);RetireActionCompletionOwner();}
 
     /// <summary>L3: <c>beaconRadius_mm</c>, the f32 at +0x128.</summary>
     public float BeaconRadiusMm { get; }
@@ -1097,21 +1111,34 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
 
     // R5 0x005E5CC2..0x005E5CD8: runnable iff GetActiveBeacon(whiteboard) is null; nothing else is read.
     protected override bool IsRunnableInternal(BehaviorContext context) => M.Whiteboard.GetActiveBeacon() is null;
+    public override bool IsRunnable(BehaviorContext context)
+    {
+        using var owner=EnterHostExecutionOwner(context);long generation=CaptureHostExecutionVersion();
+        if(!HostExecutionVersionCurrent(generation)){MarkReadinessUnavailable();ReportMissing("M15-084 Think original Robot owner unavailable");return false;}
+        bool result=base.IsRunnable(context);
+        if(!HostExecutionVersionCurrent(generation)){MarkReadinessUnavailable();return false;}
+        return result;
+    }
 
     protected override void OnStart()
     {
+        long generation=CaptureHostExecutionVersion();
         // fidelity: M15-011, M15-084
         // I1 0x005E5CF8..0x005E5D52: Info "Behaviors", name + ".InitInternal", "Selecting new beacon" (best effort).
         Log($"{Id}.InitInternal: Selecting new beacon");
+        if(!HostExecutionVersionCurrent(generation))return;
         // I2 0x005E5D94..0x005E5D98: SelectNewBeacon, unconditionally.
-        SelectNewBeacon();
+        SelectNewBeacon(generation);
+        if(!HostExecutionVersionCurrent(generation))return;
         // I3 0x005E5D9C..0x005E5DF4: an empty string or Count (0x23F) starts no action; Init still returns 0 (I6) and U1 completes on the next Update.
         if (ResolveTrigger() is { } trigger)
         {
+            if(!HostExecutionVersionCurrent(generation))return;
             // I4 0x005E5DF6..0x005E5E18: TriggerAnimationAction(robot, trigger, 1, interruptRunning true, tracks 0, 60.0f 0x42700000, false); not lift-safe.
             var action = new TriggerAnimationAction(M.Robot, new(trigger, 1, true, 0, TriggerAnimationTimeoutSec, false));
+            if(!HostExecutionVersionCurrent(generation)){action.RetireNeverAdmittedTree();return;}
             // I5 0x005E5E1C..0x005E5E3C: the RobotCompletedAction StartActing overload with an empty function: no callback.
-            StartActing(action, null);
+            StartActing(action, null,()=>HostExecutionVersionCurrent(generation));
         }
         // I6 0x005E5E4A..0x005E5E50: Init returns 0 on every path.
     }
@@ -1119,16 +1146,19 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
     // S1..S3, SelectNewBeacon 0x005E5F0C..0x005E5F3C: Robot::GetPose (0x004EA398, called at 0x005E5F1A), then GetWithRespectToRoot
     // (0x004DF628, called at 0x005E5F24), then AddBeacon(wb, pose, [this+0x128]) (0x005E5F28..0x005E5F36); AddBeacon 0x0056C39C stores
     // failure time 0 at +0x10. S5: no RNG, distance, memory map or limit.
-    private void SelectNewBeacon()
+    private void SelectNewBeacon(long generation)
     {
-        if (M.Robot.Engine.Robot is not { } owner)
+        if (_originalRobot is not { } owner || !HostExecutionVersionCurrent(generation))
         {
             ReportMissing("M15-084 S1 Robot::GetPose 0x004EA398 at 0x005E5F1A: no native Robot owner bound to this ManipulationSystem; no beacon added");
             return;
         }
         using var main = owner.CopyCheckedMainPose();
+        if(!HostExecutionVersionCurrent(generation))return;
         using var root = main.GetWithRespectToRoot();
-        Selected = M.Whiteboard.AddBeacon(root, BeaconRadiusMm);
+        if(!HostExecutionVersionCurrent(generation))return;
+        var beacon=M.Whiteboard.AddBeacon(root, BeaconRadiusMm);
+        if(HostExecutionVersionCurrent(generation))Selected=beacon;
     }
 
     private AnimationTrigger? ResolveTrigger()

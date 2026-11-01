@@ -160,13 +160,13 @@ public sealed class OrdinaryFreeplayNativeTests
         var edge=Assert.IsType<VisitInterestingEdgeBehavior>(f.Runtime.Bound["Hiking_VisitInterestingEdge"]);
         var method=typeof(VisitInterestingEdgeBehavior).GetMethod("IsRunnableInternal",BindingFlags.Instance|BindingFlags.NonPublic)!;
         (bool Available,bool Value) Evaluate()=>SteppedBehavior.EvaluateHostOperation(()=>(bool)method.Invoke(edge,new object[]{f.Runtime.Context})!);
+        var original=edge.NativeInputs;edge.NativeInputs=_=>null; // isolated unavailable-provider seam
         Assert.False(Evaluate().Available);
         var chooser=new ScoringChooser(new[]{edge.NativeScoring!},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
         f.Runtime.AI.Analyzer.AddEnableRequest(1,"edge-unit");
         var unavailableStacks=new List<string>();SteppedBehavior.ReadinessUnavailableObservedForTest=()=>unavailableStacks.Add(Environment.StackTrace);
         ChooserDecision Choose()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
         Assert.True(Choose().InputUnavailable);
-        var original=edge.NativeInputs;
         try
         {
             edge.NativeInputs=_=>new InterestingEdgeInputs{RobotPose=f.Robot.GetCheckedMainPose(),WorldOrigin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId),Regions=Array.Empty<InterestingEdgeRegion>(),Map=null,EraseDebugSegments=_=>{}};
@@ -217,14 +217,15 @@ public sealed class OrdinaryFreeplayNativeTests
         ChooserDecision Query()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
         string[] order={"EarnedSparks","Needs_SevereLowPlayBored","Needs_SevereLowPlayRequest","Needs_MildLowRepairRequest","Needs_MildLowEnergyRequest","Needs_MildLowPlayRequest"};
         var healthy=Query();Assert.False(healthy.InputUnavailable);Assert.Null(healthy.Behavior);Assert.Equal(order,healthy.Scores.Select(s=>s.Id));
-        f.Rig.Engine.Needs.SparksRewardPending=true;
-        var reward=Query();Assert.True(reward.InputUnavailable);Assert.Single(reward.Scores);Assert.Equal("EarnedSparks",reward.Scores[0].Id);
-        f.Rig.Engine.Needs.SparksRewardPending=false;
         f.Rig.Engine.Needs.State.SetNeedLevel(NeedId.Repair,0.27);
         Assert.True(f.Rig.Engine.Needs.State.IsNeedAtBracket(NeedId.Repair,NeedBracketId.Warning));
         f.Rig.Engine.Timer.UpdateTime(100_000_000_000); // Source cooldown must have elapsed.
         var warning=Query();Assert.False(warning.InputUnavailable);Assert.Same(f.Runtime.Bound["Needs_MildLowRepairRequest"],warning.Behavior);Assert.Equal("Needs_MildLowRepairRequest",warning.Scores[^1].Id);
         f.Rig.Engine.Needs.State.SetNeedLevel(NeedId.Repair,1.0);
+        f.Rig.Engine.Needs.SparksRewardPending=true;
+        var reward=Query();Assert.True(reward.InputUnavailable);Assert.Single(reward.Scores);Assert.Equal("EarnedSparks",reward.Scores[0].Id);
+        f.Rig.Engine.Needs.SparksRewardPending=false;
+        Assert.True(Query().InputUnavailable); // host clear cannot restore native history
         Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync("EarnedSparks",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         var unknown=Query();Assert.True(unknown.InputUnavailable);Assert.Single(unknown.Scores);Assert.Equal("EarnedSparks",unknown.Scores[0].Id);
     }
@@ -238,6 +239,22 @@ public sealed class OrdinaryFreeplayNativeTests
         var decision=chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
         Assert.Equal(missing.ToString(),decision.Scores[0].Id);Assert.Equal("native missing",decision.Scores[0].Note);
         Assert.False(decision.InputUnavailable);
+    }
+
+    [Fact]
+    public void EarnedFalseProofIsWithdrawnByAnyActionOrHostWrite()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();var needs=f.Rig.Engine.Needs;
+        var chooser=new StrictPriorityChooser(new[]{"EarnedSparks"},f.Runtime.Bound,true,f.Robot);chooser.EnableOrdinaryInterludeBoundary(f.Robot);
+        ChooserDecision Query()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
+        int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};
+        try
+        {
+            Assert.True(needs.NativePendingKnownFalse);Assert.False(Query().InputUnavailable);Assert.Equal(0,words);
+            needs.RegisterNeedsActionCompleted("not-a-native-action");Assert.True(Query().InputUnavailable);
+            needs.SparksRewardPending=false;Assert.True(Query().InputUnavailable);
+        }
+        finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}
     }
 
     // Isolated common-wrapper boundary: supplied unavailable interlude decision preserves the completed prior cache.

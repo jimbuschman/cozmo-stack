@@ -36,7 +36,7 @@ public sealed class NativeParentSwitchTimeTests
         f.Rig.Engine.LogEntry+=OnLog;
         try
         {
-            f.Rig.Engine.Timer.UpdateTime(10_000_000_000);runtime.AdmitActivity("Freeplay");
+            f.Rig.Engine.Timer.UpdateTime(10_000_000_000);runtime.AdmitNativeHighLevel("Freeplay");
             Assert.Equal(new[]{"selected","switch","desired"},trace);Assert.Equal(20f,manager.ParentSwitchTime);
         }
         finally{f.Rig.Engine.LogEntry-=OnLog;property.SetValue(child,chooser);child.NativePublicStateSelected=selected;}
@@ -60,9 +60,9 @@ public sealed class NativeParentSwitchTimeTests
         freeplay.NativePublicStateSelected=()=>{prior?.Invoke();callbacks++;f.Rig.Engine.Timer.UpdateTime(12_000_000_000);};
         try
         {
-            f.Rig.Engine.Timer.UpdateTime(10_000_000_000);runtime.AdmitActivity("Freeplay");
+            f.Rig.Engine.Timer.UpdateTime(10_000_000_000);runtime.AdmitNativeHighLevel("Freeplay");
             Assert.Equal(1,callbacks);Assert.Equal(12f,manager.ParentSwitchTime);Assert.Equal(12f,manager.FreeplayStartTime);Assert.Equal(manager.ParentSwitchTime,runtime.HighLevelEntryTime);Assert.Equal(manager.ParentSwitchTime,manager.SparkSwitchTime);
-            f.Rig.Engine.Timer.UpdateTime(20_000_000_000);runtime.AdmitActivity("Freeplay");
+            f.Rig.Engine.Timer.UpdateTime(20_000_000_000);runtime.AdmitNativeHighLevel("Freeplay");
             Assert.Equal(1,callbacks);Assert.Equal(12f,manager.ParentSwitchTime);
         }
         finally{freeplay.NativePublicStateSelected=prior;}
@@ -72,7 +72,7 @@ public sealed class NativeParentSwitchTimeTests
     public void RequestDoesNotStampButActualSparkSwitchWritesSharedField()
     {
         using var f=new Fixture();var manager=f.Robot.BehaviorManagerOwner!;var runtime=f.Runtime;
-        f.Rig.Engine.Timer.UpdateTime(10_000_000_000);runtime.AdmitActivity("Freeplay");float before=manager.ParentSwitchTime;
+        f.Rig.Engine.Timer.UpdateTime(10_000_000_000);runtime.AdmitNativeHighLevel("Freeplay");float before=manager.ParentSwitchTime;
         f.Rig.Engine.Timer.UpdateTime(20_000_000_000);manager.SetNativeRequestedSpark(9,0);
         Assert.Equal(before,manager.ParentSwitchTime);manager.SwitchToNativeRequestedSpark();
         Assert.Equal(20f,manager.ParentSwitchTime);Assert.Equal(manager.ParentSwitchTime,runtime.HighLevelEntryTime);Assert.Equal(9,manager.ActiveSparkId);

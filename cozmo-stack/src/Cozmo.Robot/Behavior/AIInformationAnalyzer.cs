@@ -1,4 +1,5 @@
 using Cozmo.Transport;
+using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M11-079
@@ -13,6 +14,11 @@ public sealed class AIInformationAnalyzer
     }
     private readonly SortedDictionary<int, Process> _processes = new();
     private readonly SourceLogSink? _source;
+    private Func<MemoryMap?>? _originalMap;
+    private Func<bool>? _originalOwnerCurrent;
+    internal bool BorderResultKnownEmpty {get;private set;}=true; // native constructor vector is empty
+    internal void BindOriginalMap(Func<MemoryMap?> map,Func<bool> current){_originalMap=map;_originalOwnerCurrent=current;}
+    internal bool? ActualBorderResultEmpty()=>_originalOwnerCurrent?.Invoke()==true ? BorderResultKnownEmpty : null;
     internal AIInformationAnalyzer(SourceLogSink? source)
     {
         _source = source;
@@ -60,10 +66,17 @@ public sealed class AIInformationAnalyzer
             }
         }
     }
-    private static void CalculateInterestingRegions()
+    private void CalculateInterestingRegions()
     {
-        // 0x00574FCC..0x00575054: clear results, GetBorders(mask 7, seed 9), then seed 6.
-        // No invented empty result: the native map's refresh/waypoint owner and type-9 data are absent.
-        SteppedBehavior.ReportMissing("M11-079/M11-089 CalculateInterestingRegions 0x00574FCC..0x00575054: persistent region vector, native GetBorders refresh/waypoint/neighbor producer and InterestingEdge data owner are unbuilt; mask 7 / seed 9 then 6 cannot be joined to the host map");
+        BorderResultKnownEmpty=false; // the source clears the retained vector before querying
+        try
+        {
+            var map=_originalOwnerCurrent?.Invoke()==true ? _originalMap?.Invoke() : null;
+            if(map is not null && map.Tree.RefreshEmptyInterestingBorders() && _originalOwnerCurrent?.Invoke()==true && ReferenceEquals(_originalMap?.Invoke(),map))
+            {BorderResultKnownEmpty=true;return;}
+        }
+        catch(Exception e) when(e is InvalidOperationException or ArgumentException)
+        {SteppedBehavior.ReportMissing("M1-034 M11-079 CalculateInterestingRegions map query unavailable: "+e.Message);return;}
+        SteppedBehavior.ReportMissing("M11-079/M11-089 CalculateInterestingRegions: original map or nonempty border producer unavailable");
     }
 }

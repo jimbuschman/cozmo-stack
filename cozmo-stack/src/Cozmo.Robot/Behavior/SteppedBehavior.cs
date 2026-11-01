@@ -220,6 +220,8 @@ public abstract partial class SteppedBehavior : IBehavior
     private sealed class ReadinessFrame { internal bool Unavailable; }
     private static readonly AsyncLocal<ReadinessFrame?> Readiness = new();
     internal static Action? ReadinessUnavailableObservedForTest;
+    // Host input availability boundary, not a native readiness predicate.
+    internal virtual bool HostScoringInputsAvailable()=>true;
     internal static void MarkReadinessUnavailable()
     {
         if(Readiness.Value is not {} frame)return;
