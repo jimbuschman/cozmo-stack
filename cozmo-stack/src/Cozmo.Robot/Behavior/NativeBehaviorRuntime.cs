@@ -144,6 +144,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(manager.Find(behavior.Id) is null)manager.Add(behavior);
         }
         Bound=bound;
+        manager.BindConfiguredBehaviors(Bound);
         // Manager's container is constructed before the BSM container (0050FCAC/BE).
         if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is NativeCantHandleTallStackBehavior && robot.TallStackContainers.Length == 2)
             TallStackOwnerInput=robot.TallStackContainers[0];

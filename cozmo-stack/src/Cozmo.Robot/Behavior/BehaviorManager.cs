@@ -87,6 +87,10 @@ public sealed partial class BehaviorManager : IDisposable
         else if(Current is not null)SteppedBehavior.ReportMissing("M8-001 end-next-action current behavior has no native lifecycle; prior action retained");
     }
     private readonly object _gate = new();
+    private IReadOnlyDictionary<string,IBehavior>? _configuredBehaviors;
+    // 005A4178/005A4182 delegate to the retained configured container, not the host scoring list.
+    internal void BindConfiguredBehaviors(IReadOnlyDictionary<string,IBehavior> configured)
+    { lock (_gate) _configuredBehaviors=configured; }
     private bool _hostDisposed;
     private RetainedSubscription? _defaultPostureInput;
     internal void AttachDefaultPostureInput()
@@ -722,13 +726,26 @@ public sealed partial class BehaviorManager : IDisposable
     /// <summary>The engine's FindBehaviorByID.</summary>
     public IBehavior? Find(string id)
     {
-        lock (_gate) return _behaviors.FirstOrDefault(b => b.Id == id);
+        lock (_gate)
+        {
+            if (_configuredBehaviors is {} configured)
+            {
+                if (configured.TryGetValue(id,out var behavior)) return behavior;
+                if (Enum.TryParse<BehaviorID>(id,false,out _)) return null;
+            }
+            return _behaviors.FirstOrDefault(b => b.Id == id);
+        }
     }
 
     /// <summary>The engine's FindBehaviorsByClass.</summary>
     public IReadOnlyList<IBehavior> FindByClass(string behaviorClass)
     {
-        lock (_gate) return _behaviors.Where(b => b.Class == behaviorClass).ToList();
+        lock (_gate)
+        {
+            if (_configuredBehaviors is not {} configured) return _behaviors.Where(b => b.Class == behaviorClass).ToList();
+            return configured.Values.Where(b => b.Class == behaviorClass)
+                .Concat(_behaviors.Where(b => b.Class == behaviorClass && !Enum.TryParse<BehaviorID>(b.Id,false,out _))).ToList();
+        }
     }
 
     /// <summary>
