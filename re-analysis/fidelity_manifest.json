@@ -14648,7 +14648,7 @@
       "subsystem": "M15-freeplay",
       "title": "ActivityStrategyNeedBasedCooldown: cooldown graphs driven by the NeedsState message",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Ctor 0x005B4298: needId default 3 at +0x54 (0x005B42CE..0x005B4338); needCooldownGraph +0x3C and needCooldownRandomnessGraph +0x48, read from JSON or AddNode(0, base value) when absent (0x005B4340..0x005B4392).",
@@ -14659,7 +14659,7 @@
       ],
       "effect": "how long the activity using this strategy cools down, as a function of the live need level",
       "provenance": "ChatGPT extraction, Claude check 2026-10-31; record added with operator approval 2026-10-31.",
-      "unresolved": "STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Native strategy construction subscribes synchronously to local E2G0x62 only with an external interface; the selected three-level snapshot drives graph1 then graph2 and SetCooldown, including overwrite while unselected, with runtime-owned handle disposal (005B42DC..42F2,005B4504..4530). Actual Needs send queues app invocation before inline local delivery (006625CE..FA); action completion sends before rewards (00696366). This local projection is not the full public NeedsState packet, which remains M15-001 MISSING. Earlier unresolved history: Confirm or build against the stack.",
+      "unresolved": "Settled by Claude 2026-10-31 (research/20261031-fix-batch-claude-check.md): subscription, three-level local NeedsState, f32 graphs, SetCooldown and start/end predicates hold on main. The full public NeedsState packet stays with M15-001. STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Native strategy construction subscribes synchronously to local E2G0x62 only with an external interface; the selected three-level snapshot drives graph1 then graph2 and SetCooldown, including overwrite while unselected, with runtime-owned handle disposal (005B42DC..42F2,005B4504..4530). Actual Needs send queues app invocation before inline local delivery (006625CE..FA); action completion sends before rewards (00696366). This local projection is not the full public NeedsState packet, which remains M15-001 MISSING. Earlier unresolved history: Confirm or build against the stack.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -14690,7 +14690,7 @@
       "subsystem": "M15-freeplay",
       "title": "ActivityStrategySpark: no should-end limit, start true, end false",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Spark ctor 0x005B4E90: after the base parse, +0x18 = 0x7F7FFFFF (FLT_MAX) (0x005B4E98..0x005B4EA2), overriding activityShouldEndDurationSecs; no shipped spark config sets the key.",
@@ -14699,7 +14699,7 @@
       ],
       "effect": "how long a spark activity may run: the stack ends one older than 60 s once its behaviour finishes, and the engine has no time limit",
       "provenance": "ChatGPT check 2, Claude check 2026-10-31; record added with operator approval 2026-10-31.",
-      "unresolved": "STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Configured Spark constructor now overwrites the should-end field with0x7F7FFFFF even after an explicit config value, with internal start true/end false (005B4E98..4EA2,005B4EBE/4EC2). Strategy code/tests built; actual Spark activity admission remains separately open. No status or approval changed. Earlier unresolved history: The stack keeps the default 60 s (Activities.cs). Fix in STRATEGIES-FIX-1.",
+      "unresolved": "Settled by Claude 2026-10-31 (research/20261031-fix-batch-claude-check.md): ctor FLT_MAX override and start/end predicates hold on main. Admission of a Spark activity is M15-006, not this record. STRATEGIES-FIX-1 bounded build (2026-10-31), awaiting Claude: Configured Spark constructor now overwrites the should-end field with0x7F7FFFFF even after an explicit config value, with internal start true/end false (005B4E98..4EA2,005B4EBE/4EC2). Strategy code/tests built; actual Spark activity admission remains separately open. No status or approval changed. Earlier unresolved history: The stack keeps the default 60 s (Activities.cs). Fix in STRATEGIES-FIX-1.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

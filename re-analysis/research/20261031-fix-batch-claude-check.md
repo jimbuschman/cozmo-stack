@@ -56,3 +56,17 @@ GraphEvaluator is f32. Neither file carries its `// fidelity:` tag yet, so the f
 - **Hardware note:** PlacedOnCharger can now really fire, so sitting on the charger starts the idle timeout: reason 4,
   face off at 300 s and disconnect at 330 s unless cancelled. That matches the engine, but it is new visible behaviour
   on the first hardware run with a charger.
+
+## Second pass: REACTION-CANONICAL-BIND-1 at `f889b83a`
+
+**Verdict: PASS. All nine jobs merged.** Codex gate 7099/7099 at `7d3bbc63`.
+
+- `CozmoRobot.cs` binds after `NativeBehaviorRuntime` creates Manipulation, with no FreeplayStack needed. The tests go
+  through production construction, and they exposed one more real defect that the job fixed: the wait was marked
+  complete at the end of start, so motor calibration ended on the same tick.
+- `AddOrderedNativeReaction` matches `AddReaction` and keeps shipped map order, Minor then Major. Major takes -0.9 and
+  no cooldown from the shipped row, the same values as the old literals.
+- Remaining MISSING: the canonical Ram factory identity and body, reported visibly at the adapter; Cliff's normal
+  animation completion under the existing M8-015 boundary.
+
+**Settled:** M15-098 and M15-100, each EXACT_SOURCE on its own path, as read above. M7-019, M8-012 and M15-006 stay open.
