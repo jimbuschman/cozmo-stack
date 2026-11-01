@@ -260,6 +260,7 @@ public sealed class HikingBringBeaconCandidatesTests
         try
         {
             Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,behavior.Id);
             var parent=Assert.IsType<NativePlaceGroundAtBeaconRunner>(behavior.OwnedRunner);
             for(int i=0;i<250&&!parent.DestructionObserved;i++){scene.Step();scene.Trace.Add(scene.Describe(parent));}
             string diagnostic=scene.Describe(parent)+" | "+string.Join(" | ",scene.Trace.TakeLast(60));
@@ -307,6 +308,7 @@ public sealed class HikingBringBeaconCandidatesTests
         try
         {
             Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,behavior.Id);
             Assert.IsType<NativeDriveToPlaceOnBeaconRunner>(behavior.OwnedRunner);
             for(int i=0;i<350&&needs.Count==0;i++)scene.Step();
             Assert.Equal(expectedPlacements,scene.Placements);
@@ -475,14 +477,15 @@ public sealed class HikingBringBeaconCandidatesTests
         void Missing(string message)
         {
             if(entered||!message.Contains("actual MoodManager unavailable"))return;
-            entered=true;f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
+            entered=true;f.Rig.Robot.ExecuteBehaviorById(255,0);f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
             f.Robot.ActionList.QueueAction(QueueActionPosition.AtEnd,replacement);
         }
         SteppedBehavior.MissingReported+=Missing;
         try
         {
             Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-            for(int i=0;i<350&&!entered;i++)scene.Step();
+            QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,behavior.Id);
+            for(int i=0;i<350&&!entered;i++)scene.Step(()=>entered);
             Assert.True(entered,string.Join(" | ",scene.Trace.TakeLast(30)));
             Assert.False(replacement.DestructionObserved);Assert.Same(replacement,f.Robot.ActionList.GetCurrentAction());
         }
@@ -541,6 +544,7 @@ public sealed class HikingBringBeaconCandidatesTests
         var behavior=Assert.IsType<NativeBringCubeToBeaconBehavior>(f.Runtime.Bound["Hiking_BringCubeToBeacon"]);
         var manager=f.Robot.BehaviorManagerOwner!;
         Assert.True(manager.StartAsync(behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        QueuedSelection.Keep(f.Rig.Robot,manager,behavior.Id);
         var parent=Assert.IsType<NativePlaceGroundAtBeaconRunner>(behavior.OwnedRunner);
         for(int i=0;i<250&&!parent.Ground.Initialized&&!parent.DestructionObserved;i++){scene.Step(()=>parent.Ground.Initialized||parent.DestructionObserved);scene.Trace.Add(scene.Describe(parent));}
         Assert.True(parent.Ground.Initialized,scene.Describe(parent)+" | "+string.Join(" | ",scene.Trace.TakeLast(60)));
@@ -553,7 +557,7 @@ public sealed class HikingBringBeaconCandidatesTests
         void OnMissing(string text)
         {
             if(missing||!text.Contains("Ground actual raw robot state unavailable"))return;
-            missing=true;f.Robot.ActionList.QueueAction(QueueActionPosition.AtEnd,replacement);
+            missing=true;f.Rig.Robot.ExecuteBehaviorById(255,0);f.Robot.ActionList.QueueAction(QueueActionPosition.AtEnd,replacement);
         }
         SteppedBehavior.MissingReported+=OnMissing;
         try

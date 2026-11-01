@@ -239,6 +239,7 @@ public sealed class FreeplayStack : IDisposable
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
         stack._unsubscribe.Add(manager.Dispose);
+        foreach(var express in all.OfType<ExpressNeedsBehavior>())stack._unsubscribe.Add(express.Dispose);
         stack._unsubscribe.Add(severe.Dispose);
         if(actionEndedHandle!=0 && !ReferenceEquals(moodOwner,robot.Engine.Robot?.MoodOwner) && actionEndedList is not null)
             stack._unsubscribe.Add(()=>actionEndedList.UnregisterActionEndedCallback(actionEndedHandle));

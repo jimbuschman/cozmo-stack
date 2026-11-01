@@ -28,13 +28,17 @@ public sealed class PickupPyramidNativeExecutionTests
         internal Fixture()
         {
             Rig.ToSynced();Rig.Calibrate();Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,head:Head);
+            var startupTrace=new List<string>();var startupLogs=new System.Collections.Concurrent.ConcurrentQueue<string>();void Log(string text)=>startupLogs.Enqueue(text);Rig.Engine.StackLogLine+=Log;
             for(int i=0;i<35&&Rig.Robot.CameraSettings.Calibration is null;i++)
             {
-                Rig.Tick();var tag=Rig.Engine.NvStorage!.InFlightTag;if(tag is null)continue;
+                Rig.Tick();var tag=Rig.Engine.NvStorage!.InFlightTag;startupTrace.Add($"tick={i} inFlight={tag}");if(tag is null)continue;
                 var writer=new CladWriter();if(tag==CameraCalibration.NvEntryTag)
                 {foreach(float value in new[]{290f,291f,160f,120f,0f})writer.F32(value);writer.U16(240);writer.U16(320);for(int k=0;k<8;k++)writer.F32(0);}
                 Rig.Data(new NVOpResult{Tag=tag.Value,Op=0,Result=tag==CameraCalibration.NvEntryTag?(sbyte)0:(sbyte)1,Data=writer.ToArray()});Rig.Tick();
             }
+            Rig.Engine.StackLogLine-=Log;
+            if(Rig.Robot.CameraSettings.Calibration is null)
+                Assert.True(false,$"NV={string.Join(" | ",startupTrace)}; sent={string.Join(" | ",Rig.SentSince(0).OfType<NVCommand>().Select(c=>$"tag={c.Tag} op={c.Op} len={c.Length}"))}; logs={string.Join(" | ",startupLogs.TakeLast(30))}");
             Assert.NotNull(Rig.Robot.CameraSettings.Calibration);Assert.Same(Rig.Robot.CameraSettings.Calibration,M.Vision.Calibration);
         }
         internal ObservableObject Add(uint id=7,float x=150,float z=22)
@@ -211,7 +215,7 @@ public sealed class PickupPyramidNativeExecutionTests
     public void OriginalImmutablePayloadSurvivesTheActualResponseAnimationCallback()
     {
         //Supplied original result unit; real parent84/response ActionList/CA/CB, not successful native pickup proof.
-        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(Resources());
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Rig.Robot.Animations.LoadFrom(Resources());
         var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
         var helper=new NativePickupBlockHelper(f.M,parent,f.Runtime.AI.Helpers.Factory,7,0,false,true);
         var expected=new ObjectInteractionCompletion(7,8,uint.MaxValue,uint.MaxValue,uint.MaxValue,2,true);
@@ -238,7 +242,7 @@ public sealed class PickupPyramidNativeExecutionTests
     public void LateNamedFaceFailsClearlyAndRetiresOnlyItsOwnedSubtreeWithoutPickupContinuation(bool uiEnabled)
     {
         //Injected LOCAL46 recipient unit, actual LastFace motor/Needs/Mood/error-boundary lifecycle.
-        using var f=new Fixture();f.Add();var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Add();var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         void Face(string? name)
         {
             var tracked=new TrackedFace(new DetectedFace(11,new FaceRect(0,0,20,20),new Vec2(5,5),new Vec2(15,5),Name:name),1)
@@ -393,7 +397,7 @@ public sealed class PickupPyramidNativeExecutionTests
         Assert.True(pickup.IsRunnable(f.Runtime.Context));Assert.True(pickup.CheckExecutionAvailability());
         var reports=new List<RobotCompletedAction>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r)reports.Add(r);});
         var app=new List<ActionCompletionReport>();f.Rig.Engine.ActionCompleted+=app.Add;
-        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner,pickup.Id);
         var animations=new HashSet<byte>();bool dock=false,firstTurns=false;uint image=0;
         try
         {

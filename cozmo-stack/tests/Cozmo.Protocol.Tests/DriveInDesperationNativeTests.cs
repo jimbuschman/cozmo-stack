@@ -45,21 +45,17 @@ public class DriveInDesperationNativeTests
         var energy = Assert.Single(NativeBehaviorRuntime.AllActivities(runtime.Tree).Where(a => a.Id == "NeedsSevereLowEnergy"));
         Assert.Equal(new[] { "DriveOffCharger", "PutDownBlock", "Needs_SevereLowEnergyGetIn", "Needs_SevereLowEnergyState", "Needs_Wait" }, energy.Chooser!.BehaviorIds);
     }
-    // reach: actual admission entry with supplied activity ID; parent NeedsExpression is not built (M8-013).
+    // Supplied admission uses the retained shipped NeedsExpression owner.
     [Fact]
-    public void EnergyActivityAdmissionExposesMissingParentAndKeepsPriorActivity()
+    public void EnergyActivityAdmissionSelectsConfiguredOwner()
     {
         using var f = new Fixture();
-        var messages = new List<string>(); void Observe(string message) => messages.Add(message);
-        SteppedBehavior.MissingReported += Observe;
-        try
-        {
-            var prior = f.Robot.BehaviorManagerOwner!.Activity;
-            f.Runtime.AdmitActivity("NeedsSevereLowEnergy");
-            Assert.Same(prior, f.Robot.BehaviorManagerOwner.Activity);
-            Assert.Contains(messages, m => m.Contains("M8-013") && m.Contains("NeedsExpression"));
-        }
-        finally { SteppedBehavior.MissingReported -= Observe; }
+        var selected = Assert.Single(NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Where(a => a.Id == "NeedsSevereLowEnergy"));
+        var prior = f.Robot.BehaviorManagerOwner!.Activity;
+        f.Runtime.AdmitActivity(selected.Id);
+        Assert.NotSame(prior, f.Robot.BehaviorManagerOwner.Activity);
+        Assert.NotNull(selected.SelectedAtSec);
+        Assert.IsType<NativeNeedsGetInBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyGetIn"]);
     }
     // reach: offline CLI --simulate with shipped assets; verifies the actual printed boundary, no robot or hardware run.
     [Fact]
@@ -76,7 +72,7 @@ public class DriveInDesperationNativeTests
         finally { Console.SetOut(previous); }
         Assert.Contains("MISSING: Needs_SevereLowEnergyState uses the legacy standalone custom driver", output.ToString());
         Assert.Contains("MISSING: Needs_SevereLowRepairState uses the legacy standalone custom driver", output.ToString());
-        Assert.Contains("Native NeedsExpression admission remains unbuilt (M8-013)", output.ToString());
+        Assert.DoesNotContain("Native NeedsExpression admission remains unbuilt", output.ToString());
     }
     // reach: unit; supplied factory inputs and canonical carrying/platform state. Native vtable cells 0x10288f4/f8/fc and runnable 0x5d90ac.
     [Fact]
@@ -113,24 +109,19 @@ public class DriveInDesperationNativeTests
         Assert.False(path.Field48); Assert.Equal(40f, path.NativeMotionProfile.SpeedMmps);
     }
 
-    // reach: shipped binding and supplied admission; actual NeedsExpression parent is unbound (M8-013).
+    // Shipped Repair binding and supplied admission use the configured activity.
     [Fact]
-    public void RepairBindingAndParentRefusalPreserveSelectedOwner()
+    public void RepairBindingAndParentAdmissionSelectConfiguredOwner()
     {
         using var f = new Fixture();
         Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowRepairState"]);
         var activity = Assert.Single(NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Where(a => a.Id == "NeedsSevereLowRepair"));
         Assert.Equal(new[] { "DriveOffCharger", "PutDownBlock", "Needs_SevereLowRepairGetIn", "Needs_SevereLowRepairState", "Needs_Wait" }, activity.Chooser!.BehaviorIds);
-        var messages = new List<string>(); void Observe(string message) => messages.Add(message);
-        SteppedBehavior.MissingReported += Observe;
-        try
-        {
-            var prior = f.Robot.BehaviorManagerOwner!.Activity;
-            f.Runtime.AdmitActivity("NeedsSevereLowRepair");
-            Assert.Same(prior, f.Robot.BehaviorManagerOwner.Activity);
-            Assert.Contains(messages, m => m.Contains("NeedsSevereLowRepair") && m.Contains("M8-013") && m.Contains("NeedsExpression"));
-        }
-        finally { SteppedBehavior.MissingReported -= Observe; }
+        var prior = f.Robot.BehaviorManagerOwner!.Activity;
+        f.Runtime.AdmitActivity(activity.Id);
+        Assert.NotSame(prior, f.Robot.BehaviorManagerOwner.Activity);
+        Assert.NotNull(activity.SelectedAtSec);
+        Assert.IsType<NativeNeedsGetInBehavior>(f.Runtime.Bound["Needs_SevereLowRepairGetIn"]);
     }
     // reach: supplied direct activation and RNG words, actual Repair JSON and PathComponent; 005D8ECA..8FE4.
     [Fact]

@@ -176,6 +176,7 @@ public sealed class CozmoSensors
     /// <summary>Raised when the classified off-treads state changes: the engine's <c>RobotOffTreadsStateChanged</c>.</summary>
     public event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChangedInternal;
+    internal event Action<OffTreadsState, OffTreadsState>? ConfiguredBehaviorOffTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? FreeplayOffTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? HiccupOffTreadsStateChanged;
     internal event Action<OffTreadsState, OffTreadsState>? ReturnedToTreadsStateChanged;
@@ -183,7 +184,8 @@ public sealed class CozmoSensors
     internal void DispatchOffTreadsStateChanged(OffTreadsState from, OffTreadsState to)
     {
         _robot.Engine.QueueAppEvent(_robot.Engine.CaptureAppEvent(OffTreadsStateChanged,from,to));
-        // M15-066 phase-1/2 behavior subscribers remain unbound; M15-068 remains open.
+        ConfiguredBehaviorOffTreadsStateChanged?.Invoke(from,to); // phase 1 configured behavior container
+        // Other M15-066 phase-1/2 subscribers remain unbound; M15-068 order remains open.
         FreeplayOffTreadsStateChanged?.Invoke(from,to);
         HiccupOffTreadsStateChanged?.Invoke(from,to);
         ReturnedToTreadsStateChanged?.Invoke(from,to);

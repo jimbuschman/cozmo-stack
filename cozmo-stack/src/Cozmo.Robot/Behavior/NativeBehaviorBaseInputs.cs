@@ -9,16 +9,14 @@ internal sealed class NativeBehaviorBaseInputs
     private readonly EngineRobot _robot;
     private readonly uint _requiredUnlock;
     internal uint RequiredUnlock=>_requiredUnlock;
-    // Checked common+6C metadata for the supported Stack/Roll configs. Other explicit names
-    // remain unavailable here; this is not an executable finder or a general enum parser.
+    // Common +6C uses the native executable name table and Count constructor default.
     internal byte? CheckedExecutableType {get;}
     private readonly int _requiredSevere;
     private readonly float _recentDriveOff, _recentSwitch;
     internal NativeBehaviorBaseInputs(EngineRobot robot,JsonElement config)
     {
         _robot=robot;
-        CheckedExecutableType=!config.TryGetProperty("executableBehaviorType",out var executable)||executable.ValueKind!=JsonValueKind.String
-            ?(byte)12:executable.GetString() switch{"StackBlocks"=>(byte)9,"RollBlock"=>(byte)8,_=>null}; // ctor005BBCA2/A4; parser005BC1BE..C4; Roll table01033750.
+        CheckedExecutableType=ExecutableBehaviorNames.FromConfig(config);
         _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)&&unlock.ValueKind!=JsonValueKind.Null?NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(unlock.GetString()!)):0x55;
         _requiredSevere=config.TryGetProperty("requiredSevereNeedsState",out var need)
             ?need.GetString() switch{"Repair"=>0,"Energy"=>1,"Play"=>2,"Count"=>3,_=>-1}:3;
@@ -28,7 +26,9 @@ internal sealed class NativeBehaviorBaseInputs
     internal bool IsCarrying=>_robot.CarryingOwner is {} owner && (owner.CarriedObjectId??uint.MaxValue)!=uint.MaxValue;
     internal bool Allows(BehaviorContext context)
     {
-        if(!ReferenceEquals(context.Robot.Engine.Robot,_robot) || _robot.CarryingOwner is null)
+        bool actual=ReferenceEquals(context.Robot.Engine.Robot,_robot) ||
+            (context.Robot.Engine.Robot is null && _robot.NativeBehaviorRuntimeConstructing && ReferenceEquals(context.Robot.Engine,_robot.Engine));
+        if(!actual || _robot.CarryingOwner is null)
         {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior native base admission: actual Robot/Carrying owner unavailable");return false;}
         if(_requiredSevere!=3 && _requiredSevere!=context.Robot.Engine.Needs.SevereNeeds.Selected)return false;
         if(_requiredUnlock!=0x55)

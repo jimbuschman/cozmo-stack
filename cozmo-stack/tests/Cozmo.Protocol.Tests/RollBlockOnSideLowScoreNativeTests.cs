@@ -19,13 +19,13 @@ public sealed class RollBlockOnSideLowScoreNativeTests
     {
         // P1/P3: actual shipped parent entry2, parsed by the production activity loader.
         // Native0060A032..3E writes ReadFromScoredJson(true) to this same behavior before TryAdd.
-        // Supplied input seam only: the stack's automatic same-receiver scored reload remains MISSING.
+        // The native tree reload writes the same retained behavior's scoring fields.
         var parent=Assert.Single(Activities(f.Runtime.Tree),a=>a.Id=="PlayWithHumans");
         Assert.Equal("BehaviorsOnly",parent.Type);Assert.Equal("PlayWithHumans",parent.Strategy.Type);
         var chooser=Assert.IsType<ScoringChooser>(parent.Chooser);var entry=chooser.Entries[2];
-        Assert.Equal(Id,entry.BehaviorId);Assert.Equal(7d,entry.FlatScore);Assert.Equal(0d,roll.Score);
+        Assert.Equal(Id,entry.BehaviorId);Assert.Equal(7d,entry.FlatScore);Assert.Equal(7d,roll.Score);
+        Assert.Equal(7d,roll.NativeScoring!.FlatScore);
         Assert.Same(f.Runtime.Bound[entry.BehaviorId],roll);
-        roll.Score=(float)entry.FlatScore;
     }
     [Fact]
     public void ExactShippedFactoryUsesNativeIdentityDefaultAxisCacheAndActualUnlockGate()
@@ -55,7 +55,8 @@ public sealed class RollBlockOnSideLowScoreNativeTests
         // Scene supplies independent physical cube and firmware inputs, never helper results or planner goals.
         using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;var manager=f.Robot.BehaviorManagerOwner!;
         var roll=Roll(f);SupplyParentScore(f,roll);var order=new List<string>();var local=new List<RobotCompletedAction>();var app=new List<ActionCompletionReport>();
-        var lights=new List<string>();bool celebration=false;
+        var lights=new List<string>();var stateTrace=new List<string>();bool celebration=false;
+        void Capture(string stage){var state=manager.InspectStateLights();stateTrace.Add($"{stage}:current={manager.Current?.Id} running={roll.EngineRunning} class={state.Class} entries={state.Entries.Count} runner={roll.OwnedRunner?.GetType().Name}");}
         f.Rig.Robot.Lights.Cubes.BehaviorStateCallObservedForTest=(id,call,trigger,layer,modifier,_,offset)=>
         {Assert.Equal(scene.Target,id);Assert.Equal(1,layer);Assert.False(modifier);Assert.Equal(0,offset);lights.Add(call+":"+trigger);};
         using var objective=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value&&value==2)order.Add("objective2");});
@@ -64,17 +65,19 @@ public sealed class RollBlockOnSideLowScoreNativeTests
         f.Rig.Engine.Needs.Log+=line=>
         {
             if(!line.StartsWith("needs.action_completed RollACube:"))return;
+            Capture("needs callback");
+            Assert.Same(roll,manager.Current);Assert.True(roll.EngineRunning);Assert.Single(manager.InspectStateLights().Entries);
             Assert.Equal(new[]{"objective2"},order);Assert.Equal(1,roll.State);
             var animation=Assert.IsType<TriggerAnimationAction>(roll.OwnedRunner);
             Assert.Equal((AnimationTrigger)0x1FB,animation.Request.Trigger);Assert.Equal(.8f,(float)roll.RunningScoreBonus);
             celebration=true;order.Add("needs39");
         };
-        int mark=f.Rig.Mark();Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        int mark=f.Rig.Mark();Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,manager,Id);
         Assert.Same(roll,manager.Current);Assert.False(roll.HardSpark);Assert.True(roll.RollHelper!.Upright);
         Assert.Equal(BitConverter.UInt32BitsToSingle(0x3FC90FDB),roll.RollHelper.MaxFaceTurn);
         Assert.Equal(new[]{"Play:InteractingBehaviorLock"},lights);
         Assert.Contains(f.Rig.SentSince(mark),m=>m is CubeID);Assert.Contains(f.Rig.SentSince(mark),m=>m is CubeLights);
-        for(int i=0;i<200&&order.Count<2;i++)scene.Step();
+        for(int i=0;i<200&&order.Count<2;i++){scene.Step();Capture("step"+i);}
         Assert.True(order.Count==2,string.Join(" | ",scene.Trace.TakeLast(30)));
         Assert.Equal(new[]{"objective2","needs39"},order);Assert.True(celebration);Assert.True(roll.PreDockReached);
         Assert.Equal(7d,roll.Score);Assert.Equal(1,scene.Rolls);Assert.Equal(1u,roll.RollHelper.Attempts);
@@ -82,7 +85,9 @@ public sealed class RollBlockOnSideLowScoreNativeTests
         Assert.Equal((byte)5,dock.DockAction);Assert.Equal((byte)0,dock.DockingMethod);Assert.Equal((byte)0,dock.Field6);Assert.False(dock.Field8);
         Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:false}&&target==scene.Target);
         // Source S14/M1-034: defined local result survives; full-public undefined unused IDs are guarded.
-        f.Rig.Engine.DrainAppDelivery();Assert.Empty(app);Assert.Single(manager.InspectStateLights().Entries);
+        f.Rig.Engine.DrainAppDelivery();Assert.Empty(app);Capture("final");
+        Assert.Same(f.Runtime.Bound["Wait"],manager.Current);var finalLights=manager.InspectStateLights();
+        Assert.Empty(finalLights.Entries);Assert.Equal((byte)BehaviorClass.RollBlock,finalLights.Class); // M7-030 0x005A223E..226E
     }
 
     [Fact]
@@ -90,7 +95,7 @@ public sealed class RollBlockOnSideLowScoreNativeTests
     {
         // S10/shared Stop005BD08C..126: own helper/action cleanup, target reset; S16 retains manager lights.
         using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;var manager=f.Robot.BehaviorManagerOwner!;
-        var roll=Roll(f);SupplyParentScore(f,roll);Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        var roll=Roll(f);SupplyParentScore(f,roll);Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,manager,Id);
         var owned=Assert.IsAssignableFrom<ActionRunner>(roll.OwnedRunner);
         var unrelated=new NativeTimedWaitRunner(f.M,100f);f.Robot.ActionList.QueueAction(QueueActionPosition.InParallel,unrelated);f.Rig.Tick();
         manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);f.Robot.ActionList.Watcher.Update();

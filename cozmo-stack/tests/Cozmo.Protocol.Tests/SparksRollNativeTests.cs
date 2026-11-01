@@ -54,7 +54,7 @@ public sealed class SparksRollNativeTests
         using var f=new Fixture();var roll=Roll(f);var activity=Activity(f);var owner=Assert.IsType<NativeSparkedActivity>(activity.SparkedOwner);
         Assert.Equal(155,(int)BehaviorID.SparksRollBlock);Assert.False(roll.RotationImportant);Assert.Equal(new[]{6},roll.OwnSlot2C());
         Assert.Equal(9u,roll.NativeBaseInputs!.RequiredUnlock);Assert.Equal((byte?)8,roll.NativeBaseInputs.CheckedExecutableType);
-        Assert.Equal(0f,owner.Minimum);Assert.Equal(80f,owner.Maximum);Assert.Equal((byte)1,owner.Repetitions);Assert.True(owner.CanExecute);
+        Assert.Equal(0f,owner.Minimum);Assert.Equal(80f,owner.Maximum);Assert.Equal(1,owner.Repetitions);Assert.True(owner.CanExecute);
         Assert.Equal((AnimationTrigger)0x216,owner.Success);Assert.Equal((AnimationTrigger)0x210,owner.Failure);
         Assert.Equal(new[]{"DriveOffCharger","KnockOverCubes",Id,"SparksPutDownBlock","SparksLookInPlace"},activity.Chooser!.BehaviorIds);
         var upright=f.Add(7,150);f.Robot.Progression!.Unlocked.Add(9);
@@ -193,7 +193,7 @@ public sealed class SparksRollNativeTests
         Assert.Equal(8u,f.Runtime.PickupTargets!.GetBest(6));
         f.Robot.Progression!.Unlocked.Add(9);var manager=f.Robot.BehaviorManagerOwner!;
         // Explicit manager child admission for exact155; tests only retarget recipient, not parent winner.
-        Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());var roll=Roll(f);var first=roll.RollHelper;
+        Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,manager,Id);var roll=Roll(f);var first=roll.RollHelper;
         side.Pose=new Pose3d(Rotation3d.Identity,new(400,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
         f.M.Whiteboard.SetFailedToUse(side,(ObjectActionFailure)3);f.Rig.Tick();
         Assert.Equal(7u,roll.Target);Assert.NotSame(first,roll.RollHelper);Assert.False(roll.PreDockReached);Assert.Equal(0,roll.State);

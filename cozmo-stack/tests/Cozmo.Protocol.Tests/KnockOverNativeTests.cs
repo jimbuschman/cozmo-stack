@@ -32,11 +32,12 @@ public sealed class KnockOverNativeTests
     public void ConfiguredFactoryUsesCanonicalStackProgressionAndHardSpark(int spark,byte soft,bool hard)
     {
         // reach: configured factory/manager/ActionList, supplied native world + progression + checked spark-switch inputs. K1-K8.
-        using var f=new Fixture();var knock=Stack(f);Assert.Equal((byte)3,knock.MinimumHeight);
+        using var f=new Fixture();var bootSelection=f.Robot.BehaviorManagerOwner!.Activity;Assert.NotNull(bootSelection);var knock=Stack(f);Assert.Equal((byte)3,knock.MinimumHeight);
         f.Robot.Progression!.Unlocked.Remove(5);Assert.False(knock.IsRunnable(f.Runtime.Context));f.Robot.Progression.Unlocked.Add(5);
         Spark(f,spark,soft);Start(f,knock);Assert.Equal(hard,knock.HardSpark);
         Assert.Equal(hard?"KnockingOverStack":"ReachingForBlock",knock.Phase);Assert.Equal(7u,knock.Bottom);Assert.Equal(8u,knock.Middle);Assert.Equal(9u,knock.Top);
-        Assert.NotNull(f.Robot.ActionList.GetCurrentAction());Assert.Null(f.Robot.BehaviorManagerOwner!.Activity);
+        // M8 Selection boot 005A119E..122A remains the same owner during supplied direct start.
+        Assert.NotNull(f.Robot.ActionList.GetCurrentAction());Assert.Same(bootSelection,f.Robot.BehaviorManagerOwner!.Activity);
         if(hard){Assert.Equal(0f,knock.Interaction!.MaximumFaceTurn);Assert.Null(knock.Interaction.Face);}
         f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted,0);Assert.Equal(uint.MaxValue,knock.Bottom);
     }
@@ -225,7 +226,7 @@ public sealed class KnockOverNativeTests
     public void ManagerReplacementRetiresRunningBlindFlipAndItsLiftWithoutCancellingAnotherQueue()
     {
         // reach: unit supplied retry results and replacement behavior; actual configured manager/ActionList/Flip/motor/cancellation recipients.
-        using var f=new Fixture();var knock=Stack(f,30);Start(f,knock);
+        using var f=new Fixture();var knock=Stack(f,30);Start(f,knock);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,knock.Id);
         void Complete(uint result){Assert.IsAssignableFrom<ActionRunner>(f.Robot.ActionList.GetCurrentAction()).State=result;f.Robot.ActionList.Update();}
         Complete(0);Complete(0x04000001);Complete(0x04000001);Complete(0x04000001);Assert.Equal("BlindlyFlipping",knock.Phase);
         var flip=Assert.IsType<NativeFlipBlockRunner>(knock.LastSequence!.Children[0]);
@@ -242,6 +243,8 @@ public sealed class KnockOverNativeTests
             Assert.Equal(uint.MaxValue,knock.Bottom);Assert.Equal(uint.MaxValue,knock.Middle);Assert.Equal(uint.MaxValue,knock.Top);Assert.False(knock.EngineRunning);
             Assert.Equal(subscriptions,f.Rig.Engine.AnimationMessages.Count(0x11,true));f.Rig.Engine.AnimationMessages.Deliver(0x11,true,new CubeUpAxisEvent(1,7,UpAxis.XPositive));Assert.Empty(knock.Tipped);
             Assert.False(manager.HasDisableLock(ReactionTrigger.UnexpectedMovement,"FlipBlock"));Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated,"KnockOverCubes_behaviorLock"));
+            // Clear the indefinite Selection request through the actual 94 miss before another tick.
+            f.Rig.Robot.ExecuteBehaviorById(255,0);f.Rig.Tick();Assert.NotSame(knock,manager.Current);Assert.False(knock.EngineRunning);
         }
         finally{manager.Stop(BehaviorStopReason.Interrupted,0);replacement.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
     }
@@ -302,6 +305,7 @@ public sealed class KnockOverNativeTests
         try
         {
             Assert.True(manager.StartAsync(knock.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            QueuedSelection.Keep(f.Rig.Robot,manager,knock.Id);
             for(int tick=0;tick<260&&ReferenceEquals(manager.Current,knock);tick++)
             {
                 if(f.M.GetNativePlanners().Lattice is {} runtime&&runtime.CheckPlanningStatus==1)

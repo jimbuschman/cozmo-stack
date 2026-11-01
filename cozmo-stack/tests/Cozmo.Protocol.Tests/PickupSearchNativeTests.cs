@@ -219,7 +219,8 @@ public sealed class PickupSearchNativeTests
         using var f=new Fixture();f.Add();var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
         HelperRef? held=null;NativeSearchForBlockHelper? search=null;bool success=false;
         parent.Entry=p=>{var h=f.Runtime.AI.Helpers.Factory.CreateNativeSearchForBlock(f.M,p,7);held=h.Copy();search=(NativeSearchForBlockHelper)h.Pointer;try{p.Delegate(h,_=>success=true,null);}finally{h.Release();}};
-        var manager=f.Robot.BehaviorManagerOwner!;manager.Add(parent);manager.DisableReactionsWithLock("p5-offline",Enumerable.Range(0,21).Select(i=>i==(int)ReactionTrigger.ObjectPositionUpdated).ToArray(),false);
+        var manager=f.Robot.BehaviorManagerOwner!;var priorActivity=manager.Activity;manager.Activity=null; // Local synthetic helper owner; no configured chooser entry.
+        manager.Add(parent);manager.DisableReactionsWithLock("p5-offline",Enumerable.Range(0,21).Select(i=>i==(int)ReactionTrigger.ObjectPositionUpdated).ToArray(),false);
         Thread? producer=null;Exception? error=null;using var go=new ManualResetEventSlim();
         try
         {
@@ -242,7 +243,7 @@ public sealed class PickupSearchNativeTests
         finally
         {
             go.Set();if(producer is not null)Assert.True(producer.Join(TimeSpan.FromSeconds(5)),"join producer before owned state disposal");
-            manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);held?.Release();parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();
+            manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);manager.Activity=priorActivity;held?.Release();parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();
         }
     }
     [Theory][InlineData(false)][InlineData(true)]
@@ -251,7 +252,8 @@ public sealed class PickupSearchNativeTests
         using var f=new Fixture();var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
         NativeTimedWaitRunner? original=null,replacement=null;bool callback=false;
         parent.Entry=p=>{original=new(f.M,100);p.StartActing(original,_=>{callback=true;replacement=new(f.M,100);p.StartActing(replacement,null);});};
-        var manager=f.Robot.BehaviorManagerOwner!;manager.Add(parent);
+        var manager=f.Robot.BehaviorManagerOwner!;var priorActivity=manager.Activity;manager.Activity=null; // Local synthetic StopActing probe.
+        manager.Add(parent);
         try
         {
             Assert.True(manager.StartAsync(parent.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
@@ -260,7 +262,7 @@ public sealed class PickupSearchNativeTests
             if(keep){Assert.Same(replacement,parent.OwnedRunner);Assert.Equal(replacement!.Tag,parent.CurrentRunnerTag);Assert.False(replacement.DestructionObserved);}
             else{Assert.Equal(0u,parent.CurrentRunnerTag);Assert.Null(replacement);}
         }
-        finally{manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
+        finally{manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);manager.Activity=priorActivity;parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
     }
     [Theory][InlineData(false)][InlineData(true)]
     public void ShippedPickupMissingMarkerRunsRealPK9SearchThenWorker44RetriesAndCarriesWithOriginalReport(bool interruptRetry)
@@ -282,7 +284,7 @@ public sealed class PickupSearchNativeTests
         if(!interruptRetry)manager.DisableReactionsWithLock("p5-positive-recovery",Enumerable.Range(0,21).Select(i=>i==(int)ReactionTrigger.ObjectPositionUpdated).ToArray(),false);
         try
         {
-            Assert.True(manager.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.SparksPickupSingleCubeForPyramid);f.Rig.Tick();Assert.Same(pickup,manager.Current);
             for(int i=0;i<80&&pickup.Helper is null;i++)firmware.Step();
             var firstSequence=Assert.IsAssignableFrom<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
             var pendingPickup=Assert.Single(firstSequence.Children.OfType<NativePickupObjectRunner>());Assert.False(pendingPickup.Initialized);

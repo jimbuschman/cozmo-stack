@@ -9,8 +9,8 @@ public sealed record FreeplayDecision(double AtSec, string? Activity, string? Be
 /// <summary>
 /// The bounded ActivityFreeplay chooser (0x005AE29C), called by BehaviorManager after reactions.
 /// A kept activity may cause one re-pick; the newly picked activity is asked once. Putdown immediately deselects
-/// eligible activities but does not calculate the object-derived desired cache. The Look state-6 cache supplier
-/// and filtered located-object query remain missing.
+/// eligible activities but does not calculate the object-derived desired cache. The canonical Look state-6
+/// path calculates it through the retained parent; standalone callers still lack that owner join.
 /// </summary>
 // fidelity: M15-002
 // fidelity: M15-006
@@ -22,9 +22,29 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
     private readonly IReadOnlyDictionary<string, IBehavior> _bound;
     private bool _requestPending;
     private string? _desiredActivity;
-    // Explicit test seam for the recovered cache byte. The canonical Look state-6 producer remains unbound.
+    // Explicit standalone test seam; canonical Look state6 writes the retained parent directly.
     internal void SetDesiredActivityCacheForTest(string? id) => _desiredActivity = ActivityIdOrNull(id);
     internal string? DesiredActivityCacheForTest => _desiredActivity;
+    // 005ADF4C: called by retained Freeplay, independent of current high-level selection.
+    internal bool CalculateNativeDesired(EngineRobot owner, ManipulationSystem manipulation,Func<bool> stillCurrent)
+    {
+        if (Freeplay.DesiredActivityNames is not {} names || !ReferenceEquals(owner.Engine.Robot,owner) ||
+            !ReferenceEquals(manipulation.Robot.LocalizationWorld,manipulation.World))
+        { ReportActivityMissing("M15-008 retained Freeplay desired calculation actual owner/config unavailable"); return false; }
+        using var mutation=manipulation.World.EnterPoseMutation();
+        uint originId=owner.CurrentOriginId;
+        if(!owner.TryGetNativeOriginOwner(originId,out var origin) || origin?.Node is null)
+        { ReportActivityMissing("M15-008 desired calculation current origin unavailable; prior cache retained"); return false; }
+        using var pose=new Pose3d("");
+        bool face=manipulation.Vision.Faces.CopyNativeLastFace(origin,true,pose);
+        if(face) { using var root=pose.FindRoot();face=ReferenceEquals(root.Node,origin.Node); }
+        var filter=new BlockWorldFilter();filter.AllowedFamilies.Add((ObjectFamily)1);filter.AllowedFamilies.Add((ObjectFamily)2);
+        bool cube=manipulation.World.FindLocatedObjectHelper(filter,null,true) is not null;
+        if(!stillCurrent() || owner.CurrentOriginId!=originId || !owner.TryGetNativeOriginOwner(originId,out var current) || !ReferenceEquals(current,origin))
+        { ReportActivityMissing("M15-008 desired calculation owner changed; prior cache retained");return false; }
+        _desiredActivity=ActivityIdOrNull(face ? (cube ? names.FaceAndCube : names.FaceOnly) : (cube ? names.CubeOnly : names.None));
+        return true;
+    }
     internal byte? SelectedChildActivityId { get; private set; }
     internal string? SelectedChildActivityName { get; private set; }
     /// <summary><c>BehaviorManager+0x65</c>: the invalid-spark latch (C1 §1).</summary>
@@ -128,7 +148,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
     /// <summary><c>CalculateDesiredActivityFromObjects</c>: the configured activity for the faces and cubes known.</summary>
     public string? DesiredActivityFromObjects()
     {
-        ReportActivityMissing("MISSING: M15-006 filtered object count and Look state-6 desired supplier are unbound");
+        ReportActivityMissing("MISSING: M15-008 standalone DesiredActivityFromObjects has no retained native Robot/world input; canonical Look state6 uses its actual owner");
         return null;
     }
 
@@ -145,7 +165,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
     internal Func<bool>? NativeStillCurrent;
     private bool OwnerCurrent()=>!NativeOwner || NativeStillCurrent?.Invoke()==true;
     bool IHostReadinessOwner.ReadinessChecksEnabled=>NativeOwner;
-    bool IHostReadinessOwner.EvaluateCandidateReadiness=>Current?.SparkedOwner?.Delegate is not null || Current?.Id=="SparksWorkout";
+    bool IHostReadinessOwner.EvaluateCandidateReadiness=>Current?.SparkedOwner is not null;
     void IHostReadinessOwner.RetireUnavailable()
     {
         _childUnavailable=true;
@@ -229,7 +249,10 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             if(_childUnavailable)return current;
             bool retry = decision.Behavior is null;
             if (retry) { Log?.Invoke("ActivityFreeplay.ChooseNextBehavior.NoBehaviorChosenWhileRunning: activity is not allowed to be repicked"); barred = Current; } // askCurrent=false
-            if (!retry && !_manager.IsRunning(decision.Behavior!) && !(Inputs.Needs?.SparksRewardPending ?? false))
+            bool running = decision.Behavior is SteppedBehavior stepped ? stepped.EngineRunning : _manager.IsRunning(decision.Behavior!);
+            if(NativeOwner && !retry && decision.Behavior is not SteppedBehavior)
+            {ReportActivityMissing("MISSING: actual child running flag unavailable");return current;}
+            if (!retry && !running && !(Inputs.Needs?.SparksRewardPending ?? false))
             {
                 retry = Current!.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out _, nowSec);
                 if (retry) Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: '{Current.Id}' wants to end");
@@ -303,13 +326,14 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
                 return null;
             }
             if (initialPick || changed) decision = ChooseActivityBehavior(Current, current, nowSec);
+            if(_childUnavailable)return current; // missing child input is not a native null/normal tail
             _desiredActivity = null; // after lifecycle, switch, pause and chooser (0x005AE5E0)
         }
 
         var desired = decision.Behavior;
-        if(NativeOwner && desired is NativeLookForFaceAndCubeBehavior)
+        if(NativeOwner && desired is NativeLookForFaceAndCubeBehavior look && !look.ExecutionAvailable)
         {
-            ReportActivityMissing("MISSING: M15-006 LookForFaceAndCube native lifecycle unavailable; retaining current behavior");
+            ReportActivityMissing("MISSING: M15-006 LookForFaceAndCube actual input owner unavailable; retaining current behavior");
             desired=current;
         }
         _switchReason = decision.Reason;
@@ -337,7 +361,8 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             }
             return new ChooserDecision(desired,"Sparked child",Array.Empty<(string,double,string)>());
         }
-        if (NativeOwner && (activity.Type!="BehaviorsOnly" || activity.Id=="PlayAlone" || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
+        bool checkedNeeds=activity.Type=="NeedsExpression" && (activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn") && activity.NativeUpdate20 is not null;
+        if (NativeOwner && activity.Type is not ("BehaviorsOnly" or "Socialize") && !checkedNeeds)
         {
             ReportActivityMissing("MISSING: M8-013 specialized child desired lifecycle "+activity.Id);
             _childUnavailable=true;
@@ -352,12 +377,26 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
         }
         if (activity.CachedInterlude is not null && ReferenceEquals(activity.CachedInterlude, current))
             return new ChooserDecision(activity.CachedInterlude, "cached interlude", Array.Empty<(string, double, string)>());
+        var priorInterlude=activity.CachedInterlude;
         activity.CachedInterlude = null;
         var decision = activity.Chooser?.GetDesiredActiveBehavior(current, _manager.RunningDurationSec(nowSec), _ctx, nowSec)
             ?? new ChooserDecision(null, "no chooser", Array.Empty<(string, double, string)>());
+        if(NativeOwner && decision.InputUnavailable)
+        {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: M8-013 scored chooser input unavailable; retaining current behavior");return decision with {Behavior=current};}
+        if(NativeOwner && activity.Type=="Socialize")
+        {
+            if(activity.ObjectiveOwner is null)
+            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: Socialize retained objective owner unavailable");return decision with {Behavior=current,InputUnavailable=true};}
+            decision=activity.ObjectiveOwner.Desired(current,decision,_ctx);
+            if(decision.InputUnavailable)
+            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: Socialize actual child input unavailable; retaining current behavior");return decision with {Behavior=current};}
+        }
         if (activity.InterludeChooser is not null && !ReferenceEquals(decision.Behavior, current))
         {
-            activity.CachedInterlude = activity.InterludeChooser.GetDesiredActiveBehavior(decision.Behavior, 0, _ctx, nowSec).Behavior;
+            var interlude=activity.InterludeChooser.GetDesiredActiveBehavior(decision.Behavior, 0, _ctx, nowSec);
+            if(NativeOwner && interlude.InputUnavailable)
+            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: actual interlude input unavailable; retaining current behavior");return decision with {Behavior=current,InputUnavailable=true};}
+            activity.CachedInterlude = interlude.Behavior;
             if (activity.CachedInterlude is not null) return decision with { Behavior = activity.CachedInterlude };
         }
         return decision;
@@ -438,7 +477,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
 
     private Activity? PickFromBucket(double nowSec, List<Activity> bucket, out string reason, Activity? barred)
     {
-        string? desiredId = _desiredActivity; // The canonical state-6 supplier is not yet bound.
+        string? desiredId = _desiredActivity; // Canonical state6 or the explicit standalone test seam.
         if (bucket.Count == 0) { reason = $"no activities for the requested spark '{Inputs.RequestedSpark ?? "none"}'"; return null; }
         var notes = new List<string>();
         // +0x91 first, then +0x90 (0x005ADC6A..0x005ADC76); a name the ActivityID enum does not know is 0 and forces nothing (ActivityIDFromString 0x0076706C..0x007670D4)

@@ -11,6 +11,7 @@ internal sealed class NativeGatherCubesActivity : IDisposable
     private readonly Dictionary<uint,bool> _progress = new();
     private long _generation;
     private bool _retired;
+    internal Action? BeforeDisposeForTest;
     internal bool Completed { get; private set; }
     internal IReadOnlyDictionary<uint,bool> Progress => _progress;
     internal NativeGatherCubesActivity(EngineRobot robot) => _robot=robot;
@@ -75,5 +76,5 @@ internal sealed class NativeGatherCubesActivity : IDisposable
             else if(!_progress.ContainsKey(cube.ObjectId))_progress[cube.ObjectId]=false;
         }
     }
-    public void Dispose(){_retired=true;++_generation;_progress.Clear();}
+    public void Dispose(){BeforeDisposeForTest?.Invoke();_retired=true;++_generation;_progress.Clear();}
 }

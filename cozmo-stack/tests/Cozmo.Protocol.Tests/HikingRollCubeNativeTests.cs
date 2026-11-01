@@ -22,8 +22,9 @@ public sealed class HikingRollCubeNativeTests
     {
         f.Robot.Progression!.Unlocked.Add(9);var manager=f.Robot.BehaviorManagerOwner!;
         if(hard){manager.SparkNameInput=id=>id==9?"RollCube":"Count";manager.SetNativeRequestedSpark(9,0);manager.SwitchToNativeRequestedSpark();}
-        // Explicit native manager choice/admission input; this does not assert Hiking/Gather competition or interlude readiness.
-        Assert.True(manager.StartAsync("Hiking_RollCube",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());return Roll(f);
+        // Actual Selection request; does not assert Hiking/Gather competition or interlude readiness.
+        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.Hiking_RollCube);f.Rig.Tick();
+        Assert.Same(Roll(f),manager.Current);return Roll(f);
     }
     [Fact]
     public void ActualShippedFactoryDefaultsTrueAndCarriesUnlockAndNeeds()
@@ -118,6 +119,7 @@ public sealed class HikingRollCubeNativeTests
     private sealed class Parent:SteppedBehavior
     {
         internal Action<Parent>? Entry;
+        internal IManagedActivity? PriorActivity;
         internal Parent():base("roll-join-probe","Probe"){}
         public override bool IsRunnable(BehaviorContext context)=>true;
         protected override bool KeepsRunningWithoutAction=>true;
@@ -125,9 +127,10 @@ public sealed class HikingRollCubeNativeTests
         internal bool Delegate(HelperRef helper)=>SmartDelegateToHelper(helper,null,null);
     }
     private static void Start(Fixture f,Parent parent)
-    {parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);var manager=f.Robot.BehaviorManagerOwner!;manager.Add(parent);Assert.True(manager.StartAsync(parent.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());}
+    {parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);var manager=f.Robot.BehaviorManagerOwner!;parent.PriorActivity=manager.Activity;manager.Activity=null; // Local synthetic-helper unit; no configured chooser owns this probe.
+        manager.Add(parent);Assert.True(manager.StartAsync(parent.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());}
     private static void Stop(Fixture f,Parent parent)
-    {f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
+    {var manager=f.Robot.BehaviorManagerOwner!;manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);manager.Activity=parent.PriorActivity;parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
     private sealed class ResultInput(uint result):ActionRunner(0x1F,0)
     {
         protected override string ActionName=>"explicit raw Roll result input";

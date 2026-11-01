@@ -192,6 +192,8 @@ public sealed class DevTurnInPlaceNativeTests
         var wait = Assert.IsType<NativeTimedWaitRunner>(root.Children[1]);
         Assert.Equal(next, turn.Tag); Assert.Equal(next + 1, wait.Tag); Assert.Equal(next + 2, root.Tag);
         uint tag = root.Tag;
+        // 0060AD7E..86 retains the already-running A1 owner without rechecking its false readiness.
+        QueuedSelection.Keep(f.Rig.Robot,manager,b.Id);
         f.Rig.Tick();
         for (int i = 0; i < 40 && wait.Deadline < 0; i++) f.Motors();
         Assert.True(turn.DestructionObserved); Assert.True(wait.Deadline >= 0);

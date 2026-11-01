@@ -33,6 +33,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal Func<IReadOnlyList<NativePyramidBase>>? PyramidBaseStrongInput {get;set;}
     internal Func<IReadOnlyList<NativePyramidConfiguration>>? PyramidFullStrongInput {get;set;}
     internal IReadOnlyDictionary<string,IBehavior> Bound {get;}
+    private readonly Dictionary<string,NativeScoredFields> _configuredScoreFields;
+    private readonly SortedDictionary<BehaviorID,byte> _executableMetadata=new();
     internal IReadOnlyList<Activity> Tree {get;}
     internal FreeplayDataTracker Tracker {get;}
     // SetupTurnAndVerify551FE6..5520BA: actual owner/located target, finite child only.
@@ -112,7 +114,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _chargerPause=paused=>Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger,paused);
         facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=_offTreadsPause;
         facade.Sensors.OnChargerPlatformChangedInternal+=_chargerPause;
-        Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
         Configurations=new(facade.LocalizationWorld,robot);
         facade.LocalizationWorld.NativeConfigurations=Configurations;
         if(vision is not null)
@@ -144,6 +145,32 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(manager.Find(behavior.Id) is null)manager.Add(behavior);
         }
         Bound=bound;
+        var scoreFields=_configuredScoreFields=new Dictionary<string,NativeScoredFields>(StringComparer.Ordinal);
+        foreach(var entry in facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>())
+        {
+            string id=entry.Key.ToString();
+            if(bound.TryGetValue(id,out var built) && built is SteppedBehavior step)scoreFields[id]=step.NativeScoredFields;
+            else
+            {
+                var fields=new NativeScoredFields();fields.Read(id,entry.Value);
+                if(!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var objective) || objective.ValueKind==System.Text.Json.JsonValueKind.Null)
+                    if((entry.Key==BehaviorID.PounceOnMotion_Socialize && entry.Value.TryGetProperty("behaviorClass",out var pounceClass) && pounceClass.ValueKind==System.Text.Json.JsonValueKind.String && pounceClass.GetString()=="PounceOnMotion") ||
+                       (entry.Key==BehaviorID.FPPeekABoo && entry.Value.TryGetProperty("behaviorClass",out var peekClass) && peekClass.ValueKind==System.Text.Json.JsonValueKind.String && peekClass.GetString()=="PeekABoo"))fields.MarkPristine();
+                if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var interludeObjective) || interludeObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
+                   entry.Value.TryGetProperty("behaviorClass",out var interludeClass) && interludeClass.ValueKind==System.Text.Json.JsonValueKind.String &&
+                   ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
+                    ((id is "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" or "Needs_MildLowRepairRequest" or "Needs_MildLowEnergyRequest" or "Needs_MildLowPlayRequest") && interludeClass.GetString()=="ExpressNeeds")))
+                    fields.MarkPristine();
+                if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
+                   entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
+                   id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
+                scoreFields[id]=fields;
+            }
+        }
+        robot.NativeConfiguredScoreFields=scoreFields;
+        foreach(var entry in facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>())
+            _executableMetadata[entry.Key]=bound.TryGetValue(entry.Key.ToString(),out var b) && b is SteppedBehavior {NativeBaseInputs.CheckedExecutableType: {} value}
+                ? value : ExecutableBehaviorNames.FromConfig(entry.Value);
         manager.BindConfiguredBehaviors(Bound);
         // Manager's container is constructed before the BSM container (0050FCAC/BE).
         if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is NativeCantHandleTallStackBehavior && robot.TallStackContainers.Length == 2)
@@ -169,6 +196,18 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 activity.Analyzer=AI.Analyzer;
                 foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
                     if(chooser is SelectionChooser selectionChooser)
+                    {
+                        selectionChooser.SourceLog=(level,channel,key,text)=>facade.Engine.EmitSourceLog(level,channel,key,text);
+                        selectionChooser.FindBehaviorByExecutableType=type=>
+                        {
+                            foreach(var entry in _executableMetadata)
+                            {
+                                if(entry.Value!=type)continue;
+                                if(Bound.TryGetValue(entry.Key.ToString(),out var found))return found;
+                                throw new NativeChooserUnavailable("configured executable owner "+entry.Key+" is unbuilt",entry.Key.ToString());
+                            }
+                            return null;
+                        };
                         selectionChooser.SetAnalyzerEnabled=(behavior,key,enabled)=>
                         {
                             if(behavior is not SteppedBehavior stepped)
@@ -176,6 +215,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                             if(enabled)AI.Analyzer.AddEnableRequest(stepped.RequiredProcessId,key);
                             else AI.Analyzer.RemoveEnableRequest(stepped.RequiredProcessId,key);
                         };
+                    }
             }
             robot.NativeActivityRecipientsConstructed=true;
             if(Tree.Any(a=>a.Id=="Freeplay"))
@@ -189,9 +229,13 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(_selected is {} selection)
             {
                 _highLevel=2;
+                selection.GuardNativeLifecycle=true;
                 selection.OnSelected(facade.Engine.Timer.SecondsF,facade.Engine.EmitStackLog);
                 HighLevelEntryTime=facade.Engine.Timer.SecondsF;
-                SteppedBehavior.ReportMissing("M15-031 boot Selection chooser/process execution remains unbuilt");
+                Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
+                _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
+                // SetCurrentActivity(Selection,true) takes the normal None-trigger chooser tail before Robot publication.
+                _manager.ChooseAfterHighLevelChange(HighLevelEntryTime);
             }
         }
         else
@@ -210,6 +254,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal void AdmitActivity(string activityId)
     {
         if(activityId=="Freeplay") { AdmitFreeplay(); return; }
+        if(activityId=="Selection") { AdmitSelection(); return; }
         var selected=AllActivities(Tree).FirstOrDefault(a=>a.Id==activityId)
             ??throw new ArgumentException("No configured activity named "+activityId,nameof(activityId));
         if(selected.SparkedOwner is {CanExecute:false})
@@ -217,7 +262,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             SteppedBehavior.ReportMissing("M15-059 changed Sparked parameter configuration requires native retained Wait or subActivityDelegate lifecycle, which is unbuilt; prior selected activity retained before admission");
             return;
         }
-        if(selected.SparkedOwner is null && (selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null))
+        bool checkedNeeds=selected.Type=="NeedsExpression" && (selected.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn") && selected.NativeUpdate20 is not null && selected.InterludeChooser is null;
+        if(selected.SparkedOwner is null && !checkedNeeds && (selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null))
         {
             if(selected.Id=="NeedsSevereLowEnergy" || selected.Id=="NeedsSevereLowRepair")
             {
@@ -255,6 +301,24 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,selected.Id!="Freeplay");
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
         _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick,()=>RetireUnavailable(selected,epoch));
+    }
+    private void AdmitSelection()
+    {
+        if(_highLevel==2)return;
+        var selection=Tree.FirstOrDefault(a=>a.Id=="Selection");
+        if(selection is null){SteppedBehavior.ReportMissing("M15-031 configured Selection owner unavailable");return;}
+        float now=_facade.Engine.Timer.SecondsF;long epoch=++_admissionEpoch;
+        _selected?.OnDeselected(now,_facade.Engine.EmitStackLog);
+        if(_retired||epoch!=_admissionEpoch)return;
+        bool ordinary=_manager.PrepareHighLevelChange(now);
+        if(_retired||epoch!=_admissionEpoch)return;
+        _selected=selection;_highLevel=2;AwaitingParentActivityPick=false;
+        selection.OnSelected(now,_facade.Engine.EmitStackLog);
+        if(_retired||epoch!=_admissionEpoch)return;
+        HighLevelEntryTime=now;Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
+        _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
+        if(ordinary)_manager.ChooseAfterHighLevelChange(now);
+        _manager.HighLevelAdapterTail(false,now);
     }
     private void OnFreeplayTreads(OffTreadsState from,OffTreadsState to)
     {
@@ -315,6 +379,16 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Tree.FirstOrDefault(a=>a.Id=="Freeplay")??throw new InvalidOperationException("Configured Freeplay resources unavailable"),
         Bound,new FreeplayInputs{Needs=_facade.Engine.Needs,Mood=_robot.MoodOwner,Features=_facade.Engine.Features},false)
         {ObserveOnly=Observe,NativeOwner=true,NativeStillCurrent=()=>!_retired && _selected?.Id=="Freeplay" && ReferenceEquals(_manager.Activity,_observer),SparkPauseChanged=p=>Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark,p)};
+    internal bool LookInputsAvailable(NativeLookForFaceAndCubeBehavior look)=>
+        !_retired && ReferenceEquals(_robot.Engine.Robot,_robot) && ReferenceEquals(_robot.NativeBehaviorRuntime,this) &&
+        Manipulation is {} m && _vision is not null && ReferenceEquals(m.Vision,_vision) &&
+        ReferenceEquals(m.World,_facade.LocalizationWorld) && _observer is not null &&
+        _robot.TryGetNativeOriginOwner(_robot.CurrentOriginId,out var origin) && origin?.Node is not null && _robot.MainPose.Node is not null &&
+        _observer.Freeplay.DesiredActivityNames is not null &&
+        ReferenceEquals(_observer.Freeplay,Tree.FirstOrDefault(a=>a.Id=="Freeplay")) &&
+        Bound.TryGetValue(look.Id,out var bound) && ReferenceEquals(bound,look);
+    internal bool CalculateLookDesired(NativeLookForFaceAndCubeBehavior look)=>
+        LookInputsAvailable(look) && _observer!.CalculateNativeDesired(_robot,Manipulation!,()=>LookInputsAvailable(look));
     private void RefreshFreeplayInputs(float now)=>FreeplayObserver.RefreshInputs(_facade,_vision,Manipulation,now,_robot);
     internal void UpdateAI()=>AI.Update(_facade);
     // The existing checked 0x006553FC -> 0x0067F7AC recipient belongs to the
@@ -352,6 +426,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     public void Dispose()
     {
         if(_retired)return;_retired=true;++_admissionEpoch;
+        if(ReferenceEquals(_robot.NativeConfiguredScoreFields,_configuredScoreFields))_robot.NativeConfiguredScoreFields=null;
         _facade.Sensors.FreeplayOffTreadsStateChanged -= OnFreeplayTreads;
         if(ReferenceEquals(_facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads,_offTreadsPause))
             _facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=null;
@@ -363,8 +438,12 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _observer?.DetachHostHandle();
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();
         foreach(var activity in AllActivities(Tree))activity.Strategy.Dispose();
+        foreach(var chooser in AllActivities(Tree).SelectMany(a=>new[]{a.Chooser,a.InterludeChooser}).OfType<SelectionChooser>())chooser.Dispose();
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeExpressNeedsBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeNeedsGetInBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeKnockOverCubesBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeBouncerBehavior>())candidate.Dispose();
@@ -391,16 +470,18 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 if(next is null&&spark.State is 4 or 5)waitForParent();
                 return next;
             }
-            var desired=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now).Behavior;
-            if(desired is NativeLookForFaceAndCubeBehavior)
+            var decision=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now);
+            if(decision?.InputUnavailable==true){SteppedBehavior.ReportMissing("M8-013 configured chooser input unavailable; prior behavior retained");return current;}
+            var desired=decision?.Behavior;
+            if(desired is NativeLookForFaceAndCubeBehavior look && !look.ExecutionAvailable)
             {
-                SteppedBehavior.ReportMissing("PutDownDispatch LookForFaceAndCube selected Init/Resume/action body unavailable; scored candidate retained, prior execution retained");
+                SteppedBehavior.ReportMissing("PutDownDispatch LookForFaceAndCube actual input owner unavailable; prior execution retained");
                 return current;
             }
             return desired;
         }
         public void BehaviorSwitched(IBehavior? desired,bool started,double now){}
-        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null || activity.Id=="SparksWorkout";
+        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner is not null;
         bool IHostReadinessOwner.EvaluateCandidateReadiness=>true;
         void IHostReadinessOwner.RetireUnavailable()=>retireUnavailable();
     }

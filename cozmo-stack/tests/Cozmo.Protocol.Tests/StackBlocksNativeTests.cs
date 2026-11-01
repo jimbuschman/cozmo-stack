@@ -25,7 +25,8 @@ public sealed class StackBlocksNativeTests
         if(hard){manager.SparkNameInput=id=>id==10?"StackTwoCubes":"Count";manager.SetNativeRequestedSpark(10,0);manager.SwitchToNativeRequestedSpark();}
         // Explicit canonical manager admission/choice input. This does not admit PlayAlone,
         // evaluate unknown siblings, run its scoring/interlude or create a Sparked owner.
-        Assert.True(manager.StartAsync("StackBlocks",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());return Stack(f);
+        Assert.True(manager.StartAsync("StackBlocks",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        QueuedSelection.Keep(f.Rig.Robot,manager,"StackBlocks");return Stack(f);
     }
     [Theory]
     [InlineData(0x3F800000u,0x3F800000u,0x3F800000u,1)]
@@ -106,7 +107,8 @@ public sealed class StackBlocksNativeTests
         Assert.Equal(10u,stack.NativeBaseInputs!.RequiredUnlock);Assert.Equal((byte?)9,stack.NativeBaseInputs.CheckedExecutableType);
         var spark=Assert.IsType<NativeStackBlocksBehavior>(f.Runtime.Bound["SparksStackBlock"]);Assert.Equal((byte?)12,spark.NativeBaseInputs!.CheckedExecutableType);
         var missing=new List<string>();SteppedBehavior.MissingReported+=missing.Add;
-        try{f.Runtime.AdmitActivity("PlayAlone");Assert.Null(f.Robot.BehaviorManagerOwner!.Current);Assert.Contains(missing,s=>s.Contains("Native activity admission PlayAlone"));}
+        var prior=f.Robot.BehaviorManagerOwner!.Current;Assert.Same(f.Runtime.Bound["Wait"],prior); // Selection boot 005A119E..122A.
+        try{f.Runtime.AdmitActivity("PlayAlone");Assert.Same(prior,f.Robot.BehaviorManagerOwner.Current);Assert.Contains(missing,s=>s.Contains("Native activity admission PlayAlone"));}
         finally{SteppedBehavior.MissingReported-=missing.Add;}
         f.Robot.Progression.Unlocked.Remove(10);Assert.False(stack.IsRunnable(f.Runtime.Context));
         f.Robot.Progression.Unlocked.Add(10);Assert.True(stack.IsRunnable(f.Runtime.Context));Assert.Equal(scene.Top,stack.Top);Assert.Equal(scene.Bottom,stack.Bottom);
@@ -140,7 +142,12 @@ public sealed class StackBlocksNativeTests
         using var scene=new StackFirmwareScene(true,"StackBlocks",rollUnlocked);var f=scene.F;var stack=Stack(f);var order=new List<string>();
         using var objective=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint id&&id==40){Assert.Empty(order);order.Add("objective40");}});
         f.Rig.Engine.Needs.Log+=s=>{if(!s.StartsWith("needs.action_completed StackCube:"))return;Assert.Null(stack.OwnedRunner);Assert.Equal(new[]{"objective40"},order);order.Add("needs42");};
-        Admit(scene,true);for(int i=0;i<140&&order.Count<2;i++)scene.Step();
+        Admit(scene,true);var transitions=new List<string>();
+        for(int i=0;i<140&&order.Count<2;i++)
+        {
+            scene.Step();if(i<12)transitions.Add($"step={i} current={f.Robot.BehaviorManagerOwner!.Current?.Id} running={stack.EngineRunning} owned={stack.OwnedRunner?.GetType().Name} action={f.Robot.ActionList.GetCurrentAction()?.GetType().Name} state={stack.State}");
+        }
+        Assert.True(order.Count==2,$"{string.Join(" | ",transitions)}; scene={string.Join(" | ",scene.Trace.TakeLast(12))}");
         Assert.Equal(new[]{"objective40","needs42"},order);Assert.Equal(1,scene.Placements);
     }
     private sealed class Replacement(ManipulationSystem m):SteppedBehavior("regular-stack-replacement-input","Dev")
@@ -166,6 +173,8 @@ public sealed class StackBlocksNativeTests
             Assert.True(manager.StartAsync(next.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
             Assert.True(replaced.DestructionObserved);Assert.False(other.DestructionObserved);Assert.Equal(EngineActionResult.Running,other.State);
             Assert.Equal(uint.MaxValue,stack.Top);Assert.Equal(uint.MaxValue,stack.Bottom);Assert.False(stack.Replaced);Assert.Equal(1,stack.State);
+            // Clear the indefinite Selection request through the actual 94 miss before another tick.
+            f.Rig.Robot.ExecuteBehaviorById(255,0);f.Rig.Tick();Assert.NotSame(stack,manager.Current);Assert.False(stack.EngineRunning);
         }
         finally{manager.Stop(BehaviorStopReason.Interrupted,0);next.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
     }

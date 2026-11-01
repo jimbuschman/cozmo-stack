@@ -9,6 +9,10 @@ public sealed partial class EngineRobot
     internal bool MoodResourcesAvailable;
     internal bool NativeActivityRecipientsConstructed;
     internal Behavior.NativeBehaviorRuntime? NativeBehaviorRuntime;
+    internal Dictionary<string,NativeScoredFields>? NativeConfiguredScoreFields;
+    internal void InvalidateConfiguredScoreHistory(string id)
+    {if(NativeConfiguredScoreFields?.TryGetValue(id,out var fields)==true)fields.Invalidate();}
+    internal bool NativeBehaviorRuntimeConstructing;
     internal void UpdateNativeMood(float now)
     {
         MoodOwner?.Advance(now);
@@ -18,7 +22,7 @@ public sealed partial class EngineRobot
 
 public sealed partial class CozmoRobot
 {
-    /// <summary>Explicit host/app activity admission. Construction alone selects nothing.
+    /// <summary>Explicit host/app activity admission. Construction selects the native Selection activity.
     /// Specialized activity bodies that are not implemented retain the prior activity and report MISSING.</summary>
     public void ActivateHighLevelActivity(string activityId)=>Engine.PostGameMessage(()=>
         (Engine.Robot?.NativeBehaviorRuntime??throw new InvalidOperationException("No native Robot activity owner")).AdmitActivity(activityId));

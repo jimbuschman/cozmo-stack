@@ -113,13 +113,15 @@ public sealed class PopAWheelieNativeTests
         using var objective=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint id&&id==22)order.Add("objective22");});
         f.Rig.Engine.Needs.Log+=line=>{if(line.StartsWith("needs.action_completed PopAWheelie:")){Assert.Equal(new[]{"objective22"},order);Assert.Equal((AnimationTrigger)0x21C,Assert.IsType<TriggerAnimationAction>(Pop(f).OwnedRunner).Request.Trigger);order.Add("needs33");}};
         using var complete=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r&&r.ActionType==0x1D)local.Add(r);});
-        var pop=Admit(f);for(int i=0;i<250&&order.Count<2;i++)scene.Step();
+        var pop=Admit(f);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,pop.Id);for(int i=0;i<250&&order.Count<2;i++)scene.Step();
         Assert.Equal(new[]{"objective22","needs33"},order);Assert.Equal(1,scene.Rolls);Assert.True(pop.CliffChanged);Assert.Equal(uint.MaxValue,pop.Previous);
         var dock=Assert.Single(f.Rig.SentSince(0).OfType<DockWithObject>());Assert.Equal((byte)9,dock.DockAction);
         Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:false}&&target==scene.Target);
         for(int i=0;i<21;i++)Assert.Equal(new[]{0,1,3,11,12,14,15,20}.Contains(i),f.Robot.BehaviorManagerOwner!.HasDisableLock((ReactionTrigger)i,"PopAWheelie_behaviorLock"));
         Assert.Contains(f.Rig.SentSince(0),m=>m is EnableStopOnCliff{Enable:false});
-        f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);f.Rig.Tick();
+        f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
+        f.Rig.Robot.ExecuteBehaviorById(255,0); // Actual 94 miss clears the prior indefinite request before the next Selection tick.
+        f.Rig.Tick();
         Assert.False(pop.CliffChanged);Assert.Equal(uint.MaxValue,pop.Target);Assert.Single(f.Rig.SentSince(0).OfType<EnableStopOnCliff>().Where(m=>m.Enable));
     }
     // P10-P11: isolated full scalar callback inputs (not fake native outcomes), actual retry action/refresh.
@@ -127,7 +129,7 @@ public sealed class PopAWheelieNativeTests
     [InlineData(0x04000001u,0x18D)] [InlineData(0x04000003u,0x18E)]
     public void RetryRefreshesTargetAndCapsOneAttemptIgnoringRetryAnimationResult(uint result,int trigger)
     {
-        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);var first=f.Add();var pop=Admit(f,true);
+        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);var first=f.Add();var pop=Admit(f,true);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,pop.Id);
         f.M.Whiteboard.SetFailedToUse(first,(ObjectActionFailure)3);f.Add(8,300);f.Rig.Tick();StopOwned(pop);
         pop.Respond(result);Assert.Equal(8u,pop.Target);var retry=Assert.IsType<TriggerLiftSafeAnimationAction>(pop.OwnedRunner);Assert.Equal((AnimationTrigger)trigger,retry.Request.Trigger);
         f.Robot.ActionList.Cancel(retry.Tag);f.Robot.ActionList.Watcher.Update();for(int i=0;i<5&&pop.Retries==0;i++)f.Rig.Tick();
@@ -141,7 +143,7 @@ public sealed class PopAWheelieNativeTests
     {
         using var f=new Fixture();f.Add();var pop=Admit(f,true);StopOwned(pop);pop.Respond(result);
         Assert.Equal(marked,f.M.Whiteboard.DidFailToUse(7,(ObjectActionFailure)3,30f));Assert.Null(pop.OwnedRunner);
-        Assert.True(pop.EngineRunning);f.Rig.Tick();Assert.Null(f.Robot.BehaviorManagerOwner!.Current);
+        Assert.True(pop.EngineRunning);f.Rig.Tick();Assert.False(pop.EngineRunning);Assert.Null(pop.OwnedRunner);Assert.Same(f.Runtime.Bound["Wait"],f.Robot.BehaviorManagerOwner!.Current);
     }
     [Fact]
     public void NonzeroSuccessCategoryQueuesCelebrationBeforeObjectiveAndConfiguredNeeds()
@@ -154,7 +156,7 @@ public sealed class PopAWheelieNativeTests
     [Fact]
     public void SuccessfulGetInCachesPreviousAndNextAdmissionSkipsItButFailureDoesNot()
     {
-        using var scene=new PopFirmwareScene();var f=scene.F;var pop=Admit(f);
+        using var scene=new PopFirmwareScene();var f=scene.F;var pop=Admit(f);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,pop.Id);
         for(int i=0;i<100&&pop.Interaction is null;i++)scene.Step(()=>pop.Interaction is not null);
         Assert.NotNull(pop.Interaction);Assert.Equal(scene.Target,pop.Previous);Assert.False(pop.CliffChanged);
         f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
@@ -163,7 +165,7 @@ public sealed class PopAWheelieNativeTests
     [Fact]
     public void RetryWithNoRemainingCacheTargetStillRunsRetryAnimationThenWarnsWithoutNewDrive()
     {
-        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);var obj=f.Add();var pop=Admit(f,true);
+        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);var obj=f.Add();var pop=Admit(f,true);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,pop.Id);
         f.M.Whiteboard.SetFailedToUse(obj,(ObjectActionFailure)3);f.Rig.Tick();StopOwned(pop);pop.Respond(0x04000003);
         Assert.Equal(uint.MaxValue,pop.Target);var retry=Assert.IsType<TriggerLiftSafeAnimationAction>(pop.OwnedRunner);Assert.Equal((AnimationTrigger)0x18E,retry.Request.Trigger);
         f.Robot.ActionList.Cancel(retry.Tag);f.Robot.ActionList.Watcher.Update();for(int i=0;i<5&&pop.OwnedRunner is not null;i++)f.Rig.Tick();

@@ -7,6 +7,12 @@ namespace Cozmo.Protocol.Tests;
 
 public sealed class NativeTrackerOwnerTests
 {
+    private static string Resources()
+    {
+        for(var dir=new DirectoryInfo(AppContext.BaseDirectory);dir is not null;dir=dir.Parent)
+        {var path=Path.Combine(dir.FullName,"re-analysis","obb","assets","cozmo_resources");if(File.Exists(Path.Combine(path,"config","engine","behaviorSystem","activities_config.json")))return path;}
+        throw new InvalidOperationException("Shipped resources absent");
+    }
     private sealed class Probe : SteppedBehavior
     {
         internal Probe():base("tracker-order-probe","Probe"){}
@@ -40,9 +46,10 @@ public sealed class NativeTrackerOwnerTests
     [Fact]
     public void ActualRobotRetirementForcesTrackerBeforeAbortAndFreshRobotGetsFreshStorage()
     {
-        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State();
+        using var rig=new M4ControlTests.Rig(Resources());rig.ToSynced();rig.State();
         var native=rig.Engine.Robot!;var runtime=native.NativeBehaviorRuntime!;var tracker=runtime.Tracker;
         Assert.Same(tracker,runtime.AI.Tracker);
+        Assert.NotNull(runtime.Tree.Single(a=>a.Id=="Selection").SelectedAtSec);Assert.Same(runtime.Bound["Wait"],native.BehaviorManagerOwner!.Current);
         Assert.Contains(FreeplayPauseFlag.GameControl,tracker.PausedFlags);
         tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,false); // explicit source flag input, not app Freeplay admission
         var order=new List<string>();
@@ -55,8 +62,9 @@ public sealed class NativeTrackerOwnerTests
         Assert.Equal(new[]{"accumulate","event","abort"},order);
         Assert.True(runtime.AI.IsChildRetired(0x2C));Assert.Empty(tracker.PausedFlags);
         rig.Engine.Robots.AddRobot(1);
-        var replacement=rig.Engine.Robot!.NativeBehaviorRuntime!.Tracker;
+        var replacementRobot=rig.Engine.Robot!;var replacementRuntime=replacementRobot.NativeBehaviorRuntime!;var replacement=replacementRuntime.Tracker;
         Assert.NotSame(tracker,replacement);Assert.Equal(0UL,replacement.AccumulatedNanos);
+        Assert.NotNull(replacementRuntime.Tree.Single(a=>a.Id=="Selection").SelectedAtSec);Assert.Same(replacementRuntime.Bound["Wait"],replacementRobot.BehaviorManagerOwner!.Current);
         Assert.Contains(FreeplayPauseFlag.GameControl,replacement.PausedFlags);
     }
 

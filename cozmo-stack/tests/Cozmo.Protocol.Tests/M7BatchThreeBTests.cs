@@ -270,7 +270,8 @@ public class M7BatchThreeBTests
         // HIKING-BRING-CUBE-TO-BEACON-1 A1: case0059C968/ctor005DEFB0, bounded to the checked Hiking ID and owners.
         // DRIVE-IN-DESPERATION-ENERGY-1 E1: case0059CA9A/ctor005D8AE0, bounded Energy ID.
         // DEV-TURN-IN-PLACE-TEST-1: factory case 0x0059CA56.
-        Assert.Equal(new[] { BehaviorClass.DevTurnInPlaceTest, BehaviorClass.DriveInDesperation, BehaviorClass.CubeLiftWorkout, BehaviorClass.Dance, BehaviorClass.Bouncer, BehaviorClass.BringCubeToBeacon, BehaviorClass.ThinkAboutBeacons, BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.CantHandleTallStack, BehaviorClass.CheckForStackAtInterval, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
+        // FindFaces 0059CC44; ExpressNeeds 0059CBA4; PlayAnimOnNeedsChange 0059CE46.
+        Assert.Equal(new[] { BehaviorClass.FindFaces, BehaviorClass.ExpressNeeds, BehaviorClass.PlayAnimOnNeedsChange, BehaviorClass.DevTurnInPlaceTest, BehaviorClass.DriveInDesperation, BehaviorClass.CubeLiftWorkout, BehaviorClass.Dance, BehaviorClass.Bouncer, BehaviorClass.BringCubeToBeacon, BehaviorClass.ThinkAboutBeacons, BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked, BehaviorClass.Wait, BehaviorClass.DriveOffCharger, BehaviorClass.LookForFaceAndCube, BehaviorClass.PickUpCube, BehaviorClass.PutDownBlock, BehaviorClass.KnockOverCubes, BehaviorClass.CantHandleTallStack, BehaviorClass.CheckForStackAtInterval, BehaviorClass.PlayArbitraryAnim, BehaviorClass.StackBlocks, BehaviorClass.RollBlock, BehaviorClass.PopAWheelie, BehaviorClass.BuildPyramidBase, BehaviorClass.BuildPyramid, BehaviorClass.AcknowledgeObject }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 
@@ -490,8 +491,8 @@ public class M7BatchThreeBTests
         var sparks = Assert.IsType<FistBumpBehavior>(container.Behaviors[BehaviorID.SparksFistBump]);
         Assert.Equal((5.0f, false, false), (sparks.MaxTimeToLookForFaceSec, sparks.AbortIfNoFaceFound, sparks.UpdateLastCompletionTime));
         // 15 PlayAnim + 2 FistBump + ReactToSparked + the checked VisitInterestingEdge goal owner (lifecycle M11-092).
-        Assert.Equal(20, container.Behaviors.Count);
-        Assert.Equal(158, container.NotCreated);
+        Assert.Equal(22, container.Behaviors.Count);
+        Assert.Equal(156, container.NotCreated);
         Assert.Single(container.Behaviors.Values.OfType<NativeLookForFaceAndCubeBehavior>());
         Assert.DoesNotContain(container.Behaviors.Values,b=>b is DriveOffChargerBehavior); // no Manipulation input in this pure factory context
     }

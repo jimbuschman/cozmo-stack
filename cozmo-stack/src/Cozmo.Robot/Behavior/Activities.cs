@@ -4,6 +4,9 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
+
+internal sealed class NativeChooserUnavailable(string reason,string? behaviorId=null):Exception(reason)
+{internal string? BehaviorId=>behaviorId;}
 // Native ActivityID table 0x01033070, EnumToString 0x00766C50.
 internal static class ActivityIdNames
 {
@@ -191,9 +194,13 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
     public static ScoredBehaviorEntry FromJson(JsonElement e)
     {
         string id = e.GetProperty("behaviorID").GetString()!;
+        return FromScoringJson(id,e.TryGetProperty("scoring",out var child)?child:default);
+    }
+    internal static ScoredBehaviorEntry FromScoringJson(string id,JsonElement sc)
+    {
         double flat = 0; Graph2d? rep = null, run = null; double? boredom = null;
         var scorers = new List<EmotionScorer>();
-        if (e.TryGetProperty("scoring", out var sc))
+        if (sc.ValueKind==JsonValueKind.Object)
         {
             if (sc.TryGetProperty("flatScore", out var f)) flat = f.GetDouble();
             if (sc.TryGetProperty("repetitionPenalty", out var r)) rep = Graph2d.FromJson(r);
@@ -300,8 +307,8 @@ public interface IBehaviorChooser
 /// The engine's <c>ScoringBSRunnableChooser</c> (0x00609ED8..0x0060A7A0): every listed behaviour's score is
 /// evaluated (<c>IBehavior::EvaluateScore</c>), the running one gets <c>ScoreBonusForCurrentBehavior</c> (a graph
 /// over its running duration, default none), and a challenger replaces it only when it scores higher
-/// ("behavior '%s' has score of %f, so is interrupting running behavior '%s' which scored %f"); exact ties are
-/// broken at random (<c>RandDbl</c>). Behaviours named in the config but absent from the bound set are noted,
+/// ("behavior '%s' has score of %f, so is interrupting running behavior '%s' which scored %f"); each non-running
+/// positive candidate draws before comparison, with equal final scores retaining the earlier candidate. Behaviours absent from the bound set are noted,
 /// not invented.
 /// </summary>
 // fidelity: M8-013
@@ -310,14 +317,73 @@ public sealed class ScoringChooser : IBehaviorChooser
 {
     private readonly Dictionary<string, IBehavior> _bound;
     private readonly RepetitionPenalty _penalty;
-    private readonly IReadOnlyList<ScoredBehaviorEntry> _evaluationEntries;
-
-    public ScoringChooser(IReadOnlyList<ScoredBehaviorEntry> entries, IReadOnlyDictionary<string, IBehavior> bound, Graph2d? scoreBonusForCurrent = null, RepetitionPenalty? penalty = null)
+    private IReadOnlyList<ScoredBehaviorEntry> _evaluationEntries;
+    private readonly bool _native;
+    private EngineRobot? _ordinaryOwner;
+    internal void EnableOrdinaryUnbuiltBoundary(EngineRobot owner)
     {
+        _ordinaryOwner=owner;
+        _evaluationEntries=Entries.DistinctBy(e=>e.BehaviorId).OrderBy(e=>
+            Enum.TryParse<BehaviorID>(e.BehaviorId,false,out var id) && id.ToString()==e.BehaviorId ? (int)id : 256).ToList();
+    }
+    private enum UnbuiltScore { KnownFalse, ScoringZero, Unavailable, NativeAbsent }
+    private UnbuiltScore EvaluateUnbuilt(string id,BehaviorContext ctx,double nowSec)
+    {
+        var owner=_ordinaryOwner;
+        if(owner is null || !ReferenceEquals(owner.Engine.Robot,owner) || owner.NativeBehaviorRuntime is not {} runtime)
+            return UnbuiltScore.Unavailable;
+        if(owner.Engine.HostBehaviorMap is not {} configured)return UnbuiltScore.Unavailable;
+        if(!Enum.TryParse<BehaviorID>(id,false,out var nativeId) || nativeId.ToString()!=id)return UnbuiltScore.Unavailable;
+        if(!configured.ContainsKey(nativeId))return UnbuiltScore.NativeAbsent;
+        var winner=configured[nativeId];
+        NativeScoredFields? gateFields=null;long gateEpoch=0;
+        if(id=="GuardDog")
+        {
+            if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out gateFields)!=true || !gateFields.ConstructorPristine)return UnbuiltScore.Unavailable;
+            gateEpoch=gateFields.Epoch;
+        }
+        bool GateCurrent()=>gateFields is {ConstructorPristine:true} && gateFields.Epoch==gateEpoch &&
+            ReferenceEquals(owner.Engine.Robot,owner) && ReferenceEquals(owner.NativeBehaviorRuntime,runtime) &&
+            owner.NativeConfiguredScoreFields?.TryGetValue(id,out var currentGate)==true && ReferenceEquals(currentGate,gateFields);
+        if(id=="GuardDog" && winner.TryGetProperty("behaviorClass",out var guardClass) && guardClass.ValueKind==JsonValueKind.String && guardClass.GetString()=="GuardDog" && runtime.Manipulation is {} manipulation &&
+           owner.TryGetNativeOriginOwner(owner.CurrentOriginId,out var origin) && origin?.Node is not null)
+        {
+            var filter=new BlockWorldFilter();filter.AllowedFamilies.Add(ObjectFamily.LightCube);
+            filter.Predicates.Add(o=>o.ActiveId>-1);
+            int count=manipulation.World.FindLocatedMatchingObjects(filter).Count;
+            if(!ReferenceEquals(owner.Engine.Robot,owner) || !ReferenceEquals(owner.NativeBehaviorRuntime,runtime))return UnbuiltScore.Unavailable;
+            if(count<3)return GateCurrent()?UnbuiltScore.KnownFalse:UnbuiltScore.Unavailable;
+        }
+        if(id is "PounceOnMotion_Socialize" or "FPPeekABoo")
+        {
+            if(id=="FPPeekABoo" && (runtime.Manipulation is not {} faceInput || faceInput.Vision.Faces.Count!=0))return UnbuiltScore.Unavailable;
+            if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fields)!=true || !fields.ConstructorPristine ||
+               !fields.ExplicitFlatReload || fields.Value is not {} score || score.EmotionScorers.Count!=0 ||
+               !float.IsFinite((float)score.FlatScore) || (float)score.FlatScore!=0f || !float.IsFinite((float)nowSec))return UnbuiltScore.Unavailable;
+            bool FiniteGraph(Graph2d? graph)=>graph is null || graph.Nodes.All(n=>float.IsFinite((float)n.X)&&float.IsFinite((float)n.Y));
+            if(!FiniteGraph(score.RepetitionPenalty) || !FiniteGraph(score.RunningPenalty) ||
+               (score.BoredomMultiplier is {} multiplier && !float.IsFinite((float)multiplier)))return UnbuiltScore.Unavailable;
+            long epoch=fields.Epoch;
+            if(id=="PounceOnMotion_Socialize")
+            {
+                var config=winner;float factor=0.8f;
+                if(config.TryGetProperty("boredomMultiplier",out var value) && value.ValueKind!=JsonValueKind.Null &&
+                   (value.ValueKind!=JsonValueKind.Number || !value.TryGetSingle(out factor)))return UnbuiltScore.Unavailable;
+                if(!float.IsFinite(factor))return UnbuiltScore.Unavailable;
+            }
+            if(fields.ConstructorPristine && fields.Epoch==epoch && ReferenceEquals(owner.Engine.Robot,owner) &&
+               ReferenceEquals(owner.NativeBehaviorRuntime,runtime) && owner.NativeConfiguredScoreFields?.TryGetValue(id,out var current)==true && ReferenceEquals(current,fields))return UnbuiltScore.ScoringZero;
+        }
+        return UnbuiltScore.Unavailable;
+    }
+
+    public ScoringChooser(IReadOnlyList<ScoredBehaviorEntry> entries, IReadOnlyDictionary<string, IBehavior> bound, Graph2d? scoreBonusForCurrent = null, RepetitionPenalty? penalty = null, bool native=false)
+    {
+        _native=native;
         Entries = entries; ScoreBonusForCurrent = scoreBonusForCurrent; _penalty = penalty ?? new RepetitionPenalty();
-        _bound = entries.Where(e => bound.ContainsKey(e.BehaviorId)).ToDictionary(e => e.BehaviorId, e => bound[e.BehaviorId]);
+        _bound = entries.Where(e => bound.ContainsKey(e.BehaviorId)).DistinctBy(e=>e.BehaviorId).ToDictionary(e => e.BehaviorId, e => bound[e.BehaviorId]);
         // Native map key is the bound behavior's ID byte (0x0060a2c4). Unknown host-only IDs retain input order.
-        _evaluationEntries = entries.OrderBy(e => _bound.TryGetValue(e.BehaviorId, out var b) &&
+        _evaluationEntries = (_native?entries.Where(e=>_bound.ContainsKey(e.BehaviorId)).DistinctBy(e=>e.BehaviorId):entries).OrderBy(e => _bound.TryGetValue(e.BehaviorId, out var b) &&
             Enum.TryParse<BehaviorID>(b.Id, out var id) && id.ToString() == b.Id ? (int)id : 256).ToList();
     }
 
@@ -355,19 +421,35 @@ public sealed class ScoringChooser : IBehaviorChooser
         IBehavior? best = null; double bestScore = 0; double currentScore = 0;
         foreach (var e in _evaluationEntries)
         {
-            if (!_bound.TryGetValue(e.BehaviorId, out var b)) { scores.Add((e.BehaviorId, 0, "not built")); continue; }
-            bool running = current is not null && current.Id == b.Id;
+            if (!_bound.TryGetValue(e.BehaviorId, out var b))
+            {
+                if(_ordinaryOwner is not null)
+                {
+                    var state=EvaluateUnbuilt(e.BehaviorId,ctx,nowSec);
+                    if(state==UnbuiltScore.Unavailable)
+                    {SteppedBehavior.ReportMissing("M8-003 configured scored owner/input unavailable for "+e.BehaviorId);return new ChooserDecision(null,"unavailable scored owner",scores){InputUnavailable=true};}
+                    scores.Add((e.BehaviorId,0,state.ToString()));continue;
+                }
+                scores.Add((e.BehaviorId, 0, "not built")); continue;
+            }
+            if(_native && (b is not SteppedBehavior native || native.NativeScoring is null || !native.NativeScoringAvailable))
+            {SteppedBehavior.ReportMissing("M8-003 actual scored owner unavailable for "+b.Id);return new ChooserDecision(null,"unavailable scored owner",scores){InputUnavailable=true};}
+            bool running = _native ? b is SteppedBehavior { EngineRunning:true } : current is not null && current.Id == b.Id;
+            double duration=running && _native && b is SteppedBehavior timed ? (float)nowSec-(float)timed.RunningPenaltyClockSec : currentRunningSec;
+            var scoreInput=_native && b is SteppedBehavior scored ? scored.NativeScoring ?? e : e;
             // IBehavior +0x104: the running-score bonus IncreaseScoreWhileActing accumulates (M8-003).
             double runningBonus = b is SteppedBehavior sb ? sb.RunningScoreBonus : 0;
-            float s = (float)e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty,
+            var scoreResult=SteppedBehavior.EvaluateHostOperation(()=>(float)scoreInput.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? duration : null, _penalty,
                                   runningBonus: runningBonus, penaltySuppressed: _penalty.IsSuppressed(b.Id, nowSec),
-                                  runningClockSec: b is SteppedBehavior clocked ? clocked.RunningPenaltyClockSec : null);
+                                  runningClockSec: b is SteppedBehavior clocked ? clocked.RunningPenaltyClockSec : null));
+            if(_native && !scoreResult.Available)return new ChooserDecision(null,"unavailable scored readiness",scores){InputUnavailable=true};
+            float s=scoreResult.Value;
             if (s <= 0) { scores.Add((b.Id, s, "scored 0")); continue; }
             if (running)
             {
                 // 0x0060a466 ldrb +0xa1; 0x0060a474 GraphEvaluator2d::EvaluateY(chooser+0x28, running duration);
                 // 0x0060a486 vadd the 0.1 constant; 0x0060a48a floor at 0.01.
-                s = (float)(ScoreBonusForCurrent?.EvaluateY(currentRunningSec) ?? 0)+s; // 0x0060a474
+                s = (float)(ScoreBonusForCurrent?.EvaluateY(duration) ?? 0)+s; // 0x0060a474
                 s += BitConverter.Int32BitsToSingle(0x3DCCCCCD);                  // 0x0060a486
                 float floor=BitConverter.Int32BitsToSingle(0x3C23D70A);
                 if (!(s > floor)) s = floor; // vmovgt retains floor on unordered.
@@ -394,7 +476,41 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
 {
     private readonly IReadOnlyDictionary<string, IBehavior> _bound;
     internal bool StopOnUnavailable { get; set; }
-    public StrictPriorityChooser(IReadOnlyList<string> ids, IReadOnlyDictionary<string, IBehavior> bound) { BehaviorIds = ids; _bound = bound; }
+    private EngineRobot? _ordinaryOwner;
+    private readonly EngineRobot? _configuredOwner;
+    internal void EnableOrdinaryInterludeBoundary(EngineRobot owner)=>_ordinaryOwner=owner;
+    private bool ProvedUnbuiltFalse(string id,BehaviorContext ctx)
+    {
+        var owner=_ordinaryOwner;
+        if(owner is null || !ReferenceEquals(owner.Engine.Robot,owner) || owner.NativeBehaviorRuntime is not {} runtime ||
+           !ReferenceEquals(ctx.Needs,owner.Engine.Needs) || owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fields)!=true ||
+           !fields.ConstructorPristine || owner.Engine.HostBehaviorMap is not {} configs ||
+           !Enum.TryParse<BehaviorID>(id,false,out var nativeId) || !configs.TryGetValue(nativeId,out var config))return false;
+        long epoch=fields.Epoch;bool result;
+        if(id=="EarnedSparks")result=!owner.Engine.Needs.SparksRewardPending;
+        else
+        {
+            var expected=id switch
+            {
+                "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" => (NeedId.Play,NeedBracketId.Critical),
+                "Needs_MildLowRepairRequest" => (NeedId.Repair,NeedBracketId.Warning),
+                "Needs_MildLowEnergyRequest" => (NeedId.Energy,NeedBracketId.Warning),
+                "Needs_MildLowPlayRequest" => (NeedId.Play,NeedBracketId.Warning),
+                _ => ((NeedId)(-1),(NeedBracketId)(-1))
+            };
+            if((int)expected.Item1<0 || !config.TryGetProperty("need",out var need) || need.ValueKind!=JsonValueKind.String || need.GetString()!=expected.Item1.ToString() ||
+               !config.TryGetProperty("needBracket",out var bracket) || bracket.ValueKind!=JsonValueKind.String || bracket.GetString()!=expected.Item2.ToString() ||
+               (config.TryGetProperty("caresAboutExpressedState",out var cares) && cares.ValueKind!=JsonValueKind.False && cares.ValueKind!=JsonValueKind.Null))return false;
+            result=!owner.Engine.Needs.State.IsNeedAtBracket(expected.Item1,expected.Item2);
+        }
+        return result && fields.ConstructorPristine && fields.Epoch==epoch && ReferenceEquals(owner.Engine.Robot,owner) &&
+            ReferenceEquals(owner.NativeBehaviorRuntime,runtime) && ReferenceEquals(ctx.Needs,owner.Engine.Needs) &&
+            owner.NativeConfiguredScoreFields?.TryGetValue(id,out var current)==true && ReferenceEquals(current,fields);
+    }
+    private readonly bool _native;
+    public StrictPriorityChooser(IReadOnlyList<string> ids, IReadOnlyDictionary<string, IBehavior> bound, bool native=false) : this(ids,bound,native,null) { }
+    internal StrictPriorityChooser(IReadOnlyList<string> ids,IReadOnlyDictionary<string,IBehavior> bound,bool native,EngineRobot? owner)
+    { BehaviorIds = ids; _bound = native?bound.ToDictionary(e=>e.Key,e=>e.Value):bound;_native=native;_configuredOwner=owner; }
     public BehaviorChooserType Type => BehaviorChooserType.StrictPriority;
     public IReadOnlyList<string> BehaviorIds { get; }
     public IReadOnlyList<string> Unbound => BehaviorIds.Where(i => !_bound.ContainsKey(i)).ToList();
@@ -402,14 +518,24 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
     public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)
     {
         var scores = new List<(string, double, string)>();
+        if(_native && _configuredOwner is {} owner && !ReferenceEquals(owner.Engine.Robot,owner))
+        {SteppedBehavior.ReportMissing("M8-013 strict priority original configured owner unavailable");return new ChooserDecision(null,"unavailable owner",scores){InputUnavailable=true};}
         foreach (var id in BehaviorIds)
         {
-            if (!_bound.TryGetValue(id, out var b)) { scores.Add((id, 0, "not built")); if(StopOnUnavailable) { SteppedBehavior.ReportMissing("M8-013 strict priority reached unavailable readiness: "+id); return new ChooserDecision(null, "unavailable readiness", scores) { InputUnavailable=true }; } continue; }
+            if (!_bound.TryGetValue(id, out var b))
+            {
+                if(_native && _configuredOwner?.Engine.HostBehaviorMap is {} configs && Enum.TryParse<BehaviorID>(id,false,out var nativeId) && nativeId.ToString()==id && !configs.ContainsKey(nativeId))
+                {scores.Add((id,0,"native missing"));continue;}
+                if(ProvedUnbuiltFalse(id,ctx)){scores.Add((id,0,"checked false"));continue;}
+                scores.Add((id,0,"not built"));
+                if(_native || StopOnUnavailable) { SteppedBehavior.ReportMissing("M8-013 strict priority reached unavailable readiness: "+id); return new ChooserDecision(null, "unavailable readiness", scores) { InputUnavailable=true }; }
+                continue;
+            }
             // NATIVE (StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E): the loop reads the
             // candidate's is-running flag (IBehavior +0xA1, the same byte IsRunnableBase logs "Behavior %s is
             // already running" from) at 0x0060B250 and selects it without calling IsRunnable at all. Only a
             // behaviour that is not running is asked whether it is runnable.
-            bool running = StopOnUnavailable ? b is SteppedBehavior { EngineRunning:true } : current is not null && current.Id == id;
+            bool running = _native || StopOnUnavailable ? b is SteppedBehavior { EngineRunning:true } : current is not null && current.Id == id;
             if (running) { scores.Add((id,1,"running"));return new ChooserDecision(b,"already running",scores); }
             bool runnable;
             if(StopOnUnavailable && b is SteppedBehavior stepped)
@@ -428,7 +554,7 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
 
 /// <summary>
 /// The robot's external interface as <c>SelectionBSRunnableChooser</c>'s constructor sees it (0x0060A87A..0x0060A884): the subscription seam for the
-/// game-to-engine <c>MessageGameToEngine</c> tags 0x94 and 0x93. The stack has no game-to-engine channel, so nothing implements it in production.
+/// game-to-engine <c>MessageGameToEngine</c> tags 0x94 and 0x93. Canonical input uses the owned local message hub.
 /// </summary>
 // fidelity: M8-013
 public interface IChooserExternalInterface
@@ -447,13 +573,18 @@ public interface IChooserExternalInterface
 /// applied to <c>Wait</c>, whose countdown block only runs when <c>+0x34 == +0x2c</c>; otherwise null.
 /// </summary>
 // fidelity: M8-013
-public sealed class SelectionChooser : IBehaviorChooser
+public sealed class SelectionChooser : IBehaviorChooser, IDisposable
 {
     private readonly IBehavior? _wait;
     private readonly IReadOnlyDictionary<string, IBehavior>? _bound;
     private IBehavior? _requested;   // +0x2c
     private int _numRuns = -1;       // +0x3c
     private bool _latch;             // +0x40
+    private readonly List<RetainedSubscription> _subscriptions=new();
+    private EngineRobot? _nativeOwner;
+    private bool _retired;
+    private bool _inputUnavailable;
+    private long _selectionEpoch;
 
     /// <summary>The key <c>SetProcessEnabled</c> (0x0060AE84..0x0060AEEA) files the analyzer enable request under.</summary>
     public const string ProcessKey = "SelectionBSRunnableChooser";
@@ -462,19 +593,31 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// The constructor (0x0060A87C..0x0060A99E): when the robot has an external interface (<paramref name="external"/> non-null,
     /// 0x0060A87A..0x0060A884) it subscribes the one bound <c>HandleExecuteBehavior</c> to game-to-engine tag 0x94
     /// (<c>ExecuteBehaviorByID</c>, 0x0060A898..0x0060A8B4) and then 0x93 (<c>ExecuteBehaviorByExecutableType</c>, 0x0060A91C..0x0060A938);
-    /// with none it subscribes nothing. Either way it then resolves <c>Wait</c> (0x0060A984..0x0060A99E). Nothing in this stack
-    /// implements <see cref="IChooserExternalInterface"/> (no game-to-engine channel exists), so production passes none.
+    /// with none it subscribes nothing. Either way it then resolves <c>Wait</c> (0x0060A984..0x0060A99E). Canonical construction
+    /// uses its original Robot's local message hub; this external interface remains a standalone test seam.
     /// </summary>
-    public SelectionChooser(IReadOnlyDictionary<string, IBehavior>? bound = null, IChooserExternalInterface? external = null)
+    public SelectionChooser(IReadOnlyDictionary<string, IBehavior>? bound = null, IChooserExternalInterface? external = null, EngineRobot? nativeOwner = null)
     {
         _bound = bound;
-        // ctor 0x0060a988/0x0060a99a: BehaviorID 0xb2 = 178 = "Wait" resolved through FindBehaviorByID.
-        _wait = bound is not null && bound.TryGetValue("Wait", out var w) ? w : null;
+        _nativeOwner=nativeOwner;
         if (external is not null)
         {
             external.SubscribeChooserHandler(Cozmo.Protocol.ExecuteBehaviorByIDMessage.UnionTag, this);               // 0x0060a898..0x0060a8b4
             external.SubscribeChooserHandler(Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnionTag, this);   // 0x0060a91c..0x0060a938
         }
+        if(nativeOwner?.HasExternalInterface==true)
+        {
+            foreach(ushort tag in new ushort[]{0x94,0x93})
+                _subscriptions.Add(nativeOwner.Engine.AnimationMessages.SubscribeMessage(tag,false,payload=>
+                {
+                    using var owner=nativeOwner.Engine.EnterSynchronousOwner();
+                    if(_retired || !ReferenceEquals(nativeOwner.Engine.Robot,nativeOwner))return;
+                    if(payload is byte[] body && body.Length==5)HandleMessage(tag,body);
+                    else SteppedBehavior.ReportMissing("M8-013 Selection input requires exactly five payload bytes");
+                }));
+        }
+        // Native constructor subscribes first, then resolves Wait.
+        _wait = bound is not null && bound.TryGetValue("Wait", out var w) ? w : null;
     }
 
     public BehaviorChooserType Type => BehaviorChooserType.Selection;
@@ -486,15 +629,18 @@ public sealed class SelectionChooser : IBehaviorChooser
     public IBehavior? Wait => _wait;
     /// <summary>+0x3c: the remaining runs; -1 is unlimited.</summary>
     public int NumRuns => _numRuns;
+    internal bool RunningLatch=>_latch;
+    internal void OnSelected(){if(!_retired)SetProcessEnabled(_requested,true);}
+    internal void OnDeselected(){if(!_retired)SetProcessEnabled(_requested,false);}
+    public void Dispose(){if(_retired)return;_retired=true;++_selectionEpoch;_requested=null;foreach(var subscription in _subscriptions)subscription.Dispose();_subscriptions.Clear();_nativeOwner=null;}
 
     /// <summary>Log lines (the handler's warnings and the unknown-tag error).</summary>
     public event Action<string>? Log;
     public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>
-    /// <c>BehaviorManager::FindBehaviorByExecutableType</c> (called at 0x0060AA7C). Its body is not in the M8 inventory (the container
-    /// map walk at 0x0059C836 is cited but not read), so there is no default: when unset, an executable-type message reports MISSING once and is skipped
-    /// (nothing is stored or selected). MISSING: M8-013.
+    /// <c>BehaviorManager::FindBehaviorByExecutableType</c> (0x005A418C / container 0x0059C836). Canonical construction binds
+    /// the retained configured owner; standalone callers may supply their own finder.
     /// </summary>
     public Func<byte, IBehavior?>? FindBehaviorByExecutableType { get; set; }
 
@@ -543,10 +689,13 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// </summary>
     private void Select(IBehavior? selected)
     {
+        long epoch=++_selectionEpoch;
         if (!ReferenceEquals(selected, _requested))
         {
             SetProcessEnabled(_requested, false);
+            if(_retired || epoch!=_selectionEpoch)return;
             SetProcessEnabled(selected, true);
+            if(_retired || epoch!=_selectionEpoch)return;
         }
         _requested = selected;
     }
@@ -559,14 +708,19 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// </summary>
     public void HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByIDMessage message)
     {
+        if(_retired)return;
+        long epoch=++_selectionEpoch;
         // FindBehaviorByID: the container map keyed by BehaviorID (the enum is a byte); an undefined id is a miss.
         IBehavior? found = null;
         bool defined = Enum.IsDefined(typeof(BehaviorID), message.BehaviorID);
         string name = defined ? ((BehaviorID)message.BehaviorID).ToString() : message.BehaviorID.ToString();
         if (defined && _bound is not null) _bound.TryGetValue(name, out found);
+        if(found is null && defined && _nativeOwner?.Engine.HostBehaviorMap?.ContainsKey((BehaviorID)message.BehaviorID)==true)
+        { _nativeOwner.InvalidateConfiguredScoreHistory(name);SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("M8-013 configured behavior owner "+name+" is unbuilt");return; }
         _numRuns = message.NumRuns;                                                        // 0x0060AA88 / 0x0060AB7A
         if (found is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "SelectionBSRunnableChooser.HandleExecuteBehaviorByName.UnknownBehavior", $"Unknown behavior {name}");
         else SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "SelectionBSRunnableChooser.HandleExecuteBehaviorByName.SelectBehavior", $"selecting behavior name '{name}'");
+        if(_retired || epoch!=_selectionEpoch)return;
         Select(found);
     }
 
@@ -576,20 +730,33 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// "selecting behavior '%s' exec type '%s'" (event <c>...ExecuteBehaviorByExecutableType.SelectBehavior</c>), a miss warns
     /// "No behavior for exec type %s" (event <c>...ExecuteBehaviorByExecutableType.NoBehavior</c>) and selects null. The engine prints the type through
     /// <c>EnumToString(ExecutableBehaviorType)</c> (PLT 0x4B6CA8, 0x0060AAEC / 0x0060ABA0) and the hit line's first %s is the behaviour's name string (+0x40).
-    /// The stack has no <c>ExecutableBehaviorType</c> name table, so the type's name is MISSING (reported once) and its number is printed in its place.
+    /// Canonical construction uses the recovered native name table; standalone test callers retain the numeric diagnostic.
     /// </summary>
     public void HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage message)
     {
+        if(_retired)return;
+        long epoch=++_selectionEpoch;
         if (FindBehaviorByExecutableType is not { } find)
         {
             if (!_reportedFinderMissing) { _reportedFinderMissing = true; Log?.Invoke("MISSING: M8-013: BehaviorManager::FindBehaviorByExecutableType's body is not in the inventory; the executable-type message is skipped"); }
             return;
         }
-        var found = find(message.ExecutableBehaviorType);
+        IBehavior? found;
+        try { found=find(message.ExecutableBehaviorType); }
+        catch(NativeChooserUnavailable error) { if(error.BehaviorId is {} id)_nativeOwner?.InvalidateConfiguredScoreHistory(id);SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("M8-013 "+error.Message);return; }
+        if(_retired || epoch!=_selectionEpoch)return;
         _numRuns = message.NumRuns;                                                        // 0x0060AAC8
-        if (!_reportedTypeNameMissing) { _reportedTypeNameMissing = true; Log?.Invoke("MISSING: M8-013: the ExecutableBehaviorType name table (EnumToString, PLT 0x4B6CA8) is not in the stack; the number is logged instead of the name"); }
-        if (found is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.NoBehavior", $"No behavior for exec type {message.ExecutableBehaviorType}");
-        else SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.SelectBehavior", $"selecting behavior '{found.Id}' exec type '{message.ExecutableBehaviorType}'");
+        string typeName;
+        if(_nativeOwner is not null)typeName=message.ExecutableBehaviorType<ExecutableBehaviorNames.Names.Length?ExecutableBehaviorNames.Names[message.ExecutableBehaviorType]:"(null)";
+        else
+        {
+            if (!_reportedTypeNameMissing) { _reportedTypeNameMissing = true; Log?.Invoke("MISSING: M8-013: standalone executable type-name input unavailable; number logged"); }
+            typeName=message.ExecutableBehaviorType.ToString();
+        }
+        if(_retired || epoch!=_selectionEpoch)return;
+        if (found is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.NoBehavior", $"No behavior for exec type {typeName}");
+        else SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.SelectBehavior", $"selecting behavior '{found.Id}' exec type '{typeName}'");
+        if(_retired || epoch!=_selectionEpoch)return;
         Select(found);
     }
 
@@ -600,6 +767,7 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// </summary>
     public void HandleMessage(ushort tag, ReadOnlyMemory<byte> payload)
     {
+        if(_retired)return;
         switch (tag)
         {
             case Cozmo.Protocol.ExecuteBehaviorByIDMessage.UnionTag:
@@ -607,8 +775,9 @@ public sealed class SelectionChooser : IBehaviorChooser
             case Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnionTag:
                 HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnpackBody(payload)); break;
             default:
+                long epoch=++_selectionEpoch;
                 SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "SelectionBSRunnableChooser.HandleMessage.UnknownTag", "got a tag we didn't subscribe to");   // sErrorF 0x0060AB3A..0x0060AB74
-                Select(null);
+                if(!_retired && epoch==_selectionEpoch)Select(null);
                 break;
         }
     }
@@ -619,17 +788,22 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// </summary>
     public void RequestBehavior(IBehavior? behavior, int numRuns = -1)
     {
+        if(_retired)return;
         _numRuns = numRuns;
         Select(behavior);
     }
 
     public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)
     {
+        if(_retired)return new ChooserDecision(null,"chooser retired",Array.Empty<(string,double,string)>()){InputUnavailable=true};
+        _inputUnavailable=false;
         var scores = new List<(string, double, string)>();
         if (Candidate(_requested, current, ctx, scores, updateCountdown: true))
             return new ChooserDecision(_requested, "the requested behaviour", scores);
-        if (Candidate(_wait, current, ctx, scores, updateCountdown: _wait is not null && ReferenceEquals(_wait, _requested)))
+        if(_inputUnavailable)return new ChooserDecision(null,"unavailable readiness",scores){InputUnavailable=true};
+        if (Candidate(_wait, current, ctx, scores, updateCountdown: ReferenceEquals(_wait, _requested)))
             return new ChooserDecision(_wait, "the Wait fallback", scores);
+        if(_inputUnavailable)return new ChooserDecision(null,"unavailable readiness",scores){InputUnavailable=true};
         return new ChooserDecision(null, "no requested behaviour and no Wait are runnable", scores);
     }
 
@@ -641,12 +815,20 @@ public sealed class SelectionChooser : IBehaviorChooser
     private bool Candidate(IBehavior? candidate, IBehavior? current, BehaviorContext ctx,
                            List<(string, double, string)> scores, bool updateCountdown)
     {
-        if (candidate is null) return false;
-        bool running = current is not null && current.Id == candidate.Id;
-        bool runnable = running || candidate.IsRunnable(ctx);
+        if(_nativeOwner is not null && candidate is not null && candidate is not SteppedBehavior)
+        { _inputUnavailable=true;SteppedBehavior.ReportMissing("M8-013 Selection actual running/readiness owner unavailable for "+candidate.Id);return false; }
+        bool running = candidate is SteppedBehavior stepped ? stepped.EngineRunning : candidate is not null && ReferenceEquals(current,candidate);
+        bool runnable=running;
+        if(!running && candidate is SteppedBehavior nativeCandidate && _nativeOwner is not null)
+        {
+            var readiness=nativeCandidate.EvaluateHostReadiness(ctx);
+            if(!readiness.Available){_inputUnavailable=true;return false;}
+            runnable=readiness.Runnable;
+        }
+        else if(!running && candidate is not null)runnable=candidate.IsRunnable(ctx);
         if (updateCountdown)
         {
-            if (_numRuns == 0) runnable = false;                                   // 0x0060ada4/0x0060adce
+            if (_numRuns == 0) { runnable = false; goto finishedCountdown; }       // count zero preserves latch
             else if (_numRuns >= 1 && !running && _latch)                          // 0x0060ada8..0x0060adbc
             {
                 _numRuns--;                                                        // 0x0060adbe/0x0060adc0
@@ -654,6 +836,8 @@ public sealed class SelectionChooser : IBehaviorChooser
             }
             _latch = running;                                                      // 0x0060adc8 / 0x0060ae3a
         }
+        finishedCountdown:
+        if(candidate is null)return false;
         scores.Add((candidate.Id, runnable ? 1 : 0, running ? "running" : runnable ? "selected" : "not runnable"));
         return runnable;
     }
@@ -1089,6 +1273,25 @@ public sealed class Activity
     internal Action? NativePublicStateSelected;
     internal NeedsManager? NativeNeeds;
     internal IBehavior? CachedInterlude;
+    // IActivity::GetDesiredActiveBehavior wrapper for the checked GatherCubes delegate.
+    internal ChooserDecision NativeGatherDesired(IBehavior? current,double running,BehaviorContext context,double now,Func<bool> currentOwner)
+    {
+        if(GatherOwner is null)return new ChooserDecision(null,"delegate unavailable",Array.Empty<(string,double,string)>()){InputUnavailable=true};
+        if(CachedInterlude is {} cached && ReferenceEquals(cached,current))return new ChooserDecision(cached,"cached interlude",Array.Empty<(string,double,string)>());
+        var previous=CachedInterlude;CachedInterlude=null;
+        var decision=Chooser?.GetDesiredActiveBehavior(current,running,context,now) ?? new ChooserDecision(null,"no chooser",Array.Empty<(string,double,string)>());
+        if(!currentOwner())return decision with {InputUnavailable=true};
+        if(decision.InputUnavailable){CachedInterlude=previous;return decision;}
+        if(InterludeChooser is {} interlude&&!ReferenceEquals(decision.Behavior,current))
+        {
+            var next=interlude.GetDesiredActiveBehavior(decision.Behavior,0,context,now);
+            if(!currentOwner())return next with {InputUnavailable=true};
+            if(next.InputUnavailable){CachedInterlude=previous;return next;}
+            CachedInterlude=next.Behavior;
+            if(CachedInterlude is {} selected)return next with {Behavior=selected};
+        }
+        return decision;
+    }
     internal NativeActivityObjectiveOwner? ObjectiveOwner;
     internal NativeSparkedActivity? SparkedOwner;
     // Common OnDeselected's derived virtual hook, after common cleanup (005B3658).
@@ -1138,6 +1341,8 @@ public sealed class Activity
         long epoch=++_nativeLifecycleEpoch;
         bool Current()=>!GuardNativeLifecycle || epoch==_nativeLifecycleEpoch;
         SelectedAtSec = nowSec; Strategy.OnStarted(nowSec);
+        if(Chooser is SelectionChooser selection)selection.OnSelected();
+        if(!Current())return;
         if(!Current())return;
         if(NativePublicStateSelected is {} publish)publish();
         else ReportActivityMissing("PublicStateBroadcaster::UpdateActivity 0x005B3154", missing);
@@ -1155,6 +1360,7 @@ public sealed class Activity
     public void OnDeselected(double nowSec, Action<string>? missing = null, NeedsManager? needs = null)
     {
         long epoch=++_nativeLifecycleEpoch;
+        if(Chooser is SelectionChooser selection){SelectedAtSec=null;Strategy.OnEnded(nowSec);selection.OnDeselected();if(GuardNativeLifecycle && epoch!=_nativeLifecycleEpoch)return;}
         bool Current()=>!GuardNativeLifecycle || epoch==_nativeLifecycleEpoch;
         var oldSpark=GuardNativeLifecycle?SparkedOwner?.DetachGather():null;
         var oldDriving=GuardNativeLifecycle?_nativeDrivingLease:null;
@@ -1210,6 +1416,8 @@ public sealed class Activity
     internal void RetireHostResources()
     {
         ++_nativeLifecycleEpoch;
+        // Sparked's destructor releases owned references, not selected-state outputs.
+        if(SparkedOwner is not null)return;
         var oldSpark=SparkedOwner?.DetachGather();
         var oldDriving=_nativeDrivingLease;_nativeDrivingLease=null;
         try { oldSpark?.ReleaseAll(); }
@@ -1299,38 +1507,42 @@ public static class ActivityTreeLoader
     {
         string id = e.GetProperty("activityID").GetString()!;
         var subs = new List<Activity>();
-        if (e.TryGetProperty("subActivities", out var sa))
-            foreach (var s in sa.EnumerateArray())
-            {
-                string sid = s.GetProperty("activityID").GetString()!;
-                // activityPriority is parsed with ParseUint8 and discarded (0x005AD63C/0x005AD640); the
-                // child order is the JSON array order, not a priority sort (M15-013).
-                if (byId.TryGetValue(sid, out var se)) subs.Add(Build(se, byId, bound, penalty, random, 0,owner));
-                else subs.Add(new Activity { Id = sid, Type = "Missing", Priority = 0, Strategy = new ActivityStrategy { Type = "Missing" } });
-            }
         AnimationTrigger? Trig(string k) => e.TryGetProperty(k, out var t) && Enum.TryParse<AnimationTrigger>(t.GetString(), out var tr) ? tr : null;
         (string, string, string, string)? desired = null;
         if (e.TryGetProperty("desiredActivityNames", out var dn))
             desired = (dn.GetProperty("faceAndCubeActivityName").GetString()!, dn.GetProperty("faceOnlyActivityName").GetString()!, dn.GetProperty("cubeOnlyActivityName").GetString()!, dn.GetProperty("noFaceNoCubeActivityName").GetString()!);
+        var normalChooser=e.TryGetProperty("behaviorChooser",out var bc) ? BuildChooser(bc,bound,penalty,random,owner) : e.TryGetProperty("universalChooser",out var uc) ? BuildChooser(uc,bound,penalty,random,owner) : null;
+        if(owner is not null && (id is "Socialize" or "PlayAlone") && normalChooser is ScoringChooser ordinary)
+            ordinary.EnableOrdinaryUnbuiltBoundary(owner);
+        var interludeChooser=e.TryGetProperty("interludeBehaviorChooser",out var ic) ? BuildChooser(ic,bound,penalty,random,owner) : null;
+        if(owner is not null && (id is "Socialize" or "PlayAlone") && interludeChooser is StrictPriorityChooser ordinaryInterlude)
+        {ordinaryInterlude.EnableOrdinaryInterludeBoundary(owner);ordinaryInterlude.StopOnUnavailable=true;}
         var strategy = e.TryGetProperty("activityStrategy", out var st) ? ActivityStrategy.FromJson(st) : new ActivityStrategy();
-        if (random is not null) strategy.Random = random;
-        if(owner is not null)strategy.BindNative(owner);
         // fidelity: M15-059
-        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes" or "SparksWorkout")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
-            SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");
+        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !(owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
+            SteppedBehavior.ReportMissing("M15-059 "+id+": actual original Robot or retained configured PlayArbitraryAnim 3D is unavailable; Sparked owner not constructed.");
         if(id=="SparksGatherCubes")
             SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt");
         var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,
             Id = id, Type = e.TryGetProperty("activityType", out var ty) ? ty.GetString() ?? "BehaviorsOnly" : "BehaviorsOnly", Priority = priority, Strategy = strategy,
-            Chooser = e.TryGetProperty("behaviorChooser", out var bc) ? BuildChooser(bc, bound, penalty, random) : e.TryGetProperty("universalChooser", out var uc) ? BuildChooser(uc, bound, penalty, random) : null,
-            InterludeChooser = e.TryGetProperty("interludeBehaviorChooser", out var ic) ? BuildChooser(ic, bound, penalty, random) : null,
+            Chooser = normalChooser,
+            InterludeChooser = interludeChooser,
             DriveStartAnim = Trig("driveStartAnimTrigger"), DriveLoopAnim = Trig("driveLoopAnimTrigger"), DriveEndAnim = Trig("driveEndAnimTrigger"), IdleAnim = Trig("idleAnimTrigger"),
             RequireSpark = e.TryGetProperty("requireSpark", out var rs) ? rs.GetString() : null,
             NeedsActionId = e.TryGetProperty("needsActionID", out var na) ? na.GetString() : null,
             SubActivities = subs, DesiredActivityNames = desired,
         };
+        if (random is not null) strategy.Random = random;
+        if(owner is not null)strategy.BindNative(owner);
+        if (e.TryGetProperty("subActivities", out var sa))
+            foreach (var s in sa.EnumerateArray())
+            {
+                string sid=s.GetProperty("activityID").GetString()!;
+                if(byId.TryGetValue(sid,out var se))subs.Add(Build(se,byId,bound,penalty,random,0,owner));
+                else subs.Add(new Activity { Id=sid,Type="Missing",Priority=0,Strategy=new ActivityStrategy { Type="Missing" } });
+            }
         if(owner is not null)
         {
             byte? nativeId = ActivityIdNames.TryId(id, out var mapped) ? mapped : null;
@@ -1356,7 +1568,7 @@ public static class ActivityTreeLoader
                             &&rawId.ValueKind==JsonValueKind.String &&bound.TryGetValue(rawId.GetString()!,out var candidate)
                             &&candidate is NativeLookForFaceAndCubeBehavior look &&rawEntry.TryGetProperty("scoring",out var rawScoring))
                             look.CheckObjectiveInput(rawScoring,"activity "+id+" "+chooserKey);
-            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes" or "SparksWorkout")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
+            if(activity.Type=="Sparked"&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
             {
                 Activity? nested=null;
                 if(id=="SparksGatherCubes" && e.TryGetProperty("subActivityDelegate",out var nestedConfig))
@@ -1365,9 +1577,16 @@ public static class ActivityTreeLoader
                     if(nested.Chooser is StrictPriorityChooser strict)strict.StopOnUnavailable=true;
                 }
                 // P3: unavailable earlier Spark workout candidates are not sourced false gates.
-                if(id=="SparksWorkout" && activity.Chooser is StrictPriorityChooser workoutChooser)workoutChooser.StopOnUnavailable=true;
-                activity.SparkedOwner=new(activity,owner,e,bound,nested);
-                if(id is "SparksGatherCubes" or "SparksWorkout"){activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;}
+                if(activity.Chooser is StrictPriorityChooser workoutChooser)workoutChooser.StopOnUnavailable=true;
+                Activity? CreateSparkDelegate(JsonElement config)
+                {
+                    if(!config.TryGetProperty("activityType",out var type) || type.ValueKind!=JsonValueKind.String || type.GetString()!="GatherCubes")return null;
+                    var created=Build(config,byId,bound,penalty,random,0,owner);
+                    if(created.Chooser is StrictPriorityChooser strict)strict.StopOnUnavailable=true;
+                    return created.GatherOwner is not null?created:null;
+                }
+                activity.SparkedOwner=new(activity,owner,e,bound,nested,CreateSparkDelegate);
+                activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;
                 if(id=="SparksGatherCubes" && activity.DriveStartAnim is {} start && activity.DriveLoopAnim is {} loop && activity.DriveEndAnim is {} end)
                 {
                     activity.NativeCommonDrivingPush=()=>activity.PushOwnedDriving(owner,new(start,loop,end));
@@ -1375,24 +1594,39 @@ public static class ActivityTreeLoader
                 }
             }
             else if(id=="GatherCubes" && activity.Type=="GatherCubes") { activity.GuardNativeLifecycle=true;activity.GatherOwner=new(owner); }
-            else if(activity.Type is "Socialize" or "Sparked")activity.ObjectiveOwner=new(activity,owner,e);
+            else if(activity.Type=="Socialize")activity.ObjectiveOwner=new(activity,owner,e,bound);
+            if(activity.Type=="Socialize") { activity.NativeUpdate20=_=>0;activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot; }
+            if(activity.Type=="NeedsExpression" && (id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
+            {activity.NativeUpdate20=_=>0;activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;if(activity.Chooser is StrictPriorityChooser needsChooser)needsChooser.StopOnUnavailable=true;}
         }
         return activity;
     }
 
-    public static IBehaviorChooser BuildChooser(JsonElement c, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random)
+    public static IBehaviorChooser BuildChooser(JsonElement c, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random, EngineRobot? owner=null)
     {
         string type = c.TryGetProperty("type", out var t) ? t.GetString() ?? "Scoring" : "Scoring";
         switch (type)
         {
             case "StrictPriority":
-                return new StrictPriorityChooser(c.TryGetProperty("behaviors", out var b) ? b.EnumerateArray().Select(x => x.GetString()!).ToList() : new List<string>(), bound);
+                return new StrictPriorityChooser(c.TryGetProperty("behaviors", out var b) ? b.EnumerateArray().Select(x => x.GetString()!).ToList() : new List<string>(), bound,owner is not null,owner);
             case "Selection":
-                return new SelectionChooser(bound);
+                return new SelectionChooser(bound,nativeOwner:owner);
             default:
                 var entries = c.TryGetProperty("behaviors", out var bs) ? bs.EnumerateArray().Select(ScoredBehaviorEntry.FromJson).ToList() : new List<ScoredBehaviorEntry>();
+                if(owner is not null && c.TryGetProperty("behaviors",out var nativeEntries))
+                    foreach(var entry in nativeEntries.EnumerateArray())
+                    {
+                        var id=entry.GetProperty("behaviorID").GetString()!;
+                        var scoring=entry.TryGetProperty("scoring",out var scored)?scored:default;
+                        if(bound.TryGetValue(id,out var candidate))
+                        {
+                            if(candidate is SteppedBehavior stepped)stepped.ReadNativeScoring(scoring);
+                            else SteppedBehavior.ReportMissing("M8-003 native shared scoring owner unavailable for "+id);
+                        }
+                        else if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fields)==true)fields.Reload(id,scoring);
+                    }
                 var bonus = c.TryGetProperty("scoreBonusForCurrentBehavior", out var sb) ? Graph2d.FromJson(sb) : null;
-                var sc = new ScoringChooser(entries, bound, bonus, penalty);
+                var sc = new ScoringChooser(entries, bound, bonus, penalty,owner is not null);
                 if (random is not null) sc.Random = random;
                 return sc;
         }

@@ -156,6 +156,21 @@ public abstract partial class SteppedBehavior : IBehavior
     /// </summary>
     // fidelity: M8-004
     public double Score { get; set; }
+    internal NativeScoredFields NativeScoredFields {get;}=new();
+    internal ScoredBehaviorEntry? NativeScoring => NativeScoredFields.Value;
+    internal bool NativeScoringAvailable {get;private set;}=true;
+    internal void ReadNativeScoring(System.Text.Json.JsonElement source)
+    {
+        bool obj=source.ValueKind==System.Text.Json.JsonValueKind.Object;
+        NativeScoredFields.Read(Id,source);
+        Score=NativeScoredFields.Value!.FlatScore;
+        if(obj && source.TryGetProperty("considerThisHasRunForBehaviorObjective",out var objective) && objective.ValueKind==System.Text.Json.JsonValueKind.String)
+        {
+            var mapped=BehaviorObjectives.FromString(objective.GetString());
+            if(mapped==BehaviorObjective.Invalid){NativeScoringAvailable=false;ReportMissing("M8-003 explicit scored objective mapping unavailable: "+objective.GetString());}
+            else {NativeScoringAvailable=true;BehaviorObjective=mapped;}
+        }
+    }
 
     /// <summary>
     /// The clock used for timings that outlive one run (a behaviour that remembers when it last ran).
@@ -213,6 +228,12 @@ public abstract partial class SteppedBehavior : IBehavior
         var prior=Readiness.Value;var frame=new ReadinessFrame();Readiness.Value=frame;
         try { bool runnable=IsRunnable(context);return (!frame.Unavailable,runnable); }
         finally { Readiness.Value=prior; }
+    }
+    internal static (bool Available,T Value) EvaluateHostOperation<T>(Func<T> action)
+    {
+        var prior=Readiness.Value;var frame=new ReadinessFrame();Readiness.Value=frame;
+        try {var value=action();return (!frame.Unavailable,value);}
+        finally {Readiness.Value=prior;}
     }
 
     public virtual bool IsRunnable(BehaviorContext context)
@@ -450,7 +471,7 @@ public abstract partial class SteppedBehavior : IBehavior
         OnStart();                               // vtable+0x48 InitInternal (0x005bccfe/0x005bcd00)
         if (!HostExecutionVersionCurrent(hostVersion)) return;
         if (InitFailed) _engineRunning = false;  // non-zero: +0xa1 = 0 (0x005bcd06)
-        else _scoreIncreaseCount++;              // zero: +0x80++ (0x005bcd0c)
+        else _scoreIncreaseCount=unchecked(_scoreIncreaseCount+1); // zero: uint32 +0x80++ (0x005bcd0c)
         SparkBehaviorDisables();                 // the "SparkBehaviorDisables" lock
         if (!HostExecutionVersionCurrent(hostVersion)) return;
         _resumeCount = 0;                        // +0x114 = 0
@@ -560,6 +581,7 @@ public abstract partial class SteppedBehavior : IBehavior
     public bool Resume(ReactionTrigger? trigger, double nowSec)
     {
         using var executionLease = EnterHostExecutionOwner(Context);
+        if(Context.Robot.Engine.Robot is {} resumeOwner && resumeOwner.NativeBehaviorRuntime?.Bound.TryGetValue(Id,out var resumed)==true && ReferenceEquals(resumed,this))resumeOwner.InvalidateConfiguredScoreHistory(Id);
         long hostVersion = CaptureHostExecutionVersion();
         if (trigger is ReactionTrigger.CliffDetected or ReactionTrigger.UnexpectedMovement)
         {
@@ -654,6 +676,7 @@ public abstract partial class SteppedBehavior : IBehavior
     public virtual Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
     {
         using var executionLease = EnterHostExecutionOwner(context);
+        if(context.Robot.Engine.Robot is {} startOwner && startOwner.NativeBehaviorRuntime?.Bound.TryGetValue(Id,out var started)==true && ReferenceEquals(started,this))startOwner.InvalidateConfiguredScoreHistory(Id);
         HostRunStarting();
         long hostVersion = CaptureHostExecutionVersion();
         if (!HostExecutionVersionCurrent(hostVersion)) return Task.FromException(new ObjectDisposedException(Id));

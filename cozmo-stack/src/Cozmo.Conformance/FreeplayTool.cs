@@ -68,7 +68,7 @@ public static class FreeplayTool
     {
         foreach (var id in new[] { "Needs_SevereLowEnergyState", "Needs_SevereLowRepairState" })
             if (stack.Bound.TryGetValue(id, out var behavior) && behavior is DriveInDesperationBehavior)
-                say($"MISSING: {id} uses the legacy standalone custom driver; its behavior differs from the source-checked native path. Native NeedsExpression admission remains unbuilt (M8-013).");
+                say($"MISSING: {id} uses the legacy standalone custom driver; its behavior differs from the source-checked native path.");
     }
 
     private static int Simulate(string obb, int ticks, string? stateDir)

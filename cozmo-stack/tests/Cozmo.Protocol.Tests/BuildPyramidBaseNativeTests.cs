@@ -151,7 +151,7 @@ public sealed class BuildPyramidBaseNativeTests
     {
         // reach: unit native cache vector/current action inputs, actual manager/timer/ActionList.
         // U1/U2/U5:005DD026..D0BA,005DD10E..D12C; shared005BDA56..DA62.
-        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);
+        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,b.Id);
         f.Runtime.PyramidBaseStrongInput=()=>new[]{new NativePyramidBase(7,8)};f.Rig.Tick(0);
         float stamp=f.Rig.Engine.Timer.SecondsF;Assert.Equal(stamp,b.Appeared);Assert.Equal(1,b.PreviousBaseCount);
         float deadline=(stamp+2f)+BitConverter.UInt32BitsToSingle(0x3727C5AC);
@@ -163,7 +163,7 @@ public sealed class BuildPyramidBaseNativeTests
     {
         // reach: unit explicit cache vectors/current runner, actual source clocks and stop path.
         // U1/U3/U4/U5:005DD046..D12C.
-        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);
+        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,b.Id);
         f.Rig.Tick(0);Assert.Equal(-1f,b.Lost);
         f.Runtime.PyramidBaseStrongInput=()=>new[]{new NativePyramidBase(7,8)};CancelOwned(f,b);b.Observe();f.Rig.Tick(0);
         f.Runtime.PyramidBaseStrongInput=()=>Array.Empty<NativePyramidBase>();f.Rig.Tick(0);float lost=b.Lost;Assert.True(lost>0);
@@ -173,7 +173,7 @@ public sealed class BuildPyramidBaseNativeTests
     public void CacheAvailabilityDuringActualRunStopsVisiblyRatherThanManufacturingCompletion()
     {
         // reach: configured manager with supplied native target/cache inputs, actual runtime producer loss.
-        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);
+        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,b.Id);
         var missing=new List<string>();SteppedBehavior.MissingReported+=missing.Add;
         try{f.Runtime.PyramidFullStrongInput=null;f.Rig.Tick();Assert.False(b.EngineRunning);Assert.Contains(missing,s=>s.Contains("cache+64"));}
         finally{SteppedBehavior.MissingReported-=missing.Add;}
@@ -181,7 +181,7 @@ public sealed class BuildPyramidBaseNativeTests
     public void FullCacheFlagStopsImmediatelyWithoutInventedCacheGoal()
     {
         // reach: unit explicit derived flag/cache/action inputs; U4/U5:005DD100..D12C,005BDA56..DA62.
-        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);
+        using var f=new Fixture();Inputs(f);f.Add(7);var b=Start(f);HoldActualAction(f,b);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,b.Id);
         f.Runtime.PyramidFullStrongInput=()=>new[]{new NativePyramidConfiguration(new NativePyramidBase(7,8),9)};
         f.Rig.Tick(0);Assert.True(b.EngineRunning);b.StopWhenFull=true;f.Rig.Tick(0);Assert.False(b.EngineRunning);
     }    [Fact]

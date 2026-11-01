@@ -170,11 +170,21 @@ public sealed class SharedChildrenNativeTests
         f.M.World.AddLocatedObject(obj);using var relative=new Pose3d("");f.M.Docking.Carrying.AttachToLift(7,obj.Markers[0],relative,null,null);
     }
     [Fact]
+    public void ManualPublicPutDownWithoutSelectionRequestIsReplacedByWait()
+    {
+        using var f=new Fixture();Carry(f);f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        using var behavior=new PutDownBlockBehavior(f.M,"public-putdown-probe");var manager=f.Robot.BehaviorManagerOwner!;manager.Add(behavior);
+        Assert.True(manager.StartAsync(behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        var old=Assert.IsAssignableFrom<ActionRunner>(behavior.OwnedRunner);f.Rig.Tick();
+        Assert.Same(f.Runtime.Bound["Wait"],manager.Current);Assert.True(old.DestructionObserved);Assert.False(behavior.EngineRunning);
+    }
+    [Fact]
     public void PublicPutDownUsesRealQueueWaitsForTwoImagesAfterParallelAndReleasesAfterActualKeepAlive()
     {
         // Actual public Start→owned initial/look/ActionList→CA/CB and real worker43; supplied firmware/scene, not hardware.
         using var f=new Fixture();Carry(f);f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
-        using var behavior=new PutDownBlockBehavior(f.M,"public-putdown");var manager=f.Robot.BehaviorManagerOwner!;manager.Add(behavior);var firmware=new Firmware(f);
+        using var behavior=new PutDownBlockBehavior(f.M,"public-putdown");var manager=f.Robot.BehaviorManagerOwner!;var priorActivity=manager.Activity;manager.Activity=null; // Local custom adapter unit; no configured Selection ID.
+        manager.Add(behavior);var firmware=new Firmware(f);
         var reports=new List<RobotCompletedAction>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r)reports.Add(r);});
         try
         {
@@ -192,7 +202,7 @@ public sealed class SharedChildrenNativeTests
             Assert.Contains(behavior.Trace,l=>l.Contains("PutDownBlockPutDown"));Assert.Contains(behavior.Trace,l=>l.Contains("PutDownBlockKeepAlive"));
             Assert.Contains(reports,r=>r.Tag==look.Tag&&r.Result==0&&r.CompletionVariant==6);
         }
-        finally{manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);f.Robot.ActionList.Clear();}
+        finally{manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);manager.Activity=priorActivity;f.Robot.ActionList.Clear();}
     }
     [Fact]
     public void ReentrantReleaseObserverCanQueueReplacementWithoutLosingPublicOwnerLease()

@@ -134,7 +134,7 @@ public sealed class M15SevereNeedsTests
     [Fact]
     public void ExpressNeedsRequiredStateComparesTheSelectedNeedRatherThanItsBracket()
     {
-        // reach: unit (direct runnable predicate; supplied needs, real shared scalar and a valid context).
+        // reach: unit common +0x74 gate followed by own predicate; supplied needs and shared scalar.
         // Old: true when Energy is Critical even with Repair selected. RB2 0x005BD7E6..F6 requires Selected=Energy.
         using var rig=new M4ControlTests.Rig();var needs=new NeedsManager(()=>0);using var owner=Owner(needs) as IDisposable;
         needs.SetLevel(NeedId.Repair,0);needs.SetLevel(NeedId.Energy,0);needs.SetSevereExpressed(NeedId.Repair,true);
@@ -144,8 +144,8 @@ public sealed class M15SevereNeedsTests
         var ctx=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap(),Needs=needs};
         // EXPRESS-NEEDS-1 R5 0x005EE5B0..DC: empty graph c=0 and +0x138=0.0f need engine seconds > 0.0f (strict); supplied input.
         rig.Robot.Engine.Timer.UpdateTime(1_000_000_000);
-        Assert.False((bool)predicate.Invoke(b,new object[]{ctx})!);
-        needs.SetSevereExpressed(NeedId.Energy,true);Assert.True((bool)predicate.Invoke(b,new object[]{ctx})!);
+        Assert.False(b.IsRunnableBase(ctx));
+        needs.SetSevereExpressed(NeedId.Energy,true);Assert.True(b.IsRunnableBase(ctx));Assert.True((bool)predicate.Invoke(b,new object[]{ctx})!);
     }
 
     [Fact]

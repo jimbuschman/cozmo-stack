@@ -154,6 +154,7 @@ public sealed class PutDownBlockNativeTests
         using var f=new Fixture();f.InstallNvCalibration();f.Rig.Robot.Animations.LoadFrom(Resources());f.Carry();
         var completions=new List<RobotCompletedAction>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction done)completions.Add(done);});
         Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(f.Behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,f.Behavior.Id);
         var initial=Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());uint firstTag=initial.Tag;
         var paths=new HashSet<ushort>();var animations=new HashSet<byte>();int image=0;
         try

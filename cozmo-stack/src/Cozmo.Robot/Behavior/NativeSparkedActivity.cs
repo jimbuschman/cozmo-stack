@@ -12,70 +12,118 @@ internal sealed class NativeSparkedActivity : IDisposable
     private readonly EngineRobot _robot;
     private readonly BehaviorManager _manager;
     private readonly CozmoRobot _facade;
-    private readonly NativePlayArbitraryAnimBehavior _animation;
+    private NativePlayArbitraryAnimBehavior _animation=null!;
+    private readonly IReadOnlyDictionary<string,IBehavior> _bound;
     private readonly RetainedSubscription? _objective,_observed;
+    private readonly object _dataGate=new();
     private readonly SortedSet<uint> _observedIds=new();
+    private uint _count;
     private readonly SortedSet<string> _locks=new(StringComparer.Ordinal);
     private readonly Dictionary<string,ScopedAcquisition> _scopedLocks=new(StringComparer.Ordinal);
     private BodyLightComponent.Locator _lights=new();
     private ScopedAcquisition? _drivingLease,_idleLease;
-    private bool _idle,_hardOutputs,_lightsOwned,_interrupted;
+    private bool _idle,_hardOutputs,_lightsOwned,_interrupted,_peekUnavailable,_updateUnavailable,_delegateUnknown;
     private long _generation;
-    private bool _retired;
+    private volatile bool _retired;
     internal bool InputUnavailable { get; private set; }
     private bool Current(long generation)=>!_retired && generation==_generation;
-    internal uint Count {get;private set;}
+    internal uint Count {get{lock(_dataGate)return _count;}private set{lock(_dataGate)_count=value;}}
     internal int State {get;private set;}
     internal float Started {get;private set;}
-    internal float Minimum {get;set;}
-    internal float Maximum {get;set;}
-    internal byte Repetitions {get;set;}
+    internal float Minimum {get;set;}=-1f;
+    internal float Maximum {get;set;}=-1f;
+    internal int Repetitions {get;set;}=-1;
     internal bool WaitForAction {get;set;}=true;
-    private readonly bool _hasDelegate;
-    private bool ScopedOwner=>_delegate is not null || _activity.Id=="SparksWorkout";
-    private readonly Activity? _delegate;
+    private bool _hasDelegate;
+    private bool ScopedOwner=>true;
+    private Activity? _delegate;
+    private readonly Func<JsonElement,Activity?>? _createDelegate;
     internal Activity? Delegate => _delegate;
-    internal bool CanExecute=>WaitForAction&&(!_hasDelegate || _delegate?.GatherOwner is not null);
-    internal IReadOnlyCollection<uint> Observed=>_observedIds;
+    private bool DelegateUnavailable=>_delegateUnknown||(_hasDelegate && _delegate?.GatherOwner is null);
+    internal bool CanExecute=>!_retired && !DelegateUnavailable;
+    internal IReadOnlyCollection<uint> Observed {get{lock(_dataGate)return _observedIds.ToArray();}}
     internal AnimationTrigger Success {get;set;}=(AnimationTrigger)0x216;
     internal AnimationTrigger Failure {get;set;}=(AnimationTrigger)0x210;
-    private readonly AnimationTrigger _softTrigger;
-    private readonly uint _objectiveId;
+    private AnimationTrigger _softTrigger=(AnimationTrigger)0x23F;
+    internal AnimationTrigger SoftTrigger=>_softTrigger;
+    private uint _objectiveId;
+    private NativeWaitBehavior? _wait;
+    private IBehavior? _acknowledge;
+    private NativeScoredFields? _peek;
+    private readonly JsonElement _peekConfig;
     private BehaviorManager Manager=>_manager;
     private CozmoRobot Facade=>_facade;
     private static readonly ReactionLockTable SelectedLock=new("ActivitySparked","0xC624BC",new[]{1,2,3,4,5,10});
     private static readonly ReactionLockTable FinalLock=new("finalAnimLockReactions","0xC624E6",new[]{1,2,4,8});
-    internal NativeSparkedActivity(Activity activity,EngineRobot robot,JsonElement config,IReadOnlyDictionary<string,IBehavior> bound,Activity? nested=null)
+    internal NativeSparkedActivity(Activity activity,EngineRobot robot,JsonElement config,IReadOnlyDictionary<string,IBehavior> bound,Activity? nested=null,Func<JsonElement,Activity?>? createDelegate=null)
     {
-        _activity=activity;_robot=robot;_delegate=nested;
+        _activity=activity;_robot=robot;_bound=bound;_delegate=nested;_createDelegate=createDelegate;
         _manager=robot.BehaviorManagerOwner??throw new InvalidOperationException("MISSING: Sparked actual BehaviorManager owner unavailable");
         _facade=_manager.ContextRobot;
-        _animation=(NativePlayArbitraryAnimBehavior)bound["PlayArbitraryAnim"];
-        Minimum=config.GetProperty("minTimeSecs").GetSingle();Maximum=config.GetProperty("maxTimeSecs").GetSingle();
-        Repetitions=unchecked((byte)config.GetProperty("numberOfRepetitions").GetInt32());
-        _objectiveId=(activity.Id,config.GetProperty("behaviorObjective").GetString()) switch
-        {
-            ("SparksKnockOverCubes","KnockedOverBlocks")=>13u,
-            ("SparksPopAWheelie","PoppedWheelie")=>22u, // Sparks Pop S2: exact native objective table01033198.
-            ("SparksStackBlock","StackedBlock")=>40u, // S1 actual native objective40, not a generalized parser.
-            ("SparksGatherCubes","GatheredCubes")=>11u,
-            ("SparksWorkout","PerformedWorkout")=>18u, // Spark workout P1/A13: asset and 005B181E..32.
-            ("SparksRollBlock","BlockRolled")=>2u, // Sparks Roll S2: actual objective table01033148.
-            _=>throw new InvalidOperationException("MISSING: changed configured Spark objective is outside the checked instance mappings")
-        };
-        if(config.TryGetProperty("maxTimeoutForActionComplete",out var wait))WaitForAction=wait.GetBoolean();
-        _hasDelegate=config.TryGetProperty("subActivityDelegate",out _);
-        _softTrigger=config.TryGetProperty("softSparkTrigger",out var soft)?Enum.Parse<AnimationTrigger>(soft.GetString()!):(AnimationTrigger)0x23F;
+        _wait=bound.TryGetValue("Wait",out var waitOwner)?waitOwner as NativeWaitBehavior:null;
+        _acknowledge=bound.TryGetValue("AcknowledgeObject",out var acknowledge)?acknowledge:null;
+        if(robot.Engine.HostBehaviorMap?.TryGetValue(BehaviorID.SparksPeekABoo,out var peekConfig)==true &&
+           peekConfig.TryGetProperty("behaviorClass",out var peekClass) && peekClass.ValueKind==JsonValueKind.String && peekClass.GetString()=="PeekABoo" &&
+           robot.NativeConfiguredScoreFields?.TryGetValue("SparksPeekABoo",out var peek)==true)
+        { _peek=peek;_peekConfig=peekConfig; }
+        ReloadScalars(config);
+        _hasDelegate=config.TryGetProperty("subActivityDelegate",out var delegateConfig)&&delegateConfig.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined);
         if(robot.HasExternalInterface)
         {
-            _objective=robot.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value&&value==_objectiveId)Count=unchecked(Count+1);});
-            _observed=robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,p=>{if(p is NativeObservedObject value&&unchecked(value.Family-1)<=1)_observedIds.Add(value.ObjectId);});
+            _objective=robot.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value)lock(_dataGate){if(!_retired&&value==_objectiveId)_count=unchecked(_count+1);}});
+            _observed=robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,p=>{if(p is NativeObservedObject value&&unchecked(value.Family-1)<=1)lock(_dataGate){if(!_retired)_observedIds.Add(value.ObjectId);}});
         }
+    }
+    // Reload 005B0EAC..1132: partial mutations precede any host config failure.
+    private void ReloadScalars(JsonElement config)
+    {
+        _softTrigger=config.TryGetProperty("softSparkTrigger",out var soft)&&soft.ValueKind!=JsonValueKind.Null?ParseTrigger(soft.GetString()??""):(AnimationTrigger)0x23F;
+        Success=Trigger(config,"sparksSuccessTrigger",(AnimationTrigger)0x216);
+        Failure=Trigger(config,"sparksFailTrigger",(AnimationTrigger)0x210);
+        if(!_bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)||arbitrary is not NativePlayArbitraryAnimBehavior actual)
+            throw new InvalidOperationException("MISSING: Sparked retained configured PlayArbitraryAnim 3D unavailable");
+        _animation=actual;
+        Minimum=config.GetProperty("minTimeSecs").GetSingle();Maximum=config.GetProperty("maxTimeSecs").GetSingle();
+        int repetitions=config.GetProperty("numberOfRepetitions").GetInt32();
+        if(repetitions is <0 or >255)throw new InvalidOperationException("MISSING: Sparked ParseUint8 invalid input");
+        Repetitions=repetitions;
+        if(config.TryGetProperty("maxTimeoutForActionComplete",out var wait))WaitForAction=wait.GetBoolean();
+        uint objectiveId=FistBumpReactionStrategy.ObjectiveFromName(config.TryGetProperty("behaviorObjective",out var objective)?objective.GetString()??"Unknown":"Unknown");
+        lock(_dataGate)_objectiveId=objectiveId;
+    }
+    internal bool Reload(JsonElement config)
+    {
+        using var owner=_robot.Engine.EnterSynchronousOwner();
+        if(_retired){InputUnavailable=true;return false;}
+        long generation=_generation;
+        ReloadScalars(config);
+        if(!config.TryGetProperty("subActivityDelegate",out var value)||value.ValueKind==JsonValueKind.Null)return true;
+        var next=_createDelegate?.Invoke(value);
+        if(!Current(generation))
+        {next?.GatherOwner?.Dispose();next?.ObjectiveOwner?.Dispose();next?.Strategy.Dispose();return false;}
+        if(next is null){_delegateUnknown=true;InputUnavailable=true;SteppedBehavior.ReportMissing("M15-059 configured delegated activity factory unavailable");return false;}
+        var previous=_delegate;_delegate=next;_hasDelegate=true;_delegateUnknown=false;
+        previous?.GatherOwner?.Dispose();previous?.ObjectiveOwner?.Dispose();previous?.Strategy.Dispose();
+        return true;
+    }
+    private static AnimationTrigger Trigger(JsonElement config,string key,AnimationTrigger fallback)
+    {
+        if(!config.TryGetProperty(key,out var value))return fallback;
+        string name=value.GetString()??"";
+        return name.Length==0?(AnimationTrigger)0x23F:ParseTrigger(name);
+    }
+    private static AnimationTrigger ParseTrigger(string name)
+    {
+        if(Array.IndexOf(Enum.GetNames<AnimationTrigger>(),name)>=0 && Enum.TryParse<AnimationTrigger>(name,false,out var value))return value;
+        BehaviorClassNames.WriteCerrError(name,"AnimationTrigger");return (AnimationTrigger)0;
     }
     internal void Selected()
     {
-        long generation=++_generation;InputUnavailable=false;
-        Started=_robot.Engine.Timer.SecondsF;Count=0;State=0;_interrupted=false;_hardOutputs=false;_observedIds.Clear();
+        if(_retired){InputUnavailable=true;return;}
+        long generation=++_generation;InputUnavailable=false;_peekUnavailable=false;_updateUnavailable=false;
+        if(DelegateUnavailable)
+        {InputUnavailable=true;SteppedBehavior.ReportMissing("M15-059 configured delegated activity identity unavailable");return;}
+        Started=_robot.Engine.Timer.SecondsF;lock(_dataGate){_count=0;_observedIds.Clear();}State=0;_interrupted=false;_hardOutputs=false;
         if(Manager.RequestedSparkId==0x55||Manager.RequestedSparkSoft==0)
         {
             if(ScopedOwner){_lights=new();_lightsOwned=true;}
@@ -91,11 +139,20 @@ internal sealed class NativeSparkedActivity : IDisposable
             if(!ScopedOwner){_lights=new();_lightsOwned=true;}
             Facade.Lights.Body.StartLooping(HardLights(),0,_lights);if(!Current(generation))return;
             _hardOutputs=true;
-            _robot.Engine.ReportHardSparkStarted(Manager.RequestedSparkId);if(!Current(generation))return;
+            if(_robot.HasExternalInterface)_robot.Engine.ReportHardSparkStarted(Manager.RequestedSparkId);
+            else SteppedBehavior.ReportMissing("M1-034/M15-059 HardSparkStarted 005B172E: missing external interface; skip null dereference");
+            if(!Current(generation))return;
         }
         Lock(_activity.Id,SelectedLock);
         if(!Current(generation))return;
         _delegate?.OnSelected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);
+        if(Current(generation)&&Manager.RequestedSparkId==0x25)
+        {
+            if(_peek is not null && _robot.Engine.HostBehaviorMap?.TryGetValue(BehaviorID.SparksPeekABoo,out var peekConfig)==true && peekConfig.Equals(_peekConfig) &&
+                _robot.NativeConfiguredScoreFields?.TryGetValue("SparksPeekABoo",out var peek)==true && ReferenceEquals(peek,_peek))
+                _peek.SparkPeekDeadline=(_robot.Engine.Timer.SecondsF+Maximum)-2f;
+            else {InputUnavailable=true;_peekUnavailable=true;SteppedBehavior.ReportMissing("M15-059 retained configured SparksPeekABoo +168 owner input unavailable");}
+        }
     }
     private static LedPattern[] HardLights()=>Enumerable.Range(0,5).Select(i=>new LedPattern(i is 0 or 4?LedColor.Off:LedColor.White,LedColor.Off,
         i is 0 or 4?0u:360u,i is 0 or 4?0u:1110u,0,0,i==2?120:i==3?240:0)).ToArray();
@@ -118,13 +175,14 @@ internal sealed class NativeSparkedActivity : IDisposable
     }
     internal void ResetLightsAndAnimations()
     {
-        if(!_hardOutputs)return;
+        if(_retired||!_hardOutputs)return;
         long generation=_generation;
         if(ScopedOwner)
         {
             var result=Facade.Animations.DrivingAnimations.RemoveScoped(_activity.Id,()=>Current(generation));
             if(!result.Completed)return;
-            if(ReferenceEquals(result.Owner,_drivingLease))_drivingLease=null;
+            // Native removes the first matching name; never later remove a different entry by identity.
+            _drivingLease=null;
         }
         else Facade.Animations.DrivingAnimations.Remove(_activity.Id);
         if(!Current(generation))return;
@@ -134,6 +192,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     }
     internal void Deselected()
     {
+        if(_retired)return;
         if(ScopedOwner){var detached=DetachGather()!;try{DeselectedGather(detached);}finally{detached.ReleaseAll();}return;}
         long generation=++_generation;
         foreach(var (name,lease) in _scopedLocks.ToArray())
@@ -148,6 +207,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         if(!Current(generation))return;
         ResetLightsAndAnimations();
         if(!Current(generation))return;
+        if(DelegateUnavailable){InputUnavailable=true;SteppedBehavior.ReportMissing("M15-059 delegated deselection owner unavailable");return;}
         _delegate?.OnDeselected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);
         if(!Current(generation))return;
         // H12: StopAllAnims names only EngineLayer; user/state entries survive.
@@ -201,7 +261,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     }
     internal GatherRetirement? DetachGather()
     {
-        if(!ScopedOwner)return null;
+        if(_retired||!ScopedOwner)return null;
         long generation=++_generation;
         var locks=_scopedLocks.ToArray();_scopedLocks.Clear();
         var idle=_idleLease;_idleLease=null;_idle=false;
@@ -216,6 +276,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         detached.ReleaseLocks();detached.ReleaseIdle();
         if(!Current(generation))return;
         detached.ResetHard();if(!Current(generation))return;
+        if(DelegateUnavailable){InputUnavailable=true;SteppedBehavior.ReportMissing("M15-059 delegated deselection owner unavailable");return;}
         _delegate?.OnDeselected(_robot.Engine.Timer.SecondsF,_robot.Engine.EmitStackLog);
         if(!Current(generation))return;
         Facade.Lights.Cubes.StopAllAnimsOnLayer(CubeLightComponent.EngineLayer,null,()=>Current(generation));
@@ -223,12 +284,15 @@ internal sealed class NativeSparkedActivity : IDisposable
     internal static bool Deadline(float start,float window,float now)=>start+window+BitConverter.UInt32BitsToSingle(0xB727C5AC)<=now;
     internal void Update()
     {
+        if(_retired)return;
+        _updateUnavailable=false;
         long generation=_generation;
         bool reaction=Manager.CurrentReactionTrigger is not null;
         if(State is 0 or 1 && reaction)State=2;
         if(State is 2 or 3)CheckEnd();
-        if(!Current(generation))return;
+        if(!Current(generation)||_updateUnavailable)return;
         if(State==3&&reaction){Complete();if(!Current(generation))return;ResetLightsAndAnimations();if(!Current(generation))return;State=5;}
+        if(DelegateUnavailable){InputUnavailable=true;_updateUnavailable=true;SteppedBehavior.ReportMissing("M15-059 delegated Update owner unavailable");return;}
         if(Current(generation))_delegate?.GatherOwner?.Update();
     }
     private void CheckEnd()
@@ -240,7 +304,7 @@ internal sealed class NativeSparkedActivity : IDisposable
         if(WaitForAction&&Deadline(Started,Maximum,now)&&current is not null)
         {
             if(current is SteppedBehavior {NativeBaseInputs:{} native})timeout=native.RequiredUnlock!=unchecked((uint)Manager.ActiveSparkId);
-            else SteppedBehavior.ReportMissing("M15-059 CheckIfSparkShouldEnd current requiredUnlock input unavailable; no timeout predicate invented");
+            else {InputUnavailable=true;_updateUnavailable=true;SteppedBehavior.ReportMissing("M15-059 CheckIfSparkShouldEnd current requiredUnlock input unavailable; no timeout predicate invented");return;}
         }
         if(State==2&&(repetitions||timeout||Manager.SparkCancelLatch!=0))
         {
@@ -254,31 +318,53 @@ internal sealed class NativeSparkedActivity : IDisposable
             Manager.RequestCurrentBehaviorEndImmediately("Sparks transition soft spark to soft spark");if(!Current(generation))return;State=4;_interrupted=true;
         }
     }
-    private static bool Running(IBehavior? behavior)=>behavior is SteppedBehavior {EngineRunning:true};
+    private bool TryCurrent(IBehavior? behavior,out bool running,out BehaviorClass cls)
+    {
+        running=false;cls=default;
+        if(behavior is null)return true;
+        if(behavior is not SteppedBehavior stepped || _robot.NativeBehaviorRuntime?.Bound.TryGetValue(behavior.Id,out var actual)!=true || !ReferenceEquals(actual,behavior) ||
+            !Enum.TryParse<BehaviorID>(behavior.Id,false,out var id) || _robot.Engine.HostBehaviorMap?.TryGetValue(id,out var config)!=true)
+        {InputUnavailable=true;SteppedBehavior.ReportMissing("M15-059 actual current behavior class/running owner unavailable");return false;}
+        cls=BehaviorClassNames.ExtractFromConfig(config);running=stepped.EngineRunning;return true;
+    }
     private IBehavior? Choose(IBehavior? current,double now,BehaviorContext context)
     {
-        var chooser=_delegate?.Chooser ?? _activity.Chooser;
         long generation=_generation;
-        var decision=chooser?.GetDesiredActiveBehavior(current,Manager.RunningDurationSec(now),context,now);
+        ChooserDecision? decision;
+        if(_delegate is {} nested)
+        {
+            if(nested.GatherOwner is null)
+            {InputUnavailable=true;SteppedBehavior.ReportMissing("M15-059 actual delegated activity desired wrapper unavailable");return null;}
+            decision=nested.NativeGatherDesired(current,Manager.RunningDurationSec(now),context,now,()=>Current(generation));
+        }
+        else decision=_activity.Chooser?.GetDesiredActiveBehavior(current,Manager.RunningDurationSec(now),context,now);
         if(!Current(generation))return null;
         if(decision?.InputUnavailable==true) { InputUnavailable=true; return null; }
         var chosen=decision?.Behavior;
         if(!WaitForAction&&Deadline(Started,Maximum,_robot.Engine.Timer.SecondsF)&&!ReferenceEquals(current,chosen))
-        {State=3;SteppedBehavior.ReportMissing("M15-059 waitfalse hard-max retained native Wait child is not built; no replacement behavior fabricated");return null;}
+        {
+            if(_wait is null){InputUnavailable=true;SteppedBehavior.ReportMissing("M15-059 retained configured Wait B2 unavailable");return null;}
+            State=3;return _wait;
+        }
         return chosen;
     }
     internal IBehavior? Desired(IBehavior? current,double now,BehaviorContext context)
     {
+        if(_retired){InputUnavailable=true;return null;}
+        InputUnavailable=_peekUnavailable||_updateUnavailable||DelegateUnavailable;
+        if(InputUnavailable)return null;
         switch(State)
         {
             case 0:
                 _animation.SetAnimationTrigger(Manager.ActiveSparkId!=0x55&&Manager.ActiveSparkSoft!=0?_softTrigger:(AnimationTrigger)0x211,1);State=1;return _animation;
             case 1:
-                if(Running(current))return _animation;
+                if(!TryCurrent(current,out var running1,out _))return null;
+                if(running1)return _animation;
                 State=2;return Choose(current,now,context);
             case 2:return Choose(current,now,context);
             case 3:
-                if(current is not null&&current.Class!="Wait"&&Running(current))return Choose(current,now,context);
+                if(!TryCurrent(current,out var running3,out var cls3))return null;
+                if(current is not null&&cls3!=BehaviorClass.Wait&&running3)return Choose(current,now,context);
                 if(Manager.ActiveSparkId!=0x55&&Manager.ActiveSparkSoft!=0||Manager.SparkCancelLatch!=0)_animation.SetAnimationTrigger((AnimationTrigger)0x23F,1);
                 else
                 {
@@ -289,35 +375,51 @@ internal sealed class NativeSparkedActivity : IDisposable
                 }
                 State=4;return _animation;
             case 4:
-                if(Running(current))return _animation;
+                if(!TryCurrent(current,out var running4,out _))return null;
+                if(running4)return _animation;
                 Complete();return null;
             default:return null;
         }
     }
     private void Complete()
     {
-        bool success=Repetitions==0||unchecked((int)Count)>=Repetitions;
-        CompletionDiagnostics(success);
+        long generation=_generation;
+        uint count;int observed;lock(_dataGate){count=_count;observed=_observedIds.Count;}
+        bool success=Repetitions==0||unchecked((int)count)>=Repetitions;
+        if(!CompletionDiagnostics(success,generation,observed))return;
         if(Manager.SparkCancelLatch!=0||_interrupted)return;
-        if(Manager.ActiveSparkId==Manager.RequestedSparkId)Manager.SetNativeRequestedSpark(0x55,0);
-        if(Manager.ActiveSparkId==0x55||Manager.ActiveSparkSoft==0)_robot.Engine.ReportHardSparkEnded(success);
+        if(Manager.ActiveSparkId==Manager.RequestedSparkId){Manager.SetNativeRequestedSpark(0x55,0);if(!Current(generation))return;}
+        if(Manager.ActiveSparkId==0x55||Manager.ActiveSparkSoft==0)
+        {
+            if(_robot.HasExternalInterface)_robot.Engine.ReportHardSparkEnded(success);
+            else SteppedBehavior.ReportMissing("M1-034/M15-059 HardSparkEnded 005B20A4: missing external interface; skip null dereference");
+        }
     }
-    private void CompletionDiagnostics(bool success)
+    private bool CompletionDiagnostics(bool success,long generation,int observed)
     {
         bool canceled=Manager.SparkCancelLatch!=0||_interrupted;
         bool soft=Manager.ActiveSparkId!=0x55&&Manager.ActiveSparkSoft!=0;
         string name=Manager.SparkNameInput?.Invoke(Manager.ActiveSparkId)??$"unlock {Manager.ActiveSparkId}";
-        if(!canceled&&!success&&_observedIds.Count!=0&&!soft)
+        if(!Current(generation))return false;
+        if(!canceled&&!success&&observed!=0&&!soft)
+        {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"meta.upgrade_replay_fail_cubes_observed",name,
-                new Dictionary<string,string>{{"$data",_observedIds.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
-        string key=canceled?"meta.upgrade_replay_cancel":success?"meta.upgrade_replay_success":_observedIds.Count==0?"meta.upgrade_replay_timeout":"meta.upgrade_replay_fail";
+                new Dictionary<string,string>{{"$data",observed.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
+            if(!Current(generation))return false;
+        }
+        string key=canceled?"meta.upgrade_replay_cancel":success?"meta.upgrade_replay_success":observed==0?"meta.upgrade_replay_timeout":"meta.upgrade_replay_fail";
         _robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,key,name,new Dictionary<string,string>{{"$data",soft?"soft":"hard"}});
+        return Current(generation);
     }
     public void Dispose()
     {
-        if(_retired)return;
-        var detached=DetachGather();_retired=true;++_generation;
-        try { detached?.ReleaseAll(); }
-        finally { _delegate?.GatherOwner?.Dispose();_objective?.Dispose();_observed?.Dispose(); }
+        using var owner=_robot.Engine.EnterSynchronousOwner();
+        lock(_dataGate){if(_retired)return;_retired=true;_observedIds.Clear();}
+        ++_generation;
+        _animation=null!;_wait=null;_peek=null;_lights=null!;_lightsOwned=false;
+        var nested=_delegate;_delegate=null;
+        nested?.GatherOwner?.Dispose();nested?.ObjectiveOwner?.Dispose();nested?.Strategy.Dispose();
+        _acknowledge=null;_drivingLease=null;_idleLease=null;_scopedLocks.Clear();_locks.Clear();
+        _objective?.Dispose();_observed?.Dispose();
     }
 }
