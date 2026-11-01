@@ -3,6 +3,14 @@ using Cozmo.Robot.Animation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
+// Native ActivityID table 0x01033070, EnumToString 0x00766C50.
+internal static class ActivityIdNames
+{
+    private static readonly string[] Names = { "Invalid", "BuildPyramid", "Feeding", "Freeplay", "GatherCubes", "Hiking", "MeetCozmo", "NeedsSevereLowEnergy", "NeedsSevereLowRepair", "NeedsSevereLowPlayGetIn", "NothingToDo", "PlayAlone", "PlayWithHumans", "PutDownDispatch", "Selection", "Singing", "Socialize", "SparksBuildPyramid", "SparksCozmoSings", "SparksFistBump", "SparksGatherCubes", "SparksKnockOverCubes", "SparksPeekABoo", "SparksPickUpCube", "SparksPopAWheelie", "SparksPounceOnMotion", "SparksRollBlock", "SparksStackBlock", "SparksWorkout", "StrictPriorityFreeplay", "SparksTrackLaser", "SparksFireTruckAlarm" };
+    internal static bool TryId(string name, out byte id) { int i=Array.IndexOf(Names,name); id=(byte)(i < 0 ? 0 : i); return i>=0; }
+    internal static byte FromName(string name) { TryId(name,out byte id); return id; }
+    internal static string Name(byte id)=>Names[id];
+}
 
 /// <summary>
 /// <c>Anki::Util::GraphEvaluator2d::EvaluateY(float)</c> 0x00804bd0..0x00804c40 in the engine's arithmetic: everything is <c>float</c>. At or below
@@ -1066,7 +1074,9 @@ public sealed class Activity
     public AnimationTrigger? DriveLoopAnim { get; init; }
     public AnimationTrigger? DriveEndAnim { get; init; }
     public AnimationTrigger? IdleAnim { get; init; }
-    public string? RequireSpark { get; init; }
+    private string? _requireSpark;
+    internal int RequiredSparkId { get; private set; } = 0x55;
+    public string? RequireSpark { get => _requireSpark; init { _requireSpark = value; RequiredSparkId = value is null ? 0x55 : unchecked((int)NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(value))); } }
     // fidelity: M11-079 — IActivity+0x48, read 0x005B2D26..0x005B2D7C.
     public int InfoAnalyzerProcess { get; init; }
     internal AIInformationAnalyzer? Analyzer { get; set; }
@@ -1284,9 +1294,7 @@ public static class ActivityTreeLoader
         };
         if(owner is not null)
         {
-            string[] nativeNames = { "Invalid", "BuildPyramid", "Feeding", "Freeplay", "GatherCubes", "Hiking", "MeetCozmo", "NeedsSevereLowEnergy", "NeedsSevereLowRepair", "NeedsSevereLowPlayGetIn", "NothingToDo", "PlayAlone", "PlayWithHumans", "PutDownDispatch", "Selection", "Singing", "Socialize", "SparksBuildPyramid", "SparksCozmoSings", "SparksFistBump", "SparksGatherCubes", "SparksKnockOverCubes", "SparksPeekABoo", "SparksPickUpCube", "SparksPopAWheelie", "SparksPounceOnMotion", "SparksRollBlock", "SparksStackBlock", "SparksWorkout", "StrictPriorityFreeplay", "SparksTrackLaser", "SparksFireTruckAlarm" };
-            int nativeIndex = Array.IndexOf(nativeNames, id);
-            byte? nativeId = nativeIndex >= 0 ? (byte)nativeIndex : null;
+            byte? nativeId = ActivityIdNames.TryId(id, out var mapped) ? mapped : null;
             if(nativeId is {} value)activity.NativePublicStateSelected=()=>owner.BehaviorPublicState.UpdateActivity(value);
             activity.NativeNeeds = owner.Engine.Needs;
             if (id == "Hiking" && activity.DriveStartAnim is {} hikingStart && activity.DriveLoopAnim is {} hikingLoop && activity.DriveEndAnim is {} hikingEnd)

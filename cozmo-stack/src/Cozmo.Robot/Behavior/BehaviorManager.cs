@@ -103,6 +103,7 @@ public sealed partial class BehaviorManager : IDisposable
     internal BehaviorManager(BehaviorContext context,RepetitionPenalty? penalty,bool bindSensorOwner)
     {
         _context = context;
+        SparkNameInput = NativeUnlockNames.Lookup;
         _penalty = penalty ?? new RepetitionPenalty();
         // The concrete behaviours' StopWithoutImmediateRepetitionPenalty (M7/M15) stamps the +0x108
         // suppression window on this shared history; the scored chooser reads it back.
