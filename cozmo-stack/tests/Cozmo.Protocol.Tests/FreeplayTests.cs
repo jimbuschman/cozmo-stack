@@ -142,7 +142,7 @@ public class FreeplayTests
         var bound = new Dictionary<string,IBehavior> { ["b"] = behavior };
         var first = Act("PlayAlone", 1, "b", bound); var hiking = Act("Hiking", 2, "b", bound);
         var fp = new FreeplaySystem(new BehaviorManager(ctx), ctx, FpNamed(("Hiking","Hiking","Hiking","Hiking"), first, hiking), bound,
-            new FreeplayInputs { FaceKnown = true, LocatedCubes = 1 });
+            new FreeplayInputs { FaceKnown = true });
         Assert.Equal("PlayAlone", fp.Tick(1, 1000).Activity);
     }
 

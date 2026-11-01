@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
@@ -695,6 +696,42 @@ public sealed class ActivityStrategy : IDisposable
         Draw=x=>owner.Engine.ContextRandom.RandDbl(x);
         TickDuration=()=> (float)owner.Engine.Timer.DeltaSeconds;
         PyramidUnlocked=()=>owner.Progression is {} p && p.TryIsUnlocked(3,out bool unlocked) ? unlocked : null;
+        // fidelity: M15-097
+        if(Type=="Pyramid")
+        {
+            // The runtime is assigned after tree construction; resolve the actual owner on each query.
+            ManipulationSystem? Actual()
+            {
+                var runtime=owner.NativeBehaviorRuntime;
+                var m=runtime?.Manipulation;
+                if(!ReferenceEquals(owner.Engine.Robot,owner) || m is null ||
+                   !ReferenceEquals(m.Robot.LocalizationWorld,m.World) ||
+                   !ReferenceEquals(m.World.NativeConfigurations,runtime!.Configurations) ||
+                   !runtime.Configurations.InputsAvailable)
+                {
+                    SteppedBehavior.ReportMissing("M15-097/M12-049 actual pyramid world or native configuration producer unavailable");
+                    return null;
+                }
+                return m;
+            }
+            int? Count(Func<ManipulationSystem,int> query)
+            {
+                var m=Actual(); if(m is null)return null;
+                try{return query(m);}
+                catch(NativeConfigurationUnavailable error)
+                {SteppedBehavior.ReportMissing("M15-097/M12-049 native configuration unavailable: "+error.Message);return null;}
+            }
+            // 0x005B4994..4A40: default current-origin filter, allowed families 2 and 1.
+            PyramidCandidates=()=>Count(m=>
+            {
+                var filter=new BlockWorldFilter();
+                filter.AllowedFamilies.Add(ObjectFamily.LightCube);filter.AllowedFamilies.Add(ObjectFamily.Block);
+                return m.World.FindLocatedMatchingObjects(filter).Count;
+            });
+            // 0x005B4AA6/4AC2 copy every strong entry into the respective weak vector.
+            PyramidBases=()=>Count(m=>m.NativePyramidBases.Count);
+            PyramidFull=()=>Count(m=>m.NativePyramids.Count);
+        }
         if(!owner.HasExternalInterface)return;
         if(Type=="NeedBasedCooldown") _needsSubscription=owner.Engine.AnimationMessages.SubscribeMessage(0x62,true,ReceiveNeeds);
         if(Type=="Pyramid") _objectiveSubscription=owner.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value && value==3)_built=true;});
@@ -978,7 +1015,6 @@ public sealed class FreeplayInputs
     public NeedsManager? Needs { get; init; }
     public MoodState? Mood { get; init; }
     public double? LastOnTreadsEventSec { get; set; }
-    public int LocatedCubes { get; set; }
     public bool PyramidBuilt { get; set; }
     public bool FaceKnown { get; set; }
     public bool OnCharger { get; set; }
