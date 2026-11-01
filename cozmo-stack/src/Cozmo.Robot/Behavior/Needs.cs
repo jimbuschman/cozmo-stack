@@ -844,29 +844,31 @@ public sealed class NeedsManager
     private bool _sparksRewardPending;
     private long _nativePendingHistoryEpoch;
     private bool _nativePendingKnown=true;
+    private bool _nativeRewardPayloadKnown=true; // 00692216..26 clears amount and string storage in the native constructor.
     private int _nativeRewardAmount;
     private string _nativeRewardDisplayKey="";
     public bool SparksRewardPending
     {
         get {lock(_gate)return _sparksRewardPending;}
-        set {lock(_gate){Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_sparksRewardPending=value;}}
+        set {lock(_gate){Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;_sparksRewardPending=value;}}
     }
-    // Only the constructor's native false is known; host writes and attempted action
-    // producers withdraw that proof permanently until a new NeedsManager exists.
+    // Host writes and source-eligible but unbound reward producers withdraw the proof.
     internal long NativePendingHistoryEpoch=>Interlocked.Read(ref _nativePendingHistoryEpoch);
     internal bool NativePendingKnownFalse=>TryGetNativePending(out bool pending) && !pending;
     internal bool TryGetNativePending(out bool pending)
     {lock(_gate){pending=_sparksRewardPending;return _nativePendingKnown;}}
     // Explicit source-state unit input; no production reward producer calls this seam.
     internal void SupplyNativeRewardForTest(bool pending,int amount,string displayKey)
-    {lock(_gate){Interlocked.Increment(ref _nativePendingHistoryEpoch);_sparksRewardPending=pending;_nativeRewardAmount=amount;_nativeRewardDisplayKey=displayKey;_nativePendingKnown=true;}}
+    {lock(_gate){Interlocked.Increment(ref _nativePendingHistoryEpoch);_sparksRewardPending=pending;_nativeRewardAmount=amount;_nativeRewardDisplayKey=displayKey;_nativePendingKnown=true;_nativeRewardPayloadKnown=true;}}
     internal (bool Pending,int Amount,string Key,bool Known) NativeRewardSnapshotForTest()
     {lock(_gate)return(_sparksRewardPending,_nativeRewardAmount,_nativeRewardDisplayKey,_nativePendingKnown);}
+    internal bool NativeRewardPayloadKnownForTest {get{lock(_gate)return _nativeRewardPayloadKnown;}}
 
     /// <summary>Raised when a pending freeplay sparks reward is handed to the app.</summary>
     public event Action? SparksRewardAwarded;
     public event Action<FreeplaySparksAwardedReport>? FreeplaySparksAwarded;
     internal CozmoEngine? HostEngine;
+    internal bool NativeContextBound;
 
     /// <summary>
     /// <c>NeedsManager::SparksRewardCommunicatedToUser</c> 0x00696E64: clears the pending flag (+0x3d8) and
@@ -878,9 +880,10 @@ public sealed class NeedsManager
     /// </summary>
     public void SparksRewardCommunicatedToUser()
     {
-        if(HostEngine is {} native)
+        if(NativeContextBound)
         {
-            CommunicateNativeRewardContext(native);
+            if(HostEngine is {} native)CommunicateNativeRewardContext(native);
+            else SteppedBehavior.ReportMissing("M15-071 original Needs/context owner unavailable");
             return;
         }
         if (!SparksRewardPending) return;
@@ -898,18 +901,15 @@ public sealed class NeedsManager
     {
         if(!engine.NeedsContextAlive || !ReferenceEquals(engine.Needs,this))
         {SteppedBehavior.ReportMissing("M15-071 original Needs/context owner unavailable");return;}
-        int amount=0;string key="";bool known,hasInterface;
+        int amount=0;string key="";bool payloadKnown,hasInterface;
         lock(_gate)
         {
-            known=_nativePendingKnown;hasInterface=engine.NeedsContextExternalInterfaceAvailable;
-            if(known)
-            {
-                _sparksRewardPending=false;Interlocked.Increment(ref _nativePendingHistoryEpoch); // 00696E78
-                if(hasInterface){amount=_nativeRewardAmount;key=_nativeRewardDisplayKey;_nativeRewardDisplayKey="";} // move before local delivery
-            }
+            hasInterface=engine.NeedsContextExternalInterfaceAvailable;payloadKnown=_nativeRewardPayloadKnown;
+            _sparksRewardPending=false;_nativePendingKnown=true;Interlocked.Increment(ref _nativePendingHistoryEpoch); // 00696E78
+            if(hasInterface){amount=_nativeRewardAmount;key=_nativeRewardDisplayKey;_nativeRewardDisplayKey="";} // 00696E88, before delivery
         }
-        if(!known){SteppedBehavior.ReportMissing("M15-071 native reward state unavailable; producer not recovered");return;}
-        if(!hasInterface){SteppedBehavior.ReportMissing("M1-034 M15-071 skip null EI broadcast at 0x00696E80; pending cleared, amount/key retained");return;}
+        if(!hasInterface){SteppedBehavior.ReportMissing("M1-034 M15-071 skip null EI broadcast at 0x00696E7E; pending cleared, amount/key retained");return;}
+        if(!payloadKnown){SteppedBehavior.ReportMissing("M15-071 reward amount/display payload unavailable; pending cleared, report skipped");return;}
         byte[] text=System.Text.Encoding.UTF8.GetBytes(key);
         int packedLength=unchecked((byte)text.Length); // 006C22F8/2304: low byte, then exactly that many bytes
         byte[] body=new byte[5+packedLength];System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body,amount);body[4]=(byte)packedLength;text.AsSpan(0,packedLength).CopyTo(body.AsSpan(5));
@@ -1951,7 +1951,11 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
-        Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;
+        var nativeEngine=HostEngine;
+        bool nativeRecipient=NativeContextBound;
+        bool NativeCurrent()=>!nativeRecipient || (nativeEngine is not null && nativeEngine.NeedsContextAlive && ReferenceEquals(HostEngine,nativeEngine) && ReferenceEquals(nativeEngine.Needs,this));
+        if(!NativeCurrent())
+        {SteppedBehavior.ReportMissing("M15-071 original Needs/context owner unavailable; action skipped");return false;}
         if (_paused || !_robotConnected) return false; // 0x006960E0..0x006960F8
         // The +0x39C whitelist defaults off; its Unity onboarding input is outside the standalone app boundary.
         if (!Enum.TryParse<NeedsActionId>(actionId, false, out var action) || Enum.GetName(action) != actionId)
@@ -1973,14 +1977,29 @@ public sealed class NeedsManager
             _fullnessDeadlineSec[n] = _nowSec + (float)Config.FullnessDecayCooldownSec[n]; // 0x006970AC..0x00697100
         }
         Apply(NeedId.Repair, d.RepairDelta, d.RepairRange);
+        if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         Apply(NeedId.Energy, d.EnergyDelta, d.EnergyRange);
+        if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         Apply(NeedId.Play, d.PlayDelta, d.PlayRange);
+        if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         if ((action is NeedsActionId.RepairHead or NeedsActionId.RepairLift or NeedsActionId.RepairTreads) && State.NumDamagedParts() == 0)
             State.StoreLevel(NeedId.Repair, (float)Config.MaximumNeedLevel); // 0x00696906..0x0069693E
         Log?.Invoke($"needs.action_completed {actionId}: repair {State.GetNeedLevel(NeedId.Repair):F3} energy {State.GetNeedLevel(NeedId.Energy):F3} play {State.GetNeedLevel(NeedId.Play):F3}");
+        if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         SendNeedsStateToGame(action); // 0x00696366, before the reward query.
-        if (d.FreeplaySparksRewardWeight > 0)
+        if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
+        float rewardWeight=(float)d.FreeplaySparksRewardWeight;
+        if (!(MathF.Abs(rewardWeight)<BitConverter.Int32BitsToSingle(0x3727C5AC)))
         {
+            if(nativeRecipient)
+            {
+                Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
+                if(nativeEngine is null || !ReferenceEquals(HostEngine,nativeEngine) || !ReferenceEquals(nativeEngine.Needs,this))
+                    SteppedBehavior.ReportMissing("M15-071 weighted reward original Needs/context owner changed; producer unavailable");
+                else SteppedBehavior.ReportMissing("M15-071/M15-093/M15-094/M15-095 weighted reward gates, notification RNG and inventory producer unavailable");
+            }
+            else if (d.FreeplaySparksRewardWeight > 0)
+            {
             // "About to create freeplay sparks reward message but there was a pending one, so sending that
             // one now" (0x006963C0): the pending reward goes out before the new one replaces it.
             if (SparksRewardPending)
@@ -1989,6 +2008,7 @@ public sealed class NeedsManager
                 SparksRewardCommunicatedToUser();
             }
             SparksRewardPending = true;
+            }
         }
         DetectBracketChanges();
         }

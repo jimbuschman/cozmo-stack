@@ -53,11 +53,11 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         child.AddIgnoreId(targetId);return child;
     }
 
-    private NativeConfigurationSnapshot RequirePyramidSnapshot()
+    internal NativeConfigurationSnapshot RequirePyramidSnapshot()
     {
         if(_retired || !ReferenceEquals(_robot.Engine.Robot,_robot) || Manipulation is not {} m ||
             !ReferenceEquals(m.World,_facade.LocalizationWorld) ||
-            !ReferenceEquals(m.World.NativeConfigurations,Configurations) || !Configurations.InputsAvailable)
+            !ReferenceEquals(m.World.NativeConfigurations,Configurations) || Configurations.Retired || !Configurations.InputsAvailable)
             throw new NativeConfigurationUnavailable("M12-049 pyramid actual configuration owner or inputs unavailable");
         return Configurations.Snapshot;
     }
@@ -471,6 +471,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeHikingPounce>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeEarnedSparksBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeFireTruckAlarmBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeRespondToPyramidBaseBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<PlayAnimBehavior>())candidate.RetireNativeReact();
         foreach(var candidate in Bound.Values.OfType<ThinkAboutBeaconsBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeExpressNeedsBehavior>())candidate.Dispose();

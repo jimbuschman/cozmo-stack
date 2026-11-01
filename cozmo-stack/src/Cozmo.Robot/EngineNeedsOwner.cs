@@ -25,7 +25,7 @@ public sealed partial class CozmoEngine
         Needs=NeedsManager.FromObb(Options.ResourcesPath,()=>Timer.SecondsF,
             deviceDirectory:Options.NeedsDeviceDirectory,contextRandom:ContextRandom,beforeInit:n=>
             {
-                n.HostEngine=this;
+                n.HostEngine=this;n.NativeContextBound=true;
                 n.SourceLog=(level,channel,key,text)=>EmitSourceLog(level,channel,key,text);
                 n.State.PartDamageLog=(value,data)=>EmitSourceLog(EngineLogLevel.Event,null,"needs.part_damaged",value,data);
                 n.TickCount=()=>Timer.TickCount;
@@ -53,7 +53,7 @@ public sealed partial class CozmoEngine
         needs.EnableUncertifiedPersistenceForTests(); // Explicit offline unit adapter, never a production capability.
         Needs.DetachConnectionRead();
         Needs=needs;
-        Needs.HostEngine=this;
+        Needs.HostEngine=this;Needs.NativeContextBound=true;
         Needs.AttachConnectionRead(this);
         BindNeedsRobotServices();
         NeedsUpdate=Needs.Update;NeedsSetPaused=Needs.SetPaused;NeedsRobotDisconnected=Needs.OnRobotDisconnected;
