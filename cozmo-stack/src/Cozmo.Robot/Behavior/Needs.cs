@@ -838,7 +838,17 @@ public sealed class NeedsManager
     /// <summary>Whether the needs manager is paused (<c>+0x1d5</c>).</summary>
     public bool IsPaused { get { lock (_gate) return _paused; } }
     /// <summary>Set when a freeplay sparks reward is pending (the engine's <c>RewardSparksForFreeplay</c>); <c>EarnedSparks</c> clears it.</summary>
-    public bool SparksRewardPending { get; set; }
+    private bool _sparksRewardPending;
+    private long _nativePendingHistoryEpoch;
+    public bool SparksRewardPending
+    {
+        get=>Volatile.Read(ref _sparksRewardPending);
+        set {Interlocked.Increment(ref _nativePendingHistoryEpoch);Volatile.Write(ref _sparksRewardPending,value);}
+    }
+    // Only the constructor's native false is known; host writes and attempted action
+    // producers withdraw that proof permanently until a new NeedsManager exists.
+    internal long NativePendingHistoryEpoch=>Interlocked.Read(ref _nativePendingHistoryEpoch);
+    internal bool NativePendingKnownFalse=>NativePendingHistoryEpoch==0 && !SparksRewardPending;
 
     /// <summary>Raised when a pending freeplay sparks reward is handed to the app.</summary>
     public event Action? SparksRewardAwarded;
@@ -1891,6 +1901,7 @@ public sealed class NeedsManager
     /// <summary><c>RegisterNeedsActionCompleted</c>: the action's deltas (± range) applied; unknown actions are ignored and logged.</summary>
     public bool RegisterNeedsActionCompleted(string actionId)
     {
+        Interlocked.Increment(ref _nativePendingHistoryEpoch);
         lock (_gate)
         {
         if (_paused || !_robotConnected) return false; // 0x006960E0..0x006960F8

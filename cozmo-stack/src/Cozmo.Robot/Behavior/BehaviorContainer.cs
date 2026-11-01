@@ -292,7 +292,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.DevTurnInPlaceTest] = (ctx,json)=>new NativeDevTurnInPlaceTestBehavior(ctx,json),
         [BehaviorClass.DriveInDesperation] = (ctx,json)=>new NativeDriveInDesperationBehavior(ctx,json),
         [BehaviorClass.BringCubeToBeacon] = (ctx,json)=>new NativeBringCubeToBeaconBehavior(ctx,json,ctx.BringBeaconOwner!),
-        [BehaviorClass.ThinkAboutBeacons] = (ctx,json)=>new ThinkAboutBeaconsBehavior(ctx.Manipulation!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(), json.GetProperty("params").GetProperty("beaconRadius_mm").GetSingle(), json.GetProperty("params").GetProperty("newAreaAnimTrigger").GetString()!),
+        [BehaviorClass.ThinkAboutBeacons] = (ctx,json)=>new ThinkAboutBeaconsBehavior(ctx.Manipulation!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(), json.GetProperty("params").GetProperty("beaconRadius_mm").GetSingle(), json.GetProperty("params").GetProperty("newAreaAnimTrigger").GetString()!,ctx.NativeRobot),
         [BehaviorClass.Bouncer] = (ctx,json)=>new NativeBouncerBehavior(ctx,json,
             ()=>ctx.Vision!.Faces.GetNativeFaceIds(ctx.BouncerOwner!)),
         // fidelity: M7-018, M8-005
@@ -317,13 +317,16 @@ public sealed class BehaviorFactory
         [BehaviorClass.PutDownBlock] = (ctx,json)=>new NativePutDownBlockBehavior(ctx,json),
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
+        [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
+        [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
+        [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
         // case 0x19: BehaviorFistBump(robot, config), 0x158 bytes (0x0059cc84..0x0059cca2).
         [BehaviorClass.FistBump] = (ctx, json) => FistBumpBehavior.FromConfig(json, ctx.Vision, ctx.Manipulation),
         // case 0x4C: BehaviorReactToSparked(robot, config), 0x120 bytes (0x0059d2f2..0x0059d310).
-        [BehaviorClass.VisitInterestingEdge] = (ctx, json) => VisitInterestingEdgeBehavior.FromConfig(json),
+        [BehaviorClass.VisitInterestingEdge] = (ctx, json) => VisitInterestingEdgeBehavior.FromConfig(json,ctx.NativeRobot),
         [BehaviorClass.ReactToSparked] = (ctx, json) => new ReactToSparkedBehavior(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
     };
     private static IBehavior CreateDriveOff(BehaviorFactoryContext ctx,JsonElement json)
@@ -392,6 +395,12 @@ public sealed class BehaviorFactory
         }
         if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.FindFaces_socialize || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("FindFaces factory: only configured FindFaces_socialize with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("LookInPlaceMemoryMap factory: only configured Hiking_LookInPlaceForUnknown with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.PounceOnMotion && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_PounceOnMotion || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("PounceOnMotion factory: only configured Hiking_PounceOnMotion with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.ExpressNeeds && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_MildLowEnergyRequest or BehaviorID.Needs_MildLowPlayRequest or BehaviorID.Needs_MildLowRepairRequest or BehaviorID.Needs_SevereLowPlayBored or BehaviorID.Needs_SevereLowPlayRequest or BehaviorID.Needs_SevereLowEnergyForcedGetOut) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExpressNeeds factory: only six checked configured IDs with original Robot/manipulation are available");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.PlayAnimOnNeedsChange && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_SevereLowEnergyGetIn or BehaviorID.Needs_SevereLowRepairGetIn or BehaviorID.Needs_SevereLowPlayGetIn) || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -413,9 +422,9 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual native Robot input unavailable; no manual/private-owner fallback substituted");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if(cls==BehaviorClass.ThinkAboutBeacons && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksThinkAboutBeacons || ctx.Manipulation is null || ctx.NativeRobot is null))
+        if(cls==BehaviorClass.ThinkAboutBeacons && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.SparksThinkAboutBeacons or BehaviorID.Hiking_ThinkAboutBeacons) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {
-            SteppedBehavior.ReportMissing("ThinkAboutBeacons factory: only checked Sparks instance with actual Robot/manipulation owner is available");
+            SteppedBehavior.ReportMissing("ThinkAboutBeacons factory: checked Sparks and Hiking instances require actual Robot/manipulation owner");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
         if (cls == BehaviorClass.AcknowledgeObject && ctx.Vision is null)

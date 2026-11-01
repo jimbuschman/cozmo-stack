@@ -140,7 +140,7 @@ public sealed class M8CompoundCheckedRowsTests
         var context=new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()};using var manager=new BehaviorManager(context){Initialized=initialized};
         manager.RequestCurrentBehaviorEndImmediately("reason");
         Assert.Contains(logs,e=>e.Level==EngineLogLevel.Info&&e.Channel=="Behaviors"&&e.Name=="BehaviorManager.RequestCurrentBehaviorEndImmediately"&&e.Text=="Forcing current behavior to stop: reason");
-        // Request body stops at visible M8-019 switch gap. No assertion of complete stop/release/transition fidelity.
+        Assert.Null(manager.Current);
     }
     [Theory]
     [InlineData(false)] [InlineData(true)]

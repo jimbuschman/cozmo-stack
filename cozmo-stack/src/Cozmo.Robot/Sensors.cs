@@ -935,6 +935,7 @@ public sealed class CozmoSensors
                 break;
 
             case Protocol.RobotStopped rs:
+                var stoppedOwner=_robot.Engine.Robot;
                 // fidelity: M4-019, M8-015, M8-019
                 // H1..H4 HandleRobotStopped tag 0xD4 (0x0053539C..0x00535480): H3 Evaluate sets comp+0x1C := the
                 // Robot's last state timestamp (robot+0x2C); if the cliff sensor is enabled (+4 != 0, 0x00535436), in this order:
@@ -946,14 +947,20 @@ public sealed class CozmoSensors
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "RobotImplMessaging.HandleRobotStopped",
                     rs.Field0.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     new Dictionary<string, string> { ["$data"] = LibcxxPrintf.FormatFixedFloat(stoppedVariance) /* M11-083 / M4-019:0x005353AC */ });
-                EvaluateCliffSuspiciousnessWhenStopped(_robot.Engine.Robot?.StoredState?.Timestamp ?? _cliffTimestamp);
+                if(stoppedOwner is null || !ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
+                EvaluateCliffSuspiciousnessWhenStopped(stoppedOwner.StoredState?.Timestamp ?? _cliffTimestamp);
+                if(!ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
                 bool stoppedEnabled;
                 lock (_gate) stoppedEnabled = _cliffEnabled;
                 if (stoppedEnabled)
                 {
-                    if (RequestCurrentBehaviorEndImmediately is {} request) request("HandleRobotStopped");
+                    if (RequestCurrentBehaviorEndImmediately is {} request &&
+                        (request.Target is not Behavior.BehaviorManager manager || ReferenceEquals(stoppedOwner.BehaviorManagerOwner,manager)))
+                        request("HandleRobotStopped");
                     else Behavior.SteppedBehavior.ReportMissing("M8-019 HandleRobotStopped 0x00535454: native robot+0x44 manager recipient is absent");
-                    _robot.Engine.Robot?.ActionList.Cancel(-1);
+                    if(!ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
+                    stoppedOwner.ActionList.Cancel(-1);
+                    if(!ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
                     _robot.Engine.QueueAppBroadcast(RobotStopped);
                     RobotStoppedInternal?.Invoke();
                 }

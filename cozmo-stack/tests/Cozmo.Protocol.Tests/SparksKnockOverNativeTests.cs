@@ -116,23 +116,26 @@ public sealed class SparksKnockOverNativeTests
         owner.Update();Assert.Equal(5,owner.State);Assert.Equal(0x55,f.Robot.BehaviorManagerOwner!.RequestedSparkId);
     }
     [Fact]
-    public void TimeoutSchedulesEndThenUnavailableChooserRetiresAtKnownFrontier()
+    public void TimeoutStateThreeChoosesConfiguredLookFallbackBeforeCompleting()
     {
         // S17-S19/S23: actual manager/ActionList with supplied state2 and terminal action results; no fake timer action.
-        using var f=new Fixture();Entry(f);var manager=f.Robot.BehaviorManagerOwner!;manager.Update(0,0);
+        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);Entry(f);var manager=f.Robot.BehaviorManagerOwner!;manager.Update(0,0);
         var owner=Owner(f);SourceField(owner,"State",2);owner.Maximum=0;owner.Minimum=100;
         var current=f.Robot.ActionList.GetCurrentAction();owner.Update();Assert.Equal(3,owner.State);Assert.Same(current,f.Robot.ActionList.GetCurrentAction());
         Assert.True(manager.HasDisableLock((ReactionTrigger)8,"finalAnimLockReactions_activityLock"));
         var ended=new List<bool>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x84,true,p=>ended.Add((bool)p!));
         var diagnostics=new List<string>();void Missing(string text)=>diagnostics.Add(text);SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
-        int readinessUnavailable=0;SteppedBehavior.ReadinessUnavailableObservedForTest=()=>readinessUnavailable++;
+        int readinessUnavailable=0;var unavailableStacks=new List<string>();SteppedBehavior.ReadinessUnavailableObservedForTest=()=>{readinessUnavailable++;unavailableStacks.Add(Environment.StackTrace);};
         string Trace()=> $"state={owner.State} unavailable={owner.InputUnavailable} manager={manager.Current?.Id}/{manager.Current?.GetType().Name} A1={(manager.Current as SteppedBehavior)?.EngineRunning} owned={(manager.Current as SteppedBehavior)?.HasCurrentAction} activity={manager.Activity?.GetType().Name} action={f.Robot.ActionList.GetCurrentAction()?.GetType().Name}";
         string candidates=string.Join(",",Activity(f).Chooser!.BehaviorIds.Select(id=>$"{id}:{(f.Runtime.Bound.TryGetValue(id,out var candidate)?$"{candidate.GetType().Name}/A1={(candidate as SteppedBehavior)?.EngineRunning}":"unbuilt")}"));
         var transitions=new List<string>();
         try {Terminal(f);transitions.Add("terminal "+Trace());manager.Update(0,0);transitions.Add("update1 "+Trace());manager.Update(0,0);transitions.Add("update2 "+Trace());}
         finally {SteppedBehavior.MissingReported-=Missing;SteppedBehavior.ReadinessUnavailableObservedForTest=null;}
-        Assert.True(owner.InputUnavailable,$"{string.Join(" | ",transitions)}; candidates={candidates}; readinessUnavailable={readinessUnavailable}; missing={string.Join(" | ",diagnostics)}");
-        Assert.Equal(3,owner.State);Assert.Null(manager.Activity);Assert.Empty(ended);
+        var look=Assert.IsType<NativeSparksLookInPlace>(f.Runtime.Bound["SparksLookInPlace"]);
+        Assert.True(ReferenceEquals(look,manager.Current),$"{string.Join(" | ",transitions)}; candidates={candidates}; readinessUnavailable={readinessUnavailable}; libraryNull={f.Rig.Robot.Animations.Library is null}; unavailableStacks={string.Join(" | ",unavailableStacks)}; missing={string.Join(" | ",diagnostics)}");
+        Assert.False(owner.InputUnavailable);Assert.NotNull(look.OwnedRunner);
+        Assert.Equal(32f,Assert.IsType<float>(look.OwnedRunner!.GetType().GetField("Target")!.GetValue(look.OwnedRunner)));
+        Assert.Equal(3,owner.State);Assert.NotNull(manager.Activity);Assert.Empty(ended);
     }
     [Fact]
     public void NonrunningStateThreeUsesActualFailureGetOutAndReportsEnded()
@@ -149,15 +152,20 @@ public sealed class SparksKnockOverNativeTests
         Assert.Null(owner.Desired(null,0,f.Runtime.Context));Assert.Equal(new[]{false},ended);Assert.Equal(4,owner.State);
     }
     [Fact]
-    public void InvalidActiveIdDoesNotUseStaleSoftByteAndInterruptionRetainsNativeSwitchGap()
+    public void InvalidActiveIdIgnoresStaleSoftByteAndInterruptionReportsEmptySwitch()
     {
-        // S20/S21/S23: supplied canonical leaf values; no fake immediate Stop for existing M8-019 gap.
+        // S20/S21/S23: supplied canonical leaf values; 005B19F0 requests the actual empty switch.
         using var f=new Fixture();var manager=f.Robot.BehaviorManagerOwner!;manager.SparkNameInput=_=>"input";
         manager.SetNativeRequestedSpark(0x55,1);f.Runtime.AdmitActivity("SparksKnockOverCubes");manager.SwitchToNativeRequestedSpark();
         var owner=Owner(f);var child=Assert.IsType<NativePlayArbitraryAnimBehavior>(owner.Desired(null,0,f.Runtime.Context));Assert.Equal(new[]{(AnimationTrigger)0x211},child.Triggers);
         SourceField(owner,"State",3);Assert.Same(child,owner.Desired(null,0,f.Runtime.Context));Assert.Equal(new[]{(AnimationTrigger)0x210,(AnimationTrigger)0x212},child.Triggers);
         manager.SetNativeRequestedSpark(5,0);manager.SwitchToNativeRequestedSpark();manager.SetNativeRequestedSpark(6,0);SourceField(owner,"State",2);
+        var transitions=new List<BehaviorTransitionReport>();
+        using var transition=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x87,true,p=>transitions.Add(Assert.IsType<BehaviorTransitionReport>(p)));
         owner.Update();Assert.Equal(4,owner.State);Assert.Null(manager.Current);Assert.Equal(6,manager.RequestedSparkId);
+        var report=Assert.Single(transitions);Assert.Equal((byte)0xB2,report.OldId);Assert.Equal((byte)0xB2,report.NewId);
+        Assert.Equal((byte)0x39,report.OldClass);Assert.Equal((byte)0x0B,report.OldExecutable);
+        Assert.Equal((byte)0x39,report.NewClass);Assert.Equal((byte)0x0B,report.NewExecutable);Assert.Equal("",report.DisplayKey);
         var ended=new List<bool>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x84,true,p=>ended.Add((bool)p!));owner.Desired(null,0,f.Runtime.Context);Assert.Empty(ended);
     }
     [Fact]

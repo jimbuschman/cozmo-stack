@@ -24,8 +24,16 @@ public sealed partial class CozmoRobot
 {
     /// <summary>Explicit host/app activity admission. Construction selects the native Selection activity.
     /// Specialized activity bodies that are not implemented retain the prior activity and report MISSING.</summary>
-    public void ActivateHighLevelActivity(string activityId)=>Engine.PostGameMessage(()=>
-        (Engine.Robot?.NativeBehaviorRuntime??throw new InvalidOperationException("No native Robot activity owner")).AdmitActivity(activityId));
+    public void ActivateHighLevelActivity(string activityId)
+    {
+        var owner=Engine.Robot;
+        Engine.PostGameMessage(()=>
+        {
+            if(owner is null || !ReferenceEquals(Engine.Robot,owner) || owner.NativeBehaviorRuntime is not {} runtime)return;
+            if(activityId is "Feeding" or "Freeplay" or "Selection" or "MeetCozmoFindFaces")runtime.AdmitNativeHighLevel(activityId);
+            else runtime.AdmitActivity(activityId); // existing host subactivity extension
+        });
+    }
 
     private void BindNativeMood(EngineRobot owner)
     {

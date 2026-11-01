@@ -768,8 +768,12 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M11-040
     internal static readonly TimeSpan ProcessorPollInterval = TimeSpan.FromMilliseconds(2);
 
+    // Host availability evidence: DetectingMotion is unbuilt, so a received frame withdraws no-motion proof.
+    private long _motionFrameInputs;
+    internal long MotionFrameInputs=>Interlocked.Read(ref _motionFrameInputs);
     private void OnFrame(CameraFrame f)
     {
+        Interlocked.Increment(ref _motionFrameInputs);
         if(!Enabled||!_processorRun||_disposed)return;
         SteppedBehavior.ReportMissing("M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp +0xE4 owner is unbuilt; rollback of +0xE4/+0xE8 is not substituted with the processed clock");
         if(Calibration is null){WarnNoCalibration(Volatile.Read(ref _removals));return;}
@@ -819,7 +823,7 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     // fidelity: M11-040, M11-049
     internal void HandOverFrame(CameraFrame f)
-        => HandOverFrame(f,null); // direct unit hand-in; production supplies its checked captured state
+    { Interlocked.Increment(ref _motionFrameInputs);HandOverFrame(f,null); } // direct unit hand-in; production supplies its checked captured state
     private void HandOverFrame(CameraFrame f,VisionPoseData? pose)
     {
         if (!Enabled) return;
@@ -912,7 +916,8 @@ public sealed partial class VisionSystem : IDisposable
     public uint? LastRawFrameTimestamp { get; private set; }
 
     /// <summary>Processes one camera frame against the recorded robot state; null without calibration or state.</summary>
-    public VisionFrameResult? ProcessFrame(CameraFrame f) => ProcessFrame(f, Volatile.Read(ref _removals));
+    public VisionFrameResult? ProcessFrame(CameraFrame f)
+    { Interlocked.Increment(ref _motionFrameInputs);return ProcessFrame(f, Volatile.Read(ref _removals)); }
 
     // fidelity: M11-033 — VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68: the EncodedImage's
     // IsColor (0x006B4B7C, the encoding byte) chooses DecodeImageRGB (0x006B4B90) or DecodeImageGray

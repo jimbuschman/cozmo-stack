@@ -118,6 +118,66 @@ public sealed class NativeChooserDispatchTests
         Assert.Same(f.Runtime.Bound["Wait"],selection.Requested);Assert.NotNull(f.Robot.BehaviorManagerOwner!.Activity);
     }
     [Fact]
+    public void RepeatedSelectionRunsAdapterTailAfterPublicQueuedSparkRequest()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
+        var manager=f.Robot.BehaviorManagerOwner!;var selection=manager.Activity;
+        observer.ActivateSpark(29);f.Rig.Tick();Assert.Equal(29,manager.RequestedSparkId);
+        byte requestedSoft=manager.RequestedSparkSoft,activeSoft=manager.ActiveSparkSoft;
+        f.Rig.Robot.ActivateHighLevelActivity("Selection");f.Rig.Tick();
+        Assert.Same(selection,manager.Activity);Assert.Equal(0x55,manager.RequestedSparkId);Assert.Equal(0x55,manager.ActiveSparkId);
+        Assert.Equal(requestedSoft,manager.RequestedSparkSoft);Assert.Equal(activeSoft,manager.ActiveSparkSoft);
+    }
+    [Theory]
+    [InlineData("Feeding")]
+    [InlineData("MeetCozmoFindFaces")]
+    public void UnbuiltNativeHighLevelRequestStillRunsCapturedAdapterTail(string requested)
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
+        var manager=f.Robot.BehaviorManagerOwner!;var before=manager.Activity;
+        observer.ActivateSpark(29);f.Rig.Tick();Assert.Equal(29,manager.RequestedSparkId);
+        float parent=manager.ParentSwitchTime,freeplay=manager.FreeplayStartTime;
+        byte activeSoft=manager.ActiveSparkSoft,requestedSoft=manager.RequestedSparkSoft,cancel=manager.SparkCancelLatch;
+        f.Rig.Robot.ActivateHighLevelActivity(requested);f.Rig.Tick();
+        Assert.Same(before,manager.Activity);Assert.Equal(0x55,manager.ActiveSparkId);Assert.Equal(0x55,manager.RequestedSparkId);
+        Assert.Equal(parent,manager.ParentSwitchTime);Assert.Equal(freeplay,manager.FreeplayStartTime);
+        Assert.Equal(activeSoft,manager.ActiveSparkSoft);Assert.Equal(requestedSoft,manager.RequestedSparkSoft);Assert.Equal(cancel,manager.SparkCancelLatch);
+    }
+    [Fact]
+    public void HostSubactivityDoesNotRunNativeHighLevelAdapterTail()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
+        var manager=f.Robot.BehaviorManagerOwner!;observer.ActivateSpark(29);f.Rig.Tick();
+        f.Rig.Robot.ActivateHighLevelActivity("PutDownDispatch");f.Rig.Tick();
+        Assert.Equal(29,manager.RequestedSparkId);
+    }
+    [Fact]
+    public void QueuedOldOwnerRequestCannotClearReplacementSpark()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        f.Rig.Robot.ActivateHighLevelActivity("Feeding");
+        f.Rig.Engine.Robots.RemoveRobot(1,false);var replacement=f.Rig.Engine.Robots.AddRobot(1,withRic:false)!;
+        using var observer=FreeplayStack.CreateNative(f.Rig.Robot);observer.ActivateSpark(29);f.Rig.Tick();
+        Assert.Equal(29,replacement.BehaviorManagerOwner!.RequestedSparkId);
+    }
+    [Fact]
+    public void NestedHighLevelCallbackStillUsesOuterCapturedAdapterInput()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
+        var manager=f.Robot.BehaviorManagerOwner!;observer.ActivateSpark(29);f.Rig.Tick();bool nested=false;
+        void OnMissing(string text)
+        {
+            if(nested || !text.Contains("native high-level activity Feeding"))return;
+            nested=true;f.Runtime.AdmitNativeHighLevel("Freeplay"); // synchronous source-log callback reentry
+        }
+        SteppedBehavior.MissingReported+=OnMissing;
+        try {f.Rig.Robot.ActivateHighLevelActivity("Feeding");f.Rig.Tick();}
+        finally {SteppedBehavior.MissingReported-=OnMissing;}
+        Assert.True(nested);Assert.Same(f.Runtime.FreeplayObserver,manager.Activity);
+        Assert.Equal(0x55,manager.ActiveSparkId);Assert.Equal(0x55,manager.RequestedSparkId);
+    }
+    [Fact]
     public void NativeSelectionCountUsesOwnRunningAndZeroPreservesLatch()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();var chooser=Selection(f);

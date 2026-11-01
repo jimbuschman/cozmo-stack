@@ -213,11 +213,15 @@ public abstract partial class SteppedBehavior : IBehavior
     /// robot between actions overrides this to stay alive; it then ends itself with <see cref="Finish"/>.
     /// </summary>
     protected virtual bool KeepsRunningWithoutAction => false;
+    // A live source-input gap may hold an owner instead of fabricating a completed native action.
+    protected virtual bool HoldUnavailableActionCompletion => false;
 
     // Host-only scoped availability; native false remains distinct from missing input.
     private sealed class ReadinessFrame { internal bool Unavailable; }
     private static readonly AsyncLocal<ReadinessFrame?> Readiness = new();
     internal static Action? ReadinessUnavailableObservedForTest;
+    // Host input availability boundary, not a native readiness predicate.
+    internal virtual bool HostScoringInputsAvailable()=>true;
     internal static void MarkReadinessUnavailable()
     {
         if(Readiness.Value is not {} frame)return;
@@ -441,10 +445,11 @@ public abstract partial class SteppedBehavior : IBehavior
     public void StopWithoutImmediateRepetitionPenalty()
     {
         using var executionLease = EnterHostExecutionOwner(Context);
-        double now = Context.ClockSec?.Invoke() ?? Clock() / 1000.0;
         Stop(BehaviorStopReason.Interrupted);               // IBehavior::Stop 0x005beea4
-        Context.Penalty?.Ran(Id, now);                      // Stop's +0x30 = now (0x005bd11e)
         Scope?.Dispose();                                   // Stop's undo (a)-(d) (0x005bd12c..0x005bd1c6)
+        var owner=Context.Robot.Engine.Robot;
+        bool configured=owner?.NativeBehaviorRuntime?.Bound.TryGetValue(Id,out var actual)==true && ReferenceEquals(actual,this);
+        double now=configured ? Context.Robot.Engine.Timer.SecondsF : Context.ClockSec?.Invoke() ?? Clock()/1000.0; // 005BEEA8..AC, after Stop
         Context.Penalty?.StopWithoutImmediateRepetitionPenalty(Id, now);   // +0x108 = now + 1.0f
     }
 
@@ -738,7 +743,7 @@ public abstract partial class SteppedBehavior : IBehavior
         using var executionLease = EnterHostExecutionOwner(context);
         if (!HostExecutionVersionCurrent(hostVersion)) return true;
         // IBehavior::Update 0x005bd074..0x005bd088: +0xa0 set and +0x84 clear returns 2 before UpdateInternal.
-        if (UpdateStatus() == 2) return false;
+        if (UpdateStatus() == 2 && !HoldUnavailableActionCompletion) return false;
         if (_finished) return false;
         NowMs = nowMs;
         StartedMs ??= nowMs;
@@ -829,6 +834,17 @@ public abstract partial class SteppedBehavior : IBehavior
             if (oldTag != 0) oldList?.Cancel(oldTag); // never cancel a replacement run's handle
             OnStopped(reason, hostVersion);
             return;
+        }
+        // The native +0x30 repetition stamp is written after StopInternal and before
+        // StopActing can synchronously deliver cancellation callbacks (005BD11A..126).
+        if(Context is {} stopContext && stopContext.Penalty is {} penalty)
+        {
+            var robot=stopContext.Robot.Engine.Robot;
+            bool configured=robot?.NativeBehaviorRuntime?.Bound.TryGetValue(Id,out var actual)==true && ReferenceEquals(actual,this);
+            double stamp=configured ? stopContext.Robot.Engine.Timer.SecondsF : stopContext.ClockSec?.Invoke() ?? Clock()/1000.0;
+            if(!HostStopContinuationCurrent(hostVersion))
+            {if(oldTag!=0)oldList?.Cancel(oldTag);OnStopped(reason,hostVersion);return;}
+            penalty.Ran(Id,stamp);
         }
         StopActing(keepAction: false, viaCallback: false);   // IBehavior::Stop calls StopActing(0,0) 0x005bd126
         OnStopped(reason, hostVersion);

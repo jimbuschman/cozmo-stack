@@ -14,6 +14,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal ManipulationSystem? Manipulation {get;}
     internal NativeConfigurationManager Configurations {get;}
     internal AIComponent AI {get;}
+    internal BehaviorContainer Container {get;}
     internal NativePickupTargetCache? PickupTargets {get;}
     // Native input boundaries; canonical pyramid suppliers resolve the live owner at each call.
     // Tests can replace these delegates for isolated lifecycle checks.
@@ -63,10 +64,11 @@ internal sealed class NativeBehaviorRuntime : IDisposable
 
     private Activity? _selected;
     private int _highLevel=4; // constructor Count, then configured boot selects Selection
-    internal float HighLevelEntryTime {get;private set;}=-1f;
+    internal float HighLevelEntryTime=>_manager.ParentSwitchTime;
     // Continuation of the missing parent picker, not an ActivitySparked state/Complete latch.
     internal bool AwaitingParentActivityPick {get;private set;}
     private bool _retired;
+    internal bool IsRetired=>_retired;
     private long _admissionEpoch;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
@@ -129,10 +131,12 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 _ownedVision=vision;_ownedOverhead=new OverheadEdgesDetector();vision.OverheadEdges=_ownedOverhead;
             }
         }
+        AI.Analyzer.BindOriginalMap(()=>Manipulation?.World.Maps.Current,
+            ()=>!_retired && ReferenceEquals(facade.Engine.Robot,robot) && ReferenceEquals(robot.NativeBehaviorRuntime,this));
         var factory=new BehaviorFactoryContext{Vision=vision,Manipulation=Manipulation,NativeRobot=robot,Features=facade.Engine.Features,
             TallStackData=robot.TallStackContainers.Length == 2 ? robot.TallStackContainers[0] : null,
             SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),Log=facade.Engine.EmitStackLog};
-        var container=new BehaviorContainer(new BehaviorFactory(),factory,
+        var container=Container=new BehaviorContainer(new BehaviorFactory(),factory,
             facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>());
         // fidelity: M15-008 -- 005BBAE8/005BBC9C uses the container's retained config winner.
         Context.NeedsActionIds=BehaviorNeedsActions.FromConfiguredMap(
@@ -160,10 +164,14 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                    entry.Value.TryGetProperty("behaviorClass",out var interludeClass) && interludeClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
                     ((id is "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" or "Needs_MildLowRepairRequest" or "Needs_MildLowEnergyRequest" or "Needs_MildLowPlayRequest") && interludeClass.GetString()=="ExpressNeeds")))
-                    fields.MarkPristine();
+                {fields.MarkPristine();if(id=="EarnedSparks")fields.EarnedSparksConfig=entry.Value;}
                 if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
                    entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
+                if(id=="SparksFireTruckAlarm" && entry.Value.TryGetProperty("behaviorClass",out var fireClass) && fireClass.ValueKind==System.Text.Json.JsonValueKind.String && fireClass.GetString()=="FireTruckAlarm" &&
+                   entry.Value.TryGetProperty("requiredUnlockId",out var fireUnlock) && fireUnlock.ValueKind==System.Text.Json.JsonValueKind.String && fireUnlock.GetString()=="FireTruckAlarm" &&
+                   (!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var fireObjective) || fireObjective.ValueKind==System.Text.Json.JsonValueKind.Null))
+                {fields.FireTruckConfig=entry.Value;fields.MarkPristine();}
                 scoreFields[id]=fields;
             }
         }
@@ -171,7 +179,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var entry in facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>())
             _executableMetadata[entry.Key]=bound.TryGetValue(entry.Key.ToString(),out var b) && b is SteppedBehavior {NativeBaseInputs.CheckedExecutableType: {} value}
                 ? value : ExecutableBehaviorNames.FromConfig(entry.Value);
-        manager.BindConfiguredBehaviors(Bound);
+        manager.BindConfiguredBehaviors(Bound,robot);
         // Manager's container is constructed before the BSM container (0050FCAC/BE).
         if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is NativeCantHandleTallStackBehavior && robot.TallStackContainers.Length == 2)
             TallStackOwnerInput=robot.TallStackContainers[0];
@@ -231,7 +239,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 _highLevel=2;
                 selection.GuardNativeLifecycle=true;
                 selection.OnSelected(facade.Engine.Timer.SecondsF,facade.Engine.EmitStackLog);
-                HighLevelEntryTime=facade.Engine.Timer.SecondsF;
+                _manager.StampParentSwitchTime();
                 Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
                 _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
                 // SetCurrentActivity(Selection,true) takes the normal None-trigger chooser tail before Robot publication.
@@ -302,6 +310,22 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
         _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick,()=>RetireUnavailable(selected,epoch));
     }
+    internal void AdmitNativeHighLevel(string requested)
+    {
+        if(_retired || !ReferenceEquals(_facade.Engine.Robot,_robot) || !ReferenceEquals(_robot.NativeBehaviorRuntime,this))return;
+        switch(requested)
+        {
+            case "Freeplay": AdmitFreeplay(); break;
+            case "Selection": AdmitSelection(); break;
+            case "Feeding":
+            case "MeetCozmoFindFaces":
+                SteppedBehavior.ReportMissing("M15-031 native high-level activity "+requested+" lifecycle unavailable; prior activity retained");break;
+            default: throw new ArgumentOutOfRangeException(nameof(requested));
+        }
+        // The adapter tail uses the captured input even if a callback nested another request.
+        if(!_retired && ReferenceEquals(_facade.Engine.Robot,_robot) && ReferenceEquals(_robot.NativeBehaviorRuntime,this))
+            _manager.HighLevelAdapterTail(requested=="Freeplay");
+    }
     private void AdmitSelection()
     {
         if(_highLevel==2)return;
@@ -315,10 +339,10 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _selected=selection;_highLevel=2;AwaitingParentActivityPick=false;
         selection.OnSelected(now,_facade.Engine.EmitStackLog);
         if(_retired||epoch!=_admissionEpoch)return;
-        HighLevelEntryTime=now;Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
+        _manager.StampParentSwitchTime();Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
         _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
         if(ordinary)_manager.ChooseAfterHighLevelChange(now);
-        _manager.HighLevelAdapterTail(false,now);
+        if(_retired||epoch!=_admissionEpoch)return;
     }
     private void OnFreeplayTreads(OffTreadsState from,OffTreadsState to)
     {
@@ -343,13 +367,13 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             _selected=FreeplayObserver.Freeplay;_highLevel=1;AwaitingParentActivityPick=false;
             _selected.OnSelected(now,_facade.Engine.EmitStackLog);
             if(_retired||epoch!=_admissionEpoch)return;
-            HighLevelEntryTime=now;
+            _manager.StampParentSwitchTime();
             Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,false);
             _manager.Activity=FreeplayObserver;
             RefreshFreeplayInputs(now);
             if(ordinary)_manager.ChooseAfterHighLevelChange(now);
+            if(_retired||epoch!=_admissionEpoch)return;
         }
-        _manager.HighLevelAdapterTail(true,now);
     }
 
     private void RetireUnavailable(Activity activity,long epoch)
@@ -442,6 +466,10 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeSparksLookInPlace>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeHikingLookInPlace>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeHikingPounce>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<ThinkAboutBeaconsBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeExpressNeedsBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeNeedsGetInBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();

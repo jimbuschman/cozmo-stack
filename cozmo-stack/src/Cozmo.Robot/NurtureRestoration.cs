@@ -135,6 +135,8 @@ public sealed partial class EngineRobot
     private void InitNurtureOwners()
     {
         Progression=new(this);Inventory=new(this);
+        if(NativeConfiguredScoreFields?.TryGetValue("SparksFireTruckAlarm",out var fireTruck)==true && fireTruck.FireTruckConfig is not null)
+            fireTruck.FireTruckProgression=Progression;
         var progression=Progression;var inventory=Inventory;
         Lifetime.Bind(0x448,_=>progression.Retire());
         Lifetime.Bind(0x444,_=>inventory.Retire());

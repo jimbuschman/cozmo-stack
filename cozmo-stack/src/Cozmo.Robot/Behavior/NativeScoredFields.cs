@@ -11,6 +11,10 @@ internal sealed class NativeScoredFields
     internal bool ExplicitFlatReload {get;private set;}
     internal bool ConstructorPristine {get;private set;}
     internal long Epoch {get;private set;}
+    // The partial FireTruck gate retains its first configured JSON and actual Robot progression owner.
+    internal JsonElement? FireTruckConfig;
+    internal JsonElement? EarnedSparksConfig;
+    internal ProgressionUnlockOwner? FireTruckProgression;
     internal void MarkPristine()=>ConstructorPristine=true;
     internal void Invalidate(){ConstructorPristine=false;++Epoch;}
     internal void Reload(string id,JsonElement source)

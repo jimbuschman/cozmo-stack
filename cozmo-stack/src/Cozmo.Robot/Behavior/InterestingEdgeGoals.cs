@@ -67,6 +67,14 @@ public sealed class InterestingEdgeGoalSelector
         else SteppedBehavior.ReportMissing("M11-089 Viz erase recipient in 0x005E6520/0x005E675E, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
     }
     private static void Clear(List<Pose3d> poses){foreach(var pose in poses)pose.Dispose();poses.Clear();}
+    internal bool ConsumeKnownEmptyBorders(Func<bool> current)
+    {
+        SteppedBehavior.ReportMissing("M11-089 Viz erase recipient in 0x005E6520, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
+        if(!current())return false;
+        Clear(Vantage168);
+        SteppedBehavior.ReportMissing("M11-089 Viz erase recipient in 0x005E675E, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
+        return current();
+    }
 
     public bool PickGoals(InterestingEdgeInputs input,List<InterestingEdgeGoal> output)
     {

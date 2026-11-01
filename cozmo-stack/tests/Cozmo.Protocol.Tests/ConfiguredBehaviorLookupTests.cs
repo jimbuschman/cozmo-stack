@@ -58,6 +58,30 @@ public sealed class ConfiguredBehaviorLookupTests
         Assert.Equal(expected.Where(f.Runtime.Bound.ContainsKey).OrderBy(x=>x),actual.Keys.OrderBy(x=>x));
         foreach(var entry in actual)Assert.Same(f.Runtime.Bound[entry.Key],entry.Value);
         Assert.DoesNotContain("AcknowledgeObject",actual.Keys);
+        var evaluated=Assert.IsAssignableFrom<IReadOnlyList<ScoredBehaviorEntry>>(typeof(ScoringChooser)
+            .GetField("_evaluationEntries",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(chooser));
+        Assert.Equal(expected.Distinct().OrderBy(id=>(int)Enum.Parse<BehaviorID>(id)),evaluated.Select(e=>e.BehaviorId));
+        Assert.Contains("Hiking_PounceOnMotion",evaluated.Select(e=>e.BehaviorId));
+        Assert.Contains("Hiking_LookInPlaceForUnknown",evaluated.Select(e=>e.BehaviorId));
+    }
+
+    [Fact]
+    public void CanonicalScorerDistinguishesAbsentConfigFromUnbuiltConfiguredOwner()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();const string id="SparksTrackLaser";
+        Assert.False(f.Runtime.Bound.ContainsKey(id));Assert.True(f.Rig.Engine.HostBehaviorMap!.ContainsKey(BehaviorID.SparksTrackLaser));
+        var entry=f.Robot.NativeConfiguredScoreFields![id].Value!;
+        var chooser=new ScoringChooser(new[]{entry},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
+        Assert.True(chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,0).InputUnavailable);
+        var property=f.Rig.Engine.GetType().GetProperty("HostBehaviorMap",BindingFlags.Instance|BindingFlags.NonPublic)!;
+        var original=f.Rig.Engine.HostBehaviorMap!;var changed=original.Where(p=>p.Key!=BehaviorID.SparksTrackLaser).ToDictionary(p=>p.Key,p=>p.Value);
+        try
+        {
+            property.SetValue(f.Rig.Engine,changed);
+            var absent=chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,0);
+            Assert.False(absent.InputUnavailable);Assert.Null(absent.Behavior);Assert.Equal("NativeAbsent",Assert.Single(absent.Scores).Note);
+        }
+        finally {property.SetValue(f.Rig.Engine,original);}
     }
 
     [Fact]

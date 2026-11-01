@@ -88,9 +88,10 @@ public sealed partial class BehaviorManager : IDisposable
     }
     private readonly object _gate = new();
     private IReadOnlyDictionary<string,IBehavior>? _configuredBehaviors;
+    private EngineRobot? _requestOwner;
     // 005A4178/005A4182 delegate to the retained configured container, not the host scoring list.
-    internal void BindConfiguredBehaviors(IReadOnlyDictionary<string,IBehavior> configured)
-    { lock (_gate) _configuredBehaviors=configured; }
+    internal void BindConfiguredBehaviors(IReadOnlyDictionary<string,IBehavior> configured,EngineRobot? originalOwner=null)
+    { lock (_gate) { _configuredBehaviors=configured;if(originalOwner is not null)_requestOwner=originalOwner; } }
     private bool _hostDisposed;
     private RetainedSubscription? _defaultPostureInput;
     internal void AttachDefaultPostureInput()
@@ -108,6 +109,7 @@ public sealed partial class BehaviorManager : IDisposable
     internal BehaviorManager(BehaviorContext context,RepetitionPenalty? penalty,bool bindSensorOwner)
     {
         _context = context;
+        _requestOwner=context.Robot.Engine.Robot;
         SparkNameInput = NativeUnlockNames.Lookup;
         _penalty = penalty ?? new RepetitionPenalty();
         // The concrete behaviours' StopWithoutImmediateRepetitionPenalty (M7/M15) stamps the +0x108
@@ -1320,12 +1322,116 @@ public sealed partial class BehaviorManager : IDisposable
     }
 
     // fidelity: M8-019
-    /// <summary>Checked request entry 0x005A3930: the Info precedes every guard. The native switch/owner path is still unbuilt.</summary>
+    /// <summary>Request entry 0x005A3930: Info followed by the checked empty running-info switch.</summary>
     public void RequestCurrentBehaviorEndImmediately(string reason)
     {
+        using var executionLease=_context.Robot.Engine.EnterSynchronousOwner();
+        var owner=_requestOwner;
         _context.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors",
             "BehaviorManager.RequestCurrentBehaviorEndImmediately", $"Forcing current behavior to stop: {reason}");
-        SteppedBehavior.ReportMissing("M8-019 RequestCurrentBehaviorEndImmediately SwitchToBehaviorBase({null,null,0x16}) 0x005A397C..0x005A39A6 not called: existing helper stores fields before synchronous reaction reporting, omits empty-target DAS/BehaviorTransition and has no native shared controls/release order; no generic Stop substituted");
+        if(!RequestCanContinue(owner))return;
+        SwitchToEmptyForEndRequest(owner!);
+    }
+
+    private bool RequestOwnerCurrent(EngineRobot? owner)=>owner is not null && !_hostDisposed &&
+        ReferenceEquals(_context.Robot.Engine.Robot,owner) &&
+        (_configuredBehaviors is null || (ReferenceEquals(owner.BehaviorManagerOwner,this) && owner.NativeBehaviorRuntime is {IsRetired:false} runtime && ReferenceEquals(runtime.Bound,_configuredBehaviors)));
+    private bool RequestCanContinue(EngineRobot? owner)
+    {
+        if(RequestOwnerCurrent(owner))return true;
+        SteppedBehavior.ReportMissing("M8-016/M8-027 end request: original manager/container retired or replaced; remaining native release effects unavailable");
+        return false;
+    }
+
+    private bool RequestHasContainerRoot(EngineRobot owner,IBehavior? behavior)
+        =>behavior is null || (owner.NativeBehaviorRuntime is {IsRetired:false} runtime &&
+            Enum.TryParse<BehaviorID>(behavior.Id,false,out var id) && id.ToString()==behavior.Id &&
+            runtime.Container.Behaviors.TryGetValue(id,out var actual) && ReferenceEquals(actual,behavior));
+
+    // 005A1E20..1F44 with a null incoming pair. Other switching paths retain their own implementation.
+    private void SwitchToEmptyForEndRequest(EngineRobot owner)
+    {
+        IBehavior? oldCurrent,oldResume;BehaviorScope? oldScope;
+        lock(_gate){oldCurrent=_current;oldResume=_resumeAfterReaction;oldScope=_scope;}
+        bool missingRootReported=false;
+        void CheckRoots()
+        {
+            if(missingRootReported || (RequestHasContainerRoot(owner,oldCurrent) && RequestHasContainerRoot(owner,oldResume)))return;
+            missingRootReported=true;
+            SteppedBehavior.ReportMissing("M8-016/M8-027 end request: original current/resume native strong-root or final-release owner unavailable");
+        }
+        CheckRoots();
+        if(!RequestCanContinue(owner))return;
+        if(oldCurrent is not null && oldCurrent is not SteppedBehavior)
+        {SteppedBehavior.ReportMissing("M8-001/M8-019 end request: actual current behavior running-byte owner unavailable");return;}
+        if(oldCurrent is SteppedBehavior {EngineRunning:true} stopped)
+        {
+            stopped.Stop(BehaviorStopReason.Interrupted);
+            if(!RequestCanContinue(owner))return;
+            CheckRoots();if(!RequestCanContinue(owner))return;
+            oldScope?.Dispose();
+            if(!RequestCanContinue(owner))return;
+            CheckRoots();if(!RequestCanContinue(owner))return;
+        }
+        else if(oldCurrent is {} inactive && oldScope is not null)
+        {lock(_gate)_orphanScopes[inactive]=oldScope;}
+        // Native StopAndNullify reloads the live pair after Stop, including same-owner reentry.
+        lock(_gate)
+        {
+            if(_current is {} live && !ReferenceEquals(live,oldCurrent) && _scope is {} scope)_orphanScopes[live]=scope;
+            _current=null;_scope=null;Interlocked.Increment(ref _hostSelectionEpoch);
+        }
+        ReactionTrigger? trigger;lock(_gate)trigger=_currentReaction;
+        if(trigger is not null)
+        {
+            if(owner.HasExternalInterface && ReactionTriggerTransitionSender is {} send)send(trigger,null);
+            else SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
+            if(!RequestCanContinue(owner))return;
+            CheckRoots();if(!RequestCanContinue(owner))return;
+        }
+        // 005A20E2 reloads the live trigger after the synchronous 0x88 delivery.
+        lock(_gate)trigger=_currentReaction;
+        if(trigger is not null)
+        {
+            if(UpdateRobotPropertiesForReaction is {} update)update(false);
+            else SteppedBehavior.ReportMissing("M8-012 UpdateRobotPropertiesForReaction: robot state owner unavailable");
+            if(!RequestCanContinue(owner))return;
+        }
+        IBehavior? liveCurrent,liveResume;lock(_gate){liveCurrent=_current;liveResume=_resumeAfterReaction;}
+        if(!RequestHasContainerRoot(owner,liveCurrent) || !RequestHasContainerRoot(owner,liveResume))
+        {
+            SteppedBehavior.ReportMissing("M8-016/M8-027 end request: reentrant live current/resume release owner unavailable");
+            if(!RequestCanContinue(owner))return;
+        }
+        // Null incoming behavior leaves the state-light vector intact (005A2158..216C).
+        lock(_gate)
+        {
+            if(_current is {} live && _scope is {} scope)_orphanScopes[live]=scope;
+            _current=null;_scope=null;Interlocked.Increment(ref _hostSelectionEpoch);
+            _resumeAfterReaction=null;
+            _currentReaction=null;
+        }
+        if(owner.HasExternalInterface)ReportEmptyBehaviorTransition(owner,oldCurrent);
+        if(!RequestCanContinue(owner))return;
+        CheckRoots();if(!RequestCanContinue(owner))return;
+        // These are host strong references, not a claim about unknown native reference counts.
+        GC.KeepAlive(oldResume);GC.KeepAlive(oldCurrent);
+    }
+
+    private void ReportEmptyBehaviorTransition(EngineRobot owner,IBehavior? old)
+    {
+        byte oldId=0xB2,oldClass=0x39,oldExecutable=0x0B;
+        if(old is not null)
+        {
+            if(!Enum.TryParse<BehaviorID>(old.Id,false,out var id) || id.ToString()!=old.Id ||
+               old is not SteppedBehavior {NativeBaseInputs: {CheckedExecutableType: {} executable} inputs})
+            {SteppedBehavior.ReportMissing("M8-012 null transition: old behavior ID/class/executable metadata unavailable");return;}
+            oldId=(byte)id;oldClass=inputs.CheckedBehaviorClass;oldExecutable=executable;
+        }
+        string oldName=old is null?"Wait":old.Id;
+        owner.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.behavior_transition","Wait",new Dictionary<string,string>{{"$data",oldName}});
+        if(!RequestCanContinue(owner))return;
+        owner.Engine.BroadcastBehaviorTransition(new(oldId,0xB2,oldClass,oldExecutable,0x39,0x0B,""));
     }
 
     /// <summary>The engine's FinishCurrentBehavior for a caller that stops what is running.</summary>
@@ -1366,7 +1472,7 @@ public sealed partial class BehaviorManager : IDisposable
             // (BehaviorPickUpCube 0x005c685c, BehaviorStackBlocks 0x005c991c, BehaviorBuildPyramidBase
             // 0x005dd110); IBehavior::Stop, StopActing, FinishCurrentBehavior and the manager do not call it.
             // fidelity: M8-002
-            _penalty.Ran(b.Id, nowSec);
+            if(b is not SteppedBehavior)_penalty.Ran(b.Id, nowSec); // stepped Stop owns the source-ordered +0x30 write
             _scope?.Dispose();
         }
         else if (_scope is { } kept) _orphanScopes[b] = kept;
