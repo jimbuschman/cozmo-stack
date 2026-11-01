@@ -13,3 +13,5 @@ Records: existing M8-005 owns this class/action/listener path, so no new record.
 Workers unchanged: reader tallstack_runtime_read requested gpt-6.1-sol medium; builder tallstack_runtime_build and reviewer pyramid_runtime_review DEFAULT model/effort omitted; actual backends unobserved. Independent primary/source/diff PASS, **0 returned review batches/0 resubmissions**. Builder MISSING: general listener identity/order/lifetime, other PlayAnim profiles and broader native obstacle-writer census remain; own tuple/completion/original-owner contracts were resolved at the cited addresses. No worker .NET runs.
 
 Affected tests **418/418 PASS**,0failed/0skip/compiler0/test0/shutdown0/postflight0; log `.scratch/react-to-obstacle-1/affected-1.log`. Fidelity check PASS746/current counts unchanged; protected manifest equals origin/main excluding unresolved prose only. Full suite belongs to the current batch; not READY FOR CLAUDE yet.
+
+Reviewable job source cutoff after preserved reordering: `7682f721`; subsequent jobs need not merge to review this corrected job. Final batch gate is still pending.

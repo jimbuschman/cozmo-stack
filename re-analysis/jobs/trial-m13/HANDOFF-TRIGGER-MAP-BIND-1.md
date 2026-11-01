@@ -20,3 +20,5 @@ Affected tests **238/238 PASS**,0failed/0skip/compiler0/test0/shutdown0; transie
 
 
 Full gate1 on644874aa: **7425/7427,2failed,0skip**,13m10s; gate1/shutdown0/postflight0, preserved `.scratch/trigger-earned-react-fire-batch-full-1.log`. Both failures classified before edits. Imported main hardware-report code only inspects `Contains("MISSING", StringComparison.Ordinal)`; the source scanner falsely rejected that literal. Narrow test-only masking preserves original direct-log argument scanning and every other direct/indirect marker literal; no source path/hardware check is excluded. Independent focused static PASS, scanner passes. The other failure belongs to Earned pending/end dependency and is documented in its handoff. Diagnostic original assertions were preserved. Correction affected **141/141PASS**,0skip/compiler0/test0/shutdown0, transientpostflight1/followup0; log `.scratch/trigger-map-bind-1/gate-corrections-affected-1.log`. Final full gate still pending.
+
+Reviewable job source cutoff after preserved reordering: `fd333295`; subsequent jobs need not merge to review this corrected job. Final batch gate is still pending.

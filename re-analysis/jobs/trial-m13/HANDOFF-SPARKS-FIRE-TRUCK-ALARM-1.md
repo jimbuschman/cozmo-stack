@@ -15,3 +15,5 @@ Records: propose ONE coherent FireTruck configured lifecycle/original flag/API h
 Workers unchanged: reader tallstack_runtime_read requested gpt-6.1-sol medium; builder tallstack_runtime_build/reviewer pyramid_runtime_review DEFAULT model/effort omitted, actual backends unobserved. **1 returned review batch/1 resubmission** removed an unsupported animation-library prerequisite; independent source/diff static PASS. Builder MISSING: actual StopTrick ingress and later app-supplied flag/objective/needs events remain; source flag/helper/report/common Resume questions resolved at cited addresses. No worker .NET runs.
 
 Affected tests **219/219 PASS**,0failed/0skip/compiler0/test0/shutdown0/postflight0; log `.scratch/sparks-fire-truck-alarm-1/affected-1.log`. Fidelity check PASS746/current counts unchanged; protected manifest equals origin/main excluding unresolved prose only. Third current-batch job; full gate pending, not READY FOR CLAUDE.
+
+Reviewable job source cutoff after preserved reordering: `602c144e`; subsequent jobs need not merge to review this corrected job. Final batch gate is still pending.
