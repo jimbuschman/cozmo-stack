@@ -94,6 +94,51 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
+    public void FireTruckLockedGateUsesOriginalProgressionAndPristineHistoryBeforeScoring()
+    {
+        const string id="SparksFireTruckAlarm";using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        Assert.Equal(83u,NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes("FireTruckAlarm")));
+        Assert.False(f.Runtime.Bound.ContainsKey(id));var fields=f.Robot.NativeConfiguredScoreFields![id];Assert.True(fields.ConstructorPristine);
+        var progression=f.Robot.Progression!;Assert.Same(progression,fields.FireTruckProgression);
+        Assert.True(progression.TryIsUnlocked(83,out bool unlocked));Assert.False(unlocked);
+        var chooser=new ScoringChooser(new[]{fields.Value!},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
+        int draws=0;chooser.RandomDraw=()=>{draws++;return 0;};
+        ChooserDecision Choose()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
+        var locked=Choose();Assert.False(locked.InputUnavailable);Assert.Null(locked.Behavior);Assert.Equal("KnownFalse",Assert.Single(locked.Scores).Note);Assert.Equal(0,draws);
+        progression.ReadSink(new NvResult(-1,Array.Empty<byte>())); // supplied missing-NV result, actual default-restoration recipient
+        Assert.True(progression.TryIsUnlocked(83,out unlocked));Assert.False(unlocked);Assert.False(Choose().InputUnavailable);
+        using var nonfinite=JsonDocument.Parse("""{"flatScore":1e100}""");fields.Reload(id,nonfinite.RootElement);
+        Assert.False(Choose().InputUnavailable);Assert.Equal(0,draws); // source base rejection precedes scoring fields
+        progression.Unlocked.Add(83);Assert.True(Choose().InputUnavailable);progression.Unlocked.Remove(83);
+        var known=typeof(ProgressionUnlockOwner).GetProperty("OverridesKnownEmpty",BindingFlags.Instance|BindingFlags.NonPublic)!;
+        known.SetValue(progression,false);Assert.True(Choose().InputUnavailable);known.SetValue(progression,true);
+        var original=f.Robot.NativeConfiguredScoreFields![id];f.Robot.NativeConfiguredScoreFields[id]=new NativeScoredFields();
+        Assert.True(Choose().InputUnavailable);f.Robot.NativeConfiguredScoreFields[id]=original;
+        var oldProgression=f.Robot.Progression;f.Robot.Progression=new ProgressionUnlockOwner(f.Robot);
+        Assert.True(Choose().InputUnavailable);f.Robot.Progression=oldProgression;
+        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync(id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.False(fields.ConstructorPristine);Assert.True(Choose().InputUnavailable);
+    }
+
+    [Fact]
+    public void FireTruckChangedConfigAndQueuedUnsupportedRequestWithdrawProof()
+    {
+        const string id="SparksFireTruckAlarm";using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        var fields=f.Robot.NativeConfiguredScoreFields![id];var chooser=new ScoringChooser(new[]{fields.Value!},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
+        ChooserDecision Choose()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
+        Assert.False(Choose().InputUnavailable);
+        var property=f.Rig.Engine.GetType().GetProperty("HostBehaviorMap",BindingFlags.Instance|BindingFlags.NonPublic)!;
+        var original=f.Rig.Engine.HostBehaviorMap!;var changed=original.ToDictionary(p=>p.Key,p=>p.Value);
+        using var altered=JsonDocument.Parse("""{"behaviorClass":"FireTruckAlarm","requiredUnlockId":"Count"}""");
+        changed[BehaviorID.SparksFireTruckAlarm]=altered.RootElement;
+        try {property.SetValue(f.Rig.Engine,changed);Assert.True(Choose().InputUnavailable);}
+        finally {property.SetValue(f.Rig.Engine,original);}
+        Assert.False(Choose().InputUnavailable);
+        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.SparksFireTruckAlarm,1);f.Rig.Tick();
+        Assert.False(fields.ConstructorPristine);Assert.True(Choose().InputUnavailable);
+    }
+
+    [Fact]
     public void ReactToObstacleUsesActualConfiguredPlayAnimAndLiveAiFlag()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();
@@ -104,6 +149,33 @@ public sealed class OrdinaryFreeplayNativeTests
         var chooser=new ScoringChooser(new[]{react.NativeScoring!},f.Runtime.Bound,native:true);
         var decision=chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
         Assert.False(decision.InputUnavailable);Assert.Null(decision.Behavior);Assert.Equal("scored 0",Assert.Single(decision.Scores).Note);
+    }
+
+    [Fact]
+    public void ActualInterestingEdgeOwnerDistinguishesUnknownInputsFromKnownEmpty()
+    {
+        // Isolated own-predicate unit on the retained configured owner; no native map producer is invented.
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var edge=Assert.IsType<VisitInterestingEdgeBehavior>(f.Runtime.Bound["Hiking_VisitInterestingEdge"]);
+        var method=typeof(VisitInterestingEdgeBehavior).GetMethod("IsRunnableInternal",BindingFlags.Instance|BindingFlags.NonPublic)!;
+        (bool Available,bool Value) Evaluate()=>SteppedBehavior.EvaluateHostOperation(()=>(bool)method.Invoke(edge,new object[]{f.Runtime.Context})!);
+        Assert.False(Evaluate().Available);
+        var chooser=new ScoringChooser(new[]{edge.NativeScoring!},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
+        f.Runtime.AI.Analyzer.AddEnableRequest(1,"edge-unit");
+        var unavailableStacks=new List<string>();SteppedBehavior.ReadinessUnavailableObservedForTest=()=>unavailableStacks.Add(Environment.StackTrace);
+        ChooserDecision Choose()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
+        Assert.True(Choose().InputUnavailable);
+        var original=edge.NativeInputs;
+        try
+        {
+            edge.NativeInputs=_=>new InterestingEdgeInputs{RobotPose=f.Robot.GetCheckedMainPose(),WorldOrigin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId),Regions=Array.Empty<InterestingEdgeRegion>(),Map=null,EraseDebugSegments=_=>{}};
+            var empty=Evaluate();Assert.True(empty.Available);Assert.False(empty.Value);
+            var decision=Choose();Assert.True(!decision.InputUnavailable,$"libraryNull={f.Rig.Robot.Animations.Library is null}; unavailable={string.Join(" | ",unavailableStacks)}");Assert.Null(decision.Behavior);Assert.Equal("scored 0",Assert.Single(decision.Scores).Note);
+            edge.NativeInputs=_=>new InterestingEdgeInputs{RobotPose=f.Robot.GetCheckedMainPose(),WorldOrigin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId),Regions=new[]{new InterestingEdgeRegion(1,Array.Empty<InterestingEdgeSegment>())},Map=null,EraseDebugSegments=_=>{}};
+            Assert.False(Evaluate().Available);
+        }
+        finally{SteppedBehavior.ReadinessUnavailableObservedForTest=null;edge.NativeInputs=original;f.Runtime.AI.Analyzer.RemoveEnableRequest(1,"edge-unit");}
     }
 
     [Fact]

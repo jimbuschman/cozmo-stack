@@ -7,6 +7,7 @@ namespace Cozmo.Robot.Behavior;
 internal sealed class NativeBehaviorBaseInputs
 {
     private readonly EngineRobot _robot;
+    private readonly BehaviorManager? _manager;
     private readonly uint _requiredUnlock;
     internal uint RequiredUnlock=>_requiredUnlock;
     // Common +6C uses the native executable name table and Count constructor default.
@@ -16,6 +17,7 @@ internal sealed class NativeBehaviorBaseInputs
     internal NativeBehaviorBaseInputs(EngineRobot robot,JsonElement config)
     {
         _robot=robot;
+        _manager=robot.BehaviorManagerOwner;
         CheckedExecutableType=ExecutableBehaviorNames.FromConfig(config);
         _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)&&unlock.ValueKind!=JsonValueKind.Null?NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(unlock.GetString()!)):0x55;
         _requiredSevere=config.TryGetProperty("requiredSevereNeedsState",out var need)
@@ -44,10 +46,14 @@ internal sealed class NativeBehaviorBaseInputs
             float stamp=_robot.LastDriveOffChargerSeconds;
             if(stamp < -epsilon || !((_recentDriveOff+stamp)+epsilon>=now))return false;
         }
-        // Shipped DriveOff leaves this at -1. A host activity timestamp is not
-        // evidence of the native manager+0x50 producer (RB3).
         if(!((double)_recentSwitch < BitConverter.Int64BitsToDouble(unchecked((long)0xBEE4F8B588E368F1))))
-        {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior requiredRecentSwitchToParent_sec 0x005BD84A: native manager+0x50 writer is not bound");return false;}
+        {
+            if(_manager is not {} manager || !ReferenceEquals(_robot.BehaviorManagerOwner,manager) || !ReferenceEquals(manager.ContextRobot,context.Robot))
+            {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior requiredRecentSwitchToParent_sec: original manager+0x50 owner unavailable");return false;}
+            float limit=_recentSwitch+epsilon;
+            float elapsed=now-manager.ParentSwitchTime;
+            if(limit<elapsed)return false;
+        }
         return true;
     }
 }

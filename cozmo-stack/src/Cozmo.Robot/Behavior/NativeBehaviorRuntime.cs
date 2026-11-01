@@ -63,7 +63,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
 
     private Activity? _selected;
     private int _highLevel=4; // constructor Count, then configured boot selects Selection
-    internal float HighLevelEntryTime {get;private set;}=-1f;
+    internal float HighLevelEntryTime=>_manager.ParentSwitchTime;
     // Continuation of the missing parent picker, not an ActivitySparked state/Complete latch.
     internal bool AwaitingParentActivityPick {get;private set;}
     private bool _retired;
@@ -164,6 +164,10 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
                    entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
+                if(id=="SparksFireTruckAlarm" && entry.Value.TryGetProperty("behaviorClass",out var fireClass) && fireClass.ValueKind==System.Text.Json.JsonValueKind.String && fireClass.GetString()=="FireTruckAlarm" &&
+                   entry.Value.TryGetProperty("requiredUnlockId",out var fireUnlock) && fireUnlock.ValueKind==System.Text.Json.JsonValueKind.String && fireUnlock.GetString()=="FireTruckAlarm" &&
+                   (!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var fireObjective) || fireObjective.ValueKind==System.Text.Json.JsonValueKind.Null))
+                {fields.FireTruckConfig=entry.Value;fields.MarkPristine();}
                 scoreFields[id]=fields;
             }
         }
@@ -231,7 +235,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 _highLevel=2;
                 selection.GuardNativeLifecycle=true;
                 selection.OnSelected(facade.Engine.Timer.SecondsF,facade.Engine.EmitStackLog);
-                HighLevelEntryTime=facade.Engine.Timer.SecondsF;
+                _manager.StampParentSwitchTime();
                 Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
                 _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
                 // SetCurrentActivity(Selection,true) takes the normal None-trigger chooser tail before Robot publication.
@@ -315,10 +319,11 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _selected=selection;_highLevel=2;AwaitingParentActivityPick=false;
         selection.OnSelected(now,_facade.Engine.EmitStackLog);
         if(_retired||epoch!=_admissionEpoch)return;
-        HighLevelEntryTime=now;Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
+        _manager.StampParentSwitchTime();Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
         _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
         if(ordinary)_manager.ChooseAfterHighLevelChange(now);
-        _manager.HighLevelAdapterTail(false,now);
+        if(_retired||epoch!=_admissionEpoch)return;
+        _manager.HighLevelAdapterTail(false);
     }
     private void OnFreeplayTreads(OffTreadsState from,OffTreadsState to)
     {
@@ -343,13 +348,15 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             _selected=FreeplayObserver.Freeplay;_highLevel=1;AwaitingParentActivityPick=false;
             _selected.OnSelected(now,_facade.Engine.EmitStackLog);
             if(_retired||epoch!=_admissionEpoch)return;
-            HighLevelEntryTime=now;
+            _manager.StampParentSwitchTime();
             Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,false);
             _manager.Activity=FreeplayObserver;
             RefreshFreeplayInputs(now);
             if(ordinary)_manager.ChooseAfterHighLevelChange(now);
+            if(_retired||epoch!=_admissionEpoch)return;
         }
-        _manager.HighLevelAdapterTail(true,now);
+        if(_retired)return;
+        _manager.HighLevelAdapterTail(true);
     }
 
     private void RetireUnavailable(Activity activity,long epoch)
@@ -443,6 +450,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeSparksLookInPlace>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeHikingLookInPlace>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeExpressNeedsBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeNeedsGetInBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();

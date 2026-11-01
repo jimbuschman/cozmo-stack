@@ -24,11 +24,16 @@ public sealed partial class BehaviorManager
     internal byte ActiveSparkSoft {get;private set;}
     internal byte RequestedSparkSoft {get;private set;}
     internal byte SparkCancelLatch {get;private set;}
-    internal float SparkSwitchTime {get;private set;}=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+    // The high-level activity and Spark writers share BehaviorManager+0x50.
+    internal float ParentSwitchTime {get;private set;}=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+    internal float SparkSwitchTime=>ParentSwitchTime;
+    internal float StampParentSwitchTime()=>ParentSwitchTime=_context.Robot.Engine.Timer.SecondsF;
     internal float FreeplayStartTime {get;private set;}=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
-    internal void HighLevelAdapterTail(bool freeplay,float now)
+    private long _sparkSwitchEpoch;
+    internal void HighLevelAdapterTail(bool freeplay)
     {
-        if(freeplay) { if(FreeplayStartTime<0) FreeplayStartTime=now; }
+        if(_hostDisposed)return;
+        if(freeplay) { if(FreeplayStartTime<0) FreeplayStartTime=_context.Robot.Engine.Timer.SecondsF; }
         else { ActiveSparkId=0x55; RequestedSparkId=0x55; }
     }
     private RetainedSubscription? _sparkInput;
@@ -86,10 +91,15 @@ public sealed partial class BehaviorManager
     // Checked leaf; the canonical Freeplay parent calls it on a changed pick.
     internal void SwitchToNativeRequestedSpark()
     {
+        if(_hostDisposed)return;
+        long epoch=++_sparkSwitchEpoch;
+        var owner=_context.Robot.Engine.Robot;
+        bool canonical=owner is not null && ReferenceEquals(owner.BehaviorManagerOwner,this);
         if(SparkNameInput is not {} name){SparkMissing("M15-058 SwitchToRequestedSpark0x005A41A8/0x005A41B0: native UnlockId names missing before Info/state writes; switch withheld. Its successful native Freeplay picker caller remains M15-006.");return;}
         _context.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Behaviors","BehaviorManager.SwitchToRequestedSpark",
             $"switching active spark from '{name(ActiveSparkId) ?? "(null)"}' -> '{name(RequestedSparkId) ?? "(null)"}'. From {(ActiveSparkSoft!=0?"soft":"hard")} -> {(RequestedSparkSoft!=0?"soft":"hard")}");
-        SparkSwitchTime=_context.Robot.Engine.Timer.SecondsF;
+        if(_hostDisposed || epoch!=_sparkSwitchEpoch || (canonical && (!ReferenceEquals(_context.Robot.Engine.Robot,owner) || !ReferenceEquals(owner!.BehaviorManagerOwner,this))))return;
+        StampParentSwitchTime();
         SparkCancelLatch=0;ActiveSparkId=RequestedSparkId;ActiveSparkSoft=RequestedSparkSoft;
         // requested+60/+64 remain intact; no acknowledgment just because a request arrived.
     }

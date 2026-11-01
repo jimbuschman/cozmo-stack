@@ -19,8 +19,11 @@ public sealed class VisitInterestingEdgeBehavior : SteppedBehavior
     {
         var input=NativeInputs?.Invoke(context);
         if(input is null)
-        {ReportMissing("M11-089 live native border-vector/map/RNG/robot-root input join at 0x005E6520 -> 0x005E682C; M11-092 lifecycle remains unread");return false;}
-        return Goals.IsRunnable(input)==true;
+        {MarkReadinessUnavailable();ReportMissing("M11-089 live native border-vector/map/RNG/robot-root input join at 0x005E6520 -> 0x005E682C; M11-092 lifecycle remains unread");return false;}
+        var result=Goals.IsRunnable(input);
+        if(result is null)
+        {MarkReadinessUnavailable();ReportMissing("M11-089 VisitInterestingEdge goal readiness input unavailable");return false;}
+        return result.Value;
     }
     protected override void OnStart()
     {

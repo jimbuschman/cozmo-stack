@@ -318,6 +318,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
+        [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
@@ -395,6 +396,8 @@ public sealed class BehaviorFactory
         {SteppedBehavior.ReportMissing("FindFaces factory: only configured FindFaces_socialize with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("LookInPlaceMemoryMap factory: only configured Hiking_LookInPlaceForUnknown with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.ExpressNeeds && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_MildLowEnergyRequest or BehaviorID.Needs_MildLowPlayRequest or BehaviorID.Needs_MildLowRepairRequest or BehaviorID.Needs_SevereLowPlayBored or BehaviorID.Needs_SevereLowPlayRequest or BehaviorID.Needs_SevereLowEnergyForcedGetOut) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExpressNeeds factory: only six checked configured IDs with original Robot/manipulation are available");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.PlayAnimOnNeedsChange && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_SevereLowEnergyGetIn or BehaviorID.Needs_SevereLowRepairGetIn or BehaviorID.Needs_SevereLowPlayGetIn) || ctx.Manipulation is null || ctx.NativeRobot is null))

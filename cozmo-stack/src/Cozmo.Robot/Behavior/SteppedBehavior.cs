@@ -213,6 +213,8 @@ public abstract partial class SteppedBehavior : IBehavior
     /// robot between actions overrides this to stay alive; it then ends itself with <see cref="Finish"/>.
     /// </summary>
     protected virtual bool KeepsRunningWithoutAction => false;
+    // A live source-input gap may hold an owner instead of fabricating a completed native action.
+    protected virtual bool HoldUnavailableActionCompletion => false;
 
     // Host-only scoped availability; native false remains distinct from missing input.
     private sealed class ReadinessFrame { internal bool Unavailable; }
@@ -738,7 +740,7 @@ public abstract partial class SteppedBehavior : IBehavior
         using var executionLease = EnterHostExecutionOwner(context);
         if (!HostExecutionVersionCurrent(hostVersion)) return true;
         // IBehavior::Update 0x005bd074..0x005bd088: +0xa0 set and +0x84 clear returns 2 before UpdateInternal.
-        if (UpdateStatus() == 2) return false;
+        if (UpdateStatus() == 2 && !HoldUnavailableActionCompletion) return false;
         if (_finished) return false;
         NowMs = nowMs;
         StartedMs ??= nowMs;
