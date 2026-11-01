@@ -1,4 +1,4 @@
-# REACTION-BEHAVIOURS-FIX-1 — affected PASS, batch gate pending
+# REACTION-BEHAVIOURS-FIX-1 — READY FOR CLAUDE
 
 Last job in this seven-job fix batch, based on main9abf6edd after REACTION-FIX-2 0faf142b. Check8/check9 were leads; two readers and the independent reviewer checked actual engine instructions. No hardware run.
 
@@ -22,3 +22,9 @@ MISSING: typed GoingToSleep host recipient; native idle-owner prefix; face-inter
 Requested workers: reaction_behaviors_read_events and reaction_behaviors_read_lifecycle gpt-6.1-sol medium; reaction_behaviors_build/review DEFAULT model/effort omitted; actual backends unobserved. Same workers throughout. Review fix rounds3: initial action/RNG/pose/lease/idle feedback; formal replacement-run ownership and real context/goal coverage; affected report/tag-lifetime guards. Compiler correction1; grouped post-test fixture/oracle correction1. After batch full gate/handoff, restore unchanged Hiking WIP; FISTBUMP-STRATEGY-1 follows without waiting for Claude.
 
 First full batch gate at520ad93c: **7084/7087 PASS,3 failures,0 skipped**, gate1/shutdown0/postflight0; logs .scratch/start-path-fix-batch-gate-1{,-console}.log. All three failures classified before edits: cold whiteboard assertion0 contradicted nativeBF800000; face test expected the removed misleading objective log at the mood callback; teardown list omitted source-proven G2E A2 release after96. Three test-only fixes preserve actual source behavior and all other assertions. Independent primary/affected review PASS. No false assertion that the whole face interaction lacks0x0C: its real timer owner remains MISSING. Focused classes and corrected full gate still required. This is batch-gate fixture correction1, separate from earlier affected-fixture correction1; review3/compiler1 counts unchanged.
+
+## Completed batch gate (2026-10-31)
+
+Full gate **7087/7087 PASS, 0 failed, 0 skipped** at `af83ed19e0856a8234a9742df04ce9be8a109e08`; gate/shutdown0. Logs `.scratch/start-path-fix-batch-gate-2{,-console}.log`. First gate at520ad93c was7084/7087 with three source-contradicted/stale test assertions; those test-only corrections passed76/76 and the full rerun. Production code did not change between those gates.
+
+Effective rebased job commit `520ad93c` (main9abf6edd); older hashes above preserve historical read/test context. Batch test correction `af83ed19`. Only metadata follows this passing tip. Fidelity statuses/evidence/titles/approvals are unchanged; M15-098/100 remain proposals for Claude, no whole M7-019/M15-006 settlement. Hiking code/test remain unchanged on remote parking branchbb5ea84a and are restored next.

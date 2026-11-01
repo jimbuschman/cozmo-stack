@@ -1,4 +1,4 @@
-# NEEDS-FIX-1 — affected PASS, batch gate pending
+# NEEDS-FIX-1 — READY FOR CLAUDE
 
 Job 2 of the five ACTION jobs, on top of SCORING-FIX-1 9351d778. Current origin/main 08e9dc34 was fetched and the branch rebased before starting. One batch full gate remains due after the five jobs under AUTONOMY Speed changes.
 
@@ -15,3 +15,9 @@ Source/static review PASS. Affected tests **461/461 PASS, zero skipped** (Needs,
 M15-029 and M15-046 remain IMPLEMENTATION_GAP; no whole-record settlement proposed. MISSING: deferred whitelist bytes +0x1DF, prediction entry/state copy and its shared-RNG ownership, broader needs rewards/persistence/messages remain open. The native NeedsState message payload and local strategy recipient are reserved for STRATEGIES-FIX-1 and require their own primary check. The supported immediate action path was changed without claiming those joins complete.
 
 Requested models: needs_read gpt-6.1-sol medium; needs_build and needs_review DEFAULT model/effort overrides omitted. Backend identity unobserved. Reviewer fix rounds 1 (meaningful multi-part/live-owner/signed-epsilon test coverage); production behavioral corrections after review 0, compiler corrections 0. Builder MISSING/questions are listed above; no new operator decision. No status, approval, hardware or main push changes. READY FOR CLAUDE awaits the batch full gate.
+
+## Completed batch gate (2026-10-31)
+
+Full gate **7087/7087 PASS, 0 failed, 0 skipped** at `af83ed19e0856a8234a9742df04ce9be8a109e08`; gate/shutdown0. Logs `.scratch/start-path-fix-batch-gate-2{,-console}.log`. First gate at520ad93c was7084/7087 with three source-contradicted/stale test assertions; those test-only corrections passed76/76 and the full rerun. Production code did not change between those gates.
+
+Effective rebased job commit `6ef32261` (main9abf6edd); older hashes above preserve historical read/test context. Batch test correction `af83ed19`. Only metadata follows this passing tip. Fidelity statuses/evidence/titles/approvals are unchanged; M15-098/100 remain proposals for Claude, no whole M7-019/M15-006 settlement. Hiking code/test remain unchanged on remote parking branchbb5ea84a and are restored next.

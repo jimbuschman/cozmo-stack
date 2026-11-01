@@ -1,4 +1,4 @@
-# FREEPLAY-FIX-1 — affected PASS, batch gate pending
+# FREEPLAY-FIX-1 — READY FOR CLAUDE
 
 Job 5, based on main2857f25f. Check3 was a lead; two readers and the independent reviewer checked actual engine instructions. The unchanged Hiking WIP is preserved on remote `codex/parked-hiking-drive-off-charger-1` at bb5ea84a and omitted from this batch only as main directed; restore after the batch, including REACTION-FIX-2. No assertion was skipped or weakened.
 
@@ -20,3 +20,9 @@ Only unresolved prose for M15-006/060/066 and generated FIDELITY_GAPS changed. T
 Requested workers: freeplay_read and freeplay_inputs_read gpt-6.1-sol medium; freeplay_build and freeplay_review DEFAULT model/effort omitted; actual backends unobserved. Same builder throughout. Reviewer fix rounds2; compiler correction1; post-execution test correction0. Builder raised all MISSING items above; picker control flow, raw Spark substitute, absent bucket, timer ownership and event-phase questions were resolved against checked source or visibly held at the gap. No hardware or acceptance claim.
 
 Batch gate follow-up: the full run520ad93c exposed M8BatchThreeCTests' stale initial timestamp0. Native ctor0x0056A2AE/0x0056A2B6 stores BF800000; nonzero event leaves it unchanged. Test now pins cold/ignored-event -1f bits, retaining the existing timer-word and warm ignored-event checks. Test-only, independently reviewed; no production or status change.
+
+## Completed batch gate (2026-10-31)
+
+Full gate **7087/7087 PASS, 0 failed, 0 skipped** at `af83ed19e0856a8234a9742df04ce9be8a109e08`; gate/shutdown0. Logs `.scratch/start-path-fix-batch-gate-2{,-console}.log`. First gate at520ad93c was7084/7087 with three source-contradicted/stale test assertions; those test-only corrections passed76/76 and the full rerun. Production code did not change between those gates.
+
+Effective rebased job commit `47de8f47` (main9abf6edd); older hashes above preserve historical read/test context. Batch test correction `af83ed19`. Only metadata follows this passing tip. Fidelity statuses/evidence/titles/approvals are unchanged; M15-098/100 remain proposals for Claude, no whole M7-019/M15-006 settlement. Hiking code/test remain unchanged on remote parking branchbb5ea84a and are restored next.

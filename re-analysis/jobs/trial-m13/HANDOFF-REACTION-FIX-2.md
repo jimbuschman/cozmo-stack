@@ -1,4 +1,4 @@
-# REACTION-FIX-2 — affected PASS, batch gate pending
+# REACTION-FIX-2 — READY FOR CLAUDE
 
 Based on main9abf6edd, after FREEPLAY-FIX-1. Check7 was a lead; reader and independent reviewer both checked the engine instructions. Three native joins, plus a required host-lifetime correction found by affected tests:
 
@@ -17,3 +17,9 @@ Tests use real sensor ingress/factory subscriptions and bound World.ObjectObserv
 No manifest, status, inventory, approval or acceptance change; no new record. Propose no whole settlement of M10-003 or M15-081: broader strategy classes and the previously recorded pose/family/native destructor and behavior helper gaps remain. No new MISSING input was invented. Builder's carry+4/+8 question was resolved by the ObjectID subobject trace; old stale sensor-MISSING comments removed. No hardware claim.
 
 Requested workers: reaction2_read gpt-6.1-sol medium; reaction2_build and reaction2_review DEFAULT model/effort omitted; actual backends unobserved. Same workers throughout. Reviewer fix rounds2 (initial ownership/coverage, then host-lifetime correction); compiler0; grouped post-test fixture/oracle correction1. REACTION-BEHAVIOURS-FIX-1 follows per main's new check8/check9 direction, before restoring Hiking.
+
+## Completed batch gate (2026-10-31)
+
+Full gate **7087/7087 PASS, 0 failed, 0 skipped** at `af83ed19e0856a8234a9742df04ce9be8a109e08`; gate/shutdown0. Logs `.scratch/start-path-fix-batch-gate-2{,-console}.log`. First gate at520ad93c was7084/7087 with three source-contradicted/stale test assertions; those test-only corrections passed76/76 and the full rerun. Production code did not change between those gates.
+
+Effective rebased job commit `0faf142b` (main9abf6edd); older hashes above preserve historical read/test context. Batch test correction `af83ed19`. Only metadata follows this passing tip. Fidelity statuses/evidence/titles/approvals are unchanged; M15-098/100 remain proposals for Claude, no whole M7-019/M15-006 settlement. Hiking code/test remain unchanged on remote parking branchbb5ea84a and are restored next.

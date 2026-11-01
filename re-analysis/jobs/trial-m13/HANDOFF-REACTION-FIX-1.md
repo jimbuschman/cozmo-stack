@@ -1,4 +1,4 @@
-# REACTION-FIX-1 — affected PASS, batch gate pending
+# REACTION-FIX-1 — READY FOR CLAUDE
 
 Job 3 of five, after NEEDS-FIX-1 a4ab4b91; fetched/rebased current main 08e9dc34 before starting. Check4 was a lead, not proof. Extractor and independent reviewer checked the real engine instructions and corrected the report predicate and running-info order described by the lead.
 
@@ -21,3 +21,9 @@ Requested workers: reaction_read gpt-6.1-sol medium; reaction_build/reaction_rev
 Batch correction found by REACTION-FIX-2: public Stop's empty-info switch could overwrite a synchronous listener's replacement. The existing after-stop epoch check now applies to all callers, preserving that replacement before outer publication. Existing AcknowledgeObject reentrancy regression retained; independent affected-diff review PASS and corrected combined affected427/427 PASS, zero skipped. Normal native transition order unchanged; no new status or approval change. See HANDOFF-REACTION-FIX-2.md for the preserved first failure and classification.
 
 Batch gate follow-up: M5X13BuilderTests' teardown list omitted the new A2 subscription. Native append0x005A1504..0x005A151E precedes96 append0x005A15D0..0x005A15E8; reverse destructor0x004EAE94..0x004EAEbe via0x005A0D86 proves96 thenA2. Add that source-proven expectation while retaining excluded captured-owner gaps. Test-only, independently reviewed; no production or status change.
+
+## Completed batch gate (2026-10-31)
+
+Full gate **7087/7087 PASS, 0 failed, 0 skipped** at `af83ed19e0856a8234a9742df04ce9be8a109e08`; gate/shutdown0. Logs `.scratch/start-path-fix-batch-gate-2{,-console}.log`. First gate at520ad93c was7084/7087 with three source-contradicted/stale test assertions; those test-only corrections passed76/76 and the full rerun. Production code did not change between those gates.
+
+Effective rebased job commit `53c00f1e` (main9abf6edd); older hashes above preserve historical read/test context. Batch test correction `af83ed19`. Only metadata follows this passing tip. Fidelity statuses/evidence/titles/approvals are unchanged; M15-098/100 remain proposals for Claude, no whole M7-019/M15-006 settlement. Hiking code/test remain unchanged on remote parking branchbb5ea84a and are restored next.

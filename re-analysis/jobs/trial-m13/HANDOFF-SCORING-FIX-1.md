@@ -1,4 +1,4 @@
-# SCORING-FIX-1 — affected PASS, batch gate pending
+# SCORING-FIX-1 — READY FOR CLAUDE
 
 Rebased manager branch on origin/main 08e9dc34; read AUTONOMY and REVIEW including DIRECTION and the five ACTION rows. This is job 1 of the requested five-job batch. Hiking remains preserved WIP; no status or approval changes.
 
@@ -15,3 +15,9 @@ Records: M15-002, M8-003 and M8-013 remain IMPLEMENTATION_GAP; no whole-record s
 Builder question resolved: native emplace_unique differs from existing duplicate-name ToDictionary failure. A narrow scan found nine shipped scoring objects, 125 entries, no within-chooser duplicate names or native IDs; generated native-ID mappings match the ELF and supported bindings introduce no aliases. This difference is unreachable for those shipped lists; no new collision policy was invented.
 
 Workers requested: scoring_read gpt-6.1-sol medium; scoring_build and scoring_review DEFAULT model/effort overrides omitted. Actual backends unobserved. Reviewer behavioral fix rounds 0, compiler corrections 0. All builder MISSING/questions are recorded above. No hardware, main push, official fidelity status or approval edits. Full gate deferred to the batch tip under AUTONOMY Speed changes; READY FOR CLAUDE awaits that pass.
+
+## Completed batch gate (2026-10-31)
+
+Full gate **7087/7087 PASS, 0 failed, 0 skipped** at `af83ed19e0856a8234a9742df04ce9be8a109e08`; gate/shutdown0. Logs `.scratch/start-path-fix-batch-gate-2{,-console}.log`. First gate at520ad93c was7084/7087 with three source-contradicted/stale test assertions; those test-only corrections passed76/76 and the full rerun. Production code did not change between those gates.
+
+Effective rebased job commit `4f78b72d` (main9abf6edd); older hashes above preserve historical read/test context. Batch test correction `af83ed19`. Only metadata follows this passing tip. Fidelity statuses/evidence/titles/approvals are unchanged; M15-098/100 remain proposals for Claude, no whole M7-019/M15-006 settlement. Hiking code/test remain unchanged on remote parking branchbb5ea84a and are restored next.

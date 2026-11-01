@@ -1,4 +1,4 @@
-# STRATEGIES-FIX-1 — affected PASS, batch gate pending
+# STRATEGIES-FIX-1 — READY FOR CLAUDE
 
 Job 4 of five, after REACTION-FIX-1 96a0019f; fetched/rebased main 08e9dc34 first. Both extractors and the independent reviewer checked actual engine instructions. Check2/check6 were leads.
 
@@ -21,3 +21,9 @@ MISSING: full public NeedsState envelope (M15-001); Pyramid filter+0x3C meaning 
 Propose Claude checking **M15-098 and M15-100 for whole own-path settlement**: the scoped local level recipient/graph/current-cooldown/lifetime path, and configured Spark constructor/internal predicates. Full public envelope and parent admission have separate owners and remain open. Independent reviewer agrees these are reasonable proposals after the final rerun. No statuses changed; M15-003/097/099 retain the exact own remainders above.
 
 Requested workers: strategies_read and strategies_needs_read gpt-6.1-sol medium; strategies_build/review DEFAULT model/effort omitted; actual backends unobserved. Reviewer behavioral fix rounds2 (Pyramid RNG/timer through missing candidate input; initial public current cooldown); grouped post-test harness/oracle correction1; compiler0. Builder source-order question was resolved by the second reader's action-send trace; asset discovery used the actual junction after the initial non-following search missed it. All remaining builder MISSING items are listed above. READY FOR CLAUDE awaits the batch full gate.
+
+## Completed batch gate (2026-10-31)
+
+Full gate **7087/7087 PASS, 0 failed, 0 skipped** at `af83ed19e0856a8234a9742df04ce9be8a109e08`; gate/shutdown0. Logs `.scratch/start-path-fix-batch-gate-2{,-console}.log`. First gate at520ad93c was7084/7087 with three source-contradicted/stale test assertions; those test-only corrections passed76/76 and the full rerun. Production code did not change between those gates.
+
+Effective rebased job commit `1e226a44` (main9abf6edd); older hashes above preserve historical read/test context. Batch test correction `af83ed19`. Only metadata follows this passing tip. Fidelity statuses/evidence/titles/approvals are unchanged; M15-098/100 remain proposals for Claude, no whole M7-019/M15-006 settlement. Hiking code/test remain unchanged on remote parking branchbb5ea84a and are restored next.
