@@ -1,4 +1,4 @@
-# FISTBUMP-STRATEGY-1 — BUILT ISOLATED, BATCH GATE PENDING
+# FISTBUMP-STRATEGY-1 — READY FOR CLAUDE (ISOLATED, LIVE BODY GAP)
 
 Dedicated strategy implementation and future target-binding hook are built; **the live canonical reaction remains UNBOUND/MISSING under M7-018**. The legacy configured FistBump body still has unsafe/unrecovered idle, power, pan, objective and other seams. No body bridge, placeholder reaction or orphan objective subscription was added. Actual live objective/RNG/reaction/completion-cooldown effects remain unavailable until that body is separately recovered. This is not a live FistBump pass.
 
@@ -19,3 +19,5 @@ Checks: initial compile failure was missing test namespace; corrected without pr
 Records: M10-003 remains partial; M7-018 remains the live target gap; M10-016/Hiccup untouched. No whole-record settlement or new record proposed. Only M10-003/M7-018 unresolved prose and generated gaps refreshed; statuses/titles/evidence/approvals unchanged versus main. No hardware run. No unsupported games built.
 
 Requested workers: fistbump_strategy_read gpt-6.1-sol medium; builder/reviewer DEFAULT model/effort omitted; actual backends unobserved, configurations unchanged. Reviewer2 bundles (coverage; running semantics), compiler1, grouped fixture1, production correction1. Builder MISSING/questions: body availability resolved by keeping it unbound; strict name fallback and listener timing resolved by native follow-ups; live subscription/RNG, target-body completion and broader teardown remain open. Next NEEDS-FIX-2 starts without waiting for Claude, then full batch gate.
+
+Full follow-up batch gate **7138/7138 PASS,0 failed,0 skipped** at `a04a9f466b400c4fc962f6e855a461b4f5bf073f`. Logs `.scratch/start-path-followup-batch-gate-1{,-console}.log`; gate/shutdown0. Covers all five jobs; only M15-097 own canonical strategy path is proposed for Claude settlement. All named parent/body/producer/persistence gaps remain; FistBump is an isolated implementation with live row unbound. Protected statuses/evidence/titles/approvals unchanged from main. No hardware claim.

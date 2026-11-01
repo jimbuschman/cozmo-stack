@@ -1,4 +1,4 @@
-# SPARK-JOIN-1 — BUILT, BATCH GATE PENDING
+# SPARK-JOIN-1 — READY FOR CLAUDE
 
 Builds the raw requested-ID bucket picker and native name input. This is not complete canonical Spark admission: public ActivateSpark reaches the canonical manager; the standalone chooser has a separate supplied-manager boundary. No second subscriber or reroute was added. Canonical parent and unavailable specialized Sparked owners remain visibly held.
 
@@ -19,3 +19,5 @@ Validation: initial affected253/254 and second256/257 (0skip) compiled; both fai
 Records: M15-006/M15-013/M15-058 remain open; only unresolved prose and generated FIDELITY_GAPS changed. Protected statuses/titles/evidence/approvals identical to main. M15-044 is already settled, not reclassified. No new record or whole-record settlement proposed. Remaining MISSING: canonical Freeplay parent/Look state6/filter, specialized owner availability, selected-metadata consumers/initial state, unknown configured keys, legacy string/native join and high-level adapter. M15-096/RequestGameSimple remains unsupported. No hardware run.
 
 Requested workers: spark_join_read gpt-6.1-sol medium; spark_join_build/review DEFAULT model/effort omitted. Actual backends unobserved; no worker switched. Reviewer4 batches: unknown/reentry/legacy/diagnostic; metadata/cache and fixture; unavailable Sparked winner; no-current diagnostic/clear tail and final log oracle. Compiler0; fixture2. Builder questions resolved: raw/fullword membership, native table reuse/nulls, absent/exhausted distinction, request snapshots, actual helper identity and callback safety. Public-to-standalone routing suggestion was withdrawn after owner trace; no unsupported bridge added. Named availability/metadata/parent gaps remain. Next: current main sync, then next released start-path job without Claude wait.
+
+Full follow-up batch gate **7138/7138 PASS,0 failed,0 skipped** at `a04a9f466b400c4fc962f6e855a461b4f5bf073f`. Logs `.scratch/start-path-followup-batch-gate-1{,-console}.log`; gate/shutdown0. Covers all five jobs; only M15-097 own canonical strategy path is proposed for Claude settlement. All named parent/body/producer/persistence gaps remain; FistBump is an isolated implementation with live row unbound. Protected statuses/evidence/titles/approvals unchanged from main. No hardware claim.

@@ -1,4 +1,4 @@
-# HIKING-DRIVE-OFF-CHARGER-1 — BUILT, BATCH GATE PENDING
+# HIKING-DRIVE-OFF-CHARGER-1 — READY FOR CLAUDE
 
 Preserved on operator instruction, 2026-10-31. No reset, discard, test correction, independent replay or full gate was performed on resumption.
 
@@ -25,3 +25,5 @@ Resume result: **182/182 affected PASS,0 failed,0 skipped**, including the compl
 Current next step: shared full gate with the next batch, then READY FOR CLAUDE; the earlier full7099 covered the prefix before this restored WIP and is not claimed for this commit. Hiking parent admission/interlude M15-006/M15-008 and existing shared-input gaps remain visible MISSING. M13-017 is already EXACT_SOURCE for its own path; no new record or settlement proposed. No status, evidence, title, approval or inventory changes. No hardware run.
 
 Resume workers requested: hiking_resume_read gpt-6.1-sol medium; hiking_resume_build and hiking_resume_review DEFAULT model/effort omitted; actual backends unobserved. Earlier sessions were unavailable; resume workers retain their requested configurations throughout. Resume reviewer correction rounds0, compiler0, grouped test-oracle correction1. The unnecessary startup diagnostic patch was preserved and removed without execution; source classification corrected the mistaken failure label before the test repair. Builder MISSING: inherited native Hiking parent admission/interlude and shared readiness/action/report/mood suppliers; no new exclusion or guessed behavior. SPARK-JOIN-1 starts next, without waiting for Claude.
+
+Full follow-up batch gate **7138/7138 PASS,0 failed,0 skipped** at `a04a9f466b400c4fc962f6e855a461b4f5bf073f`. Logs `.scratch/start-path-followup-batch-gate-1{,-console}.log`; gate/shutdown0. Covers all five jobs; only M15-097 own canonical strategy path is proposed for Claude settlement. All named parent/body/producer/persistence gaps remain; FistBump is an isolated implementation with live row unbound. Protected statuses/evidence/titles/approvals unchanged from main. No hardware claim.

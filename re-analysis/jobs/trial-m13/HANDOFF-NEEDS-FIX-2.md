@@ -1,4 +1,4 @@
-# NEEDS-FIX-2 — BUILT, BATCH GATE PENDING
+# NEEDS-FIX-2 — READY FOR CLAUDE
 
 Live NeedsState now models the raw ForceNextSong UnlockId word, initially0, and actions0x0D/CozmoSings and0x55/CozmoSingsCompleted_Sparked clear it in the native order. No dirty flag, message, persistence or song output is added. Positive ProcessLevelRewards/restored input remains a gap; tests label seeded raw state as a lower input boundary, not a recovered producer.
 
@@ -17,3 +17,5 @@ Validation: initial compile failed because a new test assigned a Log event; test
 Records: M15-046 stays IMPLEMENTATION_GAP, M15-029 unchanged; no whole-record settlement or new record proposed. Positive reward/device/robot adoption, persistenceM15-014 and singing selection/output remain visible gaps. Only M15-046 unresolved prose/generated report refreshed; protected statuses/titles/evidence/approvals equal current main. No hardware run.
 
 Requested workers: needs_fix2_read gpt-6.1-sol medium; builder/reviewer DEFAULT model/effort omitted; actual backends unobserved, configurations unchanged. Reviewer0/compiler1/fixture0. Builder MISSING: unbuilt positive slot inputs/persistence/song output and explicit host config absence, all retained; whitelist scope resolved from native and Unity caller evidence. No production correction required after initial source review. After the shared gate/handoff, next behavior starts without Claude wait.
+
+Full follow-up batch gate **7138/7138 PASS,0 failed,0 skipped** at `a04a9f466b400c4fc962f6e855a461b4f5bf073f`. Logs `.scratch/start-path-followup-batch-gate-1{,-console}.log`; gate/shutdown0. Covers all five jobs; only M15-097 own canonical strategy path is proposed for Claude settlement. All named parent/body/producer/persistence gaps remain; FistBump is an isolated implementation with live row unbound. Protected statuses/evidence/titles/approvals unchanged from main. No hardware claim.
