@@ -1,0 +1,17 @@
+Left-alone Freeplay test. Nothing here passes or fails.
+
+240 s recorded, 176 s with no behaviour running.
+Behaviours:
+  -: 176 s, started 8 time(s)
+  FindFaces_socialize: 61.3 s, started 4 time(s)
+  DriveOffCharger: 2.6 s, started 1 time(s)
+  Wait: 0.1 s, started 1 time(s)
+
+Startup: engine readiness delivered after 3843 ms; connect callback completed; 0 error-level engine log(s)
+
+Your notes: {"keptBusy":"partly","longestStill":"usually during the \u0022playalone\u0022 and \u0022hiking\u0022 sections of the test","odd":"only seems like maybe one action worked. "}
+
+Known gaps reported: 126
+
+Run errors:
+None.

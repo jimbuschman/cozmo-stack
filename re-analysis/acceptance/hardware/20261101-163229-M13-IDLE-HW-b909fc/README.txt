@@ -1,0 +1,1 @@
+M13-IDLE-HW evidence bundle. result.json holds the summary and source records; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram; events.jsonl keeps engine logs and API events; stack-log.txt keeps the stack's own lines. Times are host capture times. No acceptance or manifest change was made.
