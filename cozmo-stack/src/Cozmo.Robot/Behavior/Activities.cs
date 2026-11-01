@@ -881,6 +881,17 @@ public sealed class ActivityStrategy : IDisposable
 {
     // Test-only collaborator for exercising distinct native picker calls; never set by production configuration.
     internal Func<bool>? WantsToEndForTest;
+    private EngineRobot? _nativeOwner;
+    // 005B4EC2: Spark's own end predicate is constant false. Certify only the
+    // retained source owner and the checked common duration comparisons.
+    internal bool NativeSparkEndKnownFalse(EngineRobot owner,double absoluteNow)
+    {
+        if(!ReferenceEquals(_nativeOwner,owner) || Type!="Spark" || WantsToEndForTest is not null ||
+           (float)ShouldEndDurationSec!=float.MaxValue || LastStartedSec is not {} started)return false;
+        float selected=(float)started,now=(float)absoluteNow,can=(float)CanEndDurationSec;
+        if(!float.IsFinite(selected)||!float.IsFinite(now)||!float.IsFinite(can)||selected<0||now<selected)return false;
+        return !((float.MaxValue+selected)+Epsilon<now);
+    }
     private IDisposable? _needsSubscription, _objectiveSubscription;
     internal Func<double,double>? Draw;
     internal Func<float>? TickDuration;
@@ -895,6 +906,7 @@ public sealed class ActivityStrategy : IDisposable
     // fidelity: M15-098
     internal void BindNative(EngineRobot owner)
     {
+        _nativeOwner=owner;
         _defaultBase=(float)CooldownBaseSec; _defaultRandomness=(float)CooldownRandomnessSec;
         Draw=x=>owner.Engine.ContextRandom.RandDbl(x);
         TickDuration=()=> (float)owner.Engine.Timer.DeltaSeconds;

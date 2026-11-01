@@ -236,6 +236,17 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             if(Inputs.Needs is {} actual && ReferenceEquals(actual,_ctx.Robot.Engine.Needs) && OwnerCurrent() && actual.TryGetNativePending(out pending))return true;
             ReportActivityMissing("M15-071 Freeplay native pending reward producer unavailable; prior activity retained");return false;
         }
+        bool TryShouldEnd(Activity activity,out bool end)
+        {
+            end=false;
+            if(NativeOwner && Inputs.Needs is {} needs && ReferenceEquals(needs,_ctx.Robot.Engine.Needs) &&
+               OwnerCurrent() && !needs.TryGetNativePending(out _) && _ctx.Robot.Engine.Robot is {} robot &&
+               ReferenceEquals(Current,activity) && activity.SparkedOwner is {} spark && spark.IsOwnedBy(robot) &&
+               activity.Strategy.NativeSparkEndKnownFalse(robot,nowSec))return true;
+            if(!TryPending(out bool pending))return false;
+            if(!pending)end=activity.Strategy.WantsToEnd(Inputs,activity.RunningSec(nowSec),out _,nowSec);
+            return true;
+        }
         bool pick = Current is null;
         if (Current is { } existing)
         {
@@ -244,8 +255,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             else if (_requestPending || (_manager.ActiveSparkId == 0x55 && _manager.RequestedSparkId != 0x55)) pick = true;
             else if (current is null)
             {
-                if(!TryPending(out bool pending))return current;
-                if(!pending)pick = existing.Strategy.WantsToEnd(Inputs, existing.RunningSec(nowSec), out _, nowSec);
+                if(!TryShouldEnd(existing,out pick))return current;
             }
         }
         _requestPending = false;
@@ -264,10 +274,9 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             {ReportActivityMissing("MISSING: actual child running flag unavailable");return current;}
             if (!retry && !running)
             {
-                if(!TryPending(out bool pending))return current;
-                if(!pending)
+                if(!TryShouldEnd(Current!,out retry))return current;
+                if(retry)
                 {
-                    retry = Current!.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out _, nowSec);
                     if (retry) Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: '{Current.Id}' wants to end");
                 }
             }
