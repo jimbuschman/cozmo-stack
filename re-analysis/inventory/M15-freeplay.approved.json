@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-11-01",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "f72d007bbed1c1c70880afb2d513c5386c7ed637c695d92349463c001678b32a",
+  "inventory_sha256": "b237d1fdf6f5961d314cd26a31b40a791d106d0990a6c67974c0070f33a397e1",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1337,6 +1337,28 @@
       "evidence": [
         "Normal path 0x005F7F90..0x005FA194; running score 0x005F83BE; movement helper 0x00640634, 0x00640654; pack 0x007A4C24.",
         "re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-108": {
+      "status": "EXACT_SOURCE",
+      "title": "BehaviorEarnedSparks configured lifecycle: live pending predicate, lift-safe A4 Init, Resume, pending-guarded Stop, carry gate",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CB22..0x0059CB3C; ctor 0x005DAE98; predicate 0x005DAEC2..0x005DAECA; Init 0x005DAECC..0x005DAF38; Resume 0x005DAF6C; Stop 0x005DAF70..0x005DAF7C; carry gate 0x005DAF82.",
+        "re-analysis/jobs/trial-m13/HANDOFF-EARNED-SPARKS-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-109": {
+      "status": "EXACT_SOURCE",
+      "title": "BehaviorFireTruckAlarm configured lifecycle: Robot +0x354 flag predicate, Init flag set and CSharpTrickStarted broadcast, no action",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CC64..0x0059CC82; ctor 0x005DAF88; predicate 0x005DAFA4; Init 0x005DAFB4..0x005DB026; flag 0x0051379A..0x005137AE; Robot::Broadcast 0x00511DE8..0x00511DFC; StopTrick 0x005DB0CC; carry gate 0x005DB0E2.",
+        "re-analysis/jobs/trial-m13/HANDOFF-SPARKS-FIRE-TRUCK-ALARM-1.md"
       ],
       "live_path": true,
       "hardware_required": false

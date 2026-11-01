@@ -2,6 +2,7 @@ using System.Text.Json;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M15-109
 // 005DAF88..005DB0E2: the engine hands the trick to the app; it creates no action.
 internal sealed class NativeFireTruckAlarmBehavior : SteppedBehavior, IDisposable
 {

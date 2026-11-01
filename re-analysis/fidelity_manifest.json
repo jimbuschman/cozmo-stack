@@ -14847,6 +14847,42 @@
       "hardware_required": false,
       "live_path": true,
       "test": "NativeHikingPounceTests"
+    },
+    {
+      "id": "M15-108",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorEarnedSparks configured lifecycle: live pending predicate, lift-safe A4 Init, Resume, pending-guarded Stop, carry gate",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeEarnedSparksBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CB22..0x0059CB3C; ctor 0x005DAE98; predicate 0x005DAEC2..0x005DAECA; Init 0x005DAECC..0x005DAF38; Resume 0x005DAF6C; Stop 0x005DAF70..0x005DAF7C; carry gate 0x005DAF82.",
+        "re-analysis/jobs/trial-m13/HANDOFF-EARNED-SPARKS-1.md"
+      ],
+      "effect": "the reward animation Cozmo plays when a Freeplay Sparks reward is pending, and the report at its end",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Settled on the lifecycle only, Claude check re-analysis/research/20261101-four-behaviour-batch-claude-check.md. Owned elsewhere: the pending producer, amount and key (M15-071, M15-093), common Update and Stop (M8-001). Until M15-071 is built the predicate reports unavailable once pending is unknown; that stall is NEEDS-PROOF-1.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeEarnedSparksTests"
+    },
+    {
+      "id": "M15-109",
+      "subsystem": "M15-freeplay",
+      "title": "BehaviorFireTruckAlarm configured lifecycle: Robot +0x354 flag predicate, Init flag set and CSharpTrickStarted broadcast, no action",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeFireTruckAlarmBehavior.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Factory 0x0059CC64..0x0059CC82; ctor 0x005DAF88; predicate 0x005DAFA4; Init 0x005DAFB4..0x005DB026; flag 0x0051379A..0x005137AE; Robot::Broadcast 0x00511DE8..0x00511DFC; StopTrick 0x005DB0CC; carry gate 0x005DB0E2.",
+        "re-analysis/jobs/trial-m13/HANDOFF-SPARKS-FIRE-TRUCK-ALARM-1.md"
+      ],
+      "effect": "the empty CSharpTrickStarted report (tag 143) the engine sends when the fire truck alarm Spark starts, and the flag that stops it repeating",
+      "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Settled on the engine side of the handoff, Claude check re-analysis/research/20261101-four-behaviour-batch-claude-check.md. The physical trick is app code. StopTrick's caller is UNKNOWN, so the flag stays set after one run; a visible MISSING names it and no input is guessed. Owned elsewhere: common Update and Stop (M8-001), the unlock (M15-034).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeFireTruckAlarmTests"
     }
   ]
 }

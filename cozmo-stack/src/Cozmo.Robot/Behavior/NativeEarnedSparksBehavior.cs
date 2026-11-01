@@ -4,6 +4,7 @@ using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Behavior;
 
+// fidelity: M15-108
 // 005DAE98..005DAF82: actual configured owner; reward production remains independently unavailable.
 internal sealed class NativeEarnedSparksBehavior : SteppedBehavior,IDisposable
 {

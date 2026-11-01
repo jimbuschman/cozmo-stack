@@ -1215,3 +1215,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New: BehaviorExploreLookAroundInPlace configured for SparksLookInPlace: config, gates, Init, sweep S1 to S7, focus-zero finish | M15-105 |
 | New: BehaviorLookInPlaceMemoryMap configured for Hiking: admission, Init, sector search, children, visit history | M15-106 |
 | New: BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop | M15-107 |
+
+## Four-job batch owners (manager, 2026-11-01; research/20261101-four-behaviour-batch-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New: BehaviorEarnedSparks configured lifecycle: live pending predicate, lift-safe A4 Init, Resume, pending-guarded Stop, carry gate | M15-108 |
+| New: BehaviorFireTruckAlarm configured lifecycle: Robot +0x354 flag predicate, Init flag set and CSharpTrickStarted broadcast, no action | M15-109 |
