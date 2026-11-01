@@ -5,6 +5,9 @@ namespace Cozmo.Robot;
 public sealed partial class CozmoEngine
 {
     public NeedsManager Needs { get; private set; } = null!;
+    // CozmoContext+4 is constructed independently of RobotManager/Needs; absence is an explicit host test input.
+    internal bool NeedsContextExternalInterfaceAvailable {get;set;}=true;
+    internal bool NeedsContextAlive=>!_disposed;
     internal bool IsOfflineEngine { get; private set; }
     private bool _requestedInitialBlockPool;
     internal Action? RequestInitialBlockPool;

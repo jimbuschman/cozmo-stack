@@ -211,7 +211,7 @@ public sealed class OrdinaryFreeplayNativeTests
     [Fact]
     public void OrdinaryInterludeChecksActualNeedsInSourceOrderAndSelectsBuiltOwner()
     {
-        using var f=new PickupPyramidNativeExecutionTests.Fixture();AssertHealthyNeeds(f);
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);AssertHealthyNeeds(f);
         var activity=f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a=>a.Id=="Socialize");
         var chooser=Assert.IsType<StrictPriorityChooser>(activity.InterludeChooser);
         ChooserDecision Query()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
@@ -223,11 +223,14 @@ public sealed class OrdinaryFreeplayNativeTests
         var warning=Query();Assert.False(warning.InputUnavailable);Assert.Same(f.Runtime.Bound["Needs_MildLowRepairRequest"],warning.Behavior);Assert.Equal("Needs_MildLowRepairRequest",warning.Scores[^1].Id);
         f.Rig.Engine.Needs.State.SetNeedLevel(NeedId.Repair,1.0);
         f.Rig.Engine.Needs.SparksRewardPending=true;
-        var reward=Query();Assert.True(reward.InputUnavailable);Assert.Single(reward.Scores);Assert.Equal("EarnedSparks",reward.Scores[0].Id);
+        var reward=Query();Assert.True(reward.InputUnavailable);Assert.Empty(reward.Scores);Assert.Equal("EarnedSparks",chooser.BehaviorIds[0]);Assert.Equal("unavailable readiness",reward.Reason);
         f.Rig.Engine.Needs.SparksRewardPending=false;
         Assert.True(Query().InputUnavailable); // host clear cannot restore native history
-        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync("EarnedSparks",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-        var unknown=Query();Assert.True(unknown.InputUnavailable);Assert.Single(unknown.Scores);Assert.Equal("EarnedSparks",unknown.Scores[0].Id);
+        var unknown=Query();Assert.True(unknown.InputUnavailable);Assert.Empty(unknown.Scores);Assert.Equal("EarnedSparks",chooser.BehaviorIds[0]);Assert.Equal("unavailable readiness",unknown.Reason);
+        // Explicit public Start reaches source Init despite its unknown readiness; Stop cannot fabricate the missing reward state.
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync("EarnedSparks",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.IsType<TriggerLiftSafeAnimationAction>(((NativeEarnedSparksBehavior)f.Runtime.Bound["EarnedSparks"]).OwnedRunner);
+        f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);Assert.True(Query().InputUnavailable);
     }
 
     [Fact]
@@ -244,7 +247,7 @@ public sealed class OrdinaryFreeplayNativeTests
     [Fact]
     public void EarnedFalseProofIsWithdrawnByAnyActionOrHostWrite()
     {
-        using var f=new PickupPyramidNativeExecutionTests.Fixture();var needs=f.Rig.Engine.Needs;
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);var needs=f.Rig.Engine.Needs;
         var chooser=new StrictPriorityChooser(new[]{"EarnedSparks"},f.Runtime.Bound,true,f.Robot);chooser.EnableOrdinaryInterludeBoundary(f.Robot);
         ChooserDecision Query()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
         int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};

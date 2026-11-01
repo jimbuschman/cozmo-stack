@@ -229,14 +229,24 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
         if (_changingActivity) return current; // host callback reentry cannot nest an activity transition
         _switchedFromId = null;
         Activity? barred = null;
+        bool TryPending(out bool pending)
+        {
+            pending=false;
+            if(!NativeOwner){pending=Inputs.Needs?.SparksRewardPending??false;return true;}
+            if(Inputs.Needs is {} actual && ReferenceEquals(actual,_ctx.Robot.Engine.Needs) && OwnerCurrent() && actual.TryGetNativePending(out pending))return true;
+            ReportActivityMissing("M15-071 Freeplay native pending reward producer unavailable; prior activity retained");return false;
+        }
         bool pick = Current is null;
         if (Current is { } existing)
         {
             var wanted = ActivityIdOrNull(ForcedActivity) ?? _desiredActivity;
             if (wanted is not null) pick = wanted != existing.Id;
             else if (_requestPending || (_manager.ActiveSparkId == 0x55 && _manager.RequestedSparkId != 0x55)) pick = true;
-            else if (current is null && !(Inputs.Needs?.SparksRewardPending ?? false))
-                pick = existing.Strategy.WantsToEnd(Inputs, existing.RunningSec(nowSec), out _, nowSec);
+            else if (current is null)
+            {
+                if(!TryPending(out bool pending))return current;
+                if(!pending)pick = existing.Strategy.WantsToEnd(Inputs, existing.RunningSec(nowSec), out _, nowSec);
+            }
         }
         _requestPending = false;
         bool initialPick = pick;
@@ -252,10 +262,14 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             bool running = decision.Behavior is SteppedBehavior stepped ? stepped.EngineRunning : _manager.IsRunning(decision.Behavior!);
             if(NativeOwner && !retry && decision.Behavior is not SteppedBehavior)
             {ReportActivityMissing("MISSING: actual child running flag unavailable");return current;}
-            if (!retry && !running && !(Inputs.Needs?.SparksRewardPending ?? false))
+            if (!retry && !running)
             {
-                retry = Current!.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out _, nowSec);
-                if (retry) Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: '{Current.Id}' wants to end");
+                if(!TryPending(out bool pending))return current;
+                if(!pending)
+                {
+                    retry = Current!.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out _, nowSec);
+                    if (retry) Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: '{Current.Id}' wants to end");
+                }
             }
             if (retry) pick = true; // non-running candidate: askCurrent=true
         }

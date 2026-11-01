@@ -557,7 +557,7 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
             bool running = _native || StopOnUnavailable ? b is SteppedBehavior { EngineRunning:true } : current is not null && current.Id == id;
             if (running) { scores.Add((id,1,"running"));return new ChooserDecision(b,"already running",scores); }
             bool runnable;
-            if(StopOnUnavailable && b is SteppedBehavior stepped)
+            if((_native || StopOnUnavailable) && b is SteppedBehavior stepped)
             {
                 var evaluation=stepped.EvaluateHostReadiness(ctx);
                 if(!evaluation.Available)return new ChooserDecision(null,"unavailable readiness",scores) { InputUnavailable=true };
@@ -1416,10 +1416,11 @@ public sealed class Activity
             SetAnalyzerRequest(false);if(!Current())return;
             CachedInterlude = null;
             var reward = needs ?? NativeNeeds;
-            if (reward is { SparksRewardPending: true })
+            if(reward is not null && ReferenceEquals(reward,NativeNeeds) && !reward.TryGetNativePending(out _))
+                SteppedBehavior.ReportMissing("M15-071 activity deselection native pending producer unavailable");
+            else if (reward is { SparksRewardPending: true })
             {
                 reward.SparksRewardCommunicatedToUser();
-                SteppedBehavior.ReportMissing("M15-071 SparksRewardCommunicatedToUser 0x00696E64/0x00696E90: pending flag and existing queued notification delivered; native reward amount +0x3DC and raw FreeplaySparksAwarded broadcast are unbuilt");
             }
             if(!Current())return;
             FeedingDisconnect?.OnDeselected();if(!Current())return;

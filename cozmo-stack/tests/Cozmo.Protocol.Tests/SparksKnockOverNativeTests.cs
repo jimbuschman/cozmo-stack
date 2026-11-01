@@ -208,17 +208,17 @@ public sealed class SparksKnockOverNativeTests
     [Fact]
     public void DeselectionCommunicatesRewardBeforeSubclassEngineLayerCleanup()
     {
-        // S27/H4,H5,H12: actual selected owner and existing Needs recipient. M15-071 amount/raw award stays a named gap.
+        // S27/H4,H5,H12: supplied native reward state, actual selected owner and synchronous 0x65 recipient.
         using var f=new Fixture();M4ControlTests.ConnectCube(f.Rig);Entry(f);Assert.Equal((byte)21,f.Robot.BehaviorPublicState.State.Activity);
         var manager=f.Robot.BehaviorManagerOwner!;var cubes=f.Rig.Robot.Lights.Cubes;var names=new List<string>();f.Rig.Engine.LogEntry+=entry=>{if(entry.Name=="CubeLightComponent.StopAllAnimsOnLayer.AllObjects")names.Add(entry.Text??"");};
-        bool notified=false,recipient=false;f.Rig.Engine.Needs.SparksRewardPending=true;f.Rig.Engine.Needs.SparksRewardAwarded+=()=>notified=true;
-        f.Rig.Engine.Needs.Log+=line=>
+        bool notified=false,recipient=false;f.Rig.Engine.Needs.SupplyNativeRewardForTest(true,4,"A");f.Rig.Engine.Needs.SparksRewardAwarded+=()=>notified=true;
+        using var reward=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x65,true,_=>
         {
-            if(line!="needs.freeplay_sparks_awarded")return;recipient=true;
+            recipient=true;
             Assert.True(manager.HasDisableLock(ReactionTrigger.CubeMoved,"SparksKnockOverCubes_activityLock"));
             Assert.Contains(f.Rig.Robot.Animations.Scheduler.IdleStack,e=>e.Lock=="Activity_SparksKnockOverCubes");
             Assert.Contains(f.Rig.Robot.Animations.DrivingAnimations.Entries,e=>e.LockName=="SparksKnockOverCubes");Assert.Empty(names);Assert.False(notified);
-        };
+        });
         Activity(f).OnDeselected(0);Assert.True(recipient);Assert.False(f.Rig.Engine.Needs.SparksRewardPending);Assert.False(notified);
         Assert.False(manager.HasDisableLock(ReactionTrigger.CubeMoved,"SparksKnockOverCubes_activityLock"));
         Assert.Equal(new[]{"Stopping all anims for all objects on layer Engine"},names);

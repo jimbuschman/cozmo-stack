@@ -3,6 +3,9 @@ using Cozmo.Robot.Animation;
 
 namespace Cozmo.Robot.Behavior;
 
+/// <summary>The native FreeplaySparksAwarded amount and moved display key (tag 0x65).</summary>
+public sealed record FreeplaySparksAwardedReport(int Amount,string DisplayKey);
+
 /// <summary>
 /// The behaviour end of the needs system: which behaviour reports which needs action, and the reporting
 /// itself.
@@ -840,18 +843,29 @@ public sealed class NeedsManager
     /// <summary>Set when a freeplay sparks reward is pending (the engine's <c>RewardSparksForFreeplay</c>); <c>EarnedSparks</c> clears it.</summary>
     private bool _sparksRewardPending;
     private long _nativePendingHistoryEpoch;
+    private bool _nativePendingKnown=true;
+    private int _nativeRewardAmount;
+    private string _nativeRewardDisplayKey="";
     public bool SparksRewardPending
     {
-        get=>Volatile.Read(ref _sparksRewardPending);
-        set {Interlocked.Increment(ref _nativePendingHistoryEpoch);Volatile.Write(ref _sparksRewardPending,value);}
+        get {lock(_gate)return _sparksRewardPending;}
+        set {lock(_gate){Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_sparksRewardPending=value;}}
     }
     // Only the constructor's native false is known; host writes and attempted action
     // producers withdraw that proof permanently until a new NeedsManager exists.
     internal long NativePendingHistoryEpoch=>Interlocked.Read(ref _nativePendingHistoryEpoch);
-    internal bool NativePendingKnownFalse=>NativePendingHistoryEpoch==0 && !SparksRewardPending;
+    internal bool NativePendingKnownFalse=>TryGetNativePending(out bool pending) && !pending;
+    internal bool TryGetNativePending(out bool pending)
+    {lock(_gate){pending=_sparksRewardPending;return _nativePendingKnown;}}
+    // Explicit source-state unit input; no production reward producer calls this seam.
+    internal void SupplyNativeRewardForTest(bool pending,int amount,string displayKey)
+    {lock(_gate){Interlocked.Increment(ref _nativePendingHistoryEpoch);_sparksRewardPending=pending;_nativeRewardAmount=amount;_nativeRewardDisplayKey=displayKey;_nativePendingKnown=true;}}
+    internal (bool Pending,int Amount,string Key,bool Known) NativeRewardSnapshotForTest()
+    {lock(_gate)return(_sparksRewardPending,_nativeRewardAmount,_nativeRewardDisplayKey,_nativePendingKnown);}
 
     /// <summary>Raised when a pending freeplay sparks reward is handed to the app.</summary>
     public event Action? SparksRewardAwarded;
+    public event Action<FreeplaySparksAwardedReport>? FreeplaySparksAwarded;
     internal CozmoEngine? HostEngine;
 
     /// <summary>
@@ -860,15 +874,49 @@ public sealed class NeedsManager
     /// activity ending with a reward still pending (<c>IActivity::OnDeselected</c> 0x005B3548) and the
     /// EarnedSparks behaviour stopping (<c>BehaviorEarnedSparks::StopInternal</c> 0x005DAF7C) - plus
     /// <c>RegisterNeedsActionCompleted</c> itself, which sends a pending reward before creating a new one.
-    /// How many sparks are awarded is the app's economy, so only the flag and the event are here.
+    /// The native producer of the amount and key remains separately unavailable; the communication body uses only source-known state.
     /// </summary>
     public void SparksRewardCommunicatedToUser()
     {
+        if(HostEngine is {} native)
+        {
+            CommunicateNativeRewardContext(native);
+            return;
+        }
         if (!SparksRewardPending) return;
         SparksRewardPending = false;
         Log?.Invoke("needs.freeplay_sparks_awarded");
-        if(HostEngine is {} engine)engine.QueueAppEvent(SparksRewardAwarded);
-        else SparksRewardAwarded?.Invoke(); // Standalone unit, no live engine owner.
+        SparksRewardAwarded?.Invoke(); // standalone legacy unit
+    }
+    internal void CommunicateNativeReward(EngineRobot owner)
+    {
+        if(!ReferenceEquals(HostEngine,owner.Engine) || !ReferenceEquals(owner.Engine.Robot,owner) || !ReferenceEquals(owner.Engine.Needs,this))
+        {SteppedBehavior.ReportMissing("M15-071 original Robot/Needs communication owner unavailable");return;}
+        CommunicateNativeRewardContext(owner.Engine);
+    }
+    private void CommunicateNativeRewardContext(CozmoEngine engine)
+    {
+        if(!engine.NeedsContextAlive || !ReferenceEquals(engine.Needs,this))
+        {SteppedBehavior.ReportMissing("M15-071 original Needs/context owner unavailable");return;}
+        int amount=0;string key="";bool known,hasInterface;
+        lock(_gate)
+        {
+            known=_nativePendingKnown;hasInterface=engine.NeedsContextExternalInterfaceAvailable;
+            if(known)
+            {
+                _sparksRewardPending=false;Interlocked.Increment(ref _nativePendingHistoryEpoch); // 00696E78
+                if(hasInterface){amount=_nativeRewardAmount;key=_nativeRewardDisplayKey;_nativeRewardDisplayKey="";} // move before local delivery
+            }
+        }
+        if(!known){SteppedBehavior.ReportMissing("M15-071 native reward state unavailable; producer not recovered");return;}
+        if(!hasInterface){SteppedBehavior.ReportMissing("M1-034 M15-071 skip null EI broadcast at 0x00696E80; pending cleared, amount/key retained");return;}
+        byte[] text=System.Text.Encoding.UTF8.GetBytes(key);
+        int packedLength=unchecked((byte)text.Length); // 006C22F8/2304: low byte, then exactly that many bytes
+        byte[] body=new byte[5+packedLength];System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body,amount);body[4]=(byte)packedLength;text.AsSpan(0,packedLength).CopyTo(body.AsSpan(5));
+        var report=new FreeplaySparksAwardedReport(amount,key);
+        var typed=engine.CaptureAppEvent(FreeplaySparksAwarded,report);var legacy=SparksRewardAwarded?.GetInvocationList();
+        Action? delivery=typed is null && legacy is null?null:()=>{typed?.Invoke();if(legacy is not null)foreach(Action handler in legacy)engine.RunIsolated(handler);};
+        engine.DeliverNurture(0x65,body,report,delivery); // compatibility callback shares this report's queued delivery
     }
     /// <summary>
     /// Raised by <see cref="DetectBracketChangeForDas"/>; the fourth argument is the DAS elapsed
@@ -1901,9 +1949,9 @@ public sealed class NeedsManager
     /// <summary><c>RegisterNeedsActionCompleted</c>: the action's deltas (± range) applied; unknown actions are ignored and logged.</summary>
     public bool RegisterNeedsActionCompleted(string actionId)
     {
-        Interlocked.Increment(ref _nativePendingHistoryEpoch);
         lock (_gate)
         {
+        Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;
         if (_paused || !_robotConnected) return false; // 0x006960E0..0x006960F8
         // The +0x39C whitelist defaults off; its Unity onboarding input is outside the standalone app boundary.
         if (!Enum.TryParse<NeedsActionId>(actionId, false, out var action) || Enum.GetName(action) != actionId)
