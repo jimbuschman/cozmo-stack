@@ -9,6 +9,65 @@ namespace Cozmo.Protocol.Tests;
 
 public sealed class NeedsFix1Tests
 {
+    // reach: action API on standalone manager; raw state seed substitutes for the unbuilt reward/persistence input.
+    [Theory]
+    [InlineData("CozmoSings", 0)] [InlineData("CozmoSingsCompleted_Sparked", 0)]
+    [InlineData("CozmoPerformsComplete", 65)] [InlineData("DizzyHard", 65)]
+    [InlineData("FireTruckAlarm", 65)] [InlineData("RepairHead", 65)]
+    public void M15_046_SongActionsClearRawUnlockOnly(string action, int expected)
+    {
+        var n=Create(action); int words=0;
+        n.DistortionRng=new EngineRandom(1){WordSourceForTest=()=>{words++;return 0;}};
+        Assert.Equal(0,n.State.ForceNextSong); // ctor 0x0069BF38..42
+        n.State.ForceNextSong=65; // input boundary: UnlockId CozmoSings, not a production reward
+        Assert.True(n.RegisterNeedsActionCompleted(action));
+        Assert.Equal(expected,n.State.ForceNextSong);
+        Assert.Equal(6,words); // three RandDbl calls, 0x00696886..0x00696904
+    }
+
+    // reach: action API; raw input and clock supplied. 0x006960E0..0x0069615A.
+    [Theory]
+    [InlineData("CozmoSings")] [InlineData("CozmoSingsCompleted_Sparked")]
+    public void M15_046_GuardsRetainAndCooldownRejectionClears(string action)
+    {
+        var n=Create(action,cooldown:60); int words=0;
+        n.DistortionRng=new EngineRandom(1){WordSourceForTest=()=>{words++;return 0;}};
+        n.State.ForceNextSong=65; n.Connected=false;
+        Assert.False(n.RegisterNeedsActionCompleted(action)); Assert.Equal(65,n.State.ForceNextSong);
+        n.Connected=true; n.SetPaused(true);
+        Assert.False(n.RegisterNeedsActionCompleted(action)); Assert.Equal(65,n.State.ForceNextSong); Assert.Equal(0,words);
+        n.SetPaused(false); n.Update(100);
+        Assert.True(n.RegisterNeedsActionCompleted(action)); Assert.Equal(0,n.State.ForceNextSong); Assert.Equal(6,words);
+        n.State.ForceNextSong=65; n.Update(159);
+        var before=n.State.GetNeedLevel(NeedId.Energy);
+        Assert.False(n.RegisterNeedsActionCompleted(action)); Assert.Equal(0,n.State.ForceNextSong);
+        Assert.Equal(before,n.State.GetNeedLevel(NeedId.Energy)); Assert.Equal(6,words);
+        n.Update(160); Assert.True(n.RegisterNeedsActionCompleted(action)); Assert.Equal(12,words);
+    }
+
+    // reach: action API; absent host config is a gap, after the source-defined clear prefix.
+    [Theory]
+    [InlineData("CozmoSings")] [InlineData("CozmoSingsCompleted_Sparked")]
+    public void M15_046_MissingHostConfigStillClearsPrefix(string action)
+    {
+        var n=Create("SayName"); string? log=null; n.Log+=s=>log=s;
+        n.State.ForceNextSong=65;
+        Assert.False(n.RegisterNeedsActionCompleted(action));
+        Assert.Equal(0,n.State.ForceNextSong); Assert.Contains("M15-046 MISSING host needs action config",log);
+    }
+
+    // reach: action API; supplied clock and raw state. Non-song cooldown rejection leaves the slot intact.
+    [Fact]
+    public void M15_046_OrdinaryCooldownRejectionRetainsSong()
+    {
+        var n=Create("SayName",cooldown:60); int words=0;
+        n.DistortionRng=new EngineRandom(1){WordSourceForTest=()=>{words++;return 0;}};
+        n.Update(100); Assert.True(n.RegisterNeedsActionCompleted("SayName"));
+        n.State.ForceNextSong=65; n.Update(159);
+        Assert.False(n.RegisterNeedsActionCompleted("SayName"));
+        Assert.Equal(65,n.State.ForceNextSong); Assert.Equal(6,words);
+    }
+
     private sealed class Port : IEngineTransport
     {
         public bool TimedOut => false;
