@@ -161,6 +161,12 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         return Final();
     }
     public override void Prep(){_child?.Prep();base.Prep();}
+    internal override bool RetireNeverAdmittedTree()
+    {
+        if(!base.RetireNeverAdmittedTree())return false;
+        foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();
+        return true;
+    }
     public override void WatcherEnding()
     {SetChild(null);Unlock();foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();base.WatcherEnding();}
 }

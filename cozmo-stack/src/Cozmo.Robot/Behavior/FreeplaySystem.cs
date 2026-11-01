@@ -361,7 +361,8 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             }
             return new ChooserDecision(desired,"Sparked child",Array.Empty<(string,double,string)>());
         }
-        if (NativeOwner && (activity.Type is not ("BehaviorsOnly" or "Socialize") || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
+        bool checkedNeeds=activity.Type=="NeedsExpression" && (activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn") && activity.NativeUpdate20 is not null;
+        if (NativeOwner && activity.Type is not ("BehaviorsOnly" or "Socialize") && !checkedNeeds)
         {
             ReportActivityMissing("MISSING: M8-013 specialized child desired lifecycle "+activity.Id);
             _childUnavailable=true;

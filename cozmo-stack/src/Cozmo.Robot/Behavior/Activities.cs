@@ -1568,6 +1568,8 @@ public static class ActivityTreeLoader
             else if(id=="GatherCubes" && activity.Type=="GatherCubes") { activity.GuardNativeLifecycle=true;activity.GatherOwner=new(owner); }
             else if(activity.Type is "Socialize" or "Sparked")activity.ObjectiveOwner=new(activity,owner,e,bound);
             if(activity.Type=="Socialize") { activity.NativeUpdate20=_=>0;activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot; }
+            if(activity.Type=="NeedsExpression" && (id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
+            {activity.NativeUpdate20=_=>0;activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;if(activity.Chooser is StrictPriorityChooser needsChooser)needsChooser.StopOnUnavailable=true;}
         }
         return activity;
     }

@@ -51,6 +51,48 @@ public class ExpressNeedsNativeTests
         return Assert.IsType<CompoundActionSequential>(rig.Robot.Engine.Robot!.ActionList.GetCurrentAction());
     }
 
+    [Fact]
+    public void LegacyCommonGateUsesOriginalActualPlatformState()
+    {
+        using var rig=new Rig();var ctx=Ctx(rig);var b=Shipped(rig,"Needs_MildLowEnergyRequest");
+        rig.Robot.Sensors.SetOnChargerPlatform(true);Assert.True(rig.Robot.Sensors.OnChargerPlatform);Assert.False(b.IsRunnableBase(ctx));
+        rig.Robot.Sensors.SetOnChargerPlatform(false);Assert.False(rig.Robot.Sensors.OnChargerPlatform);Assert.True(b.IsRunnableBase(ctx));
+        b.Dispose();
+    }
+
+    [Fact]
+    public void LegacyReadinessExposesMissingOrReplacedOriginalOwner()
+    {
+        using var rig=new Rig();var ctx=Ctx(rig);var original=Shipped(rig,"Needs_MildLowEnergyRequest");
+        var noOwner=new ExpressNeedsBehavior(rig.Robot.Engine.Needs,original.Id,original.Need,original.Bracket,original.Triggers,original.Cooldown);
+        Assert.False(noOwner.EvaluateHostReadiness(ctx).Available);
+        rig.Robot.Engine.Robots.RemoveRobot(1,false);rig.Robot.Engine.Robots.AddRobot(1,withRic:false);
+        Assert.False(original.EvaluateHostReadiness(ctx).Available);
+        original.Dispose();noOwner.Dispose();
+    }
+
+    [Fact]
+    public void StandaloneStackRetiresLoadedExpressOwnersWithoutClearingUnselectedNeed()
+    {
+        using var rig=new Rig();var ctx=Ctx(rig);
+        var stack=FreeplayStack.Create(Obb(),rig.Robot,ctx,()=>0,rig.Vision,rig.M,random:new Random(1));
+        Assert.NotEmpty(stack.Bound.Values.OfType<ExpressNeedsBehavior>());
+        var hub=rig.Robot.Engine.AnimationMessages;
+        var map=(System.Collections.IDictionary)hub.GetType().GetField("_e2g",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(hub)!;
+        var signal=map[(ushort)0x5A]!;
+        var nodes=(System.Collections.IEnumerable)signal.GetType().GetField("Nodes",BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public)!.GetValue(signal)!;
+        List<Delegate> Callbacks()=>nodes.Cast<object?>().OfType<Delegate>().ToList();
+        var express=Callbacks().Where(callback=>callback.Target is ExpressNeedsBehavior).ToArray();
+        Assert.NotEmpty(express);
+        Assert.All(stack.Bound.Values.OfType<ExpressNeedsBehavior>(),owner=>Assert.Contains(express,callback=>ReferenceEquals(callback.Target,owner)));
+        rig.Robot.Engine.Needs.SetSevereExpressed(NeedId.Repair,true);
+        stack.Dispose();
+        Assert.True(rig.Robot.Engine.Needs.IsSevereExpressed(NeedId.Repair));
+        var remaining=Callbacks();
+        Assert.All(express,callback=>Assert.DoesNotContain(remaining,other=>ReferenceEquals(callback,other)));
+        // Other standalone DriveOff/UnexpectedMovement owners have separate lifetime gaps.
+    }
+
     /// <summary>
     /// R1 (0x005BD864..0x005BD89C): base +0x20 0x005BF04C returns 0 (off treads), base +0x24 0x0059EC12 returns 0 (robot+0x34A),
     /// EN's +0x28 0x005EE860 returns 0: not runnable while carrying.

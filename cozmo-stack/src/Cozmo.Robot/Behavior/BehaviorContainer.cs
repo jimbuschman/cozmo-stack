@@ -317,6 +317,8 @@ public sealed class BehaviorFactory
         [BehaviorClass.PutDownBlock] = (ctx,json)=>new NativePutDownBlockBehavior(ctx,json),
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
+        [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
+        [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
         // case 0x19: BehaviorFistBump(robot, config), 0x158 bytes (0x0059cc84..0x0059cca2).
         [BehaviorClass.FistBump] = (ctx, json) => FistBumpBehavior.FromConfig(json, ctx.Vision, ctx.Manipulation),
@@ -390,6 +392,10 @@ public sealed class BehaviorFactory
         }
         if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.FindFaces_socialize || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("FindFaces factory: only configured FindFaces_socialize with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.ExpressNeeds && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_MildLowEnergyRequest or BehaviorID.Needs_MildLowPlayRequest or BehaviorID.Needs_MildLowRepairRequest or BehaviorID.Needs_SevereLowPlayBored or BehaviorID.Needs_SevereLowPlayRequest or BehaviorID.Needs_SevereLowEnergyForcedGetOut) || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("ExpressNeeds factory: only six checked configured IDs with original Robot/manipulation are available");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.PlayAnimOnNeedsChange && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_SevereLowEnergyGetIn or BehaviorID.Needs_SevereLowRepairGetIn or BehaviorID.Needs_SevereLowPlayGetIn) || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("PlayAnimOnNeedsChange factory: only three checked GetIn IDs with original Robot/manipulation are available");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.DriveInDesperation && ((BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowEnergyState && BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowRepairState) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {
             SteppedBehavior.ReportMissing("DriveInDesperation factory: only the checked Energy and Repair configurations with actual Robot and manipulation owners are available");
@@ -436,7 +442,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
+            if(stepped is NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

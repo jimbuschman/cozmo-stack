@@ -137,7 +137,7 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
-    public void OrdinaryInterludeChecksActualNeedsInSourceOrderAndStopsAtUnknown()
+    public void OrdinaryInterludeChecksActualNeedsInSourceOrderAndSelectsBuiltOwner()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();AssertHealthyNeeds(f);
         var activity=f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a=>a.Id=="Socialize");
@@ -150,7 +150,8 @@ public sealed class OrdinaryFreeplayNativeTests
         f.Rig.Engine.Needs.SparksRewardPending=false;
         f.Rig.Engine.Needs.State.SetNeedLevel(NeedId.Repair,0.27);
         Assert.True(f.Rig.Engine.Needs.State.IsNeedAtBracket(NeedId.Repair,NeedBracketId.Warning));
-        var warning=Query();Assert.True(warning.InputUnavailable);Assert.Equal("Needs_MildLowRepairRequest",warning.Scores[^1].Id);
+        f.Rig.Engine.Timer.UpdateTime(100_000_000_000); // Source cooldown must have elapsed.
+        var warning=Query();Assert.False(warning.InputUnavailable);Assert.Same(f.Runtime.Bound["Needs_MildLowRepairRequest"],warning.Behavior);Assert.Equal("Needs_MildLowRepairRequest",warning.Scores[^1].Id);
         f.Rig.Engine.Needs.State.SetNeedLevel(NeedId.Repair,1.0);
         Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync("EarnedSparks",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         var unknown=Query();Assert.True(unknown.InputUnavailable);Assert.Single(unknown.Scores);Assert.Equal("EarnedSparks",unknown.Scores[0].Id);

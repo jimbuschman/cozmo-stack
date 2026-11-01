@@ -402,10 +402,13 @@ public sealed class DriveInDesperationBehavior : ActionBehavior
 /// <c>TriggerAnimationAction</c> per trigger (I1..I4); the callback stamps +0x138 only on SUCCESS (I5).
 /// </summary>
 // fidelity: M15-082
-public sealed class ExpressNeedsBehavior : SteppedBehavior
+public sealed class ExpressNeedsBehavior : SteppedBehavior, IDisposable
 {
     private readonly NeedsManager _needs;
     private readonly ManipulationSystem? _m;
+    private readonly EngineRobot? _originalRobot;
+    private long _generation;
+    private int _retired;
     // C2: +0x138 last-success time, 0.0f from the ctor (0x005EE152..0x005EE18E); written only by the I5 callback.
     private float _lastSuccessSec;
 
@@ -416,8 +419,11 @@ public sealed class ExpressNeedsBehavior : SteppedBehavior
         _needs = needs; Need = need; Bracket = bracket; Triggers = triggers; Cooldown = cooldown; RequiredSevereState = requiredSevereState;
         ShouldClearExpressedState = shouldClearExpressedState; CaresAboutExpressedState = caresAboutExpressedState;
         _m = m;
+        _originalRobot=m?.Robot.Engine.Robot;
+        if(m is not null && _originalRobot is not null)RobotState34a=()=>m.Robot.Sensors.OnChargerPlatform;
+        if(requiredSevereState is {} severe)RobotStateAllowsRun=()=>_needs.SevereNeeds.Selected==(int)severe;
         // I4: StartActing's completion arrives through the IBehavior ctor's RobotCompletedAction subscription (0x005BBD5E..7A).
-        if (m is not null) BindActionCompletionOwner(m.Robot);
+        if (m is not null && _originalRobot is not null) BindActionCompletionOwner(m.Robot,_originalRobot);
     }
 
     public NeedId Need { get; }
@@ -443,6 +449,16 @@ public sealed class ExpressNeedsBehavior : SteppedBehavior
     // P1: ResumeInternal 0x005EE7D4..0x005EE7D6 `movs r0,#1; bx lr`: resume always fails.
     protected override int ResumeInternal() => 1;
 
+    public override bool IsRunnable(BehaviorContext context)
+    {
+        using var owner=EnterHostExecutionOwner(context);
+        if(_m is null || _originalRobot is null || Volatile.Read(ref _retired)!=0 ||
+            !ReferenceEquals(_originalRobot.Engine.Robot,_originalRobot) || !ReferenceEquals(context.Robot,_m.Robot) || !ReferenceEquals(context.Needs,_needs))
+        { MarkReadinessUnavailable(); ReportMissing("ExpressNeeds actual original owner/needs input unavailable"); return false; }
+        long generation=CaptureHostExecutionVersion();
+        return IsRunnableBase(context) && HostExecutionVersionCurrent(generation) && IsRunnableInternal(context);
+    }
+
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
         // fidelity: M15-072
@@ -452,9 +468,7 @@ public sealed class ExpressNeedsBehavior : SteppedBehavior
             if (_needs.SevereNeeds.Selected != (int)Need) return false;
         }
         else if (!_needs.State.IsNeedAtBracket(Need, Bracket)) return false;
-        // R2 0x005BD7E6..0x005BD7F6 is IsRunnableBase's +0x74 test. This loader path sets neither NativeBaseInputs nor the
-        // RobotStateAllowsRun seam, so the base does not apply it here; it is kept as a pure predicate (no side effects, so order is immaterial).
-        if (RequiredSevereState is { } s && _needs.SevereNeeds.Selected != (int)s) return false;
+        // R2 +0x74 is applied by the common RobotStateAllowsRun seam before this predicate.
         // R5 0x005EE5B0..0x005EE5DC: (GetCooldownSec + [+0x138]) < BaseStationTimer seconds, f32 vadd then strict vcmpe.
         float cooldown = (float)CooldownSec;
         float sum = cooldown + _lastSuccessSec;
@@ -463,22 +477,28 @@ public sealed class ExpressNeedsBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
-        if (_m is not { } m)
+        if (_m is not { } m || _originalRobot is null || !ReferenceEquals(m.Robot.Engine.Robot,_originalRobot) || Volatile.Read(ref _retired)!=0)
         {
             ReportMissing("EXPRESS-NEEDS-1 I1..I4 (0x005EE690..0x005EE788): no ManipulationSystem owner for the native TurnTowardsLastFacePose/TriggerAnimation runners; Init not performed");
             InitFailed = true;
             return;
         }
         // I1 0x005EE690..0x005EE69A: new CompoundActionSequential(robot).
+        long generation=CaptureHostExecutionVersion();
         var sequence = new CompoundActionSequential(() => m.Robot.Engine.Timer.SecondsF);
         sequence.SeedNativeEmptyCompletion();
         // I2 0x005EE6A4..0x005EE6E8: TurnTowardsLastFacePoseAction(face 0, Radians(0x40490FDB), sayName false), always added; ignoreFailure 1 (0x005EE6DA).
-        sequence.AddAction(new NativeLastFaceRunner(m, Radians.Pi, false), true, false);
+        sequence.AddAction(new NativeLastFaceRunner(m, _originalRobot, 0), true, false);
         // I3 0x005EE6F2..0x005EE748: per trigger, TriggerAnimationAction(trigger, 1, true, 0, 60.0f, false), not lift-safe; ignoreFailure 0 (0x005EE736).
         foreach (var trigger in Triggers)
-            sequence.AddAction(new TriggerAnimationAction(m.Robot, new(trigger, 1, true, 0, TriggerAnimationTimeoutSec, false)), false, false);
+        {
+            var child = new TriggerAnimationAction(m.Robot, new(trigger, 1, true, 0, TriggerAnimationTimeoutSec, false));
+            if(!HostExecutionVersionCurrent(generation)){child.RetireNeverAdmittedTree();sequence.RetireNeverAdmittedTree();return;}
+            sequence.AddAction(child, false, false);
+        }
         // I4 0x005EE74A..0x005EE788: StartActing(compound, $_0); Init returns 0.
-        StartActing(sequence, OnActionCompleted);
+        if(!HostExecutionVersionCurrent(generation)){sequence.RetireNeverAdmittedTree();return;}
+        StartActing(sequence, completed=>{if(HostExecutionVersionCurrent(generation))OnActionCompleted(completed);},()=>HostExecutionVersionCurrent(generation));
     }
 
     // I5 0x005EE89E..0x005EE8B6: only a SUCCESS category (byte 3 == 0) stamps +0x138 = BaseStationTimer seconds.
@@ -490,10 +510,19 @@ public sealed class ExpressNeedsBehavior : SteppedBehavior
 
     protected override void OnStop(BehaviorStopReason reason)
     {
+        Interlocked.Increment(ref _generation);
         // fidelity: M15-072
         // S1 0x005EE7D8..0x005EE7E8: +0x134 -> ClearSevereNeedExpression, whatever the reason.
-        if (ShouldClearExpressedState) _needs.SevereNeeds.Clear();
+        if (ShouldClearExpressedState && Volatile.Read(ref _retired)==0 && (_originalRobot is null || ReferenceEquals(_originalRobot.Engine.Robot,_originalRobot))) _needs.SevereNeeds.Clear();
     }
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>_m?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting()=>Interlocked.Increment(ref _generation);
+    protected override long CaptureHostExecutionVersion()=>Interlocked.Read(ref _generation);
+    protected override bool HostExecutionVersionCurrent(long version)=>Volatile.Read(ref _retired)==0 && Interlocked.Read(ref _generation)==version &&
+        (_m is null || (_originalRobot is not null && ReferenceEquals(_originalRobot.Engine.Robot,_originalRobot)));
+    protected override bool HostStopContinuationCurrent(long version)=>Volatile.Read(ref _retired)==0 && Interlocked.Read(ref _generation)==unchecked(version+1);
+    protected override bool HostResumeContinuationCurrent(long version)=>Volatile.Read(ref _retired)==0 && (Interlocked.Read(ref _generation)==version||Interlocked.Read(ref _generation)==unchecked(version+1));
+    public void Dispose(){if(Interlocked.Exchange(ref _retired,1)!=0)return;Interlocked.Increment(ref _generation);RetireActionCompletionOwner();}
 }
 
 /// <summary>

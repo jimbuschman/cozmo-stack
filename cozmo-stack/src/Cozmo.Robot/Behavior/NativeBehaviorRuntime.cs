@@ -262,7 +262,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             SteppedBehavior.ReportMissing("M15-059 changed Sparked parameter configuration requires native retained Wait or subActivityDelegate lifecycle, which is unbuilt; prior selected activity retained before admission");
             return;
         }
-        if(selected.SparkedOwner is null && (selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null))
+        bool checkedNeeds=selected.Type=="NeedsExpression" && (selected.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn") && selected.NativeUpdate20 is not null && selected.InterludeChooser is null;
+        if(selected.SparkedOwner is null && !checkedNeeds && (selected.Id!="PutDownDispatch" || selected.Type!="BehaviorsOnly" || selected.NativeUpdate20 is null || selected.InterludeChooser is not null))
         {
             if(selected.Id=="NeedsSevereLowEnergy" || selected.Id=="NeedsSevereLowRepair")
             {
@@ -441,6 +442,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeExpressNeedsBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeNeedsGetInBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeKnockOverCubesBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeBouncerBehavior>())candidate.Dispose();
