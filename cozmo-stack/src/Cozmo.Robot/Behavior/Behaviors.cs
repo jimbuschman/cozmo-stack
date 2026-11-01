@@ -99,6 +99,64 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     }
 
     private readonly List<AnimationTrigger> _triggers;
+    private EngineRobot? _reactRobot;
+    private Cozmo.Robot.Manipulation.ManipulationSystem? _reactManipulation;
+    private System.Text.Json.JsonElement _reactConfig;
+    private bool _nativeReact;
+    private long _reactGeneration;
+    private int _reactRetired;
+    internal void BindNativeReact(BehaviorFactoryContext source,System.Text.Json.JsonElement config)
+    {
+        _nativeReact=true;_reactRobot=source.NativeRobot;_reactManipulation=source.Manipulation;_reactConfig=config;
+    }
+    private bool ReactAvailable
+    {
+        get
+        {
+            var robot=_reactRobot;var m=_reactManipulation;
+            return _nativeReact && Volatile.Read(ref _reactRetired)==0 && robot is not null && m is not null &&
+                ReferenceEquals(robot.Engine.Robot,robot) && robot.NativeBehaviorRuntime is {IsRetired:false} runtime &&
+                ReferenceEquals(runtime.Manipulation,m) && runtime.Bound.TryGetValue(Id,out var actual) && ReferenceEquals(actual,this) &&
+                runtime.Container.Behaviors.TryGetValue(BehaviorID.ReactToObstacle,out var retained) && ReferenceEquals(retained,this) &&
+                robot.Engine.HostBehaviorMap?.TryGetValue(BehaviorID.ReactToObstacle,out var current)==true && current.Equals(_reactConfig) &&
+                Id=="ReactToObstacle" && NumLoops==1 && _triggers.Count==1 && (int)_triggers[0]==417 && WantsToRunStrategy=="ObstacleDetected" &&
+                _reactConfig.TryGetProperty("displayNameKey",out var display) && display.ValueKind==System.Text.Json.JsonValueKind.String && display.GetString()=="behavior.ReactToObstacle";
+        }
+    }
+    private bool ReactOwnerCurrent=>Volatile.Read(ref _reactRetired)==0 && _reactRobot is {} robot &&
+        ReferenceEquals(robot.Engine.Robot,robot) && robot.NativeBehaviorRuntime is {IsRetired:false} runtime &&
+        runtime.Bound.TryGetValue(Id,out var actual) && ReferenceEquals(actual,this) &&
+        runtime.Container.Behaviors.TryGetValue(BehaviorID.ReactToObstacle,out var retained) && ReferenceEquals(retained,this);
+    private bool ReactCurrent(long generation)
+    {
+        if(Volatile.Read(ref _reactRetired)!=0 || Interlocked.Read(ref _reactGeneration)!=generation || !ReferenceEquals(_reactRobot?.Engine.Robot,_reactRobot))return false;
+        if(ReactOwnerCurrent && ReactAvailable)return true;
+        MarkReadinessUnavailable();ReportMissing("M8-005 ReactToObstacle live owner/profile unavailable");return false;
+    }
+    internal override bool HostScoringInputsAvailable()
+    {
+        if(!_nativeReact || ReactAvailable)return true;
+        MarkReadinessUnavailable();ReportMissing("M8-005 ReactToObstacle original owner or checked single-trigger profile unavailable");return false;
+    }
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>_nativeReact?_reactRobot?.Engine.EnterSynchronousOwner():null;
+    protected override void HostRunStarting(){if(_nativeReact)Interlocked.Increment(ref _reactGeneration);}
+    protected override long CaptureHostExecutionVersion()=>_nativeReact?Interlocked.Read(ref _reactGeneration):0;
+    protected override bool HostExecutionVersionCurrent(long version)=>!_nativeReact || (Interlocked.Read(ref _reactGeneration)==version && ReactOwnerCurrent);
+    protected override bool HostStopContinuationCurrent(long version)=>!_nativeReact || (Volatile.Read(ref _reactRetired)==0 && Interlocked.Read(ref _reactGeneration)==unchecked(version+1) && ReferenceEquals(_reactRobot?.Engine.Robot,_reactRobot));
+    protected override bool HostResumeContinuationCurrent(long version)=>!_nativeReact || (Volatile.Read(ref _reactRetired)==0 && (Interlocked.Read(ref _reactGeneration)==version || Interlocked.Read(ref _reactGeneration)==unchecked(version+1)) && ReferenceEquals(_reactRobot?.Engine.Robot,_reactRobot));
+    protected override void OnStop(BehaviorStopReason reason){if(_nativeReact)Interlocked.Increment(ref _reactGeneration);}
+    internal void RetireNativeReact()
+    {if(!_nativeReact || Interlocked.Exchange(ref _reactRetired,1)!=0)return;Interlocked.Increment(ref _reactGeneration);RetireActionCompletionOwner();}
+    public override bool IsRunnable(BehaviorContext context)
+    {
+        if(!_nativeReact)return base.IsRunnable(context);
+        using var owner=EnterHostExecutionOwner(context);
+        if(!HostScoringInputsAvailable() || !ReferenceEquals(context.AI,_reactRobot!.NativeBehaviorRuntime!.AI))
+        {MarkReadinessUnavailable();ReportMissing("M8-005 ReactToObstacle original AI owner unavailable");return false;}
+        long generation=CaptureHostExecutionVersion();bool result=base.IsRunnable(context);
+        if(!ReactCurrent(generation))return false;
+        return result;
+    }
     /// <summary>BehaviorPlayAnimSequence +0x12c: how many times <c>StartSequenceLoop</c> has built the sequence this run.</summary>
     private int _loopIndex;
 
@@ -246,7 +304,17 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     protected override int ResumeInternal() => 1;
 
     /// <summary><c>BehaviorPlayAnimSequence::InitInternal</c> (<c>vtable+0x48</c>) 0x005C014E: <c>StartPlayingAnimations</c>, result always 0.</summary>
-    protected override void OnStart() => StartPlayingAnimations();
+    protected override void OnStart()
+    {
+        if(!_nativeReact){StartPlayingAnimations();return;}
+        long generation=CaptureHostExecutionVersion();
+        if(!ReactCurrent(generation)){InitFailed=true;return;}
+        ReportMissing("M8-005 PlayAnim listener registration identity, pointer order and lifetime remain unavailable outside the checked empty constructor path");
+        if(!ReactCurrent(generation))return;
+        var action=new TriggerLiftSafeAnimationAction(_reactManipulation!.Robot,new((AnimationTrigger)417,1,true,0,60f,false));
+        if(!ReactCurrent(generation)){action.RetireNeverAdmittedTree();return;}
+        StartActing(action,_=>{if(ReactCurrent(generation))CallToListeners();},()=>ReactCurrent(generation));
+    }
 
     protected override void OnTriggerResolved(AnimationTrigger trigger, string clip) => LastSelected = clip;
 
@@ -299,7 +367,9 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     private void ConstructActions()
     {
         foreach (var trigger in _triggers)
-            if (string.IsNullOrEmpty(Context.Triggers.GroupFor(trigger)))
+            if (!Context.Triggers.IsAvailable)
+                ReportMissing("M8-021 native trigger-map input unavailable while constructing PlayAnim action");
+            else if (string.IsNullOrEmpty(Context.Triggers.GroupFor(trigger)))
                 Log($"TriggerAnimationAction.SetAnimGroupFromTrigger: the animation group for {trigger} is empty");
     }
 
@@ -324,8 +394,8 @@ public sealed class PlayAnimBehavior : SteppedBehavior
 
     /// <summary>
     /// <c>BehaviorPlayAnimSequence::CallToListeners</c>: the listener set is at +0x130 and
-    /// <c>AddListener</c> (<c>vtable+0x30</c>) fills it. Nothing in this stack registers a listener, so there is
-    /// none to call.
+    /// <c>AddListener</c> (<c>vtable+0x30</c>) fills it. The checked React constructor path owns an empty tree;
+    /// general native listener identity, traversal and lifetime remain M8-005 unavailable.
     /// </summary>
     private void CallToListeners() { }
 

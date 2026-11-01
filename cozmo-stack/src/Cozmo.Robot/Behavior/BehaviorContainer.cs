@@ -299,7 +299,7 @@ public sealed class BehaviorFactory
         // case 0x26: BehaviorPlayAnimSequence(robot, config, true): config animTriggers and num_loops (0x005bff24..0x005c004c). This is also
         // the whole of the shipped Hiccup behaviour (reactions/hiccup.json: animTriggers ["Hiccup"]); the timed hiccup/cure logic is the M10
         // strategy ReactionTriggerStrategyHiccup, which is not this class.
-        [BehaviorClass.PlayAnim] = (ctx, json) => PlayAnimBehavior.FromConfig(json, ctx.Log),
+        [BehaviorClass.PlayAnim] = CreatePlayAnim,
         [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
         [BehaviorClass.Wait] = (ctx,json)=>new NativeWaitBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
@@ -320,6 +320,8 @@ public sealed class BehaviorFactory
         [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
         [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
         [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
+        [BehaviorClass.EarnedSparks] = (ctx,json)=>new NativeEarnedSparksBehavior(ctx,json),
+        [BehaviorClass.FireTruckAlarm] = (ctx,json)=>new NativeFireTruckAlarmBehavior(ctx,json),
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
@@ -329,6 +331,12 @@ public sealed class BehaviorFactory
         [BehaviorClass.VisitInterestingEdge] = (ctx, json) => VisitInterestingEdgeBehavior.FromConfig(json,ctx.NativeRobot),
         [BehaviorClass.ReactToSparked] = (ctx, json) => new ReactToSparkedBehavior(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
     };
+    private static IBehavior CreatePlayAnim(BehaviorFactoryContext ctx,JsonElement json)
+    {
+        var behavior=PlayAnimBehavior.FromConfig(json,ctx.Log);
+        if(behavior.Id=="ReactToObstacle" && ctx.NativeRobot is not null)behavior.BindNativeReact(ctx,json);
+        return behavior;
+    }
     private static IBehavior CreateDriveOff(BehaviorFactoryContext ctx,JsonElement json)
     {
         var manipulation=ctx.Manipulation??throw new InvalidOperationException("MISSING: DriveOff factory actual manipulation owner");
@@ -412,6 +420,10 @@ public sealed class BehaviorFactory
         }
         if(cls==BehaviorClass.CubeLiftWorkout && BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.CubeLiftWorkout or BehaviorID.SparksCubeLiftWorkout))
         { SteppedBehavior.ReportMissing("CubeLiftWorkout factory: configuration is outside the checked ordinary/Sparks instances");status=BehaviorCreateStatus.NotImplemented;return null; }
+        if(cls==BehaviorClass.EarnedSparks && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.EarnedSparks || ctx.NativeRobot is null || ctx.Manipulation is null))
+        {SteppedBehavior.ReportMissing("EarnedSparks factory needs the actual configured Robot and manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.FireTruckAlarm && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksFireTruckAlarm || ctx.NativeRobot is null || ctx.Manipulation is null))
+        {SteppedBehavior.ReportMissing("FireTruckAlarm factory needs the actual configured Robot and manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
         if((cls==BehaviorClass.DevTurnInPlaceTest||cls==BehaviorClass.Dance||cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
@@ -451,7 +463,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
+            if(stepped is NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

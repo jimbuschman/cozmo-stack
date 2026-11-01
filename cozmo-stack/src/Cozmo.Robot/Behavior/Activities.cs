@@ -336,19 +336,6 @@ public sealed class ScoringChooser : IBehaviorChooser
         if(!Enum.TryParse<BehaviorID>(id,false,out var nativeId) || nativeId.ToString()!=id)return UnbuiltScore.Unavailable;
         if(!configured.ContainsKey(nativeId))return UnbuiltScore.NativeAbsent;
         var winner=configured[nativeId];
-        if(id=="SparksFireTruckAlarm")
-        {
-            if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fire)!=true || !fire.ConstructorPristine ||
-               fire.FireTruckConfig is not {} original || !original.Equals(winner) || fire.FireTruckProgression is not {} progression ||
-               !ReferenceEquals(owner.Progression,progression))return UnbuiltScore.Unavailable;
-            long epoch=fire.Epoch;
-            if(!progression.TryIsUnlocked(83,out bool unlocked) || unlocked)return UnbuiltScore.Unavailable;
-            if(fire.ConstructorPristine && fire.Epoch==epoch && ReferenceEquals(owner.Engine.Robot,owner) &&
-               ReferenceEquals(owner.NativeBehaviorRuntime,runtime) && ReferenceEquals(owner.Progression,progression) &&
-               ReferenceEquals(owner.Engine.HostBehaviorMap,configured) && configured.TryGetValue(nativeId,out var currentConfig) && original.Equals(currentConfig) &&
-               owner.NativeConfiguredScoreFields?.TryGetValue(id,out var current)==true && ReferenceEquals(current,fire))return UnbuiltScore.KnownFalse;
-            return UnbuiltScore.Unavailable;
-        }
         NativeScoredFields? gateFields=null;long gateEpoch=0;
         if(id=="GuardDog")
         {
@@ -557,7 +544,7 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
             bool running = _native || StopOnUnavailable ? b is SteppedBehavior { EngineRunning:true } : current is not null && current.Id == id;
             if (running) { scores.Add((id,1,"running"));return new ChooserDecision(b,"already running",scores); }
             bool runnable;
-            if(StopOnUnavailable && b is SteppedBehavior stepped)
+            if((_native || StopOnUnavailable) && b is SteppedBehavior stepped)
             {
                 var evaluation=stepped.EvaluateHostReadiness(ctx);
                 if(!evaluation.Available)return new ChooserDecision(null,"unavailable readiness",scores) { InputUnavailable=true };
@@ -881,6 +868,17 @@ public sealed class ActivityStrategy : IDisposable
 {
     // Test-only collaborator for exercising distinct native picker calls; never set by production configuration.
     internal Func<bool>? WantsToEndForTest;
+    private EngineRobot? _nativeOwner;
+    // 005B4EC2: Spark's own end predicate is constant false. Certify only the
+    // retained source owner and the checked common duration comparisons.
+    internal bool NativeSparkEndKnownFalse(EngineRobot owner,double absoluteNow)
+    {
+        if(!ReferenceEquals(_nativeOwner,owner) || Type!="Spark" || WantsToEndForTest is not null ||
+           (float)ShouldEndDurationSec!=float.MaxValue || LastStartedSec is not {} started)return false;
+        float selected=(float)started,now=(float)absoluteNow,can=(float)CanEndDurationSec;
+        if(!float.IsFinite(selected)||!float.IsFinite(now)||!float.IsFinite(can)||selected<0||now<selected)return false;
+        return !((float.MaxValue+selected)+Epsilon<now);
+    }
     private IDisposable? _needsSubscription, _objectiveSubscription;
     internal Func<double,double>? Draw;
     internal Func<float>? TickDuration;
@@ -895,6 +893,7 @@ public sealed class ActivityStrategy : IDisposable
     // fidelity: M15-098
     internal void BindNative(EngineRobot owner)
     {
+        _nativeOwner=owner;
         _defaultBase=(float)CooldownBaseSec; _defaultRandomness=(float)CooldownRandomnessSec;
         Draw=x=>owner.Engine.ContextRandom.RandDbl(x);
         TickDuration=()=> (float)owner.Engine.Timer.DeltaSeconds;
@@ -1416,10 +1415,11 @@ public sealed class Activity
             SetAnalyzerRequest(false);if(!Current())return;
             CachedInterlude = null;
             var reward = needs ?? NativeNeeds;
-            if (reward is { SparksRewardPending: true })
+            if(reward is not null && ReferenceEquals(reward,NativeNeeds) && !reward.TryGetNativePending(out _))
+                SteppedBehavior.ReportMissing("M15-071 activity deselection native pending producer unavailable");
+            else if (reward is { SparksRewardPending: true })
             {
                 reward.SparksRewardCommunicatedToUser();
-                SteppedBehavior.ReportMissing("M15-071 SparksRewardCommunicatedToUser 0x00696E64/0x00696E90: pending flag and existing queued notification delivered; native reward amount +0x3DC and raw FreeplaySparksAwarded broadcast are unbuilt");
             }
             if(!Current())return;
             FeedingDisconnect?.OnDeselected();if(!Current())return;

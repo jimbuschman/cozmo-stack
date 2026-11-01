@@ -33,19 +33,69 @@ public sealed class SparksRollNativeTests
         f.Rig.Robot.ActivateHighLevelActivity("Freeplay");f.Rig.Tick();
         observer.ActivateSpark(9);f.Rig.Tick();
         Assert.Same(parent,manager.Activity);Assert.Same(spark,parent.Current);
-        bool sawCompletion=false;
+        bool sawCompletion=false,sawUnknownAfterObjective=false;int rewardReports=0;
+        using var reward=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x65,true,_=>rewardReports++);
         for(int i=0;i<250;i++)
         {
+            if(owner.Count>0 && !f.Rig.Engine.Needs.TryGetNativePending(out _))sawUnknownAfterObjective=true;
             if(owner.Count>0 && owner.State is 4 or 5)sawCompletion=true;
             if(sawCompletion && !ReferenceEquals(parent.Current,spark))break;
             scene.Step();
         }
         Assert.True(sawCompletion,string.Join(" | ",scene.Trace.TakeLast(25)));
+        Assert.True(sawUnknownAfterObjective);Assert.False(f.Rig.Engine.Needs.TryGetNativePending(out _));Assert.Equal(0,rewardReports);
         Assert.Equal(1,scene.Rolls);
         Assert.Same(parent,manager.Activity);
         Assert.NotSame(spark,parent.Current);
         Assert.False(f.Runtime.AwaitingParentActivityPick);
         Assert.Equal(0x55,manager.ActiveSparkId);
+    }
+    [Fact]
+    public void UnknownPendingDoesNotInvokeSuppliedSparkEndOverride()
+    {
+        using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;
+        var parent=f.Runtime.FreeplayObserver;var spark=Activity(f);using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
+        f.Rig.Robot.ActivateHighLevelActivity("Freeplay");f.Rig.Tick();observer.ActivateSpark(9);f.Rig.Tick();
+        Assert.Same(spark,parent.Current);f.Rig.Engine.Needs.SparksRewardPending=false;
+        int calls=0;spark.Strategy.WantsToEndForTest=()=>{calls++;return true;};
+        try
+        {
+            Assert.False(f.Rig.Engine.Needs.TryGetNativePending(out _));
+            Assert.Null(((IManagedActivity)parent).GetDesiredActiveBehavior(null,f.Rig.Engine.Timer.SecondsF));
+            Assert.Equal(0,calls);Assert.Same(spark,parent.Current);
+        }
+        finally {spark.Strategy.WantsToEndForTest=null;}
+    }
+    [Fact]
+    public void SparkEndCertificateRequiresBoundOwnerAndFiniteSourceFields()
+    {
+        using var f=new Fixture();var strategy=Activity(f).Strategy;
+        strategy.OnStarted(1);Assert.True(strategy.NativeSparkEndKnownFalse(f.Robot,2));
+        Assert.False(strategy.NativeSparkEndKnownFalse(f.Robot,double.PositiveInfinity));
+        Assert.False(strategy.NativeSparkEndKnownFalse(f.Robot,0));
+        int calls=0;strategy.WantsToEndForTest=()=>{calls++;return false;};
+        try {Assert.False(strategy.NativeSparkEndKnownFalse(f.Robot,2));Assert.Equal(0,calls);}
+        finally {strategy.WantsToEndForTest=null;}
+        var other=new ActivityStrategy{Type="Spark",ShouldEndDurationSec=float.MaxValue};other.OnStarted(1);
+        Assert.False(other.NativeSparkEndKnownFalse(f.Robot,2));
+        var wrong=new ActivityStrategy{Type="Simple",ShouldEndDurationSec=float.MaxValue};wrong.BindNative(f.Robot);wrong.OnStarted(1);
+        Assert.False(wrong.NativeSparkEndKnownFalse(f.Robot,2));
+    }
+    [Fact]
+    public void UnknownPendingDoesNotInvokeNonSparkEndOverride()
+    {
+        using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;var parent=f.Runtime.FreeplayObserver;
+        f.Rig.Robot.ActivateHighLevelActivity("Freeplay");f.Rig.Tick();
+        var current=Assert.IsType<Activity>(parent.Current);Assert.NotEqual("Spark",current.Strategy.Type);
+        f.Rig.Engine.Needs.SparksRewardPending=false;int calls=0;
+        current.Strategy.WantsToEndForTest=()=>{calls++;return true;};
+        try
+        {
+            Assert.False(f.Rig.Engine.Needs.TryGetNativePending(out _));
+            Assert.Null(((IManagedActivity)parent).GetDesiredActiveBehavior(null,f.Rig.Engine.Timer.SecondsF));
+            Assert.Equal(0,calls);Assert.Same(current,parent.Current);
+        }
+        finally {current.Strategy.WantsToEndForTest=null;}
     }
     [Fact]
     public void ExactFactoryOwnerAndCacheSixKeepUprightFallbackAndSidePreference()

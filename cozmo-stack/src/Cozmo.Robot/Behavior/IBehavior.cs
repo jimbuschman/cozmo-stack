@@ -35,7 +35,9 @@ public enum BehaviorStopReason
 public sealed class BehaviorContext
 {
     public required CozmoRobot Robot { get; init; }
-    public required AnimationTriggerMap Triggers { get; init; }
+    private AnimationTriggerMap _triggers=null!;
+    internal Func<AnimationTriggerMap?>? NativeTriggersProvider { get; init; }
+    public required AnimationTriggerMap Triggers { get => NativeTriggersProvider is null ? _triggers : NativeTriggersProvider() ?? AnimationTriggerMap.Unavailable; init => _triggers=value; }
     public BehaviorArbiter? Arbiter { get; init; }
     public MoodState? Mood { get; set; }
     /// <summary>

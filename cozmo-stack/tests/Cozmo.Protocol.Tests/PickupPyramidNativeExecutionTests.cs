@@ -25,8 +25,15 @@ public sealed class PickupPyramidNativeExecutionTests
         internal ManipulationSystem M=>Runtime.Manipulation!;
         internal float Head=-.15f,Lift,Yaw,X,Y;
         private int _motorMark;
-        internal Fixture()
+        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false)
         {
+            if(pumpAnimations)
+            {
+                Rig.Robot.Animations.ManualTicking=true;
+                Rig.Robot.Animations.ClockMs=()=>Rig.Engine.Timer.TimeStampMs;
+                Rig.Engine.AnimationStreamerUpdate=()=>Rig.Robot.Animations.Scheduler.Advance(Rig.Engine.Timer.TimeStampMs,Rig.Engine.Timer.Nanoseconds);
+            }
+            if(preloadAnimations)Rig.Robot.Animations.LoadFrom(Rig.Engine.Options.ResourcesPath!);
             Rig.ToSynced();Rig.Calibrate();Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,head:Head);
             var startupTrace=new List<string>();var startupLogs=new System.Collections.Concurrent.ConcurrentQueue<string>();void Log(string text)=>startupLogs.Enqueue(text);Rig.Engine.StackLogLine+=Log;
             for(int i=0;i<35&&Rig.Robot.CameraSettings.Calibration is null;i++)

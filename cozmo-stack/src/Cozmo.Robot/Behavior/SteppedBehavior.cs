@@ -1093,7 +1093,15 @@ public abstract partial class SteppedBehavior : IBehavior
         var lib = Context.Robot.Animations.Library;
         if (lib is null) { Log($"{trigger}: no animation assets are loaded"); Fail(ActionOutcome.NoAnimationForTrigger); return; }
 
-        var resolved = Context.Triggers.Resolve(trigger, lib, Context.Random);
+        var triggers=Context.Triggers;
+        if(!triggers.IsAvailable)
+        {
+            ReportMissing("M8-021 native trigger-map input unavailable while starting trigger action");
+            if(CallbackMayRun(epoch))Fail(ActionOutcome.NoAnimationForTrigger);
+            else if(owner is not null)Context.Robot.Motion.UnlockTracks(mask,owner);
+            return;
+        }
+        var resolved = triggers.Resolve(trigger, lib, Context.Random);
         if (!resolved.Resolved)
         {
             Log($"{trigger}: {resolved.Problem ?? "resolved to no animation"}");

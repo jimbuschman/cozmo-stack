@@ -1,10 +1,19 @@
 using Cozmo.Robot.Behavior;
 namespace Cozmo.Robot;
 
+public sealed partial class EngineRobot
+{
+    // Robot+354, initialized false by 005100EA.
+    internal bool NativeDoingCSharpTrick { get; set; }
+}
+
 // fidelity: M1-054, M15-001, M15-014, M15-016, M1-024, M1-042
 public sealed partial class CozmoEngine
 {
     public NeedsManager Needs { get; private set; } = null!;
+    // CozmoContext+4 is constructed independently of RobotManager/Needs; absence is an explicit host test input.
+    internal bool NeedsContextExternalInterfaceAvailable {get;set;}=true;
+    internal bool NeedsContextAlive=>!_disposed;
     internal bool IsOfflineEngine { get; private set; }
     private bool _requestedInitialBlockPool;
     internal Action? RequestInitialBlockPool;

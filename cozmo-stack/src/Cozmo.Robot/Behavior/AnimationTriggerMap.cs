@@ -37,6 +37,8 @@ public sealed record TriggerResolution(AnimationTrigger Trigger)
 // fidelity: M7-002
 public sealed class AnimationTriggerMap
 {
+    internal static readonly AnimationTriggerMap Unavailable = new() { IsAvailable=false };
+    internal bool IsAvailable { get; private init; } = true;
     private readonly Dictionary<string, string> _groups = new(StringComparer.Ordinal);
     private readonly List<string> _unknownTriggers = new();
 
@@ -170,6 +172,8 @@ public sealed class AnimationTriggerMap
     public TriggerResolution Resolve(AnimationTrigger trigger, AnimationLibrary library,
                                      Random? random = null, string? mood = null)
     {
+        if (!IsAvailable)
+            return new TriggerResolution(trigger) { Mood=mood, Problem="M8-021 native trigger-map input unavailable" };
         var group = GroupFor(trigger);
         if (group is null)
             return new TriggerResolution(trigger)

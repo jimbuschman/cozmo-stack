@@ -16,23 +16,33 @@ public sealed class PlayAloneMovesOnNativeTests
     public void CanonicalEmptyWorldFreeplayMovesPastPlayAloneOverFiveMinutes()
     {
         // Offline firmware acknowledgments follow actual wire commands. No activity, child, needs or reaction is forced.
-        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true);
         var parent=f.Runtime.FreeplayObserver;var manager=f.Robot.BehaviorManagerOwner!;
         var find=Assert.IsType<NativeFindFacesSocialize>(f.Runtime.Bound["FindFaces_socialize"]);
         double start=f.Rig.Engine.Timer.Seconds;
         var transitions=new List<string>();var missing=new List<string>();void Observe(string value)=>missing.Add($"t={f.Rig.Engine.Timer.Seconds-start:F2} child={parent.Current?.Id} behavior={manager.Current?.Id} {value}");
         SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Observe;
         bool sawSocialize=false,sawPlayAlone=false,sawLater=false,sawFind=false,findStopped=false;
-        byte priorAnimation=0;string previous="";string? firstLater=null;
+        byte activeAnimation=0;int sentMark=f.Rig.Mark();string previous="";string? firstLater=null;
+        var introClips=new HashSet<string>();var idleClips=new HashSet<string>();
         try
         {
             f.Rig.Robot.ActivateHighLevelActivity("Freeplay");
             while(f.Rig.Engine.Timer.Seconds-start<300)
             {
                 f.Motors();
-                byte tag=f.Rig.Robot.Animations.CurrentTag;
-                if(tag!=0 && tag!=priorAnimation){f.Rig.Data(new AnimationStarted{AnimId=tag});f.Rig.Data(new AnimationEnded{AnimId=tag});}
-                priorAnimation=tag;
+                var sent=f.Rig.SentSince(sentMark);sentMark=f.Rig.Mark();
+                foreach(var message in sent)
+                {
+                    if(message is StartOfAnimation begin)
+                    {
+                        activeAnimation=begin.AnimId;string? clip=f.Rig.Robot.Animations.Playing;
+                        if(clip is not null && manager.Current?.Id=="Hiking_FirstLookIntro")introClips.Add(clip);
+                        if(clip is not null && manager.Current?.Id=="NothingToDo_Idle")idleClips.Add(clip);
+                        f.Rig.Data(new AnimationStarted{AnimId=activeAnimation});
+                    }
+                    else if(message is EndOfAnimation)f.Rig.Data(new AnimationEnded{AnimId=activeAnimation});
+                }
                 string child=parent.Current?.Id??"<null>";string current=manager.Current?.Id??"<null>";
                 string state=child+"/"+current;
                 if(state!=previous){transitions.Add($"t={f.Rig.Engine.Timer.Seconds-start:F2} {state}");previous=state;}
@@ -46,6 +56,10 @@ public sealed class PlayAloneMovesOnNativeTests
             }
             string evidence="transitions="+string.Join(" | ",transitions)+"; decisions="+string.Join(" | ",parent.Decisions.TakeLast(30))+"; missing="+string.Join(" | ",missing);
             Assert.True(sawSocialize && sawFind,evidence);Assert.True(sawPlayAlone,evidence);Assert.True(findStopped,evidence);Assert.True(sawLater,evidence);
+            var library=f.Rig.Robot.Animations.Library!;
+            var introGroup=library.GetGroup("ag_hiking_getin")!;var idleGroup=library.GetGroup("ag_hiking_lookaround")!;
+            Assert.NotEmpty(introClips);Assert.All(introClips,clip=>Assert.Contains(introGroup.Entries,e=>e.Name==clip));
+            Assert.NotEmpty(idleClips);Assert.All(idleClips,clip=>Assert.Contains(idleGroup.Entries,e=>e.Name==clip));
             _output.WriteLine("First later owned action: "+firstLater);
         }
         finally {SteppedBehavior.MissingReported-=Observe;}

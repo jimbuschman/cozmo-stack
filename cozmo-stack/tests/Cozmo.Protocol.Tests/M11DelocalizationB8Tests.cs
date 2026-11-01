@@ -416,7 +416,10 @@ public sealed class M11DelocalizationB8Tests
             if (path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") ||
                 path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")) continue;
             var text = File.ReadAllText(path);
-            if (text.Contains("\"MISSING\"")) bad.Add($"{Path.GetFileName(path)}: \"MISSING\" literal");
+            // A read-only ordinal inspection of already captured lines does not emit an engine log.
+            // Preserve the original text below for every engine-log argument check.
+            var literalScan=Regex.Replace(text,@"\.Contains\(\s*""MISSING""\s*,\s*StringComparison\.Ordinal\s*\)",".Contains(<inspected marker>)");
+            if (literalScan.Contains("\"MISSING\"")) bad.Add($"{Path.GetFileName(path)}: \"MISSING\" literal");
             foreach (Match m in call.Matches(text))
             {
                 // the argument list: from the call's '(' to its balancing ')', skipping string contents

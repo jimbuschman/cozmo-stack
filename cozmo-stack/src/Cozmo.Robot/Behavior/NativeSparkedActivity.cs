@@ -41,6 +41,7 @@ internal sealed class NativeSparkedActivity : IDisposable
     internal Activity? Delegate => _delegate;
     private bool DelegateUnavailable=>_delegateUnknown||(_hasDelegate && _delegate?.GatherOwner is null);
     internal bool CanExecute=>!_retired && !DelegateUnavailable;
+    internal bool IsOwnedBy(EngineRobot owner)=>!_retired && ReferenceEquals(_robot,owner);
     internal IReadOnlyCollection<uint> Observed {get{lock(_dataGate)return _observedIds.ToArray();}}
     internal AnimationTrigger Success {get;set;}=(AnimationTrigger)0x216;
     internal AnimationTrigger Failure {get;set;}=(AnimationTrigger)0x210;
