@@ -61,6 +61,23 @@ public sealed record Graph2d(IReadOnlyList<(double X, double Y)> Nodes)
 /// <c>AddNode(0.0f, 1.0f, true)</c> (0x005bc55c..0x005bc566, 0x005bc666..0x005bc678): no penalty.
 /// </summary>
 // fidelity: M8-003
+// These inputs belong to the concrete native behavior owners, which are not built yet.
+// A supplier must expose their actual state, not a synthetic timer or sector count.
+public interface IPounceScoreState
+{
+    float LastGroundMotionSeconds { get; }
+    float NotRunningBoredSeconds { get; }
+    float BoredomMultiplier { get; }
+}
+
+public interface ILookInPlaceMemoryMapScoreState
+{
+    byte CompletedSectorCount { get; }
+    byte PrioritySectorCount { get; }
+    float LowPriorityScoreReduction { get; }
+}
+
+// fidelity: M8-003
 public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Graph2d? RepetitionPenalty, Graph2d? RunningPenalty, double? BoredomMultiplier,
                                          IReadOnlyList<EmotionScorer> EmotionScorers)
 {
@@ -91,6 +108,10 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
         float score = (float)(EmotionScorers.Count > 0 ? EmotionScore(ctx) : FlatScore);
         if (runningSec is { } r)
         {
+            // Pounce's running factor is one; Look's running override precedes the common bonus.
+            if (b is IPounceScoreState) score = 1f * score; // 0x005f83c4..404
+            if (b is ILookInPlaceMemoryMapScoreState look && look.CompletedSectorCount >= look.PrioritySectorCount)
+                score -= look.LowPriorityScoreReduction; // 0x005e4f30..48
             // Running branch: EvaluateScoreInternal + the float at +0x104 (vldr s2,[r4,#0x104]
             // 0x005bef80; vadd.f32 0x005bef88), then multiplied by EvaluateRunningPenalty only when the
             // +0x111 enable byte is set (0x005bef84/0x005bef8c). No IsRunnable gate here.
@@ -109,6 +130,12 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
             // Non-running branch: IsRunnableBase (0x005befa2) then the vtable+0x50 gate (0x005befce).
             // The stack's IBehavior.IsRunnable is that IsRunnableBase + vtable+0x50 combination (M8-001 C1a).
             if (!b.IsRunnable(ctx)) return 0;
+            if (b is IPounceScoreState pounce)
+            {
+                float threshold = pounce.LastGroundMotionSeconds + pounce.NotRunningBoredSeconds;
+                float factor = threshold < (float)nowSec ? pounce.BoredomMultiplier : 1f;
+                score = factor * score; // 0x005f83be..8404; unordered comparison retains factor one.
+            }
             if (repetitionPenaltyEnabled && !penaltySuppressed && lastRunSec is { } last)
             {
                 // EvaluateRepetitionPenalty 0x005beee6: 1.0 when +0x30 <= 0 (or NaN), else the +0xe8 graph at float(now) - float(+0x30)
@@ -274,11 +301,15 @@ public sealed class ScoringChooser : IBehaviorChooser
 {
     private readonly Dictionary<string, IBehavior> _bound;
     private readonly RepetitionPenalty _penalty;
+    private readonly IReadOnlyList<ScoredBehaviorEntry> _evaluationEntries;
 
     public ScoringChooser(IReadOnlyList<ScoredBehaviorEntry> entries, IReadOnlyDictionary<string, IBehavior> bound, Graph2d? scoreBonusForCurrent = null, RepetitionPenalty? penalty = null)
     {
         Entries = entries; ScoreBonusForCurrent = scoreBonusForCurrent; _penalty = penalty ?? new RepetitionPenalty();
         _bound = entries.Where(e => bound.ContainsKey(e.BehaviorId)).ToDictionary(e => e.BehaviorId, e => bound[e.BehaviorId]);
+        // Native map key is the bound behavior's ID byte (0x0060a2c4). Unknown host-only IDs retain input order.
+        _evaluationEntries = entries.OrderBy(e => _bound.TryGetValue(e.BehaviorId, out var b) &&
+            Enum.TryParse<BehaviorID>(b.Id, out var id) && id.ToString() == b.Id ? (int)id : 256).ToList();
     }
 
     public BehaviorChooserType Type => BehaviorChooserType.Scoring;
@@ -313,7 +344,7 @@ public sealed class ScoringChooser : IBehaviorChooser
     {
         var scores = new List<(string, double, string)>();
         IBehavior? best = null; double bestScore = 0; double currentScore = 0;
-        foreach (var e in Entries)
+        foreach (var e in _evaluationEntries)
         {
             if (!_bound.TryGetValue(e.BehaviorId, out var b)) { scores.Add((e.BehaviorId, 0, "not built")); continue; }
             bool running = current is not null && current.Id == b.Id;

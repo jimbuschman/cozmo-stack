@@ -55,7 +55,7 @@ public class FreeplayTests
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>
         (bool)typeof(SteppedBehavior).GetMethod("IsRunnableInternal", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(b, new object[] { ctx })!;
 
-    private sealed class Fake : IBehavior
+    private class Fake : IBehavior
     {
         public Fake(string id, bool runnable = true, int ticks = 1) { Id = id; Runnable = runnable; Ticks = ticks; }
         public string Id { get; }
@@ -68,6 +68,67 @@ public class FreeplayTests
         public Task StartAsync(BehaviorContext c, BehaviorScope s, CancellationToken t) { Started++; Left = Ticks; return Task.CompletedTask; }
         public bool Update(BehaviorContext c, double nowMs) => --Left > 0;
         public void Stop(BehaviorStopReason r) { }
+    }
+
+    private sealed class PounceScoreFixture : Fake, IPounceScoreState
+    {
+        public PounceScoreFixture() : base("Hiking_PounceOnMotion") { }
+        public float LastGroundMotionSeconds { get; set; } = 10f;
+        public float NotRunningBoredSeconds => 30f;
+        public float BoredomMultiplier => 0.8f;
+    }
+
+    private sealed class LookScoreFixture : Fake, ILookInPlaceMemoryMapScoreState
+    {
+        public LookScoreFixture() : base("Hiking_LookInPlaceForUnknown") { }
+        public byte CompletedSectorCount { get; set; }
+        public byte PrioritySectorCount => 2;
+        public float LowPriorityScoreReduction { get; set; } = 0.3f;
+    }
+
+    // reach: unit; fake state suppliers substitute unbuilt Pounce/Look native lifecycle owners. M8-003, 0x005f83be..8404, 0x005e4f30..48.
+    [Fact]
+    public void NativeSubclassScoreHooksPrecedeCommonPenalties()
+    {
+        using var rig = new Rig(); var ctx = Ctx(rig);
+        var p = new PounceScoreFixture(); var l = new LookScoreFixture();
+        var entry = new ScoredBehaviorEntry("fixture", 1, null, new Graph2d(new[] { (0.0, 0.5) }), null, Array.Empty<EmotionScorer>());
+        Assert.Equal(1f, (float)entry.Evaluate(p, ctx, 40, null, null, null));
+        Assert.Equal(0.8f, (float)entry.Evaluate(p, ctx, MathF.BitIncrement(40f), null, null, null));
+        Assert.Equal(0.5f, (float)entry.Evaluate(p, ctx, 100, null, 1, null));
+        p.LastGroundMotionSeconds = float.NaN;
+        Assert.Equal(1f, (float)entry.Evaluate(p, ctx, 100, null, null, null));
+        l.CompletedSectorCount = 1;
+        Assert.Equal(1f, (float)entry.Evaluate(l, ctx, 0, null, null, null));
+        Assert.Equal(1f, (float)entry.Evaluate(l, ctx, 0, null, 1, null, runningBonus: 1));
+        l.CompletedSectorCount = 2;
+        Assert.Equal((1f - 0.3f + 1f) * 0.5f, (float)entry.Evaluate(l, ctx, 0, null, 1, null, runningBonus: 1));
+        l.LowPriorityScoreReduction = 2f;
+        Assert.Equal(-0.5f, (float)entry.Evaluate(l, ctx, 0, null, 1, null));
+    }
+
+    // reach: unit; test behaviors substitute native owners. M15-002/M8-013, 0x0060a2c4 and 0x0060a3ee..a5be.
+    [Fact]
+    public void ScoringVisitsNativeIdsInByteOrderAndAttachesDrawsInThatOrder()
+    {
+        using var rig = new Rig(); var ctx = Ctx(rig);
+        string[] ids = { "ReactToObstacle", "KnockOverCubes", "Hiking_DriveOffCharger" };
+        var entries = ids.Select(id => new ScoredBehaviorEntry(id, 1, null, null, null, Array.Empty<EmotionScorer>())).ToArray();
+        var bound = ids.ToDictionary(id => id, id => (IBehavior)new Fake(id));
+        var chooser = new ScoringChooser(entries, bound) { RandomDraw = () => 0 };
+        var tied = chooser.GetDesiredActiveBehavior(null, 0, ctx, 0);
+        Assert.Equal(ids, chooser.Entries.Select(e => e.BehaviorId));
+        Assert.Equal("Hiking_DriveOffCharger", tied.Behavior!.Id);
+        Assert.Equal(new[] { "Hiking_DriveOffCharger", "KnockOverCubes", "ReactToObstacle" }, tied.Scores.Select(s => s.Id));
+        var draws = new Queue<double>(new[] { 0d, 0.2d, 0.4d });
+        chooser.RandomDraw = () => draws.Dequeue();
+        Assert.Equal("ReactToObstacle", chooser.GetDesiredActiveBehavior(null, 0, ctx, 0).Behavior!.Id);
+        Assert.Empty(draws);
+        ((Fake)bound["KnockOverCubes"]).Runnable = false;
+        int count = 0;
+        chooser.RandomDraw = () => { count++; return 0; };
+        chooser.GetDesiredActiveBehavior(bound["Hiking_DriveOffCharger"], 1, ctx, 0);
+        Assert.Equal(1, count); // running and zero-scored entries consume no draws (0x0060a462/466).
     }
 
     [Fact]
