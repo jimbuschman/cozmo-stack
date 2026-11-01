@@ -316,6 +316,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.PickUpCube] = (ctx,json)=>new NativePickUpCubeBehavior(ctx,json),
         [BehaviorClass.PutDownBlock] = (ctx,json)=>new NativePutDownBlockBehavior(ctx,json),
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
+        [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
         // case 0x19: BehaviorFistBump(robot, config), 0x158 bytes (0x0059cc84..0x0059cca2).
         [BehaviorClass.FistBump] = (ctx, json) => FistBumpBehavior.FromConfig(json, ctx.Vision, ctx.Manipulation),
@@ -387,6 +388,8 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
+        if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.FindFaces_socialize || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("FindFaces factory: only configured FindFaces_socialize with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.DriveInDesperation && ((BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowEnergyState && BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Needs_SevereLowRepairState) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {
             SteppedBehavior.ReportMissing("DriveInDesperation factory: only the checked Energy and Repair configurations with actual Robot and manipulation owners are available");

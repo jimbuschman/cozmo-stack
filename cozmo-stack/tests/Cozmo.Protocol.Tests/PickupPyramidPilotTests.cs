@@ -36,7 +36,7 @@ public sealed class PickupPyramidPilotTests
     public void ActualConfiguredFactoryUsesNativeTargetAndActualUnlockState()
     {
         using var f=new Fixture();f.Add(7,100);
-        var pickup=f.Pickup;
+        var pickup=f.Pickup;var bootActivity=f.Native.BehaviorManagerOwner!.Activity;Assert.NotNull(bootActivity);
         f.Native.Progression!.Unlocked.Clear();
         Assert.False(pickup.IsRunnable(f.Runtime.Context));
         f.Native.Progression.Unlocked.Add(6); // explicit actual-owner state input, not a constant eligibility delegate.
@@ -45,7 +45,7 @@ public sealed class PickupPyramidPilotTests
         f.M.Docking.Carrying.SetCarrying(7);
         Assert.False(pickup.IsRunnable(f.Runtime.Context));
         // Specialized activity remains guarded; this fixture never substitutes a whole activity admission.
-        Assert.Null(f.Native.BehaviorManagerOwner!.Activity);
+        Assert.Same(bootActivity,f.Native.BehaviorManagerOwner!.Activity);
     }
     [Fact]
     public void IntentionZeroUsesSignedTieOrderAndRetainsEligibleBestWithinAndBeyondEpsilon()
@@ -180,7 +180,7 @@ public sealed class PickupPyramidPilotTests
         f.Add(7,100);f.Native.Progression!.Unlocked.Add(6);
         var pickup=Assert.IsType<NativePickUpCubeBehavior>(observer.Bound["SparksPickupSingleCubeForPyramid"]);
         Assert.Same(f.Pickup,pickup);Assert.True(pickup.IsRunnable(observer.Context));
-        var oldScore=pickup.Score;pickup.Score=1; // Explicit public host-ranking input; no native activity score is claimed.
+        var oldScore=pickup.Score;pickup.Score=10000; // Explicit host-unit challenger dominates configured scores; no native activity score is claimed.
         var parent=new ProbeParent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Native);
         parent.Entry=p=>p.StartActing(new ControlledRunner(EngineActionResult.Running),null);
         manager.Add(parent);
@@ -202,7 +202,7 @@ public sealed class PickupPyramidPilotTests
     public void SourceResponseWrapperUsesRealParentTagActionListAndPreservesSuppliedOriginalPayload()
     {
         // Supplied original child result unit; actual native pickup/visual execution is unavailable.
-        using var f=new Fixture();var manager=f.Native.BehaviorManagerOwner!;
+        using var f=new Fixture();var manager=f.Native.BehaviorManagerOwner!;using var selection=new SelectionUnitScope(manager);
         var parent=new ProbeParent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Native);
         var helper=new NativePickupBlockHelper(f.M,parent,f.Runtime.AI.Helpers.Factory,7,0,false,true);
         RobotCompletedAction? received=null;

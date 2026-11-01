@@ -230,7 +230,7 @@ public sealed class PickupChildrenNativeTests
     {
         // reach: unit manually constructed unsupported Charger_Basic/empty-marker scene; actual native helper/manager/precheck entry.
         // Host availability handling must emit no invented native report or failure and must not stop a replacement run.
-        using var f=new Fixture();f.Add(x:300);
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Add(x:300);
         var obstacle=new ObservableObject(9,ObjectType.Charger_Basic,Array.Empty<KnownMarker>())
         {Pose=new Pose3d(Rotation3d.Identity,new(100,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known};
         f.M.World.AddLocatedObject(obstacle);
@@ -268,7 +268,7 @@ public sealed class PickupChildrenNativeTests
     public void ForceHelperCapturesMainOnceAndExcludesOnlyThatOriginalPredockPose()
     {
         // reach: native factory/helper/actual pose callback, supplied scene/initial predock and no fabricated result.
-        using var f=new Fixture();var cube=f.Add(x:300);var poses=new DriveToObjectAction(f.M,7,PreActionType.Docking){NativeInputs=true};bool inPosition=false;
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);var cube=f.Add(x:300);var poses=new DriveToObjectAction(f.M,7,PreActionType.Docking){NativeInputs=true};bool inPosition=false;
         Assert.Equal(ActionResult.Success,poses.GetPossiblePoses(cube,out var all,ref inPosition));Assert.True(all.Count>1);
         using var initial=all[0].WorldPose.GetWithRespectToRoot();f.X=(float)initial.Translation.X;f.Y=(float)initial.Translation.Y;f.Yaw=(float)initial.AngleAroundZ;f.Motors();
         var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);NativeDriveToHelper? helper=null;HelperRef? held=null;
@@ -319,7 +319,7 @@ public sealed class PickupChildrenNativeTests
     public void StoppingNativeApproachRetiresOwnedPlanAndChildrenWhileUnrelatedParallelSurvives()
     {
         // reach: real factory/helper/parent84 cancellation/ActionList and source cleanup, offline scene/firmware.
-        using var f=new Fixture();f.Add(x:300);var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Add(x:300);var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
         NativeDriveToHelper? helper=null;HelperRef? held=null;bool callback=false;
         parent.Entry=p=>{var h=f.Runtime.AI.Helpers.Factory.CreateNativeDriveTo(f.M,p,7,false);held=h.Copy();helper=(NativeDriveToHelper)h.Pointer;try{p.Delegate(h,_=>callback=true,_=>callback=true);}finally{h.Release();}};
         var manager=f.Robot.BehaviorManagerOwner!;manager.Add(parent);var unrelated=new NativeTimedWaitRunner(f.M,1000);
@@ -372,7 +372,7 @@ public sealed class PickupChildrenNativeTests
     {
         // reach: native helper factory/manager/parent84/ActionList with explicit offline firmware and no observations.
         // SH7/A21 5BB1AA..500: any-result reentry and actual default-filter deletion, not a count stub.
-        using var f=new Fixture();f.Add();f.Add(8,600);var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Add();f.Add(8,600);var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
         NativeSearchForBlockHelper? search=null;HelperRef? held=null;ActionRunner[]? stageOne=null;bool failed=false,succeeded=false;int words=0;
         f.Rig.Engine.ContextRandom.WordSourceForTest=()=>++words%2==1?0u:0x80000000u;
         parent.Entry=p=>
@@ -422,7 +422,7 @@ public sealed class PickupChildrenNativeTests
         bool dock=false,allGoals=false;uint frame=0;var anims=new HashSet<byte>();var startedPaths=new HashSet<ushort>();var firmwareTrace=new List<string>();
         try
         {
-            Assert.True(manager.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            Assert.True(manager.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,manager,pickup.Id);
             for(int i=0;i<350&&ReferenceEquals(manager.Current,pickup);i++)
             {
                 var helper=pickup.Helper;

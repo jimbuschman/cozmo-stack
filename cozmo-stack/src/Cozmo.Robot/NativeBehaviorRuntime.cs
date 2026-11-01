@@ -9,6 +9,9 @@ public sealed partial class EngineRobot
     internal bool MoodResourcesAvailable;
     internal bool NativeActivityRecipientsConstructed;
     internal Behavior.NativeBehaviorRuntime? NativeBehaviorRuntime;
+    internal Dictionary<string,NativeScoredFields>? NativeConfiguredScoreFields;
+    internal void InvalidateConfiguredScoreHistory(string id)
+    {if(NativeConfiguredScoreFields?.TryGetValue(id,out var fields)==true)fields.Invalidate();}
     internal bool NativeBehaviorRuntimeConstructing;
     internal void UpdateNativeMood(float now)
     {

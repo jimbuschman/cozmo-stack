@@ -28,7 +28,7 @@ public sealed class HikingRollCubeRecoveryTests
     {
         // Explicit external carry change at the StartRolling retry boundary; real composites, precondition failures,
         // response animations and original-result callbacks. No helper/runner terminal state is assigned.
-        using var f=new Fixture();var obj=f.Add();f.Robot.CarryingOwner!.SetCarrying(7);f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);var obj=f.Add();f.Robot.CarryingOwner!.SetCarrying(7);f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
         // Explicit helper-unit external admission: real ABORT completions lower Confidence and would
         // otherwise admit ReactToFrustrationMinor. Lock only that independent reaction; retain actual mood/results.
         f.Robot.BehaviorManagerOwner!.DisableReactionsWithLock("supplied-roll-retry-admission",Enumerable.Range(0,21).Select(i=>i==(int)ReactionTrigger.Frustration).ToArray(),false);
@@ -49,7 +49,7 @@ public sealed class HikingRollCubeRecoveryTests
     [Fact]
     public void ActualCarryingRollDelegatesPlaceTurnGroundWireAndRealCarryCompletionBeforeReevaluation()
     {
-        using var f=new Fixture();var carried=f.Add(7,150);var target=f.Add(8,400);target.Pose=new Pose3d(Rotation3d.FromAngleAxis(Radians.Pi*.5f,new(0,1,0)),new(400,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);var carried=f.Add(7,150);var target=f.Add(8,400);target.Pose=new Pose3d(Rotation3d.FromAngleAxis(Radians.Pi*.5f,new(0,1,0)),new(400,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
         Assert.Equal(0u,f.M.Docking.SetObjectAsAttachedToLift(7,carried.Markers.First(m=>m.Face==BlockFace.Front).Code));
         var p=new Parent();NativeRollBlockHelper? helper=null;int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};
         p.Entry=parent=>{helper=new(f.M,parent,f.Runtime.AI.Helpers.Factory,8,true,0,null);IHelper? raw=helper;var handle=f.Runtime.AI.Helpers.AddHelperToComponent(ref raw);try{parent.Delegate(handle);}finally{handle.Release();}};Start(f,p);
@@ -77,7 +77,7 @@ public sealed class HikingRollCubeRecoveryTests
     public void ManagerStopRetiresOwnedRollOnlyKeepsUnrelatedActionAndRetainedStateLights()
     {
         using var scene=new RollFirmwareScene();var f=scene.F;var manager=f.Robot.BehaviorManagerOwner!;
-        Assert.True(manager.StartAsync("Hiking_RollCube",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());var roll=Assert.IsType<NativeRollBlockBehavior>(manager.Current);
+        Assert.True(manager.StartAsync("Hiking_RollCube",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,manager,"Hiking_RollCube");var roll=Assert.IsType<NativeRollBlockBehavior>(manager.Current);
         var owned=Assert.IsAssignableFrom<ActionRunner>(roll.OwnedRunner);var unrelated=new NativeTimedWaitRunner(f.M,100f);f.Robot.ActionList.QueueAction(QueueActionPosition.InParallel,unrelated);f.Rig.Tick();
         manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);f.Robot.ActionList.Watcher.Update();
         Assert.True(owned.DestructionObserved);Assert.False(unrelated.DestructionObserved);Assert.Equal(EngineActionResult.Running,unrelated.State);Assert.Equal(uint.MaxValue,roll.Target);Assert.False(roll.HasLiveHelper);Assert.Single(manager.InspectStateLights().Entries);

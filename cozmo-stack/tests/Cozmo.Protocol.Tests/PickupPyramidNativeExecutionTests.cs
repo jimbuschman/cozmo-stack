@@ -211,7 +211,7 @@ public sealed class PickupPyramidNativeExecutionTests
     public void OriginalImmutablePayloadSurvivesTheActualResponseAnimationCallback()
     {
         //Supplied original result unit; real parent84/response ActionList/CA/CB, not successful native pickup proof.
-        using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(Resources());
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Rig.Robot.Animations.LoadFrom(Resources());
         var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
         var helper=new NativePickupBlockHelper(f.M,parent,f.Runtime.AI.Helpers.Factory,7,0,false,true);
         var expected=new ObjectInteractionCompletion(7,8,uint.MaxValue,uint.MaxValue,uint.MaxValue,2,true);
@@ -238,7 +238,7 @@ public sealed class PickupPyramidNativeExecutionTests
     public void LateNamedFaceFailsClearlyAndRetiresOnlyItsOwnedSubtreeWithoutPickupContinuation(bool uiEnabled)
     {
         //Injected LOCAL46 recipient unit, actual LastFace motor/Needs/Mood/error-boundary lifecycle.
-        using var f=new Fixture();f.Add();var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Add();var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         void Face(string? name)
         {
             var tracked=new TrackedFace(new DetectedFace(11,new FaceRect(0,0,20,20),new Vec2(5,5),new Vec2(15,5),Name:name),1)
@@ -393,7 +393,7 @@ public sealed class PickupPyramidNativeExecutionTests
         Assert.True(pickup.IsRunnable(f.Runtime.Context));Assert.True(pickup.CheckExecutionAvailability());
         var reports=new List<RobotCompletedAction>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r)reports.Add(r);});
         var app=new List<ActionCompletionReport>();f.Rig.Engine.ActionCompleted+=app.Add;
-        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner,pickup.Id);
         var animations=new HashSet<byte>();bool dock=false,firstTurns=false;uint image=0;
         try
         {

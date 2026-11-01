@@ -193,7 +193,7 @@ public sealed class SparksRollNativeTests
         Assert.Equal(8u,f.Runtime.PickupTargets!.GetBest(6));
         f.Robot.Progression!.Unlocked.Add(9);var manager=f.Robot.BehaviorManagerOwner!;
         // Explicit manager child admission for exact155; tests only retarget recipient, not parent winner.
-        Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());var roll=Roll(f);var first=roll.RollHelper;
+        Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,manager,Id);var roll=Roll(f);var first=roll.RollHelper;
         side.Pose=new Pose3d(Rotation3d.Identity,new(400,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
         f.M.Whiteboard.SetFailedToUse(side,(ObjectActionFailure)3);f.Rig.Tick();
         Assert.Equal(7u,roll.Target);Assert.NotSame(first,roll.RollHelper);Assert.False(roll.PreDockReached);Assert.Equal(0,roll.State);

@@ -32,15 +32,17 @@ public sealed partial class FaceWorld
     }
     //004F5AE2..5B38: false allows ROOT-flatten/reparent; map removal does not clear the cache.
     internal bool CopyNativeLastFace(Pose3d currentOrigin,bool requireCurrentOrigin,Pose3d output)
+        => CopyNativeLastFaceTimestamp(currentOrigin,requireCurrentOrigin,output)!=0;
+    internal uint CopyNativeLastFaceTimestamp(Pose3d currentOrigin,bool requireCurrentOrigin,Pose3d output)
     {
         using var mutation=NativePoseScope?.Invoke();
         lock(_gate)
         {
-            if(_nativeLastStamp==0||_nativeLastPose is null)return false;
+            if(_nativeLastStamp==0||_nativeLastPose is null)return 0;
             using var root=_nativeLastPose.FindRoot();
-            if(ReferenceEquals(root.Node,currentOrigin.Node)){output.Assign(_nativeLastPose);return true;}
-            if(requireCurrentOrigin)return false;
-            using var flat=_nativeLastPose.GetWithRespectToRoot();output.Assign(flat);output.SetParent(currentOrigin);return true;
+            if(ReferenceEquals(root.Node,currentOrigin.Node)){output.Assign(_nativeLastPose);return _nativeLastStamp;}
+            if(requireCurrentOrigin)return 0;
+            using var flat=_nativeLastPose.GetWithRespectToRoot();output.Assign(flat);output.SetParent(currentOrigin);return _nativeLastStamp;
         }
     }
 }

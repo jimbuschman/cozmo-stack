@@ -204,7 +204,7 @@ public sealed class StackBlocksNativeTests
     [InlineData(false)] [InlineData(true)]
     public void RegularSuppliedPlaceFailureBoundaryRunsGroundAndReturnsToPickup(bool rollUnlocked)
     {
-        using var scene=new StackFirmwareScene(true,"StackBlocks",rollUnlocked);var f=scene.F;var stack=Admit(scene);
+        using var scene=new StackFirmwareScene(true,"StackBlocks",rollUnlocked);var f=scene.F;var stack=Admit(scene);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,stack.Id);
         bool PlaceOwned()=>stack.PlacementHelper?.Runner is not null&&ReferenceEquals(stack.OwnedRunner,stack.PlacementHelper.Runner);
         for(int i=0;i<70&&!PlaceOwned();i++)scene.Step(PlaceOwned);
         var helper=stack.PlacementHelper!;var place=Assert.IsType<NativePlaceRelRunner>(stack.OwnedRunner);Assert.Same(helper,Assert.Single(f.Runtime.AI.Helpers.StackHelpers));

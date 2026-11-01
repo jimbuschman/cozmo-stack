@@ -249,7 +249,10 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             if(_childUnavailable)return current;
             bool retry = decision.Behavior is null;
             if (retry) { Log?.Invoke("ActivityFreeplay.ChooseNextBehavior.NoBehaviorChosenWhileRunning: activity is not allowed to be repicked"); barred = Current; } // askCurrent=false
-            if (!retry && !_manager.IsRunning(decision.Behavior!) && !(Inputs.Needs?.SparksRewardPending ?? false))
+            bool running = decision.Behavior is SteppedBehavior stepped ? stepped.EngineRunning : _manager.IsRunning(decision.Behavior!);
+            if(NativeOwner && !retry && decision.Behavior is not SteppedBehavior)
+            {ReportActivityMissing("MISSING: actual child running flag unavailable");return current;}
+            if (!retry && !running && !(Inputs.Needs?.SparksRewardPending ?? false))
             {
                 retry = Current!.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out _, nowSec);
                 if (retry) Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: '{Current.Id}' wants to end");
@@ -323,6 +326,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
                 return null;
             }
             if (initialPick || changed) decision = ChooseActivityBehavior(Current, current, nowSec);
+            if(_childUnavailable)return current; // missing child input is not a native null/normal tail
             _desiredActivity = null; // after lifecycle, switch, pause and chooser (0x005AE5E0)
         }
 
@@ -357,7 +361,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             }
             return new ChooserDecision(desired,"Sparked child",Array.Empty<(string,double,string)>());
         }
-        if (NativeOwner && (activity.Type!="BehaviorsOnly" || activity.Id=="PlayAlone" || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
+        if (NativeOwner && (activity.Type is not ("BehaviorsOnly" or "Socialize") || activity.Id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
         {
             ReportActivityMissing("MISSING: M8-013 specialized child desired lifecycle "+activity.Id);
             _childUnavailable=true;
@@ -372,14 +376,26 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
         }
         if (activity.CachedInterlude is not null && ReferenceEquals(activity.CachedInterlude, current))
             return new ChooserDecision(activity.CachedInterlude, "cached interlude", Array.Empty<(string, double, string)>());
+        var priorInterlude=activity.CachedInterlude;
         activity.CachedInterlude = null;
         var decision = activity.Chooser?.GetDesiredActiveBehavior(current, _manager.RunningDurationSec(nowSec), _ctx, nowSec)
             ?? new ChooserDecision(null, "no chooser", Array.Empty<(string, double, string)>());
         if(NativeOwner && decision.InputUnavailable)
-        {_childUnavailable=true;ReportActivityMissing("MISSING: M8-013 scored chooser input unavailable; retaining current behavior");return decision with {Behavior=current};}
+        {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: M8-013 scored chooser input unavailable; retaining current behavior");return decision with {Behavior=current};}
+        if(NativeOwner && activity.Type=="Socialize")
+        {
+            if(activity.ObjectiveOwner is null)
+            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: Socialize retained objective owner unavailable");return decision with {Behavior=current,InputUnavailable=true};}
+            decision=activity.ObjectiveOwner.Desired(current,decision,_ctx);
+            if(decision.InputUnavailable)
+            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: Socialize actual child input unavailable; retaining current behavior");return decision with {Behavior=current};}
+        }
         if (activity.InterludeChooser is not null && !ReferenceEquals(decision.Behavior, current))
         {
-            activity.CachedInterlude = activity.InterludeChooser.GetDesiredActiveBehavior(decision.Behavior, 0, _ctx, nowSec).Behavior;
+            var interlude=activity.InterludeChooser.GetDesiredActiveBehavior(decision.Behavior, 0, _ctx, nowSec);
+            if(NativeOwner && interlude.InputUnavailable)
+            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: actual interlude input unavailable; retaining current behavior");return decision with {Behavior=current,InputUnavailable=true};}
+            activity.CachedInterlude = interlude.Behavior;
             if (activity.CachedInterlude is not null) return decision with { Behavior = activity.CachedInterlude };
         }
         return decision;

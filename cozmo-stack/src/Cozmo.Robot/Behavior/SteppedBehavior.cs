@@ -156,16 +156,14 @@ public abstract partial class SteppedBehavior : IBehavior
     /// </summary>
     // fidelity: M8-004
     public double Score { get; set; }
-    internal ScoredBehaviorEntry? NativeScoring {get;private set;}
+    internal NativeScoredFields NativeScoredFields {get;}=new();
+    internal ScoredBehaviorEntry? NativeScoring => NativeScoredFields.Value;
     internal bool NativeScoringAvailable {get;private set;}=true;
     internal void ReadNativeScoring(System.Text.Json.JsonElement source)
     {
         bool obj=source.ValueKind==System.Text.Json.JsonValueKind.Object;
-        var old=NativeScoring;
-        var parsed=obj ? ScoredBehaviorEntry.FromScoringJson(Id,source) : new ScoredBehaviorEntry(Id,0,null,null,null,Array.Empty<EmotionScorer>());
-        double flat=obj && source.TryGetProperty("flatScore",out var score) && score.ValueKind!=System.Text.Json.JsonValueKind.Null ? (float)parsed.FlatScore : old?.FlatScore??0f;
-        NativeScoring=parsed with { FlatScore=flat };
-        Score=flat;
+        NativeScoredFields.Read(Id,source);
+        Score=NativeScoredFields.Value!.FlatScore;
         if(obj && source.TryGetProperty("considerThisHasRunForBehaviorObjective",out var objective) && objective.ValueKind==System.Text.Json.JsonValueKind.String)
         {
             var mapped=BehaviorObjectives.FromString(objective.GetString());
@@ -473,7 +471,7 @@ public abstract partial class SteppedBehavior : IBehavior
         OnStart();                               // vtable+0x48 InitInternal (0x005bccfe/0x005bcd00)
         if (!HostExecutionVersionCurrent(hostVersion)) return;
         if (InitFailed) _engineRunning = false;  // non-zero: +0xa1 = 0 (0x005bcd06)
-        else _scoreIncreaseCount++;              // zero: +0x80++ (0x005bcd0c)
+        else _scoreIncreaseCount=unchecked(_scoreIncreaseCount+1); // zero: uint32 +0x80++ (0x005bcd0c)
         SparkBehaviorDisables();                 // the "SparkBehaviorDisables" lock
         if (!HostExecutionVersionCurrent(hostVersion)) return;
         _resumeCount = 0;                        // +0x114 = 0
@@ -583,6 +581,7 @@ public abstract partial class SteppedBehavior : IBehavior
     public bool Resume(ReactionTrigger? trigger, double nowSec)
     {
         using var executionLease = EnterHostExecutionOwner(Context);
+        if(Context.Robot.Engine.Robot is {} resumeOwner && resumeOwner.NativeBehaviorRuntime?.Bound.TryGetValue(Id,out var resumed)==true && ReferenceEquals(resumed,this))resumeOwner.InvalidateConfiguredScoreHistory(Id);
         long hostVersion = CaptureHostExecutionVersion();
         if (trigger is ReactionTrigger.CliffDetected or ReactionTrigger.UnexpectedMovement)
         {
@@ -677,6 +676,7 @@ public abstract partial class SteppedBehavior : IBehavior
     public virtual Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
     {
         using var executionLease = EnterHostExecutionOwner(context);
+        if(context.Robot.Engine.Robot is {} startOwner && startOwner.NativeBehaviorRuntime?.Bound.TryGetValue(Id,out var started)==true && ReferenceEquals(started,this))startOwner.InvalidateConfiguredScoreHistory(Id);
         HostRunStarting();
         long hostVersion = CaptureHostExecutionVersion();
         if (!HostExecutionVersionCurrent(hostVersion)) return Task.FromException(new ObjectDisposedException(Id));

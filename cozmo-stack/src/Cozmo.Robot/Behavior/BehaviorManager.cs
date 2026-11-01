@@ -848,6 +848,7 @@ public sealed partial class BehaviorManager : IDisposable
         try
         {
             using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+            _context.Robot.Engine.Robot?.InvalidateConfiguredScoreHistory(id);
             var b = Find(id);
             return Task.FromResult(b is not null && SwitchToBehaviorBaseCore(new RunningInfo(b, null, null), nowSec, BehaviorStopReason.Interrupted, cancel));
         }
@@ -1036,6 +1037,7 @@ public sealed partial class BehaviorManager : IDisposable
                                           CancellationToken cancel = default, IHostReadinessOwner? hostReadiness = null)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
+        if(info.Current is {} attempted)_context.Robot.Engine.Robot?.InvalidateConfiguredScoreHistory(attempted.Id);
         if (_hostDisposed) return false;
         // Host availability boundary, not a native false/no-effect result. Do not retire the prior selection.
         if(info.Current is NativePickUpCubeBehavior pickup&&!pickup.CheckExecutionAvailability())return false;

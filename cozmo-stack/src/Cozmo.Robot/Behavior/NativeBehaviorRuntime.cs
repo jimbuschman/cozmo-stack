@@ -33,6 +33,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal Func<IReadOnlyList<NativePyramidBase>>? PyramidBaseStrongInput {get;set;}
     internal Func<IReadOnlyList<NativePyramidConfiguration>>? PyramidFullStrongInput {get;set;}
     internal IReadOnlyDictionary<string,IBehavior> Bound {get;}
+    private readonly Dictionary<string,NativeScoredFields> _configuredScoreFields;
     private readonly SortedDictionary<BehaviorID,byte> _executableMetadata=new();
     internal IReadOnlyList<Activity> Tree {get;}
     internal FreeplayDataTracker Tracker {get;}
@@ -144,6 +145,29 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(manager.Find(behavior.Id) is null)manager.Add(behavior);
         }
         Bound=bound;
+        var scoreFields=_configuredScoreFields=new Dictionary<string,NativeScoredFields>(StringComparer.Ordinal);
+        foreach(var entry in facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>())
+        {
+            string id=entry.Key.ToString();
+            if(bound.TryGetValue(id,out var built) && built is SteppedBehavior step)scoreFields[id]=step.NativeScoredFields;
+            else
+            {
+                var fields=new NativeScoredFields();fields.Read(id,entry.Value);
+                if(!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var objective) || objective.ValueKind==System.Text.Json.JsonValueKind.Null)
+                    if((entry.Key==BehaviorID.PounceOnMotion_Socialize && entry.Value.TryGetProperty("behaviorClass",out var pounceClass) && pounceClass.ValueKind==System.Text.Json.JsonValueKind.String && pounceClass.GetString()=="PounceOnMotion") ||
+                       (entry.Key==BehaviorID.FPPeekABoo && entry.Value.TryGetProperty("behaviorClass",out var peekClass) && peekClass.ValueKind==System.Text.Json.JsonValueKind.String && peekClass.GetString()=="PeekABoo"))fields.MarkPristine();
+                if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var interludeObjective) || interludeObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
+                   entry.Value.TryGetProperty("behaviorClass",out var interludeClass) && interludeClass.ValueKind==System.Text.Json.JsonValueKind.String &&
+                   ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
+                    ((id is "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" or "Needs_MildLowRepairRequest" or "Needs_MildLowEnergyRequest" or "Needs_MildLowPlayRequest") && interludeClass.GetString()=="ExpressNeeds")))
+                    fields.MarkPristine();
+                if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
+                   entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
+                   id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
+                scoreFields[id]=fields;
+            }
+        }
+        robot.NativeConfiguredScoreFields=scoreFields;
         foreach(var entry in facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>())
             _executableMetadata[entry.Key]=bound.TryGetValue(entry.Key.ToString(),out var b) && b is SteppedBehavior {NativeBaseInputs.CheckedExecutableType: {} value}
                 ? value : ExecutableBehaviorNames.FromConfig(entry.Value);
@@ -180,7 +204,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                             {
                                 if(entry.Value!=type)continue;
                                 if(Bound.TryGetValue(entry.Key.ToString(),out var found))return found;
-                                throw new NativeChooserUnavailable("configured executable owner "+entry.Key+" is unbuilt");
+                                throw new NativeChooserUnavailable("configured executable owner "+entry.Key+" is unbuilt",entry.Key.ToString());
                             }
                             return null;
                         };
@@ -401,6 +425,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     public void Dispose()
     {
         if(_retired)return;_retired=true;++_admissionEpoch;
+        if(ReferenceEquals(_robot.NativeConfiguredScoreFields,_configuredScoreFields))_robot.NativeConfiguredScoreFields=null;
         _facade.Sensors.FreeplayOffTreadsStateChanged -= OnFreeplayTreads;
         if(ReferenceEquals(_facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads,_offTreadsPause))
             _facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=null;
@@ -415,6 +440,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var chooser in AllActivities(Tree).SelectMany(a=>new[]{a.Chooser,a.InterludeChooser}).OfType<SelectionChooser>())chooser.Dispose();
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeKnockOverCubesBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeBouncerBehavior>())candidate.Dispose();
