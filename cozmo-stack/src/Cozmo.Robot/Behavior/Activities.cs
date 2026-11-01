@@ -336,19 +336,6 @@ public sealed class ScoringChooser : IBehaviorChooser
         if(!Enum.TryParse<BehaviorID>(id,false,out var nativeId) || nativeId.ToString()!=id)return UnbuiltScore.Unavailable;
         if(!configured.ContainsKey(nativeId))return UnbuiltScore.NativeAbsent;
         var winner=configured[nativeId];
-        if(id=="SparksFireTruckAlarm")
-        {
-            if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fire)!=true || !fire.ConstructorPristine ||
-               fire.FireTruckConfig is not {} original || !original.Equals(winner) || fire.FireTruckProgression is not {} progression ||
-               !ReferenceEquals(owner.Progression,progression))return UnbuiltScore.Unavailable;
-            long epoch=fire.Epoch;
-            if(!progression.TryIsUnlocked(83,out bool unlocked) || unlocked)return UnbuiltScore.Unavailable;
-            if(fire.ConstructorPristine && fire.Epoch==epoch && ReferenceEquals(owner.Engine.Robot,owner) &&
-               ReferenceEquals(owner.NativeBehaviorRuntime,runtime) && ReferenceEquals(owner.Progression,progression) &&
-               ReferenceEquals(owner.Engine.HostBehaviorMap,configured) && configured.TryGetValue(nativeId,out var currentConfig) && original.Equals(currentConfig) &&
-               owner.NativeConfiguredScoreFields?.TryGetValue(id,out var current)==true && ReferenceEquals(current,fire))return UnbuiltScore.KnownFalse;
-            return UnbuiltScore.Unavailable;
-        }
         NativeScoredFields? gateFields=null;long gateEpoch=0;
         if(id=="GuardDog")
         {

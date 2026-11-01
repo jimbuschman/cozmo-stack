@@ -94,50 +94,23 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
-    public void FireTruckLockedGateUsesOriginalProgressionAndPristineHistoryBeforeScoring()
+    public void FireTruckLockedGateUsesActualOwnerAndOriginalProgression()
     {
-        const string id="SparksFireTruckAlarm";using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        Assert.Equal(83u,NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes("FireTruckAlarm")));
-        Assert.False(f.Runtime.Bound.ContainsKey(id));var fields=f.Robot.NativeConfiguredScoreFields![id];Assert.True(fields.ConstructorPristine);
-        var progression=f.Robot.Progression!;Assert.Same(progression,fields.FireTruckProgression);
-        Assert.True(progression.TryIsUnlocked(83,out bool unlocked));Assert.False(unlocked);
-        var chooser=new ScoringChooser(new[]{fields.Value!},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
-        int draws=0;chooser.RandomDraw=()=>{draws++;return 0;};
-        ChooserDecision Choose()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
-        var locked=Choose();Assert.False(locked.InputUnavailable);Assert.Null(locked.Behavior);Assert.Equal("KnownFalse",Assert.Single(locked.Scores).Note);Assert.Equal(0,draws);
-        progression.ReadSink(new NvResult(-1,Array.Empty<byte>())); // supplied missing-NV result, actual default-restoration recipient
-        Assert.True(progression.TryIsUnlocked(83,out unlocked));Assert.False(unlocked);Assert.False(Choose().InputUnavailable);
-        using var nonfinite=JsonDocument.Parse("""{"flatScore":1e100}""");fields.Reload(id,nonfinite.RootElement);
-        Assert.False(Choose().InputUnavailable);Assert.Equal(0,draws); // source base rejection precedes scoring fields
-        progression.Unlocked.Add(83);Assert.True(Choose().InputUnavailable);progression.Unlocked.Remove(83);
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();
+        f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var truck=Assert.IsType<NativeFireTruckAlarmBehavior>(f.Runtime.Bound["SparksFireTruckAlarm"]);
+        Assert.Same(truck.NativeScoredFields,f.Robot.NativeConfiguredScoreFields![truck.Id]);
+        Assert.True(f.Robot.Progression!.TryIsUnlocked(83,out bool unlocked));Assert.False(unlocked);
+        var locked=truck.EvaluateHostReadiness(f.Runtime.Context);
+        Assert.True(locked.Available);Assert.False(locked.Runnable);
+        f.Robot.Progression.ReadSink(new NvResult(-1,Array.Empty<byte>()));
+        Assert.True(f.Robot.Progression.TryIsUnlocked(83,out unlocked));Assert.False(unlocked);
+        Assert.False(truck.EvaluateHostReadiness(f.Runtime.Context).Runnable);
         var known=typeof(ProgressionUnlockOwner).GetProperty("OverridesKnownEmpty",BindingFlags.Instance|BindingFlags.NonPublic)!;
-        known.SetValue(progression,false);Assert.True(Choose().InputUnavailable);known.SetValue(progression,true);
-        var original=f.Robot.NativeConfiguredScoreFields![id];f.Robot.NativeConfiguredScoreFields[id]=new NativeScoredFields();
-        Assert.True(Choose().InputUnavailable);f.Robot.NativeConfiguredScoreFields[id]=original;
-        var oldProgression=f.Robot.Progression;f.Robot.Progression=new ProgressionUnlockOwner(f.Robot);
-        Assert.True(Choose().InputUnavailable);f.Robot.Progression=oldProgression;
-        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync(id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-        Assert.False(fields.ConstructorPristine);Assert.True(Choose().InputUnavailable);
+        known.SetValue(f.Robot.Progression,false);
+        try {Assert.False(truck.EvaluateHostReadiness(f.Runtime.Context).Available);}
+        finally {known.SetValue(f.Robot.Progression,true);}
     }
-
-    [Fact]
-    public void FireTruckChangedConfigAndQueuedUnsupportedRequestWithdrawProof()
-    {
-        const string id="SparksFireTruckAlarm";using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        var fields=f.Robot.NativeConfiguredScoreFields![id];var chooser=new ScoringChooser(new[]{fields.Value!},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
-        ChooserDecision Choose()=>chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
-        Assert.False(Choose().InputUnavailable);
-        var property=f.Rig.Engine.GetType().GetProperty("HostBehaviorMap",BindingFlags.Instance|BindingFlags.NonPublic)!;
-        var original=f.Rig.Engine.HostBehaviorMap!;var changed=original.ToDictionary(p=>p.Key,p=>p.Value);
-        using var altered=JsonDocument.Parse("""{"behaviorClass":"FireTruckAlarm","requiredUnlockId":"Count"}""");
-        changed[BehaviorID.SparksFireTruckAlarm]=altered.RootElement;
-        try {property.SetValue(f.Rig.Engine,changed);Assert.True(Choose().InputUnavailable);}
-        finally {property.SetValue(f.Rig.Engine,original);}
-        Assert.False(Choose().InputUnavailable);
-        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.SparksFireTruckAlarm,1);f.Rig.Tick();
-        Assert.False(fields.ConstructorPristine);Assert.True(Choose().InputUnavailable);
-    }
-
     [Fact]
     public void ReactToObstacleUsesActualConfiguredPlayAnimAndLiveAiFlag()
     {

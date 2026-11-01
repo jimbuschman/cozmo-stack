@@ -1,6 +1,12 @@
 using Cozmo.Robot.Behavior;
 namespace Cozmo.Robot;
 
+public sealed partial class EngineRobot
+{
+    // Robot+354, initialized false by 005100EA.
+    internal bool NativeDoingCSharpTrick { get; set; }
+}
+
 // fidelity: M1-054, M15-001, M15-014, M15-016, M1-024, M1-042
 public sealed partial class CozmoEngine
 {

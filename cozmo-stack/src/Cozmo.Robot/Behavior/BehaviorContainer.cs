@@ -321,6 +321,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
         [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
         [BehaviorClass.EarnedSparks] = (ctx,json)=>new NativeEarnedSparksBehavior(ctx,json),
+        [BehaviorClass.FireTruckAlarm] = (ctx,json)=>new NativeFireTruckAlarmBehavior(ctx,json),
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
@@ -421,6 +422,8 @@ public sealed class BehaviorFactory
         { SteppedBehavior.ReportMissing("CubeLiftWorkout factory: configuration is outside the checked ordinary/Sparks instances");status=BehaviorCreateStatus.NotImplemented;return null; }
         if(cls==BehaviorClass.EarnedSparks && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.EarnedSparks || ctx.NativeRobot is null || ctx.Manipulation is null))
         {SteppedBehavior.ReportMissing("EarnedSparks factory needs the actual configured Robot and manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.FireTruckAlarm && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksFireTruckAlarm || ctx.NativeRobot is null || ctx.Manipulation is null))
+        {SteppedBehavior.ReportMissing("FireTruckAlarm factory needs the actual configured Robot and manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
         if((cls==BehaviorClass.DevTurnInPlaceTest||cls==BehaviorClass.Dance||cls==BehaviorClass.CubeLiftWorkout||cls==BehaviorClass.CantHandleTallStack||cls==BehaviorClass.CheckForStackAtInterval||cls==BehaviorClass.BuildPyramid||cls==BehaviorClass.BuildPyramidBase||cls==BehaviorClass.PopAWheelie||cls==BehaviorClass.RollBlock||cls==BehaviorClass.StackBlocks||cls==BehaviorClass.PlayArbitraryAnim||cls==BehaviorClass.DriveOffCharger||cls==BehaviorClass.PickUpCube||cls==BehaviorClass.PutDownBlock||cls==BehaviorClass.KnockOverCubes) && ctx.Manipulation is null)
         {
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior {cls}: actual manipulation input unavailable; no hand-built/default owner substituted");
@@ -460,7 +463,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
+            if(stepped is NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
