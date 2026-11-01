@@ -1182,14 +1182,20 @@ public class FreeplayTests
             Assert.True(mooded.WantsToStart(withMood, 0, out _));                           // Social starts at 0 -> score 1
             Assert.True(mood.Trigger("InteractWithNamedFace", 0) || true);
         }
-        // needs strategies
-        var needsStrategy = new ActivityStrategy { Type = "Needs", Need = NeedId.Energy, NeedBracket = NeedBracketId.Critical, HigherPriorityStrategy = "Repair", ShouldEndDurationSec = -1 };
+        // reach: unit; direct Needs state. Primary start and secondary end: 0x005B4718/4768..47B0.
+        using var needsConfig=JsonDocument.Parse("""
+            {"type":"Needs","activityShouldEndDurationSecs":-1,
+             "wantsToRunStrategyConfig":{"strategyType":"InNeedsBracket","need":"Energy","needBracket":"Critical"},
+             "higherPriorityStrategyConfig":{"strategyType":"InNeedsBracket","need":"Repair","needBracket":"Critical"}}
+            """);
+        var needsStrategy=ActivityStrategy.FromJson(needsConfig.RootElement);
         Assert.False(needsStrategy.WantsToStart(inputs, 0, out var r1)); Assert.Contains("not Critical", r1);
         needs.SetLevel(NeedId.Energy, 0);
         Assert.True(needsStrategy.WantsToStart(inputs, 0, out _));
         Assert.False(needsStrategy.WantsToEnd(inputs, 1000, out _));                         // -1: never by duration
         needs.SetLevel(NeedId.Repair, 0);
-        Assert.False(needsStrategy.WantsToStart(inputs, 0, out var r2)); Assert.Contains("Repair", r2);
+        Assert.True(needsStrategy.WantsToStart(inputs, 0, out _));
+        Assert.True(needsStrategy.WantsToEnd(inputs, 1, out _));
         needs.SetLevel(NeedId.Repair, 1); needs.SetLevel(NeedId.Energy, 1);
         Assert.True(needsStrategy.WantsToEnd(inputs, 1, out var r3)); Assert.Contains("left", r3);
         var transition = new ActivityStrategy { Type = "SevereNeedTransition", Need = NeedId.Play };
@@ -1198,10 +1204,14 @@ public class FreeplayTests
         needs.SetSevereExpressed(NeedId.Play, true);
         Assert.False(transition.WantsToStart(inputs, 0, out var r4)); Assert.Contains("expressed", r4);
         Assert.True(transition.WantsToEnd(inputs, 0, out _));
-        var pyramid = new ActivityStrategy { Type = "Pyramid" };
-        Assert.False(pyramid.WantsToStart(new FreeplayInputs { LocatedCubes = 2 }, 0, out _));
-        Assert.True(pyramid.WantsToStart(new FreeplayInputs { LocatedCubes = 3 }, 0, out _));
-        Assert.False(new ActivityStrategy { Type = "Spark" }.WantsToStart(inputs, 0, out _));
+        // reach: unit; substituted unlock, filtered count, weak caches and RNG. M12-049 suppliers remain missing.
+        int candidates=2;
+        var pyramid = new ActivityStrategy { Type = "Pyramid", PyramidUnlocked=()=>true,
+            PyramidCandidates=()=>candidates, PyramidBases=()=>0, PyramidFull=()=>0, Draw=_=>0 };
+        Assert.False(pyramid.WantsToStart(inputs, 1, out _)); // 0x005B4A62..4A94: roll and latch
+        candidates=3;
+        Assert.True(pyramid.WantsToStart(inputs, 1, out _));
+        Assert.True(new ActivityStrategy { Type = "Spark" }.WantsToStart(inputs, 0, out _)); // 0x005B4EBE
     }
 
     // ------------------------------------------------------------------ the shipped tree
@@ -1712,7 +1722,8 @@ public class FreeplayTests
     /// <c>ActivityStrategy::FromJson</c> keeps the <c>IActivityStrategy</c> constructor defaults (row 25) for
     /// keys the config omits: <c>JsonTools::GetValueOptional&lt;float&gt;</c> 0x004FA580 only overwrites when
     /// the member exists, so an absent <c>activityShouldEndDurationSecs</c> is 60 and an absent
-    /// <c>cooldownBaseSecs</c> is -1. The shipped <c>sparksFireTruckAlarm.json</c> carries neither key.
+    /// <c>cooldownBaseSecs</c> is -1. The shipped <c>sparksFireTruckAlarm.json</c> carries neither key;
+    /// its Spark constructor subsequently overwrites the should-end value with 0x7F7FFFFF (0x005B4E98..4EA2).
     /// </summary>
     [Fact]
     public void AnActivityStrategyWithNoStrategyKeysKeepsTheConstructorDefaults()
@@ -1732,7 +1743,7 @@ public class FreeplayTests
         if (obb is null) return;
         var tree = ActivityTreeLoader.Load(obb, new Dictionary<string, IBehavior>());
         var truck = tree.SelectMany(a => a.SubActivities.Prepend(a)).Single(a => a.Id == "SparksFireTruckAlarm");
-        Assert.Equal(60, truck.Strategy.ShouldEndDurationSec);
+        Assert.Equal(0x7F7FFFFF, BitConverter.SingleToInt32Bits((float)truck.Strategy.ShouldEndDurationSec));
         Assert.Equal(-1, truck.Strategy.CooldownBaseSec);
     }
 

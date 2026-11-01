@@ -1075,7 +1075,8 @@ public sealed class NeedsManager
             engine.QueueAppBroadcast(()=>{copied?.Invoke();sent?.Invoke();});
         }
         else {NeedsLevelBitsCopied?.Invoke(words,action);NeedsStateSent?.Invoke(action);}
-
+        // Broadcast invokes app delivery first, then the local tag signal inline (0x006625CE..FA).
+        HostEngine?.AnimationMessages.Deliver(0x62,true,words);
     }
 
     /// <summary>Raised by <see cref="SendNeedsStateToGame"/>; the action is <c>Decay</c> on a decay tick.</summary>
@@ -1902,6 +1903,7 @@ public sealed class NeedsManager
         if ((action is NeedsActionId.RepairHead or NeedsActionId.RepairLift or NeedsActionId.RepairTreads) && State.NumDamagedParts() == 0)
             State.StoreLevel(NeedId.Repair, (float)Config.MaximumNeedLevel); // 0x00696906..0x0069693E
         Log?.Invoke($"needs.action_completed {actionId}: repair {State.GetNeedLevel(NeedId.Repair):F3} energy {State.GetNeedLevel(NeedId.Energy):F3} play {State.GetNeedLevel(NeedId.Play):F3}");
+        SendNeedsStateToGame(action); // 0x00696366, before the reward query.
         if (d.FreeplaySparksRewardWeight > 0)
         {
             // "About to create freeplay sparks reward message but there was a pending one, so sending that

@@ -216,7 +216,7 @@ public sealed class FreeplaySystem : IManagedActivity
         // the activity: keep, end, or pick
         if (Current is not null)
         {
-            bool wantsEnd = Current.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out var endReason);
+            bool wantsEnd = Current.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out var endReason, nowSec);
             bool behaviorFinished = current is null;
             // C1 §1 (0x005AE40C..0x005AE46E): when the current activity already carries the requested spark
             // and BehaviorManager+0x65 (the invalid-spark latch) is set, the engine logs SparkReselected and
@@ -280,7 +280,7 @@ public sealed class FreeplaySystem : IManagedActivity
             // the activity that chose a behaviour it is not already running ends instead, if it wants to end
             bool rewardPending = Inputs.Needs?.SparksRewardPending ?? false;
             if (!rewardPending && (current is null || current.Id != desired.Id)
-                && Current.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out var switchEndReason))
+                && Current.Strategy.WantsToEnd(Inputs, Current.RunningSec(nowSec), out var switchEndReason, nowSec))
             {
                 Log?.Invoke($"ActivityFreeplay.ChooseNextBehavior.NewBehaviorChosenWhileRunning: Picking new activity because '{Current.Id}' wants to end ({switchEndReason}), and behavior finished");
                 // PickNewActivityForSpark only re-picks the activity that is still running when its strategy
