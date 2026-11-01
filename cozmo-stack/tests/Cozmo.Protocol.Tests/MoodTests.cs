@@ -9,6 +9,31 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class MoodTests
 {
+    [Fact]
+    public void SyntheticEventNamesAreCaseSensitiveAndAMissDoesNotChangeMood()
+    {
+        // Synthetic configuration unit test. FindEvent 0x0067A2F4 uses the tree's raw
+        // byte comparison (0x0067A79E/0x0067A7FE); the miss at 0x0067B87E
+        // bypasses the timestamp and affector calls at 0x0067B8D8/0x0067B902.
+        var model = new MoodModel();
+        var penalty = new DecayGraph("penalty", new[] { (0.0, 0.0), (10.0, 1.0) });
+        model.AddEvent(new EmotionEvent("KnownEvent", new[] { new EmotionAffector(EmotionType.Happy, 0.2) }, penalty));
+        var mood = new MoodState(model);
+
+        Assert.True(mood.Trigger("KnownEvent", 10));
+        Assert.Equal((double)0.2f, mood[EmotionType.Happy]);
+        mood.Advance(11);
+        var before = mood.Snapshot();
+        var history = mood.GetHistoryValueTicksAgo(EmotionType.Happy, 1);
+        Assert.False(mood.Trigger("knownevent", 15));
+        Assert.Equal(before, mood.Snapshot());
+        Assert.Equal(history, mood.GetHistoryValueTicksAgo(EmotionType.Happy, 1));
+
+        // Ten seconds after the exact event, the next exact match has full strength.
+        Assert.True(mood.Trigger("KnownEvent", 20));
+        Assert.Equal((double)((float)before[EmotionType.Happy] + 0.2f), mood[EmotionType.Happy]);
+    }
+
     private static string? ObbRoot()
     {
         var d = new DirectoryInfo(AppContext.BaseDirectory);
