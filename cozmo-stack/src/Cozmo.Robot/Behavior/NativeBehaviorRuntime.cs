@@ -481,7 +481,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             return desired;
         }
         public void BehaviorSwitched(IBehavior? desired,bool started,double now){}
-        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner?.Delegate is not null || activity.Id=="SparksWorkout";
+        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner is not null;
         bool IHostReadinessOwner.EvaluateCandidateReadiness=>true;
         void IHostReadinessOwner.RetireUnavailable()=>retireUnavailable();
     }

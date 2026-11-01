@@ -54,7 +54,7 @@ public sealed class SparksRollNativeTests
         using var f=new Fixture();var roll=Roll(f);var activity=Activity(f);var owner=Assert.IsType<NativeSparkedActivity>(activity.SparkedOwner);
         Assert.Equal(155,(int)BehaviorID.SparksRollBlock);Assert.False(roll.RotationImportant);Assert.Equal(new[]{6},roll.OwnSlot2C());
         Assert.Equal(9u,roll.NativeBaseInputs!.RequiredUnlock);Assert.Equal((byte?)8,roll.NativeBaseInputs.CheckedExecutableType);
-        Assert.Equal(0f,owner.Minimum);Assert.Equal(80f,owner.Maximum);Assert.Equal((byte)1,owner.Repetitions);Assert.True(owner.CanExecute);
+        Assert.Equal(0f,owner.Minimum);Assert.Equal(80f,owner.Maximum);Assert.Equal(1,owner.Repetitions);Assert.True(owner.CanExecute);
         Assert.Equal((AnimationTrigger)0x216,owner.Success);Assert.Equal((AnimationTrigger)0x210,owner.Failure);
         Assert.Equal(new[]{"DriveOffCharger","KnockOverCubes",Id,"SparksPutDownBlock","SparksLookInPlace"},activity.Chooser!.BehaviorIds);
         var upright=f.Add(7,150);f.Robot.Progression!.Unlocked.Add(9);

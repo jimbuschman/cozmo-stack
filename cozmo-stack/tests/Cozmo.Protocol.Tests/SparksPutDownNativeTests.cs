@@ -186,18 +186,21 @@ public sealed class SparksPutDownNativeTests
         using var sub = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A, true,
             p => { if (p is RobotCompletedAction done) completions.Add(done); });
         Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        QueuedSelection.Keep(f.Rig.Robot,manager,Id); // source Selection retains this actual configured owner on subsequent ticks.
         var initial = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         uint firstTag = initial.Tag;
         var paths = new HashSet<ushort>();
         var animations = new HashSet<byte>();
         int images = 0;
         bool inspectedLook = false;
+        var transitions=new List<string>();
         var held = LockState(behavior);
         try
         {
             for (int tick = 0; tick < 100 && (behavior.HasCurrentAction || f.M.Docking.Carrying.IsCarryingObject); tick++)
             {
                 f.Motors();
+                transitions.Add($"tick={tick} current={manager.Current?.Id} activity={manager.Activity?.GetType().Name} running={behavior.EngineRunning} owned={behavior.OwnedRunner?.GetType().Name} action={f.Robot.ActionList.GetCurrentAction()?.GetType().Name} carry={f.M.Docking.Carrying.IsCarryingObject}");
                 foreach (var path in f.Rig.SentSince(0).OfType<ExecutePath>())
                     if (paths.Add(path.EventId))
                     {
@@ -233,7 +236,7 @@ public sealed class SparksPutDownNativeTests
                     if (wait?.Subscribed == true) f.Image((uint)++images);
                 }
             }
-            Assert.True(inspectedLook);
+            Assert.True(inspectedLook,string.Join(" | ",transitions.Take(12)));
             Assert.False(behavior.HasCurrentAction);
             Assert.False(f.M.Docking.Carrying.IsCarryingObject);
             Assert.Equal(2, paths.Count);

@@ -28,13 +28,17 @@ public sealed class PickupPyramidNativeExecutionTests
         internal Fixture()
         {
             Rig.ToSynced();Rig.Calibrate();Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,head:Head);
+            var startupTrace=new List<string>();var startupLogs=new System.Collections.Concurrent.ConcurrentQueue<string>();void Log(string text)=>startupLogs.Enqueue(text);Rig.Engine.StackLogLine+=Log;
             for(int i=0;i<35&&Rig.Robot.CameraSettings.Calibration is null;i++)
             {
-                Rig.Tick();var tag=Rig.Engine.NvStorage!.InFlightTag;if(tag is null)continue;
+                Rig.Tick();var tag=Rig.Engine.NvStorage!.InFlightTag;startupTrace.Add($"tick={i} inFlight={tag}");if(tag is null)continue;
                 var writer=new CladWriter();if(tag==CameraCalibration.NvEntryTag)
                 {foreach(float value in new[]{290f,291f,160f,120f,0f})writer.F32(value);writer.U16(240);writer.U16(320);for(int k=0;k<8;k++)writer.F32(0);}
                 Rig.Data(new NVOpResult{Tag=tag.Value,Op=0,Result=tag==CameraCalibration.NvEntryTag?(sbyte)0:(sbyte)1,Data=writer.ToArray()});Rig.Tick();
             }
+            Rig.Engine.StackLogLine-=Log;
+            if(Rig.Robot.CameraSettings.Calibration is null)
+                Assert.True(false,$"NV={string.Join(" | ",startupTrace)}; sent={string.Join(" | ",Rig.SentSince(0).OfType<NVCommand>().Select(c=>$"tag={c.Tag} op={c.Op} len={c.Length}"))}; logs={string.Join(" | ",startupLogs.TakeLast(30))}");
             Assert.NotNull(Rig.Robot.CameraSettings.Calibration);Assert.Same(Rig.Robot.CameraSettings.Calibration,M.Vision.Calibration);
         }
         internal ObservableObject Add(uint id=7,float x=150,float z=22)

@@ -31,7 +31,7 @@ public sealed class SparksCubeLiftWorkoutNativeTests
         Assert.NotSame(ordinary,spark);Assert.Equal(142,(int)BehaviorID.SparksCubeLiftWorkout);
         Assert.Equal(29u,spark.NativeBaseInputs!.RequiredUnlock);Assert.Equal(41,(int)spark.BehaviorObjective);
         Assert.Equal(new[]{"DriveOffCharger","KnockOverCubes","SparksCubeLiftWorkout","SparksLookInPlace"},activity.Chooser!.BehaviorIds);
-        Assert.Equal(0f,owner.Minimum);Assert.Equal(60f,owner.Maximum);Assert.Equal((byte)1,owner.Repetitions);Assert.True(owner.WaitForAction);
+        Assert.Equal(0f,owner.Minimum);Assert.Equal(60f,owner.Maximum);Assert.Equal(1,owner.Repetitions);Assert.True(owner.WaitForAction);
         Assert.True(Assert.IsType<StrictPriorityChooser>(activity.Chooser).StopOnUnavailable);
         Assert.Equal(45,(int)NeedsActionId.Workout_Sparked);
         var delta=f.Rig.Engine.Needs.Actions["Workout_Sparked"];

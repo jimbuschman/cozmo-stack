@@ -1273,6 +1273,25 @@ public sealed class Activity
     internal Action? NativePublicStateSelected;
     internal NeedsManager? NativeNeeds;
     internal IBehavior? CachedInterlude;
+    // IActivity::GetDesiredActiveBehavior wrapper for the checked GatherCubes delegate.
+    internal ChooserDecision NativeGatherDesired(IBehavior? current,double running,BehaviorContext context,double now,Func<bool> currentOwner)
+    {
+        if(GatherOwner is null)return new ChooserDecision(null,"delegate unavailable",Array.Empty<(string,double,string)>()){InputUnavailable=true};
+        if(CachedInterlude is {} cached && ReferenceEquals(cached,current))return new ChooserDecision(cached,"cached interlude",Array.Empty<(string,double,string)>());
+        var previous=CachedInterlude;CachedInterlude=null;
+        var decision=Chooser?.GetDesiredActiveBehavior(current,running,context,now) ?? new ChooserDecision(null,"no chooser",Array.Empty<(string,double,string)>());
+        if(!currentOwner())return decision with {InputUnavailable=true};
+        if(decision.InputUnavailable){CachedInterlude=previous;return decision;}
+        if(InterludeChooser is {} interlude&&!ReferenceEquals(decision.Behavior,current))
+        {
+            var next=interlude.GetDesiredActiveBehavior(decision.Behavior,0,context,now);
+            if(!currentOwner())return next with {InputUnavailable=true};
+            if(next.InputUnavailable){CachedInterlude=previous;return next;}
+            CachedInterlude=next.Behavior;
+            if(CachedInterlude is {} selected)return next with {Behavior=selected};
+        }
+        return decision;
+    }
     internal NativeActivityObjectiveOwner? ObjectiveOwner;
     internal NativeSparkedActivity? SparkedOwner;
     // Common OnDeselected's derived virtual hook, after common cleanup (005B3658).
@@ -1397,6 +1416,8 @@ public sealed class Activity
     internal void RetireHostResources()
     {
         ++_nativeLifecycleEpoch;
+        // Sparked's destructor releases owned references, not selected-state outputs.
+        if(SparkedOwner is not null)return;
         var oldSpark=SparkedOwner?.DetachGather();
         var oldDriving=_nativeDrivingLease;_nativeDrivingLease=null;
         try { oldSpark?.ReleaseAll(); }
@@ -1498,8 +1519,8 @@ public static class ActivityTreeLoader
         {ordinaryInterlude.EnableOrdinaryInterludeBoundary(owner);ordinaryInterlude.StopOnUnavailable=true;}
         var strategy = e.TryGetProperty("activityStrategy", out var st) ? ActivityStrategy.FromJson(st) : new ActivityStrategy();
         // fidelity: M15-059
-        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !((id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes" or "SparksWorkout")&&owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
-            SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");
+        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !(owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
+            SteppedBehavior.ReportMissing("M15-059 "+id+": actual original Robot or retained configured PlayArbitraryAnim 3D is unavailable; Sparked owner not constructed.");
         if(id=="SparksGatherCubes")
             SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt");
         var activity=new Activity
@@ -1547,7 +1568,7 @@ public static class ActivityTreeLoader
                             &&rawId.ValueKind==JsonValueKind.String &&bound.TryGetValue(rawId.GetString()!,out var candidate)
                             &&candidate is NativeLookForFaceAndCubeBehavior look &&rawEntry.TryGetProperty("scoring",out var rawScoring))
                             look.CheckObjectiveInput(rawScoring,"activity "+id+" "+chooserKey);
-            if(activity.Type=="Sparked"&&(id is "SparksKnockOverCubes" or "SparksStackBlock" or "SparksRollBlock" or "SparksPopAWheelie" or "SparksGatherCubes" or "SparksWorkout")&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
+            if(activity.Type=="Sparked"&&bound.TryGetValue("PlayArbitraryAnim",out var arbitrary)&&arbitrary is NativePlayArbitraryAnimBehavior)
             {
                 Activity? nested=null;
                 if(id=="SparksGatherCubes" && e.TryGetProperty("subActivityDelegate",out var nestedConfig))
@@ -1556,9 +1577,16 @@ public static class ActivityTreeLoader
                     if(nested.Chooser is StrictPriorityChooser strict)strict.StopOnUnavailable=true;
                 }
                 // P3: unavailable earlier Spark workout candidates are not sourced false gates.
-                if(id=="SparksWorkout" && activity.Chooser is StrictPriorityChooser workoutChooser)workoutChooser.StopOnUnavailable=true;
-                activity.SparkedOwner=new(activity,owner,e,bound,nested);
-                if(id is "SparksGatherCubes" or "SparksWorkout"){activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;}
+                if(activity.Chooser is StrictPriorityChooser workoutChooser)workoutChooser.StopOnUnavailable=true;
+                Activity? CreateSparkDelegate(JsonElement config)
+                {
+                    if(!config.TryGetProperty("activityType",out var type) || type.ValueKind!=JsonValueKind.String || type.GetString()!="GatherCubes")return null;
+                    var created=Build(config,byId,bound,penalty,random,0,owner);
+                    if(created.Chooser is StrictPriorityChooser strict)strict.StopOnUnavailable=true;
+                    return created.GatherOwner is not null?created:null;
+                }
+                activity.SparkedOwner=new(activity,owner,e,bound,nested,CreateSparkDelegate);
+                activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;
                 if(id=="SparksGatherCubes" && activity.DriveStartAnim is {} start && activity.DriveLoopAnim is {} loop && activity.DriveEndAnim is {} end)
                 {
                     activity.NativeCommonDrivingPush=()=>activity.PushOwnedDriving(owner,new(start,loop,end));
@@ -1566,7 +1594,7 @@ public static class ActivityTreeLoader
                 }
             }
             else if(id=="GatherCubes" && activity.Type=="GatherCubes") { activity.GuardNativeLifecycle=true;activity.GatherOwner=new(owner); }
-            else if(activity.Type is "Socialize" or "Sparked")activity.ObjectiveOwner=new(activity,owner,e,bound);
+            else if(activity.Type=="Socialize")activity.ObjectiveOwner=new(activity,owner,e,bound);
             if(activity.Type=="Socialize") { activity.NativeUpdate20=_=>0;activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot; }
             if(activity.Type=="NeedsExpression" && (id is "NeedsSevereLowEnergy" or "NeedsSevereLowRepair" or "NeedsSevereLowPlayGetIn"))
             {activity.NativeUpdate20=_=>0;activity.GuardNativeLifecycle=true;activity.NativeDrivingFacade=owner.BehaviorManagerOwner!.ContextRobot;if(activity.Chooser is StrictPriorityChooser needsChooser)needsChooser.StopOnUnavailable=true;}

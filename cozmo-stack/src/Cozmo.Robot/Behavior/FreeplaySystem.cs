@@ -165,7 +165,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
     internal Func<bool>? NativeStillCurrent;
     private bool OwnerCurrent()=>!NativeOwner || NativeStillCurrent?.Invoke()==true;
     bool IHostReadinessOwner.ReadinessChecksEnabled=>NativeOwner;
-    bool IHostReadinessOwner.EvaluateCandidateReadiness=>Current?.SparkedOwner?.Delegate is not null || Current?.Id=="SparksWorkout";
+    bool IHostReadinessOwner.EvaluateCandidateReadiness=>Current?.SparkedOwner is not null;
     void IHostReadinessOwner.RetireUnavailable()
     {
         _childUnavailable=true;

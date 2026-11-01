@@ -28,7 +28,7 @@ public sealed class SparksPopAWheelieNativeTests
         using var f=new Fixture();var pop=Pop(f);var activity=Activity(f);var owner=Assert.IsType<NativeSparkedActivity>(activity.SparkedOwner);
         Assert.Equal(152,(int)BehaviorID.SparksPopAWheelie);Assert.Equal(13u,pop.NativeBaseInputs!.RequiredUnlock);
         Assert.Equal((byte?)12,pop.NativeBaseInputs.CheckedExecutableType);Assert.Equal(41,(int)pop.BehaviorObjective);
-        Assert.Equal(0f,owner.Minimum);Assert.Equal(60f,owner.Maximum);Assert.Equal((byte)1,owner.Repetitions);Assert.True(owner.CanExecute);
+        Assert.Equal(0f,owner.Minimum);Assert.Equal(60f,owner.Maximum);Assert.Equal(1,owner.Repetitions);Assert.True(owner.CanExecute);
         Assert.Equal((AnimationTrigger)0x216,owner.Success);Assert.Equal((AnimationTrigger)0x210,owner.Failure);
         Assert.Equal(new[]{"DriveOffCharger","KnockOverCubes","SparksPutDownBlock",Id,"SparksLookInPlace"},activity.Chooser!.BehaviorIds);
         f.Add();Assert.False(pop.IsRunnable(f.Runtime.Context));f.Robot.Progression!.Unlocked.Add(13);Assert.True(pop.IsRunnable(f.Runtime.Context));
