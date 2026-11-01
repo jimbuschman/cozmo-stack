@@ -978,7 +978,16 @@ public sealed class CozmoSensors
                 // fidelity: M2-013, M10-011
                 // C2 (0x5350AA..0x5350C2; 0x535186..0x53519C): intensity > 1000 registers NeedsAction 17, then the DAS
                 // "robot.falling_event", then the game FallingStopped{duration, intensity}.
-                if (f.ImpactIntensity > FallNeedsActionIntensity) NeedsActionCompleted?.Invoke(FallNeedsActionId);
+                var fallOwner=_robot.Engine.Robot;var fallNeeds=_robot.Engine.Needs;
+                bool FallOwnerCurrent()=>fallOwner is not null && ReferenceEquals(_robot.Engine.Robot,fallOwner) && ReferenceEquals(_robot.Engine.Needs,fallNeeds);
+                if(!FallOwnerCurrent()){Behavior.SteppedBehavior.ReportMissing("M10-011 FallingStopped original Robot/Needs context unavailable");break;}
+                if (f.ImpactIntensity > FallNeedsActionIntensity)
+                {
+                    fallNeeds.RegisterNeedsActionCompleted("Fall"); // 005350BC..C2, original context+34.
+                    if(!FallOwnerCurrent())break;
+                    NeedsActionCompleted?.Invoke(FallNeedsActionId);
+                    if(!FallOwnerCurrent())break;
+                }
                 // sEvent 0x00535144: roundf then vcvt.s32.f32; unsigned duration to_string in $data.
                 float rounded = MathF.Round(f.ImpactIntensity, MidpointRounding.AwayFromZero);
                 int intensity = float.IsNaN(rounded) ? 0 : rounded >= int.MaxValue ? int.MaxValue
@@ -986,6 +995,7 @@ public sealed class CozmoSensors
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.falling_event",
                     intensity.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     new Dictionary<string, string> { ["$data"] = f.DurationMs.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+                if(!FallOwnerCurrent())break;
                 var fallReport=new FallingStoppedReport(f.DurationMs,f.ImpactIntensity){Timestamp=f.Timestamp};
                 _robot.Engine.QueueAppBroadcast(FallingStopped,fallReport);FallingStoppedInternal?.Invoke(fallReport);
                 break;

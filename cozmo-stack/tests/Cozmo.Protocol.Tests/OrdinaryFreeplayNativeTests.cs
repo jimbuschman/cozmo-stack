@@ -218,7 +218,7 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
-    public void EarnedFalseProofIsWithdrawnByAnyActionOrHostWrite()
+    public void EarnedFalseProofSurvivesRejectedActionButNotHostWrite()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);var needs=f.Rig.Engine.Needs;
         var chooser=new StrictPriorityChooser(new[]{"EarnedSparks"},f.Runtime.Bound,true,f.Robot);chooser.EnableOrdinaryInterludeBoundary(f.Robot);
@@ -227,7 +227,7 @@ public sealed class OrdinaryFreeplayNativeTests
         try
         {
             Assert.True(needs.NativePendingKnownFalse);Assert.False(Query().InputUnavailable);Assert.Equal(0,words);
-            needs.RegisterNeedsActionCompleted("not-a-native-action");Assert.True(Query().InputUnavailable);
+            needs.RegisterNeedsActionCompleted("not-a-native-action");Assert.False(Query().InputUnavailable);
             needs.SparksRewardPending=false;Assert.True(Query().InputUnavailable);
         }
         finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}

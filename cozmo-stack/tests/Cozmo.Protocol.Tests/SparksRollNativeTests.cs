@@ -33,17 +33,17 @@ public sealed class SparksRollNativeTests
         f.Rig.Robot.ActivateHighLevelActivity("Freeplay");f.Rig.Tick();
         observer.ActivateSpark(9);f.Rig.Tick();
         Assert.Same(parent,manager.Activity);Assert.Same(spark,parent.Current);
-        bool sawCompletion=false,sawUnknownAfterObjective=false;int rewardReports=0;
+        bool sawCompletion=false,sawKnownFalseAfterObjective=false;int rewardReports=0;
         using var reward=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x65,true,_=>rewardReports++);
         for(int i=0;i<250;i++)
         {
-            if(owner.Count>0 && !f.Rig.Engine.Needs.TryGetNativePending(out _))sawUnknownAfterObjective=true;
+            if(owner.Count>0 && f.Rig.Engine.Needs.TryGetNativePending(out bool pending) && !pending)sawKnownFalseAfterObjective=true;
             if(owner.Count>0 && owner.State is 4 or 5)sawCompletion=true;
             if(sawCompletion && !ReferenceEquals(parent.Current,spark))break;
             scene.Step();
         }
         Assert.True(sawCompletion,string.Join(" | ",scene.Trace.TakeLast(25)));
-        Assert.True(sawUnknownAfterObjective);Assert.False(f.Rig.Engine.Needs.TryGetNativePending(out _));Assert.Equal(0,rewardReports);
+        Assert.True(sawKnownFalseAfterObjective);Assert.True(f.Rig.Engine.Needs.TryGetNativePending(out bool finalPending));Assert.False(finalPending);Assert.Equal(0,rewardReports);
         Assert.Equal(1,scene.Rolls);
         Assert.Same(parent,manager.Activity);
         Assert.NotSame(spark,parent.Current);

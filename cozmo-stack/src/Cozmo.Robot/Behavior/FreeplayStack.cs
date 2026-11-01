@@ -287,8 +287,13 @@ public sealed class FreeplayStack : IDisposable
         {
             if (ordinal == CozmoSensors.FallNeedsActionId) needs.RegisterNeedsActionCompleted("Fall");
         }
-        robot.Sensors.NeedsActionCompleted += onNeedsAction;
-        stack._unsubscribe.Add(() => robot.Sensors.NeedsActionCompleted -= onNeedsAction);
+        // The canonical handler already registered Fall with the engine-owned Needs recipient.
+        // Only a distinct standalone Needs owner needs this compatibility bridge.
+        if(!ReferenceEquals(needs,robot.Engine.Needs))
+        {
+            robot.Sensors.NeedsActionCompleted += onNeedsAction;
+            stack._unsubscribe.Add(() => robot.Sensors.NeedsActionCompleted -= onNeedsAction);
+        }
 
         // fidelity: M15-016
         // T4: Needs disconnect precedes Perf/DAS and the Robot destructor, including
