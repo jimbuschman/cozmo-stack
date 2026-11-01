@@ -299,7 +299,9 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     private void ConstructActions()
     {
         foreach (var trigger in _triggers)
-            if (string.IsNullOrEmpty(Context.Triggers.GroupFor(trigger)))
+            if (!Context.Triggers.IsAvailable)
+                ReportMissing("M8-021 native trigger-map input unavailable while constructing PlayAnim action");
+            else if (string.IsNullOrEmpty(Context.Triggers.GroupFor(trigger)))
                 Log($"TriggerAnimationAction.SetAnimGroupFromTrigger: the animation group for {trigger} is empty");
     }
 

@@ -206,7 +206,8 @@ public sealed partial class CozmoRobot : IDisposable
     internal Behavior.BehaviorManager? BehaviorManager => Engine.Robot?.BehaviorManagerOwner;
     private void BindNativeBehaviorManager(EngineRobot native)
     {
-        var context=new Behavior.BehaviorContext{Robot=this,Triggers=Animations.DrivingTriggerMap??new Behavior.AnimationTriggerMap(),
+        var animations=Animations;
+        var context=new Behavior.BehaviorContext{Robot=this,Triggers=animations.DrivingTriggerMap??new Behavior.AnimationTriggerMap(),NativeTriggersProvider=()=>animations.DrivingTriggerMap,
             ClockSec=()=>Engine.Timer.Seconds,Needs=Engine.Needs};
         var manager=new Behavior.BehaviorManager(context);
         // fidelity: M8-012, M10-004, M10-008: bind the actual robot and movement owners.
