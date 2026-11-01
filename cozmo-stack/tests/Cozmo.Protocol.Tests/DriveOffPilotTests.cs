@@ -20,6 +20,73 @@ public sealed class DriveOffPilotTests
     }
 
     [Fact]
+    public void CanonicalConfiguredNeedsActionsUseTheActualBehaviorMap()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());rig.ToSynced();rig.State();
+        var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;var ids=Assert.IsAssignableFrom<IReadOnlyDictionary<string,string>>(runtime.Context.NeedsActionIds);
+        var expected=new (string Behavior,string Action,int Raw)[] {
+            ("CubeLiftWorkout","Workout",44),("FPPeekABoo","PeekAboo",29),("KnockOverCubes","KnockDownCubes",27),
+            ("PopAWheelie","PopAWheelie",33),("PounceOnMotion_Socialize","Pounce",35),("RollBlockOnSide","RollACube",39),
+            ("RollBlockOnSideLowScore","RollACube",39),("StackBlocks","StackCube",42),("Hiking_PounceOnMotion","Pounce",35),
+            ("Hiking_RollCube","RollACube",39),("SparksCubeLiftWorkout","Workout_Sparked",45),("SparksFireTruckAlarm","FireTruckAlarm",84),
+            ("SparksFistBump","FistBump_Sparked",19),("SparksKnockOverCubes","KnockDownCubes_Sparked",28),("SparksPeekABoo","PeekAboo_Sparked",30),
+            ("SparksPickUpCube","PickupCube_Sparked",32),("SparksPopAWheelie","PopAWheelie_Sparked",34),("SparksPounceOnMotion","Pounce_Sparked",36),
+            ("SparksRollBlock","RollACube_Sparked",40),("SparksStackBlock","StackCube_Sparked",43),("SparksTrackLaser","Laser_Sparked",49),
+            ("FistBump","FistBump",18)};
+        Assert.Equal(expected.Length,ids.Count);
+        foreach(var row in expected){Assert.Equal(row.Action,ids[row.Behavior]);Assert.Equal(row.Raw,(int)Enum.Parse<NeedsActionId>(row.Action));}
+        // Explicit helper boundary: actual configured owner/context and engine Needs recipient.
+        var reports=new List<string>();rig.Engine.Needs.Log+=reports.Add;
+        var behavior=runtime.Bound["SparksRollBlock"];
+        Assert.Equal("PickupCube",BehaviorNeedsActions.Complete(behavior,runtime.Context,"PickupCube"));
+        Assert.Equal("RollACube_Sparked",BehaviorNeedsActions.Complete(behavior,runtime.Context));
+        Assert.Contains(reports,line=>line.StartsWith("needs.action_completed PickupCube:"));
+        Assert.Contains(reports,line=>line.StartsWith("needs.action_completed RollACube_Sparked:"));
+        Assert.Null(BehaviorNeedsActions.Complete(runtime.Bound["DriveOffCharger"],runtime.Context));
+    }
+
+    [Fact]
+    public void CanonicalSelectionChooserUsesTheActualAnalyzer()
+    {
+        using var rig=new M4ControlTests.Rig(ShippedResources());rig.ToSynced();rig.State();
+        var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
+        var selection=Assert.IsType<SelectionChooser>(runtime.Tree.Single(a=>a.Id=="Selection").Chooser);
+        var edge=Assert.IsType<VisitInterestingEdgeBehavior>(runtime.Bound["Hiking_VisitInterestingEdge"]);
+        Assert.Equal(1,edge.RequiredProcessId);Assert.False(runtime.AI.Analyzer.IsProcessRunning(1));
+        selection.HandleExecuteBehavior(new ExecuteBehaviorByIDMessage((byte)BehaviorID.Hiking_VisitInterestingEdge,-1));
+        Assert.True(runtime.AI.Analyzer.IsProcessRunning(1));
+        selection.HandleExecuteBehavior(new ExecuteBehaviorByIDMessage((byte)BehaviorID.Wait,-1));
+        Assert.False(runtime.AI.Analyzer.IsProcessRunning(1));
+    }
+
+    [Fact]
+    public void CanonicalNeedsProjectionUsesTheContainerFirstConfigWinner()
+    {
+        string temporary=Directory.CreateTempSubdirectory("needs-config-winner-").FullName;
+        try
+        {
+            string source=Path.Combine(ShippedResources(),"config","engine","behaviorSystem");
+            string destination=Path.Combine(temporary,"config","engine","behaviorSystem");
+            foreach(string path in Directory.EnumerateFiles(source,"*.json",SearchOption.AllDirectories))
+            {
+                string target=Path.Combine(destination,Path.GetRelativePath(source,path));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);File.Copy(path,target);
+            }
+            string original=Path.Combine(destination,"behaviors","freeplay","sparkable","sparksRollBlock.json");
+            var json=System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(original),
+                documentOptions:new System.Text.Json.JsonDocumentOptions{CommentHandling=System.Text.Json.JsonCommentHandling.Skip,AllowTrailingCommas=true})!;
+            json["needsActionID"]="PickupCube";
+            File.WriteAllText(Path.Combine(destination,"behaviors","000-first.json"),json.ToJsonString());
+            using var rig=new M4ControlTests.Rig(temporary);rig.ToSynced();rig.State();
+            var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
+            Assert.IsType<NativeRollBlockBehavior>(runtime.Bound["SparksRollBlock"]);
+            Assert.Equal("PickupCube",runtime.Context.NeedsActionIds!["SparksRollBlock"]);
+            Assert.Equal("PickupCube",rig.Engine.HostBehaviorMap![BehaviorID.SparksRollBlock].GetProperty("needsActionID").GetString());
+        }
+        finally{Directory.Delete(temporary,true);}
+    }
+
+    [Fact]
     public void CanonicalFreeplayPicksShippedPutDownAndStartsDriveOff()
     {
         // Queued host string semantic adapter -> 005A106C -> 005AE29C configured parent.

@@ -112,6 +112,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),Log=facade.Engine.EmitStackLog};
         var container=new BehaviorContainer(new BehaviorFactory(),factory,
             facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>());
+        // fidelity: M15-008 -- 005BBAE8/005BBC9C uses the container's retained config winner.
+        Context.NeedsActionIds=BehaviorNeedsActions.FromConfiguredMap(
+            facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>());
         var bound=new Dictionary<string,IBehavior>(StringComparer.Ordinal);
         foreach(var behavior in container.Behaviors.Values)
         {
@@ -125,7 +128,19 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             &&File.Exists(Path.Combine(resources,"config","engine","behaviorSystem","activities_config.json")))
         {
             Tree=ActivityTreeLoader.LoadResources(resources,Bound,manager.Penalty,robot);
-            foreach(var activity in AllActivities(Tree))activity.Analyzer=AI.Analyzer;
+            foreach(var activity in AllActivities(Tree))
+            {
+                activity.Analyzer=AI.Analyzer;
+                foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
+                    if(chooser is SelectionChooser selectionChooser)
+                        selectionChooser.SetAnalyzerEnabled=(behavior,key,enabled)=>
+                        {
+                            if(behavior is not SteppedBehavior stepped)
+                            {SteppedBehavior.ReportMissing("M8-013 Selection SetProcessEnabled 0x0060AE84: non-stepped native process field is unbuilt");return;}
+                            if(enabled)AI.Analyzer.AddEnableRequest(stepped.RequiredProcessId,key);
+                            else AI.Analyzer.RemoveEnableRequest(stepped.RequiredProcessId,key);
+                        };
+            }
             robot.NativeActivityRecipientsConstructed=true;
             if(Tree.Any(a=>a.Id=="Freeplay"))
             {

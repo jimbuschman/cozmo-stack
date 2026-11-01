@@ -94,6 +94,7 @@ public sealed class SparksRollNativeTests
         // S/R/A actual factory+owner+child+helper/Drive/IDock and retained visual verification.
         // Scene physics, firmware acknowledgements, host admission and explicit deselection are independent inputs.
         using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;var roll=Roll(f);var owner=Activity(f).SparkedOwner!;var manager=f.Robot.BehaviorManagerOwner!;
+        Assert.Equal("RollACube_Sparked",f.Runtime.Context.NeedsActionIds![roll.Id]);
         var order=new List<string>();var local=new List<RobotCompletedAction>();var app=new List<ActionCompletionReport>();var raw=new List<byte[]>();var sparks=new List<(ushort Tag,byte[] Body)>();var triggers=new List<AnimationTrigger[]>();
         IActionRunner? needsRunner=null;int needsState=-1;float needsScore=0;
         using var objective=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint value&&value==2){Assert.Empty(order);order.Add("objective2");}});

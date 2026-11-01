@@ -41,6 +41,16 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public static class BehaviorNeedsActions
 {
+    // IBehavior ctor 005BBC9C..CAA reads the same winning config as its container.
+    internal static IReadOnlyDictionary<string,string> FromConfiguredMap(IReadOnlyDictionary<BehaviorID,JsonElement> configs)
+    {
+        var result=new Dictionary<string,string>(StringComparer.Ordinal);
+        foreach(var (id,config) in configs)
+            if(config.ValueKind==JsonValueKind.Object && config.TryGetProperty("needsActionID",out var action)
+                && action.ValueKind==JsonValueKind.String && action.GetString() is { Length:>0 } name)
+                result[id.ToString()]=name;
+        return result;
+    }
     /// <summary>
     /// Every shipped behaviour config's <c>needsActionID</c>, by <c>behaviorID</c>. Twenty-two of them carry
     /// one; the rest report nothing of their own.
