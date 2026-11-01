@@ -375,6 +375,8 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
         activity.CachedInterlude = null;
         var decision = activity.Chooser?.GetDesiredActiveBehavior(current, _manager.RunningDurationSec(nowSec), _ctx, nowSec)
             ?? new ChooserDecision(null, "no chooser", Array.Empty<(string, double, string)>());
+        if(NativeOwner && decision.InputUnavailable)
+        {_childUnavailable=true;ReportActivityMissing("MISSING: M8-013 scored chooser input unavailable; retaining current behavior");return decision with {Behavior=current};}
         if (activity.InterludeChooser is not null && !ReferenceEquals(decision.Behavior, current))
         {
             activity.CachedInterlude = activity.InterludeChooser.GetDesiredActiveBehavior(decision.Behavior, 0, _ctx, nowSec).Behavior;

@@ -193,6 +193,12 @@ public sealed partial class CozmoRobot : IDisposable
     /// <summary>Supplies the app's wake notification (G2E166), also sent once when each connection is ready.</summary>
     // fidelity: M15-073
     public void NotifyCozmoWakeup()=>Engine.PostGameMessage(()=>Engine.AnimationMessages.Deliver(166,false,null));
+    /// <summary>Queue a configured behavior request to the native Selection chooser.</summary>
+    public void ExecuteBehaviorById(byte id,int numRuns=-1)
+    { var owner=Engine.Robot;var body=new Cozmo.Protocol.ExecuteBehaviorByIDMessage(id,numRuns).PackBody();Engine.PostGameMessage(()=>{if(owner is not null&&ReferenceEquals(Engine.Robot,owner))Engine.AnimationMessages.Deliver(0x94,false,body);}); }
+    /// <summary>Queue an executable-type request to the native Selection chooser.</summary>
+    public void ExecuteBehaviorByExecutableType(byte type,int numRuns=-1)
+    { var owner=Engine.Robot;var body=new Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage(type,numRuns).PackBody();Engine.PostGameMessage(()=>{if(owner is not null&&ReferenceEquals(Engine.Robot,owner))Engine.AnimationMessages.Deliver(0x93,false,body);}); }
     /// <summary>Sets the default head and lift posture through the engine's game input.</summary>
     public void SetDefaultHeadAndLiftState(bool enable, float headRadians, float liftHeightMm)
         => Engine.PostGameMessage(()=>Engine.AnimationMessages.Deliver(0xA2, false, new DefaultHeadAndLiftState(enable, headRadians, liftHeightMm)));
@@ -210,7 +216,9 @@ public sealed partial class CozmoRobot : IDisposable
             manager.ReactionTriggerTransitionSender=(oldTrigger,newTrigger)=>Engine.BroadcastReactionTransition(oldTrigger,newTrigger);
         manager.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
         native.BehaviorManagerOwner=manager;
-        native.NativeBehaviorRuntime=new(this,native,manager,context,_vision);
+        native.NativeBehaviorRuntimeConstructing=true;
+        try { native.NativeBehaviorRuntime=new(this,native,manager,context,_vision); }
+        finally { native.NativeBehaviorRuntimeConstructing=false; }
         manager.InitializeRobotReactions(Engine.Options.ResourcesPath,_vision,native.NativeBehaviorRuntime.Manipulation,native.NativeBehaviorRuntime.Bound,native);
         if(native.HasExternalInterface) { manager.AttachSparkInput(); manager.AttachDefaultPostureInput(); }
         manager.BindReactionDependencies(native.NativeBehaviorRuntime.Manipulation,native.NativeBehaviorRuntime.Bound);

@@ -156,6 +156,23 @@ public abstract partial class SteppedBehavior : IBehavior
     /// </summary>
     // fidelity: M8-004
     public double Score { get; set; }
+    internal ScoredBehaviorEntry? NativeScoring {get;private set;}
+    internal bool NativeScoringAvailable {get;private set;}=true;
+    internal void ReadNativeScoring(System.Text.Json.JsonElement source)
+    {
+        bool obj=source.ValueKind==System.Text.Json.JsonValueKind.Object;
+        var old=NativeScoring;
+        var parsed=obj ? ScoredBehaviorEntry.FromScoringJson(Id,source) : new ScoredBehaviorEntry(Id,0,null,null,null,Array.Empty<EmotionScorer>());
+        double flat=obj && source.TryGetProperty("flatScore",out var score) && score.ValueKind!=System.Text.Json.JsonValueKind.Null ? (float)parsed.FlatScore : old?.FlatScore??0f;
+        NativeScoring=parsed with { FlatScore=flat };
+        Score=flat;
+        if(obj && source.TryGetProperty("considerThisHasRunForBehaviorObjective",out var objective) && objective.ValueKind==System.Text.Json.JsonValueKind.String)
+        {
+            var mapped=BehaviorObjectives.FromString(objective.GetString());
+            if(mapped==BehaviorObjective.Invalid){NativeScoringAvailable=false;ReportMissing("M8-003 explicit scored objective mapping unavailable: "+objective.GetString());}
+            else {NativeScoringAvailable=true;BehaviorObjective=mapped;}
+        }
+    }
 
     /// <summary>
     /// The clock used for timings that outlive one run (a behaviour that remembers when it last ran).
@@ -213,6 +230,12 @@ public abstract partial class SteppedBehavior : IBehavior
         var prior=Readiness.Value;var frame=new ReadinessFrame();Readiness.Value=frame;
         try { bool runnable=IsRunnable(context);return (!frame.Unavailable,runnable); }
         finally { Readiness.Value=prior; }
+    }
+    internal static (bool Available,T Value) EvaluateHostOperation<T>(Func<T> action)
+    {
+        var prior=Readiness.Value;var frame=new ReadinessFrame();Readiness.Value=frame;
+        try {var value=action();return (!frame.Unavailable,value);}
+        finally {Readiness.Value=prior;}
     }
 
     public virtual bool IsRunnable(BehaviorContext context)

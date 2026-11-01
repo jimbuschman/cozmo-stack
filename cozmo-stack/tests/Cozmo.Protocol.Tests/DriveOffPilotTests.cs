@@ -252,10 +252,11 @@ public sealed class DriveOffPilotTests
             {
                 Assert.Contains(missing,message=>message.Contains("changed-config objective input")&&message.Contains(changeRoot?"behavior root":"activity PutDownDispatch"));
                 Assert.Contains(missing,message=>message.Contains("objective callback unavailable")&&message.Contains(changeRoot?"behavior root":"activity PutDownDispatch"));
-                Assert.Null(owner.BehaviorManagerOwner!.Activity);
+                var priorSelection=owner.BehaviorManagerOwner!.Activity;var priorBehavior=owner.BehaviorManagerOwner.Current;
+                Assert.NotNull(priorSelection);
                 byte priorActivity=owner.BehaviorPublicState.State.Activity;
                 rig.Robot.ActivateHighLevelActivity("PutDownDispatch");rig.Tick(10);
-                Assert.Null(owner.BehaviorManagerOwner.Activity);Assert.Null(owner.BehaviorManagerOwner.Current);
+                Assert.Same(priorSelection,owner.BehaviorManagerOwner.Activity);Assert.Same(priorBehavior,owner.BehaviorManagerOwner.Current);
                 Assert.Null(owner.ActionList.GetCurrentAction());Assert.False(look.EngineRunning);
                 Assert.Equal(priorActivity,owner.BehaviorPublicState.State.Activity); // guard ran before Stop/selection/publication.
             }
@@ -329,7 +330,7 @@ public sealed class DriveOffPilotTests
         rig.ToSynced();rig.Calibrate();
         var native=rig.Engine.Robot!;
         var runtime=Assert.IsType<NativeBehaviorRuntime>(native.NativeBehaviorRuntime);
-        Assert.Null(native.BehaviorManagerOwner!.Activity); // construction invents no app selection.
+        Assert.NotNull(native.BehaviorManagerOwner!.Activity); // native boot Selection.
         var behavior=Assert.IsType<DriveOffChargerBehavior>(runtime.Bound["DriveOffCharger"]);
         Assert.Same(behavior,native.BehaviorManagerOwner.Find("DriveOffCharger"));
         Assert.Equal(156f,behavior.DriveDistanceMm); // shipped60 + native96, not host ctor fallback.
@@ -394,7 +395,7 @@ public sealed class DriveOffPilotTests
         rig.ToSynced();rig.Calibrate();
         var native=rig.Engine.Robot!;
         var runtime=Assert.IsType<NativeBehaviorRuntime>(native.NativeBehaviorRuntime);
-        Assert.Null(native.BehaviorManagerOwner!.Activity); // construction invents no app selection.
+        Assert.NotNull(native.BehaviorManagerOwner!.Activity); // native boot Selection.
         var behavior=Assert.IsType<DriveOffChargerBehavior>(runtime.Bound["Hiking_DriveOffCharger"]);
         Assert.Same(behavior,native.BehaviorManagerOwner.Find("Hiking_DriveOffCharger"));
         Assert.Equal(141f,behavior.DriveDistanceMm); // shipped45 + native96.
@@ -406,7 +407,7 @@ public sealed class DriveOffPilotTests
         behavior.Step+=line=>{if(line=="emotion event DriveOffCharger")order.Add("mood");};
         try
         {
-            Assert.True(native.BehaviorManagerOwner.StartAsync("Hiking_DriveOffCharger",rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());rig.Tick(10);
+            rig.Robot.ExecuteBehaviorById((byte)BehaviorID.Hiking_DriveOffCharger);rig.Tick(10);
             Assert.Same(behavior,native.BehaviorManagerOwner.Current);
             Assert.Equal(1,behavior.DrivingAnimationsFlag);
             Assert.True(native.BehaviorManagerOwner.HasDisableLock((ReactionTrigger)0,"Hiking_DriveOffCharger_behaviorLock"));

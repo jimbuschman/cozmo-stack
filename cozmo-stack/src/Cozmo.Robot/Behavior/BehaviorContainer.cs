@@ -301,6 +301,7 @@ public sealed class BehaviorFactory
         // strategy ReactionTriggerStrategyHiccup, which is not this class.
         [BehaviorClass.PlayAnim] = (ctx, json) => PlayAnimBehavior.FromConfig(json, ctx.Log),
         [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
+        [BehaviorClass.Wait] = (ctx,json)=>new NativeWaitBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
         [BehaviorClass.CantHandleTallStack] = (ctx,json)=>new NativeCantHandleTallStackBehavior(ctx,json),
@@ -428,10 +429,11 @@ public sealed class BehaviorFactory
         var completionOwner=cls==BehaviorClass.Bouncer?ctx.BouncerOwner:cls==BehaviorClass.BringCubeToBeacon?ctx.BringBeaconOwner:ctx.NativeRobot;
         if(behavior is SteppedBehavior stepped && completionOwner is {} native && ctx.Manipulation is {} source)
             {
+            stepped.ReadNativeScoring(config);
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
+            if(stepped is NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

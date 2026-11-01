@@ -202,7 +202,7 @@ public sealed class LookForFaceAndCubeNativeTests
     public void RetainedFreeplayCalculationUsesCurrentLocatedFamilyAndDoesNotSelect()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();var look=Look(f);var parent=f.Runtime.FreeplayObserver;
-        Assert.Null(f.Robot.BehaviorManagerOwner!.Activity);
+        var initialActivity=f.Robot.BehaviorManagerOwner!.Activity;var initialBehavior=f.Robot.BehaviorManagerOwner.Current;
         Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal("Hiking",parent.DesiredActivityCacheForTest);
         f.Add(7);Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal("PlayAlone",parent.DesiredActivityCacheForTest);
         // Supplied named face observation goes through the actual FaceWorld last-pose cache.
@@ -210,7 +210,7 @@ public sealed class LookForFaceAndCubeNativeTests
         {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,100),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId))};
         Assert.NotNull(f.M.Vision.Faces.AddOrUpdateFace(face,f.Robot.GetCheckedMainPose(),false));
         Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal("Socialize",parent.DesiredActivityCacheForTest);
-        Assert.Null(f.Robot.BehaviorManagerOwner.Activity);
+        Assert.Same(initialActivity,f.Robot.BehaviorManagerOwner.Activity);Assert.Same(initialBehavior,f.Robot.BehaviorManagerOwner.Current);
         var world=f.M.World;var prior=f.Rig.Robot.LocalizationWorld.NativeConfigurations;
         try { f.Rig.Robot.LocalizationWorld.NativeConfigurations=null; /* configuration cache is not the queried owner */
             Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal("Socialize",parent.DesiredActivityCacheForTest); }
@@ -222,6 +222,7 @@ public sealed class LookForFaceAndCubeNativeTests
     public void ActualRetainedCacheUsesFourShippedDesiredNames(bool face,bool cube,string expected)
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();var look=Look(f);
+        var initialActivity=f.Robot.BehaviorManagerOwner!.Activity;var initialBehavior=f.Robot.BehaviorManagerOwner.Current;
         if(face)
         {
             var tracked=new TrackedFace(new DetectedFace(31,new FaceRect(0,0,10,10),Name:"Ada"),123)
@@ -231,7 +232,7 @@ public sealed class LookForFaceAndCubeNativeTests
         if(cube){var item=f.Add(7);item.PoseState=PoseState.Dirty;}
         Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal(expected,f.Runtime.FreeplayObserver.DesiredActivityCacheForTest);
         if(cube){f.Add(8,300);Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal(expected,f.Runtime.FreeplayObserver.DesiredActivityCacheForTest);}
-        Assert.Null(f.Robot.BehaviorManagerOwner!.Activity);
+        Assert.Same(initialActivity,f.Robot.BehaviorManagerOwner!.Activity);Assert.Same(initialBehavior,f.Robot.BehaviorManagerOwner.Current);
     }
     [Fact]
     public void NonCubeAndPriorOriginDoNotCountAsCurrentCube()

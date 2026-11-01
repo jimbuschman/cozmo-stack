@@ -33,6 +33,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal Func<IReadOnlyList<NativePyramidBase>>? PyramidBaseStrongInput {get;set;}
     internal Func<IReadOnlyList<NativePyramidConfiguration>>? PyramidFullStrongInput {get;set;}
     internal IReadOnlyDictionary<string,IBehavior> Bound {get;}
+    private readonly SortedDictionary<BehaviorID,byte> _executableMetadata=new();
     internal IReadOnlyList<Activity> Tree {get;}
     internal FreeplayDataTracker Tracker {get;}
     // SetupTurnAndVerify551FE6..5520BA: actual owner/located target, finite child only.
@@ -112,7 +113,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _chargerPause=paused=>Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger,paused);
         facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads=_offTreadsPause;
         facade.Sensors.OnChargerPlatformChangedInternal+=_chargerPause;
-        Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
         Configurations=new(facade.LocalizationWorld,robot);
         facade.LocalizationWorld.NativeConfigurations=Configurations;
         if(vision is not null)
@@ -144,6 +144,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(manager.Find(behavior.Id) is null)manager.Add(behavior);
         }
         Bound=bound;
+        foreach(var entry in facade.Engine.HostBehaviorMap??new Dictionary<BehaviorID,System.Text.Json.JsonElement>())
+            _executableMetadata[entry.Key]=bound.TryGetValue(entry.Key.ToString(),out var b) && b is SteppedBehavior {NativeBaseInputs.CheckedExecutableType: {} value}
+                ? value : ExecutableBehaviorNames.FromConfig(entry.Value);
         manager.BindConfiguredBehaviors(Bound);
         // Manager's container is constructed before the BSM container (0050FCAC/BE).
         if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is NativeCantHandleTallStackBehavior && robot.TallStackContainers.Length == 2)
@@ -169,6 +172,18 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 activity.Analyzer=AI.Analyzer;
                 foreach(var chooser in new[]{activity.Chooser,activity.InterludeChooser})
                     if(chooser is SelectionChooser selectionChooser)
+                    {
+                        selectionChooser.SourceLog=(level,channel,key,text)=>facade.Engine.EmitSourceLog(level,channel,key,text);
+                        selectionChooser.FindBehaviorByExecutableType=type=>
+                        {
+                            foreach(var entry in _executableMetadata)
+                            {
+                                if(entry.Value!=type)continue;
+                                if(Bound.TryGetValue(entry.Key.ToString(),out var found))return found;
+                                throw new NativeChooserUnavailable("configured executable owner "+entry.Key+" is unbuilt");
+                            }
+                            return null;
+                        };
                         selectionChooser.SetAnalyzerEnabled=(behavior,key,enabled)=>
                         {
                             if(behavior is not SteppedBehavior stepped)
@@ -176,6 +191,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                             if(enabled)AI.Analyzer.AddEnableRequest(stepped.RequiredProcessId,key);
                             else AI.Analyzer.RemoveEnableRequest(stepped.RequiredProcessId,key);
                         };
+                    }
             }
             robot.NativeActivityRecipientsConstructed=true;
             if(Tree.Any(a=>a.Id=="Freeplay"))
@@ -189,9 +205,13 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             if(_selected is {} selection)
             {
                 _highLevel=2;
+                selection.GuardNativeLifecycle=true;
                 selection.OnSelected(facade.Engine.Timer.SecondsF,facade.Engine.EmitStackLog);
                 HighLevelEntryTime=facade.Engine.Timer.SecondsF;
-                SteppedBehavior.ReportMissing("M15-031 boot Selection chooser/process execution remains unbuilt");
+                Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
+                _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
+                // SetCurrentActivity(Selection,true) takes the normal None-trigger chooser tail before Robot publication.
+                _manager.ChooseAfterHighLevelChange(HighLevelEntryTime);
             }
         }
         else
@@ -210,6 +230,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     internal void AdmitActivity(string activityId)
     {
         if(activityId=="Freeplay") { AdmitFreeplay(); return; }
+        if(activityId=="Selection") { AdmitSelection(); return; }
         var selected=AllActivities(Tree).FirstOrDefault(a=>a.Id==activityId)
             ??throw new ArgumentException("No configured activity named "+activityId,nameof(activityId));
         if(selected.SparkedOwner is {CanExecute:false})
@@ -255,6 +276,24 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,selected.Id!="Freeplay");
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
         _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick,()=>RetireUnavailable(selected,epoch));
+    }
+    private void AdmitSelection()
+    {
+        if(_highLevel==2)return;
+        var selection=Tree.FirstOrDefault(a=>a.Id=="Selection");
+        if(selection is null){SteppedBehavior.ReportMissing("M15-031 configured Selection owner unavailable");return;}
+        float now=_facade.Engine.Timer.SecondsF;long epoch=++_admissionEpoch;
+        _selected?.OnDeselected(now,_facade.Engine.EmitStackLog);
+        if(_retired||epoch!=_admissionEpoch)return;
+        bool ordinary=_manager.PrepareHighLevelChange(now);
+        if(_retired||epoch!=_admissionEpoch)return;
+        _selected=selection;_highLevel=2;AwaitingParentActivityPick=false;
+        selection.OnSelected(now,_facade.Engine.EmitStackLog);
+        if(_retired||epoch!=_admissionEpoch)return;
+        HighLevelEntryTime=now;Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl,true);
+        _manager.Activity=new ConfiguredActivity(selection,_robot,_manager,Context,()=>{},()=>false,()=>{});
+        if(ordinary)_manager.ChooseAfterHighLevelChange(now);
+        _manager.HighLevelAdapterTail(false,now);
     }
     private void OnFreeplayTreads(OffTreadsState from,OffTreadsState to)
     {
@@ -373,6 +412,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _observer?.DetachHostHandle();
         foreach(var activity in AllActivities(Tree))activity.ObjectiveOwner?.Dispose();
         foreach(var activity in AllActivities(Tree))activity.Strategy.Dispose();
+        foreach(var chooser in AllActivities(Tree).SelectMany(a=>new[]{a.Chooser,a.InterludeChooser}).OfType<SelectionChooser>())chooser.Dispose();
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativePickUpCubeBehavior>())candidate.Dispose();
@@ -401,7 +441,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 if(next is null&&spark.State is 4 or 5)waitForParent();
                 return next;
             }
-            var desired=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now).Behavior;
+            var decision=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now);
+            if(decision?.InputUnavailable==true){SteppedBehavior.ReportMissing("M8-013 configured chooser input unavailable; prior behavior retained");return current;}
+            var desired=decision?.Behavior;
             if(desired is NativeLookForFaceAndCubeBehavior look && !look.ExecutionAvailable)
             {
                 SteppedBehavior.ReportMissing("PutDownDispatch LookForFaceAndCube actual input owner unavailable; prior execution retained");
