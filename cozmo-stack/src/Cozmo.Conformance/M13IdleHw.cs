@@ -116,7 +116,7 @@ internal sealed class M13IdleRun
         {
             if (!yes) { Console.WriteLine("\nWhen Cozmo is set up, press Enter to connect. Connecting takes up to a minute."); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested(); }
             using var resolution = new HighResolutionTimer();
-            robot = CozmoRobot.Create(engineOptions: new CozmoEngineOptions { ResourcesPath = resources, BeforeStart = e =>
+            robot = CozmoRobot.Create(engineOptions: new CozmoEngineOptions { ResourcesPath = resources, NeedsDeviceDirectory = Directory.CreateDirectory(Path.Combine(new CozmoEngineOptions().FilesPath, "nurture")).FullName, BeforeStart = e =>
             {
                 EngineEvidence.Subscribe(e, line => { }, Event);
                 e.StackLogLine += stackLines.Enqueue;

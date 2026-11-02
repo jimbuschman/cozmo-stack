@@ -10,7 +10,7 @@ namespace Cozmo.Protocol.Tests;
 // reach: production. The robot is built by the production factory, its NV reads come back through the wire as a
 // fresh robot's would, ticks go through the engine, and the action enters through RegisterNeedsActionCompleted,
 // the recipient of IBehavior::NeedActionCompleted (0x005BE40C -> 0x006960D0). Fixture inputs: motor/camera/animation
-// echoes, the host's persisted notification history and the needs file. Nothing is reseeded after startup.
+// echoes and the needs file. Nothing is reseeded after startup.
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
 {
@@ -19,12 +19,13 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
     internal static long FixedClockMicros=>InitialSeconds()*1_000_000;
     private static long InitialSeconds()
     {DateTime local=new(2026,1,15,12,0,0,DateTimeKind.Unspecified);return new DateTimeOffset(local,TimeZoneInfo.Local.GetUtcOffset(local)).ToUnixTimeSeconds();}
-    // The host inputs production takes from its settings: the nurture directory with a needs file, and the persisted notification history.
+    // The host inputs production takes from its settings: the nurture directory with a needs file. Notification history is not
+    // passed: the engine's own M15-111 store supplies it, as on a real robot.
     internal static CozmoEngineOptions SourceOptions(string directory,Func<long> clock,float playLevel,long lastStarAgeSeconds)
     {
-        long initial=InitialSeconds();int[] timestamps=new int[85];timestamps[14]=timestamps[36]=timestamps[84]=(int)initial;int play=(int)(playLevel*100000);
+        long initial=InitialSeconds();int play=(int)(playLevel*100000);
         File.WriteAllText(Path.Combine(directory,"needsState.json"),$"{{\"_StateFileVersion\":5,\"_DateTime\":{initial},\"TimeCreated\":{initial},\"TimeLastDisconnect\":0,\"TimeLastAppBackgrounded\":0,\"OpenAppAfterDisconnect\":0,\"_SerialNumber\":2,\"CurNeedsUnlockLevel\":0,\"NumStarsAwarded\":0,\"NumStarsForNextUnlock\":1,\"CurNeedLevel\":{{\"Repair\":100000,\"Energy\":100000,\"Play\":{play}}},\"PartIsDamaged\":{{\"Head\":false,\"Lift\":false,\"Treads\":false}},\"TimeLastStarAwarded\":{initial-lastStarAgeSeconds},\"ForceNextSong\":\"Invalid\"}}");
-        return new CozmoEngineOptions{ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),BlockPoolPath="",NeedsDeviceDirectory=directory,NeedsSystemClockMicroseconds=clock,NotificationHistory=new((int)initial,timestamps,new bool[85]),DasDeviceId="source-fixture",LabLocaleLanguage="en",LabLocaleCountry="us"};
+        return new CozmoEngineOptions{ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),BlockPoolPath="",NeedsDeviceDirectory=directory,NeedsSystemClockMicroseconds=clock,DasDeviceId="source-fixture",LabLocaleLanguage="en",LabLocaleCountry="us"};
     }
 
     private Run RunFreeplay(float playLevel,long lastStarAgeSeconds,Action<NeedsManager>? afterAction=null)
@@ -36,6 +37,7 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
             var options=SourceOptions(directory,()=>wall,playLevel,lastStarAgeSeconds);
             using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,engineOptions:options,sourceNvEmpty:true);
             var engine=f.Rig.Engine;var needs=engine.Needs;var manager=f.Robot.BehaviorManagerOwner!;
+            Assert.True(File.Exists(Path.Combine(directory,NotificationHistoryStore.FileName))); // M15-111 production default
             Assert.True(needs.HasNativePersistence);Assert.True(engine.Experiments.NativeAssignmentHistoryAvailable);Assert.True(engine.NativeLocalNotifications!.RandomHistoryKnown);Assert.True(f.Robot.Inventory!.Ready);
             // M15-034: 0x0064B89E reads unlock_config_nurture.json and an empty NV read installs its defaultUnlocks.
             foreach(uint id in DefaultUnlockIds())Assert.Contains(id,f.Robot.Progression!.Unlocked);

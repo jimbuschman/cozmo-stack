@@ -24,10 +24,10 @@ public sealed class NativeNotificationTests
         internal readonly CozmoRobot Robot;
         internal CozmoEngine Engine=>Robot.Engine;
         internal LocalNotifications Owner=>Assert.IsType<LocalNotifications>(Engine.NativeLocalNotifications);
-        internal Fixture(NotificationDeterminants? history=null,string? config=null,Func<long>? clock=null,bool supplyNeeds=true,bool supplyDecay=true)
+        internal Fixture(NotificationDeterminants? history=null,string? config=null,Func<long>? clock=null,bool supplyNeeds=true,bool supplyDecay=true,bool omitHistory=false)
         {
             string nurture=Path.Combine(Files.Root,"nurture");Directory.CreateDirectory(nurture);
-            var options=Files.Options(new CozmoEngineOptions{NeedsDeviceDirectory=nurture,NotificationHistory=history,NeedsSystemClockMicroseconds=clock,DasDeviceId="device",LabLocaleLanguage="en",LabLocaleCountry="us"});
+            var options=Files.Options(new CozmoEngineOptions{NeedsDeviceDirectory=nurture,NotificationHistory=history,OmitNotificationHistoryForTests=omitHistory,NeedsSystemClockMicroseconds=clock,DasDeviceId="device",LabLocaleLanguage="en",LabLocaleCountry="us"});
             string source=Path.GetDirectoryName(BackupTestResources.ShippedConfig())!;
             foreach(string name in new[]{"needs_config.json","needs_decay_config.json","needs_action_config.json","needs_level_config.json","needs_handlers_config.json","local_notification_config.json"})
                 if((supplyNeeds||name!="needs_config.json")&&(supplyDecay||name!="needs_decay_config.json"))File.Copy(Path.Combine(source,name),Path.Combine(options.ResourcesPath!,"config","engine",name),true);
@@ -109,7 +109,7 @@ public sealed class NativeNotificationTests
     public void MissingDeterminantKeepsClearPrefixAndDoesNotRecoverLostRandomHistoryOnD6()
     {
         DateTime local=new(2026,1,15,12,0,0,DateTimeKind.Unspecified);long now=new DateTimeOffset(local,TimeZoneInfo.Local.GetUtcOffset(local)).ToUnixTimeSeconds();
-        using var f=new Fixture(clock:()=>now*1_000_000L);int clear=0;using var sub=f.Engine.AnimationMessages.SubscribeMessage(0x97,true,_=>clear++);
+        using var f=new Fixture(clock:()=>now*1_000_000L,omitHistory:true);int clear=0;using var sub=f.Engine.AnimationMessages.SubscribeMessage(0x97,true,_=>clear++);
         Assert.False(f.Owner.TryGenerate());Assert.Equal(1,clear);Assert.False(f.Owner.RandomHistoryKnown);
         f.Engine.AnimationMessages.Deliver(0xD6,false,new NotificationDeterminants((int)now,new int[85],new bool[85]));
         Assert.False(f.Owner.TryGenerate());Assert.Equal(2,clear);Assert.False(f.Owner.RandomHistoryKnown);

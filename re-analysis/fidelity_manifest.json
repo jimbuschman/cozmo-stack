@@ -264,7 +264,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-11-01",
+        "approved": "2026-11-02",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -14901,6 +14901,25 @@
       "hardware_required": false,
       "live_path": true,
       "test": "NativeRespondToPyramidBaseTests"
+    },
+    {
+      "id": "M15-111",
+      "subsystem": "M15-freeplay",
+      "title": "Host source of SetDeterminantData (0xD6): the app's install date and unlock history, supplied by the stack",
+      "location": "cozmo-stack/src/Cozmo.Robot/NotificationHistoryStore.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "Unity app code 3.4.0-1204",
+      "evidence": [
+        "unity/scripts/csharp/Cozmo.Util.Segmentation/SegmentationService.cs:479-499 SendDataToEngine: install seconds, 85 timestamps, 85 played flags.",
+        "SegmentationService.cs:268-272, 334-344: InstallDate set once; DateTime.Today with no platform timestamp. 547-552: ids 36, 14, 84 are InstallDate. 380-390: first unlock time only.",
+        "unity/scripts/csharp/StartupManager.cs:419 and Cozmo.Notifications/NotificationsManager.cs:113 send it."
+      ],
+      "effect": "the history the engine's notification generation reads at startup; without it the shared RNG history is unknown and weighted needs rewards are withheld",
+      "provenance": "App boundary scope (operator, 2026-10-09): an app-supplied input the stack supplies itself. Read by Claude 2026-11-02; added under the standing authorisation for cited inventory corrections.",
+      "unresolved": "Input named: SetDeterminantData. The store keeps it in NeedsDeviceDirectory/notificationHistory.json. Played flags stay false because only app game and spark screens set them, and the stack replaces those. Unlock times are recorded on the successful unlock write result, as UnlockablesManager.cs:284 records them. The stack delivers an unlock's update at once; the app resends later (NotificationsManager.cs:113), so the latest-unlock notification input can change sooner than on a phone.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
     },
     {
       "id": "M11-098",

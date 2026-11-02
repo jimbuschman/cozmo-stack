@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-11-01",
+  "approved": "2026-11-02",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "62910764baddb8db95a365a31cd564606077ece5366c84e120040ef9299b8673",
+  "inventory_sha256": "061958fe45f07b5e7b924d986f01add879760afe5f0fa32b872716662b60f8f4",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1331,7 +1331,7 @@
       "hardware_required": false
     },
     "M15-107": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -1370,6 +1370,18 @@
       "evidence": [
         "Factory 0x0059CD84..0x0059CDA2; ctor 0x005DB0E8; readiness 0x005DB2D4..0x005DB396; Init 0x005DB3AC; TransitionToPlayAnimationSequence 0x005DB3BC..0x005DB414; Resume 0x005DB4DC; trigger table 0x010326E0.",
         "re-analysis/jobs/trial-m13/HANDOFF-RESPOND-TO-PYRAMID-BASE-1.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-111": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Host source of SetDeterminantData (0xD6): the app's install date and unlock history, supplied by the stack",
+      "authority": "Unity app code 3.4.0-1204",
+      "evidence": [
+        "unity/scripts/csharp/Cozmo.Util.Segmentation/SegmentationService.cs:479-499 SendDataToEngine: install seconds, 85 timestamps, 85 played flags.",
+        "SegmentationService.cs:268-272, 334-344: InstallDate set once; DateTime.Today with no platform timestamp. 547-552: ids 36, 14, 84 are InstallDate. 380-390: first unlock time only.",
+        "unity/scripts/csharp/StartupManager.cs:419 and Cozmo.Notifications/NotificationsManager.cs:113 send it."
       ],
       "live_path": true,
       "hardware_required": false

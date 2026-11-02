@@ -3,7 +3,7 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **753 records** over 16 subsystems.
+Manifest of **754 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
@@ -11,7 +11,7 @@ Manifest of **753 records** over 16 subsystems.
 | EQUIVALENT_IMPLEMENTATION | 9 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 69 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 70 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 110 | 4 | 84 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 111 | 4 | 84 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -4151,4 +4151,5 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M15-077 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset | libcozmoEngine.so 3.4.0-1204 |
 | M15-096 | M15-freeplay | COMPATIBILITY_POLICY | ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown | libcozmoEngine.so 3.4.0-1204 |
 | M15-107 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop | libcozmoEngine.so 3.4.0-1204 |
+| M15-111 | M15-freeplay | COMPATIBILITY_POLICY | Host source of SetDeterminantData (0xD6): the app's install date and unlock history, supplied by the stack | Unity app code 3.4.0-1204 |
 

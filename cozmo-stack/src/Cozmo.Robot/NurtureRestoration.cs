@@ -55,6 +55,7 @@ internal sealed class ProgressionUnlockOwner(EngineRobot robot)
         if(!robot.Engine.NeedsContextExternalInterfaceAvailable)return;
         byte[] body=new byte[5];BinaryPrimitives.WriteUInt32LittleEndian(body,id);body[4]=requested?(byte)1:(byte)0;
         robot.Engine.DeliverNurture(0x6C,body,new RequestSetUnlockResultReport(id,requested));
+        if(requested&&Current)robot.Engine.RecordNotificationUnlock(id);
     }
     private void SendDefaults(uint[] defaults)
     {

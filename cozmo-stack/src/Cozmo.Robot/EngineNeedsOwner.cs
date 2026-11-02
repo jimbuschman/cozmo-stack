@@ -66,9 +66,17 @@ public sealed partial class CozmoEngine
             needs.TryLocalNotificationsGenerate=notifications.TryGenerate;
             needs.LocalNotificationsUpdate+=()=>notifications.Update(needs.NowSec);
             needs.LocalNotificationsSetPaused+=notifications.SetPaused;
-            if(Options.NotificationHistory is {} history)AnimationMessages.Deliver(0xD6,false,history);
+            // fidelity: M15-111 — the host's history, else the persisted store; both arrive on 0xD6 before Needs Init.
+            var history=Options.NotificationHistory;
+            if(history is null&&!Options.OmitNotificationHistoryForTests&&Options.NeedsDeviceDirectory is {} directory)
+            {_notificationHistory=NotificationHistoryStore.LoadOrCreate(directory,NeedsWallClockMicros(),EmitStackLog);history=_notificationHistory.Snapshot();}
+            if(history is not null)AnimationMessages.Deliver(0xD6,false,history);
         }
     }
+    private NotificationHistoryStore? _notificationHistory;
+    // fidelity: M15-111 — UnlockablesManager.HandleOnUnlockRequestSuccess, on the unlock result report.
+    internal void RecordNotificationUnlock(uint id)
+    {if(_notificationHistory is {} store&&store.RecordUnlock(id,NeedsWallClockMicros()))SetNotificationDeterminants(store.Snapshot());}
 
     // Explicit unit adapter; production ownership cannot be replaced by a Freeplay handle.
     internal void UseNeedsForOfflineTest(NeedsManager needs)
