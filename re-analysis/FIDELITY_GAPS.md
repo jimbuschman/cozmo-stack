@@ -7,10 +7,10 @@ Manifest of **753 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 272 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 273 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 365 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 364 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 69 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 13 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 98 | 6 | 74 | 0 | 1 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 98 | 6 | 73 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
@@ -62,7 +62,7 @@ status.
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
-| M11-vision | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
+| M11-vision | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
@@ -2290,6 +2290,7 @@ B-M11-6 (2026-10-15), bounded build, awaiting strong verification; BLOCKED: Imag
 POUNCE-REAL-FRAMES-1 main7d73d879 answer supersedes the earlier unknown-rectangle/withholding blocker: shipped MeterFromDetections stays true. Actual fresh Update-local vector collects raw marker quads before correction6B4854/4868, then attached face/pet rectangles with native f32 roundf component conversion; BlackOutRects6B33AC uses separate image copies and mutable-local GetROI6BA45E/Intersect658EC0 clipping without changing the vector. Absent face/pet algorithms remain a visible M11-016/M11-080 gap under operator2026-10-14, including frames with a real face/pet in view; that accepted seam does not withhold quality or motion reports. No detector emptiness or full quality-path recovery is claimed. Profiler timing and remaining quality/statics/API recipient claims stay open. Native-literal conversions, blackout, physical nonzero-F4 raw-ROI/corrected-marker, null detector and callback retirement tests pass in affected77/77; full gate pending, statuses/approvals unchanged.
 
 POUNCE-REAL-FRAMES-1 final validation (2026-11-02) supersedes its prior WIP/pending-gate checkpoints: affected410/410 and full3 d843bc7d7581/7581 PASS0skip9m44s; compiler/gate/shutdown/postflight0. One consolidated handoff READY FOR CLAUDE. Mode3 delivery and finite Init/IMU/worker/quality-rectangle/physical-marker/live-world joins are built; this record remains open with its other named gaps. Only M11-098 and M15-107 own paths are proposed for Claude settlement, with explicit M1-034/libm boundaries; no Codex status/approval/hardware change. See jobs/trial-m13/HANDOFF-POUNCE-REAL-FRAMES-1.md.
+With no detector attached, frames with a face or pet in view meter from markers only, under the operator's 2026-10-14 M11-016 decision (re-analysis/research/20261102-pounce-real-frames-claude-check.md).
 
 **M11-081 — ImagingPipeline exposure adjustment: ComputeExposureAdjustment (image, image+mask, vector), ImageBrightnessHistogram FillFromImage and ComputePercentile, SetExposureParameters, VisionSystem::SetAutoExposureParams** (live path)
 
@@ -2426,15 +2427,6 @@ B-M3M4-33 final review: robot-owned history queries, cull, clear and cache inser
 SetNextImage join read (re-analysis/research/20261019-b-m3m4-33-check.md, 2026-10-19): query at min(imageTs, newest raw key) with flag 1; both failures drop the frame without handoff. The PoseData construction after 0x00652CFC (0x00652CFC..0x00652D58) is not read. Build the join in B-M3M4-34 and restore the production frame handoff.
 B-M3M4-34 (2026-10-19), built, awaiting strong verification: Manager-adopted SetNextImage query/timestamp/result join now built; image timestamp remains the observation timestamp even when its state is queried at newest raw. Native bounds getters reopened0x00532188..0x005321EE (empty0). Correction guard narrowed: GetParent(A) only when A.frame==R.frame,0x0053193E. Removed the false0x00531904 crash/end-anchor claim (end unreachable here); GetParent(V) guard at0x00531AA0 remains at its call point. Earlier broad no-parent anchor guard superseded. Root-before interpolation null read citation corrected to0x008452BA. Tests include decreasing-frame/root-anchor input that does not require GetParent(A). Computed key/index producer after0x00531BAA remains M11-044 MISSING/out of scope.
 VISION-GROUND-CARRIER-1 (2026-11-01): actual frame capture reuses checked min(image timestamp,newest raw), flag1 query and returned time/state; its new ground snapshot is created before the temporary is disposed. Current job does not re-audit or settle the broad query/admission record; existing checked OV128/B33/B34 own ledger remains distinct from the later carrier/IMU/worker gaps.
-
-**M11-098 — The Anki MotionDetector: image, ground and peripheral motion from frame to the motion result** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/NativeMotionImage.cs`
-* effect: whether Cozmo sees motion, which is what lets Pounce run on a real robot
-* rests on: Codex read, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections, because M11-016's frozen OKAO authority and evidence do not describe it.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Detect 0x006AAAF0; helpers 0x004BEB98 (DetectHelper<ImageRGB>), 0x004BEBA4 (DetectHelper<Image>); ratio 0x006ABA76, 0x006AB8DE; close 0x006A98D6; components 0x008720F8.; re-analysis/research/20261101-pounce-prerequisites-claude-check.md
-* outstanding: POUNCE-REAL-FRAMES-1 READY FOR CLAUDE (2026-11-02): own source-backed MotionDetector candidate includes half sampling/box21 Reflect101, strict ratio/ellipse10 close, all-label components, ordered periphery, quantile/ground crop/polygon/f32 LU, native gates and ordered motion results. Rounding is nearest/ties-even; old ExactBinary32/FPSCR restrictions are removed per research/20261101-pounce-prerequisites-claude-check.md. Standing M1-034 skips ONLY undefined peripheral-positive/ground-image-false prefix append006A92D4; both defined duplicate appends remain. Original owner Init/carrier/IMU/worker, true-meter raw rectangles/attached-detector seam, physical marker correction and live-World rotation join are built with named sibling gaps. Final affected410/410 and full3 d843bc7d7581/7581 PASS0skip9m44s, gate/shutdown/postflight0. Proposed own-record settlement is for Claude only, not a status change or whole-Vision/hardware claim. See jobs/trial-m13/HANDOFF-POUNCE-REAL-FRAMES-1.md for primary addresses, classified failed runs, M1-034/libm boundaries and exact leftovers.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -4059,6 +4051,7 @@ PLAYALONE-MOVES-ON-1 binds Hiking as well as Sparks for the same shipped Think b
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Normal path 0x005F7F90..0x005FA194; running score 0x005F83BE; movement helper 0x00640634, 0x00640654; pack 0x007A4C24.; re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md
 * outstanding: Partly built, NativeHikingPounceTests. Not settled: the body was not read in the Claude check. Real frame, motion and cliff history and an unrecovered rotation branch stay MISSING.
+Not settled by re-analysis/research/20261102-pounce-real-frames-claude-check.md: the positive body from 0x005F9C34 is unread by Claude and has not met a real frame.
 
 ## What remains after both: blocked externally, or needing hardware
 

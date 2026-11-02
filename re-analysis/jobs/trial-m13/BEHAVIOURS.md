@@ -21,6 +21,7 @@ This is the operator-requested asset-based planning document, checked by the man
 | 2026-11-01 | 1 (DriveOffCharger) | total +11 over 30 start-path jobs | First left-alone robot run | Idle 176 of 240 s: Hiking holds on real camera frames, which the simulation has none of. POUNCE-REAL-FRAMES-1 ordered after NEEDS-PROOF-1. |
 | 2026-11-01 | 1 (DriveOffCharger) | total +12 over 32 start-path jobs (adds M15-110) | NEEDS-PROOF-1, RESPOND-TO-PYRAMID-BASE-1; Codex full 7461/7461 | SeeFace and Fall no longer stall the loop. A rewarded action still does: REWARD-GATE-1 ordered after POUNCE-REAL-FRAMES-1. |
 | 2026-11-01 | 1 (DriveOffCharger) | total +13 over 37 start-path jobs (adds M11-049) | Five Pounce prerequisites; Codex full 7501/7501 | Helpers only, no production caller yet. Hiking still holds on a robot. Rest of the producer ordered as one job. |
+| 2026-11-02 | 1 (DriveOffCharger) | total +14 over 38 start-path jobs (adds M11-098) | POUNCE-REAL-FRAMES-1; Codex full 7581/7581 | Left alone with frames: no hold, idle 0.2 of 300 s with default unlocks, Pounce runs. Not yet on a robot. |
 
 ## Sources and interpretation
 
