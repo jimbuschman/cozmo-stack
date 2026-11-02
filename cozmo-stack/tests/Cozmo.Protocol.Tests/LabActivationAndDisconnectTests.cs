@@ -159,6 +159,7 @@ public sealed class LabActivationAndDisconnectTests
         using var resources=new BackupTestResources();using var engine=new CozmoEngine(new M4ControlTests.FakePort(),resources.Options(new CozmoEngineOptions{DasDeviceId="u",LabLocaleLanguage="English",LabLocaleCountry="US"}),()=>1);
         var lab=engine.Experiments;var trace=new List<string>();lab.InitBeforeNeedsObserved=()=>trace.Add("init-before-needs");engine.LogEntry+=entry=>{if(entry.Name=="AnkiLab.Enable")trace.Add("enable");};lab.NeedsState8Input=()=>{Assert.Equal("u",lab.DeviceIdInput);trace.Add("tags");return 0;};
         lab.Lab.FindExperiment=_=>{trace.Add("activate");return null;};lab.Lab.StatusName=_=>B("ExperimentNotFound");lab.Lab.Definition=()=>new(B("p"),1,1,new[]{Experiment()});lab.KnownAudienceTagsInput=()=>{trace.Add("verify");return Array.Empty<byte[]>();};Action callback=()=>throw new Exception();lab.AbCallbacksInput=()=>{trace.Add("ab");return(callback,callback);};
+        lab.Audience.Cache.Clear(); // supplied empty-cache entry for this explicit second Init
         lab.InitBeforeNeeds(()=>trace.Add("needs"));Assert.Equal(new[]{"init-before-needs","enable","tags","activate","verify","ab","needs"},trace);
     }
     // reach: unit (substitutes native state/lookup/callback inputs; joins MISSING at M15-0624CA6F4 and M15-0615A6038; actual subscription/factory entry is exercised where named).

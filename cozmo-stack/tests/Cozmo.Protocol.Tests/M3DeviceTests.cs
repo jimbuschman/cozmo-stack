@@ -2631,6 +2631,7 @@ public class M3DeviceTests
         {
             using var rig = new Rig();
             var reports=new List<ushort>();rig.Engine.EngineToGameMessage+=(tag,_)=>reports.Add(tag);
+            var labLogs=new List<EngineLogEntry>();rig.Engine.LogEntry+=e=>{if(e.Name=="CozmoExperiments.RestoreLoadedActiveExperiments")labLogs.Add(e);};
             rig.ToValidated();
             rig.Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
             rig.Tick();
@@ -2648,7 +2649,8 @@ public class M3DeviceTests
                 Assert.True(rig.Engine.Robot!.Inventory!.Ready);
                 Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M15-033 | "));
                 Assert.Equal(0u,rig.Engine.Backup!.PendingCount);
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-036 | "));
+                Assert.Contains(labLogs,e=>e.Level==EngineLogLevel.Info&&e.Text=="No lab assignments data on robot");
+                Assert.Empty(rig.Engine.Experiments.CachedAssignments!);
             }
         }
         finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= OnMissing; }
@@ -3566,7 +3568,8 @@ public class M3DeviceTests
             Assert.DoesNotContain(missing,line=>line.Contains("M15-034 | ProgressionUnlockComponent's NV read callback")||line.Contains("M15-035 | InventoryComponent's NV read callback"));
             Assert.DoesNotContain(missing,line=>line.Contains("M15-033 | RobotDataBackupManager's backup read callback"));
             Assert.Equal(0u,rig.Engine.Backup!.PendingCount);
-            Assert.Contains(missing, line => line.Contains("M15-036 | the Lab read's callback 0x006A6486 into CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34: this stack has no component for it, so the read completes and its result is dropped"));
+            Assert.Contains(missing, line => line.Contains("CozmoExperiments.RestoreLoadedActiveExperiments: No lab assignments data on robot"));
+            Assert.Empty(rig.Engine.Experiments.CachedAssignments!);
         }
         finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
     }

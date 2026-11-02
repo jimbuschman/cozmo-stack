@@ -111,7 +111,7 @@ public sealed class LabWritebackCheckedRowsTests:IDisposable
     [Fact] public void UnbuiltAssignmentProducersStayUnknownAtRealOwner()
     {
         using var robot=Robot();var lab=robot.Engine.Experiments;var missing=new List<string>();SteppedBehavior.MissingReported+=missing.Add;
-        try{lab.PossiblyWriteLabAssignmentsToRobot();Assert.Null(lab.CachedAssignments);Assert.Empty(Queue(robot.Engine.NvStorage!));Assert.Contains(missing,s=>s.Contains("M15-050/M15-052/M15-036"));}
+        try{lab.PossiblyWriteLabAssignmentsToRobot();Assert.Empty(lab.CachedAssignments!);Assert.Null(lab.ActiveAssignmentsForTest);Assert.Empty(Queue(robot.Engine.NvStorage!));Assert.Contains(missing,s=>s.Contains("M15-050/M15-052/M15-036"));}
         finally{SteppedBehavior.MissingReported-=missing.Add;}
     }
     [Fact] public void FirstRobotUsesStoredIdOrderRatherThanSortedOrConnectedRobotGuess()
