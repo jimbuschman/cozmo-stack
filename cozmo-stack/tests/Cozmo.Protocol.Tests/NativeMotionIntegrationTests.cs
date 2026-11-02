@@ -10,7 +10,80 @@ public sealed class NativeMotionIntegrationTests
 {
     // Native 0x00539258/0x005394BC oracle, RateZ=3 with no-after fallback.
     private static readonly uint[] NativeZ3ShiftBits = { 0x3F0CCCCDu, 0x3F8CCCCDu, 0x3FD33334u, 0x400CCCCDu, 0x40300000u, 0x40533333u, 0x40766666u, 0x408CCCCDu, 0x409E6667u, 0x40B00001u, 0x40C1999Bu, 0x40D33335u, 0x40E4CCCFu, 0x40F66669u, 0x41040001u, 0x410CCCCEu, 0x4115999Bu, 0x411E6668u, 0x41273335u, 0x41300002u, 0x4138CCCFu, 0x4141999Cu, 0x414A6669u, 0x41533336u, 0x415C0003u, 0x4164CCD0u, 0x416D999Du, 0x4176666Au, 0x417F3337u, 0x41840002u, 0x41886668u, 0x418CCCCEu, 0x41913334u, 0x4195999Au, 0x419A0000u, 0x419E6666u, 0x41A2CCCCu, 0x41A73332u, 0x41AB9998u, 0x41AFFFFEu, 0x41B46664u, 0x41B8CCCAu, 0x41BD3330u, 0x41C19996u, 0x41C5FFFCu, 0x41CA6662u, 0x41CECCC8u, 0x41D3332Eu, 0x41D79994u, 0x41DBFFFAu, 0x41E06660u, 0x41E4CCC6u, 0x41E9332Cu, 0x41ED9992u, 0x41F1FFF8u, 0x41F6665Eu, 0x41FACCC4u, 0x41FF332Au, 0x4201CCC8u, 0x4203FFFBu, 0x4206332Eu, 0x42086661u, 0x420A9994u, 0x420CCCC7u, 0x420EFFFAu, 0x4211332Du, 0x42136660u, 0x42159993u, 0x4217CCC6u, 0x4219FFF9u, 0x421C332Cu, 0x421E665Fu, 0x42209992u, 0x4222CCC5u, 0x4224FFF8u, 0x4227332Bu, 0x4229665Eu, 0x422B9991u, 0x422DCCC4u, 0x422FFFF7u, 0x4232332Au, 0x4234665Du, 0x42369990u, 0x4238CCC3u, 0x423AFFF6u, 0x423D3329u, 0x423F665Cu, 0x4241998Fu, 0x4243CCC2u, 0x4245FFF5u, 0x42483328u, 0x424A665Bu, 0x424C998Eu, 0x424ECCC1u, 0x4250FFF4u, 0x42533327u, 0x4255665Au, 0x4257998Du, 0x4259CCC0u, 0x425BFFF3u, 0x425E3326u, 0x42606659u, 0x4262998Cu, 0x4264CCBFu, 0x4266FFF2u, 0x42693325u, 0x426B6658u, 0x426D998Bu, 0x426FCCBEu, 0x4271FFF1u, 0x42743324u, 0x42766657u, 0x4278998Au, 0x427ACCBDu, 0x427CFFF0u, 0x427F3323u, 0x4280B32Bu, 0x4281CCC5u, 0x4282E65Fu, 0x4283FFF9u };
-    private sealed class NullFaces:IFaceDetector
+    // 0x656260/0x656384: original live VC history, strict 0x3E32B8C2 on Y then Z.
+    [Theory]
+    [InlineData(0x3E32B8C2, false, false)]
+    [InlineData(0x3E32B8C3, false, true)]
+    [InlineData(0xBE32B8C2, true, false)]
+    [InlineData(0xBE32B8C3, true, true)]
+    public void WorldRotationUsesLiveF4BracketAndNativeThreshold(uint bits,bool body,bool expected)
+    {
+        using var f=new Fixture();var vision=f.M.Vision;var owner=f.Robot;
+        float rate=BitConverter.Int32BitsToSingle(unchecked((int)bits));
+        f.Rig.Data(new ImageImuData{ImageId=101,Line2Number=120,RateY=body?0:rate,RateZ=body?rate:0});f.Rig.Tick();
+        uint timestamp=owner.StoredState!.Timestamp;Assert.True(timestamp>65);
+        var priorGate=f.Rig.Engine.HasCameraCalibration;f.Rig.Engine.HasCameraCalibration=()=>false;
+        try
+        {
+            f.Rig.CameraGrayFrame(101,timestamp,Enumerable.Repeat((byte)150,320*240).ToArray());
+            vision.WaitForProcessorIdle();
+            Assert.True(vision.NativeWorldRotatingTooFast(owner,timestamp)); // no after record yet
+            f.Rig.Data(new ImageImuData{ImageId=102,Line2Number=0,RateY=body?0:rate,RateZ=body?rate:0});f.Rig.Tick();
+            Assert.True(vision.NativeWorldHasImuBracketForTest(owner,timestamp));
+            Assert.Equal(expected,vision.NativeWorldRotatingTooFast(owner,timestamp));
+        }
+        finally{f.Rig.Engine.HasCameraCalibration=priorGate;}
+    }
+    [Fact]
+    public void WorldRotationBracketIncludes64AndRejects65Milliseconds()
+    {
+        NativeImageImu before=default,after=default;
+        var at64=new[]{new NativeImageImu(1,0,0,0,0,936),new NativeImageImu(2,0,0,0,0,0)};
+        var at65=new[]{new NativeImageImu(1,0,0,0,0,935),new NativeImageImu(2,0,0,0,0,0)};
+        Assert.True(NativeImageImuHistory.TryBracket(at64,1000,ref before,ref after));
+        Assert.Equal(936u,before.ComputedTimestamp);Assert.Equal(0u,after.ComputedTimestamp);
+        Assert.False(NativeImageImuHistory.TryBracket(at65,1000,ref before,ref after));
+    }    [Fact]
+    public void WorldMovingGateSkipsRotationQuery()
+    {
+        using var f=new Fixture();int calls=0;
+        var camera=new CameraModel(f.M.Vision.Calibration!,Pose3d.Identity);
+        _=f.M.World.CheckForUnobservedObjects(camera,1000,true,false,_=>{calls++;return false;});
+        Assert.Equal(0,calls);
+    }    [Fact]
+    public void WorldRotationBypassIsOriginalOwnerStateAndResetsOnReplacement()
+    {
+        using var f=new Fixture();var vision=f.M.Vision;var old=f.Robot;
+        Assert.True(vision.NativeWorldRotatingTooFast(old,1000));
+        f.Rig.Robot.SetVisionWhileMoving(true);f.Rig.Tick();Assert.False(vision.NativeWorldRotatingTooFast(old,1000));
+        f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        var replacement=f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        Assert.True(vision.NativeWorldRotatingTooFast(old,1000));
+        Assert.True(vision.NativeWorldRotatingTooFast(replacement,1000));
+        vision.SetNativeVisionWhileMoving(old,true);Assert.True(vision.NativeWorldRotatingTooFast(replacement,1000));
+    }    [Fact]
+    public void VisionWhileMovingRequiresContextInterfaceAtOwnerConstruction()
+    {
+        using var f=new Fixture();var engine=f.Rig.Engine;var vision=f.M.Vision;
+        engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        engine.NeedsContextExternalInterfaceAvailable=false;
+        try
+        {
+            var owner=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+            f.Rig.Robot.SetVisionWhileMoving(true);f.Rig.Tick();
+            Assert.True(vision.NativeWorldRotatingTooFast(owner,1000));
+        }
+        finally{engine.NeedsContextExternalInterfaceAvailable=true;}
+    }
+    [Fact]
+    public void QueuedVisionWhileMovingCannotReachReplacementOwner()
+    {
+        using var f=new Fixture();var engine=f.Rig.Engine;var vision=f.M.Vision;
+        f.Rig.Robot.SetVisionWhileMoving(true); // queued for the old original owner
+        engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        var replacement=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        f.Rig.Tick();Assert.True(vision.NativeWorldRotatingTooFast(replacement,1000));
+    }    private sealed class NullFaces:IFaceDetector
     {
         public bool IsAvailable=>true;public string Description=>"supplied null output";
         public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>null!;

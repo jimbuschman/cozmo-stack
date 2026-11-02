@@ -66,14 +66,25 @@ internal sealed class StackFirmwareScene:IDisposable
         F.M.Vision.Enabled=true;F.M.Vision.ModeEnableMask=1<<1;uint stamp=F.Robot.StoredState!.Timestamp;
         F.M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied per-frame marker schedule
         uint id=++_image;
-        F.Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});F.Rig.Tick();
+        F.Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=120});F.Rig.Tick();
         var cal=F.M.Vision.Calibration!;var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
         using var hist=HistRobotState.From(F.Robot.GetCheckedMainPose(),F.Robot.StoredState!);using var camera=F.Robot.CopyHistoricalCameraPose(hist);using var flat=camera.GetWithRespectToRoot();var model=new CameraModel(cal,flat);
         using var bottom=new Pose3d(Rotation3d.Identity,new(400,0,22));OpaqueCube(image,model,bottom);MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,model,ObjectType.Block_LIGHTCUBE2,bottom);
         if(!_physicalCarry&&!(Grounded&&HideGroundCube))
         {using var top=new Pose3d(Rotation3d.Identity,new(Placed?400:Grounded?250.2f:150,0,Placed?66:22));OpaqueCube(image,model,top);MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,model,ObjectType.Block_LIGHTCUBE1,top);}
-        F.Rig.CameraGrayFrame(id,stamp,image.Pixels);
-        F.M.Vision.WaitForProcessorIdle();F.Rig.Engine.VisionUpdateAllResultsFailed!();F.Rig.Tick();
+        var previousResult=F.M.Vision.LastResult;
+        var calibrationGate=F.Rig.Engine.HasCameraCalibration;
+        F.Rig.Engine.HasCameraCalibration=()=>false; // hold only engine result drain until the real next F4 arrives
+        try
+        {
+            F.Rig.CameraGrayFrame(id,stamp,image.Pixels);
+            F.M.Vision.WaitForProcessorIdle();
+            Assert.Same(previousResult,F.M.Vision.LastResult);
+            F.Rig.Data(new ImageImuData{ImageId=unchecked(id+1),RateX=0,RateY=0,RateZ=0,Line2Number=0});F.Rig.Tick();
+            Assert.True(F.M.Vision.NativeWorldHasImuBracketForTest(F.Robot,stamp));
+        }
+        finally{F.Rig.Engine.HasCameraCalibration=calibrationGate;}
+        F.Rig.Engine.VisionUpdateAllResultsFailed!();F.Rig.Tick();
     }
     // Scene physics: the existing marker-only renderer has no opaque cube body. Mask each
     // independently supplied cube's projected faces before its fiducials, hiding far markers.

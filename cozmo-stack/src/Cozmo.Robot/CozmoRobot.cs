@@ -193,6 +193,9 @@ public sealed partial class CozmoRobot : IDisposable
     /// <summary>Supplies the app's wake notification (G2E166), also sent once when each connection is ready.</summary>
     // fidelity: M15-073
     public void NotifyCozmoWakeup()=>Engine.PostGameMessage(()=>Engine.AnimationMessages.Deliver(166,false,null));
+    /// <summary>Queue the source VisionWhileMoving input for the current robot.</summary>
+    public void SetVisionWhileMoving(bool enabled)
+    {var owner=Engine.Robot;Engine.PostGameMessage(()=>{if(owner is not null&&ReferenceEquals(Engine.Robot,owner))Engine.AnimationMessages.Deliver(0x86,false,enabled);});}
     /// <summary>Queue a configured behavior request to the native Selection chooser.</summary>
     public void ExecuteBehaviorById(byte id,int numRuns=-1)
     { var owner=Engine.Robot;var body=new Cozmo.Protocol.ExecuteBehaviorByIDMessage(id,numRuns).PackBody();Engine.PostGameMessage(()=>{if(owner is not null&&ReferenceEquals(Engine.Robot,owner))Engine.AnimationMessages.Deliver(0x94,false,body);}); }

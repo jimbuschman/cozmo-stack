@@ -1630,6 +1630,8 @@ B-M3M4-28 (2026-10-15), built, awaiting strong verification: MovementLocatedLoop
 
 POUNCE-REAL-FRAMES-1 WIP clarification (2026-11-01): actual F4 first word is ImageId; associated native computed timestamp is the history record+14, produced by00538C00..D7E before frame capture. Owned cap20 history is built under M11-098; the legacy public ImuDataHistory raw-ID-as-time/2000ms adapter is not certified as the native consumer. Face new-entry query004F4596 uses original LIVE history and per-face0/5 windows; that consumer/input remains visible M14-008, with supplied-predicate tests only. No whole rotating-gate closure or protected evidence/status/approval change.
 
+POUNCE-REAL-FRAMES-1 live World consumer correction (2026-11-01): engine-side CheckForUnobservedObjects621C9A now queries ORIGINAL LIVE native computed-timestamp history, after the existing moving gate, head then body with threshold bits3E32B8C2/window0. It does not use raw ImageId as time, the worker carrier snapshot or the legacy public2000ms adapter. Missing bracket remains native true; strict rate comparisons and zero-after signed64ms rule are preserved. VC ctor650164 initializes bypassfalse; actual G2E86(oneboolbyte) constructor subscription650A34/callback65932A updates originalVC+2F0, with scoped retirement and queued host API. Generic published PoseData, Docking and new-face rotation semantics are not rewritten. Native-literal/live-after-worker/no-EI/replacement/moving-first and real-F2 hidden-cube deletion checks pass in affected410/410; final full gate pending. No whole M11-004 settlement or protected evidence/status/approval change.
+
 **M11-006 — The clustering tolerances and the flat-snap angle** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`

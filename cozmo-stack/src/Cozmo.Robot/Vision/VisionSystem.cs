@@ -70,7 +70,9 @@ public sealed partial class VisionSystem : IDisposable
     private readonly System.Collections.Concurrent.ConcurrentQueue<NativeVisionInitialization> _retiredMotionStates=new();
     private void DrainRetiredMotionStates(){while(_retiredMotionStates.TryDequeue(out var state))state.MotionPose.Dispose();}
     private NativeImageImuHistory? _nativeImu;
+    private bool _nativeVisionWhileMoving;
     private RetainedSubscription? _nativeImuSubscription;
+    private RetainedSubscription? _nativeVisionWhileMovingSubscription;
     internal int NativeGroundEpochForTest { get { lock (_groundGate) return _groundEpoch; } }
     internal Action<IReadOnlyList<ImageQualityRectangle>>? NativeQualityRectanglesObservedForTest;
     internal NativeVisionInitialization? NativeInitializationForTest { get { lock (_groundGate) return _nativeInitialization; } }
@@ -84,18 +86,55 @@ public sealed partial class VisionSystem : IDisposable
         lock(_groundGate)return ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner);
     }
 
+    // 0x65805C: explicit original-owner recipient; message subscription is a separate source boundary.
+    internal void SetNativeVisionWhileMoving(EngineRobot owner,bool enabled)
+    {
+        lock(_groundGate)if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner))_nativeVisionWhileMoving=enabled;
+    }
+    internal bool NativeWorldHasImuBracketForTest(EngineRobot owner,uint timestamp)
+    {
+        lock(_groundGate)
+        {
+            if(!ReferenceEquals(_groundOwner,owner)||_nativeImu is null)return false;
+            NativeImageImu before=default,after=default;
+            return NativeImageImuHistory.TryBracket(_nativeImu.Snapshot(),timestamp,ref before,ref after);
+        }
+    }
+    // M11-004: 0x621C9A queries this original owner's LIVE VC+B0 history in the world handler.
+    internal bool NativeWorldRotatingTooFast(EngineRobot owner,uint timestamp)
+    {
+        NativeImageImu[]? history=null;
+        lock(_groundGate)
+        {
+            if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner)&&_nativeImu is not null)
+            {if(_nativeVisionWhileMoving)return false;history=_nativeImu.Snapshot();}
+        }
+        if(history is null)
+        {SteppedBehavior.ReportMissing("M11-004 original live IMU owner unavailable at world rotation gate");return true;}
+        NativeImageImu before=default,after=default;
+        if(!NativeImageImuHistory.TryBracket(history,timestamp,ref before,ref after))
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.WasHeadRotatingTooFast.NoIMUData","No IMU data for world rotation query");
+            return true;
+        }
+        float threshold=BitConverter.Int32BitsToSingle(unchecked((int)0x3E32B8C2));
+        if(MathF.Abs(before.RateY)>threshold||MathF.Abs(after.RateY)>threshold)return true;
+        return MathF.Abs(before.RateZ)>threshold||MathF.Abs(after.RateZ)>threshold;
+    }
     // The outer VisionComponent camera has its own identity check, separate from the inner marker camera.
     internal void BindNativeGroundOwner(EngineRobot owner)
     {
-        RetainedSubscription? oldSubscription;
+        RetainedSubscription? oldSubscription,oldMovingSubscription;
         var imu=new NativeImageImuHistory();
         lock (_groundGate)
         {
-            oldSubscription=_nativeImuSubscription;_nativeImuSubscription=null;_nativeImu=imu;
+            oldSubscription=_nativeImuSubscription;_nativeImuSubscription=null;
+            oldMovingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;_nativeImu=imu;
             if(_nativeInitialization is {} displaced)_retiredMotionStates.Enqueue(displaced);
             if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
             _groundOwner = owner;
             _nativeWorkerPhysical=false;
+            _nativeVisionWhileMoving=false;
             _nativeInitialization=new NativeVisionInitialization(owner);_nativeInitializationEpoch++;
             PendingDropStatsSeconds=-1f; // per-owner diagnostic; native Init's source is a local value
             _groundOuterCalibration = null;
@@ -105,7 +144,7 @@ public sealed partial class VisionSystem : IDisposable
             lock(_modeGate){_modeEnableMask=0;_schedules.Clear();}
             _exposurePipeline=null;QualityProcessor.Pipeline=null;
         }
-        oldSubscription?.Dispose();
+        oldSubscription?.Dispose();oldMovingSubscription?.Dispose();
         if(Monitor.TryEnter(_busy,RemovalWait))
         {try{DrainRetiredMotionStates();}finally{Monitor.Exit(_busy);}}
         RetainedSubscription? subscription=owner.SubscribeMessage(RobotMessageId.ImageGyro,m=>
@@ -120,6 +159,13 @@ public sealed partial class VisionSystem : IDisposable
             { _nativeImuSubscription=subscription;subscription=null; }
         }
         subscription?.Dispose();
+        RetainedSubscription? movingSubscription=owner.Engine.NeedsContextExternalInterfaceAvailable
+            ? owner.Engine.AnimationMessages.SubscribeMessage(0x86,false,p=>
+              {if(p is bool enabled)SetNativeVisionWhileMoving(owner,enabled);}) : null;
+        lock(_groundGate)
+            if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying)
+            {_nativeVisionWhileMovingSubscription=movingSubscription;movingSubscription=null;}
+        movingSubscription?.Dispose();
     }
 
     internal void SetNativeOuterCalibration(CameraCalibration calibration)
@@ -361,12 +407,14 @@ public sealed partial class VisionSystem : IDisposable
     // A newer, already-bound owner must survive this retained-facade reset.
     private void RetireDestroyedGroundOwner()
     {
-        RetainedSubscription? subscription;
+        RetainedSubscription? subscription,movingSubscription;
         lock (_groundGate)
         {
             if (_groundOwner is not { Lifetime.Destroying: true }) return;
             subscription=_nativeImuSubscription;_nativeImuSubscription=null;_nativeImu=null;
+            movingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;
             _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;_nativeWorkerPhysical=false;
+            _nativeVisionWhileMoving=false;
             if(_nativeInitialization is {} retired)_retiredMotionStates.Enqueue(retired);
             _nativeInitialization=null;_nativeInitializationEpoch++;
             PendingDropStatsSeconds=-1f;
@@ -375,7 +423,7 @@ public sealed partial class VisionSystem : IDisposable
             _groundPendingOuter=_constructedCalibration;
             _groundEpoch++; // host stale-work token; intentionally monotonic across owners
         }
-        subscription?.Dispose();
+        subscription?.Dispose();movingSubscription?.Dispose();
     }
     internal void ResetToConstructed()
     {
@@ -1551,7 +1599,7 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose):null;
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null):null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
             if (worldFrame is not null)
             {
