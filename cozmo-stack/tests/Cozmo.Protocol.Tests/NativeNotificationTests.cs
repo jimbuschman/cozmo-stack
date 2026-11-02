@@ -26,7 +26,8 @@ public sealed class NativeNotificationTests
         internal LocalNotifications Owner=>Assert.IsType<LocalNotifications>(Engine.NativeLocalNotifications);
         internal Fixture(NotificationDeterminants? history=null,string? config=null,Func<long>? clock=null,bool supplyNeeds=true,bool supplyDecay=true)
         {
-            var options=Files.Options(new CozmoEngineOptions{NotificationHistory=history,NeedsSystemClockMicroseconds=clock,DasDeviceId="device",LabLocaleLanguage="en",LabLocaleCountry="us"});
+            string nurture=Path.Combine(Files.Root,"nurture");Directory.CreateDirectory(nurture);
+            var options=Files.Options(new CozmoEngineOptions{NeedsDeviceDirectory=nurture,NotificationHistory=history,NeedsSystemClockMicroseconds=clock,DasDeviceId="device",LabLocaleLanguage="en",LabLocaleCountry="us"});
             string source=Path.GetDirectoryName(BackupTestResources.ShippedConfig())!;
             foreach(string name in new[]{"needs_config.json","needs_decay_config.json","needs_action_config.json","needs_level_config.json","needs_handlers_config.json","local_notification_config.json"})
                 if((supplyNeeds||name!="needs_config.json")&&(supplyDecay||name!="needs_decay_config.json"))File.Copy(Path.Combine(source,name),Path.Combine(options.ResourcesPath!,"config","engine",name),true);

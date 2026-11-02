@@ -41,4 +41,17 @@ internal static class NativeNotificationCalendar
         }
         catch(Exception e) when(e is DllNotFoundException or EntryPointNotFoundException){return false;}
     }
+    internal static bool TryLocalDay(long epochSeconds,out int year,out int yearDay)
+    {
+        year=yearDay=0;if(epochSeconds<int.MinValue||epochSeconds>int.MaxValue)return false;
+        try
+        {
+            Tm value;
+            if(OperatingSystem.IsWindows()){if(WindowsLocaltime(out value,ref epochSeconds)!=0)return false;}
+            else if(OperatingSystem.IsLinux()){if(UnixLocaltime(ref epochSeconds,out value)==IntPtr.Zero)return false;}
+            else return false;
+            year=value.Year;yearDay=value.YearDay;return true;
+        }
+        catch(Exception e) when(e is DllNotFoundException or EntryPointNotFoundException){return false;}
+    }
 }

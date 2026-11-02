@@ -120,10 +120,10 @@ public sealed partial class NeedsManager
         if(engine is null||!engine.NeedsContextAlive||!ReferenceEquals(engine.Needs,this)){SteppedBehavior.ReportMissing("M15-014 original Needs/context owner unavailable at resolver");return;}
         bool Current()=>engine.NeedsContextAlive&&ReferenceEquals(engine.Needs,this);
         if(PossiblyWriteLabAssignments is {} lab)lab();
-        else {SteppedBehavior.ReportMissing("M15-050 Lab writeback unavailable at Needs resolver 0x00694622");return;}
+        else {engine.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-050 Lab writeback unavailable at Needs resolver 0x00694622");return;}
         if(!Current())return;
-        if(!engine.Experiments.NativeAssignmentHistoryAvailable){SteppedBehavior.ReportMissing("M15-050/M15-014 Lab precursor history unavailable; Needs resolver continuation withheld");return;}
-        if(_nativeDeviceInputUnavailable){SteppedBehavior.ReportMissing("M15-014 Needs device input history unavailable; resolver continuation withheld");return;}
+        if(!engine.Experiments.NativeAssignmentHistoryAvailable){engine.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-050/M15-014 Lab precursor history unavailable; Needs resolver continuation withheld");return;}
+        if(_nativeDeviceInputUnavailable){engine.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-014 Needs device input history unavailable; resolver continuation withheld");return;}
         bool r=_robotReadSucceeded,d=_deviceDataPresent,rewrite=_robotRewriteNeeded;
         bool deviceWrite=false,robotWrite=false,changed=false,apply=false,clearDisconnect=false,clearBackground=false,noAction=false;
         if(!r&&!d){deviceWrite=true;robotWrite=true;noAction=true;}
@@ -131,7 +131,7 @@ public sealed partial class NeedsManager
         {
             if(_previousSerial!=_serial)
             {
-                bool alternate=TryLoadAlternateDeviceFile(_serial);if(!Current()||_nativeDeviceInputUnavailable)return;
+                bool alternate=TryLoadAlternateDeviceFile(_serial);if(!Current())return;if(_nativeDeviceInputUnavailable){engine.NativeLocalNotifications?.MarkHistoryUnavailable();return;}
                 deviceWrite=alternate;robotWrite=true;changed=true;
             }
             else robotWrite=true;
@@ -170,13 +170,13 @@ public sealed partial class NeedsManager
         long writeTime=NativeSystemClockMicros(); // 0x694D9E, always once for both requested writes
         if(deviceWrite)
         {
-            State.NativeDateTimeMicros=writeTime;if(!WriteNativeDevice(false)||!Current())return;
+            State.NativeDateTimeMicros=writeTime;if(!WriteNativeDevice(false)){engine.NativeLocalNotifications?.MarkHistoryUnavailable();return;}if(!Current())return;
             _deviceDataPresent=true;_deviceVersionUpdated=false;
         }
-        if(robotWrite){_robotRewriteNeeded=false;if(!StartNativeRobotWrite(writeTime)||!Current())return;}
+        if(robotWrite){_robotRewriteNeeded=false;if(!StartNativeRobotWrite(writeTime)){engine.NativeLocalNotifications?.MarkHistoryUnavailable();return;}if(!Current())return;}
         if(TryLocalNotificationsGenerate is {} nativeNotifications){if(!nativeNotifications())return;}
         else if(LocalNotificationsGenerate is {} notifications)notifications();
-        else SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00694EEC");
+        else {engine.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00694EEC");}
     }
     // 0x69449C: only the original connected robot's queue can deliver this callback.
     private int? StartNativeRobotRead(uint tag)
@@ -221,11 +221,12 @@ public sealed partial class NeedsManager
         {SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.StartWriteToRobot.WriteFailed","Write failed");if(engine.NeedsContextAlive&&!owner.Lifetime.Destroying&&ReferenceEquals(_nativeConnectedRobot,owner))EngineErrorState.StoreAndMaybeBreak();}
         return engine.NeedsContextAlive&&ReferenceEquals(engine.Needs,this);
     }
-    private void PossiblyStartNativeRobotWrite(bool force)
+    private bool PossiblyStartNativeRobotWrite(bool force)
     {
-        var owner=_nativeConnectedRobot;if(!_robotConnected||owner is null||owner.Lifetime.Destroying)return;
+        var owner=_nativeConnectedRobot;if(!_robotConnected||owner is null)return true;if(owner.Lifetime.Destroying)return false;
         long now=NativeSystemClockMicros();
-        if(unchecked(now-_nativeLastRobotWriteMicros)>600_999_999L||force)StartNativeRobotWrite(now);
+        if(unchecked(now-_nativeLastRobotWriteMicros)>600_999_999L||force)return StartNativeRobotWrite(now);
+        return true;
     }
     private void ApplyNativeElapsed(bool connected)
     {

@@ -731,10 +731,11 @@ public sealed partial class NeedsManager
     internal Func<long> NativeSystemClockMicros=()=> (DateTimeOffset.UtcNow.Ticks-DateTimeOffset.UnixEpoch.Ticks)/10;
     private long _nativeLastRobotWriteMicros;
     private NativeStarThresholds? _nativeStarThresholds;
+    private bool _nativeStarMetadataKnown;
     private int? _nativeRepairRounds;
     private NeedsState? _nativeRobotCandidate;
     private int _nativeOnboardingStage;
-    private bool NativeMetadataAvailable=>_nativeStarThresholds is not null;
+    private bool NativeMetadataAvailable=>_nativeStarThresholds is not null&&_nativeStarMetadataKnown;
     private bool _nativePersistenceReady; // remains false until the full source resolver/read/write join is installed
     private bool _nativePersistencePrerequisites;
     internal float? NativeNotificationMaxFuture;
@@ -748,7 +749,8 @@ public sealed partial class NeedsManager
     {
         if(starConfig is null){SteppedBehavior.ReportMissing("M15-014 StarRewardsConfig needs_level_config.json is unavailable; no max-stars value fabricated");return;}
         _nativeStarThresholds=NativeStarThresholds.Parse(starConfig);if(_nativeStarThresholds is null)return;
-        State.NativeUnlockLevel=0;State.NativeStarsAwarded=0;State.NativeStarsForNextUnlock=_nativeStarThresholds.GetMax(0);
+        if(!_nativeStarThresholds.TryGetMax(0,out int maximum)){SteppedBehavior.ReportMissing("M15-014 initial max-stars scalar unavailable");return;}
+        _nativeStarMetadataKnown=true;State.NativeUnlockLevel=0;State.NativeStarsAwarded=0;State.NativeStarsForNextUnlock=maximum;
         State.NativeDateTimeMicros=0;State.NativeSerial=uint.MaxValue;
         State.NativeTimeCreatedMicros=NativeSystemClockMicros();
         State.NativeAppOpenMicros=NativeSystemClockMicros();
@@ -855,19 +857,20 @@ public sealed partial class NeedsManager
         }
         if(NativeContextBound&&FixedDeviceFilePath is null)
         {
+            HostEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();
             SteppedBehavior.ReportMissing("M15-014 NeedsDeviceDirectory input unavailable at 0x00693466; no file-absence outcome or startup persistence tail fabricated");
             return;
         }
         bool ok = AttemptReadFromDevice(FixedDeviceFilePath);      // 0x00693466
-        if(NativeContextBound&&_nativePersistenceReady&&_nativeDeviceInputUnavailable)return;
+        if(NativeContextBound&&_nativePersistenceReady&&_nativeDeviceInputUnavailable){HostEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();return;}
         lock (_gate) _deviceDataPresent = ok;   // +0x1C9 = (byte)result (0x0069346C)
         if (!ok) SendNeedsStateToGame(NeedsActionId.NoAction);   // 0x00693476
-        if(NativeContextBound&&_nativePersistenceReady){if(!WriteNativeDevice(true))return;}
+        if(NativeContextBound&&_nativePersistenceReady){if(!WriteNativeDevice(true)){HostEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();return;}}
         else WriteToDevice?.Invoke(true);                        // 0x0069347E
         SendNeedsLevelsDasEvent?.Invoke("app_start");            // 0x00693486
         if(TryLocalNotificationsGenerate is {} nativeNotifications){if(!nativeNotifications())return;}
         else if(LocalNotificationsGenerate is {} notifications)notifications();
-        else if(HasNativePersistence)SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00693492");
+        else if(HasNativePersistence){HostEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00693492");}
     }
 
     public NeedsConfig Config { get; }
@@ -1249,15 +1252,19 @@ public sealed partial class NeedsManager
     {
         if(NativeContextBound&&_nativePersistenceReady)
         {
-            if(!NativeMetadataAvailable||DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 device persistence input unavailable");return;}
-            long nowMicros=NativeSystemClockMicros();
-            if(unchecked(nowMicros-State.NativeDateTimeMicros)<61_000_000L)return;
-            State.NativeDateTimeMicros=nowMicros;WriteNativeDevice(false);return;
+            _=PossiblyWriteNativeDevice();return;
         }
         double now = _clockSec();
         if (now - _lastWriteSec < WriteThrottleSec) return;
         _lastWriteSec = now;
         WriteToDevice?.Invoke(false);
+    }
+    private bool PossiblyWriteNativeDevice()
+    {
+        if(!NativeMetadataAvailable||DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 device persistence input unavailable");return false;}
+        long nowMicros=NativeSystemClockMicros();
+        if(unchecked(nowMicros-State.NativeDateTimeMicros)<61_000_000L)return true;
+        State.NativeDateTimeMicros=nowMicros;return WriteNativeDevice(false);
     }
 
     /// <summary>The engine's 61,000,000-unit (microsecond) write throttle, 61 s (J14).</summary>
@@ -1674,7 +1681,8 @@ public sealed partial class NeedsManager
             candidate.NativeTimeCreatedMicros=unchecked((long)(robot.TimeCreated*1_000_000UL));
             candidate.NativeLastStarMicros=unchecked((long)(robot.TimeLastStarAwarded*1_000_000UL));
             candidate.NativeUnlockLevel=robot.CurNeedsUnlockLevel;candidate.NativeStarsAwarded=robot.NumStarsAwarded;
-            candidate.NativeStarsForNextUnlock=_nativeStarThresholds!.GetMax(robot.CurNeedsUnlockLevel);
+            if(!_nativeStarThresholds!.TryGetMax(robot.CurNeedsUnlockLevel,out int maximum)){SteppedBehavior.ReportMissing("M15-014 robot candidate max-stars scalar unavailable");return false;}
+            candidate.NativeStarsForNextUnlock=maximum;
             candidate.NativeSerial=owner.NativeBodyId;candidate.ForceNextSong=robot.ForceNextSong;candidate.ContextRandom=context.ContextRandom;
             for(int i=0;i<3;i++){candidate.StoreLevel((NeedId)i,(float)levels[i]);candidate.SetNativePartDamage(i,robot.PartIsDamaged[i]);}
             _nativeOnboardingStage=robot.OnboardingStageCompleted; // 0x69A18C: manager field, before bracket refresh/resolver
@@ -2109,6 +2117,7 @@ public sealed partial class NeedsManager
     /// <summary><c>RegisterNeedsActionCompleted</c>: the action's deltas (± range) applied; unknown actions are ignored and logged.</summary>
     public bool RegisterNeedsActionCompleted(string actionId)
     {
+        bool allowRobotTail=true;
         lock (_gate)
         {
         var nativeEngine=HostEngine;
@@ -2116,7 +2125,10 @@ public sealed partial class NeedsManager
         bool NativeCurrent()=>!nativeRecipient || (nativeEngine is not null && nativeEngine.NeedsContextAlive && ReferenceEquals(HostEngine,nativeEngine) && ReferenceEquals(nativeEngine.Needs,this));
         if(!NativeCurrent())
         {SteppedBehavior.ReportMissing("M15-071 original Needs/context owner unavailable; action skipped");return false;}
-        if (_paused || !_robotConnected) return false; // 0x006960E0..0x006960F8
+        if(_paused)return false;
+        if(nativeRecipient&&!UsesUncertifiedPersistenceTestAdapter)
+        {if(_nativeConnectedRobot is null)return false;}
+        else if(!_robotConnected)return false; // 0x006960E0..0x006960FA
         // The +0x39C whitelist defaults off; its Unity onboarding input is outside the standalone app boundary.
         if (!Enum.TryParse<NeedsActionId>(actionId, false, out var action) || Enum.GetName(action) != actionId)
         { SteppedBehavior.ReportMissing("M15-046 host action has no supplied native NeedsActionId: " + actionId); return false; }
@@ -2148,26 +2160,29 @@ public sealed partial class NeedsManager
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         SendNeedsStateToGame(action); // 0x00696366, before the reward query.
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
+        int? dailyResult=nativeRecipient&&!UsesUncertifiedPersistenceTestAdapter?UpdateNativeStars(false):0;
+        if(dailyResult is null)return false;
         // 0x696378 calls Generate before examining the configured reward weight,
         // including for zero-weight actions. Its owner retains uncertainty if an
         // incomplete invocation could have consumed the shared RNG.
         bool notificationHistoryKnown=true;
-        if(nativeRecipient)
+        if(nativeRecipient&&dailyResult==0)
         {
             if(TryLocalNotificationsGenerate is {} generate)notificationHistoryKnown=generate()&&nativeEngine?.NativeLocalNotifications?.RandomHistoryKnown==true;
             else {notificationHistoryKnown=false;nativeEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-093 LocalNotifications.Generate recipient unavailable at 0x00696378");}
             if(!NativeCurrent())return false;
         }
         float rewardWeight=(float)d.FreeplaySparksRewardWeight;
-        if (!(MathF.Abs(rewardWeight)<BitConverter.Int32BitsToSingle(0x3727C5AC)))
+        if (dailyResult==0&&!(MathF.Abs(rewardWeight)<BitConverter.Int32BitsToSingle(0x3727C5AC)))
         {
             if(nativeRecipient)
             {
-                Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
-                if(nativeEngine is null || !ReferenceEquals(HostEngine,nativeEngine) || !ReferenceEquals(nativeEngine.Needs,this))
-                    SteppedBehavior.ReportMissing("M15-071 weighted reward original Needs/context owner changed; producer unavailable");
-                else if(!notificationHistoryKnown)SteppedBehavior.ReportMissing("M15-071/M15-093 weighted reward withheld: notification effects or shared RNG history unavailable");
-                else SteppedBehavior.ReportMissing("M15-071/M15-093/M15-094/M15-095 weighted reward gates and inventory producer unavailable");
+                bool? awarded=nativeEngine is null?null:TryNativeFreeplayReward(nativeEngine,action,notificationHistoryKnown);
+                if(awarded is null)
+                {
+                    Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
+                    SteppedBehavior.ReportMissing("M15-071/M15-093 weighted reward withheld: notification effects, shared RNG history or reward inputs unavailable");
+                }
             }
             else if (d.FreeplaySparksRewardWeight > 0)
             {
@@ -2182,10 +2197,16 @@ public sealed partial class NeedsManager
             }
         }
         DetectBracketChanges();
+        if(nativeRecipient&&!UsesUncertifiedPersistenceTestAdapter)
+        {
+            if(!NativeCurrent())return false;
+            if(!_nativePersistenceReady){SteppedBehavior.ReportMissing("M15-014 common action device-write input unavailable at 0x0069652E");allowRobotTail=false;}
+            else if(!PossiblyWriteNativeDevice())allowRobotTail=false;
+        }
         }
         // Appendix I2: RegisterNeedsActionCompleted 0x006960D0 calls PossiblyStartWriteToRobot with force = false
         // (0x00696534..0x00696536), after the deltas. Outside _gate so the NV write is not queued under it.
-        PossiblyStartWriteToRobot(false);
+        if(allowRobotTail)PossiblyStartWriteToRobot(false);
         return true;
     }
 

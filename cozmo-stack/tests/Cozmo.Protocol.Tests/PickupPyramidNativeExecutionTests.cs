@@ -11,7 +11,7 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class PickupPyramidNativeExecutionTests
 {
-    private static string Resources()
+    internal static string Resources()
     {
         for(var dir=new DirectoryInfo(AppContext.BaseDirectory);dir is not null;dir=dir.Parent)
         {var path=Path.Combine(dir.FullName,"re-analysis","obb","assets","cozmo_resources");if(File.Exists(Path.Combine(path,"config","engine","behaviorSystem","activities_config.json")))return path;}
@@ -19,14 +19,15 @@ public sealed class PickupPyramidNativeExecutionTests
     }
     internal sealed class Fixture:IDisposable
     {
-        internal readonly M4ControlTests.Rig Rig=new(Resources());
+        internal readonly M4ControlTests.Rig Rig;
         internal EngineRobot Robot=>Rig.Engine.Robot!;
         internal NativeBehaviorRuntime Runtime=>Robot.NativeBehaviorRuntime!;
         internal ManipulationSystem M=>Runtime.Manipulation!;
         internal float Head=-.15f,Lift,Yaw,X,Y;
         private int _motorMark;
-        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false)
+        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false)
         {
+            Rig=new M4ControlTests.Rig(Resources(),engineOptions:engineOptions);
             if(pumpAnimations)
             {
                 Rig.Robot.Animations.ManualTicking=true;
@@ -42,12 +43,32 @@ public sealed class PickupPyramidNativeExecutionTests
                 Rig.Tick();var tag=Rig.Engine.NvStorage!.InFlightTag;startupTrace.Add($"tick={i} inFlight={tag}");if(tag is null)continue;
                 var writer=new CladWriter();if(tag==CameraCalibration.NvEntryTag)
                 {foreach(float value in new[]{290f,291f,160f,120f,0f})writer.F32(value);writer.U16(240);writer.U16(320);for(int k=0;k<8;k++)writer.F32(0);}
-                Rig.Data(new NVOpResult{Tag=tag.Value,Op=0,Result=tag==CameraCalibration.NvEntryTag?(sbyte)0:(sbyte)1,Data=writer.ToArray()});Rig.Tick();
+                if(sourceNvEmpty)
+                {
+                    var command=Rig.SentSince(0).OfType<NVCommand>().Last(c=>c.Tag==tag.Value);
+                    Rig.Data(new NVOpResult{Tag=tag.Value,Op=command.Op,Result=command.Op==NvStorageComponent.OpRead&&tag!=CameraCalibration.NvEntryTag?(sbyte)-1:(sbyte)0,Data=tag==CameraCalibration.NvEntryTag?writer.ToArray():Array.Empty<byte>()});
+                }
+                else Rig.Data(new NVOpResult{Tag=tag.Value,Op=0,Result=tag==CameraCalibration.NvEntryTag?(sbyte)0:(sbyte)1,Data=writer.ToArray()});
+                Rig.Tick();
             }
             Rig.Engine.StackLogLine-=Log;
             if(Rig.Robot.CameraSettings.Calibration is null)
                 Assert.True(false,$"NV={string.Join(" | ",startupTrace)}; sent={string.Join(" | ",Rig.SentSince(0).OfType<NVCommand>().Select(c=>$"tag={c.Tag} op={c.Op} len={c.Length}"))}; logs={string.Join(" | ",startupLogs.TakeLast(30))}");
             Assert.NotNull(Rig.Robot.CameraSettings.Calibration);Assert.Same(Rig.Robot.CameraSettings.Calibration,M.Vision.Calibration);
+            if(sourceNvEmpty)
+            {
+                var nv=Rig.Engine.NvStorage!;
+                for(int i=0;i<300&&!nv.IsIdle;i++)
+                {
+                    if(nv.InFlightTag is {} tag)
+                    {
+                        var command=Rig.SentSince(0).OfType<NVCommand>().Last(c=>c.Tag==tag);
+                        Rig.Data(new NVOpResult{Tag=tag,Op=command.Op,Result=command.Op==NvStorageComponent.OpRead?(sbyte)-1:(sbyte)0,Data=Array.Empty<byte>()});
+                    }
+                    Rig.Tick();
+                }
+                Assert.True(nv.IsIdle,"Actual startup NV queue did not drain");Rig.Tick();
+            }
         }
         internal ObservableObject Add(uint id=7,float x=150,float z=22)
         {

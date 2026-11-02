@@ -1,32 +1,34 @@
 # REWARD-GATE-1 — WIP, NOT READY
 
-Current baseline: main d45b08c3; manager branch rebased and pushed at0d3d9959. Unfinished work was preserved throughout; no reset/discard. The original e4b2db5e draft also remains on the pushed preservation branch. Pounce passed externally; this job continues before VISIT-EDGE-REAL-MAP-1.
+Stopped at the operator's usage-limit request. Baseline is origin/main d45b08c3. Last checked checkpoint is38c22da9; the daily/weighted draft saved above it is untested. Nothing was discarded, no full gate was run for this job, and no statuses or approvals were changed.
 
-Built and checked:
-- Original-robot Inventory: D8/D9/DA, signed cap/Add/Set, 5,000,000us throttle,256-byte NV195000 snapshot and completion/current6F report; no extra Ready/inflight guards or rollback. Original callback owner and source change/balance events retained (63CDE0,63CE9C,63D05C,63D3A4,63D974).
-- Original-robot ProgressionUnlock: D7, changed-only ordered All/Defaults expansion,2048-byte NV182000 snapshots and result6C/default6E reports; original request/callback owner (64BA4E,64BFDC,64C204,64C4D0,64CBE8).
-- Actual Lab startup/assignment/cache subscriber, pre-init audience, body-ID AB callback, original NV196000 restore and live writeback (7ECEF8,4EF212,6A6112,537054,6A5AA0,78A970,6A5C34). Missing startup inputs/history stay unavailable.
-- Native Needs metadata: full current/candidate state and maps, pre-Lab constructor clocks, signed epoch microseconds, immediate onboarding, nine-case resolver and source callback order; full62/69/6B bodies, actual194000 read/write and first-Robot/NV representation boundary (695870,6998B4,694608,69449C,695494,69BEB2,699CD8). Initial normal variation is source-known; an unknown later caller does not make initial reporting unavailable.
+Built and passing at the checked checkpoint:
+- Original Inventory and ProgressionUnlock owners: subscriptions, mutations, caps/throttles, NV195000/182000 snapshots and reports;67 affected tests passed.
+- Lab startup, retained lookup/assignment/signal state and actual NV196000 restore/writeback;332 affected tests passed. Whole M15-062 is independently recommended for Claude after the parent gate; its stale location/evidence/unresolved still need formal alignment.
+- Full Needs metadata/candidate, signed microsecond clock, nine-case resolver, original NV owner and62/69/6B reports;396 affected tests passed.
+- Shipped44 LocalNotifications, D4/D5/D6, persisted85-entry input, host C calendar, same context RNG,97/98/99 reports and native clock boundaries; final416/416 PASS,0 skipped,31s, compiler/test/shutdown/postflight0. Fidelity check passed753 records.
 
-Checks completed (all0 skipped):
-- Writers:62/64,F2 independently classified stale interface fixtures; corrected64/64, final event-inclusive67/67 PASS.
-- Lab:327/332,F5 classified four stale fixture assertions; corrected332/332 PASS14s.
-- Metadata: first compile failed3 errors before tests; corrected. Next389/396,F7 independently classified fixture defects/stale expectations: two truncated copies of the source blob, two old version0-zero expectations, two diagnostic filters and one ForceSet owner missing config. Exact independent116-byte vectors and original behavioural checks retained. Final396/396 PASS30s; compiler/test/shutdown0, final process count0 (transient1 followed by0 in the same log).
-- Notifications:415/416,F1 classified a stale weighted-proof diagnostic assertion after the real missing-profile boundary; fixture-only repair retained all state/payload/no-report/recovery checks. Final416/416 PASS0skip31s, compiler/test/shutdown/postflight0. Native microsecond boundary/restoration tests are included. Two verified diagnostic address corrections and the actual062 tag are non-behavioural cleanup after the pass.
-- Fidelity check PASS753 records. No protected manifest fields differ from main. No Reward full gate yet; Pounce's7581 pass is not claimed for these changes. Logs and classification/source ledgers are in .scratch/reward-gate-1/.
+Half-done files:
+- `Behavior/NeedsDailyRewards.cs`: new daily-star, reward traversal, report codecs and weighted producer.
+- `Behavior/Needs.cs`, `NeedsMetadata.cs`, `NeedsNativePersistence.cs`: full level config, Register integration and metadata joins.
+- `NativeNotificationCalendar.cs`: daily calendar extension.
+- `NativeDailyRewardTests.cs`, `NativeRewardCanonicalTests.cs`: new, unrun component/canonical tests.
+- `PickupPyramidNativeExecutionTests.cs`: fixture ingress/options extension; `NativeNotificationTests.cs`: related draft fixture changes.
 
-Built and checked next: LocalNotifications source-ordered shipped44 parser/subscriptions, sticky connection byte, actual initialization float, explicit persisted determinant input, host C calendar, shared RNG and97/98/99 recipients. Scaffolding was unfinished at the main-sync checkpoint; the completed finite implementation now passed416/416 affected tests. Source inventories for shipped44 notifications and daily/weighted rewards have independently passed, including actual ARM predicate/pack/arithmetic oracles. They are evidence for the build, not implementation passes.
+Engine reading already complete:
+- 0x696366..696536: state report → daily check → notification generation → weight/chance → award → old pending report → new amount/pending/key → common tails.
+- 0x696AAC: prior/current Play bracket and local year/day gate; changed-day mutation,67, completion, forced write, notifications.
+- 0x698740/0x6993F8/0x69CBB8: ordered prior/current reward traversal; counter limits the next prior level, not inner descriptors; SetStarLevel resets stars before updated66 payload.
+- 0x696D74/0x697110: unclamped binary32 chance floor, strict context-RNG comparison, inclusive award draw and raw Add amount. Weight equality and unordered NaN proceed at0x69638A..A4.
+- Native pack71732E/71715C/784414 establishes67/66/nested reward widths;68E650/7869D0 establishes ordered28-level config. ARM payload/arithmetic oracles and exact assets are in `.scratch/reward-gate-1/` alongside `daily-reward-build-read.md` and its independent review.
 
-Not yet built: complete daily star machine, ProcessLevelRewards integration and weighted freeplay gate/pending/key producer. Done still requires the canonical300s production-order test with RollACube at30s, continuing Freeplay and naturally produced/communicated EarnedSparks, then the final batch gate. Do not force pending/amount or pretend missing notification draws did not occur. Native64-bit throttle/restoration boundaries are covered by the passing notification integration scope.
+Left, in order:
+1. Finish the draft and verify early reviewer findings: distinguish known M1 empty-level skips from unknown inputs; check/reload only each source-used recipient; stop unknown RNG at the first actual draw while preserving known prefix effects. Final review has not passed.
+2. Finish component tests and canonical300s RollACube-at30s/natural EarnedSparks proof. The current canonical draft reseeds RNG after startup and has a weak continuation assertion; these are not an accepted production-path proof and must be corrected.
+3. Run affected tests, classify failures before edits, obtain independent review, then commit and run the full gate. Only then READY FOR CLAUDE. Next job afterward is VISIT-EDGE-REAL-MAP-1, not started.
 
-Input/policy boundaries for Claude:
-- Supply the persisted app tuple explicitly: signed install seconds,85 signed unlock timestamps,85 played flags. No automatic new profile, zero history or reconstruction from unlock ownership. Initial settings delivery after subscription registration and before the host's first Generate is standalone input scheduling, not a global Unity-order claim. Propose the owning app-input COMPATIBILITY_POLICY; Codex adds no record or approval.
-- Standing M1-034: version0 sets rewrite before undefined prefix use69A052; skip only invalid blob application and keep prior valid state. Current protected M15-018 still says zero-fill and needs formal reconciliation by Claude. Normal versions1–5 are unaffected.
-- Notification faults: skip only an invalid text item at68CB98 after its known draws; null Clear97 at68CAD0 and Cache98 at68CC28 skip only each failed report, keeping known remaining work/draws/deadline. Missing source inputs are distinct and cannot be treated as handled success or retroactively repaired RNG history.
-- Nonshipped/partially uninitialized config branches, external calendar domains, runtime tuning invocation, unrepresented first-Robot NV and missing host directories/history remain explicit boundaries. No whole existing record settlement proposal until integrated own-path verification. M15-096 game bodies are not built.
+Failures/check limits: no current known failing test at38c22da9. Notification run1 was415/416 due a stale missing-profile diagnostic assertion; corrected416/416. Earlier metadata compile errors and seven fixture failures were corrected and logged. The current daily draft has not been compiled or tested; it may fail. No hardware run by Codex.
 
-Workers requested: reader gpt-6.1-sol medium; builder/reviewers DEFAULT, overrides omitted and unchanged. Actual backend/effort unobserved except earlier reviewer-reported Terra telemetry; no inference from labels. Reviewer corrections so far: writers1; Lab1; metadata1 ongoing pre-freeze feedback batch plus1 frozen source correction,1 compiler correction and1 fixture-only correction. Notification:1 pre-freeze feedback batch,0 frozen behavioral fix rounds and1 classified fixture-only correction; no invented final aggregate. Builder MISSING items and resolutions are in the finite ledgers above, including original-owner representation, host inputs, calendar and runtime variation.
+Boundaries: explicit persisted notification history is required; no invented zero profile or RNG recovery. Runtime tuning and nonshipped config/calendar domains remain named gaps. Standing M1-034 skips invalid version0 application at69A052, retaining prior state/rewrite; protected M15-018's old zero wording remains for Claude to reconcile.
 
-Whole-record proposal after the parent gate: M15-062, independently checked against its current full claim. Its actual Lab owner now has the fidelity tag; Claude must align the protected stale Lights.cs location/evidence/unresolved, use the clock-dependent app_user_d0 predicate and name shared M1-034 report skip7ECA9C. No neighboring052/036/050/034/035 closure is implied.
-
-Next: build/review/test the daily/weighted producer, canonical test and full gate. Parent row remains WIP, NOT READY. After handoff, take main's VISIT-EDGE-REAL-MAP-1 as one whole job. No statuses, approvals, acceptance or hardware runs by Codex.
+Worker requests stayed unchanged: reader gpt-6.1-sol medium; builder/reviewer DEFAULT with overrides omitted, actual backend unobserved. Review rounds: writers1; Lab1; metadata1 pre-freeze batch+1 frozen correction, plus compiler/fixture repairs; notifications1 pre-freeze batch+1 fixture repair; daily early review unfinished. Builder MISSING concerns are owner/input/RNG-history boundaries above. Parent remains WIP, NOT READY.

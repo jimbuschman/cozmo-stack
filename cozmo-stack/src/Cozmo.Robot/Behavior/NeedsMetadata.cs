@@ -30,14 +30,27 @@ public sealed partial class NeedsState
     }
 }
 
-// Source NumStarsToUnlock recipient; other reward fields are intentionally not represented here.
+internal sealed record NativeNeedsReward(int Type,byte[] Data,bool InventoryIsFull);
+internal sealed record NativeStarLevel(int? Stars,int? Target,int? PriorLimit,float? MinimumPct,float? MaximumPct,int? Minimum,int? MinimumMaximum,int? FreeplayTarget,float? FreeplayChance,float? FreeplayMinimumPct,float? FreeplayMaximumPct,int? FreeplayMinimum,int? FreeplayMinimumMaximum,IReadOnlyList<NativeNeedsReward> Rewards);
+
+// One retained source-owned StarRewardsConfig is shared by metadata and reward consumers.
 internal sealed class NativeStarThresholds
 {
-    private readonly int[] _levels;
-    private NativeStarThresholds(int[] levels)=>_levels=levels;
-    internal int GetMax(int level)=>_levels.Length==0?0:_levels[(uint)level<(uint)_levels.Length?level:_levels.Length-1];
+    private readonly NativeStarLevel[] _levels;
+    private NativeStarThresholds(NativeStarLevel[] levels)=>_levels=levels;
+    internal int Count=>_levels.Length;
+    internal bool TryGetMax(int level,out int maximum)
+    {
+        if(_levels.Length==0){maximum=0;return true;}
+        int? value=_levels[(uint)level<(uint)_levels.Length?level:_levels.Length-1].Stars;
+        maximum=value.GetValueOrDefault();return value.HasValue;
+    }
+    internal int GetMax(int level)=>TryGetMax(level,out int maximum)?maximum:throw new JsonMissingSource("StarRewardsConfig max-stars scalar unavailable");
+    internal bool TryGetLevel(int level,out NativeStarLevel? value)
+    {value=_levels.Length==0?null:_levels[(uint)level<(uint)_levels.Length?level:_levels.Length-1];return value is not null;}
     internal static NativeStarThresholds? Parse(string text)
     {
+        var result=new List<NativeStarLevel>();
         try
         {
             if(!Json.TryParseFirst(Encoding.UTF8.GetBytes(text),out var document))
@@ -47,18 +60,36 @@ internal sealed class NativeStarThresholds
                 var root=document.RootElement;var levels=Json.Member(root,"unlockLevels");
                 if(levels.Kind!=FirmwareJsonKind.Array)
                 {StackDiagnostics.Write("M15-014 StarRewardsConfig unlockLevels outside checked array input; config unavailable");return null;}
-                var result=new List<int>();
                 foreach(var entry in levels.Elements)
                 {
-                    if(entry.Kind!=FirmwareJsonKind.Object||!entry.Members.ContainsKey(Convert.ToHexString("numStarsToUnlock"u8)))
-                    {StackDiagnostics.Write("M15-014 StarRewardsConfig missing numStarsToUnlock; config unavailable");return null;}
-                    result.Add(Json.AsInt(Json.Member(entry,"numStarsToUnlock")));
+                    if(entry.Kind!=FirmwareJsonKind.Object)
+                    {StackDiagnostics.Write("M15-014 StarRewardsConfig level entry unavailable; earlier levels retained");break;}
+                    bool Has(string key)=>entry.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
+                    int? I(string key)=>Has(key)?Json.AsInt(Json.Member(entry,key)):null;
+                    float? F(string key)=>Has(key)?Json.AsFloat(Json.Member(entry,key)):null;
+                    var rewards=new List<NativeNeedsReward>();
+                    if(Has("rewards"))
+                    {
+                        var array=Json.Member(entry,"rewards");
+                        for(uint i=0;i<Json.Size(array);i++)
+                        {
+                            var item=Json.Index(array,i);bool R(string key)=>item.Kind==FirmwareJsonKind.Object&&item.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
+                            int type=0;byte[] data=Array.Empty<byte>();bool full=false;
+                            if(R("rewardType"))type=Encoding.UTF8.GetString(Json.AsStringBytes(Json.Member(item,"rewardType"))) switch{"Sparks"=>0,"Unlock"=>1,"Song"=>2,"MemoryBadge"=>3,_=>0};
+                            if(R("data"))data=Json.AsStringBytes(Json.Member(item,"data")).ToArray();
+                            if(R("inventoryIsFull")){var v=Json.Member(item,"inventoryIsFull");full=v.Kind switch{FirmwareJsonKind.Boolean=>v.Boolean,FirmwareJsonKind.Null=>false,FirmwareJsonKind.Int=>v.Signed!=0,FirmwareJsonKind.UInt=>v.Unsigned!=0,FirmwareJsonKind.Real=>v.Real!=0,_=>throw new JsonLogicError("Value is not convertible to bool")};}
+                            rewards.Add(new(type,data,full));
+                        }
+                    }
+                    result.Add(new(I("numStarsToUnlock"),I("targetSparksTotal"),I("maxPriorLevelUnlocks"),F("minSparksPct"),F("maxSparksPct"),I("minSparks"),I("minMaxSparks"),I("freeplayTargetSparksTotal"),F("freeplayMinSparksRewardPct"),F("freeplayMinSparksPct"),F("freeplayMaxSparksPct"),I("freeplayMinSparks"),I("freeplayMinMaxSparks"),rewards));
                 }
                 return new(result.ToArray());
             }
         }
+        catch(JsonMissingSource e)
+        {StackDiagnostics.Write("M15-014 StarRewardsConfig conversion unavailable; earlier levels retained: "+e.Message);return result.Count==0?null:new(result.ToArray());}
         catch(Exception e) when(e is JsonLogicError or JsonRuntimeError)
-        {StackDiagnostics.Write("M1-034/M15-014 StarRewardsConfig terminating JsonCpp conversion; config unit skipped: "+e.Message);return null;}
+        {StackDiagnostics.Write("M1-034/M15-014 StarRewardsConfig terminating JsonCpp conversion; current level skipped, earlier levels retained: "+e.Message);return result.Count==0?null:new(result.ToArray());}
     }
 }
 
