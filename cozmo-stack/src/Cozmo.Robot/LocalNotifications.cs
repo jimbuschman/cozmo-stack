@@ -254,7 +254,9 @@ internal sealed class LocalNotifications : IDisposable
         }
         _deadline=_needs.NowSec+60f;return true;
     }
-    internal void Update(float now){if(_deadline<now)TryGenerate();}
+    // Update 0x0068CFF0 calls Generate only past the deadline, and Generate 0x0068CCBC..0x0068CCC4 always moves it. A stack stop
+    // on an unknown input leaves Generate early, so it moves here too: at most one attempt a minute, not one a tick.
+    internal void Update(float now){if(_deadline<now && !TryGenerate() && Current)_deadline=_needs.NowSec+60f;}
     internal void SetPaused(bool paused)=>TryGenerate();
     public void Dispose(){_retired=true;for(int i=_subscriptions.Count-1;i>=0;i--)_subscriptions[i].Dispose();_subscriptions.Clear();}
 }

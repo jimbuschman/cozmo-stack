@@ -115,6 +115,14 @@ public sealed class NativeNotificationTests
         Assert.False(f.Owner.TryGenerate());Assert.Equal(2,clear);Assert.False(f.Owner.RandomHistoryKnown);
     }
     [Fact]
+    public void UnknownHistoryStillMovesTheDeadlineSoUpdateDoesNotGenerateEveryTick() // 0x0068CFF0, 0x0068CCBC..0x0068CCC4
+    {
+        using var f=new Fixture(omitHistory:true);int clear=0;using var sub=f.Engine.AnimationMessages.SubscribeMessage(0x97,true,_=>clear++);
+        float now=f.Engine.Needs.NowSec+30f;f.Owner.Update(now);int first=clear;
+        Assert.True(first<=1);for(int i=0;i<5;i++)f.Owner.Update(now);Assert.Equal(first,clear);
+        f.Owner.Update(f.Engine.Needs.NowSec+61f);Assert.Equal(first+1,clear);
+    }
+    [Fact]
     public void MissingActualNeedsInputsStopAfterClearBeforeRandomDraw()
     {
         using var f=new Fixture(supplyNeeds:false,supplyDecay:false);int clear=0,words=0;f.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};

@@ -121,7 +121,7 @@ internal sealed class M13IdleRun
             robot = CozmoRobot.Create(engineOptions: engineOptions = HardwareEngineOptions.Create(resources, log: errors.Enqueue, beforeStart: e =>
             {
                 // What the robot had stored before this run changes anything.
-                e.Needs.RobotReadObserved += (result, data) => { var body = new JsonObject { ["result"] = result, ["hex"] = Convert.ToHexString(data) }; try { File.WriteAllText(Path.Combine(bundle, "needs-nv-read.json"), body.ToJsonString()); } catch (IOException x) { errors.Enqueue("needs NV read not saved: " + x.Message); } };
+                e.Needs.RobotReadObserved += (result, data) => { var body = new JsonObject { ["result"] = result, ["hex"] = Convert.ToHexString(data) }; try { File.WriteAllText(Path.Combine(bundle, "needs-nv-read.json"), body.ToJsonString()); } catch (Exception x) { errors.Enqueue("needs NV read not saved: " + x.Message); } };
                 EngineEvidence.Subscribe(e, line => { }, Event);
                 e.StackLogLine += stackLines.Enqueue;
                 e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject());
