@@ -25,9 +25,9 @@ public sealed class PickupPyramidNativeExecutionTests
         internal ManipulationSystem M=>Runtime.Manipulation!;
         internal float Head=-.15f,Lift,Yaw,X,Y;
         private int _motorMark;
-        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false,Func<uint,byte[]?>? sourceNvStored=null)
+        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false,Func<uint,byte[]?>? sourceNvStored=null,Func<uint,byte[]?>? sourceNvRaw=null)
         {
-            _sourceNvStored=sourceNvStored;
+            _sourceNvStored=sourceNvStored;_sourceNvRaw=sourceNvRaw;
             Rig=new M4ControlTests.Rig(Resources(),engineOptions:engineOptions);
             if(pumpAnimations)
             {
@@ -66,11 +66,13 @@ public sealed class PickupPyramidNativeExecutionTests
                 Assert.True(nv.IsIdle,"Actual startup NV queue did not drain");Rig.Tick();
             }
         }
-        private readonly Func<uint,byte[]?>? _sourceNvStored;
+        private readonly Func<uint,byte[]?>? _sourceNvStored,_sourceNvRaw; // raw: the reply bytes as the firmware sends them, no header added
         // Robot NV as a fresh robot answers it: reads find nothing unless a stored blob is supplied; writes and erases succeed.
         private void AnswerNv(uint tag,byte[]? calibration=null)
         {
-            var command=Rig.SentSince(0).OfType<NVCommand>().Last(c=>c.Tag==tag);byte[]? stored=command.Op==NvStorageComponent.OpRead?calibration is {Length:>0}&&tag==CameraCalibration.NvEntryTag?calibration:_sourceNvStored?.Invoke(tag) is {} blob?WithNvHeader(blob):null:null;
+            var command=Rig.SentSince(0).OfType<NVCommand>().Last(c=>c.Tag==tag);
+            if(command.Op==NvStorageComponent.OpRead&&_sourceNvRaw?.Invoke(tag) is {} raw){Rig.Data(new NVOpResult{Tag=tag,Op=command.Op,Result=0,Data=raw});return;}
+            byte[]? stored=command.Op==NvStorageComponent.OpRead?calibration is {Length:>0}&&tag==CameraCalibration.NvEntryTag?calibration:_sourceNvStored?.Invoke(tag) is {} blob?WithNvHeader(blob):null:null;
             Rig.Data(new NVOpResult{Tag=tag,Op=command.Op,Result=command.Op==NvStorageComponent.OpRead&&stored is null?(sbyte)-1:(sbyte)0,Data=stored??Array.Empty<byte>()});
         }
         private static byte[] WithNvHeader(byte[] payload) // M3-028: the robot returns the 16-byte header the write stored

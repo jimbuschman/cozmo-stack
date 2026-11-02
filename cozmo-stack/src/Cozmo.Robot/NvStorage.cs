@@ -1142,7 +1142,7 @@ public sealed class NvStorageComponent : IDisposable
                         // 0x00643112 bne -> 0x0064348A: sChanneledDebugF, channel NVStorage (0xBFB43A), key 0xBFB993, format
                         // 0xBFB9C5; args the reply tag, the u32 at blob+0, 0x435A4D4F. Result -1 (0x006434DC).
                         LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.InvalidHeader", $"Tag: 0x{r.Tag:x}, Got 0x{BitConverter.ToUInt32(r.Data, 0):x}, Expected 0x{NonFactoryHeaderMagic:x}");
-                        result = -1; req.Rejected = true;
+                        result = -1; req.Rejected = BitConverter.ToUInt32(r.Data, 0) != 0xFFFFFFFF; // erased flash is how an empty entry arrives on the operator's robot
                     }
                     else
                     {
@@ -1422,7 +1422,7 @@ public sealed class NvStorageComponent : IDisposable
 }
 
 /// <summary>The terminal result of one NV request: the NVResult and the assembled bytes (empty on an error).</summary>
-/// <summary><paramref name="Rejected"/>: the stack turned a bad header or size into NV_NOT_FOUND, as the engine does, so the robot does hold something.</summary>
+/// <summary><paramref name="Rejected"/>: NV_NOT_FOUND came from a bad header or size, as in the engine, on flash that is not erased, so the robot does hold something.</summary>
 public readonly record struct NvResult(sbyte Result, byte[] Data, bool Rejected=false);
 
 /// <summary>M3-030: one chunk of <c>BroadcastNVStorageOpResult</c> (tag, op, result, word@4 index, data).</summary>

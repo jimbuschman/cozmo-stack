@@ -219,9 +219,24 @@ public sealed class NativeNeedsPendingProofTests
         }
         finally{Directory.Delete(directory,true);}
     }
+    // A bad header on flash that is not erased: the robot holds something the stack can't read.
+    [Fact]
+    public void ABadHeaderOnWrittenFlashWritesNeitherCopy()
+    {
+        string directory=Directory.CreateTempSubdirectory("cozmo-bad-header-").FullName;
+        try
+        {
+            using var f=new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true,sourceNvRaw:tag=>tag==NeedsManager.NeedsNvKey?Enumerable.Repeat((byte)0x12,1024).ToArray():null);
+            var needs=f.Rig.Engine.Needs;
+            needs.RegisterNeedsActionCompleted("RollACube");needs.StartWriteToRobot(0);
+            for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
+            Assert.Empty(NeedsChanges(f));
+        }
+        finally{Directory.Delete(directory,true);}
+    }
     private static byte[] StoredLevelSeven()
     {
-        var stored=new NeedsStateOnRobot{Version=5,TimeLastWritten=2_000_000_000,CurNeedsUnlockLevel=7,NumStarsAwarded=1,TimeCreated=1_000_000_000};
+        var stored=new NeedsStateOnRobot{Version=5,TimeLastWritten=1_000_000_000,CurNeedsUnlockLevel=7,NumStarsAwarded=1,TimeCreated=900_000_000}; // older than the device copy
         for(int i=0;i<stored.CurNeedLevel.Length;i++)stored.CurNeedLevel[i]=80000;
         return NeedsStateOnRobot.Pack(stored);
     }
@@ -266,14 +281,17 @@ public sealed class NativeNeedsPendingProofTests
         }
         finally{Directory.Delete(directory,true);}
     }
-    // NV_NOT_FOUND is a real answer: the robot holds nothing, so the engine's first write stands (0x00694EE4).
-    [Fact]
-    public void ARobotWithNoStoredNeedsStillGetsTheEnginesFirstWrite()
+    // Hardware bundles 2026-10-12..11-01: every 0x194000 read on the operator's robot is NV_OKAY with erased flash, "Got 0xffffffff", so
+    // InvalidHeader gives NV_NOT_FOUND. That is how "no record" arrives, and the engine's first write stands (0x00694EE4).
+    [Theory]
+    [InlineData(false)] // the firmware's own NV_NOT_FOUND
+    [InlineData(true)]  // erased flash, the real reply
+    public void ARobotWithNoStoredNeedsStillGetsTheEnginesFirstWrite(bool erased)
     {
         string directory=Directory.CreateTempSubdirectory("cozmo-first-write-").FullName;
         try
         {
-            using var f=new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true);
+            using var f=new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true,sourceNvRaw:tag=>erased&&tag==NeedsManager.NeedsNvKey?Enumerable.Repeat((byte)0xFF,1024).ToArray():null);
             for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
             Assert.NotEmpty(NeedsChanges(f));
             Assert.True(Directory.GetFiles(directory).Length>1);

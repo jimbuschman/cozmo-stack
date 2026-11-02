@@ -44,7 +44,10 @@ input production can't make, and the test header now says so.
 Operator's approved departure, M15-014 in AGENTS.md. The first build leaked on reconnects and on a dropped link, so the rule became:
 from the serial edge until the copies resolve, nothing is saved under that serial, and a serial that was never earned is taken back.
 New tests cover an unusable read over two runs, a reconnect with a bad then a good read, and a disconnect during the read. A bad header
-or size that the stack reports as NV_NOT_FOUND now counts as a failed read. A true NV_NOT_FOUND keeps the engine's first write.
+or size on written flash counts as a failed read. Erased flash is different: every 0x194000 read in the hardware bundles returned
+0xFFFFFFFF, so the operator's robot holds no needs record and takes the engine's first write on its next run. The first version of this
+change refused it, and the verifier caught that from the bundles. The fixture's empty read had never matched the real reply; the test
+now uses erased flash.
 
 **Open:** what the firmware itself returns as NV_NOT_FOUND is not established. Host API Inventory and Unlock writes can still write
 after failed reads of those blocks, which is engine behaviour outside this change.

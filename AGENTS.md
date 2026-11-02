@@ -180,7 +180,8 @@ stack implements that feature.
 - **M15-014, an unusable robot needs read** (operator, 2026-11-02): when the needs read fails for any reason but
   NV_NOT_FOUND, or returns a blob the stack rejects, and the PC has no needs file for this robot, the stack writes no needs to
   the robot or the PC that run, and weighted rewards stay withheld. The original writes defaults over the stored needs
-  (0x00694820, 0x00694EE4). NV_NOT_FOUND keeps the engine's first write. Reversible.
+  (0x00694820, 0x00694EE4). A true empty entry keeps the engine's first write: NV_NOT_FOUND, or erased flash, which is how an
+  empty entry arrives on the operator's robot. Reversible.
 - **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
 - **M11-047, the border-walk seed order** (operator, 2026-10-14).
   - **The original:** iterates a type set (`unordered_set` of quad-tree node pointers, murmur2 hash) whose order follows
