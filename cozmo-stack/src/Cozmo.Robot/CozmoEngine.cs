@@ -97,6 +97,8 @@ public sealed class CozmoEngineOptions
     public string? LabLocaleCountry { get; init; }
     /// <summary>Optional Unix-epoch system clock in microseconds for Needs persistence; null uses the host UTC clock.</summary>
     public Func<long>? NeedsSystemClockMicroseconds {get;init;}
+    /// <summary>Persisted app notification determinant tuple; null means the profile history is unavailable.</summary>
+    public NotificationDeterminants? NotificationHistory {get;init;}
     // fidelity: M1-054, M1-060 - COMPATIBILITY_POLICY: replaces the app engine-config JSON input.
     public byte[]? EngineConfigJson { get; init; }
     /// <summary>Host audio controller; M1 connects its six app inputs, M6 owns their execution.</summary>
