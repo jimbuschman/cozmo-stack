@@ -48,7 +48,7 @@ public sealed partial class CozmoEngine
         NeedsSetPaused=Needs.SetPaused;
         NeedsRobotDisconnected=Needs.OnRobotDisconnected;
         AnimationMessages.SubscribeMessage(0xC6,false,p=>Needs.ForceSetNeedsLevels((IReadOnlyList<float>)p!));
-        SteppedBehavior.ReportMissing("M15-001 NeedsManager.Init: StarRewardsConfig 0x00692612, LocalNotifications Init/Generate 0x0069264A/0x00693492, remaining registrations 0x00692668..0x006926C8, full NeedsState envelope 0x0069383C and DAS app_start tail 0x00693486 remain unbuilt/uncertified");
+        SteppedBehavior.ReportMissing("M15-001 NeedsManager.Init: LocalNotifications Init/Generate 0x0069264A/0x00693492, remaining registrations 0x00692668..0x006926C8 and DAS app_start tail 0x00693486 remain unbuilt/uncertified; full StarRewardsConfig and runtime tuning lifecycle remain incomplete");
         if(Options.NeedsDeviceDirectory is null)
             SteppedBehavior.ReportMissing("M15-001 NeedsManager.InitInternal 0x00693466/0x0069347E: host nurture directory not supplied; device read/write remain unbound");
     }

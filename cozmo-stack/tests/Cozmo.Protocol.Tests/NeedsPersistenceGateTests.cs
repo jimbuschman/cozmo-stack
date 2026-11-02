@@ -26,7 +26,7 @@ public sealed class NeedsPersistenceGateTests
         string file=Path.Combine(root,"needsState.json"),copy=Path.Combine(root,"other.json");
         const string saved="{\"_StateFileVersion\":5,\"_DateTime\":1700000000,\"_SerialNumber\":1234,\"CurNeedLevel\":{\"Repair\":25000,\"Energy\":50000,\"Play\":75000}}";
         var messages=new ConcurrentQueue<string>();
-        void Diagnostic(string s){if(s.Contains("M15-030 needs device persistence skipped"))messages.Enqueue(s);}
+        void Diagnostic(string s){if(s.Contains("M15-030/M15-014 needs device persistence unavailable"))messages.Enqueue(s);}
         SteppedBehavior.MissingReported+=Diagnostic;
         try
         {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cozmo.Robot.Animation;
+using Cozmo.Transport;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -856,7 +857,8 @@ public sealed partial class NeedsManager
         if(NativeContextBound&&_nativePersistenceReady&&_nativeDeviceInputUnavailable)return;
         lock (_gate) _deviceDataPresent = ok;   // +0x1C9 = (byte)result (0x0069346C)
         if (!ok) SendNeedsStateToGame(NeedsActionId.NoAction);   // 0x00693476
-        WriteToDevice?.Invoke(true);                             // 0x0069347E
+        if(NativeContextBound&&_nativePersistenceReady){if(!WriteNativeDevice(true))return;}
+        else WriteToDevice?.Invoke(true);                        // 0x0069347E
         SendNeedsLevelsDasEvent?.Invoke("app_start");            // 0x00693486
         if(LocalNotificationsGenerate is {} notifications)notifications();
         else if(HasNativePersistence)SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00693492");
@@ -1018,7 +1020,7 @@ public sealed partial class NeedsManager
         needs.DistortionRng=contextRandom;
         // J3: the directory the engine's DataPlatform resolves ("nurture/") is the host's; the caller supplies it.
         needs.DeviceDirectory = deviceDirectory;
-        // J7: bind before InitInternal; WriteDeviceFile now gates the unbuilt persistence clock (M15-030).
+        // J7: bind before InitInternal; native persistence requires the source inputs below.
         if (deviceDirectory is not null) needs.WriteToDevice = needs.WriteDeviceFile;
         // fidelity: M7-017
         // D01..D06: NeedsManager::Init 0x00692574 constructs the DesiredFaceDistortionComponent (owned at +0x3D4),
@@ -1045,9 +1047,10 @@ public sealed partial class NeedsManager
             if(sourceConfig.RootElement.TryGetProperty("RepairRounds",out var rounds)&&rounds.ValueKind==JsonValueKind.Number&&rounds.TryGetByte(out byte value))needs._nativeRepairRounds=value;
             else SteppedBehavior.ReportMissing("M15-014 NeedsConfig.RepairRounds input unavailable; full 0x62 report withheld");
         }
-        // The production join stays gated until the full native persistence path is verified.
+        // Each required source input must exist before the finite metadata path is available.
         needs._nativePersistencePrerequisites=needs.NativeContextBound&&needs.NativeMetadataAvailable&&needs._nativeRepairRounds is not null&&
-            deviceDirectory is not null&&needsConfigJson is not null&&decayJson is not null&&actionsJson is not null;
+            deviceDirectory is not null&&cfg is not null&&decay is not null&&actions is not null;
+        needs._nativePersistenceReady=needs._nativePersistencePrerequisites;
         needs.InitInternal(clockSec());
         return needs;
     }
@@ -1174,8 +1177,8 @@ public sealed partial class NeedsManager
     /// <summary>
     /// <c>NeedsManager::SendNeedsStateToGame(action)</c> 0x0069383C: refreshes the brackets, builds the
     /// level/bracket/damaged-part vectors and sends one <c>MessageEngineToGame</c> carrying a
-    /// <c>NeedsState</c> whose <c>actionCausingTheUpdate</c> is the argument. The wire message is the app's;
-    /// the stack exposes the action so a host can send it.
+    /// <c>NeedsState</c> whose <c>actionCausingTheUpdate</c> is the argument. The native context path
+    /// delivers the full encoded report and the host events.
     /// </summary>
     // fidelity: M15-001
     public void SendNeedsStateToGame(NeedsActionId action)
@@ -1189,8 +1192,8 @@ public sealed partial class NeedsManager
             {SteppedBehavior.ReportMissing("M1-034/M15-014 skipped null NeedsState report interface dereference at 0x006939D2");return;}
             if(!NativeMetadataAvailable||_nativeRepairRounds is not {} rounds)
             {SteppedBehavior.ReportMissing("M15-014 full NeedsState report metadata/config unavailable at 0x0069383C");return;}
-            // Runtime variation can be changed by 0x69718C; its live recipient is not yet bound.
-            // Do not emit the constructor value as though it were still current.
+            // The owned normal-path value starts with the source constructor status;
+            // the distinct runtime setter and its caller remain an M15-014 frontier.
             if(!TryGetNativeReportVariation(out var variation))
             {SteppedBehavior.ReportMissing("M15-014 NeedsState runtime variation input unavailable at 0x0069383C");return;}
             var report=new NativeNeedsStateReport(words.ToArray(),
@@ -1213,7 +1216,7 @@ public sealed partial class NeedsManager
 
     /// <summary>Raised by <see cref="SendNeedsStateToGame"/>; the action is <c>Decay</c> on a decay tick.</summary>
     public event Action<NeedsActionId>? NeedsStateSent;
-    /// <summary>Raw binary32 level words copied for the engine-to-app needs report; complete payload marshalling remains open.</summary>
+    /// <summary>Raw binary32 level words copied for the engine-to-app needs report.</summary>
     public event Action<IReadOnlyList<uint>,NeedsActionId>? NeedsLevelBitsCopied;
 
     /// <summary>Raised at the top of <see cref="Update"/> (the engine's <c>LocalNotifications::Update</c>).</summary>
@@ -1317,7 +1320,7 @@ public sealed partial class NeedsManager
         if(NativeContextBound&&_nativePersistenceReady)
         {
             State.NativeLastDisconnectMicros=NativeSystemClockMicros();State.NativeOpenAppAfterDisconnect=0;
-            if(!_paused)WriteNativeDevice(true);
+            if(!_paused&&!WriteNativeDevice(true))return;
             _robotConnected=false;_nativeConnectedRobot=null;_nativeDeviceTimestampMicros=State.NativeDateTimeMicros;
             DetectBracketChangeForDas(true);SendNeedsLevelsDasEvent?.Invoke("disconnect");return;
         }
@@ -1531,13 +1534,13 @@ public sealed partial class NeedsManager
         ISet<string> scope;
         lock(_gate){_awaitingRobotData=false;scope=_robotPersistenceMissingScope;}
         // Separate from the process-wide deduper: visible again on the next connection. No callout holds _gate.
-        SteppedBehavior.ReportMissing("M15-030/M15-014 needs robot persistence skipped: system_clock epoch producer 0x00694D9C/0x006954F8/0x0069555C and economy fields 0x006955F2..0x0069560C are unbuilt; robot copy/resolver and NV erase/write 0x194000 are gated; also skipped: M15-050 Lab writeback join 0x00694622, SendNeedsStateToGame (case 1 NoAction, cases 5-7 Decay), RobotChangedFromLastSession (cases 3, 5-7)",scope);
+        SteppedBehavior.ReportMissing("M15-030/M15-014 needs robot persistence unavailable: required native metadata, config or host device-directory input is missing; robot copy/resolver and NV erase/write 0x194000 are withheld",scope);
     }
 
     private bool SkipUnbuiltDevicePersistence()
     {
         lock(_gate)if(UsesUncertifiedPersistenceTestAdapter||NativeContextBound&&_nativePersistenceReady)return false;
-        SteppedBehavior.ReportMissing("M15-030 needs device persistence skipped: system_clock epoch producer at 0x00693BC0/0x00693BC4 and elapsed decay 0x00695304..0x00695330 are unbuilt; needsState.json read/apply, persistence restoration decay and forced/periodic writes (writeAsJson 0x00693EE6) are gated",_devicePersistenceMissingScope);
+        SteppedBehavior.ReportMissing("M15-030/M15-014 needs device persistence unavailable: required native metadata, config or host device-directory input is missing; needsState.json read/apply and writes are withheld",_devicePersistenceMissingScope);
         return true;
     }
 
@@ -1559,7 +1562,7 @@ public sealed partial class NeedsManager
     // fidelity: M15-014
     public int StartReadFromRobot(uint tag = NeedsNvKey)
     {
-        if(HasNativePersistence)return StartNativeRobotRead(tag);
+        if(HasNativePersistence)return StartNativeRobotRead(tag) ?? throw new InvalidOperationException("M15-014 original Needs robot/NV owner unavailable");
         if(SkipUnbuiltRobotPersistence())return 0;
         NvStorageComponent? nv;
         lock (_gate) nv = NvStorage;

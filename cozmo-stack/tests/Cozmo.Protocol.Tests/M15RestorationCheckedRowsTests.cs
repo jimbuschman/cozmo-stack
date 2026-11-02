@@ -175,8 +175,9 @@ public sealed class M15RestorationCheckedRowsTests
     // reach: unit (direct G2E hub delivery substitutes host input; needs host lifetime is the engine, not Freeplay).
     public void LiveForceSetSubscriptionMutatesThenSendsAndRetiresWithItsNeedsHost()
     {
-        using var robot=CozmoRobot.CreateOffline();var needs=new NeedsManager(()=>0);
+        using var robot=CozmoRobot.CreateOffline();
         string obb=Path.GetFullPath(Path.Combine(Path.GetDirectoryName(BackupTestResources.ShippedConfig())!,"../../../.."));
+        var needs=NeedsManager.FromObb(obb,()=>0); // supplied shipped metadata/config for the full source report
         robot.Engine.UseNeedsForOfflineTest(needs);
         var stack=FreeplayStack.Create(obb,robot,new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()},()=>0,needs:needs,withReactions:false);
         var order=new List<string>();Action<EngineLogEntry> info=e=>{if(e.Name=="NeedsManager.ForceSetNeedsLevels"){Assert.Equal(1,needs.State.GetNeedLevel(NeedId.Play));Assert.Equal("Game sent ForceSetNeedsLevels message with 0.500000, 0.600000, 0.700000",e.Text);order.Add("info");}};robot.Engine.LogEntry+=info;

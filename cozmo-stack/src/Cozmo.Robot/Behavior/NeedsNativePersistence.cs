@@ -5,10 +5,15 @@ namespace Cozmo.Robot.Behavior;
 
 public sealed partial class NeedsManager
 {
-    private static bool TryGetNativeReportVariation(out byte[] variation)
+    // Constructor +3EC begins as "Unknown (unknown)". The normal unsuffixed
+    // initializer has no tuning update (AttemptActivateTuningExperiment is BX LR).
+    // The distinct runtime setter/caller remains a named M15-014 frontier.
+    private byte[]? _nativeReportVariation=NativeNeedsStateReportCodec.InitialVariation.ToArray();
+    private bool TryGetNativeReportVariation(out byte[] variation)
     {
-        variation=Array.Empty<byte>();
-        return false; // M15-014: the runtime variation writer/owner is not yet connected.
+        if(_nativeReportVariation is not {} current){variation=Array.Empty<byte>();return false;}
+        variation=current.ToArray();
+        return true;
     }
     private long _nativeDeviceTimestampMicros;
     private bool _nativeDeviceInputUnavailable;
@@ -35,13 +40,13 @@ public sealed partial class NeedsManager
                 var levels=Json.Member(root,"CurNeedLevel");
                 foreach(int id in State.NativeLevels.Keys.OrderBy(id=>id).ToArray())
                 {
-                    if((uint)id>2){SteppedBehavior.ReportMissing("M15-014 NeedsId name outside recovered device input");return false;}
+                    if((uint)id>2){_nativeDeviceInputUnavailable=true;SteppedBehavior.ReportMissing("M15-014 NeedsId name outside recovered device input");return false;}
                     candidate.StoreLevel((NeedId)id,(float)Json.AsInt(Json.Member(levels,((NeedId)id).ToString()))/100000f);
                 }
                 var parts=Json.Member(root,"PartIsDamaged");
                 foreach(int id in State.PartDamage.Keys.OrderBy(id=>id).ToArray())
                 {
-                    if((uint)id>2){SteppedBehavior.ReportMissing("M15-014 repairable-part name outside recovered device input");return false;}
+                    if((uint)id>2){_nativeDeviceInputUnavailable=true;SteppedBehavior.ReportMissing("M15-014 repairable-part name outside recovered device input");return false;}
                     string name=id switch{0=>"Head",1=>"Lift",_=>"Treads"};candidate.SetNativePartDamage(id,NativeJsonBool(Json.Member(parts,name))?(byte)1:(byte)0);
                 }
                 candidate.NativeLastStarMicros=version>=2?Seconds("TimeLastStarAwarded"):0;
@@ -75,24 +80,24 @@ public sealed partial class NeedsManager
         FirmwareJsonKind.UInt=>value.Unsigned!=0,FirmwareJsonKind.Real=>value.Real!=0,
         _=>throw new JsonLogicError("Value is not convertible to bool")
     };
-    private void WriteNativeDevice(bool refresh)
+    private bool WriteNativeDevice(bool refresh)
     {
         long now=NativeSystemClockMicros(); // 0x693BC0, even when refresh=false
         if(refresh)State.NativeDateTimeMicros=now;
-        if(DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 NeedsDeviceDirectory unavailable for device write");return;}
-        if(!NativeMetadataAvailable){SteppedBehavior.ReportMissing("M15-014 star config unavailable for device write");return;}
+        if(DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 NeedsDeviceDirectory unavailable for device write");return false;}
+        if(!NativeMetadataAvailable){SteppedBehavior.ReportMissing("M15-014 star config unavailable for device write");return false;}
         string? song=NativeUnlockNames.Lookup(State.ForceNextSong);
-        if(song is null){SteppedBehavior.ReportMissing("M15-014 ForceNextSong enum name unavailable for device write");return;}
+        if(song is null){SteppedBehavior.ReportMissing("M15-014 ForceNextSong enum name unavailable for device write");return false;}
         var levels=new Dictionary<string,int>();
         foreach(var p in State.NativeLevels.OrderBy(entry=>entry.Key))
         {
-            if((uint)p.Key>2){SteppedBehavior.ReportMissing("M15-014 NeedsId name outside recovered device output");return;}
+            if((uint)p.Key>2){SteppedBehavior.ReportMissing("M15-014 NeedsId name outside recovered device output");return false;}
             levels[((NeedId)p.Key).ToString()]=QuantizeLevel(p.Value);
         }
         var parts=new Dictionary<string,bool>();
         foreach(var p in State.PartDamage.OrderBy(entry=>entry.Key))
         {
-            if((uint)p.Key>2){SteppedBehavior.ReportMissing("M15-014 repairable-part name outside recovered device output");return;}
+            if((uint)p.Key>2){SteppedBehavior.ReportMissing("M15-014 repairable-part name outside recovered device output");return false;}
             parts[p.Key switch{0=>"Head",1=>"Lift",_=>"Treads"}]=p.Value!=0;
         }
         var doc=new Dictionary<string,object>
@@ -106,6 +111,7 @@ public sealed partial class NeedsManager
         try{File.WriteAllText(Path.Combine(DeviceDirectory,FixedFileName),System.Text.Json.JsonSerializer.Serialize(doc));}
         catch(Exception e) when(e is IOException or UnauthorizedAccessException)
         {SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.WriteToDevice","Write failed: "+e.Message);EngineErrorState.StoreAndMaybeBreak();}
+        return true;
     }
     // 0x694608: the original context and source-selected robot stay live through every outward callback.
     private void ResolveNativeCopies()
@@ -113,9 +119,11 @@ public sealed partial class NeedsManager
         var engine=HostEngine;
         if(engine is null||!engine.NeedsContextAlive||!ReferenceEquals(engine.Needs,this)){SteppedBehavior.ReportMissing("M15-014 original Needs/context owner unavailable at resolver");return;}
         bool Current()=>engine.NeedsContextAlive&&ReferenceEquals(engine.Needs,this);
-        if(PossiblyWriteLabAssignments is {} lab)lab();else SteppedBehavior.ReportMissing("M15-050 Lab writeback unavailable at Needs resolver 0x00694622");
+        if(PossiblyWriteLabAssignments is {} lab)lab();
+        else {SteppedBehavior.ReportMissing("M15-050 Lab writeback unavailable at Needs resolver 0x00694622");return;}
         if(!Current())return;
         if(!engine.Experiments.NativeAssignmentHistoryAvailable){SteppedBehavior.ReportMissing("M15-050/M15-014 Lab precursor history unavailable; Needs resolver continuation withheld");return;}
+        if(_nativeDeviceInputUnavailable){SteppedBehavior.ReportMissing("M15-014 Needs device input history unavailable; resolver continuation withheld");return;}
         bool r=_robotReadSucceeded,d=_deviceDataPresent,rewrite=_robotRewriteNeeded;
         bool deviceWrite=false,robotWrite=false,changed=false,apply=false,clearDisconnect=false,clearBackground=false,noAction=false;
         if(!r&&!d){deviceWrite=true;robotWrite=true;noAction=true;}
@@ -162,7 +170,7 @@ public sealed partial class NeedsManager
         long writeTime=NativeSystemClockMicros(); // 0x694D9E, always once for both requested writes
         if(deviceWrite)
         {
-            State.NativeDateTimeMicros=writeTime;WriteNativeDevice(false);if(!Current())return;
+            State.NativeDateTimeMicros=writeTime;if(!WriteNativeDevice(false)||!Current())return;
             _deviceDataPresent=true;_deviceVersionUpdated=false;
         }
         if(robotWrite){_robotRewriteNeeded=false;if(!StartNativeRobotWrite(writeTime)||!Current())return;}

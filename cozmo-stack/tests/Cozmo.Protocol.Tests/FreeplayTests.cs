@@ -2372,8 +2372,8 @@ public class FreeplayTests
     /// <summary>
     /// <c>FinishReadFromRobot</c> 0x00699DB0..0x0069A1AC, corrected contract (C2 row 11, Appendix H): result
     /// -1 and any result below -1 return false; a version above 5 returns false; version 5 returns true
-    /// without +0x1ca; versions 1-4 return true with +0x1ca; version 0 returns true with +0x1ca and a
-    /// "not supported" log.
+    /// without +0x1ca; versions 1-4 return true with +0x1ca; version 0 sets +0x1ca then reaches the
+    /// undefined prefix and is skipped under M1-034.
     /// </summary>
 
     // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
@@ -2382,8 +2382,6 @@ public class FreeplayTests
     {
         double clock = 0;
         var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
-        var logs = new List<string>();
-        needs.Log += logs.Add;
 
         Assert.False(needs.FinishReadFromRobot(Array.Empty<byte>(), -1));    // the missing NV item
         Assert.False(needs.FinishReadFromRobot(Array.Empty<byte>(), -4));    // another NV failure
@@ -2399,32 +2397,34 @@ public class FreeplayTests
 
         Assert.False(needs.FinishReadFromRobot(new byte[] { 6 }, 0));               // above 5: the only zero version path
 
-        Assert.True(needs.FinishReadFromRobot(new byte[] { 0 }, 0));                // the unsupported old version succeeds
+        Assert.False(needs.FinishReadFromRobot(new byte[] { 0 }, 0));               // M1-034 skips the undefined prefix
         Assert.True(needs.RobotRewriteNeeded);
-        Assert.Contains(logs, l => l.Contains("not supported"));
     }
 
     /// <summary>
-    /// M15-018: a version-0 blob is read as all-zero fields, sets the rewrite flag and returns success
-    /// (the engine's prefix is uninitialised; zeros are the forced SD2 policy).
+    /// M15-018: version 0 sets the rewrite flag before the undefined prefix read at 0x69A052;
+    /// M1-034 skips that application and retains the previous valid copy.
     /// </summary>
 
     // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
-    public void AVersionZeroBlobIsReadAsZerosWithTheRewriteFlagSet()
+    public void VersionZeroKeepsPriorCopyAndSetsRewriteBeforeUndefinedPrefix()
     {
         double clock = 0;
         var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.WriteToDevice = _ => { };
 
-        Assert.True(needs.FinishReadFromRobot(new byte[] { 0 }, 0));
-        Assert.True(needs.RobotRewriteNeeded);
-        Assert.True(needs.HasRobotCopy);
-
-        // the all-zero levels are applied (clamped to the configured minimum)
-        needs.InitAfterReadFromRobotAttempt();
-        Assert.Equal(0.03, needs.State.GetNeedLevel(NeedId.Play), 6);
-        Assert.Equal(0.03, needs.State.GetNeedLevel(NeedId.Repair), 6);
+        Assert.True(needs.FinishReadFromRobot(RobotBlobV5(1,0.9,0.8,0.5),0));
+        var field=typeof(NeedsManager).GetField("_robotCopy",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+        object? prior=field.GetValue(needs);Assert.NotNull(prior);double play=needs.State.GetNeedLevel(NeedId.Play);
+        var diagnostics=new List<string>();StackDiagnostics.Reported+=diagnostics.Add;
+        try
+        {
+            Assert.False(needs.FinishReadFromRobot(new byte[] { 0 }, 0));
+            Assert.True(needs.RobotRewriteNeeded);Assert.Same(prior,field.GetValue(needs));Assert.Equal(play,needs.State.GetNeedLevel(NeedId.Play));
+            Assert.Contains(diagnostics,line=>line.Contains("M1-034")&&line.Contains("M15-018")&&line.Contains("0069A052"));
+        }
+        finally{StackDiagnostics.Reported-=diagnostics.Add;}
     }
 
     /// <summary>
