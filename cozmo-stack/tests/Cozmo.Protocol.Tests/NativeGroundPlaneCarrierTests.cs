@@ -1,3 +1,4 @@
+using Cozmo.Robot;
 using Cozmo.Robot.Vision;
 using Xunit;
 
@@ -88,5 +89,54 @@ public sealed class NativeGroundPlaneCarrierTests
             new NativeGroundPoint(190,40), new NativeGroundPoint(40,0) },
             NativeGroundPlaneProjection.Project(one, 320, 116));
     }
-}
+    private static object? GroundField(VisionSystem vision,string name)
+        =>typeof(VisionSystem).GetField(name,System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.GetValue(vision);
 
+    [Fact]
+    public void RemovalRetiresGroundOwnerAndRebindingStartsFresh()
+    {
+        var seed=CameraCalibration.Nominal();
+        using var rig=new M4ControlTests.Rig(engineOptions:new CozmoEngineOptions{BlockPoolPath="",VisionCalibration=seed});
+        rig.ToSynced();var vision=rig.Robot.Vision;var old=rig.Engine.Robot!;
+        vision.SetNativeOuterCalibration(seed);
+        Assert.Same(old,GroundField(vision,"_groundOwner"));Assert.NotNull(GroundField(vision,"_groundLookup"));
+        Assert.Same(seed,GroundField(vision,"_groundOuterCalibration"));
+        int epoch=vision.NativeGroundEpochForTest;bool checkedBeforeCallback=false;
+        Action onRemoved=() =>
+        {
+            Assert.Null(GroundField(vision,"_groundOwner"));Assert.Null(GroundField(vision,"_groundLookup"));
+            Assert.Null(GroundField(vision,"_groundOuterCalibration"));Assert.Null(GroundField(vision,"_groundInstalled"));
+            Assert.Same(seed,GroundField(vision,"_groundPendingOuter"));checkedBeforeCallback=true;
+        };
+        vision.RemovalInvalidated+=onRemoved;
+        rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        vision.RemovalInvalidated-=onRemoved;
+        Assert.True(checkedBeforeCallback);Assert.True(vision.NativeGroundEpochForTest>epoch);
+        Assert.Null(GroundField(vision,"_groundOwner"));Assert.Null(GroundField(vision,"_groundLookup"));
+        var replacement=rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        Assert.NotNull(replacement);Assert.NotSame(old,replacement);Assert.Same(replacement,GroundField(vision,"_groundOwner"));
+        Assert.NotNull(GroundField(vision,"_groundLookup"));Assert.Null(GroundField(vision,"_groundInstalled"));
+    }
+
+    [Fact]
+    public void ReentrantNewBindingSurvivesTheOldRemovalTail()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();var vision=rig.Robot.Vision;var old=rig.Engine.Robot!;
+        vision.SetNativeOuterCalibration(CameraCalibration.Nominal());
+        EngineRobot? replacement=null;int before=vision.NativeGroundEpochForTest, boundEpoch=0;
+        Action onRemoved=() =>
+        {
+            Assert.Null(GroundField(vision,"_groundOwner"));Assert.Null(GroundField(vision,"_groundLookup"));
+            replacement=rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+            Assert.NotNull(replacement);boundEpoch=vision.NativeGroundEpochForTest;
+            Assert.Same(replacement,GroundField(vision,"_groundOwner"));
+        };
+        vision.RemovalInvalidated+=onRemoved;
+        rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        vision.RemovalInvalidated-=onRemoved;
+        Assert.NotNull(replacement);Assert.NotSame(old,replacement);
+        Assert.Same(replacement,GroundField(vision,"_groundOwner"));
+        Assert.NotNull(GroundField(vision,"_groundLookup"));
+        Assert.True(boundEpoch>before);Assert.Equal(boundEpoch,vision.NativeGroundEpochForTest);
+    }
+}

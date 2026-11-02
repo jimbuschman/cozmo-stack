@@ -2520,7 +2520,7 @@ public class EngineAppLayerTests
         "AnimationScheduler._generation", "CozmoAudio._removals", "CozmoAudio._clock", "CozmoAudio._scheduled",
         // Host continuation epochs must remain monotonic across reset to prevent stale work from claiming a replacement.
         "AnimationScheduler._idleMutationVersion", "AnimationScheduler._streamMutationEpoch",
-        "VisionSystem._removals", "VisionSystem.<Enabled>k__BackingField",
+        "VisionSystem._removals", "VisionSystem._groundEpoch", "VisionSystem.<Enabled>k__BackingField",
         // M5 gap4 R2, R3: IKeyFrame::sRNG is a process static that is never reseeded, and the context RNG belongs to the
         // CozmoContext, not to the Robot; neither is rebuilt with a new Robot
         "AnimationScheduler._keyframeRng", "AnimationScheduler._contextRng",

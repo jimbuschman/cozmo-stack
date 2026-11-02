@@ -310,8 +310,21 @@ public sealed partial class VisionSystem : IDisposable
     /// the wait (on the engine thread, inside the tick) ends; only a subscriber to a vision event that posts a game
     /// message on the offline auto-ticking seam could hold it to the bound.
     /// </summary>
+    // 0x00511162..16C / 0x0065258E: the destroyed VisionComponent owns its LUT.
+    // A newer, already-bound owner must survive this retained-facade reset.
+    private void RetireDestroyedGroundOwner()
+    {
+        lock (_groundGate)
+        {
+            if (_groundOwner is not { Lifetime.Destroying: true }) return;
+            _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;
+            _groundPendingOuter=_constructedCalibration;
+            _groundEpoch++; // host stale-work token; intentionally monotonic across owners
+        }
+    }
     internal void ResetToConstructed()
     {
+        RetireDestroyedGroundOwner();
         Interlocked.Increment(ref _removals);
         // fidelity: M11-061, M4-017, M1-025, M4-027
         // CB33/CC26/CC27: removal deletes this owner; a new owner's request deque is empty.
