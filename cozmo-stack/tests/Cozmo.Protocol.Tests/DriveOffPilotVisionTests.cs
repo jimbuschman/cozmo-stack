@@ -28,6 +28,8 @@ public sealed class DriveOffPilotVisionTests
         var vision=rig.Robot.Vision;vision.Enabled=true;vision.ModeEnableMask=1<<8;
         vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied schedule for this isolated producer unit
         vision.Calibration=CameraCalibration.Nominal();
+        rig.State(head:-.15f);
+        vision.SetNativeOuterCalibration(vision.Calibration); // supplied outer calibration for this worker unit
         var reports=new ConcurrentQueue<ProcessedImageReport>();
         using var sub=rig.Engine.AnimationMessages.SubscribeMessage(0x43,true,p=>reports.Enqueue(Assert.IsType<ProcessedImageReport>(p)));
         try
@@ -61,6 +63,7 @@ public sealed class DriveOffPilotVisionTests
         using var rig=new M4ControlTests.Rig(engineOptions:resources.Options());
         rig.ToSynced();rig.Calibrate();rig.State(head:-.15f);
         var vision=rig.Robot.Vision;vision.Calibration=CameraCalibration.Nominal();
+        vision.SetNativeOuterCalibration(vision.Calibration); // supplied outer calibration for this worker unit
         vision.Enabled=true;vision.ModeEnableMask=(1<<7)|(1<<8);
         vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         vision.QualityRectangleInput=()=>new[]{new ImageQualityRectangle(0,0,320,240)};
@@ -90,6 +93,10 @@ public sealed class DriveOffPilotVisionTests
         using var resources=new BackupTestResources();
         using var rig=new M4ControlTests.Rig(engineOptions:resources.Options());rig.ToSynced();rig.Calibrate();
         var vision=rig.Robot.Vision;vision.Enabled=true;vision.Calibration=CameraCalibration.Nominal();vision.ModeEnableMask=1<<1;
+        rig.State(head:-.15f);
+        // Supplied simulated firmware selects the native nonphysical marker path for this renderer unit.
+        rig.Engine.Robot!.HandleFirmwareVersion(new FirmwareVersion{Signature=System.Text.Encoding.UTF8.GetBytes("{\"sim\":true}")});
+        vision.SetNativeOuterCalibration(vision.Calibration);
         vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         var reports=new ConcurrentQueue<ProcessedImageReport>();var frames=new ConcurrentQueue<uint>();
         var priorGate=rig.Engine.HasCameraCalibration;

@@ -96,6 +96,9 @@ internal sealed class Rig : IDisposable
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
         Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
+        // Supplied direct-offline unit inputs: marker and face modes with every-frame schedules.
+        Vision.ModeEnableMask=(1<<1)|(1<<2);
+        Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         M = ManipulationSystem.CreateStandalone(Robot, Vision,()=>ActionClockSec);
         // These geometry/wire regressions isolate the M12-024 animation lifecycle.
         // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and

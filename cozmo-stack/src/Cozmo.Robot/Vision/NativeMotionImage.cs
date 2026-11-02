@@ -2,8 +2,8 @@ using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Vision;
 
-// fidelity: M11-016, M11-033
-// M11-016: selected MotionDetector byte-image primitives, not the detector or an event producer.
+// fidelity: M11-098, M11-033
+// M11-098: selected MotionDetector byte-image primitives, not the detector or an event producer.
 internal sealed class NativeMotionImage
 {
     internal NativeMotionImage(int rows,int columns,int channels,int stride,byte[] pixels,uint timestamp)
@@ -109,9 +109,39 @@ internal static class NativeMotionRatio
         return(mask,count);
     }
 
+    // M11-098: selected full Mat, normalized 21x21, BORDER_REFLECT_101, RNE.
     internal static bool TryBoxFilter(NativeMotionImage image)
     {
-        SteppedBehavior.ReportMissing("M11-016 motion 21x21 box filter: selected vector profile and scalar FPSCR boundary are not built");
-        return false;
+        static int Reflect(int p,int length)
+        {
+            if(length==1)return 0;
+            while(p<0 || p>=length)p=p<0?-p:2*length-p-2;
+            return p;
+        }
+        int width=image.Columns, height=image.Rows, channels=image.Channels;
+        var horizontal=new int[checked(width*height*channels)];
+        var output=new byte[horizontal.Length];
+        for(int y=0;y<height;y++)for(int c=0;c<channels;c++)
+        {
+            int sum=0,row=y*image.Stride;
+            for(int dx=-10;dx<=10;dx++)sum+=image.Pixels[row+Reflect(dx,width)*channels+c];
+            for(int x=0;x<width;x++)
+            {
+                horizontal[(y*width+x)*channels+c]=sum;
+                sum+=image.Pixels[row+Reflect(x+11,width)*channels+c]-image.Pixels[row+Reflect(x-10,width)*channels+c];
+            }
+        }
+        for(int x=0;x<width;x++)for(int c=0;c<channels;c++)
+        {
+            int sum=0;
+            for(int dy=-10;dy<=10;dy++)sum+=horizontal[(Reflect(dy,height)*width+x)*channels+c];
+            for(int y=0;y<height;y++)
+            {
+                output[(y*width+x)*channels+c]=(byte)((sum+220)/441);
+                sum+=horizontal[(Reflect(y+11,height)*width+x)*channels+c]-horizontal[(Reflect(y-10,height)*width+x)*channels+c];
+            }
+        }
+        for(int y=0;y<height;y++)Array.Copy(output,y*width*channels,image.Pixels,y*image.Stride,width*channels);
+        return true;
     }
 }

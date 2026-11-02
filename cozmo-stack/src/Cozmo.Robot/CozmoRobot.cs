@@ -453,6 +453,7 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M1-024
         // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
         Engine.DeviceRoute = RouteToDevices;
+        Engine.DeviceRouteOwned = RouteToDevicesOwned;
         Engine.TapFilterRoute = m => Cubes.HandleTapFilterMovement(m);
         Engine.CubeAccelRoute = m => CubeAccel.Handle(m);
         Engine.MovementExitSdkMode = Motion.OnExitSdkMode;
@@ -902,14 +903,17 @@ public sealed partial class CozmoRobot : IDisposable
     /// detect. A fault is reported through <see cref="HandlerFaulted"/>.
     /// </summary>
     private void RouteToDevices(RobotMessage m, bool stateHandled)
+        => RouteToDevicesOwned(Engine.Robot,m,stateHandled);
+    private void RouteToDevicesOwned(EngineRobot? sourceOwner,RobotMessage m, bool stateHandled)
     {
+        if(sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(Engine.Robot,sourceOwner)))return;
         if (m is RobotState && !stateHandled) return;
         Route(() => State.Handle(m));
         Route(() => Motion.Handle(m));
         Route(() => Camera.Handle(m));
         // fidelity: M3-021
         if (m is DefaultCameraParams dcp) Route(() => CameraSettings.Handle(dcp));
-        Route(() => Sensors.Handle(m));
+        Route(() => Sensors.Handle(m,sourceOwner));
         // AddConnectedActiveObject (0x00533BD6) precedes the broadcast (0x00533D2C).
         if (m is ObjectConnectionState cs)
         {

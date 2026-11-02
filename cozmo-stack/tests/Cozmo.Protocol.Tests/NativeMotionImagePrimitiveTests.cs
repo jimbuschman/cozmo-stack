@@ -89,4 +89,17 @@ public sealed class NativeMotionImagePrimitiveTests
         var strided=NativeMotionRatio.Compare(rowsA,rowsB);
         Assert.Equal(new byte[]{255,0,0,255},strided.Mask);Assert.Equal(2u,strided.Count);
     }
-}
+    [Fact]
+    public void NativeBoxUsesReflect101ForGrayAndRgbAndPreservesPadding()
+    {
+        var gray=new NativeMotionImage(1,3,1,5,new byte[]{0,0,255,88,89},1);
+        Assert.True(NativeMotionRatio.TryBoxFilter(gray));Assert.Equal(new byte[]{73,61,61,88,89},gray.Pixels);
+        var rgb=new NativeMotionImage(1,2,3,8,new byte[]{0,11,255,255,22,0,88,89},2);
+        Assert.True(NativeMotionRatio.TryBoxFilter(rgb));Assert.Equal(new byte[]{121,16,134,134,17,121,88,89},rgb.Pixels);
+    }    [Fact]
+    public void NativeEllipseAtScaleTwoHasSourceKernelAndAnchor()
+    {
+        var kernel=NativeMotionKernel.Ellipse10();
+        Assert.Equal(100,kernel.Length);Assert.Equal(83,kernel.Count(x=>x!=0));
+        Assert.Equal(string.Concat(new[]{"0000010000","0011111110","0111111111","1111111111","1111111111","1111111111","1111111111","1111111111","0111111111","0011111110"}),string.Concat(kernel.Select(x=>x.ToString())));
+    }}

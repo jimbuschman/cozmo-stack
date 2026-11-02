@@ -90,11 +90,15 @@ internal sealed class NativeVisionInitialization
     internal EngineRobot Owner { get; }
     private volatile bool _availabilityKnown=true;
     private volatile bool _initialized;
+    private volatile bool _motionKnowledgeKnown=true;
     internal bool AvailabilityKnown => _availabilityKnown;
     internal bool Initialized => _initialized;
+    internal bool MotionKnowledgeKnown=>_motionKnowledgeKnown;
+    internal void MarkMotionUnavailable()=>_motionKnowledgeKnown=false;
     internal bool Reset338 { get; private set; }
     internal bool Reset328 { get; private set; }
     internal NativeVisionPetInitialization Pet { get; }=new();
+    internal NativeMotionPoseState MotionPose { get; }=new();
     internal NativeVisionFaceConstructor? Face { get; private set; }
     internal NativeVisionMotionConstructor? Motion { get; private set; }
     internal long ProfilerInfoMs { get; private set; }
@@ -106,7 +110,7 @@ internal sealed class NativeVisionInitialization
     internal void EnterSystem(){_availabilityKnown=false;Reset338=false;_initialized=false;Reset328=false;LastResult=null;_availabilityKnown=true;}
     internal void SetProfiler(long info,long das){ProfilerInfoMs=info;ProfilerDasMs=das;}
     internal void ReplaceFace(string modelPath,FirmwareJsonValue config)=>Face=new(modelPath,config);
-    internal void ReplaceMotion(VisionSystem camera,FirmwareJsonValue config)=>Motion=new(camera,config);
+    internal void ReplaceMotion(VisionSystem camera,FirmwareJsonValue config)=>Motion=new(Owner,camera,config);
     internal void Failure(uint result){LastResult=result;_availabilityKnown=true;}
     internal void MarkUnavailable(){_availabilityKnown=false;}
     internal void Finish(){ClaheClipLimit=32;ClaheTilesX=4;ClaheTilesY=4;_initialized=true;LastResult=0;_availabilityKnown=true;}
@@ -134,12 +138,13 @@ internal sealed class NativeVisionFaceConstructor(string modelPath,FirmwareJsonV
     }
 }
 
-internal sealed class NativeVisionMotionConstructor(VisionSystem camera,FirmwareJsonValue config)
+internal sealed class NativeVisionMotionConstructor(EngineRobot owner,VisionSystem camera,FirmwareJsonValue config)
 {
     internal VisionSystem Camera { get; }=camera;
     internal FirmwareJsonValue Config { get; }=config;
     internal NativeMotionPrevious Previous { get; }=new();
     internal NativeMotionImageCache ImageCache { get; }=new();
+    internal NativeMotionDetector Detector { get; }=new(config,key=>camera.Robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,""),()=>camera.NativeMotionOwnerCurrent(owner));
     internal uint Timestamp { get; }=0;
 }
 

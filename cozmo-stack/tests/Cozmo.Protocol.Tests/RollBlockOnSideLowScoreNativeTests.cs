@@ -52,7 +52,7 @@ public sealed class RollBlockOnSideLowScoreNativeTests
         // Source S8-S16: actual helper/IDrive/IDock/visual recipients; success005C8B52..8C1A.
         // P3: explicit parent scoring input is applied to the SAME canonical receiver before admission.
         // MISSING: automatic native scored reload/TryAdd and PlayWithHumans choice/strategy/interlude (P1-P5).
-        // Scene supplies independent physical cube and firmware inputs, never helper results or planner goals.
+        // Scene supplies cube geometry and simulated firmware; rendered images use the nonphysical marker branch.
         using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;var manager=f.Robot.BehaviorManagerOwner!;
         var roll=Roll(f);SupplyParentScore(f,roll);var order=new List<string>();var local=new List<RobotCompletedAction>();var app=new List<ActionCompletionReport>();
         var lights=new List<string>();var stateTrace=new List<string>();bool celebration=false;

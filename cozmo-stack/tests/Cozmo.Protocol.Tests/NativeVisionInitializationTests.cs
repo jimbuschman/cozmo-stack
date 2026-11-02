@@ -288,10 +288,13 @@ public sealed class NativeVisionInitializationTests
         {
             using var resources=new BackupTestResources();using var rig=new M4ControlTests.Rig(resources.Options().ResourcesPath);rig.ToSynced();
             var vision=rig.Robot.Vision;EngineRobot? replacement=null;object? pipeline=null;AllVisionModesSchedule? front=null;
+            CameraCalibration? replacementCalibration=null;
             void OnRemoved()
             {
                 replacement=rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
                 pipeline=vision.QualityProcessor.Pipeline;front=vision.Schedules;
+                replacementCalibration=CameraCalibration.Nominal();vision.Calibration=replacementCalibration;
+                replacement!.PoseHistory.Add(new RobotState{Timestamp=345,PoseOriginId=1,Pose=new RobotPose(),Accel=new AccelData(),Gyro=new GyroData(),CliffDataRaw=new ushort[4]});
             }
             vision.RemovalInvalidated+=OnRemoved;
             try { rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false); }
@@ -299,6 +302,7 @@ public sealed class NativeVisionInitializationTests
             Assert.NotNull(replacement);Assert.NotNull(pipeline);Assert.NotNull(front);
             Assert.Same(replacement,vision.NativeInitializationForTest!.Owner);
             Assert.Same(pipeline,vision.QualityProcessor.Pipeline);Assert.Same(front,vision.Schedules);
+            Assert.Same(replacementCalibration,vision.Calibration);Assert.Equal(1,replacement!.PoseHistory.Count);
             Assert.Equal(30f,vision.PendingDropStatsSeconds);
         }
         finally

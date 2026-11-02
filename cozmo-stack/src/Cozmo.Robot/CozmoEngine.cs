@@ -1821,6 +1821,7 @@ public sealed partial class CozmoEngine : IDisposable
     // ---- the host's hooks (set by CozmoRobot)
     /// <summary>The stack's device handlers for one broadcast robot message, and whether a RobotState is handled (CD23).</summary>
     internal Action<RobotMessage, bool>? DeviceRoute;
+    internal Action<EngineRobot,RobotMessage,bool>? DeviceRouteOwned;
     internal Action<RobotMessage>? TapFilterRoute;
     internal Action<RobotMessage>? CubeAccelRoute;
     internal Action<RobotMessage>? PickAndPlaceRoute;

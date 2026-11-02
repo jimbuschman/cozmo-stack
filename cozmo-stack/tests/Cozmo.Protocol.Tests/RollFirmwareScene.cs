@@ -59,14 +59,19 @@ internal sealed class RollFirmwareScene:IDisposable
     }
     private void Image()
     {
+        // Supplied simulated firmware selects the source nonphysical marker branch for this rendered scene.
+        F.Robot.HandleFirmwareVersion(new FirmwareVersion{Signature=System.Text.Encoding.UTF8.GetBytes("{\"sim\":true}")});
+        F.M.Vision.SetNativeOuterCalibration(F.M.Vision.Calibration!);
         F.M.Vision.Enabled=true;F.M.Vision.ModeEnableMask=1<<1;uint stamp=F.Robot.StoredState!.Timestamp;
-        F.Rig.Data(new ImageImuData{ImageId=stamp,RateX=0,RateY=0,RateZ=0,Line2Number=0});F.Rig.Tick();
+        F.M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied per-frame mode schedule
+        uint id=++_image;
+        F.Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});F.Rig.Tick();
         var cal=F.M.Vision.Calibration!;var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
         using var hist=HistRobotState.From(F.Robot.GetCheckedMainPose(),F.Robot.StoredState!);using var camera=F.Robot.CopyHistoricalCameraPose(hist);using var flat=camera.GetWithRespectToRoot();var model=new CameraModel(cal,flat);
         // Independent scripted physical cube; no native goal or estimated world pose is used to draw it.
         if(!Carry&&!HideMarkers)
         {using var cube=new Pose3d(PhysicalRotation,new(150,0,22));OpaqueCube(image,model,cube);MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,model,ObjectType.Block_LIGHTCUBE1,cube);}
-        F.M.Vision.HandOverFrame(new CameraFrame{ImageId=++_image,Timestamp=stamp,Width=cal.Columns,Height=cal.Rows,Encoding=1,RawPayload=image.Pixels});
+        F.Rig.CameraGrayFrame(id,stamp,image.Pixels);
         F.M.Vision.WaitForProcessorIdle();F.Rig.Engine.VisionUpdateAllResultsFailed!();F.Rig.Tick();
     }
     // Scene physics: the existing marker-only renderer has no opaque cube body. Mask each

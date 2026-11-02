@@ -12,15 +12,18 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     private readonly EngineRobot _robot;
     private readonly BehaviorManager? _manager;
     private readonly bool _valid;
-    private readonly long _initialFrames;
-    private readonly RetainedSubscription? _unsupportedMotion;
+    private readonly RetainedSubscription? _motion;
     private readonly Action<OffTreadsState,OffTreadsState>? _treads;
-    private readonly Action<CliffReport>? _unsupportedCliff;
-    private int _unsupportedEvent,_retired;
+    private readonly Action<CliffReport>? _cliff;
+    private int _retired;
     private long _generation;
     private bool _blocked,_liftDisabled;
     private ScopedAcquisition? _drivingLease,_idleLease;
     private float _lastMotion=-1000f,_lastCliff,_started,_lastRotate;
+    private float _lastValid,_distance,_driveDistance,_pitchBaseline,_accumulatedYaw;
+    private short _imageX,_imageY;
+    private int _validCount,_creepCount;
+    private bool _gotValid,_pendingPoint;
     internal int NativeState {get;private set;}
     internal bool LiftDisabled=>_liftDisabled;
     public float LastGroundMotionSeconds=>_lastMotion;
@@ -28,7 +31,7 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     public float BoredomMultiplier=>BitConverter.UInt32BitsToSingle(0x3F4CCCCD);
     internal NativeHikingPounce(BehaviorFactoryContext source,JsonElement config):base("Hiking_PounceOnMotion","PounceOnMotion")
     {
-        _m=source.Manipulation!;_robot=source.NativeRobot!;_manager=_robot.BehaviorManagerOwner;_initialFrames=_m.Vision.MotionFrameInputs;
+        _m=source.Manipulation!;_robot=source.NativeRobot!;_manager=_robot.BehaviorManagerOwner;
         try
         {
             _valid=config.GetProperty("maxNoGroundMotionBeforeBored_running_Sec").GetSingle()==3f &&
@@ -42,13 +45,11 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
         {ReportMissing("Hiking_PounceOnMotion parameters unavailable: "+e.Message);}
         if(_robot.HasExternalInterface)
         {
-            // This is an unsupported-delivery guard, not a claim that the M11-035 producer exists.
-            _unsupportedMotion=_robot.Engine.AnimationMessages.SubscribeMessage(0x49,true,_=>Interlocked.Exchange(ref _unsupportedEvent,1));
+            _motion=_robot.Engine.AnimationMessages.SubscribeMessage(0x49,true,p=>{if(p is NativeObservedMotion motion)HandleMotion(motion);});
             _treads=(_,_)=>{using var owner=_robot.Engine.EnterSynchronousOwner();if(Volatile.Read(ref _retired)==0 && ReferenceEquals(_robot.Engine.Robot,_robot))_lastCliff=0;};
             _m.Robot.Sensors.ConfiguredBehaviorOffTreadsStateChanged+=_treads;
-            // This host callback only withdraws the no-cliff proof; native tag-22 phase remains unresolved.
-            _unsupportedCliff=_=>Interlocked.Exchange(ref _unsupportedEvent,1);
-            _m.Robot.Sensors.CliffDetectedInternal+=_unsupportedCliff;
+            _cliff=report=>{using var owner=_robot.Engine.EnterSynchronousOwner();if(Volatile.Read(ref _retired)==0 && ReferenceEquals(_robot.Engine.Robot,_robot) && (byte)report.Sensors!=0)_lastCliff=_robot.Engine.Timer.SecondsF;};
+            _m.Robot.Sensors.ConfiguredBehaviorCliffDetected+=_cliff;
         }
     }
     private bool OwnerCurrent=>_valid && NativeScoringAvailable && Volatile.Read(ref _retired)==0 && ReferenceEquals(_robot.Engine.Robot,_robot) &&
@@ -56,8 +57,8 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
         ReferenceEquals(runtime.Manipulation,_m) && runtime.Bound.TryGetValue(Id,out var actual) && ReferenceEquals(actual,this);
     private bool Supported()
     {
-        if(!OwnerCurrent || _manager!.ActiveSparkId!=0x55 || _initialFrames!=0 || _m.Vision.MotionFrameInputs!=_initialFrames || Volatile.Read(ref _unsupportedEvent)!=0)
-        {MarkReadinessUnavailable();ReportMissing("M11-035/M15 Pounce no-motion execution needs original owner, ordinary Spark state and known no-frame/no-unsupported-event history");return false;}
+        if(!OwnerCurrent || _manager!.ActiveSparkId!=0x55 || !_m.Vision.NativeMotionReadyFor(_robot))
+        {MarkReadinessUnavailable();ReportMissing("M11-098/M15-107 Pounce needs its original owner's live motion producer");return false;}
         return true;
     }
     internal override bool HostScoringInputsAvailable()
@@ -93,7 +94,7 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     protected override void OnStart()
     {
         if(!Supported()){InitFailed=true;return;}
-        _blocked=false;long g=CaptureHostExecutionVersion();if(!InitHelper(g))return;
+        _blocked=false;_gotValid=false;long g=CaptureHostExecutionVersion();if(!InitHelper(g))return;
         NativeState=1;float now=_robot.Engine.Timer.SecondsF;
         NativePanTiltRunner? optional=null;
         if((float)(now-_lastCliff)<10f)optional=Pan(BitConverter.UInt32BitsToSingle(0x3FC90FDB),0,false,false);
@@ -106,7 +107,7 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     }
     private bool InitHelper(long g)
     {
-        _lastMotion=_started=_robot.Engine.Timer.SecondsF;
+        _lastMotion=_started=_robot.Engine.Timer.SecondsF;_creepCount=0;
         var scheduler=_m.Robot.Animations.Scheduler;
         var idle=new ScopedAcquisition();_idleLease=idle;
         if(!Scope.SmartPushIdleAnimationGuarded(()=>scheduler.PushScopedIdle((AnimationTrigger)0x192,Id,idle),()=>{idle.Cancel();scheduler.RemoveScopedIdle(Id,idle,_robot.Engine.Timer.TimeStampMs);},()=>Current(g)))return false;
@@ -166,18 +167,112 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     }
     private void WaitForMotion(long g)
     {
-        if(!Current(g))return;NativeState=6;
+        if(!Current(g))return;NativeState=6;_driveDistance=0;_validCount=0;_pendingPoint=false;
         if(!Scope.SmartLockTracks("behaviorPounceOnMotionWaitLock",AnimationTrack.Head))return;
         if(!Current(g))return;Run(new NativeTimedWaitRunner(_m,2f),()=>AfterWait(g),g);
     }
     private void AfterWait(long g)
     {
         if(!Current(g))return;Scope.SmartUnLockTracks("behaviorPounceOnMotionWaitLock");if(!Current(g))return;
+        if(_pendingPoint){TurnToMotion(g);return;}
         float now=_robot.Engine.Timer.SecondsF;
         if(_lastMotion+3f<now){GetOut(g);return;}
-        if(_lastRotate+5f<now){_blocked=true;ReportMissing("MISSING: Pounce RotateWatchingNewArea 0x005F8FD8 is not in the released normal path");return;}
+        if(_lastRotate+5f<now){RotateWatchingNewArea(g);return;}
         if(_started+30f<now){GetOut(g);return;}
         WaitForMotion(g);
+    }
+    private void HandleMotion(NativeObservedMotion report)
+    {
+        using var owner=_robot.Engine.EnterSynchronousOwner();
+        if(!OwnerCurrent)return;
+        bool ground=report.GroundArea>BitConverter.UInt32BitsToSingle(0x3C23D70A);
+        float x=report.GroundX,y=report.GroundY;float distanceSquared=x*x+y*y;
+        if(!EngineRunning)
+        {
+            if(ground && distanceSquared<=240f*240f)_lastMotion=_robot.Engine.Timer.SecondsF;
+            return;
+        }
+        float now=_robot.Engine.Timer.SecondsF;
+        if(ground)_lastMotion=now;
+        if(NativeState!=6)return;
+        float distance=(float)Math.Sqrt((double)x*x+(double)y*y);
+        if(ground && distance<=240f)
+        {
+            _lastValid=now;_gotValid=true;_validCount=unchecked(_validCount+1);_distance=distance;
+            _imageX=report.ImageX;_imageY=report.ImageY;_pendingPoint=true;
+            StopActing(keepAction:true,viaCallback:false);
+        }
+        else if(_validCount>=1 && now>=_lastValid+4f)_validCount=0;
+    }
+    private void TurnToMotion(long g)
+    {
+        if(!Current(g))return;NativeState=7;_lastRotate=_robot.Engine.Timer.SecondsF;
+        if(_m.Vision.Calibration is not {} camera){_blocked=true;ReportMissing("M11-098/M15-107 Pounce camera calibration unavailable at TurnToMotion");return;}
+        float dx=(float)_imageX-(float)camera.CenterX,dy=(float)_imageY-(float)camera.CenterY;
+        _=MathF.Atan(-dy/(float)camera.FocalLengthY); // source computes tilt first; action uses zero head.
+        float pan=MathF.Atan(-dx/(float)camera.FocalLengthX);
+        bool odds=false;
+        if(_creepCount>=3)odds=(double)_creepCount*.2>_robot.Engine.ContextRandom.RandDbl(1);
+        bool pounce=_distance<=65f || _distance-50f<10f || odds;
+        Action next=pounce?()=>Pounce(g):()=>CreepForward(g);
+        if(!pounce)_creepCount=unchecked(_creepCount+1);
+        Run(Pan(pan,0,false,false),next,g);
+    }
+    private void CreepForward(long g)
+    {
+        if(!Current(g))return;NativeState=8;_driveDistance=_distance-50f;
+        var action=new DriveStraightAction(_m,_robot,_driveDistance,60f,true);
+        if(!Scope.SmartLockTracks("behaviorPounceOnMotionWaitLock",AnimationTrack.Head)){action.RetireNeverAdmittedTree();return;}
+        Run(action,()=>HeadDown(g),g);
+    }
+    private void Pounce(long g)
+    {
+        if(!Current(g))return;NativeState=9;
+        if(_robot.StoredState is not {} state){_blocked=true;ReportMissing("M15-107 original pitch input unavailable");return;}
+        _pitchBaseline=state.Pose.Pitch;if(_driveDistance<=0)_driveDistance=_distance-50f;
+        PounceSequence(g,null,()=>ResultAnimation(g));
+    }
+    private void PounceSequence(long g,ActionRunner? optional,Action next)
+    {
+        var sequence=new CompoundActionSequential(()=>_robot.Engine.Timer.SecondsF);
+        if(optional is not null)sequence.AddAction(optional,false,false);
+        sequence.AddAction(new TriggerLiftSafeAnimationAction(_m.Robot,new((AnimationTrigger)0x196,1,true,0,60f,false)),false,false);
+        if(!Current(g)){sequence.RetireNeverAdmittedTree();return;}
+        Run(sequence,()=>DisableLiftThenWait(g,next),g);
+    }
+    private void ResultAnimation(long g)
+    {
+        if(!Current(g))return;NativeState=11;
+        if(_robot.StoredState is not {} state){_blocked=true;ReportMissing("M15-107 original pitch/lift input unavailable");return;}
+        float delta=state.Pose.Pitch-_pitchBaseline;
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Behaviors","BehaviorPounceOnMotion.CheckResult",
+            FormattableString.Invariant($"lift: {state.LiftHeightMm:F6} body: {delta*57.29578f:F6}deg ({delta:F6}rad) ({_pitchBaseline*57.29578f:F6} -> {state.Pose.Pitch*57.29578f:F6})"));
+        if(!Current(g))return;
+        if(_robot.StoredState is not {} current){_blocked=true;ReportMissing("M15-107 original lift input unavailable after CheckResult");return;}
+        bool caught=delta>BitConverter.UInt32BitsToSingle(0x3CA3D70A) || current.LiftHeightMm>35.5f;
+        _validCount=0;
+        Run(new TriggerLiftSafeAnimationAction(_m.Robot,new((AnimationTrigger)(caught?0x197:0x193),1,true,0,60f,false)),_driveDistance>0?()=>Backup(g):()=>HeadDown(g),g);
+        if(caught && Current(g))_robot.Engine.ReportBehaviorObjective(23,"PouncedAndCaught",Id);
+    }
+    private void Backup(long g)
+    {
+        if(!Current(g))return;NativeState=12;
+        float distance=BitConverter.UInt32BitsToSingle(BitConverter.SingleToUInt32Bits(_driveDistance)^0x80000000u);
+        Run(new DriveStraightAction(_m,_robot,distance,80f,true),()=>HeadDown(g),g);
+    }
+    private void RotateWatchingNewArea(long g)
+    {
+        if(!Current(g))return;NativeState=5;_lastRotate=_robot.Engine.Timer.SecondsF;
+        float amount=(float)(_robot.Engine.ContextRandom.RandDblInRange(20,45)*0.017453292519943295);
+        double draw=_robot.Engine.ContextRandom.RandDbl(1);
+        double amplitude=BitConverter.UInt32BitsToSingle(0x3FC90FDB);
+        double probability=(amplitude-(double)_accumulatedYaw);
+        probability=(amplitude/probability)*.5d;
+        if(draw<probability)amount=-amount;
+        _accumulatedYaw=new Radians(_accumulatedYaw+amount).Value;
+        var action=Pan(amount,0,false,false);
+        float chance=(float)_robot.Engine.ContextRandom.RandDbl(1); // shipped pounceChance is zero
+        if(0f>chance)PounceSequence(g,action,()=>WaitForMotion(g));else Run(action,()=>WaitForMotion(g),g);
     }
     private void GetOut(long g)
     {
@@ -204,13 +299,15 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
             else _m.Robot.Animations.DrivingAnimations.RemoveOwned(driving);
         }
         if(!HostExecutionVersionCurrent(g))return;
+        _lastValid=0;_validCount=0;_imageX=0;_imageY=0;_pendingPoint=false;
+        if(_gotValid){_gotValid=false;NeedActionCompleted();if(!HostExecutionVersionCurrent(g))return;}
         _blocked=false;Interlocked.Increment(ref _generation);
     }
     public void Dispose()
     {
-        if(Interlocked.Exchange(ref _retired,1)!=0)return;Interlocked.Increment(ref _generation);_unsupportedMotion?.Dispose();
+        if(Interlocked.Exchange(ref _retired,1)!=0)return;Interlocked.Increment(ref _generation);_motion?.Dispose();
         if(_treads is not null)_m.Robot.Sensors.ConfiguredBehaviorOffTreadsStateChanged-=_treads;
-        if(_unsupportedCliff is not null)_m.Robot.Sensors.CliffDetectedInternal-=_unsupportedCliff;
+        if(_cliff is not null)_m.Robot.Sensors.ConfiguredBehaviorCliffDetected-=_cliff;
         RetireActionCompletionOwner();
     }
 }

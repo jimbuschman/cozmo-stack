@@ -97,6 +97,7 @@ public sealed class CozmoSensors
     /// <summary>Raised when the robot reports a cliff.</summary>
     public event Action<CliffReport>? CliffDetected;
     internal event Action<CliffReport>? CliffDetectedInternal;
+    internal event Action<CliffReport>? ConfiguredBehaviorCliffDetected;
     /// <summary>Raised when the robot reports it has been picked up, or put back down.</summary>
     public event Action<bool>? PickedUpChanged;
     /// <summary>Raised when the robot arrives on, or leaves, the charger contacts.</summary>
@@ -888,7 +889,8 @@ public sealed class CozmoSensors
     }
 
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
-    internal void Handle(RobotMessage m)
+    internal void Handle(RobotMessage m)=>Handle(m,_robot.Engine.Robot);
+    internal void Handle(RobotMessage m,EngineRobot? sourceOwner)
     {
         switch (m)
         {
@@ -898,6 +900,8 @@ public sealed class CozmoSensors
                 // SC5 (0x00535548..0x005356E6): enabled with flags ≠ 0 runs ComputeCliffPose and AddCliff (the M11/M13
                 // map interface, not built here); disabled with flags ≠ 0 drops the event with no broadcast; otherwise
                 // +5 = (flags ≠ 0) and the event goes to the game. Nothing is sent to the robot.
+                var originalCliffOwner=sourceOwner;
+                if(originalCliffOwner is null || originalCliffOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,originalCliffOwner))break;
                 bool any = c.DetectedFlags != 0;
                 lock (_gate)
                 {
@@ -918,6 +922,7 @@ public sealed class CozmoSensors
                     }
                 }
                 else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotImplMessaging.HandleCliffEvent.Undetected", "");
+                if(originalCliffOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,originalCliffOwner))break;
                 lock (_gate) _cliffDetectedByEvent = any;
                 var report = new CliffReport(c.Timestamp, (CliffSensors)c.DetectedFlags, c.DidStopForCliff);
                 lock (_gate)
@@ -926,6 +931,9 @@ public sealed class CozmoSensors
                     if (_cliffs.Count > 256) _cliffs.RemoveAt(0);
                 }
                 _robot.Engine.QueueAppBroadcast(CliffDetected,report);
+                if(originalCliffOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,originalCliffOwner))break;
+                if(originalCliffOwner.HasExternalInterface)ConfiguredBehaviorCliffDetected?.Invoke(report);
+                if(originalCliffOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,originalCliffOwner))break;
                 CliffDetectedInternal?.Invoke(report);
                 break;
             }

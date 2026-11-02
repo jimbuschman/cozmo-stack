@@ -21,6 +21,15 @@ internal sealed class NativeGroundFrame : IDisposable
         GroundValid = groundValid;
         _homography = homography.ToArray();
     }
+    private NativeGroundFrame(NativeGroundFrame source)
+    {
+        Owner=source.Owner;Timestamp=source.Timestamp;_history.Assign(source._history);
+        CameraPose=new Pose3d(source.CameraPose);CameraPose.SetParent(_history.Pose);
+        GroundValid=source.GroundValid;_homography=(float[])source._homography.Clone();
+        Imu=source.Imu.ToArray();
+    }
+    internal NativeGroundFrame Copy()=>new(this);
+    internal NativeImageImu[] Imu { get; set; }=Array.Empty<NativeImageImu>();
     internal EngineRobot Owner { get; }
     internal uint Timestamp { get; }
     internal RobotState State => HistRobotState.Copy(_history.State);

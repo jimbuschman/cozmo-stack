@@ -79,15 +79,15 @@ public sealed class NativeHikingPounceTests
     }
 
     [Fact]
-    public void LiveFrameInputWithdrawsUnselectedNoMotionProof()
+    public void RealFrameWithBoundProducerKeepsUnselectedReadinessKnown()
     {
         using var f=new Fixture();var p=Prepare(f);
         var chooser=new ScoringChooser(new[]{f.Robot.NativeConfiguredScoreFields![p.Id].Value!},f.Runtime.Bound,native:true);
         chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
         Assert.False(chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF).InputUnavailable);
-        f.M.Vision.HandOverFrame(new CameraFrame { ImageId=1,Timestamp=1,Width=1,Height=1,Encoding=1,RawPayload=new byte[1] });
-        Assert.True(chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF).InputUnavailable);
-        Assert.False(p.HostScoringInputsAvailable());
+        f.Image(1); // actual F4/F2 ingress with the configured source-owned producer
+        Assert.False(chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF).InputUnavailable);
+        Assert.True(p.HostScoringInputsAvailable());
     }
 
     [Fact]
@@ -197,4 +197,88 @@ public sealed class NativeHikingPounceTests
         rig.Pump();var power=rig.Sent.Skip(mark).OfType<EnableMotorPower>().ToArray();
         Assert.Equal(new byte[]{0,1},power.Select(x=>x.Field1));Assert.All(power,x=>Assert.Equal((byte)2,x.Field0));
     }
-}
+    [Fact]
+    public void ThreeRealWaitCancellationsThenShortDistanceStillConsumeProbabilityDraw()
+    {
+        using var f=new Fixture();var p=Prepare(f);
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(p.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        void Complete(){var runner=Assert.IsAssignableFrom<ActionRunner>(p.OwnedRunner);runner.State=0x03000018;f.Robot.ActionList.Update();}
+        Complete();Complete();Complete();Complete(); // supplied terminal results: initial, power wait, search, head
+        Assert.Equal(6,p.NativeState);
+        int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0u;};
+        try
+        {
+            for(int i=0;i<3;i++)
+            {
+                uint oldTag=p.CurrentRunnerTag;
+                f.Rig.Engine.AnimationMessages.Deliver(0x49,true,new NativeObservedMotion(1,0,160,120,.1f,100,0,0,0,0,0,0,0,0,0,0));
+                Assert.Equal(7,p.NativeState);Assert.NotEqual(oldTag,p.CurrentRunnerTag);
+                Complete();Assert.Equal(8,p.NativeState);Assert.IsType<DriveStraightAction>(p.OwnedRunner);
+                Complete();Assert.Equal(4,p.NativeState);Complete();Assert.Equal(6,p.NativeState);
+            }
+            Assert.Equal(0,words);
+            f.Rig.Engine.AnimationMessages.Deliver(0x49,true,new NativeObservedMotion(2,0,160,120,.1f,60,0,0,0,0,0,0,0,0,0,0));
+            Assert.Equal(2,words);Assert.Equal(7,p.NativeState);
+            Complete();Assert.Equal(9,p.NativeState);Assert.IsType<CompoundActionSequential>(p.OwnedRunner);
+        }
+        finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}
+    }    [Fact]
+    public void RetiredPounceDriveCannotStopReplacementDrivingAnimations()
+    {
+        using var f=new Fixture();var old=f.Robot;
+        var drive=new DriveStraightAction(f.M,old,20,60,true);
+        f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        var replacement=f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        Assert.NotNull(replacement);
+        var driving=f.Rig.Robot.Animations.DrivingAnimations;
+        driving.Init(0,123,false,false);Assert.Equal(0,driving.State);
+        drive.Dispose();Assert.Equal(0,driving.State);
+    }    [Fact]
+    public void OldCliffDispatchCannotEnterReplacementConfiguredPhase()
+    {
+        using var f=new Fixture();var old=f.Robot;EngineRobot? replacement=null;int configured=0;bool fired=false;
+        void OnCliff(CliffReport _)=>configured++;
+        f.Rig.Engine.MessageDispatchObservedForTest=(tag,name)=>
+        {
+            if(fired || tag!=RobotMessageId.CliffEvent || name!="Impl")return;
+            fired=true;f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+            replacement=f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+            f.Rig.Robot.Sensors.ConfiguredBehaviorCliffDetected+=OnCliff;
+        };
+        try
+        {
+            f.Rig.Data(new CliffEvent{Timestamp=123,DetectedFlags=1});f.Rig.Tick();
+            Assert.True(fired);Assert.NotNull(replacement);Assert.NotSame(old,replacement);Assert.Equal(0,configured);
+        }
+        finally {f.Rig.Engine.MessageDispatchObservedForTest=null;f.Rig.Robot.Sensors.ConfiguredBehaviorCliffDetected-=OnCliff;}
+    }    [Fact]
+    public void DriveMissingLogReplacementCannotStartForeignAnimation()
+    {
+        using var f=new Fixture();var old=f.Robot;var drive=new DriveStraightAction(f.M,old,20,60,true);
+        bool fired=false;EngineRobot? replacement=null;
+        void OnLog(string line)
+        {
+            if(fired || !line.Contains("M13-013 | CheckIfDone"))return;
+            fired=true;f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+            replacement=f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+            f.Rig.Robot.Animations.DrivingAnimations.Init(0,123,false,false);
+        }
+        f.Rig.Engine.StackLogLine+=OnLog;
+        try
+        {
+            Assert.Equal(ActionResult.Abort,drive.CheckIfDone(new DriveStraightTick(false,true,true)));
+            Assert.True(fired);Assert.NotNull(replacement);Assert.Equal(0,f.Rig.Robot.Animations.DrivingAnimations.State);
+        }
+        finally {f.Rig.Engine.StackLogLine-=OnLog;drive.Dispose();}
+    }    [Fact]
+    public void NonrunningMotionUsesStrictAreaAndInclusiveDistance()
+    {
+        using var f=new Fixture();var p=Prepare(f);float before=p.LastGroundMotionSeconds;
+        f.Rig.Engine.Timer.UpdateTime(12000000000L);
+        NativeObservedMotion Report(float area,short x)=>new(1,0,0,0,area,x,0,0,0,0,0,0,0,0,0,0);
+        float threshold=BitConverter.UInt32BitsToSingle(0x3C23D70A);
+        f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(threshold,0));Assert.Equal(before,p.LastGroundMotionSeconds);
+        f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(MathF.BitIncrement(threshold),240));Assert.Equal(12f,p.LastGroundMotionSeconds);
+        f.Rig.Engine.Timer.UpdateTime(13000000000L);
+        f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(MathF.BitIncrement(threshold),241));Assert.Equal(12f,p.LastGroundMotionSeconds);
+    }}

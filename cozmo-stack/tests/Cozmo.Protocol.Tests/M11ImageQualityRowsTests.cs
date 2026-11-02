@@ -212,12 +212,16 @@ public sealed class M11ImageQualityRowsTests
         string root=Directory.CreateTempSubdirectory("cozmo-b116-").FullName;
         var global=ImageQualitySettings.Globals;
         var previous=(global.TooBright,global.TooDark,global.MeterFromDetections,global.Low,global.Mid,global.High);
+        var schedules=AllVisionModesSchedule.CopyDefault();
+        var component=(VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
+        bool oldError=EngineErrorState.ErrorFlagSet;
         try
         {
             string source=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../re-analysis/obb/assets/cozmo_resources/config/engine/vision_config.json"));
             string folder=Path.Combine(root,"config","engine");Directory.CreateDirectory(folder);
             File.Copy(source,Path.Combine(folder,"vision_config.json"));
             using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,new CozmoEngineOptions{ResourcesPath=root});
+            robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false); // actual owner invokes source Init
             var vision=robot.Vision; vision.Calibration=Cal();
             Assert.Equal((byte)20,vision.QualityProcessor.Settings.TooDark);
             Assert.Equal((byte)230,vision.QualityProcessor.Settings.TooBright);
@@ -226,6 +230,9 @@ public sealed class M11ImageQualityRowsTests
         finally
         {
             (global.TooBright,global.TooDark,global.MeterFromDetections,global.Low,global.Mid,global.High)=previous;
+            AllVisionModesSchedule.RestoreDefaultForTest(schedules);
+            (VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=component;
+            EngineErrorState.ErrorFlagSet=oldError;
             Assert.StartsWith(Path.GetFullPath(Path.GetTempPath()),Path.GetFullPath(root),StringComparison.OrdinalIgnoreCase);
             Assert.StartsWith("cozmo-b116-",Path.GetFileName(root));
             Directory.Delete(root,true);

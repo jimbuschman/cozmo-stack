@@ -2,7 +2,7 @@ using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Vision;
 
-// fidelity: M11-016
+// fidelity: M11-098
 // Supplied sparse-kernel unit, imgproc 948A8/964C4 and u8 workers 90528/90B8C.
 internal enum NativeMotionMorphOperation { Dilate, Erode, Close }
 
@@ -24,7 +24,7 @@ internal static class NativeMotionMorphology
             if(kernel[y*kernelColumns+x]!=0) offsets.Add((x-anchorX,y-anchorY));
         if(source.Channels!=1||destination.Channels!=1||offsets.Count==0||offsets.Count==kernel.Length)
         {
-            SteppedBehavior.ReportMissing("M11-016 byte morphology: only supplied nonempty sparse one-channel kernel profile is available");
+            SteppedBehavior.ReportMissing("M11-098 byte morphology: only supplied nonempty sparse one-channel kernel profile is available");
             return false;
         }
         int rows=source.Rows,cols=source.Columns;
