@@ -1762,3 +1762,4 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Evidence added: SetNextImage's query time min(imageTs, newest raw key), flag 1, and both failure exits (0x00652C22..0x00652C44, 0x00653158, 0x0065315A) | M11-097 |
 | Production frame handoff stopped by B-M3M4-33 without a decision; restored in B-M3M4-34 | M11-049 (note) |
+| New: The Anki MotionDetector: image, ground and peripheral motion from frame to the motion result | M11-098 |

@@ -3,11 +3,11 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **752 records** over 16 subsystems.
+Manifest of **753 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 271 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 272 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 365 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 13 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 97 | 6 | 74 | 0 | 1 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 98 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
@@ -62,7 +62,7 @@ status.
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
-| M11-vision | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
+| M11-vision | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
@@ -1919,20 +1919,6 @@ B-M3M4-19 built, awaiting strong verification: all current explored-area readers
 * outstanding: read the border-walk order (4.3, 4.4), the neighbour definition and AddBorderWaypoint 0x0068ADAA; decide with the operator whether an address-dependent order must be reproduced or only the resulting border set. Read 2026-10-14 (re-analysis/research/overnight/20261014-ov11-m11-047-check.md): IMPLEMENTATION_GAP for rows a-g (InvalidateBorders also empties the waypoint vectors; waypoints carry flags +0xC/+0xD and closing contacts can repeat). Open: the seed iteration order comes from an unordered_set keyed by node addresses (bionic malloc, not shipped): an operator decision (raised 2026-10-14); until then a visible MISSING. The border consumer is M11-079; __next_prime is M4-050. M1-034 standing rule sites (malformed topology only): 0x0068AD2C, 0x0068AE4C, 0x0068AE62, 0x0068AF30, 0x00689444, 0x006881E4, 0x00688190, 0x0068AF10. Operator 2026-10-14 (AGENTS.md approved departures): the seed order is a departure: the stack iterates the seeds in insertion order (the order nodes entered the type set), deterministically; the original follows the phone's heap addresses. Everything else stays exact. Operator 2026-10-15: the same insertion-order departure also covers the memory map's FindIf results (M11-074). Operator 2026-10-15: the insertion-order departure also covers the GetBorders area sum (M11-079) and the profiler teardown print order (M11-078/M11-055).
 B-M11-5 (2026-10-15), BLOCKED prerequisite report only: job item 1 requires the integrated production tree before the border walk. Current MemoryMap normal insertion/content/collision/FillBorder still uses _regions; SourceQuadTree Insert stops on production-null overlap geometry and root/shift bodies. Checked geometry/Transform/ray evidence exists under M11-045/046 (20261013-quadtree-rest-check), but that prerequisite has not been built. No border walker, profiler, geometry stand-in, new policy or status promotion added. See jobs/status/B-M11-5.md for actual production files/lines and native dependency ranges. Revised QUEUE rule 8: publish and continue.
 
-**M11-049 — The enabled flag: images are dropped until the NV calibration read callback has run** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
-* effect: the stack processes images before the calibration read returns, or never resumes after a failed read
-* rests on: recovered by the R-VIS gap pass 1; the pre-extraction and the items 9-10 verifier had found no writer
-* best authority: libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q7, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): VisionComponent+0x48 (enabled) has one writer, movs r0,#1; strb.w r0,[r5,#0x48] at 0x0065AE80, inside the NV read callback at 0x0065AB68 (tag NVEntry_CameraCalib 0x80000001), reached on every path: NV failure, size mismatch and success. The callback is registered by HandleMessage<RobotConnectionResponse> 0x006583A4 only when the response result byte is 0 (Success) (0x006583BA..0x006583FA); that handler also sends SetCameraParams with only the struct byte at +6 set (0x00658414; the other bytes are uninitialised, contents UNKNOWN). SetNextImage 0x00652B04 drops images ('not enabled') until the callback has run once. VisionComponent+0x4B (paused) has no writer (the constructor zeroes both bytes at 0x006500EE); it is only read (0x006517C8, 0x00651874, 0x00652218, 0x0065300E, 0x0065302C)
-* evidence: 0x0065AE80 the enabled write; 0x0065AB68 the callback; 0x006583A4..0x00658414 the registration and SetCameraParams; 0x006500EE the ctor; re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q7; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q7 PASS, own encoding scan)
-* outstanding: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): overlap ruling: the +0x48 store in the calibration callback (0x0065AE80; callback 0x0065AB68) is M3-022's; this record owns the readers (the image drop). Before: BUILT: VisionSystem starts not enabled and is enabled only by the calibration-read callback's event (all three outcomes, M3-022 raises it); HandOverFrame discards every image while not enabled; there is no paused state. The SetCameraParams contents the same handler sends are M11-042/M3-019 (policy).
-B-M3M4-33 stopped the production frame handoff (VisionSystem.cs OnFrame) with no recorded decision; the check (re-analysis/research/20261019-b-m3m4-33-check.md) is blocking. B-M3M4-34 restores it through the SetNextImage join (M11-097). Until then this record's BUILT parts are unreachable in production.
-B-M3M4-34 (2026-10-19), built, awaiting strong verification: Restored Camera.FrameForVision -> OnFrame -> captured robot state -> HandOverFrame -> processor. Enabled/run/disposed gates kept. Manager-checked SetNextImage0x00652C22..0x00652E40 queries ComputeStateAt(min(imageTs,newestRaw),flag1), drops0x06000000 with OriginMismatch info and other failures with StateHistoryFail warning/history counts and bounds. Robot state captured at handoff and carried in the one pending slot, not requeried on the worker. Host ProcessCapture uses the same selection. IMPORTANT unread boundary: PoseData construction AFTER0x00652CFC (historical camera/last-frame pose, homography/IMU/motion fields and remaining assembly) is not ported from a new guess: existing host PoseData pairing beyond the checked robot state is retained as requested by B34. B33 camera-stop MISSING superseded; no production-camera exclusion remains.
-B-M3M4-36 (2026-10-19), built, awaiting strong verification: Robot options VisionCalibration/VisionDetector/VisionOkaoRecognizer carry the former optional VisionSystem constructor inputs (same null/defaults). Null calibration still waits for CameraSettings NV CalibrationInstalled and VisionEnabledSet. All callers use robot.Vision; constructor now internal to prevent host replacement. Camera/pose assembly and worker start conditions unchanged; no new PoseData fidelity claim.
-VISION-GROUND-CARRIER-1 (2026-11-01): actual M11-049 enabled-reader tests now use original native owner plus registered NV reads/replies for failure, wrong size and success. Callback writer remains M3-022, source store0065AE80 after install0065ADE0. Whole OWN enabled-reader path is proposed for Claude after batch gate, independently of the later M11-033 partial-carrier/IMU/worker gaps; no status change or whole later processing claim. See handoff for actual tests and classified callback-tail fixture race.
-POUNCE prerequisite batch final validation (2026-11-01): full2 at8365f4307501/7501 PASS0skip9m18, compiler/gate/shutdown/postflight0, after classified retired-ground cleanup and independent action-tag fixture fix. Five bounded jobs READY FOR CLAUDE; prior pending/failure checkpoints superseded. Parent real-frame Pounce, full MotionDetector/worker Init/pose/IMU/ground/packing and positive action path remain open. Only whole M11-049 OWN enabled-reader path is proposed in its handoff; no official status/approval changes.
-
 **M11-050 — UpdateVisionMarkers steps between ComputeAndInsertStateAt and UpdateObservedMarkers** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
@@ -2418,6 +2404,15 @@ B-M3M4-33 final review: robot-owned history queries, cull, clear and cache inser
 SetNextImage join read (re-analysis/research/20261019-b-m3m4-33-check.md, 2026-10-19): query at min(imageTs, newest raw key) with flag 1; both failures drop the frame without handoff. The PoseData construction after 0x00652CFC (0x00652CFC..0x00652D58) is not read. Build the join in B-M3M4-34 and restore the production frame handoff.
 B-M3M4-34 (2026-10-19), built, awaiting strong verification: Manager-adopted SetNextImage query/timestamp/result join now built; image timestamp remains the observation timestamp even when its state is queried at newest raw. Native bounds getters reopened0x00532188..0x005321EE (empty0). Correction guard narrowed: GetParent(A) only when A.frame==R.frame,0x0053193E. Removed the false0x00531904 crash/end-anchor claim (end unreachable here); GetParent(V) guard at0x00531AA0 remains at its call point. Earlier broad no-parent anchor guard superseded. Root-before interpolation null read citation corrected to0x008452BA. Tests include decreasing-frame/root-anchor input that does not require GetParent(A). Computed key/index producer after0x00531BAA remains M11-044 MISSING/out of scope.
 VISION-GROUND-CARRIER-1 (2026-11-01): actual frame capture reuses checked min(image timestamp,newest raw), flag1 query and returned time/state; its new ground snapshot is created before the temporary is disposed. Current job does not re-audit or settle the broad query/admission record; existing checked OV128/B33/B34 own ledger remains distinct from the later carrier/IMU/worker gaps.
+
+**M11-098 — The Anki MotionDetector: image, ground and peripheral motion from frame to the motion result** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/NativeMotionImage.cs`
+* effect: whether Cozmo sees motion, which is what lets Pounce run on a real robot
+* rests on: Codex read, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections, because M11-016's frozen OKAO authority and evidence do not describe it.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Detect 0x006AAAF0; helpers 0x004BEB98 (DetectHelper<ImageRGB>), 0x004BEBA4 (DetectHelper<Image>); ratio 0x006ABA76, 0x006AB8DE; close 0x006A98D6; components 0x008720F8.; re-analysis/research/20261101-pounce-prerequisites-claude-check.md
+* outstanding: Built: half sampling, ratio test, supplied-mask components, sparse morphology, ground-plane lookup. Missing: 21x21 box filter, ellipse kernel, the detector gates, peripheral and ground paths, packing, delivery, IMU deque and worker anchor. Rounding is round to nearest, ties to even, per re-analysis/research/20261101-pounce-prerequisites-claude-check.md.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 

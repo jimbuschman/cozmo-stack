@@ -132,8 +132,9 @@ internal static class NativeGroundPlaneProjection
     // 0x004F7B74: the two near corners change only when both intersections exist.
     internal static void Clamp(NativeGroundPoint[] points, int columns, int rows)
     {
-        var a = new NativeGroundPoint(columns - 1, rows - 1);
-        var b = new NativeGroundPoint(0, rows - 1);
+        // 0x004F7952..0x004F797C passes (0, rows-1) first, so the extended edge runs left to right.
+        var a = new NativeGroundPoint(0, rows - 1);
+        var b = new NativeGroundPoint(columns - 1, rows - 1);
         float dx = a.X - b.X, dy = a.Y - b.Y;
         var start = new NativeGroundPoint(a.X + dx, a.Y + dy);
         var end = new NativeGroundPoint(b.X - dx, b.Y - dy);

@@ -65,9 +65,20 @@ public sealed class NativeGroundPlaneCarrierTests
     }
 
     [Fact]
+    public void ClampRunsTheBottomEdgeFromLeftToRightLikeNative()
+    {
+        // 0x004F7B74 with p1=(0,239), p2=(319,239): edge -319..638. Expected X values are that f32 arithmetic
+        // worked by hand outside C#; the opposite direction gives 52.84161376953125 and 85.14837646484375.
+        NativeGroundPoint[] points = { new(100.5f,50.25f),new(37.25f,300.75f),new(190,50),new(33,333) };
+        NativeGroundPlaneProjection.Clamp(points,320,240);
+        Assert.Equal(new NativeGroundPoint(52.841552734375f,239),points[1]);
+        Assert.Equal(new NativeGroundPoint(85.14840698242188f,239),points[3]);
+    }
+
+    [Fact]
     public void ClampUpdatesBothNearCornersOnlyWhenBothSidesIntersect()
     {
-        // Literal source segment inputs: bottom edge y=9, extended x=20..-10.
+        // Literal source segment inputs: bottom edge y=9, extended x=-10..20.
         NativeGroundPoint[] literal = { new(2,0),new(2,20),new(8,0),new(8,20) };
         NativeGroundPlaneProjection.Clamp(literal,11,10);
         Assert.Equal(new[] { new NativeGroundPoint(2,0),new NativeGroundPoint(2,9),
