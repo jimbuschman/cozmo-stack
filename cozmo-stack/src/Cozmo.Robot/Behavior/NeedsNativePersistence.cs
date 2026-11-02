@@ -83,6 +83,7 @@ public sealed partial class NeedsManager
     private bool WriteNativeDevice(bool refresh)
     {
         long now=NativeSystemClockMicros(); // 0x693BC0, even when refresh=false
+        if(_nativeRobotDataProtected)return true; // see ResolveNativeCopies: the State here is not the robot's
         if(refresh)State.NativeDateTimeMicros=now;
         if(DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 NeedsDeviceDirectory unavailable for device write");return false;}
         if(!NativeMetadataAvailable){SteppedBehavior.ReportMissing("M15-014 star config unavailable for device write");return false;}
@@ -113,6 +114,11 @@ public sealed partial class NeedsManager
         {SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.WriteToDevice","Write failed: "+e.Message);EngineErrorState.StoreAndMaybeBreak();}
         return true;
     }
+    private void ProtectRobotData()
+    {
+        _nativeRobotDataProtected=true;
+        SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.RobotDataProtected","The robot's needs could not be read; no needs are saved to the robot or this PC until a read works");
+    }
     // 0x694608: the original context and source-selected robot stay live through every outward callback.
     private void ResolveNativeCopies()
     {
@@ -126,13 +132,25 @@ public sealed partial class NeedsManager
         if(_nativeDeviceInputUnavailable){engine.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-014 Needs device input history unavailable; resolver continuation withheld");return;}
         bool r=_robotReadSucceeded,d=_deviceDataPresent,rewrite=_robotRewriteNeeded;
         bool deviceWrite=false,robotWrite=false,changed=false,apply=false,clearDisconnect=false,clearBackground=false,noAction=false;
-        if(!r&&!d){deviceWrite=true;robotWrite=true;noAction=true;}
+        if(!r&&!d)
+        {
+            noAction=true;
+            // Approved departure (operator, 2026-11-02): a robot read that failed for any reason but NV_NOT_FOUND says nothing
+            // about what the robot holds, so neither copy is written. The engine writes both (0x00694820, 0x00694EE4). A device
+            // file written here would look newer than the robot on the next run and overwrite it anyway.
+            if(_nativeRobotReadInconclusive)ProtectRobotData();
+            else {deviceWrite=true;robotWrite=true;}
+        }
         else if(!r&&d)
         {
             if(_previousSerial!=_serial)
             {
                 bool alternate=TryLoadAlternateDeviceFile(_serial);if(!Current())return;if(_nativeDeviceInputUnavailable){engine.NativeLocalNotifications?.MarkHistoryUnavailable();return;}
-                deviceWrite=alternate;robotWrite=true;changed=true;
+                // The startup file holds defaults under no serial, so without this robot's own file the device copy says nothing
+                // about it either: same approved departure as below.
+                if(_nativeRobotReadInconclusive&&!alternate)ProtectRobotData();
+                else {deviceWrite=alternate;robotWrite=true;}
+                changed=true;
             }
             else robotWrite=true;
         }
@@ -166,7 +184,7 @@ public sealed partial class NeedsManager
         if(!engine.NeedsContextExternalInterfaceAvailable)SteppedBehavior.ReportMissing("M1-034/M15-014 skipped null onboarding interface dereference at 0x006953DC");
         else {byte[] body=new byte[4];System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body,stage);engine.DeliverNurture(0x69,body,stage);}
         if(!Current())return;
-        _nativeCopiesResolved=true; // every native robot write is reached only after this resolver (0x00694608)
+        _nativeCopiesResolved=!_nativeRobotDataProtected; // every native robot write is reached only after this resolver (0x00694608)
         if(State.NativeLastDisconnectMicros!=0)_=NativeSystemClockMicros(); // source elapsed diagnostic samples separately
         long writeTime=NativeSystemClockMicros(); // 0x694D9E, always once for both requested writes
         if(deviceWrite)

@@ -3327,6 +3327,7 @@ B-M1-10 (2026-10-18), built, awaiting strong verification: production Needs read
 B-M1-10 check (2026-10-18) A1: the needs device-file read, decay and writes (host state directory) also run on the engine clock; B-M1-11 gates them until this is built.
 B-M1-11 (2026-10-18), built, awaiting strong verification: the B-M1-10 resolver gate also skips M15-050 Lab writeback join 0x00694622, SendNeedsStateToGame (case 1 NoAction; cases 5-7 Decay), and RobotChangedFromLastSession (cases 3, 5-7). The scoped stack MISSING now names these deliveries/joins explicitly. No claim that their production producers are built.
 B-M1-11 (2026-10-18), built, awaiting strong verification: host device-file AttemptReadFromDevice/Load, persistence restoration decay, WriteDeviceFile and direct Save are gated before file access or state application until M15-030 epoch time is built (0x00693BC0/0x00693BC4, 0x00695304..0x00695330, writeAsJson 0x00693EE6). One scoped stack MISSING per engine lifetime, shared by forced/periodic/direct entries; normal in-memory Init/tick remains. The partial model is only available through the existing explicit detached/offline test adapter.
+Approved departure (operator, 2026-11-02; AGENTS.md): an unusable robot read with no needs file for this robot writes neither copy; NV_NOT_FOUND keeps the engine's first write. NativeNeedsPendingProofTests.AnUnusableRobotReadWritesNeitherCopy.
 
 **M15-015 — Freeplay active-time tracker and its four pause sources** (live path)
 

@@ -733,6 +733,7 @@ public sealed partial class NeedsManager
     private NativeStarThresholds? _nativeStarThresholds;
     private bool _nativeStarMetadataKnown;
     private bool _nativeCopiesResolved; // this connection's ResolveNativeCopies has taken the robot/device copies
+    private bool _nativeRobotReadInconclusive,_nativeRobotDataProtected; // this connection's read failed; see ResolveNativeCopies
     private int? _nativeRepairRounds;
     private NeedsState? _nativeRobotCandidate;
     private int _nativeOnboardingStage;
@@ -1326,7 +1327,7 @@ public sealed partial class NeedsManager
     /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
     /// </summary>
     // fidelity: M15-014, M15-016
-    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _nativeCopiesResolved=false; if(NativeContextBound){_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot();NativeNotificationDidConnect=true;} _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
+    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _nativeCopiesResolved=false;_nativeRobotDataProtected=false; if(NativeContextBound){_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot();NativeNotificationDidConnect=true;} _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
 
     /// <summary>
     /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6, J5): write the disconnect timestamp to
@@ -1460,7 +1461,7 @@ public sealed partial class NeedsManager
             if(NativeContextBound&&_nativePersistenceReady)State.NativeSerial=serial;
             _robotReadSucceeded = false;       // +0x1c8
             _robotRewriteNeeded = false;       // +0x1ca
-            _nativeCopiesResolved=false;
+            _nativeCopiesResolved=false;_nativeRobotDataProtected=false;
         }
         // The NV read (and the immediate fallback) run outside _gate.
         // M15-014/M3-033: on the live path the engine owns the 0x194000 read (queued from its mfgId handler,
@@ -1621,6 +1622,7 @@ public sealed partial class NeedsManager
             _awaitingRobotData=false;
             bool success=FinishReadFromRobot(r.Data,r.Result);
             if(!engine.NeedsContextAlive||owner.Lifetime.Destroying||!ReferenceEquals(_nativeConnectedRobot,owner))return;
+            _nativeRobotReadInconclusive=!success&&r.Result!=NvStorageComponent.ResultNotFound;
             _robotReadSucceeded=success;ResolveNativeCopies();return;
         }
         if(SkipUnbuiltRobotPersistence())return;

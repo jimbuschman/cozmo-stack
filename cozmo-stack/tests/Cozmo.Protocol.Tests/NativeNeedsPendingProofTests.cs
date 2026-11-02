@@ -194,4 +194,43 @@ public sealed class NativeNeedsPendingProofTests
         }
         finally{Directory.Delete(directory,true);}
     }
+    private static CozmoEngineOptions ProtectedOptions(string directory)=>new(){ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),BlockPoolPath="",NeedsDeviceDirectory=directory,DasDeviceId="fixture",LabLocaleLanguage="en",LabLocaleCountry="us"};
+    private static IEnumerable<NVCommand> NeedsChanges(Fixture f)=>f.Rig.SentSince(0).OfType<NVCommand>().Where(c=>c.Tag==NeedsManager.NeedsNvKey&&c.Op!=NvStorageComponent.OpRead);
+    // Approved departure (operator, 2026-11-02): an unusable robot read with no device file writes neither copy. A device file would
+    // look newer than the robot next run and overwrite it. reach: production; the unusable blob is the fixture input.
+    [Fact]
+    public void AnUnusableRobotReadWritesNeitherCopy()
+    {
+        string directory=Directory.CreateTempSubdirectory("cozmo-protected-").FullName;
+        try
+        {
+            for(int run=0;run<2;run++) // the second run finds run one's startup file, which holds defaults
+            {
+                using var f=new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true,sourceNvStored:tag=>tag==NeedsManager.NeedsNvKey?new byte[3]:null);
+                var needs=f.Rig.Engine.Needs;Assert.True(needs.HasNativePersistence);Assert.True(f.Rig.Engine.Experiments.NativeAssignmentHistoryAvailable);
+                for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
+                needs.RegisterNeedsActionCompleted("RollACube");
+                needs.PossiblyStartWriteToRobot(true);needs.StartWriteToRobot(0);
+                for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
+                needs.OnRobotDisconnected();
+                Assert.Empty(NeedsChanges(f));
+                Assert.Equal(new[]{"needsState.json",NotificationHistoryStore.FileName},Directory.GetFiles(directory).Select(Path.GetFileName).Order());
+            }
+        }
+        finally{Directory.Delete(directory,true);}
+    }
+    // NV_NOT_FOUND is a real answer: the robot holds nothing, so the engine's first write stands (0x00694EE4).
+    [Fact]
+    public void ARobotWithNoStoredNeedsStillGetsTheEnginesFirstWrite()
+    {
+        string directory=Directory.CreateTempSubdirectory("cozmo-first-write-").FullName;
+        try
+        {
+            using var f=new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true);
+            for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
+            Assert.NotEmpty(NeedsChanges(f));
+            Assert.True(Directory.GetFiles(directory).Length>1);
+        }
+        finally{Directory.Delete(directory,true);}
+    }
 }

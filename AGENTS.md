@@ -177,6 +177,10 @@ stack implements that feature.
   one of the nine other OpenCV decoders (BMP, HDR, WebP, SunRaster, PxM, TIFF, PNG, JPEG 2000, EXR) returns the empty
   image with a visible MISSING, where the original would decode it. The operator's robot sent only encoding 8 (M3-050),
   and the engine cannot request 5/6/7.
+- **M15-014, an unusable robot needs read** (operator, 2026-11-02): when the needs read fails for any reason but
+  NV_NOT_FOUND, or returns a blob the stack rejects, and the PC has no needs file for this robot, the stack writes no needs to
+  the robot or the PC that run, and weighted rewards stay withheld. The original writes defaults over the stored needs
+  (0x00694820, 0x00694EE4). NV_NOT_FOUND keeps the engine's first write. Reversible.
 - **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
 - **M11-047, the border-walk seed order** (operator, 2026-10-14).
   - **The original:** iterates a type set (`unordered_set` of quad-tree node pointers, murmur2 hash) whose order follows
