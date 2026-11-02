@@ -31,6 +31,7 @@ public sealed partial class CozmoEngine
                 n.TickCount=()=>Timer.TickCount;
                 n.PossiblyWriteLabAssignments=Experiments.PossiblyWriteLabAssignmentsToRobot;
             });
+        Experiments.AttachInitializedNeeds(Needs);
         Needs.Connected=false; // native constructor manager+4 is null until InitAfterConnection (0x0069211A, 0x00694388)
         Needs.AttachConnectionRead(this);
         ConnectToRobotHandled+=()=>Needs.InitAfterConnection();

@@ -35,6 +35,7 @@ public sealed partial class EngineRobot
         camera.PreComposeWith(neck);camera.SetParent(state.Pose);return camera;
     }
     internal uint NativeRobotId {get;}
+    internal uint NativeBodyId {get;private set;} // Robot+0x1C, constructor zero 0x0050FC3C
     private static readonly Pose3d MissingOrigin=new(""); // MissingOrigin's native name is not a checked input in this job.
     internal Pose3d MainPose {get;}=new("");
     internal Pose3d ForwardPose {get;}=new("");

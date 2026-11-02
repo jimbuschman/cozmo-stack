@@ -1596,9 +1596,9 @@ internal sealed class RobotInitialConnection
         SendConnectionResponse(RobotConnectionResult.Success, fw);
         // fidelity: M3-033, M3-034, M1-028
         // 0x52E3AA: ReadLabAssignmentsFromRobot (CozmoExperiments, 0x6A5B1E) queues NV 0x196000; the lab layer
-        // has no component in this stack, so the read queues and completes with a no-op sink. It precedes the
+        // retains its original context/robot callback and precedes the
         // Needs read (0x52E3B2), which the NeedsManager queues on the serial edge below.
-        _engine.NvStorage?.Read(0x196000, EngineRobot.NoSink("M15-036", "the Lab read's callback 0x006A6486 into CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34"));
+        _engine.Experiments.ReadLabAssignmentsFromRobot(id.SerialNumber);
         // fidelity: M15-014, M3-033
         // C2 row 10 / 0x0052E3B2 -> 0x006943F8: the Needs read 0x194000 follows the lab read. In the engine the
         // NeedsManager owns it (StartReadFromRobot 0x006944B4), but this stack builds the NeedsManager after the
@@ -2557,6 +2557,7 @@ public sealed partial class CozmoEngine : IDisposable
         DestructionObserved?.Invoke("loader");
         DisposeAppAudioInput();
         ClearAppDelivery();
+        Experiments?.RetireLab(); // context-owned Lab subscriber, not Robot lifetime.
         AnimationMessages.Dispose(); // G2E map, then E2G map (0x0066016E..0x00660184).
         AnimationMessages.ReportRetirementAtShutdown(EmitStackLog); // M8-027: missing sink was detached before teardown.
         _backupUnlockHandle?.Dispose(); // expired context signal; no callback.

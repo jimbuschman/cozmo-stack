@@ -1,7 +1,8 @@
 using Cozmo.Transport;
 namespace Cozmo.Robot;
 
-internal sealed record LabAssignmentDef(byte[] Key, byte[] User, byte[] Variation);
+internal sealed class LabAssignmentDef(byte[] key, byte[] user, byte[] variation)
+{ internal byte[] Key {get;}=key; internal byte[] User {get;}=user; internal byte[] Variation {get;set;}=variation; }
 internal sealed record LabAssignmentPair(byte[] Key, byte[] Variation);
 
 // fidelity: M15-050 — checked OV59. Raw byte vectors, not decoded/normalized strings.
@@ -14,11 +15,67 @@ internal sealed partial class CozmoExperiments
     internal void SetAssignmentVectorsForTest(IReadOnlyList<LabAssignmentDef> active, IReadOnlyList<LabAssignmentPair> cache)
     { lock (_gate) { _activeAssignments = active; _cachedAssignments = cache; } }
     internal IReadOnlyList<LabAssignmentPair>? CachedAssignments { get { lock (_gate) return _cachedAssignments; } }
+    internal IReadOnlyList<LabAssignmentDef>? ActiveAssignmentsForTest { get { lock(_gate)return _activeAssignments?.ToArray(); } }
 
+    // 0x6A5AA0: clear the loaded vector only after finding the original first robot.
+    internal void ReadLabAssignmentsFromRobot(uint serial)
+    {
+        var owner=_engine.Robots.GetFirstRobot();if(owner is null)return;
+        if(!ReferenceEquals(owner,_engine.Robot)||_engine.NvStorage is not {} nv)
+        {Missing("M15-036 first robot NV owner unavailable at 0x006A5AFC");return;}
+        lock(_gate)_cachedAssignments=Array.Empty<LabAssignmentPair>();
+        int accepted=nv.Read(0x196000,result=>
+        {
+            if(!_engine.NeedsContextAlive||owner.Lifetime.Destroying||!ReferenceEquals(_engine.Robot,owner))return;
+            RestoreLoadedAssignments(serial,result,()=>_engine.NeedsContextAlive&&!owner.Lifetime.Destroying&&ReferenceEquals(_engine.Robot,owner));
+        });
+        if(accepted==0 && _engine.NeedsContextAlive && !owner.Lifetime.Destroying)
+        {_engine.EmitSourceLog(EngineLogLevel.Error,null,"CozmoExperiments.ReadLabAssignmentsFromRobot","Read failed");if(_engine.NeedsContextAlive&&!owner.Lifetime.Destroying&&ReferenceEquals(_engine.Robot,owner))EngineErrorState.StoreAndMaybeBreak();}
+    }
+    internal void RestoreLoadedAssignments(uint serial,NvResult result,Func<bool>? current=null)
+    {
+        current??=()=>_engine.NeedsContextAlive;if(!current())return;
+        if(result.Result==-1){_engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","CozmoExperiments.RestoreLoadedActiveExperiments","No lab assignments data on robot");return;}
+        if(result.Result<0)
+        {_engine.EmitSourceLog(EngineLogLevel.Error,null,"CozmoExperiments.RestoreLoadedActiveExperiments","Read failed with "+NvStorageComponent.NvResultName(result.Result));if(current())EngineErrorState.StoreAndMaybeBreak();return;}
+        IReadOnlyList<LabAssignmentPair> pairs;
+        lock(_gate)
+        {
+            if(_cachedAssignments is not {} cached){Missing("M15-036 loaded Lab vector unavailable before restore");return;}
+            _cachedAssignments=DecodeAssignments(result.Data,cached);pairs=_cachedAssignments.ToArray();
+        }
+        byte[] user=System.Text.Encoding.ASCII.GetBytes(serial.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        foreach(var pair in pairs)
+        {
+            if(!current())return;
+            uint now=unchecked((uint)(Lab.ClockMicroseconds()/1_000_000));
+            try
+            {
+                var experiment=Lab.FindExperiment!(pair.Key);if(experiment is null)continue;
+                if(Lab.FindVariation!(experiment,pair.Variation) is null||!Lab.IsRunning(experiment,now)||!Lab.Enabled)continue;
+                if(!current())return;
+                Lab.Assign(new LabAssignmentDef(pair.Key.ToArray(),user.ToArray(),pair.Variation.ToArray()));
+            }
+            catch(LabMissingSource){lock(_gate){_startupHistoryKnown=false;_activeAssignments=null;}return;}
+        }
+    }
+    // 0x78A970/0x78D378: cumulative cursor, reused temporary, defined partial reads.
+    internal static IReadOnlyList<LabAssignmentPair> DecodeAssignments(byte[] data,IReadOnlyList<LabAssignmentPair> previous)
+    {
+        if(data.Length==0)return previous;int offset=1,count=data[0];byte[] key=Array.Empty<byte>(),variation=Array.Empty<byte>();
+        byte[] Read(byte[] old)
+        {
+            if(offset>=data.Length)return old;int length=data[offset++];int n=Math.Min(length,data.Length-offset);
+            var value=data.AsSpan(offset,n).ToArray();offset+=n;return value;
+        }
+        var output=new List<LabAssignmentPair>(count);
+        for(int i=0;i<count;i++){key=Read(key);variation=Read(variation);output.Add(new(key.ToArray(),variation.ToArray()));}
+        return output;
+    }
     internal void PossiblyWriteLabAssignmentsToRobot()
     {
         IReadOnlyList<LabAssignmentDef>? active; IReadOnlyList<LabAssignmentPair>? cache;
-        lock (_gate) { active = Lab.Assignments40?.ToArray() ?? _activeAssignments; cache = _cachedAssignments; }
+        lock (_gate) { active = _activeAssignments?.ToArray(); cache = _cachedAssignments; }
         if (active is null || cache is null)
         {
             Missing("M15-050/M15-052/M15-036 PossiblyWriteLabAssignmentsToRobot0x006A5DE4: active assignment and restored cache vector producers are unbuilt; no empty vector or selected variation fabricated");
@@ -29,10 +86,11 @@ internal sealed partial class CozmoExperiments
             equal = cache[i].Key.AsSpan().SequenceEqual(active[i].Key) && cache[i].Variation.AsSpan().SequenceEqual(active[i].Variation);
         if (equal) return;
         _engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "CozmoExperiments.PossiblyWriteLabAssignmentsToRobot", "Writing updated lab assignments to robot");
+        lock(_gate) active=_activeAssignments?.ToArray();
+        if(active is null)return;
         WriteLabAssignmentsToRobot(active);
-        // 0x006A5F62..0x006A6014: even no robot or immediate NV rejection refreshes cache; no ack controls this.
-        var next = active.Select(a => new LabAssignmentPair(a.Key.ToArray(), a.Variation.ToArray())).ToArray();
-        lock (_gate) _cachedAssignments = next;
+        // 0x006A5F62: reload the live subscriber vector after log and writer callbacks.
+        lock (_gate) _cachedAssignments = _activeAssignments?.Select(a => new LabAssignmentPair(a.Key.ToArray(), a.Variation.ToArray())).ToArray();
     }
     internal void WriteLabAssignmentsToRobot(IReadOnlyList<LabAssignmentDef> active)
     {

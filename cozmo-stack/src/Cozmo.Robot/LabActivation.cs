@@ -90,12 +90,12 @@ internal sealed class LabActivationRuntime
         lock(AssignmentGate)
         {
             if(Assignments40 is null)Missing("lab+40 assignment vector storage owner0x007ECEF8..0x007ECF4A");
-            if(old is null)Assignments40!.Add(assignment);
+            if(old is null)Assignments40!.Add(new LabAssignmentDef(assignment.Key.ToArray(),assignment.User.ToArray(),assignment.Variation.ToArray()));
             else
             {
                 int index=Assignments40!.FindIndex(entry=>ReferenceEquals(entry,old));
                 if(index<0)Missing("FindAssignment returned an entry outside explicit lab+40 vector");
-                Assignments40[index]=old with{Variation=assignment.Variation.ToArray()};
+                old.Variation=assignment.Variation.ToArray();
             }
         }
         if(AssignmentSignal64 is null)Missing("observer chain owner+64 at0x007ECF32; assignment retained");

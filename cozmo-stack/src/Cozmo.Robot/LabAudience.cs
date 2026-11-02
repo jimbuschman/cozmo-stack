@@ -1,6 +1,21 @@
 using System.Text;
 namespace Cozmo.Robot;
 
+// Constructor-owned Needs state recipient: same context logical owner survives transition to Init.
+internal sealed class LabPreInitNeedsRecipient
+{
+    internal long? TimeCreatedMicros {get;private set;}=0; // NeedsState constructor 0x69BF04
+    internal readonly SortedDictionary<int,float> Levels=new();
+    internal readonly SortedDictionary<int,int> Brackets=new();
+    internal long? ReadTimeCreated()
+    {
+        if(InitializedOwner is null)
+            foreach(int need in new[]{0,1,2}){Levels.TryAdd(need,0);Brackets.TryAdd(need,-1);}
+        return TimeCreatedMicros;
+    }
+    internal Cozmo.Robot.Behavior.NeedsManager? InitializedOwner {get;private set;}
+    internal void Attach(Cozmo.Robot.Behavior.NeedsManager owner){InitializedOwner=owner;TimeCreatedMicros=null;Levels.Clear();Brackets.Clear();}
+}
 // fidelity: M15-052
 internal sealed class LabAudienceTags
 {
@@ -66,6 +81,7 @@ internal sealed class LabAbInterface
 internal sealed class LabAssignmentSignalNode
 {
     internal LabAssignmentSignalNode? Next;
+    internal LabAssignmentSignalNode? Previous;
     internal uint RefCount20;
     internal Action<IReadOnlyList<LabAssignmentDef>>? Callback;
 }
@@ -73,6 +89,17 @@ internal sealed class LabAssignmentSignal
 {
     internal LabAssignmentSignalNode? Head;
     internal Action<LabAssignmentSignalNode>? Release4EB0CA;
+    internal LabAssignmentSignalNode Connect(Action<IReadOnlyList<LabAssignmentDef>> callback)
+    {
+        if(Head is null){Head=new LabAssignmentSignalNode{RefCount20=1};Head.Next=Head;Head.Previous=Head;}
+        var node=new LabAssignmentSignalNode{Callback=callback,RefCount20=1,Next=Head,Previous=Head.Previous};
+        Head.Previous!.Next=node;Head.Previous=node;return node;
+    }
+    internal void Disconnect(LabAssignmentSignalNode node)
+    {
+        if(node.Callback is null||node.Previous is null||node.Next is null)return;
+        node.Callback=null;node.Previous.Next=node.Next;node.Next.Previous=node.Previous;Release(node);
+    }
     internal void Dispatch(IReadOnlyList<LabAssignmentDef> values)
     {
         var current=Head;if(current is null)return;
