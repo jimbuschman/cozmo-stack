@@ -40,6 +40,92 @@ public sealed partial class VisionSystem : IDisposable
     private bool _warnedNoCalibration;
     /// <summary>The calibration the constructor was given, which a removal restores.</summary>
     private readonly CameraCalibration? _constructedCalibration;
+    private readonly object _groundGate = new();
+    private readonly List<IDisposable> _groundDeferredRelease = new();
+
+    private void ReleaseGround(IDisposable? frame)
+    {
+        if (frame is null) return;
+        if (Monitor.IsEntered(_mailbox)) { _groundDeferredRelease.Add(frame); return; }
+        frame.Dispose();
+    }
+
+    private void DrainGroundReleases()
+    {
+        if (Monitor.IsEntered(_mailbox)) return;
+        IDisposable[] frames;
+        lock (_mailbox) { frames = _groundDeferredRelease.ToArray(); _groundDeferredRelease.Clear(); }
+        foreach (var frame in frames) frame.Dispose();
+    }
+    private EngineRobot? _groundOwner;
+    private CameraCalibration? _groundOuterCalibration;
+    private CameraCalibration? _groundPendingOuter;
+    private CameraCalibration? _groundInstalled;
+    private NativeGroundPlaneLookup? _groundLookup;
+    private int _groundEpoch;
+    internal int NativeGroundEpochForTest { get { lock (_groundGate) return _groundEpoch; } }
+
+    // The outer VisionComponent camera has its own identity check, separate from the inner marker camera.
+    internal void BindNativeGroundOwner(EngineRobot owner)
+    {
+        lock (_groundGate)
+        {
+            if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
+            _groundOwner = owner;
+            _groundOuterCalibration = null;
+            _groundInstalled = null;
+            _groundLookup = new NativeGroundPlaneLookup();
+            _groundEpoch++;
+        }
+    }
+
+    internal void SetNativeOuterCalibration(CameraCalibration calibration)
+    {
+        EngineRobot? owner;
+        int epoch;
+        lock (_groundGate)
+        {
+            owner = _groundOwner;
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner)) { _groundPendingOuter=calibration; return; }
+            if (ReferenceEquals(_groundOuterCalibration, calibration)) { if (ReferenceEquals(_groundPendingOuter,calibration)) _groundPendingOuter=null; return; }
+            _groundOuterCalibration = calibration;
+            _groundPendingOuter = null;
+            epoch = ++_groundEpoch;
+        }
+        UpdateCameraCalibration(calibration);
+        lock (_groundGate)
+            if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying || epoch != _groundEpoch || !ReferenceEquals(_groundOuterCalibration, calibration)) return;
+        InstallNativeGroundCalibration(calibration);
+    }
+
+    private void InstallNativeGroundCalibration(CameraCalibration calibration)
+    {
+        EngineRobot? owner;
+        NativeGroundPlaneLookup candidate;
+        int epoch;
+        lock (_groundGate)
+        {
+            owner = _groundOwner;
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner) || !ReferenceEquals(_groundOuterCalibration, calibration) || ReferenceEquals(_groundInstalled, calibration) || _groundLookup is null) return;
+            epoch = _groundEpoch;
+            candidate = _groundLookup.Copy();
+        }
+        bool populated = false;
+        LogCallbackDeferral.RunGated(owner.PoseTreeGate, () => populated = candidate.Populate(owner, calibration));
+        bool unavailable = false;
+        lock (_groundGate)
+        {
+            if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner) || epoch != _groundEpoch) return;
+            if (!populated)
+            {
+                _groundLookup = null;
+                unavailable = true;
+            }
+            else { _groundLookup = candidate; _groundInstalled = calibration; }
+            _groundEpoch++;
+        }
+        if (unavailable) SteppedBehavior.ReportMissing("M11-017 ground-plane LUT pose input unavailable; retained native lookup history cannot be established");
+    }
     /// <summary>Bumped by every removal. A frame started before one is discarded: nothing it found is kept or raised.</summary>
     private int _removals;
     /// <summary>How long a removal waits for a frame being processed to reach a point where it can be discarded.</summary>
@@ -56,6 +142,7 @@ public sealed partial class VisionSystem : IDisposable
         LoadQualityConfiguration();
         Calibration = calibration;
         _constructedCalibration = calibration;
+        _groundPendingOuter = calibration;
         Detector = detector ?? new MarkerDetector();
         Faces.Log += l => Log?.Invoke(l);
         // fidelity: M14-011
@@ -131,7 +218,7 @@ public sealed partial class VisionSystem : IDisposable
         // Vision gets what HandleImageChunk hands to SetNextImage (the per-tick cap, A3), and the calibration and the
         // enable the connection-time NV read gives (1j).
         robot.Camera.FrameForVision += OnFrame;
-        robot.CameraSettings.CalibrationInstalled += OnCalibrationInstalled;
+        robot.CameraSettings.NativeCalibrationInstalled += OnCalibrationInstalled;
         robot.CameraSettings.VisionEnabledSet += OnVisionEnabledSet;
         if (robot.CameraSettings.Calibration is { } read) UpdateCameraCalibration(read);   // fidelity: M11-039: the callback's install already ran, so the catch-up runs it too
         // A VisionSystem built after the connection's NV callback already fired picks up the enable (2d).
@@ -176,7 +263,11 @@ public sealed partial class VisionSystem : IDisposable
 
     // fidelity: M3-022
     /// <summary>SetCameraCalibration from the connection-time NV read (1j).</summary>
-    private void OnCalibrationInstalled(CameraCalibration c) => UpdateCameraCalibration(c);
+    private void OnCalibrationInstalled(EngineRobot owner, CameraCalibration c)
+    {
+        lock (_groundGate) if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying) return;
+        SetNativeOuterCalibration(c);
+    }
 
     // fidelity: M11-039
     /// <summary>
@@ -219,8 +310,21 @@ public sealed partial class VisionSystem : IDisposable
     /// the wait (on the engine thread, inside the tick) ends; only a subscriber to a vision event that posts a game
     /// message on the offline auto-ticking seam could hold it to the bound.
     /// </summary>
+    // 0x00511162..16C / 0x0065258E: the destroyed VisionComponent owns its LUT.
+    // A newer, already-bound owner must survive this retained-facade reset.
+    private void RetireDestroyedGroundOwner()
+    {
+        lock (_groundGate)
+        {
+            if (_groundOwner is not { Lifetime.Destroying: true }) return;
+            _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;
+            _groundPendingOuter=_constructedCalibration;
+            _groundEpoch++; // host stale-work token; intentionally monotonic across owners
+        }
+    }
     internal void ResetToConstructed()
     {
+        RetireDestroyedGroundOwner();
         Interlocked.Increment(ref _removals);
         // fidelity: M11-061, M4-017, M1-025, M4-027
         // CB33/CC26/CC27: removal deletes this owner; a new owner's request deque is empty.
@@ -756,7 +860,9 @@ public sealed partial class VisionSystem : IDisposable
 
     private readonly object _mailbox = new();
     /// <summary>The one pending image (VisionComponent's "next" slot, +0x74) and the removal epoch it arrived in.</summary>
-    private (CameraFrame Frame, int Removal, VisionPoseData? Pose)? _next;
+    private (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground)? _next;
+    internal NativeGroundFrame? PendingGroundForTest { get { lock (_mailbox) return _next?.Ground; } }
+    internal bool HasPendingFrameForTest { get { lock (_mailbox) return _next is not null; } }
     private bool _processorRunning;
     private Thread? _processorThread;
     private volatile bool _processorRun = true;
@@ -770,29 +876,69 @@ public sealed partial class VisionSystem : IDisposable
 
     // Host availability evidence: DetectingMotion is unbuilt, so a received frame withdraws no-motion proof.
     private long _motionFrameInputs;
+    // Test-only observer; no production assignment. The carrier remains owned by the worker.
+    internal Action<NativeGroundFrame>? NativeGroundFrameConsumedForTest;
     internal long MotionFrameInputs=>Interlocked.Read(ref _motionFrameInputs);
     private void OnFrame(CameraFrame f)
     {
         Interlocked.Increment(ref _motionFrameInputs);
         if(!Enabled||!_processorRun||_disposed)return;
+        EngineRobot? frameOwner;
+        lock (_groundGate) frameOwner=_groundOwner;
+        int removal=Volatile.Read(ref _removals);
+        if (frameOwner is null) { SteppedBehavior.ReportMissing("M11-033 camera handoff: original Robot owner unavailable"); return; }
+        bool CurrentFrameOwner()
+        {
+            bool current=frameOwner is not null && !frameOwner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,frameOwner) && removal==Volatile.Read(ref _removals);
+            lock (_groundGate) return current && ReferenceEquals(frameOwner,_groundOwner);
+        }
         SteppedBehavior.ReportMissing("M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp +0xE4 owner is unbuilt; rollback of +0xE4/+0xE8 is not substituted with the processed clock");
+        if (!CurrentFrameOwner()) return;
+        CameraCalibration? pendingOuter;
+        lock (_groundGate) pendingOuter=_groundPendingOuter;
+        if (pendingOuter is not null) SetNativeOuterCalibration(pendingOuter);
+        if (!CurrentFrameOwner()) return;
         if(Calibration is null){WarnNoCalibration(Volatile.Read(ref _removals));return;}
-        var pose=QueryFramePose(f.Timestamp);
-        if(pose is {} captured)HandOverFrame(f,captured);
+        var pose=QueryFramePose(f.Timestamp, out var ground);
+        if(CurrentFrameOwner() && pose is {} captured)HandOverFrame(f,captured,ground,frameOwner,removal);
+        else { ReleaseGround(ground); ReleaseGround(pose?.RobotPose); DrainGroundReleases(); }
     }
     // fidelity: M11-097 — checked SetNextImage caller flag1 (OV12,0x00652C32).
     // Manager-adopted SetNextImage join0x00652C22..0x00652E40: clamp to newest raw time before flag1 query.
     private VisionPoseData? QueryFramePose(uint timestamp)
     {
-        var history=History;
+        var pose = QueryFramePose(timestamp, out var ground);
+        ground?.Dispose();
+        return pose;
+    }
+    private VisionPoseData? QueryFramePose(uint timestamp, out NativeGroundFrame? ground)
+    {
+        EngineRobot? owner;
+        lock (_groundGate) owner = _groundOwner;
+        var history=owner?.PoseHistory ?? History;
+        NativeGroundFrame? capturedGround = null;
         VisionPoseData? Query()
         {
             using var value=new HistRobotState();uint time=0;
             uint result=history.ComputeStateAt(Math.Min(timestamp,history.NewestTimeStamp),ref time,value,true);
             if(result==0)
             {
-                // M11-049: PoseData construction after0x00652CFC is unread. Retain the existing host pairing's
-                // camera/motion fields beyond this checked robot state; no new PoseData construction is inferred.
+                NativeGroundPlaneLookup? lookup; int epoch;
+                lock (_groundGate)
+                {
+                    epoch=_groundEpoch;
+                    lookup=owner is not null && ReferenceEquals(owner,_groundOwner) && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && _groundInstalled is not null ? _groundLookup?.Copy() : null;
+                }
+                if (owner is not null && lookup is not null)
+                {
+                    float[] h = new float[9];
+                    bool valid = lookup.TryGet(value.State.HeadAngle, h);
+                    var candidate = new NativeGroundFrame(owner, time, value, valid, h);
+                    lock (_groundGate)
+                        if (ReferenceEquals(owner, _groundOwner) && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner) && epoch == _groundEpoch) capturedGround = candidate;
+                    if (capturedGround is null) candidate.Dispose();
+                }
+                // The legacy marker facade remains separate from the captured native ground carrier.
                 return RobotStateHistory.PoseData(time,value);
             }
             var sink=SourceLog??((SourceLogSink)((l,c,k,t)=>_robot.Engine.EmitSourceLog(l,c,k,t)));
@@ -806,8 +952,19 @@ public sealed partial class VisionSystem : IDisposable
             return null;
         }
         // Snapshot selection, native query and the retained host pose conversion share every native tree writer's gate.
-        if(history.NativePoseTreeGate is not {} tree)return Query();
-        VisionPoseData? pose=null;LogCallbackDeferral.RunGated(tree,()=>pose=Query());return pose;
+        VisionPoseData? pose=null;
+        if(history.NativePoseTreeGate is not {} tree) pose=Query();
+        else LogCallbackDeferral.RunGated(tree,()=>pose=Query());
+        if (capturedGround is not null)
+        {
+            bool current;
+            lock (_groundGate) current=ReferenceEquals(owner,_groundOwner) && owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner);
+            if (!current) { capturedGround.Dispose(); capturedGround=null; }
+        }
+        ground = capturedGround;
+        if (pose is not null && ground is null)
+            SteppedBehavior.ReportMissing("M11-033/M11-040 captured ground carrier: original owner or calibration lookup unavailable");
+        return pose;
     }
 
     /// <summary>
@@ -819,26 +976,50 @@ public sealed partial class VisionSystem : IDisposable
     /// replaces it (latest wins, 0x006530CC..0x00653140). The Processor takes the pending image, processes it, and on completion discards the
     /// current image and any image that arrived meanwhile without counting it (0x00652234..0x0065224C), then sleeps 2 ms and polls again.
     /// NOT BUILT (M11-040): the synchronous mode (<c>SetIsSynchronous</c>, <c>Start</c>/<c>Stop</c>), the timestamp monotonicity test
-    /// and the drop-statistics events. Production captures the checked robot state at hand-in; remaining PoseData fields after0x00652CFC stay unread.
+    /// and the drop-statistics events. Production captures the source ground pose and matrix at hand-in; the native IMU deque,
+    /// worker anchor and motion consumption remain unavailable.
     /// </summary>
     // fidelity: M11-040, M11-049
     internal void HandOverFrame(CameraFrame f)
-    { Interlocked.Increment(ref _motionFrameInputs);HandOverFrame(f,null); } // direct unit hand-in; production supplies its checked captured state
-    private void HandOverFrame(CameraFrame f,VisionPoseData? pose)
+    { Interlocked.Increment(ref _motionFrameInputs);HandOverFrame(f,null,null,null,null); } // direct unit hand-in; production supplies its checked captured state
+    private void HandOverFrame(CameraFrame f,VisionPoseData? pose,NativeGroundFrame? ground,EngineRobot? sourceOwner,int? sourceRemoval)
     {
-        if (!Enabled) return;
-        lock (_mailbox)
+        if (!Enabled) { ReleaseGround(ground); ReleaseGround(pose?.RobotPose); DrainGroundReleases(); return; }
+        NativeGroundFrame? displaced = null;
+        bool accepted = false;
+        try
         {
-            if (!_processorRun || _disposed) return;
-            if (_next is { } pending)
+            lock (_mailbox)
             {
-                FramesDropped++;
-                Log?.Invoke($"VisionComponent.SetNextImage.DroppedFrame: Setting next image with t={f.Timestamp}, but existing next image from t={pending.Frame.Timestamp} not yet processed");
+                if (_processorRun && !_disposed)
+                {
+                    if (_next is { } pending)
+                    {
+                        FramesDropped++;
+                        Log?.Invoke($"VisionComponent.SetNextImage.DroppedFrame: Setting next image with t={f.Timestamp}, but existing next image from t={pending.Frame.Timestamp} not yet processed");
+                    }
+                    if (sourceOwner is not null)
+                    {
+                        bool ownerCurrent;
+                        lock (_groundGate) ownerCurrent=ReferenceEquals(_groundOwner,sourceOwner);
+                        if (!ownerCurrent || sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner) || sourceRemoval!=Volatile.Read(ref _removals)) return;
+                    }
+                    displaced = _next?.Ground;
+                    _next = (f, sourceRemoval ?? Volatile.Read(ref _removals),pose,ground);
+                    accepted = true;
+                    if (_processorThread is null)
+                    {
+                        _processorThread = new Thread(Processor) { IsBackground = true };
+                        _processorThread.Start();
+                    }
+                }
             }
-            _next = (f, Volatile.Read(ref _removals),pose);
-            if (_processorThread is not null) return;
-            _processorThread = new Thread(Processor) { IsBackground = true };
-            _processorThread.Start();
+        }
+        finally
+        {
+            ReleaseGround(displaced);
+            if (!accepted) { ReleaseGround(ground); ReleaseGround(pose?.RobotPose); }
+            DrainGroundReleases();
         }
     }
 
@@ -855,7 +1036,7 @@ public sealed partial class VisionSystem : IDisposable
             SteppedBehavior.ReportMissing("M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership");
             while (_processorRun)
             {
-                (CameraFrame Frame, int Removal, VisionPoseData? Pose)? taken = null;
+                (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground)? taken = null;
                 lock (_mailbox)
                 {
                     if (!SkipProcessorPass && _next is { } n)
@@ -868,17 +1049,29 @@ public sealed partial class VisionSystem : IDisposable
                 if (taken is { } frame)
                 {
                     bool completed=false;
-                    try { ProcessEncodedFrame(frame.Frame, frame.Removal,frame.Pose,queueForEngine:true);completed=true; }
+                    try
+                    {
+                        if (frame.Ground is not null)
+                        {
+                            NativeGroundFrameConsumedForTest?.Invoke(frame.Ground);
+                            SteppedBehavior.ReportMissing("M11-033 native captured ground carrier: IMU deque, VisionSystem current/previous anchor and motion consumer are unavailable");
+                        }
+                        ProcessEncodedFrame(frame.Frame, frame.Removal,frame.Pose,queueForEngine:true);completed=true;
+                    }
                     catch (Jpeg.OpenCvException e) { ReportDecodeThrow(frame.Frame,e); }
                     catch (Exception e) { completed=true;Log?.Invoke($"frame {frame.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
                     finally
                     {
+                        ReleaseGround(frame.Ground);
+                        NativeGroundFrame? discarded = null;
                         lock (_mailbox)
                         {
-                            if(completed)_next = null; // native completion only follows a returned Update; a throw keeps later arrivals
+                            if(completed) { discarded = _next?.Ground; _next = null; } // native completion discards later arrivals
                             _processorRunning = false;
                             Monitor.PulseAll(_mailbox);
                         }
+                        ReleaseGround(discarded);
+                        DrainGroundReleases();
                     }
                 }
                 Thread.Sleep(ProcessorPollInterval);
@@ -906,7 +1099,10 @@ public sealed partial class VisionSystem : IDisposable
         Thread? thread;
         lock (_mailbox) { _processorRun = false; thread = _processorThread; }
         thread?.Join();
-        lock (_mailbox) { _next = null; Monitor.PulseAll(_mailbox); }
+        NativeGroundFrame? discarded;
+        lock (_mailbox) { discarded = _next?.Ground; _next = null; Monitor.PulseAll(_mailbox); }
+        ReleaseGround(discarded);
+        DrainGroundReleases();
     }
 
     /// <summary>
@@ -1377,7 +1573,7 @@ public sealed partial class VisionSystem : IDisposable
         _robot.MessageInternal -= OnMessage;
         _robot.Engine.DelocalizationReported -= OnDelocalizationReported;
         _robot.Camera.FrameForVision -= OnFrame;
-        _robot.CameraSettings.CalibrationInstalled -= OnCalibrationInstalled;
+        _robot.CameraSettings.NativeCalibrationInstalled -= OnCalibrationInstalled;
         _robot.CameraSettings.VisionEnabledSet -= OnVisionEnabledSet;
         _robot.RobotRemoved -= ResetToConstructed;
         _robot.StateHistoryCleared -= _historyCleared;

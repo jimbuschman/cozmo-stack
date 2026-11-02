@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Cozmo.Robot;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 using Cozmo.Transport;
@@ -425,7 +426,12 @@ public class M4ControlTests
         public void Start() { }
         public void Connect(IPAddress ip, bool isSimulated) { }
         public void Disconnect(IPEndPoint address) { }
-        public void SendData(byte[] clad) { lock (Sent) Sent.Add(clad); }
+        internal readonly Dictionary<byte[],AnimationScheduler.StartWireObservation> StartContexts=new();
+        public void SendData(byte[] clad)
+        {
+            var context=AnimationScheduler.CurrentStartWireForTest;
+            lock (Sent) { Sent.Add(clad); if(context is { } value)StartContexts.Add(clad,value); }
+        }
         public void Raise(ReceiverMarker m, IPEndPoint? a, byte[]? d = null) => Received?.Invoke(new ReceiverEvent(m, a, d));
     }
 
@@ -497,6 +503,7 @@ public class M4ControlTests
         public int Mark() { lock (Port.Sent) return Port.Sent.Count; }
         public List<byte[]> RawSince(int mark) { lock (Port.Sent) return Port.Sent.Skip(mark).ToList(); }
         public List<RobotMessage> SentSince(int mark) => RawSince(mark).Select(b => RobotMessage.Parse(b)).ToList();
+        internal List<(RobotMessage Message,AnimationScheduler.StartWireObservation? Start)> TakeObservedSince(ref int mark) { lock(Port.Sent) { int from=mark;mark=Port.Sent.Count;return Port.Sent.Skip(from).Take(mark-from).Select(b=>(RobotMessage.Parse(b),Port.StartContexts.TryGetValue(b,out var value)?value:(AnimationScheduler.StartWireObservation?)null)).ToList(); } }
         public bool Logged(string part) { lock (Log) return Log.Any(l => l.Contains(part)); }
         public void Dispose() { Robot.Dispose(); }
     }

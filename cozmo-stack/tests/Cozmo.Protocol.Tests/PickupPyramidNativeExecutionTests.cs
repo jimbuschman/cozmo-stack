@@ -34,7 +34,8 @@ public sealed class PickupPyramidNativeExecutionTests
                 Rig.Engine.AnimationStreamerUpdate=()=>Rig.Robot.Animations.Scheduler.Advance(Rig.Engine.Timer.TimeStampMs,Rig.Engine.Timer.Nanoseconds);
             }
             if(preloadAnimations)Rig.Robot.Animations.LoadFrom(Rig.Engine.Options.ResourcesPath!);
-            Rig.ToSynced();Rig.Calibrate();Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,head:Head);
+            Rig.ToSynced();foreach(var owner in Runtime.Bound.Values.OfType<SteppedBehavior>().Distinct())owner.EnableAnimationCompletionCaptureForTest();
+            Rig.Calibrate();Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,head:Head);
             var startupTrace=new List<string>();var startupLogs=new System.Collections.Concurrent.ConcurrentQueue<string>();void Log(string text)=>startupLogs.Enqueue(text);Rig.Engine.StackLogLine+=Log;
             for(int i=0;i<35&&Rig.Robot.CameraSettings.Calibration is null;i++)
             {
@@ -56,6 +57,23 @@ public sealed class PickupPyramidNativeExecutionTests
             foreach(var marker in obj.Markers)marker.LastObservedTimestamp=obj.LastObservedTimestamp;
             M.World.AddLocatedObject(obj);return obj;
         }
+        internal Action<SteppedBehavior>? BeforeCompletedAnimationWaitForTest;
+        internal void WaitCompletedAnimationCallbacks()
+        {
+            while(true)
+            {
+                bool observed=false;
+                foreach(var behavior in Runtime.Bound.Values.OfType<SteppedBehavior>().Distinct().ToArray())
+                    foreach(var observation in behavior.CompletedAnimationCallbacksForTest())
+                    {
+                        observed=true;
+                        BeforeCompletedAnimationWaitForTest?.Invoke(behavior);
+                        observation.Callback.WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                        behavior.RemoveCompletionObservationForTest(observation.Id);
+                    }
+                if(!observed)return;
+            }
+        }
         internal void Motors(RobotStatusFlag extra=0)
         {
             var messages=Rig.SentSince(_motorMark);_motorMark=Rig.Mark();
@@ -65,7 +83,7 @@ public sealed class PickupPyramidNativeExecutionTests
                 case SetBodyAngle b:Yaw=b.AngleRad;Rig.Data(new MotorActionAck{ActionId=b.ActionId});break;
                 case SetLiftHeight l:Lift=(float)Math.Asin((l.HeightMm-45f)/66f);Rig.Data(new MotorActionAck{ActionId=l.ActionId});break;
             }
-            var state=Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos|extra,origin:Robot.CurrentOriginId,frame:Robot.PoseFrameId,x:X,y:Y,head:Head,liftAngle:Lift);state.Pose.Angle=Yaw;Rig.Data(state);Rig.Tick();
+            var state=Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos|extra,origin:Robot.CurrentOriginId,frame:Robot.PoseFrameId,x:X,y:Y,head:Head,liftAngle:Lift);state.Pose.Angle=Yaw;Rig.Data(state);WaitCompletedAnimationCallbacks();Rig.Tick();
         }
         internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1)
         {

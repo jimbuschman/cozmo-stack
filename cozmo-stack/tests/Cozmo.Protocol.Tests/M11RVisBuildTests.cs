@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -1737,16 +1738,19 @@ public class M11RVisBuildTests : IDisposable
     [InlineData(0, -1)]                                         // the right size
     public void M11_049_NoImageIsProcessedUntilTheCalibrationReadCallbackHasRunOnAnyOutcome(int nvResult, int size)
     {
-        using var robot = CozmoRobot.CreateOffline();
+        using var rig = new M3DeviceTests.Rig();
+        var robot=rig.Robot;
         var vision = robot.Vision;
         var log = new List<string>(); vision.Log += l => { lock (log) log.Add(l); };
         Assert.False(vision.Enabled);
         vision.HandOverFrame(BadFrame(1));
         vision.WaitForProcessorIdle();
         lock (log) Assert.Empty(log);                           // dropped: nothing processed, not even a decode attempt
-        var callback = typeof(CameraSettings).GetMethod("OnCalibrationRead", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        rig.ToSuccess();
+        M3DeviceTests.SendConnectionReadsUntilCalibration(rig);
         var data = new byte[size < 0 ? CameraSettings.CalibrationBytes : size];
-        callback.Invoke(robot.CameraSettings, new object[] { new NvResult((sbyte)nvResult, data) });
+        rig.Data(new NVOpResult { Tag=CameraCalibration.NvEntryTag, Op=0, Result=(sbyte)nvResult, Length=0, Data=data });
+        rig.Tick();
         Assert.True(vision.Enabled);
         vision.HandOverFrame(BadFrame(2));
         // Encoded Update decodes before ImageCache Update checks readiness/calibration (OV15 R1).

@@ -2401,7 +2401,7 @@ public class M3DeviceTests
 
     // ================================================================== connection and camera settings: M3-019, M3-021..M3-024
 
-    private sealed class FakePort : IEngineTransport
+    internal sealed class FakePort : IEngineTransport
     {
         public readonly List<byte[]> Sent = new();
         public bool TimedOut { get; set; }
@@ -2414,7 +2414,7 @@ public class M3DeviceTests
         public List<RobotMessage> Messages() { lock (Sent) return Sent.Select(b => RobotMessage.Parse(b)).ToList(); }
     }
 
-    private sealed class Rig : IDisposable
+    internal sealed class Rig : IDisposable
     {
         public long NowNs = 1_000_000_000;
         public readonly FakePort Port = new();
@@ -2573,6 +2573,46 @@ public class M3DeviceTests
         Assert.True(rig.Robot.CameraSettings.VisionEnabled);
     }
 
+    [Theory]
+    [InlineData(-1,56,"VisionComponent.ReadCameraCalibration.Failed")]
+    [InlineData(0,40,"VisionComponent.ReadCameraCalibration.SizeMismatch")]
+    [InlineData(0,56,"VisionComponent.ReadCameraCalibration.Recvd")]
+    public void M3_022_DetachedNvCallbackDoesNotInstallIntoReplacement(int result,int size,string logKey)
+    {
+        using var rig=new Rig(); rig.ToSuccess(); SendConnectionReadsUntilCalibration(rig);
+        var original=rig.Engine.Robot!; bool replaced=false; int installed=0,enabled=0;
+        rig.Robot.CameraSettings.CalibrationInstalled += _ => installed++;
+        rig.Robot.CameraSettings.VisionEnabledSet += () => enabled++;
+        rig.Engine.LogEntry += entry =>
+        {
+            if (entry.Name!=logKey || replaced) return;
+            replaced=true;
+            rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+            rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        };
+        rig.Data(new NVOpResult { Tag=0x80000001,Op=0,Result=(sbyte)result,Length=0,Data=Calibration56()[..size] });
+        rig.Tick();
+        Assert.True(replaced);Assert.NotSame(original,rig.Engine.Robot);
+        Assert.Null(rig.Robot.CameraSettings.Calibration);
+        Assert.False(rig.Robot.CameraSettings.VisionEnabled);
+        Assert.Equal(0,installed);Assert.Equal(0,enabled);
+    }
+
+    [Fact]
+    public void M3_022_CalibrationRegistrationWithoutOriginalOwnerIsExplicitlyUnavailable()
+    {
+        using var rig=new Rig();rig.ToSuccess();
+        rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        var missing=new System.Collections.Concurrent.ConcurrentQueue<string>();
+        void OnMissing(string text)=>missing.Enqueue(text);
+        Cozmo.Robot.Behavior.SteppedBehavior.MissingReported+=OnMissing;
+        try { rig.Robot.CameraSettings.OnRobotConnected(7); }
+        finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported-=OnMissing; }
+        Assert.Contains(missing,text=>text.Contains("M3-022 camera calibration read: original Robot owner unavailable",StringComparison.Ordinal));
+        Assert.False(rig.Robot.CameraSettings.VisionEnabled);
+    }
+
     /// <summary>
     /// B-M3M4 build item 3 (M3-034 retired into M15-034 / M15-035 / M15-033 / M15-036, M11-059): the connection reads whose layer is unbuilt report MISSING naming the
     /// owning record when they complete, and the FaceAlbum/Enrollment pair, which the engine reads only past the branch at 0x00650E3C, is gated on a hook owned by
@@ -2694,7 +2734,7 @@ public class M3DeviceTests
     /// Establishes the first synced full state and answers the 12 constructor reads, leaving the CameraCalib read
     /// (0x80000001) in flight so a test can answer it with its own result.
     /// </summary>
-    private static void SendConnectionReadsUntilCalibration(Rig rig)
+    internal static void SendConnectionReadsUntilCalibration(Rig rig)
     {
         SendFirstFullState(rig);
         for (int i = 0; i < 12; i++) AnswerInFlight(rig);

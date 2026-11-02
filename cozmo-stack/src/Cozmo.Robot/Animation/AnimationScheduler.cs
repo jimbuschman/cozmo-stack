@@ -1654,10 +1654,25 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>A21 SendStartOfAnimation: StartOfAnimation{+0xA0} buffered; startSent = 1, endSent = 0.</summary>
+    // Observation only: immutable identity captured with this buffered start; byte Tag is not an action tag.
+    internal readonly record struct StartWireObservation(long QueueId,long Generation,byte Tag,string? Clip);
+    [ThreadStatic] private static StartWireObservation? _currentStartWireForTest;
+    internal static StartWireObservation? CurrentStartWireForTest => _currentStartWireForTest;
+    internal bool CaptureStartWireForTest;
+    private long _startWireSequenceForTest;
+    private readonly System.Collections.Concurrent.ConcurrentQueue<StartWireObservation> _sentStartWireForTest=new();
+    internal StartWireObservation[] DrainSentStartWireForTest(){var result=new List<StartWireObservation>();while(_sentStartWireForTest.TryDequeue(out var item))result.Add(item);return result.ToArray();}
     private void SendStartOfAnimationLocked()
     {
         byte tag = _tag;
-        Buffer(StreamSizes.StartOfAnimation, false, () => _sink.AnimationStarted(tag), tagName: "animStartOfAnimation");
+        StartWireObservation? identity=CaptureStartWireForTest
+            ? new(++_startWireSequenceForTest,_generation,tag,_streamingClip?.Name) : null;
+        Buffer(StreamSizes.StartOfAnimation, false, () =>
+        {
+            var prior=_currentStartWireForTest;
+            try { _currentStartWireForTest=identity; _sink.AnimationStarted(tag); }
+            finally { _currentStartWireForTest=prior; }
+        }, onSent: () => { if(identity is { } sent)_sentStartWireForTest.Enqueue(sent); }, tagName: "animStartOfAnimation");
         _startSent = true;
         _endSent = false;
     }
