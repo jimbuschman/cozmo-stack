@@ -1,0 +1,17 @@
+# MOTION-IMAGE-PRIMITIVES-1 — BUILD DONE, BATCH GATE PENDING
+
+Second finite prerequisite under POUNCE-REAL-FRAMES-1. The actual detector, frame readiness and real-frame Hiking goal remain OPEN. No statuses, approvals, new records or hardware runs.
+
+- Native same-kind half cache uses rounded destination dimensions and nearest sampling, not the old 2x2 average: engine006AAB02/00874304/008743D8, imgproc000821E8..00082382 and selected worker000723F0. Preserve the two f64 divisions, floor indices, separate strides and original channel order. Odd5 becomes3 with indices0,1,3; no conversion of RGB to gray. Cache reset invalidates entries but retains allocated buffers; repeated lookup returns the mutable cached pixels.
+- Full-image assignment copies the timestamp/header while sharing pixel storage (gray0086EF2C/30, RGB008701DC/E0). Retained previous images instead deep-copy pixels and timestamp, retain the incoming filtered flag and clear the opposite kind (006A9E08/006AA6FC). These are distinct lifetimes, not one borrowed object.
+- Ratio mask/count follows the byte gates and strict f32 threshold: gray006ABA76, RGB006AB8DE. All contributing bytes must be >=11; max/min must be >1.25; any qualifying RGB channel contributes one pixel, not three. No detector event or readiness is inferred from these pure helpers.
+
+Files: new NativeMotionImage.cs and NativeMotionImagePrimitiveTests.cs. Literal source-derived gray/RGB odd-size, padding/stride, strict threshold, mutable-cache, timestamp-header and deep-previous cases exercise the helpers. Expected bytes come from the native selected branches, not C# output.
+
+Affected checks: **118/118 PASS,0 skipped,29s**, compiler/test/shutdown0. Transient shutdown process1 exited; follow-up postflight0 appended to `.scratch/motion-image-primitives-1/affected-1.log`. Scope includes the new tests, VisionTests, VisionModeScheduleTests, M3M4ReviewFixTests and NativeHikingPounceTests. Full batch gate pending: **NOT READY yet**.
+
+Records: no whole settlement or new record proposed. Current M11-016 RECOVERABLE_GAP, "Face, pet and motion detection", already covers motion, although its OKAO-only authority/evidence needs Claude's bounded correction for the actual Anki MotionDetector. M11-033's whole handoff remains partial. Only unresolved prose is updated; protected fields stay equal to main.
+
+MISSING: actual21x21 box filter (selected scalar VCVTR FPSCR boundary unresolved), ellipse-kernel rounding, morphology/components, worker anchor/current-previous integration, detector gates/peripheral/ground/packing/delivery and positive Pounce. TryBoxFilter reports MISSING and returns unavailable; it does not manufacture a no-motion result. No cross-kind cache conversion was invented.
+
+Worker requests: reader and bounded helper `gpt-6.1-sol`, medium; builder DEFAULT and independent reviewer DEFAULT (model/effort omitted), unchanged; actual backends unobserved. **1 returned correction batch/1 resubmission:** timestamp header aliasing fixed, with independent gray/RGB regression tests. Other source clarifications did not trigger code rounds. Builder questions about cache dimensions, typed ownership and byte gates were resolved at the addresses above; filter/FPSCR and the downstream producer remain explicit MISSING.
