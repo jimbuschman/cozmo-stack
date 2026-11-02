@@ -8,14 +8,14 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 273 |
+| EXACT_SOURCE | 275 |
 | EQUIVALENT_IMPLEMENTATION | 9 |
-| COMPATIBILITY_POLICY | 69 |
+| COMPATIBILITY_POLICY | 70 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 363 |
-| RECOVERABLE_GAP | 23 |
-| **total** | **753** |
+| IMPLEMENTATION_GAP | 362 |
+| RECOVERABLE_GAP | 22 |
+| **total** | **754** |
 
 ## Subsystems
 
@@ -35,7 +35,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M12-manipulation | INVENTORY_APPROVED | 2026-10-28 | 52 | 15 | 1 | 1 | 33 | 2 | 34 |
 | M13-navigation | INVENTORY_APPROVED | 2026-10-28 | 41 | 9 | 1 | 1 | 29 | 1 | 28 |
 | M14-faces | INVENTORY_APPROVED | 2026-10-29 | 14 | 1 | 0 | 1 | 11 | 1 | 12 |
-| M15-freeplay | INVENTORY_APPROVED | 2026-11-01 | 110 | 16 | 4 | 2 | 84 | 4 | 88 |
+| M15-freeplay | INVENTORY_APPROVED | 2026-11-02 | 111 | 18 | 5 | 2 | 83 | 3 | 86 |
 | tools | UNREVIEWED |  | 5 | 1 | 4 | 0 | 0 | 0 | 0 |
 
 ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M4-control, M5-animation.
@@ -45,4 +45,4 @@ ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M4-control, M5-animat
 | level | records |
 | --- | ---: |
 | HARDWARE_VERIFIED | 14 |
-| NONE | 739 |
+| NONE | 740 |

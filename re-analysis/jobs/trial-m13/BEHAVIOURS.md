@@ -24,6 +24,7 @@ This is the operator-requested asset-based planning document, checked by the man
 | 2026-11-02 | 1 (DriveOffCharger) | total +14 over 38 start-path jobs (adds M11-098) | POUNCE-REAL-FRAMES-1; Codex full 7581/7581 | Left alone with frames: no hold, idle 0.2 of 300 s with default unlocks, Pounce runs. Not yet on a robot. |
 | 2026-11-02 | 1 (DriveOffCharger) | total 14 over 38 start-path jobs | second idle robot run | Robot: Pounce ran a full real-frame pounce; idle 165.7 of 240 s, almost all Hiking held on VisitInterestingEdge with a non-empty map. |
 | 2026-11-02 | 1 (DriveOffCharger) | total 15 (adds M15-107) | Pounce body read; four differences fixed | Hiking_PounceOnMotion counts as finished after a robot run on this code. Codex out of usage; Claude managing and building. |
+| 2026-11-02 | 1 (DriveOffCharger) | total 17 over 40 start-path jobs (adds M15-071, M15-093) | REWARD-GATE-1 | Simulated: a weighted action no longer stalls Freeplay, idle about 4 s after the action, no holds. Not yet on a robot. |
 
 ## Sources and interpretation
 

@@ -834,7 +834,7 @@
       "hardware_required": false
     },
     "M15-071": {
-      "status": "RECOVERABLE_GAP",
+      "status": "EXACT_SOURCE",
       "title": "SparksRewardCommunicatedToUser: the FreeplaySparksAwarded game broadcast and its amount",
       "authority": "NeedsManager::SparksRewardCommunicatedToUser 0x00696E64: store 0 at +0x3D8 (0x00696E78), MessageEngineToGame(FreeplaySparksAwarded&&) from +0x3DC (0x00696E82..0x00696E88), external interface vtable +0x1C Broadcast (0x00696E80, call 0x00696E90)",
       "evidence": [
@@ -1151,7 +1151,7 @@
       "hardware_required": false
     },
     "M15-093": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NeedsManager daily star machine: UpdateStarsState, the calendar-day compare, StarUnlocked and StarLevelCompleted, level completion and ProcessLevelRewards",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
