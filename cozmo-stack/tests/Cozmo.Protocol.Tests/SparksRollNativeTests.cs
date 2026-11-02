@@ -161,6 +161,15 @@ public sealed class SparksRollNativeTests
             if(tag is 0x83 or 0x84)sparks.Add((tag,body.ToArray()));
             if(tag==0x5A&&body.Length>=8&&BinaryPrimitives.ReadInt32LittleEndian(body.Span[4..])==0x1F)raw.Add(body.ToArray());
         };
+        var priorTransition=manager.DasTransition;
+        manager.DasTransition=next=>
+        {
+            priorTransition?.Invoke(next);
+            if(next is NativePlayArbitraryAnimBehavior arbitrary&&arbitrary.Triggers.Count!=0)
+            {var current=arbitrary.Triggers.ToArray();if(triggers.Count==0||!triggers[^1].SequenceEqual(current))triggers.Add(current);}
+        };
+        try
+        {
         Admit(f,soft);Assert.Equal((byte)26,f.Robot.BehaviorPublicState.State.Activity);
         manager.Update(f.Rig.Engine.Timer.SecondsF,0); // expose the real get-in before the firmware worker can finish it in one Step.
         for(int i=0;i<220&&!f.Runtime.AwaitingParentActivityPick;i++)
@@ -186,6 +195,8 @@ public sealed class SparksRollNativeTests
         // Null returns to the unbuilt parent picker; cleanup occurs ONLY on this supplied changed selection.
         f.Runtime.AdmitActivity("PutDownDispatch");Assert.False(f.Runtime.AwaitingParentActivityPick);
         Assert.DoesNotContain(f.Rig.Robot.Animations.Scheduler.IdleStack,e=>e.Lock=="Activity_"+Id);
+        }
+        finally{manager.DasTransition=priorTransition;}
     }
     [Theory]
     [InlineData((byte)0)] [InlineData((byte)1)]

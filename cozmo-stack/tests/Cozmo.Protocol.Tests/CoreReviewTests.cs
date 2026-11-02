@@ -820,6 +820,8 @@ public class CoreReviewTests
         using var robot=CozmoRobot.CreateOffline();robot.Transport.OfflineAcceptConnection();
         using var f=new M13OverheadMapWriterTests.Fixture();
         var cal=CameraCalibration.Nominal();var vision=robot.Vision;vision.Calibration=cal;
+        vision.ModeEnableMask=1<<(int)VisionMode.DetectingOverheadEdges;
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-helper schedule
         vision.OverheadEdges=new OverheadEdgesDetector();
         Action<VisionFrameResult> onFrame=r=>{if(r.OverheadEdges is {} edges)f.Map.AddVisionOverheadEdges(edges,f.Current);};
         vision.FrameProcessed+=onFrame;
@@ -852,6 +854,8 @@ public class CoreReviewTests
         using var robot=CozmoRobot.CreateOffline();robot.Transport.OfflineAcceptConnection();
         using var f=new M13OverheadMapWriterTests.Fixture();
         var cal=CameraCalibration.Nominal();var vision=robot.Vision;vision.Calibration=cal;
+        vision.ModeEnableMask=1<<(int)VisionMode.DetectingOverheadEdges;
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-helper schedule
         vision.OverheadEdges=new OverheadEdgesDetector();
         Action<VisionFrameResult> onFrame=r=>{if(r.OverheadEdges is {} edges)f.Map.AddVisionOverheadEdges(edges,f.Current);};
         vision.FrameProcessed+=onFrame;

@@ -2130,6 +2130,8 @@ public class M11RVisBuildTests : IDisposable
         {
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
             Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
+            Vision.ModeEnableMask=1<<(int)VisionMode.DetectingMarkers;
+            Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-helper schedule
             Vision.World.Log += l => { lock (Log) Log.Add(l); };
         }
 

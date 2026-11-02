@@ -138,6 +138,7 @@ public sealed class M11DecodeBoundaryTests
             File.WriteAllText(Path.Combine(folder,"vision_config.json"),System.Text.Json.JsonSerializer.Serialize(new{ImageQuality=quality,PerformanceLogging=performance}));
             var logs=new List<EngineLogEntry>();
             using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,new CozmoEngineOptions{ResourcesPath=root},engineCreated:e=>e.LogEntry+=logs.Add);
+            robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false); // original owner invokes Init
             var vision=robot.Vision; vision.Calibration=Cal();check(robot,vision,logs);
         }
         finally

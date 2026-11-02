@@ -24,6 +24,7 @@ public sealed class M11ProcessedImageTimestampTests
                 Rig.ToSynced();Rig.State(head:(float)HeadGeometry.MinHeadAngleRad);
                 Vision.Calibration=CameraCalibration.Nominal();Vision.Enabled=true;
                 Vision.ModeEnableMask=1<<(int)VisionMode.DetectingOverheadEdges;
+                Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-capture schedule
                 Image=new(Vision.Calibration.Columns,Vision.Calibration.Rows);
                 // A camera can supply these horizontal light/dark bands. The actual detector supplies all edges.
                 for(int y=0;y<Image.Height;y++)for(int x=0;x<Image.Width;x++)Image.Pixels[y*Image.Width+x]=(byte)((y/16)%2==0?0:255);

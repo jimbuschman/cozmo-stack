@@ -29,10 +29,10 @@ public sealed partial class VisionSystem
             }
             return true;
         }
-        catch(JsonLogicError)
+        catch(JsonLogicError error)
         {
             if(current())ModeEnableMask=previous;
-            StackDiagnostics.Write("M1-034/M11-082 InitialVisionModes getMemberNames/asBool throw: skip config unit, prior mode mask retained");
+            StackDiagnostics.Write("M1-034/M11-082 InitialVisionModes getMemberNames/asBool throw: skip config unit, prior mode mask retained: "+error.Message);
             return false;
         }
     }

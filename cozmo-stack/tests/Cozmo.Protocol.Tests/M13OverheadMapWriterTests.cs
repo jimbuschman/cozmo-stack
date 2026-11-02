@@ -49,6 +49,7 @@ public sealed class M13OverheadMapWriterTests
         using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State(head:(float)HeadGeometry.MinHeadAngleRad);
         var vision=rig.Robot.Vision;vision.Calibration=CameraCalibration.Nominal();vision.Enabled=true;
         vision.ModeEnableMask=1<<(int)VisionMode.DetectingOverheadEdges;
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-capture schedule
         using var manipulation=new ManipulationSystem(rig.Robot,vision);
         var directory=new DirectoryInfo(AppContext.BaseDirectory);
         while(directory is not null && !Directory.Exists(Path.Combine(directory.FullName,"re-analysis","obb","assets")))directory=directory.Parent;

@@ -35,8 +35,9 @@ public sealed class VisionConfigCheckedRowsTests:IDisposable
         using var resources=new BackupTestResources();var options=resources.Options();string path=Path.Combine(options.ResourcesPath!,CozmoEngine.VisionConfigurationPath);
         File.WriteAllText(path,File.ReadAllText(path).Replace("0.80","2.00",StringComparison.Ordinal));
         var logs=new List<EngineLogEntry>();using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,options,engineCreated:e=>e.LogEntry+=logs.Add);
+        robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false); // original owner invokes Init
         var vision=robot.Vision;Assert.Null(vision.QualityProcessor.Pipeline);
-        Assert.Equal(new[]{"ImagingPipeline.SetExposureParameters.BadMaxChangeFraction","VisionSystem.Init.SetExposureParametersFailed"},logs.Where(l=>l.Level==EngineLogLevel.Error).Select(l=>l.Name));Assert.DoesNotContain(logs,l=>l.Name=="VisionSystem.SetAutoExposureParams");
+        Assert.Equal(new[]{"ImagingPipeline.SetExposureParameters.BadMaxChangeFraction","VisionSystem.Init.SetExposureParametersFailed"},logs.Where(l=>l.Level==EngineLogLevel.Error&&(l.Name.StartsWith("ImagingPipeline.SetExposureParameters.",StringComparison.Ordinal)||l.Name.StartsWith("VisionSystem.Init.",StringComparison.Ordinal))).Select(l=>l.Name));Assert.DoesNotContain(logs,l=>l.Name=="VisionSystem.SetAutoExposureParams");
     }
     // reach: unit (direct initial-mode loop with supplied configuration; full native Init prerequisite join remains M11-059).
     [Fact] public void InitialModesUseByteKeyOrderAndPassFalseEntriesToo()

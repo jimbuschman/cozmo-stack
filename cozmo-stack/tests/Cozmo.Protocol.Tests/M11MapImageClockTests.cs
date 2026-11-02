@@ -18,7 +18,7 @@ public sealed class M11MapImageClockTests
         throw new DirectoryNotFoundException("Shipped resources required");
     }
     private static void Enable(VisionSystem vision,int mask)
-    {vision.Calibration=CameraCalibration.Nominal();vision.Enabled=true;vision.ModeEnableMask=mask;}
+    {vision.Calibration=CameraCalibration.Nominal();vision.Enabled=true;vision.ModeEnableMask=mask;vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();} // supplied direct-capture schedule
     private static (GrayImage Image,uint Timestamp) Frame(M4ControlTests.Rig rig,bool cube=false)
     {
         rig.State(head:-0.15f);
