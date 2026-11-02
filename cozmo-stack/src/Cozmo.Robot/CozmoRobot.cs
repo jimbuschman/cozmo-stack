@@ -504,6 +504,8 @@ public sealed partial class CozmoRobot : IDisposable
         // Subscribe before any connection event; retain the existing NV calibration and worker start gates.
         if (!Engine.Options.OmitVisionForTest)
             _vision = new Vision.VisionSystem(this,Engine.Options.VisionCalibration,Engine.Options.VisionDetector,Engine.Options.VisionOkaoRecognizer);
+        Engine.BindRobotLifetime += native => _vision?.BindNativeGroundOwner(native);
+        if (Engine.Robot is { } groundOwner) _vision?.BindNativeGroundOwner(groundOwner);
         Engine.BindRobotLifetime+=native=>{BindNativeMood(native);BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
         if(Engine.Robot is {} severeOwner){BindNativeMood(severeOwner);BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}
 

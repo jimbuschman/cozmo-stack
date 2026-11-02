@@ -76,6 +76,8 @@ public sealed class M3M4ReviewFixTests
                 Assert.True(SpinWait.SpinUntil(()=>nv.InFlightTag!=tag||Robot.CameraSettings.Calibration is not null,TimeSpan.FromSeconds(15)));
             }
             Assert.NotNull(Robot.CameraSettings.Calibration);
+            Assert.True(SpinWait.SpinUntil(()=>Robot.CameraSettings.VisionEnabled && Vision.Enabled,TimeSpan.FromSeconds(15)),
+                $"Calibration callback tail did not enable vision: camera={Robot.CameraSettings.VisionEnabled}, vision={Vision.Enabled}; logs={string.Join(" | ",Logs.Select(e=>e.Name))}");
             Assert.Same(Robot.CameraSettings.Calibration,Vision.Calibration);
             Assert.True(Vision.Enabled);
         }
@@ -150,12 +152,113 @@ public sealed class M3M4ReviewFixTests
     public void CameraUsesTheRobotStateCapturedAtHandoffRatherThanRequeryingOnTheWorker()
     {
         using var f=new Live();f.Vision.SkipProcessorPass=true;
+        uint consumedTime=0, consumedStatus=0; float consumedHead=0; float[]? consumedH=null;
+        f.Vision.NativeGroundFrameConsumedForTest = ground =>
+        {
+            consumedTime=ground.Timestamp; consumedStatus=ground.State.Status;
+            consumedHead=ground.State.HeadAngle; consumedH=ground.Homography;
+            Assert.Same(ground.RobotPose.Node, ground.CameraPose.Node!.Parent);
+            Assert.Null(ground.RobotPose.Node!.Parent);
+        };
         using var handed=new ManualResetEventSlim();f.Robot.Camera.FrameForVision+=_=>handed.Set();
         f.Image(f.Render(),1,150);Assert.True(handed.Wait(TimeSpan.FromSeconds(5)));
-        try{f.State(200,10);}finally{f.Vision.SkipProcessorPass=false;}
+        var pending=Assert.IsType<NativeGroundFrame>(f.Vision.PendingGroundForTest);
+        Assert.Same(f.Robot.Engine.Robot,pending.Owner);
+        Assert.Null(pending.RobotPose.Node!.Parent);
+        uint status=pending.State.Status;float[] h=pending.Homography;bool valid=pending.GroundValid;
+        Assert.Equal(100u,pending.Timestamp);Assert.Equal(-0.15f,pending.State.HeadAngle);
+        if(!valid)Assert.All(h,value=>Assert.Equal(0f,value));
+        try
+        {
+            f.State(200,10);
+            var oldCalibration=f.Vision.Calibration!;
+            var changed=oldCalibration with { FocalLengthX=oldCalibration.FocalLengthX+1 };
+            int epoch=f.Vision.NativeGroundEpochForTest;
+            // Inner-only unit input separates identities: native outer same-pointer must skip inner update.
+            f.Vision.UpdateCameraCalibration(changed);
+            f.Vision.SetNativeOuterCalibration(oldCalibration);
+            Assert.Same(changed,f.Vision.Calibration);
+            Assert.Equal(epoch,f.Vision.NativeGroundEpochForTest);
+            f.Vision.SetNativeOuterCalibration(changed);
+            Assert.True(f.Vision.NativeGroundEpochForTest>epoch);
+            Assert.Equal(h,pending.Homography);Assert.Equal(valid,pending.GroundValid);
+        }
+        finally{f.Vision.SkipProcessorPass=false;}
         Assert.True(SpinWait.SpinUntil(()=>f.Vision.FramesProcessed>0,TimeSpan.FromSeconds(5)));
         Assert.Equal(150u,f.Vision.LastResult!.Timestamp);
         Assert.Equal(0f,(float)f.Vision.LastResult.PoseData.RobotPose.Translation.X); // query at newest100, not later interpolated150/x5
+        Assert.Equal(100u,consumedTime);Assert.Equal(status,consumedStatus);Assert.Equal(-0.15f,consumedHead);Assert.Equal(h,consumedH);
+    }
+
+    // The supplied observer pauses the worker only; camera packets and both handoffs use the real path.
+    [Fact]
+    public void WorkerCarrierSurvivesReplacementOfThePendingFrame()
+    {
+        using var f=new Live();
+        using var entered=new ManualResetEventSlim(); using var release=new ManualResetEventSlim();
+        NativeGroundFrame? worker=null;
+        f.Vision.NativeGroundFrameConsumedForTest = ground => { worker=ground;entered.Set();release.Wait(); };
+        var image=f.Render();f.Image(image,1,100);
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+        try
+        {
+            Assert.NotNull(worker);float[] original=worker!.Homography;
+            f.State(133,10);f.Image(image,2,133);
+            Assert.True(SpinWait.SpinUntil(()=>f.Vision.PendingGroundForTest is not null,TimeSpan.FromSeconds(5)));
+            Assert.NotSame(worker,f.Vision.PendingGroundForTest);
+            int drops=f.Vision.FramesDropped;
+            f.State(166,20);f.Image(image,3,166);
+            Assert.True(SpinWait.SpinUntil(()=>f.Vision.PendingGroundForTest?.Timestamp==166,TimeSpan.FromSeconds(5)));
+            Assert.Equal(drops+1,f.Vision.FramesDropped);
+            Assert.Equal(100u,worker.Timestamp);Assert.Equal(original,worker.Homography);
+            Assert.Same(worker.RobotPose.Node,worker.CameraPose.Node!.Parent);
+        }
+        finally { release.Set(); }
+        Assert.True(SpinWait.SpinUntil(()=>f.Vision.FramesProcessed>0,TimeSpan.FromSeconds(5)));
+    }
+
+    [Fact]
+    public void InnerOnlyCalibrationChangeDoesNotBecomeOuterInputOnTheNextRealFrame()
+    {
+        using var f=new Live(); f.Vision.SkipProcessorPass=true;
+        var image=f.Render(); f.Image(image,1,100);
+        Assert.True(SpinWait.SpinUntil(()=>f.Vision.PendingGroundForTest is not null,TimeSpan.FromSeconds(5)));
+        int epoch=f.Vision.NativeGroundEpochForTest;
+        var original=f.Vision.Calibration!;
+        var innerOnly=original with { FocalLengthX=original.FocalLengthX+1 };
+        f.Vision.UpdateCameraCalibration(innerOnly);
+        f.State(133); f.Image(image,2,133);
+        Assert.True(SpinWait.SpinUntil(()=>f.Vision.PendingGroundForTest?.Timestamp==133,TimeSpan.FromSeconds(5)));
+        Assert.Equal(epoch,f.Vision.NativeGroundEpochForTest);
+        Assert.Same(innerOnly,f.Vision.Calibration);
+        f.Vision.SkipProcessorPass=false;
+    }
+
+    [Fact]
+    public void GroundUnavailableDiagnosticReplacementDoesNotHandOffTheOldPose()
+    {
+        // Real raw state and camera packets; the supplied host calibration is inner-only, so native LUT is unavailable.
+        using var f=new Live(state:false);f.State(100);f.Vision.SkipProcessorPass=true;
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        using var replaced=new ManualResetEventSlim();using var returned=new ManualResetEventSlim();var old=f.Robot.Engine.Robot!;
+        f.Robot.Camera.FrameForVision+=_=>returned.Set();
+        void OnMissing(string text)
+        {
+            if (!text.Contains("captured ground carrier: original owner or calibration lookup unavailable",StringComparison.Ordinal)) return;
+            f.Robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+            f.Robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+            replaced.Set();
+        }
+        Cozmo.Robot.Behavior.SteppedBehavior.MissingReported+=OnMissing;
+        try
+        {
+            f.Image(f.Render(),1,100);Assert.True(replaced.Wait(TimeSpan.FromSeconds(5)));Assert.True(returned.Wait(TimeSpan.FromSeconds(5)));
+            Assert.NotSame(old,f.Robot.Engine.Robot);
+            Assert.Null(f.Vision.PendingGroundForTest);
+            Assert.False(f.Vision.HasPendingFrameForTest);
+            Assert.Equal(0,f.Vision.FramesProcessed);
+        }
+        finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported-=OnMissing;f.Vision.SkipProcessorPass=false; }
     }
 
     // reach: unit (native SetNewPose creates the frame boundary; real state and camera packet dispatch/query gates).

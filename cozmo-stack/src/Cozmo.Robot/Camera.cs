@@ -659,6 +659,7 @@ public sealed partial class CameraSettings
 
     /// <summary>The NV callback installed a calibration (1j success path).</summary>
     public event Action<Vision.CameraCalibration>? CalibrationInstalled;
+    internal event Action<EngineRobot, Vision.CameraCalibration>? NativeCalibrationInstalled;
     /// <summary>The NV callback set vision enabled (1j, all three paths).</summary>
     public event Action? VisionEnabledSet;
     /// <summary>The CurrentCameraParams broadcast to the game after a SetCameraSettings that sent (A20).</summary>
@@ -785,9 +786,15 @@ public sealed partial class CameraSettings
     /// </summary>
     internal void OnRobotConnected(int bodyHwVersion)
     {
+        var owner = _robot.Engine.Robot;
+        if (owner is null || owner.Lifetime.Destroying)
+        {
+            Behavior.SteppedBehavior.ReportMissing("M3-022 camera calibration read: original Robot owner unavailable");
+            return;
+        }
         lock (_gate) _bodyHwVersion = bodyHwVersion;
         // 0x006583E2..0x006583FA queues the read before 0x00658414..0x0065842C sends SetCameraParams.
-        _robot.Engine.NvStorage!.Read(Vision.CameraCalibration.NvEntryTag, OnCalibrationRead);
+        _robot.Engine.NvStorage!.Read(Vision.CameraCalibration.NvEntryTag, result => OnCalibrationReadForOwner(owner, result));
         _send(new SetCameraParams { Gain = 0.0f, ExposureMs = 0, AutoExposureEnabled = true });
     }
 
@@ -802,9 +809,23 @@ public sealed partial class CameraSettings
     /// </summary>
     private void OnCalibrationRead(NvResult r)
     {
+        var owner = _robot.Engine.Robot;
+        if (owner is null || owner.Lifetime.Destroying)
+        {
+            Behavior.SteppedBehavior.ReportMissing("M3-022 camera calibration callback: original Robot owner unavailable");
+            return;
+        }
+        OnCalibrationReadForOwner(owner, r);
+    }
+
+    private void OnCalibrationReadForOwner(EngineRobot owner, NvResult r)
+    {
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
+        if (!Current()) return;
         Vision.CameraCalibration? installed = null;
         lock (_gate)
         {
+            if (!Current()) return;
             if (r.Result != 0) Emit(EngineLogLevel.Warning, null, "VisionComponent.ReadCameraCalibration.Failed", "");   // empty format (0xBE3F00, 0x0065AB7A)
             else if (r.Data.Length != CalibrationBytes)
                 // "Expected %zu, got %zu" (0x0065AE50..0x0065AE58): r3 = MakeWordAligned(size) is compared with the blob size, which is the second arg.
@@ -814,20 +835,31 @@ public sealed partial class CameraSettings
                 installed = Vision.CameraCalibration.Unpack(r.Data);
                 // 0x0065ACE8 logs the received struct before the <=6 check zeroes the distortion.
                 Emit(EngineLogLevel.Info, "Unnamed", "VisionComponent.ReadCameraCalibration.Recvd", $"{RecvdText(installed)}");
+                if (!Current()) return;
                 if (_bodyHwVersion <= 6)
                 {
                     Emit(EngineLogLevel.Info, "Unnamed", "VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs", "");   // empty format (0xBE3F00)
+                    if (!Current()) return;
                     installed = installed with { DistortionCoefficients = new double[8] };
                 }
+                if (!Current()) return;
                 Calibration = installed;
             }
+            if (!Current()) return;
         }
         // fidelity: M3-022
         // Order (0x0065AB68): SetCameraCalibration (0x0065ADE0; the install, which starts processing) runs first, and only then the
         // +0x48 store (0x0065AE80), on every path. MISSING: M11-039 | the install's consumer chain into MarkerDetector::Init is
         // M11-039's, and the readers of +0x48 (the image drop) are M11-049's; the two events below are this stack's seam to them.
-        if (installed is not null) CalibrationInstalled?.Invoke(installed);
-        lock (_gate) VisionEnabled = true;
+        if (installed is not null)
+        {
+            NativeCalibrationInstalled?.Invoke(owner, installed);
+            if (!Current()) return;
+            CalibrationInstalled?.Invoke(installed);
+            if (!Current()) return;
+        }
+        lock (_gate) { if (!Current()) return; VisionEnabled = true; }
+        if (!Current()) return;
         VisionEnabledSet?.Invoke();
     }
 
