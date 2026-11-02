@@ -103,6 +103,8 @@ internal sealed class M13IdleRun
         pendingRead = null; return read.GetAwaiter().GetResult();
     }
 
+    private CozmoEngineOptions? engineOptions;
+
     public int Execute()
     {
         Directory.CreateDirectory(bundle);
@@ -116,12 +118,14 @@ internal sealed class M13IdleRun
         {
             if (!yes) { Console.WriteLine("\nWhen Cozmo is set up, press Enter to connect. Connecting takes up to a minute."); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested(); }
             using var resolution = new HighResolutionTimer();
-            robot = CozmoRobot.Create(engineOptions: new CozmoEngineOptions { ResourcesPath = resources, NeedsDeviceDirectory = Directory.CreateDirectory(Path.Combine(new CozmoEngineOptions().FilesPath, "nurture")).FullName, BeforeStart = e =>
+            robot = CozmoRobot.Create(engineOptions: engineOptions = HardwareEngineOptions.Create(resources, log: errors.Enqueue, beforeStart: e =>
             {
+                // What the robot had stored before this run changes anything.
+                e.Needs.RobotReadObserved += (result, data) => { var body = new JsonObject { ["result"] = result, ["hex"] = Convert.ToHexString(data) }; try { File.WriteAllText(Path.Combine(bundle, "needs-nv-read.json"), body.ToJsonString()); } catch (IOException x) { errors.Enqueue("needs NV read not saved: " + x.Message); } };
                 EngineEvidence.Subscribe(e, line => { }, Event);
                 e.StackLogLine += stackLines.Enqueue;
                 e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject());
-            } });
+            }));
             robot.Transport.FrameTrace += f => frames.Enqueue((Now, f.Outbound, (byte[])f.Raw.Clone(), f.Frame, f.Error));
             robot.Engine.ConnectionResponse += r => { response = r; Event("connection-response", new() { ["result"] = r.Result.ToString(), ["firmware"] = r.FwVersion }); };
             robot.HandlerFaulted += e => Event("handler-fault", new() { ["exception"] = e.ToString() });
@@ -218,8 +222,14 @@ internal sealed class M13IdleRun
             File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), wire.Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload), ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal, ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }.ToJsonString()));
             File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));
             File.WriteAllLines(Path.Combine(bundle, "stack-log.txt"), stackLines);
+            if (engineOptions?.NeedsDeviceDirectory is { } nurture && Directory.Exists(nurture))
+            {
+                string copy = Directory.CreateDirectory(Path.Combine(bundle, "nurture")).FullName;
+                foreach (string file in Directory.GetFiles(nurture))
+                    try { File.Copy(file, Path.Combine(copy, Path.GetFileName(file)), true); } catch (IOException x) { errors.Enqueue("nurture file not copied: " + x.Message); }
+            }
             var files = new JsonArray();
-            foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M13IdleHw.cs", "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/acceptance/hardware/scripts/m13-idle-hw-1.md", "re-analysis/fidelity_manifest.json" })
+            foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M13IdleHw.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs", "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/acceptance/hardware/scripts/m13-idle-hw-1.md", "re-analysis/fidelity_manifest.json" })
             {
                 string source = Path.Combine(root, relative); if (!File.Exists(source)) { errors.Enqueue("Missing provenance file " + relative); continue; }
                 string dest = Path.Combine(bundle, "provenance", relative); Directory.CreateDirectory(Path.GetDirectoryName(dest)!); File.Copy(source, dest, true);

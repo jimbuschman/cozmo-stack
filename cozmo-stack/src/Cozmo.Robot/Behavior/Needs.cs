@@ -732,6 +732,7 @@ public sealed partial class NeedsManager
     private long _nativeLastRobotWriteMicros;
     private NativeStarThresholds? _nativeStarThresholds;
     private bool _nativeStarMetadataKnown;
+    private bool _nativeCopiesResolved; // this connection's ResolveNativeCopies has taken the robot/device copies
     private int? _nativeRepairRounds;
     private NeedsState? _nativeRobotCandidate;
     private int _nativeOnboardingStage;
@@ -905,6 +906,8 @@ public sealed partial class NeedsManager
     {lock(_gate)return(_sparksRewardPending,_nativeRewardAmount,_nativeRewardDisplayKey,_nativePendingKnown);}
     internal bool NativeRewardPayloadKnownForTest {get{lock(_gate)return _nativeRewardPayloadKnown;}}
 
+    /// <summary>The raw needs NV read reply (result, bytes), for a hardware run's record; no engine behaviour hangs on it.</summary>
+    public event Action<int,byte[]>? RobotReadObserved;
     /// <summary>Raised when a pending freeplay sparks reward is handed to the app.</summary>
     public event Action? SparksRewardAwarded;
     public event Action<FreeplaySparksAwardedReport>? FreeplaySparksAwarded;
@@ -1323,7 +1326,7 @@ public sealed partial class NeedsManager
     /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
     /// </summary>
     // fidelity: M15-014, M15-016
-    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; if(NativeContextBound){_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot();NativeNotificationDidConnect=true;} _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
+    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _nativeCopiesResolved=false; if(NativeContextBound){_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot();NativeNotificationDidConnect=true;} _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
 
     /// <summary>
     /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6, J5): write the disconnect timestamp to
@@ -1340,7 +1343,7 @@ public sealed partial class NeedsManager
         {
             State.NativeLastDisconnectMicros=NativeSystemClockMicros();State.NativeOpenAppAfterDisconnect=0;
             if(!_paused&&!WriteNativeDevice(true))return;
-            _robotConnected=false;_nativeConnectedRobot=null;_nativeDeviceTimestampMicros=State.NativeDateTimeMicros;
+            _robotConnected=false;_nativeConnectedRobot=null;_nativeCopiesResolved=false;_nativeDeviceTimestampMicros=State.NativeDateTimeMicros;
             DetectBracketChangeForDas(true);SendNeedsLevelsDasEvent?.Invoke("disconnect");return;
         }
         lock (_gate)
@@ -1349,6 +1352,7 @@ public sealed partial class NeedsManager
             _openAppAfterDisconnect = 0;                          // reset the +0x30 counter (J5, 0x00695922)
             if (!_paused) WriteToDevice?.Invoke(true);            // forced write (0x00695924..0x0069592A)
             _robotConnected = false;                              // clear the robot pointer (+4)
+            _nativeCopiesResolved=false;
             if(NativeContextBound)_nativeConnectedRobot=null;
             _deviceTimestampSnapshotSec = _stateDateTimeSec;      // +0x1B8/+0x1BC = +8/+0xC (0x00695934)
             DetectBracketChangeForDas(true);
@@ -1456,6 +1460,7 @@ public sealed partial class NeedsManager
             if(NativeContextBound&&_nativePersistenceReady)State.NativeSerial=serial;
             _robotReadSucceeded = false;       // +0x1c8
             _robotRewriteNeeded = false;       // +0x1ca
+            _nativeCopiesResolved=false;
         }
         // The NV read (and the immediate fallback) run outside _gate.
         // M15-014/M3-033: on the live path the engine owns the 0x194000 read (queued from its mfgId handler,
@@ -1609,6 +1614,7 @@ public sealed partial class NeedsManager
     // fidelity: M15-014
     private void OnRobotRead(NvResult r)
     {
+        RobotReadObserved?.Invoke(r.Result,r.Data.ToArray());
         if(HasNativePersistence)
         {
             var engine=HostEngine!;var owner=_nativeConnectedRobot;if(owner is null||owner.Lifetime.Destroying)return;
@@ -1875,6 +1881,7 @@ public sealed partial class NeedsManager
     public void StartWriteToRobot(double nowSec)
     {
         if(SkipUnbuiltRobotPersistence())return; // Before timestamps, partial packing, erase or write.
+        if(NativeContextBound&&!UsesUncertifiedPersistenceTestAdapter&&!NativeRobotWriteAllowed())return;
         byte[] blob;
         NvStorageComponent? nv;
         lock (_gate)
@@ -2210,7 +2217,8 @@ public sealed partial class NeedsManager
         }
         }
         // Appendix I2: RegisterNeedsActionCompleted 0x006960D0 calls PossiblyStartWriteToRobot with force = false
-        // (0x00696534..0x00696536), after the deltas. Outside _gate so the NV write is not queued under it.
+        // (0x00696534..0x00696536), after the deltas. This common tail runs outside _gate; the daily forced write
+        // (UpdateNativeStars, 0x00696BE2) and the reward NV writes run under it.
         if(allowRobotTail)PossiblyStartWriteToRobot(false);
         return true;
     }

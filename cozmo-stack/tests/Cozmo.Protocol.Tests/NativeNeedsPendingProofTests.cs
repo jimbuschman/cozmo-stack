@@ -160,4 +160,38 @@ public sealed class NativeNeedsPendingProofTests
         f.Rig.Data(new FallingStopped{Timestamp=13,DurationMs=23,ImpactIntensity=1001f});f.Rig.Tick();
         Assert.Equal(1,calls);Assert.True(needs.NativePendingKnownFalse);
     }
+    // B2, M15-093: with no needs directory NativeLastStarMicros 0 looks like a new day. reach: production entry on a plain host.
+    [Fact]
+    public void NoDirectoryDailyDoesNothingAndEveryActionKeepsReachingItsTails()
+    {
+        using var f=new Fixture();var needs=f.Rig.Engine.Needs;Assert.False(needs.HasNativePersistence);int star=0;
+        using var s=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x67,true,_=>star++);
+        needs.State.NativePreviousBrackets[NeedId.Play]=NeedBracketId.Normal;needs.State.StoreLevel(NeedId.Play,1f);
+        int detect=0;needs.BracketChanged+=(_,_,_,_)=>detect++;
+        Assert.True(needs.RegisterNeedsActionCompleted("Fall"));Assert.True(needs.RegisterNeedsActionCompleted("RollACube"));
+        Assert.Equal(0,star);Assert.Equal(0,needs.State.NativeStarsAwarded);
+        Assert.True((bool)typeof(NeedsManager).GetField("_nativeDailyHistoryKnown",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(needs)!);
+        Assert.Equal(NeedBracketId.Full,needs.State.NativePreviousBrackets[NeedId.Play]); // Detect ran: it moved the prior bracket
+    }
+    // B1, M15-014: Lab inputs missing, so the resolver stops before taking the robot's copy. Native never writes before 0x00694608, so
+    // the stored blob must survive every write path. reach: production. Robot NV reply through the wire; the host omits only Lab inputs.
+    [Fact]
+    public void MissingLabInputsNeverOverwriteTheRobotsStoredNeeds()
+    {
+        string directory=Directory.CreateTempSubdirectory("cozmo-no-lab-").FullName;
+        try
+        {
+            var stored=new NeedsStateOnRobot{Version=5,TimeLastWritten=2_000_000_000,CurNeedsUnlockLevel=7,NumStarsAwarded=1,TimeCreated=1_000_000_000};stored.CurNeedLevel[0]=stored.CurNeedLevel[1]=stored.CurNeedLevel[2]=50000;
+            var options=new CozmoEngineOptions{ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),BlockPoolPath="",NeedsDeviceDirectory=directory};
+            using var f=new Fixture(engineOptions:options,sourceNvEmpty:true,sourceNvStored:tag=>tag==NeedsManager.NeedsNvKey?NeedsStateOnRobot.Pack(stored):null);
+            var needs=f.Rig.Engine.Needs;Assert.True(needs.HasNativePersistence);Assert.False(f.Rig.Engine.Experiments.NativeAssignmentHistoryAvailable);
+            Assert.Contains(f.Rig.SentSince(0).OfType<NVCommand>(),c=>c.Tag==NeedsManager.NeedsNvKey&&c.Op==NvStorageComponent.OpRead); // the read did happen
+            Assert.NotEqual(7,needs.State.NativeUnlockLevel); // the blob was never taken: exactly the state that must not reach the robot
+            needs.RegisterNeedsActionCompleted("RollACube");
+            needs.PossiblyStartWriteToRobot(true);needs.StartWriteToRobot(0);
+            for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
+            Assert.DoesNotContain(f.Rig.SentSince(0).OfType<NVCommand>(),c=>c.Tag==NeedsManager.NeedsNvKey&&c.Op!=NvStorageComponent.OpRead);
+        }
+        finally{Directory.Delete(directory,true);}
+    }
 }

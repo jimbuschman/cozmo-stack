@@ -124,6 +124,8 @@ public sealed partial class NeedsManager
     {
         var engine=HostEngine;
         if(engine is null||!NativeRewardContextCurrent(engine))return null;
+        if(!_nativeCopiesResolved) // the stars and last-star time are not the robot's until the resolver has run
+        {SteppedBehavior.ReportMissing("M15-093 daily-star check skipped: the robot/device copies are not resolved, so star state is not known");return 0;}
         if(!State.NativePreviousBrackets.TryGetValue(NeedId.Play,out var previous)){previous=0;State.NativePreviousBrackets[NeedId.Play]=previous;}
         if(previous==0){if(!force)return 0;} // 0x00696AD6, 0x00696AEA..0x00696AEC: a forced call goes to the calendar with no bracket refresh
         else
@@ -155,6 +157,7 @@ public sealed partial class NeedsManager
     }
     internal bool? TryNativeFreeplayReward(CozmoEngine engine,NeedsActionId action,bool notificationKnown)
     {
+        if(!_nativeCopiesResolved){SteppedBehavior.ReportMissing("M15-071 freeplay reward skipped: the robot/device copies are not resolved, so the unlock level is not known");return null;}
         if(RewardInventory() is not {} inventory)return null;
         int amount=inventory.GetAmount(1);
         if(_nativeStarThresholds is {Count:0})

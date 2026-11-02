@@ -166,6 +166,7 @@ public sealed partial class NeedsManager
         if(!engine.NeedsContextExternalInterfaceAvailable)SteppedBehavior.ReportMissing("M1-034/M15-014 skipped null onboarding interface dereference at 0x006953DC");
         else {byte[] body=new byte[4];System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body,stage);engine.DeliverNurture(0x69,body,stage);}
         if(!Current())return;
+        _nativeCopiesResolved=true; // every native robot write is reached only after this resolver (0x00694608)
         if(State.NativeLastDisconnectMicros!=0)_=NativeSystemClockMicros(); // source elapsed diagnostic samples separately
         long writeTime=NativeSystemClockMicros(); // 0x694D9E, always once for both requested writes
         if(deviceWrite)
@@ -201,6 +202,7 @@ public sealed partial class NeedsManager
         if(engine is null)return false;
         if(!_robotConnected||_nativeConnectedRobot is null)return true;
         if(_nativeConnectedRobot.Lifetime.Destroying)return false;
+        if(!NativeRobotWriteAllowed())return true;
         if(_awaitingRobotData){SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Warning,null,"NeedsManager.StartWriteToRobot","Aborting writing needs state to robot, because we are reading needs state from robot");return true;}
         _nativeLastRobotWriteMicros=writeMicros;
         SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Info,"NeedsSystem","NeedsManager.StartWriteToRobot","");
@@ -220,6 +222,13 @@ public sealed partial class NeedsManager
         if(accepted==0&&engine.NeedsContextAlive&&!owner.Lifetime.Destroying&&ReferenceEquals(_nativeConnectedRobot,owner))
         {SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.StartWriteToRobot.WriteFailed","Write failed");if(engine.NeedsContextAlive&&!owner.Lifetime.Destroying&&ReferenceEquals(_nativeConnectedRobot,owner))EngineErrorState.StoreAndMaybeBreak();}
         return engine.NeedsContextAlive&&ReferenceEquals(engine.Needs,this);
+    }
+    // Native never writes before InitAfterReadFromRobotAttempt 0x00694608 has run (callers 0x00696536, 0x00696BE2, 0x00698602).
+    // State that never took the robot's copy must not replace what the robot has stored.
+    private bool NativeRobotWriteAllowed()
+    {
+        if(_nativeCopiesResolved)return true;
+        SteppedBehavior.ReportMissing("M15-014 robot needs write skipped: the robot/device copies were not resolved on this connection (0x00694608 not completed); NV 0x194000 left as stored");return false;
     }
     private bool PossiblyStartNativeRobotWrite(bool force)
     {

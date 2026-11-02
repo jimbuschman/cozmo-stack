@@ -31,6 +31,7 @@ public sealed class NativeDailyRewardTests
             Engine.Experiments.SetAssignmentVectorsForTest(Array.Empty<LabAssignmentDef>(),Array.Empty<LabAssignmentPair>());
             Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);Needs.InitAfterConnection();Set("_awaitingRobotData",false);
             Owner.Progression!.Init();Owner.Progression.ReadSink(new NvResult(-1,Array.Empty<byte>()));Owner.Inventory!.Init();Owner.Inventory.ReadSink(new NvResult(-1,Array.Empty<byte>()));
+            Set("_nativeCopiesResolved",true); // supplied: this unit fixture skips the robot read and the resolver
             Assert.True(Engine.NativeLocalNotifications!.RandomHistoryKnown);Engine.DrainAppDelivery();
         }
         internal void Set(string field,object? value)=>typeof(NeedsManager).GetField(field,System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(Needs,value);
@@ -116,7 +117,7 @@ public sealed class NativeDailyRewardTests
         Assert.Equal(expected,f.Needs.TryNativeFreeplayReward(f.Engine,NeedsActionId.RollACube,true));
         Assert.Equal(expected?4:2,index);Assert.Equal(expected,f.Needs.NativeRewardSnapshotForTest().Pending);
     }
-    // M15-071 0x0069638A..0x006963A4, literal 0x3727C5AC at 0x0069645C: only ordered magnitude < epsilon skips. reach: production entry, supplied weight.
+    // M15-071 0x0069638A..0x006963A4, literal 0x3727C5AC at 0x0069645C: only ordered magnitude < epsilon skips. reach: unit through RegisterNeedsActionCompleted, on the supplied Lab vectors and awaiting flag, with supplied weight.
     [Theory]
     [InlineData(0x3727C5AB,false)] [InlineData(0x3727C5AC,true)] [InlineData(unchecked((int)0xB727C5AC),true)] [InlineData(0x7FC00000,true)]
     public void RegisterWeightSkipsOnlyOrderedMagnitudeBelowNativeEpsilon(int bits,bool expectPending)
@@ -187,7 +188,7 @@ public sealed class NativeDailyRewardTests
         finally{f.Owner.Progression=progression;}
     }
     // M15-093, the unknown RNG rule of the handoff: the Unlock before the first draw (0x00697174) stays applied; nothing after it runs.
-    // reach: production entry RegisterNeedsActionCompleted; the unknown history is supplied through MarkHistoryUnavailable.
+    // reach: unit through RegisterNeedsActionCompleted, on the supplied Lab vectors and awaiting flag; the unknown history is supplied through MarkHistoryUnavailable.
     [Fact]
     public void UnknownRngStopsDailyLevelAtFirstDrawAndKeepsTheKnownPrefix()
     {
@@ -203,7 +204,7 @@ public sealed class NativeDailyRewardTests
         Assert.Null(f.Needs.UpdateNativeStars(true));Assert.Equal(1,star);
     }
     // M15-071 0x00696DE4: the chance draw is the first draw of the freeplay gate. Action deltas stay applied, no word is consumed and the
-    // proof is withdrawn; a zero-weight action never reaches the draw (0x0069638A..A4) and keeps it. reach: production entry, supplied unknown history.
+    // proof is withdrawn; a zero-weight action never reaches the draw (0x0069638A..A4) and keeps it. reach: unit through RegisterNeedsActionCompleted, on the supplied Lab vectors and awaiting flag, with supplied unknown history.
     [Fact]
     public void UnknownRngStopsFreeplayGateAtItsDrawAndZeroWeightKeepsTheProof()
     {
@@ -215,7 +216,7 @@ public sealed class NativeDailyRewardTests
         Assert.Equal(afterDeltas,words);Assert.Equal(0,f.Owner.Inventory!.GetAmount(1));Assert.False(f.Needs.TryGetNativePending(out _));Assert.False(f.Needs.NativeRewardPayloadKnownForTest);
     }
     // M1-034 0x0068E7A4: an empty level vector is the original's invalid read, skipped with the prior state kept (false, proof kept).
-    // A config that never loaded is an unknown input, not that fault (null, proof withdrawn). reach: production entry, supplied config.
+    // A config that never loaded is an unknown input, not that fault (null, proof withdrawn). reach: unit through RegisterNeedsActionCompleted, on the supplied Lab vectors and awaiting flag, with supplied config.
     [Fact]
     public void EmptyConfigIsAKnownSkipButUnavailableConfigIsUnknown()
     {
@@ -228,7 +229,7 @@ public sealed class NativeDailyRewardTests
         Assert.True(f.Needs.RegisterNeedsActionCompleted("RollACube"));Assert.False(f.Needs.TryGetNativePending(out _));
     }
     // M15-093 0x00696BCA 67, 0x00696BD8 completion (66), 0x00696BDE..E2 forced write, 0x00696BEA Generate, with no result test
-    // between the last two. reach: production entry; the NV owner is removed to make the writer return false.
+    // between the last two. reach: unit, on the supplied Lab vectors and awaiting flag; the NV owner is removed to make the writer return false.
     [Theory]
     [InlineData(true)] [InlineData(false)]
     public void NewDayOrderIsReportsThenForcedWriteThenGenerateWhateverTheWriterReturns(bool nvPresent)
@@ -242,7 +243,7 @@ public sealed class NativeDailyRewardTests
         Assert.Equal(new[]{"67","66",nvPresent?"generate-after-write":"generate"},order);
     }
     // M15-093 0x00698762..0x0069879C: the counter is tested between prior levels; the current level always runs.
-    // Prior level 0 grants FistBump (counter 1->0), so prior level 1 is not visited and the current level 2 still is. reach: production-shaped day change, supplied config.
+    // Prior level 0 grants FistBump (counter 1->0), so prior level 1 is not visited and the current level 2 still is. reach: unit, a direct day change on supplied config.
     [Fact]
     public void CompletionCounterStopsLaterPriorLevelsButNotTheCurrentLevel()
     {
@@ -258,4 +259,17 @@ public sealed class NativeDailyRewardTests
     [InlineData("{\"unlockLevels\":[{\"numStarsToUnlock\":1}]}")]
     [InlineData("{\"unlockLevels\":[null]}")]
     public void LevelOutsideTheShippedShapeLeavesConfigUnavailable(string text)=>Assert.Null(NativeStarThresholds.Parse(text));
+    // B2, M15-093: until the copies are resolved the stars are not the robot's, so a new-looking day awards nothing: no 0x67,
+    // no latch, and the action keeps going through its tails. reach: production entry, on a fresh manager with a needs directory.
+    [Fact]
+    public void DirectoryButUnresolvedDailyDoesNothingAndActionsContinue()
+    {
+        using var f=new Fixture();f.Set("_nativeCopiesResolved",false);f.LastStarYearsAgo();f.PlayEntersFull();int star=0;
+        using var s=f.Engine.AnimationMessages.SubscribeMessage(0x67,true,_=>star++);long before=f.Needs.State.NativeLastStarMicros;
+        Assert.Equal(0,f.Needs.UpdateNativeStars(false));
+        Assert.True(f.Needs.RegisterNeedsActionCompleted("SeeFace"));Assert.True(f.Needs.RegisterNeedsActionCompleted("RollACube"));
+        Assert.Equal(0,star);Assert.Equal(0,f.Needs.State.NativeStarsAwarded);Assert.Equal(before,f.Needs.State.NativeLastStarMicros);
+        Assert.True((bool)typeof(NeedsManager).GetField("_nativeDailyHistoryKnown",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(f.Needs)!);
+        Assert.False(f.Needs.TryGetNativePending(out _)); // the weighted branch stays withheld, as it was before this job
+    }
 }

@@ -55,7 +55,7 @@ public sealed class PlayAloneMovesOnNativeTests
         f.Rig.Robot.Animations.Scheduler.CaptureStartWireForTest=true;
         bool seeSent=false,fallSent=false,fallApplied=false,changedAfterSee=false,changedAfterFall=false;
         uint cameraId=1;double nextCamera=start+1;
-        string? seeBefore=null,fallBefore=null;double seeAt=double.PositiveInfinity,fallAt=double.PositiveInfinity;int rewards=0;int seeWireMark=int.MaxValue,fallWireMark=int.MaxValue;var stack=new List<string>();
+        string? seeBefore=null,fallBefore=null;double seeAt=double.PositiveInfinity,fallAt=double.PositiveInfinity;int seeWireMark=int.MaxValue,fallWireMark=int.MaxValue;var stack=new List<string>();
         var eventTrace=new List<string>();
         void OnStack(string line){if(line.Contains("M15-071 Freeplay native pending"))stack.Add(line);}
         void OnNeeds(string line){if(line.StartsWith("needs.action_completed Fall:")){fallApplied=true;fallAt=f.Rig.Engine.Timer.Seconds;fallWireMark=f.Rig.Mark();eventTrace.Add($"t={f.Rig.Engine.Timer.Seconds-start:F2} Fall applied current={manager.Current?.Id} paused={f.Rig.Engine.Needs.IsPaused} connected={f.Rig.Engine.Needs.Connected}");}}
@@ -63,7 +63,6 @@ public sealed class PlayAloneMovesOnNativeTests
         void OnFallReport(FallingStoppedReport report)=>eventTrace.Add($"t={f.Rig.Engine.Timer.Seconds-start:F2} sensor report intensity={report.ImpactIntensity}");
         f.Rig.Engine.StackLogLine+=OnStack;f.Rig.Engine.Needs.Log+=OnNeeds;
         f.Rig.Robot.Sensors.NeedsActionCompleted+=OnFallAction;f.Rig.Robot.Sensors.FallingStoppedInternal+=OnFallReport;
-        using var reward=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x65,true,_=>rewards++);
         try
         {
             f.Rig.Robot.ActivateHighLevelActivity("Freeplay");
@@ -150,7 +149,7 @@ public sealed class PlayAloneMovesOnNativeTests
             _output.WriteLine("Unmatched wire starts: "+string.Join(" | ",unmatched));
             Assert.True(seeSent,evidence);Assert.True(fallSent,evidence);Assert.True(fallApplied,evidence);
             Assert.True(changedAfterSee,evidence);Assert.True(changedAfterFall,evidence);
-            Assert.True(f.Rig.Engine.Needs.TryGetNativePending(out _),evidence);Assert.Empty(stack);_=rewards;
+            Assert.True(f.Rig.Engine.Needs.TryGetNativePending(out _),evidence);Assert.Empty(stack);
             _output.WriteLine("First later owned action: "+firstLater);
         }
         finally {f.Rig.Robot.Animations.Scheduler.CaptureStartWireForTest=false;foreach(var owner in owners)owner.CapturePlaybackObservationsForTest=false;SteppedBehavior.MissingReported-=Observe;f.Rig.Engine.StackLogLine-=OnStack;f.Rig.Engine.Needs.Log-=OnNeeds;f.Rig.Robot.Sensors.NeedsActionCompleted-=OnFallAction;f.Rig.Robot.Sensors.FallingStoppedInternal-=OnFallReport;}

@@ -161,7 +161,7 @@ public sealed class NativeNeedsMetadataTests
         using var files=new BackupTestResources();string directory=Path.Combine(files.Root,"nurture");Directory.CreateDirectory(directory);
         using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,SourceOptions(files,directory));var engine=robot.Engine;
         var original=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false)!;var needs=engine.Needs;Assert.True(needs.HasNativePersistence);
-        needs.InitAfterConnection();Set(needs,"_awaitingRobotData",false);
+        needs.InitAfterConnection();Set(needs,"_awaitingRobotData",false);Set(needs,"_nativeCopiesResolved",true);/* supplied: this unit skips the read and resolver */
         EngineRobot? replacement=null;var sent=new List<NVCommand>();
         engine.LogEntry+=entry=>
         {
@@ -191,7 +191,7 @@ public sealed class NativeNeedsMetadataTests
         using var files=new BackupTestResources();string directory=Path.Combine(files.Root,"nurture");Directory.CreateDirectory(directory);long now=1_000_000;int clockReads=0;
         using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,SourceOptions(files,directory,()=>{clockReads++;return now;}));var engine=robot.Engine;var needs=engine.Needs;Assert.True(needs.HasNativePersistence);
         clockReads=0;needs.PossiblyStartWriteToRobot(true);Assert.Equal(0,clockReads);
-        engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);needs.InitAfterConnection();Set(needs,"_nativeLastRobotWriteMicros",1_000_000L);
+        engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);needs.InitAfterConnection();Set(needs,"_nativeCopiesResolved",true);/* supplied: this unit skips the read and resolver */Set(needs,"_nativeLastRobotWriteMicros",1_000_000L);
         now=602_000_000;needs.PossiblyStartWriteToRobot(true);Assert.Equal(1_000_000L,typeof(NeedsManager).GetField("_nativeLastRobotWriteMicros",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(needs));
         Assert.DoesNotContain(NeedsManager.NeedsNvKey,engine.NvStorage!.QueuedTags);
         Set(needs,"_awaitingRobotData",false);now=601_999_999;needs.PossiblyStartWriteToRobot(false);Assert.DoesNotContain(NeedsManager.NeedsNvKey,engine.NvStorage.QueuedTags);

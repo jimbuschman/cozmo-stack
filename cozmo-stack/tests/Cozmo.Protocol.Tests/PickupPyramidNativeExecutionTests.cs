@@ -25,8 +25,9 @@ public sealed class PickupPyramidNativeExecutionTests
         internal ManipulationSystem M=>Runtime.Manipulation!;
         internal float Head=-.15f,Lift,Yaw,X,Y;
         private int _motorMark;
-        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false)
+        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false,Func<uint,byte[]?>? sourceNvStored=null)
         {
+            _sourceNvStored=sourceNvStored;
             Rig=new M4ControlTests.Rig(Resources(),engineOptions:engineOptions);
             if(pumpAnimations)
             {
@@ -45,8 +46,7 @@ public sealed class PickupPyramidNativeExecutionTests
                 {foreach(float value in new[]{290f,291f,160f,120f,0f})writer.F32(value);writer.U16(240);writer.U16(320);for(int k=0;k<8;k++)writer.F32(0);}
                 if(sourceNvEmpty)
                 {
-                    var command=Rig.SentSince(0).OfType<NVCommand>().Last(c=>c.Tag==tag.Value);
-                    Rig.Data(new NVOpResult{Tag=tag.Value,Op=command.Op,Result=command.Op==NvStorageComponent.OpRead&&tag!=CameraCalibration.NvEntryTag?(sbyte)-1:(sbyte)0,Data=tag==CameraCalibration.NvEntryTag?writer.ToArray():Array.Empty<byte>()});
+                    AnswerNv(tag.Value,writer.ToArray());
                 }
                 else Rig.Data(new NVOpResult{Tag=tag.Value,Op=0,Result=tag==CameraCalibration.NvEntryTag?(sbyte)0:(sbyte)1,Data=writer.ToArray()});
                 Rig.Tick();
@@ -60,16 +60,22 @@ public sealed class PickupPyramidNativeExecutionTests
                 var nv=Rig.Engine.NvStorage!;
                 for(int i=0;i<300&&!nv.IsIdle;i++)
                 {
-                    if(nv.InFlightTag is {} tag)
-                    {
-                        var command=Rig.SentSince(0).OfType<NVCommand>().Last(c=>c.Tag==tag);
-                        Rig.Data(new NVOpResult{Tag=tag,Op=command.Op,Result=command.Op==NvStorageComponent.OpRead?(sbyte)-1:(sbyte)0,Data=Array.Empty<byte>()});
-                    }
+                    AnswerInFlightNv();
                     Rig.Tick();
                 }
                 Assert.True(nv.IsIdle,"Actual startup NV queue did not drain");Rig.Tick();
             }
         }
+        private readonly Func<uint,byte[]?>? _sourceNvStored;
+        // Robot NV as a fresh robot answers it: reads find nothing unless a stored blob is supplied; writes and erases succeed.
+        private void AnswerNv(uint tag,byte[]? calibration=null)
+        {
+            var command=Rig.SentSince(0).OfType<NVCommand>().Last(c=>c.Tag==tag);byte[]? stored=command.Op==NvStorageComponent.OpRead?calibration is {Length:>0}&&tag==CameraCalibration.NvEntryTag?calibration:_sourceNvStored?.Invoke(tag) is {} blob?WithNvHeader(blob):null:null;
+            Rig.Data(new NVOpResult{Tag=tag,Op=command.Op,Result=command.Op==NvStorageComponent.OpRead&&stored is null?(sbyte)-1:(sbyte)0,Data=stored??Array.Empty<byte>()});
+        }
+        private static byte[] WithNvHeader(byte[] payload) // M3-028: the robot returns the 16-byte header the write stored
+        {byte[] data=new byte[NvStorageComponent.NvHeaderSize+payload.Length];BitConverter.GetBytes(NvStorageComponent.NonFactoryHeaderMagic).CopyTo(data,0);BitConverter.GetBytes((uint)payload.Length).CopyTo(data,8);payload.CopyTo(data,NvStorageComponent.NvHeaderSize);return data;}
+        internal void AnswerInFlightNv(){if(Rig.Engine.NvStorage!.InFlightTag is {} tag)AnswerNv(tag);}
         internal ObservableObject Add(uint id=7,float x=150,float z=22)
         {
             var obj=new ObservableObject(id,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
