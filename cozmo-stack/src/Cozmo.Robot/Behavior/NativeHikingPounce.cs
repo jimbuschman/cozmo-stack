@@ -5,7 +5,8 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
-// Configured Hiking_PounceOnMotion: bounded no-camera/no-delivered-motion path.
+// fidelity: M15-107
+// Configured Hiking_PounceOnMotion. Native body 0x005F7F90..0x005FA194, read against this file 2026-11-02.
 internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, IDisposable
 {
     private readonly ManipulationSystem _m;
@@ -39,7 +40,8 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
                 config.GetProperty("searchAmplitudeDeg").GetSingle()==90f &&
                 (!config.TryGetProperty("alwaysStreamline",out var always) || always.ValueKind==JsonValueKind.False || always.ValueKind==JsonValueKind.Null) &&
                 !config.TryGetProperty("boredomMultiplier",out _) && !config.TryGetProperty("maxTimeBehaviorTimeout_Sec",out _) &&
-                !config.TryGetProperty("timeBeforeRotate_Sec",out _);
+                !config.TryGetProperty("timeBeforeRotate_Sec",out _) &&
+                !config.TryGetProperty("skipGetOutAnim",out _) && !config.TryGetProperty("oddsOfPouncingOnTurn",out _); // 0x005F81F6, 0x005F817A: not in shipped Hiking
         }
         catch(Exception e) when(e is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
         {ReportMissing("Hiking_PounceOnMotion parameters unavailable: "+e.Message);}
@@ -144,7 +146,7 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     {
         if(!Current(g))return;NativeState=2;
         if(_robot.StoredState is not {} state){_blocked=true;ReportMissing("Pounce actual pitch/lift state unavailable");return;}
-        bool caught=state.Pose.Pitch>BitConverter.UInt32BitsToSingle(0x3CA3D70A) || state.LiftHeightMm>35.5f;
+        bool caught=state.Pose.Pitch-_pitchBaseline>BitConverter.UInt32BitsToSingle(0x3CA3D70A) || state.LiftHeightMm>35.5f;
         if(caught)Run(new TriggerLiftSafeAnimationAction(_m.Robot,new((AnimationTrigger)0x197,1,true,0,60f,false)),()=>InitialSearch(g),g);
         else InitialSearch(g);
     }
@@ -158,7 +160,7 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
         float second=(float)(_robot.Engine.ContextRandom.RandDblInRange(20,45)*deg);second*=-sign;
         sequence.AddAction(Pan(second,0,false,true),false,false);
         if(!Current(g)){sequence.RetireNeverAdmittedTree();return;}
-        Run(sequence,()=>HeadDown(g),g);
+        Run(sequence,()=>WaitForMotion(g),g); // 0x005F89BE..0x005F89CA
     }
     private void HeadDown(long g)
     {
@@ -189,14 +191,14 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
         float x=report.GroundX,y=report.GroundY;float distanceSquared=x*x+y*y;
         if(!EngineRunning)
         {
-            if(ground && distanceSquared<=240f*240f)_lastMotion=_robot.Engine.Timer.SecondsF;
+            if(ground && distanceSquared<=120f*120f)_lastMotion=_robot.Engine.Timer.SecondsF;
             return;
         }
         float now=_robot.Engine.Timer.SecondsF;
         if(ground)_lastMotion=now;
         if(NativeState!=6)return;
         float distance=(float)Math.Sqrt((double)x*x+(double)y*y);
-        if(ground && distance<=240f)
+        if(ground && distance<=120f) // +0x11C=120f 0x005F7FA0..0x005F7FAC
         {
             _lastValid=now;_gotValid=true;_validCount=unchecked(_validCount+1);_distance=distance;
             _imageX=report.ImageX;_imageY=report.ImageY;_pendingPoint=true;
@@ -239,6 +241,7 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
         sequence.AddAction(new TriggerLiftSafeAnimationAction(_m.Robot,new((AnimationTrigger)0x196,1,true,0,60f,false)),false,false);
         if(!Current(g)){sequence.RetireNeverAdmittedTree();return;}
         Run(sequence,()=>DisableLiftThenWait(g,next),g);
+        _creepCount=0; // 0x005F8B36..0x005F8B38, after StartActing
     }
     private void ResultAnimation(long g)
     {
@@ -282,7 +285,7 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     protected override void OnUpdate(){if(!Supported())_blocked=true;}
     protected override int ResumeInternal()
     {
-        if(!Supported())return 1;_blocked=false;long g=CaptureHostExecutionVersion();
+        if(!Supported())return 1;_blocked=false;_pendingPoint=false;long g=CaptureHostExecutionVersion(); // +0x164 0x005F8580
         if(!InitHelper(g))return 1;HeadDown(g);return 0;
     }
     protected override void OnStop(BehaviorStopReason reason)

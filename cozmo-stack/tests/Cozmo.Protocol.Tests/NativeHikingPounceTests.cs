@@ -66,8 +66,7 @@ public sealed class NativeHikingPounceTests
             var first=Assert.IsType<NativePanTiltRunner>(search.Children[0]);var second=Assert.IsType<NativePanTiltRunner>(search.Children[1]);
             Assert.Equal((float)(20d*Math.PI/180d),(float)first.Parameters.PanAngleRad,6);
             Assert.Equal((float)(-20d*Math.PI/180d),(float)second.Parameters.PanAngleRad,6);
-            search.State=0x03000018;f.Robot.ActionList.Update();Assert.Equal(4,p.NativeState);
-            var head=Assert.IsAssignableFrom<ActionRunner>(p.OwnedRunner);head.State=0x03000018;f.Robot.ActionList.Update();
+            search.State=0x03000018;f.Robot.ActionList.Update(); // 0x005F89BE..0x005F89CA: no head action here
             Assert.Equal(6,p.NativeState);var motionWait=Assert.IsType<NativeTimedWaitRunner>(p.OwnedRunner);Assert.Equal(2f,motionWait.Duration);
             motionWait.Init();float motionDeadline=motionWait.Deadline;
             f.Rig.Engine.Timer.UpdateTime((long)Math.Round((double)motionDeadline*1_000_000_000));Assert.NotEqual(0u,motionWait.CheckIfDone());
@@ -197,13 +196,69 @@ public sealed class NativeHikingPounceTests
         rig.Pump();var power=rig.Sent.Skip(mark).OfType<EnableMotorPower>().ToArray();
         Assert.Equal(new byte[]{0,1},power.Select(x=>x.Field1));Assert.All(power,x=>Assert.Equal((byte)2,x.Field0));
     }
+    private static void Finish(NativeHikingPounce p,Fixture f)
+    {var runner=Assert.IsAssignableFrom<ActionRunner>(p.OwnedRunner);runner.State=0x03000018;f.Robot.ActionList.Update();}
+    [Fact]
+    public void PounceResetsCreepCountAfterStartActing() // 0x005F8B36..0x005F8B38
+    {
+        using var f=new Fixture();var p=Prepare(f);
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(p.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        for(int i=0;i<3;i++)Finish(p,f);
+        for(int i=0;i<3;i++)
+        {
+            f.Rig.Engine.AnimationMessages.Deliver(0x49,true,new NativeObservedMotion(1,0,160,120,.1f,100,0,0,0,0,0,0,0,0,0,0));
+            Finish(p,f);Assert.Equal(8,p.NativeState);Finish(p,f);Finish(p,f);Assert.Equal(6,p.NativeState);
+        }
+        f.Rig.Engine.ContextRandom.WordSourceForTest=()=>0u;
+        try
+        {
+            f.Rig.Engine.AnimationMessages.Deliver(0x49,true,new NativeObservedMotion(2,0,160,120,.1f,60,0,0,0,0,0,0,0,0,0,0));
+            Finish(p,f);Assert.Equal(9,p.NativeState);
+        }
+        finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}
+        for(int i=0;i<12 && p.NativeState!=6;i++)Finish(p,f);
+        Assert.Equal(6,p.NativeState);
+        int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0u;};
+        try
+        {
+            f.Rig.Engine.AnimationMessages.Deliver(0x49,true,new NativeObservedMotion(3,0,160,120,.1f,100,0,0,0,0,0,0,0,0,0,0));
+            Assert.Equal(7,p.NativeState);Assert.Equal(0,words); // count back at 0: distance 100 creeps with no draw
+        }
+        finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}
+    }
+    [Fact]
+    public void InitialReactionComparesPitchToTheRetainedBaseline() // 0x005F8BC4..0x005F8BCE, 0x005F8D20, 0x005F8DA4
+    {
+        using var f=new Fixture();var p=Prepare(f);
+        void Pitch(float value)
+        {
+            var state=f.Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,origin:f.Robot.CurrentOriginId,frame:f.Robot.PoseFrameId,liftAngle:-.2f);
+            state.Pose.Pitch=value;f.Rig.Data(state);f.Rig.Tick();
+        }
+        var manager=f.Robot.BehaviorManagerOwner!;
+        Pitch(.03f);
+        Assert.True(manager.StartAsync(p.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Finish(p,f);Finish(p,f);Assert.Equal(2,p.NativeState); // baseline 0: caught
+        Finish(p,f);Finish(p,f);Assert.Equal(6,p.NativeState);
+        f.Rig.Engine.ContextRandom.WordSourceForTest=()=>0u;
+        try
+        {
+            f.Rig.Engine.AnimationMessages.Deliver(0x49,true,new NativeObservedMotion(2,0,160,120,.1f,60,0,0,0,0,0,0,0,0,0,0));
+            Assert.Equal(7,p.NativeState);Finish(p,f);Assert.Equal(9,p.NativeState); // 0x005F9740: saves .03 to +0x128
+        }
+        finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}
+        manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
+        Pitch(.04f);
+        Assert.True(manager.StartAsync(p.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Finish(p,f);Finish(p,f);Assert.Equal(3,p.NativeState); // delta .01 is not caught; absolute .04 would be
+    }
     [Fact]
     public void ThreeRealWaitCancellationsThenShortDistanceStillConsumeProbabilityDraw()
     {
         using var f=new Fixture();var p=Prepare(f);
         Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(p.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         void Complete(){var runner=Assert.IsAssignableFrom<ActionRunner>(p.OwnedRunner);runner.State=0x03000018;f.Robot.ActionList.Update();}
-        Complete();Complete();Complete();Complete(); // supplied terminal results: initial, power wait, search, head
+        Complete();Complete();Complete(); // supplied terminal results: initial, power wait, search (0x005F89BE: straight to wait)
         Assert.Equal(6,p.NativeState);
         int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0u;};
         try
@@ -278,7 +333,7 @@ public sealed class NativeHikingPounceTests
         NativeObservedMotion Report(float area,short x)=>new(1,0,0,0,area,x,0,0,0,0,0,0,0,0,0,0);
         float threshold=BitConverter.UInt32BitsToSingle(0x3C23D70A);
         f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(threshold,0));Assert.Equal(before,p.LastGroundMotionSeconds);
-        f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(MathF.BitIncrement(threshold),240));Assert.Equal(12f,p.LastGroundMotionSeconds);
+        f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(MathF.BitIncrement(threshold),120));Assert.Equal(12f,p.LastGroundMotionSeconds);
         f.Rig.Engine.Timer.UpdateTime(13000000000L);
-        f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(MathF.BitIncrement(threshold),241));Assert.Equal(12f,p.LastGroundMotionSeconds);
+        f.Rig.Engine.AnimationMessages.Deliver(0x49,true,Report(MathF.BitIncrement(threshold),121));Assert.Equal(12f,p.LastGroundMotionSeconds);
     }}
