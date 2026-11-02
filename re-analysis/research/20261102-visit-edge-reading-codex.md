@@ -1,8 +1,8 @@
-# Visit edge reading — Part1: nonempty GetBorders and analyzer caller
+# Visit edge reading — Parts 1–2: border output and type-9 map storage
 
 **Requested reading only; extraction, not accepted implementation or a fidelity-status change.** Requested reader gpt-6.1-sol medium, unchanged; actual backend unobserved. Read2026-11-02, starting13:37:35 UTC, on branch `codex-m13-manager-2` in the manager worktree. Source: `resources/lib/armeabi-v7a/libcozmoEngine.so`, ARMv7/Thumb, SHA256 **02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1**. PROJECT_STATE, `.opencode/agent/cozmo-extractor.md` and research README were read first. The explicit request authorizes this research file; root owns the requested commit/push checkpoint. No production/test/helper-code/manifest/status/queue changes, .NET, hardware or git mutation by reader.
 
-This is **ONLY Part1** of the strict requested order:1)nonempty GetBorders and caller574FCC;2)type9 data;3)VisitInterestingEdge lifecycle. Parts2/3 have NOT started. This report stops at their named interfaces rather than silently filling them. Existing OV11/OV51 and the independent20261015 checks were navigation leads; the instructions/constants/calls below were reread directly from the shipped ELF. No decompiler text is evidence.
+The strict requested order is 1)nonempty GetBorders and caller574FCC;2)type9 data;3)VisitInterestingEdge lifecycle. **Part1 was committed/pushed as ed5fbe1d; Part2 is appended below for its separate checkpoint. Part3 has NOT started.** The Part1 sections and checkpoint below are preserved as the historical first extraction. This report stops at the next named interface rather than silently filling it. Existing OV11/OV51 and the independent20261015 checks were navigation leads; the instructions/constants/calls below were reread directly from the shipped ELF. No decompiler text is evidence.
 
 ## Current records, read literally before claims
 
@@ -100,3 +100,88 @@ Exact remaining interfaces, rather than invented behavior:
 - **Malformed/fault paths:** nullmapdereferences575006/575026;nullcontenttypebyte68C4C2/C4;malformedi0splitreadswaypoint-before-begin6897F6;corrupttopologyreversecontact68AF10/otherM11-047sites. Theyarenotnormalemptyresults. ExistingM1-034 standingruleappliesonlywhereoriginalterminates/readsundefinedmemory;no newlyinventednormalguard/resultorreachabilityclaim. Nativeallocation/unwindcleanupdoesnotconstitutea successful emptyborderreturn.
 
 Root checkpoint requested now: commit/push thisPart1researchfile beforeauthorizingPart2. Reader stopped here;no .NET,hardware,code,status,manifest,queueor git changes byreader.
+
+
+# Part 2 — actual type-9 data and map storage
+
+Read 2026-11-02 after the Part1 commit/push checkpoint **ed5fbe1d**, same branch, reader configuration and ELF hash stated above. This is reading only, not implementation acceptance. The primary instructions, ELF relocations and literal tables were reopened; OV80 and the 2026-10-16 check are navigation leads. known.py preflight: 680286, MemoryMapData,687518,67DC4C,6808F4,689FAC,68C59A before their new trace groups. **No VisitInterestingEdge lifecycle extraction is included.**
+
+## Literal current ownership
+
+**M11-089 — IMPLEMENTATION_GAP**, title **InterestingEdge (type 9) map data class, MemoryMap::HasBorders callers, and BehaviorVisitInterestingEdge's consumers of the border output**. Authority `libcozmoEngine.so 3.4.0-1204.` Its current evidence is:
+
+- `re-analysis/research/overnight/20261015-ov50-52-check.md: border caller 0x00574FCC..0x00575054 (seed 9 then 6); equality targets read (base type-only 0x00680758..0x00680764); BehaviorVisitInterestingEdge IsRunnableInternal 0x005E6520, PickGoals 0x005E682C (BorderRegionScore); HasBorders vt+0x28 callers not found by a direct scan.`
+- `re-analysis/research/overnight/20261016-batch-check.md: E1 0x00680286..0x0068030A; E3 0x00680730..0x00680764; PickGoals 0x005E682C..0x005E6C0A; IsRunnable 0x005E6520..0x005E6824; CheckGoalReachable 0x005E6C20..0x005E6C7E; GenerateVantagePoints 0x005E6C94..0x005E7006; config 0x005E6236..0x005E62CC; sort main 0x005E8350..0x005E8712.`
+
+The current unresolved already says prepared two-point insertion uses base type9 with both frame stamps; it retains the absent live prepared-segment/post-insert recipients and full nonempty Visit path. Its **HasBorders no-caller census is already recorded unreachable/not built**; this reading does not reopen that census. CalculateBorders vt+2C is the actual analyzer interface from Part1. No whole-record closure or new record is proposed: Part3 remains outstanding under this same record.
+
+The relevant existing storage dependencies are **M11-045 — IMPLEMENTATION_GAP**, **The memory map's quad tree: Insert, Expand, override rules, subdivision and merging**, and **M11-046 — IMPLEMENTATION_GAP**, **The quad tree's polygon Transform and the collision ray walk**. Their current approved M11 inventory explicitly covers Insert6817DE/685008, override687E78..EEE, merge687F56..68805C, and Transform688378/68A414. In particular it already says **all FOUR children's stamps, seeded from child3**; an older extractor's three-child description was corrected by its verifier. There is no approved-inventory contradiction here. **M11-047** owns the border-walk/FillBorder machinery as quoted in Part1; **M11-017** owns the upstream vision-derived overhead-edge preparation. These are named dependencies, not newly asserted complete implementations.
+
+## Concrete object and insertion
+
+**Result:** InterestingEdge is the ordinary **16-byte MemoryMapData base object**, not a derived object containing an edge ID, line endpoints, normal or region. Geometry belongs to quad-tree nodes; the data object supplies type and timestamps. The source initializes the semantic fields below. Padding bytes are not a further defined payload.
+
+|address / step|what the instructions establish|
+|---|---|
+|67F814..67F8B8, selected writer entry|MapComponent::AddVisionOverheadEdges receives an OverheadEdgeFrame. It looks up the actual current-origin map and requests RobotStateHistory at incoming frame word+0 (67F894..67F8A2). A missing map/history does not establish an empty segment result. The subsequent segment production is an upstream input boundary, not recovered anew here.|
+|680286..680290|Loads the prepared vector begin/end; empty skips this insertion and its following +4C operation. Each nonempty item occupies16 bytes: two Point2 float pairs.|
+|68029E..6802B6|Loads MemoryMapData vtable through GOT103FA6C (ELF GLOB_DAT names `_ZTVN4Anki5Cozmo13MemoryMapDataE`), adds8 for address point1030794. Writes vptr at object+0, byte9 at+4, and incoming frame timestamp twice at+8/+C. There is no allocation of an InterestingEdge subclass here.|
+|6802BA..6802E0|Copies both endpoint pairs, constructs Polygon<2,float> with count2, and calls actual map virtual+8 with that polygon and the stack base-data object. It processes items in vector order; no deduplication at this writer. The temporary polygon is destroyed, then the segment pointer advances16 (6802E2..680308).|
+|6817C6..6817E0|MemoryMap::Insert makes the FastPolygon and invokes QuadTree::Insert with growth-attempt argument1; this is the ordinary insertion/expansion contract owned by M11-045, not a separate edge-specific geometry store.|
+|1030794..10307A0|Base vtable slots: +0=67E509 destructor, +4=68072D deleting destructor, +8=680731 Clone, +C=680759 Equals. Thumb-bit words are distinguished from even instruction addresses.|
+|680730..680752|Clone allocates16 bytes and sets the same base vptr, then copies three words from source+4 through+F. Both timestamps survive; clone does not sample a clock or construct direction metadata.|
+|680758..680764|Equals compares **only byte+4**. Two type9 objects compare equal despite different first/last timestamps. This is the dynamic equality used by NodeContent and thus the border grouping join from Part1.|
+|67E508;68072C|Nondeleting base destructor is BX LR. Deleting destructor tails to operator delete. No type9-specific output or callback is hidden in that destructor.|
+|68C450..68C4A0;686CB4..686CD0|NodeContent(data&) calls virtual Clone (+8), then wraps the clone in an owning shared control block. QuadTreeNode::Insert clones once for the insertion call; recursive nodes can share that actual cloned object. It is not an independent 16-byte copy per cell.|
+|68C59A..68C5A4|The raw-pointer shared control block's zero-shared recipient loads its owned pointer, and when nonnull dispatches that object's virtual deleting destructor (+4). Source ownership is explicit; this report does not substitute host garbage collection for native release semantics.|
+
+The payload layout is therefore `{vptr32, type_u8, padding[3], first_u32, last_u32}`. The first/last names are justified by the merge and expiry readers below, not by an assumed immutable creation time. No direction should be fabricated from this data object; Part1 computes normals from actual border-node geometry.
+
+## Replacement, timestamp mutation and border-cache effects
+
+|address / step|what the instructions establish|
+|---|---|
+|686CF4..686D3A|Insertion first rejects the identical incoming data pointer or overlap0. For any nonzero overlap it writes **incoming last+0xC into existing content+0xC before the override decision**. Thus a blocked replacement may still refresh the existing payload's last timestamp. Shared aliases observe that write.|
+|687E78..687EEE|Incoming type9 can override current **0,1,2,5,6,9**; it cannot override3,4,7,8,10. Incoming10 overrides only current9. Current9 can be cleared by incoming1 only on full overlap; incoming5 does not replace9. This is the actual override predicate, not a claim that a two-point segment paints every crossed bounding-box cell.|
+|687EF0..687F28;686D3C..686DC6|Replacing a node and all descendants requires full overlap plus successful self and recursive child predicates. Otherwise partial leaves subdivide above level0, children are visited, and TryAutoMerge runs. The inherited M11-045 overlap/root-expansion mechanics remain the named geometry dependency.|
+|687518..6875D2|ForceSet retains the incoming shared control, stores the incoming content pointer/control pair at node+84/+88, then releases the old control. Type9 remains9 (the special removed-charger type5 conversion is unrelated). The content-type callback is invoked only if old/new type bytes differ. A same-type9 replacement can change the pointer/timestamps without that type-change callback.|
+|687F56..68805C|TryAutoMerge first requires leaf children; initializes min-first/max-last from **child3**, then includes children0,1,2 in order using unsigned→f64 fmin/fmax. It also checks adjacent content equality. All four type9 children can merge even when their stamps differ because base equality ignores stamps.|
+|688060..688088|On merge success it retains **child0's actual shared payload**, writes the computed min-first/max-last into that object, clears descendants, and ForceSets parent from it. Other nodes sharing that payload see those timestamp changes; merge does not construct a fresh type9 value.|
+|688E50..6890A0|OnNodeContentTypeChanged updates interesting-area totals for leaving/entering9 and the relevant per-type node-pointer sets, then invalidates borders. This bookkeeping follows actual node geometry and type changes, not the number of base payload allocations.|
+|68923A..68928A;68928C..68934C|InvalidateBorders marks every cached combination dirty and empties its waypoint vector. Node destruction removes its set membership/area bookkeeping and invalidates the same cache. The cache therefore does not constitute persistent edge-owned geometry.|
+
+## Resolved post-insert +4C: type10 border fill
+
+|address / step|what the instructions establish|
+|---|---|
+|68030A..6803AA|Only the nonempty prepared-vector branch reaches this operation. Although preceding code prepares transformed quad temporaries, the actual call passes **map, seed9, tableC87675, outputtype10, timestamp**. It does **not** pass that quad or an ROI polygon to +4C.|
+|680392..6803A2|Obtains Robot::GetLastImageTimeStamp freshly for the +4C stack argument. It is distinct from blindly reusing the frame stamp used in the earlier type9 insertion.|
+|MemoryMap vtable symbol103095C, address point1030964, +4C=relocation10309B0|ELF ABS32 relocation names **MemoryMap::FillBorderInternal**; actual body6813B0. A raw on-disk zero at this relocated slot is not a null function pointer.|
+|C87675;6813B0..6813F6|The22 literal bytes are `00 00 01 00 02 00 03 01 04 01 05 01 06 01 07 01 08 00 09 00 0A 01`. Folded mask **0x4F8**, enabling3,4,5,6,7,10. Wrapper constructs base output type10 with **both stamps equal to the supplied fresh last-image time**, and calls processor(map+10).FillBorder(seed9,mask,data).|
+|6813FC|Marks map dirty byte+8 after normal return, regardless of whether any cell changed. This is distinct from the combination cache's dirty state.|
+|689FAC;68A034..68A1C2|FillBorder refreshes that seed/mask combination, walks its waypoint vector, deduplicates **FROM node pointers**, and copies each first-seen node's center XY into a point vector. It snapshots the points before mutating the tree. It does not copy endpoint direction or the base timestamp into an edge record.|
+|68A1E0..68A206;68A29A..68A29E|For each saved point, reloads current root (processor+24), constructs a **one-point** Polygon and FastPolygon, and calls QuadTreeNode::Insert directly with the type10 data. No QuadTree root-expansion wrapper is called here. Type10's override rule means only type9 is replaced; the quantized cell at a saved center is affected, not an entire prepared ROI.|
+
+FillBorder's already-owned traversal/neighbor contracts remain M11-047. Native pointer-set bookkeeping remains distinguished from the approved insertion-order policy described in Part1; there is no new ordering approval request. The upstream prepared-segment input is not replaced with an empty vector or with legacy diagnostics.
+
+## Aging and expiry of stored type9
+
+|address / step|what the instructions establish|
+|---|---|
+|67DC4C..67DCA6|MapComponent::Update obtains a valid current map and **Robot+2C current robot-state timestamp**. If no valid map, this transform is skipped; that is not proof of empty content. There is no separate elapsed-time throttle around the transform in this routine.|
+|67DCB0..67DCE0|Converts the original u32 timestamp to f32, adds **-30000f (C6EA6000)** and **-120000f (C7EA6000)** separately, then VCVT.u32.f32 truncates. The30s cutoff is forced0 when original timestamp<30001;120s cutoff is forced0 when original timestamp<120001. These are millisecond-state-clock operands, not a wall-clock expiry or subtraction in unlimited integer precision. Closure also captures the original u32 timestamp.|
+|67DCE0..67DCF4;1030834/+18→6808F5|Calls whole-map virtual+10 TransformContent with this closure. Actual callback6808F4..680962 reads the content's type and last+0xC. Types9 and10 use the120s cutoff; type8 uses30s; others retain the same shared object.|
+|680908..68095C|For9/10, **unsigned last <= cutoff expires**, including equality and last0/cutoff0. Expiry produces a fresh base type0 with first=last=the captured current robot-state timestamp. Last>cutoff returns the original shared pair. No additional nonzero-cutoff or age guard is present.|
+|68140C;68A414;688378..68846E|Whole-map processor transform visits children, attempts merge, and applies the function to node content. Changed replacement is ForceSet only on a leaf; internal-node returned replacements are discarded. Thus expiry uses actual transform topology/cache bookkeeping, not removal of every object from an independent edge list. Update then continues to BroadcastMap (67DD20), whose transport/scheduling is separately owned by M11-075.|
+
+Simple instruction-derived boundary examples (not executions or C# output oracles): type9 `(first10,last20)` equals type9 `(first30,last40)`; incoming9 over current10 is rejected; incoming10 over9 is allowed; at state timestamp120001 the120s cutoff is1, so last1 expires and last2 survives. Merging four equal-type children with stamps `(8,20),(4,21),(6,19),(2,25)` yields child0-shared data `(first2,last25)`; the fourth child is included. These examples do not claim a complete map fixture or native allocator order.
+
+## Part2 completeness and explicit boundaries
+
+The **concrete type9 payload/vtable/clone/equality/lifetime, prepared two-point insertion, relevant override/shared timestamp/merge bookkeeping, post-insert +4C table/callee/point-fill, expiry and Part1 border-consumer data interface are established** at the addresses above. There is no remaining unknown field in the16-byte type9 base object or unknown +4C target/table.
+
+**Named boundaries, not guessed behavior:** the complete preceding vision algorithm that supplies the prepared segments/current origin/history is M11-017 and is not re-extracted here; shared overlap/walk/expansion internals remain the existing M11-045/046/047 contracts. Existing M11-074's FlagInterestingEdgesAsUseless/ReviewInterestingEdges no-caller decision is not reopened by this storage read. No repository-wide new-writer absence claim is made. **VisitInterestingEdge's lifecycle and its own subsequent map mutations remain deferred to Part3**, not declared no-effect or complete. No status, manifest, queue, production or test edits were made.
+
+Primary scratch companions: `part2-record-symbols.txt`, `part2-storage-primary.txt`, `part2-update-primary.txt`, `part2-map-mutations-primary.txt`, `part2-aging-insert-primary.txt`, `part2-fill-cache-transform-primary.txt`, `part2-final-interfaces-primary.txt`, `part2-final-relocations.txt`, `part2-vtable-symbols.txt`, `part2-control-symbols.txt`, `part2-aging-target.txt` under `.scratch/visit-edge-reading-1/`. Instruction/relocation addresses above remain the evidence, not the prose of older notes.
+
+**PART2 CHECKPOINT: ready for root review/commit/push. Stop here before Part3.** This is extraction coverage only; M11-089 still owns the larger unfinished consumer path and is not proposed settled.
