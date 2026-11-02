@@ -50,6 +50,24 @@ public abstract partial class SteppedBehavior : IBehavior
     protected void ObserveAsyncWork(Task work) => _observedAsyncWork = work;
     // Observation only: the fixture distinguishes a running animation from its completed ticket's
     // still-pending default-scheduler callback. Neither task changes the production schedule.
+    // Observation only: playback byte tag (native action+8B), distinct from this host action handle / native +84 tag.
+    internal readonly record struct PlaybackObservation(SteppedBehavior Owner,int Handle,int CallbackEpoch,int ActionEpoch,byte Tag,long Generation,string Clip,double StartedAt,bool Running,bool HasAction);
+    internal volatile bool CapturePlaybackObservationsForTest;
+    private readonly ConcurrentQueue<PlaybackObservation> _playbackObservationsForTest=new();
+    internal PlaybackObservation[] DrainPlaybackObservationsForTest(){var result=new List<PlaybackObservation>();while(_playbackObservationsForTest.TryDequeue(out var item))result.Add(item);return result.ToArray();}
+    internal sealed record AnimationCompletionObservation(long Id,Task Ticket,Task Callback);
+    private readonly ConcurrentDictionary<long,AnimationCompletionObservation> _completionObservations=new();
+    private long _completionObservationId;
+    internal volatile bool CaptureAnimationCompletionsForTest;
+    internal void EnableAnimationCompletionCaptureForTest(){CaptureAnimationCompletionsForTest=true;if(_observedAnimationTicket is { } ticket && _observedAnimationCallback is { } callback)SetCompletionObservationForTest(ticket,callback);}
+    internal AnimationCompletionObservation[] CompletedAnimationCallbacksForTest()
+        =>_completionObservations.Values.Where(x=>x.Ticket.IsCompleted).ToArray();
+    internal void RemoveCompletionObservationForTest(long id)=>_completionObservations.TryRemove(id,out _);
+    internal void SetCompletionObservationForTest(Task ticket,Task callback)
+    {
+        long id=Interlocked.Increment(ref _completionObservationId);
+        _completionObservations[id]=new(id,ticket,callback);
+    }
     private Task? _observedAnimationTicket;
     private Task? _observedAnimationCallback;
     internal bool AwaitingCompletedAnimationCallback => _observedAnimationTicket is { IsCompleted: true }
@@ -1155,6 +1173,9 @@ public abstract partial class SteppedBehavior : IBehavior
                 _onActionTimeout = null; _actionTimeoutMs = double.NaN; _actionDeadlineMs = double.NaN;
             }
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+        if(CaptureAnimationCompletionsForTest)SetCompletionObservationForTest(ticket.Completion,_observedAnimationCallback!);
+        if(CapturePlaybackObservationsForTest)_playbackObservationsForTest.Enqueue(new(this,handleToClear,epoch,actionEpoch,ticket.Tag,ticket.Generation,resolved.Selected!,Context.Robot.Engine.Timer.Seconds,EngineRunning,HasCurrentAction));
     }
 
     /// <summary>Called when an action's trigger has resolved to a clip and the clip has started. A class that records the choice overrides it.</summary>
