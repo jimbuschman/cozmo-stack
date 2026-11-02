@@ -6,61 +6,15 @@ namespace Cozmo.Robot;
 
 public sealed record InventoryStatusReport(IReadOnlyList<int> Words);
 public sealed record DefaultUnlocksReport(IReadOnlyList<uint> UnlockIds);
-public sealed record RequestSetUnlockMessage(uint UnlockId,bool Unlocked);
-public sealed record RequestSetUnlockResultReport(uint UnlockId,bool Unlocked);
 
-// fidelity: M15-034, M15-035, M15-095
+// fidelity: M15-034, M15-035
 // These are the Robot's actual connection-read recipients, not a second set in a tool.
 internal sealed class ProgressionUnlockOwner(EngineRobot robot)
 {
     internal readonly SortedSet<uint> Unlocked=new();
-    private RetainedSubscription? _requestSubscription;
     internal bool OverridesKnownEmpty {get;private set;}=true; //0064B86E ctor empty tree, before any NV response.
     internal bool TryIsUnlocked(uint id,out bool unlocked)
     {unlocked=false;if(!OverridesKnownEmpty)return false;unlocked=Unlocked.Contains(id);return true;}
-    private bool Current=>!robot.Lifetime.Destroying && ReferenceEquals(robot.Progression,this) && ReferenceEquals(robot.Engine.Robot,robot);
-    // 0x64C200: ordinary changes write immediately; All and Defaults recurse in ID order.
-    internal void SetUnlock(uint id,bool requested)
-    {
-        if(!Current)return;
-        if(id is 1 or 2)
-        {
-            for(uint child=3;child<=84;child++)
-            {
-                if(!Current)return;
-                if(NativeUnlockNames.Lookup((int)child) is not null)
-                    SetUnlock(child,id==1?requested:Array.IndexOf(BackupFiles.CurrentDefaults(),child)>=0);
-            }
-            if(id==2 && Current)SendDefaults(BackupFiles.CurrentDefaults());
-            return;
-        }
-        if(id<3 || id>84 || NativeUnlockNames.Lookup((int)id) is null)return;
-        bool changed=requested?Unlocked.Add(id):Unlocked.Remove(id);
-        if(!changed)return;
-        byte[] snapshot=new byte[2048];int index=0;
-        foreach(uint value in Unlocked)BinaryPrimitives.WriteUInt32LittleEndian(snapshot.AsSpan(index++*4,4),value);
-        int accepted=robot.Engine.NvStorage!.Write(0x182000,snapshot,result=>WriteComplete(id,requested,result),false);
-        if(Current && accepted==0)robot.Engine.EmitSourceLog(EngineLogLevel.Info,"UnlockComponent","WriteCurrentUnlocksToRobot","Write failed");
-    }
-    private void WriteComplete(uint id,bool requested,NvResult result)
-    {
-        if(!Current)return;
-        if(result.Result<0)
-        {
-            robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"UnlockComponent.WriteCurrentUnlocksToRobot", "Write failed with "+NvStorageComponent.NvResultName(result.Result));
-            if(Current)EngineErrorState.StoreAndMaybeBreak();
-            return;
-        }
-        if(!robot.Engine.NeedsContextExternalInterfaceAvailable)return;
-        byte[] body=new byte[5];BinaryPrimitives.WriteUInt32LittleEndian(body,id);body[4]=requested?(byte)1:(byte)0;
-        robot.Engine.DeliverNurture(0x6C,body,new RequestSetUnlockResultReport(id,requested));
-    }
-    private void SendDefaults(uint[] defaults)
-    {
-        if(!robot.Engine.NeedsContextExternalInterfaceAvailable)
-        {robot.Engine.EmitStackLog("M1-034/M15-095 skipped NotifyGameDefaultUnlocksSet null interface dereference 0x0064C114");return;}
-        robot.Engine.DeliverNurture(0x6E,PackIds(defaults,false),new DefaultUnlocksReport(Array.AsReadOnly(defaults)));
-    }
     internal void Init()
     {
         OverridesKnownEmpty=robot.Engine.BackupFiles.InitProgressionDefaults();
@@ -68,13 +22,6 @@ internal sealed class ProgressionUnlockOwner(EngineRobot robot)
         {SteppedBehavior.ReportMissing("M15-034 nonempty/malformed freeplayOverrides Init branch 0x0064B928..0x0064B9F8 is unread; remaining Init unit skipped");return;}
         if(robot.Engine.NvStorage!.Read(0x182000,ReadSink)==0)
             robot.Engine.EmitSourceLog(EngineLogLevel.Info,"UnlockComponent","ReadCurrentUnlocksToRobot","Read failed");
-        if(robot.Engine.NeedsContextExternalInterfaceAvailable && !robot.Lifetime.Destroying)
-            _requestSubscription=robot.Engine.AnimationMessages.SubscribeMessage(0xD7,false,p=>
-            {
-                if(p is not RequestSetUnlockMessage request || !Current)return;
-                if(unchecked(request.UnlockId-1)<84)SetUnlock(request.UnlockId,request.Unlocked);
-                else robot.Engine.EmitSourceLog(EngineLogLevel.Info,"UnlockComponent","HandleRequestSetUnlock",$"Invalid unlockId {unchecked((int)request.UnlockId)}, ignoring");
-            });
     }
     internal void ReadSink(NvResult result)
     {
@@ -124,7 +71,6 @@ internal sealed class ProgressionUnlockOwner(EngineRobot robot)
     }
     internal void Retire()
     {
-        _requestSubscription?.Dispose();_requestSubscription=null;
         SteppedBehavior.ReportMissing("M15-027/M15-034 progression scoped vector+1C and tree+10 concrete recipients remain absent at 0x005111BE..0x005111EE; current unlock tree cleared in checked order, global defaults retained");Unlocked.Clear();OverridesKnownEmpty=false;
     }
 }
@@ -198,9 +144,6 @@ public sealed partial class EngineRobot
 }
 public sealed partial class CozmoEngine
 {
-    /// <summary>Queue the native RequestSetUnlock input on the engine's game-message hub.</summary>
-    public void RequestSetUnlock(uint unlockId,bool unlocked)
-        => Post(()=>AnimationMessages.Deliver(0xD7,false,new RequestSetUnlockMessage(unlockId,unlocked)));
     internal void DeliverNurture(ushort tag,byte[] data,object? report,Action? typed=null)
     {
         DeliverAnimationReportToApp(tag,data,typed,typedFirst:true);
