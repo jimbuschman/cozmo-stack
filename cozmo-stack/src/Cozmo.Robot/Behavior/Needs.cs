@@ -749,8 +749,7 @@ public sealed partial class NeedsManager
     {
         if(starConfig is null){SteppedBehavior.ReportMissing("M15-014 StarRewardsConfig needs_level_config.json is unavailable; no max-stars value fabricated");return;}
         _nativeStarThresholds=NativeStarThresholds.Parse(starConfig);if(_nativeStarThresholds is null)return;
-        if(!_nativeStarThresholds.TryGetMax(0,out int maximum)){SteppedBehavior.ReportMissing("M15-014 initial max-stars scalar unavailable");return;}
-        _nativeStarMetadataKnown=true;State.NativeUnlockLevel=0;State.NativeStarsAwarded=0;State.NativeStarsForNextUnlock=maximum;
+        _nativeStarMetadataKnown=true;State.NativeUnlockLevel=0;State.NativeStarsAwarded=0;State.NativeStarsForNextUnlock=_nativeStarThresholds.GetMax(0);
         State.NativeDateTimeMicros=0;State.NativeSerial=uint.MaxValue;
         State.NativeTimeCreatedMicros=NativeSystemClockMicros();
         State.NativeAppOpenMicros=NativeSystemClockMicros();
@@ -918,7 +917,7 @@ public sealed partial class NeedsManager
     /// activity ending with a reward still pending (<c>IActivity::OnDeselected</c> 0x005B3548) and the
     /// EarnedSparks behaviour stopping (<c>BehaviorEarnedSparks::StopInternal</c> 0x005DAF7C) - plus
     /// <c>RegisterNeedsActionCompleted</c> itself, which sends a pending reward before creating a new one.
-    /// The native producer of the amount and key remains separately unavailable; the communication body uses only source-known state.
+    /// The amount and key come from <c>TryNativeFreeplayReward</c>; the communication body uses only source-known state.
     /// </summary>
     public void SparksRewardCommunicatedToUser()
     {
@@ -1681,8 +1680,7 @@ public sealed partial class NeedsManager
             candidate.NativeTimeCreatedMicros=unchecked((long)(robot.TimeCreated*1_000_000UL));
             candidate.NativeLastStarMicros=unchecked((long)(robot.TimeLastStarAwarded*1_000_000UL));
             candidate.NativeUnlockLevel=robot.CurNeedsUnlockLevel;candidate.NativeStarsAwarded=robot.NumStarsAwarded;
-            if(!_nativeStarThresholds!.TryGetMax(robot.CurNeedsUnlockLevel,out int maximum)){SteppedBehavior.ReportMissing("M15-014 robot candidate max-stars scalar unavailable");return false;}
-            candidate.NativeStarsForNextUnlock=maximum;
+            candidate.NativeStarsForNextUnlock=_nativeStarThresholds!.GetMax(robot.CurNeedsUnlockLevel);
             candidate.NativeSerial=owner.NativeBodyId;candidate.ForceNextSong=robot.ForceNextSong;candidate.ContextRandom=context.ContextRandom;
             for(int i=0;i<3;i++){candidate.StoreLevel((NeedId)i,(float)levels[i]);candidate.SetNativePartDamage(i,robot.PartIsDamaged[i]);}
             _nativeOnboardingStage=robot.OnboardingStageCompleted; // 0x69A18C: manager field, before bracket refresh/resolver
@@ -2160,8 +2158,15 @@ public sealed partial class NeedsManager
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         SendNeedsStateToGame(action); // 0x00696366, before the reward query.
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
+        // fidelity: M15-093, M15-071
         int? dailyResult=nativeRecipient&&!UsesUncertifiedPersistenceTestAdapter?UpdateNativeStars(false):0;
-        if(dailyResult is null)return false;
+        if(dailyResult is null)
+        {
+            // 0x00696372 branches on an integer the host could not establish: return 0 could reach the pending store 0x00696410.
+            Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
+            SteppedBehavior.ReportMissing("M15-071/M15-093 daily-star result unavailable at 0x00696372; reward branch withheld and pending proof withdrawn");
+            return false;
+        }
         // 0x696378 calls Generate before examining the configured reward weight,
         // including for zero-weight actions. Its owner retains uncertainty if an
         // incomplete invocation could have consumed the shared RNG.

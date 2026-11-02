@@ -149,7 +149,9 @@ public sealed class NativeNotificationTests
         const string config="{\"localNotificationConfigs\":[{\"notificationMainUnion\":{\"type\":\"notificationGeneral\"},\"connection\":\"Either\",\"whenType\":\"AfterAppClose\",\"whenParam\":0,\"rangeEarly\":0,\"rangeLate\":0,\"textKeys\":[\"a\"]}]}";
         using var f=new Fixture(config:config,clock:()=>1_700_000_000_000_000);int words=0,clear=0,cache=0;f.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};
         using var c=f.Engine.AnimationMessages.SubscribeMessage(0x97,true,_=>clear++);using var n=f.Engine.AnimationMessages.SubscribeMessage(0x98,true,_=>cache++);
-        Assert.False(f.Owner.TryGenerate());Assert.Equal(2,words);Assert.Equal(1,clear);Assert.Equal(0,cache);Assert.False(f.Owner.RandomHistoryKnown);
+        // Startup Generate (0x00693492) already stopped at this config's missing minimum, so a fresh owner shows the first pass on the same RNG.
+        Assert.False(f.Owner.RandomHistoryKnown);using var fresh=new LocalNotifications(f.Engine,f.Engine.Needs);Assert.True(fresh.Initialize(config,0));
+        Assert.False(fresh.TryGenerate());Assert.Equal(2,words);Assert.Equal(1,clear);Assert.Equal(0,cache);Assert.False(fresh.RandomHistoryKnown);
     }
     [Fact]
     public void EarlierWindowBranchDoesNotReadUnavailableUpperWindow()

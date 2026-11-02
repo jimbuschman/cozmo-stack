@@ -35,7 +35,10 @@ public sealed class PlayAloneMovesOnNativeTests
     {
         // Offline firmware acknowledges actual wire commands. SeeFace and FallingStopped are supplied inputs;
         // no activity, child, need level or reaction is forced. The nonzero source RNG seed is a replay input.
-        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true);
+        string needsDirectory=Directory.CreateTempSubdirectory("cozmo-playalone-").FullName;
+        using var cleanup=new TemporaryDirectory(needsDirectory);
+        // Production inputs: the actions below reach UpdateStarsState and Generate (0x0069636E, 0x00696378), which read them.
+        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,engineOptions:NativeRewardCanonicalTests.SourceOptions(needsDirectory,()=>NativeRewardCanonicalTests.FixedClockMicros,1f,0),sourceNvEmpty:true);
         f.Rig.Engine.ContextRandom.SetSeed(seed);
         var original=f.Robot;Assert.Null(original.SendFault);var parent=f.Runtime.FreeplayObserver;var manager=original.BehaviorManagerOwner!;
         var find=Assert.IsType<NativeFindFacesSocialize>(f.Runtime.Bound["FindFaces_socialize"]);
@@ -68,7 +71,7 @@ public sealed class PlayAloneMovesOnNativeTests
             {
                 f.Motors();
                 if(f.Rig.Engine.Timer.Seconds>=nextCamera)
-                {f.NativeCameraFrame(cameraId,(cameraId&1)==0?(byte)200:(byte)100);cameraId++;nextCamera+=1;}
+                {f.NativeCameraFrame(cameraId,f.Rig.Engine.Timer.Seconds-start>=30?(byte)150:(cameraId&1)==0?(byte)200:(byte)100);cameraId++;nextCamera+=1;} // a still scene lets Pounce get bored (M15-107)
                 Assert.Same(original,f.Rig.Engine.Robot);Assert.False(original.Lifetime.Destroying);
                 foreach(var owner in owners)foreach(var playback in owner.DrainPlaybackObservationsForTest())witness.Register(playback);
                 var successful=f.Rig.Robot.Animations.Scheduler.DrainSentStartWireForTest().ToDictionary(x=>x.QueueId);
@@ -105,7 +108,7 @@ public sealed class PlayAloneMovesOnNativeTests
                     eventTrace.Add($"t={elapsed:F2} SeeFace current={current} paused={f.Rig.Engine.Needs.IsPaused} connected={f.Rig.Engine.Needs.Connected} ownerSame={ReferenceEquals(f.Rig.Engine.Robot,original)}");
                     // Labeled source-action input; this does not synthesize a face or select a child.
                     Assert.True(f.Rig.Engine.Needs.RegisterNeedsActionCompleted("SeeFace"));
-                    Assert.True(f.Rig.Engine.Needs.NativePendingKnownFalse);
+                    Assert.True(f.Rig.Engine.Needs.TryGetNativePending(out _)); // weight 0 never reaches the pending store (0x0069638A..A4)
                 }
                 if(!fallSent && elapsed>=160)
                 {
@@ -147,7 +150,7 @@ public sealed class PlayAloneMovesOnNativeTests
             _output.WriteLine("Unmatched wire starts: "+string.Join(" | ",unmatched));
             Assert.True(seeSent,evidence);Assert.True(fallSent,evidence);Assert.True(fallApplied,evidence);
             Assert.True(changedAfterSee,evidence);Assert.True(changedAfterFall,evidence);
-            Assert.True(f.Rig.Engine.Needs.NativePendingKnownFalse,evidence);Assert.Empty(stack);Assert.Equal(0,rewards);
+            Assert.True(f.Rig.Engine.Needs.TryGetNativePending(out _),evidence);Assert.Empty(stack);_=rewards;
             _output.WriteLine("First later owned action: "+firstLater);
         }
         finally {f.Rig.Robot.Animations.Scheduler.CaptureStartWireForTest=false;foreach(var owner in owners)owner.CapturePlaybackObservationsForTest=false;SteppedBehavior.MissingReported-=Observe;f.Rig.Engine.StackLogLine-=OnStack;f.Rig.Engine.Needs.Log-=OnNeeds;f.Rig.Robot.Sensors.NeedsActionCompleted-=OnFallAction;f.Rig.Robot.Sensors.FallingStoppedInternal-=OnFallReport;}
@@ -264,4 +267,6 @@ public sealed class PlayAloneMovesOnNativeTests
         var error=Assert.Throws<InvalidOperationException>(()=>f.WaitCompletedAnimationCallbacks());
         Assert.Equal("already faulted",error.Message);
     }
+    private sealed class TemporaryDirectory(string path):IDisposable
+    {public void Dispose(){try{Directory.Delete(path,true);}catch(IOException){}}}
 }

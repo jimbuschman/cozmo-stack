@@ -73,7 +73,8 @@ public sealed class ActivityStrategiesFixTests
     // M15-098 0x005B42DC..42F2/4504..4530, M15-001 0x00693870..C6, 0x006625CE..FA.
     [Fact] public void NeedsDeliveryIsInlineSnapshotsLevelsAndSubscriptionLivesUntilDisposed()
     {
-        using var rig=new M4ControlTests.Rig(); rig.ToSynced(); rig.State();
+        // The full tag 0x62 report (M15-014, 0x0069383C) needs the shipped level and needs config.
+        using var rig=new M4ControlTests.Rig(PickupPyramidNativeExecutionTests.Resources()); rig.ToSynced(); rig.State();
         var robot=rig.Engine.Robot!; var needs=rig.Engine.Needs;
         string root=Directory.CreateTempSubdirectory("strategy-input-").FullName;
         try
@@ -158,6 +159,8 @@ public sealed class ActivityStrategiesFixTests
                 [{"activityID":"Fixture","activityStrategy":{"type":"NeedBasedCooldown","needId":"Energy",
                 "cooldownBaseSecs":5,"needCooldownGraph":{"nodes":[{"x":0,"y":10},{"x":1,"y":20}]}}}]
                 """);
+            // The full tag 0x62 report (M15-014, 0x0069383C) needs the shipped level and needs config.
+            foreach(string name in new[]{"needs_config.json","needs_level_config.json"})File.Copy(Path.Combine(PickupPyramidNativeExecutionTests.Resources(),"config","engine",name),Path.Combine(root,"config","engine",name));
             using var rig=new M4ControlTests.Rig(root);rig.ToSynced();rig.State();
             var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
             var strategy=Assert.Single(runtime.Tree).Strategy;

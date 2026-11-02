@@ -13991,7 +13991,7 @@
       "unresolved": "COMPATIBILITY_POLICY: the stack supplies this root from its own settings (an app input under the 2026-10-09 scope rule): Options.BlockPoolPath, default LocalApplicationData/cozmo-stack. Build: tag the setting.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "NativeDailyRewardTests; NativeRewardCanonicalTests.WeightedActionRewardsNaturallyAndFreeplayKeepsChoosingFor300Seconds; NativeEarnedSparksTests"
     },
     {
       "id": "M4-051",
@@ -14572,7 +14572,7 @@
       "unresolved": "Not built. Unread: ProcessLevelRewards 0x006993F8 (reward branches, inventory changes, messages), the helper 0x0069CB20, LocalNotifications::Generate 0x004BD3D4 downstream, and whether +0x54 is updated before the StarLevelCompleted read at 0x006987AC. Needs.cs:632 calling this the app's is contradicted by the native code. Depends on the owner of inventory type 1.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "NativeDailyRewardTests; NativeRewardCanonicalTests.DailyStarSendsBothReportsWritesTheRobotAndFreeplayKeepsChoosing"
     },
     {
       "id": "M15-094",

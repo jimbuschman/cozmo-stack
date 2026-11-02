@@ -31,21 +31,16 @@ public sealed partial class NeedsState
 }
 
 internal sealed record NativeNeedsReward(int Type,byte[] Data,bool InventoryIsFull);
-internal sealed record NativeStarLevel(int? Stars,int? Target,int? PriorLimit,float? MinimumPct,float? MaximumPct,int? Minimum,int? MinimumMaximum,int? FreeplayTarget,float? FreeplayChance,float? FreeplayMinimumPct,float? FreeplayMaximumPct,int? FreeplayMinimum,int? FreeplayMinimumMaximum,IReadOnlyList<NativeNeedsReward> Rewards);
+internal sealed record NativeStarLevel(int Stars,int Target,int PriorLimit,float MinimumPct,float MaximumPct,int Minimum,int MinimumMaximum,int FreeplayTarget,float FreeplayChance,float FreeplayMinimumPct,float FreeplayMaximumPct,int FreeplayMinimum,int FreeplayMinimumMaximum,IReadOnlyList<NativeNeedsReward> Rewards);
 
 // One retained source-owned StarRewardsConfig is shared by metadata and reward consumers.
 internal sealed class NativeStarThresholds
 {
     private readonly NativeStarLevel[] _levels;
     private NativeStarThresholds(NativeStarLevel[] levels)=>_levels=levels;
+    private static readonly string[] ScalarKeys={"numStarsToUnlock","targetSparksTotal","maxPriorLevelUnlocks","minSparksPct","maxSparksPct","minSparks","minMaxSparks","freeplayTargetSparksTotal","freeplayMinSparksRewardPct","freeplayMinSparksPct","freeplayMaxSparksPct","freeplayMinSparks","freeplayMinMaxSparks"};
     internal int Count=>_levels.Length;
-    internal bool TryGetMax(int level,out int maximum)
-    {
-        if(_levels.Length==0){maximum=0;return true;}
-        int? value=_levels[(uint)level<(uint)_levels.Length?level:_levels.Length-1].Stars;
-        maximum=value.GetValueOrDefault();return value.HasValue;
-    }
-    internal int GetMax(int level)=>TryGetMax(level,out int maximum)?maximum:throw new JsonMissingSource("StarRewardsConfig max-stars scalar unavailable");
+    internal int GetMax(int level)=>_levels.Length==0?0:_levels[(uint)level<(uint)_levels.Length?level:_levels.Length-1].Stars;
     internal bool TryGetLevel(int level,out NativeStarLevel? value)
     {value=_levels.Length==0?null:_levels[(uint)level<(uint)_levels.Length?level:_levels.Length-1];return value is not null;}
     internal static NativeStarThresholds? Parse(string text)
@@ -62,18 +57,21 @@ internal sealed class NativeStarThresholds
                 {StackDiagnostics.Write("M15-014 StarRewardsConfig unlockLevels outside checked array input; config unavailable");return null;}
                 foreach(var entry in levels.Elements)
                 {
-                    if(entry.Kind!=FirmwareJsonKind.Object)
-                    {StackDiagnostics.Write("M15-014 StarRewardsConfig level entry unavailable; earlier levels retained");break;}
+                    // Every shipped level is an object with all 13 scalars; anything else is not a config this system uses.
                     bool Has(string key)=>entry.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
-                    int? I(string key)=>Has(key)?Json.AsInt(Json.Member(entry,key)):null;
-                    float? F(string key)=>Has(key)?Json.AsFloat(Json.Member(entry,key)):null;
+                    if(entry.Kind!=FirmwareJsonKind.Object||Array.Exists(ScalarKeys,key=>!Has(key)))
+                    {StackDiagnostics.Write("M15-014 StarRewardsConfig level outside shipped complete object input; config unavailable");return null;}
+                    int I(string key)=>Json.AsInt(Json.Member(entry,key));
+                    float F(string key)=>Json.AsFloat(Json.Member(entry,key));
                     var rewards=new List<NativeNeedsReward>();
                     if(Has("rewards"))
                     {
                         var array=Json.Member(entry,"rewards");
                         for(uint i=0;i<Json.Size(array);i++)
                         {
-                            var item=Json.Index(array,i);bool R(string key)=>item.Kind==FirmwareJsonKind.Object&&item.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
+                            var item=Json.Index(array,i);bool R(string key)=>item.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
+                            if(item.Kind!=FirmwareJsonKind.Object)
+                            {StackDiagnostics.Write("M15-014 StarRewardsConfig reward outside shipped object input; config unavailable");return null;}
                             int type=0;byte[] data=Array.Empty<byte>();bool full=false;
                             if(R("rewardType"))type=Encoding.UTF8.GetString(Json.AsStringBytes(Json.Member(item,"rewardType"))) switch{"Sparks"=>0,"Unlock"=>1,"Song"=>2,"MemoryBadge"=>3,_=>0};
                             if(R("data"))data=Json.AsStringBytes(Json.Member(item,"data")).ToArray();
@@ -87,7 +85,7 @@ internal sealed class NativeStarThresholds
             }
         }
         catch(JsonMissingSource e)
-        {StackDiagnostics.Write("M15-014 StarRewardsConfig conversion unavailable; earlier levels retained: "+e.Message);return result.Count==0?null:new(result.ToArray());}
+        {StackDiagnostics.Write("M15-014 StarRewardsConfig conversion unavailable; config unavailable: "+e.Message);return null;}
         catch(Exception e) when(e is JsonLogicError or JsonRuntimeError)
         {StackDiagnostics.Write("M1-034/M15-014 StarRewardsConfig terminating JsonCpp conversion; current level skipped, earlier levels retained: "+e.Message);return result.Count==0?null:new(result.ToArray());}
     }

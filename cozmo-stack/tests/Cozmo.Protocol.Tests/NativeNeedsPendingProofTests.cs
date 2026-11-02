@@ -24,7 +24,9 @@ public sealed class NativeNeedsPendingProofTests
         using var f=new Fixture();var needs=f.Rig.Engine.Needs;needs.Connected=true;
         long epoch=needs.NativePendingHistoryEpoch;
         needs.SetPaused(true);Assert.False(needs.RegisterNeedsActionCompleted("Fall"));needs.SetPaused(false);
-        needs.Connected=false;Assert.False(needs.RegisterNeedsActionCompleted("Fall"));needs.Connected=true;
+        // 0x006960F2..0x006960F8 tests Needs+4, the connected Robot pointer, not a connection flag.
+        var connected=typeof(NeedsManager).GetField("_nativeConnectedRobot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+        var robot=connected.GetValue(needs);connected.SetValue(needs,null);Assert.False(needs.RegisterNeedsActionCompleted("Fall"));connected.SetValue(needs,robot);
         Assert.False(needs.RegisterNeedsActionCompleted("not-a-native-action"));
         Assert.True(needs.RegisterNeedsActionCompleted("Fall"));Assert.True(needs.RegisterNeedsActionCompleted("SeeFace"));
         Assert.False(needs.RegisterNeedsActionCompleted("SeeFace")); // actual source cooldown
@@ -99,7 +101,7 @@ public sealed class NativeNeedsPendingProofTests
         {
             Assert.True(needs.RegisterNeedsActionCompleted("RollACube"));Assert.False(needs.TryGetNativePending(out _));
             Assert.Contains(missing,s=>s.Contains("persisted notification determinant unavailable"));
-            Assert.Contains(missing,s=>s.Contains("weighted reward withheld: notification effects or shared RNG history unavailable"));
+            Assert.Contains(missing,s=>s.Contains("weighted reward withheld: notification effects, shared RNG history or reward inputs unavailable"));
             needs.SparksRewardCommunicatedToUser();Assert.True(needs.NativePendingKnownFalse);
             Assert.False(needs.NativeRewardPayloadKnownForTest);Assert.Equal(0,reports);
             Assert.Contains(missing,s=>s.Contains("reward amount/display payload unavailable"));

@@ -109,7 +109,7 @@ public sealed class EngineSettlingRegressionTests
             });
             using var observedReadiness=readinessObserver;
             Assert.True(initialized);
-            Assert.False(File.Exists(Path.Combine(state,"needsState.json"))); // M15-030 device persistence is gated.
+            Assert.True(File.Exists(Path.Combine(state,"needsState.json"))); // M15-014 InitInternal forces the device write at 0x0069347E.
             await ready.Task.WaitAsync(TimeSpan.FromSeconds(60));
             Assert.Equal(0,ticksAtReady);
             var owner=robot.Engine.Needs;
