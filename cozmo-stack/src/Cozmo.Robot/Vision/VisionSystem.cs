@@ -63,7 +63,10 @@ public sealed partial class VisionSystem : IDisposable
     private CameraCalibration? _groundInstalled;
     private NativeGroundPlaneLookup? _groundLookup;
     private int _groundEpoch;
+    private NativeVisionInitialization? _nativeInitialization;
+    private int _nativeInitializationEpoch;
     internal int NativeGroundEpochForTest { get { lock (_groundGate) return _groundEpoch; } }
+    internal NativeVisionInitialization? NativeInitializationForTest { get { lock (_groundGate) return _nativeInitialization; } }
 
     // The outer VisionComponent camera has its own identity check, separate from the inner marker camera.
     internal void BindNativeGroundOwner(EngineRobot owner)
@@ -72,10 +75,14 @@ public sealed partial class VisionSystem : IDisposable
         {
             if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
             _groundOwner = owner;
+            _nativeInitialization=new NativeVisionInitialization(owner);_nativeInitializationEpoch++;
+            PendingDropStatsSeconds=-1f; // per-owner diagnostic; native Init's source is a local value
             _groundOuterCalibration = null;
             _groundInstalled = null;
             _groundLookup = new NativeGroundPlaneLookup();
             _groundEpoch++;
+            lock(_modeGate){_modeEnableMask=0;_schedules.Clear();}
+            _exposurePipeline=null;QualityProcessor.Pipeline=null;
         }
     }
 
@@ -139,7 +146,7 @@ public sealed partial class VisionSystem : IDisposable
         _robot = robot;
         LifetimeProfiler.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
         QualityProcessor.SourceLog = (l,c,k,t) => robot.Engine.EmitSourceLog(l,c,k,t);
-        LoadQualityConfiguration();
+
         Calibration = calibration;
         _constructedCalibration = calibration;
         _groundPendingOuter = calibration;
@@ -318,6 +325,10 @@ public sealed partial class VisionSystem : IDisposable
         {
             if (_groundOwner is not { Lifetime.Destroying: true }) return;
             _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;
+            _nativeInitialization=null;_nativeInitializationEpoch++;
+            PendingDropStatsSeconds=-1f;
+            _exposurePipeline=null;QualityProcessor.Pipeline=null;
+            lock(_modeGate){_modeEnableMask=0;_schedules.Clear();}
             _groundPendingOuter=_constructedCalibration;
             _groundEpoch++; // host stale-work token; intentionally monotonic across owners
         }
@@ -453,10 +464,16 @@ public sealed partial class VisionSystem : IDisposable
     /// <c>CheckTimeToProcessAndAdvance</c> on its front schedule (0x006B5AB4..0x006B5AC6). The default is
     /// <c>InitDefaultSchedules</c> (all 16 modes {true}, counter 0), so every enabled mode runs every frame.
     /// </summary>
-    public AllVisionModesSchedule Schedules { get; set; } = AllVisionModesSchedule.Default;
+    private readonly LinkedList<AllVisionModesSchedule> _schedules = new();
+    public AllVisionModesSchedule? Schedules
+    {
+        get { lock(_modeGate)return _schedules.First?.Value; }
+        set { lock(_modeGate){_schedules.Clear();if(value is not null)_schedules.AddFirst(value);} }
+    }
+    private void PushNativeSchedule(AllVisionModesSchedule value){lock(_modeGate)_schedules.AddFirst(value);}
 
     /// <summary>The mode enable bitmask at <c>VisionSystem+0xac</c>, from the shipped config (C2.3).</summary>
-    private int _modeEnableMask = ShippedModeEnableMask;
+    private int _modeEnableMask;
     public int ModeEnableMask { get { lock(_modeGate)return _modeEnableMask; } set { lock(_modeGate)_modeEnableMask=value; } }
 
     // fidelity: M11-061
@@ -860,7 +877,7 @@ public sealed partial class VisionSystem : IDisposable
 
     private readonly object _mailbox = new();
     /// <summary>The one pending image (VisionComponent's "next" slot, +0x74) and the removal epoch it arrived in.</summary>
-    private (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground)? _next;
+    private (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground, EngineRobot? Owner)? _next;
     internal NativeGroundFrame? PendingGroundForTest { get { lock (_mailbox) return _next?.Ground; } }
     internal bool HasPendingFrameForTest { get { lock (_mailbox) return _next is not null; } }
     private bool _processorRunning;
@@ -1005,7 +1022,7 @@ public sealed partial class VisionSystem : IDisposable
                         if (!ownerCurrent || sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner) || sourceRemoval!=Volatile.Read(ref _removals)) return;
                     }
                     displaced = _next?.Ground;
-                    _next = (f, sourceRemoval ?? Volatile.Read(ref _removals),pose,ground);
+                    _next = (f, sourceRemoval ?? Volatile.Read(ref _removals),pose,ground,sourceOwner);
                     accepted = true;
                     if (_processorThread is null)
                     {
@@ -1036,7 +1053,7 @@ public sealed partial class VisionSystem : IDisposable
             SteppedBehavior.ReportMissing("M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership");
             while (_processorRun)
             {
-                (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground)? taken = null;
+                (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground, EngineRobot? Owner)? taken = null;
                 lock (_mailbox)
                 {
                     if (!SkipProcessorPass && _next is { } n)
@@ -1056,7 +1073,7 @@ public sealed partial class VisionSystem : IDisposable
                             NativeGroundFrameConsumedForTest?.Invoke(frame.Ground);
                             SteppedBehavior.ReportMissing("M11-033 native captured ground carrier: IMU deque, VisionSystem current/previous anchor and motion consumer are unavailable");
                         }
-                        ProcessEncodedFrame(frame.Frame, frame.Removal,frame.Pose,queueForEngine:true);completed=true;
+                        ProcessEncodedFrame(frame.Frame, frame.Removal,frame.Pose,queueForEngine:true,sourceOwner:frame.Owner);completed=true;
                     }
                     catch (Jpeg.OpenCvException e) { ReportDecodeThrow(frame.Frame,e); }
                     catch (Exception e) { completed=true;Log?.Invoke($"frame {frame.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
@@ -1130,7 +1147,7 @@ public sealed partial class VisionSystem : IDisposable
         => SteppedBehavior.ReportMissing($"M1-034/M11-058 decode throw: skipped image {f.ImageId} ({e.Message}); native cleanup unwinds to terminate at 0x004E39F8; no Toc, cache Reset, rollback or Processor completion");
     // Host diagnostic snapshot only; native persistent cache/tree ownership is still M11-033/M11-078.
     internal ImageCache EncodedFrameCache {get;private set;}=new();
-    private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false)
+    private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,EngineRobot? sourceOwner=null)
     {
         var cache = new ImageCache(); // retain per-call host buffers so separate host entries cannot corrupt a frame
         SteppedBehavior.ReportMissing("M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only");
@@ -1145,7 +1162,7 @@ public sealed partial class VisionSystem : IDisposable
         cache.ResetDecoded(decoded.Image,isColor); // native Reset even for nonzero Result; throw bypasses this
         EncodedFrameCache=cache; // publish after Reset; a throw leaves the previous diagnostic snapshot
         if(!decoded.Ok)return DecodeReturnedFailure();
-        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose,queueForEngine);
+        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose,queueForEngine,sourceOwner);
         VisionFrameResult? DecodeReturnedFailure()
         {
             // Reset already ran; the unbuilt native Toc above belongs only to this normal-return tail.
@@ -1170,8 +1187,9 @@ public sealed partial class VisionSystem : IDisposable
     public VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp)
         => ProcessCapture(cache, imageId, cameraTimestamp, Volatile.Read(ref _removals));
 
-    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false)
+    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,EngineRobot? sourceOwner=null)
     {
+        if(queueForEngine && !NativeDecodedAdmission(sourceOwner,removal))return null;
         GrayImage gray;
         try { gray = cache.GetGray(); }
         catch (InvalidOperationException e) { Log?.Invoke($"frame {imageId}: {e.Message}"); return null; }

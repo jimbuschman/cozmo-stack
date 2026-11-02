@@ -53,6 +53,7 @@ public sealed class VisionModeSchedule
 
     /// <summary>The wrapping counter at <c>schedule+0xc</c>.</summary>
     public int Counter => _counter;
+    internal VisionModeSchedule Copy() { var copy=new VisionModeSchedule(_frames);copy._counter=_counter;return copy; }
 
     /// <summary>
     /// <c>AllVisionModesSchedule::CheckTimeToProcessAndAdvance</c> <c>0x006AF1F8</c>: return the current
@@ -86,6 +87,8 @@ public sealed class AllVisionModesSchedule
     }
 
     public VisionModeSchedule this[int mode] => _modes[mode];
+    internal void Set(int mode,VisionModeSchedule schedule)=>_modes[mode]=schedule;
+    internal AllVisionModesSchedule Copy()=>new(_modes.Select(x=>x.Copy()).ToArray());
 
     /// <summary><c>AllVisionModesSchedule::InitDefaultSchedules</c> 0x006AEFDE: all 16 modes {true}, counter 0.</summary>
     public static AllVisionModesSchedule InitDefaultSchedules()
@@ -97,4 +100,8 @@ public sealed class AllVisionModesSchedule
 
     /// <summary><c>sDefaultSchedules</c> 0x0105C540.</summary>
     public static AllVisionModesSchedule Default { get; } = InitDefaultSchedules();
+    private static readonly object DefaultGate=new();
+    internal static void SetDefault(int mode,VisionModeSchedule schedule){lock(DefaultGate)Default.Set(mode,schedule);}
+    internal static AllVisionModesSchedule CopyDefault(){lock(DefaultGate)return Default.Copy();}
+    internal static void RestoreDefaultForTest(AllVisionModesSchedule value){lock(DefaultGate)for(int i=0;i<ModeCount;i++)Default.Set(i,value[i].Copy());}
 }

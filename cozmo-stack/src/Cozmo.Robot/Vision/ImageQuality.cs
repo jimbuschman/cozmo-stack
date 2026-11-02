@@ -20,17 +20,18 @@ internal sealed class ImageQualitySettings
     internal byte TooBright=230,TooDark=15;
     internal bool MeterFromDetections=true;
     internal float Low=BitConverter.UInt32BitsToSingle(0x3DCCCCCD),Mid=BitConverter.UInt32BitsToSingle(0x3F000000),High=BitConverter.UInt32BitsToSingle(0x3F666666);
-    internal bool Load(FirmwareJsonValue root,SourceLogSink source)
+    internal bool Load(FirmwareJsonValue root,SourceLogSink source)=>Load(root,source,()=>true);
+    internal bool Load(FirmwareJsonValue root,SourceLogSink source,Func<bool> current)
     {
         var previous=(TooBright,TooDark,MeterFromDetections,Low,Mid,High);
-        try { return LoadFields(root,source); }
+        try { return LoadFields(root,source,current); }
         catch(JsonLogicError)
         {
-            (TooBright,TooDark,MeterFromDetections,Low,Mid,High)=previous;
+            if(current())(TooBright,TooDark,MeterFromDetections,Low,Mid,High)=previous;
             throw; // M1-034 terminating JsonCpp conversion: caller skips this config unit.
         }
     }
-    private bool LoadFields(FirmwareJsonValue root,SourceLogSink source)
+    private bool LoadFields(FirmwareJsonValue root,SourceLogSink source,Func<bool> current)
     {
         static FirmwareJsonValue? Find(FirmwareJsonValue r,string k)
         {
@@ -59,7 +60,7 @@ internal sealed class ImageQualitySettings
             }
         }
         return true;
-        void Error(string key,string text) { source(EngineLogLevel.Error,null,key,text);EngineErrorState.StoreAndMaybeBreak(); }
+        void Error(string key,string text) { source(EngineLogLevel.Error,null,key,text);if(current())EngineErrorState.StoreAndMaybeBreak(); }
     }
 }
 

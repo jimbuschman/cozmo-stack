@@ -70,13 +70,13 @@ internal sealed class ExposurePipeline:IImageQualityPipeline
     internal int SubSample {get;private set;}
     internal bool Configured {get;private set;}
     internal ExposurePipeline(SourceLogSink source){_source=source;Histogram.SourceLog=source;}
-    private void Error(string key,string text){_source(EngineLogLevel.Error,null,key,text);EngineErrorState.StoreAndMaybeBreak();}
-    internal uint SetExposureParameters(byte mid,float percentile,float maxChange,int sub)
+    private void Error(string key,string text,Func<bool>? current=null){_source(EngineLogLevel.Error,null,key,text);if(current is null||current())EngineErrorState.StoreAndMaybeBreak();}
+    internal uint SetExposureParameters(byte mid,float percentile,float maxChange,int sub,Func<bool>? current=null)
     {
         float lower=BitConverter.UInt32BitsToSingle(0xB727C5AC),upper=BitConverter.UInt32BitsToSingle(0x3F800054);
-        if(maxChange<lower||maxChange>upper){Error("ImagingPipeline.SetExposureParameters.BadMaxChangeFraction",PoseDiagnostics.Fixed(maxChange)+" not on interval [0,1]");return 0x03000000;}
-        if(percentile<lower||percentile>upper){Error("ImagingPipeline.SetExposureParameters.BadMidPercentile",PoseDiagnostics.Fixed(percentile)+" not on interval [0,1]");return 0x03000000;}
-        if(sub<=0){Error("ImagingPipeline.SetExposureParameters.BadSubSample",FormattableString.Invariant($"{sub} not > 0"));return 0x03000000;}
+        if(maxChange<lower||maxChange>upper){Error("ImagingPipeline.SetExposureParameters.BadMaxChangeFraction",PoseDiagnostics.Fixed(maxChange)+" not on interval [0,1]",current);return 0x03000000;}
+        if(percentile<lower||percentile>upper){Error("ImagingPipeline.SetExposureParameters.BadMidPercentile",PoseDiagnostics.Fixed(percentile)+" not on interval [0,1]",current);return 0x03000000;}
+        if(sub<=0){Error("ImagingPipeline.SetExposureParameters.BadSubSample",FormattableString.Invariant($"{sub} not > 0"),current);return 0x03000000;}
         MidValue=mid;MidPercentile=percentile;MaxChange=maxChange;SubSample=sub;Configured=true;return 0;
     }
     public uint ComputePercentile(float percentile)=>Histogram.Percentile(percentile);
@@ -102,10 +102,10 @@ public sealed partial class VisionSystem
     private ExposurePipeline? _exposurePipeline;
     private static string Fixed3(float v)=>float.IsFinite(v)?((double)v).ToString("F3",CultureInfo.InvariantCulture):PoseDiagnostics.Fixed(v);
     // fidelity: M11-081 — wrapper argument order at0x006B1858, success-only Info.
-    internal uint SetAutoExposureParams(int sub,byte mid,float percentile,float maxChange)
+    internal uint SetAutoExposureParams(int sub,byte mid,float percentile,float maxChange,Func<bool>? current=null)
     {
         var pipeline=_exposurePipeline??=new((l,c,k,t)=>_robot.Engine.EmitSourceLog(l,c,k,t));
-        uint status=pipeline.SetExposureParameters(mid,percentile,maxChange,sub);
+        uint status=pipeline.SetExposureParameters(mid,percentile,maxChange,sub,current);
         if(status==0)
         {
             QualityProcessor.Pipeline=pipeline;
