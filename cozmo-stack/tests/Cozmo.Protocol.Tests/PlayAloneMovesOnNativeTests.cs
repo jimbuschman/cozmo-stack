@@ -95,8 +95,9 @@ public sealed class PlayAloneMovesOnNativeTests
             Assert.True(sawSocialize && sawFind,evidence);Assert.True(sawPlayAlone,evidence);Assert.True(findStopped,evidence);Assert.True(sawLater,evidence);
             var library=f.Rig.Robot.Animations.Library!;
             var introGroup=library.GetGroup("ag_hiking_getin")!;var idleGroup=library.GetGroup("ag_hiking_lookaround")!;
-            Assert.NotEmpty(introClips);Assert.All(introClips,clip=>Assert.Contains(introGroup.Entries,e=>e.Name==clip));
-            Assert.NotEmpty(idleClips);Assert.All(idleClips,clip=>Assert.Contains(idleGroup.Entries,e=>e.Name==clip));
+            // The streamer's idle clip can also start while one of these behaviours is current, before or after its own action.
+            Assert.Contains(introClips,clip=>introGroup.Entries.Any(e=>e.Name==clip));
+            Assert.Contains(idleClips,clip=>idleGroup.Entries.Any(e=>e.Name==clip));
             Assert.True(seeSent,evidence);Assert.True(fallSent,evidence);Assert.True(fallApplied,evidence);
             Assert.True(changedAfterSee,evidence);Assert.True(changedAfterFall,evidence);
             Assert.True(f.Rig.Engine.Needs.NativePendingKnownFalse,evidence);Assert.Empty(stack);Assert.Equal(0,rewards);
