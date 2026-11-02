@@ -734,6 +734,7 @@ public sealed partial class NeedsManager
     private bool _nativeStarMetadataKnown;
     private bool _nativeCopiesResolved; // this connection's ResolveNativeCopies has taken the robot/device copies
     private bool _nativeRobotReadInconclusive,_nativeRobotDataProtected; // this connection's read failed; see ResolveNativeCopies
+    private bool _nativeSerialUnresolved; // M15-014 departure: from the serial edge until the copies resolve, nothing is saved under this serial
     private int? _nativeRepairRounds;
     private NeedsState? _nativeRobotCandidate;
     private int _nativeOnboardingStage;
@@ -1327,7 +1328,7 @@ public sealed partial class NeedsManager
     /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
     /// </summary>
     // fidelity: M15-014, M15-016
-    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _nativeCopiesResolved=false;_nativeRobotDataProtected=false; if(NativeContextBound){_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot();NativeNotificationDidConnect=true;} _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
+    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _nativeCopiesResolved=false; if(NativeContextBound){_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot();NativeNotificationDidConnect=true;} _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
 
     /// <summary>
     /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6, J5): write the disconnect timestamp to
@@ -1344,6 +1345,7 @@ public sealed partial class NeedsManager
         {
             State.NativeLastDisconnectMicros=NativeSystemClockMicros();State.NativeOpenAppAfterDisconnect=0;
             if(!_paused&&!WriteNativeDevice(true))return;
+            if(_nativeSerialUnresolved){State.NativeSerial=_previousSerial;_nativeSerialUnresolved=false;} // the read never finished
             _robotConnected=false;_nativeConnectedRobot=null;_nativeCopiesResolved=false;_nativeDeviceTimestampMicros=State.NativeDateTimeMicros;
             DetectBracketChangeForDas(true);SendNeedsLevelsDasEvent?.Invoke("disconnect");return;
         }
@@ -1456,12 +1458,13 @@ public sealed partial class NeedsManager
     {
         lock (_gate)
         {
+            if(_nativeSerialUnresolved)State.NativeSerial=_previousSerial; // a repeated edge: the earlier stamp was never earned
             _previousSerial = NativeContextBound&&_nativePersistenceReady ? State.NativeSerial : _serial;
             _serial = serial;
             if(NativeContextBound&&_nativePersistenceReady)State.NativeSerial=serial;
             _robotReadSucceeded = false;       // +0x1c8
             _robotRewriteNeeded = false;       // +0x1ca
-            _nativeCopiesResolved=false;_nativeRobotDataProtected=false;
+            _nativeCopiesResolved=false;_nativeRobotDataProtected=false;_nativeSerialUnresolved=NativeContextBound&&_nativePersistenceReady;
         }
         // The NV read (and the immediate fallback) run outside _gate.
         // M15-014/M3-033: on the live path the engine owns the 0x194000 read (queued from its mfgId handler,
@@ -1622,7 +1625,7 @@ public sealed partial class NeedsManager
             _awaitingRobotData=false;
             bool success=FinishReadFromRobot(r.Data,r.Result);
             if(!engine.NeedsContextAlive||owner.Lifetime.Destroying||!ReferenceEquals(_nativeConnectedRobot,owner))return;
-            _nativeRobotReadInconclusive=!success&&r.Result!=NvStorageComponent.ResultNotFound;
+            _nativeRobotReadInconclusive=!success&&(r.Result!=NvStorageComponent.ResultNotFound||r.Rejected);
             _robotReadSucceeded=success;ResolveNativeCopies();return;
         }
         if(SkipUnbuiltRobotPersistence())return;

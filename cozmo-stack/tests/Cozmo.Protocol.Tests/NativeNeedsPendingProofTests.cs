@@ -219,6 +219,53 @@ public sealed class NativeNeedsPendingProofTests
         }
         finally{Directory.Delete(directory,true);}
     }
+    private static byte[] StoredLevelSeven()
+    {
+        var stored=new NeedsStateOnRobot{Version=5,TimeLastWritten=2_000_000_000,CurNeedsUnlockLevel=7,NumStarsAwarded=1,TimeCreated=1_000_000_000};
+        for(int i=0;i<stored.CurNeedLevel.Length;i++)stored.CurNeedLevel[i]=80000;
+        return NeedsStateOnRobot.Pack(stored);
+    }
+    private static void Reconnect(Fixture f,bool answer=true)
+    {
+        var needs=f.Rig.Engine.Needs;
+        needs.OnRobotDisconnected();needs.InitAfterConnection();needs.InitAfterSerialNumberAcquired(2);
+        if(!answer)return;
+        for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
+    }
+    // Reconnects after a protected connection: a second unusable read still writes nothing, and a usable read takes the robot's data
+    // rather than comparing it with a State that was never this robot's.
+    [Fact]
+    public void AReconnectAfterAnUnusableReadNeverWritesDefaults()
+    {
+        string directory=Directory.CreateTempSubdirectory("cozmo-protected-reconnect-").FullName;
+        try
+        {
+            using(new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true,sourceNvStored:tag=>tag==NeedsManager.NeedsNvKey?new byte[3]:null)){}
+            byte[] reply=new byte[3];
+            using var f=new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true,sourceNvStored:tag=>tag==NeedsManager.NeedsNvKey?reply:null);
+            var needs=f.Rig.Engine.Needs;
+            Reconnect(f);Assert.Empty(NeedsChanges(f));
+            reply=StoredLevelSeven();Reconnect(f);
+            Assert.Equal(7,needs.State.NativeUnlockLevel);Assert.Empty(NeedsChanges(f));
+        }
+        finally{Directory.Delete(directory,true);}
+    }
+    // M3-035: a dropped link discards the read with no callback. Nothing may be saved under the serial, or the next run trusts defaults.
+    [Fact]
+    public void ADisconnectDuringTheReadSavesNothingUnderTheSerial()
+    {
+        string directory=Directory.CreateTempSubdirectory("cozmo-mid-read-").FullName;
+        try
+        {
+            using var f=new Fixture(engineOptions:ProtectedOptions(directory),sourceNvEmpty:true,sourceNvStored:tag=>tag==NeedsManager.NeedsNvKey?new byte[3]:null);
+            var needs=f.Rig.Engine.Needs;string file=Path.Combine(directory,"needsState.json");
+            uint before=needs.State.NativeSerial;Assert.NotEqual(2u,before);
+            Reconnect(f,answer:false);File.Delete(file);
+            needs.OnRobotDisconnected();
+            Assert.False(File.Exists(file));Assert.Equal(before,needs.State.NativeSerial);
+        }
+        finally{Directory.Delete(directory,true);}
+    }
     // NV_NOT_FOUND is a real answer: the robot holds nothing, so the engine's first write stands (0x00694EE4).
     [Fact]
     public void ARobotWithNoStoredNeedsStillGetsTheEnginesFirstWrite()

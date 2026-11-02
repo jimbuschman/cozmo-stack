@@ -101,6 +101,7 @@ public sealed class NvStorageComponent : IDisposable
         public bool Broadcast { get; init; }
         /// <summary>M3-028: the non-factory header has been accepted (+0x79).</summary>
         public bool HeaderAccepted { get; set; }
+        public bool Rejected { get; set; } // a bad header or size reported as NV_NOT_FOUND
         /// <summary>M3-028: the header's total size (its u32@8).</summary>
         public int? HeaderTotal { get; set; }
         /// <summary>
@@ -1141,7 +1142,7 @@ public sealed class NvStorageComponent : IDisposable
                         // 0x00643112 bne -> 0x0064348A: sChanneledDebugF, channel NVStorage (0xBFB43A), key 0xBFB993, format
                         // 0xBFB9C5; args the reply tag, the u32 at blob+0, 0x435A4D4F. Result -1 (0x006434DC).
                         LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.InvalidHeader", $"Tag: 0x{r.Tag:x}, Got 0x{BitConverter.ToUInt32(r.Data, 0):x}, Expected 0x{NonFactoryHeaderMagic:x}");
-                        result = -1;
+                        result = -1; req.Rejected = true;
                     }
                     else
                     {
@@ -1150,7 +1151,7 @@ public sealed class NvStorageComponent : IDisposable
                         if (total > (uint)(max - NvHeaderSize))
                         {
                             LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.InvalidDataSize", $"Tag 0x{r.Tag:x}, size {total}, maxSizeAllowed {max}");
-                            result = -1;
+                            result = -1; req.Rejected = true;
                         }
                         else
                         {
@@ -1315,7 +1316,7 @@ public sealed class NvStorageComponent : IDisposable
                 ? BuildBroadcasts(nameTag, req.Op, result, data)
                 : new List<NVStorageOpResult> { new(nameTag, op, result, 0, Array.Empty<byte>()) };
         }
-        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag, req, nameTag, op);
+        return new Completion(req.Callback, new NvResult(result, data, req.Rejected), broadcasts, req.Op == OpRead, req.Tag, req, nameTag, op);
     }
 
     private void Deliver(Completion c)
@@ -1421,7 +1422,8 @@ public sealed class NvStorageComponent : IDisposable
 }
 
 /// <summary>The terminal result of one NV request: the NVResult and the assembled bytes (empty on an error).</summary>
-public readonly record struct NvResult(sbyte Result, byte[] Data);
+/// <summary><paramref name="Rejected"/>: the stack turned a bad header or size into NV_NOT_FOUND, as the engine does, so the robot does hold something.</summary>
+public readonly record struct NvResult(sbyte Result, byte[] Data, bool Rejected=false);
 
 /// <summary>M3-030: one chunk of <c>BroadcastNVStorageOpResult</c> (tag, op, result, word@4 index, data).</summary>
 public readonly record struct NVStorageOpResult(uint Tag, byte Op, sbyte Result, int Index, byte[] Data);

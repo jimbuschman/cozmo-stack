@@ -18,6 +18,8 @@ namespace Cozmo.Protocol.Tests;
 // AddVisionOverheadEdges. Type 1 and 2 content comes from the robot pose writer. (3) SuppliedCloseEdgeMm replaces the detector's
 // output while gathering with a border chain that far ahead, entered at its production recipient ApplyOverhead 0x006553FC. The
 // close branch needs an edge within 60 mm, and the bottom image row of the vision model's camera sees no floor nearer than 79 mm.
+// That is M11-054: the vision model's camera z is 17.52 where the engine's is -8.0. So the close scene is NOT reachable from a real frame
+// until M11-054 is fixed; CloseEdgeFlagsTheVisitedConeAndObserves substitutes an input production can't make, and proves the branch only.
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper output)
 {

@@ -83,7 +83,7 @@ public sealed partial class NeedsManager
     private bool WriteNativeDevice(bool refresh)
     {
         long now=NativeSystemClockMicros(); // 0x693BC0, even when refresh=false
-        if(_nativeRobotDataProtected)return true; // see ResolveNativeCopies: the State here is not the robot's
+        if(_nativeSerialUnresolved)return true; // the State carries this robot's serial but not yet its data; see ResolveNativeCopies
         if(refresh)State.NativeDateTimeMicros=now;
         if(DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 NeedsDeviceDirectory unavailable for device write");return false;}
         if(!NativeMetadataAvailable){SteppedBehavior.ReportMissing("M15-014 star config unavailable for device write");return false;}
@@ -117,6 +117,7 @@ public sealed partial class NeedsManager
     private void ProtectRobotData()
     {
         _nativeRobotDataProtected=true;
+        State.NativeSerial=_previousSerial; // the State is not this robot's, so the serial must not persist or pass to a reconnect
         SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.RobotDataProtected","The robot's needs could not be read; no needs are saved to the robot or this PC until a read works");
     }
     // 0x694608: the original context and source-selected robot stay live through every outward callback.
@@ -130,6 +131,7 @@ public sealed partial class NeedsManager
         if(!Current())return;
         if(!engine.Experiments.NativeAssignmentHistoryAvailable){engine.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-050/M15-014 Lab precursor history unavailable; Needs resolver continuation withheld");return;}
         if(_nativeDeviceInputUnavailable){engine.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-014 Needs device input history unavailable; resolver continuation withheld");return;}
+        _nativeRobotDataProtected=false;
         bool r=_robotReadSucceeded,d=_deviceDataPresent,rewrite=_robotRewriteNeeded;
         bool deviceWrite=false,robotWrite=false,changed=false,apply=false,clearDisconnect=false,clearBackground=false,noAction=false;
         if(!r&&!d)
@@ -185,6 +187,7 @@ public sealed partial class NeedsManager
         else {byte[] body=new byte[4];System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body,stage);engine.DeliverNurture(0x69,body,stage);}
         if(!Current())return;
         _nativeCopiesResolved=!_nativeRobotDataProtected; // every native robot write is reached only after this resolver (0x00694608)
+        _nativeSerialUnresolved=_nativeRobotDataProtected;
         if(State.NativeLastDisconnectMicros!=0)_=NativeSystemClockMicros(); // source elapsed diagnostic samples separately
         long writeTime=NativeSystemClockMicros(); // 0x694D9E, always once for both requested writes
         if(deviceWrite)
