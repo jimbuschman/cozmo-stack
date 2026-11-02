@@ -193,6 +193,9 @@ public sealed partial class CozmoRobot : IDisposable
     /// <summary>Supplies the app's wake notification (G2E166), also sent once when each connection is ready.</summary>
     // fidelity: M15-073
     public void NotifyCozmoWakeup()=>Engine.PostGameMessage(()=>Engine.AnimationMessages.Deliver(166,false,null));
+    /// <summary>Queue the source VisionWhileMoving input for the current robot.</summary>
+    public void SetVisionWhileMoving(bool enabled)
+    {var owner=Engine.Robot;Engine.PostGameMessage(()=>{if(owner is not null&&ReferenceEquals(Engine.Robot,owner))Engine.AnimationMessages.Deliver(0x86,false,enabled);});}
     /// <summary>Queue a configured behavior request to the native Selection chooser.</summary>
     public void ExecuteBehaviorById(byte id,int numRuns=-1)
     { var owner=Engine.Robot;var body=new Cozmo.Protocol.ExecuteBehaviorByIDMessage(id,numRuns).PackBody();Engine.PostGameMessage(()=>{if(owner is not null&&ReferenceEquals(Engine.Robot,owner))Engine.AnimationMessages.Deliver(0x94,false,body);}); }
@@ -453,6 +456,7 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M1-024
         // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
         Engine.DeviceRoute = RouteToDevices;
+        Engine.DeviceRouteOwned = RouteToDevicesOwned;
         Engine.TapFilterRoute = m => Cubes.HandleTapFilterMovement(m);
         Engine.CubeAccelRoute = m => CubeAccel.Handle(m);
         Engine.MovementExitSdkMode = Motion.OnExitSdkMode;
@@ -505,6 +509,8 @@ public sealed partial class CozmoRobot : IDisposable
         if (!Engine.Options.OmitVisionForTest)
             _vision = new Vision.VisionSystem(this,Engine.Options.VisionCalibration,Engine.Options.VisionDetector,Engine.Options.VisionOkaoRecognizer);
         Engine.BindRobotLifetime += native => _vision?.BindNativeGroundOwner(native);
+        Engine.NativeVisionConstructor = native => _vision is { } vision
+            ? vision.InitializeNativeVision(native) : global::Cozmo.Robot.Vision.NativeVisionStageResult.Missing;
         if (Engine.Robot is { } groundOwner) _vision?.BindNativeGroundOwner(groundOwner);
         Engine.BindRobotLifetime+=native=>{BindNativeMood(native);BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
         if(Engine.Robot is {} severeOwner){BindNativeMood(severeOwner);BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}
@@ -900,14 +906,17 @@ public sealed partial class CozmoRobot : IDisposable
     /// detect. A fault is reported through <see cref="HandlerFaulted"/>.
     /// </summary>
     private void RouteToDevices(RobotMessage m, bool stateHandled)
+        => RouteToDevicesOwned(Engine.Robot,m,stateHandled);
+    private void RouteToDevicesOwned(EngineRobot? sourceOwner,RobotMessage m, bool stateHandled)
     {
+        if(sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(Engine.Robot,sourceOwner)))return;
         if (m is RobotState && !stateHandled) return;
         Route(() => State.Handle(m));
         Route(() => Motion.Handle(m));
         Route(() => Camera.Handle(m));
         // fidelity: M3-021
         if (m is DefaultCameraParams dcp) Route(() => CameraSettings.Handle(dcp));
-        Route(() => Sensors.Handle(m));
+        Route(() => Sensors.Handle(m,sourceOwner));
         // AddConnectedActiveObject (0x00533BD6) precedes the broadcast (0x00533D2C).
         if (m is ObjectConnectionState cs)
         {

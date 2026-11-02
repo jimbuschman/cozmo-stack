@@ -1572,11 +1572,11 @@ public sealed partial class BlockWorld
     /// <c>BlockConfigurationManager::Update</c> (0x0062520C) and <c>UpdateMarkerlessObjects</c> (0x0062521A).
     /// </summary>
     // fidelity: M11-036, M11-037, M11-006, M11-010
-    public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
+    public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate=null)
     {
-        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd);
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate);
     }
-    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate)
     {
         _missingMapTimeReported=_missingPoseChangedReported=false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
@@ -1600,7 +1600,7 @@ public sealed partial class BlockWorld
             {
                 camera.Occluders.Clear();                                          // 0x0062503A
                 AddLiftOccluder(camera, pd);                                       // 0x00625046
-                forgotten.AddRange(CheckForUnobservedObjects(camera, lastImage, pd.Moving, pd.RotatingTooFast));   // 0x0062504E
+                forgotten.AddRange(CheckForUnobservedObjects(camera, lastImage, pd.Moving, pd.RotatingTooFast,worldRotatingGate));   // 0x0062504E
             }
         }
         else
@@ -1621,7 +1621,7 @@ public sealed partial class BlockWorld
             }
             if (r7)
             {
-                forgotten.AddRange(CheckForUnobservedObjects(camera, ts, pd.Moving, pd.RotatingTooFast));   // 0x006250CA
+                forgotten.AddRange(CheckForUnobservedObjects(camera, ts, pd.Moving, pd.RotatingTooFast,worldRotatingGate));   // 0x006250CA
                 UpdatePoseOfStackedObjects();                                      // 0x006250D0
             }
         }
@@ -2522,13 +2522,13 @@ public sealed partial class BlockWorld
     /// <c>(2.0 - d/max)</c>, and fields at calib+4/+8 and node+0x18/+0x1C whose names are unread), so both pads are 0 (<see cref="PaddingIsBuilt"/> is false).
     /// </summary>
     // fidelity: M11-004, M11-007, M11-008, M11-010, M11-037, M11-042
-    public IReadOnlyList<ObservableObject> CheckForUnobservedObjects(CameraModel camera, uint timestamp, bool robotMoving, bool rotatingTooFast)
+    public IReadOnlyList<ObservableObject> CheckForUnobservedObjects(CameraModel camera, uint timestamp, bool robotMoving, bool rotatingTooFast, Func<uint,bool>? worldRotatingGate=null)
     {
         using var frameMutation=EnterPoseMutation();
         var forgotten = new List<ObservableObject>();
         if (!OnTreadsNow()) return forgotten;
         if (robotMoving) return forgotten;
-        if (rotatingTooFast) return forgotten;
+        if (worldRotatingGate?.Invoke(timestamp) ?? rotatingTooFast) return forgotten;
         List<ObservableObject> current;
         lock (_gate) current = _located.Where(kv => kv.Key.Origin == CurrentOriginId).Select(kv => kv.Value).ToList();
         if (current.Count == 0) return forgotten;

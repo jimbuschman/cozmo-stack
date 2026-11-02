@@ -135,7 +135,7 @@ public sealed class M11ImageQualityRowsTests
         bool old=EngineErrorState.ErrorFlagSet;
         try
         {
-            using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.ModeEnableMask=(1<<7)|(1<<2);
+            using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); vision.ModeEnableMask=(1<<7)|(1<<2);
             var pipe=new Pipeline();vision.QualityProcessor.Pipeline=pipe;vision.QualityRectangleInput=()=>Array.Empty<ImageQualityRectangle>();
             var first=Frame(vision);int worldCalls=vision.World.UnbuiltLocalizeRobotCalls;
             int published=0;vision.FrameProcessed+=_=>published++;
@@ -155,7 +155,7 @@ public sealed class M11ImageQualityRowsTests
     [Fact]
     public void PendingPairCopiesBeforeQualityAndLimitedExposureDoesNotOverwriteCurrent()
     {
-        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.ModeEnableMask=(1<<7)|(1<<14);
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); vision.ModeEnableMask=(1<<7)|(1<<14);
         vision.QualityProcessor.Pipeline=new Pipeline();vision.QualityRectangleInput=()=>Array.Empty<ImageQualityRectangle>();
         Assert.True(robot.CameraSettings.SetCameraSettings(17,1.5f));Assert.Equal(16,robot.CameraSettings.CurrentExposureMs);
         var result=Frame(vision);
@@ -166,7 +166,7 @@ public sealed class M11ImageQualityRowsTests
     // reach: unit (public camera command with explicit drain substitutes ticker; checks old-byte snapshot after engine mutation).
     public void SetAndDisableBroadcastsOldLiveByteThenQueuesModeSevenInSharedFifo()
     {
-        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.ModeEnableMask=1<<7;
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); vision.ModeEnableMask=1<<7;
         var reports=new List<CurrentCameraParams>();robot.CameraSettings.CurrentCameraParamsChanged+=p=>
         {Assert.False(robot.CameraSettings.AutoExposureEnabled);Assert.Equal(1<<7,vision.ModeEnableMask);reports.Add(p);};
         robot.CameraSettings.SetAndDisableAutoExposure(16,1);
@@ -196,7 +196,7 @@ public sealed class M11ImageQualityRowsTests
     [Fact]
     public void LiveCaptureStopsOnUnknownRoiProducerWithoutFabricatingAnEngineFailure()
     {
-        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.ModeEnableMask=1<<7;
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); vision.ModeEnableMask=1<<7;
         vision.History.Add(new Cozmo.Protocol.RobotState{Timestamp=1,PoseOriginId=1,Pose=new Cozmo.Protocol.RobotPose(),Accel=new Cozmo.Protocol.AccelData(),Gyro=new Cozmo.Protocol.GyroData()});
         var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;
         Assert.Null(vision.ProcessCapture(new GrayImage(16,16),1,1));Assert.Null(vision.LastResult);Assert.Equal(0,vision.FramesProcessed);
@@ -212,12 +212,16 @@ public sealed class M11ImageQualityRowsTests
         string root=Directory.CreateTempSubdirectory("cozmo-b116-").FullName;
         var global=ImageQualitySettings.Globals;
         var previous=(global.TooBright,global.TooDark,global.MeterFromDetections,global.Low,global.Mid,global.High);
+        var schedules=AllVisionModesSchedule.CopyDefault();
+        var component=(VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
+        bool oldError=EngineErrorState.ErrorFlagSet;
         try
         {
             string source=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../re-analysis/obb/assets/cozmo_resources/config/engine/vision_config.json"));
             string folder=Path.Combine(root,"config","engine");Directory.CreateDirectory(folder);
             File.Copy(source,Path.Combine(folder,"vision_config.json"));
             using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,new CozmoEngineOptions{ResourcesPath=root});
+            robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false); // actual owner invokes source Init
             var vision=robot.Vision; vision.Calibration=Cal();
             Assert.Equal((byte)20,vision.QualityProcessor.Settings.TooDark);
             Assert.Equal((byte)230,vision.QualityProcessor.Settings.TooBright);
@@ -226,6 +230,9 @@ public sealed class M11ImageQualityRowsTests
         finally
         {
             (global.TooBright,global.TooDark,global.MeterFromDetections,global.Low,global.Mid,global.High)=previous;
+            AllVisionModesSchedule.RestoreDefaultForTest(schedules);
+            (VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=component;
+            EngineErrorState.ErrorFlagSet=oldError;
             Assert.StartsWith(Path.GetFullPath(Path.GetTempPath()),Path.GetFullPath(root),StringComparison.OrdinalIgnoreCase);
             Assert.StartsWith("cozmo-b116-",Path.GetFileName(root));
             Directory.Delete(root,true);
@@ -236,7 +243,7 @@ public sealed class M11ImageQualityRowsTests
     [Fact]
     public void ADisabledFaceProducerIsNotRunBeforeTheQualityConsumer()
     {
-        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.ModeEnableMask=1<<7;
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); vision.ModeEnableMask=1<<7;
         var faces=new Faces();vision.FaceDetector=faces;
         vision.QualityProcessor.Pipeline=new Pipeline();vision.QualityRectangleInput=()=>Array.Empty<ImageQualityRectangle>();
         Assert.NotNull(Frame(vision).ImageQuality);Assert.Equal(0,faces.Calls);Assert.Equal(0,vision.Faces.Count);
@@ -246,7 +253,7 @@ public sealed class M11ImageQualityRowsTests
     [Fact]
     public void SetAndDisableKeepsSignedNativeExposureAndDisablesAfterValidationFailure()
     {
-        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.ModeEnableMask=1<<7;
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); vision.ModeEnableMask=1<<7;
         int reports=0;robot.CameraSettings.CurrentCameraParamsChanged+=_=>reports++;
         var warnings=new List<EngineLogEntry>();robot.Engine.LogEntry+=entry=>
         {

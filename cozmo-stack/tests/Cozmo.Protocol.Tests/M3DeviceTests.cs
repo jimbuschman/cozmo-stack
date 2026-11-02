@@ -2641,7 +2641,8 @@ public class M3DeviceTests
             Assert.Equal(new uint[] { 0x182000, 0x195000, 0x184000, 0x183000, 0x180000 }, tags.Take(5));
             lock (missing)
             {
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M11-059 | the FaceAlbum/Enrollment read pair"));
+                var init=Assert.IsType<NativeVisionInitialization>(rig.Robot.Vision.NativeInitializationForTest);
+                Assert.Same(rig.Engine.Robot,init.Owner);Assert.True(init.AvailabilityKnown);Assert.True(init.Initialized);
                 Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M15-034 | ")||m.StartsWith("MISSING: M15-035 | "));
                 Assert.Equal(new ushort[]{0x6D,0x6E,0x6F,0x70},reports.Where(tag=>tag is >=0x6D and <=0x70));
                 Assert.True(rig.Engine.Robot!.Inventory!.Ready);
@@ -4059,7 +4060,8 @@ public class M3DeviceTests
     public void M3_013_CD12_OnAProductionEngineTheEngineTickStreamsAClipToItsEnd()
     {
         var port = new FakePort();
-        using var robot = CozmoRobot.CreateForTest(port, EngineTickRunner.HostNowNs, new CozmoEngineOptions { BlockPoolPath = "" });
+        using var resources = new BackupTestResources();
+        using var robot = CozmoRobot.CreateForTest(port, EngineTickRunner.HostNowNs, resources.Options(new CozmoEngineOptions { BlockPoolPath = "" }));
         using var ticks = new TickSignal(robot.Engine);
         robot.Engine.StartProduction();
         Assert.True(robot.Animations.EngineDriven);

@@ -4,10 +4,10 @@ namespace Cozmo.Robot.Vision;
 
 public sealed partial class VisionSystem
 {
-    // fidelity: M11-059 — C1-C3 prefix only; full component/system Init and success remain unbuilt.
+    // fidelity: M11-059 — C1-C3 component prefix before the system Init recipient.
     internal static uint TimeBeforeQualityErrorMs=3000,RepeatedQualityErrorIntervalMs=5000;
     internal float PendingDropStatsSeconds=-1f;
-    private bool ReadComponentQualityPrefix(FirmwareJsonValue root)
+    private bool ReadComponentQualityPrefix(FirmwareJsonValue root,Func<bool>? current=null)
     {
         var old=(TimeBeforeQualityErrorMs,RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
         try
@@ -22,12 +22,12 @@ public sealed partial class VisionSystem
             PendingDropStatsSeconds=-1f;
             if(!Read(Member(root,"PerformanceLogging"),"DropStatsWindowLength_sec",out value))return false;
             PendingDropStatsSeconds=Json.AsFloat(value!);
-            SteppedMissingInit();
+
             return true;
         }
         catch(Exception e) when(e is JsonLogicError or JsonRuntimeError)
         {
-            (TimeBeforeQualityErrorMs,RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=old;
+            if(current is null||current())(TimeBeforeQualityErrorMs,RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=old;
             throw; // M1-034 skips terminating config unit; defined missing-key returns keep earlier writes.
         }
         bool Read(FirmwareJsonValue? group,string key,out FirmwareJsonValue? value)
@@ -35,7 +35,7 @@ public sealed partial class VisionSystem
             value=Member(group,key);
             if(value is not null&&value.Kind!=FirmwareJsonKind.Null)return true;
             _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionSystem.Init.MissingJsonParameter",key);
-            EngineErrorState.StoreAndMaybeBreak();return false;
+            if(current is null||current())EngineErrorState.StoreAndMaybeBreak();return false;
         }
         static FirmwareJsonValue? Member(FirmwareJsonValue? group,string key)
         {
@@ -44,5 +44,4 @@ public sealed partial class VisionSystem
             return group.Members.GetValueOrDefault(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
         }
     }
-    private static void SteppedMissingInit()=>Behavior.SteppedBehavior.ReportMissing("M11-059 component config C1-C3 only: Robot-owned VisionComponent/Init result and data-platform gate 0x005103BC, system setup/OMCV results 0x006B0658..0x006B141A and album branch before component success 0x00650E36..0x006510F8 remain unbuilt; no component success/count or system ready byte fabricated");
 }

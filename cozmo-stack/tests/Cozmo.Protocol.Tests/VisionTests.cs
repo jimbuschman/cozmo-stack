@@ -808,6 +808,9 @@ public class VisionTests
         {
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
             Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
+            // This direct-frame unit supplies the marker-mode input and its schedule.
+            Vision.ModeEnableMask=1<<VisionSystem.DetectingMarkers;
+            Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
             Vision.World.Log += Log.Add;
             Vision.Log += Log.Add;
             if (seedCubeId) ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE1, CubeId);

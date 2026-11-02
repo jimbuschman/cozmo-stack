@@ -38,7 +38,7 @@ public sealed class RollBlockOnSideNativeTests
     {
         // Source S8-S16: actual helper/IDrive/IDock/visual recipients; success005C8B52..8C1A.
         // Explicit manager admission replaces the MISSING PlayAlone/Socialize choice/interlude (P1-P4).
-        // Scene supplies independent physical cube and firmware inputs, never helper results or planner goals.
+        // Scene supplies cube geometry and simulated firmware; rendered images use the nonphysical marker branch.
         using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;var manager=f.Robot.BehaviorManagerOwner!;
         var roll=Roll(f);var order=new List<string>();var local=new List<RobotCompletedAction>();var app=new List<ActionCompletionReport>();
         var lights=new List<string>();var stateTrace=new List<string>();bool celebration=false;

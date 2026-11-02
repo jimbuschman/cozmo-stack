@@ -1022,6 +1022,7 @@ public readonly record struct DriveStraightTick(bool LastPathFailed, bool HasPat
 public sealed class DriveStraightAction : ActionRunner, IDisposable
 {
     private readonly ManipulationSystem _m;
+    private readonly EngineRobot? _nativeOwner;
     internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _started, _destroyed, _missingDiagnostics;
     private readonly HashSet<string> _missingMessages=new();
@@ -1032,24 +1033,30 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
         :this(m,distanceMm,distanceMm<0?-80f:100f,shouldPlayAnimation){}
     public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps, bool shouldPlayAnimation = true) : base(8,4)
     { _m=m;DistanceMm=distanceMm;SpeedMmps=speedMmps;ShouldPlayAnimation=shouldPlayAnimation;DrivingAnimations=m.DrivingAnimationsForTest?.Invoke()??m.Robot.Animations.DrivingAnimations;SourceLog=(l,c,k,t)=>m.Robot.Engine.EmitSourceLog(l,c,k,t);Log=m.Robot.Engine.EmitStackLog; }
+    internal DriveStraightAction(ManipulationSystem m,EngineRobot owner,double distanceMm,float speedMmps,bool shouldPlayAnimation=true)
+        :this(m,distanceMm,speedMmps,shouldPlayAnimation){_nativeOwner=owner;}
+    private bool NativeOwnerCurrent()=>_nativeOwner is null || !_nativeOwner.Lifetime.Destroying && ReferenceEquals(_m.Robot.Engine.Robot,_nativeOwner);
     public double DistanceMm { get; }
     public float SpeedMmps { get; }
     public bool ShouldPlayAnimation { get; }
     public IDrivingAnimationHandler DrivingAnimations { get; set; }
     protected override float EngineClockSeconds=>_m.Robot.Engine.Timer.SecondsF;
-    protected override bool AreAnyTracksLocked(uint mask)=>_m.Robot.Motion.AreAnyTracksLocked((byte)mask);
-    protected override void LockTracks(uint mask,string owner)=>_m.Robot.Motion.LockTracks((byte)mask,owner,"DriveStraight");
-    protected override void UnlockTracksInternal(uint mask,string owner)=>_m.Robot.Motion.UnlockTracks((byte)mask,owner);
-    protected override bool AreAllTracksLockedBy(uint mask,string owner)=>_m.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
+    protected override bool AreAnyTracksLocked(uint mask)=>NativeOwnerCurrent()&&_m.Robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override void LockTracks(uint mask,string owner){if(NativeOwnerCurrent())_m.Robot.Motion.LockTracks((byte)mask,owner,"DriveStraight");}
+    protected override void UnlockTracksInternal(uint mask,string owner){if(NativeOwnerCurrent())_m.Robot.Motion.UnlockTracks((byte)mask,owner);}
+    protected override bool AreAllTracksLockedBy(uint mask,string owner)=>NativeOwnerCurrent()&&_m.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
     protected override string ActionName => "DriveStraight"; // thirteen bytes at 0x00BEA0DC.
     public override byte? GetCompletionVariant()=>6; // type8 ctor 0x0053FF0E..14, Set_defaultCompleted.
     public override bool CanInterrupt()=>false; // 0x0052B0B3.
     private void Missing(string text){if(_missingMessages.Add(text))_m.Robot.Engine.EmitStackLog("MISSING: M13-013 | "+text);}
     public override int Init()
     {
+        if(!NativeOwnerCurrent())return 0x03000016;
         DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);_started=false;
+        if(!NativeOwnerCurrent())return 0x03000016;
         if(MathF.Abs((float)DistanceMm)<BitConverter.Int32BitsToSingle(0x3727C5AC)){_started=true;return 0;} // 0x0054761E..26.
-        if(_m.Robot.Engine.Robot is not {} robot){Missing("actual pose/path Init owner unavailable");return 0;}
+        var robot=_nativeOwner??_m.Robot.Engine.Robot;
+        if(robot is null){Missing("actual pose/path Init owner unavailable");return 0;}
         float x,y,endX,endY;
         lock(robot.PoseTreeGate)
         {
@@ -1060,6 +1067,7 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
             endX=x+dx;endY=y+dy;
         }
         float speed=DistanceMm<0?-Math.Abs(SpeedMmps):Math.Abs(SpeedMmps);
+        if(!NativeOwnerCurrent())return 0x03000016;
         // Fresh native Path count0, one AppendLine: the signed-negative-count branch
         // is unreachable for this producer (0x005476AE), without a fabricated failure.
         int result=_m.Robot.Motion.Path.ExecuteCustomPath(new PathSegment[]{new PathSegment.Line(x,y,endX,endY,speed,200f,500f)},false);
@@ -1067,25 +1075,29 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     }
     public ActionResult CheckIfDone(DriveStraightTick tick)
     {
+        if(!NativeOwnerCurrent())return ActionResult.Abort;
         if(DrivingAnimations.State==3)return ActionResult.Running;
         if(!_missingDiagnostics){Missing("CheckIfDone info/debug arguments at 0x00547904/0x0054794E/0x005479AE are unread");_missingDiagnostics=true;}
+        if(!NativeOwnerCurrent())return ActionResult.Abort;
         if(tick.LastPathFailed)return ActionResult.FailedTraversingPath;
         if(!_started)
         {
             _started=tick.HasPathToFollow;
-            if(_started && ShouldPlayAnimation)DrivingAnimations.PlayStartAnim();
+            if(_started && ShouldPlayAnimation){DrivingAnimations.PlayStartAnim();if(!NativeOwnerCurrent())return ActionResult.Abort;}
             if(!_started)return ActionResult.Running;
         }
         if(tick.IsActive)return ActionResult.Running;
         if(ShouldPlayAnimation)
         {
             if(!DrivingAnimations.InputsReady){Missing("M5-063 driving selection unavailable");return ActionResult.Running;}
-            if(DrivingAnimations.PlayEndAnim()!=0)return ActionResult.Running;
+            uint end=DrivingAnimations.PlayEndAnim();if(!NativeOwnerCurrent())return ActionResult.Abort;
+            if(end!=0)return ActionResult.Running;
         }
         return ActionResult.Success;
     }
     public override uint CheckIfDone()
     {
+        if(!NativeOwnerCurrent())return (uint)ActionResult.Abort;
         if(_m.StraightTickForTest is {} input)return (uint)CheckIfDone(input(this));
         var path=_m.Robot.Motion.Path;
         return (uint)CheckIfDone(new DriveStraightTick(path.LastPathFailed,path.HasPathToFollow,path.IsActive));
@@ -1103,9 +1115,9 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     public void Dispose()
     {
         if(_destroyed)return;_destroyed=true;
-        if(_m.PathIsActiveForTest?.Invoke()??_m.Robot.Motion.Path.IsActive)_m.Paths.Abort();
+        if(NativeOwnerCurrent() && (_m.PathIsActiveForTest?.Invoke()??_m.Robot.Motion.Path.IsActive))_m.Paths.Abort();
 
-        DrivingAnimations.ActionIsBeingDestroyed();base.WatcherEnding();
+        if(NativeOwnerCurrent())DrivingAnimations.ActionIsBeingDestroyed();base.WatcherEnding();
     }
     public override void WatcherEnding()
     {

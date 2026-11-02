@@ -64,23 +64,14 @@ public sealed class NativeMotionComponentTests
     }
 
     [Fact]
-    public void InexactCentroidIsUnavailableWithoutPartialAppend()
+    public void InexactCentroidsUseNativeDoubleThenFloatRounding()
     {
-        var sentinel=new NativeMotionComponent(77,1,2,3,4,5,6);
-        var stats=new List<NativeMotionComponent>{sentinel};
-        // Foreground centroid y=1/3; integer labels remain available, FPSCR rounding does not.
-        Assert.False(NativeMotionComponents.TryAppend(Mask(2,3,3,1,0,1,0,1,0),stats,out var labels));
-        Assert.Equal(new[]{1,0,1,0,1,0},labels);Assert.Equal(new[]{sentinel},stats);
-    }
-
-    [Fact]
-    public void CentroidGateIncludesNativeUint64ToDoubleConversion()
-    {
-        // imgproc 33B7A converts the integer sum to f64 before division.
-        Assert.True(NativeMotionComponents.ExactBinary32(5,4));
-        Assert.False(NativeMotionComponents.ExactBinary32(1,3));
-        Assert.True(NativeMotionComponents.ExactBinary32(1UL<<53,1));
-        Assert.False(NativeMotionComponents.ExactBinary32((1UL<<53)+1,1));
+        var stats=new List<NativeMotionComponent>();
+        Assert.True(NativeMotionComponents.TryAppend(Mask(2,3,5,1,1,0,99,99,1,0,0,99,99),stats,out var labels));
+        Assert.Equal(new[]{1,1,0,1,0,0},labels);
+        Assert.Equal(0x3FD55555u,BitConverter.SingleToUInt32Bits(stats[0].CenterX));
+        Assert.Equal(0x3F2AAAABu,BitConverter.SingleToUInt32Bits(stats[0].CenterY));
+        Assert.Equal(0x3EAAAAABu,BitConverter.SingleToUInt32Bits(stats[1].CenterX));
+        Assert.Equal(0x3EAAAAABu,BitConverter.SingleToUInt32Bits(stats[1].CenterY));
     }
 }
-

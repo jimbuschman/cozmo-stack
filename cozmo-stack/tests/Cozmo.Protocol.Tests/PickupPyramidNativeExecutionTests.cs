@@ -87,9 +87,16 @@ public sealed class PickupPyramidNativeExecutionTests
         }
         internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1)
         {
+            // Rendered-marker unit input uses the native nonphysical branch; physical correction remains M11-033.
+            if(cube)
+            {
+                Robot.HandleFirmwareVersion(new FirmwareVersion{Signature=System.Text.Encoding.UTF8.GetBytes("{\"sim\":true}")});
+                M.Vision.SetNativeOuterCalibration(M.Vision.Calibration!);
+            }
             M.Vision.Enabled=true;M.Vision.ModeEnableMask=modes;
+            M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied per-test mode schedule
             uint stamp=Robot.StoredState!.Timestamp;
-            Rig.Data(new ImageImuData{ImageId=stamp,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
+            Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
             var cal=M.Vision.Calibration!;var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
             if(cube)
             {
@@ -98,8 +105,16 @@ public sealed class PickupPyramidNativeExecutionTests
                 using var pose=new Pose3d(Rotation3d.Identity,new Vec3(cubeX,0,22));
                 MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,new CameraModel(cal,flatCamera),ObjectType.Block_LIGHTCUBE1,pose);
             }
-            M.Vision.HandOverFrame(new CameraFrame{ImageId=id,Timestamp=stamp,Width=cal.Columns,Height=cal.Rows,Encoding=1,RawPayload=image.Pixels});
+            Rig.CameraGrayFrame(id,stamp,image.Pixels);
             M.Vision.WaitForProcessorIdle();Rig.Engine.VisionUpdateAllResultsFailed!();Rig.Tick();
+        }
+        // Supplied changing camera/IMU input; does not change the selected activity or vision modes.
+        internal void NativeCameraFrame(uint id,byte value)
+        {
+            uint timestamp=Robot.StoredState!.Timestamp;
+            Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
+            Rig.CameraGrayFrame(id,timestamp,Enumerable.Repeat(value,320*240).ToArray());
+            M.Vision.WaitForProcessorIdle();
         }
         public void Dispose()=>Rig.Dispose();
     }
@@ -360,9 +375,47 @@ public sealed class PickupPyramidNativeExecutionTests
     }
     private sealed class SuppliedFaceDetector:IFaceDetector
     {
+        internal bool? RotationInput=false;
         public bool IsAvailable=>true;
         public string Description=>"supplied face detector result at proprietary boundary";
-        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>new[]{new DetectedFace(11,new FaceRect(120,40,60,60),new Vec2(135,60),new Vec2(165,60),RollRad:0)};
+        // Explicit supplied native new-entry rotation predicate for this geometry/order unit.
+        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>new[]{new DetectedFace(11,new FaceRect(120,40,60,60),new Vec2(135,60),new Vec2(165,60),RollRad:0){NativeNewEntryRotatingTooFast=RotationInput}};
+    }
+    [Fact]
+    public void NativeFaceUnknownRotationSkipsNewEntryButNotExistingIdUpdate()
+    {
+        using var f=new Fixture();var detector=new SuppliedFaceDetector{RotationInput=null};f.M.Vision.FaceDetector=detector;
+        var missing=new List<string>();SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=missing.Add;
+        try
+        {
+            f.Image(1,modes:1<<2);Assert.Null(f.M.Vision.Faces.GetFace(11));
+            Assert.Contains(missing,x=>x.Contains("native new-face rotation predicate input unavailable"));
+            detector.RotationInput=false;f.Motors();f.Image(2,modes:1<<2);
+            var entry=Assert.IsType<FaceEntry>(f.M.Vision.Faces.GetFace(11));uint prior=entry.LastObservedTimestamp;
+            detector.RotationInput=null;f.Motors();f.Image(3,modes:1<<2);
+            Assert.Same(entry,f.M.Vision.Faces.GetFace(11));Assert.True(entry.LastObservedTimestamp>prior);
+        }
+        finally {SteppedBehavior.MissingReported-=missing.Add;}
+    }
+    [Fact]
+    public void NativeFaceUnknownRotationCallbackCannotMutateReplacement()
+    {
+        using var f=new Fixture();f.M.Vision.FaceDetector=new SuppliedFaceDetector{RotationInput=null};
+        var engine=f.Rig.Engine;EngineRobot? replacement=null;
+        void Missing(string value)
+        {
+            if(replacement is not null||!value.Contains("native new-face rotation predicate input unavailable"))return;
+            engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+            replacement=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        }
+        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
+        try
+        {
+            f.Image(1,modes:1<<2);
+            Assert.NotNull(replacement);Assert.Same(replacement,engine.Robot);
+            Assert.Null(f.M.Vision.Faces.GetFace(11));Assert.Empty(f.M.Vision.LastFaces);
+        }
+        finally {SteppedBehavior.MissingReported-=Missing;}
     }
     [Fact]
     public void MixedRealWorkerFrameUsesHistoricalCameraForMarkersWithoutReplacingExistingFaceCameraInput()
@@ -372,6 +425,8 @@ public sealed class PickupPyramidNativeExecutionTests
         var diagnostic=new List<string>();f.M.Vision.Log+=diagnostic.Add;f.M.World.Log+=diagnostic.Add;
         f.Image(1,true,modes:1<<2);
         var before=Assert.Single(f.M.Vision.LastFaces).HeadPose;
+        uint? initialWorldFace=f.M.Vision.Faces.GetFace(11)?.LastObservedTimestamp;
+        Assert.NotNull(initialWorldFace);
         var faceTranslation=before.Translation;var faceRotation=before.Quaternion;
         var objects=new List<NativeObservedObject>();
         var eventOrder=new List<(string Kind,uint Stamp)>();var faceTimesAtWorld=new List<(uint World,uint? Face)>();
@@ -389,7 +444,7 @@ public sealed class PickupPyramidNativeExecutionTests
         Assert.Contains(objects,o=>o.ObjectId==7);
         Assert.NotEmpty(NativeObservedMarkers.Get(cube,cube.LastObservedTimestamp));
         Assert.NotEmpty(faceTimesAtWorld);
-        Assert.All(faceTimesAtWorld,t=>Assert.True(t.Face<t.World,"world callback must precede this frame's face mutation"));
+        Assert.All(faceTimesAtWorld,t=>Assert.True(t.Face<t.World,$"world callback must precede this frame's face mutation; initialWorldFace={initialWorldFace}, diagnostics={string.Join(" | ",diagnostic)}, events={string.Join(" | ",eventOrder)}"));
         foreach(var worldEvent in eventOrder.Where(e=>e.Kind=="world"))
             Assert.True(eventOrder.IndexOf(worldEvent)<eventOrder.FindIndex(e=>e.Kind=="face"&&e.Stamp==worldEvent.Stamp));
     }

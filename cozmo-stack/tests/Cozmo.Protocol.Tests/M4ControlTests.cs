@@ -460,6 +460,14 @@ public class M4ControlTests
         {
             Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
         }
+        // Real F2 packet ingress; pixels and timestamp are supplied fixture inputs.
+        internal void CameraGrayFrame(uint id,uint timestamp,byte[] pixels)
+        {
+            const int size=1200;int count=(pixels.Length+size-1)/size;
+            for(int i=0;i<count;i++)Data(new ImageChunk{ImageId=id,FrameTimestamp=timestamp,ImageEncoding=1,ImageResolution=4,
+                ImageChunkCount=checked((byte)count),ChunkId=checked((byte)i),Data=pixels.Skip(i*size).Take(size).ToArray()});
+            Tick();
+        }
 
         /// <summary>Connected, validated, Success, SyncTimeAck: the robot is time synced (no state yet).</summary>
         public void ToSynced()

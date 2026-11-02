@@ -23,9 +23,13 @@ public sealed class DriveOffPilotVisionTests
         // Reach: actual worker decode/mean producer and native engine drain/API.
         // Raw gray camera frames and calibration are explicit fixture inputs;
         // this does not claim the robot JPEG ingress or live quality ROI collector.
-        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();
+        using var resources=new BackupTestResources();
+        using var rig=new M4ControlTests.Rig(engineOptions:resources.Options());rig.ToSynced();rig.Calibrate();
         var vision=rig.Robot.Vision;vision.Enabled=true;vision.ModeEnableMask=1<<8;
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied schedule for this isolated producer unit
         vision.Calibration=CameraCalibration.Nominal();
+        rig.State(head:-.15f);
+        vision.SetNativeOuterCalibration(vision.Calibration); // supplied outer calibration for this worker unit
         var reports=new ConcurrentQueue<ProcessedImageReport>();
         using var sub=rig.Engine.AnimationMessages.SubscribeMessage(0x43,true,p=>reports.Enqueue(Assert.IsType<ProcessedImageReport>(p)));
         try
@@ -36,7 +40,7 @@ public sealed class DriveOffPilotVisionTests
                 rig.State(head:-.15f);
                 uint stamp=rig.Engine.Robot!.PoseHistory.NewestTimeStamp;
                 var bytes=Enumerable.Repeat(value,320*240).ToArray();
-                vision.HandOverFrame(new CameraFrame{ImageId=value,Timestamp=stamp,Width=320,Height=240,Encoding=1,RawPayload=bytes});
+                rig.CameraGrayFrame(value,stamp,bytes);
                 vision.WaitForProcessorIdle();
             }
             Assert.Equal(2,vision.PendingResultCount);Assert.Empty(reports);
@@ -56,10 +60,12 @@ public sealed class DriveOffPilotVisionTests
         // ROI is an explicit bounded full-frame fixture input. Live rectangle
         // collection and robot JPEG transport remain unverified by this test.
         using var resources=new BackupTestResources();
-        using var rig=new M4ControlTests.Rig(resources.Options().ResourcesPath);
+        using var rig=new M4ControlTests.Rig(engineOptions:resources.Options());
         rig.ToSynced();rig.Calibrate();rig.State(head:-.15f);
         var vision=rig.Robot.Vision;vision.Calibration=CameraCalibration.Nominal();
+        vision.SetNativeOuterCalibration(vision.Calibration); // supplied outer calibration for this worker unit
         vision.Enabled=true;vision.ModeEnableMask=(1<<7)|(1<<8);
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         vision.QualityRectangleInput=()=>new[]{new ImageQualityRectangle(0,0,320,240)};
         var order=new ConcurrentQueue<string>();var reports=new ConcurrentQueue<ProcessedImageReport>();
         using var camera=rig.Engine.AnimationMessages.SubscribeMessage(0x2F,true,_=>order.Enqueue("camera"));
@@ -68,7 +74,7 @@ public sealed class DriveOffPilotVisionTests
         {
             Assert.IsType<ExposurePipeline>(vision.QualityProcessor.Pipeline);
             uint stamp=rig.Engine.Robot!.PoseHistory.NewestTimeStamp;
-            vision.HandOverFrame(new CameraFrame{ImageId=1,Timestamp=stamp,Width=320,Height=240,Encoding=1,RawPayload=Enumerable.Repeat((byte)100,320*240).ToArray()});
+            rig.CameraGrayFrame(1,stamp,Enumerable.Repeat((byte)100,320*240).ToArray());
             vision.WaitForProcessorIdle();Assert.Equal(1,vision.PendingResultCount);
             Assert.False(rig.Engine.VisionUpdateAllResultsFailed!());
             var report=Assert.Single(reports);Assert.Equal(new uint[]{7,8},report.Modes);Assert.Equal((byte)100,report.ImageMean);
@@ -84,8 +90,14 @@ public sealed class DriveOffPilotVisionTests
         // Actual rendered marker worker→world handler→aggregate→Robot.Update gate.
         // World status7 and calibration-presence are explicit substituted inputs;
         // no detector/queue result or completed action is synthesized.
-        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();
+        using var resources=new BackupTestResources();
+        using var rig=new M4ControlTests.Rig(engineOptions:resources.Options());rig.ToSynced();rig.Calibrate();
         var vision=rig.Robot.Vision;vision.Enabled=true;vision.Calibration=CameraCalibration.Nominal();vision.ModeEnableMask=1<<1;
+        rig.State(head:-.15f);
+        // Supplied simulated firmware selects the native nonphysical marker path for this renderer unit.
+        rig.Engine.Robot!.HandleFirmwareVersion(new FirmwareVersion{Signature=System.Text.Encoding.UTF8.GetBytes("{\"sim\":true}")});
+        vision.SetNativeOuterCalibration(vision.Calibration);
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         var reports=new ConcurrentQueue<ProcessedImageReport>();var frames=new ConcurrentQueue<uint>();
         var priorGate=rig.Engine.HasCameraCalibration;
         using var local=rig.Engine.AnimationMessages.SubscribeMessage(0x43,true,p=>reports.Enqueue(Assert.IsType<ProcessedImageReport>(p)));
@@ -102,7 +114,7 @@ public sealed class DriveOffPilotVisionTests
                 using(var objectPose=new Pose3d(Mat3.Identity,new Vec3(150,0,22)))
                 using(var cameraPose=pd.CameraPose)
                     MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull??throw new InvalidOperationException("Required marker assets missing"),new CameraModel(vision.Calibration,cameraPose),ObjectType.Block_LIGHTCUBE1,objectPose);
-                vision.HandOverFrame(new CameraFrame{ImageId=index,Timestamp=stamp,Width=320,Height=240,Encoding=1,RawPayload=image.Pixels});
+                rig.CameraGrayFrame(index,stamp,image.Pixels);
                 vision.WaitForProcessorIdle();
             }
             Assert.Equal(2,vision.PendingResultCount);

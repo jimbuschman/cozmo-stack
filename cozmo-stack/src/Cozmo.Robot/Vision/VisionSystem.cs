@@ -63,20 +63,109 @@ public sealed partial class VisionSystem : IDisposable
     private CameraCalibration? _groundInstalled;
     private NativeGroundPlaneLookup? _groundLookup;
     private int _groundEpoch;
+    private bool _nativeWorkerPhysical; // worker+0x50: ctor false, refreshed by SetCameraCalibration tail
+    internal bool NativeWorkerPhysicalForTest { get { lock(_groundGate)return _nativeWorkerPhysical; } }
+    private NativeVisionInitialization? _nativeInitialization;
+    private int _nativeInitializationEpoch;
+    private readonly System.Collections.Concurrent.ConcurrentQueue<NativeVisionInitialization> _retiredMotionStates=new();
+    private void DrainRetiredMotionStates(){while(_retiredMotionStates.TryDequeue(out var state))state.MotionPose.Dispose();}
+    private NativeImageImuHistory? _nativeImu;
+    private bool _nativeVisionWhileMoving;
+    private RetainedSubscription? _nativeImuSubscription;
+    private RetainedSubscription? _nativeVisionWhileMovingSubscription;
     internal int NativeGroundEpochForTest { get { lock (_groundGate) return _groundEpoch; } }
+    internal Action<IReadOnlyList<ImageQualityRectangle>>? NativeQualityRectanglesObservedForTest;
+    internal NativeVisionInitialization? NativeInitializationForTest { get { lock (_groundGate) return _nativeInitialization; } }
+    internal bool NativeMotionReadyFor(EngineRobot owner)
+    {
+        lock(_groundGate)return ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&
+            _nativeImu is not null&&_nativeInitialization is { AvailabilityKnown:true,Initialized:true,MotionKnowledgeKnown:true,Motion:not null } state&&ReferenceEquals(state.Owner,owner);
+    }
+    internal bool NativeMotionOwnerCurrent(EngineRobot owner)
+    {
+        lock(_groundGate)return ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner);
+    }
 
+    // 0x65805C: explicit original-owner recipient; message subscription is a separate source boundary.
+    internal void SetNativeVisionWhileMoving(EngineRobot owner,bool enabled)
+    {
+        lock(_groundGate)if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner))_nativeVisionWhileMoving=enabled;
+    }
+    internal bool NativeWorldHasImuBracketForTest(EngineRobot owner,uint timestamp)
+    {
+        lock(_groundGate)
+        {
+            if(!ReferenceEquals(_groundOwner,owner)||_nativeImu is null)return false;
+            NativeImageImu before=default,after=default;
+            return NativeImageImuHistory.TryBracket(_nativeImu.Snapshot(),timestamp,ref before,ref after);
+        }
+    }
+    // M11-004: 0x621C9A queries this original owner's LIVE VC+B0 history in the world handler.
+    internal bool NativeWorldRotatingTooFast(EngineRobot owner,uint timestamp)
+    {
+        NativeImageImu[]? history=null;
+        lock(_groundGate)
+        {
+            if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner)&&_nativeImu is not null)
+            {if(_nativeVisionWhileMoving)return false;history=_nativeImu.Snapshot();}
+        }
+        if(history is null)
+        {SteppedBehavior.ReportMissing("M11-004 original live IMU owner unavailable at world rotation gate");return true;}
+        NativeImageImu before=default,after=default;
+        if(!NativeImageImuHistory.TryBracket(history,timestamp,ref before,ref after))
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.WasHeadRotatingTooFast.NoIMUData","No IMU data for world rotation query");
+            return true;
+        }
+        float threshold=BitConverter.Int32BitsToSingle(unchecked((int)0x3E32B8C2));
+        if(MathF.Abs(before.RateY)>threshold||MathF.Abs(after.RateY)>threshold)return true;
+        return MathF.Abs(before.RateZ)>threshold||MathF.Abs(after.RateZ)>threshold;
+    }
     // The outer VisionComponent camera has its own identity check, separate from the inner marker camera.
     internal void BindNativeGroundOwner(EngineRobot owner)
     {
+        RetainedSubscription? oldSubscription,oldMovingSubscription;
+        var imu=new NativeImageImuHistory();
         lock (_groundGate)
         {
+            oldSubscription=_nativeImuSubscription;_nativeImuSubscription=null;
+            oldMovingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;_nativeImu=imu;
+            if(_nativeInitialization is {} displaced)_retiredMotionStates.Enqueue(displaced);
             if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
             _groundOwner = owner;
+            _nativeWorkerPhysical=false;
+            _nativeVisionWhileMoving=false;
+            _nativeInitialization=new NativeVisionInitialization(owner);_nativeInitializationEpoch++;
+            PendingDropStatsSeconds=-1f; // per-owner diagnostic; native Init's source is a local value
             _groundOuterCalibration = null;
             _groundInstalled = null;
             _groundLookup = new NativeGroundPlaneLookup();
             _groundEpoch++;
+            lock(_modeGate){_modeEnableMask=0;_schedules.Clear();}
+            _exposurePipeline=null;QualityProcessor.Pipeline=null;
         }
+        oldSubscription?.Dispose();oldMovingSubscription?.Dispose();
+        if(Monitor.TryEnter(_busy,RemovalWait))
+        {try{DrainRetiredMotionStates();}finally{Monitor.Exit(_busy);}}
+        RetainedSubscription? subscription=owner.SubscribeMessage(RobotMessageId.ImageGyro,m=>
+        {
+            lock(_groundGate)
+                if(ReferenceEquals(_groundOwner,owner)&&ReferenceEquals(_nativeImu,imu)&&!owner.Lifetime.Destroying)
+                    imu.Add((ImageImuData)m);
+        },"VisionComponent image IMU");
+        lock(_groundGate)
+        {
+            if(ReferenceEquals(_groundOwner,owner)&&ReferenceEquals(_nativeImu,imu)&&!owner.Lifetime.Destroying)
+            { _nativeImuSubscription=subscription;subscription=null; }
+        }
+        subscription?.Dispose();
+        RetainedSubscription? movingSubscription=owner.Engine.NeedsContextExternalInterfaceAvailable
+            ? owner.Engine.AnimationMessages.SubscribeMessage(0x86,false,p=>
+              {if(p is bool enabled)SetNativeVisionWhileMoving(owner,enabled);}) : null;
+        lock(_groundGate)
+            if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying)
+            {_nativeVisionWhileMovingSubscription=movingSubscription;movingSubscription=null;}
+        movingSubscription?.Dispose();
     }
 
     internal void SetNativeOuterCalibration(CameraCalibration calibration)
@@ -87,7 +176,7 @@ public sealed partial class VisionSystem : IDisposable
         {
             owner = _groundOwner;
             if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner)) { _groundPendingOuter=calibration; return; }
-            if (ReferenceEquals(_groundOuterCalibration, calibration)) { if (ReferenceEquals(_groundPendingOuter,calibration)) _groundPendingOuter=null; return; }
+            if (ReferenceEquals(_groundOuterCalibration, calibration)) { if (ReferenceEquals(_groundPendingOuter,calibration)) _groundPendingOuter=null; _nativeWorkerPhysical=owner.IsPhysicalRobot; return; }
             _groundOuterCalibration = calibration;
             _groundPendingOuter = null;
             epoch = ++_groundEpoch;
@@ -96,6 +185,10 @@ public sealed partial class VisionSystem : IDisposable
         lock (_groundGate)
             if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying || epoch != _groundEpoch || !ReferenceEquals(_groundOuterCalibration, calibration)) return;
         InstallNativeGroundCalibration(calibration);
+        lock (_groundGate)
+            if (ReferenceEquals(_groundOwner,owner) && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) &&
+                ReferenceEquals(_groundOuterCalibration,calibration) && (_groundEpoch==epoch || _groundEpoch==epoch+1))
+                _nativeWorkerPhysical=owner.IsPhysicalRobot;
     }
 
     private void InstallNativeGroundCalibration(CameraCalibration calibration)
@@ -139,7 +232,7 @@ public sealed partial class VisionSystem : IDisposable
         _robot = robot;
         LifetimeProfiler.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
         QualityProcessor.SourceLog = (l,c,k,t) => robot.Engine.EmitSourceLog(l,c,k,t);
-        LoadQualityConfiguration();
+
         Calibration = calibration;
         _constructedCalibration = calibration;
         _groundPendingOuter = calibration;
@@ -314,36 +407,53 @@ public sealed partial class VisionSystem : IDisposable
     // A newer, already-bound owner must survive this retained-facade reset.
     private void RetireDestroyedGroundOwner()
     {
+        RetainedSubscription? subscription,movingSubscription;
         lock (_groundGate)
         {
             if (_groundOwner is not { Lifetime.Destroying: true }) return;
-            _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;
+            subscription=_nativeImuSubscription;_nativeImuSubscription=null;_nativeImu=null;
+            movingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;
+            _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;_nativeWorkerPhysical=false;
+            _nativeVisionWhileMoving=false;
+            if(_nativeInitialization is {} retired)_retiredMotionStates.Enqueue(retired);
+            _nativeInitialization=null;_nativeInitializationEpoch++;
+            PendingDropStatsSeconds=-1f;
+            _exposurePipeline=null;QualityProcessor.Pipeline=null;
+            lock(_modeGate){_modeEnableMask=0;_schedules.Clear();}
             _groundPendingOuter=_constructedCalibration;
             _groundEpoch++; // host stale-work token; intentionally monotonic across owners
         }
+        subscription?.Dispose();movingSubscription?.Dispose();
     }
     internal void ResetToConstructed()
     {
         RetireDestroyedGroundOwner();
-        Interlocked.Increment(ref _removals);
+        int removal=Interlocked.Increment(ref _removals);
+        bool StillRetired(){lock(_groundGate)return _groundOwner is null && removal==Volatile.Read(ref _removals);}
         // fidelity: M11-061, M4-017, M1-025, M4-027
         // CB33/CC26/CC27: removal deletes this owner; a new owner's request deque is empty.
         // The retained-host reset remains the M4-027 candidate; do not replay requests on a later robot.
         lock (_modeGate) _limitedExposureRequests.Clear();
         RemovalInvalidated?.Invoke();
+        // The callback may synchronously bind a new owner. The old removal must not reset its facade state.
+        if(!StillRetired())return;
         bool locked = Monitor.TryEnter(_busy, RemovalWait);
         try
         {
+            if(locked)DrainRetiredMotionStates();
             if (!locked) Log?.Invoke($"vision reset: a frame was still being processed after {RemovalWait.TotalSeconds:F0} s; it is discarded at its next check");
+            if(!StillRetired())return;
             Calibration = _constructedCalibration;
             // fidelity: M3-034 — removal destroys VC+0x2F4/+0x300 (0x0051116C, ~VisionComponent0x0065258E).
             // The robot-owned host instance survives; discard the retained raw NV vectors with that owner.
             _serializedFaceAlbum = Array.Empty<byte>();
             _serializedFaceEnrollment = Array.Empty<byte>();
             // B-M11-8 round 2: a removal is expected to leave no robot, so this reset does not go through History's MISSING report.
-            (_robot.Engine.Robot?.PoseHistory ?? _noRobotHistory).ResetToConstructed();
+            _noRobotHistory.ResetToConstructed();
+            if(!StillRetired())return;
             Imu.ResetToConstructed();
             World.ResetToConstructed();
+            if(!StillRetired())return;
             Faces.ResetToConstructed();
             Pets.ResetToConstructed();
             LastFaces = Array.Empty<TrackedFace>();
@@ -453,10 +563,16 @@ public sealed partial class VisionSystem : IDisposable
     /// <c>CheckTimeToProcessAndAdvance</c> on its front schedule (0x006B5AB4..0x006B5AC6). The default is
     /// <c>InitDefaultSchedules</c> (all 16 modes {true}, counter 0), so every enabled mode runs every frame.
     /// </summary>
-    public AllVisionModesSchedule Schedules { get; set; } = AllVisionModesSchedule.Default;
+    private readonly LinkedList<AllVisionModesSchedule> _schedules = new();
+    public AllVisionModesSchedule? Schedules
+    {
+        get { lock(_modeGate)return _schedules.First?.Value; }
+        set { lock(_modeGate){_schedules.Clear();if(value is not null)_schedules.AddFirst(value);} }
+    }
+    private void PushNativeSchedule(AllVisionModesSchedule value){lock(_modeGate)_schedules.AddFirst(value);}
 
     /// <summary>The mode enable bitmask at <c>VisionSystem+0xac</c>, from the shipped config (C2.3).</summary>
-    private int _modeEnableMask = ShippedModeEnableMask;
+    private int _modeEnableMask;
     public int ModeEnableMask { get { lock(_modeGate)return _modeEnableMask; } set { lock(_modeGate)_modeEnableMask=value; } }
 
     // fidelity: M11-061
@@ -860,7 +976,7 @@ public sealed partial class VisionSystem : IDisposable
 
     private readonly object _mailbox = new();
     /// <summary>The one pending image (VisionComponent's "next" slot, +0x74) and the removal epoch it arrived in.</summary>
-    private (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground)? _next;
+    private (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground, EngineRobot? Owner)? _next;
     internal NativeGroundFrame? PendingGroundForTest { get { lock (_mailbox) return _next?.Ground; } }
     internal bool HasPendingFrameForTest { get { lock (_mailbox) return _next is not null; } }
     private bool _processorRunning;
@@ -899,6 +1015,11 @@ public sealed partial class VisionSystem : IDisposable
         if (pendingOuter is not null) SetNativeOuterCalibration(pendingOuter);
         if (!CurrentFrameOwner()) return;
         if(Calibration is null){WarnNoCalibration(Volatile.Read(ref _removals));return;}
+        lock(_groundGate)
+        {
+            if(!ReferenceEquals(_groundOwner,frameOwner)||_nativeImu is null)return;
+            _nativeImu.Associate(f.ImageId,f.Timestamp,f.Height);
+        }
         var pose=QueryFramePose(f.Timestamp, out var ground);
         if(CurrentFrameOwner() && pose is {} captured)HandOverFrame(f,captured,ground,frameOwner,removal);
         else { ReleaseGround(ground); ReleaseGround(pose?.RobotPose); DrainGroundReleases(); }
@@ -1003,9 +1124,14 @@ public sealed partial class VisionSystem : IDisposable
                         bool ownerCurrent;
                         lock (_groundGate) ownerCurrent=ReferenceEquals(_groundOwner,sourceOwner);
                         if (!ownerCurrent || sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner) || sourceRemoval!=Volatile.Read(ref _removals)) return;
+                        lock(_groundGate)
+                        {
+                            if(!ReferenceEquals(_groundOwner,sourceOwner)||_nativeImu is null)return;
+                            if(ground is not null)ground.Imu=_nativeImu.Snapshot();
+                        }
                     }
                     displaced = _next?.Ground;
-                    _next = (f, sourceRemoval ?? Volatile.Read(ref _removals),pose,ground);
+                    _next = (f, sourceRemoval ?? Volatile.Read(ref _removals),pose,ground,sourceOwner);
                     accepted = true;
                     if (_processorThread is null)
                     {
@@ -1036,7 +1162,7 @@ public sealed partial class VisionSystem : IDisposable
             SteppedBehavior.ReportMissing("M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership");
             while (_processorRun)
             {
-                (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground)? taken = null;
+                (CameraFrame Frame, int Removal, VisionPoseData? Pose, NativeGroundFrame? Ground, EngineRobot? Owner)? taken = null;
                 lock (_mailbox)
                 {
                     if (!SkipProcessorPass && _next is { } n)
@@ -1054,15 +1180,15 @@ public sealed partial class VisionSystem : IDisposable
                         if (frame.Ground is not null)
                         {
                             NativeGroundFrameConsumedForTest?.Invoke(frame.Ground);
-                            SteppedBehavior.ReportMissing("M11-033 native captured ground carrier: IMU deque, VisionSystem current/previous anchor and motion consumer are unavailable");
                         }
-                        ProcessEncodedFrame(frame.Frame, frame.Removal,frame.Pose,queueForEngine:true);completed=true;
+                        ProcessEncodedFrame(frame.Frame, frame.Removal,frame.Pose,queueForEngine:true,sourceOwner:frame.Owner,ground:frame.Ground);completed=true;
                     }
                     catch (Jpeg.OpenCvException e) { ReportDecodeThrow(frame.Frame,e); }
                     catch (Exception e) { completed=true;Log?.Invoke($"frame {frame.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
                     finally
                     {
                         ReleaseGround(frame.Ground);
+                        lock(_busy)DrainRetiredMotionStates();
                         NativeGroundFrame? discarded = null;
                         lock (_mailbox)
                         {
@@ -1130,7 +1256,7 @@ public sealed partial class VisionSystem : IDisposable
         => SteppedBehavior.ReportMissing($"M1-034/M11-058 decode throw: skipped image {f.ImageId} ({e.Message}); native cleanup unwinds to terminate at 0x004E39F8; no Toc, cache Reset, rollback or Processor completion");
     // Host diagnostic snapshot only; native persistent cache/tree ownership is still M11-033/M11-078.
     internal ImageCache EncodedFrameCache {get;private set;}=new();
-    private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false)
+    private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,EngineRobot? sourceOwner=null,NativeGroundFrame? ground=null)
     {
         var cache = new ImageCache(); // retain per-call host buffers so separate host entries cannot corrupt a frame
         SteppedBehavior.ReportMissing("M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only");
@@ -1145,7 +1271,7 @@ public sealed partial class VisionSystem : IDisposable
         cache.ResetDecoded(decoded.Image,isColor); // native Reset even for nonzero Result; throw bypasses this
         EncodedFrameCache=cache; // publish after Reset; a throw leaves the previous diagnostic snapshot
         if(!decoded.Ok)return DecodeReturnedFailure();
-        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose,queueForEngine);
+        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose,queueForEngine,sourceOwner,ground);
         VisionFrameResult? DecodeReturnedFailure()
         {
             // Reset already ran; the unbuilt native Toc above belongs only to this normal-return tail.
@@ -1170,15 +1296,52 @@ public sealed partial class VisionSystem : IDisposable
     public VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp)
         => ProcessCapture(cache, imageId, cameraTimestamp, Volatile.Read(ref _removals));
 
-    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false)
+    // Explicit typed-carrier unit seam; production arrives through the F2 mailbox.
+    internal void ProcessNativeCapturedForTest(EngineRobot owner,NativeGroundFrame ground,GrayImage image,uint imageId,uint timestamp)
     {
+        var cache=new ImageCache();cache.Reset(image);
+        using var pose=new Pose3d(ground.RobotPose);
+        var data=new VisionPoseData(timestamp,pose,ground.State.HeadAngle,ground.State.LiftAngle,false,false);
+        ProcessCapture(cache,imageId,timestamp,Volatile.Read(ref _removals),data,true,owner,ground);
+    }
+
+    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,EngineRobot? sourceOwner=null,NativeGroundFrame? ground=null)
+    {
+        if(queueForEngine && !Monitor.IsEntered(_busy))
+        {lock(_busy)return ProcessCapture(cache,imageId,cameraTimestamp,removal,capturedPose,true,sourceOwner,ground);}
+        if(queueForEngine && !NativeDecodedAdmission(sourceOwner,removal))return null;
+        if(queueForEngine && Calibration is null){WarnNoCalibration(removal);return null;}
+        NativeVisionInitialization? nativeState=null;
+        if(queueForEngine)
+        {
+            if(ground is null)
+            {
+                lock(_groundGate)if(ReferenceEquals(_groundOwner,sourceOwner))_nativeInitialization?.MarkMotionUnavailable();
+                SteppedBehavior.ReportMissing("M11-033/M11-098 captured native pose/ground input unavailable; worker result withheld");return null;
+            }
+            lock(_groundGate)
+            {
+                if(!ReferenceEquals(_groundOwner,sourceOwner)||_nativeInitialization is not {} state||!ReferenceEquals(state.Owner,sourceOwner))return null;
+                nativeState=state;
+            }
+            lock(_busy)
+            {
+                if(RemovedSince(removal))return null;
+                nativeState.MotionPose.Admit(ground); // 0x6B4D88 precedes GetGray for every admitted frame.
+                if(nativeState.Motion is not {} motion)return null;
+                int channels=cache.RgbValid?3:1;
+                byte[]? pixels=channels==3?cache.Rgb:cache.Gray?.Pixels;
+                if(pixels is null||cache.Width<=0||cache.Height<=0)return null;
+                motion.ImageCache.Reset(new NativeMotionImage(cache.Height,cache.Width,channels,cache.Width*channels,pixels,cameraTimestamp));
+            }
+        }
         GrayImage gray;
         try { gray = cache.GetGray(); }
         catch (InvalidOperationException e) { Log?.Invoke($"frame {imageId}: {e.Message}"); return null; }
-        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine);
+        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine,nativeState,sourceOwner);
     }
 
-    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false)
+    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null)
     {
         var calibration = Calibration;
         if (calibration is null) { WarnNoCalibration(removal); return null; }
@@ -1193,7 +1356,7 @@ public sealed partial class VisionSystem : IDisposable
         // (fail-safe true), as the engine's no-IMU-data path returns 1.
         var poseData = WithRotatingGate(pd.Value, effective);
         return ProcessImage(gray, imageId, effective, poseData, calibration, removal,
-                            effective != cameraTimestamp ? cameraTimestamp : null,queueForEngine:queueForEngine);
+                            effective != cameraTimestamp ? cameraTimestamp : null,queueForEngine:queueForEngine,nativeState:nativeState,sourceOwner:sourceOwner);
     }
 
     /// <summary>
@@ -1230,7 +1393,7 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M1-025, M1-015
     // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
     private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
-                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false)
+                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null)
     {
         var sw = Stopwatch.StartNew();
         var cal = gray.Width == calibration.Columns && gray.Height == calibration.Rows ? calibration : calibration.Scaled(gray.Width, gray.Height);
@@ -1252,22 +1415,75 @@ public sealed partial class VisionSystem : IDisposable
             // enum-4 dark-test flag (0x006B47A8..0x006B47B4). The marker-mode gate then decides whether
             // Detect runs at all (0x006B5162..0x006B516A).
             var markerImage = SelectMarkerImage(gray);
+            bool physical;
+            lock(_groundGate)physical=_nativeWorkerPhysical;
+            NativeRollingShutter.Shift[]? shifts=null;
+            if(queueForEngine && physical && nativeState?.MotionPose.Current is {} currentGround)
+            {
+                shifts=NativeRollingShutter.Compute(currentGround.Timestamp,gray.Height,currentGround.Imu,false,out bool incomplete);
+                if(incomplete)
+                {
+                    var history=currentGround.Imu;
+                    if(history.Length==0)_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"RollingShutterCorrector.ComputePixelShifts.EmptyHistory",$"No ImageIMU data from timestamp {currentGround.Timestamp}, imuDataHistory is empty");
+                    else _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"RollingShutterCorrector.ComputePixelShifts.NoImageIMUData",$"No ImageIMU data from timestamp {currentGround.Timestamp} have data from time {history[0].ComputedTimestamp}:{history[^1].ComputedTimestamp}");
+                }
+                if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
+            }
             ushort processedMask=0;
             byte imageMean=0;
+            var motionReports=new List<NativeObservedMotion>();
+            var qualityRectangles=new List<ImageQualityRectangle>(); // fresh source Update-local vector
             if(ShouldProcessVisionMode((int)VisionMode.ComputingStatistics))
             {imageMean=SampleImageMean(gray);processedMask|=1<<8;}
             bool markerMode=ShouldProcessVisionMode(DetectingMarkers);
             markers = markerMode ? Detector.Detect(markerImage, timestamp) : Array.Empty<ObservedMarker>();
+            if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
+            foreach(var marker in markers)qualityRectangles.Add(NativeQualityRectangles.Marker(marker)); // raw quad, before correction
+            if(queueForEngine && physical && markerMode && shifts is not null)
+            {
+                var corrected=new List<ObservedMarker>(markers.Count);
+                foreach(var marker in markers)
+                {
+                    if(NativeRollingShutter.TryCorrect(marker,gray.Width,gray.Height,shifts,out var value,out bool badIndex))corrected.Add(value);
+                    else if(badIndex)SteppedBehavior.ReportMissing("M1-034/M11-033 rolling-shutter strip vector.at 0x006B48D4: invalid marker skipped");
+                    else _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"VisionSystem","VisionSystem.DetectMarkersWithCLAHE.RemovingMarkerOOB",marker.Code.ToString());
+                    if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
+                }
+                markers=corrected;
+            }
             if(markerMode)processedMask|=1<<DetectingMarkers;
             if (RemovedSince(removal)) return null;
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
-            bool faceMode=ShouldProcessVisionMode((int)VisionMode.DetectingFaces),petMode=ShouldProcessVisionMode((int)VisionMode.DetectingPets);
-            if(faceMode&&!FaceDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-035 enabled face detector input unavailable; no produced face result/success fabricated");
-            if(petMode&&!PetDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-035 enabled pet detector input unavailable; no produced pet result/success fabricated");
-            var detectedFaces = faceMode && FaceDetector.IsAvailable ? FaceDetector.Detect(gray,timestamp) : null;
-            var detectedPets = petMode && PetDetector.IsAvailable ? PetDetector.Detect(gray,timestamp) : null;
+            bool StaleFrame()=>RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner));
+            bool faceMode=ShouldProcessVisionMode((int)VisionMode.DetectingFaces);
+            if(faceMode&&!FaceDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 face detector unavailable; its detection and quality rectangles are omitted");
+            if(StaleFrame())return null;
+            var faceImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
+            var detectedFaces = faceMode && FaceDetector.IsAvailable ? FaceDetector.Detect(faceImage,timestamp) : null;
+            if(StaleFrame())return null;
+            if(faceMode && FaceDetector.IsAvailable && detectedFaces is null)
+                SteppedBehavior.ReportMissing("M11-016/M11-080 attached face detector returned null; its detection and quality rectangles are omitted");
+            if(StaleFrame())return null;
+            if(detectedFaces is not null)foreach(var face in detectedFaces)qualityRectangles.Add(NativeQualityRectangles.Detection(face.Rect));
+            bool petMode=ShouldProcessVisionMode((int)VisionMode.DetectingPets);
+            if(petMode&&!PetDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted");
+            if(StaleFrame())return null;
+            var petImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
+            var detectedPets = petMode && PetDetector.IsAvailable ? PetDetector.Detect(petImage,timestamp) : null;
+            if(StaleFrame())return null;
+            if(petMode && PetDetector.IsAvailable && detectedPets is null)
+                SteppedBehavior.ReportMissing("M11-016/M11-080 attached pet detector returned null; its detection and quality rectangles are omitted");
+            if(StaleFrame())return null;
+            if(detectedPets is not null)foreach(var pet in detectedPets)qualityRectangles.Add(NativeQualityRectangles.Detection(pet.Rect));
             if(ShouldProcessVisionMode((int)VisionMode.DetectingMotion))
-                SteppedBehavior.ReportMissing("M11-035 DetectingMotion producer/handler unavailable; no processed bit or native success invented");
+            {
+                if(nativeState?.Motion is not {} motion || !queueForEngine)
+                    SteppedBehavior.ReportMissing("M11-098 DetectingMotion requires the actual decoded worker input");
+                else if(!motion.Detector.Detect(motion.ImageCache.GetHalf(),nativeState.MotionPose,gray.Width,gray.Height,motionReports))
+                {nativeState.MarkMotionUnavailable();SteppedBehavior.ReportMissing("M11-098 actual motion producer input unavailable; frame result withheld");return null;}
+                else processedMask|=1<<3;
+                if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
+            }
             if(ShouldProcessVisionMode((int)VisionMode.DetectingOverheadEdges) && OverheadEdges is {} edges) overheadEdges=edges.Detect(gray,camera,pd.RobotPose,timestamp,pd.LiftAngleRad);
             if(detectedFaces is not null)processedMask|=1<<2;
             if(detectedPets is not null)processedMask|=1<<9;
@@ -1277,13 +1493,21 @@ public sealed partial class VisionSystem : IDisposable
             if(RemovedSince(removal))return null;
             // fidelity: M11-080, M11-057
             ImageQualityProposal? quality=null;
+            NativeQualityRectanglesObservedForTest?.Invoke(Array.AsReadOnly(qualityRectangles.ToArray()));
+            if(StaleFrame())return null;
             if(ShouldProcessVisionMode((int)VisionMode.CheckingQuality))
             {
-                if(!TryCheckFrameQuality(gray,out uint qualityStatus,out var proposed))
+                bool available=TryCheckFrameQuality(gray,qualityRectangles,()=>!StaleFrame(),out uint qualityStatus,out var proposed);
+                if(StaleFrame())return null;
+                if(!available)
                 {
                     // Offline ProcessImage is a host helper with explicit decoded pixels/pose, not the native Update entry.
                     // A live frame with unknown quality input is stopped without forging a native failure/log.
-                    if(!offline)return null;
+                    if(!offline)
+                    {
+                        if(queueForEngine && motionReports.Count!=0)nativeState?.MarkMotionUnavailable();
+                        return null;
+                    }
                 }
                 else if(qualityStatus!=0)
                 {
@@ -1375,7 +1599,7 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose):null;
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null):null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
             if (worldFrame is not null)
             {
@@ -1429,9 +1653,10 @@ public sealed partial class VisionSystem : IDisposable
                         {
                             var originNode=ResolveFaceObservationOrigin(History,owner,timestamp);
                             if(originNode is null)continue;
-                            observation=Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,processingPose.RotatingTooFast,originNode);
+                            observation=Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode);
                         }
                     }
+                    if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
                     if(observation is not null && (observation.Face.TimesObserved>3||observation.Face.HasName) && _robot.Engine.Robot is {HasExternalInterface:true})
                     {
                         Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace full app report fields remain unavailable; no truncated wire report published; delivering checked LOCAL46 ID/timestamp projection only");
@@ -1458,6 +1683,16 @@ public sealed partial class VisionSystem : IDisposable
             // the map uses the same frame's robot pose - which is what the engine's map component looks
             // up by the frame's timestamp (RobotStateHistory::ComputeAndInsertStateAt at 0x0067F8A2).
             if (RemovedSince(removal)) return null;
+            if(queueForEngine && sourceOwner is not null && sourceOwner.HasExternalInterface)
+            {
+                foreach(var motion in motionReports)
+                {
+                    if(RemovedSince(removal)||sourceOwner.Lifetime.Destroying||!ReferenceEquals(_robot.Engine.Robot,sourceOwner))return null;
+                    _robot.Engine.DeliverAnimationReportToApp(0x49,motion.PackBody());
+                    if(RemovedSince(removal)||sourceOwner.Lifetime.Destroying||!ReferenceEquals(_robot.Engine.Robot,sourceOwner))return null;
+                    _robot.Engine.AnimationMessages.Deliver(0x49,true,motion);
+                }
+            }
             if(overheadEdges is {} overhead)_robot.Engine.Robot?.NativeBehaviorRuntime?.ApplyOverhead(overhead,this);
             if(queueForEngine && quality is {} qualityResult)handlerFailed|=UpdateImageQuality(timestamp,qualityResult)!=0;
             result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed)

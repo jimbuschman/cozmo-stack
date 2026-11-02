@@ -1644,7 +1644,8 @@ public class M5AnimationTests
     public void M3_013_C9_A18_TheProductionStreamStopsAtTheBudgetAndRefills()
     {
         var port = new FakePort();
-        using var robot = CozmoRobot.CreateForTest(port, EngineTickRunner.HostNowNs, new CozmoEngineOptions { BlockPoolPath = "" });
+        using var resources = new BackupTestResources();
+        using var robot = CozmoRobot.CreateForTest(port, EngineTickRunner.HostNowNs, resources.Options(new CozmoEngineOptions { BlockPoolPath = "" }));
         using var ticks = new TickSignal(robot.Engine);
         robot.Engine.StartProduction();
         void Data(RobotMessage m) => port.Raise(ReceiverMarker.Data, Rig.RobotEp, m.ToBytes());

@@ -808,6 +808,7 @@ public sealed partial class EngineRobot
         ConstructorDelocalize();
         InitDelocalizationStrategyRecipients();
         if (queueConnectionReads) QueueConnectionReads();
+        else InvokeNativeVisionConstructor();
     }
 
     // fidelity: M3-033, M3-034
@@ -827,24 +828,53 @@ public sealed partial class EngineRobot
     /// The backup sink is the counted RobotDataBackupManager path (M15-033).
     /// M11-059: the FaceAlbum/Enrollment pair is queued in the engine only past the branch at 0x00650E3C (VisionSystem::Init's
     /// outcome, then the album load-or-erase branch 0x00650FB4..0x0065108A), so it is gated on
-    /// <see cref="CozmoEngine.FaceAlbumReadsGate"/>; with no hook set the gate is reported MISSING and the pair is queued as before.
+    /// the original owner's known Init result and the source album selector. Unknown input holds this ordered tail;
+    /// the optional <see cref="CozmoEngine.FaceAlbumReadsGate"/> remains a test extension only.
     /// </summary>
+    private Vision.NativeVisionStageResult InvokeNativeVisionConstructor()
+    {
+        if (Engine.NativeVisionConstructor is { } init) return init(this);
+        Behavior.SteppedBehavior.ReportMissing("M11-059 original VisionComponent Init recipient unavailable");
+        return Vision.NativeVisionStageResult.Missing;
+    }
+
+    private volatile bool _visionNvTailUnavailable;
+    internal bool VisionNvTailUnavailable { get => _visionNvTailUnavailable; private set => _visionNvTailUnavailable=value; }
     private void QueueConnectionReads()
     {
         var nv = Engine.NvStorage;
-        if (nv is null) return;                                  // no NV component: the offline/test seam
-        Progression!.Init();   // #1 ProgressionUnlock
-        Inventory!.Init();          // #2 Inventory
-        // fidelity: M11-059
-        // The pair is read by the engine only past VisionComponent::Init's branch at 0x00650E3C. The hook is M11-059's.
+        if (nv is not null) { Progression!.Init(); Inventory!.Init(); }
+        var outcome = InvokeNativeVisionConstructor();
+        if (nv is null || Lifetime.Destroying) return;
+        if (!outcome.Available)
+        {
+            VisionNvTailUnavailable = true;
+            Behavior.SteppedBehavior.ReportMissing("M11-059 original Vision Init outcome unavailable; album and backup NV continuation deferred");
+            return;
+        }
+        if (outcome.Result != 0) goto backupReads;
+        var root = Engine.VisionConfiguration;
+        FirmwareJsonValue? album = root.Kind == FirmwareJsonKind.Object
+            ? root.Members.GetValueOrDefault(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes("FaceAlbum"))) : null;
+        if (album is not null && album.Kind != FirmwareJsonKind.Null &&
+            (album.Kind != FirmwareJsonKind.String ||
+             (album.Bytes.Length != 0 && !album.Bytes.AsSpan().SequenceEqual("robot"u8))))
+        {
+            VisionNvTailUnavailable = true;
+            Behavior.SteppedBehavior.ReportMissing("M11-059 non-robot FaceAlbum selection and ordered NV continuation unavailable");
+            return;
+        }
+        // 0x650FD6..65108A: absent, empty, or "robot" selects the NV pair.
         if (Engine.FaceAlbumReadsGate is { } faceGate)
         {
-            if (!faceGate()) goto backupReads;
+            bool enabled=faceGate();
+            if (Lifetime.Destroying) return;
+            if (!enabled) goto backupReads;
         }
-        else
-            Behavior.SteppedBehavior.ReportMissing("M11-059 | the FaceAlbum/Enrollment read pair is queued only past the branch at 0x00650E3C (VisionSystem::Init's outcome, the album load-or-erase branch 0x00650FB4..0x0065108A); that outcome is unread, so this stack queues the pair unconditionally");
+        if (Lifetime.Destroying) return;
         // #3 FaceAlbum 0x184000: the empty callback fills VC+0x2F4 (the album bytes).
         nv.Read(0x184000, _ => { }, _faceAlbum);
+        if (Lifetime.Destroying) return;
         // #4 FaceEnrollment 0x183000: on terminal success the engine's callback consumes VC+0x2F4 and
         // installs both (0x65A860). Raised at completion, so a VisionSystem built after the response still
         // adopts it; with none subscribed the result is kept and the read still drains.
@@ -853,14 +883,16 @@ public sealed partial class EngineRobot
         // (0x0065A916, warning, "NVResult = %s").
         nv.Read(0x183000, r =>
         {
+            if (Lifetime.Destroying) return;
             if (r.Result == -1)
                 Engine.EmitSourceLog(EngineLogLevel.Info, null, "VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound", "");
             else if (r.Result != 0)
                 Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail", $"NVResult = {NvStorageComponent.NvResultName(r.Result)}");
-            if (r.Result != 0) return;
+            if (r.Result != 0 || Lifetime.Destroying) return;
             Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
         });
     backupReads:
+        if (Lifetime.Destroying) return;
         Engine.Backup?.ReadAll(); // M15-033: configured ascending set and counted native backup sink.
     }
 
@@ -1619,6 +1651,7 @@ internal sealed partial class RobotManager
     internal readonly Dictionary<uint, EngineRobot?> RobotEntries = new();
     internal readonly List<uint> RobotIds = new();
     private readonly Dictionary<uint, RobotInitialConnection> _rics = new();
+    private readonly HashSet<uint> _constructingIds = new();
 
     public RobotManager(CozmoEngine engine) => _engine = engine;
 
@@ -1647,18 +1680,29 @@ internal sealed partial class RobotManager
     /// </summary>
     public EngineRobot? AddRobot(uint id, bool withRic = true)
     {
-        if (RobotExists(id)) { _engine.EmitSourceLog(EngineLogLevel.Warning, null, "RobotManager.AddRobot", $"robot {id} already exists"); return Get(id); }
+        bool alreadyExists;
+        lock (_membershipGate)
+        {
+            alreadyExists=RobotEntries.ContainsKey(id);
+            if (!alreadyExists && !_constructingIds.Add(id))
+                throw new InvalidOperationException($"Robot {id} construction is already in progress");
+        }
+        if (alreadyExists) { _engine.EmitSourceLog(EngineLogLevel.Warning, null, "RobotManager.AddRobot", $"robot {id} already exists"); return Get(id); }
         // fidelity: M3-033
         // The engine's Robot constructor queues the connection-time NV reads; the RIC is the handshake path, so
         // the offline seam (withRic false) queues none.
-        var r = new EngineRobot(_engine, queueConnectionReads: withRic,robotId:id);
-        lock (_membershipGate)
+        try
         {
-            RobotEntries.Add(id, r);
-            RobotIds.Add(id);
-            if (withRic) _rics.Add(id, new RobotInitialConnection(_engine, ExpectedVersion, ExpectedTime, r));
+            var r = new EngineRobot(_engine, queueConnectionReads: withRic,robotId:id);
+            lock (_membershipGate)
+            {
+                RobotEntries.Add(id, r);
+                RobotIds.Add(id);
+                if (withRic) _rics.Add(id, new RobotInitialConnection(_engine, ExpectedVersion, ExpectedTime, r));
+            }
+            return r;
         }
-        return r;
+        finally { lock (_membershipGate) _constructingIds.Remove(id); }
     }
 
     // fidelity: M1-030
@@ -1777,6 +1821,7 @@ public sealed partial class CozmoEngine : IDisposable
     // ---- the host's hooks (set by CozmoRobot)
     /// <summary>The stack's device handlers for one broadcast robot message, and whether a RobotState is handled (CD23).</summary>
     internal Action<RobotMessage, bool>? DeviceRoute;
+    internal Action<EngineRobot,RobotMessage,bool>? DeviceRouteOwned;
     internal Action<RobotMessage>? TapFilterRoute;
     internal Action<RobotMessage>? CubeAccelRoute;
     internal Action<RobotMessage>? PickAndPlaceRoute;
@@ -1919,6 +1964,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// the pair, the behaviour before the gate was named.
     /// </summary>
     internal Func<bool>? FaceAlbumReadsGate;
+    internal Func<EngineRobot, Vision.NativeVisionStageResult>? NativeVisionConstructor;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>
@@ -2373,6 +2419,12 @@ public sealed partial class CozmoEngine : IDisposable
             EmitSourceLog(EngineLogLevel.Info, null, "RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims", ""); // 0x00528A34
             robot.NvOnIdle(() =>
             {
+                if (robot.Lifetime.Destroying || robot.VisionNvTailUnavailable)
+                {
+                    if (robot.VisionNvTailUnavailable)
+                        Behavior.SteppedBehavior.ReportMissing("M11-059 ready-to-stream waits for the unresolved ordered vision NV tail");
+                    return;
+                }
                 robot.ReadyToStream = true;
                 EmitSourceLog(EngineLogLevel.Info, null, "RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims", ""); // 0x0052C3B6, after +0x2A store at 0x0052C3A6
             });

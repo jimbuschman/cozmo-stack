@@ -37,9 +37,11 @@ public sealed class PutDownBlockNativeTests
         internal void Image(uint id,uint mask)
         {
             M.Vision.Enabled=true;M.Vision.ModeEnableMask=(int)mask;
+            M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied every-frame unit schedule
             Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos);
-            Rig.Data(new ImageImuData{ImageId=Robot.StoredState!.Timestamp,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
-            M.Vision.HandOverFrame(new CameraFrame{ImageId=id,Timestamp=Robot.StoredState!.Timestamp,Width=320,Height=240,Encoding=1,RawPayload=new byte[320*240]});
+            uint stamp=Robot.StoredState!.Timestamp;
+            Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
+            Rig.CameraGrayFrame(id,stamp,new byte[320*240]);
             M.Vision.WaitForProcessorIdle();Rig.Engine.VisionUpdateAllResultsFailed!();Rig.Tick();
         }
         internal ObservableObject Carry()
@@ -183,7 +185,8 @@ public sealed class PutDownBlockNativeTests
     private sealed class Detector:IFaceDetector
     {
         public bool IsAvailable=>true;public string Description=>"explicit detector input at proprietary boundary";
-        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>new[]{new DetectedFace(11,new FaceRect(120,40,60,60),new Vec2(135,60),new Vec2(165,60),RollRad:0)};
+        // Supplied false native new-entry predicate for the face/cache order unit.
+        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>new[]{new DetectedFace(11,new FaceRect(120,40,60,60),new Vec2(135,60),new Vec2(165,60),RollRad:0){NativeNewEntryRotatingTooFast=false}};
     }
     [Theory][InlineData(true)][InlineData(false)]
     public void ActualVisionDrainUpdatesCacheBeforeCountGatedLocal46(bool external)

@@ -1,26 +1,11 @@
 namespace Cozmo.Robot.Vision;
 
-// fidelity: M11-016
+// fidelity: M11-098
 // Supplied-mask unit: imgproc 35146..35360 and engine Image.GetConnectedComponents 8720F8.
 internal readonly record struct NativeMotionComponent(uint Area,float CenterX,float CenterY,int Left,int Top,int Width,int Height);
 
 internal static class NativeMotionComponents
 {
-    internal static bool ExactBinary32(ulong numerator,uint denominator)
-    {
-        if(denominator==0 || numerator==0) return true;
-        if(numerator>(1UL<<53)) return false; // source uint64-to-f64 conversion may itself round
-        ulong a=numerator,b=denominator;
-        while(b!=0){ulong remainder=a%b;a=b;b=remainder;}
-        ulong n=numerator/a,d=denominator/a;
-        if((d&(d-1))!=0) return false;
-        while((n&1)==0) n>>=1;
-        int bits=0;while(n!=0){bits++;n>>=1;}
-        // Valid image coordinates fit signed int and the reduced denominator fits uint,
-        // so the exponent is within binary32's normal range.
-        return bits<=24;
-    }
-
     internal static bool TryAppend(NativeMotionImage mask,ICollection<NativeMotionComponent> output,out int[] labels)
     {
         if(mask.Channels!=1) throw new ArgumentException("A one-channel mask is required.",nameof(mask));
@@ -75,14 +60,6 @@ internal static class NativeMotionComponents
             right[label]=Math.Max(right[label],x);bottom[label]=Math.Max(bottom[label],y);
             area[label]++;sumX[label]+=(uint)x;sumY[label]+=(uint)y;
         }
-        // The source's VFP rounding mode is not yet established. Only exactly representable
-        // finite centroids are delivered; zero-area background retains source NaN classification.
-        for(int i=0;i<next;i++)
-            if(!ExactBinary32(sumX[i],area[i]) || !ExactBinary32(sumY[i],area[i]))
-            {
-                Behavior.SteppedBehavior.ReportMissing("M11-016 motion components: inexact centroid requires unknown native FPSCR rounding mode");
-                return false;
-            }
         for(int i=0;i<next;i++)
         {
             double cx=(double)sumX[i]/area[i],cy=(double)sumY[i]/area[i];

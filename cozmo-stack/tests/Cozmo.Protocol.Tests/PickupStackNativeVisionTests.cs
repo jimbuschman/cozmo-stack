@@ -10,11 +10,13 @@ public sealed class PickupStackNativeVisionTests
 {
     private sealed class Fixture:IDisposable
     {
-        internal readonly M4ControlTests.Rig Rig=new();
+        private readonly BackupTestResources _resources=new();
+        internal readonly M4ControlTests.Rig Rig;
         internal EngineRobot Robot=>Rig.Engine.Robot!;
         internal ManipulationSystem M=>Robot.NativeBehaviorRuntime!.Manipulation!;
         internal Fixture(bool nvCalibration=false)
         {
+            Rig=nvCalibration?new M4ControlTests.Rig(engineOptions:_resources.Options()):new M4ControlTests.Rig();
             Rig.ToSynced();Rig.Calibrate();Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos);
             if(nvCalibration)
             {
@@ -51,7 +53,7 @@ public sealed class PickupStackNativeVisionTests
             var state=Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,head:head,liftAngle:lift);
             state.Pose.Angle=angle;Rig.Data(state);Rig.Tick();
         }
-        public void Dispose()=>Rig.Dispose();
+        public void Dispose(){Rig.Dispose();_resources.Dispose();}
     }
     [Fact]
     public void QueuedTurnUsesLiveMainCalibratedHeadAndActualVisionCalibrationWithoutHistory()
@@ -96,11 +98,12 @@ public sealed class PickupStackNativeVisionTests
         Assert.False(runner.Positioning);Assert.NotNull(runner.Wait);Assert.False(runner.Wait.Subscribed);Assert.Equal(EngineActionResult.Running,runner.State);
         f.Rig.Tick();Assert.True(runner.Wait.Subscribed);
         f.M.Vision.Enabled=true;f.M.Vision.ModeEnableMask=1<<1;
+        f.M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied schedule for this image unit
         for(int i=0;i<30&&runner.State==EngineActionResult.Running;i++)
         {
             f.Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos);
             uint stamp=f.Robot.StoredState!.Timestamp;
-            f.M.Vision.HandOverFrame(new CameraFrame{ImageId=(uint)i,Timestamp=stamp,Width=320,Height=240,Encoding=1,RawPayload=new byte[320*240]});
+            f.Rig.CameraGrayFrame((uint)i,stamp,new byte[320*240]);
             f.M.Vision.WaitForProcessorIdle();f.Rig.Engine.VisionUpdateAllResultsFailed!();f.Rig.Tick();
         }
         Assert.Equal(EngineActionResult.Success,runner.State);Assert.True(runner.DestructionObserved);

@@ -31,6 +31,8 @@ public readonly record struct FaceRect(double X, double Y, double Width, double 
 public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, Vec2? RightEye = null, IReadOnlyList<byte>? ExpressionValues = null, string? Name = null, int Score = 0, double? RollRad = null)
 {
     public int? NativeFaceDirectionThirdDegrees { get; init; }
+    // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
+    internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
 
 /// <summary>
@@ -310,10 +312,10 @@ public sealed partial class FaceWorld
     public FaceObservation? AddOrUpdateFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast)
         => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,null);
 
-    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast, PoseTreeNode origin)
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin)
         => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin);
 
-    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast, PoseTreeNode? origin)
+    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin)
     {
         if (face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev;
@@ -326,8 +328,13 @@ public sealed partial class FaceWorld
             bool existing = entry is not null;
             if (entry is null)
             {
+                if(rotatingTooFast is null)
+                {
+                    Behavior.SteppedBehavior.ReportMissing("M14-008 native new-face rotation predicate input unavailable; new face entry skipped");
+                    return null;
+                }
                 // C2-F7c: WasRotatingTooFast 0x004F4596 gates the new-entry path only.
-                if (rotatingTooFast) { Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping"); return null; }
+                if (rotatingTooFast.Value) { Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping"); return null; }
                 entry = new FaceEntry { Id = face.Id, FirstObservedTimestamp = face.Timestamp };
                 _faces[face.Id] = entry; isNew = true;
                 Log?.Invoke($"FaceWorld.UpdateFace.NewFace: Added new face with ID={face.Id} at t={face.Timestamp}.");

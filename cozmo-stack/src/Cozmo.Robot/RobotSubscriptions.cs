@@ -203,7 +203,8 @@ public sealed partial class EngineRobot
         void Deliver(RobotMessage m)
         {
             callback(m);
-            if (name == "Impl" || routeDevice) Engine.DeviceRoute?.Invoke(m, _lastStateHandled);
+            if(name=="Impl")Engine.DeviceRouteOwned?.Invoke(this,m,_lastStateHandled);
+            else if(routeDevice)Engine.DeviceRoute?.Invoke(m,_lastStateHandled);
         }
         if(name=="Impl" && _pendingImpl is {} pending)pending.Add((tag,Deliver));
         else (owners ?? _messagingHandles).Add(SubscribeMessage(tag,Deliver,name));

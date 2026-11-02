@@ -57,6 +57,15 @@ public sealed class SparksPopAWheelieNativeTests
             if(tag is 0x83 or 0x84)sparks.Add((tag,body.ToArray()));
             if(tag==0x5A&&body.Length>=8&&BinaryPrimitives.ReadInt32LittleEndian(body.Span[4..])==0x1D)raw.Add(body.ToArray());
         };
+        var priorTransition=manager.DasTransition;
+        manager.DasTransition=next=>
+        {
+            priorTransition?.Invoke(next);
+            if(next is NativePlayArbitraryAnimBehavior arbitrary&&arbitrary.Triggers.Count!=0)
+            {var current=arbitrary.Triggers.ToArray();if(triggers.Count==0||!triggers[^1].SequenceEqual(current))triggers.Add(current);}
+        };
+        try
+        {
         Admit(f,soft);Assert.Equal((byte)24,f.Robot.BehaviorPublicState.State.Activity);manager.Update(f.Rig.Engine.Timer.SecondsF,0);
         for(int i=0;i<250&&!f.Runtime.AwaitingParentActivityPick;i++)
         {
@@ -91,6 +100,8 @@ public sealed class SparksPopAWheelieNativeTests
         f.Runtime.AdmitActivity("PutDownDispatch");Assert.False(f.Runtime.AwaitingParentActivityPick);
         Assert.DoesNotContain(f.Rig.Robot.Animations.Scheduler.IdleStack,e=>e.Lock=="Activity_"+Id);
         for(int t=0;t<21;t++)Assert.False(manager.HasDisableLock((ReactionTrigger)t,Id+"_behaviorLock"));
+        }
+        finally{manager.DasTransition=priorTransition;}
     }
     [Theory]
     [InlineData((byte)0,(byte)1,true,0x206)] [InlineData((byte)1,(byte)0,false,0x211)]

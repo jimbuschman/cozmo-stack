@@ -10,6 +10,7 @@ namespace Cozmo.Protocol.Tests;
 /// schedule+0 and the wrapping counter at schedule+0xc read by CheckTimeToProcessAndAdvance 0x006AF1F8,
 /// ShouldProcessVisionMode 0x006B5AA4, and the shipped vision_config.json), never from the code under test.
 /// </summary>
+[Collection("ObjectID process statics")]
 public class VisionModeScheduleTests
 {
     /// <summary>M11-034: <c>InitDefaultSchedules</c> 0x006AEFDE fills all 16 modes with a single true and counter 0.</summary>
@@ -63,10 +64,14 @@ public class VisionModeScheduleTests
     {
         using var robot = CozmoRobot.CreateOffline();
         var vision = robot.Vision; vision.Calibration=CameraCalibration.Nominal();
-        Assert.Equal(VisionSystem.ShippedModeEnableMask, vision.ModeEnableMask);
+        // Explicit source inputs for this isolated schedule/bit gate unit.
+        vision.ModeEnableMask=VisionSystem.ShippedModeEnableMask;
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
 
         // enabled marker mode on the default schedule runs every frame
         Assert.True(vision.ShouldProcessVisionMode(VisionSystem.DetectingMarkers));
+        Assert.True(vision.ShouldProcessVisionMode((int)VisionMode.DetectingFaces));
+        Assert.True(vision.ShouldProcessVisionMode((int)VisionMode.DetectingMotion));
 
         // a mode whose bit is clear is refused
         vision.ModeEnableMask = 0;
@@ -118,22 +123,38 @@ public class VisionModeScheduleTests
         const int expected = 0x0002 | 0x0004 | 0x0008 | 0x0010 | 0x0080 | 0x0100 | 0x0200 | 0x8000;
         Assert.Equal(expected, VisionSystem.ShippedModeEnableMask);
 
-        using var robot = CozmoRobot.CreateOffline();
+        var prior=AllVisionModesSchedule.CopyDefault();var quality=ImageQualitySettings.Globals;
+        var oldQuality=(quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High);
+        var oldComponent=(VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
+        try
+        {
+        // Supplied cold template input for this unit; ordinary Init does not reset the process static.
+        AllVisionModesSchedule.RestoreDefaultForTest(AllVisionModesSchedule.InitDefaultSchedules());
+        using var resources = new BackupTestResources();
+        using var robot = CozmoRobot.CreateOffline(engineOptions:resources.Options());
         var vision = robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         Assert.Equal(expected, vision.ModeEnableMask);
         foreach (var mode in new[]
         {
             VisionMode.DetectingMarkers, VisionMode.DetectingFaces, VisionMode.DetectingMotion,
-            VisionMode.DetectingOverheadEdges, VisionMode.CheckingQuality, VisionMode.ComputingStatistics,
-            VisionMode.DetectingPets, VisionMode.DetectingLaserPoints,
+            VisionMode.CheckingQuality, VisionMode.DetectingPets, VisionMode.DetectingLaserPoints,
         })
             Assert.True(vision.ShouldProcessVisionMode((int)mode), mode.ToString());
+        Assert.False(vision.ShouldProcessVisionMode((int)VisionMode.DetectingOverheadEdges));
+        Assert.False(vision.ShouldProcessVisionMode((int)VisionMode.ComputingStatistics));
         foreach (var mode in new[]
         {
             VisionMode.EstimatingFacialExpression, VisionMode.DetectingSmileAmount,
             VisionMode.DetectingGaze, VisionMode.DetectingBlinkAmount,
         })
             Assert.False(vision.ShouldProcessVisionMode((int)mode), mode.ToString());
+        }
+        finally
+        {
+            AllVisionModesSchedule.RestoreDefaultForTest(prior);
+            (quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High)=oldQuality;
+            (VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=oldComponent;
+        }
     }
 
     /// <summary>

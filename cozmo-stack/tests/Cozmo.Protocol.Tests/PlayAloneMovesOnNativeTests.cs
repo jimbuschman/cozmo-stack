@@ -51,6 +51,7 @@ public sealed class PlayAloneMovesOnNativeTests
         foreach(var owner in owners)owner.CapturePlaybackObservationsForTest=true;
         f.Rig.Robot.Animations.Scheduler.CaptureStartWireForTest=true;
         bool seeSent=false,fallSent=false,fallApplied=false,changedAfterSee=false,changedAfterFall=false;
+        uint cameraId=1;double nextCamera=start+1;
         string? seeBefore=null,fallBefore=null;double seeAt=double.PositiveInfinity,fallAt=double.PositiveInfinity;int rewards=0;int seeWireMark=int.MaxValue,fallWireMark=int.MaxValue;var stack=new List<string>();
         var eventTrace=new List<string>();
         void OnStack(string line){if(line.Contains("M15-071 Freeplay native pending"))stack.Add(line);}
@@ -66,6 +67,8 @@ public sealed class PlayAloneMovesOnNativeTests
             while(f.Rig.Engine.Timer.Seconds-start<300)
             {
                 f.Motors();
+                if(f.Rig.Engine.Timer.Seconds>=nextCamera)
+                {f.NativeCameraFrame(cameraId,(cameraId&1)==0?(byte)200:(byte)100);cameraId++;nextCamera+=1;}
                 Assert.Same(original,f.Rig.Engine.Robot);Assert.False(original.Lifetime.Destroying);
                 foreach(var owner in owners)foreach(var playback in owner.DrainPlaybackObservationsForTest())witness.Register(playback);
                 var successful=f.Rig.Robot.Animations.Scheduler.DrainSentStartWireForTest().ToDictionary(x=>x.QueueId);
@@ -121,6 +124,8 @@ public sealed class PlayAloneMovesOnNativeTests
                    f.Runtime.Bound.TryGetValue(running.Id,out var actual) && ReferenceEquals(actual,running))
                 {sawLater=true;firstLater ??= $"t={f.Rig.Engine.Timer.Seconds-start:F2} child={child} behavior={running.Id} runner={runner.GetType().Name}";}
             }
+            Assert.True(f.M.Vision.NativeInitializationForTest?.Motion?.Detector.ComparisonCount>0,
+                "Supplied F4/F2 frames never reached the native motion comparison gates");
             foreach(var item in matched)
             {
                 var playback=item.Playback;var owner=playback.Owner;

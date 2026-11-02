@@ -8,6 +8,7 @@ namespace Cozmo.Protocol.Tests;
 public sealed class VisionConfigCheckedRowsTests:IDisposable
 {
     private readonly bool _error=EngineErrorState.ErrorFlagSet;
+    private readonly AllVisionModesSchedule _schedules=AllVisionModesSchedule.CopyDefault();
     private readonly ImageQualitySettings _saved=new(){TooBright=ImageQualitySettings.Globals.TooBright,TooDark=ImageQualitySettings.Globals.TooDark,MeterFromDetections=ImageQualitySettings.Globals.MeterFromDetections,Low=ImageQualitySettings.Globals.Low,Mid=ImageQualitySettings.Globals.Mid,High=ImageQualitySettings.Globals.High};
     private readonly uint _time=VisionSystem.TimeBeforeQualityErrorMs,_repeat=VisionSystem.RepeatedQualityErrorIntervalMs;
     private readonly ushort _exposure=CameraSettings.ConfiguredInitialExposureTimeMs;
@@ -15,11 +16,13 @@ public sealed class VisionConfigCheckedRowsTests:IDisposable
     {
         var g=ImageQualitySettings.Globals;(g.TooBright,g.TooDark,g.MeterFromDetections,g.Low,g.Mid,g.High)=(_saved.TooBright,_saved.TooDark,_saved.MeterFromDetections,_saved.Low,_saved.Mid,_saved.High);
         VisionSystem.TimeBeforeQualityErrorMs=_time;VisionSystem.RepeatedQualityErrorIntervalMs=_repeat;CameraSettings.ConfiguredInitialExposureTimeMs=_exposure;EngineErrorState.ErrorFlagSet=_error;
+        AllVisionModesSchedule.RestoreDefaultForTest(_schedules);
     }
     // reach: unit (robot-owned vision with explicit quality frame inputs; full native Init join remains M11-059).
     [Fact] public void ShippedExposureInputsConnectToActualFrameConsumer()
     {
         using var resources=new BackupTestResources();using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,resources.Options());
+        robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false); // actual owner invokes source Init
         var vision=robot.Vision; vision.Calibration=new CameraCalibration{Rows=16,Columns=16,FocalLengthX=20,FocalLengthY=20,CenterX=8,CenterY=8}; vision.ModeEnableMask=1<<7;
         var p=Assert.IsType<ExposurePipeline>(vision.QualityProcessor.Pipeline);Assert.Equal((byte)115,p.MidValue);Assert.Equal(0x3F000000u,BitConverter.SingleToUInt32Bits(p.MidPercentile));Assert.Equal(0x3F4CCCCDu,BitConverter.SingleToUInt32Bits(p.MaxChange));Assert.Equal(2,p.SubSample);
         vision.QualityRectangleInput=()=>Array.Empty<ImageQualityRectangle>();var image=new GrayImage(16,16);image.Fill(100);
@@ -32,8 +35,9 @@ public sealed class VisionConfigCheckedRowsTests:IDisposable
         using var resources=new BackupTestResources();var options=resources.Options();string path=Path.Combine(options.ResourcesPath!,CozmoEngine.VisionConfigurationPath);
         File.WriteAllText(path,File.ReadAllText(path).Replace("0.80","2.00",StringComparison.Ordinal));
         var logs=new List<EngineLogEntry>();using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,options,engineCreated:e=>e.LogEntry+=logs.Add);
+        robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false); // original owner invokes Init
         var vision=robot.Vision;Assert.Null(vision.QualityProcessor.Pipeline);
-        Assert.Equal(new[]{"ImagingPipeline.SetExposureParameters.BadMaxChangeFraction","VisionSystem.Init.SetExposureParametersFailed"},logs.Where(l=>l.Level==EngineLogLevel.Error).Select(l=>l.Name));Assert.DoesNotContain(logs,l=>l.Name=="VisionSystem.SetAutoExposureParams");
+        Assert.Equal(new[]{"ImagingPipeline.SetExposureParameters.BadMaxChangeFraction","VisionSystem.Init.SetExposureParametersFailed"},logs.Where(l=>l.Level==EngineLogLevel.Error&&(l.Name.StartsWith("ImagingPipeline.SetExposureParameters.",StringComparison.Ordinal)||l.Name.StartsWith("VisionSystem.Init.",StringComparison.Ordinal))).Select(l=>l.Name));Assert.DoesNotContain(logs,l=>l.Name=="VisionSystem.SetAutoExposureParams");
     }
     // reach: unit (direct initial-mode loop with supplied configuration; full native Init prerequisite join remains M11-059).
     [Fact] public void InitialModesUseByteKeyOrderAndPassFalseEntriesToo()
