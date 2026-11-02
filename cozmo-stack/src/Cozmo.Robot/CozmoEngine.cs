@@ -95,6 +95,8 @@ public sealed class CozmoEngineOptions
     // Native LanguageToString/CountryISO2ToString spellings, before lowercase/prefix; null is Missing.
     public string? LabLocaleLanguage { get; init; }
     public string? LabLocaleCountry { get; init; }
+    /// <summary>Optional Unix-epoch system clock in microseconds for Needs persistence; null uses the host UTC clock.</summary>
+    public Func<long>? NeedsSystemClockMicroseconds {get;init;}
     // fidelity: M1-054, M1-060 - COMPATIBILITY_POLICY: replaces the app engine-config JSON input.
     public byte[]? EngineConfigJson { get; init; }
     /// <summary>Host audio controller; M1 connects its six app inputs, M6 owns their execution.</summary>
@@ -1604,7 +1606,7 @@ internal sealed class RobotInitialConnection
         // NeedsManager owns it (StartReadFromRobot 0x006944B4), but this stack builds the NeedsManager after the
         // handshake, so the engine queues it here and buffers the terminal NvResult for whichever NeedsManager
         // adopts it (the FaceAlbum pattern); a NeedsManager attached later reads ConnectionNeedsResult.
-        _engine.QueueConnectionNeedsRead();
+        if(!_engine.Needs.HasNativePersistence)_engine.QueueConnectionNeedsRead(); // native owner queues at serial edge
         // fidelity: M15-014
         // C2 row 6: after the response the callback calls ReadLabAssignmentsFromRobot(serial) and then
         // RobotManager::ConnectRobotToNeedsManager(serial), with mfgId word 0. The needs edge is raised after the
@@ -2029,6 +2031,7 @@ public sealed partial class CozmoEngine : IDisposable
         _t.Received += Rcm.Rcd.ReceiveData;
         Rcm.Rcd.Queued = Kick;
         InitAnimationTransfer(); // fidelity: M5-059 — construction after DeviceDataManager, 0x004EB2CE.
+        CaptureNativeNeedsConstructorTimes(); // two NeedsState ctor samples precede Lab.Init
         Experiments = new CozmoExperiments(this);
         NativeInitRecipients.UiInit=InitializeHostUiProcessing;
         // Checked native gates validate supplied host config; unread UI/core joins do not disable host startup.

@@ -656,7 +656,7 @@ public sealed record NeedsCopy(double[] Levels, uint SerialNumber, long DateTime
 /// <see cref="Save"/> and <see cref="Load"/> are that arrangement; where the file lives is the host's
 /// business, as it is the app's in the engine.
 /// </summary>
-public sealed class NeedsManager
+public sealed partial class NeedsManager
 {
     private readonly Func<double> _clockSec;
     /// <summary>
@@ -685,7 +685,7 @@ public sealed class NeedsManager
     private readonly object _gate = new();
     // fidelity: M15-072 -- shared with AI+0x30; no per-need expression flags.
     internal SevereNeedsComponent SevereNeeds { get; }
-    private readonly Dictionary<NeedId, NeedBracketId> _prevBrackets = new();
+    private Dictionary<NeedId, NeedBracketId> _prevBrackets => State.NativePreviousBrackets;
     /// <summary><c>+0x1d5</c>: while set, <c>Update</c> returns at once (0x00695CA4).</summary>
     private bool _paused;
     /// <summary>
@@ -726,6 +726,27 @@ public sealed class NeedsManager
     private int _openAppAfterDisconnect;
     /// <summary><c>+0x1c0/+0x1c4</c>: the time the last robot write was built with (Appendix G Q1).</summary>
     private double _lastWriteToRobotSec;
+    // Native system_clock microseconds; independent of BaseStationTimer seconds.
+    internal Func<long> NativeSystemClockMicros=()=> (DateTimeOffset.UtcNow.Ticks-DateTimeOffset.UnixEpoch.Ticks)/10;
+    private long _nativeLastRobotWriteMicros;
+    private NativeStarThresholds? _nativeStarThresholds;
+    private int? _nativeRepairRounds;
+    private NeedsState? _nativeRobotCandidate;
+    private int _nativeOnboardingStage;
+    private bool NativeMetadataAvailable=>_nativeStarThresholds is not null;
+    private bool _nativePersistenceReady; // remains false until the full source resolver/read/write join is installed
+    private bool _nativePersistencePrerequisites;
+    private EngineRobot? _nativeConnectedRobot; // Needs+0x4, explicitly rebound by InitAfterConnection
+    internal bool HasNativePersistence=>NativeContextBound&&_nativePersistenceReady;
+    private void InitializeNativeMetadata(string? starConfig)
+    {
+        if(starConfig is null){SteppedBehavior.ReportMissing("M15-014 StarRewardsConfig needs_level_config.json is unavailable; no max-stars value fabricated");return;}
+        _nativeStarThresholds=NativeStarThresholds.Parse(starConfig);if(_nativeStarThresholds is null)return;
+        State.NativeUnlockLevel=0;State.NativeStarsAwarded=0;State.NativeStarsForNextUnlock=_nativeStarThresholds.GetMax(0);
+        State.NativeDateTimeMicros=0;State.NativeSerial=uint.MaxValue;
+        State.NativeTimeCreatedMicros=NativeSystemClockMicros();
+        State.NativeAppOpenMicros=NativeSystemClockMicros();
+    }
     /// <summary><c>_errG</c>: set when a robot write fails (Appendix G Q1).</summary>
     private bool _writeToRobotError;
     /// <summary><c>+0x1cb</c>: the device file's <c>versionUpdated</c> out-flag, set when an old device format needs rewriting (C2 row 1, Appendix I1).</summary>
@@ -767,13 +788,16 @@ public sealed class NeedsManager
     /// </summary>
     private double _deviceTimestampSnapshotSec;
 
-    public NeedsManager(Func<double> clockSec, NeedsConfig? config = null, DecayConfig? decay = null, IReadOnlyDictionary<string, NeedsActionDelta>? actions = null, Random? random = null)
+    public NeedsManager(Func<double> clockSec, NeedsConfig? config = null, DecayConfig? decay = null, IReadOnlyDictionary<string, NeedsActionDelta>? actions = null, Random? random = null, Func<long>? systemClockMicroseconds = null, (long Current,long Candidate)? constructorTimes = null)
     {
         _clockSec = clockSec;
+        if(systemClockMicroseconds is not null)NativeSystemClockMicros=systemClockMicroseconds;
         Config = config ?? NeedsConfig.Default;
         Decay = decay ?? new DecayConfig(new Dictionary<NeedId, IReadOnlyList<(double, double)>>(), new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
         Actions = actions ?? new Dictionary<string, NeedsActionDelta>();
         State = new NeedsState(Config);
+        State.NativeAppOpenMicros=constructorTimes?.Current ?? NativeSystemClockMicros();
+        _nativeRobotCandidate=new NeedsState(Config){NativeAppOpenMicros=constructorTimes?.Candidate ?? NativeSystemClockMicros()};
         SevereNeeds = new SevereNeedsComponent { IsAtBracket=State.IsNeedAtBracket };
         Random = random ?? new Random();
         State.Warn += m => Log?.Invoke(m);
@@ -823,12 +847,19 @@ public sealed class NeedsManager
             _deviceVersionUpdated = false;      // +0x1CB = 0 (0x0069345C)
             _deviceDataPresent = false;         // +0x1C9 = 0 (0x00693462)
         }
+        if(NativeContextBound&&FixedDeviceFilePath is null)
+        {
+            SteppedBehavior.ReportMissing("M15-014 NeedsDeviceDirectory input unavailable at 0x00693466; no file-absence outcome or startup persistence tail fabricated");
+            return;
+        }
         bool ok = AttemptReadFromDevice(FixedDeviceFilePath);      // 0x00693466
+        if(NativeContextBound&&_nativePersistenceReady&&_nativeDeviceInputUnavailable)return;
         lock (_gate) _deviceDataPresent = ok;   // +0x1C9 = (byte)result (0x0069346C)
         if (!ok) SendNeedsStateToGame(NeedsActionId.NoAction);   // 0x00693476
         WriteToDevice?.Invoke(true);                             // 0x0069347E
         SendNeedsLevelsDasEvent?.Invoke("app_start");            // 0x00693486
-        LocalNotificationsGenerate?.Invoke();                    // 0x00693492
+        if(LocalNotificationsGenerate is {} notifications)notifications();
+        else if(HasNativePersistence)SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00693492");
     }
 
     public NeedsConfig Config { get; }
@@ -973,14 +1004,17 @@ public sealed class NeedsManager
     }
 
     // fidelity: M15-014
-    public static NeedsManager FromObb(string? obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null, EngineRandom? contextRandom = null, Action<NeedsManager>? beforeInit = null)
+    public static NeedsManager FromObb(string? obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null, EngineRandom? contextRandom = null, Action<NeedsManager>? beforeInit = null, Func<long>? systemClockMicroseconds = null, (long Current,long Candidate)? constructorTimes = null)
     {
         string? dir = obbRoot is null ? null : new[]{Path.Combine(obbRoot,"config","engine"),Path.Combine(obbRoot,"..","config","engine"),Path.Combine(obbRoot,"assets","cozmo_resources","config","engine")}.FirstOrDefault(Directory.Exists);
         string? Read(string name) { if(dir is null)return null;var p = Path.Combine(dir, name); return File.Exists(p) ? File.ReadAllText(p) : null; }
-        var cfg = Read("needs_config.json") is { } c ? NeedsConfig.Parse(c) : null;
-        var decay = Read("needs_decay_config.json") is { } d ? DecayConfig.Parse(d) : null;
-        var actions = Read("needs_action_config.json") is { } a ? NeedsActionDelta.Parse(a) : null;
-        var needs = new NeedsManager(clockSec, cfg, decay, actions, random);
+        string? needsConfigJson=Read("needs_config.json");
+        var cfg = needsConfigJson is { } c ? NeedsConfig.Parse(c) : null;
+        string? decayJson=Read("needs_decay_config.json");
+        var decay = decayJson is { } d ? DecayConfig.Parse(d) : null;
+        string? actionsJson=Read("needs_action_config.json");
+        var actions = actionsJson is { } a ? NeedsActionDelta.Parse(a) : null;
+        var needs = new NeedsManager(clockSec, cfg, decay, actions, random, systemClockMicroseconds, constructorTimes);
         needs.DistortionRng=contextRandom;
         // J3: the directory the engine's DataPlatform resolves ("nurture/") is the host's; the caller supplies it.
         needs.DeviceDirectory = deviceDirectory;
@@ -1004,6 +1038,16 @@ public sealed class NeedsManager
         // NeedsManager::Init 0x00692574 ends by calling InitInternal 0x006926CE (J1/J14): the construction
         // analogue here, so a manager built from the OBB has run the startup device read and its tail.
         beforeInit?.Invoke(needs);
+        needs.InitializeNativeMetadata(Read("needs_level_config.json"));
+        if(needsConfigJson is not null)
+        {
+            using var sourceConfig=JsonDocument.Parse(needsConfigJson,new JsonDocumentOptions{CommentHandling=JsonCommentHandling.Skip,AllowTrailingCommas=true});
+            if(sourceConfig.RootElement.TryGetProperty("RepairRounds",out var rounds)&&rounds.ValueKind==JsonValueKind.Number&&rounds.TryGetByte(out byte value))needs._nativeRepairRounds=value;
+            else SteppedBehavior.ReportMissing("M15-014 NeedsConfig.RepairRounds input unavailable; full 0x62 report withheld");
+        }
+        // The production join stays gated until the full native persistence path is verified.
+        needs._nativePersistencePrerequisites=needs.NativeContextBound&&needs.NativeMetadataAvailable&&needs._nativeRepairRounds is not null&&
+            deviceDirectory is not null&&needsConfigJson is not null&&decayJson is not null&&actionsJson is not null;
         needs.InitInternal(clockSec());
         return needs;
     }
@@ -1138,15 +1182,33 @@ public sealed class NeedsManager
     {
         State.UpdateCurNeedsBrackets();   // 0x0069383C refreshes the brackets before building the vectors
         var words=Array.AsReadOnly(new[]{State.LevelBits(NeedId.Repair),State.LevelBits(NeedId.Energy),State.LevelBits(NeedId.Play)});
-        if(HostEngine is {} engine)
+        if(HostEngine is {} engine && NativeContextBound)
         {
+            if(!engine.NeedsContextAlive||!ReferenceEquals(engine.Needs,this))return;
+            if(!engine.NeedsContextExternalInterfaceAvailable)
+            {SteppedBehavior.ReportMissing("M1-034/M15-014 skipped null NeedsState report interface dereference at 0x006939D2");return;}
+            if(!NativeMetadataAvailable||_nativeRepairRounds is not {} rounds)
+            {SteppedBehavior.ReportMissing("M15-014 full NeedsState report metadata/config unavailable at 0x0069383C");return;}
+            // Runtime variation can be changed by 0x69718C; its live recipient is not yet bound.
+            // Do not emit the constructor value as though it were still current.
+            if(!TryGetNativeReportVariation(out var variation))
+            {SteppedBehavior.ReportMissing("M15-014 NeedsState runtime variation input unavailable at 0x0069383C");return;}
+            var report=new NativeNeedsStateReport(words.ToArray(),
+                new[]{(int)State.GetNeedBracket(NeedId.Repair),(int)State.GetNeedBracket(NeedId.Energy),(int)State.GetNeedBracket(NeedId.Play)},
+                new[]{State.PartDamage.GetValueOrDefault(0)!=0,State.PartDamage.GetValueOrDefault(1)!=0,State.PartDamage.GetValueOrDefault(2)!=0},
+                State.NativeUnlockLevel,State.NativeStarsAwarded,State.NativeStarsForNextUnlock,(int)action,variation,rounds);
             var copied=engine.CaptureAppEvent(NeedsLevelBitsCopied,(IReadOnlyList<uint>)words,action);
             var sent=engine.CaptureAppEvent(NeedsStateSent,action);
-            engine.QueueAppBroadcast(()=>{copied?.Invoke();sent?.Invoke();});
+            engine.DeliverNurture(0x62,NativeNeedsStateReportCodec.Pack(report),report,()=>{copied?.Invoke();sent?.Invoke();});
+        }
+        else if(HostEngine is {} legacyEngine)
+        {
+            var copied=legacyEngine.CaptureAppEvent(NeedsLevelBitsCopied,(IReadOnlyList<uint>)words,action);
+            var sent=legacyEngine.CaptureAppEvent(NeedsStateSent,action);
+            legacyEngine.QueueAppBroadcast(()=>{copied?.Invoke();sent?.Invoke();});
+            legacyEngine.AnimationMessages.Deliver(0x62,true,words);
         }
         else {NeedsLevelBitsCopied?.Invoke(words,action);NeedsStateSent?.Invoke(action);}
-        // Broadcast invokes app delivery first, then the local tag signal inline (0x006625CE..FA).
-        HostEngine?.AnimationMessages.Deliver(0x62,true,words);
     }
 
     /// <summary>Raised by <see cref="SendNeedsStateToGame"/>; the action is <c>Decay</c> on a decay tick.</summary>
@@ -1169,6 +1231,13 @@ public sealed class NeedsManager
     // fidelity: M15-001
     public void PossiblyWriteToDevice()
     {
+        if(NativeContextBound&&_nativePersistenceReady)
+        {
+            if(!NativeMetadataAvailable||DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 device persistence input unavailable");return;}
+            long nowMicros=NativeSystemClockMicros();
+            if(unchecked(nowMicros-State.NativeDateTimeMicros)<61_000_000L)return;
+            State.NativeDateTimeMicros=nowMicros;WriteNativeDevice(false);return;
+        }
         double now = _clockSec();
         if (now - _lastWriteSec < WriteThrottleSec) return;
         _lastWriteSec = now;
@@ -1232,7 +1301,7 @@ public sealed class NeedsManager
     /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
     /// </summary>
     // fidelity: M15-014, M15-016
-    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
+    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; if(NativeContextBound)_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot(); _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
 
     /// <summary>
     /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6, J5): write the disconnect timestamp to
@@ -1245,12 +1314,20 @@ public sealed class NeedsManager
     // fidelity: M15-014, M15-016
     public void OnRobotDisconnected()
     {
+        if(NativeContextBound&&_nativePersistenceReady)
+        {
+            State.NativeLastDisconnectMicros=NativeSystemClockMicros();State.NativeOpenAppAfterDisconnect=0;
+            if(!_paused)WriteNativeDevice(true);
+            _robotConnected=false;_nativeConnectedRobot=null;_nativeDeviceTimestampMicros=State.NativeDateTimeMicros;
+            DetectBracketChangeForDas(true);SendNeedsLevelsDasEvent?.Invoke("disconnect");return;
+        }
         lock (_gate)
         {
             _lastDisconnectSec = _clockSec();
             _openAppAfterDisconnect = 0;                          // reset the +0x30 counter (J5, 0x00695922)
             if (!_paused) WriteToDevice?.Invoke(true);            // forced write (0x00695924..0x0069592A)
             _robotConnected = false;                              // clear the robot pointer (+4)
+            if(NativeContextBound)_nativeConnectedRobot=null;
             _deviceTimestampSnapshotSec = _stateDateTimeSec;      // +0x1B8/+0x1BC = +8/+0xC (0x00695934)
             DetectBracketChangeForDas(true);
             SendNeedsLevelsDasEvent?.Invoke("disconnect");
@@ -1352,8 +1429,9 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
-            _previousSerial = _serial;
+            _previousSerial = NativeContextBound&&_nativePersistenceReady ? State.NativeSerial : _serial;
             _serial = serial;
+            if(NativeContextBound&&_nativePersistenceReady)State.NativeSerial=serial;
             _robotReadSucceeded = false;       // +0x1c8
             _robotRewriteNeeded = false;       // +0x1ca
         }
@@ -1362,6 +1440,7 @@ public sealed class NeedsManager
         // because RobotEventHandler queues the connection read before the serial-number edge); adopt its buffered/streamed result
         // rather than queueing a second read. When the engine has no such read (the offline seam, or a
         // NeedsManager used directly), StartReadFromRobot still queues one.
+        if (HasNativePersistence){if(StartNativeRobotRead(NeedsNvKey)==0)ResolveNativeCopies();return;}
         if (_connectionEngine is { ConnectionNeedsReadQueued: true } engine)
         {
             if (engine.ConnectionNeedsResult is { } buffered) OnConnectionNeedsRead(buffered);
@@ -1444,7 +1523,7 @@ public sealed class NeedsManager
         && NvStorage is not {IsOfflineOwner:false};
     private bool SkipUnbuiltRobotPersistence()
     {
-        lock(_gate)if(UsesUncertifiedPersistenceTestAdapter)return false;
+        lock(_gate)if(UsesUncertifiedPersistenceTestAdapter||NativeContextBound&&_nativePersistenceReady)return false;
         ReportUnbuiltRobotPersistence();return true;
     }
     private void ReportUnbuiltRobotPersistence()
@@ -1457,7 +1536,7 @@ public sealed class NeedsManager
 
     private bool SkipUnbuiltDevicePersistence()
     {
-        lock(_gate)if(UsesUncertifiedPersistenceTestAdapter)return false;
+        lock(_gate)if(UsesUncertifiedPersistenceTestAdapter||NativeContextBound&&_nativePersistenceReady)return false;
         SteppedBehavior.ReportMissing("M15-030 needs device persistence skipped: system_clock epoch producer at 0x00693BC0/0x00693BC4 and elapsed decay 0x00695304..0x00695330 are unbuilt; needsState.json read/apply, persistence restoration decay and forced/periodic writes (writeAsJson 0x00693EE6) are gated",_devicePersistenceMissingScope);
         return true;
     }
@@ -1480,6 +1559,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public int StartReadFromRobot(uint tag = NeedsNvKey)
     {
+        if(HasNativePersistence)return StartNativeRobotRead(tag);
         if(SkipUnbuiltRobotPersistence())return 0;
         NvStorageComponent? nv;
         lock (_gate) nv = NvStorage;
@@ -1507,6 +1587,14 @@ public sealed class NeedsManager
     // fidelity: M15-014
     private void OnRobotRead(NvResult r)
     {
+        if(HasNativePersistence)
+        {
+            var engine=HostEngine!;var owner=_nativeConnectedRobot;if(owner is null||owner.Lifetime.Destroying)return;
+            _awaitingRobotData=false;
+            bool success=FinishReadFromRobot(r.Data,r.Result);
+            if(!engine.NeedsContextAlive||owner.Lifetime.Destroying||!ReferenceEquals(_nativeConnectedRobot,owner))return;
+            _robotReadSucceeded=success;ResolveNativeCopies();return;
+        }
         if(SkipUnbuiltRobotPersistence())return;
         bool ok;
         lock (_gate)
@@ -1523,34 +1611,59 @@ public sealed class NeedsManager
     /// Appendix H): a missing NV item (result -1) and any other NV failure (result &lt; -1) return false; a
     /// blob version above 5 returns false; version 5 unpacks the full binary layout and returns true without
     /// <c>+0x1ca</c>; versions 1-4 unpack the shorter layout (missing tail zeroed, version forced to 5),
-    /// set <c>+0x1ca</c> and return true; version 0 is read as all-zero fields (M15-018), sets <c>+0x1ca</c>
-    /// and returns true. The success constant is 0x0069A176; the only zero is 0x00699F06.
+    /// set <c>+0x1ca</c> and return true. Version 0 sets <c>+0x1ca</c> then hits the uninitialized
+    /// prefix at 0x0069A052; M1-034 skips that invalid blob application and preserves prior state.
     /// </summary>
     // fidelity: M15-014, M15-017, M15-018
     public bool FinishReadFromRobot(byte[] data, sbyte result)
     {
         if(SkipUnbuiltRobotPersistence())return false;
-        if (result <= -1) return false;                              // -1 missing, < -1 other failure
-        if (data.Length == 0) return false;                          // no version byte to dispatch on
-        int version = data[0];
-        if (version > 5) return false;                               // 0x00699DD2/0x00699DD4, sVerifyFailedReturnFalse
-
-        NeedsStateOnRobot robot;
-        if (version == 0)
+        var callbackEngine=HasNativePersistence?HostEngine:null;var callbackOwner=callbackEngine is null?null:_nativeConnectedRobot;
+        if(callbackEngine is not null&&(callbackOwner is null||callbackOwner.Lifetime.Destroying))return false;
+        if(result==-1){SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Info,"NeedsSystem","NeedsManager.FinishReadFromRobot","No nurture metagame data on robot");return false;}
+        if(result< -1)
         {
-            // fidelity: M15-018
-            // The engine runs no Unpack variant and leaves the struct prefix uninitialised; the stack reads
-            // it as all-zero (the forced SD2 policy), sets the rewrite flag and returns success.
-            robot = new NeedsStateOnRobot { Version = 5 };
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "NeedsManager.FinishReadFromRobot", "Version 0 found on robot but not supported");
+            SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.FinishReadFromRobot.ReadFailedFinish","Read failed with "+NvStorageComponent.NvResultName(result));
+            if(callbackEngine is null||callbackEngine.NeedsContextAlive&&callbackOwner is not null&&!callbackOwner.Lifetime.Destroying&&ReferenceEquals(_nativeConnectedRobot,callbackOwner))EngineErrorState.StoreAndMaybeBreak();return false;
         }
-        else
+        if (data.Length == 0) return false;
+        int version=data[0]; // 0x00699DD0 reads the low version byte
+        if(version>5)
         {
-            robot = NeedsStateOnRobot.UnpackVersioned(data, version);
+            // 0x699DEA calls sVerifyFailedReturnFalse: it logs, sets errG, and returns false.
+            SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.FinishReadFromRobot.StateFileVersionIsFuture","Needs state file version is in the future");
+            if(callbackEngine is null||callbackEngine.NeedsContextAlive&&callbackOwner is not null&&!callbackOwner.Lifetime.Destroying&&ReferenceEquals(_nativeConnectedRobot,callbackOwner))EngineErrorState.StoreAndMaybeBreak();
+            return false;
         }
+        if(version!=5)_robotRewriteNeeded=true; // source store at 0x699E64 precedes undefined v0 application
+        if(version==0)
+        {
+            StackDiagnostics.Write("M1-034/M15-018/M15-014/M15-017 skipped version-0 uninitialized prefix application at 0x0069A052; prior state retained");
+            return false;
+        }
+        int required=version switch{1=>92,2=>100,3=>104,4=>108,_=>116};
+        if(data.Length<required)
+        {StackDiagnostics.Write("M1-034/M15-014/M15-017 skipped truncated robot needs blob; prior state retained");return false;}
+        NeedsStateOnRobot robot=NeedsStateOnRobot.UnpackVersioned(data,version);
 
         var levels = new double[3];
         for (int i = 0; i < levels.Length; i++) levels[i] = (float)robot.CurNeedLevel[i] / BitConverter.Int32BitsToSingle(0x47C35000);
+        if(NativeMetadataAvailable && HostEngine is {} context)
+        {
+            var owner=_nativeConnectedRobot;
+            if(owner is null||owner.Lifetime.Destroying)
+            {SteppedBehavior.ReportMissing("M15-014 FinishRead original Robot+0x1C unavailable; candidate application withheld");return false;}
+            var candidate=_nativeRobotCandidate!; // candidate's constructor-time State+0x20 is retained
+            candidate.NativeDateTimeMicros=unchecked((long)(robot.TimeLastWritten*1_000_000UL));
+            candidate.NativeTimeCreatedMicros=unchecked((long)(robot.TimeCreated*1_000_000UL));
+            candidate.NativeLastStarMicros=unchecked((long)(robot.TimeLastStarAwarded*1_000_000UL));
+            candidate.NativeUnlockLevel=robot.CurNeedsUnlockLevel;candidate.NativeStarsAwarded=robot.NumStarsAwarded;
+            candidate.NativeStarsForNextUnlock=_nativeStarThresholds!.GetMax(robot.CurNeedsUnlockLevel);
+            candidate.NativeSerial=owner.NativeBodyId;candidate.ForceNextSong=robot.ForceNextSong;candidate.ContextRandom=context.ContextRandom;
+            for(int i=0;i<3;i++){candidate.StoreLevel((NeedId)i,(float)levels[i]);candidate.SetNativePartDamage(i,robot.PartIsDamaged[i]);}
+            _nativeOnboardingStage=robot.OnboardingStageCompleted; // 0x69A18C: manager field, before bracket refresh/resolver
+            candidate.UpdateCurNeedsBrackets();_nativeRobotCandidate=candidate;
+        }
         _robotCopy = new NeedsCopy(levels, 0, (long)robot.TimeLastWritten, 5);   // the robot blob has no serial
         if (version != 5) _robotRewriteNeeded = true;                // 0x00699E64: every version but 5 rewrites
         return true;
@@ -1575,6 +1688,7 @@ public sealed class NeedsManager
     internal Action? PossiblyWriteLabAssignments;
     public void InitAfterReadFromRobotAttempt()
     {
+        if(NativeContextBound&&_nativePersistenceReady){ResolveNativeCopies();return;}
         if(SkipUnbuiltRobotPersistence())return; // Before Lab, alternate device read, copy apply, decay or either write.
         if (PossiblyWriteLabAssignments is { } lab) lab(); // 0x00694622, before Needs copy resolution.
         else SteppedBehavior.ReportMissing("M15-050 Needs InitAfterReadFromRobotAttempt0x00694622 has no CozmoExperiments writeback owner");
@@ -1697,6 +1811,30 @@ public sealed class NeedsManager
         }
     }
 
+    // 0x695542..0x695670: source fields packed from the currently retained full state.
+    internal byte[]? BuildNativeRobotBlob(long writeMicros)
+    {
+        if(!NativeMetadataAvailable){SteppedBehavior.ReportMissing("M15-014 native star config unavailable for Needs NV payload");return null;}
+        var value=new NeedsStateOnRobot
+        {
+            Version=5,TimeLastWritten=unchecked((ulong)(writeMicros/1_000_000)),
+            CurNeedsUnlockLevel=State.NativeUnlockLevel,NumStarsAwarded=State.NativeStarsAwarded,
+            TimeLastStarAwarded=unchecked((ulong)(State.NativeLastStarMicros/1_000_000)),
+            OnboardingStageCompleted=_nativeOnboardingStage,ForceNextSong=State.ForceNextSong,
+            TimeCreated=unchecked((ulong)(State.NativeTimeCreatedMicros/1_000_000))
+        };
+        foreach(var p in State.NativeLevels)
+        {
+            if((uint)p.Key>=NeedsStateOnRobot.NeedCount){SteppedBehavior.ReportMissing("M1-034/M15-014 skipped unsupported need index in NV payload");return null;}
+            value.CurNeedLevel[p.Key]=QuantizeLevel(p.Value);
+        }
+        foreach(var p in State.PartDamage)
+        {
+            if((uint)p.Key>=NeedsStateOnRobot.PartCount){SteppedBehavior.ReportMissing("M1-034/M15-014 skipped unsupported part index in NV payload");return null;}
+            value.PartIsDamaged[p.Key]=p.Value==0?(byte)0:(byte)1;
+        }
+        return NeedsStateOnRobot.Pack(value);
+    }
     /// <summary>C2 row 13: the timestamp a resolved device write was stamped with (<c>system_clock::now</c>).</summary>
     // fidelity: M15-014
     public long ResolvedDeviceWriteTimestampSec { get; private set; }
@@ -1770,6 +1908,7 @@ public sealed class NeedsManager
     /// </summary>
     public void PossiblyStartWriteToRobot(bool force)
     {
+        if(NativeContextBound&&_nativePersistenceReady){PossiblyStartNativeRobotWrite(force);return;}
         double now;
         double last;
         lock (_gate)
@@ -1859,7 +1998,11 @@ public sealed class NeedsManager
         // J3: the host may name the alternate file itself, or leave it to the device directory.
         string? path = AlternateDeviceFilePath?.Invoke(serial)
                        ?? (DeviceDirectory is null ? null : Path.Combine(DeviceDirectory, FileNameForSerial(serial)));
-        if (path is null) return false;
+        if (path is null)
+        {
+            if(NativeContextBound&&_nativePersistenceReady){_nativeDeviceInputUnavailable=true;SteppedBehavior.ReportMissing("M15-014 alternate Needs device path unavailable");}
+            return false;
+        }
         return AttemptReadFromDevice(path);
     }
 
@@ -1921,6 +2064,7 @@ public sealed class NeedsManager
     internal static int QuantizeLevel(float level)
     {
         float scaled=level*BitConverter.Int32BitsToSingle(0x47C35000);
+        scaled=scaled+0.5f; // 0x695582 / 0x693D8E before VCVT.s32.f32
         if(float.IsNaN(scaled))return 0;
         if(scaled>=BitConverter.Int32BitsToSingle(0x4F000000))return int.MaxValue;
         if(scaled<=BitConverter.Int32BitsToSingle(unchecked((int)0xCF000000)))return int.MinValue;
@@ -2085,6 +2229,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public void WriteDeviceFile(bool refreshDateTime)
     {
+        if(NativeContextBound&&_nativePersistenceReady){WriteNativeDevice(refreshDateTime);return;}
         if (FixedDeviceFilePath is not { } path) return;
         if(SkipUnbuiltDevicePersistence())return;
         if (refreshDateTime) _stateDateTimeSec = _clockSec();    // 0x00693BC4
@@ -2103,6 +2248,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public bool Load(string path, long? unixTimeSec = null, bool applyElapsedDecay = true)
     {
+        if(NativeContextBound&&_nativePersistenceReady)return NativeMetadataAvailable&&LoadNativeDevice(path,applyElapsedDecay);
         if(SkipUnbuiltDevicePersistence())return false;
         if (!File.Exists(path)) return false;
         string text = File.ReadAllText(path);            // the file I/O is outside _gate
@@ -2160,10 +2306,13 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public bool AttemptReadFromDevice(string? path)
     {
-        if(path is not null&&SkipUnbuiltDevicePersistence())return false;
+        bool native=NativeContextBound&&_nativePersistenceReady;
+        if(native&&_nativeDeviceInputUnavailable)return false;
+        if(path is not null&&!(NativeContextBound&&_nativePersistenceReady)&&SkipUnbuiltDevicePersistence())return false;
         string name = path is null ? FixedFileName : Path.GetFileName(path);
-        if (path is null || !File.Exists(path))
+        if (path is null || (!native && !File.Exists(path)))
         {
+            if(native){_nativeDeviceInputUnavailable=true;SteppedBehavior.ReportMissing("M15-014 Needs device path unavailable");return false;}
             Log?.Invoke($"FAILED to FIND file {name} on device");
             return false;
         }
@@ -2178,6 +2327,7 @@ public sealed class NeedsManager
         lock (_gate)
         {
             _openAppAfterDisconnect += 1;                       // +0x30 (0x006936CE)
+            if(NativeContextBound&&_nativePersistenceReady)State.NativeOpenAppAfterDisconnect++;
             openApp = _openAppAfterDisconnect;
         }
         if (_lastAppBackgroundSec != 0)
@@ -2197,7 +2347,8 @@ public sealed class NeedsManager
         {
             var b = State.GetNeedBracket(n);
             // 0x00695958 enters the event branch when cached (+0x214) != current or force is set.
-            if (b != _prevBrackets[n] || force)
+            if(!_prevBrackets.TryGetValue(n,out var previous)){previous=(NeedBracketId)0;_prevBrackets[n]=previous;} // source map operator[] 0x69A9CC
+            if (b != previous || force)
             {
                 // J10: the DAS elapsed is now - +0x214, read before the emit (0x006959D6, 0x006959FA).
                 double elapsed = now - _bracketChangedSec[(int)n];

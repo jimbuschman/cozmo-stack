@@ -11,6 +11,13 @@ public sealed partial class EngineRobot
 public sealed partial class CozmoEngine
 {
     public NeedsManager Needs { get; private set; } = null!;
+    private long _needsCurrentConstructorMicros,_needsCandidateConstructorMicros;
+    internal long NeedsWallClockMicros()=>Options.NeedsSystemClockMicroseconds?.Invoke() ?? (DateTimeOffset.UtcNow.Ticks-DateTimeOffset.UnixEpoch.Ticks)/10;
+    private void CaptureNativeNeedsConstructorTimes()
+    {
+        _needsCurrentConstructorMicros=NeedsWallClockMicros();
+        _needsCandidateConstructorMicros=NeedsWallClockMicros();
+    }
     // CozmoContext+4 is constructed independently of RobotManager/Needs; absence is an explicit host test input.
     internal bool NeedsContextExternalInterfaceAvailable {get;set;}=true;
     internal bool NeedsContextAlive=>!_disposed;
@@ -25,12 +32,13 @@ public sealed partial class CozmoEngine
         Needs=NeedsManager.FromObb(Options.ResourcesPath,()=>Timer.SecondsF,
             deviceDirectory:Options.NeedsDeviceDirectory,contextRandom:ContextRandom,beforeInit:n=>
             {
+                Needs=n; // context retains this same logical owner before its Init callbacks
                 n.HostEngine=this;n.NativeContextBound=true;
                 n.SourceLog=(level,channel,key,text)=>EmitSourceLog(level,channel,key,text);
                 n.State.PartDamageLog=(value,data)=>EmitSourceLog(EngineLogLevel.Event,null,"needs.part_damaged",value,data);
                 n.TickCount=()=>Timer.TickCount;
                 n.PossiblyWriteLabAssignments=Experiments.PossiblyWriteLabAssignmentsToRobot;
-            });
+            },systemClockMicroseconds:NeedsWallClockMicros,constructorTimes:(_needsCurrentConstructorMicros,_needsCandidateConstructorMicros));
         Experiments.AttachInitializedNeeds(Needs);
         Needs.Connected=false; // native constructor manager+4 is null until InitAfterConnection (0x0069211A, 0x00694388)
         Needs.AttachConnectionRead(this);

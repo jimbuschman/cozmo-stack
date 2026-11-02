@@ -1,5 +1,5 @@
 # No outstanding operator decision
 
-Main 7d73d879 answers the previous Pounce metering question in REVIEW.md. Keep shipped MeterFromDetections=true; use real marker rectangles and attached detector results, retaining the existing M11-016/M11-080 gap when no detector is attached. No proposed override was applied. The pending question is superseded by that recorded direction.
+Main 0a6b6792 confirms POUNCE-REAL-FRAMES-1 PASS/MERGED and M11-098 settled. The previous metering question was answered by main7d73d879: shipped MeterFromDetections=true remains; no override was applied. M15-107 remains open under the current Claude check.
 
-POUNCE-REAL-FRAMES-1 remains WIP until rolling-shutter correction, production rectangle wiring, the changing-frame/marker canonical checks and full gate are complete. New-face rotation remains a named gap. Reward draft is preserved separately as WIP, NOT READY.
+REWARD-GATE-1 is WIP, NOT READY. Lab integration is checked332/332; Needs metadata, notification eligibility and weighted reward integration continue. Missing source facts are being recovered, and required persisted app inputs remain explicit; neither is being disguised as a recovered default. No operator decision is currently pending.

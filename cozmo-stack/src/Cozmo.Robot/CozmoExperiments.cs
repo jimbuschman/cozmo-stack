@@ -46,7 +46,7 @@ internal sealed partial class CozmoExperiments
         _engineAssignmentNode=signal.Connect(values=>{lock(_gate)if(_startupHistoryKnown)_activeAssignments=values.Select(CopyAssignment).ToArray();});
         Lab.AssignmentSignal64=signal;_activeAssignments=Array.Empty<LabAssignmentDef>();_cachedAssignments=Array.Empty<LabAssignmentPair>();
         Audience=new LabAudienceTags{Log=engine.EmitSourceLog};
-        Audience.RegisterEngineTags(()=>NeedsState8Input is {} input ? input() : _preInitNeeds.ReadTimeCreated(),()=>DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+        Audience.RegisterEngineTags(()=>NeedsState8Input is {} input ? input() : _preInitNeeds.ReadTimeCreated(),()=>engine.NeedsWallClockMicros()/1_000_000L,
             ()=>engine.Options.LabLocaleLanguage,()=>engine.Options.LabLocaleCountry);
     }
     private readonly List<LabAssignmentDef> _assignments4C;

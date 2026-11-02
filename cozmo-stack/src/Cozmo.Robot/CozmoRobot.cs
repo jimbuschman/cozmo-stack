@@ -315,7 +315,7 @@ public sealed partial class CozmoRobot : IDisposable
         {
             owned=Directory.CreateTempSubdirectory("cozmo-offline-cache-").FullName;
             settings=new CozmoEngineOptions {
-                FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,NeedsDeviceDirectory=settings.NeedsDeviceDirectory,
+                FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,NeedsDeviceDirectory=settings.NeedsDeviceDirectory,NeedsSystemClockMicroseconds=settings.NeedsSystemClockMicroseconds,
                 DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,BeforeStart=settings.BeforeStart,
                 AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
                 VisionCalibration=settings.VisionCalibration,VisionDetector=settings.VisionDetector,

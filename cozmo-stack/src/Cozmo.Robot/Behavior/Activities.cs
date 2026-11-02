@@ -941,7 +941,8 @@ public sealed class ActivityStrategy : IDisposable
     // fidelity: M15-098
     private void ReceiveNeeds(object? payload)
     {
-        if(payload is not IReadOnlyList<uint> words || Need is not {} n || (uint)n>=3)
+        IReadOnlyList<uint>? words=payload is NativeNeedsStateReport full ? full.Levels : payload as IReadOnlyList<uint>;
+        if(words is null || Need is not {} n || (uint)n>=3)
         {SteppedBehavior.ReportMissing("M15-098 needs level projection or needId unavailable");return;}
         float level=BitConverter.Int32BitsToSingle(unchecked((int)words[(int)n]));
         float baseValue=NeedCooldownGraph is {} graph ? (float)graph.EvaluateY(level) : _defaultBase;

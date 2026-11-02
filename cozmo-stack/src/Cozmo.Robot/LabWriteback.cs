@@ -16,6 +16,7 @@ internal sealed partial class CozmoExperiments
     { lock (_gate) { _activeAssignments = active; _cachedAssignments = cache; } }
     internal IReadOnlyList<LabAssignmentPair>? CachedAssignments { get { lock (_gate) return _cachedAssignments; } }
     internal IReadOnlyList<LabAssignmentDef>? ActiveAssignmentsForTest { get { lock(_gate)return _activeAssignments?.ToArray(); } }
+    internal bool NativeAssignmentHistoryAvailable {get {lock(_gate)return _activeAssignments is not null&&_cachedAssignments is not null;}}
 
     // 0x6A5AA0: clear the loaded vector only after finding the original first robot.
     internal void ReadLabAssignmentsFromRobot(uint serial)
