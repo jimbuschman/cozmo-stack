@@ -1,4 +1,6 @@
-# MOTION-MASK-COMPONENTS-1 — BUILD DONE, BATCH GATE PENDING
+# MOTION-MASK-COMPONENTS-1 — READY FOR CLAUDE
+
+Final full2 at8365f430: **7501/7501 PASS,0 skipped,9m18s**, compiler/gate/shutdown0/postflight0. Logs `.scratch/pounce-prerequisites-batch-full-2{,-console}.log`. This supersedes earlier pending/NOT READY and failed-gate checkpoints. Parent POUNCE-REAL-FRAMES-1 remains OPEN; no record status/approval or hardware change.
 
 Third finite POUNCE-REAL-FRAMES-1 prerequisite: supplied-mask components, not a working detector. No statuses, approvals, new records or hardware runs.
 

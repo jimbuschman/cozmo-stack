@@ -1,4 +1,6 @@
-# VISION-GROUND-CARRIER-1 — BUILD DONE, BATCH GATE PENDING
+# VISION-GROUND-CARRIER-1 — READY FOR CLAUDE
+
+Final full2 at8365f430: **7501/7501 PASS,0 skipped,9m18s**, compiler/gate/shutdown0/postflight0. Logs `.scratch/pounce-prerequisites-batch-full-2{,-console}.log`. This supersedes earlier pending/NOT READY and failed-gate checkpoints. Parent POUNCE-REAL-FRAMES-1 remains OPEN; no record status/approval or hardware change.
 
 First prerequisite under POUNCE-REAL-FRAMES-1, split under main c458f3f2's explicit permission for the large producer path. The parent real-frame/no-Hiking-hold goal remains OPEN. No statuses, approvals, new records or hardware runs.
 
