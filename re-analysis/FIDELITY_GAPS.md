@@ -8,9 +8,9 @@ Manifest of **753 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 273 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 8 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EQUIVALENT_IMPLEMENTATION | 9 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 364 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 69 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 110 | 4 | 85 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 110 | 4 | 84 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 18 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -4043,16 +4043,6 @@ PLAYALONE-MOVES-ON-1 binds Hiking as well as Sparks for the same shipped Think b
 * evidence: Ctor and admission 0x005E482C, 0x005E4C6C; Init 0x005E4CE0; lifecycle through 0x005E5A6C.; re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md
 * outstanding: Built, NativeHikingLookInPlaceTests. Not settled: the body was not read in the Claude check and it has not run on a robot. A missing live map holds visibly.
 
-**M15-107 — BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/NativeHikingPounce.cs`
-* effect: the pounce Cozmo does while Hiking when something moves
-* rests on: Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Normal path 0x005F7F90..0x005FA194; running score 0x005F83BE; movement helper 0x00640634, 0x00640654; pack 0x007A4C24.; re-analysis/jobs/trial-m13/HANDOFF-PLAYALONE-MOVES-ON-1.md
-* outstanding: Partly built, NativeHikingPounceTests. Not settled: the body was not read in the Claude check. Real frame, motion and cliff history and an unrecovered rotation branch stay MISSING.
-Not settled by re-analysis/research/20261102-pounce-real-frames-claude-check.md: the positive body from 0x005F9C34 is unread by Claude and has not met a real frame.
-
 ## What remains after both: blocked externally, or needing hardware
 
 | id | subsystem | status | what | why it cannot be settled here |
@@ -4160,4 +4150,5 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M4-052 | M4-control | EQUIVALENT_IMPLEMENTATION | Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY | libcozmoEngine.so 3.4.0-1204. |
 | M15-077 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset | libcozmoEngine.so 3.4.0-1204 |
 | M15-096 | M15-freeplay | COMPATIBILITY_POLICY | ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown | libcozmoEngine.so 3.4.0-1204 |
+| M15-107 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop | libcozmoEngine.so 3.4.0-1204 |
 

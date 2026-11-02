@@ -14835,7 +14835,7 @@
       "subsystem": "M15-freeplay",
       "title": "BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/NativeHikingPounce.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Normal path 0x005F7F90..0x005FA194; running score 0x005F83BE; movement helper 0x00640634, 0x00640654; pack 0x007A4C24.",
@@ -14843,7 +14843,7 @@
       ],
       "effect": "the pounce Cozmo does while Hiking when something moves",
       "provenance": "Codex read and build, Claude check 2026-11-01; added under the standing authorisation for cited inventory corrections.",
-      "unresolved": "Partly built, NativeHikingPounceTests. Not settled: the body was not read in the Claude check. Real frame, motion and cliff history and an unrecovered rotation branch stay MISSING.\nNot settled by re-analysis/research/20261102-pounce-real-frames-claude-check.md: the positive body from 0x005F9C34 is unread by Claude and has not met a real frame.",
+      "unresolved": "Partly built, NativeHikingPounceTests. Not settled: the body was not read in the Claude check. Real frame, motion and cliff history and an unrecovered rotation branch stay MISSING.\nNot settled by re-analysis/research/20261102-pounce-real-frames-claude-check.md: the positive body from 0x005F9C34 is unread by Claude and has not met a real frame.\nSettled on the Hiking configuration's own path by Claude check re-analysis/research/20261102-pounce-body-claude-check.md, which also covers the real-frame motion path. Equivalent only for the phone's libm atanf in ComputePanAndTiltAngles 0x0085E8E4; every other step is from the engine. Four differences fixed there. Streamline branches are unreachable on this configuration (+0xD9 refused, +0xD8 is 0 at spark 0x55). Rests on Codex's reading, not re-read by Claude: Init, initial pounce, get-out, Stop, Cleanup and lift-delay lambdas. Other Pounce configurations (socialize, sparks, voice) are not built. The last robot pounce predates the four fixes.",
       "hardware_required": false,
       "live_path": true,
       "test": "NativeHikingPounceTests"
