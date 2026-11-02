@@ -1,0 +1,15 @@
+# MOTION-BYTE-MORPH-1 — BUILD DONE, BATCH GATE PENDING
+
+Fourth finite POUNCE-REAL-FRAMES-1 prerequisite. This supplied sparse-kernel helper does not construct the runtime ellipse or run MotionDetector. No statuses, approvals, new records or hardware runs.
+
+- Native close is dilation then erosion (engine006A98D6, imgproc000948A8/00094AB2), one iteration. The selected sparse kernel takes general2D factory000964C4 via000967F2..0009687E, with u8 workers00090528/00090B8C. Full rectangles select separate workers and remain visibly unavailable here.
+- Nonzero kernel cells supply row-major coordinates, without coefficient weights or reflection (000557BC). Each sample uses output+kernel-anchor. Dilation uses max with outside-image0, erosion min with outside-image255; DBL_MAX sentinel conversion is000968BA..00096A7E. Native table bytes confirm the exact min/max reductions. Whole-pass snapshots preserve native in-place buffering; close's second pass consumes the completed first pass.
+- Mat-only operations preserve the destination image header/timestamp. A separate destination is not assigned the source timestamp: native006A9880..006A98D6 passes the Mat at Image+4, not the header timestamp at+3C. Unsupported all-zero/full kernels and non-gray channels return MISSING without changing pixels or metadata.
+
+Files: new NativeMotionMorphology.cs and NativeMotionMorphologyTests.cs. Five literal source-derived cases exercise asymmetric even anchors, different nonzero magnitudes, a single off-anchor cell, all image edges, an image smaller than the kernel, width5's grouped/tail behavior, non-reflection and dilation-before-erosion. Each runs same-buffer and separate-buffer with padding/source preservation. Tiny1x2 sparse kernel still selects2D:000945AE tests physical area1, not retained count;000967F2 compares count with physical area.
+
+Affected checks: **40/40 PASS,0 skipped,9s**, compiler/test/shutdown0; transient postflight1 exited, follow-up0. Filter includes all new motion-image/components/morphology tests plus NativeGroundPlaneCarrierTests and NativeHikingPounceTests. Log `.scratch/motion-byte-morph-1/affected-1.log`. Full batch gate pending; NOT READY.
+
+Records: M11-016 RECOVERABLE_GAP "Face, pet and motion detection" already owns these steps; its OKAO-only evidence correction stays with Claude. No whole settlement or new record. MISSING: actual ellipse cells/FPSCR,21x21 scalar normalization, arbitrary CC centroid rounding, worker pose/IMU/anchor, detector/peripheral/ground/packing/delivery and positive Pounce. No processed-bit, no-motion or readiness success is manufactured.
+
+Worker requests: reader `gpt-6.1-sol`, medium; builder DEFAULT and independent reviewer DEFAULT (model/effort omitted), unchanged; actual backends unobserved. **1 returned batch/1 resubmission:** removed the unsupported destination timestamp copy and corrected that test oracle. Builder source questions about sparse single-cell selection and timestamp ownership were resolved at the addresses above; inherited ellipse/FPSCR/downstream gaps remain. No worker .NET run.
