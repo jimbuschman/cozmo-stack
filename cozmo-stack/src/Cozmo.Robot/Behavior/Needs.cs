@@ -737,6 +737,11 @@ public sealed partial class NeedsManager
     private bool NativeMetadataAvailable=>_nativeStarThresholds is not null;
     private bool _nativePersistenceReady; // remains false until the full source resolver/read/write join is installed
     private bool _nativePersistencePrerequisites;
+    internal float? NativeNotificationMaxFuture;
+    internal float NativeInitializationTime;
+    internal bool NativeNotificationNeedsConfigAvailable,NativeNotificationDecayAvailable;
+    internal bool NativeNotificationDidConnect; // +0x1D4: sticky since full Init, not Needs+4
+    internal Func<bool>? TryLocalNotificationsGenerate;
     private EngineRobot? _nativeConnectedRobot; // Needs+0x4, explicitly rebound by InitAfterConnection
     internal bool HasNativePersistence=>NativeContextBound&&_nativePersistenceReady;
     private void InitializeNativeMetadata(string? starConfig)
@@ -860,7 +865,8 @@ public sealed partial class NeedsManager
         if(NativeContextBound&&_nativePersistenceReady){if(!WriteNativeDevice(true))return;}
         else WriteToDevice?.Invoke(true);                        // 0x0069347E
         SendNeedsLevelsDasEvent?.Invoke("app_start");            // 0x00693486
-        if(LocalNotificationsGenerate is {} notifications)notifications();
+        if(TryLocalNotificationsGenerate is {} nativeNotifications){if(!nativeNotifications())return;}
+        else if(LocalNotificationsGenerate is {} notifications)notifications();
         else if(HasNativePersistence)SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00693492");
     }
 
@@ -1017,6 +1023,7 @@ public sealed partial class NeedsManager
         string? actionsJson=Read("needs_action_config.json");
         var actions = actionsJson is { } a ? NeedsActionDelta.Parse(a) : null;
         var needs = new NeedsManager(clockSec, cfg, decay, actions, random, systemClockMicroseconds, constructorTimes);
+        needs.NativeNotificationNeedsConfigAvailable=cfg is not null;needs.NativeNotificationDecayAvailable=decay is not null;
         needs.DistortionRng=contextRandom;
         // J3: the directory the engine's DataPlatform resolves ("nurture/") is the host's; the caller supplies it.
         needs.DeviceDirectory = deviceDirectory;
@@ -1039,6 +1046,12 @@ public sealed partial class NeedsManager
         needs.DesiredFaceDistortion = distortion;
         // NeedsManager::Init 0x00692574 ends by calling InitInternal 0x006926CE (J1/J14): the construction
         // analogue here, so a manager built from the OBB has run the startup device read and its tail.
+        if(needsConfigJson is not null)
+        {
+            using var notificationConfig=JsonDocument.Parse(needsConfigJson,new JsonDocumentOptions{CommentHandling=JsonCommentHandling.Skip,AllowTrailingCommas=true});
+            if(notificationConfig.RootElement.TryGetProperty("LocalNotificationMaxFutureMinutes",out var max)&&max.ValueKind==JsonValueKind.Number&&max.TryGetSingle(out float value))needs.NativeNotificationMaxFuture=value;
+        }
+        needs.NativeInitializationTime=(float)clockSec();
         beforeInit?.Invoke(needs);
         needs.InitializeNativeMetadata(Read("needs_level_config.json"));
         if(needsConfigJson is not null)
@@ -1051,7 +1064,7 @@ public sealed partial class NeedsManager
         needs._nativePersistencePrerequisites=needs.NativeContextBound&&needs.NativeMetadataAvailable&&needs._nativeRepairRounds is not null&&
             deviceDirectory is not null&&cfg is not null&&decay is not null&&actions is not null;
         needs._nativePersistenceReady=needs._nativePersistencePrerequisites;
-        needs.InitInternal(clockSec());
+        needs.InitInternal(needs.NativeInitializationTime);
         return needs;
     }
 
@@ -1304,7 +1317,7 @@ public sealed partial class NeedsManager
     /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
     /// </summary>
     // fidelity: M15-014, M15-016
-    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; if(NativeContextBound)_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot(); _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
+    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; if(NativeContextBound){_nativeConnectedRobot=HostEngine?.Robots.GetFirstRobot();NativeNotificationDidConnect=true;} _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
 
     /// <summary>
     /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6, J5): write the disconnect timestamp to
@@ -2135,6 +2148,16 @@ public sealed partial class NeedsManager
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         SendNeedsStateToGame(action); // 0x00696366, before the reward query.
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
+        // 0x696378 calls Generate before examining the configured reward weight,
+        // including for zero-weight actions. Its owner retains uncertainty if an
+        // incomplete invocation could have consumed the shared RNG.
+        bool notificationHistoryKnown=true;
+        if(nativeRecipient)
+        {
+            if(TryLocalNotificationsGenerate is {} generate)notificationHistoryKnown=generate()&&nativeEngine?.NativeLocalNotifications?.RandomHistoryKnown==true;
+            else {notificationHistoryKnown=false;nativeEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-093 LocalNotifications.Generate recipient unavailable at 0x00696378");}
+            if(!NativeCurrent())return false;
+        }
         float rewardWeight=(float)d.FreeplaySparksRewardWeight;
         if (!(MathF.Abs(rewardWeight)<BitConverter.Int32BitsToSingle(0x3727C5AC)))
         {
@@ -2143,7 +2166,8 @@ public sealed partial class NeedsManager
                 Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
                 if(nativeEngine is null || !ReferenceEquals(HostEngine,nativeEngine) || !ReferenceEquals(nativeEngine.Needs,this))
                     SteppedBehavior.ReportMissing("M15-071 weighted reward original Needs/context owner changed; producer unavailable");
-                else SteppedBehavior.ReportMissing("M15-071/M15-093/M15-094/M15-095 weighted reward gates, notification RNG and inventory producer unavailable");
+                else if(!notificationHistoryKnown)SteppedBehavior.ReportMissing("M15-071/M15-093 weighted reward withheld: notification effects or shared RNG history unavailable");
+                else SteppedBehavior.ReportMissing("M15-071/M15-093/M15-094/M15-095 weighted reward gates and inventory producer unavailable");
             }
             else if (d.FreeplaySparksRewardWeight > 0)
             {

@@ -17,7 +17,7 @@ internal sealed record LabExperiment(uint? Version=null,byte[]? Key=null,byte? A
     IReadOnlyList<byte[]>? AudienceTags=null,IReadOnlyList<LabVariation>? Variations=null);
 internal sealed record LabDefinition(byte[]? ProjectId=null,uint? Version=null,uint? Revision=null,IReadOnlyList<LabExperiment>? Experiments=null);
 
-// fidelity: M15-049 — checked definition loader/setters, no assignment/bucketing implementation.
+// fidelity: M15-049, M15-062 — original context owner, retained lookups and assignment signal recipients.
 internal sealed partial class CozmoExperiments
 {
     private readonly CozmoEngine _engine;

@@ -174,7 +174,8 @@ public sealed partial class NeedsManager
             _deviceDataPresent=true;_deviceVersionUpdated=false;
         }
         if(robotWrite){_robotRewriteNeeded=false;if(!StartNativeRobotWrite(writeTime)||!Current())return;}
-        if(LocalNotificationsGenerate is {} notifications)notifications();
+        if(TryLocalNotificationsGenerate is {} nativeNotifications){if(!nativeNotifications())return;}
+        else if(LocalNotificationsGenerate is {} notifications)notifications();
         else SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00694EEC");
     }
     // 0x69449C: only the original connected robot's queue can deliver this callback.

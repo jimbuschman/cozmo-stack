@@ -98,7 +98,8 @@ public sealed class NativeNeedsPendingProofTests
         try
         {
             Assert.True(needs.RegisterNeedsActionCompleted("RollACube"));Assert.False(needs.TryGetNativePending(out _));
-            Assert.Contains(missing,s=>s.Contains("weighted reward gates"));
+            Assert.Contains(missing,s=>s.Contains("persisted notification determinant unavailable"));
+            Assert.Contains(missing,s=>s.Contains("weighted reward withheld: notification effects or shared RNG history unavailable"));
             needs.SparksRewardCommunicatedToUser();Assert.True(needs.NativePendingKnownFalse);
             Assert.False(needs.NativeRewardPayloadKnownForTest);Assert.Equal(0,reports);
             Assert.Contains(missing,s=>s.Contains("reward amount/display payload unavailable"));

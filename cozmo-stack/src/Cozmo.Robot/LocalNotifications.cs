@@ -11,6 +11,18 @@ public sealed record NotificationDeterminants(int InstallSeconds,IReadOnlyList<i
 public sealed record NotificationTextKeysReport(IReadOnlyList<string> TextKeys,IReadOnlyList<string> TitleKeys);
 public sealed record NotificationScheduleReport(int Seconds,string Title,string Text,bool Persist,string Deeplink,string Url);
 
+internal static class NotificationDeterminantCodec
+{
+    internal static byte[] Pack(NotificationDeterminants input)
+    {
+        if(input.UnlockTimestamps.Count!=85||input.HasPlayed.Count!=85)throw new ArgumentException("Notification history requires exactly 85 values in each vector.",nameof(input));
+        byte[] data=new byte[433];BinaryPrimitives.WriteInt32LittleEndian(data,input.InstallSeconds);BinaryPrimitives.WriteUInt16LittleEndian(data.AsSpan(4),85);
+        for(int i=0;i<85;i++)BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(6+i*4),input.UnlockTimestamps[i]);
+        BinaryPrimitives.WriteUInt16LittleEndian(data.AsSpan(346),85);for(int i=0;i<85;i++)data[348+i]=input.HasPlayed[i]?(byte)1:(byte)0;
+        return data;
+    }
+}
+
 // fidelity: M15-093 — bounded shipped LocalNotifications path; nonshipped branches remain explicit gaps.
 internal sealed class LocalNotifications : IDisposable
 {
@@ -20,23 +32,31 @@ internal sealed class LocalNotifications : IDisposable
         internal string Title="",Parameter="",Deeplink="",Url="";
         internal List<string> Texts=new();
         internal float? Early,Late,Minimum,NoEarlier,NoLater;
-        internal Item Next()=>new(){Kind=255,Connection=Connection,When=When,Days=Days,Unlock=Unlock,Comparison=Comparison,Early=Early,Late=Late,Minimum=Minimum,NoEarlier=NoEarlier,NoLater=NoLater};
+        // The reused union storage can alias prior variants; missing union scalars
+        // remain unavailable until that changed-config case is source-bounded.
+        internal Item Next()=>new(){Kind=255,Connection=Connection,When=When,Early=Early,Late=Late,Minimum=Minimum,NoEarlier=NoEarlier,NoLater=NoLater};
     }
     private readonly CozmoEngine _engine;
     private readonly NeedsManager _needs;
     private readonly EngineRandom _rng;
     private readonly List<IDisposable> _subscriptions=new();
     private readonly List<Item> _items=new();
-    private readonly float? _maximum;
+    private readonly HashSet<string> _missingScope=new();
     private NotificationDeterminants? _history;
     private int _latestId,_latestTime;
     private float _deadline;
     private bool _retired,_rngHistoryKnown=true;
     internal bool RandomHistoryKnown=>_rngHistoryKnown;
+    internal void MarkHistoryUnavailable()=>_rngHistoryKnown=false;
     internal float Deadline=>_deadline;
+    internal int LatestId=>_latestId;
+    internal int LatestTime=>_latestTime;
+    internal bool AnyMinigamePlayed=>_history is {} h&&(h.HasPlayed[15]||h.HasPlayed[17]||h.HasPlayed[18]);
+    internal int ItemCount=>_items.Count;
+    internal bool TryEvaluateForTest(int index,out bool eligible)=>Eligible(_items[index],out eligible);
     private bool Current=>!_retired&&_engine.NeedsContextAlive&&ReferenceEquals(_engine.Needs,_needs);
-    internal LocalNotifications(CozmoEngine engine,NeedsManager needs,float? maximum)
-    {_engine=engine;_needs=needs;_rng=engine.ContextRandom;_maximum=maximum;}
+    internal LocalNotifications(CozmoEngine engine,NeedsManager needs)
+    {_engine=engine;_needs=needs;_rng=engine.ContextRandom;}
 
     private static bool Has(FirmwareJsonValue value,string key)=>value.Kind==FirmwareJsonKind.Object&&value.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
     private static string Str(FirmwareJsonValue value)=>Encoding.UTF8.GetString(Json.AsStringBytes(value));
@@ -81,9 +101,10 @@ internal sealed class LocalNotifications : IDisposable
                 }
             }
         }
-        catch(Exception e) when(e is JsonLogicError or JsonRuntimeError or JsonMissingSource)
+        catch(JsonMissingSource e){Missing("notification config conversion unavailable: "+e.Message);return false;}
+        catch(Exception e) when(e is JsonLogicError or JsonRuntimeError)
         {Missing("M1-034 notification config item skipped at 0x00789E30: "+e.Message);return false;}
-        if(!_engine.NeedsContextExternalInterfaceAvailable){Missing("M1-034 null notification subscription interface at 0x0068C784");return false;}
+        if(!_engine.NeedsContextExternalInterfaceAvailable){Missing("M1-034 null notification subscription interface at 0x0068C86E");return false;}
         _subscriptions.Add(_engine.AnimationMessages.Subscribe(0xD4,false,()=>TryGenerate()));
         _subscriptions.Add(_engine.AnimationMessages.Subscribe(0xD5,false,SendTextKeys));
         _subscriptions.Add(_engine.AnimationMessages.SubscribeMessage(0xD6,false,p=>{if(p is NotificationDeterminants value)SetDeterminants(value);}));
@@ -97,19 +118,141 @@ internal sealed class LocalNotifications : IDisposable
         for(int i=0;i<stamps.Length;i++)if(stamps[i]>_latestTime){_latestTime=stamps[i];_latestId=i;}
         _history=new(value.InstallSeconds,stamps,played);return true;
     }
-    private void Missing(string text)=>SteppedBehavior.ReportMissing("M15-093 LocalNotifications: "+text);
+    private void Missing(string text)=>SteppedBehavior.ReportMissing("M15-093 LocalNotifications: "+text,_missingScope);
     private bool Feature(out bool enabled)
     {if(_engine.Features is null){enabled=false;Missing("feature 11 input unavailable");return false;}enabled=_engine.Features.IsEnabled("LocalNotifications");return true;}
-    private int NowSeconds()=>unchecked((int)(_engine.NeedsWallClockMicros()/1_000_000L));
+    private bool TryNowSeconds(out int seconds)
+    {
+        long value=_engine.NeedsWallClockMicros()/1_000_000L;
+        if(!Current){seconds=0;return false;}
+        if(value<int.MinValue||value>int.MaxValue){seconds=0;Missing("clock outside checked signed32 notification domain");return false;}
+        seconds=(int)value;return true;
+    }
     private static byte[] Text(string text)=>Encoding.UTF8.GetBytes(text);
     private static void PutString(Stream stream,string text){byte[] bytes=Text(text);int count=unchecked((byte)bytes.Length);stream.WriteByte((byte)count);stream.Write(bytes,0,count);}
     private void SendTextKeys()
     {
         if(!Current)return;
-        if(!_engine.NeedsContextExternalInterfaceAvailable){Missing("M1-034 null text-key report interface at 0x0068CE64");return;}
+        if(!_engine.NeedsContextExternalInterfaceAvailable){Missing("M1-034 null text-key report interface at 0x0068CE52");return;}
         string[] texts=_items.SelectMany(i=>i.Texts).ToArray(),titles=_items.Select(i=>i.Title).Where(s=>s.Length!=0).ToArray();
         using var stream=new MemoryStream();void PutVector(string[] a){Span<byte> count=stackalloc byte[2];BinaryPrimitives.WriteUInt16LittleEndian(count,unchecked((ushort)a.Length));stream.Write(count);foreach(string s in a.Take(unchecked((ushort)a.Length)))PutString(stream,s);}
         PutVector(texts);PutVector(titles);_engine.DeliverNurture(0x99,stream.ToArray(),new NotificationTextKeysReport(texts,titles));
+    }
+    private bool TryLocalDate(string text,out int seconds)
+    {
+        seconds=0;
+        if(!DateTime.TryParseExact(text,"yyyy-MM-dd HH:mm",CultureInfo.InvariantCulture,DateTimeStyles.None,out var value))
+        {Missing("noncanonical local-date/mktime input at 0x0068D628");return false;}
+        if(!NativeNotificationCalendar.TryMktime(value,out seconds)){Missing("host C mktime recipient unavailable for notification date");return false;}
+        return true;
+    }
+    private bool TryMinutes(string value,out float minutes)
+    {
+        if(value.Length>0&&value.All(c=>c>='0'&&c<='9')&&float.TryParse(value,NumberStyles.None,CultureInfo.InvariantCulture,out minutes)&&float.IsFinite(minutes)&&minutes<=259200f)return true;
+        minutes=0;Missing("notification stof input outside checked shipped decimal domain");return false;
+    }
+    private bool TargetFuture(string parameter,int origin,out bool result)
+    {
+        result=false;if(!TryNowSeconds(out int now)||!TryMinutes(parameter,out float minutes))return false;
+        int delta=(int)(minutes*60f);result=unchecked(origin+delta)>now;return true;
+    }
+    private bool Eligible(Item item,out bool result)
+    {
+        result=false;if(item.Connection is not {} connection||item.Kind is not {} kind||item.When is not {} when){Missing("uninitialized notification predicate field");return false;}
+        if((!_needs.NativeNotificationDidConnect&&connection==1)||(_needs.NativeNotificationDidConnect&&connection==2))return true;
+        if(kind==0)
+        {
+            result=true;
+            if(when==4){if(!TryNowSeconds(out int now)||!TryLocalDate(item.Parameter,out int target))return false;result=target>now;}
+            if(!Feature(out bool enabled))return false;
+            if(enabled&&when==5){if(_history is null){Missing("persisted notification determinant unavailable");return false;}return TargetFuture(item.Parameter,_history.InstallSeconds,out result);}
+            return true;
+        }
+        if(kind==4)
+        {
+            if(!TryNowSeconds(out int now))return false;if(_history is null||item.Days is not {} days){Missing("post-onboarding determinant unavailable");return false;}
+            result=now>unchecked(_history.InstallSeconds+days*86400);return true;
+        }
+        if(kind==5)
+        {
+            if(_history is null||item.Unlock is not {} id||item.Comparison is not {} comparison){Missing("trick notification determinant unavailable");return false;}
+            if((uint)id>=85){Missing("M1-034 notification unlock index outside native fixed history at 0x0068D1DC");return false;}
+            if(comparison==1){if(_latestId==0||_latestId!=id||_latestTime==0)return true;}
+            else if(comparison is 2 or 3)
+            {if(_history.UnlockTimestamps[id]<1||_history.HasPlayed[id]!=(comparison==2))return true;}
+            else return true;
+            return TargetFuture(item.Parameter,_latestTime,out result);
+        }
+        if(kind>6){result=true;return true;}
+        Missing("notification predicate type outside checked shipped domain");return false;
+    }
+    private bool TrySchedule(Item item,long captured,out int seconds)
+    {
+        seconds=0;if(item.When is not {} when){Missing("notification timing type unavailable");return false;}
+        float minutes;
+        if(when==2){if(!TryMinutes(item.Parameter,out minutes))return false;}
+        else if(when==4)
+        {
+            if(!TryLocalDate(item.Parameter,out int target))return false;long capturedSeconds=captured/1_000_000L;
+            if(capturedSeconds<int.MinValue||capturedSeconds>int.MaxValue){Missing("captured clock outside checked signed32 notification domain");return false;}
+            minutes=(float)unchecked(target-(int)capturedSeconds)/60f;if(item.Minimum is not {} min){Missing("notification minimum unavailable");return false;}minutes=MathF.Max(minutes,(float)(int)min);
+        }
+        else if(when is 5 or 6)
+        {
+            if(_history is null){Missing("notification scheduling determinant unavailable");return false;}
+            if(!TryMinutes(item.Parameter,out float value))return false;int origin=when==5?_history.InstallSeconds:_latestTime;if(!TryNowSeconds(out int now))return false;
+            int target=unchecked(origin+(int)(value*60f));minutes=(float)unchecked(target-now)/60f;if(item.Minimum is not {} min){Missing("notification minimum unavailable");return false;}minutes=MathF.Max(minutes,(float)(int)min);
+        }
+        else {Missing("notification scheduling type outside checked shipped domain");return false;}
+        if(item.Early is not {} early||item.Late is not {} late){Missing("notification timing range unavailable");return false;}
+        if(!_rngHistoryKnown){Missing("shared RNG history unavailable after an earlier incomplete generation");return false;}
+        float draw=(float)_rng.RandDblInRange(-(double)early,(double)late);minutes=minutes+draw;
+        if(item.Minimum is not {} minimum){Missing("notification minimum unavailable");return false;}
+        if(!float.IsFinite(minutes)||!float.IsFinite(minimum)){Missing("notification arithmetic outside checked finite timing domain");return false;}
+        if(minutes<minimum)minutes=minimum;
+        if(_needs.NativeNotificationMaxFuture is not {} maximum){Missing("live NeedsConfig notification maximum unavailable");return false;}
+        if(!float.IsFinite(maximum)){Missing("notification maximum outside checked finite timing domain");return false;}
+        if(minutes>maximum){_engine.EmitSourceLog(EngineLogLevel.Info,null,"LocalNotifications.DetermineTimeToNotify","Notification exceeds maximum future time");if(!Current)return false;minutes=maximum;}
+        float secondsFloat=minutes*60f;
+        if(!float.IsFinite(secondsFloat)||secondsFloat>=2147483648f||secondsFloat< -2147483648f){Missing("notification seconds outside checked signed32 timing domain");return false;}
+        seconds=(int)secondsFloat;
+        long targetSeconds=unchecked((captured+(long)seconds*1_000_000L)/1_000_000L);
+        if(!NativeNotificationCalendar.TryLocalMinute(targetSeconds,out float localMinutes)){Missing("host C localtime recipient unavailable for notification date");return false;}
+        if(item.NoEarlier is not {} lower){Missing("notification lower time window unavailable");return false;}
+        if(!float.IsFinite(lower)){Missing("notification lower window outside checked finite domain");return false;}
+        if(localMinutes<lower)seconds=(int)(((lower-localMinutes)*60f)+(float)seconds);
+        else
+        {
+            if(item.NoLater is not {} upper){Missing("notification upper time window unavailable");return false;}
+            if(!float.IsFinite(upper)){Missing("notification upper window outside checked finite domain");return false;}
+            if(localMinutes>upper){int intermediate=(int)(((1440f-localMinutes)*60f)+(float)seconds);seconds=(int)((float)intermediate+lower*60f);}
+        }
+        return true;
+    }
+    internal bool TryGenerate()
+    {
+        if(!Current)return false;if(!Feature(out bool enabled)){_rngHistoryKnown=false;return false;}if(!enabled)return true;
+        if(!_engine.NeedsContextExternalInterfaceAvailable)Missing("M1-034 null clear-cache interface at 0x0068CAD0; report skipped");
+        else _engine.DeliverNurture(0x97,Array.Empty<byte>(),null);
+        if(!Current)return false;
+        if(!_needs.NativeNotificationNeedsConfigAvailable){Missing("actual Needs config unavailable after Clear at 0x0068CAEA");_rngHistoryKnown=false;return false;}
+        _needs.State.UpdateCurNeedsBrackets();if(!Current)return false;
+        if(!_needs.NativeNotificationDecayAvailable){Missing("actual decay input unavailable after bracket refresh at 0x0068CAFC");_rngHistoryKnown=false;return false;}
+        _= _needs.Decay.DecayMultipliers(n=>_needs.State.GetNeedLevel(n));if(!Current)return false;
+        long captured=_engine.NeedsWallClockMicros();if(!Current)return false;_= (float)((captured-_needs.State.NativeAppOpenMicros)/1_000_000L)/60f;
+        foreach(var item in _items)
+        {
+            if(!Eligible(item,out bool eligible)){_rngHistoryKnown=false;return false;}if(!Current)return false;if(!eligible)continue;
+            if(!TrySchedule(item,captured,out int seconds)){_rngHistoryKnown=false;return false;}if(!Current)return false;
+            int choice=_rng.RandInt(item.Texts.Count);
+            if((uint)choice>=(uint)item.Texts.Count){Missing("M1-034 notification text read outside vector at 0x0068CB98; item skipped");if(!Current)return false;continue;}
+            string text=item.Texts[choice];using var stream=new MemoryStream();Span<byte> word=stackalloc byte[4];BinaryPrimitives.WriteInt32LittleEndian(word,seconds);stream.Write(word);
+            PutString(stream,item.Title);PutString(stream,text);stream.WriteByte(0);PutString(stream,item.Deeplink);PutString(stream,item.Url);
+            if(!_engine.NeedsContextExternalInterfaceAvailable)Missing("M1-034 null cache report interface at 0x0068CC28; report skipped");
+            else _engine.DeliverNurture(0x98,stream.ToArray(),new NotificationScheduleReport(seconds,item.Title,text,false,item.Deeplink,item.Url));
+            if(!Current)return false;
+        }
+        _deadline=_needs.NowSec+60f;return true;
     }
     internal void Update(float now){if(_deadline<now)TryGenerate();}
     internal void SetPaused(bool paused)=>TryGenerate();

@@ -9,9 +9,9 @@ namespace Cozmo.Protocol.Tests;
 public sealed class NativeNeedsMetadataTests
 {
     private static void Set(NeedsManager n,string name,object value)=>typeof(NeedsManager).GetField(name,System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(n,value);
-    private static CozmoEngineOptions SourceOptions(BackupTestResources files,string directory)
+    private static CozmoEngineOptions SourceOptions(BackupTestResources files,string directory,Func<long>? clock=null)
     {
-        var options=files.Options(new CozmoEngineOptions{NeedsDeviceDirectory=directory,NeedsSystemClockMicroseconds=()=>3_000_000_000,DasDeviceId="device",LabLocaleLanguage="en",LabLocaleCountry="us"});
+        var options=files.Options(new CozmoEngineOptions{NeedsDeviceDirectory=directory,NeedsSystemClockMicroseconds=clock??(()=>3_000_000_000),DasDeviceId="device",LabLocaleLanguage="en",LabLocaleCountry="us"});
         string source=Path.GetDirectoryName(BackupTestResources.ShippedConfig())!;
         foreach(string name in new[]{"needs_config.json","needs_decay_config.json","needs_action_config.json","needs_level_config.json","needs_handlers_config.json"})
             File.Copy(Path.Combine(source,name),Path.Combine(options.ResourcesPath!,"config","engine",name),true);
@@ -175,6 +175,36 @@ public sealed class NativeNeedsMetadataTests
         Assert.NotNull(replacement);Assert.NotSame(original,replacement);Assert.Same(replacement,engine.Robot);
         Assert.Contains(NeedsManager.NeedsNvKey,engine.NvStorage!.QueuedTags);
         engine.NvStorage.Update();Assert.Contains(sent,c=>c.Tag==NeedsManager.NeedsNvKey&&c.Op==NvStorageComponent.OpErase);
+    }
+    [Fact]
+    public void ActualNativeDeviceThrottleUsesMicrosecondBoundary()
+    {
+        using var files=new BackupTestResources();string directory=Path.Combine(files.Root,"nurture");Directory.CreateDirectory(directory);long now=1_000_000;
+        using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,SourceOptions(files,directory,()=>now));var needs=robot.Engine.Needs;Assert.True(needs.HasNativePersistence);
+        needs.State.NativeDateTimeMicros=1_000_000;string path=needs.FixedDeviceFilePath!;File.WriteAllText(path,"sentinel");
+        now=61_999_999;needs.PossiblyWriteToDevice();Assert.Equal("sentinel",File.ReadAllText(path));Assert.Equal(1_000_000,needs.State.NativeDateTimeMicros);
+        now=62_000_000;needs.PossiblyWriteToDevice();Assert.NotEqual("sentinel",File.ReadAllText(path));Assert.Equal(62_000_000,needs.State.NativeDateTimeMicros);
+    }
+    [Fact]
+    public void ActualNativeRobotThrottleAndForcedReadGuardUseMicroseconds()
+    {
+        using var files=new BackupTestResources();string directory=Path.Combine(files.Root,"nurture");Directory.CreateDirectory(directory);long now=1_000_000;int clockReads=0;
+        using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,SourceOptions(files,directory,()=>{clockReads++;return now;}));var engine=robot.Engine;var needs=engine.Needs;Assert.True(needs.HasNativePersistence);
+        clockReads=0;needs.PossiblyStartWriteToRobot(true);Assert.Equal(0,clockReads);
+        engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);needs.InitAfterConnection();Set(needs,"_nativeLastRobotWriteMicros",1_000_000L);
+        now=602_000_000;needs.PossiblyStartWriteToRobot(true);Assert.Equal(1_000_000L,typeof(NeedsManager).GetField("_nativeLastRobotWriteMicros",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(needs));
+        Assert.DoesNotContain(NeedsManager.NeedsNvKey,engine.NvStorage!.QueuedTags);
+        Set(needs,"_awaitingRobotData",false);now=601_999_999;needs.PossiblyStartWriteToRobot(false);Assert.DoesNotContain(NeedsManager.NeedsNvKey,engine.NvStorage.QueuedTags);
+        now=602_000_000;needs.PossiblyStartWriteToRobot(false);Assert.Contains(NeedsManager.NeedsNvKey,engine.NvStorage.QueuedTags);
+    }
+    [Fact]
+    public void ActualNativeRestoreDividesMicrosecondsBeforeFloatConversion()
+    {
+        using var files=new BackupTestResources();string directory=Path.Combine(files.Root,"nurture");Directory.CreateDirectory(directory);long now=1_900_000;
+        using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,SourceOptions(files,directory,()=>now));var needs=robot.Engine.Needs;Assert.True(needs.HasNativePersistence);
+        needs.State.NativeDateTimeMicros=0;var logs=new List<string>();needs.State.SourceLog=(level,channel,key,text)=>{if(key=="NeedsState.ApplyDecay")logs.Add(text);};
+        typeof(NeedsManager).GetMethod("ApplyNativeElapsed",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(needs,new object[]{false});
+        Assert.Equal(3,logs.Count);Assert.All(logs,text=>Assert.Contains("elapsed time of 1.000000 seconds",text));
     }
     [Fact]
     public void SourceStarThresholdsKeepActualLevelOrderAndLastFallback()

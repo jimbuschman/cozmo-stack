@@ -2563,6 +2563,7 @@ public sealed partial class CozmoEngine : IDisposable
         DisposeAppAudioInput();
         ClearAppDelivery();
         Experiments?.RetireLab(); // context-owned Lab subscriber, not Robot lifetime.
+        NativeLocalNotifications?.Dispose(); // context-owned D4/D5/D6 subscriptions
         AnimationMessages.Dispose(); // G2E map, then E2G map (0x0066016E..0x00660184).
         AnimationMessages.ReportRetirementAtShutdown(EmitStackLog); // M8-027: missing sink was detached before teardown.
         _backupUnlockHandle?.Dispose(); // expired context signal; no callback.
