@@ -1339,6 +1339,7 @@ public sealed partial class EngineRobot
         // and precedes MoodManager::Update (0x00513E84) and so AIComponent::Update; it is owned by the world's owner (the VisionSystem), which sets this hook.
         if (Engine.ChargerPlatformUpdate is { } platform) Engine.RunIsolated(platform);
         UpdateNativeMood(now); // 0x00513E84..8A: same entry-captured float; unavailable host input is explicit.
+        Inventory?.Update(); // 0x00513E90: owner system-clock retry, after mood and before AI.
         // fidelity: M8-011
         // 0x00513EA8..0x00513EAC: AIComponent::Update (its BehaviorHelperComponent step) runs here, ahead of ActionList::Update (0x005140BC), the animation streamer
         // (0x0051410C) and NVStorage::Update (0x0051416A).

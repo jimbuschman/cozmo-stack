@@ -86,7 +86,7 @@ public sealed class M15RestorationCheckedRowsTests
     [Fact]
     public void MissingUnlocksInstallDefaultsBeforeTheNullInterfaceNotificationSkip()
     {
-        using var f=new Fixture();f.Native.HasExternalInterface=false;f.Native.Progression!.Unlocked.Add(84);f.Native.Progression.ReadSink(new NvResult(-1,Array.Empty<byte>()));f.Engine.DrainAppDelivery();
+        using var f=new Fixture();f.Engine.NeedsContextExternalInterfaceAvailable=false;f.Native.Progression!.Unlocked.Add(84);f.Native.Progression.ReadSink(new NvResult(-1,Array.Empty<byte>()));f.Engine.DrainAppDelivery();
         Assert.Equal(BackupFiles.CurrentDefaults(),f.Native.Progression.Unlocked);Assert.Empty(f.Reports);Assert.Contains(f.Stack,s=>s.Contains("0x0064C114"));
     }
     // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
@@ -116,7 +116,7 @@ public sealed class M15RestorationCheckedRowsTests
     [Fact]
     public void InventoryWithoutInterfaceStillDecodesAndBecomesReadyButSendsNothing()
     {
-        using var f=new Fixture();f.Native.HasExternalInterface=false;f.Native.Inventory!.ReadSink(new NvResult(0,BitConverter.GetBytes(-4)));f.Engine.DrainAppDelivery();
+        using var f=new Fixture();f.Engine.NeedsContextExternalInterfaceAvailable=false;f.Native.Inventory!.ReadSink(new NvResult(0,BitConverter.GetBytes(-4)));f.Engine.DrainAppDelivery();
         Assert.True(f.Native.Inventory.Ready);Assert.Equal(-4,f.Native.Inventory.Words[0]);Assert.Empty(f.Reports);
     }
     [Fact]
