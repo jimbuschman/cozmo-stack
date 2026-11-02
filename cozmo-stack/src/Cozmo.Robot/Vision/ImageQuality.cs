@@ -101,17 +101,16 @@ internal sealed class ImageQualityProcessor
         float weight=(float)area*255f;
         weight=weight/(float)total;
         byte outside=unchecked((byte)ArmUnsigned(weight)),inside=unchecked((byte)~outside);
-        // Only the established in-bounds ROI recipient is used. Clip/error behavior has no checked row here.
-        foreach(var rect in rectangles)
-            if(rect.X<0||rect.Y<0||rect.Width<0||rect.Height<0||(long)rect.X+rect.Width>image.Width||(long)rect.Y+rect.Height>image.Height)
-            {SteppedBehavior.ReportMissing("M11-080 GetROI 0x006B2E36 clipping/malformed rectangle recipient not built; mask unit skipped without inventing clipping");return false;}
         mask=new GrayImage(image.Width,image.Height);mask.Fill(outside);
         foreach(var rect in rectangles)
-            for(int y=rect.Y;y<rect.Y+rect.Height;y++)for(int x=rect.X;x<rect.X+rect.Width;x++)mask[x,y]=inside;
+        {
+            var clipped=NativeQualityRectangles.Intersect(rect,image.Width,image.Height);
+            for(int y=clipped.Y;y<clipped.Y+clipped.Height;y++)for(int x=clipped.X;x<clipped.X+clipped.Width;x++)mask[x,y]=inside;
+        }
         return true;
     }
     // false means missing input/recipient, not a fabricated native nonzero Result.
-    internal bool TryCheck(GrayImage image,IReadOnlyList<ImageQualityRectangle> rectangles,CameraSettings.QualityCameraState state,int modes,out uint status,out ImageQualityProposal proposal)
+    internal bool TryCheck(GrayImage image,IReadOnlyList<ImageQualityRectangle> rectangles,CameraSettings.QualityCameraState state,int modes,out uint status,out ImageQualityProposal proposal,Func<bool>? current=null)
     {
         status=0;proposal=default;
         if(Pipeline is null)
@@ -119,6 +118,7 @@ internal sealed class ImageQualityProcessor
         if(!TryMask(image,rectangles,out var mask))return false;
         float factor=1f;
         status=Pipeline.ComputeExposureAdjustment(image,mask,ref factor);
+        if(current is not null && !current())return false;
         if(status!=0)
         {
             SourceLog?.Invoke(EngineLogLevel.Warning,null,"VisionSystem.CheckImageQuality.ComputeNewExposureFailed",FormattableString.Invariant($"Detection Quads={rectangles.Count}"));

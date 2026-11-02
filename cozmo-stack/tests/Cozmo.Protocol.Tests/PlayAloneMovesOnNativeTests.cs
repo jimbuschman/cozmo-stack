@@ -68,7 +68,7 @@ public sealed class PlayAloneMovesOnNativeTests
             {
                 f.Motors();
                 if(f.Rig.Engine.Timer.Seconds>=nextCamera)
-                {f.NativeConstantFrame(cameraId++);nextCamera+=1;}
+                {f.NativeCameraFrame(cameraId,(cameraId&1)==0?(byte)200:(byte)100);cameraId++;nextCamera+=1;}
                 Assert.Same(original,f.Rig.Engine.Robot);Assert.False(original.Lifetime.Destroying);
                 foreach(var owner in owners)foreach(var playback in owner.DrainPlaybackObservationsForTest())witness.Register(playback);
                 var successful=f.Rig.Robot.Animations.Scheduler.DrainSentStartWireForTest().ToDictionary(x=>x.QueueId);

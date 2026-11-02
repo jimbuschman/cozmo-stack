@@ -3,7 +3,7 @@ using Cozmo.Protocol;
 namespace Cozmo.Robot.Vision;
 
 // fidelity: M11-033, M11-040
-// Partial SetNextImage handoff snapshot; the native IMU deque remains unavailable.
+// Partial SetNextImage handoff snapshot, including the captured native IMU deque.
 // Neither live robot state nor LUT arrays are retained by reference.
 internal sealed class NativeGroundFrame : IDisposable
 {

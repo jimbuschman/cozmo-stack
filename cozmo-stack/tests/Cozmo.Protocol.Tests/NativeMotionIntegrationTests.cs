@@ -8,6 +8,70 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeMotionIntegrationTests
 {
+    // Native 0x00539258/0x005394BC oracle, RateZ=3 with no-after fallback.
+    private static readonly uint[] NativeZ3ShiftBits = { 0x3F0CCCCDu, 0x3F8CCCCDu, 0x3FD33334u, 0x400CCCCDu, 0x40300000u, 0x40533333u, 0x40766666u, 0x408CCCCDu, 0x409E6667u, 0x40B00001u, 0x40C1999Bu, 0x40D33335u, 0x40E4CCCFu, 0x40F66669u, 0x41040001u, 0x410CCCCEu, 0x4115999Bu, 0x411E6668u, 0x41273335u, 0x41300002u, 0x4138CCCFu, 0x4141999Cu, 0x414A6669u, 0x41533336u, 0x415C0003u, 0x4164CCD0u, 0x416D999Du, 0x4176666Au, 0x417F3337u, 0x41840002u, 0x41886668u, 0x418CCCCEu, 0x41913334u, 0x4195999Au, 0x419A0000u, 0x419E6666u, 0x41A2CCCCu, 0x41A73332u, 0x41AB9998u, 0x41AFFFFEu, 0x41B46664u, 0x41B8CCCAu, 0x41BD3330u, 0x41C19996u, 0x41C5FFFCu, 0x41CA6662u, 0x41CECCC8u, 0x41D3332Eu, 0x41D79994u, 0x41DBFFFAu, 0x41E06660u, 0x41E4CCC6u, 0x41E9332Cu, 0x41ED9992u, 0x41F1FFF8u, 0x41F6665Eu, 0x41FACCC4u, 0x41FF332Au, 0x4201CCC8u, 0x4203FFFBu, 0x4206332Eu, 0x42086661u, 0x420A9994u, 0x420CCCC7u, 0x420EFFFAu, 0x4211332Du, 0x42136660u, 0x42159993u, 0x4217CCC6u, 0x4219FFF9u, 0x421C332Cu, 0x421E665Fu, 0x42209992u, 0x4222CCC5u, 0x4224FFF8u, 0x4227332Bu, 0x4229665Eu, 0x422B9991u, 0x422DCCC4u, 0x422FFFF7u, 0x4232332Au, 0x4234665Du, 0x42369990u, 0x4238CCC3u, 0x423AFFF6u, 0x423D3329u, 0x423F665Cu, 0x4241998Fu, 0x4243CCC2u, 0x4245FFF5u, 0x42483328u, 0x424A665Bu, 0x424C998Eu, 0x424ECCC1u, 0x4250FFF4u, 0x42533327u, 0x4255665Au, 0x4257998Du, 0x4259CCC0u, 0x425BFFF3u, 0x425E3326u, 0x42606659u, 0x4262998Cu, 0x4264CCBFu, 0x4266FFF2u, 0x42693325u, 0x426B6658u, 0x426D998Bu, 0x426FCCBEu, 0x4271FFF1u, 0x42743324u, 0x42766657u, 0x4278998Au, 0x427ACCBDu, 0x427CFFF0u, 0x427F3323u, 0x4280B32Bu, 0x4281CCC5u, 0x4282E65Fu, 0x4283FFF9u };
+    private sealed class NullFaces:IFaceDetector
+    {
+        public bool IsAvailable=>true;public string Description=>"supplied null output";
+        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>null!;
+    }
+    private sealed class NullPets:IPetDetector
+    {
+        public bool IsAvailable=>true;
+        public IReadOnlyList<DetectedPet> Detect(GrayImage image,uint timestamp)=>null!;
+    }
+    [Fact]
+    public void NullAttachedDetectorsAreVisibleAndDoNotBlockQuality()
+    {
+        using var f=new Fixture();var vision=f.M.Vision;vision.FaceDetector=new NullFaces();vision.PetDetector=new NullPets();
+        var missing=new List<string>();var reports=new List<ProcessedImageReport>();
+        using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x43,true,p=>reports.Add(Assert.IsType<ProcessedImageReport>(p)));
+        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=missing.Add;
+        try
+        {
+            f.Image(91,modes:(1<<2)|(1<<9)|(1<<7));
+            Assert.Contains(missing,x=>x.Contains("attached face detector returned null"));
+            Assert.Contains(missing,x=>x.Contains("attached pet detector returned null"));
+            var report=Assert.Single(reports);Assert.Contains(7u,report.Modes);
+            Assert.DoesNotContain(2u,report.Modes);Assert.DoesNotContain(9u,report.Modes);
+        }
+        finally{SteppedBehavior.MissingReported-=missing.Add;}
+    }
+    [Fact]
+    public void QualityInputReentryCannotCommitOldFrameToReplacement()
+    {
+        using var f=new Fixture();var vision=f.M.Vision;var engine=f.Rig.Engine;EngineRobot? replacement=null;
+        int replacementFrames=-1;
+        vision.QualityRectangleInput=()=>
+        {
+            engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+            replacement=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+            replacementFrames=vision.FramesProcessed;
+            return Array.Empty<ImageQualityRectangle>();
+        };
+        try
+        {
+            f.Image(92,modes:1<<7);
+            Assert.NotNull(replacement);Assert.Same(replacement,engine.Robot);
+            Assert.Equal(replacementFrames,vision.FramesProcessed);Assert.Null(vision.LastResult);
+        }
+        finally {vision.QualityRectangleInput=null;}
+    }
+    [Fact]
+    public void QualityDiagnosticReentryDoesNotCallOldFrameProvider()
+    {
+        using var f=new Fixture();var vision=f.M.Vision;var engine=f.Rig.Engine;EngineRobot? replacement=null;int calls=0;
+        vision.QualityRectangleInput=()=>{calls++;return Array.Empty<ImageQualityRectangle>();};
+        void Missing(string value)
+        {
+            if(replacement is not null || !value.Contains("Profiler.Tic/Toc CheckingImageQuality"))return;
+            engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+            replacement=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        }
+        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
+        try {f.Image(93,modes:1<<7);Assert.NotNull(replacement);Assert.Equal(0,calls);Assert.Null(vision.LastResult);}
+        finally {SteppedBehavior.MissingReported-=Missing;vision.QualityRectangleInput=null;}
+    }
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -17,8 +81,11 @@ public sealed class NativeMotionIntegrationTests
         owner.HandleFirmwareVersion(new FirmwareVersion{Signature=System.Text.Encoding.UTF8.GetBytes(physical?"{}":"{\"sim\":true}")});
         vision.SetNativeOuterCalibration(vision.Calibration!);
         Assert.Equal(physical,vision.NativeWorkerPhysicalForTest);
-        vision.ModeEnableMask=1<<1;vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
+        Assert.True(ImageQualitySettings.Globals.MeterFromDetections);Assert.Null(vision.QualityRectangleInput);
+        vision.ModeEnableMask=(1<<1)|(1<<7);vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         var reports=new List<ProcessedImageReport>();var frames=new List<VisionFrameResult>();var missing=new List<string>();
+        var rawMarkers=new List<ObservedMarker>();var rawRectangles=new List<IReadOnlyList<ImageQualityRectangle>>();
+        vision.NativeQualityRectanglesObservedForTest=rectangles=>rawRectangles.Add(rectangles.ToArray());
         using var sub=engine.AnimationMessages.SubscribeMessage(0x43,true,p=>reports.Add(Assert.IsType<ProcessedImageReport>(p)));
         void Frame(VisionFrameResult value)=>frames.Add(value);
         vision.FrameProcessed+=Frame;SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=missing.Add;
@@ -28,31 +95,38 @@ public sealed class NativeMotionIntegrationTests
             {
                 f.Rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.HeadInPos,head:-.15f);
                 uint stamp=owner.PoseHistory.NewestTimeStamp;var pd=vision.History.At(stamp)!.Value;
+                Assert.True(stamp>65); // Every native strip query exceeds the retained zero timestamp.
                 var image=new GrayImage(320,240);image.Fill(150);
                 using(var objectPose=new Pose3d(Mat3.Identity,new Vec3(150,0,22)))
                 using(var cameraPose=pd.CameraPose)
                     MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull??throw new InvalidOperationException("Required marker assets missing"),new CameraModel(vision.Calibration!,cameraPose),ObjectType.Block_LIGHTCUBE1,objectPose);
-                f.Rig.Data(new ImageImuData{ImageId=index,Line2Number=0});f.Rig.Tick();
+                // Earlier image ID leaves its timestamp zero; native helper uses its last-sample fallback.
+                f.Rig.Data(new ImageImuData{ImageId=0,RateZ=physical?3f:0f,Line2Number=0});f.Rig.Tick();
                 f.Rig.CameraGrayFrame(index,stamp,image.Pixels);vision.WaitForProcessorIdle();
+                rawMarkers.Add(vision.Detector.LastQuads.Select(x=>x.Marker).First(x=>x is not null)!);
             }
             engine.VisionUpdateAllResultsFailed!();
             Assert.Equal(2,reports.Count);
-            if(physical)
+            Assert.DoesNotContain(missing,x=>x.Contains("marker pixel-shift"));
+            Assert.Equal(2,frames.Count);Assert.All(reports,r=>Assert.Contains(1u,r.Modes));
+            Assert.Contains(frames,x=>x.Markers.Count!=0);
+            Assert.Contains(vision.World.LocatedObjects,x=>x.Type==ObjectType.Block_LIGHTCUBE1);
+            Assert.Equal(2,rawMarkers.Count);Assert.Equal(2,rawRectangles.Count);
+            for(int i=0;i<2;i++)
             {
-                Assert.Contains(missing,x=>x.Contains("marker pixel-shift"));
-                Assert.Empty(frames);Assert.All(reports,r=>Assert.DoesNotContain(1u,r.Modes));
-            }
-            else
-            {
-                Assert.DoesNotContain(missing,x=>x.Contains("marker pixel-shift"));
-                Assert.Equal(2,frames.Count);Assert.All(reports,r=>Assert.Contains(1u,r.Modes));
-                Assert.Contains(frames,x=>x.Markers.Count!=0);
+                var raw=rawMarkers[i];var xs=raw.Corners.Select(x=>(int)(float)x.X).ToArray();var ys=raw.Corners.Select(x=>(int)(float)x.Y).ToArray();
+                Assert.Equal(new ImageQualityRectangle(xs.Min(),ys.Min(),xs.Max()-xs.Min(),ys.Max()-ys.Min()),Assert.Single(rawRectangles[i]));
+                var corrected=Assert.Single(frames[i].Markers.Where(x=>x.Code==raw.Code));
+                int stripe=(int)MathF.Floor((float)raw.Corners[0].Y/2f);
+                float shift=physical?BitConverter.UInt32BitsToSingle(NativeZ3ShiftBits[stripe]):0f;
+                float expected=(float)raw.Corners[0].X-shift;
+                Assert.Equal(BitConverter.SingleToUInt32Bits(expected),BitConverter.SingleToUInt32Bits((float)corrected.Corners[0].X));
             }
         }
-        finally {vision.FrameProcessed-=Frame;SteppedBehavior.MissingReported-=missing.Add;}
+        finally {vision.NativeQualityRectanglesObservedForTest=null;vision.FrameProcessed-=Frame;SteppedBehavior.MissingReported-=missing.Add;}
     }
     [Fact]
-    public void RealInitFalseMeterUsesFullImageWithoutRectangleProvider()
+    public void RealInitMeterUsesCurrentFrameVectorWithoutExternalRectangleProvider()
     {
         var settings=ImageQualitySettings.Globals;
         var saved=(settings.TooBright,settings.TooDark,settings.MeterFromDetections,settings.Low,settings.Mid,settings.High);
@@ -80,7 +154,7 @@ public sealed class NativeMotionIntegrationTests
                 engine.VisionUpdateAllResultsFailed!();
             }
             Frame(31);Assert.Contains(7u,Assert.Single(reports).Modes);
-            settings.MeterFromDetections=true;reports.Clear();Frame(32);Assert.Empty(reports);
+            settings.MeterFromDetections=true;reports.Clear();Frame(32);Assert.Contains(7u,Assert.Single(reports).Modes);
         }
         finally
         {
@@ -116,7 +190,7 @@ public sealed class NativeMotionIntegrationTests
         EngineRobot? replacement=null;VisionModeSchedule? schedule=null;int counter=-1;
         void Missing(string message)
         {
-            if(replacement is not null || !message.Contains("enabled face detector input unavailable"))return;
+            if(replacement is not null || !message.Contains("face detector unavailable"))return;
             engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
             replacement=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
             schedule=vision.Schedules![(int)VisionMode.DetectingMotion];counter=schedule.Counter;

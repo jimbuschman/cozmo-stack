@@ -72,6 +72,7 @@ public sealed partial class VisionSystem : IDisposable
     private NativeImageImuHistory? _nativeImu;
     private RetainedSubscription? _nativeImuSubscription;
     internal int NativeGroundEpochForTest { get { lock (_groundGate) return _groundEpoch; } }
+    internal Action<IReadOnlyList<ImageQualityRectangle>>? NativeQualityRectanglesObservedForTest;
     internal NativeVisionInitialization? NativeInitializationForTest { get { lock (_groundGate) return _nativeInitialization; } }
     internal bool NativeMotionReadyFor(EngineRobot owner)
     {
@@ -1366,38 +1367,66 @@ public sealed partial class VisionSystem : IDisposable
             // enum-4 dark-test flag (0x006B47A8..0x006B47B4). The marker-mode gate then decides whether
             // Detect runs at all (0x006B5162..0x006B516A).
             var markerImage = SelectMarkerImage(gray);
+            bool physical;
+            lock(_groundGate)physical=_nativeWorkerPhysical;
+            NativeRollingShutter.Shift[]? shifts=null;
+            if(queueForEngine && physical && nativeState?.MotionPose.Current is {} currentGround)
+            {
+                shifts=NativeRollingShutter.Compute(currentGround.Timestamp,gray.Height,currentGround.Imu,false,out bool incomplete);
+                if(incomplete)
+                {
+                    var history=currentGround.Imu;
+                    if(history.Length==0)_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"RollingShutterCorrector.ComputePixelShifts.EmptyHistory",$"No ImageIMU data from timestamp {currentGround.Timestamp}, imuDataHistory is empty");
+                    else _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"RollingShutterCorrector.ComputePixelShifts.NoImageIMUData",$"No ImageIMU data from timestamp {currentGround.Timestamp} have data from time {history[0].ComputedTimestamp}:{history[^1].ComputedTimestamp}");
+                }
+                if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
+            }
             ushort processedMask=0;
             byte imageMean=0;
             var motionReports=new List<NativeObservedMotion>();
+            var qualityRectangles=new List<ImageQualityRectangle>(); // fresh source Update-local vector
             if(ShouldProcessVisionMode((int)VisionMode.ComputingStatistics))
             {imageMean=SampleImageMean(gray);processedMask|=1<<8;}
             bool markerMode=ShouldProcessVisionMode(DetectingMarkers);
             markers = markerMode ? Detector.Detect(markerImage, timestamp) : Array.Empty<ObservedMarker>();
             if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
-            bool physical;
-            lock(_groundGate)physical=_nativeWorkerPhysical;
-            bool markerUnavailable=queueForEngine && physical && markerMode && markers.Count!=0;
-            if(markerUnavailable)
+            foreach(var marker in markers)qualityRectangles.Add(NativeQualityRectangles.Marker(marker)); // raw quad, before correction
+            if(queueForEngine && physical && markerMode && shifts is not null)
             {
-                // The physical rolling-shutter gate and marker corner correction are not yet joined.
-                // Do not turn an unknown corrected observation into a world update or an empty observation.
-                SteppedBehavior.ReportMissing("M11-033 marker pixel-shift gate/corner correction 0x006B50F6 and 0x006B4868 unavailable; marker/world output withheld");
-                markerMode=false;
+                var corrected=new List<ObservedMarker>(markers.Count);
+                foreach(var marker in markers)
+                {
+                    if(NativeRollingShutter.TryCorrect(marker,gray.Width,gray.Height,shifts,out var value,out bool badIndex))corrected.Add(value);
+                    else if(badIndex)SteppedBehavior.ReportMissing("M1-034/M11-033 rolling-shutter strip vector.at 0x006B48D4: invalid marker skipped");
+                    else _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"VisionSystem","VisionSystem.DetectMarkersWithCLAHE.RemovingMarkerOOB",marker.Code.ToString());
+                    if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
+                }
+                markers=corrected;
             }
             if(markerMode)processedMask|=1<<DetectingMarkers;
             if (RemovedSince(removal)) return null;
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
             bool StaleFrame()=>RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner));
             bool faceMode=ShouldProcessVisionMode((int)VisionMode.DetectingFaces);
-            if(faceMode&&!FaceDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-035 enabled face detector input unavailable; no produced face result/success fabricated");
+            if(faceMode&&!FaceDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 face detector unavailable; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
-            var detectedFaces = faceMode && FaceDetector.IsAvailable ? FaceDetector.Detect(gray,timestamp) : null;
+            var faceImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
+            var detectedFaces = faceMode && FaceDetector.IsAvailable ? FaceDetector.Detect(faceImage,timestamp) : null;
             if(StaleFrame())return null;
+            if(faceMode && FaceDetector.IsAvailable && detectedFaces is null)
+                SteppedBehavior.ReportMissing("M11-016/M11-080 attached face detector returned null; its detection and quality rectangles are omitted");
+            if(StaleFrame())return null;
+            if(detectedFaces is not null)foreach(var face in detectedFaces)qualityRectangles.Add(NativeQualityRectangles.Detection(face.Rect));
             bool petMode=ShouldProcessVisionMode((int)VisionMode.DetectingPets);
-            if(petMode&&!PetDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-035 enabled pet detector input unavailable; no produced pet result/success fabricated");
+            if(petMode&&!PetDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
-            var detectedPets = petMode && PetDetector.IsAvailable ? PetDetector.Detect(gray,timestamp) : null;
+            var petImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
+            var detectedPets = petMode && PetDetector.IsAvailable ? PetDetector.Detect(petImage,timestamp) : null;
             if(StaleFrame())return null;
+            if(petMode && PetDetector.IsAvailable && detectedPets is null)
+                SteppedBehavior.ReportMissing("M11-016/M11-080 attached pet detector returned null; its detection and quality rectangles are omitted");
+            if(StaleFrame())return null;
+            if(detectedPets is not null)foreach(var pet in detectedPets)qualityRectangles.Add(NativeQualityRectangles.Detection(pet.Rect));
             if(ShouldProcessVisionMode((int)VisionMode.DetectingMotion))
             {
                 if(nativeState?.Motion is not {} motion || !queueForEngine)
@@ -1416,9 +1445,13 @@ public sealed partial class VisionSystem : IDisposable
             if(RemovedSince(removal))return null;
             // fidelity: M11-080, M11-057
             ImageQualityProposal? quality=null;
+            NativeQualityRectanglesObservedForTest?.Invoke(Array.AsReadOnly(qualityRectangles.ToArray()));
+            if(StaleFrame())return null;
             if(ShouldProcessVisionMode((int)VisionMode.CheckingQuality))
             {
-                if(!TryCheckFrameQuality(gray,out uint qualityStatus,out var proposed))
+                bool available=TryCheckFrameQuality(gray,qualityRectangles,()=>!StaleFrame(),out uint qualityStatus,out var proposed);
+                if(StaleFrame())return null;
+                if(!available)
                 {
                     // Offline ProcessImage is a host helper with explicit decoded pixels/pose, not the native Update entry.
                     // A live frame with unknown quality input is stopped without forging a native failure/log.
@@ -1621,7 +1654,7 @@ public sealed partial class VisionSystem : IDisposable
             };
             if (rawTimestamp is { } raw) LastRawFrameTimestamp = raw;
             FramesProcessed++;
-            if(!markerUnavailable)LastResult = result;
+            LastResult = result;
                 }
             // Native result state is committed before optional host callbacks; a host
             // callback may dispose/join the worker without holding its processing lock.
@@ -1630,18 +1663,15 @@ public sealed partial class VisionSystem : IDisposable
             // A consumed result still reaches the tail when a host handler throws.
             try
             {
-                if(!markerUnavailable)
-                {
-                    if(!queueForEngine)FrameProcessed?.Invoke(result);
-                    else EventFan.Raise(FrameProcessed,result,e=>_robot.Engine.EmitStackLog("M1-034 Vision FrameProcessed subscriber skipped: "+e));
-                }
+                if(!queueForEngine)FrameProcessed?.Invoke(result);
+                else EventFan.Raise(FrameProcessed,result,e=>_robot.Engine.EmitStackLog("M1-034 Vision FrameProcessed subscriber skipped: "+e));
             }
             finally
             {
                 _robot.CameraSettings.LastProcessedImageTimestamp = result.Timestamp;
                 if(queueForEngine)PublishProcessedImage(timestamp,processedMask,imageMean);
             }
-            return markerUnavailable?null:result;
+            return result;
 
             }
             if(queueForEngine)

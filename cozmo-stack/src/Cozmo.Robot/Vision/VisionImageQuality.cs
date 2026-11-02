@@ -8,17 +8,15 @@ public sealed partial class VisionSystem
     // fidelity: M11-080, M11-057
     internal readonly ImageQualityProcessor QualityProcessor=new();
     internal Func<IReadOnlyList<ImageQualityRectangle>>? QualityRectangleInput;
-    private bool TryCheckFrameQuality(GrayImage image,out uint status,out ImageQualityProposal proposal)
+    private bool TryCheckFrameQuality(GrayImage image,IReadOnlyList<ImageQualityRectangle> frameRectangles,Func<bool> current,out uint status,out ImageQualityProposal proposal)
     {
         status=0;proposal=default;
-        if(QualityProcessor.Settings.MeterFromDetections && QualityRectangleInput is null)
-        {
-            SteppedBehavior.ReportMissing("M11-080 detector rectangle producers (DetectMarkersWithCLAHE/DetectFaces/DetectPets -> 0x006B2D4C): which rectangles are appended is not checked; no empty/guessed ROI vector supplied");
-            return false;
-        }
         SteppedBehavior.ReportMissing("M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted");
-        var rectangles=QualityProcessor.Settings.MeterFromDetections ? QualityRectangleInput!() : Array.Empty<ImageQualityRectangle>();
-        return QualityProcessor.TryCheck(image,rectangles,_robot.CameraSettings.QualityState,ModeEnableMask,out status,out proposal);
+        if(!current())return false;
+        // The optional provider is an explicit test seam; production uses the current Update's own vector.
+        var rectangles=QualityProcessor.Settings.MeterFromDetections ? QualityRectangleInput?.Invoke() ?? frameRectangles : Array.Empty<ImageQualityRectangle>();
+        if(!current())return false;
+        return QualityProcessor.TryCheck(image,rectangles,_robot.CameraSettings.QualityState,ModeEnableMask,out status,out proposal,current);
     }
 
     private static FirmwareJsonValue? InitMember(FirmwareJsonValue? root,string key)
