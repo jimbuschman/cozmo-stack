@@ -47,14 +47,14 @@ public sealed class MapTimingCheckedRowsTests
         m.BroadcastMap(8);Assert.Equal(1,due);
     }
     [Fact]
-    public void ActualRobotComponentsTickUsesStoredTimestampAndReportsMissingTransformWithoutTouchingLegacyRegions()
+    public void ActualRobotComponentsTickUsesStoredTimestampAndRunsTheTreeTransformWithoutTouchingLegacyRegions()
     {
         using var rig=new Rig();var m=rig.Robot.LocalizationWorld.Maps;
         Assert.NotNull(m.Current);var map=m.Current!;map.Insert(new[]{new Vec2(0,0),new Vec2(1,0)},MemoryMapContentType.Cliff,timestamp:1);
         Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();var logs=new List<string>();var source=new List<string>();rig.Robot.Engine.StackLogLine+=logs.Add;rig.Robot.Engine.LogEntry+=e=>source.Add(e.Name+":"+e.Text);
         rig.State();rig.Robot.Engine.Tick();
         Assert.Equal(rig.Robot.Engine.Robot!.StoredState!.Timestamp,m.LastAgingForTest!.Value.Now);
-        Assert.Single(map.Regions);Assert.Contains(logs,s=>s.Contains("M11-075/M11-046 aging"));Assert.DoesNotContain(source,s=>s.Contains("MISSING"));
+        Assert.Single(map.Regions);Assert.DoesNotContain(logs,s=>s.Contains("M11-075/M11-046 aging"));Assert.DoesNotContain(source,s=>s.Contains("MISSING"));
     }
     [Fact]
     public void PoseConfirmerRoutesInvalidToValidTwiceBeforeStateRecipients()

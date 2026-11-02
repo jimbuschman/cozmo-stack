@@ -88,6 +88,9 @@ public sealed class OverheadEdgesDetector
     /// <summary>The <c>float</c> argument <c>VisionSystem</c> constructs the detector with (0x006B0120), kept at the detector's +0xC and compared against the absolute filter response.</summary>
     public const double EdgeThreshold = 50.0;
 
+    /// <summary>The fewest points a chain may have to be kept, the detector's +0x10.</summary>
+    public const int MinChainPoints = 3;
+
     /// <summary>The largest gap between consecutive points of one chain, 5 mm (0x006AE1DE).</summary>
     public const double MaxChainGapMm = 5.0;
 
@@ -179,7 +182,8 @@ public sealed class OverheadEdgesDetector
                     Append(chains, new OverheadEdgePoint(g, 0), false);
             }
         }
-        return new OverheadEdgeFrame(timestamp, true, groundQuad, chains);
+        // fidelity: M11-017 -- 0x006ACA2A..0x006ACAD6: only chains of at least detector+0x10 points leave Detect (constructor 3, 0x006B0110..0x006B012E).
+        return new OverheadEdgeFrame(timestamp, true, groundQuad, chains.Where(chain => chain.Points.Count >= MinChainPoints).ToList());
     }
 
     private static OverheadEdgeFrame Empty(uint timestamp, Vec2[] quad) =>

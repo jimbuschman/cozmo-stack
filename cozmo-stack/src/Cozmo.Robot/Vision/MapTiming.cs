@@ -198,6 +198,20 @@ internal sealed partial class SourceMapComponent : IDisposable
         // Unknown origin or null map skips only aging; scheduler still runs.
         BroadcastMap(timer);
     }
+    // fidelity: M11-092 -- 0x0067E50C..0x0067E5D2. Null current map is the unguarded read at 0x0067E5BC (M1-034).
+    internal void FlagGroundPlaneRoiInterestingEdgesAsUncertain(Pose3d robotPose)
+    {
+        if(ImageTimestamp?.Invoke() is not {} stamp)return; // an unbound clock reported its own gap
+        if(Current is {} map)map.FlagGroundPlaneRoiInterestingEdgesAsUncertain(robotPose,stamp);
+        else StackDiagnostics.Write("M1-034 M11-092 skip null current map read at 0x0067E5BC; map state retained");
+    }
+    // fidelity: M11-092 -- 0x0067E6B0..0x0067E71C. Null current map is the unguarded read at 0x0067E712 (M1-034).
+    internal void FlagQuadAsNotInterestingEdges(Vec2[] quad)
+    {
+        if(ImageTimestamp?.Invoke() is not {} stamp)return;
+        if(Current is {} map)map.FlagQuadAsNotInterestingEdges(quad,stamp);
+        else StackDiagnostics.Write("M1-034 M11-092 skip null current map read at 0x0067E712; map state retained");
+    }
     internal void BroadcastMap(float timer)
     {
         if(!(BroadcastInterval>=0))return; // negative and NaN return, -0 passes

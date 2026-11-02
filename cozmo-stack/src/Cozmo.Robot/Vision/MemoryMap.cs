@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Vision;
 
@@ -110,16 +111,16 @@ public sealed partial class MemoryMap
         get { Missing?.Invoke("MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
     }
     internal uint LastObservedTime => Tree.Root.Content.Data.Last;
+    // fidelity: M11-079 -- vt+0x2C 0x00681734: the eleven (type, enabled) pairs folded by the caller's table.
+    internal List<Cozmo.Robot.Behavior.InterestingEdgeRegion>? CalculateBorders(MemoryMapContentType seed,uint flags)=>Tree.CalculateBorders(seed,flags);
+    // fidelity: M11-092 -- GetInterestingEdgeAreaM2 vt+0x20 0x006816F2.
+    internal double InterestingEdgeAreaM2=>Tree.InterestingEdgeAreaM2;
     // fidelity: M11-074 -- 0x00681674..0x006816DC forwards the existing output without clearing.
     internal void FindContentIf(Func<SourceMapData,int> predicate,List<SourceMapData> output)
         =>Tree.FindContentIf(predicate,output);
     // fidelity: M11-075, M11-046
-    internal void TransformAging(SourceMapAging aging)
-    {
-        // The checked callback is SourceMapAging.Apply. Its real whole-map recipient first constructs
-        // root geometry and runs Transform, not a linear walk over legacy Regions.
-        Behavior.SteppedBehavior.ReportMissing("M11-075/M11-046 aging at 0x0067DCF4 -> whole-map TransformContent 0x0068140C/0x0068A414: root geometry, node Transform and subtype comparisons are not integrated; checked aging callback is not applied to legacy polygon regions");
-    }
+    // 0x0067DCF4 -> whole-map TransformContent 0x0068140C -> 0x0068A414, with callback 0x006808F4 (SourceMapAging.Apply).
+    internal void TransformAging(SourceMapAging aging)=>Tree.TransformContent(aging.Apply);
     // fidelity: M13-030 — native insertion; legacy region queries remain M11-046.
     internal Action<Vec2[],CliffMapData>? CliffInsertForTest;
     internal void InsertCliff(Vec2[] polygon, CliffMapData data)
@@ -289,45 +290,30 @@ public sealed partial class MemoryMap
         return Tree.FillBorder(type,flags,new SourceMapData(write,timestamp,timestamp));
     }
 
-    /// <summary>
-    /// <c>MapComponent::FlagQuadAsNotInterestingEdges</c> 0x0067E6B0, which
-    /// <c>BehaviorVisitInterestingEdge</c> calls once it has been to an edge and once it has a goal:
-    /// the quad goes in as <see cref="MemoryMapContentType.NotInterestingEdge"/>, stamped with the last
-    /// image's timestamp (0x0067E6EA), so nothing sends the robot back to it.
-    /// </summary>
-    public void FlagQuadAsNotInterestingEdges(Vec2[] quad, uint timestamp = 0) =>
-        Insert(quad, MemoryMapContentType.NotInterestingEdge, null, timestamp);
-
-    /// <summary>
-    /// <c>MapComponent::FlagGroundPlaneROIInterestingEdgesAsUncertain</c> 0x0067E50C, which
-    /// <c>BehaviorVisitInterestingEdge::StartWaitingForEdges</c> calls before it waits: the ground ROI at
-    /// the robot's pose is handed to <c>TransformContent</c> with a lambda (0x00680B54) that turns
-    /// content of type InterestingEdge into content of type Unknown and leaves everything else alone -
-    /// so what is about to be looked at again stops counting as an edge until the vision system says so.
-    /// Returns how many regions changed.
-    /// </summary>
-    public int FlagGroundPlaneRoiInterestingEdgesAsUncertain(Pose3d robotPose, uint timestamp = 0)
+    // fidelity: M11-092 -- map side of MapComponent::FlagQuadAsNotInterestingEdges 0x0067E6B0..0x0067E71C: base type 10 with
+    // first = last = the fresh last-image stamp, ImportQuad2d, map vt+8. The override table decides what it replaces.
+    internal void FlagQuadAsNotInterestingEdges(Vec2[] quad,uint timestamp)
     {
-        var roi = GroundPlaneROI.GroundQuad();
-        var world = new Vec2[4];
-        for (int i = 0; i < 4; i++)
-        {
-            var w = robotPose.Apply(new Vec3(roi[i].X, roi[i].Y, 0));
-            world[i] = new Vec2(w.X, w.Y);
-        }
-        var polygon = new[] { world[0], world[1], world[3], world[2] };
+        var polygon=PolygonF.ImportQuad2d(quad.Select(p=>new P2f((float)p.X,(float)p.Y)).ToArray());
+        InsertObject(polygon.Select(p=>new Vec2(p.X,p.Y)).ToArray(),new SourceMapData(MemoryMapContentType.NotInterestingEdge,timestamp,timestamp));
+    }
 
-        int changed = 0;
-        lock (_gate)
-            for (int i = 0; i < _regions.Count; i++)
-            {
-                var r = _regions[i];
-                if (r.Type != MemoryMapContentType.InterestingEdge) continue;
-                if (!r.Polygon.All(pt => OverheadEdgesDetector.InsidePolygon(polygon, pt))) continue;
-                _regions[i] = r with { Type = MemoryMapContentType.Unknown, Timestamp = timestamp };
-                changed++;
-            }
-        return changed;
+    // fidelity: M11-092, M11-046 -- map side of MapComponent::FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C..0x0067E5D2:
+    // GetGroundQuad(0) through the robot's pose wrt root, XY to ImportQuad2d, polygon TransformContent vt+0x14 with the
+    // closure 0x00680B54..0x00680BB0: type 9 becomes fresh base type 0, both stamps the captured image stamp; the rest keep their data.
+    internal void FlagGroundPlaneRoiInterestingEdgesAsUncertain(Pose3d robotPose,uint timestamp)
+    {
+        var roi=GroundPlaneROI.GroundQuad();
+        using var root=robotPose.GetWithRespectToRoot();
+        var corners=new P2f[4];
+        for(int i=0;i<4;i++)
+        {
+            var world=root.Apply(new Vec3((float)roi[i].X,(float)roi[i].Y,0f));
+            corners[i]=new((float)world.X,(float)world.Y);
+        }
+        var polygon=PolygonF.ImportQuad2d(corners).Select(p=>new Vec2(p.X,p.Y)).ToArray();
+        Tree.TransformPolygonContent(polygon,data=>data.Type==MemoryMapContentType.InterestingEdge
+            ?new SourceMapData(MemoryMapContentType.Unknown,timestamp,timestamp):data);
     }
 
     /// <summary>Whether two regions are neighbours: any pair of their edges within <paramref name="tolerance"/>, or one inside the other.</summary>

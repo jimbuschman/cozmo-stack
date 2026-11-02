@@ -243,33 +243,6 @@ public class OverheadEdgeTests
     }
 
     /// <summary>
-    /// The two entry points the visit-an-edge behaviour uses:
-    /// <c>FlagQuadAsNotInterestingEdges</c> 0x0067E6B0 writes a quad off once the robot has been there,
-    /// and <c>FlagGroundPlaneROIInterestingEdgesAsUncertain</c> 0x0067E50C takes the edges inside the
-    /// ground ROI back to Unknown before it waits for the vision system to say what is there now (the
-    /// lambda at 0x00680B54, which only touches content of type InterestingEdge).
-    /// </summary>
-    [Fact]
-    public void TheVisitBehaviourCanWriteAnEdgeOffOrTakeItBackToUnknown()
-    {
-        var map = new MemoryMap();
-        map.FlagQuadAsNotInterestingEdges(
-            new[] { new Vec2(0, 0), new Vec2(20, 0), new Vec2(20, 20), new Vec2(0, 20) }, 55);
-        var written = map.Regions.Single();
-        Assert.Equal(MemoryMapContentType.NotInterestingEdge, written.Type);
-        Assert.Equal(55u, written.Timestamp);
-
-        var map2 = new MemoryMap();
-        map2.Insert(new[] { new Vec2(100, -5), new Vec2(100, 5) }, MemoryMapContentType.InterestingEdge, null, 1);
-        map2.Insert(new[] { new Vec2(600, 0), new Vec2(600, 10) }, MemoryMapContentType.InterestingEdge, null, 1);
-        map2.Insert(new[] { new Vec2(100, 20), new Vec2(100, 30) }, MemoryMapContentType.ObstacleProx, null, 1);
-        Assert.Equal(1, map2.FlagGroundPlaneRoiInterestingEdgesAsUncertain(AtOrigin, 77));
-        Assert.Equal(MemoryMapContentType.Unknown, map2.Regions.Single(r => r.Polygon[0].X == 100 && r.Polygon[0].Y == -5).Type);
-        Assert.Equal(MemoryMapContentType.InterestingEdge, map2.Regions.Single(r => r.Polygon[0].X == 600).Type);
-        Assert.Equal(MemoryMapContentType.ObstacleProx, map2.Regions.Single(r => r.Polygon[0].Y == 20).Type);
-    }
-
-    /// <summary>
     /// The two masks the ray queries use, the tables at 0x00C8768B and 0x00C876A1: a point clamped to
     /// the far edge is refused by anything in the map but clear ground, while an unclamped one is
     /// refused only by the five obstacle types.

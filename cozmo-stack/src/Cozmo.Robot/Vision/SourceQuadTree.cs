@@ -371,19 +371,18 @@ internal sealed class SourceQuadTree
 {
     private static readonly object MergeGate=new(); // serializes two-tree lock acquisition; normal writers take one geometry gate
     private readonly object _geometryGate = new();
-    // The empty-seed branch of GetBorders refreshes both real cached combinations
-    // under the same geometry lock as the type sets it consults.
-    internal bool RefreshEmptyInterestingBorders()
+    // fidelity: M11-079 -- MemoryMap vt+2C 0x00681734..0x0068176A -> GetBorders 0x006894E0, under the type-set lock.
+    // Null: a walk fault skipped this refresh under M1-034 (RefreshBorders logged it); the caller appends nothing.
+    internal List<Cozmo.Robot.Behavior.InterestingEdgeRegion>? CalculateBorders(MemoryMapContentType seed,uint flags)
     {
         lock(_geometryGate)
         {
-            var edge=(MemoryMapContentType)9;var obstacle=(MemoryMapContentType)6;
-            if((Processor.TypeSets.TryGetValue(edge,out var a)&&a.Count!=0) ||
-               (Processor.TypeSets.TryGetValue(obstacle,out var b)&&b.Count!=0))return false;
-            var first=Processor.RefreshBorders(edge,7);var second=Processor.RefreshBorders(obstacle,7);
-            return !first.Dirty && first.Waypoints.Count==0 && !second.Dirty && second.Waypoints.Count==0;
+            var combination=Processor.RefreshBorders(seed,flags);
+            return combination.Dirty?null:SourceBorderRegions.Build(combination.Waypoints);
         }
     }
+    // fidelity: M11-092 -- vt+0x20 0x006816F2, the f64 at map+0x48.
+    internal double InterestingEdgeAreaM2 { get { lock(_geometryGate)return Processor.EdgeArea; } }
     internal bool HasContentType(MemoryMapContentType type)
     {
         lock(_geometryGate)return Processor.TypeSets.TryGetValue(type,out var nodes)&&nodes.Count!=0;
@@ -467,6 +466,12 @@ internal sealed class SourceQuadTree
             root.TransformContent(this,new SourceFastPolygon(polygon.Select(p=>new Vec2(p.X,p.Y))),callback);
             // The whole-map wrapper does not write Dirty or OR any return into it.
         });
+    }
+    // fidelity: M11-092, M11-046 -- polygon overload vt+0x14 0x0068147C -> 0x006814F4; no dirty write in the wrapper.
+    internal void TransformPolygonContent(Vec2[] polygon,Func<SourceMapData,SourceMapData> callback)
+    {
+        var fast=new SourceFastPolygon(polygon);
+        LogCallbackDeferral.RunGated(_geometryGate,()=>Root.TransformContent(this,fast,callback));
     }
     // fidelity: M11-047 -- 0x00689FAC..0x0068A2D6, snapshot before direct node inserts.
     internal int FillBorder(MemoryMapContentType seed,uint flags,SourceMapData data)

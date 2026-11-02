@@ -6,7 +6,11 @@ using System.Text.Json;
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M11-089
-public readonly record struct InterestingEdgeSegment(Point3f A,Point3f B,Point3f Normal);
+public readonly record struct InterestingEdgeSegment(Point3f A,Point3f B,Point3f Normal)
+{
+    // Segment+0x24/+0x28: the shared content pair, retained after construction (0x00689D46..0x00689D70).
+    internal SourceMapData? Content {get;init;}
+}
 public sealed class InterestingEdgeRegion(float area,IReadOnlyList<InterestingEdgeSegment> segments)
 {
     public float Area {get;}=area;
@@ -67,20 +71,12 @@ public sealed class InterestingEdgeGoalSelector
         else SteppedBehavior.ReportMissing("M11-089 Viz erase recipient in 0x005E6520/0x005E675E, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
     }
     private static void Clear(List<Pose3d> poses){foreach(var pose in poses)pose.Dispose();poses.Clear();}
-    internal bool ConsumeKnownEmptyBorders(Func<bool> current)
-    {
-        SteppedBehavior.ReportMissing("M11-089 Viz erase recipient in 0x005E6520, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
-        if(!current())return false;
-        Clear(Vantage168);
-        SteppedBehavior.ReportMissing("M11-089 Viz erase recipient in 0x005E675E, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
-        return current();
-    }
-
+    internal void ClearVantage()=>Clear(Vantage168);
     public bool PickGoals(InterestingEdgeInputs input,List<InterestingEdgeGoal> output)
     {
         output.Clear();if(input.Regions.Count==0)return true;
         Point3f position;
-        using(var robot=new Pose3d(input.RobotPose))position=new Point3f(robot.Translation);
+        using(var robot=input.RobotPose.GetWithRespectToRoot())position=new Point3f(robot.Translation); // 0x004DF628, before the map read
         if(input.Map is null){StackDiagnostics.Write("M1-034 M11-089: skip PickGoals null map read at 0x005E68A6; cleared output retained");return false;}
         float r=input.Map.Scalar24(),t=r*Milli;
         float area=(t*t)*4f+Epsilon,length=(r*r)+(r*r)+Epsilon;
@@ -153,7 +149,7 @@ public sealed class InterestingEdgeGoalSelector
     {
         Erase(input);Clear(Vantage168);
         var scores=new List<InterestingEdgeGoal>();if(!PickGoals(input,scores))return null;
-        if(scores.Count!=0 && !Sort.TrySort(scores))return null;
+        if(scores.Count!=0)Sort.Sort(scores);
         foreach(var goal in scores)
         {
             if(goal.Segment>=goal.Region.Segments.Count)

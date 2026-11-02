@@ -16,9 +16,11 @@ public sealed class AIInformationAnalyzer
     private readonly SourceLogSink? _source;
     private Func<MemoryMap?>? _originalMap;
     private Func<bool>? _originalOwnerCurrent;
-    internal bool BorderResultKnownEmpty {get;private set;}=true; // native constructor vector is empty
+    // Analyzer+C. Empty from the constructor (0x005741CE/D2); replaced only by a run of the enabled process.
+    private readonly List<InterestingEdgeRegion> _regions=new();
+    internal IReadOnlyList<InterestingEdgeRegion> Regions=>_regions;
     internal void BindOriginalMap(Func<MemoryMap?> map,Func<bool> current){_originalMap=map;_originalOwnerCurrent=current;}
-    internal bool? ActualBorderResultEmpty()=>_originalOwnerCurrent?.Invoke()==true ? BorderResultKnownEmpty : null;
+    internal bool? ActualBorderResultEmpty()=>_originalOwnerCurrent?.Invoke()==true ? _regions.Count==0 : null;
     internal AIInformationAnalyzer(SourceLogSink? source)
     {
         _source = source;
@@ -66,17 +68,22 @@ public sealed class AIInformationAnalyzer
             }
         }
     }
+    // AIInfoAnalysisProcCalculateInterestingRegions 0x00574FCC..0x00575054. Table 0x00C59AE0 enables types 0, 1 and 2: mask 7.
+    private const uint BorderNeighborMask=7;
     private void CalculateInterestingRegions()
     {
-        BorderResultKnownEmpty=false; // the source clears the retained vector before querying
+        _regions.Clear(); // 0x00574FEC..0x00575004, from the back, before either query
+        if(_originalMap is null)
+        {SteppedBehavior.ReportMissing("M11-079 CalculateInterestingRegions: no MapComponent owner bound on this standalone analyzer");return;}
+        var map=_originalOwnerCurrent?.Invoke()==true?_originalMap():null; // read once, kept for both calls (0x00574FD2..0x00574FDA)
+        if(map is null)
+        {StackDiagnostics.Write("M1-034 M11-079 skip null map read at 0x00575006/0x00575026; regions stay cleared");return;}
         try
         {
-            var map=_originalOwnerCurrent?.Invoke()==true ? _originalMap?.Invoke() : null;
-            if(map is not null && map.Tree.RefreshEmptyInterestingBorders() && _originalOwnerCurrent?.Invoke()==true && ReferenceEquals(_originalMap?.Invoke(),map))
-            {BorderResultKnownEmpty=true;return;}
+            foreach(var seed in new[]{MemoryMapContentType.InterestingEdge,MemoryMapContentType.ObstacleProx}) // 0x00575012 then 0x0057502A
+                if(map.CalculateBorders(seed,BorderNeighborMask) is {} regions)_regions.AddRange(regions);
         }
         catch(Exception e) when(e is InvalidOperationException or ArgumentException)
-        {SteppedBehavior.ReportMissing("M1-034 M11-079 CalculateInterestingRegions map query unavailable: "+e.Message);return;}
-        SteppedBehavior.ReportMissing("M11-079/M11-089 CalculateInterestingRegions: original map or nonempty border producer unavailable");
+        {SteppedBehavior.ReportMissing("M1-034 M11-079 CalculateInterestingRegions map query unavailable: "+e.Message);}
     }
 }

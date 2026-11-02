@@ -103,6 +103,8 @@ public sealed partial class AIWhiteboard
     // fidelity: M11-017 - native +0x4C/+0x50 stores, 0x006803E8/0x006803EC.
     internal (float Timestamp,float Distance)? OverheadEdgeState {get;private set;}
     internal void SetOverheadEdgeState(float timestamp,float distance)=>OverheadEdgeState=(timestamp,distance);
+    // fidelity: M11-092 -- +0x50: constructor -1.0f (0x0056A2A4..0x0056A2BA) until the map tail 0x006803E8/0x006803EC writes it.
+    internal float OverheadEdgeDistance=>OverheadEdgeState?.Distance??BitConverter.UInt32BitsToSingle(0xBF800000);
 
     // AIWhiteboard+0x74, initialized clear at 0x0056A2DA and owned by Hiccup.
     internal bool HiccupsActive { get; set; }

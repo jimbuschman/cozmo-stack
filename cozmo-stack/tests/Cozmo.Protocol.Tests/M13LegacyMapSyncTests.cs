@@ -62,8 +62,7 @@ public sealed class M13LegacyMapSyncTests
         {
             var map=new MemoryMap();var quad=new[]{new Vec2(30,-1),new Vec2(30,1),new Vec2(40,1),new Vec2(40,-1)};
             bool native=map.Tree.HasCollisionRayWithTypes(new(29,0),new(41,0),1u<<(int)type);
-            if(type==MemoryMapContentType.NotInterestingEdge)map.FlagQuadAsNotInterestingEdges(quad);
-            else map.Insert(quad,type);
+            map.Insert(quad,type);
             Assert.Equal(native,map.HasCollisionRayWithTypes(new(29,0),new(41,0),t=>t==type)); // selecting Unknown may hit the untouched native root
             Assert.False(map.HasCollisionRayWithTypes(new(29,0),new(41,0),_=>false));
             map.InsertObject(new[]{new Vec2(0,0)},new SourceMapData(type,1,1));

@@ -24,13 +24,15 @@ public sealed class NativeInterestingBorderHistoryTests
         int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};
         try {var ready=edge.EvaluateHostReadiness(f.Runtime.Context);Assert.True(ready.Available);Assert.False(ready.Runnable);Assert.Equal(0,words);}
         finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}
-        root.ForceSet(new SourceNodeContent(new SourceMapData((MemoryMapContentType)seed,0,0)),map.Tree.Processor);
+        // A seed leaf with Unknown side neighbours has a mask-7 contact (M11-079 rows 5-7), so 0x00574FCC leaves a region.
+        root.Subdivide(map.Tree.Processor);var seeded=root.Children[0]!;
+        seeded.ForceSet(new SourceNodeContent(new SourceMapData((MemoryMapContentType)seed,0,0)),map.Tree.Processor);
         analyzer.AddDisableRequest(1,"test");analyzer.Update();Assert.True(analyzer.ActualBorderResultEmpty());
         analyzer.RemoveDisableRequest(1,"test");analyzer.Update();Assert.False(analyzer.ActualBorderResultEmpty());
         uint origin=f.M.World.Maps.CurrentOrigin;f.M.World.Maps.Maps[origin]=new MemoryMap();
         Assert.False(analyzer.ActualBorderResultEmpty()); // a changed map alone does not run the producer
         f.M.World.Maps.Maps[origin]=map;
-        root.ForceSet(new SourceNodeContent(new SourceMapData(MemoryMapContentType.Unknown,0,0)),map.Tree.Processor);
+        seeded.ForceSet(new SourceNodeContent(new SourceMapData(MemoryMapContentType.Unknown,0,0)),map.Tree.Processor);
         analyzer.AddDisableRequest(1,"test");analyzer.Update();Assert.False(analyzer.ActualBorderResultEmpty());
         analyzer.RemoveDisableRequest(1,"test");analyzer.Update();Assert.True(analyzer.ActualBorderResultEmpty());
         f.Rig.Engine.Robots.RemoveRobot(1,false);f.Rig.Engine.Robots.AddRobot(1,withRic:false);

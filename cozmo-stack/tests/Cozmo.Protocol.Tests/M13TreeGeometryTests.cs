@@ -29,7 +29,7 @@ public sealed class M13TreeGeometryTests
     {
         var map = new MemoryMap();
         map.InsertObject(Box(1,1,2,2),new SourceMapData(MemoryMapContentType.ObstacleCharger,1,1));
-        map.FlagQuadAsNotInterestingEdges(Box(30,30,40,40)); // still-unported explicit quad writer
+        map.Insert(Box(30,30,40,40),MemoryMapContentType.NotInterestingEdge); // legacy-only input
         map.Insert(Box(50,50,60,60),MemoryMapContentType.ClearOfCliff);
         map.Insert(Box(70,70,80,80),MemoryMapContentType.Cliff);
         Assert.True(map.HasCollisionRayWithTypes(new(9,8),new(9,9))); // native-only corner cell

@@ -19,7 +19,7 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
     private sealed record Run(List<(double At,string Id)> Chosen,List<string> Holds,List<FreeplaySparksAwardedReport> Sparks,List<StarUnlockedReport> Stars,List<StarLevelCompletedReport> Levels,double IdleAfterAction,double LongestIdleAfterAction,int Frames,NeedsStateOnRobot? FirstRobotWrite);
 
     internal static long FixedClockMicros=>InitialSeconds()*1_000_000;
-    private static long InitialSeconds()
+    internal static long InitialSeconds()
     {DateTime local=new(2026,1,15,12,0,0,DateTimeKind.Unspecified);return new DateTimeOffset(local,TimeZoneInfo.Local.GetUtcOffset(local)).ToUnixTimeSeconds();}
     // The host inputs production takes from its settings: the nurture directory with a needs file. Notification history is not
     // passed: the engine's own M15-111 store supplies it, as on a real robot.
@@ -30,7 +30,7 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
         return HardwareEngineOptions.Create(PickupPyramidNativeExecutionTests.Resources(),localeName:"en-US",filesPath:directory,needsDirectory:directory,deviceIdPath:Path.Combine(directory,"device-id"),blockPoolPath:"",clock:clock);
     }
     // What the robot has stored; written after the PC's needs file, so the resolver takes it (0x0069481C..0x00694D06).
-    private static byte[] StoredBlob(float repair,float energy,float play,int level,int stars,long lastStarSeconds)
+    internal static byte[] StoredBlob(float repair,float energy,float play,int level,int stars,long lastStarSeconds)
     {
         var stored=new NeedsStateOnRobot{Version=5,TimeLastWritten=(ulong)(InitialSeconds()+10),CurNeedsUnlockLevel=level,NumStarsAwarded=stars,TimeLastStarAwarded=(ulong)lastStarSeconds,TimeCreated=(ulong)InitialSeconds()};
         stored.CurNeedLevel[0]=(int)(repair*100000);stored.CurNeedLevel[1]=(int)(energy*100000);stored.CurNeedLevel[2]=(int)(play*100000);

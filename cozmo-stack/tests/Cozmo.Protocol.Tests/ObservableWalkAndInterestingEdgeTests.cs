@@ -130,11 +130,13 @@ public sealed class ObservableWalkAndInterestingEdgeTests
         selector.PickGoals(Input(Array.Empty<InterestingEdgeRegion>(),new()),output);Assert.Empty(output);
     }
     [Fact]
-    public void TwoGoalSortIsAscendingAndUnknownSmallSortStopsVisibly()
+    public void TwoGoalSortIsAscendingAndThreeGoalsUseTheExactSort3Permutation()
     {
-        var r=Region(1,1);var list=new List<InterestingEdgeGoal>{new(r,0,9),new(r,0,1)};var sort=new InterestingEdgeGoalSort();
-        Assert.True(sort.TrySort(list));Assert.Equal(new[]{1f,9f},list.Select(x=>x.Score));
-        list.Add(new(r,0,4));Assert.False(sort.TrySort(list)); // reaches unread native sort3, never stable-sort guess
+        // 0x005E8350: two records compare and swap. 0x005E8714: [3A,2B,1C] takes one A<->C swap; [2A,2B,1C] takes B<->C then A<->B.
+        var r=Region(1,1);var sort=new InterestingEdgeGoalSort();
+        var two=new List<InterestingEdgeGoal>{new(r,0,9),new(r,1,1)};sort.Sort(two);Assert.Equal(new[]{1f,9f},two.Select(x=>x.Score));
+        var swapped=new List<InterestingEdgeGoal>{new(r,0,3),new(r,1,2),new(r,2,1)};sort.Sort(swapped);Assert.Equal(new uint[]{2,1,0},swapped.Select(x=>x.Segment));
+        var ties=new List<InterestingEdgeGoal>{new(r,0,2),new(r,1,2),new(r,2,1)};sort.Sort(ties);Assert.Equal(new uint[]{2,0,1},ties.Select(x=>x.Segment));
     }
     [Fact]
     public void VantageRetriesZeroThenNegativeThenPositiveAndUsesBehindEndpointFirst()
@@ -185,26 +187,29 @@ public sealed class ObservableWalkAndInterestingEdgeTests
         var clone=seen[0].Clone();Assert.NotSame(seen[0],clone);clone.Last=99;Assert.True(seen[0].Same(clone));
     }
     [Fact]
-    public void SortMainPartitionsAndRecursesWithExplicitUnreadLeafDoubles()
+    public void SortMainPartitionsWithTheNativeHelpers()
     {
+        // Comparator 0x005E86EC: separated finite scores end ascending. Distinct scores fix the whole order.
         var region=Region(1,1);var input=Enumerable.Range(0,39).Select(i=>new InterestingEdgeGoal(region,(uint)i,(i*17)%39)).ToList();
-        var sort=new InterestingEdgeGoalSort();
-        sort.Sort3_5E8714=(array,indexes)=>
-        {
-            uint count=0;
-            void SwapAt(int a,int b){var t=array[indexes[a]];array[indexes[a]]=array[indexes[b]];array[indexes[b]]=t;count++;}
-            if(array[indexes[1]].Score<array[indexes[0]].Score)SwapAt(0,1);
-            if(array[indexes[2]].Score<array[indexes[1]].Score)SwapAt(1,2);
-            if(array[indexes[1]].Score<array[indexes[0]].Score)SwapAt(0,1);
-            return count;
-        };
-        sort.Incomplete5E89DC=(array,first,end)=>
-        {
-            // Explicit fixture recipient, not claimed to implement libc++'s unread bounded helper.
-            var sorted=Enumerable.Range(first,end-first).Select(i=>array[i]).OrderBy(g=>g.Score).ToArray();
-            for(int i=0;i<sorted.Length;i++)array[first+i]=sorted[i];return true;
-        };
-        Assert.True(sort.TrySort(input));Assert.Equal(Enumerable.Range(0,39).Select(x=>(float)x),input.Select(g=>g.Score));
+        new InterestingEdgeGoalSort().Sort(input);Assert.Equal(Enumerable.Range(0,39).Select(x=>(float)x),input.Select(g=>g.Score));
     }
-
+    [Fact]
+    public void SortEqualMinimumPartitionMovesTheOneLargerRecordAsTheInstructionsDo()
+    {
+        // Hand trace of 0x005E838A..0x005E845E for 31 records of score 5 with score 9 at index 3: sort3 swaps nothing, j runs down to i
+        // with nothing below the pivot, then the first record above a[first] (index 3) swaps with the last and the scan ends. Index 3 and 30 trade places.
+        var region=Region(1,1);var input=Enumerable.Range(0,31).Select(i=>new InterestingEdgeGoal(region,(uint)i,i==3?9:5)).ToList();
+        new InterestingEdgeGoalSort().Sort(input);
+        var expected=Enumerable.Range(0,31).Select(i=>(uint)i).ToArray();expected[3]=30;expected[30]=3;
+        Assert.Equal(expected,input.Select(g=>g.Segment));
+    }
+    [Fact]
+    public void SortNearTiesAndEqualScoresKeepInsertionOrderUnderThirtyOneRecords()
+    {
+        // 0x005E8630..0x005E86B4: shifting stops on equality or a gap under 1e-5, so only a real gap moves a record.
+        var region=Region(1,1);float e=BitConverter.UInt32BitsToSingle(0x3727C5AC);
+        var input=new[]{5f,5f,5f,5f,5f+e/2,5f,1f}.Select((score,i)=>new InterestingEdgeGoal(region,(uint)i,score)).ToList();
+        new InterestingEdgeGoalSort().Sort(input);
+        Assert.Equal(new uint[]{6,0,1,2,3,4,5},input.Select(g=>g.Segment));
+    }
 }

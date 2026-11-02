@@ -136,11 +136,12 @@ public sealed class PickupPyramidNativeExecutionTests
             M.Vision.WaitForProcessorIdle();Rig.Engine.VisionUpdateAllResultsFailed!();Rig.Tick();
         }
         // Supplied changing camera/IMU input; does not change the selected activity or vision modes.
-        internal void NativeCameraFrame(uint id,byte value)
+        internal void NativeCameraFrame(uint id,byte value)=>NativeCameraFrame(id,Enumerable.Repeat(value,320*240).ToArray());
+        internal void NativeCameraFrame(uint id,byte[] pixels)
         {
             uint timestamp=Robot.StoredState!.Timestamp;
             Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
-            Rig.CameraGrayFrame(id,timestamp,Enumerable.Repeat(value,320*240).ToArray());
+            Rig.CameraGrayFrame(id,timestamp,pixels);
             M.Vision.WaitForProcessorIdle();
         }
         public void Dispose()=>Rig.Dispose();
