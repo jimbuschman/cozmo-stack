@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **756 records** over 16 subsystems.
+Manifest of **758 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 276 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 277 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 10 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 362 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 70 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 13 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 100 | 6 | 73 | 0 | 1 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 102 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
@@ -62,7 +62,7 @@ status.
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
-| M11-vision | INVENTORY_APPROVED | 19 | 0 | 0 | 0 |
+| M11-vision | INVENTORY_APPROVED | 20 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
@@ -191,6 +191,7 @@ POUNCE-REAL-FRAMES-1 final validation (2026-11-02) supersedes its prior WIP/pend
 * best authority: libcozmoEngine.so 3.4.0-1204 and the shipped OpenCV 3.1.0: QuadTree::ShiftRoot branch table, SwapChildrenAndContent 0x00687601, DestroyNodes; LineSegment::IntersectsWith (PLT 0x004BD080); AddSmallestDescendants 0x00688105 and ...DepthFirst 0x00688251 and the CheckedInfo bit indexing; the 3-vector behind AIWhiteboard +0x50's running maximum (0x0067FDE8..0x0067FE38); the uses of the constants 3.0 and 6.0 next to the 6.00001 literal; callers of MemoryMap::TransformContent(fn); OpenCV 3.1.0 filter2D 8U->16S (libopencv_imgproc.so 0x0005705D) and fillConvexPoly (0x00042F59, 0x00042C99), Mat::convertTo 0x000407E9, Mat::setTo 0x0004486D, transpose 0x0008ED6D (libopencv_core.so); kmLine2WithLineIntersection (PLT 0x004D3220); the UpdateAllResults loop head 0x006542EC..0x00654486 and the handler bodies UpdateToolCode 0x00655421, UpdateComputedCalibration 0x006554C5, UpdateImageQuality 0x00655579, UpdateLaserPoints 0x00655795, UpdateOverheadMap 0x00655909; the shipped PerformanceLogging.DropStatsWindowLength_sec value
 * evidence: re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md 'not done'; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md 'Open'; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'
 * outstanding: read each item; OpenCV numerics may be exact black boxes only if the shipped OpenCV is emulated (the emu tools in re-analysis/tools/emu). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): still unread for the cliff insert: GetOverlapType and FastPolygon ctor/Contains (0x00688290 and callees), UpgradeRootLevel body 0x006876FA..0x006879C0, ShiftRoot 0x00686DF8..0x0068743E, processor bodies 0x00688E50..0x006890AA and 0x0068928C..0x0068934C, ClearDescendants 0x00687E1C, SwapChildrenAndContent 0x00687600, DestroyNodes 0x0068768A. Also unread: MemoryMap vt+0xC (the merge used by UpdateMapOrigins, slot 0x0067DF78) and its null-argument handling (M13-032). Update 2026-10-13 (re-analysis/research/20261013-play-area-check.md): now read, moved to M11-045: the processor bodies, ClearDescendants, SwapChildrenAndContent, DestroyNodes. Still unread: ShiftRoot, UpgradeRootLevel body, QuadTreeNode::Transform (0x0068846E) and their area effect; GetOverlapType/FastPolygon; the MemoryMap merge. Split 2026-10-13 (re-analysis/research/20261013-quadtree-rest-check.md): the quad-tree subset is fully read (B1-B7: FastPolygon/LineSegment, GetOverlapType, ResetBoundingBox, UpgradeRootLevel/Expand, ShiftRoot with 20 ForceSet and 12 Swap sites, Transform, Merge) and moves to M11-045 / M11-046 / M13-032 as build rows. Still unread here: the OpenCV numerics, kmLine2WithLineIntersection, the AIWhiteboard +0x50 maximum and 3.0/6.0 uses, the UpdateAllResults loop and its five handlers, DropStatsWindowLength, AddSmallestDescendants (directional) 0x00688104 and the CheckedInfo bit indexing (M11-047). OV11 check (re-analysis/research/overnight/20261014-ov11-m11-047-check.md): the directional AddSmallestDescendants (0x00688104) and the CheckedInfo indexing are now read under M11-047.
+VISIT-EDGE-DETECTOR-1 (2026-11-03): fillConvexPoly 0x42F59/0x42C99 are libopencv_imgproc.so symbols, not libopencv_core.so. The filter2D 8U->16S path is read and proven in M11-101.
 
 **M11-056 — SDK camera and custom-world reset recipients** (live path)
 
@@ -1690,6 +1691,7 @@ B-M12-3 (2026-10-15), built, awaiting strong verification: Necessary M12-027 dep
 * outstanding: build Detect, GroundPlaneROI, the ClampQuad clear quad and the four MapComponent entry points exactly, on the quad-tree records M11-045, M11-046 and M11-047 (the quad tree must be built first: the stack's detector is an equivalent). Border-walk order, ShiftRoot, LineSegment::IntersectsWith and the OpenCV numerics are M11-047 and M11-048 (RECOVERABLE_GAP). The null-map behaviour of rows 48-49 is for the policy review. Contradicted (re-analysis/research/20261013-quadtree-rest-check.md): its evidence says the quad tree vs polygons difference is not observable; it is: the ray answers per cell (0x00689F4C..0x00689F5E) and HasContentType answers only for {3,6,7,8,9,10} (HasContentType(ClearOfCliff=2) is always false in the engine). OV11 check (re-analysis/research/overnight/20261014-ov11-m11-047-check.md): the border fill is a one-point insert at each seed node's centre, only for side contacts, and only when the frame produced border segments (0x00680290, 0x00680310 -> 0x006803AC); the evidence wording is too loose.
 VISION-GROUND-CARRIER-1 (2026-11-01), built pending batch gate/Claude: native calibration-owned ground H lookup, exact f32 K*M, static quad/project/segment clamp/FOV helpers now supply a captured ground subset (00651998/006533C4/004F83F8/004F7774/004F78E0/004F7B74). Existing keys retained; finite lower_bound selects first >=head, never invented nearest interpolation. Unknown retained-key history stays unavailable. This is not the overhead-edge detector or its complete map path; no whole settlement.
 POSE-SOLVEPNP-1 (2026-11-02): with the camera at z -8, a lowered lift at the minimum head crosses the ROI and the lift gate abandons the frame, which the engine's arithmetic also does (verifier hand check, re-analysis/research/20261102-solvepnp-claude-check.md); at VisitInterestingEdge's head 0xBE860A92 frames are kept. Open: the stack returns 'out of the way' whenever point A does not project, where Detect 0x006ABE34 abandons when A does not project but B does with B.y >= top; ComputeLiftPose 0x005151AC rotation not checked.
+VISIT-EDGE-DETECTOR-1 (2026-11-03): the detector itself is now M11-101 (EXACT_SOURCE, bit-exact against the shipped Detect under the emulator) and its lift gate M11-102. Corrections to this record's evidence: the ROI corners are immediates (0x004F7774..0x004F77C2), not statics at 0x00C48F60; a column whose hit fails to project also reports clear (0x006AD218); the engine rounds responses to int16 before the threshold (0x00049AB6), so the old double filter did move decisions in (50, 50.5]. This record keeps the map side of the overhead edges. re-analysis/research/20261103-visit-edge-detector-claude-check.md
 
 **M11-019 — A delocalize: a new pose origin; carried objects (and the one on top) move to the new root; old-origin objects are kept unless their origin is a zombie** (live path)
 
@@ -2417,6 +2419,15 @@ VISION-GROUND-CARRIER-1 (2026-11-01): actual frame capture reuses checked min(im
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: ComputePossiblePoses 0x008769F0 drops a marker only when EstimateObservedPose 0x0087E958 returns nonzero; PoseCluster::RecomputePose 0x0062A490 re-solves a cluster with more than one member through 0x0085DF98 (thunk 0x004B84E4) and assigns the result with no residual test; re-analysis/research/20261102-solvepnp-claude-check.md
 * outstanding: The stack drops a marker when its reprojection RMS exceeds 3 px (BlockWorld.cs CreateObjectsFromMarkers) and keeps a joint cluster pose only when RMS <= 6 px; neither exists in the engine. The cluster re-solve itself has an engine counterpart (RecomputePose). Not built: remove the gates once the clustering is compared with PoseCluster.
+
+**M11-102 — The overhead-edge lift-in-the-way gate: lift pose (ComputeLiftPose 0x005151AC) projected through the camera with Project3dPoint against the unclipped scan rect** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/OverheadEdges.cs`
+* effect: whether a frame with the lift low is abandoned before edge detection
+* rests on: split out of M11-017 by VISIT-EDGE-DETECTOR-1, 2026-11-03; added under the standing authorisation for cited inventory corrections
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Detect lift gate 0x006AC1A2..0x006AC522 (lift base parented on pd+4, GetWithRespectTo 0x006AC246, A/B tests 0x006AC49E..0x006AC522); ComputeLiftPose 0x005151AC..0x00515214; re-analysis/research/20261103-visit-edge-detector-extraction.md; re-analysis/research/20261103-visit-edge-detector-claude-check.md
+* outstanding: LiftIsOutOfTheWay is the stack's own projection: Camera::Project3dPoint's polynomial is unread and the ComputeLiftPose rotation is not checked. Known shape difference (M11-017 note): the stack returns 'out of the way' whenever point A does not project, where the engine abandons when A does not project but B does with B.y >= top. Now given the unclipped truncated rect, as the engine does (rows 9-10). The emulator oracle runs with a null calibration, so this gate is outside M11-101's proof.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 

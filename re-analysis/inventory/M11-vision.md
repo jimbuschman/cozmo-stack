@@ -1772,3 +1772,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP: BlockWorld's reprojection gates, which the engine does not have | M11-100 (new) |
 | IMPLEMENTATION_GAP -> EXACT_SOURCE: camera z -8.0 applied to the vision model | M11-054 |
 | Note: lift gate with the corrected camera | M11-017 |
+
+## VISIT-EDGE-DETECTOR-1 (manager, 2026-11-03; research/20261103-visit-edge-detector-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New EXACT_SOURCE: the overhead-edge detector Detect 0x006ABE34 (grey path), bit-exact against the shipped code under the emulator | M11-101 (new) |
+| New IMPLEMENTATION_GAP: the detector's lift-in-the-way gate, split out | M11-102 (new) |
+| Notes: evidence corrections; map side stays | M11-017, M11-048 |

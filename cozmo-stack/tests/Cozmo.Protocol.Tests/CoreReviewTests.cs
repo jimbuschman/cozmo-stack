@@ -830,7 +830,8 @@ public class CoreReviewTests
             var pd=new VisionPoseData(1000,f.Historical,BitConverter.UInt32BitsToSingle(0xBE860A92),(float)Math.Asin((LiftPresets.LowDockMm-45.0)/LiftGeometry.ArmLengthMm),false,false); // VisitInterestingEdge's head and lift (0x005E79FC..0x005E7AD6): the camera's geometry (M11-054) puts a raised arm across the ROI, which abandons the frame
             var frame=new GrayImage(cal.Columns,cal.Rows);frame.Fill(150);
             for(int y=0;y<cal.Rows;y++)for(int x=0;x<cal.Columns;x++)if(y>cal.Rows*3/5)frame.Pixels[y*cal.Columns+x]=30;
-            var result=vision.ProcessImage(frame,1,1000,pd);
+            // M11-017 rows 4-6: the offline entry takes the frame's VisionPoseData fields the detector reads (H in the LUT's shape, visible, LIFT_IN_POS)
+            var result=vision.ProcessImage(frame,1,1000,pd,OverheadEdgeTests.Ground(new CameraModel(cal,pd.CameraPose),f.Historical));
             Assert.NotNull(result.OverheadEdges);Assert.True(result.OverheadEdges!.GroundPlaneValid);
             Assert.Contains(result.OverheadEdges.Chains,c=>c.IsBorder);
             Assert.Contains(f.Writes,w=>w.Data.Type==MemoryMapContentType.InterestingEdge);
@@ -863,7 +864,8 @@ public class CoreReviewTests
         {
             var pd=new VisionPoseData(1000,f.Historical,BitConverter.UInt32BitsToSingle(0xBE860A92),(float)Math.Asin((LiftPresets.LowDockMm-45.0)/LiftGeometry.ArmLengthMm),false,false); // VisitInterestingEdge's head and lift (0x005E79FC..0x005E7AD6): the camera's geometry (M11-054) puts a raised arm across the ROI, which abandons the frame
             var frame=new GrayImage(cal.Columns,cal.Rows);frame.Fill(150);
-            var result=vision.ProcessImage(frame,1,1000,pd);
+            // M11-017 rows 4-6: the offline entry takes the frame's VisionPoseData fields the detector reads (H in the LUT's shape, visible, LIFT_IN_POS)
+            var result=vision.ProcessImage(frame,1,1000,pd,OverheadEdgeTests.Ground(new CameraModel(cal,pd.CameraPose),f.Historical));
             Assert.NotNull(result.OverheadEdges);Assert.True(result.OverheadEdges!.GroundPlaneValid);
             Assert.DoesNotContain(f.Writes,w=>w.Data.Type==MemoryMapContentType.InterestingEdge);
             Assert.Single(f.States);Assert.Equal(1000f,f.States[0].Time);Assert.Empty(f.Map.Regions);

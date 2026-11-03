@@ -28,6 +28,7 @@ This is the operator-requested asset-based planning document, checked by the man
 | 2026-11-02 | 1 (DriveOffCharger) | total 17 over 41 start-path jobs | VISIT-EDGE-REAL-MAP-1 | Simulated: no Hiking hold with map content, idle 2 to 4 s of 300 s. Close branch needs M11-054. Not yet on a robot. |
 | 2026-11-02 | 1 (DriveOffCharger) | total 19 over 42 start-path jobs | POSE-SOLVEPNP-1 | M11-054, M11-099 settled. Marker poses from the shipped solver; camera at engine height. Not yet on a robot. |
 | 2026-11-03 | 2 (DriveOffCharger, Hiking_PounceOnMotion) | total 19 over 43 start-path jobs | CLIFF-QUAD-CRASH-1; third idle robot run | Robot: idle 1.4 of 240 s, three full pounces, VisitInterestingEdge close branch from real frames, six cliffs handled. |
+| 2026-11-03 | 2 (DriveOffCharger, Hiking_PounceOnMotion) | total 20 over 44 start-path jobs (adds M11-101) | VISIT-EDGE-DETECTOR-1 | Overhead-edge detector exact against the shipped code. Not yet on a robot. |
 
 ## Sources and interpretation
 

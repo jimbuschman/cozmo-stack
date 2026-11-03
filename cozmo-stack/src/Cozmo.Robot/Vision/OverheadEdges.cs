@@ -4,9 +4,8 @@ namespace Cozmo.Robot.Vision;
 
 /// <summary>
 /// <c>Anki::Cozmo::GroundPlaneROI</c>: the patch of floor in front of the robot the overhead-edge
-/// detector looks at. Its four static members are at 0x00C48F60..0x00C48F6C - <c>_dist</c> 40,
-/// <c>_length</c> 150, <c>_widthFar</c> 150, <c>_widthClose</c> 40 - and <c>GetGroundQuad</c> 0x004F7774
-/// builds the trapezoid they describe in robot coordinates: from 40 mm ahead, forty wide, out to 190 mm
+/// detector looks at. <c>GetGroundQuad</c> 0x004F7774..0x004F77C2 builds it from immediates (no static is read; inventory row 7):
+/// TL (190, 75), BL (40, 20), TR (190, -75), BR (40, -20) in robot coordinates - from 40 mm ahead, forty wide, out to 190 mm
 /// ahead, a hundred and fifty wide.
 /// </summary>
 public static class GroundPlaneROI
@@ -54,35 +53,21 @@ public sealed record OverheadEdgeFrame(uint Timestamp, bool GroundPlaneValid, Ve
                                        IReadOnlyList<OverheadEdgePointChain> Chains);
 
 /// <summary>
-/// <c>Anki::Cozmo::OverheadEdgesDetector::Detect</c> 0x006ABE34. The engine's three profiled stages are
-/// EdgeDetection, GroundQuadEdgeMasking and FindingGroundEdgePoints, and this follows them:
-///
-/// 1. the ground ROI is projected into the image (<c>GroundPlaneROI::GetImageQuad</c>) and its bounding
-///    rectangle taken (<c>Rectangle&lt;int&gt;::InitFromPointContainer</c>, 0x006ABEA4);
-/// 2. that rectangle is filtered with the seven-by-five kernel the engine keeps as a function-local
-///    static at 0x00C8E020 - a horizontal five-tap smoothing times a vertical difference with three
-///    blank rows between its halves - through <c>cv::filter2D</c> (0x006AC650);
-/// 3. everything outside the ground quad is masked away (<c>fillConvexPoly</c> then <c>SetMaskTo</c>,
-///    0x006AC7AE);
-/// 4. the result is transposed (0x006AD0BE) and each image column is walked from the bottom of the
-///    rectangle upwards for the first response whose magnitude passes the detector's threshold
-///    (0x006AD1FE). The first one found is an edge point; a column with none at all reports the top of
-///    the rectangle as clear, but only where the far edge of the ROI is itself in frame - the two
-///    comparisons at 0x006AD23E and 0x006AD24C, against the x of the ground quad's two far corners.
-///    Either way the image point becomes a ground point through the homography (0x006AE0A8: multiply,
-///    then divide by z, and refuse the point when z is not positive).
-///
-/// Consecutive points join a chain while they are of the same kind and no more than five millimetres
-/// apart (<c>0x006AE1DE</c>); anything else starts a new one.
-///
-/// The threshold is 50 and the fifth constructor argument 3, both from the one construction site in
-/// <c>VisionSystem::VisionSystem</c> (0x006B0120).
+/// The parts of the frame's <c>VisionPoseData</c> Detect reads besides the poses: the ground-plane homography H (+0x7C, nine binary32,
+/// ground (x, y, 1) in robot mm to pixels; the LUT entry LookupGroundPlaneHomography chose), the ground-plane-visible byte (+0x78) and the
+/// RobotState status (+0x5C). Inventory rows 4, 5 and 6 (VisionPoseData::Set 0x006AF330..0x006AF38A).
+/// </summary>
+public readonly record struct OverheadEdgeGroundInput(float[] Homography, bool GroundPlaneVisible, uint Status);
+
+/// <summary>
+/// <c>Anki::Cozmo::OverheadEdgesDetector::Detect</c> 0x006ABE34, the stack's live detector (VisionSystem constructs and calls it for
+/// <c>DetectingOverheadEdges</c>). The algorithm is <see cref="NativeOverheadEdges"/>, a transcription of the approved inventory
+/// <c>re-analysis/research/20261103-visit-edge-detector-extraction.md</c> proved bit for bit against the engine's own Detect under the
+/// emulator. Its inputs are the frame's <c>VisionPoseData</c>: the ground-plane homography (+0x7C), the ground-plane-visible byte (+0x78),
+/// the RobotState status (+0x5C) and, for the lift gate, the lift angle (+0x3C) with the frame's camera and robot pose.
+/// The threshold 50 and the minimum chain length 3 are the one construction site's (VisionSystem::VisionSystem 0x006B011E..0x006B012E).
 /// </summary>
 // fidelity: M11-017
-// M11-017 is IMPLEMENTATION_GAP: SD1 requires the engine's exact detector, but the inventory carries
-// only the entry addresses (OverheadEdgesDetector::Detect 0x006ABE34, GroundPlaneROI 0x004F7774, the
-// four MapComponent entry points) and a prose description - not the instruction body. This class is
-// therefore the stack's equivalent (polygon map, double-precision filter), not a transcription.
 public sealed class OverheadEdgesDetector
 {
     /// <summary>The <c>float</c> argument <c>VisionSystem</c> constructs the detector with (0x006B0120), kept at the detector's +0xC and compared against the absolute filter response.</summary>
@@ -103,91 +88,34 @@ public sealed class OverheadEdgesDetector
     public static readonly Vec3 LiftPointA = new(4.0, 0.0, -20.0);
     public static readonly Vec3 LiftPointB = new(-1.0, 0.0, -36.5);
 
-    /// <summary>
-    /// The engine's edge kernel, the thirty-five floats at 0x00C8E020 laid out seven rows by five
-    /// columns. The three zero rows in the middle are what makes it a difference across a gap rather
-    /// than a plain derivative.
-    /// </summary>
-    public static readonly double[,] Kernel =
+    /// <summary>The engine's edge kernel as binary32, seven rows by five, from its bit patterns at 0xC8E0AC (inventory row 13).</summary>
+    public static float[,] Kernel
     {
-        {  0.0168,  0.0754,  0.1242,  0.0754,  0.0168 },
-        {  0.0377,  0.1689,  0.2784,  0.1689,  0.0377 },
-        {  0.0,     0.0,     0.0,     0.0,     0.0    },
-        {  0.0,     0.0,     0.0,     0.0,     0.0    },
-        {  0.0,     0.0,     0.0,     0.0,     0.0    },
-        { -0.0377, -0.1689, -0.2784, -0.1689, -0.0377 },
-        { -0.0168, -0.0754, -0.1242, -0.0754, -0.0168 },
-    };
-
-    public OverheadEdgesDetector(double threshold = EdgeThreshold) => Threshold = threshold;
-
-    public double Threshold { get; }
-
-    /// <summary>
-    /// Runs the detector over one frame. <paramref name="camera"/> is the camera in the same frame as
-    /// <paramref name="robotPose"/>; the points come back in robot coordinates, which is what
-    /// <see cref="MemoryMap.AddVisionOverheadEdges"/> expects - the engine's map component transforms
-    /// them by the robot's historical pose before it uses them (0x0067FC06).
-    /// </summary>
-    public OverheadEdgeFrame Detect(GrayImage image, CameraModel camera, Pose3d robotPose, uint timestamp = 0,
-                                    double? liftAngleRad = null)
-    {
-        var groundQuad = GroundPlaneROI.GroundQuad();
-        var imageQuad = new Vec2[4];
-        for (int i = 0; i < 4; i++)
+        get
         {
-            var world = robotPose.Apply(new Vec3(groundQuad[i].X, groundQuad[i].Y, 0));
-            if (camera.Project(world) is not { } px) return Empty(timestamp, groundQuad);
-            imageQuad[i] = px;
+            var k = new float[NativeOverheadEdges.KernelRows, NativeOverheadEdges.KernelCols];
+            for (int y = 0; y < NativeOverheadEdges.KernelRows; y++)
+                for (int x = 0; x < NativeOverheadEdges.KernelCols; x++)
+                    k[y, x] = BitConverter.UInt32BitsToSingle(NativeOverheadEdges.KernelBits[y * NativeOverheadEdges.KernelCols + x]);
+            return k;
         }
-
-        // image to ground, the homography the engine carries in its pose data. A homography is only
-        // fixed up to scale, and the engine's test is on the sign of the third component, so the scale is
-        // chosen here to make it positive over the ROI - which is what the engine's own ground-plane
-        // homography does.
-        var toGround = Homography.FromPoints(imageQuad, groundQuad);
-        var centre = new Vec2(imageQuad.Average(p => p.X), imageQuad.Average(p => p.Y));
-        if (toGround.ApplyHomogeneous(centre.X, centre.Y).W < 0)
-            toGround = new Homography(toGround.H.Select(v => -v).ToArray());
-
-        int minX = (int)Math.Floor(imageQuad.Min(p => p.X)), maxX = (int)Math.Ceiling(imageQuad.Max(p => p.X));
-        int minY = (int)Math.Floor(imageQuad.Min(p => p.Y)), maxY = (int)Math.Ceiling(imageQuad.Max(p => p.Y));
-        minX = Math.Max(0, minX); minY = Math.Max(0, minY);
-        maxX = Math.Min(image.Width - 1, maxX); maxY = Math.Min(image.Height - 1, maxY);
-        if (maxX <= minX || maxY <= minY) return Empty(timestamp, groundQuad);
-        if (liftAngleRad is { } lift && !LiftIsOutOfTheWay(camera, robotPose, lift, minY, maxY))
-            return Empty(timestamp, groundQuad);
-
-        var response = Filter(image, minX, minY, maxX, maxY, imageQuad);
-
-        // the far edge's two corners bound the columns a clear report may be made for
-        double clearMinX = Math.Min(imageQuad[0].X, imageQuad[2].X);
-        double clearMaxX = Math.Max(imageQuad[0].X, imageQuad[2].X);
-
-        var chains = new List<OverheadEdgePointChain>();
-        for (int x = minX; x <= maxX; x++)
-        {
-            int found = -1;
-            for (int y = maxY; y >= minY; y--)
-                if (Math.Abs(response[x - minX, y - minY]) > Threshold) { found = y; break; }
-
-            if (found >= 0)
-            {
-                if (ToGround(toGround, x, found) is { } g)
-                    Append(chains, new OverheadEdgePoint(g, response[x - minX, found - minY]), true);
-            }
-            else if (x >= clearMinX && x <= clearMaxX)
-            {
-                if (ToGround(toGround, x, minY) is { } g)
-                    Append(chains, new OverheadEdgePoint(g, 0), false);
-            }
-        }
-        // fidelity: M11-017 -- 0x006ACA2A..0x006ACAD6: only chains of at least detector+0x10 points leave Detect (constructor 3, 0x006B0110..0x006B012E).
-        return new OverheadEdgeFrame(timestamp, true, groundQuad, chains.Where(chain => chain.Points.Count >= MinChainPoints).ToList());
     }
 
-    private static OverheadEdgeFrame Empty(uint timestamp, Vec2[] quad) =>
-        new(timestamp, false, quad, Array.Empty<OverheadEdgePointChain>());
+    /// <summary>
+    /// Runs Detect over one frame. Returns the frame it appended, or null when it appended none: the status gate (row 5) and the lift
+    /// gate (row 9) return 0 with no frame. Its only failure return (row 9's pose-tree error) cannot arise in the stack, so a call always
+    /// succeeds and the caller sets the processed-mode bit (row 2). The points come back in robot coordinates, which is what
+    /// <see cref="MemoryMap.AddVisionOverheadEdges"/> expects.
+    /// </summary>
+    public OverheadEdgeFrame? Detect(GrayImage image, OverheadEdgeGroundInput ground, CameraModel camera, Pose3d robotPose,
+                                     uint timestamp = 0, double? liftAngleRad = null)
+    {
+        NativeOverheadEdges.LiftGate? gate = liftAngleRad is { } lift
+            ? (top, bottom) => LiftIsOutOfTheWay(camera, robotPose, lift, top, bottom)
+            : null;
+        NativeOverheadEdges.Detect(image, ground.Homography, ground.GroundPlaneVisible, ground.Status, timestamp, gate, out var frame);
+        return frame;
+    }
 
     /// <summary>
     /// The lift test at 0x006AC4A2..0x006ACDC8, which is a gate and not a mask: the two lift points are
@@ -206,52 +134,6 @@ public sealed class OverheadEdgesDetector
         return pb.Y < top;                             // or the pair straddles it from above
     }
 
-    /// <summary>
-    /// <c>0x006AE0A8</c>: the image point taken through the homography as (x, y, 1), then divided by its
-    /// third component - and refused outright when that is not positive, which is the case for a column
-    /// whose ray never meets the ground in front of the robot.
-    /// </summary>
-    private static Vec2? ToGround(Homography h, double x, double y)
-    {
-        var (gx, gy, w) = h.ApplyHomogeneous(x, y);
-        if (w <= 0) return null;
-        return new Vec2(gx / w, gy / w);
-    }
-
-    /// <summary>
-    /// The EdgeDetection and GroundQuadEdgeMasking stages together: the kernel over the ROI rectangle,
-    /// with everything outside the ground quad left at zero so it can never raise an edge.
-    /// </summary>
-    private static double[,] Filter(GrayImage image, int minX, int minY, int maxX, int maxY, Vec2[] quad)
-    {
-        int w = maxX - minX + 1, h = maxY - minY + 1;
-        var outp = new double[w, h];
-        var poly = new[] { quad[0], quad[1], quad[3], quad[2] };   // the trapezoid, once round
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                if (!InsidePolygon(poly, new Vec2(minX + x, minY + y))) continue;
-                double acc = 0;
-                for (int ky = 0; ky < 7; ky++)
-                    for (int kx = 0; kx < 5; kx++)
-                    {
-                        int sx = Reflect(minX + x + kx - 2, image.Width);
-                        int sy = Reflect(minY + y + ky - 3, image.Height);
-                        acc += Kernel[ky, kx] * image.Pixels[sy * image.Width + sx];
-                    }
-                outp[x, y] = acc;
-            }
-        return outp;
-    }
-
-    private static int Reflect(int i, int n)
-    {
-        if (n == 1) return 0;
-        if (i < 0) return -i;
-        if (i >= n) return 2 * n - i - 2;
-        return i;
-    }
-
     internal static bool InsidePolygon(Vec2[] poly, Vec2 p)
     {
         bool inside = false;
@@ -262,20 +144,7 @@ public sealed class OverheadEdgesDetector
         return inside;
     }
 
-    /// <summary>
-    /// The engine's chain appender at 0x006AE1B0: a point joins the last chain when that chain is of the
-    /// same kind and its last point is within five millimetres; otherwise a new chain starts.
-    /// </summary>
-    internal static void Append(List<OverheadEdgePointChain> chains, OverheadEdgePoint point, bool isBorder)
-    {
-        var last = chains.Count > 0 ? chains[^1] : null;
-        bool join = last is not null && last.Points.Count > 0 && last.IsBorder == isBorder
-                    && (point.Ground - last.Points[^1].Ground).Length <= MaxChainGapMm;
-        if (last is null || (last.Points.Count > 0 && !join))
-        {
-            last = new OverheadEdgePointChain { IsBorder = isBorder };
-            chains.Add(last);
-        }
-        last.Points.Add(point);
-    }
+    /// <summary>The engine's chain appender <c>AddPoint</c> 0x006AE1B0 (inventory row 27).</summary>
+    internal static void Append(List<OverheadEdgePointChain> chains, OverheadEdgePoint point, bool isBorder) =>
+        NativeOverheadEdges.AddPoint(chains, point, isBorder);
 }

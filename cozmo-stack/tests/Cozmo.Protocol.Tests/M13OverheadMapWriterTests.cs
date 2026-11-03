@@ -46,8 +46,9 @@ public sealed class M13OverheadMapWriterTests
     [Fact]
     public void CapturedFrameReachesExistingHistoryAndWhiteboardOwners()
     {
-        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State(head:BitConverter.UInt32BitsToSingle(0xBE860A92),liftAngle:(float)Math.Asin((LiftPresets.LowDockMm-45.0)/LiftGeometry.ArmLengthMm)); // VisitInterestingEdge's head and lift (0x005E79FC..0x005E7AD6): M11-054's geometry puts a raised arm across the ROI
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.LiftInPos,head:BitConverter.UInt32BitsToSingle(0xBE860A92),liftAngle:(float)Math.Asin((LiftPresets.LowDockMm-45.0)/LiftGeometry.ArmLengthMm)); // VisitInterestingEdge's head and lift (0x005E79FC..0x005E7AD6): M11-054's geometry puts a raised arm across the ROI; LIFT_IN_POS because Detect runs only with (status & 0x102) == 0x100 (M11-017 row 5, 0x006AC090..0x006AC09C)
         var vision=rig.Robot.Vision;vision.Calibration=CameraCalibration.Nominal();vision.Enabled=true;
+        vision.SetNativeOuterCalibration(vision.Calibration); // M11-017 row 6: the ground-plane LUT the frame's carrier H comes from (production: the NV calibration read)
         vision.ModeEnableMask=1<<(int)VisionMode.DetectingOverheadEdges;
         vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-capture schedule
         using var manipulation=new ManipulationSystem(rig.Robot,vision);

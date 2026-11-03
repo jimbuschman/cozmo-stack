@@ -1,3 +1,4 @@
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -23,8 +24,36 @@ public class OverheadEdgeTests
     private static readonly Pose3d AtOrigin = new(Mat3.Identity, new Vec3(0, 0, 0));
 
     /// <summary>
-    /// <c>GroundPlaneROI</c>'s four static members at 0x00C48F60 and the trapezoid
-    /// <c>GetGroundQuad</c> 0x004F7774 builds from them.
+    /// A ground-plane homography for a camera, in the shape of the engine's LUT entries: H = K*[r0 r1 t] in binary32, ground (x, y, 1) in
+    /// the robot frame of <paramref name="robotPose"/> to pixels (M11-017 inventory row 6; PopulateGroundPlaneHomographyLUT 0x0065176A..
+    /// 0x00651BA6). Only a way to make the detector's input for a test camera; no distortion, as the LUT has none.
+    /// </summary>
+    internal static float[] GroundHomography(CameraModel cam, Pose3d robotPose)
+    {
+        var c = cam.Calibration;
+        Vec3 t = cam.ToCamera(robotPose.Apply(new Vec3(0, 0, 0)));
+        Vec3 r0 = cam.ToCamera(robotPose.Apply(new Vec3(1, 0, 0))) - t;
+        Vec3 r1 = cam.ToCamera(robotPose.Apply(new Vec3(0, 1, 0))) - t;
+        float[] k = { (float)c.FocalLengthX, (float)c.Skew * (float)c.FocalLengthX, (float)c.CenterX, 0, (float)c.FocalLengthY, (float)c.CenterY, 0, 0, 1 };
+        float[] m = { (float)r0.X, (float)r1.X, (float)t.X, (float)r0.Y, (float)r1.Y, (float)t.Y, (float)r0.Z, (float)r1.Z, (float)t.Z };
+        var h = new float[9];
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+            {
+                float v = 0f;
+                for (int q = 0; q < 3; q++) v += k[i * 3 + q] * m[q * 3 + j];
+                h[i * 3 + j] = v;
+            }
+        return h;
+    }
+
+    /// <summary>The detector's inputs for a test camera: its homography, ground plane visible, LIFT_IN_POS (rows 4-6).</summary>
+    internal static OverheadEdgeGroundInput Ground(CameraModel cam, Pose3d robotPose) =>
+        new(GroundHomography(cam, robotPose), true, (uint)RobotStatusFlag.LiftInPos);
+
+    /// <summary>
+    /// <c>GroundPlaneROI::GetGroundQuad</c> 0x004F7774..0x004F77C2 builds the trapezoid from immediates (M11-017 inventory row 7):
+    /// TL (190, 75), BL (40, 20), TR (190, -75), BR (40, -20).
     /// </summary>
     [Fact]
     public void TheGroundRoiIsTheEnginesTrapezoid()
@@ -42,33 +71,32 @@ public class OverheadEdgeTests
     }
 
     /// <summary>
-    /// The kernel at 0x00C8E020: seven rows by five, the top two rows positive and the bottom two their
-    /// negatives, and three blank rows between them. It sums to zero, so flat ground gives no response
-    /// at all and only a step in brightness can pass the threshold of 50 the detector is constructed
-    /// with (0x006B0120).
+    /// The kernel, the function-local static Matx&lt;float,7,5&gt; copied from 0xC8E0AC (M11-017 inventory row 13): rows 0 and 1 as
+    /// their bit patterns, rows 2..4 zero, row 5 = -row 1, row 6 = -row 0. The threshold 50.0f is the construction site's
+    /// (0x006B0120 movt r1,#0x4248).
     /// </summary>
     [Fact]
     public void TheEdgeKernelIsTheEngines()
     {
         Assert.Equal(50.0, OverheadEdgesDetector.EdgeThreshold);
+        Assert.Equal(0x42480000u, BitConverter.SingleToUInt32Bits(NativeOverheadEdges.Threshold));
         Assert.Equal(5.0, OverheadEdgesDetector.MaxChainGapMm);
 
         var k = OverheadEdgesDetector.Kernel;
         Assert.Equal(7, k.GetLength(0));
         Assert.Equal(5, k.GetLength(1));
-        double sum = 0;
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 5; x++) sum += k[y, x];
-        Assert.Equal(0.0, sum, 6);
+        uint[] row0 = { 0x3C89A027, 0x3D9A6B51, 0x3DFE5C92, 0x3D9A6B51, 0x3C89A027 };
+        uint[] row1 = { 0x3D1A6B51, 0x3E2CF41F, 0x3E8E8A72, 0x3E2CF41F, 0x3D1A6B51 };
         for (int x = 0; x < 5; x++)
         {
-            Assert.Equal(0.0, k[2, x]);
-            Assert.Equal(0.0, k[3, x]);
-            Assert.Equal(0.0, k[4, x]);
-            Assert.Equal(-k[0, x], k[6, x], 6);
-            Assert.Equal(-k[1, x], k[5, x], 6);
+            Assert.Equal(row0[x], BitConverter.SingleToUInt32Bits(k[0, x]));
+            Assert.Equal(row1[x], BitConverter.SingleToUInt32Bits(k[1, x]));
+            Assert.Equal(0f, k[2, x]);
+            Assert.Equal(0f, k[3, x]);
+            Assert.Equal(0f, k[4, x]);
+            Assert.Equal(row1[x] | 0x80000000u, BitConverter.SingleToUInt32Bits(k[5, x]));
+            Assert.Equal(row0[x] | 0x80000000u, BitConverter.SingleToUInt32Bits(k[6, x]));
         }
-        Assert.Equal(0.0168, k[0, 0], 4);
-        Assert.Equal(0.2784, k[1, 2], 4);
     }
 
     /// <summary>
@@ -96,35 +124,26 @@ public class OverheadEdgeTests
     }
 
     /// <summary>
-    /// The detector on two synthetic frames. Flat grey ground has no step for the kernel to find, so
-    /// every column reports clear; a dark band across the ROI gives a step, and the columns that cross
-    /// it come back as border points, on the ground, in front of the robot.
+    /// The detector on two oracle frames (the engine's Detect under the emulator, NativeOverheadEdgesOracleTests' fixture). Flat grey
+    /// ground has no step for the kernel to find, so every column reports clear (kind 0, rows 26-27); a step across the ROI gives border
+    /// points (kind 1, rows 23-25) on the ground, in front of the robot. Expected: the oracle's frames. reach: unit.
     /// </summary>
     [Fact]
     public void FlatGroundReportsClearAndAStepReportsAnEdge()
     {
-        var cam = Camera();
-        var flat = new GrayImage(320, 240);
-        flat.Fill(120);
+        var d = NativeOverheadEdgesOracleTests.Fixture_.Value;
         var det = new OverheadEdgesDetector();
-
-        var frame = det.Detect(flat, cam, AtOrigin, 1000);
-        Assert.True(frame.GroundPlaneValid);
+        var flat = d.Cases.Single(c => c.Name == "probe_clamp__flat120");
+        var frame = det.Detect(d.Images[flat.Image], new OverheadEdgeGroundInput(flat.H, true, flat.Status), Camera(), AtOrigin, flat.Ts);
+        Assert.Null(NativeOverheadEdgesOracleTests.Compare(flat, frame));
+        Assert.True(frame!.GroundPlaneValid);
         Assert.NotEmpty(frame.Chains);
         Assert.All(frame.Chains, c => Assert.False(c.IsBorder));
 
-        // a dark band painted across the middle of the image
-        var stepped = new GrayImage(320, 240);
-        stepped.Fill(120);
-        int mid = 0;
-        for (int y = 0; y < 240; y++)
-            for (int x = 0; x < 320; x++)
-                if (y > 150) { stepped.Pixels[y * 320 + x] = 20; mid = y; }
-        Assert.True(mid > 0);
-
-        var frame2 = det.Detect(stepped, cam, AtOrigin, 1001);
-        Assert.Contains(frame2.Chains, c => c.IsBorder);
-        var border = frame2.Chains.Where(c => c.IsBorder).SelectMany(c => c.Points).ToList();
+        var step = d.Cases.Single(c => c.Name == "probe_clamp__step_probe");
+        var frame2 = det.Detect(d.Images[step.Image], new OverheadEdgeGroundInput(step.H, true, step.Status), Camera(), AtOrigin, step.Ts);
+        Assert.Null(NativeOverheadEdgesOracleTests.Compare(step, frame2));
+        var border = frame2!.Chains.Where(c => c.IsBorder).SelectMany(c => c.Points).ToList();
         Assert.NotEmpty(border);
         Assert.All(border, p => Assert.InRange(p.Ground.X, GroundPlaneROI.DistMm,
                                               GroundPlaneROI.DistMm + GroundPlaneROI.LengthMm));
@@ -132,8 +151,9 @@ public class OverheadEdgeTests
 
     /// <summary>
     /// The lift gate at 0x006AC4A2: the arm in front of the ground the detector wants to look at makes it
-    /// abandon the frame outright - it masks nothing, it just does not report. With the lift down the
-    /// frame comes back as usual.
+    /// abandon the frame outright - it masks nothing and appends no frame (inventory row 9: "Else return 0, no frame"). With the lift down
+    /// the frame comes back as usual. The gate's projection (Project3dPoint polynomial) is a RECOVERABLE_GAP and outside the oracle proof;
+    /// the rect it is given is the unclipped truncated one of row 10. reach: unit.
     /// </summary>
     [Fact]
     public void TheArmInTheWayAbandonsTheFrame()
@@ -152,8 +172,8 @@ public class OverheadEdgeTests
         // frame comes back as usual. Down, point A projects to row 253.6, below the ROI rectangle's bottom (row 239, the image's last).
         double down = Math.Asin((32.0 - 45) / LiftGeometry.ArmLengthMm);
         double up = Math.Asin((92.0 - 45) / LiftGeometry.ArmLengthMm);
-        Assert.True(det.Detect(flat, cam, AtOrigin, 1, down).GroundPlaneValid);
-        Assert.True(det.Detect(flat, cam, AtOrigin, 2, up).GroundPlaneValid);
+        Assert.True(det.Detect(flat, Ground(cam, AtOrigin), cam, AtOrigin, 1, down)!.GroundPlaneValid);
+        Assert.True(det.Detect(flat, Ground(cam, AtOrigin), cam, AtOrigin, 2, up)!.GroundPlaneValid);
 
         // the rule itself: the first point below the rectangle lets the frame through, and a rectangle
         // the arm is drawn across does not
@@ -162,8 +182,8 @@ public class OverheadEdgeTests
         // The head at its lowest (M11-054, camera z -8): the camera sits at (-0.5, 0, 34.35) looking 29 degrees down. Lift-down point A (27.7, 0, 12)
         // is 38.4 degrees down, so row 120 + 290 tan 9.4 = 168; the ROI's near edge (40, 0, 0) is 40.3 degrees down, row 178; point B (22.7, 0, -4.5)
         // is row 288, not above the rectangle's top. The arm is across the rectangle, so the rule above abandons a real frame.
-        var abandoned = det.Detect(flat, Camera(), AtOrigin, 3, down);
-        Assert.False(abandoned.GroundPlaneValid);
+        var abandoned = det.Detect(flat, Ground(Camera(), AtOrigin), Camera(), AtOrigin, 3, down);
+        Assert.Null(abandoned);
     }
 
     private static OverheadEdgeFrame FrameOf(bool border, params Vec2[] points)

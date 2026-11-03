@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-11-02",
+  "approved": "2026-11-03",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "6d2412d64b0d86cc04aa5f9423f120d3292976877b8fc7899011bff29c0d47f9",
+  "inventory_sha256": "d926468eaa769a821c46a0b456f5a686b1ba9246104cb184afb39117edd06e3e",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1169,6 +1169,32 @@
       "evidence": [
         "ComputePossiblePoses 0x008769F0 drops a marker only when EstimateObservedPose 0x0087E958 returns nonzero; PoseCluster::RecomputePose 0x0062A490 re-solves a cluster with more than one member through 0x0085DF98 (thunk 0x004B84E4) and assigns the result with no residual test",
         "re-analysis/research/20261102-solvepnp-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-101": {
+      "status": "EXACT_SOURCE",
+      "title": "The overhead-edge detector VisionSystem::OverheadEdges Detect 0x006ABE34, grey path, given the lift-in-the-way decision: gates, ROI quad and clamp, rect, 7x5 filter2D to int16, mask, bottom-up scan, image-to-ground, clear reports, chains, frame",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so and libopencv_core.so shipped with it",
+      "evidence": [
+        "Detect 0x006ABE34..0x006AD508 (gates 0x006AC086..0x006AC09C, filter2D call 0x006ACE9E..0x006ACEE2, mask 0x006ACF74..0x006AD042, scan 0x006AD1D0..0x006AD20A, hit/clear 0x006AD218..0x006AD258, chain filter 0x006AD302..0x006AD30E, frame push 0x006AD386..0x006AD39A); kernel 0xC8E0AC; inverse 0x004F7FB0 (0x004F821A..0x004F83EC); GetImageQuad/ClampQuad 0x004F78E0, 0x004F7B74..0x004F7C8E; GetVisibleGroundQuad 0x004F77CC..0x004F78C4; image-to-ground 0x006AE0A8; AddPoint 0x006AE1B0, distance 0x00656E20..0x00656E78; processed bit 0x006B540A..0x006B5416",
+        "imgproc filter2D path: createLinearFilter/getLinearFilter/preprocess2DKernel, Filter2D<uchar,Cast<float,short>,FilterNoVec> (0x00056AA2, vtable 0x000FACA8), per-tap vmla.f32 then vcvtr and int16 saturation (0x0004A6BA..0x0004A800, 0x00049AB6); fillConvexPoly 0x00042F59/0x00042C99/0x00042958",
+        "re-analysis/research/20261103-visit-edge-detector-extraction.md",
+        "re-analysis/tools/emu/emu_overhead_edges.py runs the shipped Detect with the engine's VisionPoseData layout (VisionPoseData::Set 0x006AF330..0x006AF38A): 286 of 286 fixture cases bit-exact (NativeOverheadEdgesOracleTests), 10 from real robot frames; verifier sweep 612 of 612",
+        "re-analysis/research/20261103-visit-edge-detector-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-102": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The overhead-edge lift-in-the-way gate: lift pose (ComputeLiftPose 0x005151AC) projected through the camera with Project3dPoint against the unclipped scan rect",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Detect lift gate 0x006AC1A2..0x006AC522 (lift base parented on pd+4, GetWithRespectTo 0x006AC246, A/B tests 0x006AC49E..0x006AC522); ComputeLiftPose 0x005151AC..0x00515214",
+        "re-analysis/research/20261103-visit-edge-detector-extraction.md",
+        "re-analysis/research/20261103-visit-edge-detector-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

@@ -94,7 +94,10 @@ internal readonly record struct NativeGroundPoint(float X, float Y);
 internal static class NativeGroundPlaneProjection
 {
     // 0x004F78E0: matrix × static homogeneous ground corners, with f32 reciprocal.
-    internal static NativeGroundPoint[] Project(ReadOnlySpan<float> h, int columns, int rows)
+    internal static NativeGroundPoint[] Project(ReadOnlySpan<float> h, int columns, int rows) => Project(h, columns, rows, out _);
+
+    // fidelity: M11-017 -- the same, with ClampQuad's result (GetVisibleGroundQuad reads it at 0x004F7812).
+    internal static NativeGroundPoint[] Project(ReadOnlySpan<float> h, int columns, int rows, out bool clamped)
     {
         if (h.Length != 9) throw new ArgumentException("Ground-plane matrices require nine elements.");
         (float X, float Y)[] corners = { (190, 75), (40, 20), (190, -75), (40, -20) };
@@ -108,7 +111,7 @@ internal static class NativeGroundPlaneProjection
             float reciprocal = 1f / c;
             result[i] = new NativeGroundPoint(a * reciprocal, b * reciprocal);
         }
-        Clamp(result, columns, rows);
+        clamped = Clamp(result, columns, rows);
         return result;
     }
     private static bool Segment(NativeGroundPoint p, NativeGroundPoint pend, NativeGroundPoint q, NativeGroundPoint qend, out NativeGroundPoint result)
@@ -130,7 +133,7 @@ internal static class NativeGroundPlaneProjection
     }
 
     // 0x004F7B74: the two near corners change only when both intersections exist.
-    internal static void Clamp(NativeGroundPoint[] points, int columns, int rows)
+    internal static bool Clamp(NativeGroundPoint[] points, int columns, int rows)
     {
         // 0x004F7952..0x004F797C passes (0, rows-1) first, so the extended edge runs left to right.
         var a = new NativeGroundPoint(0, rows - 1);
@@ -140,7 +143,8 @@ internal static class NativeGroundPlaneProjection
         var end = new NativeGroundPoint(b.X - dx, b.Y - dy);
         bool first = Segment(start, end, points[1], points[0], out var one);
         bool second = Segment(start, end, points[3], points[2], out var three);
-        if (first && second) { points[1] = one; points[3] = three; }
+        if (first && second) { points[1] = one; points[3] = three; return true; }
+        return false;
     }
 }
 

@@ -540,7 +540,7 @@ public sealed partial class VisionSystem : IDisposable
     /// Whether frames from the camera are processed as they arrive. The engine's VisionComponent +0x48 starts 0
     /// (2a) and is set to 1 only by the NV calibration callback (1j, 2d), on every outcome of that read (M11-049,
     /// 0x0065AE80), so this starts false and the callback turns it on. A caller that drives frames directly through
-    /// <see cref="ProcessImage(GrayImage, uint, uint, VisionPoseData)"/> (offline tools and tests) does not go through the gate.
+    /// <see cref="ProcessImage(GrayImage, uint, uint, VisionPoseData, OverheadEdgeGroundInput?)"/> (offline tools and tests) does not go through the gate.
     /// </summary>
     // fidelity: M11-049
     public bool Enabled { get; set; }
@@ -1345,7 +1345,10 @@ public sealed partial class VisionSystem : IDisposable
     {
         var calibration = Calibration;
         if (calibration is null) { WarnNoCalibration(removal); return null; }
-        var pd=capturedPose??QueryFramePose(cameraTimestamp);
+        // fidelity: M11-017 -- the public decoded-capture entry keeps its SetNextImage query's ground carrier for Detect (rows 4-6).
+        NativeGroundFrame? edgeGround=null;
+        var pd=capturedPose??QueryFramePose(cameraTimestamp,out edgeGround);
+        using var edgeGroundScope=edgeGround;
         if (pd is null)return null;
         // Query selection affects the captured state; processing/observations retain the image timestamp.
         uint effective=cameraTimestamp;
@@ -1356,13 +1359,18 @@ public sealed partial class VisionSystem : IDisposable
         // (fail-safe true), as the engine's no-IMU-data path returns 1.
         var poseData = WithRotatingGate(pd.Value, effective);
         return ProcessImage(gray, imageId, effective, poseData, calibration, removal,
-                            effective != cameraTimestamp ? cameraTimestamp : null,queueForEngine:queueForEngine,nativeState:nativeState,sourceOwner:sourceOwner);
+                            effective != cameraTimestamp ? cameraTimestamp : null,queueForEngine:queueForEngine,nativeState:nativeState,sourceOwner:sourceOwner,
+                            edgeGround:edgeGround is null?null:EdgeGroundInput(edgeGround));
     }
+
+    // fidelity: M11-017 -- VisionPoseData::Set 0x006AF330..0x006AF38A: H at +0x7C, the visible byte at +0x78, the RobotState status at +0x5C.
+    private static OverheadEdgeGroundInput EdgeGroundInput(NativeGroundFrame ground) =>
+        new(ground.Homography, ground.GroundValid, ground.State.Status);
 
     /// <summary>
     /// Applies the engine's rotating gate to a frame's pose data: <c>VisionComponent::WasRotatingTooFast</c>
     /// 0x0065359C over the <c>ImuDataHistory</c> at <c>VisionComponent+0xb0</c> (C3.3). Used by both the
-    /// capture path and the offline <see cref="ProcessImage(GrayImage, uint, uint, VisionPoseData)"/> path,
+    /// capture path and the offline <see cref="ProcessImage(GrayImage, uint, uint, VisionPoseData, OverheadEdgeGroundInput?)"/> path,
     /// so the gate reaches <see cref="BlockWorld"/> either way.
     /// </summary>
     // fidelity: M11-004
@@ -1373,11 +1381,13 @@ public sealed partial class VisionSystem : IDisposable
     /// The core update over a decoded image and the robot's pose data for it (usable offline). Throws
     /// <see cref="OperationCanceledException"/> when the robot is removed while the image is being processed.
     /// </summary>
-    public VisionFrameResult ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd)
+    /// <param name="overheadEdgeGround">The frame's VisionPoseData fields the overhead-edge detector reads (H, visible, status; M11-017
+    /// rows 4-6). Without them DetectingOverheadEdges reports MISSING and appends no frame.</param>
+    public VisionFrameResult ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd, OverheadEdgeGroundInput? overheadEdgeGround = null)
     {
         var calibration = Calibration ?? throw new InvalidOperationException("no camera calibration");
         pd = WithRotatingGate(pd, timestamp);
-        return ProcessImage(gray, imageId, timestamp, pd, calibration, Volatile.Read(ref _removals), null, offline: true)
+        return ProcessImage(gray, imageId, timestamp, pd, calibration, Volatile.Read(ref _removals), null, offline: true, edgeGround: overheadEdgeGround)
             ?? throw new OperationCanceledException("the robot was removed while this image was being processed");
     }
 
@@ -1393,7 +1403,7 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M1-025, M1-015
     // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
     private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
-                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null)
+                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,OverheadEdgeGroundInput? edgeGround=null)
     {
         var sw = Stopwatch.StartNew();
         var cal = gray.Width == calibration.Columns && gray.Height == calibration.Rows ? calibration : calibration.Scaled(gray.Width, gray.Height);
@@ -1484,10 +1494,26 @@ public sealed partial class VisionSystem : IDisposable
                 else processedMask|=1<<3;
                 if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
             }
-            if(ShouldProcessVisionMode((int)VisionMode.DetectingOverheadEdges) && OverheadEdges is {} edges) overheadEdges=edges.Detect(gray,camera,pd.RobotPose,timestamp,pd.LiftAngleRad);
+            bool overheadEdgesRan=false;
+            if(ShouldProcessVisionMode((int)VisionMode.DetectingOverheadEdges) && OverheadEdges is {} edges)
+            {
+                // fidelity: M11-017 -- Detect(ImageCache, VisionPoseData fp+0x104, result) 0x006B5398..0x006B53A4 reads the frame's VisionPoseData:
+                // H +0x7C, the visible byte +0x78 and the status +0x5C (inventory rows 4-6). Production's carrier is MotionPose.Current, this
+                // frame's SetNextImage capture; the public decoded-capture entry passes its own SetNextImage query, and the offline host entry
+                // takes the fields from its caller as it takes the pixels and the pose. Its return is always 0 here
+                // (row 9's pose-tree failure needs lift and camera poses without a common root; both hang off this frame's robot pose), so the
+                // whole-result drop of row 2 has no input and the processed bit 0x10 is set whenever Detect ran.
+                var carrier=nativeState?.MotionPose.Current is {} current?EdgeGroundInput(current):edgeGround;
+                if(carrier is not {} edgeInput)SteppedBehavior.ReportMissing("M11-017 overhead-edge Detect: this entry has no VisionPoseData ground carrier (homography +0x7C, visible +0x78, status +0x5C); Detect not run, no frame");
+                else
+                {
+                    overheadEdges=edges.Detect(gray,edgeInput,camera,pd.RobotPose,timestamp,pd.LiftAngleRad);
+                    overheadEdgesRan=true;
+                }
+            }
             if(detectedFaces is not null)processedMask|=1<<2;
             if(detectedPets is not null)processedMask|=1<<9;
-            if(overheadEdges is not null)processedMask|=1<<4;
+            if(overheadEdgesRan)processedMask|=1<<4; // 0x006B540A..0x006B5416: set on Detect's zero return, with or without a frame
             foreach(int mode in new[]{5,6,15})if(ShouldProcessVisionMode(mode))
                 SteppedBehavior.ReportMissing("M11-035 "+(VisionMode)mode+" producer/handler unavailable; no processed bit or native success invented");
             if(RemovedSince(removal))return null;
