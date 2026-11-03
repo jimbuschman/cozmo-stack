@@ -2736,8 +2736,9 @@ public sealed partial class BlockWorld
     /// <c>BlockWorld::UpdateMarkerlessObjects(ts)</c> 0x00625704 (M11-037): <c>DeleteLocatedObjects</c> over the objects of family 6 and type 15
     /// (CliffDetection) whose predicate 0x0062B764 is true: the object's timestamp + 30000 is before ts ("RemovingExpired"); else false when the
     /// object's timestamp is not before ts; else true when its z lies within [robotZ, robotZ + 67.7] (0x42876666) and its footprint intersects the
-    /// robot's bounding quad ("RemovingIntersectWithRobot"). NOT BUILT, visible (M13-023): the markerless object's <c>GetBoundingQuadXY</c> is
-    /// unread, so the last test throws <see cref="NotSupportedException"/> when it is reached.
+    /// robot's bounding quad ("RemovingIntersectWithRobot"): the robot quad is <c>Robot::GetBoundingQuadXY(pose, 0)</c> (0x006257D6), the object's
+    /// is its +0x50 quad at padding 0 (0x0062B83C), and the test is <c>robotQuad.Intersects(objectQuad)</c> (0x0062B842). The markerless quad
+    /// itself is M11-091's partial build; a quad the stack cannot compute is a visible MISSING and keeps the object.
     /// </summary>
     // fidelity: M11-037
     public void UpdateMarkerlessObjects(uint timestamp, Pose3d robotPose)
@@ -2747,6 +2748,8 @@ public sealed partial class BlockWorld
         f.AllowedFamilies.Add(ObjectFamily.MarkerlessObject);
         f.AllowedTypes.Add(ObjectType.CliffDetection);
         float robotZ = (float)robotPose.Translation.Z;
+        // 0x006257A8..0x006257D6: Robot::GetBoundingQuadXY(robot pose, 0), computed once before the filter runs (captured at +0x14).
+        var robotQuad = Cozmo.Robot.Manipulation.ObjectFootprint.RobotBoundingQuadXY(robotPose, 0f);
         f.Predicates.Add(o =>
         {
             if (unchecked(o.LastObservedTimestamp + 30000) < timestamp)
@@ -2756,8 +2759,18 @@ public sealed partial class BlockWorld
             }
             if (o.LastObservedTimestamp >= timestamp) return false;
             float z = (float)o.Pose.Translation.Z;
-            if (!(z >= robotZ && z <= robotZ + 67.7f)) return false;
-            throw new NotSupportedException($"M13-023: the footprint (GetBoundingQuadXY) of a markerless {o.Type} is unread; UpdateMarkerlessObjects' RemovingIntersectWithRobot test (0x0062B764) cannot be evaluated");
+            if (!(z >= robotZ && z <= robotZ + 67.7f)) return false;                       // 0x0062B810..0x0062B82E (blt / bhi: NaN false)
+            // 0x0062B830..0x0062B83C: the object's +0x50 quad at its world pose, padding 0; 0x0062B83E..0x0062B846: robotQuad.Intersects(objectQuad).
+            Quadrilateral objectQuad;
+            try { objectQuad = QuadFor(o); }
+            catch (NotSupportedException)
+            {
+                Missing($"M11-091 UpdateMarkerlessObjects 0x0062B83C: the quad of object {o.ObjectId} is unbuilt for this pose; object kept");
+                return false;
+            }
+            if (!robotQuad.Intersects(objectQuad)) return false;
+            EmitPublicLog($"BlockWorld.UpdateMarkerlessObjects.RemovingIntersectWithRobot: object {o.ObjectId}");
+            return true;
         });
         DeleteLocatedObjects(f);
     }

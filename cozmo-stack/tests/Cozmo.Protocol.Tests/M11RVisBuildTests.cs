@@ -1619,11 +1619,11 @@ public class M11RVisBuildTests : IDisposable
     /// <summary>
     /// M11-037 (5.8), <c>UpdateMarkerlessObjects</c> 0x00625704 deletes objects of family 6 and type 15 (CliffDetection) whose predicate 0x0062B764 is true: timestamp + 30000 &lt; ts is
     /// "RemovingExpired"; else false when the timestamp is not before ts; else true when z is within [robotZ, robotZ + 67.7] and the footprint intersects the robot's quad
-    /// (the footprint is unread, M13-023: the stack throws).
+    /// (robot quad at padding 0, 0x006257D6; object quad 0x0062B83C; Intersects 0x0062B842).
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void M11_037_ExpiredCliffObjectsAreDeletedAndTheFootprintTestIsAVisibleStub()
+    public void M11_037_ExpiredCliffObjectsAndCliffsUnderTheRobotAreDeleted()
     {
         var w = new BlockWorld();
         var cliff = w.AddMarkerlessObject(At(300, 0, 0), ObjectType.CliffDetection);
@@ -1632,9 +1632,16 @@ public class M11RVisBuildTests : IDisposable
         cliff.LastObservedTimestamp = 5000;
         collision.LastObservedTimestamp = 5000;
         var robot = Pose3d.Identity;
-        // 5000 + 30000 is not before 35000, the object is older than ts and its z (25) is inside [robotZ, robotZ + 67.7]: the footprint test is reached and is not built
-        Assert.Throws<NotSupportedException>(() => w.UpdateMarkerlessObjects(35000, robot));
+        // 5000 + 30000 is not before 35000, the object is older than ts and its z is inside [robotZ, robotZ + 67.7]: the footprint test runs.
+        // 300 mm ahead the cliff's quad does not meet the robot's (0x0062B842 false): kept.
+        w.UpdateMarkerlessObjects(35000, robot);
         Assert.NotNull(w.GetObjectById(cliff.ObjectId));
+        // A cliff recorded where the robot now stands meets the robot's quad: "RemovingIntersectWithRobot", deleted.
+        var wUnder = new BlockWorld();
+        var under = wUnder.AddMarkerlessObject(At(0, 0, 0), ObjectType.CliffDetection);
+        under.LastObservedTimestamp = 5000;
+        wUnder.UpdateMarkerlessObjects(35000, robot);
+        Assert.Null(wUnder.GetObjectById(under.ObjectId));
         w.UpdateMarkerlessObjects(35001, robot);                                                          // 5000 + 30000 < 35001: expired, no geometry needed
         Assert.Null(w.GetObjectById(cliff.ObjectId));
         Assert.NotNull(w.GetObjectById(collision.ObjectId));                                              // other types are never touched
