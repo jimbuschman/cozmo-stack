@@ -1,6 +1,6 @@
 # Behaviours
 
-Whole-behavior scoreboard, 2026-10-29. **1 finished · 44 in progress · 133 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
+Whole-behavior scoreboard, 2026-10-29. **2 finished · 44 in progress · 132 not started.** These states track complete behavior work, independently of fidelity-record status or test counts. The per-ID rows below are authoritative; read, build and READY states do not mean finished.
 
 This is the operator-requested asset-based planning document, checked by the manager against all178 source-map rows. It introduces no feature exclusion, fidelity/status change, new source recovery, implementation or acceptance.
 
@@ -27,6 +27,7 @@ This is the operator-requested asset-based planning document, checked by the man
 | 2026-11-02 | 1 (DriveOffCharger) | total 17 over 40 start-path jobs (adds M15-071, M15-093) | REWARD-GATE-1 | Simulated: a weighted action no longer stalls Freeplay, idle about 4 s after the action, no holds. Not yet on a robot. |
 | 2026-11-02 | 1 (DriveOffCharger) | total 17 over 41 start-path jobs | VISIT-EDGE-REAL-MAP-1 | Simulated: no Hiking hold with map content, idle 2 to 4 s of 300 s. Close branch needs M11-054. Not yet on a robot. |
 | 2026-11-02 | 1 (DriveOffCharger) | total 19 over 42 start-path jobs | POSE-SOLVEPNP-1 | M11-054, M11-099 settled. Marker poses from the shipped solver; camera at engine height. Not yet on a robot. |
+| 2026-11-03 | 2 (DriveOffCharger, Hiking_PounceOnMotion) | total 19 over 43 start-path jobs | CLIFF-QUAD-CRASH-1; third idle robot run | Robot: idle 1.4 of 240 s, three full pounces, VisitInterestingEdge close branch from real frames, six cliffs handled. |
 
 ## Sources and interpretation
 
@@ -146,7 +147,7 @@ Contexts below are literal asset-derived owners, with the first existing R-code 
 | `VC_HowAreYouDoing_Play` | `PlayAnimWithFace` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `VC_HowAreYouDoing_Repair` | `PlayAnimWithFace` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
 | `PlayArbitraryAnim` | `PlayArbitraryAnim` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |
-| `Hiking_PounceOnMotion` | `PounceOnMotion` | not started | UNKNOWN | freeplay: Hiking. 1 refs; R026+ in map |
+| `Hiking_PounceOnMotion` | `PounceOnMotion` | finished | M11-098, M15-107 settled; three full pounces on the robot on `d64a2ed6` (bundle 20261103-081926; `research/20261103-idle-robot-run-3-claude-check.md`). Other PounceOnMotion configurations not checked | freeplay: Hiking. 1 refs; R026+ in map |
 | `PounceOnMotion_Socialize` | `PounceOnMotion` | not started | UNKNOWN | freeplay: Socialize. 2 refs; R133+ in map |
 | `SparksPounceOnMotion` | `PounceOnMotion` | not started | UNKNOWN | spark: SparksPounceOnMotion. 1 refs; R224+ in map |
 | `VC_PounceOnMotion` | `PounceOnMotion` | not started | UNKNOWN | No explicit config reference; native/app use UNKNOWN |

@@ -37,3 +37,11 @@ Six `HandleCliffEvent.Detected` with flags 0x03 (73.0, 113.7, 117.0, 138.3, 224.
 - 170 distinct MISSING texts reported; none new against the vision path changed this week.
 - The unhandled-exception path of the previous run: the processor thread catches exceptions (`VisionSystem.cs:1187`),
   so the route by which the stub's exception escaped is not established. The operator's console trace was truncated.
+
+## Pounce
+
+Three PounceOnMotion entries (36.5, 121.8 s and later), each through `ag_pounceonmotionpounce`, `ag_pounceonmotionsuccess` and `ag_pouncedriveface_getout`, every action SUCCESS, no Pounce MISSING beyond the factory note for other configurations. This meets the condition in `20261102-pounce-body-claude-check.md`: **Hiking_PounceOnMotion is the second finished behaviour.**
+
+## Progress
+
+19 records settled across 43 start-path jobs, 2 of 178 finished.
