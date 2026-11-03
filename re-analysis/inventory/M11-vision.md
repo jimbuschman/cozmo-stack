@@ -1763,3 +1763,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Evidence added: SetNextImage's query time min(imageTs, newest raw key), flag 1, and both failure exits (0x00652C22..0x00652C44, 0x00653158, 0x0065315A) | M11-097 |
 | Production frame handoff stopped by B-M3M4-33 without a decision; restored in B-M3M4-34 | M11-049 (note) |
 | New: The Anki MotionDetector: image, ground and peripheral motion from frame to the motion result | M11-098 |
+
+## POSE-SOLVEPNP-1 (manager, 2026-11-02; research/20261102-solvepnp-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New EQUIVALENT_IMPLEMENTATION (libm only): the shipped iterative solvePnP and the engine's call and narrowing, proven bit-exact against the shipped libraries under the emulator | M11-099 (new) |
+| New IMPLEMENTATION_GAP: BlockWorld's reprojection gates, which the engine does not have | M11-100 (new) |
+| IMPLEMENTATION_GAP -> EXACT_SOURCE: camera z -8.0 applied to the vision model | M11-054 |
+| Note: lift gate with the corrected camera | M11-017 |

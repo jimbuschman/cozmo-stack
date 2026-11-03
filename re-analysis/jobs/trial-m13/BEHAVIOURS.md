@@ -26,6 +26,7 @@ This is the operator-requested asset-based planning document, checked by the man
 | 2026-11-02 | 1 (DriveOffCharger) | total 15 (adds M15-107) | Pounce body read; four differences fixed | Hiking_PounceOnMotion counts as finished after a robot run on this code. Codex out of usage; Claude managing and building. |
 | 2026-11-02 | 1 (DriveOffCharger) | total 17 over 40 start-path jobs (adds M15-071, M15-093) | REWARD-GATE-1 | Simulated: a weighted action no longer stalls Freeplay, idle about 4 s after the action, no holds. Not yet on a robot. |
 | 2026-11-02 | 1 (DriveOffCharger) | total 17 over 41 start-path jobs | VISIT-EDGE-REAL-MAP-1 | Simulated: no Hiking hold with map content, idle 2 to 4 s of 300 s. Close branch needs M11-054. Not yet on a robot. |
+| 2026-11-02 | 1 (DriveOffCharger) | total 19 over 42 start-path jobs | POSE-SOLVEPNP-1 | M11-054, M11-099 settled. Marker poses from the shipped solver; camera at engine height. Not yet on a robot. |
 
 ## Sources and interpretation
 

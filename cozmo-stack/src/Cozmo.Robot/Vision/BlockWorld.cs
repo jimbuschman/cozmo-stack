@@ -1694,6 +1694,7 @@ public sealed partial class BlockWorld
             var (type, known) = lk;
             var res = PoseEstimation.Solve(camera, known.CornersOnObject(), seen.Corners);
             if (res is null) { EmitPublicLog($"marker {seen.Code}: pose solve failed"); continue; }
+            // fidelity: M11-100 (no engine counterpart: ComputePossiblePoses 0x008769F0 has no residual test)
             if (res.RmsReprojectionPx > MaxReprojectionRmsPx) { EmitPublicLog($"marker {seen.Code}: reprojection {res.RmsReprojectionPx:F1} px too large"); continue; }
             var world = CreateObservedCameraChild(camera,res.ObjectInCamera);
             candidates.Add((type, known, seen, world, res.RmsReprojectionPx));

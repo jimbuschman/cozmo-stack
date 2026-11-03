@@ -645,7 +645,7 @@ public class VisionTests
         Assert.InRange(axis.X, 0.99, 1.0);
         Assert.InRange(Deg(Math.Asin(-axis.Z)), 3.9, 4.1);  // 4 degrees down
         Assert.InRange(cam.Translation.X, 4.4, 4.6);         // -13 + 17.52
-        Assert.InRange(cam.Translation.Z, 66.4, 66.6);       // 49 + 17.52 (the vision model's z; the engine's is -8.0, blocked on M11 solvePnP)
+        Assert.InRange(cam.Translation.Z, 40.9, 41.1);       // 49 + (-8): M11-054, Robot::Robot 0x0050FF8A z = 0xC1000000
         // image right is the robot's right (-Y), image down is down
         var right = cam.Rotation * new Vec3(1, 0, 0);
         Assert.InRange(right.Y, -1.0, -0.99);

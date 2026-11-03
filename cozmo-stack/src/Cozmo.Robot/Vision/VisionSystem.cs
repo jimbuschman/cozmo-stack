@@ -2017,7 +2017,7 @@ public static class TurnTowardsPose
         threshold += BitConverter.Int32BitsToSingle(0x3727C5AC);
         float eps = BitConverter.Int32BitsToSingle(0x3727C5AC);
         float a = 0.0f;
-        using var camInNeck = new Pose3d(HeadGeometry.DefaultHeadCamRotation, HeadGeometry.EngineHeadCamPositionMm);   // the engine's own composition (Robot::Robot 0x0050FF7C..0x0050FFBA); the vision model still uses the older z
+        using var camInNeck = new Pose3d(HeadGeometry.DefaultHeadCamRotation, HeadGeometry.EngineHeadCamPositionMm);   // the engine's own composition (Robot::Robot 0x0050FF7C..0x0050FFBA)
         for (int k = 1; k <= 25; k++)
         {
             using var cam = HeadGeometry.GetCameraPose(camInNeck, a);                                   // GetCameraPose(a) 0x00510FFC relative to the neck: RotateBy(RotationVector3d(Radians(-a), Y)) (R28, R22)

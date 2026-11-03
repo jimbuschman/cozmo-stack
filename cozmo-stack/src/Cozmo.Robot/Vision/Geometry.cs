@@ -329,6 +329,8 @@ public sealed class Pose3d : IDisposable
     internal static Pose3d FromFlatRotation(Rotation3d q,Vec3 t)=>new(q,t,true); // Existing flat caller inputs still lack their checked parent binding.
     private static Pose3d Legacy(Transform3d t)=>new(t.Rotation,t.Translation,true);
     private Pose3d(Rotation3d q,Vec3 t,bool legacy):this(q,t){_legacyFrameInput=legacy;}
+    // An estimated object-in-camera pose carries the same frame-input context the Mat3 constructor gave it.
+    internal static Pose3d FromObservedPoseInCamera(Rotation3d rotation,Vec3 translation)=>new(rotation,translation,true);
     public void MultiplyBy(Pose3d other){var n=RequireNode();var t=n.Transform;var b=other.RequireNode().Transform;t.MultiplyBy(in b);n.Transform=t;} // MultiplyBy reads b before writing this, so the copy matches an aliased call
     public void PreComposeWith(Pose3d other)
     {

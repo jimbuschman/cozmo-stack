@@ -46,7 +46,7 @@ public sealed class M13OverheadMapWriterTests
     [Fact]
     public void CapturedFrameReachesExistingHistoryAndWhiteboardOwners()
     {
-        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State(head:(float)HeadGeometry.MinHeadAngleRad);
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State(head:BitConverter.UInt32BitsToSingle(0xBE860A92),liftAngle:(float)Math.Asin((LiftPresets.LowDockMm-45.0)/LiftGeometry.ArmLengthMm)); // VisitInterestingEdge's head and lift (0x005E79FC..0x005E7AD6): M11-054's geometry puts a raised arm across the ROI
         var vision=rig.Robot.Vision;vision.Calibration=CameraCalibration.Nominal();vision.Enabled=true;
         vision.ModeEnableMask=1<<(int)VisionMode.DetectingOverheadEdges;
         vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-capture schedule

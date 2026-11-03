@@ -21,7 +21,7 @@ public sealed class M11ProcessedImageTimestampTests
         {
             try
             {
-                Rig.ToSynced();Rig.State(head:(float)HeadGeometry.MinHeadAngleRad);
+                Rig.ToSynced();Rig.State(head:(float)HeadGeometry.MinHeadAngleRad,liftAngle:(float)Math.Asin((LiftPresets.CarryMm-45.0)/LiftGeometry.ArmLengthMm)); // lift at carry height: with the camera at z -8 (M11-054) a lower arm crosses the ROI at this head and the lift gate abandons the frame
                 Vision.Calibration=CameraCalibration.Nominal();Vision.Enabled=true;
                 Vision.ModeEnableMask=1<<(int)VisionMode.DetectingOverheadEdges;
                 Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied direct-capture schedule
@@ -60,7 +60,8 @@ public sealed class M11ProcessedImageTimestampTests
             uint first=f.Timestamp;Assert.NotEqual(0u,first);f.Capture(1);
             Assert.Equal(new[]{0u},border);Assert.Equal(new[]{0u},handler);
             Assert.Equal(first,f.Rig.Robot.CameraSettings.LastProcessedImageTimestamp);
-            f.Rig.State(head:(float)HeadGeometry.MinHeadAngleRad);uint second=f.Timestamp;Assert.True(second>first);
+            // moved past the first chain: the first capture's own edge cells block a ray to the same ground (OverheadEdgeBlocksObstacles), and a blocked chain writes no segment
+            f.Rig.State(x:60,head:(float)HeadGeometry.MinHeadAngleRad,liftAngle:(float)Math.Asin((LiftPresets.CarryMm-45.0)/LiftGeometry.ArmLengthMm));uint second=f.Timestamp;Assert.True(second>first);
             f.Capture(2);
             Assert.Equal(new[]{0u,first},border);Assert.Equal(new[]{0u,first},handler);
             Assert.Equal(second,f.Rig.Robot.CameraSettings.LastProcessedImageTimestamp);
@@ -76,8 +77,9 @@ public sealed class M11ProcessedImageTimestampTests
         using var f=new Fixture();
         // The border mask requires a neighboring obstacle. Supply it through real contact-charger admission,
         // then a received robot pose looking toward its back edge; no native tree/cell is supplied by the test.
-        f.Rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger,head:(float)HeadGeometry.MinHeadAngleRad);
-        f.Rig.State(x:-140,head:(float)HeadGeometry.MinHeadAngleRad);
+        // x -115: with the camera at z -8 the nearest image band meets the floor about 45 mm ahead, beside the charger's back cells.
+        f.Rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger,head:(float)HeadGeometry.MinHeadAngleRad,liftAngle:(float)Math.Asin((LiftPresets.CarryMm-45.0)/LiftGeometry.ArmLengthMm));
+        f.Rig.State(x:-115,head:(float)HeadGeometry.MinHeadAngleRad,liftAngle:(float)Math.Asin((LiftPresets.CarryMm-45.0)/LiftGeometry.ArmLengthMm));
         var result=f.Capture(1);
         Assert.Contains(result.OverheadEdges!.Chains,c=>c.IsBorder&&c.Points.Count>1);
         var leaves=new List<SourceQuadNode>();

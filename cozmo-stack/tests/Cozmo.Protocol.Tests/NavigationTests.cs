@@ -270,9 +270,11 @@ public class NavigationTests
         Assert.Equal(1, rig.M.Planner!.Env.ObstacleCount);
         // the drive reached the pre-action pose it chose. The corrected geometry (C-E7) puts the front
         // docking pose at ~90 mm for a cube at 260, not the refuted 97 mm standoff the old 150..175 range
-        // assumed; the chosen pose comes from the source-derived pre-action table.
+        // assumed; the chosen pose comes from the source-derived pre-action table. The path ends on the planner's lattice:
+        // RoundSafe 0x00855AF8 takes the free cell nearest the goal and cozmo_mprim.json's resolution_mm is 10, so the drive stops at
+        // the chosen pose rounded to 10 mm, wherever the observed cube puts that pose.
         var chosen = drive.Chosen!.WorldPose;
-        Assert.True((new Vec3(rig.X, rig.Y, 0) - chosen.Translation with { Z = 0 }).Length <= 3.0,
+        Assert.True(Math.Abs(rig.X - Math.Round(chosen.Translation.X / 10) * 10) <= 0.01 && Math.Abs(rig.Y - Math.Round(chosen.Translation.Y / 10) * 10) <= 0.01,
                     $"X={rig.X} Y={rig.Y} chosen={chosen} trace: " + string.Join(" | ", drive.Trace));
     }
 

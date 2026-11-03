@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-11-01",
+  "approved": "2026-11-02",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "efe00d6aa1bbf855d75add4b89e9c347a84074691039c543fc4cfe5b7d7f54e2",
+  "inventory_sha256": "6d2412d64b0d86cc04aa5f9423f120d3292976877b8fc7899011bff29c0d47f9",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -661,7 +661,7 @@
       "hardware_required": false
     },
     "M11-054": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The head camera's translation on the robot: RobotHeadCam at (17.52, 0, -8.0) under the neck (-13, 0, 49)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -1138,12 +1138,37 @@
       "hardware_required": false
     },
     "M11-098": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The Anki MotionDetector: image, ground and peripheral motion from frame to the motion result",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Detect 0x006AAAF0; helpers 0x004BEB98 (DetectHelper<ImageRGB>), 0x004BEBA4 (DetectHelper<Image>); ratio 0x006ABA76, 0x006AB8DE; close 0x006A98D6; components 0x008720F8.",
         "re-analysis/research/20261101-pounce-prerequisites-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-099": {
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "title": "The marker pose solve: cv::solvePnP (iterative, no guess) as Camera::ComputeObjectPoseHelper calls it, with the binary32 narrowing of its result",
+      "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_calib3d.so, libopencv_core.so, libopencv_imgproc.so shipped with it",
+      "evidence": [
+        "engine call 0x0085D750..0x0085D8E2 (wrappers 0x0085D77E..0x0085D8A2, guess 0 and method 0 at 0x0085D89E, vcvt.f32.f64 at 0x0085D8AC..0x0085D8E2); vector overload 0x0085DF98; quad overload 0x0085DA98",
+        "calib3d solvePnP 0x000680B0, cvFindExtrinsicCameraParams2 0x00017108..0x00017D32, LM 0x000252D8, 0x00025720, 0x00025AA8, projectPoints 0x00014030, Rodrigues 0x0000EEF8, findHomography kernel 0x0005AF48; core eigen 0x00057978, SVD 0x000595C0, back substitution 0x00056F20; imgproc cvUndistortPoints 0x000B9D40",
+        "re-analysis/research/20261004-solvepnp-extraction.md rows E02-E06, Q01-Q08, I01-I07, O04-O08, U01-U10, H01-H07, J01-J07, S01-S13, B01-B09, G01-G14, N01-N05, L01-L15, P01-P09, R01-R08 (I05's sum fallback corrected to 0x4340000000000000 at 0x00017B30)",
+        "re-analysis/tools/emu/emu_solvepnp.py runs the shipped libraries from solvePnP down with the engine's wrappers: 254 of 254 fixture cases bit-exact (NativeSolvePnPOracleTests)",
+        "re-analysis/research/20261102-solvepnp-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-100": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BlockWorld's reprojection gates: no residual test exists on the engine's marker pose path",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ComputePossiblePoses 0x008769F0 drops a marker only when EstimateObservedPose 0x0087E958 returns nonzero; PoseCluster::RecomputePose 0x0062A490 re-solves a cluster with more than one member through 0x0085DF98 (thunk 0x004B84E4) and assigns the result with no residual test",
+        "re-analysis/research/20261102-solvepnp-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

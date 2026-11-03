@@ -40,10 +40,13 @@ public static class MarkerRenderer
 
     /// <summary>
     /// Paints a marker into a frame at the quad <paramref name="corners"/> (TL, BL, TR, BR in pixels), by inverse
-    /// mapping every covered pixel to the unit square and supersampling 2x2.
+    /// mapping every covered pixel to the unit square and supersampling. LOCAL: a camera pixel integrates over its area, so the
+    /// grid is fine enough that a corner lands where it was projected. The pixel is centred on its integer coordinate,
+    /// as <see cref="CameraModel.Project"/> and OpenCV place it (it was at x+0.5, which shifted every drawn marker half a pixel).
     /// </summary>
     public static void Draw(GrayImage frame, MarkerLibrary lib, int row, Vec2[] corners)
     {
+        const int Grid = 8;
         var h = Homography.FromUnitSquare(corners).Inverse();
         int minX = (int)Math.Floor(corners.Min(c => c.X)) - 1, maxX = (int)Math.Ceiling(corners.Max(c => c.X)) + 1;
         int minY = (int)Math.Floor(corners.Min(c => c.Y)) - 1, maxY = (int)Math.Ceiling(corners.Max(c => c.Y)) + 1;
@@ -51,10 +54,10 @@ public static class MarkerRenderer
             for (int x = Math.Max(0, minX); x <= Math.Min(frame.Width - 1, maxX); x++)
             {
                 int sum = 0, n = 0;
-                for (int sy = 0; sy < 2; sy++)
-                    for (int sx = 0; sx < 2; sx++)
+                for (int sy = 0; sy < Grid; sy++)
+                    for (int sx = 0; sx < Grid; sx++)
                     {
-                        var uv = h.Apply(new Vec2(x + 0.25 + 0.5 * sx, y + 0.25 + 0.5 * sy));
+                        var uv = h.Apply(new Vec2(x + (sx + 0.5) / Grid - 0.5, y + (sy + 0.5) / Grid - 0.5));
                         if (uv.X < 0 || uv.Y < 0 || uv.X > 1 || uv.Y > 1) { sum += frame[x, y]; n++; continue; }
                         sum += Sample(lib, row, uv.X, uv.Y); n++;
                     }

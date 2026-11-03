@@ -141,14 +141,15 @@ public class OverheadEdgeTests
         Assert.Equal(new Vec3(4, 0, -20), OverheadEdgesDetector.LiftPointA);
         Assert.Equal(new Vec3(-1, 0, -36.5), OverheadEdgesDetector.LiftPointB);
 
-        var cam = Camera();
+        // The head VisitInterestingEdge holds while it reads edges: preset 0xBE860A92 (M11-092, 0x005E79FC..0x005E7AD6).
+        var cam = Camera(BitConverter.UInt32BitsToSingle(0xBE860A92));
         var flat = new GrayImage(320, 240);
         flat.Fill(120);
         var det = new OverheadEdgesDetector();
 
         // the engine's lift angle for a height: 45 + 66 sin(angle), so 32 mm is down and 92 mm is up.
         // With the arm either right down or right up it is not across the ground the ROI covers, and the
-        // frame comes back as usual.
+        // frame comes back as usual. Down, point A projects to row 253.6, below the ROI rectangle's bottom (row 239, the image's last).
         double down = Math.Asin((32.0 - 45) / LiftGeometry.ArmLengthMm);
         double up = Math.Asin((92.0 - 45) / LiftGeometry.ArmLengthMm);
         Assert.True(det.Detect(flat, cam, AtOrigin, 1, down).GroundPlaneValid);
@@ -158,8 +159,11 @@ public class OverheadEdgeTests
         // the arm is drawn across does not
         Assert.True(OverheadEdgesDetector.LiftIsOutOfTheWay(cam, AtOrigin, down, 0, 0));
         Assert.False(OverheadEdgesDetector.LiftIsOutOfTheWay(cam, AtOrigin, down, -10000, 10000));
-        var abandoned = det.Detect(flat, cam, AtOrigin, 3, down);
-        Assert.True(abandoned.GroundPlaneValid);   // the real rectangle is not one of those
+        // The head at its lowest (M11-054, camera z -8): the camera sits at (-0.5, 0, 34.35) looking 29 degrees down. Lift-down point A (27.7, 0, 12)
+        // is 38.4 degrees down, so row 120 + 290 tan 9.4 = 168; the ROI's near edge (40, 0, 0) is 40.3 degrees down, row 178; point B (22.7, 0, -4.5)
+        // is row 288, not above the rectangle's top. The arm is across the rectangle, so the rule above abandons a real frame.
+        var abandoned = det.Detect(flat, Camera(), AtOrigin, 3, down);
+        Assert.False(abandoned.GroundPlaneValid);
     }
 
     private static OverheadEdgeFrame FrameOf(bool border, params Vec2[] points)

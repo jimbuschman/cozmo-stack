@@ -185,22 +185,22 @@ public sealed class NativePoseBuilderTestsBPose2
 
     /// <summary>M11-003 GetCameraPose (0x00510FFC..0x00511064) with |a| &lt; 1e-5: R21 keeps the unit Y axis (no warning), R22 takes the
     /// Z axis because the angle IsNear 0, so r = (1, -0, -0, -2.5e-6f) after R3/R4 (cos(-2.5e-6f) = 1, sin = -2.5e-6f; f32 w = 1).
-    /// R28: t = r·(17.52, 0, 17.52) by R8: x' = 17.52f, y' = m10·px with m10 = 2wz = -5e-6f, z' = 17.52f. A Y-axis rotation would leave y' = 0.</summary>
+    /// R28: t = r·(17.52, 0, -8) by R8 (M11-054, Robot::Robot 0x0050FF7C..0x0050FF8A): x' = 17.52f, y' = m10·px with m10 = 2wz = -5e-6f, z' = -8f. A Y-axis rotation would leave y' = 0.</summary>
     [Fact]
     public void M11_003_GetCameraPoseNearZeroUsesTheZAxisSubstitution()
     {
         var entries=Capture(out var scope);using var _=scope;
         float a=5e-6f;
         using var camera=HeadGeometry.GetCameraPose(a);
-        float wz=1f*-2.5e-6f;float m10=wz+wz;float px=(float)17.52;float y=m10*px;
+        float wz=1f*-2.5e-6f;float m10=wz+wz;float px=(float)17.52;float pz=BitConverter.UInt32BitsToSingle(0xC1000000);float y=m10*px;
         Assert.Equal(Bits(px),Bits((float)camera.Translation.X));
         Assert.Equal(Bits(y),Bits((float)camera.Translation.Y));Assert.NotEqual(0f,y);
-        Assert.Equal(Bits(px),Bits((float)camera.Translation.Z));
+        Assert.Equal(Bits(pz),Bits((float)camera.Translation.Z));
         Assert.Equal("Camera",camera.Name);
         Assert.DoesNotContain(entries,e=>e.Key=="RotationVector3d.Constructor.AxisNotUnitLength");
         // The live helper flattens the identity-rotation neck (-13, 0, 49) with it: f32 sums.
         using var inRobot=HeadGeometry.CameraPoseInRobot(a);
-        Assert.Equal(Bits(-13f+px),Bits((float)inRobot.Translation.X));Assert.Equal(Bits(0f+y),Bits((float)inRobot.Translation.Y));Assert.Equal(Bits(49f+px),Bits((float)inRobot.Translation.Z));
+        Assert.Equal(Bits(-13f+px),Bits((float)inRobot.Translation.X));Assert.Equal(Bits(0f+y),Bits((float)inRobot.Translation.Y));Assert.Equal(Bits(49f+pz),Bits((float)inRobot.Translation.Z));
     }
 
     /// <summary>M12-001/M12-021 (verifier read, B-POSE-2 follow-up): the guarded static sb table built at 0x004E5868..0x004E58E4 holds
