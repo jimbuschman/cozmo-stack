@@ -19,7 +19,13 @@
       Provenance and SHA-256: third-party/ww2ogg/README.md. Not a Cozmo asset.
     -->
     <Content Include="..\..\third-party\ww2ogg\packed_codebooks_aoTuV_603.bin" Link="packed_codebooks_aoTuV_603.bin" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Unicorn 2.1.4 (win-x64), the engine of the embedded ARM emulator in Emulation/. Provenance: third-party/unicorn/README.md. -->
+    <Content Include="..\..\third-party\unicorn\unicorn.dll" Link="unicorn.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <PropertyGroup>
+    <!-- Emulation/ maps guest memory as host memory (uc_mem_map_ptr) and calls unicorn.dll through function pointers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
   <!--
     The engine's fiducial-marker nearest-neighbour library is Anki's data. It is NOT in the repository: the
     build regenerates it locally from the user's own libcozmoEngine.so with

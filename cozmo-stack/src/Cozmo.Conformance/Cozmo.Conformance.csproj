@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- The embedded ARM emulator (Emulation/UnicornLongjmp.cs) reproduces only VCRUNTIME longjmp's non-CET path: no CET shadow stacks. -->
+    <CETCompat>false</CETCompat>
     <RootNamespace>Cozmo.Conformance</RootNamespace>
     <AssemblyName>cozmo-conformance</AssemblyName>
   </PropertyGroup>
