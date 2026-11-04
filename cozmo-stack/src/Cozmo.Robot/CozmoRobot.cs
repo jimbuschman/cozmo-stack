@@ -323,9 +323,16 @@ public sealed partial class CozmoRobot : IDisposable
                 DataPlatformPersistentPath=settings.DataPlatformPersistentPath,RobotVolume=settings.RobotVolume,
             };
         }
+        t_constructingOffline=true;
         try{return new CozmoRobot(options,transport,settings,port,engineClock,engineCreated,beforeAnimationFileStat){_ownedOfflineAnimationCache=owned};}
         catch{if(owned is not null)Directory.Delete(owned,true);throw;}
+        finally{t_constructingOffline=false;}
     }
+
+    /// <summary>Set while CreateOffline/CreateForTest construct a robot: such a robot never talks to a real Cozmo, so with no
+    /// explicit BlockPoolPath it keeps no block pool file instead of the user's real one (DefaultBlockPoolPath).</summary>
+    [ThreadStatic] private static bool t_constructingOffline;
+    private readonly bool _offlineHost = t_constructingOffline;
 
     private CozmoRobot(TransportOptions? options, ReliableTransport? transport, CozmoEngineOptions? engineOptions,
                        IEngineTransport? port = null, Func<long>? engineClock = null,
@@ -543,7 +550,9 @@ public sealed partial class CozmoRobot : IDisposable
     /// from HandleFirmwareVersion; it loads the persistent pool from the platform's resource path and asks for its
     /// five factory ids before any BlockPoolEnabledMessage. A simulated robot never takes that branch.
     /// </summary>
-    private void LoadBlockPool() => Cubes.Connections.Init(Engine.Options.BlockPoolPath ?? DefaultBlockPoolPath);
+    // Host plumbing, not engine behaviour: an offline or test robot with no explicit path persists nothing ("" is BlockFilter's
+    // no-path case, Save 0x0061B014), so tests and simulations never write the user's real block pool.
+    private void LoadBlockPool() => Cubes.Connections.Init(Engine.Options.BlockPoolPath ?? (_offlineHost ? "" : DefaultBlockPoolPath));
 
     // fidelity: M1-042
     /// <summary>
