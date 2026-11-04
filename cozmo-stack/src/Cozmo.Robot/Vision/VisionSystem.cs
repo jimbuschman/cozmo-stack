@@ -1379,7 +1379,8 @@ public sealed partial class VisionSystem : IDisposable
 
     /// <summary>
     /// The core update over a decoded image and the robot's pose data for it (usable offline). Throws
-    /// <see cref="OperationCanceledException"/> when the robot is removed while the image is being processed.
+    /// <see cref="OperationCanceledException"/> when the robot is removed while the image is being processed, and
+    /// <see cref="InvalidOperationException"/> when marker detection fails and the engine abandons the frame (DetectMarkersFailed).
     /// </summary>
     /// <param name="overheadEdgeGround">The frame's VisionPoseData fields the overhead-edge detector reads (H, visible, status; M11-017
     /// rows 4-6). Without them DetectingOverheadEdges reports MISSING and appends no frame.</param>
@@ -1388,7 +1389,9 @@ public sealed partial class VisionSystem : IDisposable
         var calibration = Calibration ?? throw new InvalidOperationException("no camera calibration");
         pd = WithRotatingGate(pd, timestamp);
         return ProcessImage(gray, imageId, timestamp, pd, calibration, Volatile.Read(ref _removals), null, offline: true, edgeGround: overheadEdgeGround)
-            ?? throw new OperationCanceledException("the robot was removed while this image was being processed");
+            ?? throw (Detector.LastResult != 0
+                ? new InvalidOperationException($"VisionSystem.Update.DetectMarkersFailed: marker detection returned 0x{Detector.LastResult:X8}; the engine abandons this frame")
+                : new OperationCanceledException("the robot was removed while this image was being processed"));
     }
 
     /// <summary>
@@ -1448,6 +1451,20 @@ public sealed partial class VisionSystem : IDisposable
             bool markerMode=ShouldProcessVisionMode(DetectingMarkers);
             markers = markerMode ? Detector.Detect(markerImage, timestamp) : Array.Empty<ObservedMarker>();
             if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
+            // fidelity: M11-022, M11-033 — a non-zero Detect result (row 35; reached only by the homography loop meeting quad 100, row 18)
+            // is DetectMarkersWithCLAHE's return ([sp+0x10], 0x006B47DE..0x006B4AB4). VisionSystem::Update then logs the unchanneled
+            // Error VisionSystem.Update.DetectMarkersFailed with an empty format (0x006B518A..0x006B51A0), sets Anki::Util::_errG and
+            // calls sDebugBreakOnError when _errBreakOnError is set (0x006B51C6..0x006B51E2), and leaves through 0x006B5692 with that
+            // result: no processed bit for markers (|= 2 at 0x006B51E8 is skipped), no later mode, no frame result. The Processor's
+            // UpdateVisionSystem sees the non-zero result, warns VisionComponent.UpdateVisionSystem.UpdateFailed (0x00653D46) and goes on.
+            // _errG: no reader found on this path (886 of 944 GOT references traced to a store; 58 hoisted pointers not followed to the end).
+            if(markerMode && Detector.LastResult != 0)
+            {
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionSystem.Update.DetectMarkersFailed","");
+                EngineErrorState.StoreAndMaybeBreak();
+                if(queueForEngine)_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.UpdateVisionSystem.UpdateFailed","");
+                return null;
+            }
             foreach(var marker in markers)qualityRectangles.Add(NativeQualityRectangles.Marker(marker)); // raw quad, before correction
             if(queueForEngine && physical && markerMode && shifts is not null)
             {

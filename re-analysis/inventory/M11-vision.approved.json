@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-11-03",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "d926468eaa769a821c46a0b456f5a686b1ba9246104cb184afb39117edd06e3e",
+  "inventory_sha256": "e079f3b64ae1c30585f817b55ee7cc81f12651f36cef549d1281f80f5fc59085",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1195,6 +1195,32 @@
         "Detect lift gate 0x006AC1A2..0x006AC522 (lift base parented on pd+4, GetWithRespectTo 0x006AC246, A/B tests 0x006AC49E..0x006AC522); ComputeLiftPose 0x005151AC..0x00515214",
         "re-analysis/research/20261103-visit-edge-detector-extraction.md",
         "re-analysis/research/20261103-visit-edge-detector-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-103": {
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "title": "The marker homography gate: ComputeHomographyFromQuad (s16 to f32, unit square, IsConvex), EstimateHomography<float> (binary32 normal equations, Cholesky, h22 = 1, 0.1 px reprojection check) and validity 6 when it fails or H[2][0] / H[2][1] > 8.0",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ComputeHomographyFromQuad 0x008C9036..0x008C91F2 (vcvt 0x008C9052..0x008C907C, unit square 0x008C90A2..0x008C90BA, IsConvex 0x008C9224..0x008C92B2, ClockwiseCorners 0x008A1392..0x008A1442, InsertionSort 0x008A21CE); EstimateHomography 0x008C9340..0x008C9804 (A rows 0x008C9484..0x008C9516, Multiply 0x008C3A20, MultiplyTranspose 0x008BE3F4, Cholesky 0x0088DE68 with descending backward pass 0x0088E000..0x0088E090, identity on failure 0x008C95E8, reprojection 0x3DCCCCCD at 0x008C9804); validity-6 gate 0x00898E68..0x00898F12",
+        "re-analysis/research/20261103-marker-detector-extraction.md",
+        "re-analysis/tools/emu/emu_marker_detector.py runs the shipped ApplyCLAHE and MarkerDetector::Detect (engine ctors Camera 0x0085DD14, MarkerDetector 0x0087509C, Init 0x008752E0): 210 of 210 end-to-end fixture cases bit-exact including final slots (NativeMarkerDetectorOracleTests), 29 real robot frames, 1293 homography and 43 probe unit cases",
+        "re-analysis/research/20261103-marker-detector-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-104": {
+      "status": "EXACT_SOURCE",
+      "title": "Marker detector capacities: quad list 500 (full appends skipped), marker count min(quads, 100), and the frame VisionSystem::Update abandons when the homography loop runs past the 100-slot list",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "quad capacity params+0x44 = 500 (0x00875386, 0x00898DEE, append skip 0x00892F6A..0x00892F70); marker capacity params+0x6c = 100 (0x00875374/0x00875382) and count 0x00898E38..0x00898E52; loop over all quads 0x00898E62..0x00898F1A; EstimateHomography error 0x008C93C6..0x008C93E8 returned through 0x00898EA0 -> 0x00898830 and DetectMarkersWithCLAHE 0x006B47DE / 0x006B4AB4; VisionSystem::Update DetectMarkersFailed, _errG store and exit 0x006B5182..0x006B51E6 -> 0x006B5692; UpdateVisionSystem warning 0x00653D46",
+        "re-analysis/research/20261103-marker-detector-extraction.md",
+        "re-analysis/tools/emu/emu_marker_detector.py runs the shipped ApplyCLAHE and MarkerDetector::Detect (engine ctors Camera 0x0085DD14, MarkerDetector 0x0087509C, Init 0x008752E0): 210 of 210 end-to-end fixture cases bit-exact including final slots (NativeMarkerDetectorOracleTests), 29 real robot frames, 1293 homography and 43 probe unit cases",
+        "re-analysis/research/20261103-marker-detector-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

@@ -3,12 +3,12 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **758 records** over 16 subsystems.
+Manifest of **760 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 277 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 10 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EXACT_SOURCE | 278 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 11 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 70 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 13 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 102 | 6 | 74 | 0 | 1 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
@@ -62,7 +62,7 @@ status.
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
-| M11-vision | INVENTORY_APPROVED | 20 | 0 | 0 | 0 |
+| M11-vision | INVENTORY_APPROVED | 22 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
@@ -1594,6 +1594,7 @@ B-M10-1 (2026-10-15), built, awaiting strong verification: OffTreads.Update's li
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: GetProbeValues 0x0089EF40: 5 samples at centre+offset, the sign-branch round both axes 0x0089F0DA..0x0089F12E, the integer mean 0x0089F158; GetNearestNeighbor 0x008C0938: normalize NORM_MINMAX 0x008C09D2, absdiff+sum 0x008C0AD6/0x008C0B50, distance = (int)(cv::sum(diff)/NUM_PROBES) 0x008C0B58..0x008C0B68 with NUM_PROBES = 0x400 = 1024 (0xDC7F68), the 1.25x ambiguity reject 0x008C0C7E, integer average 0x008C0C70 (__aeabi_idiv); VisionMarker::Extract 0x008A0078: label!=-1, distance<threshold, label not 149/150, then labelToCode 0x008A0130 / cornerReorder 0x008A0158 / orientationDeg 0x008A0180; library 0x00C9BCA8 u8[598][1024], labels 0x00DC6CA8
 * outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): the nearest-neighbour search seeds the best distance with the caller's threshold (0x008C098C), accepts only a strictly smaller row (0x008C0B72), the second best starts at 0x7FFFFFFF; with no row nearer the label stays -1 and the distance is the threshold (0x008C0BBC). Still open: none known beyond the shared M11 items.
+MARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). Built: GetProbeValues in binary32 with one 1/w and sign-branch rounding, no clamp (0x0089EF40..0x0089F158); a probe wholly outside the buffer is an M1-034 skip (0x0089F148; MISSING M1-034/M11-002). GetNearestNeighbor and Extract match the oracle. Not settled here: the oracle's host libm calls (exp about 50 per frame) are not yet attributed to their call sites.
 
 **M11-003 — Camera pose on the robot, cube size, marker size, face poses and codes** (live path)
 
@@ -1713,6 +1714,7 @@ B-M3M4-28 (2026-10-15), built, awaiting strong verification: VisionSystem.Deloca
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Gated on params+1 (0x008990BE..0x008990C4; Parameters::Initialize writes 0x101 at +0, so it is on); Region (0x008990CE..0x00899126): the quad's bounding rectangle - each coordinate truncated, min and max (0x0088A16C) - grown by 5 on every side; left and top floored at 0 (it le; movle 0), right and bottom capped at cols - 1 and rows - 1; cv::Rect(left, top, right - left, bottom - top) taken as a view of the image (cv::Mat(Mat, Rect) 0x00899132). An empty region is logged ('Got empty ROI for given corners') and the marker dropped (0x0089955A); The region is copied aside (copyTo 0x00899298). Kernel (0x008992BA..0x0089938E): round((params+0x60 + params+0x64) * 0.5 * 1.4142 (0x3FB50481) * (|c0 - c3| + |c2 - c1|)), square. cv::boxFilter(region -> CV_16S, ddepth 3, that size, anchor (-1, -1), normalize true, BORDER_REFLECT_101 = 4) at 0x008993D2; cv::subtract(region, blur -> the CV_16S image, dtype -1) at 0x0089942C; cv::normalize(difference -> the region's own CV_8U view, alpha 255.0, beta 0, NORM_MINMAX = 0x20, dtype -1) at 0x00899474 - so the normalised pixels are written into the image itself, ArrayToCvMat 0x00899B50 wrapping the image's buffer without a copy; RefineCorners (0x00899528) then runs on that image; after it the saved region is copied back (copyTo at 0x0089954E, or 0x00899598 when the marker is not refined), and Extract (0x00899056) reads the restored image
 * outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): kernel factor 0x3FB50481 (literal 0x00899258, vldr 0x00898F98), binary32 arithmetic, the rounded size passed unclamped (0x008992BA..0x008993D2). A size below 1 reports MISSING and throws (OpenCV 3.1's boxFilter asserts anchor < ksize: libopencv_imgproc.so 0x00053512..0x00053548; unreachable for real quads, k < 1 needs d1 + d2 < 3.54 px); the engine's handling of that exception is not recovered. Still open: RefineQuadrilateral's 1.4142135f (M11-005) is unchanged.
+MARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). Built: cv::normalize writes the region's non-continuous CV_8U view, so cvtScale (libopencv_core 0x0003F841 via convertTo 0x000407E8) runs per row and its NEON/scalar split (NEON +0.5 truncate for w & ~7, scalar vcvtr) restarts each row; ComputeBrightDarkValues reads with no clamp (0x0089FBC2/C6, 0x0089FC5C/60), wrapping into the next row; a read wholly outside the buffer is an M1-034 skip (MISSING M1-034/M11-031, marker erased). Normalisation runs before the validity test. Not settled here: settle in a check of its own path.
 
 **M11-021 — The per-frame marker-mode gate** (live path)
 
@@ -1740,6 +1742,7 @@ B-M3M4-28 (2026-10-15), built, awaiting strong verification: VisionSystem.Deloca
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: per quad: homography 0x00898E98; params+1 gates illumination normalisation 0x008990BE, region 0x008990CE, boxFilter 0x008993D2, subtract 0x0089942C, normalize 0x00899474; exactly-4-corner check 0x008994CE; RefineCorners 0x00899528 and the copy-back 0x0089954E; decode params+0x69 0x00899032, ratio 0x0089903A, threshold 0x32 0x00899054, Extract 0x00899056
 * outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): the order holds (0x00898E98, 0x008990BE..0x008994CE, 0x00899528/0x0089954E, 0x00899032..0x00899056) with the M11-020 literal and the unclamped size; a live-entry test runs a rendered cube through the front end to a located object. Still open: none known beyond M11-020.
+MARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). Built: rows 15, 17-22 (M11-103, M11-104 own the homography gate and capacities). libm boundary of the oracle: host exp, sqrt (IEEE-exact) and atan2f. Open: row 38, DetectMarkersWithCLAHE's tail (rolling-shutter correction and the -1e-5 out-of-bounds erase) is not compared; the physical-robot test covers only zero IMU rates.
 
 **M11-029 — ExtractLineFitsPeaks and the corner fit** (live path)
 
@@ -1758,6 +1761,7 @@ B-M3M4-28 (2026-10-15), built, awaiting strong verification: VisionSystem.Deloca
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: ComputeBrightDarkValues 0x0089F8E8; ratio 1.01 (0x3F8147AE at 0x0087538E, read at params+0x3c); the compare 0x0089FD10..0x0089FD30
 * outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): the second contrast gate is removed (VisionMarker::Extract 0x008A0078 has none; INVALID-label rows are rejected at 0x008A0108..0x008A0116); ComputeBrightDarkValues unchanged (0x0089FD10..0x0089FD30). Still open: none known.
+MARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). ComputeBrightDarkValues' unclamped read and its M1-034 skip: see M11-020.
 
 **M11-033 — The image hand-off and the two VisionSystem::Update overloads** (live path)
 
@@ -4147,4 +4151,5 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M15-107 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop | libcozmoEngine.so 3.4.0-1204 |
 | M15-111 | M15-freeplay | COMPATIBILITY_POLICY | Host source of SetDeterminantData (0xD6): the app's install date and unlock history, supplied by the stack | Unity app code 3.4.0-1204 |
 | M11-099 | M11-vision | EQUIVALENT_IMPLEMENTATION | The marker pose solve: cv::solvePnP (iterative, no guess) as Camera::ComputeObjectPoseHelper calls it, with the binary32 narrowing of its result | libcozmoEngine.so 3.4.0-1204; libopencv_calib3d.so, libopencv_core.so, libopencv_imgproc.so shipped with it |
+| M11-103 | M11-vision | EQUIVALENT_IMPLEMENTATION | The marker homography gate: ComputeHomographyFromQuad (s16 to f32, unit square, IsConvex), EstimateHomography<float> (binary32 normal equations, Cholesky, h22 = 1, 0.1 px reprojection check) and validity 6 when it fails or H[2][0] / H[2][1] > 8.0 | libcozmoEngine.so 3.4.0-1204 |
 

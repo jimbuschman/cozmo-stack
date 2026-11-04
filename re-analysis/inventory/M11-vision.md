@@ -1780,3 +1780,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New EXACT_SOURCE: the overhead-edge detector Detect 0x006ABE34 (grey path), bit-exact against the shipped code under the emulator | M11-101 (new) |
 | New IMPLEMENTATION_GAP: the detector's lift-in-the-way gate, split out | M11-102 (new) |
 | Notes: evidence corrections; map side stays | M11-017, M11-048 |
+
+## MARKER-DETECTOR-1 (manager, 2026-11-03; research/20261103-marker-detector-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New EQUIVALENT_IMPLEMENTATION (libm atan2f only): the marker homography gate | M11-103 (new) |
+| New EXACT_SOURCE: detector capacities and the over-list frame failure | M11-104 (new) |
+| Notes: built against the oracle, not settled here | M11-002, M11-005, M11-020, M11-023, M11-026, M11-028, M11-031 |

@@ -211,27 +211,65 @@ public sealed class MarkerDecoder
     /// Samples the 1024 probe values of the marker whose unit square maps into the image by
     /// <paramref name="h"/> (a homography from marker coordinates in [0,1]² to pixels).
     /// </summary>
-    public byte[] GetProbeValues(GrayImage img, Homography h)
+    public byte[] GetProbeValues(GrayImage img, Homography h) =>
+        GetProbeValuesOrNull(img, h, out var outside)
+        ?? throw new InvalidOperationException($"M1-034/M11-002: a probe of GetProbeValues falls outside the image buffer (linear index {outside})");
+
+    /// <summary>
+    /// <c>VisionMarker::GetProbeValues(image, H, false, out)</c> 0x0089EF40, all binary32: the scale is <c>1 / (float)(1 &lt;&lt; 15)</c>
+    /// (0x0089EF70..0x0089EFAA); each probe point is <c>x = scale·ProbeCenters_X[i] + scale·ProbePoints_X[k]</c> (and y alike,
+    /// 0x0089EFF2..0x0089F09A; ProbeCenters_X/Y and ProbePoints_X/Y by their GOT relocations); <c>w = H22 + (H20·x + H21·y)</c>,
+    /// <c>u = (H02 + (H00·x + H01·y)) · (1/w)</c>, <c>v = (H12 + (H10·x + H11·y)) · (1/w)</c> with one <c>vdiv.f32 1/w</c>
+    /// (0x0089F09E..0x0089F0D6); each coordinate is rounded by the sign branch, <c>floorf(c + 0.5f)</c> above zero, else
+    /// <c>ceilf(c - 0.5f)</c>, then <c>vcvt.s32.f32</c> (0x0089F0DA..0x0089F13C); the pixel is read at <c>data + stride·row + col</c> with no
+    /// clamp (0x0089F144..0x0089F148), so a column off either side reads the neighbouring row; the five samples' integer sum is divided by
+    /// five (<c>__aeabi_idiv</c> 0x0089F158) and stored as a byte. A read outside the image buffer is undefined in the engine: this returns
+    /// null with the linear index (M1-034), and the caller skips the marker.
+    /// </summary>
+    // fidelity: M11-002
+    public byte[]? GetProbeValuesOrNull(GrayImage img, Homography h, out long outside)
     {
         var _lib = Library;
+        outside = 0;
         var values = new byte[MarkerLibrary.NumProbes];
+        var hf = new float[9];
+        for (int i = 0; i < 9; i++) hf[i] = (float)h.H[i];
+        float scale = 1f / (1 << MarkerLibrary.NumFractionalBits);
+        int np = MarkerLibrary.NumProbePoints;
+        var ox = new float[np];
+        var oy = new float[np];
+        for (int k = 0; k < np; k++) { ox[k] = scale * _lib.ProbePointsX[k]; oy[k] = scale * _lib.ProbePointsY[k]; }
+        int width = img.Width;
+        long size = (long)img.Pixels.Length;
         for (int i = 0; i < MarkerLibrary.NumProbes; i++)
         {
             int sum = 0;
-            double cx = MarkerLibrary.Fixed(_lib.ProbeCentersX[i]), cy = MarkerLibrary.Fixed(_lib.ProbeCentersY[i]);
-            for (int k = 0; k < MarkerLibrary.NumProbePoints; k++)
+            float cy = scale * _lib.ProbeCentersY[i], cx = scale * _lib.ProbeCentersX[i];
+            for (int k = 0; k < np; k++)
             {
-                double x = cx + MarkerLibrary.Fixed(_lib.ProbePointsX[k]);
-                double y = cy + MarkerLibrary.Fixed(_lib.ProbePointsY[k]);
-                var p = h.Apply(new Vec2(x, y));
-                // fidelity: M11-002 — the same sign branch on both axes (0x0089F0DA..0x0089F12E)
-                int px = Math.Clamp(RoundNearest(p.X), 0, img.Width - 1), py = Math.Clamp(RoundNearest(p.Y), 0, img.Height - 1);
-                sum += img[px, py];
+                float y = cy + oy[k], x = cx + ox[k];
+                float w = hf[8] + (hf[6] * x + hf[7] * y);
+                float u0 = hf[2] + (hf[0] * x + hf[1] * y);
+                float v0 = hf[5] + (hf[3] * x + hf[4] * y);
+                float inv = 1f / w;
+                float u = u0 * inv, v = v0 * inv;
+                int col = RoundNearestF(u), row = RoundNearestF(v);
+                long index = (long)width * row + col;
+                if (index < 0 || index >= size) { outside = index; return null; }
+                sum += img.Pixels[index];
             }
-            values[i] = (byte)(sum / MarkerLibrary.NumProbePoints);
+            values[i] = (byte)(sum / np);
         }
         return values;
     }
+
+    /// <summary>
+    /// The binary32 sign-branch rounding of <c>GetProbeValues</c> (0x0089F0DA..0x0089F13C): <c>floorf(c + 0.5f)</c> when <c>c &gt; 0</c>, else
+    /// <c>ceilf(c - 0.5f)</c> (NaN takes the second branch), then <c>vcvt.s32.f32</c>, which saturates (.NET's float-to-int conversion
+    /// saturates too, and gives 0 for NaN as the instruction does).
+    /// </summary>
+    // fidelity: M11-002
+    public static int RoundNearestF(float c) => (int)(c > 0f ? MathF.Floor(c + 0.5f) : MathF.Ceiling(c - 0.5f));
 
     /// <summary>
     /// The engine's brightness gate before classification: the 12 dark probes on the border must be darker
@@ -356,7 +394,15 @@ public sealed class MarkerDecoder
         if (_lib is null) { reason = "no marker library on this machine (extract it from libcozmoEngine.so; see VISION.md)"; return null; }
         var h = homography ?? Homography.FromUnitSquare(quadCorners);
         // fidelity: M11-031 — no contrast gate here (0x008A00AA..0x008A00D0 go straight to the nearest-neighbour extraction)
-        var probes = GetProbeValues(img, h);
+        var probes = GetProbeValuesOrNull(img, h, out long outside);
+        if (probes is null)
+        {
+            // M1-034 standing rule: the engine reads outside the image buffer here (0x0089F148, undefined); the stack drops this marker
+            // only, keeps everything else, and says so.
+            reason = $"M1-034/M11-002: a probe falls outside the image buffer (linear index {outside}); the marker is skipped";
+            Behavior.SteppedBehavior.ReportMissing(reason);
+            return null;
+        }
         var m = GetNearestNeighbor(probes);
         if (m.Rejected) { reason = m.Reason; return null; }
         if (m.Distance >= MarkerLibrary.MatchThreshold) { reason = $"distance {m.Distance} >= {MarkerLibrary.MatchThreshold}"; return null; }

@@ -483,6 +483,10 @@ public static class EcvcsExtractor
     // fidelity: M11-032
     public static List<ConnectedComponentSegment> ExtractComponents(GrayImage mask, int a, int b, out int maxId)
     {
+        // The engine's segment list has a capacity: ConnectedComponents(params+0x40 = 39000, width, 39000 < 0x10000, ...) 0x0089350C
+        // (called at 0x0089887A) builds ConnectedComponentsTemplate<u16>(39000, width) 0x00893288, whose segment FixedLengthList is
+        // sized 39000 (0x008933A8). A row of w columns holds at most ceil(w/2) runs, so a 320 x 240 mask has at most 160 * 240 = 38400
+        // segments and the capacity is never reached; this list is therefore unbounded.
         int w = mask.Width, h = mask.Height;
         var output = new List<ConnectedComponentSegment>();
         // D3: the component counter starts at 0 and NextRow pre-increments it (0x008940AE: ldrh r0,[r5,#0x10c];
@@ -604,12 +608,58 @@ public static class EcvcsExtractor
         foreach (var id in size.Keys)
         {
             if (id == 0) continue;
-            double ratio = size[id] == 0 ? 0.0 : (double)merged.GetValueOrDefault(id) / size[id];
-            if (ratio < hollowFraction) invalid.Add(id);
+            // 0x00896302..0x0089632C: vcvt.f32.s32 of both, vdiv.f32 merged / size, and `mi` against the binary32 fraction (a NaN keeps it)
+            float ratio = (float)merged.GetValueOrDefault(id) / (float)size[id];
+            if (ratio < (float)hollowFraction) invalid.Add(id);
         }
         for (int i = 0; i < segments.Count; i++)
             if (invalid.Contains(segments[i].Id))
                 segments[i] = segments[i] with { Id = 0 };
+    }
+
+    /// <summary>
+    /// <c>ConnectedComponentsTemplate&lt;u16&gt;::InvalidateSmallOrLargeComponents(min, max)</c> 0x00895758: each id's size is the sum of
+    /// <c>(s16)(end - start) + 1</c> over its segments (0x0089579E..0x008957C2), and every segment whose id's size is below
+    /// <paramref name="min"/> or above <paramref name="max"/> gets id 0 (0x008957D0..0x008957E8; <c>blt</c>, then <c>gt</c>).
+    /// </summary>
+    // fidelity: M11-026
+    public static void InvalidateSmallOrLargeComponents(List<ConnectedComponentSegment> segments, int min, int max)
+    {
+        var size = new Dictionary<int, int>();
+        foreach (var s in segments) size[s.Id] = size.GetValueOrDefault(s.Id) + (short)(s.End - s.Start) + 1;
+        for (int i = 0; i < segments.Count; i++)
+        {
+            int n = size[segments[i].Id];
+            if (n < min || n > max) segments[i] = segments[i] with { Id = 0 };
+        }
+    }
+
+    /// <summary>
+    /// <c>ConnectedComponentsTemplate&lt;u16&gt;::InvalidateSolidOrSparseComponents(sparseMultiply, solidMultiply)</c> 0x00895998: per id the
+    /// area (sum of <c>(s16)(end - start) + 1</c>) and the bounding box of starts, ends and rows (0x00895A6C..0x00895AC8); with
+    /// <c>box = (maxX + 1 - minX) * (maxY + 1 - minY)</c>, an id is invalid when <c>area * sparseMultiply &lt; box &lt;&lt; 5</c> or else when
+    /// <c>area * solidMultiply &gt; box &lt;&lt; 5</c> (0x00895AE8..0x00895B0A, 32-bit products); its segments get id 0 (0x00895B2C..0x00895B3E).
+    /// The parameters' +0x1c = 32000 and +0x20 = 64 (Parameters::Initialize 0x00875320..0x00875324).
+    /// </summary>
+    // fidelity: M11-026
+    public static void InvalidateSolidOrSparseComponents(List<ConnectedComponentSegment> segments, int sparseMultiply, int solidMultiply)
+    {
+        var box = new Dictionary<int, (int Area, int MinX, int MaxX, int MinY, int MaxY)>();
+        foreach (var s in segments)
+        {
+            var b = box.TryGetValue(s.Id, out var v) ? v : (0, short.MaxValue, short.MinValue, short.MaxValue, short.MinValue);
+            box[s.Id] = (b.Area + (short)(s.End - s.Start) + 1, Math.Min(b.MinX, s.Start), Math.Max(b.MaxX, s.End),
+                         Math.Min(b.MinY, (short)s.Row), Math.Max(b.MaxY, (short)s.Row));
+        }
+        var invalid = new HashSet<int>();
+        foreach (var (id, b) in box)
+        {
+            int area = (b.MaxX + 1 - b.MinX) * (b.MaxY + 1 - b.MinY);
+            if (unchecked(b.Area * sparseMultiply) < area << 5) invalid.Add(id);
+            else if (unchecked(b.Area * solidMultiply) > area << 5) invalid.Add(id);
+        }
+        for (int i = 0; i < segments.Count; i++)
+            if (invalid.Contains(segments[i].Id)) segments[i] = segments[i] with { Id = 0 };
     }
 
     /// <summary>

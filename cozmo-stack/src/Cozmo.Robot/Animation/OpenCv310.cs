@@ -1114,7 +1114,10 @@ public static class OpenCv310
     /// (<c>+0.5</c> then truncate, ties up) and the tail on the scalar path (<c>vcvtr</c>, ties even), both
     /// saturated to <c>[0,255]</c>.
     /// </summary>
-    public static void NormalizeMinMax16STo8U(short[] src, byte[] dst, int length, double alpha, double beta)
+    /// <param name="rowWidth">When the destination is a region of a larger image (not continuous), cvtScale runs row by row, so the
+    /// NEON/scalar split restarts on every row: the first <c>rowWidth &amp; ~7</c> elements of each row take the NEON path and the rest of
+    /// the row the scalar path (M11-020, matched against the engine under the emulator). 0 means one continuous array.</param>
+    public static void NormalizeMinMax16STo8U(short[] src, byte[] dst, int length, double alpha, double beta, int rowWidth = 0)
     {
         int smin = int.MaxValue, smax = int.MinValue;
         for (int i = 0; i < length; i++) { int v = src[i]; if (v < smin) smin = v; if (v > smax) smax = v; }
@@ -1126,10 +1129,11 @@ public static class OpenCv310
             shift = dmin - smin * scale;
         }
 
-        int neonEnd = length & ~7;
+        int row = rowWidth > 0 ? rowWidth : length;
+        int neonEnd = row & ~7;
         for (int i = 0; i < length; i++)
         {
-            if (i < neonEnd)
+            if (i % row < neonEnd)
             {
                 float v = (float)src[i] * (float)scale + (float)shift;
                 float t = v + 0.5f;

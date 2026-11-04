@@ -3841,7 +3841,7 @@
       "hardware_required": false,
       "effect": "a marker decodes to the wrong code",
       "provenance": "the stack's MarkerDetector.cs decode path is to be compared against the instructions above",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the nearest-neighbour search seeds the best distance with the caller's threshold (0x008C098C), accepts only a strictly smaller row (0x008C0B72), the second best starts at 0x7FFFFFFF; with no row nearer the label stays -1 and the distance is the threshold (0x008C0BBC). Still open: none known beyond the shared M11 items."
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the nearest-neighbour search seeds the best distance with the caller's threshold (0x008C098C), accepts only a strictly smaller row (0x008C0B72), the second best starts at 0x7FFFFFFF; with no row nearer the label stays -1 and the distance is the threshold (0x008C0BBC). Still open: none known beyond the shared M11 items.\nMARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). Built: GetProbeValues in binary32 with one 1/w and sign-branch rounding, no clamp (0x0089EF40..0x0089F158); a probe wholly outside the buffer is an M1-034 skip (0x0089F148; MISSING M1-034/M11-002). GetNearestNeighbor and Extract match the oracle. Not settled here: the oracle's host libm calls (exp about 50 per frame) are not yet attributed to their call sites."
     },
     {
       "id": "M11-003",
@@ -3909,7 +3909,8 @@
       "hardware_required": false,
       "live_path": true,
       "test": "VisionTests",
-      "id": "M11-005"
+      "id": "M11-005",
+      "unresolved": "\nMARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). Correction: the shared SolveLeastSquaresWithCholesky backward pass is descending (0x0088E058..0x0088E072); the stack's had been ascending, so this record's EXACT_SOURCE was not supported until this fix. RefineQuadrilateral fed the engine's inputs is bit-exact in every case the verifier isolated. The old provenance text about a different solver is out of date. Tests: NativeMarkerDetectorOracleTests (reach: unit)."
     },
     {
       "subsystem": "M11-vision",
@@ -6577,7 +6578,7 @@
       "hardware_required": false,
       "live_path": true,
       "test": "RemainingGapTests.IlluminationNormalisationStretchesTheRegionAndIsPutBack",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): kernel factor 0x3FB50481 (literal 0x00899258, vldr 0x00898F98), binary32 arithmetic, the rounded size passed unclamped (0x008992BA..0x008993D2). A size below 1 reports MISSING and throws (OpenCV 3.1's boxFilter asserts anchor < ksize: libopencv_imgproc.so 0x00053512..0x00053548; unreachable for real quads, k < 1 needs d1 + d2 < 3.54 px); the engine's handling of that exception is not recovered. Still open: RefineQuadrilateral's 1.4142135f (M11-005) is unchanged."
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): kernel factor 0x3FB50481 (literal 0x00899258, vldr 0x00898F98), binary32 arithmetic, the rounded size passed unclamped (0x008992BA..0x008993D2). A size below 1 reports MISSING and throws (OpenCV 3.1's boxFilter asserts anchor < ksize: libopencv_imgproc.so 0x00053512..0x00053548; unreachable for real quads, k < 1 needs d1 + d2 < 3.54 px); the engine's handling of that exception is not recovered. Still open: RefineQuadrilateral's 1.4142135f (M11-005) is unchanged.\nMARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). Built: cv::normalize writes the region's non-continuous CV_8U view, so cvtScale (libopencv_core 0x0003F841 via convertTo 0x000407E8) runs per row and its NEON/scalar split (NEON +0.5 truncate for w & ~7, scalar vcvtr) restarts each row; ComputeBrightDarkValues reads with no clamp (0x0089FBC2/C6, 0x0089FC5C/60), wrapping into the next row; a read wholly outside the buffer is an M1-034 skip (MISSING M1-034/M11-031, marker erased). Normalisation runs before the validity test. Not settled here: settle in a check of its own path."
     },
     {
       "id": "M2-008",
@@ -8685,7 +8686,7 @@
       "live_path": true,
       "hardware_required": false,
       "test": "VisionTests",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the order holds (0x00898E98, 0x008990BE..0x008994CE, 0x00899528/0x0089954E, 0x00899032..0x00899056) with the M11-020 literal and the unclamped size; a live-entry test runs a rendered cube through the front end to a located object. Still open: none known beyond M11-020."
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the order holds (0x00898E98, 0x008990BE..0x008994CE, 0x00899528/0x0089954E, 0x00899032..0x00899056) with the M11-020 literal and the unclamped size; a live-entry test runs a rendered cube through the front end to a located object. Still open: none known beyond M11-020.\nMARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). Built: rows 15, 17-22 (M11-103, M11-104 own the homography gate and capacities). libm boundary of the oracle: host exp, sqrt (IEEE-exact) and atan2f. Open: row 38, DetectMarkersWithCLAHE's tail (rolling-shutter correction and the -1e-5 out-of-bounds erase) is not compared; the physical-robot test covers only zero IMU rates."
     },
     {
       "id": "M11-024",
@@ -8736,7 +8737,8 @@
       "status": "EXACT_SOURCE",
       "live_path": true,
       "hardware_required": false,
-      "test": "VisionTests"
+      "test": "VisionTests",
+      "unresolved": "\nMARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). The filter chain runs in the engine's order at segment level (0x00898C90..0x00898DD0; SmallOrLarge 0x00895758, SolidOrSparse 0x00895998, hollow ratio 0x00896302..0x00896328)."
     },
     {
       "id": "M11-027",
@@ -8770,7 +8772,8 @@
       "status": "EXACT_SOURCE",
       "live_path": true,
       "hardware_required": false,
-      "test": "VisionTests"
+      "test": "VisionTests",
+      "unresolved": "\nMARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). The append is conditional on the 500 capacity (0x00892F6A..0x00892F70); owned by M11-104."
     },
     {
       "id": "M11-029",
@@ -8823,7 +8826,7 @@
       "live_path": true,
       "hardware_required": false,
       "test": "VisionTests.TheDecoderContrastGateUsesTheEnginesOnePointZeroOneRatio",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the second contrast gate is removed (VisionMarker::Extract 0x008A0078 has none; INVALID-label rows are rejected at 0x008A0108..0x008A0116); ComputeBrightDarkValues unchanged (0x0089FD10..0x0089FD30). Still open: none known."
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the second contrast gate is removed (VisionMarker::Extract 0x008A0078 has none; INVALID-label rows are rejected at 0x008A0108..0x008A0116); ComputeBrightDarkValues unchanged (0x0089FD10..0x0089FD30). Still open: none known.\nMARKER-DETECTOR-1 (2026-11-03): the whole detector is now bit-exact against the shipped code under the emulator on 210 end-to-end cases (re-analysis/research/20261103-marker-detector-claude-check.md). ComputeBrightDarkValues' unclamped read and its M1-034 skip: see M11-020."
     },
     {
       "id": "M11-032",
@@ -15017,6 +15020,46 @@
       "hardware_required": false,
       "live_path": true,
       "test": "OverheadEdgeTests.TheArmInTheWayAbandonsTheFrame"
+    },
+    {
+      "id": "M11-103",
+      "subsystem": "M11-vision",
+      "title": "The marker homography gate: ComputeHomographyFromQuad (s16 to f32, unit square, IsConvex), EstimateHomography<float> (binary32 normal equations, Cholesky, h22 = 1, 0.1 px reprojection check) and validity 6 when it fails or H[2][0] / H[2][1] > 8.0",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Homography.cs",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "ComputeHomographyFromQuad 0x008C9036..0x008C91F2 (vcvt 0x008C9052..0x008C907C, unit square 0x008C90A2..0x008C90BA, IsConvex 0x008C9224..0x008C92B2, ClockwiseCorners 0x008A1392..0x008A1442, InsertionSort 0x008A21CE); EstimateHomography 0x008C9340..0x008C9804 (A rows 0x008C9484..0x008C9516, Multiply 0x008C3A20, MultiplyTranspose 0x008BE3F4, Cholesky 0x0088DE68 with descending backward pass 0x0088E000..0x0088E090, identity on failure 0x008C95E8, reprojection 0x3DCCCCCD at 0x008C9804); validity-6 gate 0x00898E68..0x00898F12",
+        "re-analysis/research/20261103-marker-detector-extraction.md",
+        "re-analysis/tools/emu/emu_marker_detector.py runs the shipped ApplyCLAHE and MarkerDetector::Detect (engine ctors Camera 0x0085DD14, MarkerDetector 0x0087509C, Init 0x008752E0): 210 of 210 end-to-end fixture cases bit-exact including final slots (NativeMarkerDetectorOracleTests), 29 real robot frames, 1293 homography and 43 probe unit cases",
+        "re-analysis/research/20261103-marker-detector-claude-check.md"
+      ],
+      "effect": "which candidate quads are decoded as markers: a skewed, non-convex or badly fitting quad is dropped",
+      "provenance": "Claude extractor, implementer and verifier 2026-11-03; added under the standing authorisation for cited inventory corrections",
+      "unresolved": "EQUIVALENT_IMPLEMENTATION for libm only: ClockwiseCorners' atan2f is the host's (bionic not shipped); the oracle uses the same host atan2f, so its 0 ulp holds on this host. Everything else read in the binary and bit-exact on 1293 unit cases.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeMarkerDetectorOracleTests.EveryHomographyCaseMatchesBitForBit; NativeMarkerDetectorOracleTests.EveryOracleCaseMatchesTheEnginesDetectBitForBit"
+    },
+    {
+      "id": "M11-104",
+      "subsystem": "M11-vision",
+      "title": "Marker detector capacities: quad list 500 (full appends skipped), marker count min(quads, 100), and the frame VisionSystem::Update abandons when the homography loop runs past the 100-slot list",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "quad capacity params+0x44 = 500 (0x00875386, 0x00898DEE, append skip 0x00892F6A..0x00892F70); marker capacity params+0x6c = 100 (0x00875374/0x00875382) and count 0x00898E38..0x00898E52; loop over all quads 0x00898E62..0x00898F1A; EstimateHomography error 0x008C93C6..0x008C93E8 returned through 0x00898EA0 -> 0x00898830 and DetectMarkersWithCLAHE 0x006B47DE / 0x006B4AB4; VisionSystem::Update DetectMarkersFailed, _errG store and exit 0x006B5182..0x006B51E6 -> 0x006B5692; UpdateVisionSystem warning 0x00653D46",
+        "re-analysis/research/20261103-marker-detector-extraction.md",
+        "re-analysis/tools/emu/emu_marker_detector.py runs the shipped ApplyCLAHE and MarkerDetector::Detect (engine ctors Camera 0x0085DD14, MarkerDetector 0x0087509C, Init 0x008752E0): 210 of 210 end-to-end fixture cases bit-exact including final slots (NativeMarkerDetectorOracleTests), 29 real robot frames, 1293 homography and 43 probe unit cases",
+        "re-analysis/research/20261103-marker-detector-claude-check.md"
+      ],
+      "effect": "how many markers a frame can yield, and whether a crowded frame yields any vision result at all",
+      "provenance": "Claude extractor, implementer and verifier 2026-11-03; added under the standing authorisation for cited inventory corrections",
+      "unresolved": "M1-034 (standing rule): with more than 100 quads the homography loop runs past the 100-slot list (0x00898E78..0x00898F1A) and reads a slot header there; under the emulator that read is deterministic (the frame's own segment data) and EstimateHomography fails with 0x05000000. The stack does not read past the list: it drops the pass, logs MISSING naming M1-034/M11-023, and VisionSystem then follows the engine's defined failure path (DetectMarkersFailed error, _errG, UpdateFailed warning on the engine path, no processed bit, no later mode, no frame result). More than 500 quads is not reached by the corpus (at most 165 at 320x240); the 500 cap is shown by reading. _errG: no reader found on this path (886 of 944 GOT references are stores; 58 hoisted pointers not followed). CheckImageQualityFailed returns without the UpdateFailed warning, though the same caller logic (0x00653D46) would emit it: queued.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "NativeMarkerDetectorOracleTests.QuadsBeyondTheMarkerListDropThePassAndAreLogged; NativeMarkerDetectorOracleTests.AFrameWithQuadsBeyondTheListFailsTheWholeUpdate"
     }
   ]
 }

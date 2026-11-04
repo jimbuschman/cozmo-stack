@@ -27,6 +27,7 @@ public static class VisionTool
         if (!MarkerLibrary.IsAvailable) Console.WriteLine("note: the marker library is not available (Anki's data, extracted locally from libcozmoEngine.so by the build); markers cannot be decoded");
         if (a.Length < 2) { Console.WriteLine("vision --synthetic | --replay <frame-log> | --images <jpeg...> | <robot-ip> [--seconds 60] [--nominal] [--unconnected] [--acceptance [file]] [--out <dir>]"); return 1; }
         if (a[1] == "--synthetic") return Synthetic(Arg(a, "--out"));
+        if (a[1] == "--render-corpus") return a.Length > 2 ? RenderCorpus(a[2]) : 1;
         if (a[1] == "--replay") return a.Length > 2 ? Replay(a[2], Arg(a, "--out")) : 1;
         if (a[1] == "--images") return Images(a.Skip(2).Where(x => !x.StartsWith("--")).ToArray(), Arg(a, "--out"));
         return await Live(a);
@@ -72,6 +73,91 @@ public static class VisionTool
         }
         Console.WriteLine(failures == 0 ? $"all {cases} synthetic cases OK" : $"{failures} of {cases} synthetic cases FAILED");
         return failures == 0 ? 0 : 2;
+    }
+
+    /// <summary>
+    /// <c>vision --render-corpus &lt;dir&gt;</c>: writes a fixed set of 320x240 PGM frames drawn by <see cref="MarkerRenderer"/> (cubes and the
+    /// charger at camera poses, and library markers painted at chosen quads), the synthetic inputs of
+    /// re-analysis/tools/emu/gen_marker_detector_fixtures.py. They are inputs only: the expected detections come from the engine under
+    /// the emulator. Deterministic (fixed seeds); each frame is remapped to a dark range (the CLAHE path) or a bright one.
+    /// </summary>
+    private static int RenderCorpus(string outDir)
+    {
+        if (!MarkerLibrary.IsAvailable) { Console.WriteLine("the marker library is not available on this machine"); return 1; }
+        var lib = MarkerLibrary.Embedded;
+        Directory.CreateDirectory(outDir);
+        var cal = CameraCalibration.Nominal();
+        int n = 0;
+        void Save(string name, GrayImage frame, int lo, int hi)
+        {
+            var o = new GrayImage(frame.Width, frame.Height);
+            for (int i = 0; i < o.Pixels.Length; i++) o.Pixels[i] = (byte)(lo + (hi - lo) * frame.Pixels[i] / 255);
+            o.SavePgm(Path.Combine(outDir, name + ".pgm"));
+            n++;
+        }
+        GrayImage Background(Random rnd, int level, int noise)
+        {
+            var f = new GrayImage(cal.Columns, cal.Rows);
+            for (int i = 0; i < f.Pixels.Length; i++) f.Pixels[i] = (byte)Math.Clamp(level + rnd.Next(-noise, noise + 1), 0, 255);
+            return f;
+        }
+        // objects at camera poses
+        var poses = new (double Dist, double Y, double Yaw, double Head)[]
+        {
+            (120, 0, 0, -0.15), (200, 30, 0.4, -0.1), (150, -20, -0.7, -0.2), (300, 0, 0.2, 0.0), (90, 10, 0.8, -0.3),
+            (100, -15, 0.3, -0.25), (250, 40, -0.4, -0.05), (140, 0, 0.78, -0.18), (180, -35, 1.2, -0.12), (110, 5, -1.0, -0.28),
+        };
+        var types = new[] { ObjectType.Block_LIGHTCUBE1, ObjectType.Block_LIGHTCUBE2, ObjectType.Block_LIGHTCUBE3, ObjectType.Charger_Basic };
+        int k = 0;
+        foreach (var type in types)
+            foreach (var (dist, y, yaw, head) in poses)
+            {
+                var rnd = new Random(1000 + k);
+                var robotPose = HeadGeometry.RobotPose(new RobotPose { X = 0, Y = 0, Angle = 0 });
+                var pd = new VisionPoseData((uint)k, robotPose, head, 0, false, false);
+                var size = CubeGeometry.SizeOf(type);
+                double d = type == ObjectType.Charger_Basic ? dist + 40 : dist;
+                var frame = Background(rnd, 150 + rnd.Next(-30, 30), 6);
+                var copy = new GrayImage(frame.Width, frame.Height, (byte[])frame.Pixels.Clone());
+                // the charger's marker faces one way: the yaw that shows it to the camera is used
+                if (MarkerRenderer.DrawObject(frame, lib, new CameraModel(cal, pd.CameraPose), type, new Pose3d(Mat3.AboutZ(yaw), new Vec3(d, y, size.Z / 2))).Count == 0)
+                {
+                    frame = copy;
+                    MarkerRenderer.DrawObject(frame, lib, new CameraModel(cal, pd.CameraPose), type, new Pose3d(Mat3.AboutZ(yaw + Math.PI), new Vec3(d, y, size.Z / 2)));
+                }
+                bool dark = k % 2 == 0;
+                Save($"object-{type}-{k:D2}-{(dark ? "dark" : "bright")}", frame, dark ? 4 : 25, dark ? 95 : 235);
+                k++;
+            }
+        // library markers painted at chosen quads: every code once, rotated, foreshortened, small and large, several per frame
+        var codes = Enum.GetValues<MarkerType>().Where(c => c != MarkerType.Invalid && c != MarkerType.Unknown && c != MarkerType.Any).ToArray();
+        var rng = new Random(77);
+        for (int f = 0; f < 24; f++)
+        {
+            var frame = Background(rng, 120 + rng.Next(-40, 60), 4);
+            int count = 1 + f % 4;
+            for (int m = 0; m < count; m++)
+            {
+                var code = codes[(f * 4 + m) % codes.Length];
+                int row = MarkerRenderer.RowForCode(lib, code, (float)(90 * ((f + m) % 4)));
+                if (row < 0) row = MarkerRenderer.RowForCode(lib, code);
+                if (row < 0) continue;
+                double s = 26 + rng.NextDouble() * (count == 1 ? 120 : 50);
+                double cx = count == 1 ? 160 + rng.Next(-40, 40) : 45 + (m % 2) * 160 + rng.Next(0, 70);
+                double cy = count == 1 ? 120 + rng.Next(-30, 30) : 40 + (m / 2) * 120 + rng.Next(0, 60);
+                double a = (rng.NextDouble() - 0.5) * 1.2, persp = 1 - rng.NextDouble() * 0.45, skew = (rng.NextDouble() - 0.5) * 0.3;
+                Vec2 P(double u, double v)
+                {
+                    double x = (u - 0.5) * s * (v < 0.5 ? persp : 1) + (v - 0.5) * s * skew, yy = (v - 0.5) * s;
+                    return new Vec2(cx + Math.Cos(a) * x - Math.Sin(a) * yy, cy + Math.Sin(a) * x + Math.Cos(a) * yy);
+                }
+                MarkerRenderer.Draw(frame, lib, row, new[] { P(0, 0), P(0, 1), P(1, 0), P(1, 1) });
+            }
+            bool dark = f % 3 != 1;
+            Save($"markers-{f:D2}-{(dark ? "dark" : "bright")}", frame, dark ? 3 : 20, dark ? 100 : 240);
+        }
+        Console.WriteLine($"{n} frames in {outDir}");
+        return 0;
     }
 
     // ------------------------------------------------------------------ replay and images

@@ -27,6 +27,11 @@ public static class CornerRefinement
         LowContrast,
         /// <summary><c>RefineQuadrilateral</c> returned non-zero: the corners moved more than the maximum (0x008C645A).</summary>
         Failed,
+        /// <summary>
+        /// M1-034: a ComputeBrightDarkValues sample fell outside the image buffer, where the engine reads foreign memory (undefined);
+        /// the stack skips this marker (it stays validity 4 and is erased) and logs it.
+        /// </summary>
+        Skipped,
     }
 
     /// <summary>
@@ -36,7 +41,14 @@ public static class CornerRefinement
     // fidelity: M11-005, M11-031
     public static Outcome RefineCorners(GrayImage img, MarkerLibrary lib, ref Vec2[] corners, ref Homography h, QuadDetectorParameters p)
     {
-        var (bright, dark, valid) = ComputeBrightDarkValues(img, lib, h, (float)p.MinContrastRatio);
+        var bd = ComputeBrightDarkValuesOrNull(img, lib, h, (float)p.MinContrastRatio, out long outside);
+        if (bd is null)
+        {
+            Behavior.SteppedBehavior.ReportMissing($"M1-034/M11-031 ComputeBrightDarkValues: a sample falls outside the image buffer (linear index {outside}, " +
+                                                   "0x0089FBC2..0x0089FBC6 / 0x0089FC5C..0x0089FC60 read it unchecked); the marker is skipped");
+            return Outcome.Skipped;
+        }
+        var (bright, dark, valid) = bd.Value;
         if (!valid) return Outcome.LowContrast;
         if (p.RefinementIterations < 1) return Outcome.Refined;       // 0x0089FE52: the homography is kept as it is
 
@@ -119,7 +131,9 @@ public static class CornerRefinement
         OpenCv310.Subtract8U16STo16S(saved, blur, diff, w * h);
         // S19..S24: cv::normalize(diff CV_16S -> region CV_8U, alpha 255, beta 0, NORM_MINMAX).
         var normalised = new byte[w * h];
-        OpenCv310.NormalizeMinMax16STo8U(diff, normalised, w * h, 255.0, 0.0);
+        // fidelity: M11-020 — the destination is the region's CV_8U view of the image (not continuous), so cvtScale converts it row by row
+        // and the NEON/scalar rounding split restarts on each row of width w
+        OpenCv310.NormalizeMinMax16STo8U(diff, normalised, w * h, 255.0, 0.0, w);
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
                 img[left + x, top + y] = normalised[y * w + x];
@@ -188,8 +202,19 @@ public static class CornerRefinement
     /// valid when bright exceeds the ratio times dark (0x0089FD26).
     /// </summary>
     // fidelity: M11-031
-    public static (float Bright, float Dark, bool Valid) ComputeBrightDarkValues(GrayImage img, MarkerLibrary lib, Homography h, float minContrastRatio)
+    public static (float Bright, float Dark, bool Valid) ComputeBrightDarkValues(GrayImage img, MarkerLibrary lib, Homography h, float minContrastRatio) =>
+        ComputeBrightDarkValuesOrNull(img, lib, h, minContrastRatio, out long outside)
+        ?? throw new InvalidOperationException($"M1-034/M11-031: a ComputeBrightDarkValues sample falls outside the image buffer (linear index {outside})");
+
+    /// <summary>
+    /// The same, returning null (with the linear index) when a sample falls outside the image buffer. The engine reads each sample at
+    /// <c>data + stride·row + col</c> with no clamp (<c>mla</c>/<c>ldrb</c> at 0x0089FBC2/0x0089FBC6 and 0x0089FC5C/0x0089FC60), so a
+    /// column off either side reads the neighbouring row, as here; outside the buffer the read is undefined (M1-034).
+    /// </summary>
+    // fidelity: M11-031
+    public static (float Bright, float Dark, bool Valid)? ComputeBrightDarkValuesOrNull(GrayImage img, MarkerLibrary lib, Homography h, float minContrastRatio, out long outside)
     {
+        outside = 0;
         float scale = 1f / (1 << MarkerLibrary.NumFractionalBits);
         var hf = new float[9];
         for (int i = 0; i < 9; i++) hf[i] = (float)h.H[i];
@@ -205,8 +230,12 @@ public static class CornerRefinement
             uint dark = 0, bright = 0;
             for (int k = 0; k < np; k++)
             {
-                dark += Pixel(img, hf, dx + ox[k], dy + oy[k]);
-                bright += Pixel(img, hf, bx + ox[k], by + oy[k]);
+                int pd = Pixel(img, hf, dx + ox[k], dy + oy[k], out long id);
+                if (pd < 0) { outside = id; return null; }
+                dark += (uint)pd;
+                int pb = Pixel(img, hf, bx + ox[k], by + oy[k], out long ib);
+                if (pb < 0) { outside = ib; return null; }
+                bright += (uint)pb;
             }
             float darkMean = inv * dark, brightMean = inv * bright;
             if (brightMean < darkMean * minContrastRatio) return (brightMean, darkMean, false);
@@ -217,13 +246,14 @@ public static class CornerRefinement
         return (b, d, b > d * minContrastRatio);
     }
 
-    private static byte Pixel(GrayImage img, float[] h, float x, float y)
+    private static int Pixel(GrayImage img, float[] h, float x, float y, out long index)
     {
         float w = 1f / (h[6] * x + h[7] * y + h[8]);
         float u = (h[0] * x + h[1] * y + h[2]) * w;
         float v = (h[3] * x + h[4] * y + h[5]) * w;
         int col = RoundHalfAway(u), row = RoundHalfAway(v);
-        return img[Math.Clamp(col, 0, img.Width - 1), Math.Clamp(row, 0, img.Height - 1)];
+        index = (long)img.Width * row + col;
+        return index < 0 || index >= img.Pixels.Length ? -1 : img.Pixels[index];
     }
 
     /// <summary>
@@ -463,10 +493,13 @@ public static class CornerRefinement
             for (int k = 0; k < i; k++) s -= a[i, k] * b[k];
             b[i] = s * a[i, i];
         }
+        // fidelity: M11-005, M11-023 — the backward pass subtracts from the last row down: k = n-1, n-2, ..., i+1
+        // (0x0088E05A..0x0088E072: r4 starts at n-1, `subs r4,#1; cmp r4,r3; bgt`), which the homography (0x008C95C4) and
+        // RefineQuadrilateral (0x008C61F4) both reach; binary32 subtraction is not associative, so the order is the engine's.
         for (int i = n - 1; i >= 0; i--)
         {
             float s = b[i];
-            for (int k = i + 1; k < n; k++) s -= a[k, i] * b[k];
+            for (int k = n - 1; k > i; k--) s -= a[k, i] * b[k];
             b[i] = s * a[i, i];
         }
         return b;

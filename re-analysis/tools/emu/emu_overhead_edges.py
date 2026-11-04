@@ -19,7 +19,7 @@ The call is Detect(detector, ImageCache, VisionPoseData, VisionProcessingResult)
     the engine ctor Pose3d(Radians, axis, translation, parent = +4, name), visible byte +0x78, H at +0x7C;
   * VisionProcessingResult: the frame std::list sentinel at +0x48/+0x4C, size +0x50.
 
-Stand-ins and boundaries, all explicit (everything else is the shipped code):
+Stand-ins and boundaries, all explicit (everything else is the shipped code; the shared builders and shims are emu_engine_objects.py):
   * The Camera has a NULL calibration pointer (Camera+4 = 0). Project3dPoint then warns Camera.Project3dPoint.NoCalibration and fails for
     both lift points, so the lift gate always proceeds (row 9: neither projects). The lift gate is therefore OUTSIDE this proof; the stack's
     gate (OverheadEdgesDetector.LiftIsOutOfTheWay) is not checked by these fixtures.
@@ -36,53 +36,22 @@ Stand-ins and boundaries, all explicit (everything else is the shipped code):
     runs every case with poison 0x00 and 0xFF and refuses a difference.
   * A C++ throw or abort ends the run (`exception`).
 """
-import hashlib
 import os
 import struct
 import sys
 import math
 
-import lief
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from emu_elf import Machine, Abort, CxxThrow, NORET, LIBDIR, HEAP, STATIC, STATIC_SIZE
+from emu_elf import Machine, Abort, CxxThrow
+from emu_engine_objects import (PINNED_SHA256, library_hashes, f32bits, bitsf32, install_auxv, install_logging, install_profiler_stubs,
+                                install_parallel_for, install_libm_float, install_aeabi_mem, run_inits, new_image, write_pixels, Snapshot)
 from unicorn import UC_HOOK_CODE
-from unicorn.arm_const import UC_ARM_REG_PC, UC_ARM_REG_R0, UC_ARM_REG_R8
-
-# The libraries the oracle loads (emu_elf's default set), pinned by SHA-256. A different build refuses to run.
-PINNED_SHA256 = {
-    'libcozmoEngine.so': '02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1',
-    'libopencv_core.so': '8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d',
-    'libopencv_imgproc.so': '3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830',
-    'libopencv_imgcodecs.so': '4bdf5a45023c7938924f6c0018bf20774ebb5f7c0b2a637c93fe9e61b1f87218',
-    'libc++_shared.so': '8ac5090bbd0be7401af5fff6044ded6f1e6ced692fcd3581fa3cb937b519a16a',
-}
-
-AUXV_NEON = struct.pack('<IIII', 16, 0x1000 | 0x80 | 0x40 | 0x8, 0, 0)       # AT_HWCAP: NEON | VFPv3 | VFP | EDSP
-AUXV_NONE = struct.pack('<IIII', 16, 0x80 | 0x40 | 0x8, 0, 0)
+from unicorn.arm_const import UC_ARM_REG_R0, UC_ARM_REG_R8
 
 ROWS, COLS = 240, 320
 DETECT = 0x006ABE34
 HIT_RESULT = 0x006AD218          # cmp r0,#1 after the image-to-ground call for a hit (row 25)
 VISIBLE_CLAMP = 0x004F7812       # cmp.w r8,#1 in GetVisibleGroundQuad: the ClampQuad result (row 28)
-
-
-def library_hashes():
-    out = {}
-    for name, want in PINNED_SHA256.items():
-        got = hashlib.sha256(open(os.path.join(LIBDIR, name), 'rb').read()).hexdigest()
-        if got != want:
-            raise SystemExit('%s is not the pinned build: sha256 %s, expected %s' % (name, got, want))
-        out[name] = got
-    return out
-
-
-def f32bits(x):
-    return struct.unpack('<I', struct.pack('<f', x))[0]
-
-
-def bitsf32(b):
-    return struct.unpack('<f', struct.pack('<I', b & 0xFFFFFFFF))[0]
 
 
 class Oracle:
@@ -93,114 +62,34 @@ class Oracle:
         self.probe = {'hit_failed': 0, 'hits': 0, 'clamp': []}
         self._install()
         m.relocate()
-        self._run_inits()
+        run_inits(m)
         self.B = m.libs['libcozmoEngine.so'].base
         self._build()
         self._hooks()
         self._warm_up()
         m.mark_heap_base()
-        self._snapshot()
+        self.snap = Snapshot(m)
 
-    # ---- shims
+    # ---- shims (emu_engine_objects; the stand-ins are the module docstring's)
     def _install(self):
         m = self.m
-        auxv = AUXV_NEON if self.neon else AUXV_NONE
-        fds = {}
-
-        def open_(mm):
-            path = mm.cstr(mm.reg(0)).decode('latin1')
-            if path == '/proc/self/auxv':
-                fds[100] = [auxv, 0]
-                return 100
-            return 0xFFFFFFFF
-
-        def read_(mm):
-            fd, buf, n = mm.reg(0), mm.reg(1), mm.reg(2)
-            if fd not in fds:
-                return 0xFFFFFFFF
-            data, pos = fds[fd]
-            chunk = data[pos:pos + n]
-            fds[fd][1] += len(chunk)
-            mm.wr(buf, chunk)
-            return len(chunk)
-        m.libc['open'] = open_
-        m.libc['read'] = read_
-        m.libc['close'] = lambda mm: 0
-
-        def logger(kind):
-            def h(mm):
-                mm.log.append((kind, mm.cstr(mm.reg(0)).decode('latin1')))
-                return 0
-            return h
-        sig = 'PKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z'
-        m.overrides['_ZN4Anki4Util9sWarningFE' + sig] = logger('warning')
-        m.overrides['_ZN4Anki4Util7sErrorFE' + sig] = logger('error')
-        m.overrides['_ZN4Anki4Util18sDebugBreakOnErrorEv'] = lambda mm: 0
-        m.overrides['_ZN4Anki6Vision8Profiler3TicEPKc'] = lambda mm: 0
-        m.overrides['_ZN4Anki6Vision8Profiler3TocEPKc'] = lambda mm: 0
-        m.overrides['_ZN2cv3ocl9useOpenCLEv'] = lambda mm: 0
-        m.overrides['_ZN2cv3ocl10haveOpenCLEv'] = lambda mm: 0
-        m.overrides['_ZN2cv14setNumThreadsEi'] = lambda mm: 0
+        install_auxv(m, self.neon)
+        install_logging(m)
+        install_profiler_stubs(m)
         self._img = [0]
         m.overrides['_ZN4Anki6Vision10ImageCache7GetGrayENS1_4SizeEPNS1_7GetTypeE'] = lambda mm: self._img[0]
-
-        def parallel_for(mm):
-            rng, body = mm.reg(0), mm.reg(1)
-            fn = mm.r32(mm.r32(body) + 8)
-            mm.setreg(0, body)
-            mm.setreg(1, rng)
-            mm.uc.reg_write(UC_ARM_REG_PC, fn)
-            return NORET
-        m.overrides['_ZN2cv13parallel_for_ERKNS_5RangeERKNS_16ParallelLoopBodyEd'] = parallel_for
-
-        def f1(fn):
-            def h(mm):
-                return f32bits(fn(bitsf32(mm.reg(0))))
-            return h
-        for nm, fn in (('cosf', math.cos), ('sinf', math.sin), ('sqrtf', math.sqrt), ('acosf', math.acos), ('asinf', math.asin),
-                       ('tanf', math.tan), ('fabsf', abs)):
-            m.overrides[nm] = f1(fn)
+        install_parallel_for(m)
+        install_libm_float(m, {'cosf': math.cos, 'sinf': math.sin, 'sqrtf': math.sqrt, 'acosf': math.acos, 'asinf': math.asin,
+                               'tanf': math.tan, 'fabsf': abs})
         m.overrides['atan2f'] = lambda mm: f32bits(math.atan2(bitsf32(mm.reg(0)), bitsf32(mm.reg(1))))
-
-        def mcpy(mm):
-            d, s, n = mm.reg(0), mm.reg(1), mm.reg(2)
-            mm.wr(d, mm.rd(s, n))
-            return d
-        for nm in ('__aeabi_memcpy8', '__aeabi_memcpy4', '__aeabi_memcpy', '__aeabi_memmove', '__aeabi_memmove4', '__aeabi_memmove8'):
-            if nm not in m.libc:
-                m.overrides[nm] = mcpy
-
-        def mclr(mm):
-            d, n = mm.reg(0), mm.reg(1)
-            mm.wr(d, bytes(n))
-            return d
-        for nm in ('__aeabi_memclr4', '__aeabi_memclr', '__aeabi_memclr8'):
-            if nm not in m.libc:
-                m.overrides[nm] = mclr
-
-    def _run_inits(self):
-        m = self.m
-        for n in ('libopencv_core.so', 'libopencv_imgproc.so', 'libopencv_imgcodecs.so'):
-            lib = m.libs[n]
-            tag = lib.elf.get(lief.ELF.DynamicEntry.TAG.INIT_ARRAY)
-            if tag is None:
-                continue
-            for f in tag.array:
-                if f in (0, 0xFFFFFFFF):
-                    continue
-                m.call(lib.base + f)
+        install_aeabi_mem(m)
 
     # ---- the fixed objects (built once, before the snapshot)
     def _build(self):
         m = self.m
-        img = m.malloc(0x80)
-        m.wr(img, bytes(0x80))
-        m.call(m.sym('_ZN4Anki6Vision5ImageC1Eii'), img, ROWS, COLS)
+        img, self.data, self.step = new_image(m, ROWS, COLS)
         self.img = img
         self._img[0] = img
-        self.data = m.r32(img + 4 + 0x10)
-        self.step = m.r32(m.r32(img + 4 + 0x2c))
-        assert (m.r32(img + 4 + 8), m.r32(img + 4 + 0xc)) == (ROWS, COLS)
         self.cache = m.malloc(0x100)
         m.wr(self.cache, bytes(0x100))                     # +8 = 0: grey
         pd = m.malloc(0x200)
@@ -256,22 +145,8 @@ class Oracle:
         if r['exception'] or r['ret'] != 0 or not r['frames']:
             raise SystemExit('warm-up Detect failed: %r' % (r,))
 
-    def _snapshot(self):
-        m = self.m
-        self.snap = []
-        for lib in m.libs.values():
-            for s in lib.loads:
-                if int(s.flags) & 2:                       # PF_W
-                    a = lib.base + s.virtual_address
-                    self.snap.append((a, m.rd(a, s.virtual_size)))
-        self.snap.append((STATIC, m.rd(STATIC, STATIC_SIZE)))
-        self.snap.append((HEAP, m.rd(HEAP, m.heap_base - HEAP)))
-
     def _restore(self):
-        m = self.m
-        for a, data in self.snap:
-            m.wr(a, data)
-        m.reset_heap()
+        self.snap.restore()
 
     # ---- one case
     def detect(self, pixels, h_bits, lift_bits, status, visible, timestamp, count=600_000_000):
@@ -286,8 +161,7 @@ class Oracle:
         self.probe['hit_failed'] = 0
         self.probe['hits'] = 0
         self.probe['clamp'] = []
-        for y in range(ROWS):
-            m.wr(self.data + y * self.step, bytes(pixels[y * COLS:(y + 1) * COLS]))
+        write_pixels(m, self.data, self.step, pixels, ROWS, COLS)
         m.w32(self.img + 0x3c, timestamp)
         pd = self.pd
         m.w32(pd + 0x3c, lift_bits)

@@ -17,14 +17,19 @@ public sealed record QuadDetectorParameters
     /// </summary>
     public int PyramidLevels { get; init; } = 1;
     /// <summary>
-    /// Upper bound on quads per image. The engine's own bound is the capacity of the boundary list
-    /// <c>ComputeQuadrilateralsFromConnectedComponents</c> allocates at 0x00892DA8 (10000), not a
-    /// parameter; the 512 that used to be recorded here is the quad symmetry threshold,
-    /// <see cref="QuadSymmetryThresholdQ8"/>. Kept as a safety bound only.
+    /// The capacity of the quad list: the parameters' +0x44 = 500 (Parameters::Initialize 0x00875386, stored by the stm at 0x008753A2), the
+    /// FixedLengthList&lt;Quadrilateral&lt;s16&gt;&gt; <c>DetectFiducialMarkers</c> builds at 0x00898DEE..0x00898DFC. A quad found when the list is full
+    /// is not appended (the capacity test before the push, 0x00892F6A..0x00892F70) and the search goes on.
     /// </summary>
-    public int MaxQuads { get; init; } = 10000;
-    /// <summary>Upper bound on extracted markers: 500 at the parameters' +0x44 (0x00875386).</summary>
-    public int MaxMarkers { get; init; } = 500;
+    // fidelity: M11-028
+    public int MaxQuads { get; init; } = 500;
+    /// <summary>
+    /// The capacity of the VisionMarker list: the parameters' +0x6c = 100 (0x00875374/0x00875382), the list
+    /// MarkerDetector::Memory::ResetBuffers sizes (0x008753C2..0x008753C8). <c>DetectFiducialMarkers</c> keeps
+    /// <c>min(max(quads, 0), 100)</c> markers (0x00898E38..0x00898E52).
+    /// </summary>
+    // fidelity: M11-023
+    public int MaxMarkers { get; init; } = 100;
 
     /// <summary>
     /// <c>quads_minQuadArea</c>, 25 at the parameters' +0x30 (0x00875338), the second argument of
@@ -111,12 +116,21 @@ public sealed record QuadDetectorParameters
     /// <c>max = round((0.97*dmax)^2 - (0.8*0.97*dmax)^2)</c>, with dmin = min(w,h), dmax = max(w,h).
     /// For a 320x240 frame that is 19 and 34685.
     /// </summary>
+    // fidelity: M11-026
     public (int Min, int Max) ComponentSizeRange(int width, int height)
     {
-        double dmin = Math.Min(width, height), dmax = Math.Max(width, height);
-        double lo = SizeFilterMinFraction * dmin, loInner = SizeFilterInnerFactor * lo;
-        double hi = SizeFilterMaxFraction * dmax, hiInner = SizeFilterInnerFactor * hi;
-        return ((int)Math.Round(lo * lo - loInner * loInner), (int)Math.Round(hi * hi - hiInner * hiInner));
+        // MarkerDetector::Detect 0x008756E6..0x00875770, all binary32: s0 = p74 * (float)dmin; s2 = p70 * s0; roundf(s0*s0 - s2*s2), then
+        // vcvt.s32.f32 into +0x14; the same with p78 and dmax into +0x18. p70/p74/p78 are the binary32 values Initialize stores
+        // (0x3F4CCCCD, 0x3CF5C28F, 0x3F7851EC at 0x00875376..0x0087537E), which are these doubles rounded to binary32.
+        float p70 = (float)SizeFilterInnerFactor, p74 = (float)SizeFilterMinFraction, p78 = (float)SizeFilterMaxFraction;
+        static int Bound(float fraction, float inner, int d)
+        {
+            float a = fraction * d;
+            float b = inner * a;
+            float v = a * a - b * b;
+            return (int)MathF.Round(v, MidpointRounding.AwayFromZero);   // roundf (PLT 0x4A6688): half away from zero
+        }
+        return (Bound(p74, p70, Math.Min(width, height)), Bound(p78, p70, Math.Max(width, height)));
     }
     /// <summary>Corner refinement: 25 iterations, stop under 0.005 px change, reject over 5 px change (1.01 is the refinement step growth).</summary>
     public int RefinementIterations { get; init; } = 25;
@@ -213,21 +227,29 @@ public sealed class QuadDetector
         LastMask = mask;
         st.DarkPixels = mask.Pixels.Count(p => p != 0);
 
-        // M11-032: the per-row DP produces the raw segments; they are regrouped into the component list the
-        // filters and the corner stage consume. Correction C1.1: the run-length floor is params+0x10
+        // M11-032: the per-row DP produces the raw segments. Correction C1.1: the run-length floor is params+0x10
         // (shipped 0) and the threshold is params+0x12 (shipped 0).
         // fidelity: M11-032
         var segments = EcvcsExtractor.ExtractComponents(mask, Parameters.MinRunLength, Parameters.RunThresholdB, out _);
-        // M11-026: InvalidateFilledCenterComponents_hollowRows (C1.5) then CompressConnectedComponentSegmentIds.
-        // The ascending-id order is observable to the boundary trace and the sort 0x00898DD0.
+        // fidelity: M11-026 — DetectFiducialMarkers' filter chain in its own order (0x00898C90..0x00898DD0): Compress, SmallOrLarge
+        // (+0x14/+0x18), Compress, SolidOrSparse (+0x1c/+0x20), Compress, FilledCenter_hollowRows (+0x24), Compress, then the
+        // counting sort by id (0x008947EE, stable, id-0 segments dropped), which ToComponents' ascending-id grouping is.
+        var (minPixels, maxPixels) = Parameters.ComponentSizeRange(img.Width, img.Height);
+        EcvcsExtractor.CompressIds(segments);
+        st.Components = segments.Where(s => s.Id != 0).Select(s => s.Id).Distinct().Count();
+        EcvcsExtractor.InvalidateSmallOrLargeComponents(segments, minPixels, maxPixels);
+        EcvcsExtractor.CompressIds(segments);
+        st.AfterSize = segments.Where(s => s.Id != 0).Select(s => s.Id).Distinct().Count();
+        EcvcsExtractor.InvalidateSolidOrSparseComponents(segments, Parameters.SolidSparseMinFill, Parameters.SolidSparseMaxFill);
+        EcvcsExtractor.CompressIds(segments);
+        st.AfterFill = segments.Where(s => s.Id != 0).Select(s => s.Id).Distinct().Count();
         EcvcsExtractor.InvalidateFilledCenterComponents(segments, Parameters.HollowFraction);
         EcvcsExtractor.CompressIds(segments);
         var comps = EcvcsExtractor.ToComponents(segments);
-        st.Components = comps.Count;
+        st.AfterHollow = comps.Count;
 
-        // the boundary trace and the hollow test read the component by pixel label; build the label image
-        // from the segment list (the engine keeps the segment list; the extents it builds are the same).
-        // Labels are 1-based: the resolved component ids start at 0, which collides with an unset pixel.
+        // the boundary trace reads the component by pixel label; build the label image from the segment list (the engine keeps the
+        // segment list; the extents it builds are the same). Labels are 1-based: id 0 is the invalid sentinel.
         var labels = new int[img.Width * img.Height];
         var labelOf = new Dictionary<int, int>();
         for (int i = 0; i < comps.Count; i++)
@@ -238,22 +260,10 @@ public sealed class QuadDetector
                 for (int x = s.Start; x <= s.End; x++) labels[s.Row * img.Width + x] = label;
         }
 
-        var (minPixels, maxPixels) = Parameters.ComponentSizeRange(img.Width, img.Height);
         var quads = new List<DetectedQuad>();
         foreach (var c in comps)
         {
-            // M11-026 InvalidateSmallOrLargeComponents (S4/S5): count < min or count > max.
-            if (c.Pixels < minPixels || c.Pixels > maxPixels) continue;
-            st.AfterSize++;
-            // M11-026 InvalidateSolidOrSparseComponents (S7): sparse when area*minFill < 32*bboxArea,
-            // solid when area*maxFill > 32*bboxArea.
-            long bboxArea = (long)(c.MaxX - c.MinX + 1) * (c.MaxY - c.MinY + 1);
-            if ((long)c.Pixels * Parameters.SolidSparseMinFill < 32L * bboxArea) continue;
-            if ((long)c.Pixels * Parameters.SolidSparseMaxFill > 32L * bboxArea) continue;
-            st.AfterFill++;
-            // M11-026 InvalidateFilledCenterComponents_hollowRows ran on the segment list before compression.
             int label = labelOf[c.Id];
-            st.AfterHollow++;
             var boundary = QuadCorners.ExteriorBoundary(labels, label, img.Width, c.MinX, c.MinY, c.MaxX, c.MaxY);
             if (boundary is null || boundary.Count < 4) continue;
             var corners = QuadCorners.ExtractLineFitsPeaks(boundary, img.Height, img.Width);
@@ -265,8 +275,8 @@ public sealed class QuadDetector
             // the corners are refined per marker, after the homography, by CornerRefinement (MarkerDetector)
             var quad = ToDecoderOrder(corners);
             if (swapped) (quad[1], quad[2]) = (quad[2], quad[1]);
-            quads.Add(new DetectedQuad(quad, c.Pixels));
-            if (quads.Count >= Parameters.MaxQuads) break;
+            // fidelity: M11-028 — a full list skips the append and the loop goes on (0x00892F6A..0x00892F70)
+            if (quads.Count < Parameters.MaxQuads) quads.Add(new DetectedQuad(quad, c.Pixels));
         }
         LastStats = st;
         return quads;
