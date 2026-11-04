@@ -267,8 +267,8 @@ public class M7BehaviorTests
         Assert.True(rig.Robot.Sensors.OnChargerContacts);
 
         var gated = (ReactToPickupBehavior)ShippedBehaviors.Implementable().Single(b => b.Id == "ReactToPickup");
-        var lines = new List<string>();
-        rig.Robot.Engine.CaptureSourceLogs(lines.Add);
+        var lines = new System.Collections.Concurrent.ConcurrentQueue<string>();   // the engine thread appends while the test reads
+        rig.Robot.Engine.CaptureSourceLogs(lines.Enqueue);
         gated.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         gated.Update(ctx, 0);
         Assert.DoesNotContain(lines, l => l.Contains("BehaviorReactToPickup.OnCharger"));   // the wait is the action in flight

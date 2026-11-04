@@ -863,8 +863,8 @@ public class M7BatchThreeBTests
     public void AFailedReactionMapReadIsLogged()
     {
         using var rig = new Rig();
-        var lines = new List<string>();
-        rig.Robot.Engine.CaptureSourceLogs(lines.Add);
+        var lines = new System.Collections.Concurrent.ConcurrentQueue<string>();   // the engine thread appends while the test reads
+        rig.Robot.Engine.CaptureSourceLogs(lines.Enqueue);
         Assert.Empty(ShippedBehaviors.Reactions(rig.Robot));
         Assert.Contains(lines, l => l.StartsWith("error:") && l.Contains("Failed to read '") && l.Contains("reactionTrigger_behavior_map.json"));
     }
