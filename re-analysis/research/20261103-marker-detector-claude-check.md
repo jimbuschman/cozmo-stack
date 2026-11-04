@@ -51,6 +51,15 @@ binary. Built by a Claude implementer and checked twice by a separate verifier, 
   - M11-002: the host exp calls in the oracle are not yet attributed to call sites;
   - M11-023: row 38, the rolling-shutter tail, is not compared.
 
+## Full-suite failures, root-caused
+
+- **M7BehaviorTests.ThePickupReactionCompletesWithoutPlayingOnTheChargerContacts:** a test race. The engine thread appended log
+  lines to a plain List while the test enumerated it. Five tests now capture into a ConcurrentQueue (`a0c8b7cd`).
+- **NativeVisitInterestingEdgeCanonicalTests.PaintedEdgeRunsVisitToTheVantageCreepsAndCompletes:** the run ended in state 3,
+  close-edge observe (readings 93 down to 41 mm), where the test pinned state 4, edge lost. Both are engine outcomes. Which comes
+  first depends on which frames the processor mailbox takes, and this harness does not pin that timing. The test now accepts
+  either, after the creep, with the reason written in. Making the run deterministic stays queued.
+
 ## Queued
 
 - Compare the rolling-shutter tail (row 38) against the engine.

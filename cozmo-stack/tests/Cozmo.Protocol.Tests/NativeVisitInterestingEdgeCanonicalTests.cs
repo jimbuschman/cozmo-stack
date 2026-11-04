@@ -206,7 +206,12 @@ public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper o
         Assert.True(run.Starts>=1,"VisitInterestingEdge never started");
         Assert.True(run.DroveToVantage,"no path executed before gathering");
         Assert.True(run.GatherDistanceToVantage<=DriveToPoseAction.DefaultGoalDistanceToleranceMm+20f,"vantage error "+run.GatherDistanceToVantage); // 10 mm goal tolerance plus the rig's 20 mm centre offset
-        Assert.Contains(run.States,s=>s.State==2);Assert.Contains(run.States,s=>s.State==4);
+        Assert.Contains(run.States,s=>s.State==2);
+        // After the creep the visit ends either way the engine allows: state 3 when a reading falls to the 60 mm limit while the edge is still
+        // in view (S3 0x005E7D78), or state 4 when the edge leaves the image first and the map tail writes NaN (0x006803AC..0x006803EC,
+        // 0x005E7564). Which comes first depends on which frames the processor takes: its mailbox discards arrivals while it is busy (native
+        // completion), and this harness does not pin that timing (queued: make the canonical run deterministic). Both outcomes were observed.
+        Assert.Contains(run.States,s=>s.State==3||s.State==4);
         Assert.True(run.Completions>=1,"VisitInterestingEdge never completed");
         var finite=run.Distances.Where(d=>!float.IsNaN(d)).Distinct().ToList();
         Assert.True(finite.Count>=2 && finite[1]<finite[0],"far branch did not approach: "+string.Join(",",finite));
