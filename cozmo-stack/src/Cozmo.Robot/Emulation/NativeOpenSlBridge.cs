@@ -17,7 +17,16 @@ internal sealed class NativeOpenSlBridge
     private readonly ArmMachine _machine;
     private readonly int _ownerThread = Environment.CurrentManagedThreadId;
     private readonly Dictionary<string, uint> _iids = new(StringComparer.Ordinal);
-    private readonly Queue<(uint Address, uint Size)> _buffers = new();
+    private sealed class Buffer
+    {
+        internal required ulong Token;
+        internal required uint Address;
+        internal required byte[] Data;
+        internal bool Submitted;
+    }
+    internal readonly record struct OutputBlock(ulong Token, byte[] Data);
+    private readonly Queue<Buffer> _buffers = new();
+    private ulong _nextToken;
     private readonly uint _engineObject, _engine, _mix, _player, _play, _queue;
     private uint _callback, _callbackContext, _queueIndex, _playState = 1;
     private bool _engineAlive, _mixAlive, _playerAlive;
@@ -169,10 +178,9 @@ internal sealed class NativeOpenSlBridge
             throw new EmulationAbort("invalid or full OpenSL buffer queue");
         uint address = m.Reg(1), size = m.Reg(2);
         if (address == 0 || (address & 3) != 0 || size != BlockBytes) throw new EmulationAbort("unsupported OpenSL output block");
-        _ = m.Span(address, size); // validate the complete guest-owned range now
         if (_buffers.Any(buffer => buffer.Address == address))
             throw new EmulationAbort("OpenSL guest queued a buffer it still owns");
-        _buffers.Enqueue((address, size));
+        _buffers.Enqueue(new Buffer { Token = checked(++_nextToken), Address = address, Data = m.Read(address, size) });
         return Success;
     }
 
@@ -201,12 +209,41 @@ internal sealed class NativeOpenSlBridge
     {
         RequireOwner();
         if (_playState != Playing || _buffers.Count == 0) return null;
-        if (!_playerAlive || _callback == 0) throw new EmulationAbort("OpenSL queue has no live callback");
-        var buffer = _buffers.Dequeue();
-        byte[] data = _machine.Read(buffer.Address, buffer.Size);
+        var buffer = _buffers.Peek();
+        if (buffer.Submitted) throw new InvalidOperationException("OpenSL block already submitted to a platform device");
+        buffer.Submitted = true;
+        Acknowledge(buffer.Token);
+        return buffer.Data;
+    }
+
+    /// <summary>Returns the first guest block not yet handed to a platform device.</summary>
+    internal OutputBlock? PeekUnsubmitted()
+    {
+        RequireOwner();
+        if (_playState != Playing) return null;
+        var buffer = _buffers.FirstOrDefault(b => !b.Submitted);
+        return buffer is null ? null : new OutputBlock(buffer.Token, buffer.Data);
+    }
+
+    internal void MarkSubmitted(ulong token)
+    {
+        RequireOwner();
+        var buffer = _buffers.FirstOrDefault(b => !b.Submitted);
+        if (buffer is null || buffer.Token != token)
+            throw new InvalidOperationException("OpenSL submission does not match the next queued block");
+        buffer.Submitted = true;
+    }
+
+    internal void Acknowledge(ulong token)
+    {
+        RequireOwner();
+        if (!_playerAlive || _playState != Playing || _callback == 0)
+            throw new EmulationAbort("OpenSL queue has no live callback");
+        if (_buffers.Count == 0 || !_buffers.Peek().Submitted || _buffers.Peek().Token != token)
+            throw new InvalidOperationException("OpenSL completion does not match the oldest submitted block");
+        _buffers.Dequeue();
         _queueIndex = unchecked(_queueIndex + 1);
         _machine.Call(_callback, new[] { _queue, _callbackContext }, count: 1_000_000);
-        return data;
     }
 
     private StubResult DestroyPlayer(ArmMachine m)

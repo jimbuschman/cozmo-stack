@@ -28,6 +28,72 @@ public sealed partial class EngineRobot
 
 public sealed partial class CozmoRobot
 {
+    private uint _nextSpeechTag;
+    internal TextToSpeechComponent? DirectSpeechComponentForTest;
+    internal Func<float[], Task<IDirectSpeechSession>>? DirectSpeechOpenForTest;
+
+    /// <summary>Requests direct English robot speech. Completion reports the native action result after the robot's animation completion.</summary>
+    public Task<AiSpeechActionResult> SayEnglishSentenceAsync(string text, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var owner = Engine.Robot;
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromResult(new AiSpeechActionResult(false, null, "Request cancelled before admission"));
+        using var lease = Engine.EnterSynchronousOwner();
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromResult(new AiSpeechActionResult(false, null, "Request cancelled before admission"));
+        string? banks = Engine.Options.SpeechSoundBankDirectory;
+        if (!OperatingSystem.IsWindows() || string.IsNullOrEmpty(text) || Engine.Options.LabLocaleLanguage != "en" ||
+            Engine.Options.ResourcesPath is null || banks is null ||
+            !File.Exists(Path.Combine(banks, "Init.bnk")) || !File.Exists(Path.Combine(banks, "English(US)", "Cozmo.bnk")) ||
+            ShippedLibraries.FindLibDir() is null || owner is null || owner.Lifetime.Destroying ||
+            !ReferenceEquals(Engine.Robot, owner) || !Engine.IsReadyDelivered || Engine.ConnectionState != 2 ||
+            Engine.RobotValidated != true || !owner.FirstFullStateHandled || !owner.ReadyToStream ||
+            owner.AudioOutputSource != RobotAudioOutputSource.PlayOnRobot)
+            return Task.FromResult(new AiSpeechActionResult(false, null, "Direct English robot speech is not ready"));
+        uint tag = 0;
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            _nextSpeechTag = _nextSpeechTag == 1_000_000 ? 1 : _nextSpeechTag + 1;
+            if (!ActionRunnerTagCounter.Global.IsInUse(_nextSpeechTag)) { tag = _nextSpeechTag; break; }
+        }
+        if (tag == 0) return Task.FromResult(new AiSpeechActionResult(false, null, "No external action tag is available"));
+        var action = new SayTextAction(this, owner, text, 3, 1f, 0f, direct: true,
+            speechForTest: DirectSpeechComponentForTest, openForTest: DirectSpeechOpenForTest)
+            { HostCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously) };
+        if (!action.SetTag(tag))
+        {
+            action.Prep(); action.WatcherEnding();
+            return Task.FromResult(new AiSpeechActionResult(false, null, "Action tag was unavailable"));
+        }
+        if (cancellationToken.IsCancellationRequested)
+        {
+            action.RetireNeverAdmittedTree();
+            return Task.FromResult(new AiSpeechActionResult(false, null, "Request cancelled before admission"));
+        }
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot, owner);
+        bool disabled = owner.ActionList.ExternalActionsDisabled;
+        int queued = owner.ActionList.QueueActionGuardedAtEnd(action, 0, Current);
+        if (disabled || queued != 0)
+        {
+            action.RetireNeverAdmittedTree();
+            return Task.FromResult(new AiSpeechActionResult(false, null, "Speech action was not admitted"));
+        }
+        return AwaitSpeech(action, owner, cancellationToken);
+    }
+
+    private async Task<AiSpeechActionResult> AwaitSpeech(SayTextAction action, EngineRobot owner, CancellationToken token)
+    {
+        using var registration = token.Register(() => Engine.PostGameMessage(() =>
+        {
+            if (owner.Lifetime.Destroying || !ReferenceEquals(Engine.Robot, owner)) return;
+            if (owner.ActionList.ContainsRunner(action)) owner.ActionList.Cancel(action.Tag);
+        }));
+        var ended = await action.HostCompletion!.Task.ConfigureAwait(false);
+        using (Engine.EnterSynchronousOwner()) { }
+        return new AiSpeechActionResult(true, ended.Result, "Native speech action ended", ended.OwnerRetired);
+    }
+
     /// <summary>Internal admission used until the public SayText API and float output join are available.</summary>
     internal void QueueSayTextForNativePath(string text, byte style, float durationScalar, float pitch = 0)
     {
@@ -64,3 +130,7 @@ public sealed partial class CozmoRobot
         });
     }
 }
+
+/// <summary>Admission and native action result for direct English speech. OwnerRetired records whether
+/// the original robot was being destroyed or replaced when its action ended.</summary>
+public sealed record AiSpeechActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);

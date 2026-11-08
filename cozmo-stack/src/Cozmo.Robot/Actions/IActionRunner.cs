@@ -366,6 +366,9 @@ public abstract class ActionRunner : IActionRunner
         // L13: store the virtual result over +0x18. The native always calls ActionEndUpdating after storing (a
         // RUNNING result branches at 0x005405A2 to 0x54062C); only PrepForCompletion (0x540626) is skipped for
         // RUNNING.
+        // A reentrant host callback can destroy this runner during Init. The native path would
+        // return into freed memory; M1-034 stops this stale continuation.
+        if (DestructionObserved) return State;
         State = result;
         if(result!=EngineActionResult.Running)
         {

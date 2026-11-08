@@ -11,6 +11,70 @@ namespace Cozmo.Protocol.Tests;
 public class FaceRecognizerTests
 {
     [Fact]
+    public void ExplicitTargetAdvancesOnlyOnEligibleFramesAndEmitsOnceForCurrentTrack()
+    {
+        long now = 10_000_000;
+        var okao = new FakeOkaoRecognizer();
+        var recognizer = new FaceRecognizer(okao, () => now);
+        var feature = new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1, 0);
+        recognizer.CurrentTrack = 1;
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int id));
+        var face = Assert.Single(recognizer.EnrolledFaces);
+        face.Name = "Drawn";
+        okao.IdentifyResults.Add((0, 1000));
+        recognizer.SetAllowedEnrollments(4, id);
+        now = 10_999_999;
+        recognizer.ConsumeStockFeature(feature, 1, false); // confident match ignores the per-frame gate
+        Assert.Equal(4, recognizer.EnrollmentCount);
+        Assert.Equal(10_000_000, face.Timestamp30Micros);
+        Assert.Equal(0, recognizer.LookupStockTrack(1).EnrollmentCount);
+        for (int step = 1; step <= 4; step++)
+        {
+            now = 10_000_000 + step * 1_000_000;
+            recognizer.ConsumeStockFeature(feature, 1, false);
+            Assert.Equal(4 - step, recognizer.EnrollmentCount);
+            Assert.Equal(0, recognizer.LookupStockTrack(2).EnrollmentCount);
+            Assert.Equal(step == 4 ? 4 : 0, recognizer.LookupStockTrack(1).EnrollmentCount);
+        }
+        Assert.Equal(0, recognizer.EnrollmentMode);
+        Assert.Equal(0, recognizer.LookupStockTrack(1).EnrollmentCount);
+        Assert.Equal(-1, face.CurrentAlbumEntryId);
+        long last = face.Timestamp30Micros;
+        now += 1_000_000;
+        recognizer.ConsumeStockFeature(feature, 1, false);
+        Assert.Equal(last, face.Timestamp30Micros);
+    }
+
+    [Fact]
+    public void DisabledWrongTargetAndFullNamedWithoutPositiveCountSkipContinuation()
+    {
+        long now = 10_000_000;
+        var okao = new FakeOkaoRecognizer();
+        var recognizer = new FaceRecognizer(okao, () => now);
+        var feature = new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1, 0);
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int id));
+        var face = Assert.Single(recognizer.EnrolledFaces);
+        face.Name = "Named";
+        now += 2_000_000;
+        void AssertSkipped(int mode, int target)
+        {
+            recognizer.SetAllowedEnrollments(mode, target);
+            long before = face.Timestamp30Micros;
+            int current = face.CurrentAlbumEntryId;
+            Assert.Equal(0, recognizer.UpdateExistingAlbumEntry(0, feature));
+            Assert.Equal(mode, recognizer.EnrollmentCount);
+            Assert.Equal(before, face.Timestamp30Micros);
+            Assert.Equal(current, face.CurrentAlbumEntryId);
+        }
+        AssertSkipped(0, 0);
+        AssertSkipped(4, id + 1);
+        while (okao.Production.Entries[0].Count < 4) okao.Production.Entries[0].Add(new OkaoFaceFeature());
+        AssertSkipped(-1, id);
+    }
+
+    [Fact]
     public void CompletedTrackIdentityWaitsForThatTracksLookupAndDoesNotRepeatOnCrossing()
     {
         var okao = new FakeOkaoRecognizer();

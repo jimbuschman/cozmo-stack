@@ -607,9 +607,10 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     public FaceRecognizer Recognizer { get; private set; }
 
+    internal Func<long>? FaceRecognitionClockForTest;
     private FaceRecognizer CreateFaceRecognizer(IOkaoFaceRecognizer backend)
     {
-        var recognizer = new FaceRecognizer(backend);
+        var recognizer = new FaceRecognizer(backend, () => FaceRecognitionClockForTest?.Invoke() ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000);
         recognizer.Log += l => LogCallbackDeferral.Run(() => Log?.Invoke(l));
         recognizer.SourceLog = (l,c,k,t) => _robot.Engine.EmitSourceLog(l,c,k,t);
         return recognizer;
@@ -944,7 +945,16 @@ public sealed partial class VisionSystem : IDisposable
     {
         if (_stockRecognizer)
         {
-            SteppedBehavior.ReportMissing("M14-011 stock explicit enrollment lifecycle and completion are not connected");
+            var owner = _robot.Engine.Robot;
+            var recognizer = Recognizer;
+            int removal = Volatile.Read(ref _removals);
+            using (LogCallbackDeferral.EnterGated(_busy))
+            {
+                if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner) ||
+                    removal != Volatile.Read(ref _removals) || !ReferenceEquals(Recognizer, recognizer) ||
+                    !recognizer.OwnsStockDetector(_stockFaceDetector) || !recognizer.IsAvailable) return;
+                recognizer.SetAllowedEnrollments(id != 0 ? FaceWorld.EnrollModeKnownFace : FaceWorld.EnrollModeNewFace, id);
+            }
             return;
         }
         var (_, mode) = Faces.Enroll(id);
@@ -1905,6 +1915,8 @@ public sealed partial class VisionSystem : IDisposable
                     Faces.ChangeFaceID(change.OldId, change.NewId, change.Name);
                     if (StaleFrame()) return null;
                 }
+                // 0x655204..26C: all enrollment pulses precede every face observation.
+                foreach (var d in detected) Faces.ApplyEnrollmentCount(d.NativeEnrollmentCount);
                 foreach (var d in detected)
                 {
                     var tf = new TrackedFace(d, timestamp);

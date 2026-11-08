@@ -58,6 +58,9 @@ public sealed record MotionOutcome(MotionResult Result, string Detail)
 /// OwnerRetired records whether its original robot was being destroyed or replaced before admission or at action destruction.</summary>
 public sealed record AiHeadActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
 
+/// <summary>Result of an outside-AI lift request; OwnerRetired is captured when its original action ends.</summary>
+public sealed record AiLiftActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
+
 /// <summary>An advisory view of one robot owner and its last published engine state.</summary>
 public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
 
@@ -103,12 +106,22 @@ public sealed class CozmoMotion
     /// The result contains the native action result when the admitted runner is destroyed. Cancellation
     /// requests native cancellation of this specific runner; a pending runner can report NOT_STARTED.
     /// </summary>
-    public Task<AiHeadActionResult> QueueAiHeadAngleAsync(float radians, CancellationToken cancellationToken = default)
+    public Task<AiHeadActionResult> QueueAiHeadAngleAsync(float radians, CancellationToken cancellationToken = default) =>
+        QueueAiMoveAsync(radians, true, cancellationToken);
+
+    /// <summary>Queues an ordinary lift action after existing actions. A 32 mm request while carrying requires the unconnected placement action.</summary>
+    public async Task<AiLiftActionResult> QueueAiLiftHeightAsync(float heightMm, CancellationToken cancellationToken = default)
+    {
+        var result = await QueueAiMoveAsync(heightMm, false, cancellationToken).ConfigureAwait(false);
+        return new AiLiftActionResult(result.Admitted, result.EngineResult, result.Detail, result.OwnerRetired);
+    }
+
+    private Task<AiHeadActionResult> QueueAiMoveAsync(float value, bool head, CancellationToken cancellationToken)
     {
         var engine = _robot.Engine;
         var owner = engine.Robot;
-        if (!float.IsFinite(radians))
-            return Task.FromResult(new AiHeadActionResult(false, null, "Head angle must be finite"));
+        if (!float.IsFinite(value))
+            return Task.FromResult(new AiHeadActionResult(false, null, head ? "Head angle must be finite" : "Lift height must be finite"));
         if (cancellationToken.IsCancellationRequested)
             return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
         using var lease = engine.EnterSynchronousOwner();
@@ -116,6 +129,13 @@ public sealed class CozmoMotion
             return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
         if (owner is null || !AiOwnerReady(engine, owner))
             return Task.FromResult(new AiHeadActionResult(false, null, "Robot is not ready for an action"));
+        if (!head && value == LowDockHeightMm)
+        {
+            if (owner.CarryingOwner is not { } carrying)
+                return Task.FromResult(new AiHeadActionResult(false, null, "MISSING: carrying state is unavailable for the 32 mm lift request"));
+            if ((carrying.CarriedObjectId ?? uint.MaxValue) != uint.MaxValue)
+                return Task.FromResult(new AiHeadActionResult(false, null, "MISSING: the 32 mm carrying request requires the placement action"));
+        }
 
         uint tag = 0;
         for (int i = 0; i < 1_000_000; i++)
@@ -124,7 +144,9 @@ public sealed class CozmoMotion
             if (!ActionRunnerTagCounter.Global.IsInUse(_nextAiTag)) { tag = _nextAiTag; break; }
         }
         if (tag == 0) return Task.FromResult(new AiHeadActionResult(false, null, "No external action tag is available"));
-        var action = BuildHeadAction(radians, DefaultHeadSpeedRadPerSec, DefaultHeadAccelRadPerSec2, 0, null);
+        var action = head
+            ? BuildHeadAction(value, DefaultHeadSpeedRadPerSec, DefaultHeadAccelRadPerSec2, 0, null)
+            : BuildLiftAction(value, DefaultLiftSpeedRadPerSec, DefaultLiftAccelRadPerSec2, 0, null, false);
         if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner))
         {
             action.RetireNeverAdmittedTree();
@@ -150,10 +172,10 @@ public sealed class CozmoMotion
         int queued = owner.ActionList.QueueActionGuardedAtEnd(action, 0, Current);
         if (disabled || queued != 0)
             return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed"));
-        return AwaitAiHead(action, owner, cancellationToken);
+        return AwaitAiMove(action, owner, cancellationToken, head);
     }
 
-    private async Task<AiHeadActionResult> AwaitAiHead(MoveAction action, EngineRobot owner, CancellationToken token)
+    private async Task<AiHeadActionResult> AwaitAiMove(MoveAction action, EngineRobot owner, CancellationToken token, bool head)
     {
         using var registration = token.Register(() => _robot.Engine.PostGameMessage(() =>
         {
@@ -164,7 +186,7 @@ public sealed class CozmoMotion
         // WatcherEnding precedes queue unlink. Reenter the engine owner before publishing the
         // result so another thread cannot observe completion while that unlink is still pending.
         using (_robot.Engine.EnterSynchronousOwner()) { }
-        return new AiHeadActionResult(true, ended.Result, "Native head action ended", ended.OwnerRetired);
+        return new AiHeadActionResult(true, ended.Result, head ? "Native head action ended" : "Native lift action ended", ended.OwnerRetired);
     }
 
     internal CozmoMotion(CozmoRobot robot)
@@ -1443,6 +1465,8 @@ bool requireCalibration = true)
             lock (Owner._gate)
             {
                 if (!IsHead) LiftInitHeightLocked();
+                if (AiOwner is { } original && (DestructionObserved || original.Lifetime.Destroying ||
+                    !ReferenceEquals(Owner._robot.Engine.Robot, original))) return unchecked((int)EngineActionResult.Running);
                 if (Owner.InPositionLocked(this)) { InPositionLatched = true; return 0; }
                 Id = Owner.NextActionId();                       // MA8: taken in MoveHeadToAngle / MoveLiftToHeight
                 if (!Owner._robot.SendMessage(Build(Id))) return (int)ResultSendFailed;

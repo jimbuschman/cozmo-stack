@@ -19,12 +19,19 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     private readonly uint _interface;
     private readonly NativeOpenSlBridge _openSl;
     private bool _posted;
+    private bool _offered;
     private bool _disposed;
     private uint _playingId, _activeHijack;
     private bool _hijackStarted, _hijackEnded;
     internal bool TerminatedCleanly { get; private set; }
     internal string? ShutdownDiagnostic { get; private set; }
     internal bool HijackEnded => _hijackEnded;
+    internal bool HasPosted => _posted;
+    internal bool IsQuiescent => !_posted || (EndOfEvent is not null && _hijackEnded);
+    internal event Action? HijackOpened;
+    internal event Action<float[]>? HijackFrame;
+    internal event Action? HijackClosed;
+    internal event Action? EventEnded;
     public (uint Cookie, uint GameObject, uint PlayingId, uint EventId)? EndOfEvent { get; private set; }
     private readonly int _thread = Environment.CurrentManagedThreadId;
 
@@ -47,6 +54,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
                 ShutdownDiagnostic = "MISSING VOICE-LIVE-SINK-1: native session released before EndOfEvent and Hijack Term; graceful teardown was not run";
                 return;
             }
+            if (_offered && !_posted) Run(0x8DC229, new[] { _interface });
             Run(0x99DCEC); // 0x99DCEC's return register is not a sourced status contract
             if (!_openSl.IsDestroyed || _workers.Count != 0 || _openSl.PendingCount != 0)
                 throw new EmulationAbort("native Wwise termination left device or worker ownership alive");
@@ -74,15 +82,15 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         return frames;
     }
 
-    /// <summary>Injects a mono provider buffer and posts the authored Sentence event.</summary>
-    public uint Post(float[] samples, int sampleRate)
+    /// <summary>Transfers the provider data to the native pending WavePortal slot.</summary>
+    public void Offer(float[] samples, int sampleRate)
     {
         RequireOwner();
         ArgumentNullException.ThrowIfNull(samples);
-        if (_posted) throw new InvalidOperationException("native voice oracle is one-shot");
+        if (_offered) throw new InvalidOperationException("native voice oracle is one-shot");
         if (sampleRate <= 0 || samples.Length == 0) throw new ArgumentOutOfRangeException(nameof(sampleRate));
         uint byteCount = checked((uint)samples.Length * 4);
-        _posted = true;
+        _offered = true;
         uint audio = _m.Malloc(byteCount), data = _m.Malloc(16);
         if (audio == 0 || data == 0) throw new EmulationAbort("WavePortal allocation failed");
         Span<byte> bytes = _m.Span(audio, byteCount);
@@ -90,6 +98,14 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         _m.W32(data, (uint)sampleRate); _m.W16(data + 4, 1); _m.W16(data + 6, 0);
         _m.W32(data + 8, (uint)samples.Length); _m.W32(data + 12, audio);
         Run(0x8DC1B9, new[] { _interface, data });
+    }
+
+    /// <summary>Posts the authored Sentence event after its provider data has been offered.</summary>
+    public uint PostOffered(bool applyDefaultVolume = false)
+    {
+        RequireOwner();
+        if (!_offered || _posted) throw new InvalidOperationException("native voice data must be offered once before posting");
+        _posted = true;
         uint callback = _m.Stub("native_voice_end");
         _m.Libc["native_voice_end"] = m =>
         {
@@ -99,13 +115,28 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             if (info != (0xC0FFEEu, 7u, _playingId, 0xBF0BACE1u))
                 throw new EmulationAbort("native event callback did not match the posted voice");
             EndOfEvent = info;
+            EventEnded?.Invoke();
             return 0;
         };
         uint playing = Run(0x9A6704, new uint[] { 0xBF0BACE1, 7, 1, callback }, new uint[] { 0xC0FFEE, 0, 0, 0 });
         if (playing == 0) throw new EmulationAbort("native event did not return a playing ID");
         _playingId = playing;
-        Ok(Run(0x99FB14, new uint[] { 0xD2687048, F(1), playing, 0 }, new uint[] { 4, 0 }), "event volume");
+        if (applyDefaultVolume) SetEventVolume(playing, 1);
         return playing;
+    }
+
+    /// <summary>Injects a mono provider buffer and posts the authored Sentence event.</summary>
+    public uint Post(float[] samples, int sampleRate)
+    {
+        Offer(samples, sampleRate);
+        return PostOffered(applyDefaultVolume: true);
+    }
+
+    internal void ClearPending() { RequireOwner(); Run(0x8DC229, new[] { _interface }); }
+    internal void SetEventVolume(uint playing, float volume)
+    {
+        RequireOwner();
+        Ok(Run(0x99FB14, new uint[] { 0xD2687048, F(volume), playing, 0 }, new uint[] { 4, 0 }), "event volume");
     }
 
     /// <summary>Advances the supplied Wwise clock and renders once; no real-time pacing is implied.</summary>
@@ -122,6 +153,10 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         RequireOwner();
         return _openSl.ConsumeOne();
     }
+
+    internal NativeOpenSlBridge.OutputBlock? PeekOutputBlock() { RequireOwner(); return _openSl.PeekUnsubmitted(); }
+    internal void MarkOutputSubmitted(ulong token) { RequireOwner(); _openSl.MarkSubmitted(token); }
+    internal void AcknowledgeOutput(ulong token) { RequireOwner(); _openSl.Acknowledge(token); }
 
     /// <summary>Advances the host clock, optionally consumes one block, then runs one native render.</summary>
     public byte[]? Step(uint elapsedMicroseconds, bool consumeOutput)
@@ -199,6 +234,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             if (_hijackStarted || _activeHijack != 0) throw new EmulationAbort("unexpected repeated voice Hijack initialization");
             _hijackStarted = true;
             _activeHijack = fx;
+            HijackOpened?.Invoke();
         }
         else
         {
@@ -206,6 +242,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
                 throw new EmulationAbort("voice Hijack termination did not match its owner");
             _activeHijack = 0;
             _hijackEnded = true;
+            HijackClosed?.Invoke();
         }
     }
 
@@ -231,7 +268,8 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         byte[] bytes = m.Read(ptr, checked(n * 4));
         var frame = new float[n];
         for (int i = 0; i < frame.Length; i++) frame[i] = V(BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(i * 4, 4)));
-        _frames.Add(frame);
+        if (HijackFrame is null) _frames.Add(frame);
+        else HijackFrame(frame);
         return 0;
     }
 

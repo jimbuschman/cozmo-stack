@@ -143,6 +143,81 @@ public sealed class FaceIdentityTests
     }
 
     [Fact]
+    public void NativeRecognitionPublishesOneShotEnrollmentBeforeObservations()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var fixture = new Fixture(sourceNvEmpty: true, sourceNvStored: tag => tag switch
+        {
+            VisionSystem.FaceAlbumNvTag => Album(),
+            VisionSystem.FaceEnrollmentNvTag => Enrollment(),
+            _ => null,
+        });
+        var vision = fixture.M.Vision;
+        long now = 10_999_999;
+        vision.FaceRecognitionClockForTest = () => now;
+        var face = Assert.Single(vision.Recognizer.EnrolledFaces);
+        face.Timestamp30Micros = 10_000_000;
+        vision.SetFaceEnrollmentMode(7);
+        Assert.Equal(4, vision.Recognizer.EnrollmentCount);
+        vision.Enabled = true;
+        vision.ModeEnableMask = (1 << 2) | (1 << 7);
+        vision.Schedules = AllVisionModesSchedule.InitDefaultSchedules();
+        fixture.Rig.Robot.SetVisionWhileMoving(true);
+        fixture.Rig.Tick();
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "okao", "okao_oracle.json")));
+        var root = doc.RootElement;
+        var images = root.GetProperty("images").EnumerateObject().ToDictionary(p => p.Name, p => Convert.FromBase64String(p.Value.GetString()!));
+        var frames = root.GetProperty("frames").EnumerateArray().ToDictionary(f => f.GetProperty("name").GetString()!, f => images[f.GetProperty("image").GetString()!]);
+        var detector = Assert.IsType<OkaoFaceDetector>(vision.FaceDetector);
+        uint imageId = 500;
+        void Frame(string name)
+        {
+            fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            fixture.NativeCameraFrame(imageId++, frames[name]);
+            fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
+            fixture.Rig.Tick();
+        }
+        bool sawCompletionInObservation = false;
+        vision.Faces.FaceObserved += _ => { if (vision.Faces.EnrollmentCompleted) sawCompletionInObservation = true; };
+        Frame("face_s10_1");
+        Frame("face_s10_2");
+        Assert.True(SpinWait.SpinUntil(() => detector.RecognitionWorkCompleted, TimeSpan.FromSeconds(10)));
+        Frame("face_s10_3");
+        Assert.Equal(4, vision.Recognizer.EnrollmentCount);
+        Assert.False(vision.Faces.EnrollmentCompleted);
+        for (int step = 1; step <= 4; step++)
+        {
+            now = 10_000_000 + step * 1_000_000;
+            for (int attempt = 0; attempt < 12 && !detector.RecognitionWorkCompleted; attempt++) Frame("face_s10_3");
+            Assert.True(SpinWait.SpinUntil(() => detector.RecognitionWorkCompleted, TimeSpan.FromSeconds(10)), $"no FR work at step {step}; faces={vision.LastFaces.Count}");
+            Frame("face_s10_3");
+            Assert.Equal(4 - step, vision.Recognizer.EnrollmentCount);
+        }
+        Assert.True(vision.Faces.EnrollmentCompleted);
+        Assert.True(sawCompletionInObservation);
+        Assert.Equal(0, vision.Recognizer.EnrollmentMode);
+        var exported = vision.GetSerializedFaceData();
+        Assert.NotEmpty(exported.Album);
+        var restored = Assert.Single(FaceRecognizer.DeserializeEnrollment(exported.Enrollment, now, out _) !);
+        Assert.Equal(7, restored.FaceID);
+        Assert.Equal("Drawn", restored.Name);
+        Assert.Equal(14_000_000, restored.Timestamp30Micros);
+        Assert.Contains(3, restored.AlbumEntries.Keys);
+        vision.SetFaceEnrollmentMode(0);
+        Assert.True(vision.Faces.EnrollmentCompleted); // mode setter does not own the sticky reset
+        vision.Faces.ResetEnrollmentCompletionForBehavior();
+        Assert.False(vision.Faces.EnrollmentCompleted);
+        bool callbackReentered = false;
+        vision.Log += message =>
+        {
+            if (message.Contains("No data for enrollmentID=77"))
+                callbackReentered = Task.Run(() => vision.SetFaceEnrollmentMode(0)).Wait(TimeSpan.FromSeconds(2));
+        };
+        vision.SetFaceEnrollmentMode(77);
+        Assert.True(callbackReentered); // no vision/recognizer gate is held while delivering the log
+    }
+
+    [Fact]
     public void RestoredNativeAlbumMatchesOnLaterCanonicalFrame()
     {
         if (ShippedLibraries.FindLibDir() is null) return;

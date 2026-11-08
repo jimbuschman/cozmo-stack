@@ -32,6 +32,7 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
 {
     public int? NativeFaceDirectionThirdDegrees { get; init; }
     internal bool? NativeTrackerFlagChanged { get; init; }
+    internal int NativeEnrollmentCount { get; init; }
     // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
     internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
@@ -163,7 +164,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                         }
                         var identity = recognizer.LookupStockTrack(track);
                         if (identity.PreviousId is { } old) changes!.Add((old, identity.Id, identity.Name));
-                        return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name };
+                        return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name, NativeEnrollmentCount = identity.EnrollmentCount };
                     }
                     faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack);
                 }
@@ -425,6 +426,11 @@ public sealed partial class FaceWorld
 
     private readonly object _gate = new();
     private readonly Dictionary<int, FaceEntry> _faces = new();
+    private bool _enrollmentCompleted;
+    internal bool EnrollmentCompleted { get { lock (_gate) return _enrollmentCompleted; } }
+    internal void ApplyEnrollmentCount(int count) { if (count >= 1) lock (_gate) _enrollmentCompleted = true; }
+    // Only the future BehaviorEnrollFace init owns this reset (0x005FD094).
+    internal void ResetEnrollmentCompletionForBehavior() { lock (_gate) _enrollmentCompleted = false; }
 
     // fidelity: M14-008
     public event Action<FaceObservation>? FaceObserved;
@@ -646,6 +652,7 @@ public sealed partial class FaceWorld
         {
             foreach(var entry in _faces.Values)entry.NativeObservationOrigin=null;
             _faces.Clear();
+            _enrollmentCompleted = false;
             _nativeLastPose?.Dispose();_nativeLastPose=null;_nativeLastStamp=0;
         }
     }
