@@ -79,15 +79,20 @@ internal sealed class ActionQueue : IDisposable
             _current = front.Value;
             _pending.RemoveFirst();
         }
-        watcher.ParentActionUpdating(_current);
-        uint result = _current.Update();
+        var updating = _current;
+        watcher.ParentActionUpdating(updating);
+        if (!ReferenceEquals(_current, updating)) return 0;
+        uint result = updating.Update();
+        // A host callback may have destroyed this owner or replaced its current runner during Update.
+        if (!ReferenceEquals(_current, updating)) return 0;
         if (result == EngineActionResult.Running)
         {
             Behavior.SteppedBehavior.ReportMissing("M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; normal queue path is not classified SDK-only");
             return 0;
         }
         Behavior.SteppedBehavior.ReportMissing("M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound");
-        DeleteCurrent(_current);
+        if (!ReferenceEquals(_current, updating)) return 0;
+        DeleteCurrent(updating);
         return result == EngineActionResult.Success || result == EngineActionResult.Cancelled ? 0 : 1;
     }
 
