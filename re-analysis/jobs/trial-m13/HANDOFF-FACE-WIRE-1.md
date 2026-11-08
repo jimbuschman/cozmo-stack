@@ -79,7 +79,7 @@ The full engine-to-game face payload remains open. M14-010 and M14-011 remain
 IMPLEMENTATION_GAP in the approved inventory. Only anonymous detection and the
 checked consumers are proposed for Claude review.
 
-Batch full gate on 4487b1fa failed (7801/7803, zero skipped). The old stock-detector availability fixture was corrected and its follow-up passed 61/61. The identical SolvePnP oracle mismatch also reproduces on origin/main a9dbec14. The batch remains below READY FOR CLAUDE.
+Batch full gate on 4487b1fa failed (7801/7803, zero skipped). The old stock-detector availability fixture was corrected and its follow-up passed 61/61. The identical SolvePnP oracle mismatch also reproduces on origin/main a9dbec14. The corrected gate ran on 601b4475 after rebasing onto 1771234b. All 7803 tests passed with zero failures or skips. This bounded handoff is READY FOR CLAUDE.
 ## Gate correction and baseline evidence
 
 The first gate failed FaceTests.TheStockFaceDetectorIsAnExplicitUnavailableBoundary
