@@ -547,6 +547,113 @@ public class EngineAppLayerTests
     }
 
 
+    // reach: production robot construction, the actual block pool, transport messages and update path.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PooledCubeReconnectPolicyUsesNormalConnectionPath(bool enabled)
+    {
+        string path = Path.Combine(Path.GetTempPath(), "cozmo-pool-" + Guid.NewGuid().ToString("N") + ".txt");
+        const string pool = "0xab,1\n";
+        File.WriteAllText(path, pool);
+        try
+        {
+            var options = enabled
+                ? new CozmoEngineOptions { BlockPoolPath = path }
+                : new CozmoEngineOptions { BlockPoolPath = path, ReconnectPooledCubes = false };
+            using var rig = new Rig(options);
+            List<SetPropSlot> SentSlots()
+            {
+                lock (rig.Port.Sent)
+                    return rig.Port.Sent.Select(bytes => RobotMessage.Parse(bytes)).OfType<SetPropSlot>().ToList();
+            }
+            rig.ToSuccess();
+            rig.SendFirstFullState(1000);
+            var connections = rig.Robot.Cubes.Connections;
+            rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Tick();
+            Assert.Contains(SentSlots(), m => m.FactoryId == 0xAB && m.Slot == 0);
+            rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+            rig.Tick();
+            Assert.Equal(ActiveObjectSlotState.Connected, connections.Slots[0].State);
+
+            rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+            rig.Tick();
+            Assert.Equal(ActiveObjectSlotState.Disconnected, connections.Slots[0].State);
+            lock (rig.Port.Sent) rig.Port.Sent.Clear();
+            rig.Tick(3000);
+            rig.Tick(2100);
+            Assert.Equal(ActiveObjectSlotState.Empty, connections.Slots[0].State);
+            Assert.DoesNotContain(SentSlots(), m => m.FactoryId == 0xAB);
+            Assert.Equal(pool, File.ReadAllText(path));
+
+            rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+            rig.Tick();
+            Assert.Equal(ActiveObjectSlotState.Empty, connections.Slots[0].State);
+
+            rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Tick();
+            var sends = SentSlots().Where(m => m.FactoryId == 0xAB).ToList();
+            if (enabled)
+            {
+                Assert.Single(sends);
+                Assert.Equal(0, sends[0].Slot);
+                Assert.Equal(ActiveObjectSlotState.PendingConnection, connections.Slots[0].State);
+                rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+                rig.Tick();
+                Assert.Equal(ActiveObjectSlotState.Connected, connections.Slots[0].State);
+            }
+            else
+            {
+                Assert.Empty(sends);
+                Assert.Equal(ActiveObjectSlotState.Empty, connections.Slots[0].State);
+            }
+            Assert.Equal(pool, File.ReadAllText(path));
+        }
+        finally { File.Delete(path); }
+    }
+
+    // reach: production request queue and transport, with two independently pending slots.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PooledCubeReconnectKeepsOtherPendingRequests(bool replaceExpiredSlot)
+    {
+        string path = Path.Combine(Path.GetTempPath(), "cozmo-pool-" + Guid.NewGuid().ToString("N") + ".txt");
+        File.WriteAllText(path, "0xab,1\n");
+        try
+        {
+            using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
+            rig.ToSuccess();
+            rig.SendFirstFullState(1000);
+            var connections = rig.Robot.Cubes.Connections;
+            rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Tick();
+            rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+            rig.Tick();
+            rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+            rig.Tick();
+            connections.ConnectToObjects(new uint[] { replaceExpiredSlot ? 0xCDu : 0xABu, 0xEF, 0, 0, 0 });
+            rig.Tick(3000);
+            rig.Tick(2100);
+            Assert.Equal(ActiveObjectSlotState.Empty, connections.Slots[0].State);
+            lock (rig.Port.Sent) rig.Port.Sent.Clear();
+            rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Data(new ObjectAvailable { FactoryId = 0xCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Data(new ObjectAvailable { FactoryId = 0xEF, ObjectType = ObjectType.Block_LIGHTCUBE2, Rssi = 40 });
+            rig.Tick();
+            List<SetPropSlot> sent;
+            lock (rig.Port.Sent)
+                sent = rig.Port.Sent.Select(bytes => RobotMessage.Parse(bytes)).OfType<SetPropSlot>().ToList();
+            uint wanted = replaceExpiredSlot ? 0xCDu : 0xABu;
+            Assert.Contains(sent, m => m.FactoryId == wanted && m.Slot == 0);
+            Assert.DoesNotContain(sent, m => m.FactoryId == (replaceExpiredSlot ? 0xABu : 0xCDu));
+            Assert.Contains(sent, m => m.FactoryId == 0xEF && m.Slot == 1);
+            Assert.Equal("0xab,1\n", File.ReadAllText(path));
+        }
+        finally { File.Delete(path); }
+    }
+
     // ------------------------------------------------------------------ B-M3M4 build: M4-010 diagnostics
     // Every line is the engine's key and format string at the cited address (research/20261006-M3M4-diagnostics.txt P18, P23..P27), driven
     // through the live engine entry (ObjectAvailable / ObjectConnectionState over the transport, Engine.Tick).

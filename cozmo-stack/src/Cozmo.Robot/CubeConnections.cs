@@ -106,6 +106,7 @@ public sealed class CubeConnections
     private readonly object _gate = new();
     private readonly Action<SetPropSlot> _send;
     private readonly Func<float> _seconds;
+    private readonly bool _reconnectPooledCubes;
     private readonly Action<string>? _log;
     private readonly List<Action> _pendingLogs = new();     // appended under _gate, delivered outside it (FlushLogs)
 
@@ -127,10 +128,12 @@ public sealed class CubeConnections
     /// <param name="send">Sends a SetPropSlot to the robot, reliably.</param>
     /// <param name="seconds">The engine's <c>BaseStationTimer::GetCurrentTimeInSeconds</c>.</param>
     /// <param name="log">The engine log (the channeled info, warning and error lines of the connection path).</param>
-    public CubeConnections(Action<SetPropSlot> send, Func<float> seconds, Action<string>? log = null)
+    /// <param name="reconnectPooledCubes">Request a pooled cube again after its disconnected slot expires.</param>
+    public CubeConnections(Action<SetPropSlot> send, Func<float> seconds, Action<string>? log = null, bool reconnectPooledCubes = true)
     {
         _send = send;
         _seconds = seconds;
+        _reconnectPooledCubes = reconnectPooledCubes;
         _log = log;
         for (int i = 0; i < SlotCount; i++)
         {
@@ -484,7 +487,17 @@ public sealed class CubeConnections
                 // 0x0051499C..0x005149CA (channel BlockPool): slot, id, state, then three doubles as %f - the disconnect time (the f32
                 // widened), the current time (the same f32 value as read at 0x00514936) and the 2.0 second delay.
                 Queue(EngineLogLevel.Info, "BlockPool", "Robot.CheckDisconnectedObjects", $"Resetting slot {i} with factory ID 0x{_slots[i].FactoryId:x}, connection state {(int)_slots[i].State}. Object disconnected at {F6((double)_slots[i].DisconnectedTime)}, current time is {F6(now)} with max delay {F6(DisconnectResetSeconds)} seconds");
+                uint expiredId = _slots[i].FactoryId;
                 _slots[i] = Info.Reset();
+                // Operator-approved host input. The engine's ordinary connection request still
+                // waits for an advertisement and handles the robot's reply.
+                if (_reconnectPooledCubes && expiredId != 0 && _runtimePool[i].FactoryId == expiredId
+                    && (!_requested[i].Pending || _requested[i].FactoryId == expiredId))
+                {
+                    var requestedIds = _slots.Select(slot => slot.FactoryId).ToArray();
+                    requestedIds[i] = expiredId;
+                    ConnectToObjectsLocked(requestedIds);
+                }
             }
         _lastDisconnectCheck = now;
     }

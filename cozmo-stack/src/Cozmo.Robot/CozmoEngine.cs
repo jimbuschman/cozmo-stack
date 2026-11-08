@@ -83,6 +83,9 @@ public sealed class CozmoEngineOptions
     // fidelity: M3-064 — host supplies DataPlatformExternalPath (scope 4).
     public string? BlockPoolPath { get; init; }
 
+    /// <summary>Re-request a pooled cube after its disconnected robot slot expires. Enabled by default.</summary>
+    public bool ReconnectPooledCubes { get; init; } = true;
+
     // fidelity: M3-054
     // fidelity: M3-056 — app DataCollectionEnabled input, host default off.
     public bool DataCollectionEnabled { get; init; }

@@ -182,7 +182,7 @@ public sealed class CozmoCubes
         // The connection path's clock is BaseStationTimer::GetCurrentTimeInSeconds (CD3, CD4, CD8).
         Seconds = () => _robot.Engine.Timer.SecondsF;
         Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
-                                          () => Seconds());
+                                          () => Seconds(), reconnectPooledCubes: _robot.Engine.Options.ReconnectPooledCubes);
         Connections.SourceLog += (level, channel, key, text) =>
         {
             if (key != "BlockFilter.Load.ParseError") _robot.Engine.EmitSourceLog(level, channel, key, text);
