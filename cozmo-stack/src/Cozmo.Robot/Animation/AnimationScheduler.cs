@@ -860,9 +860,11 @@ public sealed class AnimationScheduler
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(ownerCurrent);
-        if (!clip.IsLive || clip.Keyframes.Count != 1 || clip.Keyframes[0] is not AudioKeyframe key ||
-            key.TriggerTimeMs != 0 || key.EventIds.Length != 1 || unchecked((uint)key.EventIds[0]) != 0xBF0BACE1 || key.Volume != 1f)
-            throw new ArgumentException("speech requires the source-backed live Sentence clip", nameof(clip));
+        var audioKeys = clip.Keyframes.OfType<AudioKeyframe>().ToArray();
+        if (audioKeys.Length != 1 || audioKeys[0] is not { TriggerTimeMs: 0, Volume: 1f } key ||
+            key.EventIds.Length != 1 || unchecked((uint)key.EventIds[0]) != 0xBF0BACE1 ||
+            (clip.IsLive ? clip.Keyframes.Count != 1 : clip.Keyframes.Any(k => k is not AudioKeyframe && k is not FaceKeyframe && k is not FaceAnimationKeyframe)))
+            throw new ArgumentException("speech requires the checked direct or face-only fitted processing clip", nameof(clip));
         lock (_gate)
         {
             _nowMs = nowMs;

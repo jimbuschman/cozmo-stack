@@ -37,8 +37,110 @@ public sealed class VoiceRobotDeliveryTests
     {
         public WwiseRobotAudioPath Path => path;
         public Exception? Failure => null;
+        public (uint Switch, float Pitch)? Configured;
+        public TaskCompletionSource? ConfigurationBarrier;
+        public Task Configure(uint voiceSwitch, float pitch) { Configured = (voiceSwitch, pitch); return ConfigurationBarrier?.Task ?? Task.CompletedTask; }
         public bool Retired;
         public void Retire() => Retired = true;
+    }
+
+    [Fact]
+    public async Task FittedNameUsesShippedFacesAndWaitsForMatchingRobotCompletion()
+    {
+        if (!OperatingSystem.IsWindows() || Cozmo.Robot.Emulation.ShippedLibraries.FindLibDir() is null) return;
+        string banks = Path.Combine(Path.GetTempPath(), "cozmo-fit-test-" + Guid.NewGuid());
+        Directory.CreateDirectory(Path.Combine(banks, "English(US)"));
+        File.WriteAllBytes(Path.Combine(banks, "Init.bnk"), Array.Empty<byte>());
+        File.WriteAllBytes(Path.Combine(banks, "English(US)", "Cozmo.bnk"), Array.Empty<byte>());
+        try
+        {
+            var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+                SpeechSoundBankDirectory = banks, LabLocaleLanguage = "en", BlockPoolPath = "" };
+            using var fixture = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
+                sourceNvEmpty: true, engineOptions: options);
+            var rig = fixture.Rig;
+            var library = rig.Robot.Animations.Library!;
+            var group = Assert.IsType<AnimationGroup>(library.GetGroup("ag_cozmosays_speakloop"));
+            Assert.Equal(3, group.Entries.Count);
+            var sources = group.Entries.Select(e => library.GetClip(e.Name)).ToArray();
+            var before = sources.Select(c => c.Keyframes.Select(k => k.TriggerTimeMs).ToArray()).ToArray();
+            Assert.All(sources, c => Assert.All(c.Keyframes, k => Assert.IsType<FaceKeyframe>(k)));
+            var buffer = new SpeechRobotAudioBuffer();
+            var audio = new AudioEngine();
+            var dispatch = new Dispatch();
+            var path = new WwiseRobotAudioPath(new AudioHost(buffer), audio, dispatch, (_, _) => 0);
+            var session = new FakeDirect(path);
+            session.ConfigurationBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            byte? style = null;
+            rig.Robot.DirectSpeechComponentForTest = new TextToSpeechComponent((_, s, _) => { style = s; return Enumerable.Repeat(0.25f, 44100).ToArray(); });
+            rig.Robot.DirectSpeechOpenForTest = _ => Task.FromResult<IDirectSpeechSession>(session);
+            int mark = rig.Mark();
+            var request = rig.Robot.SayEnglishNameWithAnimationAsync("Cozmo");
+            Assert.True(SpinWait.SpinUntil(() => { rig.Tick(); return session.Configured is not null; }, TimeSpan.FromSeconds(10)));
+            Assert.Equal((byte)1, style);
+            Assert.Equal(0x2F8B3BF4u, session.Configured!.Value.Switch);
+            Assert.InRange(session.Configured.Value.Pitch, -0.1f, 0.1f);
+            Assert.Equal(WwiseRobotAudioState.Preparing, path.State);
+            Assert.Null(audio.Callback);
+            session.ConfigurationBarrier.SetResult();
+            Assert.True(SpinWait.SpinUntil(() => { rig.Tick(); return path.State == WwiseRobotAudioState.LoadingStream; }, TimeSpan.FromSeconds(10)));
+            dispatch.Run();
+            buffer.Open(rig.Engine.Timer.TimeStampMs); buffer.Push(Enumerable.Repeat(0.25f, 744).ToArray());
+            for (int i = 0; i < 30 && (!rig.SentSince(mark).OfType<AudioSample>().Any() || !rig.SentSince(mark).OfType<FaceImage>().Any()); i++) rig.Tick();
+            Assert.Contains(rig.SentSince(mark), m => m is AudioSample);
+            Assert.Contains(rig.SentSince(mark), m => m is FaceImage);
+            var start = Assert.Single(rig.SentSince(mark).OfType<StartOfAnimation>());
+            audio.Callback!.Invoke(WwiseAudioCallbackType.Complete); buffer.Close();
+            rig.Data(new AnimationEnded { AnimId = start.AnimId }); rig.Tick();
+            Assert.False(request.IsCompleted);
+            rig.Data(new AnimationStarted { AnimId = start.AnimId }); rig.Tick();
+            rig.Data(new AnimationEnded { AnimId = start.AnimId }); rig.Tick(); rig.Tick();
+            var result = await request.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.True(result.Admitted);
+            Assert.Equal(0u, result.EngineResult);
+            for (int i = 0; i < sources.Length; i++) Assert.Equal(before[i], sources[i].Keyframes.Select(k => k.TriggerTimeMs));
+        }
+        finally { Directory.Delete(banks, recursive: true); }
+    }
+
+    [Fact]
+    public async Task FittedSelectionRetirementDoesNotConfigureOrStartReplacementOwner()
+    {
+        if (!OperatingSystem.IsWindows() || Cozmo.Robot.Emulation.ShippedLibraries.FindLibDir() is null) return;
+        string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+            SpeechSoundBankDirectory = banks, LabLocaleLanguage = "en", BlockPoolPath = "" };
+        using var fixture = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
+            sourceNvEmpty: true, engineOptions: options);
+        var rig = fixture.Rig;
+        var buffer = new SpeechRobotAudioBuffer();
+        var audio = new AudioEngine();
+        var dispatch = new Dispatch();
+        var session = new FakeDirect(new WwiseRobotAudioPath(new AudioHost(buffer), audio, dispatch, (_, _) => 0));
+        rig.Robot.DirectSpeechComponentForTest = new TextToSpeechComponent((_, _, _) => new float[44100]);
+        rig.Robot.DirectSpeechOpenForTest = _ => Task.FromResult<IDirectSpeechSession>(session);
+        bool replaced = false;
+        int selections = 0;
+        void Replace(EngineLogEntry entry)
+        {
+            if (entry.Name == "AnimationGroup.GetAnimation.Found") selections++;
+            if (entry.Name != "GetResponseForAnimationTrigger.Found" || replaced) return;
+            replaced = true;
+            rig.Engine.Robots.RemoveRobot(1, false);
+            rig.Engine.Robots.AddRobot(1, withRic: false);
+        }
+        rig.Engine.LogEntry += Replace;
+        int mark = rig.Mark();
+        var request = rig.Robot.SayEnglishNameWithAnimationAsync("Cozmo");
+        Assert.True(SpinWait.SpinUntil(() => { rig.Tick(); return request.IsCompleted; }, TimeSpan.FromSeconds(10)));
+        rig.Engine.LogEntry -= Replace;
+        var result = await request.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(replaced);
+        Assert.True(result.OwnerRetired);
+        Assert.Equal(1, selections);
+        Assert.Null(session.Configured);
+        Assert.True(session.Retired);
+        Assert.DoesNotContain(rig.SentSince(mark), m => m is StartOfAnimation or AudioSample);
     }
     private static AnimationClip Clip() => new()
     {

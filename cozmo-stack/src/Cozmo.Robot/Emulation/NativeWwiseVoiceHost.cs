@@ -20,6 +20,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     private readonly NativeOpenSlBridge _openSl;
     private bool _posted;
     private bool _offered;
+    private bool _configured;
     private bool _disposed;
     private uint _playingId, _activeHijack;
     private bool _hijackStarted, _hijackEnded;
@@ -105,6 +106,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     {
         RequireOwner();
         if (!_offered || _posted) throw new InvalidOperationException("native voice data must be offered once before posting");
+        if (!_configured) ConfigureVoice(0x36089802, 0f);
         _posted = true;
         uint callback = _m.Stub("native_voice_end");
         _m.Libc["native_voice_end"] = m =>
@@ -130,6 +132,15 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     {
         Offer(samples, sampleRate);
         return PostOffered(applyDefaultVolume: true);
+    }
+
+    internal void ConfigureVoice(uint voiceSwitch, float pitch)
+    {
+        RequireOwner();
+        if (!_offered || _posted || _configured) throw new InvalidOperationException("voice must be configured once after offer and before post");
+        Ok(Run(0x99FE1C, new uint[] { 0x15D4FD9E, voiceSwitch, 7 }), "voice switch");
+        Ok(Run(0x99FA24, new uint[] { 0x78DEBD05, F(pitch), 7, 0 }, new uint[] { 4, 0 }), "pitch");
+        _configured = true;
     }
 
     internal void ClearPending() { RequireOwner(); Run(0x8DC229, new[] { _interface }); }
@@ -216,8 +227,6 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             _m.W32(sends, 0x9FA5953C); _m.W32(sends + 4, F(1));
             Ok(Run(0x9A0354, new uint[] { 7, sends, 1 }), "aux send");
             Ok(Run(0x9A044C, new uint[] { 7, 0, 0 }), "dry level");
-            Ok(Run(0x99FE1C, new uint[] { 0x15D4FD9E, 0x36089802, 7 }), "voice switch");
-            Ok(Run(0x99FA24, new uint[] { 0x78DEBD05, 0, 7, 0 }, new uint[] { 4, 0 }), "pitch");
             _m.HookAddress(A(0x8DC041), Capture);
             _m.ObserveAddress(A(0x8DBD98), m => ObserveHijack(m, m.Reg(4), starting: true));
             _m.ObserveAddress(A(0x8DBDF8), m => ObserveHijack(m, m.Reg(0), starting: false));
