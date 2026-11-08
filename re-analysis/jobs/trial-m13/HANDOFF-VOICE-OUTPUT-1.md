@@ -113,5 +113,5 @@ internal admission and verifies no action is queued.
 - Live speech rendering, timing and delivery remain implementation work,
   with the M6-016/M6-018 boundaries recorded above.
 
-No manifest or approval edits were made. Batch full gate pending.
+No manifest or approval edits were made. Batch full gate passed at bd4c818e with 7821/7821 tests and zero skips. READY FOR CLAUDE.
 The broader affected group passed 45/45 and the clean rebuild of the safety and voice group passed 38/38 including the final address-hook test. Both emulator fixtures remained bit-exact. Independent follow-up review found no blocking change.
