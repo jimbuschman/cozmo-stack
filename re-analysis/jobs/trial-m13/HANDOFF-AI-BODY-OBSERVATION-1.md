@@ -15,4 +15,4 @@
 - Final affected suite passed 303/303. The initial 302/303 test expected a pending-cancellation watcher record before it was available. The replacement test drives the native acknowledgement path.
 - MISSING remains in the underlying state suppliers, including localization and vision, as recorded in their owners. General movement admission and observation beyond this head-command use are open. No hardware, whole-record settlement or approval changes.
 
-Reader requested gpt-6.1-sol medium. Builder and reviewer used the configured default. Actual backends unobserved. Batch full gate pending.
+Reader requested gpt-6.1-sol medium. Builder and reviewer used the configured default. Actual backends unobserved. Batch full gate passed at 412b6832 with 7834/7834 tests and zero skips. READY FOR CLAUDE.
