@@ -1610,11 +1610,14 @@ public sealed partial class VisionSystem : IDisposable
         using var detectionCameraPose=pd.CameraPose;
         var camera = new CameraModel(cal,detectionCameraPose);
         IReadOnlyList<ObservedMarker> markers;
+        (Transform3d Camera, Transform3d Robot)? nativeFaceFrames = null;
 
         OverheadEdgeFrame? overheadEdges = null;
         lock (_busy)
         {
             if (RemovedSince(removal)) return null;
+            if (!offline && nativeState?.MotionPose.Current is { } faceCamera && faceCamera.Timestamp == timestamp && ReferenceEquals(faceCamera.Owner, sourceOwner))
+                nativeFaceFrames = (faceCamera.CameraPose.Transform, faceCamera.RobotPose.Transform);
             Volatile.Write(ref _frameTimestamp, timestamp);
             // fidelity: M11-061 — E6, before ShouldProcessVisionMode dispatch in this image update.
             ApplyQueuedLimitedExposure();
@@ -1921,6 +1924,9 @@ public sealed partial class VisionSystem : IDisposable
                 {
                     var tf = new TrackedFace(d, timestamp);
                     tf.UpdateTranslation(processingCamera);
+                    if (StaleFrame()) return null;
+                    if (nativeFaceFrames is { } frames)
+                        tf.NativeTrackingTranslation = frames.Robot.Apply(frames.Camera.Apply(tf.NativeCameraTranslation));
                     faces.Add(tf);
                     FaceObservation? observation;
                     if (offline) observation=Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast);
@@ -1937,8 +1943,8 @@ public sealed partial class VisionSystem : IDisposable
                             var originNode=ResolveFaceObservationOrigin(History,owner,timestamp);
                             if(originNode is null)continue;
                             observation=d.NativeTrackerFlagChanged is { } changed
-                                ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode)
-                                : Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode);
+                                ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)
+                                : Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads);
                         }
                     }
                     if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;

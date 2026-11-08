@@ -26,6 +26,7 @@ public sealed partial class EngineRobot
 {
     // fidelity: M4-033
     internal TouchSensorComponent? TouchSensor { get; set; } = new();
+    internal int NativeTrackingFaceId { get; set; } // MovementComponent +0x24, independent of +0x20 object ID.
 }
 
 /// <summary>Why a motion call finished.</summary>

@@ -482,6 +482,56 @@ public class FaceTests
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine l && Math.Abs(l.XEndMm - l.XStartMm) is > 39 and < 41);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ComeHereTrackingQueuesNativeRunnerAndExpiresStrictlyAfterFiveSeconds(bool removeTarget)
+    {
+        using var signals = SignalTestContext.Install();
+        using var rig = FaceRig((7, new Vec3(160, 0, 120), null));
+        rig.Frame();
+        var ctx = Ctx(rig);
+        var owner = rig.Robot.Engine.Robot!;
+        void SupplyNativeFace()
+        {
+            var face = rig.Vision.Faces.GetFace(7)!;
+            face.NativeObservationOrigin = owner.GetNativeOrigin(owner.CurrentOriginId).Node;
+            face.NativeTrackingTranslation = face.HeadPose.Translation;
+        }
+        SupplyNativeFace();
+        var behavior = new DriveToFaceBehavior(rig.Vision, rig.M);
+        if (removeTarget) behavior.Step += line => { if (line.StartsWith("already close enough")) rig.Vision.Faces.RemoveFaceByID(7); };
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        behavior.ActionTaskRunner = SignalTestContext.Schedule;
+        using var scope = new BehaviorScope();
+        behavior.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+        double time = 0;
+        for (int i = 0; behavior.CurrentPhase != DriveToFaceBehavior.Phase.TrackingFace && i < 500; i++)
+        {
+            Assert.True(behavior.Update(ctx, time));
+            if (behavior.CurrentPhase == DriveToFaceBehavior.Phase.TrackingFace) break;
+            rig.Pump();
+            rig.Frame();
+            SupplyNativeFace();
+            time += 33;
+            SignalTestContext.AdvanceBehavior(behavior);
+        }
+        Assert.Equal(DriveToFaceBehavior.Phase.TrackingFace, behavior.CurrentPhase);
+        var runner = removeTarget ? null : Assert.IsType<NativeTrackFaceRunner>(owner.ActionList.GetCurrentAction());
+        if (removeTarget) Assert.Null(owner.ActionList.GetCurrentAction());
+        float deadline = owner.Engine.Timer.SecondsF + 5f;
+        owner.Engine.Timer.UpdateTime((long)Math.Round((double)deadline * 1_000_000_000));
+        Assert.Equal(deadline, owner.Engine.Timer.SecondsF);
+        Assert.True(behavior.Update(ctx, time));
+        if (runner is not null) Assert.False(runner.DestructionObserved);
+        owner.Engine.Timer.UpdateTime((long)Math.Ceiling((double)MathF.BitIncrement(deadline) * 1_000_000_000));
+        behavior.Update(ctx, time);
+        Assert.Equal(DriveToFaceBehavior.Phase.Idle, behavior.CurrentPhase);
+        if (runner is not null) Assert.True(runner.DestructionObserved);
+        behavior.Stop(BehaviorStopReason.Completed);
+    }
+
     [Fact]
     public void DriveToFaceSendsMainDistanceMinusTwoHundredFromStoredForwardStart()
     {

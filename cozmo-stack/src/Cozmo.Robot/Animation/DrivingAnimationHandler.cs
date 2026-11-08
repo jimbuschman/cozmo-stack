@@ -208,6 +208,21 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     {
         State = 5; Cancel(StartId); Cancel(LoopId); Cancel(EndId);
     }
+    internal void ActionIsBeingDestroyed(EngineRobot owner, Func<bool> current)
+    {
+        if (!ReferenceEquals(_owner, owner) || !current()) return;
+        var actions = owner.ActionListOwner;
+        State = 5;
+        void CancelOwned(uint id)
+        {
+            if (!current() || !ReferenceEquals(_owner, owner)) return;
+            CallObserved?.Invoke("Cancel", id);
+            if (!current() || !ReferenceEquals(_owner, owner)) return;
+            if (actions is not null) actions.Cancel(id);
+            else Missing("M8-015 ActionList.Cancel recipient absent");
+        }
+        CancelOwned(StartId); CancelOwned(LoopId); CancelOwned(EndId);
+    }
     internal void ClearEntriesForDestroy() => _entries.Clear();
     // The host facade survives removal; the native handler is deleted/reconstructed with its Robot.
     internal void ResetToConstructed()
