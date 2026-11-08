@@ -17,7 +17,7 @@ public sealed class ReportOrderingRegressionTests
         internal CozmoRobot Robot=>Rig.Robot;
         internal Fixture()
         {
-            Rig.ToSynced();Rig.State();Vision=new(Robot,CameraCalibration.Nominal()){Enabled=false};
+            Rig.ToSynced();Rig.State();Vision=new(Robot,CameraCalibration.Nominal(),okaoRecognizer:new OkaoFaceRecognizer()){Enabled=false};
             Directory.CreateDirectory(Path.Combine(Root,"animations"));
             Directory.CreateDirectory(Path.Combine(Root,"animationGroups"));
             Directory.CreateDirectory(Path.Combine(Root,"animationGroupMaps"));

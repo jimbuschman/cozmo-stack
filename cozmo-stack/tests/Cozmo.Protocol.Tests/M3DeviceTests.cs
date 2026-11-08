@@ -2425,7 +2425,8 @@ public class M3DeviceTests
         public const string ShippedFw = "{\"version\": 2381, \"time\": 1546972025, \"build\": \"DEVELOPMENT\"}";
 
         private readonly BackupTestResources _backupResources = new();
-        public Rig() => Robot = CozmoRobot.CreateForTest(Port, () => NowNs, _backupResources.Options());
+        public Rig(IOkaoFaceRecognizer? recognizer = null) => Robot = CozmoRobot.CreateForTest(Port, () => NowNs,
+            _backupResources.Options(new CozmoEngineOptions { BlockPoolPath = "", VisionOkaoRecognizer = recognizer }));
         public void Tick() { NowNs += 60_000_000; Engine.Tick(); }
         public void Data(RobotMessage m) => Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
         /// <summary>The transport's OnDisconnected marker (CB32/CB33), handled at the next tick as RemoveRobot.</summary>
@@ -3521,7 +3522,7 @@ public class M3DeviceTests
     public void M3_034_TheConnectionReadCallbacksReportAllNoSinkHandoffs()
     {
         Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
-        using var rig = new Rig();
+        using var rig = new Rig(new OkaoFaceRecognizer());
         var missing = new List<string>();
         var reports=new List<ushort>();rig.Engine.EngineToGameMessage+=(tag,_)=>reports.Add(tag);
         rig.Engine.CaptureSourceLogs(missing.Add);
@@ -3608,7 +3609,7 @@ public class M3DeviceTests
     [Fact]
     public void M3_034_AVisionSystemBuiltAfterTheReadsAdoptTheBufferedFaceAlbum()
     {
-        using var rig = new Rig();
+        using var rig = new Rig(new OkaoFaceRecognizer());
         rig.ToSuccess();
         SendFirstFullState(rig);
 
@@ -3682,7 +3683,7 @@ public class M3DeviceTests
     [Fact]
     public void M3_034_TheFaceAlbumResultIsClearedOnRemoval()
     {
-        using var rig = new Rig();
+        using var rig = new Rig(new OkaoFaceRecognizer());
         rig.ToSuccess();
         SendFirstFullState(rig);
 

@@ -43,7 +43,8 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
 /// <c>DetectSmile</c>, <c>DetectGazeAndBlink</c>, <c>IsEnrollable</c> and hands enrollable faces to
 /// <c>FaceRecognizer::SetNextFaceToRecognize</c>. Everything from the image to the face rectangles, parts,
 /// expressions and identities is inside that library (177 <c>OKAO_*</c> exports). The stock implementation
-/// runs the user's shipped library under the emulator. Recognition and optional expression paths remain open.
+/// runs the user's shipped library under the emulator. Stock recognition uses the same guest owner;
+/// optional expression, smile, gaze and blink paths remain open.
 /// </summary>
 public interface IFaceDetector
 {
@@ -60,24 +61,56 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     private readonly string? _libDir;
     private readonly bool _librariesPresent;
     private Emulation.OkaoFaceDetection? _detector;
-    private bool _faulted, _disposed;
+    private bool _faulted, _disposed, _retiring;
+    private Task<int>? _recognitionWorker;
+    private int _pendingTrack;
+    private bool _pendingRegistrationAllowed;
+    internal bool RecognitionWorkCompleted { get { lock (_gate) return _recognitionWorker is { IsCompleted: true }; } }
     internal Action<string>? Diagnostic { get; set; }
     public OkaoFaceDetector()
     {
         _libDir = Emulation.ShippedLibraries.FindLibDir();
         _librariesPresent = _libDir is not null && File.Exists(Path.Combine(_libDir, "libcozmoEngine.so"));
     }
-    public bool IsAvailable { get { lock (_gate) return !_disposed && !_faulted && _librariesPresent; } }
+    public bool IsAvailable { get { lock (_gate) return !_disposed && !_retiring && !_faulted && _librariesPresent; } }
     public string Description => "Shipped Omron OKAO face detector on the embedded ARM emulator";
+    internal T UseSession<T>(Func<Emulation.OkaoFaceDetection, T> operation)
+    {
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_faulted) throw new InvalidOperationException("OKAO face detector is faulted");
+            try
+            {
+                string path = _libDir ?? throw new FileNotFoundException("M14-010 shipped OKAO libraries unavailable");
+                _detector ??= new Emulation.OkaoFaceDetection(path);
+                return operation(_detector);
+            }
+            catch { _faulted = true; throw; }
+        }
+    }
     public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp)
         => Detect(image, timestamp, false);
     internal IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp, bool resetTracking)
+        => DetectCore(image, timestamp, resetTracking, null, null);
+
+    internal (IReadOnlyList<DetectedFace> Faces, IReadOnlyList<(int OldId, int NewId, string? Name)> Changes) DetectRecognized(
+        GrayImage image, uint timestamp, bool resetTracking, FaceRecognizer recognizer)
+    {
+        var changes = new List<(int, int, string?)>();
+        var faces = recognizer.WithStockFrame(() => DetectCore(image, timestamp, resetTracking, recognizer, changes));
+        return (faces, changes);
+    }
+
+    private IReadOnlyList<DetectedFace> DetectCore(GrayImage image, uint timestamp, bool resetTracking,
+        FaceRecognizer? recognizer, List<(int OldId, int NewId, string? Name)>? changes)
     {
         var diagnostics = new List<string>();
         IReadOnlyList<DetectedFace> faces;
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_retiring) throw new InvalidOperationException("OKAO face detector is retiring");
             if (_faulted) throw new InvalidOperationException("OKAO face detector is faulted");
             try
             {
@@ -88,17 +121,71 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                     catch { _faulted = true; throw; }
                 }
                 _detector.Diagnostic = diagnostics.Add;
-                if (resetTracking) _detector.ResetTracking();
-                faces = _detector.DetectTracked(image.Pixels, image.Width, image.Height);
+                if (resetTracking)
+                {
+                    _detector.ResetTracking();
+                    if (recognizer is not null) { recognizer.ClearStockTracking(); _pendingTrack = 0; }
+                }
+                if (recognizer is null) faces = _detector.DetectTracked(image.Pixels, image.Width, image.Height);
+                else
+                {
+                    var machine = _detector;
+                    DetectedFace Project(int[] raw, DetectedFace face, bool enrollable, bool excluded)
+                    {
+                        int track = raw[2];
+                        if (_recognitionWorker is { IsCompleted: true } failed && failed.GetAwaiter().GetResult() is var failedResult && failedResult != 0)
+                        {
+                            diagnostics.Add($"M14-011 OKAO_FR_ExtractHandle_GRAY returned {failedResult}");
+                            _recognitionWorker = null; // 0x8650A4: failure publishes state 0 before the next admission
+                        }
+                        // 0x865A1C: attempt admission before consuming the prior completed slot.
+                        if (!excluded && raw[12] == 0 && face.LeftEye is not null && face.RightEye is not null &&
+                            _recognitionWorker is null && (enrollable || recognizer.StockFaceCount != 0))
+                        {
+                            machine.FrQueueCurrentImage();
+                            _pendingTrack = track;
+                            _pendingRegistrationAllowed = enrollable;
+                            Behavior.SteppedBehavior.ReportMissing("M14-011 native concurrent recognition cadence is not reproduced: FR and DT/PT share one serialized emulator");
+                            _recognitionWorker = Task.Run(() =>
+                            {
+                                lock (_gate)
+                                {
+                                    try { return machine.FrExtractQueued(); }
+                                    catch { _faulted = true; throw; }
+                                }
+                            });
+                        }
+                        if (_recognitionWorker is { IsCompleted: true } worker)
+                        {
+                            int result = worker.GetAwaiter().GetResult();
+                            if (result == 0) recognizer.ConsumeStockFeature(machine.FrPendingFeature, _pendingTrack, _pendingRegistrationAllowed);
+                            _recognitionWorker = null;
+                        }
+                        var identity = recognizer.LookupStockTrack(track);
+                        if (identity.PreviousId is { } old) changes!.Add((old, identity.Id, identity.Name));
+                        return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name };
+                    }
+                    faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack);
+                }
             }
             catch { _faulted = true; throw; }
         }
         foreach (string message in diagnostics) Diagnostic?.Invoke(message);
         return faces;
     }
+    internal void RetireRecognition()
+    {
+        Task<int>? worker;
+        lock (_gate) { if (_disposed) return; _retiring = true; worker = _recognitionWorker; }
+        try { worker?.GetAwaiter().GetResult(); }
+        catch (Exception ex) { Diagnostic?.Invoke($"M1-034 M14-011 recognition worker faulted; guest owner quarantined: {ex.Message}"); }
+        lock (_gate) if (ReferenceEquals(_recognitionWorker, worker)) _recognitionWorker = null;
+    }
+    internal bool NativeUsable { get { lock (_gate) return !_disposed && !_faulted; } }
     public void Dispose()
     {
-        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _detector = null; }
+        RetireRecognition();
+        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _detector = null; _recognitionWorker = null; }
     }
 }
 

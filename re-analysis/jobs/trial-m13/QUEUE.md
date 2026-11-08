@@ -126,3 +126,4 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | Five-job batch gate (after oracle fix) | PASS | scripts/test-full.sh on 601b4475 rebased onto 1771234b: 7803/7803, zero failed or skipped, 19m31s. The five bounded handoffs are READY FOR CLAUDE. |
 | VOICE-OUTPUT-1 | CHECKED PARTIAL, BATCH GATE PENDING | Real WavePortal registry/source/pitch join and native headless oracle (Acapela 92×744, bit-exact hash, EndOfEvent). 63/63 affected before oracle addition, final 27/27. Live host sink, clock, output and SayText remain MISSING. HANDOFF-VOICE-OUTPUT-1.md. |
 | AI-BODY-CONTROL-1 | CHECKED, BATCH GATE PENDING | Head-angle command through native AtEnd admission; exact runner cancel, raw completion, owner/reaction gates. Final affected 149/149. HANDOFF-AI-BODY-CONTROL-1.md. |
+| FACE-IDENTITY-1 | IN PROGRESS | Trace the native async FR feature, album, matching and identity delivery owners. |

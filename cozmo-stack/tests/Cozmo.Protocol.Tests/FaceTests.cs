@@ -719,7 +719,7 @@ public class FaceTests
     [Fact]
     public void M14_012_TheFaceAlbumReadsAlbumThenEnrollmentAndReplaysEraseBeforeNames()
     {
-        using var rig = new Rig();
+        using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
         int erased = 0;
         var loaded = new List<(int Id, string Name)>();
         rig.Vision.EnrolledFacesErased += () => erased++;
@@ -754,7 +754,7 @@ public class FaceTests
     [Fact]
     public void M14_012_TheFaceAlbumWritesAlbumThenEnrollmentPaddedAndErasesWhenEmpty()
     {
-        using var rig = new Rig();
+        using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
         rig.Vision.InstallSerializedFaceData(new byte[] { 1, 2, 3 }, new byte[] { 4, 5 });
         rig.Vision.SaveFaceAlbumToRobot();
         rig.Tick();                                                        // M3-026: Update sends the queued write
@@ -783,7 +783,7 @@ public class FaceTests
         Assert.Equal(new byte[] { 4, 5, 0, 0 }, enrollment.Data[16..]);
 
         // empty data takes the erase path
-        using var empty = new Rig();
+        using var empty = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
         empty.Vision.InstallSerializedFaceData(Array.Empty<byte>(), Array.Empty<byte>());
         empty.Vision.SaveFaceAlbumToRobot();
         empty.Tick();                                                      // M3-026: Update sends the queued erase

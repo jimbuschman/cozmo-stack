@@ -25,7 +25,7 @@ public sealed record OkaoDetectResult(int Return, int CountReturn, IReadOnlyList
 /// re-analysis/tools/emu/emu_okao.py). Video mode: detections carry state between calls, so frames must be fed in order on one
 /// instance. Not thread-safe; one instance per vision thread. After any emulation error the instance is faulted.
 /// </summary>
-public sealed class OkaoFaceDetection : IDisposable
+public sealed partial class OkaoFaceDetection : IDisposable
 {
     public const int RawWords = 16;
     private static readonly (string Name, uint[] Args)[] Setup =
@@ -116,7 +116,9 @@ public sealed class OkaoFaceDetection : IDisposable
     }
 
     /// <summary>Production projection of the source FaceTracker's DT and PT results.</summary>
-    internal IReadOnlyList<DetectedFace> DetectTracked(ReadOnlySpan<byte> gray, int width, int height)
+    internal IReadOnlyList<DetectedFace> DetectTracked(ReadOnlySpan<byte> gray, int width, int height,
+        Func<int[], DetectedFace, bool, bool, DetectedFace>? recognize = null,
+        Func<int, bool>? knownTrack = null, int enrollmentTrack = 0)
     {
         if (_faulted) throw new InvalidOperationException("OKAO detector is faulted after an emulation error; create a new one");
         if (gray.Length != width * height) throw new ArgumentException("image size does not match width × height");
@@ -133,6 +135,11 @@ public sealed class OkaoFaceDetection : IDisposable
                 _scratch = _m.Malloc(256);
                 if (_scratch == 0) throw new EmulationAbort("OKAO part output allocation failed");
             }
+            if (recognize is not null && _frPtResult == 0)
+            {
+                _frPtResult = _m.Call(_m.Symbol("OKAO_PT_CreateResultHandle"), new[] { _co });
+                if (_frPtResult == 0) throw new EmulationAbort("OKAO recognition part result allocation failed");
+            }
             if (_buf == 0 || width != _w || height != _h)
             {
                 if (_buf != 0) _m.Free(_buf);
@@ -148,11 +155,16 @@ public sealed class OkaoFaceDetection : IDisposable
             if (result != 0) { Diagnostic?.Invoke($"M14-010 OKAO_DT_GetResultCount returned {result}"); return Array.Empty<DetectedFace>(); }
             uint count = _m.R32(_cnt);
             var order = Enumerable.Range(0, checked((int)count)).ToArray();
+            var excluded = new HashSet<int>();
             if (order.Length >= 2)
             {
-                // Native pre-reads here to prepare the recognition exclusion set. Recognition scheduling
-                // remains unavailable, but the reads and its independent shuffle are retained.
-                foreach (int index in order) if (ReadRaw((uint)index) is null) return Array.Empty<DetectedFace>();
+                foreach (int index in order)
+                {
+                    var raw = ReadRaw((uint)index);
+                    if (raw is null) return Array.Empty<DetectedFace>();
+                    if (raw[2] != enrollmentTrack && knownTrack?.Invoke(raw[2]) == true) excluded.Add(raw[2]);
+                }
+                if (excluded.Count == order.Length) excluded.Clear();
                 ShuffleIndices(order, _faceOrder);
             }
             var faces = new List<DetectedFace>(order.Length);
@@ -174,6 +186,7 @@ public sealed class OkaoFaceDetection : IDisposable
                 Vec2? leftEye = null, rightEye = null;
                 double? roll = null;
                 int? third = null;
+                bool facing = false;
                 result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_SetPositionFromHandle"), new[] { _pt, _res, (uint)index }));
                 if (result == 0)
                 {
@@ -193,14 +206,21 @@ public sealed class OkaoFaceDetection : IDisposable
                                 float radians = unchecked((int)_m.R32(_scratch + 148)) * BitConverter.UInt32BitsToSingle(0x3C8EFA35);
                                 roll = new Radians(radians).Value;
                                 third = unchecked((int)_m.R32(_scratch + 152));
+                                int d0 = unchecked((int)_m.R32(_scratch + 144));
+                                int d1 = unchecked((int)_m.R32(_scratch + 148));
+                                int d2 = third.Value;
+                                facing = Math.Abs((long)d0) <= 25 && Math.Abs((long)d1) <= 25 && Math.Abs((long)d2) <= 25;
                             }
                             else roll = 0;
                         }
                     }
                 }
                 if (result != 0 && result != -8) Diagnostic?.Invoke($"M14-010 OKAO parts returned {result}");
-                faces.Add(new DetectedFace(unchecked(-raw[2]), new FaceRect(x, y, right - x, bottom - y), leftEye, rightEye,
-                    Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100 });
+                var face = new DetectedFace(unchecked(-raw[2]), new FaceRect(x, y, right - x, bottom - y), leftEye, rightEye,
+                    Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100 };
+                bool enrollable = raw[3] > 500 && raw[9] == 0 && facing && leftEye is { } le && rightEye is { } re && roll is { } angle &&
+                    TrackedFace.GetIntraEyeDistance(le, re, angle) >= 16;
+                faces.Add(recognize?.Invoke(raw, face, enrollable, excluded.Contains(raw[2])) ?? face);
             }
             return faces;
         }
@@ -237,5 +257,18 @@ public sealed class OkaoFaceDetection : IDisposable
         catch { _faulted = true; throw; }
     }
 
-    public void Dispose() => _m.Dispose();
+    public void Dispose()
+    {
+        try
+        {
+            if (!_faulted)
+            {
+                if (_frFeature != 0) FrCall("OKAO_FR_DeleteFeatureHandle", _frFeature);
+                if (_frScratchFeature != 0) FrCall("OKAO_FR_DeleteFeatureHandle", _frScratchFeature);
+                if (_frPtResult != 0) FrCall("OKAO_PT_DeleteResultHandle", _frPtResult);
+                if (_ptResult != 0) FrCall("OKAO_PT_DeleteResultHandle", _ptResult);
+            }
+        }
+        finally { _m.Dispose(); }
+    }
 }

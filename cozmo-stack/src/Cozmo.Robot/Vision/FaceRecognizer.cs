@@ -14,18 +14,36 @@ namespace Cozmo.Robot.Vision;
 // ---------------------------------------------------------------------------------------------------
 
 /// <summary>An opaque OKAO face feature (the native recognition feature blob).</summary>
-public sealed class OkaoFaceFeature { }
+public sealed class OkaoFaceFeature
+{
+    public OkaoFaceFeature() { }
+    internal OkaoFaceFeature(object owner, uint handle) { Owner = owner; Handle = handle; }
+    internal object? Owner { get; }
+    internal uint Handle { get; }
+}
 
 /// <summary>An opaque OKAO album handle.</summary>
-public sealed class OkaoAlbumHandle { }
+public sealed class OkaoAlbumHandle
+{
+    public OkaoAlbumHandle() { }
+    internal OkaoAlbumHandle(object owner, uint handle) { Owner = owner; Handle = handle; }
+    internal object? Owner { get; }
+    internal uint Handle { get; }
+}
 
 /// <summary>An opaque OKAO common handle (the per-process OKAO context).</summary>
-public sealed class OkaoCommonHandle { }
+public sealed class OkaoCommonHandle
+{
+    public OkaoCommonHandle() { }
+    internal OkaoCommonHandle(object owner, uint handle) { Owner = owner; Handle = handle; }
+    internal object? Owner { get; }
+    internal uint Handle { get; }
+}
 
 /// <summary>
 /// The OKAO face-recognition boundary (<c>OKAO_FR_*</c>).  The Anki-side state machine is
-/// <see cref="FaceRecognizer"/>; this interface is the library underneath it.  The stock implementation
-/// reports itself unavailable.
+/// <see cref="FaceRecognizer"/>; this interface is the library underneath it. The stock vision owner
+/// uses a shared-machine native adapter; callers may supply their own implementation.
 /// </summary>
 public interface IOkaoFaceRecognizer
 {
@@ -78,8 +96,7 @@ public interface IOkaoFaceRecognizer
 }
 
 /// <summary>
-/// The stock OKAO recognizer: the Omron library is proprietary and not available in this stack, so
-/// every operation is an explicit boundary rather than a silent default.
+/// Explicit unavailable recognizer seam for callers that cannot use the shipped native library.
 /// </summary>
 public sealed class OkaoFaceRecognizer : IOkaoFaceRecognizer
 {
@@ -246,8 +263,8 @@ public sealed class StoredEnrolledFace
 /// <item><c>ConvertToEnrolledFaceStorage</c> and its inverse C3-19..C3-20, the enrollment deserialize
 /// C3-21, the album install C3-22..C3-23 and the <c>SetSerializedData</c> chain endpoint C3-24.</item>
 /// </list>
-/// The OKAO_FR_* calls are the third-party boundary (<see cref="IOkaoFaceRecognizer"/>).  The stock seam
-/// reports itself unavailable, so nothing here runs on the shipped stack.
+/// The OKAO_FR_* calls pass through <see cref="IOkaoFaceRecognizer"/>; stock vision supplies the
+/// shipped native library in the same emulator as its detector.
 /// </summary>
 // fidelity: M14-011
 public sealed class FaceRecognizer
@@ -274,7 +291,7 @@ public sealed class FaceRecognizer
     private readonly Func<long> _nowMicros;
     private readonly object _gate = new();
 
-    private readonly OkaoCommonHandle? _common;
+    private OkaoCommonHandle? _common;
     private OkaoAlbumHandle? _album;
 
     /// <summary>+0xE8: album-entry id to face id.</summary>
@@ -291,10 +308,88 @@ public sealed class FaceRecognizer
     {
         _okao = okao;
         _nowMicros = nowMicros ?? (() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000);
-        if (okao.IsAvailable)
+        if (okao is NativeOkaoFaceRecognizer)
+        {
+            // Native constructor 0x8621DC..EC; only stock composition takes these defaults.
+            EnrollmentCount = -1; EnrollmentMode = -1; RegistrationAllowed = true;
+        }
+        else if (okao.IsAvailable)
         {
             _common = okao.CreateCommon();
             _album = okao.CreateAlbum();
+        }
+    }
+
+    internal void InitializeStock()
+    {
+        lock (_gate)
+        {
+            if (_okao is not NativeOkaoFaceRecognizer || _album is not null || !_okao.IsAvailable) return;
+            _common = _okao.CreateCommon();
+            _album = _okao.CreateAlbum();
+        }
+    }
+
+    internal bool OwnsStockDetector(OkaoFaceDetector detector) =>
+        _okao is NativeOkaoFaceRecognizer native && ReferenceEquals(native.Detector, detector);
+
+    internal T WithStockFrame<T>(Func<T> frame)
+    {
+        using var gate = LogCallbackDeferral.EnterGated(_gate);
+        return frame();
+    }
+
+    internal void ClearStockTracking()
+    {
+        lock (_gate)
+        {
+            _trackToFace.Clear();
+            foreach (var f in _faces.Values) { f.CurrentTrack = 0; f.PreviousTrack = 0; }
+            CurrentTrack = 0;
+        }
+    }
+
+    internal bool HasStockTrack(int track) { lock (_gate) return _trackToFace.ContainsKey(track); }
+    internal int StockFaceCount { get { lock (_gate) return _faces.Count; } }
+
+    // 0x863CF4 consumes the completed slot for its queued track, then looks up the
+    // current track independently. Only the source-checked first association is emitted.
+    internal void ConsumeStockFeature(OkaoFaceFeature feature, int track, bool registrationAllowed)
+    {
+        lock (_gate)
+        {
+            if (track == 0) return; // tracking reset invalidated the queued work
+            CurrentTrack = track;
+            RegistrationAllowed = registrationAllowed;
+            if (EnrollmentCancelled) { EnrollmentCancelled = false; return; }
+            if (RecognizeFace(feature, out int id, out int score) != 0 || id == 0 || !_faces.TryGetValue(id, out var face)) return;
+            if (_trackToFace.TryGetValue(track, out int previous) && previous != id)
+            {
+                Behavior.SteppedBehavior.ReportMissing("M14-011 positive face-ID remap/merge is not connected");
+                return;
+            }
+            foreach (int oldTrack in _trackToFace.Where(kv => kv.Value == id && kv.Key != track).Select(kv => kv.Key).ToArray())
+                _trackToFace.Remove(oldTrack);
+            if (face.CurrentTrack != track) { face.PreviousTrack = face.CurrentTrack; face.CurrentTrack = track; }
+            face.Score = score;
+            _trackToFace[track] = id;
+        }
+    }
+
+    internal (int Id, string? Name, int? PreviousId) LookupStockTrack(int track)
+    {
+        lock (_gate)
+        {
+            if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null);
+            int? previous = null;
+            if (face.Offset04 != id)
+            {
+                if (face.Offset04 == 0) previous = -track;
+                else Behavior.SteppedBehavior.ReportMissing("M14-011 positive face-ID transition is not connected");
+                face.Offset04 = id;
+            }
+            face.PreviousTrack = face.CurrentTrack;
+            return (id, face.Name.Length == 0 ? null : face.Name, previous);
         }
     }
 
@@ -305,7 +400,8 @@ public sealed class FaceRecognizer
     {
         lock (_gate)
         {
-            Behavior.SteppedBehavior.ReportMissing("M11-055 FaceRecognizer::Shutdown 0x00862852..0x00862866, 0x008628C6..0x00862982: native worker/merge-feature/feature ownership has no producer in the stack; only the owned album recipient is built");
+            if (_okao is not NativeOkaoFaceRecognizer)
+                Behavior.SteppedBehavior.ReportMissing("M11-055 FaceRecognizer::Shutdown 0x00862852..0x00862866, 0x008628C6..0x00862982: injected recognizer worker/feature ownership is not connected; only the owned album recipient is built");
             if (_album is { } album)
             {
                 if (_okao.DeleteAlbumHandle(album) != 0)
@@ -1018,6 +1114,11 @@ public sealed class FaceRecognizer
         if (_okao.GetAlbumMaxNum(_album!, out int currentAlbumMax, out int currentDataMax) != 0) return 1;
         if (_okao.GetAlbumMaxNum(loaded, out int loadedAlbumMax, out int loadedDataMax) != 0) return 1;
         if (loadedAlbumMax > currentAlbumMax || loadedDataMax > currentDataMax) return 1;
+        if (_okao is NativeOkaoFaceRecognizer && (loadedAlbumMax != currentAlbumMax || loadedDataMax != currentDataMax))
+        {
+            Behavior.SteppedBehavior.ReportMissing("M14-011 smaller native album copy/temporary ownership is not connected; restore skipped");
+            return 1;
+        }
         if (loadedAlbumMax == currentAlbumMax && loadedDataMax == currentDataMax)
         {
             var old = _album;
