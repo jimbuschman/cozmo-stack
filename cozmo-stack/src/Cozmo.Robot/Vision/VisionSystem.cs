@@ -281,6 +281,7 @@ public sealed partial class VisionSystem : IDisposable
     internal static readonly TimeSpan RemovalWait = TimeSpan.FromSeconds(2);
     /// <summary>M3-034: the FaceAlbum/Enrollment consumer, kept so Dispose can unsubscribe it.</summary>
     private readonly Action<byte[], byte[]> _faceAlbumLoaded;
+    private readonly bool _stockRecognizer;
     private readonly Action<NativeObservedObject> _nativeObjectObserved;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
@@ -297,9 +298,8 @@ public sealed partial class VisionSystem : IDisposable
         Detector = detector ?? new MarkerDetector();
         Faces.Log += l => Log?.Invoke(l);
         // fidelity: M14-011
-        Recognizer = new FaceRecognizer(okaoRecognizer ?? new OkaoFaceRecognizer());
-        Recognizer.Log += l => Log?.Invoke(l);
-        Recognizer.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
+        _stockRecognizer = okaoRecognizer is null;
+        Recognizer = CreateFaceRecognizer(okaoRecognizer ?? new NativeOkaoFaceRecognizer(_stockFaceDetector));
         // fidelity: M11-041
         // The world keeps its own connected objects (BlockWorld::AddConnectedActiveObject, fed by ObjectConnectionState below), and
         // reads the carrying and treads state from the components that own them.
@@ -514,10 +514,22 @@ public sealed partial class VisionSystem : IDisposable
             if(!StillRetired())return;
             Faces.ResetToConstructed();
             var oldFaceDetector = _stockFaceDetector;
+            var oldRecognizer = Recognizer;
             _stockFaceDetector = CreateStockFaceDetector();
             if (ReferenceEquals(FaceDetector, oldFaceDetector)) FaceDetector = _stockFaceDetector;
-            if (locked) oldFaceDetector.Dispose();
-            else _ = Task.Run(oldFaceDetector.Dispose);
+            if (_stockRecognizer) Recognizer = CreateFaceRecognizer(new NativeOkaoFaceRecognizer(_stockFaceDetector));
+            void RetireFaceOwner()
+            {
+                try
+                {
+                    oldFaceDetector.RetireRecognition();
+                    if (_stockRecognizer && oldFaceDetector.NativeUsable) oldRecognizer.Shutdown();
+                    else if (_stockRecognizer) SteppedBehavior.ReportMissing("M1-034 M14-011 faulted recognition owner skipped guest shutdown");
+                }
+                finally { oldFaceDetector.Dispose(); }
+            }
+            if (locked) RetireFaceOwner();
+            else _ = Task.Run(() => { lock (_busy) RetireFaceOwner(); });
             Pets.ResetToConstructed();
             LastFaces = Array.Empty<TrackedFace>();
             FramesProcessed = 0;
@@ -588,12 +600,20 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M14-011
     /// <summary>
     /// The engine's <c>FaceRecognizer</c> (0x008640E4): the Anki state machine over the OKAO_FR_* seam
-    /// (Correction C3).  The stock seam reports itself unavailable, so this runs only when a caller
-    /// attaches a working <see cref="IOkaoFaceRecognizer"/>.  The enrollment mode/id chain
+    /// (Correction C3). It uses the stock detector's native recognition owner or a caller-supplied
+    /// <see cref="IOkaoFaceRecognizer"/>. The enrollment mode/id chain
     /// (<c>FaceWorld::Enroll</c> -> <c>VisionComponent::SetFaceEnrollmentMode</c> -> ... ->
     /// <c>SetAllowedEnrollments</c>, C1-F11) reaches it through <see cref="SetFaceEnrollmentMode"/>.
     /// </summary>
-    public FaceRecognizer Recognizer { get; }
+    public FaceRecognizer Recognizer { get; private set; }
+
+    private FaceRecognizer CreateFaceRecognizer(IOkaoFaceRecognizer backend)
+    {
+        var recognizer = new FaceRecognizer(backend);
+        recognizer.Log += l => LogCallbackDeferral.Run(() => Log?.Invoke(l));
+        recognizer.SourceLog = (l,c,k,t) => _robot.Engine.EmitSourceLog(l,c,k,t);
+        return recognizer;
+    }
     public IPetDetector PetDetector { get; set; } = new OkaoPetDetector();
     /// <summary>Replaceable body-and-head turn for the face actions (tests move a fake robot with it).</summary>
     public Func<Pose3d, double, CancellationToken, Task<bool>>? TurnOverride { get; set; }
@@ -839,31 +859,61 @@ public sealed partial class VisionSystem : IDisposable
     /// <c>VisionSystem::SetSerializedFaceData</c> under the vision mutex (F25): stores the two byte
     /// vectors the robot returned and, when the OKAO seam is available, installs them through the
     /// recognizer's <c>SetSerializedData</c> endpoint (C3-24: album restore, enrollment parse,
-    /// consistency/capacity install, nextFaceID).  The stock seam reports itself unavailable, so the
-    /// bytes are stored and cannot be parsed: that is the M11-016 third-party boundary, not a silent
-    /// default.
+    /// consistency/capacity install, nextFaceID). The stock path uses the detector's native owner and
+    /// retains prior data when restore fails.
     /// </summary>
     public void InstallSerializedFaceData(byte[] album, byte[] enrollment)
     {
+        var owner = _robot.Engine.Robot;
+        var recognizer = Recognizer;
+        int removal = Volatile.Read(ref _removals);
+        TryInstallSerializedFaceData(album, enrollment, owner, recognizer, removal);
+    }
+
+    private bool TryInstallSerializedFaceData(byte[] album, byte[] enrollment, EngineRobot? owner, FaceRecognizer expected, int removal)
+    {
+        string? error = null;
+        bool installed = false;
         lock (_busy)
         {
-            _serializedFaceAlbum = album ?? Array.Empty<byte>();
-            _serializedFaceEnrollment = enrollment ?? Array.Empty<byte>();
-            if (Recognizer.IsAvailable)
-                Recognizer.SetSerializedData(_serializedFaceAlbum, _serializedFaceEnrollment);
+            bool Current() => removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, expected) &&
+                (owner is null ? _robot.Engine.Robot is null : !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner));
+            if (!Current()) return false;
+            var inputAlbum = album ?? Array.Empty<byte>();
+            var inputEnrollment = enrollment ?? Array.Empty<byte>();
+            var recognizer = expected;
+            if (!_stockRecognizer)
+            {
+                _serializedFaceAlbum = inputAlbum;
+                _serializedFaceEnrollment = inputEnrollment;
+                return recognizer.IsAvailable && recognizer.SetSerializedData(inputAlbum, inputEnrollment) == 0;
+            }
+            try
+            {
+                if (recognizer.OwnsStockDetector(_stockFaceDetector) && recognizer.IsAvailable)
+                {
+                    recognizer.InitializeStock();
+                    int status = recognizer.SetSerializedData(inputAlbum, inputEnrollment);
+                    installed = status == 0 && Current();
+                    if (status != 0 && inputAlbum.Length != 0) error = $"native restore returned {status}";
+                    if (installed) { _serializedFaceAlbum = inputAlbum; _serializedFaceEnrollment = inputEnrollment; }
+                }
+            }
+            catch (Exception ex) { error = ex.Message; }
         }
+        if (error is not null) SteppedBehavior.ReportMissing($"M14-011 native face album restore failed: {error}");
+        return installed;
     }
 
     // fidelity: M14-011, M14-012
     /// <summary>
-    /// <c>VisionSystem::GetSerializedFaceData</c> (F26/C5-12).  When the OKAO seam is available the album
-    /// vector is the restored album (whose inverse serialization is OKAO's <c>RestoreAlbum</c> boundary,
-    /// M11-016) and the enrollment vector is serialized from the recognizer's enrolled faces only when the
-    /// album vector is non-empty (<c>0x00867D5A..0x00867D66</c>); an empty album yields an empty
-    /// enrollment.  With the stock unavailable seam the raw vectors last installed are returned.
+    /// <c>VisionSystem::GetSerializedFaceData</c> (F26/C5-12). Native named-only album export is not
+    /// connected, so the stock path rejects this request. A supplied legacy seam retains its prior behavior.
     /// </summary>
     public (byte[] Album, byte[] Enrollment) GetSerializedFaceData()
     {
+        if (_stockRecognizer)
+            throw new NotSupportedException("M14-011 native named-only album serialization is not connected");
         lock (_busy)
         {
             if (Recognizer.IsAvailable)
@@ -881,6 +931,11 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     public void SetFaceEnrollmentMode(int id)
     {
+        if (_stockRecognizer)
+        {
+            SteppedBehavior.ReportMissing("M14-011 stock explicit enrollment lifecycle and completion are not connected");
+            return;
+        }
         var (_, mode) = Faces.Enroll(id);
         Recognizer.SetAllowedEnrollments(mode, id);
     }
@@ -937,8 +992,33 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     public void AdoptFaceAlbum(byte[] album, byte[] enrollment)
     {
-        InstallSerializedFaceData(album, enrollment);
-        BroadcastLoadedNamesAndIDs();
+        var owner = _robot.Engine.Robot;
+        var recognizer = Recognizer;
+        int removal = Volatile.Read(ref _removals);
+        (int Id, string Name)[] loaded;
+        bool installed;
+        lock (_busy)
+        {
+            installed = TryInstallSerializedFaceData(album, enrollment, owner, recognizer, removal);
+            loaded = installed && ReferenceEquals(Recognizer, recognizer)
+                ? recognizer.EnrolledFaces.OrderBy(f => f.FaceID).Select(f => (f.FaceID, f.Name)).ToArray()
+                : Array.Empty<(int, string)>();
+        }
+        if (!_stockRecognizer) { BroadcastLoadedNamesAndIDs(); return; }
+        bool Current() => removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, recognizer) &&
+            (owner is null ? _robot.Engine.Robot is null : !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner));
+        if (!installed || !Current()) return;
+        _robot.Engine.QueueAppBroadcast(EnrolledFacesErased);
+        EnrolledFacesErasedInternal?.Invoke();
+        foreach (var face in loaded)
+        {
+            if (!Current()) return;
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "VisionComponent", "VisionComponent.BroadcastLoadedNamesAndIDs",
+                FormattableString.Invariant($"broadcasting loaded face id: {face.Id}"));
+            if (!Current()) return;
+            _robot.Engine.QueueAppBroadcast(LoadedFaceName, face.Id, face.Name);
+            LoadedFaceNameInternal?.Invoke(face.Id, face.Name);
+        }
     }
 
     // fidelity: M14-012
@@ -950,6 +1030,11 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     public void SaveFaceAlbumToRobot()
     {
+        if (_stockRecognizer)
+        {
+            SteppedBehavior.ReportMissing("M14-011 native named-only album serialization is not connected; face album save skipped");
+            return;
+        }
         var nv = _robot.Engine.NvStorage;
         if (nv is null) return;
         var (album, enrollment) = GetSerializedFaceData();
@@ -1554,6 +1639,7 @@ public sealed partial class VisionSystem : IDisposable
             if(StaleFrame())return null;
             var faceImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
             IReadOnlyList<DetectedFace>? detectedFaces = null;
+            IReadOnlyList<(int OldId, int NewId, string? Name)> faceIdChanges = Array.Empty<(int, int, string?)>();
             if (faceMode && faceDetector.IsAvailable)
             {
                 try
@@ -1566,14 +1652,18 @@ public sealed partial class VisionSystem : IDisposable
                             float threshold = BitConverter.UInt32BitsToSingle(0x3E0EFA35);
                             reset = !NativeMotionPoseState.HeadSame(currentFacePose, previousFacePose, threshold) ||
                                 !NativeMotionPoseState.BodySame(currentFacePose, previousFacePose, 10f, threshold);
-                            if (reset) SteppedBehavior.ReportMissing("M14-011 face motion reset: recognizer ClearAllTrackingData is not connected");
                         }
                         else if (queueForEngine) SteppedBehavior.ReportMissing("M14-010 face motion reset has no prior admitted VisionPoseData");
                         if ((ModeEnableMask & ((1 << 10) | (1 << 11) | (1 << 12) | (1 << 13))) != 0)
                             SteppedBehavior.ReportMissing("M14-010 enabled expression, smile, gaze or blink modes have no OKAO EX/SM/GB recipient");
-                        detectedFaces = okao.Detect(faceImage, timestamp, reset);
-                        if (detectedFaces.Count != 0)
-                            SteppedBehavior.ReportMissing("M14-011 asynchronous face recognition and stored-album identity are not connected; negative tracker IDs are provisional");
+                        var recognizer = Recognizer;
+                        if (_stockRecognizer && recognizer.OwnsStockDetector(okao) && recognizer.IsAvailable)
+                        {
+                            recognizer.InitializeStock();
+                            (detectedFaces, faceIdChanges) = okao.DetectRecognized(faceImage, timestamp, reset, recognizer);
+                        }
+                        else if (!_stockRecognizer) detectedFaces = okao.Detect(faceImage, timestamp, reset);
+                        else SteppedBehavior.ReportMissing("M14-011 detector/recognizer owner changed during face frame; frame skipped");
                     }
                     else detectedFaces = faceDetector.Detect(faceImage, timestamp);
                 }
@@ -1772,6 +1862,12 @@ public sealed partial class VisionSystem : IDisposable
             {
                 var faces = new List<TrackedFace>();
                 if (RemovedSince(removal)) return null;
+                foreach (var change in faceIdChanges)
+                {
+                    if (StaleFrame()) return null;
+                    Faces.ChangeFaceID(change.OldId, change.NewId, change.Name);
+                    if (StaleFrame()) return null;
+                }
                 foreach (var d in detected)
                 {
                     var tf = new TrackedFace(d, timestamp);
@@ -1806,11 +1902,8 @@ public sealed partial class VisionSystem : IDisposable
                 LastFaces = faces;
                 Faces.Update(timestamp);
                 // fidelity: M14-011
-                // FaceTracker::Impl::Update hands each enrollable face to FaceRecognizer::SetNextFaceToRecognize
-                // and reads GetRecognitionData (F22); RecognizeFace needs the OKAO feature blob. IFaceDetector
-                // does not carry that feature, so the recognizer is not called from here: the feature carrier is
-                // M14-010's unrecovered recognition scheduling, and inventing one would be a plausible
-                // substitution. The recognizer itself is built and its album/serialization endpoints are wired.
+                // Stock FaceTracker recognition is processed before this observation pass; optional
+                // enrollment pose modes and positive-ID merge/remap transitions remain MISSING.
             }
             if (detectedPets is {} pets)
             {
@@ -1932,13 +2025,23 @@ public sealed partial class VisionSystem : IDisposable
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;
-        lock(_busy){DiscardPreparedResults();_stockFaceDetector.Dispose();}
+        lock(_busy)
+        {
+            DiscardPreparedResults();
+            try
+            {
+                _stockFaceDetector.RetireRecognition();
+                if (_stockRecognizer && _stockFaceDetector.NativeUsable) Recognizer.Shutdown();
+                else if (_stockRecognizer) SteppedBehavior.ReportMissing("M1-034 M14-011 faulted recognition owner skipped guest shutdown");
+            }
+            finally { _stockFaceDetector.Dispose(); }
+        }
         if(_robot.Engine.VisionUpdateAllResultsFailed==DrainPreparedResults)_robot.Engine.VisionUpdateAllResultsFailed=null;
         // V3-V7 depend on native recipient ownership, not host reset/GC.
         SteppedBehavior.ReportMissing("M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join");
         // fidelity: M11-078, M11-090 — checked leaves do not establish the missing constructed recipient graph.
         SteppedBehavior.ReportMissing("M11-078/M11-090 Vision teardown: native result lists/deque 0x006586EC..0x00658A92/0x006B9F68..0x006BA092, ImageCache null-before-tree 0x006B1E9C..0x006B2142, Camera/ImageCache/CLAHE, FaceRecognizer trees, Block/MarkerlessObject and ProtoHandle reset/remove need their owned native recipients; host caches/GC are not those owners. Capture finalizers and allocator recipients remain unread; SDK CustomObject is unreachable");
-        Recognizer.Shutdown();
+        if (!_stockRecognizer) Recognizer.Shutdown();
         SteppedBehavior.ReportMissing("M11-055 Profiler timer producers/Tic/Toc and VisionSystem::Init PerformanceLogging binding 0x006B0E5C..0x006B0F2A are not built; native timer input boundary only, no host Stopwatch data substituted");
         LifetimeProfiler.Dispose();
         if (_robot.Lights.DetachVisionSystem(this))

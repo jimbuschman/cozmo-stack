@@ -22,7 +22,7 @@ public enum WwiseSourceKind
     PcmMode1,
     /// <summary>Plug-in class 1, mode 3: PCM, <c>0xA72D04</c>. No shipped bank uses it.</summary>
     PcmMode3,
-    /// <summary><c>mode == 2</c>: the <c>0xA78D10</c> class (a 0x70-byte object). Body unread.</summary>
+    /// <summary><c>mode == 2</c>: the <c>0xA78D10</c> plug-in source class.</summary>
     PluginMode2,
 }
 
@@ -46,10 +46,11 @@ public static class WwiseSourceFactory
 
     /// <summary>
     /// B14 (<c>0x9B9CD0..0x9B9DBC</c>): the stream-byte mode mapping. Only codec plug-ins
-    /// (<c>plugin &amp; 0xF == 1</c>) take it; a source plug-in leaves mode 0.
+    /// (<c>plugin &amp; 0xF == 1</c>) take it. The shipped WavePortal source takes mode 2.
     /// </summary>
     public static int ModeForStream(uint plugin, byte stream)
     {
+        if (plugin == WavePortal.PluginId && stream == 0) return 2;
         if ((plugin & 0x0F) != 1) return 0;
         return stream switch
         {
@@ -87,17 +88,17 @@ public static class WwiseSourceFactory
 
     /// <summary>
     /// Creates the source object for a selection. <paramref name="media"/> resolves the descriptor's media
-    /// id; <paramref name="codebooks"/> is required for Vorbis. The PCM and mode-2 classes have no read
-    /// body, so they throw rather than being approximated.
+    /// id; <paramref name="codebooks"/> is required for Vorbis. PCM and other mode-2 plug-ins remain unread.
     /// </summary>
     public static IWwiseVoiceSource Create(
         WwiseSourceKind kind, WwiseSourceDescriptor descriptor,
         Func<uint, WwiseMedia?> media, WwiseCodebookLibrary? codebooks,
-        WwiseStreamingContext? streaming = null)
+        WwiseStreamingContext? streaming = null, WwiseRuntimeRegistry? registry = null,
+        WwisePlayingInstance? owner = null, WavePortal? portal = null)
     {
         ArgumentNullException.ThrowIfNull(media);
 
-        // The unread classes are refused before the media is resolved, so the refusal is the visible reason.
+        // Plug-ins do not resolve codec media; unread classes are refused before media resolution.
         switch (kind)
         {
             case WwiseSourceKind.PcmMode1:
@@ -106,8 +107,9 @@ public static class WwiseSourceFactory
                     "M6-025 B13: the PCM source classes (0xA76140/0xA72D04) have no read render body; " +
                     "no shipped bank uses them");
             case WwiseSourceKind.PluginMode2:
-                throw new NotSupportedException(
-                    "M6-025 B13: the mode==2 class (0xA78D10) has no read render body");
+                if (descriptor.PluginId != WavePortal.PluginId)
+                    throw new NotSupportedException("M6-025: this mode-2 plug-in is not recovered");
+                return new WwiseWavePortalSource(descriptor.SourceId, registry, owner, portal ?? WavePortal.Shared);
         }
 
         var wem = media(descriptor.SourceId)

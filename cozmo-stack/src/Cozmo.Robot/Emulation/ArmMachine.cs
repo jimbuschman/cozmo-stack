@@ -86,6 +86,10 @@ public sealed unsafe partial class ArmMachine : IDisposable
     private bool _disposed;
     private Exception? _executionFailure;
     private long _deadline;
+    // Sampling bounds the extra guest execution after expiry to at most 64 translated blocks.
+    // Fault latches are still checked on every block, including after nested calls resume.
+    private const int DeadlineSampleBlocks = 64;
+    private int _blocksUntilDeadlineCheck = DeadlineSampleBlocks;
     private uint _activeCall;
     private int _runDepth;
 
@@ -421,10 +425,14 @@ public sealed unsafe partial class ArmMachine : IDisposable
             m._pending ??= new EmulationAbort("emulator is faulted after a previous call failed", m._executionFailure);
             uc_emu_stop(uc);
         }
-        else if (m._deadline != 0 && Stopwatch.GetTimestamp() >= m._deadline)
+        else if (--m._blocksUntilDeadlineCheck <= 0)
         {
-            m._pending ??= new EmulationAbort($"M1-034: call to 0x{m._activeCall:X} exceeded its emulation timeout at pc 0x{address:X}");
-            uc_emu_stop(uc);
+            m._blocksUntilDeadlineCheck = DeadlineSampleBlocks;
+            if (m._deadline != 0 && Stopwatch.GetTimestamp() >= m._deadline)
+            {
+                m._pending ??= new EmulationAbort($"M1-034: call to 0x{m._activeCall:X} exceeded its emulation timeout at pc 0x{address:X}");
+                uc_emu_stop(uc);
+            }
         }
     }
 
@@ -434,7 +442,10 @@ public sealed unsafe partial class ArmMachine : IDisposable
         var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
         try
         {
+            m.CheckDeadline();
             m.OnStub((uint)address);
+            m.EnsureRunnable();
+            m.CheckDeadline();
         }
         catch (Exception e)
         {
@@ -449,7 +460,10 @@ public sealed unsafe partial class ArmMachine : IDisposable
         var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
         try
         {
+            m.CheckDeadline();
             if (m._addrHooks.TryGetValue((uint)address, out var fn)) m.Finish(fn(m));
+            m.EnsureRunnable();
+            m.CheckDeadline();
         }
         catch (Exception e)
         {
@@ -530,6 +544,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
             WriteReg(UC_ARM_REG_FPSCR, fpscr);
             _pending = null;
             _fault = "";
+            CheckDeadline();
             int err = uc_emu_start(_uc, addr, RetAddr, 0, (nuint)count);
             TakePending();
             EnsureRunnable();
@@ -566,6 +581,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
         double ticks = CallTimeout.TotalSeconds * Stopwatch.Frequency;
         long now = Stopwatch.GetTimestamp();
         _deadline = ticks >= long.MaxValue - now ? long.MaxValue : now + Math.Max(1, (long)ticks);
+        _blocksUntilDeadlineCheck = DeadlineSampleBlocks;
         _activeCall = address;
     }
 
@@ -592,6 +608,55 @@ public sealed unsafe partial class ArmMachine : IDisposable
         return r.ToArray();
     }
 
+    /// <summary>Runs a cooperative guest worker while preserving the full suspended CPU context,
+    /// including VFP/NEON state. The nested execution shares the caller's deadline.</summary>
+    public uint NestedWorkerCall(uint fn, uint arg, ulong count)
+    {
+        EnsureRunnable();
+        if (_runDepth == 0 || _deadline == 0) throw new InvalidOperationException("worker call requires an active guest call");
+        if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
+        nint context = 0;
+        bool saved = false;
+        uint previousCall = _activeCall;
+        _runDepth++;
+        try
+        {
+            Check(uc_context_alloc(_uc, &context), "worker context alloc");
+            Check(uc_context_save(_uc, context), "worker context save");
+            saved = true;
+            uint sp = Sp;
+            SetReg(0, arg);
+            WriteReg(UC_ARM_REG_SP, (sp - 0x1000) & ~7u);
+            SetLr(RetAddr + 0x100);
+            _activeCall = fn;
+            CheckDeadline();
+            int err = uc_emu_start(_uc, fn, RetAddr + 0x100, 0, (nuint)count);
+            TakePending();
+            EnsureRunnable();
+            CheckDeadline();
+            if (err != 0) throw new EmulationAbort($"unicorn worker: {ErrorText(err)} {_fault} at pc 0x{Pc:X}");
+            if (Pc != RetAddr + 0x100) throw new EmulationAbort($"worker call to 0x{fn:X} exceeded its instruction budget");
+            uint result = Reg(0);
+            return result;
+        }
+        catch (Exception e) { _executionFailure ??= e; throw; }
+        finally
+        {
+            Exception? restoreFailure = null;
+            if (saved)
+            {
+                int restore = uc_context_restore(_uc, context);
+                if (restore != 0 && _executionFailure is null)
+                    _executionFailure = restoreFailure = new EmulationAbort($"unicorn worker context restore: {ErrorText(restore)}");
+            }
+            if (context != 0) uc_context_free(context);
+            _activeCall = previousCall;
+            _runDepth--;
+            GC.KeepAlive(this);
+            if (restoreFailure is not null) throw restoreFailure;
+        }
+    }
+
     /// <summary>Calls emulated code from inside a stand-in (for example a qsort comparator): saves r0..r12, sp, lr, pc and
     /// cpsr, runs <paramref name="fn"/> on the stack 0x800 below the current sp, and restores them. Mirrors the Acapela
     /// probe's <c>nested_call</c>.</summary>
@@ -611,6 +676,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
             for (int k = 0; k < args.Length; k++) SetReg(k, args[k]);
             WriteReg(UC_ARM_REG_SP, (saved[13] - 0x800) & ~7UL);
             SetLr(ret2);
+            CheckDeadline();
             int err = uc_emu_start(_uc, fn, ret2, 0, 0);
             TakePending();
             EnsureRunnable();

@@ -93,6 +93,30 @@ public sealed class CozmoVoiceTests
         Assert.False(metadata.TrySelect("not-an-intent", "Cozmo", random, out _));
     }
 
+    [Fact]
+    public void MissingIntentDoesNotQueueOrStartSynthesisOrDrawRandomness()
+    {
+        if (WwiseAssets.ObbRoot is not { } obb) return;
+        string resources = Path.Combine(obb, "assets", "cozmo_resources");
+        using var rig = new M4ControlTests.Rig(resources);
+        rig.Engine.ConnectToRobot(M4ControlTests.Rig.RobotIp);
+        rig.Tick();
+        var owner = rig.Engine.Robot!;
+        Assert.Null(owner.ActionList.GetCurrentAction());
+        var tailField = typeof(TextToSpeechComponent).GetField("_tail", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var tail = tailField.GetValue(owner.SpeechComponent);
+        int draws = 0;
+        rig.Engine.ContextRandom.WordSourceForTest = () => { draws++; return 1; };
+        var logs = new List<string>();
+        rig.Engine.StackLogLine += logs.Add;
+        rig.Robot.QueueSayTextIntentForNativePath("hello", "not-an-intent");
+        rig.Tick();
+        Assert.Null(owner.ActionList.GetCurrentAction());
+        Assert.Same(tail, tailField.GetValue(owner.SpeechComponent));
+        Assert.Equal(0, draws);
+        Assert.Contains(logs, x => x.Contains("M1-034") && x.Contains("M14-006") && x.Contains("CanNotFind.SayTextIntentConfig") && x.Contains("0x005610A4"));
+    }
+
     [Theory]
     [InlineData(50, 1f, 50)]
     [InlineData(50, 0f, 300)]

@@ -82,6 +82,14 @@ internal sealed class ActionList : IDisposable
     /// <summary>Test/inspection: the queue at a key, or null.</summary>
     public ActionQueue? QueueAt(int key) => _queues.TryGetValue(key, out var q) ? q : null;
 
+    // Host cancellation must not act on a later runner that has reused the same external tag.
+    internal bool ContainsRunner(IActionRunner runner)
+    {
+        using var executionLease = _enterOwner?.Invoke();
+        lock (_gate)
+            return _queues.Values.Any(q => ReferenceEquals(q.Current, runner) || q.HasPendingReference(runner));
+    }
+
     /// <summary>
     /// A3 ActionList Clear 0x0053D916..0x0053D93A: the clearing re-entry flag returns immediately; otherwise set
     /// it, destroy the map nodes/queues, reset the map/count, clear the flag. No delayed tick is needed to empty
@@ -161,6 +169,7 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public int QueueAction(QueueActionPosition position, IActionRunner? incoming, byte retries = 0) => QueueActionCore(position,incoming,retries,null);
     internal int QueueActionGuardedNow(IActionRunner incoming,byte retries,Func<bool> current) => QueueActionCore(QueueActionPosition.Now,incoming,retries,current);
+    internal int QueueActionGuardedAtEnd(IActionRunner incoming,byte retries,Func<bool> current) => QueueActionCore(QueueActionPosition.AtEnd,incoming,retries,current);
     private int QueueActionCore(QueueActionPosition position,IActionRunner? incoming,byte retries,Func<bool>? hostAdmissionCurrent)
     {
         if(hostAdmissionCurrent is null&&incoming is ActionRunner runner)runner.MarkQueueAdmission();
@@ -221,6 +230,7 @@ internal sealed class ActionList : IDisposable
                 case QueueActionPosition.Next:
                     return QueueNextMain(incoming,retries);
                 case QueueActionPosition.AtEnd:
+                    if(hostAdmissionCurrent is not null && incoming is ActionRunner accepted)accepted.MarkQueueAdmission();
                     return QueueAtEndMain(incoming,retries);
                 case QueueActionPosition.InParallel:
                     return AddConcurrent(incoming,retries);

@@ -54,6 +54,10 @@ public sealed record MotionOutcome(MotionResult Result, string Detail)
     public override string ToString() => $"{Result}: {Detail}";
 }
 
+/// <summary>Result of an outside-AI head request. EngineResult is present only for an admitted action;
+/// OwnerRetired records whether its original robot was being destroyed or replaced before admission or at action destruction.</summary>
+public sealed record AiHeadActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
+
 /// <summary>
 /// Cozmo's motors: wheels, head and lift - the engine's MovementComponent and its head and lift actions (M4).
 ///
@@ -72,6 +76,77 @@ public sealed class CozmoMotion
 {
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
+    private uint _nextAiTag;
+
+    /// <summary>
+    /// Queues a head action after existing actions, leaving the behavior system in control of the queue.
+    /// The result contains the native action result when the admitted runner is destroyed. Cancellation
+    /// requests native cancellation of this specific runner; a pending runner can report NOT_STARTED.
+    /// </summary>
+    public Task<AiHeadActionResult> QueueAiHeadAngleAsync(float radians, CancellationToken cancellationToken = default)
+    {
+        var engine = _robot.Engine;
+        var owner = engine.Robot;
+        if (!float.IsFinite(radians))
+            return Task.FromResult(new AiHeadActionResult(false, null, "Head angle must be finite"));
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
+        using var lease = engine.EnterSynchronousOwner();
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
+        if (!engine.IsReadyDelivered || engine.ConnectionState != 2 || engine.RobotValidated != true || owner is null ||
+            owner.Lifetime.Destroying || !owner.FirstFullStateHandled || !ReferenceEquals(engine.Robot, owner))
+            return Task.FromResult(new AiHeadActionResult(false, null, "Robot is not ready for an action"));
+
+        uint tag = 0;
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            _nextAiTag = _nextAiTag == 1_000_000 ? 1 : _nextAiTag + 1;
+            if (!ActionRunnerTagCounter.Global.IsInUse(_nextAiTag)) { tag = _nextAiTag; break; }
+        }
+        if (tag == 0) return Task.FromResult(new AiHeadActionResult(false, null, "No external action tag is available"));
+        var action = BuildHeadAction(radians, DefaultHeadSpeedRadPerSec, DefaultHeadAccelRadPerSec2, 0, null);
+        if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner))
+        {
+            action.RetireNeverAdmittedTree();
+            return Task.FromResult(new AiHeadActionResult(false, null, "Robot changed before admission", true));
+        }
+        if (cancellationToken.IsCancellationRequested)
+        {
+            action.RetireNeverAdmittedTree();
+            return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
+        }
+        action.AiNativeEnded = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        action.AiOwner = owner;
+        bool tagSet = action.SetTag(tag);
+        if (!tagSet)
+        {
+            action.Prep();
+            action.WatcherEnding();
+            return Task.FromResult(new AiHeadActionResult(false, null, "Action tag was unavailable"));
+        }
+        bool disabled = owner.ActionList.ExternalActionsDisabled;
+        lock (_gate) _actions.Add(action);
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner);
+        int queued = owner.ActionList.QueueActionGuardedAtEnd(action, 0, Current);
+        if (disabled || queued != 0)
+            return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed"));
+        return AwaitAiHead(action, owner, cancellationToken);
+    }
+
+    private async Task<AiHeadActionResult> AwaitAiHead(MoveAction action, EngineRobot owner, CancellationToken token)
+    {
+        using var registration = token.Register(() => _robot.Engine.PostGameMessage(() =>
+        {
+            if (owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner)) return;
+            if (owner.ActionList.ContainsRunner(action)) owner.ActionList.Cancel(action.Tag);
+        }));
+        var ended = await action.AiNativeEnded!.Task.ConfigureAwait(false);
+        // WatcherEnding precedes queue unlink. Reenter the engine owner before publishing the
+        // result so another thread cannot observe completion while that unlink is still pending.
+        using (_robot.Engine.EnterSynchronousOwner()) { }
+        return new AiHeadActionResult(true, ended.Result, "Native head action ended", ended.OwnerRetired);
+    }
 
     internal CozmoMotion(CozmoRobot robot)
     {
@@ -1218,6 +1293,15 @@ bool requireCalibration = true)
     /// </summary>
     private sealed class MoveAction : ActionRunner
     {
+        internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
+        internal EngineRobot? AiOwner;
+        public override byte? GetCompletionVariant() => IsHead && AiNativeEnded is not null ? (byte)6 : base.GetCompletionVariant();
+        internal override bool RetireNeverAdmittedTree()
+        {
+            if (!CanRetireNeverAdmittedTree()) return false;
+            Owner.ReleaseAckSubscription(this);
+            return base.RetireNeverAdmittedTree();
+        }
         // fidelity: M4-016 — process-lifetime u16 debug counters, head 01051028/2A, lift 0105102C/2E.
         private static readonly object DebugCounterGate = new();
         private static ushort _headWaitingAck, _headNotInPosition, _liftWaitingAck, _liftNotInPosition;
@@ -1428,6 +1512,8 @@ bool requireCalibration = true)
             Owner.ReleaseAckSubscription(this);
             base.WatcherEnding();
             Owner.ActionEnded(this);
+            if (AiNativeEnded is { } ended && AiOwner is { } owner)
+                ended.TrySetResult((State, owner.Lifetime.Destroying || !ReferenceEquals(Owner._robot.Engine.Robot, owner)));
         }
     }
 

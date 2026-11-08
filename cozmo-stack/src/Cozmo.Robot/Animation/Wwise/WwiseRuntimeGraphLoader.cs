@@ -605,11 +605,21 @@ public sealed class WwiseRuntimeGraph
         var table = custom ? WwiseRegistryTable.FxCustom : WwiseRegistryTable.FxShareSet;
         var found = Registry.LookupAndAddRef(table, o.Id);                                // 0x9B3FBC
         if (found is not null) { Append(bank, found); return 1; }
+        // The shipped WavePortal custom descriptor is a four-byte zero parameter block with
+        // empty media, RTPC and trailer. Other descriptors still require the unread init seam.
+        var body = o.Payload.Span;
+        bool wavePortal = custom && body.Length == 21 &&
+            BinaryPrimitives.ReadUInt32LittleEndian(body.Slice(4, 4)) == WavePortal.PluginId &&
+            BinaryPrimitives.ReadUInt32LittleEndian(body.Slice(8, 4)) == 4 &&
+            body.Slice(12).SequenceEqual(new byte[9]);
         var fx = custom
-            ? (_seams.CreateFxCustom ?? throw Missing("the FxCustom creator 0x9CF038"))(o.Id)
+            ? (_seams.CreateFxCustom?.Invoke(o.Id) ?? (wavePortal ? new WwiseRuntimeFx { Id = o.Id, Custom = true } : throw Missing("the FxCustom creator 0x9CF038")))
             : new WwiseRuntimeFx { Id = o.Id };                                           // 0x9CEA28: [+0x10] = -1, [+0x14..0x38] = 0
         Registry.Insert(fx);
-        int r = (_seams.InitFx ?? throw Missing("the FX init 0x9CE3B8 (0x9CE174, 0x9CDEC4, 0x9CC358)"))(fx, o);
+        int r;
+        if (_seams.InitFx is { } init) r = init(fx, o);
+        else if (wavePortal) { fx.PluginId10 = WavePortal.PluginId; r = 1; }
+        else throw Missing("the FX init 0x9CE3B8 (0x9CE174, 0x9CDEC4, 0x9CC358)");
         if (r != 1) throw Missing($"what the walker does when the FX init 0x9CE3B8 fails (code {r}): A9 does not say whether the object is released");
         Append(bank, fx);
         return 1;

@@ -10,6 +10,28 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class FaceRecognizerTests
 {
+    [Fact]
+    public void CompletedTrackIdentityWaitsForThatTracksLookupAndDoesNotRepeatOnCrossing()
+    {
+        var okao = new FakeOkaoRecognizer();
+        var recognizer = new FaceRecognizer(okao);
+        recognizer.SetAllowedEnrollments(1, 0);
+        recognizer.CurrentTrack = 1;
+        var feature = new OkaoFaceFeature();
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int id));
+        okao.IdentifyResults.Add((0, 1000));
+        recognizer.ConsumeStockFeature(feature, 1, true);
+        Assert.Equal(0, recognizer.LookupStockTrack(2).Id);
+        var first = recognizer.LookupStockTrack(1);
+        Assert.Equal(id, first.Id);
+        Assert.Equal(-1, first.PreviousId);
+        Assert.Null(recognizer.LookupStockTrack(1).PreviousId);
+        recognizer.ConsumeStockFeature(feature, 2, true);
+        Assert.Equal(0, recognizer.LookupStockTrack(1).Id);
+        var crossed = recognizer.LookupStockTrack(2);
+        Assert.Equal(id, crossed.Id);
+        Assert.Null(crossed.PreviousId);
+    }
     // ------------------------------------------------------------------ constants (C3 rows)
 
     /// <summary>
