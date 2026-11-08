@@ -8,9 +8,9 @@ Manifest of **761 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 278 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 11 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 362 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 71 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 111 | 3 | 83 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 111 | 3 | 82 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 20 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -3851,15 +3851,6 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * evidence: Derived ctor 0x005DBC8E..0x005DBCB2, vtables 0x01028F44 / 0x0103F3A0; runnable 0x005DC606..0x005DC61A / 0x005DBED4..0x005DBEFC; Init 0x005DBF04..0x005DBF84.; Top pickup 0x005DBD20..0x005DBD9C, callbacks 0x01029040 / 0x005DC67A; top placement 0x005DC08C..0x005DC304 with lock table 0x00C6C691 (enum 8).; Success 0x005DC78A, 0x005DBFB0..0x005DC00A, 0x005BE228..0x005BE308 / 0x005BE3A8..0x005BE3D6, 0x007285FE / 0x0071BEAE, 0x005BE40C..0x005BE416 (state 6, objective 3, LiftSafe 0x17); failure 0x005DC7F0..0x005DC9A4 (drive -20/20, head 25, lift 0, wait 1, head 15); state-light class 0x005DCBBC / 0x005BEE3E / 0x005BBC90..0x005BBC96.; re-analysis/jobs/trial-m13/HANDOFF-BUILD-PYRAMID-1.md; re-analysis/research/20261028-build-pyramid-1-read.md with its independent check; re-analysis/research/20261029-build-pyramid-1-claude-check.md
 * outstanding: Built and checked in BUILD-PYRAMID-1 but not settled. Inherited Base work is M15-078's; the top loop M12-047 and the placement parameters M12-028 (both settled). Still MISSING: the intention and strong cache producers and callbacks (M12-049), the shared geometry math (M12-043), the nonzero-offset placement (M12-042/M12-022), the downstream needs/objective recipients and the enclosing activity (M15-051/M15-054). PYRAMID-RUNTIME-INPUTS-1 (2026-11-01): canonical target and strong-cache suppliers are now built and actual RefreshTargets/base-static-top fields and pickup-helper start are exercised on configured owners. Strong list references preserve native order/duplicates and saved objects across later publication; each supplier reads current canonical snapshot independently, with no invented atomic pair. Broader M12-049 callbacks/cache completeness, M12-043 midpoint geometry, placement/helper and ActivityBuildPyramid desired-dispatch gaps stay open. No full behavior completion or status change.
 
-**M15-080 — BehaviorAcknowledgeFace lifecycle: ctor state, runnable gates (not while carrying/charger/+0x355, target set non-empty), Init/Update begin, BeginIteration (GetBestFaceToTrack ranking, TurnTowardsFaceAction arguments and triggers, 3-image wait, greeting gate and callback), FinishIteration loop, listener wiring and Stop clearing** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs`
-* effect: which faces Cozmo turns to acknowledge and in what order, whether he says the name or plays the greeting, how long he waits for the face, when the reaction may run, and the ReactedAcknowledgedFace objective the C# API delivers
-* rests on: ACKNOWLEDGE-FACE-1 (Claude-run: cozmo-extractor read, cozmo-implementer build, cozmo-verifier PASS), checked by Claude 2026-10-29; record added with operator approval 2026-10-29.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Ctor 0x00602884..0x006028B6; IsRunnableInternal 0x006028BC..0x006028C6; Init 0x006028C8..0x006028D0; Stop 0x006028D2..0x00602926; Update 0x00602928..0x0060294A; vtable 0x0102B834 (+0x28 override 0x00602D20 returns 0; AddListener +0x34).; BeginIteration 0x00602950..0x00602AA6: GetBestFaceToTrack(+0x120,false); TurnTowardsFaceAction(id, Radians 0x40490FDB, sayName 1); greet = (now - [[robot+0x44]+0x54] <= 60.0f) && t >= 0 && !HasTurnedTowardsFace && !+0x12D; SetSayNameTriggerCallback (lambda 0x00602D8C..0x00602DDE: +0x12D=1, GreetingSayName, trigger 301) else SetSayNameAnimationTrigger(1); SetNoNameAnimationTrigger(2); +0x188 = 3; StartActing(FinishIteration).; GetBestFaceToTrack 0x0056C110..0x0056C27E (FLT_MAX start, strict <, GetFace/GetWithRespectTo skips, cost |Radians(head)-robot+0x2FC| + 3*|body| + unnamed surcharge); GetRelativeBodyAngleToLookAtPose 0x0054B584 (atan2f).; FinishIteration 0x00602C34..0x00602C96 (erase, listeners slot 0, BehaviorObjectiveAchieved 0x1A, BeginIteration); strategy listener calls 0x0060D074..0x0060D0E2.; re-analysis/research/20261029-acknowledge-face-1-read.md; re-analysis/research/20261029-acknowledge-face-1-claude-check.md
-* outstanding: Built and checked in ACKNOWLEDGE-FACE-1 but not settled. B5 UNKNOWN: no writer of BehaviorManager+0x54 besides the ctor's -1.0f is known; the stack keeps -1 and reports MISSING, so the greeting never plays. The body angle uses libm atan2f, so the ranking can settle at most EQUIVALENT_IMPLEMENTATION. Not built: the forced trigger SetupForceTriggerBehavior 0x0060C744..0x0060C888 (no stack entry reaches it). Inherited, owned elsewhere: TurnTowardsFaceAction states (M13-014), text to speech (M14-006), the face strategy fill/cooldown (M10-003), the IBehavior base (M8-001), the objective packer (M7-019), GreetingSayName processing (M7-020), face poses through the M11-066 legacy adapter.
-
 **M15-081 — BehaviorAcknowledgeObject lifecycle: ctor/config state and the ghost cube, runnable gates (runnable while carrying, target set non-empty), Init ghost ID, BeginIteration (lowest-id target, turn/verify/animation compound), stacked-cube ghost look-below/look-above, FinishIteration loop with objective and final turn-back, listener wiring and Stop clearing** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/ObjectBehaviors.cs`
@@ -4148,6 +4139,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M4-052 | M4-control | EQUIVALENT_IMPLEMENTATION | Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY | libcozmoEngine.so 3.4.0-1204. |
 | M4-053 | M4-control | COMPATIBILITY_POLICY | Re-request a pooled cube after its disconnected slot is reset (operator-approved host input; ReconnectPooledCubes) | libcozmoEngine.so 3.4.0-1204; Unity C#. |
 | M15-077 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset | libcozmoEngine.so 3.4.0-1204 |
+| M15-080 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorAcknowledgeFace lifecycle: ctor state, runnable gates (not while carrying/charger/+0x355, target set non-empty), Init/Update begin, BeginIteration (GetBestFaceToTrack ranking, TurnTowardsFaceAction arguments and triggers, 3-image wait, greeting gate and callback), FinishIteration loop, listener wiring and Stop clearing | libcozmoEngine.so 3.4.0-1204 |
 | M15-096 | M15-freeplay | COMPATIBILITY_POLICY | ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown | libcozmoEngine.so 3.4.0-1204 |
 | M15-107 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop | libcozmoEngine.so 3.4.0-1204 |
 | M15-111 | M15-freeplay | COMPATIBILITY_POLICY | Host source of SetDeterminantData (0xD6): the app's install date and unlock history, supplied by the stack | Unity app code 3.4.0-1204 |

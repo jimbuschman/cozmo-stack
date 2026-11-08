@@ -14294,7 +14294,7 @@
       "subsystem": "M15-freeplay",
       "title": "BehaviorAcknowledgeFace lifecycle: ctor state, runnable gates (not while carrying/charger/+0x355, target set non-empty), Init/Update begin, BeginIteration (GetBestFaceToTrack ranking, TurnTowardsFaceAction arguments and triggers, 3-image wait, greeting gate and callback), FinishIteration loop, listener wiring and Stop clearing",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Ctor 0x00602884..0x006028B6; IsRunnableInternal 0x006028BC..0x006028C6; Init 0x006028C8..0x006028D0; Stop 0x006028D2..0x00602926; Update 0x00602928..0x0060294A; vtable 0x0102B834 (+0x28 override 0x00602D20 returns 0; AddListener +0x34).",
@@ -14305,10 +14305,10 @@
       ],
       "effect": "which faces Cozmo turns to acknowledge and in what order, whether he says the name or plays the greeting, how long he waits for the face, when the reaction may run, and the ReactedAcknowledgedFace objective the C# API delivers",
       "provenance": "ACKNOWLEDGE-FACE-1 (Claude-run: cozmo-extractor read, cozmo-implementer build, cozmo-verifier PASS), checked by Claude 2026-10-29; record added with operator approval 2026-10-29.",
-      "unresolved": "Built and checked in ACKNOWLEDGE-FACE-1 but not settled. B5 UNKNOWN: no writer of BehaviorManager+0x54 besides the ctor's -1.0f is known; the stack keeps -1 and reports MISSING, so the greeting never plays. The body angle uses libm atan2f, so the ranking can settle at most EQUIVALENT_IMPLEMENTATION. Not built: the forced trigger SetupForceTriggerBehavior 0x0060C744..0x0060C888 (no stack entry reaches it). Inherited, owned elsewhere: TurnTowardsFaceAction states (M13-014), text to speech (M14-006), the face strategy fill/cooldown (M10-003), the IBehavior base (M8-001), the objective packer (M7-019), GreetingSayName processing (M7-020), face poses through the M11-066 legacy adapter.",
+      "unresolved": "Settled EQUIVALENT_IMPLEMENTATION (Claude check, 2026-11-08; re-analysis/research/20261108-settle-m15-080-claude-check.md). B5 closed: the only writer of BehaviorManager+0x54 besides the ctor's -1.0f is the activity adapter tail 0x005A4FBA..0x005A4FD6 (first Freeplay activation, field below zero), built in SparkManagerInput.HighLevelAdapterTail (VOICE-CANNED-NAME-DELIVERY-1) and exercised by CannedNameDeliveryTests. EQUIVALENT only because GetRelativeBodyAngleToLookAtPose (0x0054B584) uses libm atan2f in the GetBestFaceToTrack cost; every other step is exact. Not supported: the forced trigger SetupForceTriggerBehavior 0x0060C744..0x0060C888. Only the ExecuteReactionTrigger game message reaches it, and the only app sender is the debug BehaviorPane (unity/scripts/csharp/BehaviorPane.cs:202, Robot.cs:1736); phone-app debug machinery, excluded by the manager 2026-11-08. Owned by other records (each has its own): TurnTowardsFaceAction CheckIfDone (M13-014), its frame counts (M14-002), speech (M14-006), the strategy (M10-003), the IBehavior base (M8-001), the objective packer (M7-019), GreetingSayName (M7-020). | Before: Built and checked in ACKNOWLEDGE-FACE-1 but not settled. B5 UNKNOWN: no writer of BehaviorManager+0x54 besides the ctor's -1.0f is known; the stack keeps -1 and reports MISSING, so the greeting never plays. The body angle uses libm atan2f, so the ranking can settle at most EQUIVALENT_IMPLEMENTATION. Not built: the forced trigger SetupForceTriggerBehavior 0x0060C744..0x0060C888 (no stack entry reaches it). Inherited, owned elsewhere: TurnTowardsFaceAction states (M13-014), text to speech (M14-006), the face strategy fill/cooldown (M10-003), the IBehavior base (M8-001), the objective packer (M7-019), GreetingSayName processing (M7-020), face poses through the M11-066 legacy adapter.",
       "hardware_required": false,
       "live_path": true,
-      "test": "AcknowledgeFaceNativeTests"
+      "test": "AcknowledgeFaceNativeTests; CannedNameDeliveryTests.StockGreetingPlaysAuthoredNameThroughSharedNativeAudio, FactoryGreetingUsesCurrentCameraFaceAndRetainedActionList"
     },
     {
       "id": "M15-081",

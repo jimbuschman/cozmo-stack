@@ -219,6 +219,7 @@ internal static class BestFaceToTrack
 /// </list>
 /// </summary>
 // fidelity: M7-018
+// fidelity: M15-080
 public sealed class AcknowledgeFaceBehavior : FaceBehavior
 {
     /// <summary>B4: the greeting window, 60.0f (0x42700000).</summary>
