@@ -7,6 +7,10 @@ root=$(git rev-parse --show-toplevel); cd "$root" || exit 1
 # Stop the compiler and MSBuild servers on exit: they stay resident after a build and grow by several GB over
 # repeated runs (operator, 2026-10-27).
 trap 'dotnet build-server shutdown >/dev/null 2>&1' EXIT
+# A run whose shell was killed leaves dotnet test and its testhost running, and the trap above never fired: stop that run and
+# the build servers first, so two suites never stack (operator, 2026-11-07).
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/stop-stale-tests.ps1 -Root "$(cygpath -w "$root")" 2>/dev/null
+dotnet build-server shutdown >/dev/null 2>&1
 if ! git diff --quiet HEAD -- || [ -n "$(git ls-files --others --exclude-standard -- cozmo-stack)" ]; then
     echo "test-full: commit (or move) your changes under cozmo-stack first; only committed code is recorded."; exit 1
 fi
