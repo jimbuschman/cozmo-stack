@@ -12,7 +12,7 @@ namespace Cozmo.Conformance;
 public static class HardwareEngineOptions
 {
     public static CozmoEngineOptions Create(string resources,string? filesPath=null,string? needsDirectory=null,string? deviceIdPath=null,
-        string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null)
+        string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null,string? speechSoundBankDirectory=null)
     {
         var defaults=new CozmoEngineOptions();
         string files=filesPath??defaults.FilesPath;
@@ -20,7 +20,7 @@ public static class HardwareEngineOptions
         var (language,country)=Locale(localeName??HostLocaleName(),log??Console.Error.WriteLine);
         return new CozmoEngineOptions{ResourcesPath=resources,FilesPath=files,BlockPoolPath=blockPoolPath??defaults.BlockPoolPath,NeedsDeviceDirectory=needs,
             NeedsSystemClockMicroseconds=clock,DasDeviceId=DasDeviceIdFile.LoadOrCreate(deviceIdPath??DasDeviceIdFile.DefaultPath),
-            LabLocaleLanguage=language,LabLocaleCountry=country,BeforeStart=beforeStart};
+            LabLocaleLanguage=language,LabLocaleCountry=country,BeforeStart=beforeStart,SpeechSoundBankDirectory=speechSoundBankDirectory};
     }
     // Reads the OS setting directly: this solution runs in .NET globalization-invariant mode, where CultureInfo.CurrentCulture is always invariant.
     private static (string? Language,string? Country) Locale(string? name,Action<string> log)
