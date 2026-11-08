@@ -136,7 +136,9 @@ public sealed class FaceIdentityTests
             string name = frame.GetProperty("name").GetString()!;
             fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
             fixture.NativeCameraFrame(id++, images[frame.GetProperty("image").GetString()!]);
-            fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
+            // The real vision-result consumer runs under the engine tick owner.
+            using (fixture.Rig.Engine.EnterSynchronousOwner())
+                fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
             fixture.Rig.Tick();
             if (name == "face_s10_2")
             {
