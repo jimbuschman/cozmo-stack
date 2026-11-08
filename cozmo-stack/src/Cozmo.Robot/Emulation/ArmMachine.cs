@@ -79,6 +79,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
     private readonly Dictionary<string, uint> _stubAddr = new(StringComparer.Ordinal);
     private readonly Dictionary<string, uint> _dataAddr = new(StringComparer.Ordinal);
     private readonly Dictionary<uint, ImportHandler> _addrHooks = new();
+    private readonly Dictionary<uint, Action<ArmMachine>> _addressObservers = new();
     private uint _nextStub = StubBase;
     private uint _staticTop = StaticBase;
     private Exception? _pending;
@@ -102,6 +103,8 @@ public sealed unsafe partial class ArmMachine : IDisposable
     public Dictionary<string, ImportHandler> Libc { get; } = new(StringComparer.Ordinal);
     /// <summary>Handlers that win over any definition, including one inside a loaded library.</summary>
     public Dictionary<string, ImportHandler> Overrides { get; } = new(StringComparer.Ordinal);
+    /// <summary>Optional per-machine imported data symbols, installed before relocation.</summary>
+    internal Dictionary<string, Func<ArmMachine, uint>> DataImports { get; } = new(StringComparer.Ordinal);
     /// <summary>Captured log / printf output.</summary>
     public List<string> Log { get; } = new();
     public byte Poison { get; }
@@ -373,6 +376,11 @@ public sealed unsafe partial class ArmMachine : IDisposable
         if (owner.Symbols.TryGetValue(name, out var own) && own != 0) return own;
         foreach (var l in _libs)
             if (l.Symbols.TryGetValue(name, out var v)) return v;
+        if (DataImports.TryGetValue(name, out var dataImport))
+        {
+            if (!_dataAddr.TryGetValue(name, out var imported)) _dataAddr[name] = imported = dataImport(this);
+            return imported;
+        }
         if (Libc.ContainsKey(name)) return Stub(name);
         if (DataSymbols.TryGetValue(name, out var make))
         {
@@ -473,6 +481,24 @@ public sealed unsafe partial class ArmMachine : IDisposable
     }
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static void ObserveThunk(nint uc, ulong address, uint size, nint user)
+    {
+        var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
+        try
+        {
+            m.CheckDeadline();
+            if (m._addressObservers.TryGetValue((uint)address, out var observe)) observe(m);
+            m.EnsureRunnable();
+            m.CheckDeadline();
+        }
+        catch (Exception e)
+        {
+            m._pending ??= e;
+            uc_emu_stop(uc);
+        }
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static byte UnmappedThunk(nint uc, int type, ulong address, int size, long value, nint user)
     {
         var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
@@ -514,6 +540,18 @@ public sealed unsafe partial class ArmMachine : IDisposable
         nuint hh;
         Check(uc_hook_add(_uc, &hh, UC_HOOK_CODE, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&AddrThunk,
             (void*)GCHandle.ToIntPtr(_self), a, a), "hook address");
+    }
+
+    /// <summary>Observes an instruction without replacing it; the observer must not call user code.</summary>
+    internal void ObserveAddress(uint address, Action<ArmMachine> observer)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(observer);
+        uint a = address & ~1u;
+        _addressObservers.Add(a, observer);
+        nuint hh;
+        Check(uc_hook_add(_uc, &hh, UC_HOOK_CODE, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&ObserveThunk,
+            (void*)GCHandle.ToIntPtr(_self), a, a), "observe address");
     }
 
     // ---- running

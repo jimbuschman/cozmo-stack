@@ -119,6 +119,16 @@ public interface IWwiseRobotAudioBuffer
     /// <summary>A21 (<c>PopNextAudioFrameData</c>): the next float frames of the front stream; empty is allowed (D2.9).</summary>
     ReadOnlyMemory<float> PopNextAudioFrameData();
 
+    /// <summary>
+    /// Returns false when no frame object was returned. A present empty frame returns true with an empty
+    /// memory. Legacy implementations return a present frame, preserving their existing contract.
+    /// </summary>
+    bool TryPopNextAudioFrameData(out ReadOnlyMemory<float> data)
+    {
+        data = PopNextAudioFrameData();
+        return true;
+    }
+
     /// <summary>A23 (<c>ResetAudioBufferAnimationCompleted</c>): set waiting-for-reset until the next Close.</summary>
     void ResetAudioBufferAnimationCompleted();
 }
@@ -420,6 +430,9 @@ public sealed class WwiseRobotAudioPath
         _streamTime = streamTimeMs;
         switch (State)
         {
+            case WwiseRobotAudioState.Preparing:
+                PrepareAnimation(); // 0x597C6C..98: poll reset; do not process the new state in this update
+                break;
             case WwiseRobotAudioState.LoadingStream:
             case WwiseRobotAudioState.LoadingStreamFrames:
                 UpdateLoading();
@@ -472,11 +485,11 @@ public sealed class WwiseRobotAudioPath
             return;
         }
 
-        // A19: the event is due, or elapsed ≥ floor(streamCreated − +0x50); else complete → state 1.
+        // 0x597CCC..D10: the offset gate also runs after the event cursor has reached the end.
+        // MISSING: native uses unsigned 32-bit elapsed/conversion; this public seam still accepts doubles.
         bool due = _nextEventIndex < _events.Count &&
                    _events[_nextEventIndex].TriggerTimeMs <= elapsed;
-        bool byOffset = _nextEventIndex < _events.Count &&
-                        elapsed >= Math.Floor(_buffer.CreatedMilliseconds - _offset50);
+        bool byOffset = elapsed >= Math.Floor(_buffer.CreatedMilliseconds - _offset50);
         if (due || byOffset)
             State = WwiseRobotAudioState.AudioFramesReady;
         else if (_buffer.IsComplete)
@@ -503,13 +516,13 @@ public sealed class WwiseRobotAudioPath
     /// <summary>
     /// A21 PopRobotAudioMessage, state 3 only: pop the front stream's next float frame, encode each sample
     /// with <see cref="AnkiMuLaw"/>, zero-pad a short frame to 744, then advance the event cursor past
-    /// events whose time is below the elapsed time.
+    /// events whose time is below the elapsed time. No frame object returns null without advancing.
     /// </summary>
     public byte[]? PopRobotAudioMessage()
     {
         if (State != WwiseRobotAudioState.AudioFramesReady || _buffer is null) return null;
 
-        var data = _buffer.PopNextAudioFrameData();
+        if (!_buffer.TryPopNextAudioFrameData(out var data)) return null; // 0x597DCE..DE8: no frame object
         var frame = new byte[CozmoAudio.SamplesPerFrame];               // zero-padded tail (A21)
         int n = Math.Min(data.Length, frame.Length);
         for (int i = 0; i < n; i++) frame[i] = AnkiMuLaw.Encode(data.Span[i]);
