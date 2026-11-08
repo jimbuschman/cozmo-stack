@@ -2,6 +2,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -499,6 +500,188 @@ public sealed class DriveOffPilotTests
             Assert.Contains(missing,m=>m.Contains("admission Hiking") && m.Contains("M15-006/M15-008") && m.Contains("prior activity retained"));
         }
         finally{SteppedBehavior.MissingReported-=Observe;}
+    }
+
+    [Fact]
+    public void ActiveStraightCancellationStopsItsMovingLockedBody()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();var owner=rig.Engine.Robot!;
+        rig.State(flags:RobotStatusFlag.AreWheelsMoving|RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos);
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var action=new DriveStraightAction(m,owner,100f,20f,false);
+        owner.ActionList.QueueAction(QueueActionPosition.Now,action);rig.Tick(10);
+        Assert.True(rig.Robot.Motion.BodyMoving);
+        int mark=rig.Mark();owner.ActionList.Cancel(action.Tag);
+        Assert.Contains(rig.SentSince(mark),m=>m is DriveWheels wheels && wheels.LwheelSpeedMmps==0 && wheels.RwheelSpeedMmps==0);
+    }
+
+    [Fact]
+    public void ClearPathSendReplacementDoesNotForwardToSuccessor()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();var owner=rig.Engine.Robot!;
+        rig.Data(rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200));rig.Tick(10);
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var action=new DriveStraightAction(m,owner,100f,20f,false);bool replaced=false;int after=-1;
+        owner.SendFault=message=>
+        {
+            if(!replaced && message is ClearPath)
+            {
+                replaced=true;rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+                rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);after=rig.Mark();
+            }
+            return null;
+        };
+        try
+        {
+            owner.ActionList.QueueAction(QueueActionPosition.Now,action);rig.Tick(10);
+            Assert.True(replaced);Assert.True(action.DestructionObserved);
+            Assert.DoesNotContain(rig.SentSince(after),m=>m is ClearPath or AppendPathSegmentLine or ExecutePath);
+        }
+        finally{owner.SendFault=null;}
+    }
+
+    [Fact]
+    public void DoleDiagnosticCancellationStopsBeforeLineAndExecute()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();var owner=rig.Engine.Robot!;
+        rig.Data(rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200));rig.Tick(10);
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var action=new DriveStraightAction(m,owner,100f,20f,false);bool cancelled=false;
+        void Observe(string line){if(cancelled||!line.Contains("PathSegment.Print"))return;cancelled=true;owner.ActionList.Cancel(action.Tag);}
+        rig.Engine.StackLogLine+=Observe;int mark=rig.Mark();
+        try
+        {
+            owner.ActionList.QueueAction(QueueActionPosition.Now,action);rig.Tick(10);
+            Assert.True(cancelled);Assert.True(action.DestructionObserved);
+            Assert.DoesNotContain(rig.SentSince(mark),m=>m is AppendPathSegmentLine or ExecutePath);
+        }
+        finally{rig.Engine.StackLogLine-=Observe;}
+    }
+
+    [Fact]
+    public void PendingAbortDiagnosticReplacementDoesNotClearSuccessorPath()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();var owner=rig.Engine.Robot!;
+        rig.Data(rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200));rig.Tick(10);
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var active=new DriveStraightAction(m,owner,100f,20f,false);var pending=new DriveStraightAction(m,owner,50f,20f,false);
+        owner.ActionList.QueueAction(QueueActionPosition.Now,active);rig.Tick(10);
+        owner.ActionList.QueueAction(QueueActionPosition.AtEnd,pending);
+        bool replaced=false;int after=-1;
+        void Observe(EngineLogEntry e)
+        {
+            if(replaced||e.Name!="PathComponent.Abort")return;
+            replaced=true;rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+            rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);after=rig.Mark();
+        }
+        rig.Engine.LogEntry+=Observe;
+        try
+        {
+            owner.ActionList.Cancel(pending.Tag);
+            Assert.True(replaced);
+            Assert.DoesNotContain(rig.SentSince(after),m=>m is ClearPath or AppendPathSegmentLine or ExecutePath);
+        }
+        finally{rig.Engine.LogEntry-=Observe;}
+    }
+
+    [Fact]
+    public void PendingStraightCancellationClearsTheOriginalOwnersActivePath()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();
+        var owner=rig.Engine.Robot!;
+        rig.Data(rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200));rig.Tick(10);
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var active=new DriveStraightAction(m,owner,100f,20f,false);
+        var pending=new DriveStraightAction(m,owner,50f,20f,false);
+        owner.ActionList.QueueAction(QueueActionPosition.Now,active);rig.Tick(10);
+        Assert.True(rig.Robot.Motion.Path.IsActive);
+        owner.ActionList.QueueAction(QueueActionPosition.AtEnd,pending);
+        int mark=rig.Mark();
+        Assert.True(owner.ActionList.Cancel(pending.Tag));
+        Assert.Equal(0x02000001u,pending.State);
+        Assert.Same(active,owner.ActionList.GetCurrentAction());
+        Assert.Single(rig.SentSince(mark).OfType<ClearPath>());
+        owner.ActionList.Cancel(active.Tag);
+    }
+
+    [Fact]
+    public void ExplicitStraightUsesCheckedMainYawAndIndependentForwardPosition()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();
+        var owner=rig.Engine.Robot!;
+        var state=rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200);
+        state.Pose.Angle=.4f;rig.Data(state);rig.Tick(10);
+        lock(owner.PoseTreeGate) owner.ForwardPose.Node!.Transform=new Transform3d(owner.ForwardPose.Quaternion,new Vec3(71,212,0));
+        float yaw=(float)owner.GetCheckedMainPose().AngleAroundZ;
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var action=new DriveStraightAction(m,owner,96f,25f,false);int mark=rig.Mark();
+        try
+        {
+            owner.ActionList.QueueAction(QueueActionPosition.Now,action);rig.Tick(10);
+            var line=Assert.Single(rig.SentSince(mark).OfType<AppendPathSegmentLine>());
+            Assert.Equal(71f,line.XStartMm);Assert.Equal(212f,line.YStartMm);
+            Assert.Equal(71f+MathF.Cos(yaw)*96f,line.XEndMm);
+            Assert.Equal(212f+MathF.Sin(yaw)*96f,line.YEndMm);
+        }
+        finally{owner.ActionList.Cancel(action.Tag);}
+    }
+
+    [Fact]
+    public void DriveStartDiagnosticCancellationDoesNotResumeDestroyedAction()
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();
+        var owner=rig.Engine.Robot!;
+        rig.Data(rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200));rig.Tick(10);
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var action=new DriveStraightAction(m,owner,100f,20f,false);
+        bool cancelled=false;
+        void Observe(EngineLogEntry e)
+        {
+            if(e.Name!="DriveStraightAction.CheckIfDone.WaitingForPathStart" || cancelled)return;
+            cancelled=true;owner.ActionList.Cancel(action.Tag);
+        }
+        rig.Engine.LogEntry+=Observe;
+        try
+        {
+            Assert.Equal(0,owner.ActionList.QueueAction(QueueActionPosition.Now,action));
+            rig.Tick(10);
+            Assert.True(cancelled);Assert.True(action.DestructionObserved);
+            Assert.Null(owner.ActionList.GetCurrentAction());
+        }
+        finally{rig.Engine.LogEntry-=Observe;}
+    }
+
+    [Theory]
+    [InlineData(100f, -20f, 20f, true)]
+    [InlineData(-100f, -20f, -20f, true)]
+    [InlineData(100f, -0.000005f, -0.000005f, false)]
+    [InlineData(-100f, -0.000005f, 0.000005f, false)]
+    [InlineData(100f, -0.0f, -0.0f, false)]
+    [InlineData(-100f, 0.0f, -0.0f, false)]
+    public void ExplicitStraightFactoryKeepsRawSpeedAndSendsSourceSignedSpeed(float distance,float supplied,float expected,bool warning)
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.Calibrate();
+        var owner=rig.Engine.Robot!;
+        rig.Data(rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200));rig.Tick(10);
+        using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
+        var warnings=new List<EngineLogEntry>();void Observe(EngineLogEntry e){if(e.Name=="DriveStraightAction.Constructor.NegativeSpeed")warnings.Add(e);}
+        rig.Engine.LogEntry+=Observe;
+        var action=new DriveStraightAction(m,owner,distance,supplied,false);
+        Assert.Equal(BitConverter.SingleToUInt32Bits(supplied),BitConverter.SingleToUInt32Bits(action.SpeedMmps));
+        int mark=rig.Mark();
+        try
+        {
+            Assert.Equal(0,owner.ActionList.QueueAction(QueueActionPosition.Now,action));
+            rig.Tick(10);
+            var sent=rig.SentSince(mark);
+            var line=Assert.Single(sent.OfType<AppendPathSegmentLine>());
+            Assert.Equal(BitConverter.SingleToUInt32Bits(expected),BitConverter.SingleToUInt32Bits(line.Speed.SpeedMmps));
+            Assert.Equal(200f,line.Speed.AccelMmps2);Assert.Equal(500f,line.Speed.DecelMmps2);
+            Assert.True(sent.FindIndex(m=>m is ClearPath)<sent.IndexOf(line));
+            Assert.True(sent.IndexOf(line)<sent.FindIndex(m=>m is ExecutePath));
+            Assert.Equal(warning,warnings.Count!=0);
+        }
+        finally{owner.ActionList.Cancel(action.Tag);rig.Engine.LogEntry-=Observe;}
     }
 
     [Theory]

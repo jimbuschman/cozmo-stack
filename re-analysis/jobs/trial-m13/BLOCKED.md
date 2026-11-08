@@ -1,1 +1,3 @@
-# No outstanding operator decision
+# Operator decision pending
+
+- **AI-BODY-DRIVE-CONTROL-1 cancellation.** Native DriveStraight destruction calls the shared PathComponent Abort whenever the path is active, even for a pending action deleted by tag (0x00547530–0x00547562, 0x0053E882–0x0053E8CE). It also always destroys the shared driving-animation state. A public AI command can preserve that defined engine behavior, or use an operator-approved COMPATIBILITY_POLICY that cancels only the drive's own path and animation. An idle check at admission cannot guarantee exclusive ownership after the request is queued. Source-backed construction and line work can proceed while this decision is open.

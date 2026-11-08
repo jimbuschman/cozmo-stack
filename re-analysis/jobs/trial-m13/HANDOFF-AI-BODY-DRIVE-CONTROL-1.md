@@ -1,0 +1,23 @@
+# AI-BODY-DRIVE-CONTROL-1
+
+## Checked straight-drive path
+
+- Native RobotActionUnion inner tag 5 reaches thunk 0x00525C6C and factory 0x00529EF6–0x00529F1A. Direct game tag 12 at 0x00525C82 joins the same factory. It reads f32 speed at +0, f32 distance at +4 and animation bool at +8, then calls the explicit constructor at 0x00547278. Shipped Unity Robot.cs:1575–1577 supplies those values and defaults to NOW with zero retries. The host has no new public drive entry in this slice.
+- Type 8, body mask 4, default acceleration/deceleration 200/500 and default speed +100 or −80 come from 0x005470F0–0x0054720A. The explicit constructor negates a speed strictly below −1e−5f after the native warning and negates the result for a distance strictly below −1e−5f (0x0054728C–0x00547308). The stored wire speed preserves tiny negative values and signed zero. The existing SpeedMmps property remains the caller input. The explicit custom-profile gate at 0x0054759E–0x005475D4 does not set ExecutePath's manual flag.
+- Init calls the shared animation owner even with animation disabled (0x005475D8–0x005475F6). Absolute distance strictly below 1e−5f marks started without appending a line (0x005475FA–0x00547626). For a line, checked MAIN yaw and checked Forward XY feed f32 sine/cosine, multiply and add at 0x00547628–0x005476AA. One fresh segment goes to the canonical PathComponent with manual false (0x005476B8–0x005476D0); a nonzero execution result maps to 0x03000016.
+- The shared PathComponent owns ClearPath, the rolling u16 ID, AppendPathSegmentLine, ExecutePath and C6 feedback (0x00649220–0x00649280, 0x0064A340–0x0064A48E, 0x0064B61C onward). The drive does not invent a second path state machine or filter C6 by its own ID. Scoped host guards keep reentrant path preparation, sends and abort on the original live owner. Same-owner native shared abort remains in force.
+- CheckIfDone uses handler state 3 first, path failure 0x04000002, then HasPathToFollow, IsActive and the original handler start/end calls (0x005478C0–0x005479EE). The known diagnostics are WaitingForPathStart, PathJustStarted and PathJustCompleted at 0x00547904, 0x0054794E and 0x005479AE. The action result uses variant 6 and the native 30 s timeout (0x0053FF0E–0x0053FF14, vtable 0x0102190C slot +0x2C). The PathComponent response timeout is separate (0x006494CC–0x00649586).
+- Tag cancellation deletes a pending runner without starting it (0x0053E882–0x0053E8CE). Its native destructor still aborts any active path on the same robot and always tears down the shared driving handler, even with animation disabled (0x00547530–0x00547562). That can affect an unrelated drive. An idle check at admission cannot prove future exclusive path and handler ownership. The public cancellation contract is recorded as an operator decision in BLOCKED.md.
+
+## Files and checks
+
+- DriveActions.cs owns the existing straight runner's signed-speed construction, checked pose, path diagnostics, body-track cleanup and captured driving-handler teardown. NativePathComponent.cs, Motion.cs, RobotPath.cs and CozmoEngine.cs recheck the original action and owner around the existing clear/dole/execute/status and abort steps. ActionQueue.cs detaches only an already-deleting pending node on reentrant Clear under M1-034/M8-015 (0x0053F998–0x0053F9A8). The outer deletion still owns the completion.
+- DriveOffPilotTests.cs uses the original queue, path owner and fake transport. It checks signed-speed bits, exact line endpoints for the supplied poses, ClearPath/Append/Execute ordering and matching C6 completion. It also shows the native pending-cancel shared clear, the active owned-body stop, stale continuation after a Dole log cancel, original-owner replacement during ClearPath send and the abort diagnostic, and the pending-delete hang correction.
+
+## MISSING
+
+- No public AI drive command. The operator choice covers only its cancellation contract. Existing native same-owner path and handler behavior stays source-faithful.
+- The existing host MathF sin/cos gives the recovered f32 operation order. Bit-for-bit equivalence to the unshipped bionic library for every yaw remains open. Generic profile setters and animation-selection gaps remain at their existing boundaries. No robot hardware, fidelity status or approval change.
+
+Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
+Final affected suite passed 237/237 with zero skips. Independent source review passed for the internal scope after the path owner, owned-body stop and reentrant queue corrections. Batch full gate pending.
