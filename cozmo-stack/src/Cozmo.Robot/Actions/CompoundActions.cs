@@ -474,6 +474,7 @@ public class CompoundActionParallel : CompoundAction
             var child = Children[i];
             child.SuppressTrackLocking = SuppressTrackLocking;                     // R1: copy +56
             uint result = child.Update();
+            if (DestructionObserved) return State; // M1-034: child callback retired this compound.
             SourceStatus = child.SourceStatus;
             uint category = result >> 24;
 

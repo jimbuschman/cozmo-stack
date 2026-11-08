@@ -157,6 +157,7 @@ internal sealed class StackFirmwareScene:IDisposable
         }
         byte animation=F.Rig.Robot.Animations.CurrentTag;
         if(animation!=0&&_animations.Add(animation)){F.Rig.Data(new AnimationStarted{AnimId=animation});F.Rig.Data(new AnimationEnded{AnimId=animation});F.Rig.Tick();}
+        if(stopBeforeInput?.Invoke()==true)return;
         // Explicit processed-frame boundary input for the Ground failure unit: no44 observation
         // and no ambient world negative-observation deletion. Positive pipelines use the real worker.
         if(Grounded&&GroundProcessedFramesOnly)

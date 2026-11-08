@@ -33,7 +33,14 @@ public sealed partial class CozmoRobot
     internal Func<float[], Task<IDirectSpeechSession>>? DirectSpeechOpenForTest;
 
     /// <summary>Requests direct English robot speech. Completion reports the native action result after the robot's animation completion.</summary>
-    public Task<AiSpeechActionResult> SayEnglishSentenceAsync(string text, CancellationToken cancellationToken = default)
+    public Task<AiSpeechActionResult> SayEnglishSentenceAsync(string text, CancellationToken cancellationToken = default) =>
+        QueueEnglishSpeech(text, false, cancellationToken);
+
+    /// <summary>Requests the host-selected Name_Normal intent fitted to CozmoSaysSpeakLoop.</summary>
+    public Task<AiSpeechActionResult> SayEnglishNameWithAnimationAsync(string text, CancellationToken cancellationToken = default) =>
+        QueueEnglishSpeech(text, true, cancellationToken);
+
+    private Task<AiSpeechActionResult> QueueEnglishSpeech(string text, bool fitName, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(text);
         var owner = Engine.Robot;
@@ -51,6 +58,26 @@ public sealed partial class CozmoRobot
             Engine.RobotValidated != true || !owner.FirstFullStateHandled || !owner.ReadyToStream ||
             owner.AudioOutputSource != RobotAudioOutputSource.PlayOnRobot)
             return Task.FromResult(new AiSpeechActionResult(false, null, "Direct English robot speech is not ready"));
+        byte style = 3;
+        float duration = 1f, pitch = 0f;
+        if (fitName)
+        {
+            if (Animations.Library is null)
+                return Task.FromResult(new AiSpeechActionResult(false, null, "MISSING VOICE-ANIMATION-FIT-1: animation catalog is unavailable"));
+            try
+            {
+                var metadata = SpeechMetadata.Load(Engine.Options.ResourcesPath);
+                if (!metadata.TrySelect("Name_Normal", text, Engine.ContextRandom, out var selected) || selected.Style != 1)
+                    return Task.FromResult(new AiSpeechActionResult(false, null, "MISSING VOICE-ANIMATION-FIT-1: Name_Normal style is unavailable"));
+                style = selected.Style; duration = selected.Duration; pitch = selected.Pitch;
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(new AiSpeechActionResult(false, null, $"MISSING VOICE-ANIMATION-FIT-1: intent configuration failed: {ex.Message}"));
+            }
+            if (owner.Lifetime.Destroying || !ReferenceEquals(Engine.Robot, owner))
+                return Task.FromResult(new AiSpeechActionResult(false, null, "Robot changed before admission", true));
+        }
         uint tag = 0;
         for (int i = 0; i < 1_000_000; i++)
         {
@@ -58,8 +85,8 @@ public sealed partial class CozmoRobot
             if (!ActionRunnerTagCounter.Global.IsInUse(_nextSpeechTag)) { tag = _nextSpeechTag; break; }
         }
         if (tag == 0) return Task.FromResult(new AiSpeechActionResult(false, null, "No external action tag is available"));
-        var action = new SayTextAction(this, owner, text, 3, 1f, 0f, direct: true,
-            speechForTest: DirectSpeechComponentForTest, openForTest: DirectSpeechOpenForTest)
+        var action = new SayTextAction(this, owner, text, style, duration, pitch, direct: true,
+            speechForTest: DirectSpeechComponentForTest, openForTest: DirectSpeechOpenForTest, fitName: fitName)
             { HostCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously) };
         if (!action.SetTag(tag))
         {

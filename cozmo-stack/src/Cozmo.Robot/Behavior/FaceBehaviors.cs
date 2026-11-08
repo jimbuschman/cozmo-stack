@@ -497,6 +497,11 @@ public sealed class DriveToFaceBehavior : FaceBehavior
     public const float DriveDecelMmps2 = 166.667f;
     public const double TrackSec = 5.0;
     private readonly ManipulationSystem _m;
+    private EngineRobot? _trackingOwner;
+    private NativeSmartFaceReference? _trackingFace;
+    private float _trackingDeadline;
+    private bool _nativeTracking;
+    private long _trackingGeneration;
 
     public DriveToFaceBehavior(VisionSystem v, ManipulationSystem m, string id = "VC_ComeHere") : base(id, "DriveToFace", v) => _m = m;
     public Phase CurrentPhase { get; private set; }
@@ -508,9 +513,17 @@ public sealed class DriveToFaceBehavior : FaceBehavior
 
     protected override void OnStart()
     {
+        Interlocked.Increment(ref _trackingGeneration);
         var face = V.Faces.GetLastObservedFace();
         if (face is null) { Log("BehaviorDriveToFace.InitInternal.NoValidFace"); Finish(); return; }
         TargetFaceId = face.Id;
+        _trackingOwner = Context.Robot.Engine.Robot;
+        _trackingFace?.Dispose();
+        _trackingFace = _trackingOwner is { HasExternalInterface: true } owner ? new NativeSmartFaceReference(Context.Robot, face.Id, owner) : null;
+        var runOwner = _trackingOwner;
+        long runGeneration = Interlocked.Read(ref _trackingGeneration);
+        bool CurrentRun() => Interlocked.Read(ref _trackingGeneration) == runGeneration &&
+            (runOwner is null ? Context.Robot.Engine.Robot is null : !runOwner.Lifetime.Destroying && ReferenceEquals(runOwner.Engine.Robot, runOwner));
         CurrentPhase = Phase.TurningTowardsFace;
         RunFaceAction($"TurnTowardsFace({face.Id}), verify, turn", async ct =>
         {
@@ -521,23 +534,61 @@ public sealed class DriveToFaceBehavior : FaceBehavior
             using var t2 = new TurnTowardsFaceAction(V, face.Id); return await t2.RunAsync(ct);
         }, r =>
         {
+            if (!CurrentRun()) return;
             if (r != FaceActionResult.Success) { Finish(); return; }
             var f = V.Faces.GetFace(face.Id); var robot = V.History.Latest?.RobotPose;
             if (f is null || robot is null) { Finish(); return; }
             var d = f.HeadPose.Translation - robot.Value.Translation;
             DistanceMm = Math.Sqrt(d.X * d.X + d.Y * d.Y);
-            if (DistanceMm <= CloseEnoughMm) { CurrentPhase = Phase.AlreadyCloseEnough; Log($"already close enough ({DistanceMm:F0} mm)"); TransitionToTrackingFace(); return; }
+            if (DistanceMm <= CloseEnoughMm) { CurrentPhase = Phase.AlreadyCloseEnough; Log($"already close enough ({DistanceMm:F0} mm)"); if (CurrentRun()) TransitionToTrackingFace(runOwner, runGeneration); return; }
             CurrentPhase = Phase.DrivingToFace;
             RunAction($"DriveStraight({DistanceMm - CloseEnoughMm:F0} mm @ {DriveSpeedMmps})", ct => new DriveStraightAction(_m, DistanceMm.Value - CloseEnoughMm, DriveSpeedMmps).RunAsync(ct),
-                      _ => TransitionToTrackingFace(), ActionResult.Abort);
+                      _ => { if (CurrentRun()) TransitionToTrackingFace(runOwner, runGeneration); }, ActionResult.Abort);
         });
     }
 
-    private void TransitionToTrackingFace()
+    private void TransitionToTrackingFace(EngineRobot? expectedOwner, long expectedGeneration)
     {
+        if (Interlocked.Read(ref _trackingGeneration) != expectedGeneration || !ReferenceEquals(_trackingOwner, expectedOwner)) return;
         CurrentPhase = Phase.TrackingFace;
-        var tracker = new TrackFaceAction(V, TargetFaceId!.Value);
-        RunAction("TrackFace 5 s", ct => tracker.RunAsync(TimeSpan.FromSeconds(TrackSec * TrackTimeScale), ct), _ => { CurrentPhase = Phase.Idle; Finish(); }, false);
+        if (_trackingOwner is { } owner)
+        {
+            long generation = Interlocked.Read(ref _trackingGeneration);
+            using var engine = owner.Engine.EnterSynchronousOwner();
+            if (owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot, owner) || Interlocked.Read(ref _trackingGeneration) != generation) return;
+            _nativeTracking = true;
+            _trackingDeadline = owner.Engine.Timer.SecondsF + (float)(TrackSec * TrackTimeScale);
+            var face = _trackingFace is { } target ? V.Faces.GetNativeFace(owner, target.Id) : null;
+            if (face is null || Interlocked.Read(ref _trackingGeneration) != generation || owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot, owner)) return;
+            StartActing(new NativeTrackFaceRunner(_m, owner, face.Id), null,
+                () => !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) && Interlocked.Read(ref _trackingGeneration) == generation);
+            return;
+        }
+        ReportMissing("M14-002 BehaviorDriveToFace tracking requires its original native Robot owner; tracking withheld");
+        if (Interlocked.Read(ref _trackingGeneration) != expectedGeneration || Context.Robot.Engine.Robot is not null) return;
+        CurrentPhase = Phase.Idle;
+        Finish();
+    }
+
+    protected override bool KeepsRunningWithoutAction => _nativeTracking || HasCurrentAction || base.KeepsRunningWithoutAction;
+    protected override void OnUpdate()
+    {
+        if (_nativeTracking && _trackingOwner is { } owner &&
+            ReferenceEquals(owner.Engine.Robot, owner) && owner.Engine.Timer.SecondsF > _trackingDeadline)
+        {
+            long generation = Interlocked.Read(ref _trackingGeneration);
+            StopActing(false, false);
+            if (Interlocked.Read(ref _trackingGeneration) != generation || owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot, owner)) return;
+            _nativeTracking = false;
+            CurrentPhase = Phase.Idle;
+            Finish();
+        }
+    }
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Interlocked.Increment(ref _trackingGeneration);
+        _trackingFace?.Dispose(); _trackingFace = null; _trackingOwner = null; _nativeTracking = false;
+        base.OnStop(reason);
     }
 }
 

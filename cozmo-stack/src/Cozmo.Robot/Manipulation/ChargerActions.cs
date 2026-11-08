@@ -531,31 +531,39 @@ public sealed class MountChargerAction
     /// </summary>
     internal sealed class LivePanTiltRobot : IPanTiltRobot, INativeMotorAckSource, INativePanTiltServices
     {
-        public IDisposable SubscribeMotorAck(Action<byte> callback) => _m.Robot.Engine.Robot!.SubscribeMessage(
+        public IDisposable SubscribeMotorAck(Action<byte> callback) => (_owner is null ? _m.Robot.Engine.Robot! : CheckedOwner()).SubscribeMessage(
             RobotMessageId.MotorActionAck, m => callback(((MotorActionAck)m).ActionId), "TurnAction");
 
         private readonly ManipulationSystem _m;
         private readonly bool _actualMain;
+        private readonly EngineRobot? _owner;
         public LivePanTiltRobot(ManipulationSystem m):this(m,false){}
-        internal LivePanTiltRobot(ManipulationSystem m,bool actualMain){_m=m;_actualMain=actualMain;}
+        internal LivePanTiltRobot(ManipulationSystem m,bool actualMain,EngineRobot? owner=null){_m=m;_actualMain=actualMain;_owner=owner;}
+        private EngineRobot CheckedOwner()
+        {
+            var owner=_owner??_m.Robot.Engine.Robot;
+            if(owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_m.Robot.Engine.Robot,owner))throw new NativeActionUnavailable("Turn action's original robot owner is unavailable");
+            return owner;
+        }
         public object StateGate => _m.Robot.Animations.NativeLayerGate;
         public SourceLogSink SourceLog => (level,channel,key,text) => _m.Robot.Engine.EmitSourceLog(level,channel,key,text);
         public string OffTreadsName => Enum.GetName(_m.Robot.Sensors.OffTreadsState) ?? "(null)";
-        public void RemoveKeepFaceAlive(int duration) => _m.Robot.Animations.WithTrackLayers(layers => layers.RemoveKeepFaceAlive(duration));
+        private bool Current => _owner is null || !_owner.Lifetime.Destroying && ReferenceEquals(_m.Robot.Engine.Robot,_owner);
+        public void RemoveKeepFaceAlive(int duration) { if(Current)_m.Robot.Animations.WithTrackLayers(layers => { if(Current)layers.RemoveKeepFaceAlive(duration); }); }
         public byte AddEyeShift(byte tag, float x)
         {
-            _m.Robot.Animations.WithTrackLayers(layers => layers.AddEyeShift(ref tag,"TurnInPlaceEyeDart",x,0,132,64,128,
-                BitConverter.Int32BitsToSingle(0x3F8CCCCD),BitConverter.Int32BitsToSingle(0x3F59999A),BitConverter.Int32BitsToSingle(0x3DCCCCCD)));
+            if(Current)_m.Robot.Animations.WithTrackLayers(layers => { if(Current)layers.AddEyeShift(ref tag,"TurnInPlaceEyeDart",x,0,132,64,128,
+                BitConverter.Int32BitsToSingle(0x3F8CCCCD),BitConverter.Int32BitsToSingle(0x3F59999A),BitConverter.Int32BitsToSingle(0x3DCCCCCD)); });
             return tag;
         }
-        public void RemoveEyeShift(byte tag, int duration) => _m.Robot.Animations.WithTrackLayers(layers => layers.RemoveEyeShift(tag,duration));
+        public void RemoveEyeShift(byte tag, int duration) { if(Current)_m.Robot.Animations.WithTrackLayers(layers => { if(Current)layers.RemoveEyeShift(tag,duration); }); }
         public bool OnTreads => _m.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
         public uint OriginId => _m.Robot.Engine.Robot?.PoseFrameId ?? 0;
         public float PoseAngleAroundZ
         {
             get
             {
-                var native=_m.Robot.Engine.Robot;
+                var native=_owner is null ? _m.Robot.Engine.Robot : CheckedOwner();
                 if(native is null){SteppedBehavior.ReportMissing("M13-022 Robot::GetPose 0x004EA398 has no native owner; host turn pose input is unavailable");return 0;}
                 float angle=0;
                 LogCallbackDeferral.RunGated(native.PoseTreeGate,()=>
@@ -573,10 +581,10 @@ public sealed class MountChargerAction
         public bool BodyMoving => _m.Robot.Motion.BodyMoving;
         public bool HeadMoving => _m.Robot.Motion.HeadMoving;
 
-        public uint TurnInPlace(float targetRad, float speed, float accel, float toleranceRad, ushort numHalfRevolutions, bool isAbsolute, out byte actionId) =>
-            _m.Robot.Motion.TurnInPlace(targetRad, speed, accel, toleranceRad, numHalfRevolutions, isAbsolute, out actionId);
+        public uint TurnInPlace(float targetRad, float speed, float accel, float toleranceRad, ushort numHalfRevolutions, bool isAbsolute, out byte actionId)
+        { if(_owner is not null)CheckedOwner(); return _m.Robot.Motion.TurnInPlace(targetRad, speed, accel, toleranceRad, numHalfRevolutions, isAbsolute, out actionId,_owner); }
         public uint MoveHeadToAngle(float angleRad, float speed, float accel, float durationSec, out byte actionId) =>
-            _m.Robot.Motion.MoveHeadToAngle(angleRad, speed, accel, durationSec, out actionId);
+            _m.Robot.Motion.MoveHeadToAngle(angleRad, speed, accel, durationSec, out actionId,_owner);
     }
 }
 

@@ -225,6 +225,8 @@ public sealed class TrackedFace
     public FaceRect Rect => Detection.Rect;
     public string? Name => Detection.Name;
     public Pose3d HeadPose { get; internal set; } = Pose3d.Identity;
+    internal Vec3 NativeCameraTranslation { get; private set; }
+    internal Vec3? NativeTrackingTranslation { get; set; }
     public double DistanceMm { get; private set; }
 
     /// <summary>The parts/eye-detected flag at +0x30: both eye centres present.</summary>
@@ -335,6 +337,7 @@ public sealed class TrackedFace
         float scale = fx * BitConverter.Int32BitsToSingle(unchecked((int)InterPupilBits));        // vldr 0x0087E014 (literal 0x0087E084)..0x0087E01E
         scale = scale / eyeDistance;                                                              // 0x0087E022
         float tx = scale * rx, ty = scale * ry, tz = scale * rz;                                   // 0x0087E026..0x0087E038
+        NativeCameraTranslation = new Vec3(tx, ty, tz);
         DistanceMm = scale;
         // MISSING: M14-001/M11-066 0x0087E042..0x0087E064: the native writes (tx, ty, tz) into the head pose's own translation,
         // keeping the head pose's own rotation, and calls SetParent(camera). The stack's face consumers read a flattened
@@ -382,6 +385,7 @@ public sealed class FaceEntry
     public float? NativeDirectionDcRadians { get; internal set; }
     // Strong allocation reference, like native PoseTreeNode's parent edge; no PoseBase owner is added.
     internal PoseTreeNode? NativeObservationOrigin { get; set; }
+    internal Vec3? NativeTrackingTranslation { get; set; }
     public uint LastObservedTimestamp { get; internal set; }
     public uint FirstObservedTimestamp { get; internal set; }
     public int TimesObserved { get; internal set; }
@@ -446,15 +450,17 @@ public sealed partial class FaceWorld
     public FaceObservation? AddOrUpdateFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast)
         => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,null);
 
-    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin)
-        => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin);
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin, bool? onTreads = null)
+        => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin,onTreads: onTreads);
 
-    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, Func<bool?> rotationInput, PoseTreeNode origin)
-        => AddOrUpdateFaceCore(face,robotPoseAtFrame,null,origin,rotationInput);
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, Func<bool?> rotationInput, PoseTreeNode origin, bool? onTreads = null)
+        => AddOrUpdateFaceCore(face,robotPoseAtFrame,null,origin,rotationInput,onTreads);
 
-    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin, Func<bool?>? rotationInput = null)
+    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin, Func<bool?>? rotationInput = null, bool? onTreads = null)
     {
-        if (face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
+        bool below = onTreads is { } on && face.NativeTrackingTranslation is { } native
+            ? on && native.Z < 0 : face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z;
+        if (below) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev;
         lock (_gate)
         {
@@ -495,6 +501,8 @@ public sealed partial class FaceWorld
                 entry.HeadPose=prepared;
             }
             else entry.HeadPose=face.HeadPose;
+            if (!existing || face.HasEyeParts) entry.NativeTrackingTranslation = face.NativeTrackingTranslation;
+            else if (face.NativeTrackingTranslation is null) entry.NativeTrackingTranslation = null;
             entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
@@ -534,7 +542,7 @@ public sealed partial class FaceWorld
                 if(newName is not null)old.Name=newName;
                 if(!_faces.ContainsKey(newId))
                     _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),Rect=old.Rect,
-                        LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeObservationOrigin=old.NativeObservationOrigin,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
+                        LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeObservationOrigin=old.NativeObservationOrigin,NativeTrackingTranslation=old.NativeTrackingTranslation,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
                         FirstObservedTimestamp=old.FirstObservedTimestamp}); //existing host metadata, NOT native aux114.
                 old.NativeObservationOrigin=null;
                 _faces.Remove(oldId); //native remove(false): no4B, including old==new.
@@ -547,6 +555,18 @@ public sealed partial class FaceWorld
     }
 
     public FaceEntry? GetFace(int id) { lock (_gate) return _faces.GetValueOrDefault(id); }
+    // FaceWorld::GetFace 0x004F597E: lookup is visible only in the current world origin.
+    internal FaceEntry? GetNativeFace(EngineRobot robot, int id)
+    {
+        using var mutation = NativePoseScope?.Invoke();
+        lock (robot.PoseTreeGate) lock (_gate)
+        {
+            if (!_faces.TryGetValue(id, out var face) || face.NativeObservationOrigin is null ||
+                !robot.TryGetNativeOriginOwner(robot.CurrentOriginId, out var origin) || origin?.Node is null ||
+                !PoseTreeNode.HasSameRoot(face.NativeObservationOrigin, origin.Node)) return null;
+            return face;
+        }
+    }
     public FaceEntry? GetFace(SmartFaceID id) => id.IsValid ? GetFace(id.Id) : null;
     public SmartFaceID GetSmartFaceID(int id) => new(this, id);
 

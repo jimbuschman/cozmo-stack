@@ -8,6 +8,7 @@ internal interface IDirectSpeechSession
 {
     WwiseRobotAudioPath Path { get; }
     Exception? Failure { get; }
+    Task Configure(uint voiceSwitch, float pitch);
     void Retire();
 }
 
@@ -19,6 +20,7 @@ internal sealed class DirectSpeechSession : IWwiseRobotAudioHost, IDirectSpeechS
     internal WwiseRobotAudioPath Path { get; }
     WwiseRobotAudioPath IDirectSpeechSession.Path => Path;
     Exception? IDirectSpeechSession.Failure => Native.Failure;
+    Task IDirectSpeechSession.Configure(uint voiceSwitch, float pitch) => Native.ConfigureAsync(voiceSwitch, pitch);
     private DirectSpeechSession(SpeechRobotAudioBuffer buffer, NativeWwiseVoiceSession native, Action<string> report)
     {
         _buffer = buffer;

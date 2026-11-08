@@ -652,6 +652,17 @@ public sealed class DockingSystem : IDisposable
         return false;
     }
 
+    internal bool PlaceObjectOnGroundOwned(EngineRobot owner, CarryingComponent carrying, Func<bool> current)
+    {
+        if ((carrying.CarriedObjectId ?? uint.MaxValue) == uint.MaxValue) return true;
+        _native.Success = false;
+        Log?.Invoke("PlaceObjectOnGround sent");
+        if (!current()) return true;
+        var message = PlaceObjectOnGroundAction.Message(false);
+        Sent.Add(message);
+        return !owner.SendCheckedOwned(message);
+    }
+
     /// <summary><c>DockingComponent::AbortDocking</c>.</summary>
     public bool Abort()
     {

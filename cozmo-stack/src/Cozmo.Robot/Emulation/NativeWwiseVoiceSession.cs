@@ -60,6 +60,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     }
 
     internal Task OfferAsync(float[] samples, int sampleRate) => Enqueue(host => host.Offer(samples, sampleRate));
+    internal Task ConfigureAsync(uint voiceSwitch, float pitch) => Enqueue(host => host.ConfigureVoice(voiceSwitch, pitch));
     internal Task ClearPendingAsync() => Enqueue(host => host.ClearPending());
     internal Task Finished => _finished.Task;
     internal Exception? Failure { get { lock (_gate) return _failure; } }

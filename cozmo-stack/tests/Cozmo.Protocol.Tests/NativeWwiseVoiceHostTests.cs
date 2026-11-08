@@ -9,6 +9,27 @@ namespace Cozmo.Protocol.Tests;
 public sealed class NativeWwiseVoiceHostTests
 {
     [Fact]
+    public void NameSwitchAndPitchMatchIndependentNativeReference()
+    {
+        string? lib = ShippedLibraries.FindLibDir();
+        if (lib is null) return;
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        using var host = new NativeWwiseVoiceHost(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), 1024);
+        float scale = BitConverter.UInt32BitsToSingle(0x38000100);
+        Assert.Throws<InvalidOperationException>(() => host.ConfigureVoice(0x2F8B3BF4, 0.1f));
+        host.Offer(AcapelaTtsTests.ProbeSamples().Select(s => s * scale).ToArray(), 22050);
+        host.ConfigureVoice(0x2F8B3BF4, 0.1f);
+        Assert.Throws<InvalidOperationException>(() => host.ConfigureVoice(0x2F8B3BF4, 0.1f));
+        host.PostOffered(applyDefaultVolume: true);
+        for (int i = 0; i < 195; i++) host.Step(21334, consumeOutput: true);
+        Assert.Equal(98, host.Frames.Count);
+        Assert.Equal("52155a7f13a96f2d372595f01825d6266ce1a35f8f47bf114569f80d90198344", Hash(host.Frames));
+        Assert.NotNull(host.EndOfEvent);
+        Assert.True(host.HijackEnded);
+    }
+
+    [Fact]
     public void CheckedOpenSlSinkMatchesIndependentNativeVoiceReferenceAndTerminates()
     {
         string? lib = ShippedLibraries.FindLibDir();
