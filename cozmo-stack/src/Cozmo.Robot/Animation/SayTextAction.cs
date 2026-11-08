@@ -1,3 +1,5 @@
+using Cozmo.Robot.Behavior;
+
 namespace Cozmo.Robot.Animation;
 
 /// <summary>The SayText action up to the unavailable WavePortal-to-robot float output join.</summary>
@@ -8,10 +10,13 @@ internal sealed class SayTextAction : ActionRunner
     private readonly TextToSpeechComponent _speech;
     private readonly byte _operation;
     internal float Pitch { get; }
-    private bool _retired;
+    private volatile bool _retired;
     private bool _taken;
     private readonly bool _direct;
     private readonly bool _fitName;
+    private AnimationTrigger? _cannedTrigger;
+    private Task<CannedSpeechLease>? _cannedOpening;
+    private CannedSpeechLease? _cannedSession;
     private AnimationClip? _fittedClip;
     private float _durationMs;
     private Task? _configuration;
@@ -21,6 +26,8 @@ internal sealed class SayTextAction : ActionRunner
     private readonly Func<float[], Task<IDirectSpeechSession>>? _openForTest;
     private TriggerAnimationAction? _child;
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? HostCompletion;
+    internal TriggerAnimationAction? ChildForTest => _child;
+    internal void SetCannedTrigger(AnimationTrigger trigger) => _cannedTrigger = trigger;
 
     internal SayTextAction(CozmoRobot robot, EngineRobot owner, string text, byte style, float durationScalar, float pitch, bool direct = false,
         TextToSpeechComponent? speechForTest = null, Func<float[], Task<IDirectSpeechSession>>? openForTest = null, bool fitName = false)
@@ -59,11 +66,22 @@ internal sealed class SayTextAction : ActionRunner
         byte state = _speech.GetOperationState(_operation);
         if (state == 0) return 0x03000000;
         if (state != 2) return 0x01000000;
-        if (_direct)
+        if (_direct || _cannedTrigger is not null)
         {
             if (!_speech.TakeSpeech(_operation, out var samples)) return 0x03000000;
             _taken = true;
             _durationMs = (float)(((double)samples.Length / 22050.0) * 1000.0);
+            if (_cannedTrigger is not null)
+            {
+                var owner = _owner.GetCannedSpeechOwner();
+                if (owner is null)
+                {
+                    _robot.Engine.EmitStackLog("MISSING VOICE-CANNED-NAME-DELIVERY-1: local shared audio device, archive or robot output is unavailable");
+                    return 0x03000000;
+                }
+                _cannedOpening = owner.Acquire(samples, () => !_retired && !_owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _owner));
+                return 0;
+            }
             string? library = Emulation.ShippedLibraries.FindLibDir();
             string? banks = _robot.Engine.Options.SpeechSoundBankDirectory;
             if (_openForTest is { } open) _opening = open(samples);
@@ -83,9 +101,41 @@ internal sealed class SayTextAction : ActionRunner
 
     public override uint CheckIfDone()
     {
-        if (!_direct) return EngineActionResult.Running;
+        if (!_direct && _cannedTrigger is null) return EngineActionResult.Running;
         if (DestructionObserved) return EngineActionResult.Running;
         if (_retired || _owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, _owner)) return 0x03000000;
+        if (_cannedTrigger is { } trigger)
+        {
+            if (_cannedSession is null)
+            {
+                if (_cannedOpening is null || !_cannedOpening.IsCompleted) return EngineActionResult.Running;
+                if (!_cannedOpening.IsCompletedSuccessfully)
+                {
+                    _robot.Engine.EmitStackLog($"M14-006 canned speech initialization failed: {_cannedOpening.Exception?.GetBaseException().Message}");
+                    return 0x03000000;
+                }
+                _cannedSession = _cannedOpening.Result;
+                if (_retired || _owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, _owner)) return 0x03000000;
+                var child = new TriggerLiftSafeAnimationAction(_robot, new(trigger, 1, true, 0, 60f, false));
+                if (DestructionObserved || _retired || _owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, _owner))
+                {
+                    child.RetireNeverAdmittedTree();
+                    return EngineActionResult.Cancelled;
+                }
+                child.SetSpeechPath(_cannedSession.Path, _owner, authored: true);
+                child.Watcher = Watcher;
+                _child = child;
+                _configuration = _cannedSession.Configure(Pitch);
+            }
+            if (_cannedSession.Failure is { } cannedFailure)
+            {
+                _robot.Engine.EmitStackLog($"M14-006 canned speech output failed: {cannedFailure.Message}");
+                return 0x03000000;
+            }
+            if (_configuration is null || !_configuration.IsCompleted) return EngineActionResult.Running;
+            if (!_configuration.IsCompletedSuccessfully) return 0x03000000;
+            return _child!.Update();
+        }
         if (_session is null)
         {
             if (_opening is null || !_opening.IsCompleted) return EngineActionResult.Running;
@@ -141,12 +191,16 @@ internal sealed class SayTextAction : ActionRunner
     {
         if (_retired) return;
         _retired = true;
-        if (_direct) { if (!_taken) _speech.ClearOperationData(_operation); }
+        if (_direct || _cannedTrigger is not null) { if (!_taken) _speech.ClearOperationData(_operation); }
         else _speech.CleanupAudioEngine(_operation);
+        _cannedSession?.ClearPending(); // native cleanup precedes the child destructor
         if (_child is { } child) { child.Prep(); child.WatcherEnding(); _child = null; }
         if (_session is { } session) session.Retire();
         else if (_opening is { } opening)
             _ = opening.ContinueWith(t => { if (t.Status == TaskStatus.RanToCompletion) t.Result.Retire(); else _ = t.Exception; }, TaskScheduler.Default);
+        if (_cannedSession is { } canned) canned.Retire();
+        else if (_cannedOpening is { } pending)
+            _ = pending.ContinueWith(t => { if (t.Status == TaskStatus.RanToCompletion) { t.Result.ClearPending(); t.Result.Retire(); } else _ = t.Exception; }, TaskScheduler.Default);
         HostCompletion?.TrySetResult((State, _owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, _owner)));
         base.WatcherEnding();
     }

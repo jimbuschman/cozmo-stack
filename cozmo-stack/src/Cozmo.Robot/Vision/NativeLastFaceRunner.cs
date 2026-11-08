@@ -47,15 +47,20 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     private int _faceState;
     private float _best=float.MaxValue;
     private bool _locked;
+    private readonly object _ownerStopGate = new();
     private readonly bool _sayName;
     private int _sayTrigger,_noNameTrigger;
     private readonly float _maximum;
+    private readonly EngineRobot? _actualOwner;
+    private int _imagesToWait = 10;
+    internal Func<int, AnimationTrigger>? NamedTriggerCallback;
     protected override string ActionName=>"TurnTowardsLastFacePose";
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,float maximum,bool sayName,int sayTrigger=0x23F,int noNameTrigger=0x23F):base(m,Pose3d.Identity,maximum,0x29,0,true)
     {_requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;}
-    internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,EngineRobot owner,int rawId):base(m,Pose3d.Identity,Radians.Pi,0x29,0,true)
-    {_requested=new(m.Robot,rawId,owner);_verified=new(m.Robot,owner:owner);_maximum=Radians.Pi;_sayName=false;_sayTrigger=_noNameTrigger=0x23F;}
+    internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,EngineRobot owner,int rawId,bool sayName=false):base(m,Pose3d.Identity,Radians.Pi,0x29,0,true)
+    {_requested=new(m.Robot,rawId,owner);_verified=new(m.Robot,owner:owner);_maximum=Radians.Pi;_sayName=sayName;_sayTrigger=_noNameTrigger=0x23F;if(sayName){_actualOwner=owner;ScopedOwner=owner;}}
+    internal int ImagesToWait { get => _imagesToWait; set => _imagesToWait = value; }
     internal void SetNativeNameTriggers(int named,int unnamed)
     {
         if(!_sayName)M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,"Actions","TurnTowardsFaceAction.SetSayNameTriggerWithoutSayingName","Installing name triggers while sayName is false");
@@ -96,13 +101,14 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     public override int Init()
     {
         using var mutation=M.World.EnterPoseMutation();
-        var owner=M.Robot.Engine.Robot??throw new InvalidOperationException("MISSING LastFace actual Robot owner");
+        var owner=_actualOwner??M.Robot.Engine.Robot??throw new InvalidOperationException("MISSING LastFace actual Robot owner");
+        if (!ScopedCurrent) return unchecked((int)EngineActionResult.Cancelled);
         using var cached=new Pose3d("");using var relative=new Pose3d("");
         bool found;
         if(_requested.IsValid)
         {
-            var face=M.Vision.Faces.GetFace(_requested.Id);found=face is not null;
-            if(face is not null)cached.Assign(face.HeadPose);
+            var face=_actualOwner is null?M.Vision.Faces.GetFace(_requested.Id):M.Vision.Faces.GetNativeFace(owner,_requested.Id);
+            found=face is not null && CopyFacePose(face, cached);
         }
         else found=M.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),false,cached);
         if(!found||!cached.TryWithRespectTo(owner.GetCheckedMainPose(),relative))
@@ -113,50 +119,83 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             _observed.Add(M.Robot.Engine.AnimationMessages.SubscribeMessage(0x46,true,p=>{if(p is NativeObservedFace face)Observe(face.Id);})); //54BFC4..BFDE appends; dtor owns every handle.
         }
         M.Robot.Motion.LockTracks(5,Tag.ToString(),ActionName);_locked=true;
+        if (DestructionObserved || !ScopedCurrent) { Unlock(); return unchecked((int)EngineActionResult.Cancelled); }
         return base.Init();
+    }
+    private bool CopyFacePose(FaceEntry face, Pose3d destination)
+    {
+        if (_actualOwner is null) { destination.Assign(face.HeadPose); return true; }
+        if (face.NativeTrackingTranslation is not { } point || face.NativeObservationOrigin is null)
+        {
+            Behavior.SteppedBehavior.ReportMissing("M14-001 native camera-frame face position unavailable; LastFace turn withheld");
+            return false;
+        }
+        using var origin = Pose3d.WrapExisting(face.NativeObservationOrigin);
+        using var pose = new Pose3d(Rotation3d.Identity, point);
+        pose.SetParent(origin);
+        destination.Assign(pose);
+        return true;
     }
     private void Observe(int id)
     {
+        if (!ScopedCurrent || DestructionObserved) return;
         if(_faceState>1)return;
         if(_requested.IsValid){if(_requested.Id==id)_verified.CopyFrom(_requested);return;}
         using var mutation=M.World.EnterPoseMutation();
-        if(M.Vision.Faces.GetFace(id) is not {} face||M.Robot.Engine.Robot is not {} owner)return;
+        var owner=_actualOwner??M.Robot.Engine.Robot;
+        if(owner is null||(_actualOwner is not null&&!ScopedCurrent))return;
+        var face=_actualOwner is null?M.Vision.Faces.GetFace(id):M.Vision.Faces.GetNativeFace(owner,id);
+        if(face is null)return;
+        using var source=new Pose3d("");
         using var relative=new Pose3d("");
-        if(!face.HeadPose.TryWithRespectTo(owner.GetCheckedMainPose(),relative))return;
+        if(!CopyFacePose(face,source)||!source.TryWithRespectTo(owner.GetCheckedMainPose(),relative))return;
         var t=relative.Translation;float x=(float)t.X,y=(float)t.Y,z=(float)t.Z;
         float d=x*x;d=d+y*y;d=d+z*z;
         if(!(d<_best))return;
         _best=d;_verified.UpdateToId(id);
     }
     private void Unlock()
-    {if(!_locked)return;M.Robot.Motion.UnlockTracks(5,Tag.ToString());_locked=false;}
+    {
+        if(!_locked)return;
+        _locked=false;
+        if (_actualOwner is null) M.Robot.Motion.UnlockTracks(5,Tag.ToString());
+        else LogCallbackDeferral.RunGated(_ownerStopGate, () => { if (ScopedCurrent) M.Robot.Motion.UnlockTracks(5,Tag.ToString()); });
+    }
     private void FineTune()
     {
         using var mutation=M.World.EnterPoseMutation();
         _faceState=2;
-        if(_verified.Id==0||M.Vision.Faces.GetFace(_verified.Id) is not {} face){SetChild(null);return;}
+        var owner=_actualOwner??M.Robot.Engine.Robot;
+        var face=owner is null?null:_actualOwner is null?M.Vision.Faces.GetFace(_verified.Id):M.Vision.Faces.GetNativeFace(owner,_verified.Id);
+        if(_verified.Id==0||face is null){SetChild(null);return;}
         M.Robot.Engine.Needs.RegisterNeedsActionCompleted("SeeFace"); //2E BEFORE conversion.
+        if (DestructionObserved || !ScopedCurrent) return;
         using var relative=new Pose3d("");
-        if(M.Robot.Engine.Robot is not {} owner||!face.HeadPose.TryWithRespectTo(owner.GetCheckedMainPose(),relative))return;
+        using var source=new Pose3d("");
+        if(owner is null||!CopyFacePose(face,source)||!source.TryWithRespectTo(owner.GetCheckedMainPose(),relative))return;
         if(owner.MoodOwner is {} mood)mood.Trigger("LookAtFaceVerified",M.Robot.Engine.Timer.SecondsF);
         else Behavior.SteppedBehavior.ReportMissing("M1-034 M13-014 LastFace Mood owner absent at0067ADA8; smallest emotion call skipped");
-        SetChild(new NativeTurnTowardsPoseRunner(M,relative,MathF.Min(_maximum,BitConverter.UInt32BitsToSingle(0x3F490FDB))));
+        if (DestructionObserved || !ScopedCurrent) return;
+        SetChild(new NativeTurnTowardsPoseRunner(M,relative,MathF.Min(_maximum,BitConverter.UInt32BitsToSingle(0x3F490FDB))) { ScopedOwner = _actualOwner });
     }
     private uint Final()
-    {if(_verified.Id!=0)M.Vision.Faces.SetTurnedTowardsFace(_verified.Id,true);return 0;}
+    {if(!ScopedCurrent||DestructionObserved)return EngineActionResult.Cancelled;if(_verified.Id!=0)M.Vision.Faces.SetTurnedTowardsFace(_verified.Id,true);return 0;}
     public override uint CheckIfDone()
     {
+        if (!ScopedCurrent || DestructionObserved) return EngineActionResult.Cancelled;
         if(_faceState==0)
         {
             uint result=base.CheckIfDone();if(result==EngineActionResult.Running)return result;
+            if (DestructionObserved || !ScopedCurrent) return EngineActionResult.Cancelled;
             Unlock();if(result!=0)return result;
             if(_verified.Id!=0)FineTune();
-            else {_faceState=1;SetChild(new NativeWaitForImagesRunner(M,10,(VisionMode)2,0));}
+            else {_faceState=1;SetChild(new NativeWaitForImagesRunner(M,_imagesToWait,(VisionMode)2,0) { ScopedOwner = _actualOwner });}
             return EngineActionResult.Running;
         }
         if(_faceState==1)
         {
             uint result=_child?.Update()??0;
+            if (DestructionObserved || !ScopedCurrent) return EngineActionResult.Cancelled;
             if(_verified.Id!=0){FineTune();return EngineActionResult.Running;}
             return result==0?Final():result;
         }
@@ -164,24 +203,58 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         {
             if(_child is null)return Final();
             uint result=_child.Update();if(result!=0)return result;
+            if (DestructionObserved || !ScopedCurrent) return EngineActionResult.Cancelled;
             if(!_sayName)return Final();
             using var mutation=M.World.EnterPoseMutation();
-            var face=M.Vision.Faces.GetFace(_verified.Id);if(face is null)return Final();
+            var owner=_actualOwner??M.Robot.Engine.Robot;
+            var face=owner is null?null:_actualOwner is null?M.Vision.Faces.GetFace(_verified.Id):M.Vision.Faces.GetNativeFace(owner,_verified.Id);
+            if(face is null)return Final();
             if(face.HasName)
             {
+                if (_actualOwner is not null && owner is not null && ScopedCurrent && M.Robot.Engine.Options.ResourcesPath is { } resources)
+                {
+                    SpeechMetadata.Selection selection;
+                    try
+                    {
+                        var metadata = SpeechMetadata.Load(resources);
+                        if (!metadata.TrySelect("Name_Normal", face.Name!, M.Robot.Engine.ContextRandom, out selection))
+                        { M.Robot.Engine.EmitStackLog("MISSING M14-006 Name_Normal intent is unavailable"); return 0x03000000; }
+                    }
+                    catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException or InvalidOperationException)
+                    { M.Robot.Engine.EmitStackLog("MISSING M14-006 Name_Normal configuration: " + e.Message); return 0x03000000; }
+                    var speech = new SayTextAction(M.Robot, owner, face.Name!, selection.Style, selection.Duration, selection.Pitch);
+                    int selected;
+                    try { selected = NamedTriggerCallback is null ? _sayTrigger : (int)NamedTriggerCallback(_verified.Id); }
+                    catch { speech.RetireNeverAdmittedTree(); throw; }
+                    if (DestructionObserved || !ScopedCurrent) { speech.RetireNeverAdmittedTree(); return EngineActionResult.Cancelled; }
+                    if (selected != 0x23F)
+                    {
+                        speech.SetCannedTrigger((AnimationTrigger)selected);
+                        SetChild(speech);
+                        if (DestructionObserved) return EngineActionResult.Cancelled;
+                        _faceState = 3;
+                        return EngineActionResult.Running;
+                    }
+                    speech.RetireNeverAdmittedTree();
+                }
                 string gap=_sayTrigger==0x23F
                     ? "the no-trigger named SayText action and provider are not joined to this caller"
                     : "fit is false; authored animation events and any speech event require a shared persistent Wwise/robot audio recipient";
                 Behavior.SteppedBehavior.ReportMissing("M14-006/M13-014 LastFace named SayText: "+gap);
+                if (_actualOwner is not null) return 0x03000000;
                 throw new NativeActionUnavailable("M14-006/M13-014 native LastFace SayText(name,intent3) 0x0054C5AA: "+gap);
             }
             if(_noNameTrigger==0x23F)return Final();
-            SetChild(new TriggerLiftSafeAnimationAction(M.Robot,new((AnimationTrigger)_noNameTrigger,1,true,0,60f,false)));
+            var unnamed = new TriggerLiftSafeAnimationAction(M.Robot,new((AnimationTrigger)_noNameTrigger,1,true,0,60f,false));
+            if (_actualOwner is not null) unnamed.SetScopedOwner(_actualOwner);
+            if (DestructionObserved || !ScopedCurrent) { unnamed.RetireNeverAdmittedTree(); return EngineActionResult.Cancelled; }
+            SetChild(unnamed);
             if(DestructionObserved)return EngineActionResult.Cancelled;
             _faceState=3;
             return EngineActionResult.Running; // 0x0054C706 -> 0x0054C5D2 -> 0x0054C6B4; update next tick.
         }
         uint terminal=_child?.Update()??0;
+        if (!ScopedCurrent || DestructionObserved) return EngineActionResult.Cancelled;
         if(terminal!=0)return terminal;
         if(_child is not null)M.Robot.Engine.Needs.RegisterNeedsActionCompleted("SayName"); //retained-child ReInit path54C606..61E.
         return Final();

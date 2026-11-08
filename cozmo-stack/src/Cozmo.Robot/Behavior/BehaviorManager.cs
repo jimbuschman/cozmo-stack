@@ -68,17 +68,14 @@ public sealed partial class BehaviorManager : IDisposable
     internal static readonly float GreetingTimeField54Initial=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
     /// <summary>
     /// BehaviorManager+0x54, the time BehaviorAcknowledgeFace's greeting gate reads at [[robot+0x44]+0x54] (ACKNOWLEDGE-FACE-1 B4).
-    /// MISSING (B5 UNKNOWN): no writer other than the ctor was found, so no production code writes it and it stays -1.0f, which
-    /// never passes B4's t &gt;= 0 test. The setter exists only for tests that supply the input.
+    /// The first Freeplay request writes this same field (0x005A4FBA..0x005A4FD6).
     /// </summary>
     internal float GreetingTimeField54
     {
-        get{ReportField54Missing();return _greetingTimeField54;}
+        get=>_greetingTimeField54;
         set=>_greetingTimeField54=value;
     }
     private float _greetingTimeField54=GreetingTimeField54Initial;
-    private static void ReportField54Missing()=>SteppedBehavior.ReportMissing(
-        "ACKNOWLEDGE-FACE-1 B5: writers of BehaviorManager+0x54 UNKNOWN (only the ctor's -1.0f at 0x005A08E4..0x005A08F0 is known); the AcknowledgeFace greeting gate reads the ctor value");
     // fidelity: M8-001, M8-012 — manager forwarding 005A42C4..005A4304.
     internal void RequestCurrentBehaviorEndOnNextActionComplete()
     {
@@ -149,7 +146,8 @@ public sealed partial class BehaviorManager : IDisposable
             foreach(var reg in ShippedBehaviors.Reactions(_context.Robot,vision?.Locator,
                 ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound,
                 acknowledgeObject:_configuredAcknowledgeObject,
-                nativeHiccup: row => CreateNativeHiccup(row,manipulation,bound,nativeOwner ?? _context.Robot.Engine.Robot)))
+                nativeHiccup: row => CreateNativeHiccup(row,manipulation,bound,nativeOwner ?? _context.Robot.Engine.Robot),
+                acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null))
             {
                 if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
                 if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);

@@ -315,7 +315,7 @@ public sealed partial class CozmoRobot : IDisposable
         {
             owned=Directory.CreateTempSubdirectory("cozmo-offline-cache-").FullName;
             settings=new CozmoEngineOptions {
-                FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,SpeechSoundBankDirectory=settings.SpeechSoundBankDirectory,BlockPoolPath=settings.BlockPoolPath,ReconnectPooledCubes=settings.ReconnectPooledCubes,NeedsDeviceDirectory=settings.NeedsDeviceDirectory,NeedsSystemClockMicroseconds=settings.NeedsSystemClockMicroseconds,NotificationHistory=settings.NotificationHistory,OmitNotificationHistoryForTests=settings.OmitNotificationHistoryForTests,
+                FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,SpeechSoundBankDirectory=settings.SpeechSoundBankDirectory,SpeechAudioArchivePath=settings.SpeechAudioArchivePath,BlockPoolPath=settings.BlockPoolPath,ReconnectPooledCubes=settings.ReconnectPooledCubes,NeedsDeviceDirectory=settings.NeedsDeviceDirectory,NeedsSystemClockMicroseconds=settings.NeedsSystemClockMicroseconds,NotificationHistory=settings.NotificationHistory,OmitNotificationHistoryForTests=settings.OmitNotificationHistoryForTests,
                 DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,BeforeStart=settings.BeforeStart,
                 AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
                 VisionCalibration=settings.VisionCalibration,VisionDetector=settings.VisionDetector,
@@ -408,6 +408,7 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M3-019, M3-022, M3-013
         Engine.VisionConnected = CameraSettings.OnRobotConnected;
         Engine.AnimationStreamerUpdate = Animations.EngineUpdate;
+        Engine.AnimationAudioCallbacks = Animations.DrainAuthoredAudioCallbacks;
         // fidelity: M4-010, M4-017, M4-018, M4-020, M4-023, M1-041
         Engine.StateStored = s => Cubes.Connections.SetRobotTime(s.Timestamp);
         // fidelity: M1-053

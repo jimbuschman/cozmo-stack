@@ -873,6 +873,34 @@ public sealed class AnimationScheduler
         }
     }
 
+    // The checked canned SayText caller supplies the unmodified authored clip
+    // and its complete RobotAudio track (0x5616D6..0x5616FC).
+    internal AnimationHandle? PlayAuthoredSpeech(AnimationClip clip, double nowMs, WwiseRobotAudioPath path, Func<bool> ownerCurrent)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(ownerCurrent);
+        lock (_gate)
+        {
+            _nowMs = nowMs;
+            _authoredAudioPath = path;
+            byte tag = SetStreamingAnimationLocked(clip, 1, true, ownerCurrent, path);
+            if (tag == 0 && ReferenceEquals(_authoredAudioPath, path)) _authoredAudioPath = null;
+            return tag == 0 ? null : _handle;
+        }
+    }
+
+    private WwiseRobotAudioPath? _authoredAudioPath;
+    internal void DrainAuthoredAudioCallbacks()
+    {
+        WwiseRobotAudioPath? path;
+        lock (_gate) path = _authoredAudioPath;
+        path?.DrainCallbacks();
+    }
+    private void ForgetAuthoredAudioPath(WwiseRobotAudioPath path)
+    {
+        lock (_gate) if (ReferenceEquals(_authoredAudioPath, path)) _authoredAudioPath = null;
+    }
+
     /// <summary>
     /// ReplayLastAnimation (A27, G2E 0xAD): SetStreamingAnimation(the last streamed name +0x54, numLoops, interrupt = 1).
     /// </summary>
@@ -1616,6 +1644,7 @@ public sealed class AnimationScheduler
         _audio.Update(_startMs, _streamMs);
         if (_audio.IsComplete)
         {
+            if (_audio is SpeechAudioAnimation speech) speech.Completed();
             _audio = null;
             return true;
         }
@@ -1666,6 +1695,7 @@ public sealed class AnimationScheduler
         {
             if (_startSent)
             {
+                if (_audio is SpeechAudioAnimation speech) speech.Completed();
                 _audio = null;                           // RobotAudioClient::ClearCurrentAnimation
                 return SendEndOfAnimationLocked();
             }
@@ -2053,10 +2083,14 @@ public sealed class AnimationScheduler
 
     private sealed class SpeechAudioAnimation : IAudioAnimation
     {
+        private readonly AnimationScheduler _scheduler;
         private readonly WwiseRobotAudioPath _path;
+        private readonly bool _authored;
         internal SpeechAudioAnimation(AnimationScheduler scheduler, StreamTrack<StreamKeyframe> track, WwiseRobotAudioPath path)
         {
             _path = path;
+            _scheduler = scheduler;
+            _authored = ReferenceEquals(scheduler._authoredAudioPath, path);
             var keyframes = new List<WwiseRobotAudioKeyframe>();
             while (track.Current is { } frame)
             {
@@ -2071,9 +2105,10 @@ public sealed class AnimationScheduler
         public bool IsReady => _path.State is WwiseRobotAudioState.LoadingStream or WwiseRobotAudioState.AudioFramesReady;
         public bool IsComplete => _path.State is WwiseRobotAudioState.AnimationCompleted or WwiseRobotAudioState.AnimationError;
         public bool Streaming => !IsComplete;
-        public void Update(long start, long streamTime) { _path.StartTimeMs = start; _path.DrainCallbacks(); _path.Update(streamTime); }
+        public void Update(long start, long streamTime) { _path.StartTimeMs = start; if (!_authored) _path.DrainCallbacks(); _path.Update(streamTime); }
         public byte[]? PopFrame() => _path.PopRobotAudioMessage();
-        public void Abort() => _path.Abort();
+        internal void Completed() { if (_authored) _scheduler.ForgetAuthoredAudioPath(_path); }
+        public void Abort() { _path.Abort(); Completed(); }
     }
 
     private sealed class AudioAnimation : IAudioAnimation

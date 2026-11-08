@@ -6,6 +6,8 @@ namespace Cozmo.Robot;
 public sealed partial class EngineRobot
 {
     private SpeechProvider? _speechProvider;
+    private CannedSpeechOwner? _cannedSpeechOwner;
+    internal Func<IPlatformPcmSink>? CannedSpeechSinkForTest;
     internal TextToSpeechComponent SpeechComponent { get; private set; } = null!;
 
     internal void InitSpeechComponent()
@@ -20,9 +22,23 @@ public sealed partial class EngineRobot
         });
         Lifetime.Bind(0x268, address =>
         {
+            _cannedSpeechOwner?.Retire(); _cannedSpeechOwner = null;
             SpeechComponent.Retire(() => { _speechProvider?.Dispose(); _speechProvider = null; });
             Lifetime.Missing(address, 0x268);
         });
+    }
+
+    internal CannedSpeechOwner? GetCannedSpeechOwner()
+    {
+        string? library = ShippedLibraries.FindLibDir();
+        string? banks = Engine.Options.SpeechSoundBankDirectory;
+        string? archive = Engine.Options.SpeechAudioArchivePath ?? (banks is null ? null : Path.Combine(banks, "AudioAssets.zip"));
+        if (!OperatingSystem.IsWindows() || Engine.Options.LabLocaleLanguage != "en" || library is null || banks is null || archive is null ||
+            !File.Exists(Path.Combine(banks, "Init.bnk")) || !File.Exists(Path.Combine(banks, "English(US)", "Cozmo.bnk")) || !File.Exists(archive) ||
+            Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this) || AudioOutputSource != RobotAudioOutputSource.PlayOnRobot)
+            return null;
+        return _cannedSpeechOwner ??= new CannedSpeechOwner(library, banks, archive,
+            message => Engine.PostGameMessage(() => Engine.EmitStackLog(message)), CannedSpeechSinkForTest);
     }
 }
 

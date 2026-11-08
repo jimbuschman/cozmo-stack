@@ -77,17 +77,30 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         }
     }
 
-    internal sealed class SharedGeneration(NativeWwiseVoiceSession owner, long generation) : IWwiseRobotAudioEngine, IDisposable
+    internal sealed class SharedGeneration(NativeWwiseVoiceSession owner, long generation) : IWwiseRobotAudioEngine, IWwiseAtomicAudioEngine, IDisposable
     {
         internal Task OfferAsync(float[] samples, int sampleRate) => owner.SharedTask(generation, h => h.Offer(samples, sampleRate));
         internal Task ConfigureAsync(uint voiceSwitch, float pitch) => owner.SharedTask(generation, h => h.ConfigureVoice(voiceSwitch, pitch));
-        internal Task ClearPendingAsync() => owner.SharedTask(generation, h => h.ClearPending());
+        internal Task ClearPendingAsync() => owner.SharedCleanup(generation);
         public uint PostEvent(uint eventId, uint gameObjectId, IWwiseRobotAudioCallback callback) =>
             owner.PostShared(generation, eventId, gameObjectId, callback);
+        public uint PostAndRender(uint eventId, uint gameObjectId, float volume, IWwiseRobotAudioCallback callback) =>
+            owner.PostShared(generation, eventId, gameObjectId, callback, volume);
         public void SetEventVolume(uint playingId, float volume) => owner.SharedCommand(generation, h => h.SetEventVolume(playingId, volume));
         public void RenderAudio() => owner.SharedCommand(generation, h => h.Render(0));
         public void StopAll(uint gameObjectId) => owner.EndGeneration(generation, gameObjectId, true);
         public void Dispose() => owner.EndGeneration(generation, 7, false);
+    }
+
+    private Task SharedCleanup(long generation)
+    {
+        lock (_gate)
+        {
+            if (!_generationOpen || generation != _generation || _closing || _failure is not null)
+                return Task.FromException(new InvalidOperationException("shared voice generation has retired"));
+            // Accepted cleanup stays ahead of this generation's stop and any later offer.
+            return Enqueue(host => host.ClearPending());
+        }
     }
 
     private Task SharedTask(long generation, Action<NativeWwiseVoiceHost> action)
@@ -105,7 +118,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         }
     }
 
-    private uint PostShared(long generation, uint eventId, uint gameObjectId, IWwiseRobotAudioCallback callback)
+    private uint PostShared(long generation, uint eventId, uint gameObjectId, IWwiseRobotAudioCallback callback, float? atomicVolume = null)
     {
         if (gameObjectId != 7) throw new NotSupportedException("Shared voice owns game object 7");
         ArgumentNullException.ThrowIfNull(callback);
@@ -116,11 +129,12 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
             if (!_generationOpen || generation != _generation || _closing || _failure is not null) return 0;
             post = Enqueue(host =>
             {
-                lock (_gate) if (!_generationOpen || generation != _generation) return;
                 uint cookie = checked(++_nextCookie);
                 _sharedCallbacks.Add(cookie, (generation, callback));
                 playing = host.PostShared(eventId, cookie);
                 if (playing == 0) _sharedCallbacks.Remove(cookie);
+                else if (atomicVolume is { } volume) host.SetEventVolume(playing, volume);
+                if (atomicVolume is not null) host.Render(0);
             });
         }
         post.GetAwaiter().GetResult();

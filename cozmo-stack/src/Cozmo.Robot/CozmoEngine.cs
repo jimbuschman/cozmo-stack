@@ -80,6 +80,8 @@ public sealed class CozmoEngineOptions
     public string? ResourcesPath { get; init; }
     /// <summary>Local Wwise bank directory containing Init.bnk and English(US)/Cozmo.bnk for direct robot speech.</summary>
     public string? SpeechSoundBankDirectory { get; init; }
+    /// <summary>Local AudioAssets.zip containing the authored streamed robot sounds.</summary>
+    public string? SpeechAudioArchivePath { get; init; }
 
     /// <summary>Where the block pool is kept (<see cref="CubeConnections.Init"/>); an empty path turns persistence off.</summary>
     // fidelity: M3-064 — host supplies DataPlatformExternalPath (scope 4).
@@ -1879,6 +1881,7 @@ public sealed partial class CozmoEngine : IDisposable
     internal Action<Exception>? Faulted;
     /// <summary>AnimationStreamer::Update, run by Robot::Update while synced and ready to stream (CD12, C15).</summary>
     internal Func<int>? AnimationStreamerUpdate;
+    internal Action? AnimationAudioCallbacks;
     /// <summary>The VisionComponent's RobotConnectionResponse subscriber, run in its place in the Success broadcast (CD21, 1h). Its argument is the body hardware version (mfgId word 1, the engine Robot's +0x24).</summary>
     internal Action<int>? VisionConnected;
     // fidelity: M3-033, M3-034
@@ -2204,6 +2207,7 @@ public sealed partial class CozmoEngine : IDisposable
                     PublishRobotState(r); // UpdateAllRobots, 0x0052F6E4..0x0052F716.
                 }
                 UpdateLatencyInfo(); // M1-061, once per eligible state-3 tick after all robots.
+                if (AnimationAudioCallbacks is { } audioCallbacks) Isolated(audioCallbacks); // 0x004ED6C4 -> 0x008D2928
             }
             finally { _inTick = false; }
         }

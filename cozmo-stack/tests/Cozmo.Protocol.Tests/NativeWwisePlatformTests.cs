@@ -1,4 +1,5 @@
 using Cozmo.Robot.Animation.Wwise;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Emulation;
 using Xunit;
 
@@ -7,6 +8,50 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class NativeWwisePlatformTests
 {
+    [Fact]
+    public void SerialDispatchStopWaitsForDetachedActionWithoutBlockingCaller()
+    {
+        var queue = new SerialAudioDispatchFactory().Create(2);
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        using var finished = new ManualResetEventSlim();
+        var order = new List<int>();
+        queue.After(0, () => { entered.Set(); release.Wait(TimeSpan.FromSeconds(5)); lock (order) order.Add(1); });
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+        try
+        {
+            ((IWwiseDispatchStopFence)queue).StopAfterCurrent(() => { lock (order) order.Add(2); finished.Set(); });
+            Assert.False(finished.IsSet);
+        }
+        finally { release.Set(); }
+        Assert.True(finished.Wait(TimeSpan.FromSeconds(5)));
+        lock (order) Assert.Equal(new[] { 1, 2 }, order);
+        queue.Stop();
+    }
+
+    [Fact]
+    public async Task SharedPendingClearSurvivesImmediateGenerationRetirement()
+    {
+        string? lib = ShippedLibraries.FindLibDir();
+        if (lib is null) return;
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        var sink = new FakeSink();
+        var session = await NativeWwiseVoiceSession.OpenSharedAsync(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), archive, new SpeechRobotAudioBuffer(), () => 100, () => sink);
+        var first = session.BeginGeneration();
+        await first.OfferAsync(new float[] { .25f }, 22050);
+        Task clear = first.ClearPendingAsync();
+        first.Dispose();
+        var second = session.BeginGeneration();
+        await second.OfferAsync(new float[] { -.25f }, 22050);
+        await clear;
+        await second.ClearPendingAsync();
+        second.Dispose();
+        await session.CloseAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Null(session.Failure);
+    }
+
     [Fact]
     public async Task SharedGenerationRetiresOldPostsAndActiveCloseDrainsNativeOwner()
     {
