@@ -7,6 +7,47 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class NativeWwisePlatformTests
 {
+    [Fact]
+    public async Task SharedGenerationRetiresOldPostsAndActiveCloseDrainsNativeOwner()
+    {
+        string? lib = ShippedLibraries.FindLibDir();
+        if (lib is null) return;
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        var fake = new FakeSink();
+        var session = await NativeWwiseVoiceSession.OpenSharedAsync(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), archive, new SpeechRobotAudioBuffer(), () => 100, () => fake);
+        var old = session.BeginGeneration();
+        await old.OfferAsync(new float[] { .25f, -.25f }, 22050);
+        await old.ClearPendingAsync();
+        var oldCallback = new Callback();
+        uint oldPlaying = await Task.Run(() => old.PostEvent(0x74F0B3E1, 7, oldCallback));
+        Assert.NotEqual(0u, oldPlaying);
+        old.SetEventVolume(oldPlaying, 1);
+        old.RenderAudio();
+        old.StopAll(7);
+        var next = session.BeginGeneration();
+        Assert.Equal(0u, old.PostEvent(0x74F0B3E1, 7, new Callback()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => old.OfferAsync(new float[] { .25f }, 22050));
+        uint playing = await Task.Run(() => next.PostEvent(0x74F0B3E1, 7, new Callback()));
+        Assert.NotEqual(0u, playing);
+        next.SetEventVolume(playing, 1);
+        next.RenderAudio();
+        Task closing = session.CloseAsync();
+        int consumed = 0;
+        var until = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+        while (!closing.IsCompleted && DateTime.UtcNow < until)
+        {
+            var submitted = fake.Submitted;
+            if (consumed < submitted.Length) fake.Complete(submitted[consumed++].Token);
+            await Task.Delay(10);
+        }
+        await closing.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Empty(oldCallback.Events);
+        Assert.Null(session.Failure);
+        Assert.True(fake.Disposed);
+    }
+
     private sealed class Callback : IWwiseRobotAudioCallback
     {
         internal readonly System.Collections.Concurrent.ConcurrentQueue<WwiseAudioCallbackType> Events = new();
