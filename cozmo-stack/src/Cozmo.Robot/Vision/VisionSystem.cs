@@ -793,7 +793,7 @@ public sealed partial class VisionSystem : IDisposable
     public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>Raises the system's log line (used by the face actions' failure paths).</summary>
-    internal void LogLine(string line) => Log?.Invoke(line);
+    internal void LogLine(string line) => LogCallbackDeferral.Run(() => Log?.Invoke(line));
 
     // fidelity: M3-022, M3-033
     /// <summary>

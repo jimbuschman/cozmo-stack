@@ -1,5 +1,7 @@
 using Cozmo.Protocol;
 using Cozmo.Robot;
+using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -7,6 +9,112 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class AiLiftControlTests
 {
+    [Fact]
+    public async Task PendingPlacementCancellationSendsNoPlacementOrStop()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        f.Add(7); var owner = f.Robot; owner.CarryingOwner!.SetCarrying(7);
+        var head = f.Rig.Robot.Motion.SetHeadAngleAsync(.5f); f.Rig.Tick();
+        using var cancel = new CancellationTokenSource();
+        int mark = f.Rig.Mark();
+        var task = f.Rig.Robot.Motion.QueueAiLiftHeightAsync(32, cancel.Token);
+        cancel.Cancel(); f.Rig.Tick();
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.True(result.Admitted); Assert.Equal(0x02000001u, result.EngineResult);
+        Assert.DoesNotContain(f.Rig.SentSince(mark), m => m is PlaceObjectOnGround or StopAllMotors);
+        Assert.False(head.IsCompleted);
+        owner.ActionList.Cancel(-1); f.Rig.Tick();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PlacementSendFailureAndLostCarryReturnNativeFailures(bool loseCarry)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        f.Add(7); var owner = f.Robot; owner.CarryingOwner!.SetCarrying(7);
+        int mark = f.Rig.Mark();
+        if (!loseCarry) owner.SendFault = message => message is PlaceObjectOnGround ? false : null;
+        var task = f.Rig.Robot.Motion.QueueAiLiftHeightAsync(32);
+        if (loseCarry) owner.CarryingOwner.UnsetCarrying();
+        f.Rig.Tick();
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.True(result.Admitted);
+        Assert.Equal(loseCarry ? 0x03000011u : 0x03000016u, result.EngineResult);
+        Assert.Single(f.Rig.SentSince(mark).OfType<StopAllMotors>());
+        Assert.Empty(f.Rig.SentSince(mark).OfType<PlaceObjectOnGround>());
+        owner.SendFault = null;
+    }
+
+    [Fact]
+    public async Task Carrying32RunsActualGroundVerificationAndWithholdsUndefinedAppBody()
+    {
+        using var scene = new StackFirmwareScene(true);
+        var f = scene.F;
+        f.X = 200; scene.Motors();
+        var local = new List<RobotCompletedAction>();
+        var app = new List<ActionCompletionReport>();
+        var raw = new List<byte[]>();
+        using var sub = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A, true, p => { if (p is RobotCompletedAction r) local.Add(r); });
+        f.Rig.Engine.ActionCompleted += app.Add;
+        f.Rig.Engine.EngineToGameMessage += Raw;
+        void Raw(ushort tag, ReadOnlyMemory<byte> body) { if (tag == 0x5A) raw.Add(body.ToArray()); }
+        int mark = f.Rig.Mark();
+        var task = f.Rig.Robot.Motion.QueueAiLiftHeightAsync(32);
+        var runner = Assert.IsType<Cozmo.Robot.Manipulation.NativePlaceGroundRunner>(f.Robot.ActionList.GetCurrentAction());
+        Assert.Equal(7u, runner.RequiredTrackMask);
+        for (int i = 0; i < 80 && !runner.DestructionObserved; i++) scene.Step();
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.True(result.Admitted); Assert.Equal(0u, result.EngineResult);
+        Assert.Equal(1, scene.Grounds);
+        var messages = f.Rig.SentSince(mark);
+        var placement = Assert.Single(messages.OfType<PlaceObjectOnGround>());
+        Assert.Equal((0f, 0f, 0f, 100f, 200f, 500f, false), (placement.RelX, placement.RelY, placement.RelAngle, placement.SpeedMmps, placement.AccelMmps2, placement.DecelMmps2, placement.Field6));
+        Assert.True(messages.IndexOf(placement) < messages.FindIndex(m => m is StopAllMotors));
+        var completed = Assert.Single(local.Where(r => r.Tag == runner.Tag));
+        Assert.Equal((byte)0, completed.CompletionVariant);
+        Assert.False(completed.ObjectInteraction!.IsPayloadDefined);
+        f.Rig.Engine.DrainAppDelivery();
+        Assert.DoesNotContain(app, a => a.Tag == runner.Tag);
+        Assert.Empty(raw);
+        f.Rig.Engine.EngineToGameMessage -= Raw;
+    }
+
+    [Fact]
+    public async Task VerificationSendOwnerReplacementStopsOldChildContinuation()
+    {
+        using var scene = new StackFirmwareScene(true);
+        var f = scene.F; f.X = 200; f.Head = .7f; scene.Motors();
+        var original = f.Robot;
+        bool replaced = false, placementSent = false;
+        int afterReplacement = -1;
+        var originalManager = original.BehaviorManagerOwner!;
+        original.SendFault = message =>
+        {
+            if (message is PlaceObjectOnGround) placementSent = true;
+            if (!replaced && placementSent && message is SetHeadAngle or SetBodyAngle or SetLiftHeight)
+            {
+                replaced = true;
+                f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId, false);
+                f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId, withRic: false);
+                afterReplacement = f.Rig.Mark();
+            }
+            return null;
+        };
+        var task = f.Rig.Robot.Motion.QueueAiLiftHeightAsync(32);
+        try
+        {
+            for (int i = 0; i < 80 && !replaced; i++) scene.Step(() => replaced);
+            Assert.True(replaced);
+            var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.True(result.Admitted); Assert.True(result.OwnerRetired);
+            Assert.DoesNotContain(f.Rig.SentSince(afterReplacement), m => m is SetHeadAngle or SetBodyAngle or SetLiftHeight);
+            Assert.False(originalManager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, PlaceObjectOnGroundAction.ReactionLockName));
+            Assert.False(f.Rig.Engine.Robot!.BehaviorManagerOwner!.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, PlaceObjectOnGroundAction.ReactionLockName));
+        }
+        finally { original.SendFault = null; }
+    }
+
     [Fact]
     public async Task LiftUsesNativeWireAcknowledgementAndDefaultCompletion()
     {
@@ -36,7 +144,7 @@ public sealed class AiLiftControlTests
     }
 
     [Fact]
-    public async Task Exact32CarryingAndUnknownOwnerAreRefusedBeforeAdmission()
+    public async Task Exact32CarryingUsesPlacementAndUnknownOwnerIsRefused()
     {
         using var fixture = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
         var rig = fixture.Rig;
@@ -45,10 +153,19 @@ public sealed class AiLiftControlTests
         owner.CarryingOwner!.SetCarrying(7);
         Assert.Equal(7u, owner.CarryingOwner.CarriedObjectId);
         int mark = rig.Mark();
-        var carried = await rig.Robot.Motion.QueueAiLiftHeightAsync(32);
-        Assert.False(carried.Admitted);
-        Assert.Contains("placement", carried.Detail);
-        Assert.Null(owner.ActionList.GetCurrentAction());
+        using var placementCancel = new CancellationTokenSource();
+        var manager = owner.BehaviorManagerOwner!;
+        Assert.True(manager.IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated));
+        var carried = rig.Robot.Motion.QueueAiLiftHeightAsync(32, placementCancel.Token);
+        Assert.Equal(0x18, owner.ActionList.GetCurrentAction()!.Type);
+        rig.Tick();
+        Assert.Single(rig.SentSince(mark).OfType<PlaceObjectOnGround>());
+        Assert.False(manager.IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated));
+        Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, PlaceObjectOnGroundAction.ReactionLockName));
+        placementCancel.Cancel(); rig.Tick();
+        Assert.Equal(0x02000000u, (await carried.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
+        Assert.True(manager.IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated));
+        mark = rig.Mark();
         using var nearbyCancel = new CancellationTokenSource();
         var nearby = rig.Robot.Motion.QueueAiLiftHeightAsync(31.999f, nearbyCancel.Token);
         rig.Tick();

@@ -139,3 +139,4 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | Robot speech, enrollment and lift batch gate | PASS | scripts/test-full.sh on 342c6ff1: 7851/7851, zero failed or skipped, 13m26s. All three bounded handoffs are READY FOR CLAUDE. |
 | VOICE-ANIMATION-FIT-1 | CHECKED, BATCH GATE PENDING | Scoped Name_Normal plus shipped CozmoSaysSpeakLoop, exact append/order, native Name/pitch reference and robot face/audio transport. Final affected 153/153. HANDOFF-VOICE-ANIMATION-FIT-1.md. |
 | TRACK-FACE-ACTION-1 | CHECKED, BATCH GATE PENDING | Native final Come Here tracking, historical camera position, original-owner lifecycle and enrollment profile. Final affected 245/245. HANDOFF-TRACK-FACE-ACTION-1.md. |
+| AI-BODY-PLACEMENT-1 | CHECKED, BATCH GATE PENDING | Exact 32 mm carrying factory, rendered placement, original-owner reaction and verification cleanup, native scalar completion. Final affected 739/739. HANDOFF-AI-BODY-PLACEMENT-1.md. |

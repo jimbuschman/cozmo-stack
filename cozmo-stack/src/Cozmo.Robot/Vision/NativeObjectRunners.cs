@@ -20,10 +20,11 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
     {get=>base.Watcher;set{base.Watcher=value;if(_verification is not null)_verification.Watcher=value;}}
     public override int Init()
     {
+        if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         using var mutation=M.World.EnterPoseMutation();
         var target=M.World.GetLocatedObjectByIdHelper(_id);
         if(target is null)return 0x03000004;
-        var main=M.Robot.Engine.Robot!.GetCheckedMainPose();
+        var main=(ScopedOwner??M.Robot.Engine.Robot!).GetCheckedMainPose();
         using var selected=new Pose3d("");using var relative=new Pose3d("");
         float best=float.MaxValue;bool found=false;
         foreach(var marker in target.Markers.ToArray())
@@ -39,6 +40,7 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
         }
         if(!found){Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return 0x03000002;}
         AssignGoal(selected);
+        if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         return base.Init();
     }
     public override uint CheckIfDone()
@@ -46,12 +48,14 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
         if(!_finished)
         {
             uint result=base.CheckIfDone();if(result!=0)return result;
+            if(DestructionObserved || !ScopedCurrent)return EngineActionResult.Cancelled;
             if(_refine){Reset(false);_refine=false;Parameters.SetNativePanTolerance(BitConverter.UInt32BitsToSingle(0x3DB2B8C2));return EngineActionResult.Running;}
             _finished=true;
             if(_track)throw new NotSupportedException("MISSING native TurnObject TrackObject recipient0054A9");
             if(!_verify)return 0;
-            _verification=new(M,_id,_code){SuppressTrackLocking=true,Watcher=Watcher};
+            _verification=new(M,_id,_code){SuppressTrackLocking=true,Watcher=Watcher,ScopedOwner=ScopedOwner};
             uint first=_verification.Update();if(first!=0)return first;
+            if(DestructionObserved || !ScopedCurrent)return EngineActionResult.Cancelled;
         }
         return _verification?.Update()??0; //source immediate first-success joins the retained child update again.
     }
@@ -74,10 +78,11 @@ internal sealed class NativeVerifyObjectRunner:NativeVisionRunner
     {get=>base.Watcher;set{base.Watcher=value;if(_parallel is not null)_parallel.Watcher=value;}}
     public override int Init()
     {
+        if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         _parallel?.Prep();_parallel?.WatcherEnding();
         _parallel=new CompoundActionParallel(()=>M.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,Watcher=Watcher,SourceLog=SourceLog};
-        _parallel.AddAction(M.Robot.Motion.CreateNativeLiftChild(CozmoMotion.OutOfFovHeightMm,5f),false,false);
-        _parallel.AddAction(new NativeWaitForImagesRunner(M,_images,(VisionMode)1,0),false,false);
+        _parallel.AddAction(M.Robot.Motion.CreateNativeLiftChild(CozmoMotion.OutOfFovHeightMm,5f,ScopedOwner),false,false);
+        _parallel.AddAction(new NativeWaitForImagesRunner(M,_images,(VisionMode)1,0){ScopedOwner=ScopedOwner},false,false);
         _seen=false;_markerAccepted=_code==NativeTurnTowardsObjectRunner.AnyCode;
         if(M.Robot.Engine.Robot?.HasExternalInterface!=true)
             throw new NotSupportedException("M1-034 VerifyObject native external owner absent at44 subscription");
@@ -94,7 +99,7 @@ internal sealed class NativeVerifyObjectRunner:NativeVisionRunner
         return _markerAccepted;
     }
     public override uint CheckIfDone()
-    {if(HaveSeen())return 0;return _parallel!.Update()==EngineActionResult.Running?EngineActionResult.Running:0x0300001D;}
+    {if(!ScopedCurrent)return EngineActionResult.Cancelled;if(HaveSeen())return 0;uint result=_parallel!.Update();if(DestructionObserved||!ScopedCurrent)return EngineActionResult.Cancelled;return result==EngineActionResult.Running?EngineActionResult.Running:0x0300001D;}
     public override void Prep(){_parallel?.Prep();base.Prep();}
     public override void WatcherEnding()
     {_parallel?.Prep();_observed?.Dispose();_observed=null;_parallel?.WatcherEnding();_parallel=null;base.WatcherEnding();}
