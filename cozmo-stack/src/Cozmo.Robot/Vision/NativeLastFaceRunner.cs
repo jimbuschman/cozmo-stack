@@ -53,6 +53,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     private readonly float _maximum;
     private readonly EngineRobot? _actualOwner;
     private int _imagesToWait = 10;
+    internal bool RequireVerifiedFace { get; set; }
     internal Func<int, AnimationTrigger>? NamedTriggerCallback;
     protected override string ActionName=>"TurnTowardsLastFacePose";
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
@@ -60,6 +61,18 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     {_requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;}
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,EngineRobot owner,int rawId,bool sayName=false):base(m,Pose3d.Identity,Radians.Pi,0x29,0,true)
     {_requested=new(m.Robot,rawId,owner);_verified=new(m.Robot,owner:owner);_maximum=Radians.Pi;_sayName=sayName;_sayTrigger=_noNameTrigger=0x23F;if(sayName){_actualOwner=owner;ScopedOwner=owner;}}
+    // Enrollment's explicit-ID turn uses its supplied max angle and the same
+    // checked native camera/origin owner, without the say-name child (5FE914).
+    internal NativeLastFaceRunner(Manipulation.ManipulationSystem m, EngineRobot owner, int rawId, float maximum)
+        : base(m, Pose3d.Identity, maximum, 0x29, 0, true)
+    {
+        _requested = new(m.Robot, rawId, owner);
+        _verified = new(m.Robot, owner: owner);
+        _maximum = maximum;
+        _sayTrigger = _noNameTrigger = 0x23F;
+        _actualOwner = owner;
+        ScopedOwner = owner;
+    }
     internal int ImagesToWait { get => _imagesToWait; set => _imagesToWait = value; }
     internal void SetNativeNameTriggers(int named,int unnamed)
     {
@@ -112,13 +125,16 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         }
         else found=M.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),false,cached);
         if(!found||!cached.TryWithRespectTo(owner.GetCheckedMainPose(),relative))
-        {_faceState=3;return 0;}
+        {if(RequireVerifiedFace)return unchecked((int)0x0300000E);_faceState=3;return 0;}
         SetChild(null);_verified.Reset();_best=float.MaxValue;_faceState=0;AssignGoal(relative);
         if(owner.HasExternalInterface)
         {
             _observed.Add(M.Robot.Engine.AnimationMessages.SubscribeMessage(0x46,true,p=>{if(p is NativeObservedFace face)Observe(face.Id);})); //54BFC4..BFDE appends; dtor owns every handle.
         }
-        M.Robot.Motion.LockTracks(5,Tag.ToString(),ActionName);_locked=true;
+        if (_actualOwner is null) M.Robot.Motion.LockTracks(5,Tag.ToString(),ActionName);
+        else LogCallbackDeferral.RunGated(_ownerStopGate, () =>
+        { if (ScopedCurrent && !DestructionObserved) M.Robot.Motion.LockTracksOwned(5,Tag.ToString(),ActionName,_actualOwner); });
+        _locked=true;
         if (DestructionObserved || !ScopedCurrent) { Unlock(); return unchecked((int)EngineActionResult.Cancelled); }
         return base.Init();
     }
@@ -159,7 +175,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         if(!_locked)return;
         _locked=false;
         if (_actualOwner is null) M.Robot.Motion.UnlockTracks(5,Tag.ToString());
-        else LogCallbackDeferral.RunGated(_ownerStopGate, () => { if (ScopedCurrent) M.Robot.Motion.UnlockTracks(5,Tag.ToString()); });
+        else LogCallbackDeferral.RunGated(_ownerStopGate, () => { if (ScopedCurrent) M.Robot.Motion.UnlockTracksOwned(5,Tag.ToString(),_actualOwner); });
     }
     private void FineTune()
     {
@@ -179,7 +195,11 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         SetChild(new NativeTurnTowardsPoseRunner(M,relative,MathF.Min(_maximum,BitConverter.UInt32BitsToSingle(0x3F490FDB))) { ScopedOwner = _actualOwner });
     }
     private uint Final()
-    {if(!ScopedCurrent||DestructionObserved)return EngineActionResult.Cancelled;if(_verified.Id!=0)M.Vision.Faces.SetTurnedTowardsFace(_verified.Id,true);return 0;}
+    {
+        if(!ScopedCurrent||DestructionObserved)return EngineActionResult.Cancelled;
+        if(_verified.Id!=0)M.Vision.Faces.SetTurnedTowardsFace(_verified.Id,true);
+        return 0;
+    }
     public override uint CheckIfDone()
     {
         if (!ScopedCurrent || DestructionObserved) return EngineActionResult.Cancelled;
@@ -197,6 +217,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             uint result=_child?.Update()??0;
             if (DestructionObserved || !ScopedCurrent) return EngineActionResult.Cancelled;
             if(_verified.Id!=0){FineTune();return EngineActionResult.Running;}
+            if(result!=EngineActionResult.Running && RequireVerifiedFace)return 0x0300000E;
             return result==0?Final():result;
         }
         if(_faceState==2)
@@ -248,6 +269,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             var unnamed = new TriggerLiftSafeAnimationAction(M.Robot,new((AnimationTrigger)_noNameTrigger,1,true,0,60f,false));
             if (_actualOwner is not null) unnamed.SetScopedOwner(_actualOwner);
             if (DestructionObserved || !ScopedCurrent) { unnamed.RetireNeverAdmittedTree(); return EngineActionResult.Cancelled; }
+            if (RequireVerifiedFace && _actualOwner is { } ordinaryOwner) unnamed.UseOrdinaryAuthoredAudio(ordinaryOwner);
             SetChild(unnamed);
             if(DestructionObserved)return EngineActionResult.Cancelled;
             _faceState=3;
@@ -267,7 +289,10 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         return true;
     }
     public override void WatcherEnding()
-    {SetChild(null);Unlock();foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();base.WatcherEnding();}
+    {
+        SetChild(null);Unlock();foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();
+        base.WatcherEnding();
+    }
 }
 
 // fidelity: M13-027

@@ -227,6 +227,7 @@ public sealed class TrackedFace
     public Pose3d HeadPose { get; internal set; } = Pose3d.Identity;
     internal Vec3 NativeCameraTranslation { get; private set; }
     internal Vec3? NativeTrackingTranslation { get; set; }
+    internal Rotation3d? NativeTrackingRotation { get; set; }
     public double DistanceMm { get; private set; }
 
     /// <summary>The parts/eye-detected flag at +0x30: both eye centres present.</summary>
@@ -386,6 +387,7 @@ public sealed class FaceEntry
     // Strong allocation reference, like native PoseTreeNode's parent edge; no PoseBase owner is added.
     internal PoseTreeNode? NativeObservationOrigin { get; set; }
     internal Vec3? NativeTrackingTranslation { get; set; }
+    internal Rotation3d? NativeTrackingRotation { get; set; }
     public uint LastObservedTimestamp { get; internal set; }
     public uint FirstObservedTimestamp { get; internal set; }
     public int TimesObserved { get; internal set; }
@@ -503,6 +505,7 @@ public sealed partial class FaceWorld
             else entry.HeadPose=face.HeadPose;
             if (!existing || face.HasEyeParts) entry.NativeTrackingTranslation = face.NativeTrackingTranslation;
             else if (face.NativeTrackingTranslation is null) entry.NativeTrackingTranslation = null;
+            entry.NativeTrackingRotation = face.NativeTrackingRotation;
             entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
@@ -541,7 +544,7 @@ public sealed partial class FaceWorld
                 old.Id=newId; //004F4000 updates the held old entry BEFORE unique insertion.
                 if(newName is not null)old.Name=newName;
                 if(!_faces.ContainsKey(newId))
-                    _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),Rect=old.Rect,
+                    _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),Rect=old.Rect,NativeTrackingRotation=old.NativeTrackingRotation,
                         LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeObservationOrigin=old.NativeObservationOrigin,NativeTrackingTranslation=old.NativeTrackingTranslation,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
                         FirstObservedTimestamp=old.FirstObservedTimestamp}); //existing host metadata, NOT native aux114.
                 old.NativeObservationOrigin=null;
@@ -577,7 +580,7 @@ public sealed partial class FaceWorld
     public IReadOnlyList<int> GetFaceIDs(bool namedOnly = false) => GetFaceIDsObservedSince(0, namedOnly);
 
     // Bouncer GetFaceIDs(false): native origin ancestry, never the detached legacy pose.
-    internal IReadOnlyList<int> GetNativeFaceIds(EngineRobot robot)
+    internal IReadOnlyList<int> GetNativeFaceIds(EngineRobot robot, uint observedSince = 0)
     {
         using var mutation=NativePoseScope?.Invoke();
         lock(robot.PoseTreeGate) lock(_gate)
@@ -585,9 +588,30 @@ public sealed partial class FaceWorld
             if(_faces.Count==0)return Array.Empty<int>();
             if(!robot.TryGetNativeOriginOwner(robot.CurrentOriginId,out var currentOrigin) || currentOrigin is null)
                 throw new InvalidOperationException("MISSING: M14-008 current native world-origin owner unavailable");
-            if (_faces.Values.Any(f=>f.NativeObservationOrigin is null))
+            if (_faces.Values.Any(f=>f.LastObservedTimestamp >= observedSince && f.NativeObservationOrigin is null))
                 throw new InvalidOperationException("MISSING: M14-008 face observation has no native historical origin anchor");
-            return _faces.Values.Where(f=>PoseTreeNode.HasSameRoot(f.NativeObservationOrigin,currentOrigin.Node)).Select(f=>f.Id).OrderBy(id=>id).ToArray();
+            return _faces.Values.Where(f=>f.LastObservedTimestamp >= observedSince && PoseTreeNode.HasSameRoot(f.NativeObservationOrigin,currentOrigin.Node)).Select(f=>f.Id).OrderBy(id=>id).ToArray();
+        }
+    }
+
+    // Enrollment's candidate-vs-current comparison (0x5FDDE0..0x5FDE24)
+    // consumes the full historical native pose, not the public camera facade.
+    internal bool NativeFacesSame(EngineRobot robot, int candidateId, int currentId)
+    {
+        using var mutation = NativePoseScope?.Invoke();
+        lock (robot.PoseTreeGate) lock (_gate)
+        {
+            if (!_faces.TryGetValue(candidateId, out var candidate) || !_faces.TryGetValue(currentId, out var current)) return false;
+            if (candidate.NativeObservationOrigin is null || candidate.NativeTrackingTranslation is not { } candidateTranslation ||
+                candidate.NativeTrackingRotation is not { } candidateRotation || current.NativeObservationOrigin is null ||
+                current.NativeTrackingTranslation is not { } currentTranslation || current.NativeTrackingRotation is not { } currentRotation)
+                throw new InvalidOperationException("MISSING M14-008: enrollment comparison needs both native face poses");
+            using var candidateOrigin = Pose3d.WrapExisting(candidate.NativeObservationOrigin);
+            using var currentOrigin = Pose3d.WrapExisting(current.NativeObservationOrigin);
+            using var candidatePose = new Pose3d(candidateRotation, candidateTranslation, parent: candidateOrigin);
+            using var currentPose = new Pose3d(currentRotation, currentTranslation, parent: currentOrigin);
+            return candidatePose.IsSameAs(currentPose, new Vec3(100, 100, 100),
+                BitConverter.UInt32BitsToSingle(0x3F490FDB), out _);
         }
     }
     public bool HasAnyFaces(uint seenSinceTimestamp = 0, bool namedOnly = false) => GetFaceIDsObservedSince(seenSinceTimestamp, namedOnly).Count > 0;

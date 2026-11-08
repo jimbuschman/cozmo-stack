@@ -24,11 +24,56 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     {
         byte[] init = await File.ReadAllBytesAsync(Path.Combine(banks, "Init.bnk")).ConfigureAwait(false);
         byte[] english = await File.ReadAllBytesAsync(Path.Combine(banks, "English(US)", "Cozmo.bnk")).ConfigureAwait(false);
+        byte[]? music = ReadMusicBank(archive);
         return await NativeWwiseVoiceSession.OpenSharedAsync(library, init, english, archive, _buffer,
-            () => Environment.TickCount64, sink).ConfigureAwait(false);
+            () => Environment.TickCount64, sink, music).ConfigureAwait(false);
     }
 
-    internal async Task<CannedSpeechLease> Acquire(float[] samples, Func<bool> current)
+    internal static byte[]? ReadMusicBank(string archive)
+    {
+        var index = new WwiseZipIndex(new WwiseDiskFileSystem());
+        try
+        {
+            if (!index.Open(archive) || !index.Lookup("Music.bnk", out uint offset, out uint size)) return null;
+            var bytes = new byte[checked((int)size)];
+            if (!index.ReadEntry(offset, 0, size, bytes, 0)) throw new IOException("Could not read Music.bnk from the local audio archive");
+            return bytes;
+        }
+        finally { index.Close(); }
+    }
+
+    internal Task<CannedSpeechLease> Acquire(float[] samples, Func<bool> current) => AcquireCore(samples,current);
+    internal Task<CannedSpeechLease> AcquireOrdinary(Func<bool> current) => AcquireCore(null,current);
+    internal Task Ready => _opening;
+    internal bool MusicAvailable => _opening.IsCompletedSuccessfully && _opening.Result.HasMusic;
+    internal Task RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds, Func<bool> current)
+    {
+        if (!_opening.IsCompletedSuccessfully) return Task.FromException(new InvalidOperationException("shared music owner is not ready"));
+        var native = _opening.Result;
+        lock (_gate) if (_retired) throw new ObjectDisposedException(nameof(CannedSpeechOwner));
+        if (!current()) return Task.FromException(new OperationCanceledException("music request owner retired"));
+        return native.RequestMusicStateAsync(state, interrupt, minimumMilliseconds, current);
+    }
+
+    // Engine audio tail: the worker callback only queues audio-path callbacks.
+    // Never wait for startup or for a platform completion on the engine thread.
+    internal void UpdateMusicAtEngineTail()
+    {
+        if (!_opening.IsCompletedSuccessfully) return;
+        lock (_gate) if (_retired) return;
+        Task? tick = _opening.Result.UpdateMusic(Environment.TickCount64);
+        if (tick is null) return;
+        try
+        {
+            if (!tick.Wait(TimeSpan.FromSeconds(2)))
+                _report("MISSING MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail worker timed out");
+        }
+        catch (AggregateException ex)
+        {
+            _report("MISSING MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail failed: " + ex.GetBaseException().Message);
+        }
+    }
+    private async Task<CannedSpeechLease> AcquireCore(float[]? samples, Func<bool> current)
     {
         await _lease.WaitAsync().ConfigureAwait(false);
         NativeWwiseVoiceSession.SharedGeneration? generation = null;
@@ -40,7 +85,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
             if (!current()) throw new OperationCanceledException("speech action retired before offer");
             generation = native.BeginGeneration();
             if (!current()) throw new OperationCanceledException("speech action retired before offer");
-            await generation.OfferAsync(samples, 22050).ConfigureAwait(false);
+            if (samples is not null) await generation.OfferAsync(samples, 22050).ConfigureAwait(false);
             return new CannedSpeechLease(this, native, generation);
         }
         catch
@@ -80,24 +125,37 @@ internal sealed class CannedSpeechLease
     private readonly NativeWwiseVoiceSession _native;
     private readonly NativeWwiseVoiceSession.SharedGeneration _generation;
     private Exception? _dispatchFailure;
+    private readonly object _pathGate = new();
     private int _retired;
-    internal WwiseRobotAudioPath Path { get; }
+    private WwiseRobotAudioPath _path;
+    internal WwiseRobotAudioPath Path { get { lock (_pathGate) return _path; } }
     internal Exception? Failure => _native.Failure ?? Volatile.Read(ref _dispatchFailure);
     internal CannedSpeechLease(CannedSpeechOwner owner, NativeWwiseVoiceSession native, NativeWwiseVoiceSession.SharedGeneration generation)
     {
         _owner = owner; _native = native; _generation = generation;
-        Path = new WwiseRobotAudioPath(owner, generation, new SerialAudioDispatchFactory(error =>
+        _path=NewPath();
+    }
+    private WwiseRobotAudioPath NewPath() => new WwiseRobotAudioPath(_owner, _generation, new SerialAudioDispatchFactory(error =>
         {
             Interlocked.CompareExchange(ref _dispatchFailure, error, null);
-            owner.Observe(Task.FromException(error));
+            _owner.Observe(Task.FromException(error));
         }), (_, _) => 0);
+    internal WwiseRobotAudioPath NextOrdinaryPath()
+    {
+        lock (_pathGate)
+        {
+            if (_retired != 0) throw new ObjectDisposedException(nameof(CannedSpeechLease));
+            _path=NewPath();
+            return _path;
+        }
     }
     internal Task Configure(float pitch) => _generation.ConfigureAsync(0x2F8B3BF4, pitch);
     internal void ClearPending() => _owner.Observe(_generation.ClearPendingAsync());
     internal void Retire()
     {
-        if (Interlocked.Exchange(ref _retired, 1) != 0) return;
-        Task stopped = Path.RetireWithoutAbort();
+        WwiseRobotAudioPath path;
+        lock (_pathGate) { if (_retired != 0) return; _retired=1; path=_path; }
+        Task stopped = path.RetireWithoutAbort();
         _owner.Observe(stopped);
         _ = stopped.ContinueWith(_ => { _generation.Dispose(); _owner.Released(); }, TaskScheduler.Default);
     }

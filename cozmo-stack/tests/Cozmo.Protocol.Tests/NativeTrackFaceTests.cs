@@ -10,6 +10,128 @@ namespace Cozmo.Protocol.Tests;
 public sealed class NativeTrackFaceTests
 {
     [Fact]
+    public void VerifiedTurnRejectsMissingInitialFaceWithoutMoving()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var ended=new List<RobotCompletedAction>();
+        f.Robot.ActionList.RegisterActionEndedCallback(ended.Add);
+        var turn=new NativeLastFaceRunner(f.M,f.Robot,99,true) { RequireVerifiedFace=true };
+        f.Robot.ActionList.QueueAction(QueueActionPosition.Now,turn);
+        int mark=f.Rig.Mark();
+        f.Rig.Tick();
+        Assert.Equal(0x0300000Eu,Assert.Single(ended.Where(x=>x.Tag==turn.Tag)).Result);
+        Assert.DoesNotContain(f.Rig.SentSince(mark),message=>message is SetHeadAngle or SetBodyAngle);
+    }
+
+    [Fact]
+    public void MeetHeadOnlyProfileClampsOnScheduleAndStopsWithItsDriveTag()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var owner=f.Robot;
+        f.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos,head:0);
+        var origin=owner.GetNativeOrigin(owner.CurrentOriginId);
+        var face=new TrackedFace(new DetectedFace(-12,new FaceRect(0,0,10,10)),10)
+        {
+            HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,49)),
+            NativeTrackingTranslation=new Vec3(200,0,49)
+        };
+        var entry=f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,origin.Node!)!.Face;
+        uint driveTag=ActionRunnerTagCounter.Global.NextIdTag();
+        Assert.True(ActionRunnerTagCounter.Global.TryReserve(driveTag));
+        try
+        {
+            float tolerance=BitConverter.UInt32BitsToSingle(0x3D8EFA35);
+            var runner=new NativeTrackFaceRunner(f.M,owner,-12,true,tolerance,true,.5f,.5f,driveTag);
+            Assert.Equal(1u,runner.RequiredTrackMask);
+            owner.ActionList.QueueAction(QueueActionPosition.Now,runner);
+            int mark=f.Rig.Mark();
+            f.Rig.Tick();
+            Assert.Equal(tolerance,Assert.Single(f.Rig.SentSince(mark).OfType<SetHeadAngle>()).AngleRad,5);
+            Assert.Empty(f.Rig.SentSince(mark).OfType<SetBodyAngle>());
+            mark=f.Rig.Mark();
+            entry.LastObservedTimestamp++;
+            f.Rig.Tick(100);
+            Assert.Empty(f.Rig.SentSince(mark).OfType<SetHeadAngle>());
+            entry.LastObservedTimestamp++;
+            f.Rig.Tick(500);
+            Assert.Single(f.Rig.SentSince(mark).OfType<SetHeadAngle>());
+            ActionRunnerTagCounter.Global.Release(driveTag);
+            mark=f.Rig.Mark();
+            entry.LastObservedTimestamp++;
+            f.Rig.Tick();
+            Assert.Empty(f.Rig.SentSince(mark).OfType<SetHeadAngle>());
+            Assert.Null(owner.ActionList.GetCurrentAction());
+        }
+        finally { ActionRunnerTagCounter.Global.Release(driveTag); }
+    }
+
+    [Fact]
+    public void MeetProfileDoesNotSendToReplacementDuringHeadSend()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;
+        var face=new TrackedFace(new DetectedFace(-13,new FaceRect(0,0,10,10)),10)
+        {
+            HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),
+            NativeTrackingTranslation=new Vec3(200,100,100)
+        };
+        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+        bool replaced=false;
+        int mark=-1;
+        owner.SendFault=message=>
+        {
+            if (!replaced && message is SetHeadAngle)
+            {
+                replaced=true;
+                f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+                f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+                mark=f.Rig.Mark();
+            }
+            return null;
+        };
+        try
+        {
+            var runner=new NativeTrackFaceRunner(f.M,owner,-13,false,BitConverter.UInt32BitsToSingle(0x3D8EFA35),true,.2f,.7f,0);
+            owner.ActionList.QueueAction(QueueActionPosition.Now,runner);
+            f.Rig.Tick();
+            Assert.True(replaced);
+            Assert.DoesNotContain(f.Rig.SentSince(mark),message=>message is SetHeadAngle or SetBodyAngle);
+        }
+        finally { owner.SendFault=null; }
+    }
+
+    [Fact]
+    public void MeetCleanupDoesNotSendStopToReplacementDuringDirectDriveUnlock()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;
+        var runner=new NativeTrackFaceRunner(f.M,owner,-13,true,BitConverter.UInt32BitsToSingle(0x3D8EFA35),true,.2f,.7f,0)
+        { SuppressTrackLocking=true };
+        owner.ActionList.QueueAction(QueueActionPosition.Now,runner);
+        f.Rig.Tick();
+        f.Rig.Robot.Motion.MoveHead(.2f,requireCalibration:false);
+        bool replaced=false;int mark=-1;
+        owner.SendFault=message=>
+        {
+            if(!replaced && message is EnableAnimTracks)
+            {
+                replaced=true;
+                f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+                f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+                mark=f.Rig.Mark();
+            }
+            return null;
+        };
+        try
+        {
+            owner.ActionList.Cancel(runner.Tag);
+            Assert.True(replaced);
+            Assert.DoesNotContain(f.Rig.SentSince(mark),message=>message is MoveHead or DriveWheels);
+        }
+        finally { owner.SendFault=null; }
+    }
+
+    [Fact]
     public void BodyDeltaUsesPoseUpdatedDuringHeadSend()
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
@@ -91,6 +213,7 @@ public sealed class NativeTrackFaceTests
             f.Rig.Engine.VisionUpdateAllResultsFailed!();
             Assert.True(positions.Count == 2, $"detector calls={detector.Calls}, positions={positions.Count}, frames={vision.FramesProcessed}");
             Assert.NotEqual(positions[0], positions[1]);
+            Assert.NotNull(vision.Faces.GetNativeFace(f.Robot, -7)?.NativeTrackingRotation);
             var runner = new NativeTrackFaceRunner(f.M, f.Robot, -7);
             f.Robot.ActionList.QueueAction(QueueActionPosition.Now, runner);
             int mark = f.Rig.Mark();
@@ -109,10 +232,16 @@ public sealed class NativeTrackFaceTests
         using var robot = new Pose3d(Rotation3d.FromAngleAxis(.37f, new Vec3(0, 0, 1)), new Vec3(130, -24, 7), parent: root);
         using var camera = new Pose3d(Rotation3d.FromAngleAxis(-.41f, new Vec3(0, 1, 0)), new Vec3(19, 4, 53), parent: robot);
         var point = new Vec3(42.125f, -17.75f, 263.5f);
-        using var face = new Pose3d(Rotation3d.Identity, point, parent: camera);
+        var initial = Rotation3d.FromAngleAxis(BitConverter.UInt32BitsToSingle(0x3FC90FDB), new Vec3(1, 0, 0));
+        using var face = new Pose3d(initial, point, parent: camera);
         using var native = face.GetWithRespectToRoot();
-        var captured = robot.Transform.Apply(camera.Transform.Apply(point));
-        Assert.Equal(native.Translation, captured);
+        var captured = new Transform3d(initial, point);
+        var cameraTransform = camera.Transform;
+        var robotTransform = robot.Transform;
+        captured.PreComposeWith(ref cameraTransform);
+        captured.PreComposeWith(ref robotTransform);
+        Assert.Equal(native.Translation, captured.Translation);
+        Assert.Equal(native.Quaternion, captured.Rotation);
     }
 
     [Theory]

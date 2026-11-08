@@ -7,6 +7,7 @@ public sealed partial class EngineRobot
 {
     private SpeechProvider? _speechProvider;
     private CannedSpeechOwner? _cannedSpeechOwner;
+    internal void UpdateMusicAtEngineTail() => _cannedSpeechOwner?.UpdateMusicAtEngineTail();
     internal Func<IPlatformPcmSink>? CannedSpeechSinkForTest;
     internal TextToSpeechComponent SpeechComponent { get; private set; } = null!;
 

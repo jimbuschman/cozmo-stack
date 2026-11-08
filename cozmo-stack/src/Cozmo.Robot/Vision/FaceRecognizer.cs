@@ -850,10 +850,10 @@ public sealed class FaceRecognizer
         lock (_gate) { RemoveUserCore(entry); return 0; }
     }
 
-    private void RemoveUserCore(EnrolledFaceEntry entry)
+    private void RemoveUserCore(EnrolledFaceEntry entry, bool currentTrackOnly = false)
     {
         _trackToFace.Remove(entry.CurrentTrack);
-        _trackToFace.Remove(entry.PreviousTrack);
+        if (!currentTrackOnly) _trackToFace.Remove(entry.PreviousTrack);
         foreach (var albumEntry in entry.AlbumEntries.Keys)
         {
             _albumEntryToFaceId.Remove(albumEntry);
@@ -861,6 +861,36 @@ public sealed class FaceRecognizer
                 Log?.Invoke($"RemoveUser: OKAO_FR_ClearUser failed for album entry {albumEntry}");
         }
         _faces.Remove(entry.FaceID);
+    }
+
+    // 0x8675C0..0x86772C: the surviving enrollment receives the requested name.
+    // The FaceWorld is updated by a later recognition observation, not here.
+    internal int AssignNameToFace(int selectedId, string name, int saveId)
+    {
+        lock (_gate)
+        {
+            if (saveId == 0)
+            {
+                if (!_faces.TryGetValue(selectedId, out var selected)) return 1;
+                selected.Name = name;
+                return 0;
+            }
+            if (!_faces.TryGetValue(saveId, out var target) || target.Name.Length == 0) return 1;
+            if (MergeFaces(saveId, selectedId) != 0) return 1;
+            target.Name = name;
+            return 0;
+        }
+    }
+
+    // EraseFace differs from RemoveUser(int): a missing face is a failure.
+    internal int EraseFace(int id)
+    {
+        lock (_gate)
+        {
+            if (!_faces.TryGetValue(id, out var entry)) return 1;
+            RemoveUserCore(entry, currentTrackOnly: true);
+            return 0;
+        }
     }
 
     /// <summary>
@@ -893,7 +923,9 @@ public sealed class FaceRecognizer
             }
             merge.AlbumEntries.Clear();
             merge.CurrentAlbumEntryId = -1;
-            RemoveUser(mergeID);
+            // The native merge reaches the same iterator body as EraseFace, which
+            // erases only the current tracking key (0x866AEA..0x866AF6).
+            RemoveUserCore(merge, currentTrackOnly: true);
             return 0;
         }
     }

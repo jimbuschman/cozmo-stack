@@ -455,7 +455,9 @@ public class M4ControlTests
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
         }
 
-        public void Tick(double ms = 60) { NowNs += (long)(ms * 1_000_000); Engine.Tick(); }
+        public double DefaultTickMs = 60;
+        public void Tick() => Tick(DefaultTickMs);
+        public void Tick(double ms) { NowNs += (long)(ms * 1_000_000); Engine.Tick(); }
         public void Data(RobotMessage m)
         {
             Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());

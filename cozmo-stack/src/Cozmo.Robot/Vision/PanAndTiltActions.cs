@@ -475,6 +475,15 @@ public sealed class TurnInPlaceAction : IDisposable
     private bool _useEyes;
     public bool Byte0xD8 { get { lock(_stateGate)return _useEyes; } set { lock(_stateGate)_useEyes=value; } }
     public byte Byte0xD9 { get; private set; }
+    internal bool NormalizePositionTolerance { get; set; }
+
+    internal bool ApplyPointTurnProfile(PathMotionProfile profile) => Gated(() =>
+    {
+        if (Byte0xCC) return false;
+        Speed0xC4 = profile.PointTurnSpeedRadPerSec;
+        Accel0xC8 = profile.PointTurnAccelRadPerSec2;
+        return true;
+    });
 
 
     /// <summary><c>SetMaxSpeed</c> 0x00545C08: |speed| above 5.235988 warns, sets +0xCC and stores the limit with the caller's sign; 0 restores +0x78 and leaves +0xCC; else +0xCC = 1, +0xC4 = speed.</summary>
@@ -534,7 +543,9 @@ public sealed class TurnInPlaceAction : IDisposable
         {
             if (MathF.Abs(Angle0x88) > MaxRevolutions * TwoPi) { Log?.Invoke("TurnInPlaceAction.Init.AngleTooLarge"); return PanTiltResult.Abort; }   // 0x03000000
             Angle0x88 -= Float0xA8;
-            Angle0x9C = Radians.Rescale(Angle0x8C + Angle0x88 + s16);
+            Angle0x9C = NormalizePositionTolerance
+                ? Radians.Rescale(Radians.Rescale(Angle0x8C + Angle0x88) + s16)
+                : Radians.Rescale(Angle0x8C + Angle0x88 + s16);
             Float0xA4 = s16 + Angle0x88;
             uint bits = (BitConverter.SingleToUInt32Bits(Speed0xC4) & 0x7FFFFFFFu) | (BitConverter.SingleToUInt32Bits(Angle0x88) & 0x80000000u);   // bfi r1, r0, #0x1f, #1 (0x0054610C)
             Speed0xC4 = BitConverter.UInt32BitsToSingle(bits);
@@ -570,7 +581,10 @@ public sealed class TurnInPlaceAction : IDisposable
         Angle0x8C = _robot.PoseAngleAroundZ;
         float remaining = MathF.Abs(Float0xA4 - Float0xA8);
         if (!(remaining < BitConverter.Int32BitsToSingle(0x40490FDB))) return false;
-        bool near = Radians.IsNear(Angle0x8C, Angle0x9C, Tolerance0xB0 + BitConverter.Int32BitsToSingle(0x3727C5AC));
+        float tolerance = Tolerance0xB0 + BitConverter.Int32BitsToSingle(0x3727C5AC);
+        bool near = NormalizePositionTolerance
+            ? Radians.IsNear(new Radians(Angle0x8C,false), new Radians(Angle0x9C,false), new Radians(tolerance))
+            : Radians.IsNear(Angle0x8C, Angle0x9C, tolerance);
         bool ok = OriginChanges0xD4 != 0 ? near || remaining < MathF.Abs(Tolerance0xB0) : near;
         return ok && !_robot.BodyMoving;
     }

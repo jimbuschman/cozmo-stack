@@ -851,6 +851,23 @@ public class FaceTests
     }
 
     [Fact]
+    public void FaceAlbumSaveDeliversIndependentCallbacksAfterErrorReport()
+    {
+        using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
+        rig.Vision.InstallSerializedFaceData(Array.Empty<byte>(), Array.Empty<byte>());
+        var order = new List<string>();
+        using var subscription = rig.Robot.Engine.AnimationMessages.SubscribeMessage(0x7C, true, _ => order.Add("error"));
+        rig.Vision.SaveFaceAlbumToRobot(_ => order.Add("album"), _ => order.Add("enrollment"));
+        rig.Tick(); rig.Pump();
+        rig.Send(new NVOpResult { Tag = 0x184000, Op = NvStorageComponent.OpErase, Result = -1 });
+        rig.Pump();
+        Assert.Equal(new[] { "error", "album" }, order);
+        rig.Send(new NVOpResult { Tag = 0x183000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Pump();
+        Assert.Equal(new[] { "error", "album", "enrollment" }, order);
+    }
+
+    [Fact]
     public void FaceAlbumRejectsTheExactNvCapacityBeforeEnqueue()
     {
         using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());

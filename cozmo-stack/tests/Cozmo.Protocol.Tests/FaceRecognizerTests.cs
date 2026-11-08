@@ -11,6 +11,48 @@ namespace Cozmo.Protocol.Tests;
 public class FaceRecognizerTests
 {
     [Fact]
+    public void AssignNameUsesExistingEnrollmentAndNamesTheMergeSurvivor()
+    {
+        var recognizer = new FaceRecognizer(new FakeOkaoRecognizer());
+        var feature = new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1, 0);
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int selected));
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int target));
+        var survivor = recognizer.EnrolledFaces.Single(face => face.FaceID == target);
+        Assert.Equal(1, recognizer.AssignNameToFace(selected, "New", target));
+        survivor.Name = "Old";
+        Assert.Equal(0, recognizer.AssignNameToFace(selected, "New", target));
+        Assert.Equal("New", survivor.Name);
+        Assert.DoesNotContain(recognizer.EnrolledFaces, face => face.FaceID == selected);
+        Assert.Equal(0, recognizer.AssignNameToFace(target, "Again", target));
+        Assert.Equal("Again", survivor.Name);
+        Assert.Equal(1, recognizer.AssignNameToFace(999, "Missing", 0));
+        Assert.Equal(1, recognizer.EraseFace(999));
+        Assert.Equal(0, recognizer.EraseFace(target));
+    }
+
+    [Fact]
+    public void NamingMergeDoesNotEraseAnotherLiveFacesPreviousTrackKey()
+    {
+        var okao = new FakeOkaoRecognizer();
+        var recognizer = new FaceRecognizer(okao);
+        var feature = new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1, 0);
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int selected));
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int target));
+        var old = recognizer.EnrolledFaces.Single(face => face.FaceID == selected);
+        recognizer.EnrolledFaces.Single(face => face.FaceID == target).Name = "Old";
+        okao.IdentifyResults.Add((1, 1000));
+        recognizer.ConsumeStockFeature(feature, 22, true);
+        Assert.Equal(target, recognizer.LookupStockTrack(22).Id);
+        old.PreviousTrack = 22;
+        old.CurrentTrack = 11;
+
+        Assert.Equal(0, recognizer.AssignNameToFace(selected, "New", target));
+        Assert.Equal(target, recognizer.LookupStockTrack(22).Id);
+    }
+
+    [Fact]
     public void ExplicitTargetAdvancesOnlyOnEligibleFramesAndEmitsOnceForCurrentTrack()
     {
         long now = 10_000_000;

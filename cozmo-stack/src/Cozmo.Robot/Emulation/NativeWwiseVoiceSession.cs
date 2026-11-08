@@ -19,6 +19,8 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private readonly Thread _thread;
     private readonly string _libraryDirectory;
     private readonly byte[] _initBank, _voiceBank;
+    private readonly byte[]? _musicBank;
+    internal bool HasMusic => _musicBank is not null;
     private readonly string? _archivePath;
     private readonly SpeechRobotAudioBuffer _buffer;
     private readonly Func<IPlatformPcmSink> _openSink;
@@ -34,16 +36,19 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private ulong _lastCompletedToken;
     private long _generation;
     private bool _generationOpen;
+    private bool _musicPending, _musicTickQueued;
+    private long _musicRequestVersion;
     private uint _nextCookie;
     private readonly Dictionary<uint, (long Generation, IWwiseRobotAudioCallback Callback)> _sharedCallbacks = new();
 
     private NativeWwiseVoiceSession(string libraryDirectory, byte[] initBank, byte[] voiceBank,
-        SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds, Func<IPlatformPcmSink> openSink, string? archivePath = null)
+        SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds, Func<IPlatformPcmSink> openSink, string? archivePath = null, byte[]? musicBank = null)
     {
         _libraryDirectory = libraryDirectory;
         _initBank = initBank;
         _voiceBank = voiceBank;
         _archivePath = archivePath;
+        _musicBank = musicBank;
         _buffer = buffer;
         _wallMilliseconds = wallMilliseconds;
         _openSink = openSink;
@@ -53,16 +58,56 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
 
     internal static async Task<NativeWwiseVoiceSession> OpenSharedAsync(string libraryDirectory, byte[] initBank,
         byte[] voiceBank, string archivePath, SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds,
-        Func<IPlatformPcmSink>? openSink = null)
+        Func<IPlatformPcmSink>? openSink = null, byte[]? musicBank = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(archivePath);
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentNullException.ThrowIfNull(wallMilliseconds);
         var session = new NativeWwiseVoiceSession(libraryDirectory, initBank, voiceBank, buffer,
-            wallMilliseconds, openSink ?? (() => new WinMmPcmSink()), archivePath);
+            wallMilliseconds, openSink ?? (() => new WinMmPcmSink()), archivePath, musicBank);
         try { await session._ready.Task.ConfigureAwait(false); }
         catch { try { await session._finished.Task.ConfigureAwait(false); } catch { } throw; }
         return session;
+    }
+
+    internal Task RequestMusicStateAsync(uint state, bool interrupt, uint minimumMilliseconds, Func<bool>? current = null)
+    {
+        lock (_gate)
+        {
+            if (_closing || _failure is not null) return Task.FromException(new InvalidOperationException("shared audio owner retired"));
+            if (_musicBank is null) return Task.FromException(new InvalidOperationException("MISSING: shared music bank is unavailable"));
+            _musicPending = true;
+            long version = ++_musicRequestVersion;
+            return Enqueue(host =>
+            {
+                if (current is not null && !current())
+                {
+                    lock (_gate) if (version == _musicRequestVersion) _musicPending = host.HasPendingMusic;
+                    throw new RetiredGenerationException();
+                }
+                host.RequestMusicState(state, interrupt, minimumMilliseconds);
+            });
+        }
+    }
+
+    internal Task? UpdateMusic(long monotonicMilliseconds)
+    {
+        lock (_gate)
+        {
+            if (_closing || _failure is not null || !_musicPending || _musicTickQueued) return null;
+            _musicTickQueued = true;
+            long version = _musicRequestVersion;
+            return Enqueue(host =>
+            {
+                host.UpdateMusic(monotonicMilliseconds);
+                host.Render(0); // controller tail 0x8D2938 follows conductor promotion
+                lock (_gate)
+                {
+                    _musicTickQueued = false;
+                    if (version == _musicRequestVersion) _musicPending = host.HasPendingMusic;
+                }
+            });
+        }
     }
 
     // The clip owns this adapter; ending a clip does not retire the shared bus or sink.
@@ -258,7 +303,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         try
         {
             sink = _openSink();
-            host = new NativeWwiseVoiceHost(_libraryDirectory, _initBank, _voiceBank, 1024, _archivePath);
+            host = new NativeWwiseVoiceHost(_libraryDirectory, _initBank, _voiceBank, 1024, _archivePath, musicBank: _musicBank);
             host.HijackOpened += () => _buffer.Open(_wallMilliseconds());
             host.HijackFrame += frame => _buffer.Push(frame);
             host.HijackClosed += _buffer.Close;

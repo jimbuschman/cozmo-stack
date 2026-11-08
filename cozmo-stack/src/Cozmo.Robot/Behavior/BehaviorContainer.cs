@@ -317,6 +317,8 @@ public sealed class BehaviorFactory
         [BehaviorClass.PutDownBlock] = (ctx,json)=>new NativePutDownBlockBehavior(ctx,json),
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
+        [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeMeetInteractWithFaces(ctx,json),
+        [BehaviorClass.EnrollFace] = (ctx,json)=>new NativeEnrollFaceBehavior(ctx,json),
         [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
         [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
         [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
@@ -461,6 +463,16 @@ public sealed class BehaviorFactory
         if (cls == BehaviorClass.AcknowledgeFace && (ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
         {
             SteppedBehavior.ReportMissing("AcknowledgeFace factory: actual vision, manipulation and Robot owners unavailable");
+            status = BehaviorCreateStatus.NotImplemented; return null;
+        }
+        if (cls == BehaviorClass.InteractWithFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.MeetCozmo_InteractWithFaces || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("InteractWithFaces factory supports only the checked Meet configuration with original owners");
+            status=BehaviorCreateStatus.NotImplemented; return null;
+        }
+        if (cls == BehaviorClass.EnrollFace && (BehaviorConfigLoader.ExtractIdFromConfig(config) != BehaviorID.EnrollFace || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("EnrollFace factory supports only the checked configuration with original owners");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
         if (cls == BehaviorClass.Bouncer && (ctx.Vision is null || ctx.Manipulation is null || ctx.BouncerOwner is null))
