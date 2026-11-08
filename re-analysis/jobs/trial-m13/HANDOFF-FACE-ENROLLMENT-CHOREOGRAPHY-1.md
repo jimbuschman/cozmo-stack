@@ -25,4 +25,4 @@
 - FaceIdentityTests.cs loads a two-entry album with local shipped OKAO, feeds the drawn images through the real camera/worker/result path, and uses the existing MergeFaces operation. It observes one positive local 0x47 for 7→8 before the later enrollment pulse and its FaceObserved delivery. This frame test verifies the normal recipient and later completion. The simultaneous remap/pulse case is covered at the recognizer boundary.
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
-Affected recognition, face, NV and OKAO tests passed 283/283, final focused additions 5/5, and independent manager rerun 43/43. Independent source review passed for the bounded identity correction. Batch full gate pending.
+Affected recognition, face, NV and OKAO tests passed 283/283, final focused additions 5/5, and independent manager rerun 43/43. Independent source review passed for the bounded identity correction. Batch full gate passed at e3bed520 with 7890/7890 and zero skips. READY FOR CLAUDE for the bounded slice.

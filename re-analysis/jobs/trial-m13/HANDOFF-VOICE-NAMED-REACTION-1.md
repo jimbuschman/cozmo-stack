@@ -23,4 +23,4 @@
 - The affected face/speech/emulator suite passed 152/152, including unchanged Acapela, native voice, OKAO, Wwise host and emulation safety tests. Independent source review passed for the bounded timing correction.
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
-Independent manager rerun passed 78/78 with zero skips. Batch full gate pending.
+Independent manager rerun passed 78/78 with zero skips. Batch full gate passed at e3bed520 with 7890/7890 and zero skips. READY FOR CLAUDE for the bounded slice.
