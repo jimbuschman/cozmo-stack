@@ -41,13 +41,18 @@ public static class ScanfSubset
             if (c != '%')
             {
                 if (i < src.Length && src[i] == c) { i++; j++; continue; }
+                if (i == src.Length) return (n != 0 ? n : -1, outv);
                 break;
             }
             j++;
             bool skip = false;
-            if (F(j) == '*') { skip = true; j++; }
             var w = new StringBuilder();
-            while (char.IsAsciiDigit(F(j))) { w.Append(fmt[j]); j++; }
+            while (F(j) == '*' || char.IsAsciiDigit(F(j)))
+            {
+                if (fmt[j] == '*') skip = true;
+                else w.Append(fmt[j]);
+                j++;
+            }
             int? width = w.Length > 0 ? int.Parse(w.ToString(), CultureInfo.InvariantCulture) : null;
             var mods = new StringBuilder();
             while ("hlLqjzt".Contains(F(j))) { mods.Append(fmt[j]); j++; }
@@ -57,6 +62,7 @@ public static class ScanfSubset
             if (conv == '%')
             {
                 if (i < src.Length && src[i] == '%') { i++; continue; }
+                if (i == src.Length) return (n != 0 ? n : -1, outv);
                 break;
             }
             if (conv == 'n')
@@ -84,6 +90,7 @@ public static class ScanfSubset
                     else { set.Add(ss[k]); k++; }
                 }
                 int s0 = i;
+                if (i == src.Length) return (n != 0 ? n : -1, outv);
                 while (i < src.Length && (set.Contains(src[i]) != neg) && (width is null || i - s0 < width)) i++;
                 if (i == s0) break;
                 if (!skip) { outv.Add(new Value(Kind.String, 0, 0, src[s0..i])); n++; }
@@ -92,7 +99,8 @@ public static class ScanfSubset
             if (conv == 'c')
             {
                 int wd = width is null or 0 ? 1 : width.Value;
-                if (i + wd > src.Length) break;
+                if (i == src.Length) return (n != 0 ? n : -1, outv);
+                wd = Math.Min(wd, src.Length - i);
                 if (!skip) { outv.Add(new Value(Kind.Chars, 0, 0, src.Substring(i, wd))); n++; }
                 i += wd;
                 continue;

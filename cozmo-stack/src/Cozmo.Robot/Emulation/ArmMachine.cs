@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 using static Cozmo.Robot.Emulation.UnicornNative;
 
 namespace Cozmo.Robot.Emulation;
@@ -82,6 +83,15 @@ public sealed unsafe partial class ArmMachine : IDisposable
     private uint _staticTop = StaticBase;
     private Exception? _pending;
     private string _fault = "";
+    private bool _disposed;
+    private Exception? _executionFailure;
+    private long _deadline;
+    private uint _activeCall;
+    private int _runDepth;
+
+    /// <summary>Maximum elapsed time for guest execution and returning imports, shared with nested calls. Must be positive.
+    /// A managed import that never returns cannot be interrupted by the guest execution hook.</summary>
+    public TimeSpan CallTimeout { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>Import stand-ins by symbol name (bionic and anything else not shipped). A consumer adds its own before
     /// <see cref="Relocate"/>, or after it for names bound to stubs.</summary>
@@ -103,7 +113,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
         nint uc;
         Check(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc), "uc_open");
         _uc = uc;
-        _self = GCHandle.Alloc(this);
+        _self = GCHandle.Alloc(this, GCHandleType.WeakTrackResurrection);
         try
         {
             Map(StubBase, StubSize);
@@ -133,6 +143,8 @@ public sealed unsafe partial class ArmMachine : IDisposable
             nuint hh;
             Check(uc_hook_add(_uc, &hh, UC_HOOK_CODE, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&StubThunk,
                 (void*)GCHandle.ToIntPtr(_self), StubBase, StubBase + StubSize - 1), "hook stubs");
+            Check(uc_hook_add(_uc, &hh, UC_HOOK_BLOCK, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&DeadlineThunk,
+                (void*)GCHandle.ToIntPtr(_self), 1, 0), "hook deadline");
             Check(uc_hook_add(_uc, &hh, UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED | UC_HOOK_MEM_FETCH_UNMAPPED,
                 (delegate* unmanaged[Cdecl]<nint, int, ulong, int, long, nint, byte>)&UnmappedThunk,
                 (void*)GCHandle.ToIntPtr(_self), 1, 0), "hook unmapped");
@@ -156,17 +168,25 @@ public sealed unsafe partial class ArmMachine : IDisposable
 
     public void Dispose()
     {
+        if (_disposed) return;
+        if (_runDepth != 0) throw new InvalidOperationException("cannot dispose an executing emulator");
+        _disposed = true;
         if (_uc != 0) { uc_close(_uc); _uc = 0; }
         foreach (var r in _regions) NativeMemory.Free(r.Alloc);
         _regions.Clear();
+        _lastRegion = default;
         if (_self.IsAllocated) _self.Free();
+        GC.SuppressFinalize(this);
     }
+
+    ~ArmMachine() => Dispose();
 
     // ---- memory helpers
 
     /// <summary>Host pointer to guest [address, address+length); stops the run if any of it is unmapped.</summary>
     public byte* Ptr(uint address, uint length)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         var r = _lastRegion;
         if (r.Ptr != null && address >= r.Base && (ulong)address + length <= (ulong)r.Base + r.Size) return r.Ptr + (address - r.Base);
         foreach (var x in _regions)
@@ -216,12 +236,17 @@ public sealed unsafe partial class ArmMachine : IDisposable
 
     public ulong ReadReg(int id)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         ulong v = 0;
         Check(uc_reg_read(_uc, id, &v), $"reg_read {id}");
         return v;
     }
 
-    public void WriteReg(int id, ulong v) => Check(uc_reg_write(_uc, id, &v), $"reg_write {id}");
+    public void WriteReg(int id, ulong v)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        Check(uc_reg_write(_uc, id, &v), $"reg_write {id}");
+    }
 
     public uint Reg(int n) => (uint)ReadReg(UC_ARM_REG_R0 + n);
     public void SetReg(int n, uint v) => WriteReg(UC_ARM_REG_R0 + n, v);
@@ -388,6 +413,22 @@ public sealed unsafe partial class ArmMachine : IDisposable
     // ---- hook dispatch
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static void DeadlineThunk(nint uc, ulong address, uint size, nint user)
+    {
+        var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
+        if (m._executionFailure is not null)
+        {
+            m._pending ??= new EmulationAbort("emulator is faulted after a previous call failed", m._executionFailure);
+            uc_emu_stop(uc);
+        }
+        else if (m._deadline != 0 && Stopwatch.GetTimestamp() >= m._deadline)
+        {
+            m._pending ??= new EmulationAbort($"M1-034: call to 0x{m._activeCall:X} exceeded its emulation timeout at pc 0x{address:X}");
+            uc_emu_stop(uc);
+        }
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static void StubThunk(nint uc, ulong address, uint size, nint user)
     {
         var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
@@ -453,6 +494,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
     /// <summary>Runs <paramref name="fn"/> instead of the code at <paramref name="address"/> (returns to lr).</summary>
     public void HookAddress(uint address, ImportHandler fn)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         uint a = address & ~1u;
         _addrHooks[a] = fn;
         nuint hh;
@@ -464,30 +506,73 @@ public sealed unsafe partial class ArmMachine : IDisposable
 
     /// <summary>Calls <paramref name="addr"/> (Thumb bit included for Thumb code) with up to four register arguments and
     /// <paramref name="stack"/> words above sp; returns r0. r0..r12 start at zero; sp starts at the top of the stack area
-    /// less 0x100; lr is the return sentinel. <paramref name="count"/> 0 means no instruction budget.</summary>
+    /// less 0x100; lr is the return sentinel. <paramref name="count"/> 0 means no instruction budget. Unicorn's count is
+    /// not aggregated across nested calls; <see cref="CallTimeout"/> is shared across the whole call tree.</summary>
     public uint Call(uint addr, uint[]? args = null, uint[]? stack = null, ulong count = 0, uint fpscr = 0)
     {
-        args ??= Array.Empty<uint>();
-        stack ??= Array.Empty<uint>();
-        if (args.Length > 4) throw new ArgumentException("pass arguments beyond r3 on the stack");
-        for (int n = 0; n <= 12; n++) SetReg(n, 0);
-        uint sp = StackBase + StackSize - 0x100;
-        sp -= 4u * (uint)stack.Length;
-        sp &= ~7u;
-        for (int i = 0; i < stack.Length; i++) W32(sp + 4u * (uint)i, stack[i]);
-        for (int i = 0; i < args.Length; i++) SetReg(i, args[i]);
-        WriteReg(UC_ARM_REG_SP, sp);
-        SetLr(RetAddr);
-        WriteReg(UC_ARM_REG_FPSCR, fpscr);
-        _pending = null;
-        _fault = "";
-        int err = uc_emu_start(_uc, addr, RetAddr, 0, (nuint)count);
-        TakePending();
-        if (err != 0)
-            throw new EmulationAbort($"unicorn: {ErrorText(err)} {_fault} at pc 0x{Pc:X} lr 0x{Lr:X}");
-        if (Pc != RetAddr)
-            throw new EmulationAbort($"call to 0x{addr:X} stopped at pc 0x{Pc:X} (instruction budget?)");
-        return Reg(0);
+        EnsureRunnable();
+        if (_runDepth != 0) throw new InvalidOperationException("use NestedCall inside an emulated call");
+        _runDepth++;
+        try
+        {
+            StartDeadline(addr);
+            args ??= Array.Empty<uint>();
+            stack ??= Array.Empty<uint>();
+            if (args.Length > 4) throw new ArgumentException("pass arguments beyond r3 on the stack");
+            for (int n = 0; n <= 12; n++) SetReg(n, 0);
+            uint sp = StackBase + StackSize - 0x100;
+            sp -= 4u * (uint)stack.Length;
+            sp &= ~7u;
+            for (int i = 0; i < stack.Length; i++) W32(sp + 4u * (uint)i, stack[i]);
+            for (int i = 0; i < args.Length; i++) SetReg(i, args[i]);
+            WriteReg(UC_ARM_REG_SP, sp);
+            SetLr(RetAddr);
+            WriteReg(UC_ARM_REG_FPSCR, fpscr);
+            _pending = null;
+            _fault = "";
+            int err = uc_emu_start(_uc, addr, RetAddr, 0, (nuint)count);
+            TakePending();
+            EnsureRunnable();
+            CheckDeadline();
+            if (err != 0)
+                throw new EmulationAbort($"unicorn: {ErrorText(err)} {_fault} at pc 0x{Pc:X} lr 0x{Lr:X}");
+            if (Pc != RetAddr)
+                throw new EmulationAbort($"call to 0x{addr:X} stopped at pc 0x{Pc:X} (instruction budget?)");
+            return Reg(0);
+        }
+        catch (Exception e)
+        {
+            _executionFailure ??= e;
+            throw;
+        }
+        finally
+        {
+            _deadline = 0;
+            _runDepth--;
+            GC.KeepAlive(this);
+        }
+    }
+
+    private void EnsureRunnable()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_executionFailure is not null)
+            throw new EmulationAbort("emulator is faulted after a previous call failed", _executionFailure);
+    }
+
+    private void StartDeadline(uint address)
+    {
+        if (CallTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(CallTimeout));
+        double ticks = CallTimeout.TotalSeconds * Stopwatch.Frequency;
+        long now = Stopwatch.GetTimestamp();
+        _deadline = ticks >= long.MaxValue - now ? long.MaxValue : now + Math.Max(1, (long)ticks);
+        _activeCall = address;
+    }
+
+    private void CheckDeadline()
+    {
+        if (_deadline != 0 && Stopwatch.GetTimestamp() >= _deadline)
+            throw new EmulationAbort($"M1-034: call to 0x{_activeCall:X} exceeded its emulation timeout at pc 0x{Pc:X}");
     }
 
     private void TakePending()
@@ -512,18 +597,43 @@ public sealed unsafe partial class ArmMachine : IDisposable
     /// probe's <c>nested_call</c>.</summary>
     public uint NestedCall(uint fn, params uint[] args)
     {
-        const uint ret2 = RetAddr + 0x100;
-        var saved = new ulong[SavedRegs.Length];
-        for (int i = 0; i < SavedRegs.Length; i++) saved[i] = ReadReg(SavedRegs[i]);
-        for (int k = 0; k < args.Length; k++) SetReg(k, args[k]);
-        WriteReg(UC_ARM_REG_SP, (saved[13] - 0x800) & ~7UL);
-        SetLr(ret2);
-        int err = uc_emu_start(_uc, fn, ret2, 0, 0);
-        TakePending();
-        if (err != 0)
-            throw new EmulationAbort($"unicorn (nested call 0x{fn:X}): {ErrorText(err)} {_fault} at pc 0x{Pc:X} lr 0x{Lr:X}");
-        uint r = Reg(0);
-        for (int i = 0; i < SavedRegs.Length; i++) WriteReg(SavedRegs[i], saved[i]);
-        return r;
+        EnsureRunnable();
+        bool ownsDeadline = _deadline == 0;
+        uint previousCall = _activeCall;
+        _runDepth++;
+        try
+        {
+            if (ownsDeadline) StartDeadline(fn);
+            else _activeCall = fn;
+            const uint ret2 = RetAddr + 0x100;
+            var saved = new ulong[SavedRegs.Length];
+            for (int i = 0; i < SavedRegs.Length; i++) saved[i] = ReadReg(SavedRegs[i]);
+            for (int k = 0; k < args.Length; k++) SetReg(k, args[k]);
+            WriteReg(UC_ARM_REG_SP, (saved[13] - 0x800) & ~7UL);
+            SetLr(ret2);
+            int err = uc_emu_start(_uc, fn, ret2, 0, 0);
+            TakePending();
+            EnsureRunnable();
+            CheckDeadline();
+            if (err != 0)
+                throw new EmulationAbort($"unicorn (nested call 0x{fn:X}): {ErrorText(err)} {_fault} at pc 0x{Pc:X} lr 0x{Lr:X}");
+            if (Pc != ret2)
+                throw new EmulationAbort($"nested call to 0x{fn:X} stopped at pc 0x{Pc:X}");
+            uint r = Reg(0);
+            for (int i = 0; i < SavedRegs.Length; i++) WriteReg(SavedRegs[i], saved[i]);
+            return r;
+        }
+        catch (Exception e)
+        {
+            _executionFailure ??= e;
+            throw;
+        }
+        finally
+        {
+            if (ownsDeadline) _deadline = 0;
+            _activeCall = previousCall;
+            _runDepth--;
+            GC.KeepAlive(this);
+        }
     }
 }

@@ -261,7 +261,7 @@ public sealed class AcapelaNative : IDisposable
             rand48 = (0x5DEECE66DUL * rand48 + 0xB) & 0xFFFFFFFFFFFFUL;
             return (uint)(rand48 >> 17);
         };
-        L["atoi"] = m => (uint)Atoi(m.CStr(m.Reg(0)));
+        L["atoi"] = m => unchecked((uint)Atoi(m, m.CStr(m.Reg(0))));
         L["strdup"] = m =>
         {
             var s = m.CStr(m.Reg(0), 1 << 20);
@@ -319,16 +319,28 @@ public sealed class AcapelaNative : IDisposable
         return r;
     }
 
-    /// <summary>C atoi: leading C whitespace, an optional sign, ASCII digits; wraps to 32 bits.</summary>
-    private static int Atoi(byte[] s)
+    /// <summary>Bionic atoi delegates to 32-bit strtol, including its overflow and errno behavior.</summary>
+    private static int Atoi(ArmMachine m, byte[] s)
     {
         int i = 0;
         while (i < s.Length && s[i] is 9 or 10 or 11 or 12 or 13 or 32) i++;
         bool neg = false;
         if (i < s.Length && s[i] is (byte)'+' or (byte)'-') { neg = s[i] == '-'; i++; }
         uint v = 0;
-        while (i < s.Length && s[i] >= '0' && s[i] <= '9') v = unchecked(v * 10 + (uint)(s[i++] - '0'));
-        return unchecked(neg ? -(int)v : (int)v);
+        uint limit = neg ? 2147483648u : 2147483647u;
+        bool overflow = false;
+        while (i < s.Length && s[i] >= '0' && s[i] <= '9')
+        {
+            uint digit = (uint)(s[i++] - '0');
+            if (v > (limit - digit) / 10) overflow = true;
+            if (!overflow) v = v * 10 + digit;
+        }
+        if (overflow)
+        {
+            m.W32(m.ErrnoAddress, 34);
+            return neg ? int.MinValue : int.MaxValue;
+        }
+        return neg ? unchecked(-(int)v) : (int)v;
     }
 
     private static void Store(ArmMachine m, uint a, ScanfSubset.Value v)
