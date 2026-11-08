@@ -1,1 +1,7 @@
-# No outstanding operator decision
+# Next capability jobs for operator ordering
+
+- **MEET-COZMO-RENAME-1.** Follow the shipped UpdateEnrolledFaceByID request through VisionComponent::RenameFace (0x657B24–0x657BE4) and the distinct priority-3 RespondToRenameFace owner (0x60080C–0x600848, 0x600884–0x6008F0, 0x600A50). Check the identity lookup and report, whether the original request stages speech, the native authored trigger and the effect on an active or pending enrollment. Exercise the stock chooser and original robot owner.
+- **VOICE-PICKUP-REACTION-1.** Complete the named acknowledgement in the existing robot-pickup reaction through 0x607820–0x607B98, starting at the actual pickup trigger and retained StartAnim calls at 0x607A00–0x607A2C. Trace the stock trigger, the 4-track mask and conditional speech/mood order. Test named and unnamed choices, preemption and original-owner retirement with the shared authored route.
+- **AI-BODY-CUBE-PICKUP-1.** Recover the explicit native object pickup request and its real factory selection between PickupObjectAction (0x553648) and DriveToPickupObjectAction (0x55C464), then the selected docking and carry verification path at 0x553BE0. Expose a bounded request only through checked ActionList admission, and exercise actual object identity, readiness, wire, cancellation and verified carry completion. Reuse existing concrete docking and world owners where the evidence matches.
+
+Order and scope are for operator decision.
