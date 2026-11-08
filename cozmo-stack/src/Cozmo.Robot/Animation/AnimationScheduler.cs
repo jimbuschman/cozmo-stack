@@ -1,5 +1,6 @@
 using Cozmo.Protocol;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Animation.Wwise;
 
 namespace Cozmo.Robot.Animation;
 
@@ -542,7 +543,7 @@ public sealed class AnimationScheduler
     private byte _tag;                                   // +0xA0 (not set by the ctors, A open question 2: 0 here)
     private StreamAnimation _live;                       // +0xA8
     private bool _liveFlag;                              // +0x194
-    private AudioAnimation? _audio;                      // +0x1B0 RobotAudioClient's current animation
+    private IAudioAnimation? _audio;                      // +0x1B0 RobotAudioClient's current animation
     private float _keepAliveTimeoutSec = 0.5f;           // +0x1C0: float32 (vldr s4,[r4,#0x1c0] at 0x0057CF94; 0x3F000000 at 0x0057A040)
     private string _lastInitName = "";                   // +0x1C8
     private long _lastToggleMs;                          // +0x1D4
@@ -854,6 +855,22 @@ public sealed class AnimationScheduler
         }
     }
 
+    // A speech recipient belongs to this exact clip and owner transaction, never the global audio source.
+    internal AnimationHandle? PlaySpeech(AnimationClip clip, double nowMs, WwiseRobotAudioPath path, Func<bool> ownerCurrent)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(ownerCurrent);
+        if (!clip.IsLive || clip.Keyframes.Count != 1 || clip.Keyframes[0] is not AudioKeyframe key ||
+            key.TriggerTimeMs != 0 || key.EventIds.Length != 1 || unchecked((uint)key.EventIds[0]) != 0xBF0BACE1 || key.Volume != 1f)
+            throw new ArgumentException("speech requires the source-backed live Sentence clip", nameof(clip));
+        lock (_gate)
+        {
+            _nowMs = nowMs;
+            byte tag = SetStreamingAnimationLocked(clip, 1, true, ownerCurrent, path);
+            return tag == 0 ? null : _handle;
+        }
+    }
+
     /// <summary>
     /// ReplayLastAnimation (A27, G2E 0xAD): SetStreamingAnimation(the last streamed name +0x54, numLoops, interrupt = 1).
     /// </summary>
@@ -896,7 +913,7 @@ public sealed class AnimationScheduler
     }
 
     private long _streamMutationEpoch;
-    private byte SetStreamingAnimationLocked(AnimationClip? clip, int numLoops, bool interrupt, Func<bool>? scopedCurrent=null)
+    private byte SetStreamingAnimationLocked(AnimationClip? clip, int numLoops, bool interrupt, Func<bool>? scopedCurrent=null, WwiseRobotAudioPath? speechPath=null)
     {
         if (clip is not null && RejectCustomSong(clip.Name)) return 0;
         if(scopedCurrent is not null && !scopedCurrent())return 0;
@@ -939,7 +956,11 @@ public sealed class AnimationScheduler
         }
         _lastStreamedName = clip.Name;
         byte tag = IncrementTagCtr();
-        if(!InitStreamLocked(_streaming, tag,Current))return 0;
+        if(!InitStreamLocked(_streaming, tag,Current,speechPath))
+        {
+            if (speechPath is not null && Current()) { _streaming = null; _streamingClip = null; _tag = 0; }
+            return 0;
+        }
         _numLoops = numLoops;
         _loopCounter = 0;
 
@@ -1051,7 +1072,7 @@ public sealed class AnimationScheduler
     /// +0x1C8 = the name; +0x84 = +0x80; a non-empty send buffer dropped with SendBufferNotEmpty; endSent = IsEmpty,
     /// startSent = 0; the audio animation created; for a non-live animation RemoveKeepFaceAlive(99). Nothing is sent.
     /// </summary>
-    private bool InitStreamLocked(StreamAnimation anim, byte tag,Func<bool>? current=null)
+    private bool InitStreamLocked(StreamAnimation anim, byte tag,Func<bool>? current=null, WwiseRobotAudioPath? speechPath=null)
     {
         anim.Init();
         _tag = tag;
@@ -1073,8 +1094,9 @@ public sealed class AnimationScheduler
         }
         _endSent = anim.IsEmpty;
         _startSent = false;
-        var audio = CreateAudioAnimationLocked(anim,current);
-        if(current is not null && !current())return false;
+        var audio = CreateAudioAnimationLocked(anim,current,speechPath);
+        if(current is not null && !current()) { if (audio is SpeechAudioAnimation abandoned) abandoned.Abort(); return false; }
+        if (speechPath is not null && audio is not SpeechAudioAnimation) return false;
         _audio = audio;
         // M9 owns CreateCustomSong and its "About to play the custom song" info; no M5 custom-song path.
         if (!anim.IsLive) _tlc.RemoveKeepFaceAliveGuarded(99,current);
@@ -1103,19 +1125,20 @@ public sealed class AnimationScheduler
     private static void SteppedBehavior_ReportPostConstruction() =>
         Behavior.SteppedBehavior.ReportMissing("RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made");
 
-    private AudioAnimation? CreateAudioAnimationLocked(StreamAnimation anim,Func<bool>? current=null)
+    private IAudioAnimation? CreateAudioAnimationLocked(StreamAnimation anim,Func<bool>? current=null,WwiseRobotAudioPath? speechPath=null)
     {
         if (_audio is not null) { _audio.Abort(); if(current is not null && !current())return null; _audio = null; }
         SteppedBehavior_ReportPostConstruction();
         if(current is not null && !current())return null;
-        if (OutputSource is not { } provider) return anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
+        if (OutputSource is not { } provider) return speechPath is not null || anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
         var source=provider();
         if(current is not null && !current())return null;
         switch ((byte)(source ?? RobotAudioOutputSource.None))
         {
             case 2:
-                return anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
+                return anim.RobotAudio.IsEmpty ? null : speechPath is null ? new AudioAnimation(this, anim.RobotAudio) : new SpeechAudioAnimation(this, anim.RobotAudio, speechPath);
             case 1:
+                if (speechPath is not null) return null;
                 _ = new AudioAnimation(this, anim.RobotAudio); // D1 draws also run for the device consumer.
                 if (!_reportedDeviceAudio)
                 {
@@ -1124,6 +1147,7 @@ public sealed class AnimationScheduler
                 }
                 return null;
             case 0:
+                if (speechPath is not null) return null;
                 anim.RobotAudio.Clear();
                 return null;
             default:
@@ -2015,7 +2039,42 @@ public sealed class AnimationScheduler
     /// source has not rendered them; it is ready always and complete once the track is at its end and nothing plays. The
     /// engine's readiness states (C16, Q5) are M6's and not built.
     /// </summary>
-    private sealed class AudioAnimation
+    private interface IAudioAnimation
+    {
+        bool IsReady { get; }
+        bool IsComplete { get; }
+        bool Streaming { get; }
+        void Update(long start, long streamTime);
+        byte[]? PopFrame();
+        void Abort();
+    }
+
+    private sealed class SpeechAudioAnimation : IAudioAnimation
+    {
+        private readonly WwiseRobotAudioPath _path;
+        internal SpeechAudioAnimation(AnimationScheduler scheduler, StreamTrack<StreamKeyframe> track, WwiseRobotAudioPath path)
+        {
+            _path = path;
+            var keyframes = new List<WwiseRobotAudioKeyframe>();
+            while (track.Current is { } frame)
+            {
+                var key = (AudioKeyframe)frame.Source;
+                int index = scheduler.GetAudioRefIndex(key, true);
+                if (index >= 0 && index < key.EventIds.Length && key.EventIds[index] != 0)
+                    keyframes.Add(new(key.TriggerTimeMs, new[] { new WwiseRobotAudioRef(unchecked((uint)key.EventIds[index]), key.Volume, false) }, new[] { 1f }));
+                track.MoveToNext();
+            }
+            _path.InitAnimation(keyframes, 7);
+        }
+        public bool IsReady => _path.State is WwiseRobotAudioState.LoadingStream or WwiseRobotAudioState.AudioFramesReady;
+        public bool IsComplete => _path.State is WwiseRobotAudioState.AnimationCompleted or WwiseRobotAudioState.AnimationError;
+        public bool Streaming => !IsComplete;
+        public void Update(long start, long streamTime) { _path.StartTimeMs = start; _path.DrainCallbacks(); _path.Update(streamTime); }
+        public byte[]? PopFrame() => _path.PopRobotAudioMessage();
+        public void Abort() => _path.Abort();
+    }
+
+    private sealed class AudioAnimation : IAudioAnimation
     {
         private readonly AnimationScheduler _s;
         private readonly Queue<(StreamKeyframe Frame, int Index)> _events = new();
@@ -2217,6 +2276,7 @@ public sealed class AnimationScheduler
             var setupRelease = ReleaseSetupHandlers; ReleaseSetupHandlers = null;
             setupRelease?.Invoke(); // +0x1B4 handles, before owned live animation.
             _live.Clear();
+            if (_audio is SpeechAudioAnimation speech) speech.Abort();
             _audio = null;
             _tlc.Destroy();
             _idleStack.Clear();
@@ -2262,6 +2322,7 @@ public sealed class AnimationScheduler
             _liveFlag = false;
             _bodyDurMs = _liftDurMs = _headDurMs = _bodySpacingMs = _liftSpacingMs = _headSpacingMs = 0;
             _liveEyeShiftTag = 0;
+            if (_audio is SpeechAudioAnimation speech) speech.Abort();
             _audio = null;
             _keepAliveTimeoutSec = 0.5f;
             _lastInitName = "";

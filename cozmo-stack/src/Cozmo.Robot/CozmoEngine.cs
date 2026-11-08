@@ -78,6 +78,8 @@ public sealed class CozmoEngineOptions
     /// MISSING: this stack has no fixed resources location; the caller names it.
     /// </summary>
     public string? ResourcesPath { get; init; }
+    /// <summary>Local Wwise bank directory containing Init.bnk and English(US)/Cozmo.bnk for direct robot speech.</summary>
+    public string? SpeechSoundBankDirectory { get; init; }
 
     /// <summary>Where the block pool is kept (<see cref="CubeConnections.Init"/>); an empty path turns persistence off.</summary>
     // fidelity: M3-064 — host supplies DataPlatformExternalPath (scope 4).

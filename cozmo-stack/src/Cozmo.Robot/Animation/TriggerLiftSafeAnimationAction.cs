@@ -18,6 +18,8 @@ internal class TriggerAnimationAction : ActionRunner
     private AnimationClip? _cachedClip;
     private AnimationClip? _directClip;
     private Func<bool>? _directOwnerCurrent;
+    private Wwise.WwiseRobotAudioPath? _speechPath;
+    private EngineRobot? _speechOwner;
     private bool _directDiagnosticReported;
     private bool _destroyed;
     private bool _started, _ended, _failed;
@@ -47,6 +49,7 @@ internal class TriggerAnimationAction : ActionRunner
     internal TriggerAnimationAction(CozmoRobot robot, AnimationClip clip, Func<bool> ownerCurrent, Action<string>? missing = null, bool diagnosticReported = false)
         : this(robot, new DrivingAnimationRequest(default, 1, true, 0, 60f, false), missing, directClip: clip)
     { _directOwnerCurrent=ownerCurrent;_directDiagnosticReported=diagnosticReported; }
+    internal void SetSpeechPath(Wwise.WwiseRobotAudioPath path, EngineRobot owner) { _speechPath = path; _speechOwner = owner; }
     // TriggerAnimationAction::SetAnimGroupFromTrigger 0x0054432C; shared by constructor and get-out Init.
     protected void SetAnimGroupFromTrigger(AnimationTrigger trigger)
     {
@@ -96,7 +99,9 @@ internal class TriggerAnimationAction : ActionRunner
         // fidelity: M8-015, M8-020 — PlayAnimation::Init 0x00543F20..0x00544180.
         _started = _ended = _failed = false;
         _cachedClip??=_directClip ?? library!.GetClip(_clip); // direct live clip or first lookup survives retries.
-        _ticket=_robot.Animations.PlayTracked(_cachedClip,Request.Argument3,numLoops:Request.Argument2);
+        _ticket = _speechPath is null
+            ? _robot.Animations.PlayTracked(_cachedClip,Request.Argument3,numLoops:Request.Argument2)
+            : _speechOwner is { } speechOwner ? _robot.Animations.PlaySpeechTracked(_cachedClip, _speechPath, speechOwner) : null;
         if (_ticket is null) return 0x03000001;
         if(_directClip is not null && _directOwnerCurrent?.Invoke()!=true)
         {

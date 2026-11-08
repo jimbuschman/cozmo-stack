@@ -88,6 +88,19 @@ internal sealed class TextToSpeechComponent
         }
     }
 
+    // Scoped native host owns the moved data directly; no process-global managed WavePortal slot.
+    internal bool TakeSpeech(byte id, out float[] samples)
+    {
+        lock (_gate)
+        {
+            if (!_operations.TryGetValue(id, out var bundle) || bundle.Samples is not { } data)
+            { samples = Array.Empty<float>(); return false; }
+            samples = data;
+            _operations.Remove(id);
+            return true;
+        }
+    }
+
     private const int AcapelaTtsSampleRate = 22050;
 
     internal void CleanupAudioEngine(byte id)
