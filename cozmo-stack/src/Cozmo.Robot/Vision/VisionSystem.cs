@@ -907,15 +907,26 @@ public sealed partial class VisionSystem : IDisposable
 
     // fidelity: M14-011, M14-012
     /// <summary>
-    /// <c>VisionSystem::GetSerializedFaceData</c> (F26/C5-12). Native named-only album export is not
-    /// connected, so the stock path rejects this request. A supplied legacy seam retains its prior behavior.
+    /// <c>VisionSystem::GetSerializedFaceData</c> (F26/C5-12), including the stock named-only album export.
     /// </summary>
     public (byte[] Album, byte[] Enrollment) GetSerializedFaceData()
     {
-        if (_stockRecognizer)
-            throw new NotSupportedException("M14-011 native named-only album serialization is not connected");
+        var owner = _robot.Engine.Robot;
+        var recognizer = Recognizer;
+        int removal = Volatile.Read(ref _removals);
         lock (_busy)
         {
+            if (_stockRecognizer)
+            {
+                bool Current() => removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, recognizer) &&
+                    owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner) &&
+                    recognizer.OwnsStockDetector(_stockFaceDetector);
+                if (!Current())
+                    throw new InvalidOperationException("M14-011 face recognizer owner changed");
+                var result = recognizer.ExportStockData();
+                if (!Current()) throw new InvalidOperationException("M14-011 face recognizer owner changed during export");
+                return result;
+            }
             if (Recognizer.IsAvailable)
                 return (_serializedFaceAlbum,
                         _serializedFaceAlbum.Length > 0 ? Recognizer.SerializeEnrollment() : Array.Empty<byte>());
@@ -1030,17 +1041,55 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     public void SaveFaceAlbumToRobot()
     {
-        if (_stockRecognizer)
+        var owner = _robot.Engine.Robot;
+        var recognizer = Recognizer;
+        int removal = Volatile.Read(ref _removals);
+        var nv = _robot.Engine.NvStorage;
+        if (Monitor.IsEntered(_busy) || Monitor.IsEntered(World.FrameGate))
         {
-            SteppedBehavior.ReportMissing("M14-011 native named-only album serialization is not connected; face album save skipped");
+            _robot.Engine.PostGameMessageFromVisionGate(() => SaveFaceAlbumToRobot(owner, recognizer, removal, nv));
             return;
         }
-        var nv = _robot.Engine.NvStorage;
-        if (nv is null) return;
-        var (album, enrollment) = GetSerializedFaceData();
+        SaveFaceAlbumToRobot(owner, recognizer, removal, nv);
+    }
+
+    private void SaveFaceAlbumToRobot(EngineRobot? owner, FaceRecognizer recognizer, int removal, NvStorageComponent? nv)
+    {
+        using var lease = _robot.Engine.EnterSynchronousOwner();
+        bool Current() => nv is not null && ReferenceEquals(_robot.Engine.NvStorage, nv) &&
+            removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, recognizer) &&
+            owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
+        void Completed(NvResult result)
+        {
+            if (result.Result == 0 || !Current()) return;
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.SaveFaceAlbumToRobot.NVWriteFailed", $"NVResult = {NvStorageComponent.NvResultName(result.Result)}");
+            if (!Current()) return;
+            if (owner!.HasExternalInterface)
+            {
+                var report = new EngineErrorCodeReport(3);
+                _robot.Engine.DeliverAnimationReportToApp(0x7C, new byte[] { 3 });
+                _robot.Engine.AnimationMessages.Deliver(0x7C, true, report);
+            }
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        }
+        if (!Current()) return;
+        byte[] album, enrollment;
+        try
+        {
+            lock (_busy)
+            {
+                if (!Current()) return;
+                (album, enrollment) = GetSerializedFaceData();
+            }
+        }
+        catch (Exception ex)
+        {
+            SteppedBehavior.ReportMissing($"M14-011 native face album export failed; save skipped: {ex.Message}");
+            return;
+        }
         int albumMax = NvStorageComponent.MaxSizeForEntryTag(FaceAlbumNvTag);            // 0x10000
         int enrollmentMax = NvStorageComponent.MaxSizeForEntryTag(FaceEnrollmentNvTag);  // 0x1000
-        if (album.Length > albumMax || enrollment.Length > enrollmentMax)
+        if (album.Length >= albumMax || enrollment.Length >= enrollmentMax)
         {
             Log?.Invoke($"SaveFaceAlbumToRobot: serialized data too large (album {album.Length}/{albumMax}, enrollment {enrollment.Length}/{enrollmentMax})");
             return;
@@ -1049,24 +1098,12 @@ public sealed partial class VisionSystem : IDisposable
         {
             // C5-13: erase the album first, then the enrollment only when the album erase succeeded.
             Log?.Invoke("SaveFaceAlbumToRobot: EmptyAlbumData");
-            nv.Request(FaceAlbumNvTag, 0, NvStorageComponent.OpErase, Array.Empty<byte>(), r =>
-            {
-                if (r.Result != NvStorageComponent.ResultOkay) return;
-                nv.Request(FaceEnrollmentNvTag, 0, NvStorageComponent.OpErase, Array.Empty<byte>(), _ => { });
-            });
+            if (Current() && nv!.Erase(FaceAlbumNvTag, Completed) != 0 && Current())
+                nv.Erase(FaceEnrollmentNvTag, Completed);
             return;
         }
-        WriteAlbumEntry(nv, FaceAlbumNvTag, album);
-        WriteAlbumEntry(nv, FaceEnrollmentNvTag, enrollment);
-    }
-
-    // fidelity: M14-012
-    private static void WriteAlbumEntry(NvStorageComponent nv, uint tag, byte[] data)
-    {
-        int padded = (data.Length + 3) & ~3;      // the engine's four-byte alignment
-        var bytes = new byte[padded];
-        Array.Copy(data, bytes, data.Length);
-        nv.Request(tag, padded, NvStorageComponent.OpWrite, bytes, _ => { });
+        if (Current() && nv!.Write(FaceAlbumNvTag, album, Completed) != 0 && Current())
+            nv.Write(FaceEnrollmentNvTag, enrollment, Completed);
     }
 
     /// <summary>

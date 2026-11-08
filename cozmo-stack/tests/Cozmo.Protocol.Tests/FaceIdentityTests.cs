@@ -11,6 +11,123 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class FaceIdentityTests
 {
+    [Fact]
+    public void AutoTickVisionPostDoesNotWaitForEngineOwnerUnderFrameGate()
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.Engine.StartOffline(autoTick: true);
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        using var delivered = new ManualResetEventSlim();
+        var holder = Task.Run(() =>
+        {
+            using var lease = rig.Engine.EnterSynchronousOwner();
+            entered.Set();
+            release.Wait();
+        });
+        Task? post = null;
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            post = Task.Run(() =>
+            {
+                lock (rig.Robot.LocalizationWorld.FrameGate)
+                    rig.Engine.PostGameMessageFromVisionGate(() => delivered.Set());
+            });
+            Assert.True(post.Wait(TimeSpan.FromSeconds(2)), "vision post waited for the held engine owner");
+        }
+        finally { release.Set(); }
+        Assert.True(holder.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(post!.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(delivered.Wait(TimeSpan.FromSeconds(5)));
+    }
+
+    [Fact]
+    public void UninitializedStockExportFailsRatherThanReturningAnEmptyAlbum()
+    {
+        using var detector = new OkaoFaceDetector();
+        var recognizer = new FaceRecognizer(new NativeOkaoFaceRecognizer(detector));
+        Assert.Throws<InvalidOperationException>(() => recognizer.ExportStockData());
+    }
+
+    [Fact]
+    public void ExportLimitsAlbumToFirstTenNamesButKeepsAllEnrollment()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        var enrollment = new List<byte>();
+        enrollment.AddRange(BitConverter.GetBytes(StoredEnrolledFace.VersionPrefix));
+        enrollment.AddRange(BitConverter.GetBytes(12));
+        for (int id = 1; id <= 11; id++)
+        {
+            var face = new StoredEnrolledFace { FaceID = id, Name = $"Face{id}" };
+            if (id == 11) { face.AlbumEntryIds.Add(3); face.AlbumEntrySeconds.Add(1); }
+            face.Pack(enrollment);
+        }
+        using var fixture = new Fixture(sourceNvEmpty: true, sourceNvStored: tag => tag switch
+        {
+            VisionSystem.FaceAlbumNvTag => Album(),
+            VisionSystem.FaceEnrollmentNvTag => enrollment.ToArray(),
+            _ => null,
+        });
+        var vision = fixture.M.Vision;
+        var exported = vision.GetSerializedFaceData();
+        var faces = FaceRecognizer.DeserializeEnrollment(exported.Enrollment, 0, out _);
+        Assert.Equal(11, faces!.Count);
+        var native = new NativeOkaoFaceRecognizer(Assert.IsType<OkaoFaceDetector>(vision.FaceDetector));
+        var restored = native.RestoreAlbum(native.CreateCommon(), exported.Album, exported.Album.Length, out int status);
+        Assert.Equal(0, status);
+        Assert.NotNull(restored);
+        try
+        {
+            Assert.Equal(0, native.IsRegistered(restored!, 3, 0, out int registered));
+            Assert.Equal(0, registered);
+        }
+        finally { native.DeleteAlbumHandle(restored!); }
+    }
+
+    [Fact]
+    public void SaveUnderFrameGateDefersAndDropsRetiredOwner()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var fixture = new Fixture(sourceNvEmpty: true, sourceNvStored: tag => tag switch
+        {
+            VisionSystem.FaceAlbumNvTag => Album(),
+            VisionSystem.FaceEnrollmentNvTag => Enrollment(),
+            _ => null,
+        });
+        var vision = fixture.M.Vision;
+        int mark = fixture.Rig.Mark();
+        lock (vision.World.FrameGate)
+        {
+            vision.SaveFaceAlbumToRobot();
+            Assert.True(fixture.Rig.Engine.NvStorage!.IsIdle);
+        }
+        fixture.Rig.Engine.Robots.RemoveRobot(1, false);
+        fixture.Rig.Engine.Robots.AddRobot(1, withRic: false);
+        fixture.Rig.Tick();
+        Assert.DoesNotContain(fixture.Rig.SentSince(mark).OfType<NVCommand>(),
+            c => c.Tag is VisionSystem.FaceAlbumNvTag or VisionSystem.FaceEnrollmentNvTag);
+    }
+
+    [Fact]
+    public void UnavailableStockExportDoesNotQueueNvErase()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var fixture = new Fixture(sourceNvEmpty: true, sourceNvStored: tag => tag switch
+        {
+            VisionSystem.FaceAlbumNvTag => Album(),
+            VisionSystem.FaceEnrollmentNvTag => Enrollment(),
+            _ => null,
+        });
+        var vision = fixture.M.Vision;
+        Assert.IsType<OkaoFaceDetector>(vision.FaceDetector).Dispose();
+        int mark = fixture.Rig.Mark();
+        vision.SaveFaceAlbumToRobot();
+        fixture.Rig.Tick();
+        Assert.DoesNotContain(fixture.Rig.SentSince(mark).OfType<NVCommand>(),
+            c => c.Tag is VisionSystem.FaceAlbumNvTag or VisionSystem.FaceEnrollmentNvTag);
+    }
+
     // 332-byte album generated by shipped OKAO from the existing synthetic face_s10_2 image,
     // album entry 3/data 0, capacity (1000,4). SHA-256 af7ea79ea727b395b560b0eb36657d510bbb1b09ff2ac9734f1abd8ced88aac3.
     private static byte[] Album() => Convert.FromBase64String("TAEAAExBvOxTSU5BSTguMAgAAADoAwAABAAAAAEAAAADAAAA6wzeieAP5fD2ADOt6bb+IKQQCewFA9QGAN0M7fIK4vv5yu3A6v4b9xb+58+418/+8wj97BbM5ej01Q8aHia2vxcAwc/jAr4WBw4878YIAyfpK/zl0gwy2AIOBDH7Hfc0MythECne+NrU+TT2Gw3P9P4VKxr+Dvkw7ArwK/4l+uDGAircERAizQ73Av76/P4BAQAAAAAAAADrDN6J4A/l8PYAM63ptv4gpBAJ7AUD1AYA3Qzt8gri+/nK7cDq/hv3Fv7nz7jXz/7zCP3sFszl6PTVDxoeJra/FwDBz+MCvhYHDjzvxggDJ+kr/OXSDDLYAg4EMfsd9zQzK2EQKd742tT5NPYbDc/0/hUrGv4O+TDsCvAr/iX64MYCKtwRECLNDvcC/vr8/gE=");
@@ -38,6 +155,9 @@ public sealed class FaceIdentityTests
         });
         var vision = fixture.M.Vision;
         Assert.Contains(vision.Recognizer.EnrolledFaces, x => x.FaceID == 7 && x.Name == "Drawn");
+        var initialExport = vision.GetSerializedFaceData();
+        Assert.Equal(album, initialExport.Album);
+        Assert.NotEmpty(initialExport.Enrollment);
         Assert.Empty(vision.Faces.Faces);
         var changes = new List<(int Old, int New)>();
         var order = new List<string>();
@@ -87,12 +207,14 @@ public sealed class FaceIdentityTests
         fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
         fixture.Rig.Tick();
         Assert.Single(changes);
-        Assert.Throws<NotSupportedException>(() => vision.GetSerializedFaceData());
+        var exported = vision.GetSerializedFaceData();
+        Assert.NotEmpty(exported.Album);
+        Assert.NotEmpty(exported.Enrollment);
         int mark = fixture.Rig.Mark();
         vision.SaveFaceAlbumToRobot();
         fixture.Rig.Tick();
-        Assert.DoesNotContain(fixture.Rig.SentSince(mark).OfType<NVCommand>(),
-            command => command.Tag is VisionSystem.FaceAlbumNvTag or VisionSystem.FaceEnrollmentNvTag);
+        Assert.Contains(fixture.Rig.SentSince(mark).OfType<NVCommand>(),
+            command => command.Tag == VisionSystem.FaceAlbumNvTag && command.Op == NvStorageComponent.OpErase);
 
         int eraseReports = 0;
         vision.EnrolledFacesErasedInternal += () => eraseReports++;

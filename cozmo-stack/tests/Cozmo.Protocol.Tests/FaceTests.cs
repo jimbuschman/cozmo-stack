@@ -791,6 +791,24 @@ public class FaceTests
         var erase = empty.Sent.OfType<NVCommand>().Last();
         Assert.Equal(0x184000u, erase.Tag);
         Assert.Equal(NvStorageComponent.OpErase, erase.Op);
+        // The second erase was admitted before the first reply, even when that reply fails.
+        var errors = new List<object?>();
+        using var errorsSubscription = empty.Robot.Engine.AnimationMessages.SubscribeMessage(0x7C, true, errors.Add);
+        empty.Send(new NVOpResult { Tag = 0x184000, Op = NvStorageComponent.OpErase, Result = -1 });
+        empty.Pump();
+        Assert.Equal(0x183000u, empty.Sent.OfType<NVCommand>().Last().Tag);
+        Assert.Equal((byte)3, Assert.IsType<EngineErrorCodeReport>(Assert.Single(errors)).Code);
+    }
+
+    [Fact]
+    public void FaceAlbumRejectsTheExactNvCapacityBeforeEnqueue()
+    {
+        using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
+        rig.Vision.InstallSerializedFaceData(new byte[0x10000], new byte[] { 1 });
+        int before = rig.Sent.OfType<NVCommand>().Count();
+        rig.Vision.SaveFaceAlbumToRobot();
+        rig.Tick(); rig.Pump();
+        Assert.Equal(before, rig.Sent.OfType<NVCommand>().Count());
     }
 
     /// <summary>Answers the in-flight non-factory NV read/write with a valid 16-byte header and a payload.</summary>

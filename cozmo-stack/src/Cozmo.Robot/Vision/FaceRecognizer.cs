@@ -1025,6 +1025,49 @@ public sealed class FaceRecognizer
         }
     }
 
+    // 0x866F06..0x8671F4: first ten named faces for the album; enrollment remains independent.
+    internal (byte[] Album, byte[] Enrollment) ExportStockData()
+    {
+        lock (_gate)
+        {
+            if (_okao is not NativeOkaoFaceRecognizer native || _common is null || _album is null || !native.IsAvailable)
+                throw new InvalidOperationException("M14-011 face recognizer is not initialized");
+            var temporary = native.CreateAlbum();
+            try
+            {
+                var named = _faces.Values.Where(f => f.Name.Length != 0).OrderBy(f => f.FaceID).Take(10).ToArray();
+                if (named.Length == 0) return (Array.Empty<byte>(), Array.Empty<byte>());
+                foreach (var face in named)
+                    foreach (int entry in face.AlbumEntries.Keys.OrderBy(id => id))
+                        for (int slot = 0; slot < 4; slot++)
+                        {
+                            if (native.IsRegistered(_album, entry, slot, out int registered) != 0)
+                                throw new InvalidOperationException("M14-011 OKAO IsRegistered failed during export");
+                            if (registered == 0) continue;
+                            if (native.GetFeatureFromAlbum(_album, entry, slot, out var feature) != 0 ||
+                                native.RegisterData(temporary, feature, entry, slot) != 0)
+                                throw new InvalidOperationException("M14-011 OKAO feature copy failed during export");
+                        }
+                var serialized = native.SerializeAlbum(temporary);
+                if (serialized.Status != 0) throw new InvalidOperationException($"M14-011 OKAO album serialization failed: {serialized.Status}");
+                byte[] album = serialized.Data;
+                return (album, album.Length == 0 ? Array.Empty<byte>() : SerializeEnrollment());
+            }
+            finally
+            {
+                if (native.IsAvailable)
+                {
+                    try
+                    {
+                        if (native.DeleteAlbumHandle(temporary) != 0)
+                            Behavior.SteppedBehavior.ReportMissing("M14-011 temporary face album deletion failed");
+                    }
+                    catch (Exception ex) { Behavior.SteppedBehavior.ReportMissing($"M1-034 M14-011 temporary face album deletion failed: {ex.Message}"); }
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// <c>FaceRecognizer::SetSerializedData</c> 0x00867F54 (C3-22..C3-24): album restore, enrollment
     /// parsing, the consistency checks, the capacity install, nextFaceID, the loaded-face report and the

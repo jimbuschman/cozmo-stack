@@ -2307,6 +2307,14 @@ public sealed partial class CozmoEngine : IDisposable
     /// <summary>Runs <paramref name="gameMessage"/> as a game message at the start of the next tick (CD7).</summary>
     internal void PostGameMessage(Action gameMessage) => Post(gameMessage);
 
+    // A vision/frame callback can hold a gate ordered after _tickLock. Queue immediately,
+    // but never synchronously acquire _tickLock on that thread.
+    internal void PostGameMessageFromVisionGate(Action gameMessage)
+    {
+        _gameMessages.Enqueue(gameMessage);
+        if (_autoTick && !_disposed) _ = Task.Run(Kick);
+    }
+
     // M3-021: public camera requests join the same engine-thread queue as native game inputs.
     // Keep the synchronous host result, without waiting on the engine thread itself.
     internal T InvokeCameraRequest<T>(Func<T> request)
