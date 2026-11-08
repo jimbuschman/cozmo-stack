@@ -115,6 +115,13 @@ public sealed class PathSender
         Sent.Add(message);
         return message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn ? _robot.SendToHandler(message) : _robot.SendMessage(message);
     }
+    internal bool SendOwned(EngineRobot owner,Func<bool> current,RobotMessage message)
+    {
+        if(!current())return false;
+        Sent.Add(message);
+        return message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn
+            ? _robot.SendToHandler(message) : owner.SendCheckedOwned(message,current);
+    }
     public ushort Execute(IReadOnlyList<PathSegment> path,Action<ushort>? reserve=null)
     {
         var execution=ExecuteWithResult(path,reserve);
@@ -130,6 +137,8 @@ public sealed class PathSender
         return (_path.Field42,result);
     }
     public void Abort(){if(_robot.Engine.Robot is {} owner)owner.ActionList.WithGate(()=>_path.Abort(Send));else _path.Abort(Send); }
+    internal void AbortOwned(EngineRobot owner,Func<bool> current)
+    { owner.ActionList.WithGate(()=>_path.Abort(m=>SendOwned(owner,current,m),current)); }
     // Host reservation API only. Native actions/destructors use the one global component and never this ownership gate.
     public bool AbortIfCurrent(ushort id)
     {

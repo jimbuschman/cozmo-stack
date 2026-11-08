@@ -111,31 +111,37 @@ internal sealed partial class PathComponent
     private void Error(string key,string text){_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,text);EngineErrorState.StoreAndMaybeBreak();}
     private void Verify(string key,string text){_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,text);EngineErrorState.ErrorFlagSet=true;_robot.Engine.Das.ForceFlushNow();}
     private string Name(int status)=>StatusName?.Invoke(status)??StatusNames[status];
-    internal void SetStatus(int next)
+    internal void SetStatus(int next,Func<bool>? current=null)
     {
         if(next==DriveToPoseStatus)return;
-        Info("PathComponent.TransitionStatus",$"{Name(DriveToPoseStatus)} -> {Name(next)}");DriveToPoseStatus=next;
+        string text=$"{Name(DriveToPoseStatus)} -> {Name(next)}";
+        if(current is not null&&!current())return;
+        Info("PathComponent.TransitionStatus",text);
+        if(current is null||current())DriveToPoseStatus=next;
     }
     private bool SendNative(RobotMessage message)=>SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
     // fidelity: M13-029 - ErasePath builds a local Viz tag21 and sends nothing.
     private void ErasePath() => ErasePathHook?.Invoke(CozmoEngine.RobotId);
     private void ResetMachine(){_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
     internal void ClearDoler(){_dolerPath=Array.Empty<PathSegment>();LastDoledIndex=0xFFFF;DoleSegmentCount=0;}
-    internal void SetDolerPath(IReadOnlyList<PathSegment> path)
+    internal void SetDolerPath(IReadOnlyList<PathSegment> path,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
-        _dolerPath=path.ToArray();LastDoledIndex=0xFFFF;DoleSegmentCount=(uint)(byte)path.Count;Dole(6);
+        _dolerPath=path.ToArray();LastDoledIndex=0xFFFF;DoleSegmentCount=(uint)(byte)path.Count;Dole(6,current,send);
     }
-    internal void Dole(int count)
+    internal void Dole(int count,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
         int start=(short)LastDoledIndex+1;
         uint end=unchecked((uint)((short)LastDoledIndex+count));
         if(end>=DoleSegmentCount)end=unchecked(DoleSegmentCount-1);
         _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter",$"should dole from {start} to {end} (totalSegments = {DoleSegmentCount})");
+        if(current is not null&&!current())return;
         if(DoleSegmentCount==0){MissingOnce("M1-034/M12-002 Dole empty-path unchecked segment read 0x00507F10 skipped, prior counter retained");return;}
         for(int i=start;unchecked((uint)i)<=end && i<_dolerPath.Count;i++)
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter",$"doling out basestation idx {i} :  ");
+            if(current is not null&&!current())return;
             MissingOnce("M12-002 PathSegment.Print 0x00507F36 -> 0x0085C034 text/body has no checked row; segment print is unbuilt");
+            if(current is not null&&!current())return;
             RobotMessage? message=_dolerPath[i] switch
             {
                 PathSegment.Line l=>new AppendPathSegmentLine{XStartMm=l.FromX,YStartMm=l.FromY,XEndMm=l.ToX,YEndMm=l.ToY,Speed=new(){SpeedMmps=l.SpeedMmps,AccelMmps2=l.AccelMmps2,DecelMmps2=l.DecelMmps2}},
@@ -144,8 +150,9 @@ internal sealed partial class PathComponent
             };
             if(message is null)
             {Error("Invalid path segment","Can't send path segment of unknown type");return;}
-            if(!SendNative(message))
-            {Error("PathDolerOuter.Dole","ERROR: failed to send message!");return;}
+            bool sent=(send??SendNative)(message);
+            if(current is not null&&!current())return;
+            if(!sent){Error("PathDolerOuter.Dole","ERROR: failed to send message!");return;}
             LastDoledIndex=unchecked((ushort)i);
         }
     }
@@ -155,20 +162,23 @@ internal sealed partial class PathComponent
         if(d < -4 || unchecked(DoleSegmentCount-1)<=unchecked((uint)(short)LastDoledIndex))return;
         _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter.Update.Doling",$"currPathIdx: {segment}, doling upto {d+5} path segments");Dole(d+5);
     }
-    internal int ExecutePath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null)
+    internal int ExecutePath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
         if((byte)path.Count==0){Warning("PathComponent.ExecutePath.EmptyPath","");Field47=false;ErasePath();SetStatus(4);return 0;} // Native Path+4 is u8.
-        int r=ClearPath(SendNative);if(r!=0)return r;
-        Field42=unchecked((ushort)(Field42+1));reserve?.Invoke(Field42);SetDolerPath(path);Field46=manual;
+        int r=ClearPath(send??SendNative,current);if(r!=0||current is not null&&!current())return 1;
+        Field42=unchecked((ushort)(Field42+1));reserve?.Invoke(Field42);if(current is not null&&!current())return 1;
+        SetDolerPath(path,current,send);if(current is not null&&!current())return 1;Field46=manual;
         Info("PathComponent.SendExecutePath",$"sending start execution message (pathID = {Field42}, manualSpeed == {(manual?1:0)})");
-        r=SendNative(new ExecutePath{EventId=Field42,Unknown=manual})?0:1;
-        if(r==0){Field3C=_robot.Engine.Timer.SecondsF;SetStatus(2);}
+        if(current is not null&&!current())return 1;
+        r=(send??SendNative)(new ExecutePath{EventId=Field42,Unknown=manual})?0:1;
+        if(current is not null&&!current())return 1;
+        if(r==0){Field3C=_robot.Engine.Timer.SecondsF;SetStatus(2,current);}
         MissingOnce("M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt");return r;
     }
-    internal int ExecuteCustomPath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null)
+    internal int ExecuteCustomPath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
-        if(Field47){PlannerSlot10?.Invoke();Field47=false;}_computeModel=null;_plan=null;PlannerSlot10=null;
-        return ExecutePath(path,manual,reserve);
+        if(Field47){PlannerSlot10?.Invoke();if(current is not null&&!current())return 1;Field47=false;}_computeModel=null;_plan=null;PlannerSlot10=null;
+        return ExecutePath(path,manual,reserve,current,send);
     }
     internal int StartDrivingToPose(int goals,PathGoalIndex index,bool manual,Func<PathPlannerModelResult> compute,Action stop,Action<string> missing)
     {

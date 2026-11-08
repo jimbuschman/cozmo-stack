@@ -51,7 +51,13 @@ internal sealed class ActionQueue : IDisposable
         }
         while (_pending.First is { } node)
         {
-            DeletePending(node,out _);
+            if (!DeletePending(node,out _))
+            {
+                // M1-034/M8-015: reentrant Clear at 0x53F998..A8 encounters a
+                // runner already being deleted. Its outer deletion owns the report.
+                Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 reentrant Clear skipped an in-flight pending deletion at 0x0053F998..0x0053F9A8");
+                if (ReferenceEquals(node.List,_pending)) _pending.Remove(node);
+            }
         }
         _clearing = false;
     }
@@ -267,7 +273,7 @@ internal sealed class ActionQueue : IDisposable
     private bool DeletePending(LinkedListNode<IActionRunner> node,out LinkedListNode<IActionRunner>? next)
     {
         LinkedListNode<IActionRunner>? successor=node;
-        bool result=DeleteRunner(node.Value,()=>{successor=node.Next;_pending.Remove(node);});
+        bool result=DeleteRunner(node.Value,()=>{successor=node.Next;if(ReferenceEquals(node.List,_pending))_pending.Remove(node);});
         next=successor;return result;
     }
     private static void MissingFreedSuccessor()=>Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 pending Cancel successor was removed by synchronous completion; native iterator at0x0053E6E8/0x0053E6EE would read freed list storage: skip this pending traversal tail");

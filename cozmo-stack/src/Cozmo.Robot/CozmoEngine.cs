@@ -1188,13 +1188,13 @@ public sealed partial class EngineRobot
     }
 
     // fidelity: M3-047
-    private bool Send(RobotMessage m, string what, bool guardOwner = false)
+    private bool Send(RobotMessage m, string what, bool guardOwner = false,Func<bool>? current = null)
     {
         // A test seam (not a production path): a non-null result forces that send's outcome so a test can make
         // one step of SyncTime fail without a real transport. It never runs in production.
-        if (guardOwner && (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this))) return false;
+        if (guardOwner && (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this) || current is not null && !current())) return false;
         bool? injected = SendFault?.Invoke(m);
-        if (guardOwner && (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this))) return false;
+        if (guardOwner && (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this) || current is not null && !current())) return false;
         bool sent = injected ?? Engine.Handler.SendMessage(m);
         if (sent) return true;
         // fidelity: M4-020
@@ -1210,7 +1210,7 @@ public sealed partial class EngineRobot
     // fidelity: M4-026
     /// <summary>Robot::SendMessage with its failure warning (0x00513558/0x0051356C), for the AbortAll path (the same send as <see cref="Send"/>).</summary>
     internal bool SendChecked(RobotMessage m) => Send(m, m.GetType().Name);
-    internal bool SendCheckedOwned(RobotMessage message) => Send(message, message.GetType().Name, true);
+    internal bool SendCheckedOwned(RobotMessage message,Func<bool>? current=null) => Send(message, message.GetType().Name, true,current);
 
     /// <summary>Test seam only (not a production path): a non-null return forces the send result.</summary>
     internal Func<RobotMessage, bool?>? SendFault;

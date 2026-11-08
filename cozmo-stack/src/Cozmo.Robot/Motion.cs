@@ -1738,31 +1738,37 @@ internal sealed partial class PathComponent
     /// last to the first through their vtable slot 0, in place, with no operator delete (0x00649198..0x006491A4); then
     /// UnknownOriginID stored into [[+0x50]]+0x0C.
     /// </summary>
-    internal int Abort(Func<RobotMessage, bool>? send = null)
+    internal int Abort(Func<RobotMessage, bool>? send = null,Func<bool>? current = null)
     {
         // Row 4: the static table at 0x0102F610 is indexed by +0x38 with no bounds check; slot 7 holds 0 in the file image, so a value of 7 or
         // more has no name and what the engine does with it is UNKNOWN (reported on the stack stream).
         string? name = StatusName?.Invoke(DriveToPoseStatus)
                       ?? ((uint)DriveToPoseStatus < StatusNames.Length ? StatusNames[DriveToPoseStatus] : null);
+        if(current is not null&&!current())return 1;
         if (name is null) MissingOnce($"ERobotDriveToPoseStatus name for status {DriveToPoseStatus}, read past the table at 0x0102F610; PathComponent.Abort log is unported");
         else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Planner", "PathComponent.Abort", $"Aborting from status '{name}'");
-        if (_nativePlanners?.Current is not null) { _nativePlanners.Stop(); Field47=false; }
-        else if (PlannerSlot10 is { } planner) { planner(); Field47 = false; }
+        if(current is not null&&!current())return 1;
+        if (_nativePlanners?.Current is not null) { _nativePlanners.Stop(); if(current is not null&&!current())return 1; Field47=false; }
+        else if (PlannerSlot10 is { } planner) { planner(); if(current is not null&&!current())return 1; Field47 = false; }
+        if(current is not null&&!current())return 1;
         SharedPath = null;
-        int cleared = ClearPath(send);
+        int cleared = ClearPath(send,current);
+        if(current is not null&&!current())return cleared;
         int status = DriveToPoseStatus;
         if ((uint)status <= 4)
         {
             int request = ((0x13 >> status) & 1) != 0 ? 4 : 5;
             if (SetDriveToPoseStatusHook is { } set) set(request);
-            else SetStatus(request);
+            else SetStatus(request,current);
         }
+        if(current is not null&&!current())return cleared;
         Field46 = false;
         while (PlannerObjects.Count > 0)
         {
             var destroy = PlannerObjects[^1];
             PlannerObjects.RemoveAt(PlannerObjects.Count - 1);          // the end pointer moves before the call (0x0064919C)
             PoseReleaseObservedForTest?.Invoke(destroy);
+            if(current is not null&&!current())return cleared;
             destroy.Dispose();
         }
         PlannerObjectsField0C = UnknownOriginId;
@@ -1775,13 +1781,15 @@ internal sealed partial class PathComponent
     /// PathDolerOuter's ClearPath when it is set; +0x40 = 0xFF; +0x3C = BaseStationTimer seconds; then ClearPath {u16 0}
     /// sent reliable and not hot, its result returned.
     /// </summary>
-    internal int ClearPath(Func<RobotMessage, bool>? send = null)
+    internal int ClearPath(Func<RobotMessage, bool>? send = null,Func<bool>? current = null)
     {
         if (Field42 != 0) Field4A = Field42;
         ErasePath();
+        if(current is not null&&!current())return 1;
         // PathDolerOuter at +4 is built when the context is set (0x00648B56) by the engine (ctor 0x00648B76..0x00648B92; call 0x0064924A..0x0064924E).
         if (PathDolerClearPath is { } doler) doler();
         else MissingOnce("PathDolerOuter::ClearPath 0x005082B0 (M11): the path doler is not built");
+        if(current is not null&&!current())return 1;
         Field40 = 0xFF;
         Field3C = _robot.Engine.Timer.SecondsF;
         // Robot::SendMessage's Result: 0 success, 1 failure (not connected); ClearPath returns it (0x00649280).
