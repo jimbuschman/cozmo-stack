@@ -7,6 +7,80 @@ namespace Cozmo.Protocol.Tests;
 public sealed class AiHeadControlTests
 {
     [Fact]
+    public void ObservationUsesTheCurrentOwnersPublishedObjectAndReactionGate()
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        var before = rig.Robot.Motion.GetAiBodyObservation();
+        Assert.NotNull(before.OwnerToken);
+        Assert.Null(before.LastState);
+        Assert.False(before.CanRequestHeadAction);
+        EngineRobotState? delivered = null, seenInCallback = null;
+        rig.Engine.RobotStatePublished += state =>
+        {
+            delivered = state;
+            seenInCallback = rig.Robot.Motion.GetAiBodyObservation().LastState;
+        };
+        rig.State(head: 0.2f);
+        var current = rig.Robot.Motion.GetAiBodyObservation();
+        Assert.Same(delivered, current.LastState);
+        Assert.Same(delivered, seenInCallback);
+        Assert.Equal(before.OwnerToken, current.OwnerToken);
+        Assert.True(current.CanRequestHeadAction);
+        rig.Engine.Robot!.ActionList.ExternalActionsDisabled = true;
+        Assert.False(rig.Robot.Motion.GetAiBodyObservation().CanRequestHeadAction);
+        AiBodyObservation? duringRetirement = null;
+        rig.Engine.Robot.Lifetime.Bind(-1, _ => duringRetirement = rig.Robot.Motion.GetAiBodyObservation());
+        rig.Engine.Robots.RemoveRobot(1, false);
+        Assert.Equal(new AiBodyObservation(null, false, null), duringRetirement);
+        rig.Engine.Robots.AddRobot(1, withRic: false);
+        var replacement = rig.Robot.Motion.GetAiBodyObservation();
+        Assert.NotEqual(current.OwnerToken, replacement.OwnerToken);
+        Assert.Null(replacement.LastState);
+        Assert.False(replacement.CanRequestHeadAction);
+    }
+
+    [Fact]
+    public async Task LegacyHeadAndLiftCompletionsUseNativeDefaultPayload()
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced(); rig.Calibrate();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+        var list = rig.Engine.Robot!.ActionList;
+        var reports = new List<RobotCompletedAction>();
+        list.RegisterActionEndedCallback(reports.Add);
+        var delivery = new List<string>();
+        rig.Engine.ActionCompleted += _ => delivery.Add("completion");
+        rig.Engine.RobotStatePublished += _ => delivery.Add("state");
+        int mark = rig.Mark();
+        var headTask = rig.Robot.Motion.SetHeadAngleAsync(0.4f);
+        var head = list.GetCurrentAction()!;
+        rig.Tick();
+        var headWire = Assert.Single(rig.SentSince(mark).OfType<SetHeadAngle>());
+        rig.Data(new MotorActionAck { ActionId = headWire.ActionId }); rig.Tick();
+        delivery.Clear();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, head: 0.4f);
+        Assert.True((await headTask.WaitAsync(TimeSpan.FromSeconds(2))).Ok);
+        Assert.Equal(new[] { "completion", "state" }, delivery);
+        mark = rig.Mark();
+        var liftTask = rig.Robot.Motion.SetLiftHeightAsync(60);
+        var lift = list.GetCurrentAction()!;
+        rig.Tick();
+        var liftWire = Assert.Single(rig.SentSince(mark).OfType<SetLiftHeight>());
+        rig.Data(new MotorActionAck { ActionId = liftWire.ActionId }); rig.Tick();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos,
+            head: 0.4f, liftAngle: MathF.Asin(15f / 66f));
+        Assert.True((await liftTask.WaitAsync(TimeSpan.FromSeconds(2))).Ok);
+        foreach (var action in new[] { head, lift })
+        {
+            var report = Assert.Single(reports.Where(r => r.Tag == action.Tag));
+            Assert.Equal((byte)6, report.CompletionVariant);
+            Assert.Null(report.ObjectInteraction);
+            Assert.Equal((byte)6, report.PackBody()[^1]);
+        }
+    }
+
+    [Fact]
     public async Task HeadRunsThroughNativeActionAndWatcher()
     {
         using var rig = new M4ControlTests.Rig();
