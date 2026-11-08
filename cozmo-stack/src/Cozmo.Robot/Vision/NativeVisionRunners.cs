@@ -31,6 +31,8 @@ internal abstract class NativeVisionRunner : ActionRunner
 internal sealed class NativeTurnInPlaceRunner : NativeVisionRunner
 {
     private readonly TurnInPlaceAction _turn;
+    private bool _aiTurn;
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     protected override string ActionName=>"TurnInPlace";
     internal NativeTurnInPlaceRunner(ManipulationSystem m,TurnInPlaceSpec spec,EngineRobot? owner=null):base(m,0x28,4)
     {
@@ -45,10 +47,47 @@ internal sealed class NativeTurnInPlaceRunner : NativeVisionRunner
         _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,true),angle,false,Tag);
         _turn.SetAccel(accel); _turn.SetMaxSpeed(speed); _turn.SetTolerance(tolerance); _turn.Variability0xB8=0;
     }
+    internal NativeTurnInPlaceRunner(ManipulationSystem m, EngineRobot owner, float angle, float speed, float accel, float tolerance, bool absolute):base(m,0x28,4)
+    {
+        ScopedOwner=owner;
+        _aiTurn=true;
+        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,true,owner),angle,absolute,Tag);
+        _turn.NormalizePositionTolerance=true;
+        _turn.SetMaxSpeed(speed);
+        _turn.SetAccel(accel);
+        _turn.SetTolerance(Radians.Rescale(tolerance));
+    }
     internal TurnInPlaceAction Parameters => _turn;
-    public override int Init(){_turn.BindOwnedRunnerTag(Tag);return unchecked((int)_turn.Init());}
-    public override uint CheckIfDone()=>_turn.CheckIfDone();
-    public override void WatcherEnding(){_turn.Dispose();base.WatcherEnding();}
+    protected override bool HasCustomMotionProfile => _aiTurn && ScopedCurrent && M.Robot.Motion.Path.Field48;
+    public override bool SetMotionProfile()=>_aiTurn && ScopedCurrent && _turn.ApplyPointTurnProfile(M.Robot.Motion.Path.NativeMotionProfile);
+    public override byte? GetCompletionVariant()=>_aiTurn ? (byte)5 : base.GetCompletionVariant();
+    public override uint GetCompletionUnion()=>_aiTurn ? _turn.OriginChanges0xD4 : base.GetCompletionUnion();
+    public override int Init()
+    {
+        if (_aiTurn && (!ScopedCurrent || DestructionObserved)) return unchecked((int)EngineActionResult.Cancelled);
+        _turn.BindOwnedRunnerTag(Tag);
+        try { return unchecked((int)_turn.Init()); }
+        catch (NativeActionUnavailable) when (_aiTurn && !ScopedCurrent) { return unchecked((int)EngineActionResult.Cancelled); }
+    }
+    public override uint CheckIfDone()
+    {
+        if (_aiTurn && (!ScopedCurrent || DestructionObserved)) return EngineActionResult.Cancelled;
+        try { return _turn.CheckIfDone(); }
+        catch (NativeActionUnavailable) when (_aiTurn && !ScopedCurrent) { return EngineActionResult.Cancelled; }
+    }
+    internal override bool RetireNeverAdmittedTree()
+    {
+        if (!base.RetireNeverAdmittedTree()) return false;
+        if (_aiTurn) _turn.Dispose();
+        return true;
+    }
+    public override void WatcherEnding()
+    {
+        _turn.Dispose();
+        base.WatcherEnding();
+        if (AiNativeEnded is { } ended && ScopedOwner is { } owner)
+            ended.TrySetResult((State,owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot,owner)));
+    }
 }
 
 internal class NativePanTiltRunner : NativeVisionRunner

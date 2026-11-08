@@ -52,6 +52,7 @@ internal readonly record struct RobotCompletedAction(
             w.U8(1).U8(count).Bytes(bytes.AsSpan(0,count));
         }
         else if(CompletionVariant==3) { w.U8(3); w.U32(CompletionUnion); } // TrackFace ID, 0x0075BB9C..C8
+        else if(CompletionVariant==5) { w.U8(5); w.U32(CompletionUnion); } // TurnInPlace relocalization count, 0x0075C932.
         else if(CompletionVariant==6)w.U8(6); // 0x0075C940: defaultCompleted has no payload.
         else w.U32(CompletionUnion);
         return w.ToArray();

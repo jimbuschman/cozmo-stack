@@ -65,6 +65,9 @@ public sealed record AiLiftActionResult(bool Admitted, uint? EngineResult, strin
 /// <summary>Result of an outside-AI straight-drive request; OwnerRetired is captured when its original action ends.</summary>
 public sealed record AiDriveActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
 
+/// <summary>The native turn result and its pose-frame change count.</summary>
+public sealed record AiTurnActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, uint? RelocalizationCount = null);
+
 /// <summary>An advisory view of one robot owner and its last published engine state.</summary>
 public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
 
@@ -150,6 +153,34 @@ public sealed class CozmoMotion
         return new(result.Admitted,result.EngineResult,result.Detail,result.OwnerRetired);
     }
 
+    /// <summary>Queues a native turn after existing actions. Cancellation addresses this exact action.</summary>
+    public async Task<AiTurnActionResult> QueueAiTurnInPlaceAsync(float angleRad, float speedRadPerSec, float accelRadPerSec2,
+        float toleranceRad = 0, bool absolute = false, CancellationToken cancellationToken = default)
+    {
+        if (!float.IsFinite(angleRad) || !float.IsFinite(speedRadPerSec) || !float.IsFinite(accelRadPerSec2) || !float.IsFinite(toleranceRad))
+            return new(false,null,"Turn inputs must be finite");
+        if (cancellationToken.IsCancellationRequested) return new(false,null,"Request cancelled before admission");
+        var engine=_robot.Engine;
+        var owner=engine.Robot;
+        Task<AiHeadActionResult> task;
+        Vision.NativeTurnInPlaceRunner action;
+        using (engine.EnterSynchronousOwner())
+        {
+            if (cancellationToken.IsCancellationRequested) return new(false,null,"Request cancelled before admission");
+            if (owner is null || !AiOwnerReady(engine,owner)) return new(false,null,"Robot is not ready for an action");
+            var runtime=owner.NativeBehaviorRuntime;
+            if (runtime is null || runtime.IsRetired || runtime.Manipulation is not { } manipulation)
+                return new(false,null,"MISSING: original robot turn owner unavailable");
+            uint tag=AllocateAiTag();
+            if (tag==0) return new(false,null,"No external action tag is available");
+            action=new Vision.NativeTurnInPlaceRunner(manipulation,owner,angleRad,speedRadPerSec,accelRadPerSec2,toleranceRad,absolute);
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native turn action ended",true,
+                ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime));
+        }
+        var result=await task.ConfigureAwait(false);
+        return new(result.Admitted,result.EngineResult,result.Detail,result.OwnerRetired,result.Admitted ? action.PreparedCompletionUnion : null);
+    }
+
     private uint AllocateAiTag()
     {
         for(int i=0;i<1_000_000;i++)
@@ -210,6 +241,7 @@ public sealed class CozmoMotion
         var completion = new TaskCompletionSource<(uint Result, bool OwnerRetired)>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (action is MoveAction move) { move.AiNativeEnded = completion; move.AiOwner = owner; }
         else if(action is Manipulation.NativePlaceGroundRunner ground)ground.AiNativeEnded=completion;
+        else if(action is Vision.NativeTurnInPlaceRunner turn)turn.AiNativeEnded=completion;
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)

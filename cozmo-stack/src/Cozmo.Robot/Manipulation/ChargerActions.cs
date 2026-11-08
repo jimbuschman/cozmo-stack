@@ -558,7 +558,7 @@ public sealed class MountChargerAction
         }
         public void RemoveEyeShift(byte tag, int duration) { if(Current)_m.Robot.Animations.WithTrackLayers(layers => { if(Current)layers.RemoveEyeShift(tag,duration); }); }
         public bool OnTreads => _m.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
-        public uint OriginId => _m.Robot.Engine.Robot?.PoseFrameId ?? 0;
+        public uint OriginId => _owner is null ? _m.Robot.Engine.Robot?.PoseFrameId ?? 0 : CheckedOwner().PoseFrameId;
         public float PoseAngleAroundZ
         {
             get
