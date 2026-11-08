@@ -409,8 +409,8 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.FindFaces_socialize || ctx.Manipulation is null || ctx.NativeRobot is null))
-        {SteppedBehavior.ReportMissing("FindFaces factory: only configured FindFaces_socialize with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.FindFaces_socialize or BehaviorID.MeetCozmo_FindFaces_Socialize) || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))

@@ -28,7 +28,7 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, ISocializeFind
     private bool Available=>_valid && NativeScoringAvailable && BehaviorObjective==BehaviorObjective.Invalid && Volatile.Read(ref _retired)==0 && ReferenceEquals(_robot.Engine.Robot,_robot) &&
         _robot.NativeBehaviorRuntime is {} r && ReferenceEquals(r.Manipulation,_m) && r.Bound.TryGetValue(Id,out var actual) && ReferenceEquals(actual,this) && ReferenceEquals(_m.World,_m.Robot.LocalizationWorld) &&
         _robot.TryGetNativeOriginOwner(_robot.CurrentOriginId,out var origin) && origin?.Node is not null && _robot.MainPose.Node is not null;
-    internal NativeFindFacesSocialize(BehaviorFactoryContext source,JsonElement root):base("FindFaces_socialize","FindFaces")
+    internal NativeFindFacesSocialize(BehaviorFactoryContext source,JsonElement root):base(BehaviorConfigLoader.ExtractIdFromConfig(root).ToString(),"FindFaces")
     {
         _m=source.Manipulation!;_robot=source.NativeRobot!;
         try

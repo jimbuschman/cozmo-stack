@@ -178,7 +178,7 @@ internal static class BestFaceToTrack
         return best;
     }
 
-    internal static int GetNative(IReadOnlyCollection<int> targets, Manipulation.ManipulationSystem m, EngineRobot owner)
+    internal static int GetNative(IReadOnlyCollection<int> targets, Manipulation.ManipulationSystem m, EngineRobot owner, bool surchargeUnnamed = false)
     {
         if (targets.Count == 0) return 0;
         if (targets.Count == 1) return targets.First();
@@ -193,7 +193,7 @@ internal static class BestFaceToTrack
             using var relative = new Pose3d("");
             pose.SetParent(origin);
             if (!pose.TryWithRespectTo(owner.GetCheckedMainPose(), relative)) continue;
-            float cost = Cost(relative.Translation, m.Robot.Motion.HeadAngleRad, face.HasName, false);
+            float cost = Cost(relative.Translation, m.Robot.Motion.HeadAngleRad, face.HasName, surchargeUnnamed);
             if (cost < bestCost) { best = id; bestCost = cost; }
         }
         return best;

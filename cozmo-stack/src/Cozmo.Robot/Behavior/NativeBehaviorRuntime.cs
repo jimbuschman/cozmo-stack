@@ -168,6 +168,14 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
                    entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
+                if (id is "EnrollFace" or "RespondToRenameFace" or "MeetCozmo_InteractWithFaces")
+                {
+                    string expected = id == "MeetCozmo_InteractWithFaces" ? "InteractWithFaces" : id;
+                    if (entry.Value.TryGetProperty("behaviorClass", out var meetClass) &&
+                        meetClass.ValueKind == System.Text.Json.JsonValueKind.String && meetClass.GetString() == expected &&
+                        (!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective", out var priorRun) || priorRun.ValueKind == System.Text.Json.JsonValueKind.Null))
+                        fields.MarkPristine();
+                }
                 if(id=="SparksFireTruckAlarm" && entry.Value.TryGetProperty("behaviorClass",out var fireClass) && fireClass.ValueKind==System.Text.Json.JsonValueKind.String && fireClass.GetString()=="FireTruckAlarm" &&
                    entry.Value.TryGetProperty("requiredUnlockId",out var fireUnlock) && fireUnlock.ValueKind==System.Text.Json.JsonValueKind.String && fireUnlock.GetString()=="FireTruckAlarm" &&
                    (!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var fireObjective) || fireObjective.ValueKind==System.Text.Json.JsonValueKind.Null))
@@ -317,14 +325,41 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         {
             case "Freeplay": AdmitFreeplay(); break;
             case "Selection": AdmitSelection(); break;
+            case "MeetCozmoFindFaces": AdmitMeetCozmo(); break;
             case "Feeding":
-            case "MeetCozmoFindFaces":
                 SteppedBehavior.ReportMissing("M15-031 native high-level activity "+requested+" lifecycle unavailable; prior activity retained");break;
             default: throw new ArgumentOutOfRangeException(nameof(requested));
         }
         // The adapter tail uses the captured input even if a callback nested another request.
         if(!_retired && ReferenceEquals(_facade.Engine.Robot,_robot) && ReferenceEquals(_robot.NativeBehaviorRuntime,this))
             _manager.HighLevelAdapterTail(requested=="Freeplay");
+    }
+    private void AdmitMeetCozmo()
+    {
+        if (_highLevel == 3) return;
+        var meet = Tree.FirstOrDefault(a => a.Id == "MeetCozmo");
+        if (meet is null || meet.Type != "BehaviorsOnly" || meet.NativeUpdate20 is null ||
+            meet.InterludeChooser is not null || meet.Chooser is not ScoringChooser || meet.Strategy.Type != "Simple")
+        {
+            SteppedBehavior.ReportMissing("M15-031 configured MeetCozmo activity/chooser is unavailable; previous activity retained");
+            return;
+        }
+        float now = _facade.Engine.Timer.SecondsF;
+        long epoch = ++_admissionEpoch;
+        _selected?.OnDeselected(now, _facade.Engine.EmitStackLog);
+        if (_retired || epoch != _admissionEpoch || !ReferenceEquals(_facade.Engine.Robot, _robot)) return;
+        bool ordinary = _manager.PrepareHighLevelChange(now);
+        if (_retired || epoch != _admissionEpoch || !ReferenceEquals(_facade.Engine.Robot, _robot)) return;
+        _selected = meet; _highLevel = 3; AwaitingParentActivityPick = false;
+        meet.GuardNativeLifecycle = true;
+        meet.OnSelected(now, _facade.Engine.EmitStackLog);
+        if (_retired || epoch != _admissionEpoch || !ReferenceEquals(_facade.Engine.Robot, _robot) || !ReferenceEquals(_selected, meet)) return;
+        _manager.StampParentSwitchTime();
+        if (_retired || epoch != _admissionEpoch || !ReferenceEquals(_facade.Engine.Robot, _robot)) return;
+        Tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl, true);
+        if (_retired || epoch != _admissionEpoch || !ReferenceEquals(_facade.Engine.Robot, _robot)) return;
+        _manager.Activity = new ConfiguredActivity(meet, _robot, _manager, Context, () => { }, () => false, () => { });
+        if (ordinary) _manager.ChooseAfterHighLevelChange(now);
     }
     private void AdmitSelection()
     {
@@ -489,12 +524,21 @@ internal sealed class NativeBehaviorRuntime : IDisposable
 
     private sealed class ConfiguredActivity(Activity activity,EngineRobot robot,BehaviorManager manager,BehaviorContext context,Action waitForParent,Func<bool> waiting,Action retireUnavailable):IManagedActivity,IHostReadinessOwner
     {
+        private bool _meetFrontier;
+        private string? _meetFrontierReport;
+        private void SetMeetFrontier(string message, IBehavior? current)
+        {
+            _meetFrontier = true;
+            if (current is null) SteppedBehavior.ReportMissing(message);
+            else _meetFrontierReport = message;
+        }
         public void Update(double now){if(waiting())return;if(activity.SparkedOwner is {} spark)spark.Update();else _=activity.NativeUpdate20!(robot);}
         // No interlude is configured on the admitted MeetCozmo/PutDown routes.
         // 0x005B387C/38C2/005B3A6C: no cached normal winner; chooser runs each tick.
         public IBehavior? GetDesiredActiveBehavior(IBehavior? current,double now)
         {
             if(waiting())return current;
+            if (_meetFrontier) return null;
             if(activity.SparkedOwner is {} spark)
             {
                 var next=spark.Desired(current,now,context);
@@ -503,7 +547,20 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 return next;
             }
             var decision=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now);
-            if(decision?.InputUnavailable==true){SteppedBehavior.ReportMissing("M8-013 configured chooser input unavailable; prior behavior retained");return current;}
+            if (activity.Id == "MeetCozmo" && decision?.UnbuiltWinner is { } unavailableWinner)
+            {
+                SetMeetFrontier("MISSING MEET-COZMO-ADMISSION-1: " + unavailableWinner + " won the native score; previous run stopped before the unavailable Init, with no runner-up or automatic reroll", current);
+                return null;
+            }
+            if(decision?.InputUnavailable==true)
+            {
+                if (activity.Id == "MeetCozmo")
+                {
+                    SetMeetFrontier("MISSING MEET-COZMO-ADMISSION-1: Meet scorer reached an unproved input; checked run stopped without a guessed winner or automatic reroll", current);
+                    return null;
+                }
+                SteppedBehavior.ReportMissing("M8-013 configured chooser input unavailable; prior behavior retained");return current;
+            }
             var desired=decision?.Behavior;
             if(desired is NativeLookForFaceAndCubeBehavior look && !look.ExecutionAvailable)
             {
@@ -512,8 +569,14 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             }
             return desired;
         }
-        public void BehaviorSwitched(IBehavior? desired,bool started,double now){}
-        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner is not null;
+        public void BehaviorSwitched(IBehavior? desired,bool started,double now)
+        {
+            if (_meetFrontierReport is not { } report) return;
+            _meetFrontierReport = null;
+            if (ReferenceEquals(manager.Activity, this) && ReferenceEquals(robot.Engine.Robot, robot) && manager.Current is null)
+                SteppedBehavior.ReportMissing(report);
+        }
+        bool IHostReadinessOwner.ReadinessChecksEnabled=>activity.SparkedOwner is not null || activity.Id == "MeetCozmo";
         bool IHostReadinessOwner.EvaluateCandidateReadiness=>true;
         void IHostReadinessOwner.RetireUnavailable()=>retireUnavailable();
     }
