@@ -9,6 +9,35 @@ namespace Cozmo.Protocol.Tests;
 public sealed class NativeWwisePlatformTests
 {
     [Fact]
+    public async Task SharedMusicReachesTheActualSessionPlatformSink()
+    {
+        string? lib = ShippedLibraries.FindLibDir();
+        if (lib is null) return;
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        byte[] music = CannedSpeechOwner.ReadMusicBank(archive) ?? throw new InvalidOperationException("Music.bnk missing");
+        var sink = new FakeSink();
+        var session = await NativeWwiseVoiceSession.OpenSharedAsync(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), archive, new SpeechRobotAudioBuffer(),
+            () => Environment.TickCount64, () => sink, music);
+        await session.RequestMusicStateAsync(0x99EA6572, false, 0);
+        session.UpdateMusic(Environment.TickCount64);
+        int consumed = 0;
+        var until = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        while (consumed < 130 && DateTime.UtcNow < until && session.Failure is null)
+        {
+            var submitted = sink.Submitted;
+            if (consumed < submitted.Length) sink.Complete(submitted[consumed++].Token);
+            await Task.Delay(4);
+        }
+        Assert.Equal(130, consumed);
+        Assert.Null(session.Failure);
+        Assert.Contains(sink.Submitted, block => block.Pcm.Any(value => value != 0));
+        await session.CloseAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Null(session.Failure);
+    }
+
+    [Fact]
     public void SerialDispatchStopWaitsForDetachedActionWithoutBlockingCaller()
     {
         var queue = new SerialAudioDispatchFactory().Create(2);
@@ -39,6 +68,7 @@ public sealed class NativeWwisePlatformTests
         var sink = new FakeSink();
         var session = await NativeWwiseVoiceSession.OpenSharedAsync(lib, GraphRig.ReadBank(meta, "Init.bnk"),
             GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), archive, new SpeechRobotAudioBuffer(), () => 100, () => sink);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => session.RequestMusicStateAsync(0x99EA6572, false, 0));
         var first = session.BeginGeneration();
         await first.OfferAsync(new float[] { .25f }, 22050);
         Task clear = first.ClearPendingAsync();

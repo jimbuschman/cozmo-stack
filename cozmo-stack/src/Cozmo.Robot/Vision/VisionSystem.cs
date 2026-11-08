@@ -961,6 +961,49 @@ public sealed partial class VisionSystem : IDisposable
         Recognizer.SetAllowedEnrollments(mode, id);
     }
 
+    // VisionComponent holds the vision owner while the stock recognizer mutates
+    // its enrollment tree. Observations, not this call, publish the changed name.
+    internal bool AssignStockFaceName(int selectedId, string name, int saveId)
+    {
+        var owner = _robot.Engine.Robot;
+        var recognizer = Recognizer;
+        int removal = Volatile.Read(ref _removals);
+        using (LogCallbackDeferral.EnterGated(_busy))
+        {
+            if (!_stockRecognizer || owner is null || owner.Lifetime.Destroying ||
+                !ReferenceEquals(_robot.Engine.Robot, owner) || removal != Volatile.Read(ref _removals) ||
+                !ReferenceEquals(Recognizer, recognizer) || !recognizer.OwnsStockDetector(_stockFaceDetector) ||
+                !recognizer.IsAvailable) return false;
+            return recognizer.AssignNameToFace(selectedId, name, saveId) == 0;
+        }
+    }
+
+    // 0x657A60..BE: remove the recognizer entry, attempt the normal save,
+    // then publish 57. Neither operation directly evicts a FaceWorld entry.
+    internal bool EraseStockEnrolledFace(EngineRobot owner, int id, Func<bool>? current = null)
+    {
+        var recognizer = Recognizer;
+        int removal = Volatile.Read(ref _removals);
+        bool Current() => _stockRecognizer && !owner.Lifetime.Destroying &&
+            ReferenceEquals(_robot.Engine.Robot, owner) && removal == Volatile.Read(ref _removals) &&
+            ReferenceEquals(Recognizer, recognizer) && recognizer.OwnsStockDetector(_stockFaceDetector) && (current is null || current());
+        using (LogCallbackDeferral.EnterGated(_busy))
+        {
+            if (!Current() || !recognizer.IsAvailable || recognizer.EraseFace(id) != 0) return false;
+        }
+        if (!Current()) return false;
+        SaveFaceAlbumToRobot();
+        if (!Current()) return false;
+        if (owner.HasExternalInterface)
+        {
+            byte[] body = new byte[5];
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body, id);
+            _robot.Engine.DeliverAnimationReportToApp(0x57, body);
+            _robot.Engine.AnimationMessages.Deliver(0x57, true, new NativeErasedEnrolledFace(id, string.Empty));
+        }
+        return true;
+    }
+
     // fidelity: M14-012
     /// <summary>
     /// <c>VisionComponent::BroadcastLoadedNamesAndIDs</c> (F27): <c>RobotErasedAllEnrolledFaces</c> first,
@@ -1049,7 +1092,10 @@ public sealed partial class VisionSystem : IDisposable
     /// album 0x184000 first and 0x183000 only if that erase succeeded; otherwise both are rounded up to a
     /// four-byte boundary and written, album first.
     /// </summary>
-    public void SaveFaceAlbumToRobot()
+    public void SaveFaceAlbumToRobot() => SaveFaceAlbumToRobot(null, null);
+
+    // The behavior's two slots are completed independently by the NV wrappers (0x65A478/0x65A6CC).
+    internal void SaveFaceAlbumToRobot(Action<NvResult>? albumCompleted, Action<NvResult>? enrollmentCompleted)
     {
         var owner = _robot.Engine.Robot;
         var recognizer = Recognizer;
@@ -1057,30 +1103,35 @@ public sealed partial class VisionSystem : IDisposable
         var nv = _robot.Engine.NvStorage;
         if (Monitor.IsEntered(_busy) || Monitor.IsEntered(World.FrameGate))
         {
-            _robot.Engine.PostGameMessageFromVisionGate(() => SaveFaceAlbumToRobot(owner, recognizer, removal, nv));
+            _robot.Engine.PostGameMessageFromVisionGate(() => SaveFaceAlbumToRobot(owner, recognizer, removal, nv, albumCompleted, enrollmentCompleted));
             return;
         }
-        SaveFaceAlbumToRobot(owner, recognizer, removal, nv);
+        SaveFaceAlbumToRobot(owner, recognizer, removal, nv, albumCompleted, enrollmentCompleted);
     }
 
-    private void SaveFaceAlbumToRobot(EngineRobot? owner, FaceRecognizer recognizer, int removal, NvStorageComponent? nv)
+    private void SaveFaceAlbumToRobot(EngineRobot? owner, FaceRecognizer recognizer, int removal, NvStorageComponent? nv,
+        Action<NvResult>? albumCompleted, Action<NvResult>? enrollmentCompleted)
     {
         using var lease = _robot.Engine.EnterSynchronousOwner();
         bool Current() => nv is not null && ReferenceEquals(_robot.Engine.NvStorage, nv) &&
             removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, recognizer) &&
             owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
-        void Completed(NvResult result)
+        void Completed(NvResult result, Action<NvResult>? callback)
         {
-            if (result.Result == 0 || !Current()) return;
-            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.SaveFaceAlbumToRobot.NVWriteFailed", $"NVResult = {NvStorageComponent.NvResultName(result.Result)}");
             if (!Current()) return;
-            if (owner!.HasExternalInterface)
+            if (result.Result != 0)
             {
-                var report = new EngineErrorCodeReport(3);
-                _robot.Engine.DeliverAnimationReportToApp(0x7C, new byte[] { 3 });
-                _robot.Engine.AnimationMessages.Deliver(0x7C, true, report);
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.SaveFaceAlbumToRobot.NVWriteFailed", $"NVResult = {NvStorageComponent.NvResultName(result.Result)}");
+                if (!Current()) return;
+                if (owner!.HasExternalInterface)
+                {
+                    var report = new EngineErrorCodeReport(3);
+                    _robot.Engine.DeliverAnimationReportToApp(0x7C, new byte[] { 3 });
+                    _robot.Engine.AnimationMessages.Deliver(0x7C, true, report);
+                }
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             }
-            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            if (Current()) callback?.Invoke(result);
         }
         if (!Current()) return;
         byte[] album, enrollment;
@@ -1108,12 +1159,12 @@ public sealed partial class VisionSystem : IDisposable
         {
             // C5-13: erase the album first, then the enrollment only when the album erase succeeded.
             Log?.Invoke("SaveFaceAlbumToRobot: EmptyAlbumData");
-            if (Current() && nv!.Erase(FaceAlbumNvTag, Completed) != 0 && Current())
-                nv.Erase(FaceEnrollmentNvTag, Completed);
+            if (Current() && nv!.Erase(FaceAlbumNvTag, r => Completed(r, albumCompleted)) != 0 && Current())
+                nv.Erase(FaceEnrollmentNvTag, r => Completed(r, enrollmentCompleted));
             return;
         }
-        if (Current() && nv!.Write(FaceAlbumNvTag, album, Completed) != 0 && Current())
-            nv.Write(FaceEnrollmentNvTag, enrollment, Completed);
+        if (Current() && nv!.Write(FaceAlbumNvTag, album, r => Completed(r, albumCompleted)) != 0 && Current())
+            nv.Write(FaceEnrollmentNvTag, enrollment, r => Completed(r, enrollmentCompleted));
     }
 
     /// <summary>
@@ -1926,7 +1977,17 @@ public sealed partial class VisionSystem : IDisposable
                     tf.UpdateTranslation(processingCamera);
                     if (StaleFrame()) return null;
                     if (nativeFaceFrames is { } frames)
-                        tf.NativeTrackingTranslation = frames.Robot.Apply(frames.Camera.Apply(tf.NativeCameraTranslation));
+                    {
+                        // TrackedFace starts at +X pi/2; DetectFaces parents it to
+                        // the historical camera, then flattens to root (0x6B37B0..EC).
+                        var pose = new Transform3d(Rotation3d.FromAngleAxis(BitConverter.UInt32BitsToSingle(0x3FC90FDB), new Vec3(1, 0, 0)), tf.NativeCameraTranslation);
+                        var cameraFrame = frames.Camera;
+                        var robotFrame = frames.Robot;
+                        pose.PreComposeWith(ref cameraFrame);
+                        pose.PreComposeWith(ref robotFrame);
+                        tf.NativeTrackingTranslation = pose.Translation;
+                        tf.NativeTrackingRotation = pose.Rotation;
+                    }
                     faces.Add(tf);
                     FaceObservation? observation;
                     if (offline) observation=Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast);

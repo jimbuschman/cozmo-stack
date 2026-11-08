@@ -11,7 +11,7 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
     private readonly float _tolerance;
     private readonly float _clampMin, _clampMax;
     private readonly uint _stopOnTag;
-    private readonly bool _meetProfile;
+    private readonly bool _guardedOwner;
     private float _nextClamp = -1f;
     private int _faceId;
     private uint _timestamp;
@@ -26,6 +26,8 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
         : base(m, 0x23, enrollment && (m.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads || m.Robot.Sensors.CliffDetectedByEvent) ? 1u : 5u)
     {
         _owner = owner; _faceId = faceId;
+        _guardedOwner = enrollment;
+        if (enrollment) ScopedOwner = owner;
         _headOnly = RequiredTrackMask == 1;
         _clamp = enrollment;
         _tolerance = BitConverter.UInt32BitsToSingle(enrollment ? 0x3D8EFA35u : 0x3D0EFA35u);
@@ -37,7 +39,7 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
         float tolerance, bool clamp, float clampMin, float clampMax, uint stopOnTag)
         : base(m, 0x23, headOnly ? 1u : 5u)
     {
-        _owner=owner; ScopedOwner=owner; _meetProfile=true; _faceId=faceId; _headOnly=headOnly; _tolerance=tolerance;
+        _owner=owner; ScopedOwner=owner; _guardedOwner=true; _faceId=faceId; _headOnly=headOnly; _tolerance=tolerance;
         _clamp=clamp; _clampMin=clampMin; _clampMax=clampMax; _stopOnTag=stopOnTag;
         TimeoutSeconds=float.MaxValue;
     }
@@ -116,7 +118,7 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
         }
         if (MathF.Abs(tiltDelta) >= _tolerance - Radians.Epsilon)
         {
-            if (M.Robot.Motion.MoveHeadToAngle(tilt, MathF.Abs(tiltDelta) / 0.15f, 10000f, 0f, out _, _meetProfile ? _owner : null) != 0) return 0x03000016;
+            if (M.Robot.Motion.MoveHeadToAngle(tilt, MathF.Abs(tiltDelta) / 0.15f, 10000f, 0f, out _, _guardedOwner ? _owner : null) != 0) return 0x03000016;
             if (!Current) return EngineActionResult.Cancelled;
         }
         if (!_headOnly)
@@ -140,7 +142,7 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
                 bodyTarget = Rotation3d.FromAngleAxis(pan, new Vec3(0, 0, 1)).AngleAroundZ;
             }
             if (!Current) return EngineActionResult.Cancelled;
-            if (M.Robot.Motion.TurnInPlace(bodyTarget, MathF.Min(MathF.Abs(panDelta) / 0.4f, BitConverter.UInt32BitsToSingle(0x40A78D36)), BitConverter.UInt32BitsToSingle(0x436DFFDB), _tolerance, 0, true, out _, _meetProfile ? _owner : null) != 0) return 0x03000016;
+            if (M.Robot.Motion.TurnInPlace(bodyTarget, MathF.Min(MathF.Abs(panDelta) / 0.4f, BitConverter.UInt32BitsToSingle(0x40A78D36)), BitConverter.UInt32BitsToSingle(0x436DFFDB), _tolerance, 0, true, out _, _guardedOwner ? _owner : null) != 0) return 0x03000016;
         }
         return EngineActionResult.Running;
     }
@@ -148,16 +150,16 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
     public override bool CanInterrupt() => true;
     protected override void LockTracks(uint mask,string owner)
     {
-        if (!_meetProfile) { base.LockTracks(mask,owner); return; }
+        if (!_guardedOwner) { base.LockTracks(mask,owner); return; }
         LogCallbackDeferral.RunGated(_stopGate,()=>{ if (Current) M.Robot.Motion.LockTracksOwned((byte)mask,owner,ActionName,_owner); });
     }
     protected override void UnlockTracksInternal(uint mask,string owner)
     {
-        if (!_meetProfile) { base.UnlockTracksInternal(mask,owner); return; }
+        if (!_guardedOwner) { base.UnlockTracksInternal(mask,owner); return; }
         LogCallbackDeferral.RunGated(_stopGate,()=>{ if (OwnerCurrent) M.Robot.Motion.UnlockTracksOwned((byte)mask,owner,_owner); });
     }
-    protected override void StopHeadTrack() => LogCallbackDeferral.RunGated(_stopGate, () => { if (OwnerCurrent) { if(_meetProfile)M.Robot.Motion.StopHeadOwned(_owner);else M.Robot.Motion.StopHead(); } });
-    protected override void StopBodyTrack() => LogCallbackDeferral.RunGated(_stopGate, () => { if (OwnerCurrent) { if(_meetProfile)M.Robot.Motion.StopBodyOwned(_owner);else M.Robot.Motion.StopBody(); } });
+    protected override void StopHeadTrack() => LogCallbackDeferral.RunGated(_stopGate, () => { if (OwnerCurrent) { if(_guardedOwner)M.Robot.Motion.StopHeadOwned(_owner);else M.Robot.Motion.StopHead(); } });
+    protected override void StopBodyTrack() => LogCallbackDeferral.RunGated(_stopGate, () => { if (OwnerCurrent) { if(_guardedOwner)M.Robot.Motion.StopBodyOwned(_owner);else M.Robot.Motion.StopBody(); } });
     public override byte? GetCompletionVariant() => 3;
     public override uint GetCompletionUnion() => unchecked((uint)_faceId);
     public override void WatcherEnding()

@@ -24,12 +24,55 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     {
         byte[] init = await File.ReadAllBytesAsync(Path.Combine(banks, "Init.bnk")).ConfigureAwait(false);
         byte[] english = await File.ReadAllBytesAsync(Path.Combine(banks, "English(US)", "Cozmo.bnk")).ConfigureAwait(false);
+        byte[]? music = ReadMusicBank(archive);
         return await NativeWwiseVoiceSession.OpenSharedAsync(library, init, english, archive, _buffer,
-            () => Environment.TickCount64, sink).ConfigureAwait(false);
+            () => Environment.TickCount64, sink, music).ConfigureAwait(false);
+    }
+
+    internal static byte[]? ReadMusicBank(string archive)
+    {
+        var index = new WwiseZipIndex(new WwiseDiskFileSystem());
+        try
+        {
+            if (!index.Open(archive) || !index.Lookup("Music.bnk", out uint offset, out uint size)) return null;
+            var bytes = new byte[checked((int)size)];
+            if (!index.ReadEntry(offset, 0, size, bytes, 0)) throw new IOException("Could not read Music.bnk from the local audio archive");
+            return bytes;
+        }
+        finally { index.Close(); }
     }
 
     internal Task<CannedSpeechLease> Acquire(float[] samples, Func<bool> current) => AcquireCore(samples,current);
     internal Task<CannedSpeechLease> AcquireOrdinary(Func<bool> current) => AcquireCore(null,current);
+    internal Task Ready => _opening;
+    internal bool MusicAvailable => _opening.IsCompletedSuccessfully && _opening.Result.HasMusic;
+    internal Task RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds, Func<bool> current)
+    {
+        if (!_opening.IsCompletedSuccessfully) return Task.FromException(new InvalidOperationException("shared music owner is not ready"));
+        var native = _opening.Result;
+        lock (_gate) if (_retired) throw new ObjectDisposedException(nameof(CannedSpeechOwner));
+        if (!current()) return Task.FromException(new OperationCanceledException("music request owner retired"));
+        return native.RequestMusicStateAsync(state, interrupt, minimumMilliseconds, current);
+    }
+
+    // Engine audio tail: the worker callback only queues audio-path callbacks.
+    // Never wait for startup or for a platform completion on the engine thread.
+    internal void UpdateMusicAtEngineTail()
+    {
+        if (!_opening.IsCompletedSuccessfully) return;
+        lock (_gate) if (_retired) return;
+        Task? tick = _opening.Result.UpdateMusic(Environment.TickCount64);
+        if (tick is null) return;
+        try
+        {
+            if (!tick.Wait(TimeSpan.FromSeconds(2)))
+                _report("MISSING MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail worker timed out");
+        }
+        catch (AggregateException ex)
+        {
+            _report("MISSING MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail failed: " + ex.GetBaseException().Message);
+        }
+    }
     private async Task<CannedSpeechLease> AcquireCore(float[]? samples, Func<bool> current)
     {
         await _lease.WaitAsync().ConfigureAwait(false);

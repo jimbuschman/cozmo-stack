@@ -12,6 +12,102 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class MeetCozmoAdmissionTests
 {
+    [Fact]
+    public void UnnamedSaveTargetIsRejectedBeforeMissingAudioPreflight()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        var face = new TrackedFace(new DetectedFace(7, new FaceRect(0, 0, 20, 20)), 10)
+        {
+            HeadPose = new Pose3d(Rotation3d.Identity, new Vec3(100, 0, 50)),
+            NativeTrackingTranslation = new Vec3(100, 0, 50),
+            NativeTrackingRotation = Rotation3d.Identity,
+        };
+        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!));
+        var missing = new List<string>();
+        void Capture(string line) { if (line.Contains("enrollment authored animation/audio")) missing.Add(line); }
+        SteppedBehavior.MissingReported += Capture;
+        try
+        {
+            f.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces"); f.Rig.Tick();
+            var enrollment = Assert.IsType<NativeEnrollFaceBehavior>(f.Runtime.Bound["EnrollFace"]);
+            var reports = new List<object?>();
+            using var subscription = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x56, true, reports.Add);
+            f.Rig.Robot.SetFaceToEnroll("Ada", 7);
+            for (int i = 0; i < 20; i++)
+            {
+                f.Rig.Tick();
+                if (enrollment.StagedName.Length == 0) break;
+            }
+            Assert.Equal("", enrollment.StagedName);
+            Assert.True(enrollment.InitFailed);
+            Assert.False(enrollment.EngineRunning);
+            Assert.Empty(reports);
+            Assert.Empty(missing);
+        }
+        finally { SteppedBehavior.MissingReported -= Capture; }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void ConfiguredEnrollmentRejectsPickedUpPlatformAndCarrying(int condition)
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+            SpeechSoundBankDirectory = banks, SpeechAudioArchivePath = archive, LabLocaleLanguage = "en", BlockPoolPath = "" };
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, engineOptions: options);
+        var sink = new Sink(); f.Robot.CannedSpeechSinkForTest = () => sink;
+        f.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces"); f.Rig.Tick();
+        if (condition == 0)
+        {
+            f.Rig.State(RobotStatusFlag.IsPickedUp | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            Assert.Equal(OffTreadsState.InAir, f.Rig.Robot.Sensors.OffTreadsState);
+        }
+        else if (condition == 1) f.Rig.State(RobotStatusFlag.IsOnCharger | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+        else f.Robot.CarryingOwner!.SetCarrying(99);
+        f.Rig.Robot.SetFaceToEnroll("Ada"); f.Rig.Tick();
+        var enrollment = Assert.IsType<NativeEnrollFaceBehavior>(f.Runtime.Bound["EnrollFace"]);
+        Assert.Equal("Ada", enrollment.StagedName);
+        if (condition == 1) Assert.True(f.Rig.Robot.Sensors.OnChargerPlatform);
+        Assert.False(enrollment.IsRunnable(f.Runtime.Context));
+        var chooser = Assert.IsType<ScoringChooser>(f.Runtime.Tree.Single(activity => activity.Id == "MeetCozmo").Chooser);
+        var decision = chooser.GetDesiredActiveBehavior(f.Robot.BehaviorManagerOwner!.Current, 0, f.Runtime.Context, f.Rig.Engine.Timer.SecondsF);
+        Assert.DoesNotContain(decision.Scores, score => score.Id == "EnrollFace" && score.Score > 0);
+    }
+
+    [Fact]
+    public void StockEnrollmentRequestUsesTheRetainedMeetChooserAndCancelsThroughStop()
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+            SpeechSoundBankDirectory = banks, SpeechAudioArchivePath = archive, LabLocaleLanguage = "en", BlockPoolPath = "" };
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, engineOptions: options);
+        var sink = new Sink();
+        f.Robot.CannedSpeechSinkForTest = () => sink;
+        f.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
+        f.Rig.Tick();
+        var enrollment = Assert.IsType<NativeEnrollFaceBehavior>(f.Runtime.Bound["EnrollFace"]);
+        var reports = new List<FaceEnrollmentCompletedReport>();
+        using var subscription = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x56, true, value => reports.Add(Assert.IsType<FaceEnrollmentCompletedReport>(value)));
+        f.Rig.Robot.SetFaceToEnroll("Ada");
+        for (int i = 0; i < 20 && !enrollment.EngineRunning; i++) f.Rig.Tick();
+        Assert.True(enrollment.EngineRunning);
+        Assert.Same(enrollment, f.Robot.BehaviorManagerOwner!.Current);
+        Assert.Equal(2, enrollment.Phase);
+        Assert.False(f.Robot.BehaviorManagerOwner.IsReactionTriggerEnabled(ReactionTrigger.FacePositionUpdated));
+        f.Rig.Robot.CancelFaceEnrollment();
+        for (int i = 0; i < 20 && reports.Count == 0; i++) f.Rig.Tick();
+        Assert.Equal((byte)6, Assert.Single(reports).Result);
+        Assert.Equal("", enrollment.StagedName);
+        Assert.True(f.Robot.BehaviorManagerOwner.IsReactionTriggerEnabled(ReactionTrigger.FacePositionUpdated));
+    }
+
     private sealed class GateAction : ActionRunner
     {
         internal GateAction() : base(8, 0) { }

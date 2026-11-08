@@ -22,6 +22,9 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     private uint _device, _deviceId;
     private readonly uint? _fixedSeed;
     private readonly bool _shared;
+    private readonly bool _musicEnabled;
+    private uint _musicConductor;
+    private long _musicNowMilliseconds;
     private readonly Dictionary<uint, (uint Playing, uint Event)> _sharedEvents = new();
     private uint _sharedCallback;
     private readonly Queue<(uint Cookie, uint Playing, uint Event)> _completedShared = new();
@@ -36,7 +39,9 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     internal string? ShutdownDiagnostic { get; private set; }
     internal bool HijackEnded => _hijackEnded;
     internal bool HasPosted => _posted;
+    internal bool HasPendingMusic => _musicConductor != 0 && _m.R32(_musicConductor + 0x18) != 0;
     internal uint ClockMicroseconds => _clock;
+    internal (int Before, int After) OutputBufferChanges => (_openSl.ChangedBeforeSubmission, _openSl.ChangedAfterSubmission);
     internal bool IsQuiescent => _shared ? _sharedEvents.Count == 0 && _activeHijack == 0
         : !_posted || (EndOfEvent is not null && _hijackEnded);
     internal event Action? HijackOpened;
@@ -282,16 +287,19 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     }
 
     public NativeWwiseVoiceHost(string libraryDirectory, byte[] initBank, byte[] englishBank, uint platformBlockFrames,
-        string? archivePath = null, uint? fixedSeed = null)
+        string? archivePath = null, uint? fixedSeed = null, byte[]? musicBank = null, bool inspectOutputBuffers = false)
     {
+        if (musicBank is not null && archivePath is null)
+            throw new ArgumentException("Music requires the shared archived-stream owner", nameof(musicBank));
         _fixedSeed = fixedSeed;
         _shared = archivePath is not null;
+        _musicEnabled = musicBank is not null;
         _m = new ArmMachine(libraryDirectory, new[] { "libc++_shared.so", "libcozmoEngine.so" });
         try
         {
             _base = _m.Library("libcozmoEngine.so").Base;
             InstallHost();
-            _openSl = new NativeOpenSlBridge(_m);
+            _openSl = new NativeOpenSlBridge(_m, inspectOutputBuffers);
             _m.Relocate();
             for (uint p = 0x103E4D8; p < 0x103E59C; p += 4)
                 _m.Call(_m.R32(A(p)), count: 1_000_000);
@@ -322,7 +330,10 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             _m.W32(A(0x108DF94), platformBlockFrames);
             Ok(Run(0x99E3EC, new[] { settings, platform }), "engine init");
             Run(0x99F130, new uint[] { 1 });
-            Load(initBank); Load(englishBank);
+            if (_musicEnabled) Ok(Run(0x97D72C, new uint[] { 0 }), "music engine init");
+            Load(initBank);
+            if (musicBank is not null) Load(musicBank);
+            Load(englishBank);
             _interface = _m.Malloc(0x80);
             Run(0x8DC119, new[] { _interface });
             Run(0x8DC17B, new[] { _interface });
@@ -332,12 +343,52 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             _m.W32(sends, 0x9FA5953C); _m.W32(sends + 4, F(1));
             Ok(Run(0x9A0354, new uint[] { 7, sends, 1 }), "aux send");
             Ok(Run(0x9A044C, new uint[] { 7, 0, 0 }), "dry level");
+            if (_musicEnabled) InitMusicConductor();
             _m.HookAddress(A(0x8DC041), Capture);
             if (_shared) _m.ObserveAddress(A(0x8DD636), _ => _offered = false);
             _m.ObserveAddress(A(0x8DBD98), m => ObserveHijack(m, m.Reg(4), starting: true));
             _m.ObserveAddress(A(0x8DBDF8), m => ObserveHijack(m, m.Reg(0), starting: false));
         }
         catch { try { _archiveIo?.Dispose(); } finally { _m.Dispose(); } throw; }
+    }
+
+    private void InitMusicConductor()
+    {
+        // The original controller/mux recipient's checked fields (8D74BC,
+        // 8DF3CC); all Wwise state and playback remain in this native owner.
+        uint controller = _m.Malloc(0x80), helper = _m.Malloc(0x80), config = _m.Malloc(16);
+        _musicConductor = _m.Malloc(0x40);
+        _m.Span(controller, 0x80).Clear(); _m.Span(helper, 0x80).Clear();
+        _m.Span(_musicConductor, 0x40).Clear();
+        _m.W32(controller + 8, helper); _m.W8(controller + 4, 1); _m.W8(helper, 1);
+        _m.W32(controller + 12, _musicConductor);
+        _m.W32(config, 1); _m.W32(config + 4, 0xEDF036D6);
+        _m.W32(config + 8, 0xA3D32782); _m.W32(config + 12, 0x08DDB0F6);
+        Run(0x8D74BD, new[] { _musicConductor, controller, config });
+        Ok(Run(0x9A3100, new uint[] { 1, 0, 1 }), "register music game object");
+    }
+
+    internal void RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds)
+    {
+        RequireOwner();
+        if (_musicConductor == 0) throw new InvalidOperationException("MISSING: shared music bank is unavailable");
+        Run(0x8D74E1, new[] { _musicConductor, state, interrupt ? 1u : 0u, minimumMilliseconds });
+    }
+
+    internal void UpdateMusic(long monotonicMilliseconds)
+    {
+        RequireOwner();
+        if (_musicConductor == 0) return;
+        if (monotonicMilliseconds < 0) throw new ArgumentOutOfRangeException(nameof(monotonicMilliseconds));
+        _musicNowMilliseconds = monotonicMilliseconds;
+        Run(0x8D7511, new[] { _musicConductor });
+    }
+
+    internal void StopMusic()
+    {
+        RequireOwner();
+        if (_musicConductor == 0) throw new InvalidOperationException("MISSING: shared music bank is unavailable");
+        Run(0x8D7759, new[] { _musicConductor });
     }
 
     private void ObserveHijack(ArmMachine machine, uint fx, bool starting)
@@ -422,6 +473,14 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             uint token = ++_nextWorker; _workers.Add(token, (entry, owner)); m.W32(m.Reg(0), token); return 0;
         };
         l["clock"] = _ => _clock;
+        if (_musicEnabled) l["clock_gettime"] = m =>
+        {
+            if (m.Reg(0) != 1) throw new EmulationAbort("music requested an unsupported clock");
+            uint result = m.Reg(1);
+            m.W32(result, checked((uint)(_musicNowMilliseconds / 1000)));
+            m.W32(result + 4, checked((uint)(_musicNowMilliseconds % 1000) * 1_000_000));
+            return 0;
+        };
         l["time"] = m => { uint t = _fixedSeed ?? unchecked((uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds()); if (m.Reg(0) != 0) m.W32(m.Reg(0), t); return t; };
         l["pthread_join"] = m =>
         {

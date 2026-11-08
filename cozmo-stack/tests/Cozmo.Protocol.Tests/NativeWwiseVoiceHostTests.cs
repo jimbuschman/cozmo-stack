@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using Cozmo.Robot.Emulation;
+using Cozmo.Robot.Animation;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -8,6 +9,108 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class NativeWwiseVoiceHostTests
 {
+    [Fact]
+    public void InvalidOptionalMusicBankFailsTheHostClearly()
+    {
+        string? lib = ShippedLibraries.FindLibDir();
+        if (lib is null) return;
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        Assert.Throws<EmulationAbort>(() => new NativeWwiseVoiceHost(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), 1024, archive, 1700000000, new byte[] { 1 }));
+    }
+
+    [Fact]
+    public void SharedMusicAndOrdinaryAudioMatchIndependentNativeMux()
+    {
+        string? lib = ShippedLibraries.FindLibDir();
+        if (lib is null) return;
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        byte[] music = CannedSpeechOwner.ReadMusicBank(archive) ?? throw new InvalidOperationException("Music.bnk missing");
+        using var host = new NativeWwiseVoiceHost(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), 1024, archive, 1700000000, music, inspectOutputBuffers: true);
+        var platform = new List<byte[]>();
+        var frames = new List<float[]>();
+        var ends = new List<uint>();
+        host.SharedEventEnded += (cookie, _, _) => ends.Add(cookie);
+        var schedule = new (uint Time, uint Event, uint Cookie)[]
+        { (1500000, 0xD43D2A47, 1), (2919000, 0x9EF22ABC, 2), (5130000, 0xAE983923, 3) };
+        uint clock = 0;
+        int next = 0;
+        for (int tick = 0; tick < 350; tick++)
+        {
+            uint frame = (uint)((long)(tick + 1) * 1024 * 1000000 / 48000);
+            host.AdvanceClock(frame - clock); clock = frame;
+            if (tick == 15)
+            {
+                host.RequestMusicState(0x99EA6572, false, 0);
+                host.UpdateMusic(frame / 1000);
+            }
+            if (tick == 230) host.StopMusic();
+            while (next < schedule.Length && schedule[next].Time <= frame)
+            {
+                var entry = schedule[next++];
+                uint playing = host.PostShared(entry.Event, entry.Cookie);
+                Assert.NotEqual(0u, playing);
+                host.SetEventVolume(playing, 1);
+            }
+            byte[]? block = host.Step(0, true);
+            if (tick >= 15 && tick < 230 && block is not null) platform.Add(block);
+            frames.AddRange(host.TakeFrames());
+        }
+        Assert.Equal(new uint[] { 1, 2, 3 }, ends);
+        Assert.Equal(26, frames.Count);
+        Assert.Equal("3cc4b1d0d0b170699e9544eb207e7c31aea16c19be3a0a23bbdce95a1624e864", Hash(frames));
+        Assert.Equal("b562161320552d1f8293cf304b7d5488a81476b219d6f321d2e513020a7fa387",
+            Convert.ToHexString(SHA256.HashData(platform.SelectMany(x => x).ToArray())).ToLowerInvariant());
+        host.Dispose();
+        Assert.True(host.TerminatedCleanly, host.ShutdownDiagnostic);
+    }
+
+    [Fact]
+    public void SharedMusicSubmittedBuffersStayUnchangedUntilCompletion()
+    {
+        string? lib = ShippedLibraries.FindLibDir();
+        if (lib is null) return;
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        byte[] music = CannedSpeechOwner.ReadMusicBank(archive) ?? throw new InvalidOperationException("Music.bnk missing");
+        using var host = new NativeWwiseVoiceHost(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), 1024, archive, 1700000000, music, inspectOutputBuffers: true);
+        var submitted = new Queue<NativeOpenSlBridge.OutputBlock>();
+        void Submit()
+        {
+            while (host.PeekOutputBlock() is { } block)
+            {
+                submitted.Enqueue(block);
+                host.MarkOutputSubmitted(block.Token);
+            }
+        }
+        Submit();
+        uint clock = 0;
+        for (int tick = 0; tick < 300; tick++)
+        {
+            uint frame = (uint)((long)(tick + 1) * 1024 * 1000000 / 48000);
+            host.AdvanceClock(frame - clock); clock = frame;
+            if (tick == 15)
+            {
+                host.RequestMusicState(0x99EA6572, false, 0);
+                host.UpdateMusic(frame / 1000);
+                Submit();
+            }
+            if (tick == 230) { host.StopMusic(); Submit(); }
+            var block = submitted.Dequeue();
+            host.AcknowledgeOutput(block.Token);
+            host.ServiceOutput(0);
+            Submit();
+        }
+        Assert.Equal(0, host.OutputBufferChanges.After);
+        Assert.Equal(232, host.OutputBufferChanges.Before);
+        host.Dispose();
+        Assert.True(host.TerminatedCleanly, host.ShutdownDiagnostic);
+    }
+
     [Fact]
     public void OrdinaryMeetEventsMatchIndependentNativeArchiveReference()
     {

@@ -213,6 +213,7 @@ public sealed class NativeTrackFaceTests
             f.Rig.Engine.VisionUpdateAllResultsFailed!();
             Assert.True(positions.Count == 2, $"detector calls={detector.Calls}, positions={positions.Count}, frames={vision.FramesProcessed}");
             Assert.NotEqual(positions[0], positions[1]);
+            Assert.NotNull(vision.Faces.GetNativeFace(f.Robot, -7)?.NativeTrackingRotation);
             var runner = new NativeTrackFaceRunner(f.M, f.Robot, -7);
             f.Robot.ActionList.QueueAction(QueueActionPosition.Now, runner);
             int mark = f.Rig.Mark();
@@ -231,10 +232,16 @@ public sealed class NativeTrackFaceTests
         using var robot = new Pose3d(Rotation3d.FromAngleAxis(.37f, new Vec3(0, 0, 1)), new Vec3(130, -24, 7), parent: root);
         using var camera = new Pose3d(Rotation3d.FromAngleAxis(-.41f, new Vec3(0, 1, 0)), new Vec3(19, 4, 53), parent: robot);
         var point = new Vec3(42.125f, -17.75f, 263.5f);
-        using var face = new Pose3d(Rotation3d.Identity, point, parent: camera);
+        var initial = Rotation3d.FromAngleAxis(BitConverter.UInt32BitsToSingle(0x3FC90FDB), new Vec3(1, 0, 0));
+        using var face = new Pose3d(initial, point, parent: camera);
         using var native = face.GetWithRespectToRoot();
-        var captured = robot.Transform.Apply(camera.Transform.Apply(point));
-        Assert.Equal(native.Translation, captured);
+        var captured = new Transform3d(initial, point);
+        var cameraTransform = camera.Transform;
+        var robotTransform = robot.Transform;
+        captured.PreComposeWith(ref cameraTransform);
+        captured.PreComposeWith(ref robotTransform);
+        Assert.Equal(native.Translation, captured.Translation);
+        Assert.Equal(native.Quaternion, captured.Rotation);
     }
 
     [Theory]

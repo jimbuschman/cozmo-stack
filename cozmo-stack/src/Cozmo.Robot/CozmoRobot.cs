@@ -408,7 +408,11 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M3-019, M3-022, M3-013
         Engine.VisionConnected = CameraSettings.OnRobotConnected;
         Engine.AnimationStreamerUpdate = Animations.EngineUpdate;
-        Engine.AnimationAudioCallbacks = Animations.DrainAuthoredAudioCallbacks;
+        Engine.AnimationAudioCallbacks = () =>
+        {
+            Engine.Robot?.UpdateMusicAtEngineTail();
+            Animations.DrainAuthoredAudioCallbacks();
+        };
         // fidelity: M4-010, M4-017, M4-018, M4-020, M4-023, M1-041
         Engine.StateStored = s => Cubes.Connections.SetRobotTime(s.Timestamp);
         // fidelity: M1-053

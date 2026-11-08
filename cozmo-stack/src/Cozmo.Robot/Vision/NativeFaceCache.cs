@@ -3,6 +3,7 @@ namespace Cozmo.Robot.Vision;
 internal sealed record NativeObservedFace(int Id,uint Timestamp);
 internal sealed record NativeChangedFace(int OldId,int NewId);
 internal sealed record NativeDeletedFace(int Id);
+internal sealed record NativeErasedEnrolledFace(int Id, string Name);
 
 // fidelity: M14-001, M14-008
 public sealed partial class FaceWorld
