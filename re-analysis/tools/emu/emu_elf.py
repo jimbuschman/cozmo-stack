@@ -708,14 +708,21 @@ class Machine:
             m.set_dbl(m.dbl(m.reg(0), m.reg(1)) - m.dbl(m.reg(2), m.reg(3)))
 
         # ---- libm (softfp: doubles in r0:r1, r2:r3; floats in r0, r1)
-        def m1(fn):
+        def m1(nm, fn):
             def h(m):
-                m.set_dbl(fn(m.dbl(m.reg(0), m.reg(1))))
+                x = m.dbl(m.reg(0), m.reg(1))
+                y = fn(x)
+                m.set_dbl(y)
+                # Optional record of every host-libm call (name, argument bits, result bits), so a fixture can replay the exact libm results
+                # its oracle used and a test stays independent of the test host's libm (set m.libm_log to a list to enable).
+                log = getattr(m, 'libm_log', None)
+                if log is not None:
+                    log.append((nm, struct.unpack('<Q', struct.pack('<d', x))[0], struct.unpack('<Q', struct.pack('<d', y))[0]))
             return h
 
         for nm, fn in (('sqrt', math.sqrt), ('floor', math.floor), ('ceil', math.ceil), ('exp', math.exp), ('log', math.log),
                        ('log10', math.log10), ('sin', math.sin), ('cos', math.cos), ('acos', math.acos), ('asin', math.asin)):
-            L[nm] = m1((lambda f: (lambda x: float(f(x))))(fn))
+            L[nm] = m1(nm, (lambda f: (lambda x: float(f(x))))(fn))
 
         def pow_(m):
             m.set_dbl(math.pow(m.dbl(m.reg(0), m.reg(1)), m.dbl(m.reg(2), m.reg(3))))

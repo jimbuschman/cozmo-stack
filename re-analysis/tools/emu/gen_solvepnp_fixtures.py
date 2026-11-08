@@ -168,10 +168,15 @@ def main():
         else:
             item['rvec'] = ['%016X' % v for v in r['rvec']]
             item['tvec'] = ['%016X' % v for v in r['tvec']]
+        # The host-libm results this case used (sqrt is IEEE-exact and not recorded), deduplicated: the test replays them so its expected
+        # values do not depend on the test host's libm (the M11-099 boundary).
+        libm = sorted({(nm, x, y) for nm, x, y in r['libm'] if nm != 'sqrt'})
+        if libm:
+            item['libm'] = [[nm, '%016X' % x, '%016X' % y] for nm, x, y in libm]
         out.append(item)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     doc = {'generator': 're-analysis/tools/emu/gen_solvepnp_fixtures.py', 'oracle': 're-analysis/tools/emu/emu_solvepnp.py',
-           'boundary': 'libm (sin, cos, acos, exp) is the host Python stand-in for bionic; sqrt is IEEE; everything else is the shipped calib3d/imgproc/core code',
+           'boundary': 'libm (sin, cos, acos, exp) is the host Python stand-in for bionic, recorded per case under libm for replay; sqrt is IEEE; everything else is the shipped calib3d/imgproc/core code',
            'library_sha256': hashes, 'neon_differences': neon_diff, 'cases': out}
     with open(OUT, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(doc, f, indent=0)

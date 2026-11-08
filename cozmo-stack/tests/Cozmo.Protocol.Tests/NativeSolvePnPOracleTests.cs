@@ -16,7 +16,7 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class NativeSolvePnPOracleTests
 {
-    private sealed record Case(string Name, float[] Obj, float[] Img, float[] K, float[] Dist, ulong[] Rvec, ulong[] Tvec);
+    private sealed record Case(string Name, float[] Obj, float[] Img, float[] K, float[] Dist, ulong[] Rvec, ulong[] Tvec, Dictionary<(string, ulong), ulong> Libm);
 
     private static readonly Lazy<(JsonElement Root, List<Case> Cases)> Data = new(() =>
     {
@@ -24,7 +24,7 @@ public class NativeSolvePnPOracleTests
         var root = JsonDocument.Parse(File.ReadAllText(path)).RootElement;
         var cases = new List<Case>();
         foreach (var c in root.GetProperty("cases").EnumerateArray())
-            cases.Add(new Case(c.GetProperty("name").GetString()!, Floats(c, "obj"), Floats(c, "img"), Floats(c, "k"), Floats(c, "dist"), Doubles(c, "rvec"), Doubles(c, "tvec")));
+            cases.Add(new Case(c.GetProperty("name").GetString()!, Floats(c, "obj"), Floats(c, "img"), Floats(c, "k"), Floats(c, "dist"), Doubles(c, "rvec"), Doubles(c, "tvec"), LibmTable(c)));
         return (root, cases);
     });
 
@@ -33,6 +33,31 @@ public class NativeSolvePnPOracleTests
 
     private static ulong[] Doubles(JsonElement c, string key) =>
         c.GetProperty(key).EnumerateArray().Select(v => ulong.Parse(v.GetString()!, NumberStyles.HexNumber)).ToArray();
+
+    // The oracle's host-libm results for this case (gen_solvepnp_fixtures.py records every cos, sin, acos and exp call). Replaying them makes the
+    // comparison independent of this host's libm, which differs in the last bit between Windows builds (two cases failed on another PC's .NET
+    // 9.0.3 host, 2026-11-07); libm itself is the M11-099 EQUIVALENT_IMPLEMENTATION boundary, everything else stays bit-exact.
+    private static Dictionary<(string, ulong), ulong> LibmTable(JsonElement c)
+    {
+        var table = new Dictionary<(string, ulong), ulong>();
+        if (c.TryGetProperty("libm", out var libm))
+            foreach (var e in libm.EnumerateArray())
+            {
+                var row = e.EnumerateArray().Select(v => v.GetString()!).ToArray();
+                table[(row[0], ulong.Parse(row[1], NumberStyles.HexNumber))] = ulong.Parse(row[2], NumberStyles.HexNumber);
+            }
+        return table;
+    }
+
+    // A call the oracle never made means the arithmetic before it already diverged: that is a failure, never a host-libm fallback.
+    private static T WithOracleLibm<T>(Case c, Func<T> run)
+    {
+        NativeSolvePnP.LibmOverride = (name, x) => c.Libm.TryGetValue((name, BitConverter.DoubleToUInt64Bits(x)), out var y)
+            ? BitConverter.UInt64BitsToDouble(y)
+            : throw new InvalidOperationException($"{name}({x:R}, 0x{BitConverter.DoubleToUInt64Bits(x):X16}) was never called by the oracle");
+        try { return run(); }
+        finally { NativeSolvePnP.LibmOverride = null; }
+    }
 
     private static long Ulps(ulong expected, double actual)
     {
@@ -61,7 +86,7 @@ public class NativeSolvePnPOracleTests
         foreach (var c in Data.Value.Cases)
         {
             NativeSolvePnP.Output r;
-            try { r = NativeSolvePnP.Solve(c.Obj, c.Img, c.K, c.Dist); }
+            try { r = WithOracleLibm(c, () => NativeSolvePnP.Solve(c.Obj, c.Img, c.K, c.Dist)); }
             catch (Exception e) { mismatched++; report.AppendLine($"{c.Name}: {e.GetType().Name} {e.Message}"); continue; }
             long caseWorst = 0;
             for (int i = 0; i < 3; i++)
@@ -95,7 +120,7 @@ public class NativeSolvePnPOracleTests
             };
             var obj = Enumerable.Range(0, c.Obj.Length / 3).Select(i => new Vec3(c.Obj[i * 3], c.Obj[i * 3 + 1], c.Obj[i * 3 + 2])).ToList();
             var img = Enumerable.Range(0, c.Img.Length / 2).Select(i => new Vec2(c.Img[i * 2], c.Img[i * 2 + 1])).ToList();
-            var r = PoseEstimation.Solve(new CameraModel(cal, Pose3d.Identity), obj, img);
+            var r = WithOracleLibm(c, () => PoseEstimation.Solve(new CameraModel(cal, Pose3d.Identity), obj, img));
             Assert.NotNull(r);
             float[] tvec = c.Tvec.Select(b => (float)BitConverter.UInt64BitsToDouble(b)).ToArray();
             Assert.Equal(tvec[0], (float)r!.ObjectInCamera.Translation.X);

@@ -28,6 +28,13 @@ internal static class NativeSolvePnP
     private static readonly double SvdRankCutoff = BitConverter.Int64BitsToDouble(0x3CC0000000000000); // B01, 2*DBL_EPSILON
     private const int LmMaxIterations = 20, LmMaxExponent = 16;
 
+    /// <summary>Test seam for the libm boundary above: when set on the calling thread, every cos, sin, acos and exp call goes to it instead of the
+    /// host's libm, so the oracle test can replay the exact libm results its fixture's oracle used and compare all other arithmetic bit for bit on
+    /// any host (host libms differ in the last bit between Windows builds). Null in production.</summary>
+    [ThreadStatic] internal static Func<string, double, double>? LibmOverride;
+
+    private static double Libm(string name, double x, Func<double, double> host) => LibmOverride is { } f ? f(name, x) : host(x);
+
     /// <summary>A planar set with more than four points reaches the homography's ten-iteration LM refinement (H03), which has no row.</summary>
     internal static bool NeedsUnextractedHomographyRefinement(int points) => points > 4;
 
@@ -402,7 +409,7 @@ internal static class NativeSolvePnP
     /// <summary>CvLevMarq::step (0x00025720), mask all ones (L09..L12); cv::solve method 1 (B04..B09).</summary>
     private static void Step(double[] jtj, double[] jte, double[] prev, double[] param, int lambdaLg10)
     {
-        double lambda = Math.Exp(lambdaLg10 * Ln10);                                  // EQUIVALENT_IMPLEMENTATION: libm exp
+        double lambda = Libm("exp", lambdaLg10 * Ln10, Math.Exp);                                  // EQUIVALENT_IMPLEMENTATION: libm exp
         double alpha = 1.0 + lambda;
         var a = (double[])jtj.Clone();
         for (int i = 0; i < 6; i++) a[i * 7] = a[i * 7] * alpha + 0.0;                // L11
@@ -567,7 +574,7 @@ internal static class NativeSolvePnP
             }
             return;
         }
-        double c = Math.Cos(theta), s = Math.Sin(theta);                              // EQUIVALENT_IMPLEMENTATION: libm
+        double c = Libm("cos", theta, Math.Cos), s = Libm("sin", theta, Math.Sin);                              // EQUIVALENT_IMPLEMENTATION: libm
         double c1 = 1.0 - c;
         double itheta = theta != 0 ? 1.0 / theta : 0.0;
         x = x * itheta; y = y * itheta; z = z * itheta;
@@ -627,7 +634,7 @@ internal static class NativeSolvePnP
         double s = Math.Sqrt(v);
         double c = r[0] + r[4]; c = c + r[8]; c = c - 1.0; c = c * 0.5;
         if (c > 1.0) c = 1.0; else if (c < -1.0) c = -1.0;
-        double theta = Math.Acos(c);                                                  // EQUIVALENT_IMPLEMENTATION: libm
+        double theta = Libm("acos", c, Math.Acos);                                                  // EQUIVALENT_IMPLEMENTATION: libm
         if (s < SmallS)                                                               // R07
         {
             if (c > 0) { rvec[0] = rvec[1] = rvec[2] = 0; return; }

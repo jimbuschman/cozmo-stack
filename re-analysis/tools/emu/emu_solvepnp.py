@@ -158,6 +158,7 @@ class Oracle:
             m.reset_heap()
         m.poison_stack()
         m.log.clear()
+        m.libm_log = []
         res = {'exception': None, 'ret': None, 'rvec': None, 'tvec': None}
         try:
             vobj = self._vector(obj_bits)
@@ -193,6 +194,8 @@ class Oracle:
         except Abort as e:
             res['exception'] = 'abort %s' % e
         res['logs'] = list(m.log)
+        res['libm'] = list(m.libm_log)
+        m.libm_log = None
         return res
 
 
