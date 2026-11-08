@@ -130,9 +130,9 @@ public sealed class NativeChooserDispatchTests
         Assert.Equal(requestedSoft,manager.RequestedSparkSoft);Assert.Equal(activeSoft,manager.ActiveSparkSoft);
     }
     [Theory]
-    [InlineData("Feeding")]
-    [InlineData("MeetCozmoFindFaces")]
-    public void UnbuiltNativeHighLevelRequestStillRunsCapturedAdapterTail(string requested)
+    [InlineData("Feeding", false)]
+    [InlineData("MeetCozmoFindFaces", true)]
+    public void NativeHighLevelRequestStillRunsCapturedAdapterTail(string requested, bool built)
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
         var manager=f.Robot.BehaviorManagerOwner!;var before=manager.Activity;
@@ -140,8 +140,19 @@ public sealed class NativeChooserDispatchTests
         float parent=manager.ParentSwitchTime,freeplay=manager.FreeplayStartTime;
         byte activeSoft=manager.ActiveSparkSoft,requestedSoft=manager.RequestedSparkSoft,cancel=manager.SparkCancelLatch;
         f.Rig.Robot.ActivateHighLevelActivity(requested);f.Rig.Tick();
-        Assert.Same(before,manager.Activity);Assert.Equal(0x55,manager.ActiveSparkId);Assert.Equal(0x55,manager.RequestedSparkId);
-        Assert.Equal(parent,manager.ParentSwitchTime);Assert.Equal(freeplay,manager.FreeplayStartTime);
+        if (built)
+        {
+            Assert.NotSame(before, manager.Activity);
+            Assert.Equal((byte)6, f.Robot.BehaviorPublicState.State.Activity);
+            Assert.True(manager.ParentSwitchTime > parent);
+        }
+        else
+        {
+            Assert.Same(before, manager.Activity);
+            Assert.Equal(parent, manager.ParentSwitchTime);
+        }
+        Assert.Equal(0x55,manager.ActiveSparkId);Assert.Equal(0x55,manager.RequestedSparkId);
+        Assert.Equal(freeplay,manager.FreeplayStartTime);
         Assert.Equal(activeSoft,manager.ActiveSparkSoft);Assert.Equal(requestedSoft,manager.RequestedSparkSoft);Assert.Equal(cancel,manager.SparkCancelLatch);
     }
     [Fact]

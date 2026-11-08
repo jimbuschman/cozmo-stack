@@ -26,3 +26,5 @@
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
 
 Broad affected tests passed 140/140. Final rebuilt greeting and audio subset passed 56/56. Independent manager affected run passed 95/95 with zero skips. Independent source review found no remaining blocker. Batch full gate pending.
+
+The first full gate identified a stale constructed-class expectation in M7BatchThreeBTests.cs. The correction adds the AcknowledgeFace constructor case to the expected supported set and preserves the independent 79-way ordinal, case, size and constructor address checks.
