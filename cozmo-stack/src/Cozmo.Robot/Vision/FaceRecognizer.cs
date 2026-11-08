@@ -376,11 +376,11 @@ public sealed class FaceRecognizer
         }
     }
 
-    internal (int Id, string? Name, int? PreviousId) LookupStockTrack(int track)
+    internal (int Id, string? Name, int? PreviousId, int EnrollmentCount) LookupStockTrack(int track)
     {
         lock (_gate)
         {
-            if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null);
+            if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null, 0);
             int? previous = null;
             if (face.Offset04 != id)
             {
@@ -389,7 +389,13 @@ public sealed class FaceRecognizer
                 face.Offset04 = id;
             }
             face.PreviousTrack = face.CurrentTrack;
-            return (id, face.Name.Length == 0 ? null : face.Name, previous);
+            int completed = 0;
+            if (EnrollmentCount == 0 && EnrollmentMode >= 1 && id == EnrollmentTargetId)
+            {
+                completed = EnrollmentMode;
+                EnrollmentMode = 0; // 0x863FAA..0x863FB4: selected target emits once.
+            }
+            return (id, face.Name.Length == 0 ? null : face.Name, previous, completed);
         }
     }
 
@@ -773,12 +779,21 @@ public sealed class FaceRecognizer
             bool enabled = EnrollmentCount != 0
                            && (EnrollmentTargetId == 0 || EnrollmentTargetId == faceId)
                            && now - entry.Timestamp30Micros > EnrollmentGateMicros
-                           && (dataCount < MaxDataEntries || entry.Name.Length == 0 || EnrollmentTargetId == faceId);
-            if (enabled && AddEnrollmentData(entry, albumEntry, faceId, feature, dataCount) != 0) return 1;
+                           && (dataCount < MaxDataEntries || entry.Name.Length == 0 ||
+                               (EnrollmentCount > 0 && EnrollmentTargetId == faceId));
+            if (!enabled) return 0; // 0x865CA4/0x865D0C/0x865D58/0x865D7A skip the continuation.
+            if (AddEnrollmentData(entry, albumEntry, faceId, feature, dataCount) != 0) return 1;
 
             // C3-15/C4-4 success/full continuation.
             entry.Timestamp30Micros = now;
             album.SessionOnly = EnrollmentTargetId != faceId;
+            if (album.SessionOnly)
+            {
+                if (entry.CurrentAlbumEntryId != albumEntry && entry.AlbumEntries.TryGetValue(entry.CurrentAlbumEntryId, out var oldCurrent))
+                    oldCurrent.SessionOnly = false;
+                entry.CurrentAlbumEntryId = albumEntry;
+            }
+            else if (entry.CurrentAlbumEntryId == albumEntry) entry.CurrentAlbumEntryId = -1;
             if (EnrollmentCount > 0) EnrollmentCount--;
             return 0;
         }
