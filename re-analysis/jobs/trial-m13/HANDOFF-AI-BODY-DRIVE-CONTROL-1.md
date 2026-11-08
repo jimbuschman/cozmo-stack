@@ -21,3 +21,4 @@
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
 Final affected suite passed 237/237 with zero skips. Independent source review passed for the internal scope after the path owner, owned-body stop and reentrant queue corrections. Batch full gate pending.
+The first full gate found the existing Hiking Pounce replacement fixture listening for the retired unread diagnostic. It now listens to the recovered WaitingForPathStart source event and keeps its Abort and successor-animation assertions. The affected hiking/drive rerun passed 51/51.

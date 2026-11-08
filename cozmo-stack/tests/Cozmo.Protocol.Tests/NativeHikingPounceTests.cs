@@ -307,24 +307,24 @@ public sealed class NativeHikingPounceTests
         }
         finally {f.Rig.Engine.MessageDispatchObservedForTest=null;f.Rig.Robot.Sensors.ConfiguredBehaviorCliffDetected-=OnCliff;}
     }    [Fact]
-    public void DriveMissingLogReplacementCannotStartForeignAnimation()
+    public void DriveWaitingForPathLogReplacementCannotStartForeignAnimation()
     {
         using var f=new Fixture();var old=f.Robot;var drive=new DriveStraightAction(f.M,old,20,60,true);
         bool fired=false;EngineRobot? replacement=null;
-        void OnLog(string line)
+        void OnLog(EngineLogEntry entry)
         {
-            if(fired || !line.Contains("M13-013 | CheckIfDone"))return;
+            if(fired || entry.Name!="DriveStraightAction.CheckIfDone.WaitingForPathStart")return;
             fired=true;f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
             replacement=f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
             f.Rig.Robot.Animations.DrivingAnimations.Init(0,123,false,false);
         }
-        f.Rig.Engine.StackLogLine+=OnLog;
+        f.Rig.Engine.LogEntry+=OnLog;
         try
         {
             Assert.Equal(ActionResult.Abort,drive.CheckIfDone(new DriveStraightTick(false,true,true)));
             Assert.True(fired);Assert.NotNull(replacement);Assert.Equal(0,f.Rig.Robot.Animations.DrivingAnimations.State);
         }
-        finally {f.Rig.Engine.StackLogLine-=OnLog;drive.Dispose();}
+        finally {f.Rig.Engine.LogEntry-=OnLog;drive.Dispose();}
     }    [Fact]
     public void NonrunningMotionUsesStrictAreaAndInclusiveDistance()
     {
