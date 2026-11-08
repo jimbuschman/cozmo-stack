@@ -121,6 +121,62 @@ public sealed partial class VisionSystem : IDisposable
         if(MathF.Abs(before.RateY)>threshold||MathF.Abs(after.RateY)>threshold)return true;
         return MathF.Abs(before.RateZ)>threshold||MathF.Abs(after.RateZ)>threshold;
     }
+
+    // FaceWorld 0x004F456E uses a different body threshold and history count from marker processing.
+    internal bool? NativeFaceRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack)
+    {
+        NativeImageImu[]? history = null;
+        lock (_groundGate)
+        {
+            if (ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner) && _nativeImu is not null)
+            {
+                if (_nativeVisionWhileMoving) return false;
+                history = _nativeImu.Snapshot();
+            }
+        }
+        if (history is null)
+        {
+            SteppedBehavior.ReportMissing("M14-008 native face rotation gate has no original-owner IMU history");
+            return null;
+        }
+        return NativeFaceRotationFromHistory(history, timestamp, changedTrack);
+    }
+
+    internal static bool NativeFaceRotationFromHistory(IReadOnlyList<NativeImageImu> history, uint timestamp, bool changedTrack)
+    {
+        float head = BitConverter.UInt32BitsToSingle(0x3E32B8C2);
+        float body = BitConverter.UInt32BitsToSingle(0x3F060A92);
+        if (!changedTrack)
+        {
+            NativeImageImu before = default, after = default;
+            if (!NativeImageImuHistory.TryBracket(history, timestamp, ref before, ref after)) return true;
+            return MathF.Abs(before.RateY) > head || MathF.Abs(after.RateY) > head ||
+                   MathF.Abs(before.RateZ) > body || MathF.Abs(after.RateZ) > body;
+        }
+        if (history.Count == 0 || history[0].ComputedTimestamp == 0) return false;
+        int candidate = -1;
+        for (int i = 0; i < history.Count; i++)
+        {
+            uint stamp = history[i].ComputedTimestamp;
+            int difference = i == 0 ? int.MaxValue : unchecked((int)(history[i - 1].ComputedTimestamp - timestamp));
+            int magnitude = difference < 0 ? unchecked(-difference) : difference;
+            if (stamp > timestamp || (i > 0 && stamp == 0 && magnitude <= 64)) { candidate = i; break; }
+        }
+        if (candidate < 0) return false;
+        for (int i = candidate; i >= 0 && candidate - i < 5; i--)
+        {
+            var sample = history[i];
+            float x = MathF.Abs(sample.RateX), y = MathF.Abs(sample.RateY), z = MathF.Abs(sample.RateZ);
+            if (x > 0 && y > head && z > 0) return true;
+        }
+        for (int i = candidate; i >= 0 && candidate - i < 5; i--)
+        {
+            var sample = history[i];
+            float x = MathF.Abs(sample.RateX), y = MathF.Abs(sample.RateY), z = MathF.Abs(sample.RateZ);
+            if (x > 0 && y > 0 && z > body) return true;
+        }
+        return false;
+    }
     // The outer VisionComponent camera has its own identity check, separate from the inner marker camera.
     internal void BindNativeGroundOwner(EngineRobot owner)
     {
@@ -230,6 +286,8 @@ public sealed partial class VisionSystem : IDisposable
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
         _robot = robot;
+        _stockFaceDetector = CreateStockFaceDetector();
+        FaceDetector = _stockFaceDetector;
         LifetimeProfiler.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
         QualityProcessor.SourceLog = (l,c,k,t) => robot.Engine.EmitSourceLog(l,c,k,t);
 
@@ -455,6 +513,11 @@ public sealed partial class VisionSystem : IDisposable
             World.ResetToConstructed();
             if(!StillRetired())return;
             Faces.ResetToConstructed();
+            var oldFaceDetector = _stockFaceDetector;
+            _stockFaceDetector = CreateStockFaceDetector();
+            if (ReferenceEquals(FaceDetector, oldFaceDetector)) FaceDetector = _stockFaceDetector;
+            if (locked) oldFaceDetector.Dispose();
+            else _ = Task.Run(oldFaceDetector.Dispose);
             Pets.ResetToConstructed();
             LastFaces = Array.Empty<TrackedFace>();
             FramesProcessed = 0;
@@ -518,8 +581,10 @@ public sealed partial class VisionSystem : IDisposable
     /// <summary>The face world (M14); filled only while a <see cref="FaceDetector"/> that is available is attached.</summary>
     public FaceWorld Faces { get; } = new();
     public PetWorld Pets { get; } = new();
-    /// <summary>The face detector: the stock one is the OKAO boundary and reports itself unavailable.</summary>
-    public IFaceDetector FaceDetector { get; set; } = new OkaoFaceDetector();
+    private OkaoFaceDetector _stockFaceDetector;
+    private OkaoFaceDetector CreateStockFaceDetector() => new() { Diagnostic = message => SteppedBehavior.ReportMissing(message) };
+    /// <summary>The stock detector uses the shipped OKAO library when present; callers may supply another detector.</summary>
+    public IFaceDetector FaceDetector { get; set; }
     // fidelity: M14-011
     /// <summary>
     /// The engine's <c>FaceRecognizer</c> (0x008640E4): the Anki state machine over the OKAO_FR_* seam
@@ -1483,12 +1548,42 @@ public sealed partial class VisionSystem : IDisposable
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
             bool StaleFrame()=>RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner));
             bool faceMode=ShouldProcessVisionMode((int)VisionMode.DetectingFaces);
-            if(faceMode&&!FaceDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 face detector unavailable; its detection and quality rectangles are omitted");
+            var faceDetector = FaceDetector;
+            bool stockFaceDetector = ReferenceEquals(faceDetector, _stockFaceDetector);
+            if(faceMode&&!faceDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 face detector unavailable; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             var faceImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
-            var detectedFaces = faceMode && FaceDetector.IsAvailable ? FaceDetector.Detect(faceImage,timestamp) : null;
+            IReadOnlyList<DetectedFace>? detectedFaces = null;
+            if (faceMode && faceDetector.IsAvailable)
+            {
+                try
+                {
+                    if (faceDetector is OkaoFaceDetector okao && stockFaceDetector)
+                    {
+                        bool reset = false;
+                        if (nativeState?.MotionPose.Current is { } currentFacePose && nativeState.MotionPose.Previous is { } previousFacePose)
+                        {
+                            float threshold = BitConverter.UInt32BitsToSingle(0x3E0EFA35);
+                            reset = !NativeMotionPoseState.HeadSame(currentFacePose, previousFacePose, threshold) ||
+                                !NativeMotionPoseState.BodySame(currentFacePose, previousFacePose, 10f, threshold);
+                            if (reset) SteppedBehavior.ReportMissing("M14-011 face motion reset: recognizer ClearAllTrackingData is not connected");
+                        }
+                        else if (queueForEngine) SteppedBehavior.ReportMissing("M14-010 face motion reset has no prior admitted VisionPoseData");
+                        if ((ModeEnableMask & ((1 << 10) | (1 << 11) | (1 << 12) | (1 << 13))) != 0)
+                            SteppedBehavior.ReportMissing("M14-010 enabled expression, smile, gaze or blink modes have no OKAO EX/SM/GB recipient");
+                        detectedFaces = okao.Detect(faceImage, timestamp, reset);
+                        if (detectedFaces.Count != 0)
+                            SteppedBehavior.ReportMissing("M14-011 asynchronous face recognition and stored-album identity are not connected; negative tracker IDs are provisional");
+                    }
+                    else detectedFaces = faceDetector.Detect(faceImage, timestamp);
+                }
+                catch (Exception ex) when (stockFaceDetector)
+                {
+                    SteppedBehavior.ReportMissing($"M14-010 face detection failed: {ex.Message}; other frame results continue");
+                }
+            }
             if(StaleFrame())return null;
-            if(faceMode && FaceDetector.IsAvailable && detectedFaces is null)
+            if(faceMode && faceDetector.IsAvailable && detectedFaces is null)
                 SteppedBehavior.ReportMissing("M11-016/M11-080 attached face detector returned null; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             if(detectedFaces is not null)foreach(var face in detectedFaces)qualityRectangles.Add(NativeQualityRectangles.Detection(face.Rect));
@@ -1696,7 +1791,9 @@ public sealed partial class VisionSystem : IDisposable
                         {
                             var originNode=ResolveFaceObservationOrigin(History,owner,timestamp);
                             if(originNode is null)continue;
-                            observation=Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode);
+                            observation=d.NativeTrackerFlagChanged is { } changed
+                                ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode)
+                                : Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode);
                         }
                     }
                     if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
@@ -1835,7 +1932,7 @@ public sealed partial class VisionSystem : IDisposable
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;
-        lock(_busy)DiscardPreparedResults();
+        lock(_busy){DiscardPreparedResults();_stockFaceDetector.Dispose();}
         if(_robot.Engine.VisionUpdateAllResultsFailed==DrainPreparedResults)_robot.Engine.VisionUpdateAllResultsFailed=null;
         // V3-V7 depend on native recipient ownership, not host reset/GC.
         SteppedBehavior.ReportMissing("M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join");

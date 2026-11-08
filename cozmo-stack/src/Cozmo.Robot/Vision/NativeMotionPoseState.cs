@@ -17,16 +17,14 @@ internal sealed class NativeMotionPoseState : IDisposable
         if(HasCurrent)HasPrevious=true;else HasCurrent=true;
         FrameCount=unchecked(FrameCount+1);
     }
-    internal static bool HeadSame(NativeGroundFrame current,NativeGroundFrame previous)
+    internal static bool HeadSame(NativeGroundFrame current,NativeGroundFrame previous, float angle = 0.001745329238474369f)
     {
-        const float angle=0.001745329238474369f;
         return MathF.Abs(current.State.HeadAngle-previous.State.HeadAngle)<angle;
     }
-    internal static bool BodySame(NativeGroundFrame current,NativeGroundFrame previous)
+    internal static bool BodySame(NativeGroundFrame current,NativeGroundFrame previous, float distance = .5f, float angle = 0.001745329238474369f)
     {
-        const float angle=0.001745329238474369f;
         var a=current.RobotPose;var b=previous.RobotPose;
-        return MathF.Abs((float)a.Translation.X-(float)b.Translation.X)<.5f && MathF.Abs((float)a.Translation.Y-(float)b.Translation.Y)<.5f &&
+        return MathF.Abs((float)a.Translation.X-(float)b.Translation.X)<distance && MathF.Abs((float)a.Translation.Y-(float)b.Translation.Y)<distance &&
             MathF.Abs(a.Quaternion.AngleAroundZ-b.Quaternion.AngleAroundZ)<angle;
     }
     public void Dispose(){Current?.Dispose();Previous?.Dispose();_anchor.Dispose();}

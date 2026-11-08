@@ -31,6 +31,7 @@ public readonly record struct FaceRect(double X, double Y, double Width, double 
 public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, Vec2? RightEye = null, IReadOnlyList<byte>? ExpressionValues = null, string? Name = null, int Score = 0, double? RollRad = null)
 {
     public int? NativeFaceDirectionThirdDegrees { get; init; }
+    internal bool? NativeTrackerFlagChanged { get; init; }
     // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
     internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
@@ -41,9 +42,8 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
 /// <c>OKAO_CO_ConvertCenterToSquare</c>, then per face <c>DetectFaceParts</c>, <c>EstimateExpression</c>,
 /// <c>DetectSmile</c>, <c>DetectGazeAndBlink</c>, <c>IsEnrollable</c> and hands enrollable faces to
 /// <c>FaceRecognizer::SetNextFaceToRecognize</c>. Everything from the image to the face rectangles, parts,
-/// expressions and identities is inside that library (177 <c>OKAO_*</c> exports), which is proprietary and
-/// not reproduced here. An implementation of this interface supplies faces per image; the shipped stack has
-/// none (<see cref="OkaoFaceDetector"/> says so), so the face behaviours run only when a detector is attached.
+/// expressions and identities is inside that library (177 <c>OKAO_*</c> exports). The stock implementation
+/// runs the user's shipped library under the emulator. Recognition and optional expression paths remain open.
 /// </summary>
 public interface IFaceDetector
 {
@@ -52,13 +52,54 @@ public interface IFaceDetector
     IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp);
 }
 
-/// <summary>The stock detector, recorded as an explicit boundary: the OKAO library is not available to this stack.</summary>
-public sealed class OkaoFaceDetector : IFaceDetector
+/// <summary>The stock detector runs the shipped OKAO code in the embedded ARM machine.</summary>
+public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
 {
     public const int OkaoExportCount = 177;
-    public bool IsAvailable => false;
-    public string Description => $"Omron OKAO Vision (FaceTracker::Impl over {OkaoExportCount} OKAO_* exports): proprietary, not available in this stack";
-    public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp) => Array.Empty<DetectedFace>();
+    private readonly object _gate = new();
+    private readonly string? _libDir;
+    private readonly bool _librariesPresent;
+    private Emulation.OkaoFaceDetection? _detector;
+    private bool _faulted, _disposed;
+    internal Action<string>? Diagnostic { get; set; }
+    public OkaoFaceDetector()
+    {
+        _libDir = Emulation.ShippedLibraries.FindLibDir();
+        _librariesPresent = _libDir is not null && File.Exists(Path.Combine(_libDir, "libcozmoEngine.so"));
+    }
+    public bool IsAvailable { get { lock (_gate) return !_disposed && !_faulted && _librariesPresent; } }
+    public string Description => "Shipped Omron OKAO face detector on the embedded ARM emulator";
+    public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp)
+        => Detect(image, timestamp, false);
+    internal IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp, bool resetTracking)
+    {
+        var diagnostics = new List<string>();
+        IReadOnlyList<DetectedFace> faces;
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_faulted) throw new InvalidOperationException("OKAO face detector is faulted");
+            try
+            {
+                string path = _libDir ?? throw new FileNotFoundException("M14-010 shipped OKAO libraries unavailable");
+                if (_detector is null)
+                {
+                    try { _detector = new Emulation.OkaoFaceDetection(path); }
+                    catch { _faulted = true; throw; }
+                }
+                _detector.Diagnostic = diagnostics.Add;
+                if (resetTracking) _detector.ResetTracking();
+                faces = _detector.DetectTracked(image.Pixels, image.Width, image.Height);
+            }
+            catch { _faulted = true; throw; }
+        }
+        foreach (string message in diagnostics) Diagnostic?.Invoke(message);
+        return faces;
+    }
+    public void Dispose()
+    {
+        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _detector = null; }
+    }
 }
 
 /// <summary>
@@ -315,7 +356,10 @@ public sealed partial class FaceWorld
     internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin)
         => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin);
 
-    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin)
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, Func<bool?> rotationInput, PoseTreeNode origin)
+        => AddOrUpdateFaceCore(face,robotPoseAtFrame,null,origin,rotationInput);
+
+    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin, Func<bool?>? rotationInput = null)
     {
         if (face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev;
@@ -328,6 +372,7 @@ public sealed partial class FaceWorld
             bool existing = entry is not null;
             if (entry is null)
             {
+                rotatingTooFast = rotationInput?.Invoke() ?? rotatingTooFast;
                 if(rotatingTooFast is null)
                 {
                     Behavior.SteppedBehavior.ReportMissing("M14-008 native new-face rotation predicate input unavailable; new face entry skipped");
