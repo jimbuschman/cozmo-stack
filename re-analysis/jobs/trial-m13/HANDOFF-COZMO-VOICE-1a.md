@@ -77,7 +77,7 @@ Actual backends are unobserved. Independent review corrected the WavePortal mixe
 
 MISSING: production WavePortal descriptor and float-frame/RTPC/mix/Hijack join,
 the inner animation (direct, fit and canned trigger) and playback completion,
-external and named-face ingress, and exact phone discovery/poll timing. The
+external and named-face ingress, exact phone discovery/poll timing, and callback ordering beyond the tested phrase (a sample arriving after text-end can change Java speaking state). The
 internal action reaches synthesis and stops at the output frontier. It does
 not provide audible robot speech. No status, approval or hardware claim changes.
 
