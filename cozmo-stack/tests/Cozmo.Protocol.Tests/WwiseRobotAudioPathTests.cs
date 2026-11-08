@@ -313,6 +313,27 @@ public class WwiseRobotAudioPathTests
     // ------------------------------------------------------------------ A5/A6/A7/A8: posting
 
     [Fact]
+    public void RetiredClipCallbackCannotEnterReinitializedPath()
+    {
+        var rig = Build();
+        rig.Path.InitAnimation(new[] { Keyframe(0, new WwiseRobotAudioRef(0x111, 1, false)) }, 7);
+        Action delayedOldPost = rig.Dispatch.Queue.Scheduled[0].Action;
+        rig.Dispatch.Queue.RunAll();
+        var oldCallback = rig.Engine.Posts[0].Callback;
+        rig.Path.Abort();
+        rig.Path.InitAnimation(new[] { Keyframe(0, new WwiseRobotAudioRef(0x222, 1, false)) }, 7);
+        delayedOldPost();
+        rig.Dispatch.Queue.RunAll();
+        Assert.Equal(2, rig.Engine.Posts.Count);
+        oldCallback.Invoke(WwiseAudioCallbackType.Complete);
+        Assert.Equal(0, rig.Path.DrainCallbacks());
+        Assert.Equal(0, rig.Path.CallbacksReceived);
+        rig.Engine.Posts[1].Callback.Invoke(WwiseAudioCallbackType.Complete);
+        Assert.Equal(1, rig.Path.DrainCallbacks());
+        Assert.Equal(1, rig.Path.CallbacksReceived);
+    }
+
+    [Fact]
     public void M6_016_A5_BeginBufferingPostsAtWallClockOffsetsFromTheFirstEvent()
     {
         var rig = Build(7, true, 0, 0, 0);

@@ -1026,6 +1026,7 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _started, _destroyed;
     private readonly float _nativeSpeed;
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     private readonly object _cleanupGate=new();
     private readonly HashSet<string> _missingMessages=new();
     private TaskCompletionSource<ActionResult>? _done;
@@ -1148,5 +1149,7 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     {
         Dispose();
         _done?.TrySetResult((ActionResult)State);
+        if(AiNativeEnded is { } ended && _nativeOwner is { } owner)
+            ended.TrySetResult((State,owner.Lifetime.Destroying || !ReferenceEquals(_m.Robot.Engine.Robot,owner)));
     }
 }

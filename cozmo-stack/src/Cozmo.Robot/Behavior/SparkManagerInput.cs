@@ -28,12 +28,12 @@ public sealed partial class BehaviorManager
     internal float ParentSwitchTime {get;private set;}=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
     internal float SparkSwitchTime=>ParentSwitchTime;
     internal float StampParentSwitchTime()=>ParentSwitchTime=_context.Robot.Engine.Timer.SecondsF;
-    internal float FreeplayStartTime {get;private set;}=BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+    internal float FreeplayStartTime => GreetingTimeField54;
     private long _sparkSwitchEpoch;
     internal void HighLevelAdapterTail(bool freeplay)
     {
         if(_hostDisposed)return;
-        if(freeplay) { if(FreeplayStartTime<0) FreeplayStartTime=_context.Robot.Engine.Timer.SecondsF; }
+        if(freeplay) { if(GreetingTimeField54<0) GreetingTimeField54=_context.Robot.Engine.Timer.SecondsF; }
         else { ActiveSparkId=0x55; RequestedSparkId=0x55; }
     }
     private RetainedSubscription? _sparkInput;

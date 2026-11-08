@@ -84,6 +84,11 @@ public interface IWwiseDispatchQueue
     void Stop();
 }
 
+internal interface IWwiseDispatchStopFence
+{
+    void StopAfterCurrent(Action tail);
+}
+
 /// <summary>A3: <c>Dispatch::Create(queue, priority 2)</c>, which the path stores.</summary>
 public interface IWwiseDispatchFactory
 {
@@ -175,6 +180,13 @@ public interface IWwiseRobotAudioEngine
     void StopAll(uint gameObjectId);
 }
 
+// A detached native dispatch lambda must finish post, volume and ProcessEvents
+// before an abort fence. Only the shared native adapter implements this.
+internal interface IWwiseAtomicAudioEngine
+{
+    uint PostAndRender(uint eventId, uint gameObjectId, float volume, IWwiseRobotAudioCallback callback);
+}
+
 /// <summary>One A11 routing entry: game object 7..10 (and 6) → Anki plug-in index → Robot_Bus_N.</summary>
 public readonly record struct WwiseRobotAudioRoute(
     uint GameObject, int PluginId, uint BusId, float AuxSendGain, float DryOutputVolume);
@@ -257,6 +269,9 @@ public sealed class WwiseRobotAudioPath
     private readonly WwiseRobotAudioRefSelector _selectRef;
     private readonly List<WwiseRobotAudioEvent> _events = new();
     private readonly Queue<(WwiseRobotAudioEvent Event, WwiseAudioCallbackType Type)> _callbackQueue = new();
+    private long _callbackEpoch;
+    private Task _stopFence = Task.CompletedTask;
+    private bool _abortRequested;
     private readonly object _gate = new();
 
     private IWwiseRobotAudioBuffer? _buffer;
@@ -338,6 +353,8 @@ public sealed class WwiseRobotAudioPath
     {
         ArgumentNullException.ThrowIfNull(keyframes);
 
+        lock (_gate) { _callbackEpoch++; _callbackQueue.Clear(); _abortRequested = false; _stopFence = Task.CompletedTask; }
+
         _events.Clear();
         Flag3D = false;
         LastError = null;
@@ -389,7 +406,7 @@ public sealed class WwiseRobotAudioPath
             return;
         }
 
-        _alive = true;
+        lock (_gate) _alive = true;
         _queue = _dispatchFactory.Create(priority: 2);              // A3: Dispatch::Create(queue, 2)
         PrepareAnimation();                                         // A3: vfunc+0x14
     }
@@ -416,7 +433,9 @@ public sealed class WwiseRobotAudioPath
         {
             double delay = ev.TriggerTimeMs - first;
             var captured = ev;
-            _queue.After(delay, () => PostEvent(captured));
+            long epoch;
+            lock (_gate) epoch = _callbackEpoch;
+            _queue.After(delay, () => PostEvent(captured, epoch));
         }
     }
 
@@ -541,13 +560,34 @@ public sealed class WwiseRobotAudioPath
     /// </summary>
     public void Abort()
     {
-        _alive = false;
-        _queue?.Stop();
-        DrainCallbacks();
-        _buffer?.ResetAudioBufferAnimationCompleted();
-        _engine.StopAll(GameObjectId);
-        _engine.RenderAudio();
+        lock (_gate) { if (_abortRequested) return; _abortRequested = true; _alive = false; _callbackEpoch++; }
+        if (_queue is IWwiseDispatchStopFence fence)
+        {
+            var stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _stopFence = stopped.Task;
+            fence.StopAfterCurrent(() =>
+            {
+                try { DrainCallbacks(); _buffer?.ResetAudioBufferAnimationCompleted(); _engine.StopAll(GameObjectId); _engine.RenderAudio(); stopped.TrySetResult(); }
+                catch (Exception e) { stopped.TrySetException(e); }
+            });
+        }
+        else
+        {
+            _queue?.Stop();
+            DrainCallbacks();
+            _buffer?.ResetAudioBufferAnimationCompleted();
+            _engine.StopAll(GameObjectId);
+            _engine.RenderAudio();
+        }
         State = WwiseRobotAudioState.AnimationCompleted;
+    }
+
+    // A naturally completed clip retires its executor without StopAll or buffer reset.
+    internal Task RetireWithoutAbort()
+    {
+        lock (_gate) { _alive = false; _callbackEpoch++; }
+        _queue?.Stop();
+        return _stopFence;
     }
 
     /// <summary>
@@ -573,14 +613,18 @@ public sealed class WwiseRobotAudioPath
 
     // ---------------------------------------------------------------- the A6 lambda
 
-    private void PostEvent(WwiseRobotAudioEvent ev)
+    private void PostEvent(WwiseRobotAudioEvent ev, long epoch)
     {
-        if (!_alive) return;                                            // A6: the weak pointer is dead
-
-        lock (_gate) { ev.State = WwiseRobotAudioEventState.Posted; _postedCount++; }
-
-        var callback = new Callback(this, ev);
-        uint playingId = _engine.PostEvent(ev.EventId, GameObjectId, callback);
+        lock (_gate)
+        {
+            if (!_alive || epoch != _callbackEpoch) return;             // A6: the weak pointer is dead
+            ev.State = WwiseRobotAudioEventState.Posted; _postedCount++;
+        }
+        var callback = new Callback(this, ev, epoch);
+        bool atomic = _engine is IWwiseAtomicAudioEngine;
+        uint playingId = atomic
+            ? ((IWwiseAtomicAudioEngine)_engine).PostAndRender(ev.EventId, GameObjectId, ev.Volume, callback)
+            : _engine.PostEvent(ev.EventId, GameObjectId, callback);
         if (playingId == 0)
         {
             // A8: PostEvent returned 0, so PostAudioEvent immediately delivers the type-4 error.
@@ -589,16 +633,16 @@ public sealed class WwiseRobotAudioPath
         else
         {
             ev.PlayingId = playingId;                                    // A8: the playing id goes to ctx+4
-            _engine.SetEventVolume(playingId, ev.Volume);                // A6: SetCozmoEventParameter
+            if (!atomic) _engine.SetEventVolume(playingId, ev.Volume);  // A6: SetCozmoEventParameter
         }
 
-        _engine.RenderAudio();                                           // A6/A10: ProcessEvents
+        if (!atomic) _engine.RenderAudio();                              // A6/A10: ProcessEvents
     }
 
-    private void EnqueueCallback(WwiseRobotAudioEvent ev, WwiseAudioCallbackType type)
+    private void EnqueueCallback(WwiseRobotAudioEvent ev, WwiseAudioCallbackType type, long epoch)
     {
         // A7/gapE 6.1: ctx+0x38 = 0, so the trampoline queues rather than dispatching.
-        lock (_gate) _callbackQueue.Enqueue((ev, type));
+        lock (_gate) if (epoch == _callbackEpoch) _callbackQueue.Enqueue((ev, type));
     }
 
     private void ApplyCallback(WwiseRobotAudioEvent ev, WwiseAudioCallbackType type)
@@ -620,14 +664,16 @@ public sealed class WwiseRobotAudioPath
     {
         private readonly WwiseRobotAudioPath _path;
         private readonly WwiseRobotAudioEvent _event;
+        private readonly long _epoch;
 
-        public Callback(WwiseRobotAudioPath path, WwiseRobotAudioEvent @event)
+        public Callback(WwiseRobotAudioPath path, WwiseRobotAudioEvent @event, long epoch)
         {
             _path = path;
             _event = @event;
+            _epoch = epoch;
         }
 
-        public void Invoke(WwiseAudioCallbackType type) => _path.EnqueueCallback(_event, type);
+        public void Invoke(WwiseAudioCallbackType type) => _path.EnqueueCallback(_event, type, _epoch);
     }
 }
 

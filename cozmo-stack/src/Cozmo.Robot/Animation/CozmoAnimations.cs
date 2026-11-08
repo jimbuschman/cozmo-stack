@@ -564,6 +564,17 @@ public sealed class CozmoAnimations : IDisposable
         return new AnimationTicket(handle.Completion, handle.Generation) { Tag = handle.Tag };
     }
 
+    internal AnimationTicket? PlayAuthoredSpeechTracked(AnimationClip clip, Wwise.WwiseRobotAudioPath path, EngineRobot owner)
+    {
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
+        var handle = _scheduler.PlayAuthoredSpeech(clip, NowMs(), path, Current);
+        if (handle is null) return null;
+        StartTicker();
+        return new AnimationTicket(handle.Completion, handle.Generation) { Tag = handle.Tag };
+    }
+
+    internal void DrainAuthoredAudioCallbacks() => _scheduler.DrainAuthoredAudioCallbacks();
+
     /// <summary>
     /// Plays a clip and reports which animation it became, so the caller can stop exactly that one.
     /// Returns null when the scheduler refused it.

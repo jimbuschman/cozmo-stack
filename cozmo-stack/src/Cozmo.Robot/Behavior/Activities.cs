@@ -290,6 +290,7 @@ public sealed record EmotionScorer(EmotionType Emotion, Graph2d Graph, bool Trac
 public sealed record ChooserDecision(IBehavior? Behavior, string Reason, IReadOnlyList<(string Id, double Score, string Note)> Scores)
 {
     internal bool InputUnavailable { get; init; }
+    internal string? UnbuiltWinner { get; init; }
 }
 
 /// <summary><c>Anki::Cozmo::BehaviorChooserType</c> (UNITY): Scoring, Selection, StrictPriority.</summary>
@@ -320,13 +321,15 @@ public sealed class ScoringChooser : IBehaviorChooser
     private IReadOnlyList<ScoredBehaviorEntry> _evaluationEntries;
     private readonly bool _native;
     private EngineRobot? _ordinaryOwner;
+    private bool _meetScoped;
+    internal void EnableMeetPristineBoundary() => _meetScoped = true;
     internal void EnableOrdinaryUnbuiltBoundary(EngineRobot owner)
     {
         _ordinaryOwner=owner;
         _evaluationEntries=Entries.DistinctBy(e=>e.BehaviorId).OrderBy(e=>
             Enum.TryParse<BehaviorID>(e.BehaviorId,false,out var id) && id.ToString()==e.BehaviorId ? (int)id : 256).ToList();
     }
-    private enum UnbuiltScore { KnownFalse, ScoringZero, Unavailable, NativeAbsent }
+    private enum UnbuiltScore { KnownFalse, ScoringZero, KnownPositive, Unavailable, NativeAbsent }
     private UnbuiltScore EvaluateUnbuilt(string id,BehaviorContext ctx,double nowSec)
     {
         var owner=_ordinaryOwner;
@@ -336,6 +339,47 @@ public sealed class ScoringChooser : IBehaviorChooser
         if(!Enum.TryParse<BehaviorID>(id,false,out var nativeId) || nativeId.ToString()!=id)return UnbuiltScore.Unavailable;
         if(!configured.ContainsKey(nativeId))return UnbuiltScore.NativeAbsent;
         var winner=configured[nativeId];
+        if (_meetScoped && id is ("EnrollFace" or "RespondToRenameFace" or "MeetCozmo_InteractWithFaces"))
+        {
+            if (owner.NativeConfiguredScoreFields?.TryGetValue(id, out var fields) != true || !fields.ConstructorPristine)
+                return UnbuiltScore.Unavailable;
+            long version = fields.Epoch;
+            bool Current() => ReferenceEquals(owner.Engine.Robot, owner) && ReferenceEquals(owner.NativeBehaviorRuntime, runtime) &&
+                fields.ConstructorPristine && fields.Epoch == version &&
+                owner.NativeConfiguredScoreFields?.TryGetValue(id, out var live) == true && ReferenceEquals(live, fields) &&
+                owner.Engine.HostBehaviorMap?.TryGetValue(nativeId, out var liveConfig) == true && liveConfig.Equals(winner);
+            if (!Current()) return UnbuiltScore.Unavailable;
+            if (id != "MeetCozmo_InteractWithFaces") return UnbuiltScore.KnownFalse; // empty constructor-owned request/name
+            var gate = SteppedBehavior.EvaluateHostOperation(() => new NativeBehaviorBaseInputs(owner, winner).Allows(ctx));
+            if (!gate.Available || !Current()) return UnbuiltScore.Unavailable;
+            if (!gate.Value) return UnbuiltScore.KnownFalse;
+            if (ctx.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads || ctx.Robot.Sensors.OnChargerPlatform ||
+                owner.CarryingOwner is { } carrying && (carrying.CarriedObjectId ?? uint.MaxValue) != uint.MaxValue)
+                return Current() ? UnbuiltScore.KnownFalse : UnbuiltScore.Unavailable;
+            if (runtime.Manipulation is not { } source || !owner.TryGetNativeOriginOwner(owner.CurrentOriginId, out var meetOrigin) || meetOrigin?.Node is null)
+                return UnbuiltScore.Unavailable;
+            try
+            {
+                using var mutation = source.World.EnterPoseMutation();
+                var faces = source.Vision.Faces.GetNativeFaceIds(owner);
+                if (!Current()) return UnbuiltScore.Unavailable;
+                if (faces.Count == 0) return UnbuiltScore.KnownFalse;
+                if (faces.Count == 1 && faces[0] == 0) return UnbuiltScore.KnownFalse;
+                if (faces.Count > 1)
+                {
+                    foreach (int faceId in faces)
+                        if (source.Vision.Faces.GetNativeFace(owner, faceId)?.NativeTrackingTranslation is null)
+                            return UnbuiltScore.Unavailable;
+                    if (BestFaceToTrack.GetNative(faces, source, owner, surchargeUnnamed: true) == 0)
+                        return Current() ? UnbuiltScore.KnownFalse : UnbuiltScore.Unavailable;
+                }
+                if (_penalty.LastRunSec(id) is not null || _penalty.IsSuppressed(id, nowSec) || !fields.ExplicitFlatReload ||
+                    fields.Value is not { } score || (float)score.FlatScore != 1f || score.EmotionScorers.Count != 0 ||
+                    score.BoredomMultiplier is not null || !float.IsFinite((float)nowSec)) return UnbuiltScore.Unavailable;
+                return Current() ? UnbuiltScore.KnownPositive : UnbuiltScore.Unavailable;
+            }
+            catch (InvalidOperationException) { return UnbuiltScore.Unavailable; }
+        }
         NativeScoredFields? gateFields=null;long gateEpoch=0;
         if(id=="GuardDog")
         {
@@ -418,7 +462,13 @@ public sealed class ScoringChooser : IBehaviorChooser
     public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)
     {
         var scores = new List<(string, double, string)>();
-        IBehavior? best = null; double bestScore = 0; double currentScore = 0;
+        IBehavior? best = null; string? unbuiltBest = null; double bestScore = 0; double currentScore = 0;
+        float Challenger(float score)
+        {
+            double limit = BitConverter.Int64BitsToDouble(0x3FB99999A0000000);
+            double draw = RandomDraw is {} substitute ? substitute() * limit : ContextRandom?.RandDbl(limit) ?? Random.NextDouble() * limit;
+            return (float)((double)score + draw);
+        }
         foreach (var e in _evaluationEntries)
         {
             if (!_bound.TryGetValue(e.BehaviorId, out var b))
@@ -428,6 +478,13 @@ public sealed class ScoringChooser : IBehaviorChooser
                     var state=EvaluateUnbuilt(e.BehaviorId,ctx,nowSec);
                     if(state==UnbuiltScore.Unavailable)
                     {SteppedBehavior.ReportMissing("M8-003 configured scored owner/input unavailable for "+e.BehaviorId);return new ChooserDecision(null,"unavailable scored owner",scores){InputUnavailable=true};}
+                    if (state == UnbuiltScore.KnownPositive)
+                    {
+                        float score = Challenger(1f);
+                        scores.Add((e.BehaviorId, score, "known positive; Init unavailable"));
+                        if (!(score <= bestScore)) { bestScore = score; best = null; unbuiltBest = e.BehaviorId; }
+                        continue;
+                    }
                     scores.Add((e.BehaviorId,0,state.ToString()));continue;
                 }
                 scores.Add((e.BehaviorId, 0, "not built")); continue;
@@ -463,13 +520,12 @@ public sealed class ScoringChooser : IBehaviorChooser
             }
             else
             {
-                double limit=BitConverter.Int64BitsToDouble(0x3FB99999A0000000);
-                double draw=RandomDraw is {} substitute?substitute()*limit:ContextRandom?.RandDbl(limit)??Random.NextDouble()*limit;
-                s=(float)((double)s+draw); // exact widening, vadd.f64, then one vcvt.f32.f64.
+                s=Challenger(s); // exact widening, vadd.f64, then one vcvt.f32.f64.
             }
             scores.Add((b.Id, s, running ? "running" : ""));
-            if (!(s <= bestScore)) { bestScore = s; best = b; } // BLE: unordered replaces, equality retains.
+            if (!(s <= bestScore)) { bestScore = s; best = b; unbuiltBest = null; } // BLE: unordered replaces, equality retains.
         }
+        if (unbuiltBest is not null) return new ChooserDecision(null, "winning native Init unavailable", scores) { UnbuiltWinner = unbuiltBest };
         if (best is null) return new ChooserDecision(null, "no listed behaviour is runnable and wants to run", scores);
         if (current is not null && current.Id == best.Id) return new ChooserDecision(best, "already running", scores);
         return new ChooserDecision(best, current is null ? $"highest score {bestScore:F2}" : $"behavior '{best.Id}' has score of {bestScore:F2}, so is interrupting running behavior '{current.Id}' which scored {currentScore:F2}", scores);
@@ -1533,6 +1589,7 @@ public static class ActivityTreeLoader
             desired = (dn.GetProperty("faceAndCubeActivityName").GetString()!, dn.GetProperty("faceOnlyActivityName").GetString()!, dn.GetProperty("cubeOnlyActivityName").GetString()!, dn.GetProperty("noFaceNoCubeActivityName").GetString()!);
         var normalChooser=e.TryGetProperty("behaviorChooser",out var bc) ? BuildChooser(bc,bound,penalty,random,owner) : e.TryGetProperty("universalChooser",out var uc) ? BuildChooser(uc,bound,penalty,random,owner) : null;
         if(owner is not null && normalChooser is ScoringChooser ordinary)ordinary.EnableOrdinaryUnbuiltBoundary(owner);
+        if(owner is not null && id=="MeetCozmo" && normalChooser is ScoringChooser meetChooser)meetChooser.EnableMeetPristineBoundary();
         var interludeChooser=e.TryGetProperty("interludeBehaviorChooser",out var ic) ? BuildChooser(ic,bound,penalty,random,owner) : null;
         if(owner is not null && (id is "Socialize" or "PlayAlone" or "Hiking" or "NothingToDo") && interludeChooser is StrictPriorityChooser ordinaryInterlude)
         {ordinaryInterlude.EnableOrdinaryInterludeBoundary(owner);ordinaryInterlude.StopOnUnavailable=true;}

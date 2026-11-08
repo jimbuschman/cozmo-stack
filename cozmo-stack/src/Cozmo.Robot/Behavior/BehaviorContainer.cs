@@ -326,6 +326,13 @@ public sealed class BehaviorFactory
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
+        [BehaviorClass.AcknowledgeFace] = (ctx,json) =>
+        {
+            var vision = ctx.Vision ?? throw new InvalidOperationException("MISSING: AcknowledgeFace factory vision owner");
+            var behavior = new AcknowledgeFaceBehavior(vision, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()) { NativeRetainedProfile = true };
+            behavior.BindActionCompletionOwner(vision.Robot, ctx.NativeRobot ?? vision.Robot.Engine.Robot);
+            return behavior;
+        },
         // case 0x19: BehaviorFistBump(robot, config), 0x158 bytes (0x0059cc84..0x0059cca2).
         [BehaviorClass.FistBump] = (ctx, json) => FistBumpBehavior.FromConfig(json, ctx.Vision, ctx.Manipulation),
         // case 0x4C: BehaviorReactToSparked(robot, config), 0x120 bytes (0x0059d2f2..0x0059d310).
@@ -402,8 +409,8 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
         }
-        if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.FindFaces_socialize || ctx.Manipulation is null || ctx.NativeRobot is null))
-        {SteppedBehavior.ReportMissing("FindFaces factory: only configured FindFaces_socialize with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.FindFaces_socialize or BehaviorID.MeetCozmo_FindFaces_Socialize) || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -449,6 +456,11 @@ public sealed class BehaviorFactory
         if (cls == BehaviorClass.AcknowledgeObject && ctx.Vision is null)
         {
             SteppedBehavior.ReportMissing("AcknowledgeObject factory: actual vision owner unavailable");
+            status = BehaviorCreateStatus.NotImplemented; return null;
+        }
+        if (cls == BehaviorClass.AcknowledgeFace && (ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("AcknowledgeFace factory: actual vision, manipulation and Robot owners unavailable");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
         if (cls == BehaviorClass.Bouncer && (ctx.Vision is null || ctx.Manipulation is null || ctx.BouncerOwner is null))

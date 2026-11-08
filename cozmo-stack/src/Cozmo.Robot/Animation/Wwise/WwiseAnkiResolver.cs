@@ -594,6 +594,14 @@ public sealed class WwiseAnkiResolver : IWwiseFileLocationResolver, IWwiseLowLev
         _fs = fs ?? throw new ArgumentNullException(nameof(fs));
     }
 
+    // Native device creation is owned by the emulated stream manager (0x961168).
+    internal void BindNativeDevice(int deviceId, bool deferOpen)
+    {
+        if (deviceId < 0 || DeviceId != -1) throw new InvalidOperationException("resolver already bound or invalid device");
+        DeviceId = deviceId;
+        DeferOpen = deferOpen;
+    }
+
     // ---------------------------------------------------------------- B1 and the post-init
 
     /// <summary>

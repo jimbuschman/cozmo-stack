@@ -686,7 +686,7 @@ public static class ShippedBehaviors
             new PlayAnimWithFaceBehavior(v, "VC_HowAreYouDoing_Energy", new[] { AnimationTrigger.NeutralFace }),
             new PlayAnimWithFaceBehavior(v, "VC_HowAreYouDoing_Play", new[] { AnimationTrigger.NeutralFace }),
             new PlayAnimWithFaceBehavior(v, "VC_HowAreYouDoing_Repair", new[] { AnimationTrigger.NeutralFace }),
-            new AcknowledgeFaceBehavior(v, "AcknowledgeFace"),
+            new AcknowledgeFaceBehavior(v, "AcknowledgeFace") { NativeRetainedProfile = m is not null },
             new InteractWithFacesBehavior(v, "InteractWithFaces", m),
             new InteractWithFacesBehavior(v, "MeetCozmo_InteractWithFaces", m),
             new SearchForFaceBehavior(v, "VC_SearchForFace"),
@@ -760,7 +760,8 @@ public static class ShippedBehaviors
                                                                                 string? obbRoot = null, Cozmo.Robot.Manipulation.ManipulationSystem? m = null,
                                                                                 List<string>? unbound = null,
                                                                                 AcknowledgeObjectBehavior? acknowledgeObject = null,
-                                                                                Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null)
+                                                                                Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null,
+                                                                                AcknowledgeFaceBehavior? acknowledgeFace = null)
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
@@ -821,7 +822,7 @@ public static class ShippedBehaviors
 
             // FacePositionUpdated -> AcknowledgeFace and PetInitialDetection -> ReactToPet. With no face detector the
             // worlds stay empty and neither ever fires (the OKAO boundary).
-            var ackFace = new AcknowledgeFaceBehavior(vision);
+            var ackFace = acknowledgeFace ?? new AcknowledgeFaceBehavior(vision) { NativeRetainedProfile = true };
             built.Add((ackFace.Id, ReactionTrigger.FacePositionUpdated, ackFace,
                        new FacePositionUpdatedStrategy(vision.Faces, ackFace, () => vision.History.Latest?.RobotPose, clockSec ?? (() => robot.Engine.Timer.Seconds))));
             var reactToPet = new ReactToPetBehavior(vision);

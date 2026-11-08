@@ -177,6 +177,27 @@ internal static class BestFaceToTrack
         }
         return best;
     }
+
+    internal static int GetNative(IReadOnlyCollection<int> targets, Manipulation.ManipulationSystem m, EngineRobot owner, bool surchargeUnnamed = false)
+    {
+        if (targets.Count == 0) return 0;
+        if (targets.Count == 1) return targets.First();
+        int best = 0; float bestCost = InitialBest;
+        using var mutation = m.World.EnterPoseMutation();
+        foreach (int id in targets.OrderBy(id => id))
+        {
+            var face = m.Vision.Faces.GetNativeFace(owner, id);
+            if (face?.NativeTrackingTranslation is not { } point || face.NativeObservationOrigin is null) continue;
+            using var origin = Pose3d.WrapExisting(face.NativeObservationOrigin);
+            using var pose = new Pose3d(Rotation3d.Identity, point);
+            using var relative = new Pose3d("");
+            pose.SetParent(origin);
+            if (!pose.TryWithRespectTo(owner.GetCheckedMainPose(), relative)) continue;
+            float cost = Cost(relative.Translation, m.Robot.Motion.HeadAngleRad, face.HasName, surchargeUnnamed);
+            if (cost < bestCost) { best = id; bestCost = cost; }
+        }
+        return best;
+    }
 }
 
 /// <summary>
@@ -218,6 +239,12 @@ public sealed class AcknowledgeFaceBehavior : FaceBehavior
     private volatile bool _greetingPlayed;                               // +0x12D, never reset (S1)
     private int _currentTarget;                                          // +0x11C (ctor 0)
     private TurnTowardsFaceAction? _turn;
+    private long _nativeRun;
+    private EngineRobot? _nativeOwner;
+    internal bool NativeRetainedProfile { get; set; }
+    protected override void HostRunStarting() { Interlocked.Increment(ref _nativeRun); _nativeOwner = null; }
+    protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _nativeRun);
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _nativeRun) == version;
 
     public AcknowledgeFaceBehavior(VisionSystem v, string id = "AcknowledgeFace") : base(id, "AcknowledgeFace", v) { }
 
@@ -253,10 +280,10 @@ public sealed class AcknowledgeFaceBehavior : FaceBehavior
     /// <summary>R2: +0x128 (the set's size) != 0.</summary>
     protected override bool IsRunnableInternal(BehaviorContext context) { lock (_setGate) return _targets.Count != 0; }
 
-    protected override bool KeepsRunningWithoutAction => _beginPending || base.KeepsRunningWithoutAction;
+    protected override bool KeepsRunningWithoutAction => _beginPending || (NativeRetainedProfile && HasCurrentAction) || base.KeepsRunningWithoutAction;
 
     /// <summary>I1: +0x12C = 1, return 0; no action is started.</summary>
-    protected override void OnStart() => _beginPending = true;
+    protected override void OnStart() { _nativeOwner = Context.Robot.Engine.Robot; _beginPending = true; }
 
     /// <summary>U1: if +0x12C, clear it and BeginIteration; then the base UpdateInternal.</summary>
     protected override void OnUpdate()
@@ -278,6 +305,13 @@ public sealed class AcknowledgeFaceBehavior : FaceBehavior
     {
         int[] targets;
         lock (_setGate) targets = _targets.ToArray();
+        if (NativeRetainedProfile)
+        {
+            if (_nativeOwner is { } owner && owner.NativeBehaviorRuntime?.Manipulation is { } native)
+                BeginNativeIteration(targets, owner, native);
+            else ReportMissing("M14-002 AcknowledgeFace original Robot/manipulation owner unavailable; action withheld");
+            return;
+        }
         // B1: GetBestFaceToTrack(set, false); the robot pose is the one the face actions use (TurnTowardsFaceAction.Init), robot+0x2FC is Motion's.
         int id = BestFaceToTrack.Get(targets, V.Faces, V.History.Latest?.RobotPose, Context.Robot.Motion.HeadAngleRad, surchargeUnnamed: false);
         if (id == 0) return;                                                       // B1: 0 -> no action
@@ -320,20 +354,50 @@ public sealed class AcknowledgeFaceBehavior : FaceBehavior
         });
     }
 
+    private void BeginNativeIteration(int[] targets, EngineRobot owner, Manipulation.ManipulationSystem native)
+    {
+        long version = Interlocked.Read(ref _nativeRun);
+        bool Current() => Interlocked.Read(ref _nativeRun) == version && !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner);
+        if (!Current()) return;
+        int id = BestFaceToTrack.GetNative(targets, native, owner);
+        if (id == 0 || !Current()) return;
+        _currentTarget = id; TargetFaceId = id;
+        var turn = new NativeLastFaceRunner(native, owner, id, sayName: true) { ImagesToWait = ImagesToWait };
+        float now = owner.Engine.Timer.SecondsF, started = ManagerGreetingTime();
+        var face = V.Faces.GetNativeFace(owner, id);
+        bool greet = now - started <= GreetingWindowSec && started >= 0 && !(face?.TurnedTowards ?? false) && !_greetingPlayed;
+        string text = $"currTime = {now:F6}, alreadyTurned:{(face?.TurnedTowards == true ? 1 : 0)}, shouldPlayGreeting:{(greet ? 1 : 0)}";
+        Log("AcknowledgeFace.DoAcknowledgement: " + text);
+        if (!Current()) { turn.RetireNeverAdmittedTree(); return; }
+        owner.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "AcknowledgeFace.DoAcknowledgement", text);
+        if (!Current()) { turn.RetireNeverAdmittedTree(); return; }
+        turn.SetNativeNameTriggers((int)AnimationTrigger.AcknowledgeFaceNamed, (int)AnimationTrigger.AcknowledgeFaceUnnamed);
+        if (greet) turn.NamedTriggerCallback = _ =>
+        {
+            if (Current()) { _greetingPlayed = true; EmotionEvent(GreetingEmotionEvent); }
+            return AnimationTrigger.NamedFaceInitialGreeting;
+        };
+        if (!Current()) { turn.RetireNeverAdmittedTree(); return; }
+        StartActing(turn, _ => { if (Current()) FinishIteration(Current); }, Current);
+    }
+
     /// <summary>F1: erase the id, listeners' FinishedReactingToFace, BehaviorObjectiveAchieved(0x1A, true), BeginIteration.</summary>
-    private void FinishIteration()
+    private void FinishIteration(Func<bool>? current = null)
     {
         int id = _currentTarget;
         lock (_setGate) _targets.Remove(id);
-        foreach (var l in Listeners()) l.FinishedReactingToFace(id);
+        foreach (var l in Listeners()) { l.FinishedReactingToFace(id); if (current is not null && !current()) return; }
         Context.Robot.Engine.ReportBehaviorObjective(ObjectiveReactedAcknowledgedFace, "ReactedAcknowledgedFace", Id);
+        if (current is not null && !current()) return;
         Log($"BehaviorObjectiveAchieved(0x{ObjectiveReactedAcknowledgedFace:X}, true)");
+        if (current is not null && !current()) return;
         BeginIteration();
     }
 
     /// <summary>S1: the listeners' ClearDesiredTargets (slot 1, 0x0060D0CA) and the set cleared; +0x12D is kept.</summary>
     protected override void OnStop(BehaviorStopReason reason)
     {
+        Interlocked.Increment(ref _nativeRun); _nativeOwner = null;
         foreach (var l in Listeners()) l.ClearDesiredTargets();
         lock (_setGate) _targets.Clear();
         base.OnStop(reason);

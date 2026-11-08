@@ -6,6 +6,10 @@ namespace Cozmo.Robot.Emulation;
 /// <summary>Owns the native machine and all device completions on one serialized thread.</summary>
 internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
 {
+    private sealed class RetiredGenerationException : InvalidOperationException
+    {
+        internal RetiredGenerationException() : base("shared voice generation has retired") { }
+    }
     private sealed record Command(Action<NativeWwiseVoiceHost> Run, TaskCompletionSource<object?> Completion);
     private readonly object _gate = new();
     private readonly Queue<Command> _commands = new();
@@ -15,6 +19,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private readonly Thread _thread;
     private readonly string _libraryDirectory;
     private readonly byte[] _initBank, _voiceBank;
+    private readonly string? _archivePath;
     private readonly SpeechRobotAudioBuffer _buffer;
     private readonly Func<IPlatformPcmSink> _openSink;
     private readonly Func<double> _wallMilliseconds;
@@ -27,18 +32,135 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private bool _stopRequested;
     private long _completionCount;
     private ulong _lastCompletedToken;
+    private long _generation;
+    private bool _generationOpen;
+    private uint _nextCookie;
+    private readonly Dictionary<uint, (long Generation, IWwiseRobotAudioCallback Callback)> _sharedCallbacks = new();
 
     private NativeWwiseVoiceSession(string libraryDirectory, byte[] initBank, byte[] voiceBank,
-        SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds, Func<IPlatformPcmSink> openSink)
+        SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds, Func<IPlatformPcmSink> openSink, string? archivePath = null)
     {
         _libraryDirectory = libraryDirectory;
         _initBank = initBank;
         _voiceBank = voiceBank;
+        _archivePath = archivePath;
         _buffer = buffer;
         _wallMilliseconds = wallMilliseconds;
         _openSink = openSink;
         _thread = new Thread(Run) { IsBackground = true, Name = "Cozmo native voice" };
         _thread.Start();
+    }
+
+    internal static async Task<NativeWwiseVoiceSession> OpenSharedAsync(string libraryDirectory, byte[] initBank,
+        byte[] voiceBank, string archivePath, SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds,
+        Func<IPlatformPcmSink>? openSink = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(archivePath);
+        ArgumentNullException.ThrowIfNull(buffer);
+        ArgumentNullException.ThrowIfNull(wallMilliseconds);
+        var session = new NativeWwiseVoiceSession(libraryDirectory, initBank, voiceBank, buffer,
+            wallMilliseconds, openSink ?? (() => new WinMmPcmSink()), archivePath);
+        try { await session._ready.Task.ConfigureAwait(false); }
+        catch { try { await session._finished.Task.ConfigureAwait(false); } catch { } throw; }
+        return session;
+    }
+
+    // The clip owns this adapter; ending a clip does not retire the shared bus or sink.
+    internal SharedGeneration BeginGeneration()
+    {
+        lock (_gate)
+        {
+            if (_archivePath is null || _closing || _failure is not null || _generationOpen)
+                throw new InvalidOperationException("shared voice generation cannot be opened");
+            _generationOpen = true;
+            return new SharedGeneration(this, ++_generation);
+        }
+    }
+
+    internal sealed class SharedGeneration(NativeWwiseVoiceSession owner, long generation) : IWwiseRobotAudioEngine, IWwiseAtomicAudioEngine, IDisposable
+    {
+        internal Task OfferAsync(float[] samples, int sampleRate) => owner.SharedTask(generation, h => h.Offer(samples, sampleRate));
+        internal Task ConfigureAsync(uint voiceSwitch, float pitch) => owner.SharedTask(generation, h => h.ConfigureVoice(voiceSwitch, pitch));
+        internal Task ClearPendingAsync() => owner.SharedCleanup(generation);
+        public uint PostEvent(uint eventId, uint gameObjectId, IWwiseRobotAudioCallback callback) =>
+            owner.PostShared(generation, eventId, gameObjectId, callback);
+        public uint PostAndRender(uint eventId, uint gameObjectId, float volume, IWwiseRobotAudioCallback callback) =>
+            owner.PostShared(generation, eventId, gameObjectId, callback, volume);
+        public void SetEventVolume(uint playingId, float volume) => owner.SharedCommand(generation, h => h.SetEventVolume(playingId, volume));
+        public void RenderAudio() => owner.SharedCommand(generation, h => h.Render(0));
+        public void StopAll(uint gameObjectId) => owner.EndGeneration(generation, gameObjectId, true);
+        public void Dispose() => owner.EndGeneration(generation, 7, false);
+    }
+
+    private Task SharedCleanup(long generation)
+    {
+        lock (_gate)
+        {
+            if (!_generationOpen || generation != _generation || _closing || _failure is not null)
+                return Task.FromException(new InvalidOperationException("shared voice generation has retired"));
+            // Accepted cleanup stays ahead of this generation's stop and any later offer.
+            return Enqueue(host => host.ClearPending());
+        }
+    }
+
+    private Task SharedTask(long generation, Action<NativeWwiseVoiceHost> action)
+    {
+        lock (_gate)
+        {
+            if (!_generationOpen || generation != _generation || _closing || _failure is not null)
+                return Task.FromException(new InvalidOperationException("shared voice generation has retired"));
+            return Enqueue(host =>
+            {
+                lock (_gate) if (!_generationOpen || generation != _generation)
+                    throw new RetiredGenerationException();
+                action(host);
+            });
+        }
+    }
+
+    private uint PostShared(long generation, uint eventId, uint gameObjectId, IWwiseRobotAudioCallback callback, float? atomicVolume = null)
+    {
+        if (gameObjectId != 7) throw new NotSupportedException("Shared voice owns game object 7");
+        ArgumentNullException.ThrowIfNull(callback);
+        uint playing = 0;
+        Task post;
+        lock (_gate)
+        {
+            if (!_generationOpen || generation != _generation || _closing || _failure is not null) return 0;
+            post = Enqueue(host =>
+            {
+                uint cookie = checked(++_nextCookie);
+                _sharedCallbacks.Add(cookie, (generation, callback));
+                playing = host.PostShared(eventId, cookie);
+                if (playing == 0) _sharedCallbacks.Remove(cookie);
+                else if (atomicVolume is { } volume) host.SetEventVolume(playing, volume);
+                if (atomicVolume is not null) host.Render(0);
+            });
+        }
+        post.GetAwaiter().GetResult();
+        return playing;
+    }
+
+    private void SharedCommand(long generation, Action<NativeWwiseVoiceHost> action)
+    {
+        lock (_gate)
+        {
+            if (!_generationOpen || generation != _generation || _closing || _failure is not null) return;
+            // Commands accepted before the retirement fence precede StopAll in
+            // the same FIFO, including the event's volume and ProcessEvents.
+            _ = Enqueue(action);
+        }
+    }
+
+    private void EndGeneration(long generation, uint gameObjectId, bool stop)
+    {
+        if (gameObjectId != 7) throw new NotSupportedException("Shared voice owns game object 7");
+        lock (_gate)
+        {
+            if (!_generationOpen || generation != _generation) return;
+            _generationOpen = false;
+            if (stop && !_closing && _failure is null) _ = Enqueue(host => { host.Stop(); host.Render(0); });
+        }
     }
 
     internal static async Task<NativeWwiseVoiceSession> OpenAsync(string libraryDirectory, byte[] initBank,
@@ -136,7 +258,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         try
         {
             sink = _openSink();
-            host = new NativeWwiseVoiceHost(_libraryDirectory, _initBank, _voiceBank, 1024);
+            host = new NativeWwiseVoiceHost(_libraryDirectory, _initBank, _voiceBank, 1024, _archivePath);
             host.HijackOpened += () => _buffer.Open(_wallMilliseconds());
             host.HijackFrame += frame => _buffer.Push(frame);
             host.HijackClosed += _buffer.Close;
@@ -145,6 +267,15 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
                 var callback = _callback;
                 _callback = null;
                 callback?.Invoke(WwiseAudioCallbackType.Complete);
+            };
+            host.SharedEventEnded += (cookie, _, _) =>
+            {
+                if (_sharedCallbacks.Remove(cookie, out var entry))
+                {
+                    bool current;
+                    lock (_gate) current = _generationOpen && _generation == entry.Generation;
+                    if (current) entry.Callback.Invoke(WwiseAudioCallbackType.Complete);
+                }
             };
             var stopwatch = Stopwatch.StartNew();
             long lastTicks = 0;
@@ -164,7 +295,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
                 if (stop && closingSince is null)
                 {
                     closingSince = stopwatch.Elapsed;
-                    if (host.HasPosted && !host.IsQuiescent)
+                    if ((_archivePath is not null || host.HasPosted) && !host.IsQuiescent)
                     {
                         if (!_stopRequested) { host.Stop(); _stopRequested = true; }
                         host.Render(0);
@@ -176,6 +307,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
                 if (command is not null)
                 {
                     try { command.Run(host); command.Completion.TrySetResult(null); }
+                    catch (RetiredGenerationException ex) { command.Completion.TrySetException(ex); }
                     catch (Exception ex) { command.Completion.TrySetException(ex); throw; }
                     SubmitAvailable(host, sink);
                     continue;
@@ -194,7 +326,8 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
                     long ticks = stopwatch.ElapsedTicks;
                     ulong elapsed = (ulong)((ticks - lastTicks) * 1000000.0 / Stopwatch.Frequency);
                     lastTicks = ticks;
-                    host.Render(checked((uint)elapsed));
+                    if (_archivePath is null) host.Render(checked((uint)elapsed));
+                    else host.ServiceOutput(checked((uint)elapsed));
                     SubmitAvailable(host, sink);
                 }
             }
@@ -203,7 +336,15 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         {
             lock (_gate) _failure = ex;
             _ready.TrySetException(ex);
-            _callback?.Invoke(WwiseAudioCallbackType.Error);
+            try { _callback?.Invoke(WwiseAudioCallbackType.Error); } catch { }
+            (long Generation, IWwiseRobotAudioCallback Callback)[] callbacks = _sharedCallbacks.Values.ToArray();
+            _sharedCallbacks.Clear();
+            foreach (var entry in callbacks)
+            {
+                bool current;
+                lock (_gate) current = _generationOpen && _generation == entry.Generation;
+                if (current) { try { entry.Callback.Invoke(WwiseAudioCallbackType.Error); } catch { } }
+            }
         }
         finally
         {

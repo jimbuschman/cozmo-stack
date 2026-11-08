@@ -18,6 +18,14 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     private readonly List<float[]> _frames = new();
     private readonly uint _interface;
     private readonly NativeOpenSlBridge _openSl;
+    private readonly NativeWwiseArchiveIo? _archiveIo;
+    private uint _device, _deviceId;
+    private readonly uint? _fixedSeed;
+    private readonly bool _shared;
+    private readonly Dictionary<uint, (uint Playing, uint Event)> _sharedEvents = new();
+    private uint _sharedCallback;
+    private readonly Queue<(uint Cookie, uint Playing, uint Event)> _completedShared = new();
+    internal event Action<uint, uint, uint>? SharedEventEnded;
     private bool _posted;
     private bool _offered;
     private bool _configured;
@@ -28,7 +36,9 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     internal string? ShutdownDiagnostic { get; private set; }
     internal bool HijackEnded => _hijackEnded;
     internal bool HasPosted => _posted;
-    internal bool IsQuiescent => !_posted || (EndOfEvent is not null && _hijackEnded);
+    internal uint ClockMicroseconds => _clock;
+    internal bool IsQuiescent => _shared ? _sharedEvents.Count == 0 && _activeHijack == 0
+        : !_posted || (EndOfEvent is not null && _hijackEnded);
     internal event Action? HijackOpened;
     internal event Action<float[]>? HijackFrame;
     internal event Action? HijackClosed;
@@ -50,13 +60,21 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         _disposed = true;
         try
         {
-            if (_posted && (EndOfEvent is null || !_hijackEnded))
+            if (_archiveIo is not null ? (_sharedEvents.Count != 0 || _activeHijack != 0) : (_posted && (EndOfEvent is null || !_hijackEnded)))
             {
                 ShutdownDiagnostic = "MISSING VOICE-LIVE-SINK-1: native session released before EndOfEvent and Hijack Term; graceful teardown was not run";
                 return;
             }
             if (_offered && !_posted) Run(0x8DC229, new[] { _interface });
             Run(0x99DCEC); // 0x99DCEC's return register is not a sourced status contract
+            if (_archiveIo is not null)
+            {
+                uint manager = _m.R32(A(0x108D7A8));
+                Run(0x9606C4, new uint[] { 0 });
+                Ok(Run(0x9606E8, new[] { _deviceId }), "device destroy");
+                if (_archiveIo.OpenHandles != 0) throw new EmulationAbort("native device retained archive handles");
+                _m.Call(_m.R32(_m.R32(manager) + 8), new[] { manager }, count: 100_000_000);
+            }
             if (!_openSl.IsDestroyed || _workers.Count != 0 || _openSl.PendingCount != 0)
                 throw new EmulationAbort("native Wwise termination left device or worker ownership alive");
             TerminatedCleanly = true;
@@ -67,7 +85,8 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         }
         finally
         {
-            _m.Dispose();
+            try { _archiveIo?.Dispose(); }
+            finally { _m.Dispose(); }
             if (ShutdownDiagnostic is not null) System.Diagnostics.Trace.TraceError(ShutdownDiagnostic);
         }
     }
@@ -88,7 +107,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     {
         RequireOwner();
         ArgumentNullException.ThrowIfNull(samples);
-        if (_offered) throw new InvalidOperationException("native voice oracle is one-shot");
+        if (_offered) throw new InvalidOperationException("native voice data is already pending");
         if (sampleRate <= 0 || samples.Length == 0) throw new ArgumentOutOfRangeException(nameof(sampleRate));
         uint byteCount = checked((uint)samples.Length * 4);
         _offered = true;
@@ -137,13 +156,43 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     internal void ConfigureVoice(uint voiceSwitch, float pitch)
     {
         RequireOwner();
-        if (!_offered || _posted || _configured) throw new InvalidOperationException("voice must be configured once after offer and before post");
+        if (!_offered || (!_shared && (_posted || _configured))) throw new InvalidOperationException("voice must be configured after offer and before post");
         Ok(Run(0x99FE1C, new uint[] { 0x15D4FD9E, voiceSwitch, 7 }), "voice switch");
         Ok(Run(0x99FA24, new uint[] { 0x78DEBD05, F(pitch), 7, 0 }, new uint[] { 4, 0 }), "pitch");
         _configured = true;
     }
 
-    internal void ClearPending() { RequireOwner(); Run(0x8DC229, new[] { _interface }); }
+    // Separate per-event cookies belong to one persistent object 7 recipient.
+    internal uint PostShared(uint eventId, uint cookie)
+    {
+        RequireOwner();
+        if (!_shared || cookie == 0 || _sharedEvents.ContainsKey(cookie)) throw new InvalidOperationException("invalid shared event cookie");
+        if (_sharedCallback == 0)
+        {
+            _sharedCallback = _m.Stub("native_shared_voice_end");
+            _m.Libc["native_shared_voice_end"] = m =>
+            {
+                uint info = m.Reg(1), key = m.R32(info);
+                if (m.Reg(0) != 1 || !_sharedEvents.Remove(key, out var expected) || m.R32(info + 4) != 7 ||
+                    m.R32(info + 8) != expected.Playing || m.R32(info + 12) != expected.Event)
+                    throw new EmulationAbort("shared Wwise callback did not match its event owner");
+                _completedShared.Enqueue((key, expected.Playing, expected.Event));
+                return 0;
+            };
+        }
+        _sharedEvents.Add(cookie, (0, eventId));
+        uint playing = Run(0x9A6704, new[] { eventId, 7u, 1u, _sharedCallback }, new[] { cookie, 0u, 0u, 0u });
+        if (playing == 0) { _sharedEvents.Remove(cookie); return 0; }
+        _sharedEvents[cookie] = (playing, eventId);
+        return playing;
+    }
+
+    internal void ClearPending()
+    {
+        RequireOwner();
+        Run(0x8DC229, new[] { _interface });
+        if (_shared) { _offered = false; _configured = false; }
+    }
     internal void SetEventVolume(uint playing, float volume)
     {
         RequireOwner();
@@ -154,8 +203,25 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     public void Render(uint elapsedMicroseconds)
     {
         RequireOwner();
-        _clock = checked(_clock + elapsedMicroseconds);
+        _clock = _shared ? unchecked(_clock + elapsedMicroseconds) : checked(_clock + elapsedMicroseconds);
         Run(0x99F130, new uint[] { 1 });
+        DrainSharedCallbacks();
+    }
+
+    internal void AdvanceClock(uint elapsedMicroseconds)
+    {
+        RequireOwner();
+        _clock = _shared ? unchecked(_clock + elapsedMicroseconds) : checked(_clock + elapsedMicroseconds);
+    }
+
+    internal void ServiceOutput(uint elapsedMicroseconds)
+    {
+        RequireOwner();
+        AdvanceClock(elapsedMicroseconds);
+        PumpIo();
+        Run(0x99F130, new uint[] { 1 });
+        PumpIo();
+        DrainSharedCallbacks();
     }
 
     /// <summary>Consumes one output-device block at the host's explicit consumption boundary.</summary>
@@ -173,14 +239,37 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     public byte[]? Step(uint elapsedMicroseconds, bool consumeOutput)
     {
         RequireOwner();
-        _clock = checked(_clock + elapsedMicroseconds);
+        _clock = _shared ? unchecked(_clock + elapsedMicroseconds) : checked(_clock + elapsedMicroseconds);
         byte[]? consumed = consumeOutput ? _openSl.ConsumeOne() : null;
+        PumpIo();
         Run(0x99F130, new uint[] { 1 });
+        PumpIo();
+        DrainSharedCallbacks();
         return consumed;
+    }
+
+    private void DrainSharedCallbacks()
+    {
+        while (_completedShared.TryDequeue(out var callback))
+            SharedEventEnded?.Invoke(callback.Cookie, callback.Playing, callback.Event);
     }
 
     /// <summary>Queues native StopAll for the speech game object; the caller must continue pumping.</summary>
     public void Stop() { RequireOwner(); Run(0x9A6064, new uint[] { 7 }); }
+
+    private void PumpIo()
+    {
+        if (_archiveIo is null) return;
+        for (int i = 0; i < 64; i++)
+        {
+            if (_m.R8(_device + 0x3C) == 0 || _m.R32(_device + 0x20) >= _m.R32(_device + 4) ||
+                (_m.R32(_device + 0x14) == 0 && (_m.R32(_device + 0x18) == 0 || _m.R8(_device + 0x1C) != 0))) return;
+            int before = _archiveIo.Operations;
+            Run(0x966A7C, new[] { _device });
+            if (_archiveIo.Operations == before) return;
+        }
+        throw new EmulationAbort("native streaming device exceeded its bounded service budget");
+    }
 
     private static uint F(float value) => BitConverter.SingleToUInt32Bits(value);
     private static float V(uint value) => BitConverter.UInt32BitsToSingle(value);
@@ -192,8 +281,11 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         if (result != 1) throw new EmulationAbort($"native Wwise {operation} returned {result}");
     }
 
-    public NativeWwiseVoiceHost(string libraryDirectory, byte[] initBank, byte[] englishBank, uint platformBlockFrames)
+    public NativeWwiseVoiceHost(string libraryDirectory, byte[] initBank, byte[] englishBank, uint platformBlockFrames,
+        string? archivePath = null, uint? fixedSeed = null)
     {
+        _fixedSeed = fixedSeed;
+        _shared = archivePath is not null;
         _m = new ArmMachine(libraryDirectory, new[] { "libc++_shared.so", "libcozmoEngine.so" });
         try
         {
@@ -210,6 +302,19 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
                 throw new EmulationAbort("native Wwise default pool was not pool 0");
             Run(0x960600, new[] { stream });
             if (Run(0x9604FC, new[] { stream }) == 0) throw new EmulationAbort("native Wwise stream create failed");
+            if (archivePath is not null)
+            {
+                _archiveIo = new NativeWwiseArchiveIo(_m, archivePath);
+                uint deviceSettings = _m.Malloc(0x100);
+                Run(0x96060C, new[] { deviceSettings });
+                _m.W32(deviceSettings + 4, 0x180000); _m.W8(deviceSettings + 0x30, 1);
+                Run(0x9606C4, new[] { _archiveIo.Resolver });
+                _deviceId = Run(0x961168, new[] { deviceSettings, _archiveIo.Hook });
+                if (_deviceId == uint.MaxValue) throw new EmulationAbort("native Wwise stream device creation failed");
+                _archiveIo.Bind(checked((int)_deviceId));
+                _device = _workers.Values.Single(w => w.Entry == A(0x97CA90)).Owner;
+                _m.Call(_m.R32(_m.R32(_device) + 0x10), new[] { _device }, count: 1_000_000);
+            }
             Run(0x99DC68, new[] { settings });
             Run(0x99DCE8, new[] { platform });
             _m.Span(settings + 0x3D, 1)[0] = 0;
@@ -228,10 +333,11 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             Ok(Run(0x9A0354, new uint[] { 7, sends, 1 }), "aux send");
             Ok(Run(0x9A044C, new uint[] { 7, 0, 0 }), "dry level");
             _m.HookAddress(A(0x8DC041), Capture);
+            if (_shared) _m.ObserveAddress(A(0x8DD636), _ => _offered = false);
             _m.ObserveAddress(A(0x8DBD98), m => ObserveHijack(m, m.Reg(4), starting: true));
             _m.ObserveAddress(A(0x8DBDF8), m => ObserveHijack(m, m.Reg(0), starting: false));
         }
-        catch { _m.Dispose(); throw; }
+        catch { try { _archiveIo?.Dispose(); } finally { _m.Dispose(); } throw; }
     }
 
     private void ObserveHijack(ArmMachine machine, uint fx, bool starting)
@@ -240,8 +346,9 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         if (machine.R32(checked(parameters + 4)) != 1) return;
         if (starting)
         {
-            if (_hijackStarted || _activeHijack != 0) throw new EmulationAbort("unexpected repeated voice Hijack initialization");
+            if ((_archiveIo is null && _hijackStarted) || _activeHijack != 0) throw new EmulationAbort("unexpected repeated voice Hijack initialization");
             _hijackStarted = true;
+            _hijackEnded = false;
             _activeHijack = fx;
             HijackOpened?.Invoke();
         }
@@ -306,14 +413,16 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         };
         l["sem_destroy"] = m => { if (!_semaphores.Remove(m.Reg(0))) throw new EmulationAbort("unknown semaphore destroy"); return 0; };
         foreach (string n in new[] { "pthread_attr_init", "pthread_attr_destroy", "pthread_attr_setstacksize", "pthread_attr_setdetachstate", "pthread_setschedparam" }) l[n] = _ => 0;
+        if (_shared)
+            foreach (string n in new[] { "pthread_condattr_init", "pthread_condattr_setclock", "pthread_cond_init", "pthread_condattr_destroy", "pthread_cond_signal", "pthread_cond_broadcast", "pthread_cond_destroy" }) l[n] = _ => 0;
         l["pthread_create"] = m =>
         {
             uint entry = m.Reg(2), owner = m.Reg(3);
-            if (entry != A(0xA35324) && entry != A(0x9E9378)) throw new EmulationAbort($"unexpected native worker 0x{entry:X}");
+            if (entry != A(0xA35324) && entry != A(0x9E9378) && !(entry == A(0x97CA90) && _shared)) throw new EmulationAbort($"unexpected native worker 0x{entry:X}");
             uint token = ++_nextWorker; _workers.Add(token, (entry, owner)); m.W32(m.Reg(0), token); return 0;
         };
         l["clock"] = _ => _clock;
-        l["time"] = m => { uint t = unchecked((uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds()); if (m.Reg(0) != 0) m.W32(m.Reg(0), t); return t; };
+        l["time"] = m => { uint t = _fixedSeed ?? unchecked((uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds()); if (m.Reg(0) != 0) m.W32(m.Reg(0), t); return t; };
         l["pthread_join"] = m =>
         {
             uint token = m.Reg(0);
@@ -327,6 +436,12 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             {
                 if (m.R8(A(0x108DAE8)) != 1 || _semaphores.GetValueOrDefault(A(0x108DAEC)) <= 0)
                     throw new EmulationAbort("output worker join before its stop signal");
+            }
+            else if (worker.Entry == A(0x97CA90) && _shared)
+            {
+                if (m.R8(worker.Owner + 0x3C) != 0) throw new EmulationAbort("stream worker join before stop");
+                uint done = m.R32(m.R32(worker.Owner) + 0x0C);
+                if (m.NestedWorkerCall(done, worker.Owner, 10_000_000) != 1) throw new EmulationAbort("stream worker did not finish");
             }
             else throw new EmulationAbort("unknown Wwise worker entry");
             _workers.Remove(token);
