@@ -505,7 +505,7 @@ public abstract class ActionRunner : IActionRunner
             return false;
         }
         if (Tag != OriginalTag) ActionRunnerTagCounter.Global.Release(Tag);
-        if (requested == 0 || ActionRunnerTagCounter.Global.IsInUse(requested))
+        if (requested == 0 || !ActionRunnerTagCounter.Global.TryReserve(requested))
         {
             // fidelity: M8-015
             // sErrorF event "IActionRunner.SetTag.InvalidTag": "Tag [%d] is invalid", then the error-flag store and the
@@ -516,7 +516,6 @@ public abstract class ActionRunner : IActionRunner
             return false;
         }
         Tag = requested;
-        ActionRunnerTagCounter.Global.TryReserve(requested);
         return true;
     }
 
