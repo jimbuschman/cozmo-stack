@@ -16,6 +16,45 @@ public sealed class EmulationSafetyTests
     }
 
     [Fact]
+    public void CooperativeWorkerRestoresFullFloatingPointContext()
+    {
+        using var machine = Machine();
+        const int d8 = 22, fpscr = 6;
+        machine.Libc["worker"] = m =>
+        {
+            m.WriteReg(d8, 0xFEDCBA9876543210);
+            m.WriteReg(fpscr, 0);
+            return 37;
+        };
+        uint worker = machine.Stub("worker");
+        machine.Libc["outer"] = m =>
+        {
+            m.WriteReg(d8, 0x0123456789ABCDEF);
+            m.WriteReg(fpscr, 0x00400000);
+            Assert.Equal(37u, m.NestedWorkerCall(worker, 0, 100));
+            Assert.Equal(0x0123456789ABCDEFul, m.ReadReg(d8));
+            Assert.Equal(0x00400000ul, m.ReadReg(fpscr));
+            return 1;
+        };
+        Assert.Equal(1u, machine.Call(machine.Stub("outer")));
+    }
+
+    [Fact]
+    public void FailedCooperativeWorkerRestoresContextAndStillFaultsOuterCall()
+    {
+        using var machine = Machine();
+        uint loop = Code(machine, 0xEAFFFFFE);
+        machine.Libc["outer-worker"] = m =>
+        {
+            m.WriteReg(22, 0x0123456789ABCDEF);
+            try { m.NestedWorkerCall(loop, 0, 10); }
+            catch (EmulationAbort) { Assert.Equal(0x0123456789ABCDEFul, m.ReadReg(22)); }
+            return 1;
+        };
+        Assert.Throws<EmulationAbort>(() => machine.Call(machine.Stub("outer-worker")));
+    }
+
+    [Fact]
     public void InfiniteGuestLoopTimesOutAndPermanentlyFaultsMachine()
     {
         using var machine = Machine();

@@ -592,6 +592,54 @@ public sealed unsafe partial class ArmMachine : IDisposable
         return r.ToArray();
     }
 
+    /// <summary>Runs a cooperative guest worker while preserving the full suspended CPU context,
+    /// including VFP/NEON state. The nested execution shares the caller's deadline.</summary>
+    public uint NestedWorkerCall(uint fn, uint arg, ulong count)
+    {
+        EnsureRunnable();
+        if (_runDepth == 0 || _deadline == 0) throw new InvalidOperationException("worker call requires an active guest call");
+        if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
+        nint context = 0;
+        bool saved = false;
+        uint previousCall = _activeCall;
+        _runDepth++;
+        try
+        {
+            Check(uc_context_alloc(_uc, &context), "worker context alloc");
+            Check(uc_context_save(_uc, context), "worker context save");
+            saved = true;
+            uint sp = Sp;
+            SetReg(0, arg);
+            WriteReg(UC_ARM_REG_SP, (sp - 0x1000) & ~7u);
+            SetLr(RetAddr + 0x100);
+            _activeCall = fn;
+            int err = uc_emu_start(_uc, fn, RetAddr + 0x100, 0, (nuint)count);
+            TakePending();
+            EnsureRunnable();
+            CheckDeadline();
+            if (err != 0) throw new EmulationAbort($"unicorn worker: {ErrorText(err)} {_fault} at pc 0x{Pc:X}");
+            if (Pc != RetAddr + 0x100) throw new EmulationAbort($"worker call to 0x{fn:X} exceeded its instruction budget");
+            uint result = Reg(0);
+            return result;
+        }
+        catch (Exception e) { _executionFailure ??= e; throw; }
+        finally
+        {
+            Exception? restoreFailure = null;
+            if (saved)
+            {
+                int restore = uc_context_restore(_uc, context);
+                if (restore != 0 && _executionFailure is null)
+                    _executionFailure = restoreFailure = new EmulationAbort($"unicorn worker context restore: {ErrorText(restore)}");
+            }
+            if (context != 0) uc_context_free(context);
+            _activeCall = previousCall;
+            _runDepth--;
+            GC.KeepAlive(this);
+            if (restoreFailure is not null) throw restoreFailure;
+        }
+    }
+
     /// <summary>Calls emulated code from inside a stand-in (for example a qsort comparator): saves r0..r12, sp, lr, pc and
     /// cpsr, runs <paramref name="fn"/> on the stack 0x800 below the current sp, and restores them. Mirrors the Acapela
     /// probe's <c>nested_call</c>.</summary>

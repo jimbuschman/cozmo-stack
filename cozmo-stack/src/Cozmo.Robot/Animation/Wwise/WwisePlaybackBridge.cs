@@ -375,6 +375,9 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// <summary>B11: builds the source for a PBI; when unset the default factory over <see cref="MediaFor"/> is used. A null it returns is the native null-source path.</summary>
     public Func<WwisePlayingInstance, IWwiseVoiceSource?>? SourceFactory { get; set; }
 
+    /// <summary>The HIRC registry consulted by mode-2 source StartStream.</summary>
+    public WwiseRuntimeRegistry? SourceRegistry { get; set; }
+
     /// <summary>The media resolver for the default factory (M6-001/M6-024).</summary>
     public Func<uint, WwiseMedia?>? MediaFor { get; set; }
 
@@ -856,13 +859,13 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         if (pbi.SourceDescriptor is not WwiseSourceDescriptor descriptor)
             throw new WwiseMissingBehaviourException(
                 "M6-025 C27: the PBI's source descriptor is not a WwiseSourceDescriptor; supply SourceFactory");
-        if (MediaFor is null)
+        if (MediaFor is null && descriptor.PluginId != WavePortal.PluginId)
             throw new WwiseMissingBehaviourException(
                 "M6-025 C27: no MediaFor and no SourceFactory; a missing media resolver is not the native null-source path");
         int mode = WwiseSourceFactory.ModeForStream(descriptor.PluginId, descriptor.StreamType);
         var kind = WwiseSourceFactory.Select(mode, descriptor.PluginId);
         if (kind is null) return null;
-        return WwiseSourceFactory.Create(kind.Value, descriptor, MediaFor, Codebooks, StreamingFor?.Invoke(pbi));
+        return WwiseSourceFactory.Create(kind.Value, descriptor, MediaFor ?? (_ => null), Codebooks, StreamingFor?.Invoke(pbi), SourceRegistry, pbi);
     }
 
     /// <summary>
