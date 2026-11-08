@@ -43,6 +43,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     private readonly NativeSmartFaceReference _requested,_verified;
     private readonly List<RetainedSubscription> _observed=new();
     private ActionRunner? _child;
+    private ActionRunner? _preparingChild;
     private int _faceState;
     private float _best=float.MaxValue;
     private bool _locked;
@@ -64,12 +65,32 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     internal bool SayName=>_sayName;
     internal int FaceState=>_faceState;
     internal int VerifiedId=>_verified.Id;
+    internal ActionRunner? ChildForTest=>_child;
     internal int RequestedId=>_requested.Id;
     internal override ActionWatcher? Watcher
     {get=>base.Watcher;set{base.Watcher=value;if(_child is not null)_child.Watcher=value;}}
     private void SetChild(ActionRunner? next)
     {
-        _child?.Prep();var previous=_child;_child=next;previous?.WatcherEnding();
+        var previous=_child;
+        if(previous is not null && !ReferenceEquals(_preparingChild,previous))
+        {
+            _preparingChild=previous;
+            try{previous.Prep();}finally{_preparingChild=null;}
+        }
+        if(DestructionObserved)
+        {
+            if(next is not null && !next.RetireNeverAdmittedTree())
+                Behavior.SteppedBehavior.ReportMissing("M1-034/M13-014 stale LastFace child retirement unavailable");
+            return;
+        }
+        _child=next;
+        previous?.WatcherEnding();
+        if(DestructionObserved || !ReferenceEquals(_child,next))
+        {
+            if(next is not null && !next.DestructionObserved && !next.RetireNeverAdmittedTree())
+                Behavior.SteppedBehavior.ReportMissing("M1-034/M13-014 stale LastFace child retirement unavailable");
+            return;
+        }
         if(next is not null){next.SuppressTrackLocking=true;next.Watcher=Watcher;}
     }
     public override int Init()
@@ -148,12 +169,17 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             var face=M.Vision.Faces.GetFace(_verified.Id);if(face is null)return Final();
             if(face.HasName)
             {
-                Behavior.SteppedBehavior.ReportMissing("M13-014 LastFace SayText(name,intent3), animation trigger"+_sayTrigger+" recipient unavailable");
-                throw new NativeActionUnavailable("M14-006/M13-014 native LastFace SayText(name,intent3)0054C5AA: intent metadata/trait inputs and actual Robot268 speech provider unavailable");
+                string gap=_sayTrigger==0x23F
+                    ? "the no-trigger named SayText action and provider are not joined to this caller"
+                    : "fit is false; authored animation events and any speech event require a shared persistent Wwise/robot audio recipient";
+                Behavior.SteppedBehavior.ReportMissing("M14-006/M13-014 LastFace named SayText: "+gap);
+                throw new NativeActionUnavailable("M14-006/M13-014 native LastFace SayText(name,intent3) 0x0054C5AA: "+gap);
             }
             if(_noNameTrigger==0x23F)return Final();
             SetChild(new TriggerLiftSafeAnimationAction(M.Robot,new((AnimationTrigger)_noNameTrigger,1,true,0,60f,false)));
+            if(DestructionObserved)return EngineActionResult.Cancelled;
             _faceState=3;
+            return EngineActionResult.Running; // 0x0054C706 -> 0x0054C5D2 -> 0x0054C6B4; update next tick.
         }
         uint terminal=_child?.Update()??0;
         if(terminal!=0)return terminal;

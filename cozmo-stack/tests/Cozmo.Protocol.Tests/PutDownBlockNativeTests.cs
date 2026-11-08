@@ -235,6 +235,104 @@ public sealed class PutDownBlockNativeTests
     }
 
     [Fact]
+    public void SuccessfulUnnamedAnimationRegistersNeedsBeforeTurningFace()
+    {
+        using var f=new Fixture();f.InstallNvCalibration();f.Rig.Robot.Animations.LoadFrom(Resources());
+        FaceEntry face=null!;for(uint time=1;time<=4;time++)face=f.Face(1,time,new Vec3(100,0,60));
+        var action=new NativeLastFaceRunner(f.M,Radians.Pi,true,0x23F,2);
+        var observed=new List<bool>();
+        void Needs(string line){if(line.StartsWith("needs.action_completed SayName:"))observed.Add(face.TurnedTowards);}
+        f.Rig.Engine.Needs.Log+=Needs;
+        try
+        {
+            f.Robot.ActionList.QueueAction(QueueActionPosition.Now,action);f.Rig.Tick();
+            f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(1,4));
+            for(int i=0;i<30&&action.FaceState!=3&&!action.DestructionObserved;i++)f.Motors();
+            Assert.Equal(3,action.FaceState);Assert.False(face.TurnedTowards);
+            var tags=new HashSet<byte>();
+            for(int i=0;i<80&&!action.DestructionObserved;i++)
+            {
+                f.Motors();byte tag=f.Rig.Robot.Animations.CurrentTag;
+                if(tag!=0&&tags.Add(tag)){f.Rig.Data(new AnimationStarted{AnimId=tag});f.Rig.Data(new AnimationEnded{AnimId=tag});f.Rig.Tick();}
+            }
+            Assert.True(action.DestructionObserved);Assert.Equal(0u,action.State);
+            Assert.Equal(new[]{false},observed);Assert.True(face.TurnedTowards);Assert.NotEmpty(tags);
+        }
+        finally{f.Robot.ActionList.Clear();f.Rig.Engine.Needs.Log-=Needs;}
+    }
+
+    [Fact]
+    public void CancellingDuringPreviousChildPrepDoesNotInstallOrStartTheAnimation()
+    {
+        using var f=new Fixture();
+        FaceEntry face=null!;for(uint time=1;time<=4;time++)face=f.Face(1,time,new Vec3(100,0,60));
+        var action=new NativeLastFaceRunner(f.M,Radians.Pi,true,0x23F,2);
+        bool cancelled=false;var reports=new List<RobotCompletedAction>();var logs=new List<string>();ActionRunner? hooked=null;
+        using var completed=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r)reports.Add(r);});
+        try
+        {
+            f.Robot.ActionList.QueueAction(QueueActionPosition.Now,action);f.Rig.Tick();
+            f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(1,4));
+            for(int i=0;i<30&&!action.DestructionObserved;i++)
+            {
+                if(action.FaceState==2 && action.ChildForTest is { } child && !ReferenceEquals(hooked,child))
+                {
+                    hooked=child;
+                    child.SourceLog=(level,channel,key,text)=>
+                    {
+                        logs.Add(key+":"+text);
+                        if(cancelled || key!="IActionRunner.PrepForCompletion.AlreadyPrepped")return;
+                        cancelled=true;f.Robot.ActionList.Cancel(action.Tag);
+                    };
+                }
+                f.Motors();
+            }
+            Assert.True(cancelled,string.Join(" | ",logs));Assert.True(action.DestructionObserved);
+            Assert.NotEqual(3,action.FaceState);Assert.False(face.TurnedTowards);
+            Assert.Equal(0x02000000u,Assert.Single(reports.Where(r=>r.Tag==action.Tag)).Result);
+            Assert.DoesNotContain(logs,l=>l.StartsWith("TriggerAnimationAction.NoAnimationForTrigger:"));
+        }
+        finally{f.Robot.ActionList.Clear();}
+    }
+
+    [Fact]
+    public void UnnamedFaceInstallsAnimationChildOneTickBeforeItsSourceFailure()
+    {
+        using var f=new Fixture();
+        FaceEntry face=null!;
+        for(uint time=1;time<=4;time++)face=f.Face(1,time,new Vec3(100,0,60));
+        var action=new NativeLastFaceRunner(f.M,Radians.Pi,true,0x23F,2);
+        var needs=new List<string>();var logs=new List<string>();var reports=new List<RobotCompletedAction>();
+        f.Rig.Engine.Needs.Log+=needs.Add;
+        void Observe(EngineLogEntry entry)=>logs.Add(entry.Name);
+        f.Rig.Engine.LogEntry+=Observe;
+        using var completed=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r)reports.Add(r);});
+        f.Robot.ActionList.QueueAction(QueueActionPosition.Now,action);
+        try
+        {
+            f.Rig.Tick();
+            f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(1,1));
+            Assert.Equal(1,action.VerifiedId);
+            for(int i=0;i<30 && action.FaceState!=3 && !action.DestructionObserved;i++)f.Motors();
+            Assert.Equal(3,action.FaceState);
+            Assert.Equal(EngineActionResult.Running,action.State);
+            Assert.DoesNotContain(logs,key=>key=="TriggerAnimationAction.NoAnimationForTrigger");
+            Assert.False(face.TurnedTowards);
+            Assert.DoesNotContain(needs,line=>line.StartsWith("needs.action_completed SayName:"));
+            f.Motors();
+            Assert.True(action.DestructionObserved);
+            Assert.Equal(0x0300000Cu,Assert.Single(reports.Where(r=>r.Tag==action.Tag)).Result);
+            Assert.Contains(logs,key=>key=="TriggerAnimationAction.NoAnimationForTrigger");
+            Assert.False(face.TurnedTowards);
+            Assert.DoesNotContain(needs,line=>line.StartsWith("needs.action_completed SayName:"));
+        }
+        finally
+        {
+            f.Robot.ActionList.Clear();f.Rig.Engine.Needs.Log-=needs.Add;f.Rig.Engine.LogEntry-=Observe;
+        }
+    }
+
+    [Fact]
     public void ReinitAppends46HandlesSoEarliestRecipientStillPrecedesInterveningObserver()
     {
         // Direct native Init/ReInit lifecycle unit; real retained LOCAL46 hub and real face entries.
