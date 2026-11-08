@@ -17,4 +17,4 @@
 
 The carrying-low placement action remains open. The existing legacy callback does not expose an exact original-owner native runner/cancellation contract, and the native placement runner has separate path, reaction-lock and completion payload ownership. No permanent exclusion, hardware run, manifest status or approval change.
 
-Reader requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved. Batch full gate pending.
+Reader requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved. Batch full gate passed at 342c6ff1 with 7851/7851 tests and zero skips. READY FOR CLAUDE.
