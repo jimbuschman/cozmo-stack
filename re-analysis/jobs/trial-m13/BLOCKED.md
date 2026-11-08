@@ -1,1 +1,7 @@
-# No outstanding operator decision
+# Next capability jobs for operator ordering
+
+- **MEET-COZMO-INTERACT-1.** Continue the winning configured Meet Interact behavior from Init 0x005C2154 and the verified named/unnamed turn at 0x005C2258–0x005C22AC. Trace the retained glance, map-gated signed drive with parallel tracking, tracking duration and clamp, and emotion/objective/needs tail at 0x005C24B4, 0x005C2518, 0x005C2704, 0x005C2930 and 0x005C2388. Use the actual activity winner, camera observation and fake robot. Check both map outcomes, the authored speech route, interruption and the last-image stamp. This would close the explicit missing Init in Meet admission.
+- **MEET-COZMO-NAMED-ENROLLMENT-1.** Connect the shipped 0x87 request and 0x88 scan cancel to the actual Meet chooser and retained enrollment state machine. Start at 0x005FF744–0x005FF890 and 0x005FF960–0x005FFA8A, then follow the scan, authored speech and music, separate save callbacks and final 0x56 report at 0x005FD494–0x005FD5AA and 0x005FE2F4–0x005FE528. Build and test the bounded named path through positive ID, durable save, completion and cancellation. See HANDOFF-FACE-ENROLLMENT-CHOREOGRAPHY-1.md for the already checked recognizer transition.
+- **AI-BODY-TURN-CONTROL-1.** Add a bounded public native turn request to complement straight drive. Start with the explicit action factory, TurnInPlaceAction Init at 0x00545FA0, the movement wire and ACK/timeout, and completion union 0x005469A8. Check the actual signed or absolute argument semantics before choosing the host surface. Reuse the native queue and exact owner retirement. Compare matching and stale firmware completions with a fake robot.
+
+Order and scope are for operator decision.

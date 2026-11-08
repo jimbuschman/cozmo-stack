@@ -19,4 +19,4 @@
 - The earlier internal handoff's bionic transcendental and generic animation-selection/profile boundaries remain. Physical driving, stop distance and animation timing were not tested on hardware. No compatibility policy, fidelity status or approval changed.
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
-Independent manager affected rerun passed 160/160 with zero skips. Batch full gate pending.
+Independent manager affected rerun passed 160/160 with zero skips. Batch full gate passed 7918/7918 with zero failures or skips on f36ae996.

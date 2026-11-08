@@ -21,6 +21,6 @@
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
 
-Final affected tests passed 239/239. Independent manager affected run passed 223/223 with zero skips. Independent source review found no remaining blocker within this scope. Batch full gate pending.
+Final affected tests passed 239/239. Independent manager affected run passed 223/223 with zero skips. Independent source review found no remaining blocker within this scope. Batch full gate passed 7918/7918 with zero failures or skips on f36ae996.
 
 The first full gate identified a stale unbuilt-Meet assertion in NativeChooserDispatchTests.cs. The correction checks that Meet selects public activity 6 and stamps the parent clock. Feeding retains its unbuilt activity and clock. Both cases retain the original spark ID, soft-field, latch and Freeplay-time checks.

@@ -20,4 +20,4 @@
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
 
-Affected tests passed 43/43. Independent manager affected run passed 158/158 with zero skips. Independent source review found no remaining blocker. Batch full gate pending.
+Affected tests passed 43/43. Independent manager affected run passed 158/158 with zero skips. Independent source review found no remaining blocker. Batch full gate passed 7918/7918 with zero failures or skips on f36ae996.
