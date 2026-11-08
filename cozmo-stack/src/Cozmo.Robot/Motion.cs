@@ -62,6 +62,9 @@ public sealed record AiHeadActionResult(bool Admitted, uint? EngineResult, strin
 /// <summary>Result of an outside-AI lift request; OwnerRetired is captured when its original action ends.</summary>
 public sealed record AiLiftActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
 
+/// <summary>Result of an outside-AI straight-drive request; OwnerRetired is captured when its original action ends.</summary>
+public sealed record AiDriveActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
+
 /// <summary>An advisory view of one robot owner and its last published engine state.</summary>
 public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
 
@@ -117,6 +120,46 @@ public sealed class CozmoMotion
         return new AiLiftActionResult(result.Admitted, result.EngineResult, result.Detail, result.OwnerRetired);
     }
 
+    /// <summary>
+    /// Queues a straight drive after existing actions. Cancellation addresses this runner, but its native
+    /// destructor aborts the robot's active shared path and driving animation, even if this drive was pending.
+    /// </summary>
+    public async Task<AiDriveActionResult> QueueAiDriveStraightAsync(float distanceMm, float speedMmps,
+        bool shouldPlayAnimation = true, CancellationToken cancellationToken = default)
+    {
+        var engine=_robot.Engine;
+        var owner=engine.Robot;
+        if(!float.IsFinite(distanceMm)||!float.IsFinite(speedMmps))
+            return new(false,null,"Drive distance and speed must be finite");
+        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        Task<AiHeadActionResult> task;
+        using(engine.EnterSynchronousOwner())
+        {
+            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for an action");
+            var runtime=owner.NativeBehaviorRuntime;
+            if(runtime is null || runtime.IsRetired || runtime.Manipulation is not { } manipulation)
+                return new(false,null,"MISSING: original robot drive and manipulation owners unavailable");
+            uint tag=AllocateAiTag();
+            if(tag==0)return new(false,null,"No external action tag is available");
+            var action=new Manipulation.DriveStraightAction(manipulation,owner,distanceMm,speedMmps,shouldPlayAnimation);
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native straight-drive action ended",true,
+                ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime));
+        }
+        var result=await task.ConfigureAwait(false);
+        return new(result.Admitted,result.EngineResult,result.Detail,result.OwnerRetired);
+    }
+
+    private uint AllocateAiTag()
+    {
+        for(int i=0;i<1_000_000;i++)
+        {
+            _nextAiTag=_nextAiTag==1_000_000?1:_nextAiTag+1;
+            if(!ActionRunnerTagCounter.Global.IsInUse(_nextAiTag))return _nextAiTag;
+        }
+        return 0;
+    }
+
     private Task<AiHeadActionResult> QueueAiMoveAsync(float value, bool head, CancellationToken cancellationToken)
     {
         var engine = _robot.Engine;
@@ -143,20 +186,21 @@ public sealed class CozmoMotion
             }
         }
 
-        uint tag = 0;
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            _nextAiTag = _nextAiTag == 1_000_000 ? 1 : _nextAiTag + 1;
-            if (!ActionRunnerTagCounter.Global.IsInUse(_nextAiTag)) { tag = _nextAiTag; break; }
-        }
+        uint tag = AllocateAiTag();
         if (tag == 0) return Task.FromResult(new AiHeadActionResult(false, null, "No external action tag is available"));
         ActionRunner action = placement is not null ? new Manipulation.NativePlaceGroundRunner(placement, owner) : head
             ? BuildHeadAction(value, DefaultHeadSpeedRadPerSec, DefaultHeadAccelRadPerSec2, 0, null)
             : BuildLiftAction(value, DefaultLiftSpeedRadPerSec, DefaultLiftAccelRadPerSec2, 0, null, false);
-        if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner))
+        return AdmitAiAction(action,owner,tag,cancellationToken,placement is not null ? "Native placement action ended" : head ? "Native head action ended" : "Native lift action ended",false);
+    }
+
+    private Task<AiHeadActionResult> AdmitAiAction(ActionRunner action,EngineRobot owner,uint tag,CancellationToken cancellationToken,string detail,bool retireFailedTag,Func<bool>? admissionValid=null)
+    {
+        var engine=_robot.Engine;
+        if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner) || admissionValid is not null && !admissionValid())
         {
             action.RetireNeverAdmittedTree();
-            return Task.FromResult(new AiHeadActionResult(false, null, "Robot changed before admission", true));
+            return Task.FromResult(new AiHeadActionResult(false, null, "Robot or drive readiness changed before admission", owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot,owner)));
         }
         if (cancellationToken.IsCancellationRequested)
         {
@@ -165,13 +209,19 @@ public sealed class CozmoMotion
         }
         var completion = new TaskCompletionSource<(uint Result, bool OwnerRetired)>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (action is MoveAction move) { move.AiNativeEnded = completion; move.AiOwner = owner; }
-        else ((Manipulation.NativePlaceGroundRunner)action).AiNativeEnded = completion;
+        else if(action is Manipulation.NativePlaceGroundRunner ground)ground.AiNativeEnded=completion;
+        else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)
         {
-            action.Prep();
-            action.WatcherEnding();
+            if(retireFailedTag){action.Reset(false);action.RetireNeverAdmittedTree();}
+            else {action.Prep();action.WatcherEnding();}
             return Task.FromResult(new AiHeadActionResult(false, null, "Action tag was unavailable"));
+        }
+        if(owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot,owner) || cancellationToken.IsCancellationRequested || admissionValid is not null && !admissionValid())
+        {
+            action.RetireNeverAdmittedTree();
+            return Task.FromResult(new AiHeadActionResult(false,null,"Robot changed or request cancelled before admission",owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot,owner)));
         }
         bool disabled = owner.ActionList.ExternalActionsDisabled;
         if (action is MoveAction registered) lock (_gate) _actions.Add(registered);
@@ -184,9 +234,9 @@ public sealed class CozmoMotion
                 action.Watcher = null; action.RetireNeverAdmittedTree();
                 if (action is MoveAction detached) lock (_gate) _actions.Remove(detached);
             }
-            return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed"));
+            return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed",owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot,owner)));
         }
-        return AwaitAiMove(action, completion, owner, cancellationToken, placement is not null ? "Native placement action ended" : head ? "Native head action ended" : "Native lift action ended");
+        return AwaitAiMove(action, completion, owner, cancellationToken, detail);
     }
 
     private async Task<AiHeadActionResult> AwaitAiMove(ActionRunner action, TaskCompletionSource<(uint Result, bool OwnerRetired)> completion, EngineRobot owner, CancellationToken token, string detail)
