@@ -79,4 +79,19 @@ The full engine-to-game face payload remains open. M14-010 and M14-011 remain
 IMPLEMENTATION_GAP in the approved inventory. Only anonymous detection and the
 checked consumers are proposed for Claude review.
 
-Batch full gate pending.
+Batch full gate on 4487b1fa failed (7801/7803, zero skipped). The old stock-detector availability fixture was corrected and its follow-up passed 61/61. The identical SolvePnP oracle mismatch also reproduces on origin/main a9dbec14. The batch remains below READY FOR CLAUDE.
+## Gate correction and baseline evidence
+
+The first gate failed FaceTests.TheStockFaceDetectorIsAnExplicitUnavailableBoundary
+because the stock detector is now available with the local shipped libraries.
+FaceTests.cs keeps the blank-frame, world, pet and behavior-readiness checks.
+The unavailable-detector fallback is still exercised by NativeMotionIntegrationTests.
+The focused correction run passed 61/61 including Acapela and OKAO oracles.
+
+The other failure was NativeSolvePnPOracleTests.EveryOracleCaseMatchesTheShippedSolverBitForBit.
+Both the batch and a clean archive of a9dbec14 on the same .NET 9.0.3 host
+differ in wild_0 (133 ULP) and wild_15 (2,055,015 ULP). The solver and fixture
+are identical to main. The prior solvepnp check records host math imports
+but does not pin the generating host runtime or math library. Immediate
+cause of the discrepancy remains unverified. The batch gate was run once
+and the focused fixture correction was rerun afterward.

@@ -43,6 +43,6 @@ Actual backends are unobserved. One independent review return corrected nested f
   input failure from a mismatch and cover suppression, width, and short character reads.
 - The unchanged Acapela and OKAO oracles exercised the local shipped libraries and fixtures.
 
-Batch full gate pending.
+Batch full gate on 4487b1fa failed (7801/7803, zero skipped). The old stock-detector availability fixture was corrected and its follow-up passed 61/61. The identical SolvePnP oracle mismatch also reproduces on origin/main a9dbec14. The batch remains below READY FOR CLAUDE.
 
 Focused 21/21 on the reviewed changes. Final combined run on faecca51 passed 28/28, including both bit-exact oracles. Synthesis took about 11 seconds with the watchdog on this machine.

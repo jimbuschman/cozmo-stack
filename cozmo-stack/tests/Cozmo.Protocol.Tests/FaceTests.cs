@@ -7,7 +7,7 @@ using Xunit;
 namespace Cozmo.Protocol.Tests;
 
 /// <summary>
-/// M14: the face pipeline around the OKAO boundary. The stock detector reports itself unavailable; a fake
+/// M14: the face pipeline around the OKAO boundary. The stock detector uses the shipped library when available; a fake
 /// detector places faces in the world so the stack's own geometry (62 mm inter-pupil distance), the face world's
 /// rules, the turn / track actions and the face behaviours can be exercised offline.
 /// </summary>
@@ -140,15 +140,15 @@ public class FaceTests
     // ------------------------------------------------------------------ the boundary
 
     [Fact]
-    public void TheStockFaceDetectorIsAnExplicitUnavailableBoundary()
+    public void TheStockFaceDetectorReportsNoFacesInABlankFrame()
     {
         using var rig = new Rig();
         Assert.IsType<OkaoFaceDetector>(rig.Vision.FaceDetector);
-        Assert.False(rig.Vision.FaceDetector.IsAvailable);
         Assert.Contains("OKAO", rig.Vision.FaceDetector.Description);
-        Assert.Empty(rig.Vision.FaceDetector.Detect(new GrayImage(320, 240), 1));
+        if (rig.Vision.FaceDetector.IsAvailable)
+            Assert.Empty(rig.Vision.FaceDetector.Detect(new GrayImage(320, 240), 1));
         rig.Frame();
-        Assert.Empty(rig.Vision.Faces.Faces);                                        // nothing runs without a detector
+        Assert.Empty(rig.Vision.Faces.Faces);
         Assert.False(rig.Vision.PetDetector.IsAvailable);
         var ctx = Ctx(rig);
         Assert.False(Runnable(new AcknowledgeFaceBehavior(rig.Vision), ctx));
