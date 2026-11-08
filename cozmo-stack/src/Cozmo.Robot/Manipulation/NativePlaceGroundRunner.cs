@@ -79,6 +79,7 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     public override uint CheckIfDone()
     {
         if (!Current) return EngineActionResult.Cancelled;
+        if (_owner.StoredState is null) throw new NativeActionUnavailable("Ground actual raw robot state unavailable");
         if(_docking.Active!=0){_latched=true;return EngineActionResult.Running;}
         if(!_latched||M.Robot.Motion.BodyMoving)return EngineActionResult.Running;
         uint result=EngineActionResult.Running;

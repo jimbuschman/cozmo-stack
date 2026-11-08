@@ -21,3 +21,4 @@
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
 Final affected suite passed 739/739 with no skips. Independent source review passed after the owner and nested verification corrections. Batch full gate pending.
+The first full gate exposed a lost host availability guard in the existing Bring Beacon Ground leaf. CheckIfDone retains the original owner's missing StoredState check, while Docking+4 still owns the busy decision. The unchanged regression and affected placement/Bring suites passed 68/68.
