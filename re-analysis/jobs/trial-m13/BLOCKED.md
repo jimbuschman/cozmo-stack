@@ -1,1 +1,7 @@
-# No outstanding operator decision
+# Next capability jobs for operator ordering
+
+- **VOICE-NAMED-REACTION-1.** Connect one verified face-name reaction to the native speech and animation owners. Start with the named branch of TurnTowardsLastFace at 0x0054C5AA and its completion at 0x0054C606–0x0054C61E. Check which caller supplies the animation trigger and whether that clip posts additional Wwise events before enabling it. Test the existing face-action route with local speech resources and fake firmware. The generic shared Wwise mixer remains a separate question if this caller needs it.
+- **FACE-ENROLLMENT-CHOREOGRAPHY-1.** Trace one complete named enrollment from the app's 0x87 request and chooser (0x005FF744–0x005FF890). Join the checked TrackFace profile and scan compound (0x005FEC40–0x005FED2C), recognizer completion, name assignment (0x005FDA7E–0x005FDA8A), NV save callback (0x005FD494–0x005FD51E) and enrollment completion report (0x005FE520–0x005FE528). Check the app inputs and the dependency on authored name speech before exposing a host request.
+- **AI-BODY-DRIVE-CONTROL-1.** Trace one outside-AI straight drive through the native external factory and the original owner's ActionList and PathComponent. Start with DriveStraightAction construction at 0x00547186 and line creation at 0x0054761E–0x005476AE. Check signed distance/speed, driving-animation handoff, path identity, native completion and cancellation before exposing the request. Use the fake robot to exercise the real path owner.
+
+Order and scope are for operator decision.

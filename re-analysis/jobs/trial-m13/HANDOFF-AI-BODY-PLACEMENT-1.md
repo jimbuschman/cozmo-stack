@@ -20,5 +20,5 @@
 - The isolated busy-clear while body-moving branch, an unavailable verify input that takes deferred host cleanup, and reentry specifically inside the direct-drive unlock diagnostic are source-reviewed without dedicated regressions. The four undefined completion words remain withheld under M12-052/M1-034. No fidelity status or approval changed.
 
 Reader used requested gpt-6.1-sol medium. Builder and reviewer used configured defaults. Actual backends unobserved.
-Final affected suite passed 739/739 with no skips. Independent source review passed after the owner and nested verification corrections. Batch full gate pending.
+Final affected suite passed 739/739 with no skips. Independent source review passed after the owner and nested verification corrections. Batch full gate passed at 80c933d5 with 7869/7869 and zero skips. READY FOR CLAUDE.
 The first full gate exposed a lost host availability guard in the existing Bring Beacon Ground leaf. CheckIfDone retains the original owner's missing StoredState check, while Docking+4 still owns the busy decision. The unchanged regression and affected placement/Bring suites passed 68/68.
