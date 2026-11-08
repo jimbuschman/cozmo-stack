@@ -113,12 +113,11 @@
       "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true,
       "review": {
-        "state": "ACCEPTED",
+        "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M4-control.md",
-        "approved": "2026-10-19",
+        "approved": "2026-11-07",
         "snapshot": "re-analysis/inventory/M4-control.approved.json",
         "accepted": "2026-10-19",
-        "accepted_commit": "e95d4acd",
         "acceptance_bundle": "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
       }
     },
@@ -14033,6 +14032,25 @@
       "hardware_required": false,
       "live_path": true,
       "test": "; M3M4RelativeBuilderTests.NativeMasksMoveAllSevenWords; M3M4RelativeBuilderTests.CornerPreservesStrictEpsilonAndPiWrap; M3M4RelativeBuilderTests.FacePreservesEpsilonAtAllFourBoundaries; M3M4RelativeBuilderTests.TopMarkerStrictTieAndRootPoseFeedTheNativeChoice; M3M4RelativeBuilderTests.RelativeUnitUsesLocatedStateAndItsOwnActiveSlot; M3M4RelativeBuilderTests.NullLocatedAndNonCubeProduceNoLightSend; M3M4RelativeBuilderTests.RelativeSendUsesLocatedSlotWithoutAConnectedCopy; M3M4RelativeBuilderTests.InvalidRelativeModeLogsSetsErrorAndStillSends; M3M4RelativeBuilderTests.PublicRelativePlayNamesTheUnreadNormalAndSendsNoGuessedLights; M3M4ReviewFixTests.RelativeUpdateNamesTheMissingStopInsteadOfAFalseWireFailure; M4MarkerNormalTests.RectangularMarkerNormalHasAreaAndNativeSign; M4MarkerNormalTests.NontrivialTransformMatchesEveryCornerBitAndNormal; M4MarkerNormalTests.LargeTranslationCollapsesCornersBeforeDifferences; M4MarkerNormalTests.ZeroDimensionsReturnTheArithmeticNormal; M4MarkerNormalTests.CollapsedCornerNormalsKeepFirstMarkerInsteadOfRotatedAxisWinner; M3M4RelativeBuilderTests.PublicRelativePlaySendsRotatedLedPayloadUsingNativeNormal; M3M4ReviewFixTests.RelativeUpdateSendsAfterNativeNormalInsteadOfReportingMissing"
+    },
+    {
+      "id": "M4-053",
+      "subsystem": "M4-control",
+      "title": "Re-request a pooled cube after its disconnected slot is reset (operator-approved host input; ReconnectPooledCubes)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity C#.",
+      "evidence": [
+        "re-analysis/research/20261104-cube-reconnect-claude-check.md: CheckDisconnectedObjects clears an expired slot in place (0x005149F0..0x00514A00), HandleConnectedToObject ignores a mismatching report (0x00517AA8), UpdateConnecting never re-requests the same cube (0x0061AB32); only the app's cube screen brought a dropped cube back.",
+        "re-analysis/jobs/trial-m13/HANDOFF-CUBE-RECONNECT-POLICY-1.md: the app's requests (BlockPoolTracker.cs 141-148, 169-190; BlockFilter::HandleGameEvents 0x00619EBA, 0x00619F5E, 0x00619FB4) and the engine routine the policy uses, Robot::ConnectToObjects 0x00517150.",
+        "re-analysis/research/20261107-codex-batch-claude-check.md: the Claude check of this policy."
+      ],
+      "effect": "Whether a cube that dropped for more than 2 s is asked for again without the app.",
+      "provenance": "CUBE-RECONNECT-POLICY-1 (Codex, 2026-11-07), registered by the manager.",
+      "unresolved": "COMPATIBILITY_POLICY: operator decision 2026-11-04 (REVIEW.md CUBE-RECONNECT-POLICY-1), route chosen 2026-11-07: after CheckDisconnectedObjects resets a slot whose runtime-pool entry is that factory id, the stack calls ConnectToObjects with that id for that slot (other slots unchanged), standing in for the app's cube screen. Everything after it is the engine's: the request waits for a fresh advertisement (0x00514B00) and the matching reply (0x005179C0). On by default; CozmoEngineOptions.ReconnectPooledCubes=false gives the engine-only behaviour. Hardware: a radio that reconnects without advertising again (robot run 4) is not recovered by this route; unverified on a robot.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "EngineAppLayerTests"
     },
     {
       "id": "M11-097",

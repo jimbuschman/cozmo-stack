@@ -850,3 +850,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | Evidence added: KnownMarker::ComputeNormal and Get3dCorners, the marker normal behind relative cube lights | M4-052 |
+
+
+## CUBE-RECONNECT-POLICY-1 (manager, 2026-11-07; research/20261107-codex-batch-claude-check.md)
+
+| Change | Records |
+| --- | --- |
+| New COMPATIBILITY_POLICY (operator decision 2026-11-04): re-request a pooled cube through ConnectToObjects 0x00517150 after CheckDisconnectedObjects resets its slot; on by default, ReconnectPooledCubes=false for engine-only | M4-053 (new) |

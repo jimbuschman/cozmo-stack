@@ -489,6 +489,7 @@ public sealed class CubeConnections
                 Queue(EngineLogLevel.Info, "BlockPool", "Robot.CheckDisconnectedObjects", $"Resetting slot {i} with factory ID 0x{_slots[i].FactoryId:x}, connection state {(int)_slots[i].State}. Object disconnected at {F6((double)_slots[i].DisconnectedTime)}, current time is {F6(now)} with max delay {F6(DisconnectResetSeconds)} seconds");
                 uint expiredId = _slots[i].FactoryId;
                 _slots[i] = Info.Reset();
+                // fidelity: M4-053
                 // Operator-approved host input. The engine's ordinary connection request still
                 // waits for an advertisement and handles the robot's reply.
                 if (_reconnectPooledCubes && expiredId != 0 && _runtimePool[i].FactoryId == expiredId

@@ -3,7 +3,7 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **760 records** over 16 subsystems.
+Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
@@ -11,7 +11,7 @@ Manifest of **760 records** over 16 subsystems.
 | EQUIVALENT_IMPLEMENTATION | 11 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 70 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 71 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -27,7 +27,7 @@ remains after both, and they do not go away by working harder on this repository
 | M1-transport — UDP transport and reliability | 62 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 24 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 64 | 0 | 0 | 0 | 4 | yes | yes |
-| M4-control — Motion, sensors, lights and cubes | 52 | 0 | 0 | 0 | 3 | yes | yes |
+| M4-control — Motion, sensors, lights and cubes | 53 | 0 | 0 | 0 | 3 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 0 | 0 | 1 | yes | yes |
 | M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 37 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 31 | 1 | 22 | 0 | 0 | no | no |
@@ -55,7 +55,7 @@ status.
 | M1-transport | ACCEPTED | 43 | 0 | 0 | 3 |
 | M2-protocol | ACCEPTED | 22 | 0 | 0 | 0 |
 | M3-device | ACCEPTED | 39 | 0 | 0 | 4 |
-| M4-control | ACCEPTED | 42 | 0 | 0 | 3 |
+| M4-control | INVENTORY_APPROVED | 42 | 0 | 0 | 3 |
 | M5-animation | ACCEPTED | 56 | 0 | 0 | 1 |
 | M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 1 |
@@ -4146,6 +4146,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M5-061 | M5-animation | COMPATIBILITY_POLICY | Game messages the stack never sends: TransferFile 0xF7, GetJsonDasLogs 0xE0, ReplayLastAnimation 0xAD, RequestDeviceData 0xDB, debug-console 0xDC..0xDF | libcozmoEngine.so 3.4.0-1204. |
 | M3-064 | M3-device | COMPATIBILITY_POLICY | The DataPlatform external path (DataPlatformExternalPath, scope 4; app input: temporaryCachePath) | libcozmoEngine.so 3.4.0-1204; Unity C#. |
 | M4-052 | M4-control | EQUIVALENT_IMPLEMENTATION | Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY | libcozmoEngine.so 3.4.0-1204. |
+| M4-053 | M4-control | COMPATIBILITY_POLICY | Re-request a pooled cube after its disconnected slot is reset (operator-approved host input; ReconnectPooledCubes) | libcozmoEngine.so 3.4.0-1204; Unity C#. |
 | M15-077 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset | libcozmoEngine.so 3.4.0-1204 |
 | M15-096 | M15-freeplay | COMPATIBILITY_POLICY | ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown | libcozmoEngine.so 3.4.0-1204 |
 | M15-107 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorPounceOnMotion configured for Hiking: normal no-frame path, boredom, rotation, lifetime, get-out, Resume, Stop | libcozmoEngine.so 3.4.0-1204 |

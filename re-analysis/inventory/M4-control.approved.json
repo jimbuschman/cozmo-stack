@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-19",
+  "approved": "2026-11-07",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "9e542e7d4ba4a160d3822cae84cbe40e4f0a9d92b2807589633260953205dce8",
+  "inventory_sha256": "bc89be1d192926bcea60bee5f50309b89b26bd700e993d9fe9588a470e43a41d",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -102,7 +102,7 @@
       "hardware_required": false
     },
     "M4-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "HandleActiveObjectMoved/Stopped/UpAxisChanged: lookup, charger filter, double-tap window, IsMoving on change, the broadcasts",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -118,7 +118,7 @@
       "hardware_required": false
     },
     "M4-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Outbound cube connection: block pool, five slots, SetPropSlot, filter timers, advertisement expiry, slot states, disconnect handling",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -134,7 +134,7 @@
       "hardware_required": false
     },
     "M4-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -226,7 +226,7 @@
       "hardware_required": false
     },
     "M4-018": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CubeLightComponent: layers, PlayLightAnim gates, SetObjectLights/SetLEDs, the SetLights wire group (SetCubeGamma, CubeID, CubeLights, white balance), WakeUp, EnableGameLayerOnly, default-layer anims, the +0x2C4 hold",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -245,7 +245,7 @@
       "hardware_required": false
     },
     "M4-019": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CliffSensorComponent: defaults, CliffEvent/PotentialCliff, the EnableStopOnCliff senders, the 50/400/150 schedule with its running stats, HandleRobotStopped's Evaluate and broadcast gate",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -368,7 +368,7 @@
       "hardware_required": false
     },
     "M4-027": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Sensor/light/movement/CubeAccel teardown and retained host reset candidate",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -478,7 +478,7 @@
       "hardware_required": false
     },
     "M4-037": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Pose-origin root names for the ActiveObjectInDifferentFramesWithDifferentIDs warning",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -489,7 +489,7 @@
       "hardware_required": false
     },
     "M4-038": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CliffSensorComponent::ComputeCliffPose's flag gate and result branch, and HandleCliffEvent's AddCliff call and logs (history query M11-097; BlockWorld helpers M11-062; map insert M13-030)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -520,7 +520,7 @@
       "hardware_required": false
     },
     "M4-041": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BlendAnimWithCurLights body, the StopLignAnim.Result serializer and the GetLEDState callers",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -541,7 +541,7 @@
       "hardware_required": false
     },
     "M4-043": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BlockFilter::Save failure text: the non-virtual std::exception::what() (\"std::exception\")",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -552,7 +552,7 @@
       "hardware_required": false
     },
     "M4-044": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The cube-light animation loader (CubeLightAnimations / ParseJsonToAnim)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -563,7 +563,7 @@
       "hardware_required": false
     },
     "M4-045": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PlayLightAnim: the blended / non-blended branch after BlendAnimWithCurLights",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -573,7 +573,7 @@
       "hardware_required": false
     },
     "M4-046": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ApplyAnimModifier body and the PlayLightAnim callers that pass modifier = true",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -584,7 +584,7 @@
       "hardware_required": false
     },
     "M4-047": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "MovementComponent::UnlockTracks miss path: the info log, PrintLockState, and EnableAnimTracks re-sent for free tracks",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -594,7 +594,7 @@
       "hardware_required": false
     },
     "M4-048": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CubeLightComponent HandleMessage<RobotDelocalized>: +0x21 = 1, then PlayLightAnim Connected (layer 2) on every non-carried ObjectInfo in ID order",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -604,7 +604,7 @@
       "hardware_required": false
     },
     "M4-049": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CubeLightComponent::OnActiveObjectPoseStateChanged: the cube-light reaction to an active object's pose-state change",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -614,7 +614,7 @@
       "hardware_required": false
     },
     "M4-050": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "libc++ __next_prime (unordered-container bucket counts)",
       "authority": "libc++_shared.so (shipped in the APK).",
       "evidence": [
@@ -625,7 +625,7 @@
       "hardware_required": false
     },
     "M4-051": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CubeLightComponent::PlayLightAnim's completion callback: stored with the entry, invoked by Update when the entry ends",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -637,13 +637,25 @@
       "hardware_required": false
     },
     "M4-052": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261018-m3m4-settling-a.md: GetLocatedObjectByIdHelper(id, -1) 0x00637E82, dynamic_cast to ActiveCube, SetLEDs 0x00637EDA, then MakeStateRelativeToXY 0x004E0DEC called at 0x00637EE8. Producer: BuildPyramid (M15-037).",
         "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md L1-L8, confirmed with corrections by re-analysis/research/overnight/20261018-ov128-check.md: lookup and ActiveCube cast for both modes (mode 0 via ActiveObject, 0x00637E96..0x00637EAA); SetLEDs zero-duration normalization 0x004E4902..0x004E49A2; MakeStateRelativeToXY 0x004E0DF4..0x004E100E with WhichCubeLEDs TBH 0x004E0E1C; GetTopMarker 0x004E69B8..0x004E6A7C; corner/face choice through Radians rescale/Near/GT/GE/LT (0x0084C87C..0x0084CD18, epsilon 0x3727C5AC); RotatePatternAroundTopFace 0x004E30A0: false -> [1,2,3,0] (0x00C45B94), true -> [3,0,1,2] (0x00C45B90), dest[table[i]] = src[i], 7 words, stride 0x1C; SetLights 0x0063A604 with CubeID's second byte from ObjectLights+0x70 (0xFF or floor((v+29)/30), 0x0063A7A2..0x0063A7BC).",
         "re-analysis/research/overnight/20261019-ov129-m4-052-compute-normal.md N1-N4, C1-C5, R1-R3 (manager-checked 2026-10-19): GetTopMarker's normal is KnownMarker::ComputeNormal 0x0087E3FA = (C1 - C0) x (C2 - C0) over Get3dCorners 0x0087E2E8 (canonical corners 0x0105E0F0 scaled by marker width/height in f32, then the supplied root pose's Transform3d::ApplyTo 0x0050343C, rotation 0x0084ACA6 -> 0x00849C1C); f32 per operation, products/differences in the order 0x0087E46C..0x0087E494; not normalized; no failure path."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-053": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Re-request a pooled cube after its disconnected slot is reset (operator-approved host input; ReconnectPooledCubes)",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity C#.",
+      "evidence": [
+        "re-analysis/research/20261104-cube-reconnect-claude-check.md: CheckDisconnectedObjects clears an expired slot in place (0x005149F0..0x00514A00), HandleConnectedToObject ignores a mismatching report (0x00517AA8), UpdateConnecting never re-requests the same cube (0x0061AB32); only the app's cube screen brought a dropped cube back.",
+        "re-analysis/jobs/trial-m13/HANDOFF-CUBE-RECONNECT-POLICY-1.md: the app's requests (BlockPoolTracker.cs 141-148, 169-190; BlockFilter::HandleGameEvents 0x00619EBA, 0x00619F5E, 0x00619FB4) and the engine routine the policy uses, Robot::ConnectToObjects 0x00517150.",
+        "re-analysis/research/20261107-codex-batch-claude-check.md: the Claude check of this policy."
       ],
       "live_path": true,
       "hardware_required": false
