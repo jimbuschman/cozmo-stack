@@ -353,7 +353,8 @@ public sealed class FaceRecognizer
     internal int StockFaceCount { get { lock (_gate) return _faces.Count; } }
 
     // 0x863CF4 consumes the completed slot for its queued track, then looks up the
-    // current track independently. Only the source-checked first association is emitted.
+    // current track independently; positive remaps and target retargeting use the
+    // copied previous face ID before that entry is normalized (0x863E94..0x863F1C).
     internal void ConsumeStockFeature(OkaoFaceFeature feature, int track, bool registrationAllowed)
     {
         lock (_gate)
@@ -365,7 +366,9 @@ public sealed class FaceRecognizer
             if (RecognizeFace(feature, out int id, out int score) != 0 || id == 0 || !_faces.TryGetValue(id, out var face)) return;
             if (_trackToFace.TryGetValue(track, out int previous) && previous != id)
             {
-                Behavior.SteppedBehavior.ReportMissing("M14-011 positive face-ID remap/merge is not connected");
+                // This distinct track-map replacement is not the positive previous-ID
+                // transition produced by MergeFaces and published in LookupStockTrack.
+                Behavior.SteppedBehavior.ReportMissing("M14-011 replacing a different existing track-to-face mapping is not connected");
                 return;
             }
             foreach (int oldTrack in _trackToFace.Where(kv => kv.Value == id && kv.Key != track).Select(kv => kv.Key).ToArray())
@@ -381,20 +384,22 @@ public sealed class FaceRecognizer
         lock (_gate)
         {
             if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null, 0);
+            int oldId = face.Offset04;
+            if (EnrollmentTargetId != 0 && EnrollmentTargetId != id && EnrollmentTargetId == oldId)
+                EnrollmentTargetId = id;
             int? previous = null;
-            if (face.Offset04 != id)
+            if (oldId != id)
             {
-                if (face.Offset04 == 0) previous = -track;
-                else Behavior.SteppedBehavior.ReportMissing("M14-011 positive face-ID transition is not connected");
-                face.Offset04 = id;
+                previous = oldId == 0 ? -track : oldId; // Tracker 0x86DBC6..DBD8.
             }
-            face.PreviousTrack = face.CurrentTrack;
             int completed = 0;
             if (EnrollmentCount == 0 && EnrollmentMode >= 1 && id == EnrollmentTargetId)
             {
                 completed = EnrollmentMode;
                 EnrollmentMode = 0; // 0x863FAA..0x863FB4: selected target emits once.
             }
+            face.Offset04 = id; // 0x863F00: normalize after copying the result.
+            face.PreviousTrack = face.CurrentTrack;
             return (id, face.Name.Length == 0 ? null : face.Name, previous, completed);
         }
     }

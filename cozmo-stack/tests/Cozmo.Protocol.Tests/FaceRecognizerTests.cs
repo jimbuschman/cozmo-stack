@@ -75,6 +75,96 @@ public class FaceRecognizerTests
     }
 
     [Fact]
+    public void PositiveRemapRetargetsBeforeTheSameLookupEmitsItsOneShot()
+    {
+        long now=10_000_000;
+        var okao=new FakeOkaoRecognizer();
+        var recognizer=new FaceRecognizer(okao,()=>now);
+        var feature=new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1,0);
+        recognizer.CurrentTrack=1;
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int oldId));
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int keepId));
+        recognizer.EnrolledFaces.Single(f=>f.FaceID==keepId).Name="Ada";
+        okao.IdentifyResults.Add((0,1000));
+        recognizer.ConsumeStockFeature(feature,1,true);
+        Assert.Equal(-1,recognizer.LookupStockTrack(1).PreviousId);
+        recognizer.SetAllowedEnrollments(4,oldId);
+        for(int step=1;step<=4;step++)
+        {
+            now=10_000_000+step*1_000_000;
+            recognizer.ConsumeStockFeature(feature,1,true);
+            if(step<4)Assert.Equal(0,recognizer.LookupStockTrack(1).EnrollmentCount);
+        }
+        Assert.Equal(0,recognizer.EnrollmentCount);
+        Assert.Equal(4,recognizer.EnrollmentMode);
+        Assert.Equal(0,recognizer.MergeFaces(keepId,oldId));
+        okao.IdentifyResults.Clear();
+        okao.IdentifyResults.Add((1,1000));
+        recognizer.ConsumeStockFeature(feature,1,true);
+        Assert.Equal(0,recognizer.LookupStockTrack(2).EnrollmentCount);
+        var output=recognizer.LookupStockTrack(1);
+        Assert.Equal(oldId,output.PreviousId);
+        Assert.Equal(keepId,output.Id);
+        Assert.Equal(4,output.EnrollmentCount);
+        Assert.Equal(keepId,recognizer.EnrollmentTargetId);
+        Assert.Equal(0,recognizer.EnrollmentMode);
+        Assert.Equal(0,recognizer.LookupStockTrack(1).EnrollmentCount);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void StockMergePublishesPositivePreviousIdAndRetargetsOnlyActiveEnrollment(int enrollmentCase)
+    {
+        long now=10_000_000;
+        var okao=new FakeOkaoRecognizer();
+        var recognizer=new FaceRecognizer(okao,()=>now);
+        var feature=new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1,0);
+        recognizer.CurrentTrack=1;
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int oldId));
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int keepId));
+        recognizer.EnrolledFaces.Single(f=>f.FaceID==keepId).Name="Ada";
+        okao.IdentifyResults.Add((0,1000));
+        recognizer.ConsumeStockFeature(feature,1,true);
+        Assert.Equal(-1,recognizer.LookupStockTrack(1).PreviousId);
+        if(enrollmentCase==1)recognizer.SetAllowedEnrollments(4,oldId);
+        else if(enrollmentCase==2)recognizer.SetAllowedEnrollments(4,99);
+        else recognizer.SetAllowedEnrollments(-1,0);
+        int trackBefore=recognizer.EnrollmentTrack;
+        int countBefore=recognizer.EnrollmentCount;
+        int modeBefore=recognizer.EnrollmentMode;
+        Assert.Equal(0,recognizer.MergeFaces(keepId,oldId));
+        okao.IdentifyResults.Clear();
+        okao.IdentifyResults.Add((1,1000));
+        recognizer.ConsumeStockFeature(feature,1,true);
+        Assert.Equal(0,recognizer.LookupStockTrack(2).Id);
+        var transition=recognizer.LookupStockTrack(1);
+        Assert.Equal(keepId,transition.Id);
+        Assert.Equal("Ada",transition.Name);
+        Assert.Equal(oldId,transition.PreviousId);
+        Assert.Equal(enrollmentCase==1?keepId:enrollmentCase==2?99:0,recognizer.EnrollmentTargetId);
+        Assert.Equal(trackBefore,recognizer.EnrollmentTrack);
+        Assert.Equal(countBefore,recognizer.EnrollmentCount);
+        Assert.Equal(modeBefore,recognizer.EnrollmentMode);
+        Assert.Null(recognizer.LookupStockTrack(1).PreviousId);
+        if(enrollmentCase==1)
+        {
+            for(int step=1;step<=4;step++)
+            {
+                now=10_000_000+step*1_000_000;
+                recognizer.ConsumeStockFeature(feature,1,true);
+                Assert.Equal(0,recognizer.LookupStockTrack(2).EnrollmentCount);
+                Assert.Equal(step==4?4:0,recognizer.LookupStockTrack(1).EnrollmentCount);
+            }
+            Assert.Equal(0,recognizer.EnrollmentMode);
+            Assert.Equal(0,recognizer.LookupStockTrack(1).EnrollmentCount);
+        }
+    }
+
+    [Fact]
     public void CompletedTrackIdentityWaitsForThatTracksLookupAndDoesNotRepeatOnCrossing()
     {
         var okao = new FakeOkaoRecognizer();
