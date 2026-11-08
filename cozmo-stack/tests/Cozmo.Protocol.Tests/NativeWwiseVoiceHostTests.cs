@@ -8,6 +8,49 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class NativeWwiseVoiceHostTests
 {
+    [Fact]
+    public void OrdinaryMeetEventsMatchIndependentNativeArchiveReference()
+    {
+        string? lib=ShippedLibraries.FindLibDir();
+        if(lib is null)return;
+        string meta=GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive=Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"),"AudioAssets.zip");
+        using var host=new NativeWwiseVoiceHost(lib,GraphRig.ReadBank(meta,"Init.bnk"),
+            GraphRig.ReadBank(meta,"English(US)/Cozmo.bnk"),1024,archive,1700000000);
+        var schedule=new (uint Time,uint Event,uint Cookie,float Volume)[]
+        {
+            (0,0x656E441C,1,1),(363000,0x4C49B98F,2,1),(594000,0xF143D426,3,1),(1287000,0x9EF22ABC,4,1),
+            (3000000,0x9EF22ABC,17,1),(5211000,0xAE983923,18,.7f),
+            (9000000,0xD43D2A47,33,1),(10419000,0x9EF22ABC,34,1),(12630000,0xAE983923,35,.7f)
+        };
+        var frames=new[]{new List<float[]>(),new List<float[]>(),new List<float[]>()};
+        var ended=new List<uint>();
+        host.SharedEventEnded+=(cookie,_,_)=>ended.Add(cookie);
+        uint clock=0;int next=0;
+        for(int tick=0;tick<740;tick++)
+        {
+            uint frame=(uint)((long)(tick+1)*1024*1000000/48000);
+            while(next<schedule.Length && schedule[next].Time<=frame)
+            {
+                var entry=schedule[next++];
+                host.AdvanceClock(entry.Time-clock);clock=entry.Time;
+                uint playing=host.PostShared(entry.Event,entry.Cookie);
+                Assert.NotEqual(0u,playing);
+                host.SetEventVolume(playing,entry.Volume);
+                host.Render(0);
+            }
+            host.Step(frame-clock,true);clock=frame;
+            frames[frame<3000000?0:frame<9000000?1:2].AddRange(host.TakeFrames());
+        }
+        Assert.Equal(new uint[]{1,3,2,4,17,18,33,34,35},ended);
+        Assert.Equal(new[]{46,10,23},frames.Select(x=>x.Count));
+        Assert.Equal("d9960c03baf1203aaf3bb44342497e40963fac2fc5b1bb27fd4a8eeee6081ccf",Hash(frames[0]));
+        Assert.Equal("2f26907421845d90d9f15773f89052f49fe3138ef96abbebfc8b11e717c09948",Hash(frames[1]));
+        Assert.Equal("d2fdc2e70b6b0399c01da54da1c0c2862ccec37d21e2cae362a321a47c0e6a93",Hash(frames[2]));
+        host.Dispose();
+        Assert.True(host.TerminatedCleanly,host.ShutdownDiagnostic);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

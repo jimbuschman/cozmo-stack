@@ -564,10 +564,11 @@ public sealed class CozmoAnimations : IDisposable
         return new AnimationTicket(handle.Completion, handle.Generation) { Tag = handle.Tag };
     }
 
-    internal AnimationTicket? PlayAuthoredSpeechTracked(AnimationClip clip, Wwise.WwiseRobotAudioPath path, EngineRobot owner)
+    internal AnimationTicket? PlayAuthoredSpeechTracked(AnimationClip clip, Wwise.WwiseRobotAudioPath path, EngineRobot owner,
+        int numLoops = 1, Func<Wwise.WwiseRobotAudioPath>? nextPath = null, Func<bool>? actionCurrent = null)
     {
-        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
-        var handle = _scheduler.PlayAuthoredSpeech(clip, NowMs(), path, Current);
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner) && (actionCurrent?.Invoke() ?? true);
+        var handle = _scheduler.PlayAuthoredSpeech(clip, NowMs(), path, Current, numLoops, nextPath);
         if (handle is null) return null;
         StartTicker();
         return new AnimationTicket(handle.Completion, handle.Generation) { Tag = handle.Tag };

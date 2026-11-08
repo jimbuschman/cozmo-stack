@@ -11,6 +11,35 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class CannedNameDeliveryTests
 {
+    [Fact]
+    public void OrdinaryAuthoredMissingSelectedClipFailsAndRetiresAction()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations:true,sourceNvEmpty:true);
+        var library=f.Rig.Robot.Animations.Library!;
+        var group=library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
+        var original=group.Entries;
+        var missing=new List<string>();
+        void Capture(string message){if(message.Contains("authored robot audio animation is unavailable"))missing.Add(message);}
+        SteppedBehavior.MissingReported+=Capture;
+        try
+        {
+            group.Entries=new[]{new AnimationGroupEntry("unavailable_meet_clip",1,0,"Default")};
+            var action=new TriggerAnimationAction(f.Rig.Robot,new(AnimationTrigger.InteractWithFaceTrackingIdle,0,true,0,60,false));
+            action.UseOrdinaryAuthoredAudio(f.Robot);
+            var ended=new List<RobotCompletedAction>();
+            f.Robot.ActionList.RegisterActionEndedCallback(ended.Add);
+            f.Robot.ActionList.Clear();
+            f.Robot.ActionList.QueueAction(QueueActionPosition.Now,action);
+            int mark=f.Rig.Mark();
+            f.Rig.Tick();
+            Assert.Equal(0x0300000Cu,Assert.Single(ended.Where(x=>x.Tag==action.Tag)).Result);
+            Assert.Null(f.Robot.ActionList.GetCurrentAction());
+            Assert.Single(missing);
+            Assert.Empty(f.Rig.SentSince(mark).OfType<AudioSample>());
+        }
+        finally { group.Entries=original;SteppedBehavior.MissingReported-=Capture; }
+    }
+
     private sealed class Sink : IPlatformPcmSink
     {
         private readonly object _gate = new();
@@ -40,6 +69,71 @@ public sealed class CannedNameDeliveryTests
     {
         public void FinishedReactingToFace(int faceId) => stop();
         public void ClearDesiredTargets() { }
+    }
+
+    [Fact]
+    public async Task OrdinaryAuthoredIdleRecreatesAudioPathForEachLoop()
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string banks=GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        string archive=Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"),"AudioAssets.zip");
+        var options=new CozmoEngineOptions { ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),
+            SpeechSoundBankDirectory=banks, SpeechAudioArchivePath=archive, LabLocaleLanguage="en", BlockPoolPath="" };
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true,engineOptions:options);
+        var sink=new Sink();
+        f.Robot.CannedSpeechSinkForTest=()=>sink;
+        var owner=f.Robot;
+        var action=new TriggerAnimationAction(f.Rig.Robot,new(AnimationTrigger.InteractWithFaceTrackingIdle,0,true,0,60,false));
+        action.UseOrdinaryAuthoredAudio(owner);
+        f.Robot.ActionList.Clear();
+        f.Robot.ActionList.QueueAction(QueueActionPosition.Now,action);
+        int mark=f.Rig.Mark(), starts=0, ends=0;
+        var tags=new List<byte>();
+        var until=DateTime.UtcNow+TimeSpan.FromSeconds(25);
+        try
+        {
+            while(DateTime.UtcNow<until && ends<2)
+            {
+                sink.CompleteOne();
+                var stream=f.Rig.Robot.Animations.Scheduler.Stream;
+                f.Rig.Data(new AnimationState { NumAudioFramesPlayed=stream.FramesStreamed, NumAnimBytesPlayed=stream.BytesStreamed });
+                f.Motors(RobotStatusFlag.IsBodyAccMode);
+                var sent=f.Rig.SentSince(mark);
+                var start=sent.OfType<StartOfAnimation>().ToArray();
+                while(starts<start.Length)
+                {
+                    var tag=start[starts++].AnimId;tags.Add(tag);
+                    f.Rig.Data(new AnimationStarted { AnimId=tag });
+                }
+                var end=sent.OfType<EndOfAnimation>().ToArray();
+                while(ends<end.Length)
+                {
+                    ends++;
+                    f.Rig.Data(new AnimationEnded { AnimId=action.AnimationTagForTest });
+                }
+                await Task.Delay(10);
+            }
+            Assert.True(ends>=2,$"starts={starts} ends={ends} audio={f.Rig.SentSince(mark).OfType<AudioSample>().Count()}");
+            Assert.True(tags.Count>=2);
+            Assert.All(tags,tag=>Assert.Equal(action.AnimationTagForTest,tag));
+            var messages=f.Rig.SentSince(mark);
+            int cursor=0;
+            for(int loop=0;loop<2;loop++)
+            {
+                int start=messages.FindIndex(cursor,message=>message is StartOfAnimation s && s.AnimId==action.AnimationTagForTest);
+                Assert.True(start>=0);
+                int end=messages.FindIndex(start+1,message=>message is EndOfAnimation);
+                Assert.True(end>start);
+                Assert.Contains(messages.Skip(start+1).Take(end-start-1).OfType<AudioSample>(),
+                    sample=>sample.Samples.Any(b=>b!=0xFF && b!=0x7F));
+                cursor=end+1;
+            }
+        }
+        finally
+        {
+            owner.ActionList.Cancel(action.Tag);
+            f.Rig.Tick();
+        }
     }
 
     [Fact]

@@ -875,7 +875,8 @@ public sealed class AnimationScheduler
 
     // The checked canned SayText caller supplies the unmodified authored clip
     // and its complete RobotAudio track (0x5616D6..0x5616FC).
-    internal AnimationHandle? PlayAuthoredSpeech(AnimationClip clip, double nowMs, WwiseRobotAudioPath path, Func<bool> ownerCurrent)
+    internal AnimationHandle? PlayAuthoredSpeech(AnimationClip clip, double nowMs, WwiseRobotAudioPath path, Func<bool> ownerCurrent,
+        int numLoops = 1, Func<WwiseRobotAudioPath>? nextPath = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(ownerCurrent);
@@ -883,13 +884,16 @@ public sealed class AnimationScheduler
         {
             _nowMs = nowMs;
             _authoredAudioPath = path;
-            byte tag = SetStreamingAnimationLocked(clip, 1, true, ownerCurrent, path);
+            byte tag = SetStreamingAnimationLocked(clip, numLoops, true, ownerCurrent, path);
+            if (tag != 0) { _authoredNextPath=nextPath; _authoredOwnerCurrent=ownerCurrent; }
             if (tag == 0 && ReferenceEquals(_authoredAudioPath, path)) _authoredAudioPath = null;
             return tag == 0 ? null : _handle;
         }
     }
 
     private WwiseRobotAudioPath? _authoredAudioPath;
+    private Func<WwiseRobotAudioPath>? _authoredNextPath;
+    private Func<bool>? _authoredOwnerCurrent;
     internal void DrainAuthoredAudioCallbacks()
     {
         WwiseRobotAudioPath? path;
@@ -970,6 +974,8 @@ public sealed class AnimationScheduler
             EndHandleLocked(clip is null ? AnimationEndReason.Cancelled : AnimationEndReason.Replaced);
         if(!Current())return 0;
 
+        _authoredNextPath=null;
+        _authoredOwnerCurrent=null;
         _streaming = clip is null ? null : StreamAnimation.Of(clip);
         _streamingClip = clip;
         if (clip is null)
@@ -1353,10 +1359,49 @@ public sealed class AnimationScheduler
                 {
                     _loopCounter=unchecked(_loopCounter+1);
                     if (unchecked((uint)(_numLoops - 1)) >= unchecked((uint)_loopCounter))
-                        { InitStreamLocked(_streaming, _tagCounter); return 0; }
+                    {
+                        if (_authoredNextPath is { } next)
+                        {
+                            var originalStream=_streaming;
+                            long originalEpoch=_streamMutationEpoch;
+                            bool SameStream() => _streamMutationEpoch==originalEpoch && ReferenceEquals(_streaming,originalStream);
+                            bool CurrentLoop() => _authoredOwnerCurrent?.Invoke() == true && SameStream();
+                            void DropStale()
+                            {
+                                if (!SameStream()) return;
+                                EndHandleLocked(AnimationEndReason.Cancelled);
+                                if (!SameStream()) return;
+                                _streaming=null; _streamingClip=null; _authoredNextPath=null; _authoredOwnerCurrent=null;
+                            }
+                            if (!CurrentLoop()) { DropStale(); return 0; }
+                            void FailLoop()
+                            {
+                                if (!CurrentLoop()) return;
+                                Log?.Invoke("M1-034 authored audio loop initialization failed; stream retired");
+                                if (!CurrentLoop()) return;
+                                EndHandleLocked(AnimationEndReason.Error);
+                                if (!CurrentLoop()) return;
+                                _streaming=null; _streamingClip=null; _authoredNextPath=null; _authoredOwnerCurrent=null;
+                            }
+                            WwiseRobotAudioPath path;
+                            try { path=next(); }
+                            catch (ObjectDisposedException) { FailLoop(); return 0; }
+                            if (!CurrentLoop()) { path.RetireWithoutAbort(); DropStale(); return 0; }
+                            _authoredAudioPath=path;
+                            if (!InitStreamLocked(originalStream,_tagCounter,CurrentLoop,path))
+                            {
+                                path.RetireWithoutAbort();
+                                if (ReferenceEquals(_authoredAudioPath,path)) _authoredAudioPath=null;
+                                if (CurrentLoop()) FailLoop(); else DropStale();
+                            }
+                        }
+                        else InitStreamLocked(_streaming, _tagCounter);
+                        return 0;
+                    }
                     else
                     {
                         _streaming = null;
+                        _authoredNextPath=null; _authoredOwnerCurrent=null;
                         EndHandleLocked(AnimationEndReason.Completed);
                         _streamingClip = null;
                         return LayersOrFlushLocked(); // X3–X5: no idle test in the exhaustion tick.
@@ -2107,7 +2152,7 @@ public sealed class AnimationScheduler
         public bool Streaming => !IsComplete;
         public void Update(long start, long streamTime) { _path.StartTimeMs = start; if (!_authored) _path.DrainCallbacks(); _path.Update(streamTime); }
         public byte[]? PopFrame() => _path.PopRobotAudioMessage();
-        internal void Completed() { if (_authored) _scheduler.ForgetAuthoredAudioPath(_path); }
+        internal void Completed() { if (_authored) { _path.RetireWithoutAbort(); _scheduler.ForgetAuthoredAudioPath(_path); } }
         public void Abort() { _path.Abort(); Completed(); }
     }
 
@@ -2320,6 +2365,7 @@ public sealed class AnimationScheduler
             _idleOwners.Clear();
             _idleMutationVersion++;
             _streaming = null; _streamingClip = null; _idleAnim = null;
+            _authoredNextPath=null; _authoredOwnerCurrent=null;
             LiveIdleParameters.ResetToConstructed();
             var parameterRelease = ReleaseParameterSubscription; ReleaseParameterSubscription = null;
             parameterRelease?.Invoke(); // last owner, after parameter maps; weak-lock outcome belongs to engine shutdown order.
@@ -2334,6 +2380,7 @@ public sealed class AnimationScheduler
             if (_streaming is not null) EndHandleLocked(AnimationEndReason.Cancelled);
             Stream.ResetToConstructed();
             _streaming = null;
+            _authoredNextPath=null; _authoredOwnerCurrent=null;
             _streamingClip = null;
             _idleAnim = null;
             _idleMs = 0;

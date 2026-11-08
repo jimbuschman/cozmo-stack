@@ -28,7 +28,9 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
             () => Environment.TickCount64, sink).ConfigureAwait(false);
     }
 
-    internal async Task<CannedSpeechLease> Acquire(float[] samples, Func<bool> current)
+    internal Task<CannedSpeechLease> Acquire(float[] samples, Func<bool> current) => AcquireCore(samples,current);
+    internal Task<CannedSpeechLease> AcquireOrdinary(Func<bool> current) => AcquireCore(null,current);
+    private async Task<CannedSpeechLease> AcquireCore(float[]? samples, Func<bool> current)
     {
         await _lease.WaitAsync().ConfigureAwait(false);
         NativeWwiseVoiceSession.SharedGeneration? generation = null;
@@ -40,7 +42,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
             if (!current()) throw new OperationCanceledException("speech action retired before offer");
             generation = native.BeginGeneration();
             if (!current()) throw new OperationCanceledException("speech action retired before offer");
-            await generation.OfferAsync(samples, 22050).ConfigureAwait(false);
+            if (samples is not null) await generation.OfferAsync(samples, 22050).ConfigureAwait(false);
             return new CannedSpeechLease(this, native, generation);
         }
         catch
@@ -80,24 +82,37 @@ internal sealed class CannedSpeechLease
     private readonly NativeWwiseVoiceSession _native;
     private readonly NativeWwiseVoiceSession.SharedGeneration _generation;
     private Exception? _dispatchFailure;
+    private readonly object _pathGate = new();
     private int _retired;
-    internal WwiseRobotAudioPath Path { get; }
+    private WwiseRobotAudioPath _path;
+    internal WwiseRobotAudioPath Path { get { lock (_pathGate) return _path; } }
     internal Exception? Failure => _native.Failure ?? Volatile.Read(ref _dispatchFailure);
     internal CannedSpeechLease(CannedSpeechOwner owner, NativeWwiseVoiceSession native, NativeWwiseVoiceSession.SharedGeneration generation)
     {
         _owner = owner; _native = native; _generation = generation;
-        Path = new WwiseRobotAudioPath(owner, generation, new SerialAudioDispatchFactory(error =>
+        _path=NewPath();
+    }
+    private WwiseRobotAudioPath NewPath() => new WwiseRobotAudioPath(_owner, _generation, new SerialAudioDispatchFactory(error =>
         {
             Interlocked.CompareExchange(ref _dispatchFailure, error, null);
-            owner.Observe(Task.FromException(error));
+            _owner.Observe(Task.FromException(error));
         }), (_, _) => 0);
+    internal WwiseRobotAudioPath NextOrdinaryPath()
+    {
+        lock (_pathGate)
+        {
+            if (_retired != 0) throw new ObjectDisposedException(nameof(CannedSpeechLease));
+            _path=NewPath();
+            return _path;
+        }
     }
     internal Task Configure(float pitch) => _generation.ConfigureAsync(0x2F8B3BF4, pitch);
     internal void ClearPending() => _owner.Observe(_generation.ClearPendingAsync());
     internal void Retire()
     {
-        if (Interlocked.Exchange(ref _retired, 1) != 0) return;
-        Task stopped = Path.RetireWithoutAbort();
+        WwiseRobotAudioPath path;
+        lock (_pathGate) { if (_retired != 0) return; _retired=1; path=_path; }
+        Task stopped = path.RetireWithoutAbort();
         _owner.Observe(stopped);
         _ = stopped.ContinueWith(_ => { _generation.Dispose(); _owner.Released(); }, TaskScheduler.Default);
     }

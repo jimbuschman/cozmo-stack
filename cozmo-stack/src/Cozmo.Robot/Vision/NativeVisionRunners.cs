@@ -19,9 +19,9 @@ internal abstract class NativeVisionRunner : ActionRunner
     protected override void LockTracks(uint mask,string owner){if(ScopedCurrent)M.Robot.Motion.LockTracks((byte)mask,owner,ActionName);}
     protected override void UnlockTracksInternal(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.UnlockTracks((byte)mask,owner);});}
     protected override bool AreAllTracksLockedBy(uint mask,string owner)=>ScopedCurrent && M.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
-    protected override void StopHeadTrack(){if(ScopedOwner is null)M.Robot.Motion.StopHead();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopHead();});}
+    protected override void StopHeadTrack(){if(ScopedOwner is null)M.Robot.Motion.StopHead();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopHeadOwned(ScopedOwner);});}
     protected override void StopLiftTrack(){if(ScopedOwner is null)M.Robot.Motion.StopLift();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopLift();});}
-    protected override void StopBodyTrack(){if(ScopedOwner is null)M.Robot.Motion.StopBody();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopBody();});}
+    protected override void StopBodyTrack(){if(ScopedOwner is null)M.Robot.Motion.StopBody();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopBodyOwned(ScopedOwner);});}
     protected override bool HeadTrackMoving=>M.Robot.Motion.HeadMoving;
     protected override bool LiftTrackMoving=>M.Robot.Motion.LiftMoving;
     protected override bool BodyTrackMoving=>M.Robot.Motion.BodyMoving;

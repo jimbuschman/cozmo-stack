@@ -520,7 +520,7 @@ public sealed class CozmoMotion
     /// MovementComponent::LockTracks (MA3, 0x006400D0..0x00640188): a lock entry per bit; the bits whose lock set
     /// reaches size 1 are collected, and a non-zero mask sends DisableAnimTracks 0x9D {mask}, reliable.
     /// </summary>
-    private void LockTracksLocked(byte mask, string who, string debugName = "")
+    private void LockTracksLocked(byte mask, string who, string debugName = "", EngineRobot? scopedOwner = null)
     {
         byte newly = 0;
         for (int b = 0; b < _trackLocks.Length; b++)
@@ -529,7 +529,12 @@ public sealed class CozmoMotion
             InsertLock(_trackLocks[b], new LockInfo(who, debugName));
             if (_trackLocks[b].Count == 1) newly |= (byte)(1 << b);
         }
-        if (newly != 0) _robot.SendMessage(new DisableAnimTracks { Field0 = newly });
+        if (newly != 0)
+        {
+            var message=new DisableAnimTracks { Field0 = newly };
+            if(scopedOwner is null)_robot.SendMessage(message);
+            else scopedOwner.SendCheckedOwned(message);
+        }
     }
 
     // fidelity: M4-014, M4-026
@@ -541,7 +546,7 @@ public sealed class CozmoMotion
     /// value is OR'd only when the key was found and erased and the track still has entries (0x0063FF1A..0x0063FF22). The
     /// message goes only when the u8 mask is not zero (0x0063FF96), reliable and not hot, its result ignored.
     /// </summary>
-    private bool UnlockTracksLocked(byte mask, string who)
+    private bool UnlockTracksLocked(byte mask, string who, EngineRobot? scopedOwner = null)
     {
         byte enable = 0;
         bool stillLocked = false;
@@ -564,7 +569,12 @@ public sealed class CozmoMotion
             }
             if (tree.Count == 0) enable |= (byte)(1 << b);
         }
-        if (enable != 0) SendOnAbortPath(new EnableAnimTracks { Field0 = enable });
+        if (enable != 0)
+        {
+            var message=new EnableAnimTracks { Field0 = enable };
+            if(scopedOwner is null)SendOnAbortPath(message);
+            else scopedOwner.SendCheckedOwned(message);
+        }
         return stillLocked;
     }
 
@@ -696,6 +706,10 @@ public sealed class CozmoMotion
             LockTracksLocked(mask, who, debugName);
         }
     }
+    internal void LockTracksOwned(byte mask,string who,string debugName,EngineRobot owner)
+    { lock (_gate) if (!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner)) LockTracksLocked(mask,who,debugName,owner); }
+    internal void UnlockTracksOwned(byte mask,string who,EngineRobot owner)
+    { lock (_gate) if (!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner)) UnlockTracksLocked(mask,who,owner); }
     private readonly HashSet<string> _missingDebugNameFiles = new();
 
     /// <summary><c>MovementComponent::UnlockTracks</c> 0x0063fe5c: remove the owner's entry per bit; true when a found key left its track still locked (A10).</summary>
@@ -753,7 +767,7 @@ public sealed class CozmoMotion
     /// and unlocks the mask if all its tracks are locked; otherwise it sets the flag and locks the mask unless all its
     /// tracks are already locked.
     /// </summary>
-    private void DirectDriveCheckSpeedAndLockTracksLocked(float speed, ref bool flag, byte mask, string key, string debug)
+    private void DirectDriveCheckSpeedAndLockTracksLocked(float speed, ref bool flag, byte mask, string key, string debug, Func<bool>? current = null, EngineRobot? scopedOwner = null)
     {
         // fidelity: M4-026
         // A9 / row 1b (0x0063EFB0..0x0063F0BC). The helper takes two strings: the lock key (stack argument 0) and a debug name (argument 1).
@@ -761,7 +775,9 @@ public sealed class CozmoMotion
         {
             flag = false;
             // AreAllTracksLocked, then UnlockTracks; only a result of exactly 1 (a found key that left its track locked) logs.
-            if (AreAllTracksLockedLocked(mask) && UnlockTracksLocked(mask, key))
+            bool stillLocked = AreAllTracksLockedLocked(mask) && UnlockTracksLocked(mask, key, scopedOwner);
+            if (current is not null && !current()) return;
+            if (stillLocked)
             {
                 // sErrorF event "MovementComponent.DirectDriveCheckSpeedAndLockTracks" (0x0063F036), format 0x0063F134: %s is the
                 // mask's AnimTrackFlagsToString, %x the mask, then the debug name and the key. _errG is set (0x0063F08C), then the
@@ -1221,6 +1237,16 @@ bool requireCalibration = true)
             _robot.SendMessage(new MoveHead { SpeedRadPerSec = 0f });
         }
     }
+    internal void StopHeadOwned(EngineRobot owner)
+    {
+        lock (_gate)
+        {
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner);
+            if(!Current())return;
+            if(StopGateLocked()) DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddHead,HeadTrack,DirectDriveHead,DirectDriveHead,Current,owner);
+            if(Current())owner.SendCheckedOwned(new MoveHead { SpeedRadPerSec=0f },Current);
+        }
+    }
 
     // fidelity: M4-015, M4-028
     /// <summary>
@@ -1253,6 +1279,23 @@ bool requireCalibration = true)
                 DirectDriveCheckSpeedAndLockTracksLocked(0f, ref _ddBody, BodyTrack, DirectDriveWheels, DirectDriveTurnInPlace);
             }
             _robot.SendMessage(new DriveWheels(0f, 0f, 0f, 0f));
+        }
+    }
+    internal void StopBodyOwned(EngineRobot owner)
+    {
+        lock (_gate)
+        {
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner);
+            if(!Current())return;
+            if(StopGateLocked())
+            {
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddBody,BodyTrack,DirectDriveWheels,DirectDriveWheels,Current,owner);
+                if(!Current())return;
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddBody,BodyTrack,DirectDriveWheels,DirectDriveArc,Current,owner);
+                if(!Current())return;
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddBody,BodyTrack,DirectDriveWheels,DirectDriveTurnInPlace,Current,owner);
+            }
+            if(Current())owner.SendCheckedOwned(new DriveWheels(0f,0f,0f,0f),Current);
         }
     }
 

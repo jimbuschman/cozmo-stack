@@ -22,6 +22,12 @@ internal class TriggerAnimationAction : ActionRunner
     private EngineRobot? _speechOwner;
     private EngineRobot? _scopedOwner;
     private bool _authoredSpeech;
+    private Func<Wwise.WwiseRobotAudioPath>? _nextAuthoredPath;
+    private EngineRobot? _ordinaryOwner;
+    private Task<CannedSpeechLease>? _ordinaryOpening;
+    private CannedSpeechLease? _ordinaryLease;
+    private volatile bool _ordinaryRetired;
+    private bool _ordinarySelected;
     private bool _directDiagnosticReported;
     private bool _destroyed;
     private bool _started, _ended, _failed;
@@ -52,7 +58,9 @@ internal class TriggerAnimationAction : ActionRunner
     internal TriggerAnimationAction(CozmoRobot robot, AnimationClip clip, Func<bool> ownerCurrent, Action<string>? missing = null, bool diagnosticReported = false)
         : this(robot, new DrivingAnimationRequest(default, 1, true, 0, 60f, false), missing, directClip: clip)
     { _directOwnerCurrent=ownerCurrent;_directDiagnosticReported=diagnosticReported; }
-    internal void SetSpeechPath(Wwise.WwiseRobotAudioPath path, EngineRobot owner, bool authored = false) { _speechPath = path; _speechOwner = owner; _scopedOwner = owner; _authoredSpeech = authored; }
+    internal void SetSpeechPath(Wwise.WwiseRobotAudioPath path, EngineRobot owner, bool authored = false, Func<Wwise.WwiseRobotAudioPath>? nextPath = null)
+    { _speechPath = path; _speechOwner = owner; _scopedOwner = owner; _authoredSpeech = authored; _nextAuthoredPath=nextPath; }
+    internal void UseOrdinaryAuthoredAudio(EngineRobot owner) { _ordinaryOwner=owner; _scopedOwner=owner; }
     internal void SetScopedOwner(EngineRobot owner) => _scopedOwner = owner;
     // TriggerAnimationAction::SetAnimGroupFromTrigger 0x0054432C; shared by constructor and get-out Init.
     protected void SetAnimGroupFromTrigger(AnimationTrigger trigger)
@@ -96,32 +104,67 @@ internal class TriggerAnimationAction : ActionRunner
         }
         var library=_robot.Animations.Library;
         if(_directClip is null && library is null){Missing("M8-021 animation-library input unavailable; no playback can be started");return 0x0300000C;}
-        _clip=_directClip?.Name ?? library!.GetAnimationNameFromGroup(_group!,Request.Argument6);
+        if (!_ordinarySelected) _clip=_directClip?.Name ?? library!.GetAnimationNameFromGroup(_group!,Request.Argument6);
+        if (_ordinaryOwner is not null && (_ordinaryRetired || DestructionObserved)) return unchecked((int)EngineActionResult.Cancelled);
         if (_scopedOwner is { } selectedOwner && (selectedOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, selectedOwner))) return 0x03000000;
         if(_directClip is null && _clip.Length==0)
         {
             return 0x0300000C;
         }
         // fidelity: M8-015, M8-020 — PlayAnimation::Init 0x00543F20..0x00544180.
+        try { _cachedClip??=_directClip ?? library!.GetClip(_clip); } // first lookup survives retries.
+        catch (KeyNotFoundException error) when (_authoredSpeech || _ordinaryOwner is not null)
+        {
+            Missing("M14-006 authored robot audio animation is unavailable: "+error.Message);
+            return DestructionObserved ? unchecked((int)EngineActionResult.Cancelled) : 0x0300000C;
+        }
+        if (_ordinaryOwner is not null && (_ordinaryRetired || DestructionObserved)) return unchecked((int)EngineActionResult.Cancelled);
+        if (_ordinaryOwner is { } ordinaryOwner && _ordinaryLease is null)
+        {
+            _ordinarySelected=true;
+            bool Current() => !_ordinaryRetired && !ordinaryOwner.Lifetime.Destroying && ReferenceEquals(ordinaryOwner.Engine.Robot,ordinaryOwner);
+            if (!Current()) return unchecked((int)EngineActionResult.Cancelled);
+            if (_ordinaryOpening is null)
+            {
+                var audio=ordinaryOwner.GetCannedSpeechOwner();
+                if (!Current()) return unchecked((int)EngineActionResult.Cancelled);
+                if (audio is null) { Missing("M14-006 ordinary authored audio requires the shared device, banks and archive"); return 0x03000000; }
+                _ordinaryOpening=audio.AcquireOrdinary(Current);
+            }
+            if (!_ordinaryOpening.IsCompleted) return unchecked((int)EngineActionResult.Running);
+            if (!_ordinaryOpening.IsCompletedSuccessfully)
+            { Missing("M14-006 ordinary authored audio initialization failed: "+_ordinaryOpening.Exception?.GetBaseException().Message); return 0x03000000; }
+            _ordinaryLease=_ordinaryOpening.Result;
+            if (!Current()) return unchecked((int)EngineActionResult.Cancelled);
+            SetSpeechPath(_ordinaryLease.Path,ordinaryOwner,authored:true,nextPath:_ordinaryLease.NextOrdinaryPath);
+        }
+        if (_ordinaryLease?.Failure is { } ordinaryFailure)
+        { Missing("M14-006 ordinary authored audio failed: "+ordinaryFailure.Message); return 0x03000000; }
         _started = _ended = _failed = false;
-        _cachedClip??=_directClip ?? library!.GetClip(_clip); // direct live clip or first lookup survives retries.
         _ticket = _speechPath is null
             ? _robot.Animations.PlayTracked(_cachedClip,Request.Argument3,numLoops:Request.Argument2)
             : _speechOwner is { } speechOwner ? (_authoredSpeech
-                ? _robot.Animations.PlayAuthoredSpeechTracked(_cachedClip, _speechPath, speechOwner)
+                ? _robot.Animations.PlayAuthoredSpeechTracked(_cachedClip, _speechPath, speechOwner, Request.Argument2, _nextAuthoredPath, () => !_destroyed && !DestructionObserved)
                 : _robot.Animations.PlaySpeechTracked(_cachedClip, _speechPath, speechOwner)) : null;
         if (_ticket is null) return 0x03000001;
+        bool ScopedCurrent() => _scopedOwner is null || !_destroyed && !DestructionObserved &&
+            !_scopedOwner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,_scopedOwner);
+        if (!ScopedCurrent()) return unchecked((int)EngineActionResult.Cancelled);
         if(_directClip is not null && _directOwnerCurrent?.Invoke()!=true)
         {
             _robot.Animations.ClearStreamIfClipMatches(_cachedClip);
             return 0x03000000;
         }
         _animationTag = _ticket.Tag;
-        var owner = _robot.Engine.Robot!;
+        var owner = _scopedOwner ?? _robot.Engine.Robot!;
         RetainedSubscription.Replace(ref _ca, owner.SubscribeMessage(RobotMessageId.AnimStarted, m => Started(((AnimationStarted)m).AnimId), "PlayAnimation"));
+        if (!ScopedCurrent()) { _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
         RetainedSubscription.Replace(ref _cb, owner.SubscribeMessage(RobotMessageId.AnimEnded, m => Ended(((AnimationEnded)m).AnimId), "PlayAnimation"));
+        if (!ScopedCurrent()) { _cb?.Dispose(); _cb=null; _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
         RetainedSubscription.Replace(ref _d5, owner.SubscribeMessage(RobotMessageId.AnimEventFromRobot, m => AnimationEvent((Cozmo.Protocol.AnimationEvent)m), "PlayAnimation"));
+        if (!ScopedCurrent()) { _d5?.Dispose(); _d5=null; _cb?.Dispose(); _cb=null; _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
         RetainedSubscription.Replace(ref _aborted, _robot.Engine.AnimationMessages.SubscribeMessage(0x5F, true, p => Aborted((uint)p!)));
+        if (!ScopedCurrent()) { _aborted?.Dispose(); _aborted=null; _d5?.Dispose(); _d5=null; _cb?.Dispose(); _cb=null; _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
         return 0;
     }
     // fidelity: M8-020 — 0x005452F0..0x0054534E.
@@ -163,12 +206,18 @@ internal class TriggerAnimationAction : ActionRunner
         _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "PlayAnimation.AbortAnimationHandler", $"Animation tag {tag} was aborted from running");
         _failed = true;
     }
-    public override uint CheckIfDone() => _ended ? 0u : _failed ? 0x03000001u : EngineActionResult.Running;
+    public override uint CheckIfDone()
+    {
+        if (_ordinaryLease?.Failure is { } failure)
+        { Missing("M14-006 ordinary authored audio failed: "+failure.Message); return 0x03000000; }
+        return _ended ? 0u : _failed ? 0x03000001u : EngineActionResult.Running;
+    }
     public override string? GetAnimationCompletionName()=>_clip; // current +78, not cached clip+90.
     public override byte? GetCompletionVariant()=>1;
     public override void WatcherEnding()
     {
         if(_destroyed)return;_destroyed=true;
+        _ordinaryRetired=true;
         if((_scopedOwner is null || !_scopedOwner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _scopedOwner)) && _robot.Animations.ClearStreamIfClipMatches(_cachedClip))
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","PlayAnimationAction.Destructor.StillStreaming",$"Action destructing, but AnimationStreamer is still streaming this animation({_clip}). TellingAnimationStreamer to stream null.");
@@ -178,6 +227,9 @@ internal class TriggerAnimationAction : ActionRunner
         _d5?.Dispose(); _d5 = null;
         _cb?.Dispose(); _cb = null;
         _ca?.Dispose(); _ca = null;
+        if (_ordinaryLease is { } ordinary) ordinary.Retire();
+        else if (_ordinaryOpening is { } pending)
+            _=pending.ContinueWith(t=>{if(t.Status==TaskStatus.RanToCompletion)t.Result.Retire();else _=t.Exception;},TaskScheduler.Default);
         base.WatcherEnding();
     }
 }

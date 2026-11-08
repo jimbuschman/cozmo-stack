@@ -53,6 +53,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     private readonly float _maximum;
     private readonly EngineRobot? _actualOwner;
     private int _imagesToWait = 10;
+    internal bool RequireVerifiedFace { get; set; }
     internal Func<int, AnimationTrigger>? NamedTriggerCallback;
     protected override string ActionName=>"TurnTowardsLastFacePose";
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
@@ -112,7 +113,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         }
         else found=M.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),false,cached);
         if(!found||!cached.TryWithRespectTo(owner.GetCheckedMainPose(),relative))
-        {_faceState=3;return 0;}
+        {if(RequireVerifiedFace)return unchecked((int)0x0300000E);_faceState=3;return 0;}
         SetChild(null);_verified.Reset();_best=float.MaxValue;_faceState=0;AssignGoal(relative);
         if(owner.HasExternalInterface)
         {
@@ -179,7 +180,11 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         SetChild(new NativeTurnTowardsPoseRunner(M,relative,MathF.Min(_maximum,BitConverter.UInt32BitsToSingle(0x3F490FDB))) { ScopedOwner = _actualOwner });
     }
     private uint Final()
-    {if(!ScopedCurrent||DestructionObserved)return EngineActionResult.Cancelled;if(_verified.Id!=0)M.Vision.Faces.SetTurnedTowardsFace(_verified.Id,true);return 0;}
+    {
+        if(!ScopedCurrent||DestructionObserved)return EngineActionResult.Cancelled;
+        if(_verified.Id!=0)M.Vision.Faces.SetTurnedTowardsFace(_verified.Id,true);
+        return 0;
+    }
     public override uint CheckIfDone()
     {
         if (!ScopedCurrent || DestructionObserved) return EngineActionResult.Cancelled;
@@ -197,6 +202,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             uint result=_child?.Update()??0;
             if (DestructionObserved || !ScopedCurrent) return EngineActionResult.Cancelled;
             if(_verified.Id!=0){FineTune();return EngineActionResult.Running;}
+            if(result!=EngineActionResult.Running && RequireVerifiedFace)return 0x0300000E;
             return result==0?Final():result;
         }
         if(_faceState==2)
@@ -248,6 +254,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             var unnamed = new TriggerLiftSafeAnimationAction(M.Robot,new((AnimationTrigger)_noNameTrigger,1,true,0,60f,false));
             if (_actualOwner is not null) unnamed.SetScopedOwner(_actualOwner);
             if (DestructionObserved || !ScopedCurrent) { unnamed.RetireNeverAdmittedTree(); return EngineActionResult.Cancelled; }
+            if (RequireVerifiedFace && _actualOwner is { } ordinaryOwner) unnamed.UseOrdinaryAuthoredAudio(ordinaryOwner);
             SetChild(unnamed);
             if(DestructionObserved)return EngineActionResult.Cancelled;
             _faceState=3;
@@ -267,7 +274,10 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         return true;
     }
     public override void WatcherEnding()
-    {SetChild(null);Unlock();foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();base.WatcherEnding();}
+    {
+        SetChild(null);Unlock();foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();
+        base.WatcherEnding();
+    }
 }
 
 // fidelity: M13-027
