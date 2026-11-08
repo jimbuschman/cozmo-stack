@@ -31,6 +31,12 @@ public sealed record EngineRobotState(EngineGamePose Pose, float PoseAngleRad, f
     }
 }
 
+public sealed partial class EngineRobot
+{
+    internal Guid ObservationToken { get; } = Guid.NewGuid();
+    internal EngineRobotState? LastPublishedState { get; set; }
+}
+
 // Input owned by localization (M11-053/055), before the M1 projection narrows the quaternion.
 internal readonly record struct EngineLocalizationPose(float X, float Y, float Z,
     double Q0, double Q1, double Q2, double Q3, uint OriginId)
@@ -109,6 +115,7 @@ public sealed partial class CozmoEngine
             carry.Carried, carry.Carried == -1 ? -1 : carry.Top, PublicationHeadTracking!(),
             PublicationLocalizedTo!(), PublicationImageTimestamp!(), status,
             (byte)(game.Localized != 0 && game.OffTreads == 0 ? 1 : 0));
+        if (!robot.Lifetime.Destroying && ReferenceEquals(Robot, robot)) robot.LastPublishedState = snapshot;
         QueueAppEvent(RobotStatePublished,snapshot);
     }
 

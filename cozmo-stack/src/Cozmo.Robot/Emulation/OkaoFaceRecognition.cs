@@ -97,6 +97,20 @@ public sealed partial class OkaoFaceDetection
         int result = FrCall("OKAO_FR_GetFeatureFromAlbum", album, unchecked((uint)entry), unchecked((uint)index), _frScratchFeature);
         return (result, new OkaoFaceFeature(this, _frScratchFeature));
     }
+    internal (int Status, byte[] Data) FrSerializeAlbum(uint album)
+    {
+        var size = FrOneOut("OKAO_FR_GetSerializedAlbumSize", new[] { album });
+        if (size.Result != 0) return (size.Result, Array.Empty<byte>());
+        if (size.Value <= 0) return (1, Array.Empty<byte>());
+        uint bytes = _m.Malloc((uint)size.Value);
+        if (bytes == 0) throw new EmulationAbort("OKAO album serialization allocation failed");
+        try
+        {
+            int result = FrCall("OKAO_FR_SerializeAlbum", album, bytes, (uint)size.Value);
+            return result == 0 ? (0, _m.Read(bytes, (uint)size.Value)) : (result, Array.Empty<byte>());
+        }
+        finally { _m.Free(bytes); }
+    }
     internal (OkaoFaceDetection Owner, uint Handle, int Result) FrRestore(uint common, byte[] data, int size)
     {
         if (size < 0 || size > data.Length) throw new ArgumentOutOfRangeException(nameof(size));

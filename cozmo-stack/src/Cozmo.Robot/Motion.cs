@@ -58,6 +58,9 @@ public sealed record MotionOutcome(MotionResult Result, string Detail)
 /// OwnerRetired records whether its original robot was being destroyed or replaced before admission or at action destruction.</summary>
 public sealed record AiHeadActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
 
+/// <summary>An advisory view of one robot owner and its last published engine state.</summary>
+public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
+
 /// <summary>
 /// Cozmo's motors: wheels, head and lift - the engine's MovementComponent and its head and lift actions (M4).
 ///
@@ -78,6 +81,23 @@ public sealed class CozmoMotion
     private readonly object _gate = new();
     private uint _nextAiTag;
 
+    private static bool AiOwnerReady(CozmoEngine engine, EngineRobot owner) =>
+        engine.IsReadyDelivered && engine.ConnectionState == 2 && engine.RobotValidated == true &&
+        !owner.Lifetime.Destroying && owner.FirstFullStateHandled && ReferenceEquals(engine.Robot, owner);
+
+    /// <summary>Returns an owner-coherent advisory snapshot. Admission remains authoritative.</summary>
+    public AiBodyObservation GetAiBodyObservation()
+    {
+        var engine = _robot.Engine;
+        using var lease = engine.EnterSynchronousOwner();
+        var owner = engine.Robot;
+        if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner))
+            return new AiBodyObservation(null, false, null);
+        return new AiBodyObservation(owner.ObservationToken,
+            AiOwnerReady(engine, owner) && !owner.ActionList.ExternalActionsDisabled,
+            owner.LastPublishedState);
+    }
+
     /// <summary>
     /// Queues a head action after existing actions, leaving the behavior system in control of the queue.
     /// The result contains the native action result when the admitted runner is destroyed. Cancellation
@@ -94,8 +114,7 @@ public sealed class CozmoMotion
         using var lease = engine.EnterSynchronousOwner();
         if (cancellationToken.IsCancellationRequested)
             return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
-        if (!engine.IsReadyDelivered || engine.ConnectionState != 2 || engine.RobotValidated != true || owner is null ||
-            owner.Lifetime.Destroying || !owner.FirstFullStateHandled || !ReferenceEquals(engine.Robot, owner))
+        if (owner is null || !AiOwnerReady(engine, owner))
             return Task.FromResult(new AiHeadActionResult(false, null, "Robot is not ready for an action"));
 
         uint tag = 0;
@@ -1295,7 +1314,7 @@ bool requireCalibration = true)
     {
         internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
         internal EngineRobot? AiOwner;
-        public override byte? GetCompletionVariant() => IsHead && AiNativeEnded is not null ? (byte)6 : base.GetCompletionVariant();
+        public override byte? GetCompletionVariant() => 6; // head 0x12 and lift 0x13: 0x0053FEEC..0x0053FF14
         internal override bool RetireNeverAdmittedTree()
         {
             if (!CanRetireNeverAdmittedTree()) return false;

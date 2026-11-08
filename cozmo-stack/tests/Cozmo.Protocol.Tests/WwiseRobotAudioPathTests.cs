@@ -105,6 +105,13 @@ public class WwiseRobotAudioPathTests
         public ReadOnlyMemory<float> PopNextAudioFrameData() =>
             Frames.Count > 0 ? Frames.Dequeue() : ReadOnlyMemory<float>.Empty;
 
+        public bool TryPopNextAudioFrameData(out ReadOnlyMemory<float> data)
+        {
+            if (Frames.Count == 0) { data = default; return false; }
+            data = Frames.Dequeue();
+            return true;
+        }
+
         public void ResetAudioBufferAnimationCompleted() => ResetCount++;
     }
 
@@ -399,6 +406,69 @@ public class WwiseRobotAudioPathTests
     // ------------------------------------------------------------------ A19: UpdateLoading
 
     [Fact]
+    public void PreparingPollsResetAndStartsOnceWithoutFallingThrough()
+    {
+        var rig = Build();
+        rig.Buffer.IsWaitingForReset = true;
+        rig.Buffer.HasStream = true;
+        rig.Buffer.HasData = true;
+        rig.Path.InitAnimation(new[] { Keyframe(0, new WwiseRobotAudioRef(0x111, 1, false)) }, 7);
+        Assert.Equal(WwiseRobotAudioState.Preparing, rig.Path.Update(0));
+        Assert.Equal(WwiseRobotAudioState.Preparing, rig.Path.Update(0));
+        Assert.Empty(rig.Dispatch.Queue.Scheduled);
+        rig.Buffer.IsWaitingForReset = false;
+        Assert.Equal(WwiseRobotAudioState.LoadingStream, rig.Path.Update(0));
+        Assert.Single(rig.Dispatch.Queue.Scheduled);
+        Assert.Equal(0, rig.Dispatch.Queue.Scheduled[0].Delay);
+        Assert.Equal(WwiseRobotAudioState.AudioFramesReady, rig.Path.Update(0));
+        Assert.Single(rig.Dispatch.Queue.Scheduled);
+    }
+
+    [Fact]
+    public void RemainingStreamUsesOffsetAfterEventCursorIsExhausted()
+    {
+        var rig = Build();
+        rig.Path.StartTimeMs = 1000;
+        rig.Buffer.HasStream = true;
+        rig.Buffer.HasData = true;
+        rig.Buffer.CreatedMilliseconds = 5000.75;
+        rig.Path.InitAnimation(new[] { Keyframe(10, new WwiseRobotAudioRef(0x111, 1, false)) }, 7);
+        Assert.Equal(WwiseRobotAudioState.AudioFramesReady, rig.Path.Update(1010));
+        rig.Buffer.Frames.Enqueue(Array.Empty<float>());
+        rig.Path.Update(1011);
+        Assert.NotNull(rig.Path.PopRobotAudioMessage());
+        Assert.Equal(1, rig.Path.EventCursor);
+        rig.Buffer.HasData = false;
+        Assert.Equal(WwiseRobotAudioState.LoadingStreamFrames, rig.Path.Update(1011));
+        rig.Buffer.HasData = true;
+        rig.Buffer.CreatedMilliseconds = 5010.9;
+        Assert.Equal(WwiseRobotAudioState.LoadingStreamFrames, rig.Path.Update(1019));
+        Assert.Equal(WwiseRobotAudioState.AudioFramesReady, rig.Path.Update(1020));
+    }
+
+    [Fact]
+    public void MissingFrameDoesNotAdvanceButEmptyFrameDoesAtStrictBoundary()
+    {
+        var rig = Build();
+        rig.Buffer.HasStream = true;
+        rig.Buffer.HasData = true;
+        rig.Path.InitAnimation(new[] { Keyframe(10, new WwiseRobotAudioRef(0x111, 1, false)) }, 7);
+        Assert.Equal(WwiseRobotAudioState.AudioFramesReady, rig.Path.Update(10));
+        rig.Buffer.Frames.Enqueue(Array.Empty<float>());
+        Assert.All(rig.Path.PopRobotAudioMessage()!, sample => Assert.Equal(0, sample));
+        Assert.Equal(0, rig.Path.EventCursor); // equality does not pass the strict comparison
+        rig.Path.Update(11);
+        Assert.Null(rig.Path.PopRobotAudioMessage());
+        Assert.Equal(0, rig.Path.EventCursor);
+        rig.Buffer.Frames.Enqueue(Array.Empty<float>());
+        var empty = rig.Path.PopRobotAudioMessage();
+        Assert.NotNull(empty);
+        Assert.Equal(744, empty!.Length);
+        Assert.All(empty, sample => Assert.Equal(0, sample));
+        Assert.Equal(1, rig.Path.EventCursor);
+    }
+
+    [Fact]
     public void M6_016_A19_DataStartsTheStreamOnlyWhenTheNextEventsTimeIsReached()
     {
         var rig = Build(7, true, 0);
@@ -509,6 +579,7 @@ public class WwiseRobotAudioPathTests
         Assert.All(frame.Skip(3), b => Assert.Equal(0x00, b));
 
         // A21: an empty frame is all-silence, exactly as the native pushes it (D2.9).
+        rig.Buffer.Frames.Enqueue(Array.Empty<float>());
         var silence = rig.Path.PopRobotAudioMessage();
         Assert.NotNull(silence);
         Assert.All(silence!, b => Assert.Equal(0x00, b));

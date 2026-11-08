@@ -89,4 +89,5 @@ internal sealed class NativeOkaoFaceRecognizer : IOkaoFaceRecognizer
 
     public int ClearAlbum(OkaoAlbumHandle album) => Run(m => m.FrCall("OKAO_FR_ClearAlbum", Album(m, album)));
     public int DeleteAlbumHandle(OkaoAlbumHandle album) => Run(m => m.FrCall("OKAO_FR_DeleteAlbumHandle", Album(m, album)));
+    internal (int Status, byte[] Data) SerializeAlbum(OkaoAlbumHandle album) => Run(m => m.FrSerializeAlbum(Album(m, album)));
 }
