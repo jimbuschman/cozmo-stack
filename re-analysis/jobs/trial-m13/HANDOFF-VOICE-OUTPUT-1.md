@@ -85,4 +85,33 @@ admission. No production speech output, hardware or fidelity status is claimed.
 
 Independent review passed after corrections to native buffer writes and worker context restoration. The manager reran the independent Python probe on the Acapela fixture and matched the 92-frame hash and EndOfEvent tuple. First and last frame ticks were 106670 and 3349438 microseconds, and EndOfEvent was 3328104 microseconds on the probe clock.
 
-Batch full gate pending.
+## Claude follow-up on main 7b6390de
+
+Unicorn 2.1.4 native timeout starts and joins a thread per timed call, and
+nested starts share stop and timeout state (uc.c 958–985, 1128–1186).
+The vendored Windows DLL measured about 16 ms even for a one-instruction
+call. The existing nested-safe block hook now samples the clock every 64
+translated blocks, checks the fault latch on every block, and checks time
+at call and managed-callback boundaries. Comparable Acapela runs changed
+from 12.33–12.59 s to 10.35–10.65 s, with no clear OKAO improvement.
+This is host safety and performance work, not real-time timing evidence.
+
+On a missing intent, native 0x0052AB54 allocates without zeroing, the ctor
+logs at 0x005610A4, and it reads the uninitialized style at 0x00561186.
+The stack skips the request before construction and synthesis, logs M1-034
+and M14-006, and leaves the RNG alone. The regression reaches the real
+internal admission and verifies no action is queued.
+
+### Proposed M14-006 split for Claude
+
+- SayText action, metadata and traits (0x005602D8, 0x00560F94, 0x00561488).
+- Synthesis provider, operation lifecycle and owner teardown
+  (0x0069E4C8, 0x0069EF10, 0x0069F430, and the M14-013 boundary).
+- Java speech input policy, including the stop/callback and locale inputs.
+- WavePortal descriptor, source transfer and refill (0x00A7898C,
+  0x008DD636, 0x008DDC5A).
+- Live speech rendering, timing and delivery remain implementation work,
+  with the M6-016/M6-018 boundaries recorded above.
+
+No manifest or approval edits were made. Batch full gate pending.
+The broader affected group passed 45/45 and the clean rebuild of the safety and voice group passed 38/38 including the final address-hook test. Both emulator fixtures remained bit-exact. Independent follow-up review found no blocking change.

@@ -86,6 +86,10 @@ public sealed unsafe partial class ArmMachine : IDisposable
     private bool _disposed;
     private Exception? _executionFailure;
     private long _deadline;
+    // Sampling bounds the extra guest execution after expiry to at most 64 translated blocks.
+    // Fault latches are still checked on every block, including after nested calls resume.
+    private const int DeadlineSampleBlocks = 64;
+    private int _blocksUntilDeadlineCheck = DeadlineSampleBlocks;
     private uint _activeCall;
     private int _runDepth;
 
@@ -421,10 +425,14 @@ public sealed unsafe partial class ArmMachine : IDisposable
             m._pending ??= new EmulationAbort("emulator is faulted after a previous call failed", m._executionFailure);
             uc_emu_stop(uc);
         }
-        else if (m._deadline != 0 && Stopwatch.GetTimestamp() >= m._deadline)
+        else if (--m._blocksUntilDeadlineCheck <= 0)
         {
-            m._pending ??= new EmulationAbort($"M1-034: call to 0x{m._activeCall:X} exceeded its emulation timeout at pc 0x{address:X}");
-            uc_emu_stop(uc);
+            m._blocksUntilDeadlineCheck = DeadlineSampleBlocks;
+            if (m._deadline != 0 && Stopwatch.GetTimestamp() >= m._deadline)
+            {
+                m._pending ??= new EmulationAbort($"M1-034: call to 0x{m._activeCall:X} exceeded its emulation timeout at pc 0x{address:X}");
+                uc_emu_stop(uc);
+            }
         }
     }
 
@@ -434,7 +442,10 @@ public sealed unsafe partial class ArmMachine : IDisposable
         var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
         try
         {
+            m.CheckDeadline();
             m.OnStub((uint)address);
+            m.EnsureRunnable();
+            m.CheckDeadline();
         }
         catch (Exception e)
         {
@@ -449,7 +460,10 @@ public sealed unsafe partial class ArmMachine : IDisposable
         var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
         try
         {
+            m.CheckDeadline();
             if (m._addrHooks.TryGetValue((uint)address, out var fn)) m.Finish(fn(m));
+            m.EnsureRunnable();
+            m.CheckDeadline();
         }
         catch (Exception e)
         {
@@ -530,6 +544,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
             WriteReg(UC_ARM_REG_FPSCR, fpscr);
             _pending = null;
             _fault = "";
+            CheckDeadline();
             int err = uc_emu_start(_uc, addr, RetAddr, 0, (nuint)count);
             TakePending();
             EnsureRunnable();
@@ -566,6 +581,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
         double ticks = CallTimeout.TotalSeconds * Stopwatch.Frequency;
         long now = Stopwatch.GetTimestamp();
         _deadline = ticks >= long.MaxValue - now ? long.MaxValue : now + Math.Max(1, (long)ticks);
+        _blocksUntilDeadlineCheck = DeadlineSampleBlocks;
         _activeCall = address;
     }
 
@@ -613,6 +629,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
             WriteReg(UC_ARM_REG_SP, (sp - 0x1000) & ~7u);
             SetLr(RetAddr + 0x100);
             _activeCall = fn;
+            CheckDeadline();
             int err = uc_emu_start(_uc, fn, RetAddr + 0x100, 0, (nuint)count);
             TakePending();
             EnsureRunnable();
@@ -659,6 +676,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
             for (int k = 0; k < args.Length; k++) SetReg(k, args[k]);
             WriteReg(UC_ARM_REG_SP, (saved[13] - 0x800) & ~7UL);
             SetLr(ret2);
+            CheckDeadline();
             int err = uc_emu_start(_uc, fn, ret2, 0, 0);
             TakePending();
             EnsureRunnable();

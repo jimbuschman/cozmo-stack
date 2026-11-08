@@ -53,7 +53,12 @@ public sealed partial class CozmoRobot
             }
             var metadata = SpeechMetadata.Load(resources);
             if (!metadata.TrySelect(intent, text, Engine.ContextRandom, out var selection))
-                Engine.EmitStackLog($"M14-006 SayText intent {intent} has no metadata");
+            {
+                // 0x5610A4 logs CanNotFind.SayTextIntentConfig, then 0x561186 reads an
+                // uninitialized style. M1-034 skips the action before synthesis.
+                Engine.EmitStackLog($"M1-034 M14-006 CanNotFind.SayTextIntentConfig at 0x005610A4; missing intent {intent}; skipped uninitialized style read at 0x00561186");
+                return;
+            }
             var action = new SayTextAction(this, owner, text, selection.Style, selection.Duration, selection.Pitch);
             owner.ActionList.QueueAction(QueueActionPosition.Now, action, 0);
         });

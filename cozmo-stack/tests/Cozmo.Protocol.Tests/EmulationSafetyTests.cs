@@ -188,6 +188,18 @@ public sealed class EmulationSafetyTests
         Assert.Same(failure, Assert.Throws<EmulationAbort>(() => machine.Call(entry)).InnerException);
     }
 
+    [Fact]
+    public void SlowAddressHookIsCheckedBeforeResumingGuest()
+    {
+        using var machine = Machine();
+        machine.CallTimeout = TimeSpan.FromMilliseconds(100);
+        uint entry = Code(machine, 0xE12FFF1E);
+        machine.HookAddress(entry, _ => { Thread.Sleep(300); return 0; });
+        var failure = Assert.Throws<EmulationAbort>(() => machine.Call(entry));
+        Assert.Contains("M1-034", failure.Message);
+        Assert.Same(failure, Assert.Throws<EmulationAbort>(() => machine.Call(entry)).InnerException);
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference UnownedMachine()
     {
