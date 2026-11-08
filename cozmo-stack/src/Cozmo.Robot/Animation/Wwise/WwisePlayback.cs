@@ -6,6 +6,9 @@ public abstract record WwisePlayNode;
 /// <summary>A recording, with the level and pitch summed down the path that reached it.</summary>
 public sealed record WwisePlaySound(uint SoundId, uint MediaId, double GainDb, double Cents) : WwisePlayNode;
 
+/// <summary>A source plug-in selected by the actual bank hierarchy.</summary>
+public sealed record WwisePlaySourcePlugin(uint SoundId, uint PluginId, uint SourceId, double GainDb, double Cents) : WwisePlayNode;
+
 /// <summary>Its parts play one after another, each starting when the one before it ends.</summary>
 public sealed record WwisePlaySequence(IReadOnlyList<WwisePlayNode> Parts) : WwisePlayNode;
 
@@ -31,6 +34,25 @@ public sealed record WwisePlaybackPlan(uint EventId)
                     case WwisePlaySound s: list.Add(s); break;
                     case WwisePlaySequence q: foreach (var c in q.Parts) Walk(c); break;
                     case WwisePlayTogether t: foreach (var c in t.Parts) Walk(c); break;
+                }
+            }
+            Walk(Root);
+            return list;
+        }
+    }
+
+    public IReadOnlyList<WwisePlaySourcePlugin> SourcePlugins
+    {
+        get
+        {
+            var list = new List<WwisePlaySourcePlugin>();
+            void Walk(WwisePlayNode? node)
+            {
+                switch (node)
+                {
+                    case WwisePlaySourcePlugin source: list.Add(source); break;
+                    case WwisePlaySequence sequence: foreach (var child in sequence.Parts) Walk(child); break;
+                    case WwisePlayTogether together: foreach (var child in together.Parts) Walk(child); break;
                 }
             }
             Walk(Root);
@@ -135,6 +157,8 @@ public static class WwisePlayback
             case WwiseSoundNode s:
                 if (s.IsSourcePlugin)
                 {
+                    if (s.PluginId == WavePortal.PluginId)
+                        return new WwisePlaySourcePlugin(s.Id, s.PluginId, s.MediaId, gainDb, cents);
                     problems.Add($"sound {s.Id} is a source plug-in ({s.PluginId:X8}), which makes its own audio");
                     return null;
                 }

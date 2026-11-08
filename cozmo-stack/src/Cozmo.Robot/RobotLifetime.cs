@@ -142,6 +142,7 @@ public sealed partial class EngineRobot
     internal void InitLifetime()
     {
         Lifetime = new(this);
+        InitSpeechComponent();
         InitBehaviorAudioOwners(); // M13-038: broadcaster and A-before-B clients, retained until Robot owner destruction.
         // fidelity: M15-027, M15-028 — native destructor head, before unconditional tracker ForceUpdate/AbortAll.
         Lifetime.Bind(-1,_=>Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.destructor",unchecked((int)NativeRobotId).ToString(System.Globalization.CultureInfo.InvariantCulture)));

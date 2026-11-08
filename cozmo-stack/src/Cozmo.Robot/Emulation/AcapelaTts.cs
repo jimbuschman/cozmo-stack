@@ -31,11 +31,13 @@ public sealed class AcapelaTts : IDisposable
     public const int SampleRate = 22050;
     private readonly AcapelaNative _n;
     private readonly string _libDir;
+    private readonly bool _javaGlue;
 
-    public AcapelaTts(string libDir)
+    public AcapelaTts(string libDir, bool javaGlue = false, Func<long>? unixTime = null)
     {
         _libDir = libDir;
-        _n = new AcapelaNative(libDir);
+        _javaGlue = javaGlue;
+        _n = new AcapelaNative(libDir, unixTime);
         try
         {
             _n.InitCallbacks();
@@ -65,6 +67,14 @@ public sealed class AcapelaTts : IDisposable
         credentials ??= AcapelaCredentials.FromEngine(_libDir);
         _n.HostRoot = voiceDir;
         _n.GetVoiceList(AcapelaNative.VirtualRoot);
+        if (_javaGlue)
+        {
+            foreach (string file in Directory.EnumerateFiles(voiceDir, "*", SearchOption.AllDirectories))
+            {
+                string guestPath = AcapelaNative.VirtualRoot + "/" + Path.GetRelativePath(voiceDir, file).Replace('\\', '/');
+                if (guestPath.Contains(".ini", StringComparison.Ordinal)) _n.GetVoiceInfo(guestPath, "speaker");
+            }
+        }
         int err = _n.SetLicense(credentials.UserId, credentials.Password, credentials.License);
         if (err != 0) throw new AcapelaTtsException("nSetLicense", err);
         int freq = _n.LoadVoice(voice, "");
@@ -86,8 +96,21 @@ public sealed class AcapelaTts : IDisposable
         if (e2 != 0) throw new AcapelaTtsException("nSetTTSSetting VOICESHAPE", e2);
         int e3 = _n.SetShape(pitch);
         if (e3 != 0) throw new AcapelaTtsException("nSetShape", e3);
+        if (_javaGlue)
+        {
+            _n.Stop();
+            Thread.Sleep(100);
+            _n.Events.Clear();
+        }
         _n.Samples.Clear();
         LastSpeakResult = _n.Speak(text);
+        if (_javaGlue)
+        {
+            bool ended = _n.Events.Any(e => e.Method == "eventsCallback" && e.Args.Length > 0 && e.Args[0] == 1);
+            _n.Stop();
+            Thread.Sleep(100);
+            if (!ended) throw new EmulationAbort("M1-034 M14-006: speech did not produce the Java text-end callback; skipped the indefinite isSpeaking wait");
+        }
         return _n.Samples.ToArray();
     }
 

@@ -14,6 +14,31 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]       // B9 reads the process-global _errG (EngineErrorState.ErrorFlagSet) at log time
 public class EngineAppLayerTests
 {
+    // reach: canonical robot and ActionList, real Acapela provider, attached shipped Wwise banks.
+    [Fact]
+    public void SayTextStopsVisiblyWhenTheNativeFloatOutputJoinIsMissing()
+    {
+        if (WwiseAssets.ObbRoot is not { } obb || WwiseAssets.Library is not { } banks ||
+            Cozmo.Robot.Emulation.ShippedLibraries.FindLibDir() is null) return;
+        string resources = Path.Combine(obb, "assets", "cozmo_resources");
+        using var rig = new Rig(new CozmoEngineOptions { ResourcesPath = resources, BlockPoolPath = "", LabLocaleLanguage = "en" });
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        using var source = new Cozmo.Robot.Animation.Wwise.WwiseAudioSource(banks);
+        rig.Robot.Animations.AudioSource = source;
+        var logs = new List<string>();
+        rig.Engine.LogLine += line => { lock (logs) logs.Add(line); };
+        rig.Robot.QueueSayTextForNativePath("Hello, I am Cozmo.", 3, 1);
+        bool missing = SpinWait.SpinUntil(() =>
+        {
+            rig.Tick(0);
+            lock (logs) return logs.Any(line => line.Contains("MISSING M14-006/M6-018: SayText"));
+        }, TimeSpan.FromSeconds(60));
+        Assert.True(missing, "the real speech operation did not reach its named missing output join");
+        lock (rig.Port.Sent)
+            Assert.DoesNotContain(rig.Port.Sent.Select(bytes => RobotMessage.Parse(bytes)), message => message is AudioSample);
+    }
+
     // T3/T4: transport -> UpdateFullRobotState gate -> device route -> cliff store -> Touch Update.
     [Fact]
     public void M4_033_GatedStateStoresTimestampAndRawBeforeOriginRejection()

@@ -553,6 +553,8 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     {
         var plan = WwisePlayback.Resolve(_library, eventId, _switches, _selection);
         var reasons = new List<string>(plan.Problems);
+        if (plan.SourcePlugins.Count != 0)
+            reasons.Add("MISSING M6-018/M14-006: WavePortal source selected, but the source-ID plug-in descriptor lookup and native float frame, RTPC and robot output join are not built");
         if (plan.Root is null)
         {
             _misses.Add(new WwiseMiss(eventId, plan.Name,

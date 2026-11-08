@@ -10,9 +10,8 @@ namespace Cozmo.Robot.Emulation;
 /// fopen/fread/fseek/ftell/fgets/getc/ungetc/fclose, open/read/lseek/close/fdopen, mmap/munmap as a heap copy,
 /// opendir/readdir/closedir with bionic's dirent64 and the entries "." and ".." then the names in ordinal order);</item>
 /// <item>an sscanf subset (<see cref="ScanfSubset"/>); fscanf stops the run;</item>
-/// <item>qsort as a stable sort whose comparator runs as nested emulation on copies of the two elements;</item>
-/// <item>time() fixed at 1700000000, clock_gettime from the host clock, usleep a no-op, srand48 ignored, lrand48 the 48-bit
-/// LCG from its default state 0x1234ABCD330E;</item>
+/// <item>bionic's qsort with its comparator called on guest array elements;</item>
+/// <item>time() from an injectable clock, clock_gettime from the host clock, usleep a no-op, and bionic's srand48/lrand48;</item>
 /// <item>atoi, strdup, strcasecmp, strcat, mbrtowc/wcrtomb (single byte), the stdio writers as no-ops, getenv 0;</item>
 /// <item>raise, exit and __cxa_pure_virtual stop the run;</item>
 /// <item>a JNIEnv of 240 slots with the 25 functions the library uses, a JavaVM whose GetEnv/AttachCurrentThread return that
@@ -30,10 +29,12 @@ public sealed class AcapelaNative : IDisposable
 
     private readonly ArmMachine _m;
     private readonly LoadedLibrary _lib;
+    private readonly Func<long> _unixTime;
     private string? _hostRoot;
 
-    public AcapelaNative(string libDir)
+    public AcapelaNative(string libDir, Func<long>? unixTime = null)
     {
+        _unixTime = unixTime ?? (() => FakeTime);
         _m = new ArmMachine(libDir, new[] { "libc++_shared.so", Library });
         try
         {
@@ -245,7 +246,7 @@ public sealed class AcapelaNative : IDisposable
         };
         L["closedir"] = _ => 0;
 
-        L["time"] = m => { if (m.Reg(0) != 0) m.W32(m.Reg(0), FakeTime); return FakeTime; };
+        L["time"] = m => { uint value = unchecked((uint)_unixTime()); if (m.Reg(0) != 0) m.W32(m.Reg(0), value); return value; };
         L["clock_gettime"] = m =>
         {
             long ticks = DateTime.UtcNow.Ticks - DateTime.UnixEpoch.Ticks;
@@ -254,8 +255,8 @@ public sealed class AcapelaNative : IDisposable
             return 0;
         };
         L["usleep"] = _ => 0;
-        L["srand48"] = _ => 0;
         ulong rand48 = 0x1234ABCD330E;
+        L["srand48"] = m => { rand48 = ((ulong)m.Reg(0) << 16) | 0x330E; return StubResult.Void; };
         L["lrand48"] = _ =>
         {
             rand48 = (0x5DEECE66DUL * rand48 + 0xB) & 0xFFFFFFFFFFFFUL;
@@ -374,39 +375,82 @@ public sealed class AcapelaNative : IDisposable
         }
     }
 
-    /// <summary>qsort(base, n, size, cmp): the elements are read out, sorted stably with the guest comparator called on copies
-    /// placed in one scratch block (malloc(2*size), as the probe), and written back.</summary>
+    /// <summary>Bionic's Bentley-McIlroy qsort. Comparators receive addresses in the guest array.
+    /// Algorithm reference: Android bionic eclair-release libc/stdlib/qsort.c, derived from the BSD
+    /// implementation by M. Douglas McIlroy, Copyright (c) 1992, 1993 The Regents of the University
+    /// of California. The exact phone bionic revision is not available.</summary>
     private StubResult Qsort(ArmMachine m)
     {
         uint b = m.Reg(0), n = m.Reg(1), sz = m.Reg(2), cmp = m.Reg(3);
         uint lr = m.Lr;
-        var items = new byte[n][];
-        for (uint k = 0; k < n; k++) items[k] = m.Read(b + k * sz, sz);
-        uint ta = m.Malloc(2UL * sz);
-        int Compare(byte[] x, byte[] y)
+        int Compare(uint x, uint y) => S32(m.NestedCall(cmp, x, y));
+        void Swap(uint x, uint y)
         {
-            m.Write(ta, x);
-            m.Write(ta + sz, y);
-            return S32(m.NestedCall(cmp, ta, ta + sz));
+            if (x == y) return;
+            var bytes = m.Read(x, sz);
+            m.Copy(x, y, sz);
+            m.Write(y, bytes);
         }
-        var sorted = StableSort(items, Compare);
-        for (uint k = 0; k < n; k++) m.Write(b + k * sz, sorted[k]);
+        void Sort(uint start, uint count)
+        {
+            uint At(uint index) => start + index * sz;
+            void Insertion()
+            {
+                for (uint i = 1; i < count; i++)
+                    for (uint j = i; j > 0 && Compare(At(j - 1), At(j)) > 0; j--)
+                        Swap(At(j), At(j - 1));
+            }
+            uint Median(uint a, uint c, uint d) => Compare(a, c) < 0
+                ? (Compare(c, d) < 0 ? c : Compare(a, d) < 0 ? d : a)
+                : (Compare(c, d) > 0 ? c : Compare(a, d) < 0 ? a : d);
+            if (count < 7) { Insertion(); return; }
+            uint middle = count / 2, first = 0, last = count - 1;
+            if (count > 7)
+            {
+                if (count > 40)
+                {
+                    uint step = count / 8;
+                    first = (Median(At(first), At(first + step), At(first + 2 * step)) - start) / sz;
+                    middle = (Median(At(middle - step), At(middle), At(middle + step)) - start) / sz;
+                    last = (Median(At(last - 2 * step), At(last - step), At(last)) - start) / sz;
+                }
+                middle = (Median(At(first), At(middle), At(last)) - start) / sz;
+            }
+            Swap(At(0), At(middle));
+            long pa = 1, pb = 1, pc = count - 1, pd = count - 1;
+            bool swapped = false;
+            while (true)
+            {
+                while (pb <= pc)
+                {
+                    int r = Compare(At((uint)pb), At(0));
+                    if (r > 0) break;
+                    if (r == 0) { Swap(At((uint)pa++), At((uint)pb)); swapped = true; }
+                    pb++;
+                }
+                while (pb <= pc)
+                {
+                    int r = Compare(At((uint)pc), At(0));
+                    if (r < 0) break;
+                    if (r == 0) { Swap(At((uint)pc), At((uint)pd--)); swapped = true; }
+                    pc--;
+                }
+                if (pb > pc) break;
+                Swap(At((uint)pb++), At((uint)pc--));
+                swapped = true;
+            }
+            if (!swapped) { Insertion(); return; }
+            long leftEqual = Math.Min(pa, pb - pa);
+            for (long k = 0; k < leftEqual; k++) Swap(At((uint)k), At((uint)(pb - leftEqual + k)));
+            long rightEqual = Math.Min(pd - pc, count - pd - 1);
+            for (long k = 0; k < rightEqual; k++) Swap(At((uint)(pb + k)), At((uint)(count - rightEqual + k)));
+            uint left = (uint)(pb - pa), right = (uint)(pd - pc);
+            if (left > 1) Sort(start, left);
+            if (right > 1) Sort(At(count - right), right);
+        }
+        if (sz != 0 && n > 1) Sort(b, n);
         m.SetLr(lr);
         return 0;
-    }
-
-    private static byte[][] StableSort(byte[][] a, Func<byte[], byte[], int> cmp)
-    {
-        if (a.Length < 2) return a;
-        int mid = a.Length / 2;
-        var l = StableSort(a[..mid], cmp);
-        var r = StableSort(a[mid..], cmp);
-        var o = new byte[a.Length][];
-        int i = 0, j = 0, k = 0;
-        while (i < l.Length && j < r.Length) o[k++] = cmp(r[j], l[i]) < 0 ? r[j++] : l[i++];
-        while (i < l.Length) o[k++] = l[i++];
-        while (j < r.Length) o[k++] = r[j++];
-        return o;
     }
 
     // ---- JNI
