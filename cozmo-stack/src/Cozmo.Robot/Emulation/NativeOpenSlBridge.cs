@@ -256,7 +256,8 @@ internal sealed class NativeOpenSlBridge
         var completed = _buffers.Dequeue();
         if (_inspectBuffers && !_machine.Read(completed.Address, BlockBytes).AsSpan().SequenceEqual(completed.Data)) ChangedAfterSubmission++;
         _queueIndex = unchecked(_queueIndex + 1);
-        _machine.Call(_callback, new[] { _queue, _callbackContext }, count: 1_000_000);
+        // No instruction budget on the per-block callback (see NativeWwiseVoiceHost.Run); the time deadline still applies.
+        _machine.Call(_callback, new[] { _queue, _callbackContext });
     }
 
     private StubResult DestroyPlayer(ArmMachine m)

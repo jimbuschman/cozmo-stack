@@ -78,7 +78,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
                 Run(0x9606C4, new uint[] { 0 });
                 Ok(Run(0x9606E8, new[] { _deviceId }), "device destroy");
                 if (_archiveIo.OpenHandles != 0) throw new EmulationAbort("native device retained archive handles");
-                _m.Call(_m.R32(_m.R32(manager) + 8), new[] { manager }, count: 100_000_000);
+                _m.Call(_m.R32(_m.R32(manager) + 8), new[] { manager });
             }
             if (!_openSl.IsDestroyed || _workers.Count != 0 || _openSl.PendingCount != 0)
                 throw new EmulationAbort("native Wwise termination left device or worker ownership alive");
@@ -279,8 +279,10 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     private static uint F(float value) => BitConverter.SingleToUInt32Bits(value);
     private static float V(uint value) => BitConverter.UInt32BitsToSingle(value);
     private uint A(uint relative) => checked(_base + relative);
+    // No instruction budget: a non-zero uc_emu_start count makes Unicorn count every instruction, which halved the voice
+    // render speed (8.2 s for 3.95 s of audio, 4.3 s without). The call keeps the machine's time deadline (M1-034).
     private uint Run(uint relative, uint[]? args = null, uint[]? stack = null) =>
-        _m.Call(A(relative), args, stack, count: 100_000_000);
+        _m.Call(A(relative), args, stack);
     private void Ok(uint result, string operation)
     {
         if (result != 1) throw new EmulationAbort($"native Wwise {operation} returned {result}");
@@ -302,7 +304,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             _openSl = new NativeOpenSlBridge(_m, inspectOutputBuffers);
             _m.Relocate();
             for (uint p = 0x103E4D8; p < 0x103E59C; p += 4)
-                _m.Call(_m.R32(A(p)), count: 1_000_000);
+                _m.Call(_m.R32(A(p)));
             uint mem = _m.Malloc(0x100), stream = _m.Malloc(0x100), settings = _m.Malloc(0x100), platform = _m.Malloc(0x100);
             _m.W32(mem, 32);
             Ok(Run(0xA7AC68, new[] { mem }), "memory init");
@@ -321,7 +323,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
                 if (_deviceId == uint.MaxValue) throw new EmulationAbort("native Wwise stream device creation failed");
                 _archiveIo.Bind(checked((int)_deviceId));
                 _device = _workers.Values.Single(w => w.Entry == A(0x97CA90)).Owner;
-                _m.Call(_m.R32(_m.R32(_device) + 0x10), new[] { _device }, count: 1_000_000);
+                _m.Call(_m.R32(_m.R32(_device) + 0x10), new[] { _device });
             }
             Run(0x99DC68, new[] { settings });
             Run(0x99DCE8, new[] { platform });

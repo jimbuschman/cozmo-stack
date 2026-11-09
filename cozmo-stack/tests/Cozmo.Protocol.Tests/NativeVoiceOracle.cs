@@ -69,7 +69,7 @@ internal sealed class NativeVoiceOracle : IDisposable
     private static float V(uint value) => BitConverter.UInt32BitsToSingle(value);
     private uint A(uint relative) => checked(_base + relative);
     private uint Run(uint relative, uint[]? args = null, uint[]? stack = null) =>
-        _m.Call(A(relative), args, stack, count: 100_000_000);
+        _m.Call(A(relative), args, stack);
     private void Ok(uint result, string operation)
     {
         if (result != 1) throw new EmulationAbort($"native Wwise {operation} returned {result}");
@@ -84,7 +84,7 @@ internal sealed class NativeVoiceOracle : IDisposable
             InstallHost();
             _m.Relocate();
             for (uint p = 0x103E4D8; p < 0x103E59C; p += 4)
-                _m.Call(_m.R32(A(p)), count: 1_000_000);
+                _m.Call(_m.R32(A(p)));
             uint mem = _m.Malloc(0x100), stream = _m.Malloc(0x100), settings = _m.Malloc(0x100), platform = _m.Malloc(0x100);
             _m.W32(mem, 32);
             Ok(Run(0xA7AC68, new[] { mem }), "memory init");

@@ -60,6 +60,25 @@ public sealed unsafe partial class ArmMachine : IDisposable
 {
     public const uint StubBase = 0x7F000000;
     public const uint StubSize = 0x100000;
+    /// <summary>The stub area's last page holds guest-code libc routines that run inside the emulator, outside the stub hook.</summary>
+    internal const uint GuestRoutineBase = StubBase + StubSize - 0x1000;
+    /// <summary>
+    /// memcpy, memmove and their __aeabi forms as ARM code (memmove-safe: backward byte copy when the destination
+    /// overlaps above the source, otherwise forward with a word loop when both pointers are 4-byte aligned; returns the
+    /// destination). Same result as the managed <see cref="Copy"/> they replace, without a host round trip per call:
+    /// Acapela calls memcpy about 70,000 times per second of synthesis, and each managed stub forced the emulator to
+    /// leave and re-enter its translated code. Not shipped code: bionic is not shipped, so every libc routine here is
+    /// a fixture. Assembled by hand; fuzzed against a reference copy under Unicorn (20,000 cases).
+    /// </summary>
+    internal static readonly uint[] GuestCopyCode =
+    {
+        0xE1A0C000, 0xE3520000, 0x0A00001A, 0xE1500001, 0x9A000009, 0xE0813002, 0xE1500003, 0x2A000006,
+        0xE0800002, 0xE0811002, 0xE5713001, 0xE5603001, 0xE2522001, 0x1AFFFFFB, 0xEA00000E, 0xE1803001,
+        0xE3130003, 0x1A000005, 0xE3520004, 0x3A000003, 0xE4913004, 0xE4803004, 0xE2422004, 0xEAFFFFF9,
+        0xE3520000, 0x0A000003, 0xE4D13001, 0xE4C03001, 0xE2522001, 0x1AFFFFFB, 0xE1A0000C, 0xE12FFF1E,
+    };
+    internal const uint GuestCopyAddress = GuestRoutineBase;
+    private static readonly HashSet<string> GuestCopyNames = new(StringComparer.Ordinal) { "memcpy", "memmove", "__aeabi_memcpy", "__aeabi_memmove" };
     public const uint RetAddr = 0x7F100000;
     public const uint HeapBase = 0x40000000;
     public const uint HeapSize = 0x08000000;
@@ -147,9 +166,11 @@ public sealed unsafe partial class ArmMachine : IDisposable
             InstallLibc();
             var stub = Ptr(StubBase, StubSize);
             for (uint i = 0; i < StubSize; i += 4) *(uint*)(stub + i) = 0xE12FFF1E;     // bx lr
+            for (int i = 0; i < GuestCopyCode.Length; i++) *(uint*)(stub + (GuestCopyAddress - StubBase) + (uint)(4 * i)) = GuestCopyCode[i];
             nuint hh;
+            // The stub hook stops before the guest-routine page: those routines run as ordinary emulated code.
             Check(uc_hook_add(_uc, &hh, UC_HOOK_CODE, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&StubThunk,
-                (void*)GCHandle.ToIntPtr(_self), StubBase, StubBase + StubSize - 1), "hook stubs");
+                (void*)GCHandle.ToIntPtr(_self), StubBase, GuestRoutineBase - 1), "hook stubs");
             Check(uc_hook_add(_uc, &hh, UC_HOOK_BLOCK, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&DeadlineThunk,
                 (void*)GCHandle.ToIntPtr(_self), 1, 0), "hook deadline");
             Check(uc_hook_add(_uc, &hh, UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED | UC_HOOK_MEM_FETCH_UNMAPPED,
@@ -381,7 +402,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
             if (!_dataAddr.TryGetValue(name, out var imported)) _dataAddr[name] = imported = dataImport(this);
             return imported;
         }
-        if (Libc.ContainsKey(name)) return Stub(name);
+        if (Libc.ContainsKey(name)) return GuestCopyNames.Contains(name) ? GuestCopyAddress : Stub(name);
         if (DataSymbols.TryGetValue(name, out var make))
         {
             if (!_dataAddr.TryGetValue(name, out var d)) _dataAddr[name] = d = make(this);
@@ -397,7 +418,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
         {
             a = _nextStub;
             _nextStub += 4;
-            if (_nextStub > StubBase + StubSize) throw new EmulationAbort("stub area exhausted");
+            if (_nextStub > GuestRoutineBase) throw new EmulationAbort("stub area exhausted");
             _stubAddr[name] = a;
             _stubNames[a] = name;
         }
