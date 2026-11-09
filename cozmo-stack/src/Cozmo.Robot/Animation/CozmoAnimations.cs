@@ -554,6 +554,16 @@ public sealed class CozmoAnimations : IDisposable
     /// </summary>
     public bool StopIfCurrent(long generation) => _scheduler.StopIfCurrent(generation);
     internal bool ClearStreamIfClipMatches(AnimationClip? clip)=>_scheduler.ClearStreamIfClipMatches(clip);
+    internal bool ClearStreamIfClipMatches(AnimationClip? clip, Func<bool> current)=>_scheduler.ClearStreamIfClipMatches(clip,current);
+
+    internal AnimationTicket? PlayScopedTracked(AnimationClip clip, EngineRobot owner, int numLoops, Func<bool> current)
+    {
+        bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && current();
+        var handle=_scheduler.PlayScoped(clip,NowMs(),true,numLoops,Current);
+        if(handle is null)return null;
+        StartTicker();
+        return new AnimationTicket(handle.Completion,handle.Generation) {Tag=handle.Tag};
+    }
 
     internal AnimationTicket? PlaySpeechTracked(AnimationClip clip, Wwise.WwiseRobotAudioPath path, EngineRobot owner)
     {

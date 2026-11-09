@@ -855,6 +855,17 @@ public sealed class AnimationScheduler
         }
     }
 
+    internal AnimationHandle? PlayScoped(AnimationClip clip, double nowMs, bool replaceRunning, int numLoops, Func<bool> current)
+    {
+        lock (_gate)
+        {
+            if (!current()) return null;
+            _nowMs=nowMs;
+            byte tag=SetStreamingAnimationLocked(clip,numLoops,replaceRunning,current);
+            return tag==0 ? null : _handle;
+        }
+    }
+
     // A speech recipient belongs to this exact clip and owner transaction, never the global audio source.
     internal AnimationHandle? PlaySpeech(AnimationClip clip, double nowMs, WwiseRobotAudioPath path, Func<bool> ownerCurrent)
     {
@@ -1057,15 +1068,15 @@ public sealed class AnimationScheduler
             return true;
         }
     }
-    internal bool ClearStreamIfClipMatches(AnimationClip? clip)
+    internal bool ClearStreamIfClipMatches(AnimationClip? clip, Func<bool>? current = null)
     {
         lock(_gate)
         {
             // PlayAnimation dtor 0x00543DB2..C8 compares semantic clip identity,
             // including null==null, independently of a ticket's generation/completion.
-            if(!ReferenceEquals(_streamingClip,clip))return false;
-            SetStreamingAnimationLocked(null,1,interrupt:true);
-            return true;
+            if(current?.Invoke()==false || !ReferenceEquals(_streamingClip,clip))return false;
+            SetStreamingAnimationLocked(null,1,interrupt:true,current);
+            return current?.Invoke()!=false;
         }
     }
 

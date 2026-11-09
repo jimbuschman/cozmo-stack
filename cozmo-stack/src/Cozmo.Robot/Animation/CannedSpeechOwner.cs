@@ -13,6 +13,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     private readonly SemaphoreSlim _lease = new(1, 1);
     private readonly Action<string> _report;
     private bool _retired;
+    private bool _leaseRetiring;
 
     internal CannedSpeechOwner(string library, string banks, string archive, Action<string> report, Func<IPlatformPcmSink>? sink = null)
     {
@@ -44,6 +45,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
 
     internal Task<CannedSpeechLease> Acquire(float[] samples, Func<bool> current) => AcquireCore(samples,current);
     internal Task<CannedSpeechLease> AcquireOrdinary(Func<bool> current) => AcquireCore(null,current);
+    internal Task<CannedSpeechLease> AcquireOrdinaryIfAvailable(Func<bool> current) => AcquireCore(null,current, true);
     internal Task Ready => _opening;
     internal bool MusicAvailable => _opening.IsCompletedSuccessfully && _opening.Result.HasMusic;
     internal Task RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds, Func<bool> current)
@@ -73,9 +75,21 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
             _report("MISSING MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail failed: " + ex.GetBaseException().Message);
         }
     }
-    private async Task<CannedSpeechLease> AcquireCore(float[]? samples, Func<bool> current)
+    private async Task<CannedSpeechLease> AcquireCore(float[]? samples, Func<bool> current, bool refuseBusy = false)
     {
-        await _lease.WaitAsync().ConfigureAwait(false);
+        if (refuseBusy)
+        {
+            bool acquired;
+            lock (_gate)
+            {
+                acquired=_lease.Wait(0);
+                if (!acquired && !_leaseRetiring)
+                    throw new InvalidOperationException("MISSING: shared authored audio is already owned; predecessor handoff is not established");
+            }
+            if (!acquired && !await _lease.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false))
+                throw new TimeoutException("MISSING: shared authored audio retirement did not complete");
+        }
+        else await _lease.WaitAsync().ConfigureAwait(false);
         NativeWwiseVoiceSession.SharedGeneration? generation = null;
         try
         {
@@ -91,12 +105,13 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
         catch
         {
             generation?.Dispose();
-            _lease.Release();
+            Released();
             throw;
         }
     }
 
-    internal void Released() => _lease.Release();
+    internal void MarkLeaseRetiring() { lock (_gate) _leaseRetiring=true; }
+    internal void Released() { lock (_gate) { _leaseRetiring=false; _lease.Release(); } }
     internal void Observe(Task task) => _ = task.ContinueWith(t =>
     {
         if (t.Exception is { } error) _report("M14-006 shared audio: " + error.GetBaseException().Message);
@@ -155,6 +170,7 @@ internal sealed class CannedSpeechLease
     {
         WwiseRobotAudioPath path;
         lock (_pathGate) { if (_retired != 0) return; _retired=1; path=_path; }
+        _owner.MarkLeaseRetiring();
         Task stopped = path.RetireWithoutAbort();
         _owner.Observe(stopped);
         _ = stopped.ContinueWith(_ => { _generation.Dispose(); _owner.Released(); }, TaskScheduler.Default);
