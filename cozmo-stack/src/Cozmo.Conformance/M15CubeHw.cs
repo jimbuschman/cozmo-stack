@@ -187,11 +187,24 @@ internal sealed class M15CubeRun
         if (report is null) { errors.Enqueue($"{name}: no RobotObservedObject report within 30 s; pickup not attempted"); Console.WriteLine("    He did not report seeing a cube; skipping this round."); return; }
         Console.WriteLine($"    Seen: object {report.ObjectId} at ({report.Pose.X:F0}, {report.Pose.Y:F0}) mm.");
         Console.WriteLine($">>> WATCH: Cozmo should {(drive ? "drive to and " : "")}pick up the cube <<<");
-        var pickup = Phase($"{name}-pickup", () =>
+        // Seeing a new cube starts the engine's own AcknowledgeObject reaction, which disables outside actions while it
+        // runs (run 2, 2026-11-09: the pickup was refused). Retry admission for up to 20 s, as an outside AI would.
+        JsonObject pickup = new();
+        double retryUntil = Now + 20000; int attempts = 0;
+        while (true)
         {
-            var t = r.Motion.QueueAiPickupCubeAsync(report.ObjectId, drive, cancel.Token);
-            return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default);
-        }, 90000);
+            attempts++;
+            pickup = Phase($"{name}-pickup", () =>
+            {
+                var t = r.Motion.QueueAiPickupCubeAsync(report.ObjectId, drive, cancel.Token);
+                return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default);
+            }, 90000);
+            bool refusedByReaction = pickup["admitted"]?.GetValue<bool>() == false && (pickup["detail"]?.GetValue<string>() ?? "").Contains("disabled by a reaction", StringComparison.Ordinal);
+            if (!refusedByReaction || Now > retryUntil) break;
+            Event("pickup-retry", new() { ["phase"] = name, ["attempt"] = attempts });
+            Thread.Sleep(500);
+        }
+        pickup["admissionAttempts"] = attempts;
         pickup["objectId"] = report.ObjectId; phases.Add(pickup); Console.WriteLine("    " + pickup["detail"]);
         Thread.Sleep(1500);
         Console.WriteLine(">>> WATCH: Cozmo should put the cube down <<<");

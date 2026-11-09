@@ -1,0 +1,479 @@
+{
+  "testId": "M15-CUBE-HW",
+  "createdUtc": "2026-11-09T14:40:48.2000797Z",
+  "commit": "7254ff231cef8066c5e1d7f1f303bfe554c229d9",
+  "argv": [
+    "m15-cube-hw",
+    "--resources",
+    "re-analysis/obb/assets/cozmo_resources"
+  ],
+  "resources": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources",
+  "connected": true,
+  "startup": {
+    "gate": {
+      "outcome": "Ready",
+      "ready": true,
+      "waitedMs": 1203.6585,
+      "budgetMs": 60000,
+      "failureReason": null,
+      "description": "engine readiness delivered after 1204 ms; connect callback completed",
+      "rule": "M2-021: request connection only after IsReadyDelivered; cancellation or startup failure takes priority. The 60-second budget is host coverage, not recovered engine timing."
+    },
+    "records": [
+      "M2-021",
+      "M5-010"
+    ],
+    "sources": [
+      "M2-021: unity/scripts/csharp/StartupManager.cs:322-341; unity/scripts/csharp/ConnectionFlowController.cs:670-673; native ConnectToRobot 0x004ED020..0x004ED07C has no loader gate",
+      "M5-010: AnimationStreamer constructor 0x0057A0D4..0x0057A282 reads/caches neutral/reset source once"
+    ],
+    "errorCount": 0,
+    "errors": [],
+    "badNeutralAnimGroup": false,
+    "cachedNeutralFaceAvailable": true,
+    "positiveVerdictAllowed": true,
+    "reason": null,
+    "summary": "engine readiness delivered after 1204 ms; connect callback completed; 0 error-level engine log(s)",
+    "window": "engine-log subscription registered in BeforeStart through connection setup completion, or startup interruption before cleanup; construction before BeforeStart is not captured",
+    "interrupted": null
+  },
+  "cubeReports": 55,
+  "phases": [
+    {
+      "phase": "direct-pickup",
+      "startMs": 26444.705,
+      "endMs": 26449.483,
+      "admitted": false,
+      "engineResult": null,
+      "ownerRetired": false,
+      "detail": "External actions are disabled by a reaction",
+      "carryingAfter": false,
+      "objectId": 0,
+      "timeline": {
+        "events": []
+      }
+    },
+    {
+      "phase": "direct-place",
+      "startMs": 27975.81,
+      "endMs": 28012.2962,
+      "admitted": true,
+      "engineResult": "0x00000000",
+      "ownerRetired": false,
+      "detail": "Native lift action ended",
+      "carryingAfter": false,
+      "timeline": {
+        "events": []
+      }
+    },
+    {
+      "phase": "drive-pickup",
+      "startMs": 37362.7511,
+      "endMs": 43615.2254,
+      "admitted": true,
+      "engineResult": "0x02000000",
+      "ownerRetired": false,
+      "detail": "Native cube pickup ended",
+      "carryingAfter": false,
+      "objectId": 0,
+      "timeline": {
+        "events": [
+          {
+            "atMs": 37771.686,
+            "robotTimestamp": 18429,
+            "status": "IsMoving|LiftInPos"
+          },
+          {
+            "atMs": 38250.5682,
+            "robotTimestamp": 18939,
+            "status": "LiftInPos"
+          },
+          {
+            "atMs": 39450.9182,
+            "robotTimestamp": 20139,
+            "status": "IsMoving|LiftInPos|AreWheelsMoving"
+          }
+        ]
+      }
+    },
+    {
+      "phase": "drive-place",
+      "startMs": 45144.2488,
+      "endMs": 45179.3599,
+      "admitted": true,
+      "engineResult": "0x00000000",
+      "ownerRetired": false,
+      "detail": "Native lift action ended",
+      "carryingAfter": false,
+      "timeline": {
+        "events": []
+      }
+    }
+  ],
+  "operator": {
+    "pickedFirst": "no",
+    "placedFirst": "no",
+    "pickedSecond": "no",
+    "placedSecond": "no",
+    "odd": "he drove once, missed cube "
+  },
+  "missingReported": [
+    "MISSING: M13-038 PublicStateBroadcaster::Update0x0064D5DC native manager/current-requested/carrying/reaction/needs input joins are unbound; checked broadcaster and both client owners are built, no host Freeplay state substituted",
+    "MISSING: M7-027/M12-017: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/\u002BE4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points remain unbuilt; TracePrinter B0/EC diagnostics and CF CrashReport are bound",
+    "MISSING: M7-028 LiftLoadTest[0] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown",
+    "MISSING: M7-028 LiftLoadTest[1] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown",
+    "MISSING: M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built",
+    "MISSING: DevTurnInPlaceTest: original app initiator is UNKNOWN; manager entry starts despite false IsRunnable; shared reaction/action completion owners remain M7-014/M8-001/M8-015/M8-017/M13-022 gaps",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CA78 (DockingTestSimple -\u003E BehaviorDockingTestSimple, constructor 0x5CAFB0, 656 bytes): class not implemented. This stack has no constructor that builds BehaviorDockingTestSimple from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CBC4 (FactoryCentroidExtractor -\u003E BehaviorFactoryCentroidExtractor, constructor 0x5CF80C, 528 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryCentroidExtractor from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CBE4 (FactoryTest -\u003E BehaviorFactoryTest, constructor 0x5D0438, 880 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryTest from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CD04 (LiftLoadTest -\u003E BehaviorLiftLoadTest, constructor 0x5D3F10, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorLiftLoadTest from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CE66 (PlayAnimWithFace -\u003E BehaviorPlayAnimSequenceWithFace, constructor 0x5C0630, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorPlayAnimSequenceWithFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CC04 (FeedingEat -\u003E BehaviorFeedingEat, constructor 0x5D5794, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingEat from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CC24 (FeedingSearchForCube -\u003E BehaviorFeedingSearchForCube, constructor 0x5D6C64, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingSearchForCube from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CDC4 (PeekABoo -\u003E BehaviorPeekABoo, constructor 0x5F62D0, 368 bytes): class not implemented. This stack has no constructor that builds BehaviorPeekABoo from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CF46 (RespondPossiblyRoll -\u003E BehaviorRespondPossiblyRoll, constructor 0x5DE324, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorRespondPossiblyRoll from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CF06 (PyramidThankYou -\u003E BehaviorPyramidThankYou, constructor 0x5DE048, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPyramidThankYou from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked",
+    "MISSING: InteractWithFaces factory supports only the checked Meet configuration with original owners",
+    "MISSING: PounceOnMotion factory: only configured Hiking_PounceOnMotion with actual Robot/manipulation owner is checked",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CF26 (RequestGameSimple -\u003E BehaviorRequestGameSimple, constructor 0x5EA168, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorRequestGameSimple from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CFC6 (Singing -\u003E BehaviorSinging, constructor 0x5EE8DC, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorSinging from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CDE4 (PickUpAndPutDownCube -\u003E BehaviorPickUpAndPutDownCube, constructor 0x5DB65C, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPickUpAndPutDownCube from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D026 (TrackLaser -\u003E BehaviorTrackLaser, constructor 0x5FA250, 472 bytes): class not implemented. This stack has no constructor that builds BehaviorTrackLaser from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CB84 (ExploreVisitPossibleMarker -\u003E BehaviorExploreVisitPossibleMarker, constructor 0x5E3CD8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorExploreVisitPossibleMarker from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: M15-056 GuardDog checked disconnect unit constructor0x005F2946 has no native Robot subscription/input owner; full M15-067 lifecycle remains unbuilt",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CCA4 (GuardDog -\u003E BehaviorGuardDog, constructor 0x5F28DC, 344 bytes): class not implemented. This stack has no constructor that builds BehaviorGuardDog from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CDA4 (OnboardingShowCube -\u003E BehaviorOnboardingShowCube, constructor 0x600AC0, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorOnboardingShowCube from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D0F2 (RamIntoBlock -\u003E BehaviorRamIntoBlock, constructor 0x60473C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorRamIntoBlock from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D112 (ReactToCliff -\u003E BehaviorReactToCliff, constructor 0x604CD0, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToCliff from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D132 (ReactToCubeMoved -\u003E BehaviorAcknowledgeCubeMoved, constructor 0x60219C, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorAcknowledgeCubeMoved from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D152 (ReactToFrustration -\u003E BehaviorReactToFrustration, constructor 0x605904, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToFrustration from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D172 (ReactToImpact -\u003E BehaviorReactToImpact, constructor 0x60617C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToImpact from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D192 (ReactToMotorCalibration -\u003E BehaviorReactToMotorCalibration, constructor 0x60658C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToMotorCalibration from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D1B2 (ReactToOnCharger -\u003E BehaviorReactToOnCharger, constructor 0x606A18, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToOnCharger from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D1D2 (ReactToPet -\u003E BehaviorReactToPet, constructor 0x606E98, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPet from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D1F2 (ReactToPickup -\u003E BehaviorReactToPickup, constructor 0x607724, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPickup from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D212 (ReactToPlacedOnSlope -\u003E BehaviorReactToPlacedOnSlope, constructor 0x607FB8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPlacedOnSlope from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D232 (ReactToPyramid -\u003E BehaviorReactToPyramid, constructor 0x608310, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPyramid from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D252 (ReactToReturnedToTreads -\u003E BehaviorReactToReturnedToTreads, constructor 0x6084E4, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToReturnedToTreads from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D272 (ReactToRobotOnBack -\u003E BehaviorReactToRobotOnBack, constructor 0x6087B8, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnBack from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D292 (ReactToRobotOnFace -\u003E BehaviorReactToRobotOnFace, constructor 0x608A9C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D2B2 (ReactToRobotOnSide -\u003E BehaviorReactToRobotOnSide, constructor 0x608D38, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnSide from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D2D2 (ReactToRobotShaken -\u003E BehaviorReactToRobotShaken, constructor 0x609104, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotShaken from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D312 (ReactToStackOfCubes -\u003E BehaviorReactToStackOfCubes, constructor 0x609880, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToStackOfCubes from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D332 (ReactToUnexpectedMovement -\u003E BehaviorReactToUnexpectedMovement, constructor 0x609A58, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToUnexpectedMovement from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CB00 (DriveToFace -\u003E BehaviorDriveToFace, constructor 0x5DA550, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorDriveToFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CFA6 (SearchForFace -\u003E BehaviorSearchForFace, constructor 0x5C9158, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorSearchForFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: Robot::Robot builds a second BehaviorContainer (robot\u002B0x48, BehaviorSystemManager, constructor 0x005A5812) over the same configs, so the engine constructs every behaviour twice; only the BehaviorManager\u0027s (robot\u002B0x44) is built here: the second manager\u0027s use is UNKNOWN (no direct caller of its Update, InitConfiguration, InitializeEventHandlers, GetCurrentBehavior or FindBehaviorByID)",
+    "MISSING: M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt",
+    "MISSING: M13-039 client needs cache \u002B0x2C read at 0x005924C4: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero",
+    "MISSING: M13-039 client needs cache \u002B0x30 read at 0x00592514: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero",
+    "MISSING: M13-039 client needs cache \u002B0x34 read at 0x00592560: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero",
+    "MISSING: M13-039 ActivityID EnumToString0x0059202C / RobotAudioClient source channel0x0059201C input absent; activity audio decisions still proceed",
+    "MISSING: M8-012 BehaviorManager::SendDasTransitionMessage 0x005A22B4..0x005A24AC: typed BehaviorTransition/displayNameKey delivery is unbuilt; DasTransition is only a callback seam",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: FistBump -\u003E FistBump has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Frustration -\u003E ReactToFrustrationMajor has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: NoPreDockPoses -\u003E RamIntoBlock has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Sparked -\u003E ReactToSparked has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription",
+    "MISSING: M7-019 RamIntoBlock configured factory owner unavailable; reaction-owned existing adapter supplies the strategy recipient, not the native factory identity or a recovered Ram body",
+    "MISSING: M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed",
+    "MISSING: M11-072: precise native component/container subscription retirement points are not supplied by the checked recipient rows; managed token storage retires at Robot destruction end. Full teardown ordering remains M8-023/M7-018; no native destructor ordering is claimed for these new UI handles",
+    "MISSING: M11-066 Robot ctor main (\u002B0x298) and forward (\u002B0x2A4) pose names have no checked row; empty names retained",
+    "MISSING: M11-077: RemoveOwner is built (0x008448B4..0x00844914); NotLastOwner 0x0084510E..0x0084515E needs native shared-control use_count, and final-node destruction/bookkeeping 0x0084605C..0x0084609C -\u003E 0x008D148C remains unbuilt; C# reachability is not used as a native reference count",
+    "MISSING: M11-038 BroadcastLocatedObjectStates 0x006249EC -\u003E 0x0061E6C0 payload/recipient remains unbuilt; tail call accounted",
+    "MISSING: M11-069 AIComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)",
+    "MISSING: M11-069 BehaviorManager.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)",
+    "MISSING: M11-069 MovementComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)",
+    "MISSING: M11-016 FaceTracker internal Init/algorithm and its possible error diagnostics remain unavailable",
+    "MISSING: M15-039: writeAsJson 0x0084C328..0x0084C4B6 calls StyledStreamWriter(tab). Its shipped formatting/comment/escaping body has no checked builder row; stats serialization/open/write/close and result-dependent WriteStatsFailed are not built",
+    "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported",
+    "MISSING: M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); system readiness remains unbound; the initial-exposure config prefix is built",
+    "MISSING: M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event",
+    "MISSING: M8-026 GetWorldOrigin 0x004A4C54 at 0x0056AC92 has no bound Robot/world-origin provider; ProcessClearQuad unit is built",
+    "MISSING: M13-038 PublicStateBroadcaster Update0x0064D5DC at Robot::Update: native input owner/caller join is absent; checked Update(input) is built, no publication or tick ordering invented",
+    "MISSING: M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp \u002B0xE4 owner is unbuilt; rollback of \u002B0xE4/\u002B0xE8 is not substituted with the processed clock",
+    "MISSING: M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership",
+    "MISSING: M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only",
+    "MISSING: M11-058/M11-055 DecodeJPEG Tic/Toc 0x006B4B76/0x006B4C6C native timing producer unbuilt; no host timer substituted",
+    "MISSING: IBehavior::IsRunnableBase robot\u002B0x34a (0x005bd876): no source for the byte; the vtable\u002B0x24 gate is not consulted",
+    "MISSING: IBehavior::IsRunnableBase \u002B0x74 state (0x005bd7e6) and \u002B0x70 unlock (0x005bd810) inputs: no source in this stack; not tested",
+    "MISSING: M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; normal queue path is not classified SDK-only",
+    "MISSING: M14-010 face motion reset has no prior admitted VisionPoseData",
+    "MISSING: M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted",
+    "MISSING: M11-035 DetectingLaserPoints producer/handler unavailable; no processed bit or native success invented",
+    "MISSING: M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted",
+    "MISSING: M11-037 CheckForCollisionWithRobot 0x0062593C..0x00625B88: complete native object/world/Robot::GetPose input binding and owned footprint recipients are not supplied by these wrapper rows; collision predicate/modify unit remains unbuilt",
+    "MISSING: M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound",
+    "MISSING: M8-015 destructor owns-profile byte\u002B0x58/ClearCustomMotionProfile0x005410F6 recipient is not bound; Path.HasCustomMotionProfile is a different input; no invented profile reset",
+    "MISSING: M11-013 / M11-041 | CozmoCubes host ByObjectId/ConnectionChanged still expose reported radio slots, including synthetic slots above4; source HandleActiveObjectConnectionState 0x00533B3C uses the Robot-owned BlockWorld returned ID and its own slot gate. Host-view migration remains unbuilt.",
+    "MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp\u002B0x20 remains false",
+    "MISSING: M11-044 ComputeAndInsertStateAt native auxiliary key/index ownership after0x00531BAA is not in the adopted history-query rows; bounded timestamp/pose cache only, no invented key/index producer",
+    "MISSING: M11-044 ComputeAndInsertStateAt 0x0067F8A2 -\u003E auxiliary key/index ownership after 0x00531BAA remains unbuilt; existing checked timestamp/pose cache is used",
+    "MISSING: M8-026 / M11-074 ClearRobotToMarkers 0x00506A98 -\u003E ProcessClearQuad 0x0067F708: native robot/marker-corner quad producer is unbuilt; checked whiteboard unit awaits that join",
+    "MISSING: M11-045 map last-observed-time reader vt\u002B0x38: tree does not yet contain all map content (B-M3M4-20)",
+    "MISSING: M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / cache 0x0062C5A2..0x0062C616: native current-origin family query, predicate and pose-root/distance joins are unbuilt; existing all-pairs snapshot is a candidate, not the processed-ID/old-cache source path",
+    "MISSING: IBehavior::Init/Resume \u0027SparkBehaviorDisables\u0027 lock (0x005BCD16..0x005BCD44, 0x005BCFAC..0x005BCFDE): this\u002B0x70 and [[this\u002B0x2C]\u002B0x44]\u002B0x58 (the active spark) have no source in this stack (M15 spark layer); the lock is not taken",
+    "MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs",
+    "MISSING: M8-017 StoreUnionAndDelete native shared-control external-owner retention is not bound; existing direct child cleanup remains incomplete for aliased or retained children (0x0054F0CC..0x0054F0EC)",
+    "MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E and node\u002B0x20 release0x0066352E..0x00663560: native captured-owner finalization/producer census is unbuilt; managed delegate retirement does not certify no side effects",
+    "MISSING: M8-017 DeleteActions native temporary shared ownership and last-release recipient 0x0054EC0E..0x0054EC20 are not bound; existing direct child cleanup is a candidate sole-owner path",
+    "MISSING: RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client\u002B0x38] set to 0; the stand-in has no state byte, so the check is not made",
+    "MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier contains undefined words; skip full public payload, retain scalar/local delivery.",
+    "MISSING: Concrete object-interaction completion fields unavailable: full public 5A payload withheld; defined local/scalar result and callback delivery retained. See the owning action\u0027s source diagnostic; no cross-action unused-word policy is applied.",
+    "MISSING: M15-081 M11-010/M12-033/M13-026 stacked-cube look unavailable: M11-010 ghost visibility reason",
+    "MISSING: M11-037 CheckForUnobservedObjects pads 0x00621E8C..0x00622102 use the retained flat camera/object adapter; complete native object/camera pose-owner binding is unbuilt",
+    "MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt",
+    "MISSING: M11-044 SetLocalizedTo marker loop 0x005123AE..0x00512456: native marker-node pose/camera owner binding is unbuilt; no squared-distance producer is inferred from the retained flat model",
+    "MISSING: M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object\u0027s \u002B0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen",
+    "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported",
+    "MISSING: M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump recipient at 0x004FF052..0x004FF30A remain incomplete",
+    "MISSING: M13-033 PrintPlan 0x00500532 -\u003E 0x00855E7C output remains unbuilt",
+    "MISSING: M13-033 PrintPlan 0x0050058A -\u003E 0x00855E7C output remains unbuilt",
+    "MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt",
+    "MISSING: M13-034 AppendToPath cached primitive paths/MotionPrimitive.Create and RelativePathTurn.ExtendPath are unbuilt; existing ToPath geometry remains a labelled candidate, not the native AppendToPath implementation",
+    "MISSING: M13-034 final turn uses the retained ToPath candidate\u0027s lattice endpoint; native GetEndPose cached heading/primitive paths remain unbuilt (0x0085BF5C)",
+    "MISSING: M13-034 ApplyMotionProfile two-pass length/end-pose/split calls require source-backed M13-011 PathSegment helpers (0x0085BC00..0x0085C034); only checked profile-field assignment built, continuity/deceleration/splitting remain unbuilt",
+    "MISSING: M12-002 PathSegment.Print 0x00507F36 -\u003E 0x0085C034 text/body has no checked row; segment print is unbuilt",
+    "MISSING: M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt",
+    "MISSING: MovementComponent.CheckForUnexpectedMovement warning at 0x0063E5DA; M10 log port deferred",
+    "MISSING: MovementComponent.CheckForUnexpectedMovement: SetNewPose((429.01, 16.65, 0.00)) and its AbsoluteLocalizationUpdate are not sent (M4 C9 F1..F3 not in the rows); the collision obstacle front of robot is not added",
+    "MISSING: M12-024 | EraseAllPlannerObstacles(1) 0x0055A626/0x0055A632 visualizer handoff absent",
+    "MISSING: M12-024 | EraseAllPlannerObstacles(0) 0x0055A626/0x0055A632 visualizer handoff absent",
+    "MISSING: M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join",
+    "MISSING: M11-078/M11-090 Vision teardown: native result lists/deque 0x006586EC..0x00658A92/0x006B9F68..0x006BA092, ImageCache null-before-tree 0x006B1E9C..0x006B2142, Camera/ImageCache/CLAHE, FaceRecognizer trees, Block/MarkerlessObject and ProtoHandle reset/remove need their owned native recipients; host caches/GC are not those owners. Capture finalizers and allocator recipients remain unread; SDK CustomObject is unreachable",
+    "MISSING: M11-055 Profiler timer producers/Tic/Toc and VisionSystem::Init PerformanceLogging binding 0x006B0E5C..0x006B0F2A are not built; native timer input boundary only, no host Stopwatch data substituted"
+  ],
+  "records": [
+    {
+      "id": "M15-022",
+      "subsystem": "M15-freeplay",
+      "title": "PlaceObjectOnGroundAtPoseAction composition and PlaceObjectOnGroundAction Init/CheckIfDone",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+      "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+      "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "PlaceObjectOnGroundAction Init sends message 0x44 (0, 0, 0, 100, 200, 500 as raw bits), builds a TurnTowardsObject verify action and calls StopAllMotors; CheckIfDone never reads DockingComponent\u002B5, its result is the verify action\u0027s (extraction sections 2.3..2.8; construction of PlaceObjectOnGroundAtPoseAction at 0x005DFF14)",
+        "M12-015 owns only the wire message of PlaceObjectOnGround (its evidence does not cover the action)",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "Settled EQUIVALENT_IMPLEMENTATION by Claude 2026-11-09 (re-analysis/research/20261109-settle-m15-022-claude-check.md): CheckIfDone 0x005549B0..0x005549E6 re-disassembled (busy latch \u002B0x84, then MovementComponent\u002B9, then the verify child); GROUND-AT-POSE-SETTLEMENT-1 put both Bring callers on the original-owner AtPose compound (0x00554AFC..0x00554BAC) and requires the original reaction manager; GROUND-VERIFY-MARKER-1 built 0x03000005; the TrackObject branch is unreachable (track=false). EQUIVALENT because the verify child\u0027s head-angle solve is M13-026 (host atan2f/sqrtf). Hardware check, separate: the firmware\u0027s busy/release order against PickAndPlaceResult (verification stays NONE). Candidate selection is M15-019\u0027s. | built, awaiting strong verification (R-FIX2, 2026-10-04): PlaceObjectOnGroundAction as the engine\u0027s one class: Init (0x00554794) sends message 0x44 then builds the verify action, StopAllMotors, the reaction lock \u0027placeOnGroundAction\u0027 (table 0x00C55A21, only trigger 8 set) removed in the destructor (0x005546D0) when the state is not NOT_STARTED; CheckIfDone (0x005549B0) gates on the IS_PICKING_OR_PLACING latch, never reads DockingComponent\u002B5, the result is the verify action\u0027s; the 30.0f timeout slot (0x0052B0C2); the verify child is TurnTowardsObjectAction built from Init 0x0054A1F0 and CheckIfDone 0x0054ADD4 with the visual-verify byte clear (the marker choice with vsqrt.f32; the head-angle fallback GetAbsoluteHeadAngleToLookAtPose 0x0054B428 and ComputeHeadAngleToSeePose 0x00518344 built, confirmed by a Unicorn run of the shipped instructions; the head-cam z used there is the engine\u0027s -8.0: see M11-054); every caller takes the lock through ManipulationSystem.ReactionLocks when a freeplay stack exists. Still open: TurnTowardsObjectAction\u0027s TrackObjectAction branch (\u002B0x192 set, 0x0054AE08) and its unreachable VisuallyVerifyObjectAction branch (0x0054AED8) are unbuilt, the single RUNNING tick (0x0054AE40..0x0054AEB8) is not modelled, a marker whose with-respect-to fails (0x03000005) is not coded; ComputeHeadAngleToSeePose\u0027s pose algebra is the stack\u0027s double Pose3d narrowed to f32; M12-015 owns only the wire message; whether the firmware raises IS_PICKING_OR_PLACING for message 0x44, and its order against PickAndPlaceResult, is HARDWARE_ONLY; callers without a manager (ManipTool, Motion with no stack) do not take the lock (reported MISSING).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "R2FloorPlacementTests.M15_022_TheVerifyChildIsTheEnginesTurnTowardsObjectAction; GroundPlacementCallerTests; HikingBringBeaconCandidatesTests; R2FloorPlacementTests; NativeMarkerlessFootprintTests"
+    },
+    {
+      "id": "M12-015",
+      "subsystem": "M12-manipulation",
+      "title": "PlaceObjectOnGround sends three zero offsets and a constant speed triple",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/GroundPlacement.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204: the builder 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88, reads the first three words as integer locals converted with vcvt.f32.s32 (0x00632BAE/0x00632BB2/0x00632BB6) and the next three from the constant triple 0x00C7CD90 = 100 (0x42C80000), 200 (0x43480000), 500 (0x43FA0000)",
+      "evidence": [
+        "0x00632A88 PlaceObjectOnGround zeroes the offsets (0x00632AA6 str r2,[sp,#0x18]; 0x00632AA8 strd r2,r2,[sp,#0x10])",
+        "0x00632B88 builder; 0x00632BAE/0x00632BB2/0x00632BB6 vldr; 0x00C7CD90/94/98 = 100/200/500"
+      ],
+      "effect": "the robot reads a speed where the offsets go and nothing where the speeds go",
+      "provenance": "the current code put the docking speeds in the first three words and zeros in the rest",
+      "unresolved": "compare DockActions.cs with the builder 0x00632B88",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ManipulationTests"
+    },
+    {
+      "id": "M12-052",
+      "subsystem": "M12-manipulation",
+      "title": "PlaceObjectOnGroundAction::GetCompletionUnion: the saved carried object as the first ObjectInteraction ID, count 1, flag false",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/NativePlaceGroundRunner.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "GetCompletionUnion 0x00554AE0..0x00554AFA: first ID word = this\u002B0x7C, halfword 0x0001 at \u002B0x14 (count 1, flag false), Set_objectInteractionCompleted 0x00554AF4; the other four ID words are never written.",
+        "Saved carried object: ctor 0x00554638..0x0055469C stores \u002B0x7C (0x0055467C); Init 0x00554794. Setter 0x0075C3F0..0x0075C436 copies the 22-byte payload.",
+        "re-analysis/research/20261028-sparks-roll-block-1-claude-check.md; SPARKS-ROLL-BLOCK-1 handoff proposal"
+      ],
+      "effect": "the ActionCompleted payload the C# API delivers when Cozmo puts a cube on the ground",
+      "provenance": "SPARKS-ROLL-BLOCK-1 (Codex proposal, 2026-10-28), checked by Claude 2026-10-28; record added with operator approval 2026-10-28.",
+      "unresolved": "Settled EXACT_SOURCE by Claude 2026-10-28 (re-analysis/research/20261028-fix-knockover-race-1-claude-check.md; getter checked in re-analysis/research/20261028-roll-records-claude-check.md): first ID word from \u002B0x7C, count 1, flag false. The four unwritten ID words are withheld under M1-034 as stated below. The four unwritten ID words are uninitialised stack in the original: under the M1-034 standing rule the stack withholds only the full public payload with a visible MISSING, and keeps the defined fields (saved ID, count 1, false) and the scalar result. The PlaceRel zero-padding policy (M12-050) does not apply. Not this record: Ground composition/Init/CheckIfDone (M15-022), the wire (M12-015).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "SparksRollNativeTests"
+    },
+    {
+      "id": "M12-005",
+      "subsystem": "M12-manipulation",
+      "title": "Every field of DockWithObject",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204: the builder 0x0063BD50 is the only place the 21 bytes are constructed (reached through DockingComponent::DockWithObject 0x0063BA44 from IDockAction::CheckIfDone 0x005521AC; the order is M12-003)",
+      "evidence": [
+        "word 0 = 0: 0x0063BB34 movs r4,#0 / 0x0063BB7E str r4,[sp,#0x1c]",
+        "words 1..3 = IDockAction \u002B0xAC/\u002B0xB0/\u002B0xB4, defaults 60/200/500 at the ctor 0x005502D8 (0x42700000/0x43480000/0x43FA0000)",
+        "byte 4 = DockAction \u002B0x80; byte 5 = \u002B0x95; byte 6 = \u002B0xBA (0); byte 7 = \u002B0xBB (0; PickupObjectAction 0x005536EA writes 2, RollObjectAction 0x005565D6 writes 0 (the 5 stored at 0x005565DC is the DockAction byte \u002B0x80, not \u002B0xBB)); byte 8 = \u002B0xC1 (0; PickupObjectAction 0x005536F8 writes 1)",
+        "the complete list of \u002B0xBB writers (whole-.text scan, re-analysis/research/20260929-R-VIS-verify-M12-gap2.md item 1): 0x005533F6 AlignWithObjectAction case = 2; 0x005536EA PickupObjectAction = 2; 0x00554E12 PlaceRelObjectAction::InitInternal = 3 iff |B\u0027| \u003E= 1e-5 (movpl, so NaN also sets it); 0x005554D0 PlaceRelObjectAction::SelectDockAction = 0; 0x005565D6 RollObjectAction = 0; 0x0055C5A2 SetDockingMethod = its argument; the ctor default is 0 (the 0x100 word at 0x005503AA). Byte 7 (wire offset 0x13) is DockingMethod = [this\u002B0xBB]; the builder 0x0063BD50 writes \u002B0x10 DockAction, \u002B0x11 bool [\u002B0x95], \u002B0x12 retries [\u002B0xBA], \u002B0x13 method [\u002B0xBB], \u002B0x14 bool [\u002B0xC1]; the \u002B0x95 bool is the IDockAction ctor\u0027s last bool (0x00550382), read at 0x00552278"
+      ],
+      "effect": "every dock this stack sends carries a wrong field",
+      "provenance": "the three speeds were written one word early, so every dock carried its speed in word 0 and no deceleration",
+      "unresolved": "Built (R-VIS fix round): byte 5 = [\u002B0x95] (DockActionBase.DockFlag95; PlaceRelObjectAction sends its ctor bool), byte 7 = [\u002B0xBB] with the writers PlaceRelObjectAction::SelectDockAction 0 then InitInternal 3 iff |B\u0027| \u003E= 1e-5 (post-transform, NaN sets it), PickupObjectAction 2, RollObjectAction 0; AlignWithObjectAction\u0027s 2 (0x005533F6) is ChargerActions.cs (M13-016). NOT built: DriveToPickupObjectAction::SetDockingMethod (0x0055C5A2; no such C# class). The \u002B0x95 bool of Pickup/PopAWheelie/Roll (their own third ctor argument) is not modelled: those C# actions send false, and their engine callers\u0027 values are not itemised.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ManipulationTests.TheDockMessagePutsEveryFieldWhereTheEngineDoes; M12RVisBuildTests.M12_005_ThePlaceDockCarriesPlus0xBBAndPlus0x95; M12RVisBuildTests.M12_005_RollWritesZeroAndPickupWritesTwoInPlus0xBB"
+    },
+    {
+      "id": "M12-008",
+      "subsystem": "M12-manipulation",
+      "title": "The pose chain that holds a carried object",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LiftGeometry.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204: Robot::Robot 0x0050FBF0 builds the lift pivot at robot\u002B0x2E4 (child of the origin at (-41,0,45); 0xC2240000 at 0x0050FFE0, 0x42340000) and the lift pose at robot\u002B0x2F0 (child of the pivot at (66,0,0); 0x42840000 at 0x00510038); Robot::ComputeLiftPose 0x005151AC; CarryingComponent::SetObjectAsAttachedToLift 0x00632CC4 places the object at (|dockMarkerOffset|\u002B4, 0, -12.5) (norm 0x00632E42..0x00632E74, 4.0 at 0x00632E7C, 0xC1480000 at 0x00632E82, sum 0x00632E8C); SetObjectAsAttachedToLift 0x00632CC4 in full (verified, re-analysis/research/20260929-R-VIS-verify-M12-M13-gap1.md): (1) id -1 -\u003E warn, return 1 (0x00632CD2..0x00632D34); (2) already carrying -\u003E error, return 1 (0x00632CD8..0x00632D2E); (3) GetLocatedObjectByIdHelper null -\u003E error, return 1 (0x00632D7A..0x00632D8E); (4) GetMarkersWithCode empty -\u003E error, return 1, \u003E=2 -\u003E warn and use markers[0] (0x00632D98..0x00632DCA); (5) objWrtLift = obj.pose.GetWithRespectTo(robot\u002B0x2F0) else error, return 1 (0x00632E24..0x00632E38); (6) the translation of objWrtLift is replaced by (L\u002B4.0, 0, -12.5) where L is the THREE-D length of markers[0]\u002B4\u0027s translation, sqrt(mx^2\u002Bmy^2\u002Bmz^2) (the two-iteration loop over \u002B0x24 and \u002B0x28 at 0x00632E3E..0x00632E62; NOT planar), rotation kept; (7) FindObjectOnTopOrUnderneathHelper(obj, 15.0, defaultFilter, onTop=true) (0x00632F06..0x00632F14); (8) none -\u003E this\u002B0x14 = -1 (0x0063314C); else top.pose.GetWithRespectTo(obj.pose), failure -\u003E warn and this\u002B0x14 unchanged (0x00632FA2..0x00632FBC), success -\u003E SetParent(obj.pose) and ObjectPoseConfirmer::AddObjectRelativeObservation(top, tmp, obj) (0x00633006..0x00633020), nonzero -\u003E warn and return it WITHOUT SetCarryingObject (0x00633028..0x0063306E), zero -\u003E this\u002B0x14 = top.ID (0x0063318C); (9) SetCarryingObject (0x006331AE), BlockConfigurationManager dirty flag [\u002B0xC]=1 (0x006331B2..0x006331BC), AddLiftRelativeObservation(obj, objWrtLift) and return its result (0x006331BE..0x006331CC); AddLiftRelativeObservation 0x00506E5C sets the pose with PoseState Known (1), fromDistance -1.0, then BroadcastObjectPoseChanged (0x00506E9E); R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): HandlePickAndPlaceResult 0x00533780 BlockPickedUp branch (blockStatus == 2): it stores [msg\u002B4] (success) into [[robot\u002B0x280]\u002B5] before branching, logs the DockingResult, and if success calls CarryingComponent::SetDockObjectAsAttachedToLift() (wrapper 0x00632CB4: passes dock\u002B8 and ldrsh [dock\u002B0x10], then b.w to SetObjectAsAttachedToLift) and DISCARDS the return value (0x00533848..0x00533854): a failed attach changes nothing (no rollback, message or retry)",
+      "evidence": [
+        "0x0050FBF0 Robot ctor; 0x0050FFE0 -41.0 (0xC2240000) and 45.0 (0x42340000); 0x00510038 66.0 (0x42840000)",
+        "0x005151AC ComputeLiftPose",
+        "0x00632CC4 SetObjectAsAttachedToLift; 0x00632E42/0x00632E4A/0x00632E5C/0x00632E62/0x00632E74 norm; 0x00632E7C 4.0; 0x00632E82 0xC1480000 = -12.5; 0x00632E8C vadd",
+        "the 15.0 stack tolerance this function passes to FindObjectOnTopOrUnderneathHelper is owned by M13-007",
+        "0x00632CD2..0x00632D34 steps 1-3; 0x00632D98..0x00632DCA step 4; 0x00632E24..0x00632E38 step 5; 0x00632E3E..0x00632E9E step 6 (3-D norm)",
+        "0x00632F06..0x00632F14 the 15.0 helper call; 0x00632FA2..0x0063318C step 8; 0x006331AE..0x006331CC step 9",
+        "0x00506E5C AddLiftRelativeObservation (SetPose Known via vtable \u002B0x28 at 0x00506E80..0x00506E94; Broadcast 0x00506E9E)",
+        "0x00506CD8 AddObjectRelativeObservation (SetPose Dirty via vtable \u002B0x28 at 0x00506D30..0x00506D3E; on a failed BlockWorld lookup it logs and still updates the confirmer entry 0x00506DA8..0x00506DEA, returns 0)",
+        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q3 rows; verified in re-analysis/research/20260929-R-VIS-verify-M12-M13-gap1.md (objection A2 corrects the norm to 3-D)",
+        "0x00533790..0x0053379A, 0x00533848..0x00533854, 0x00632CB4..0x00632CC0",
+        "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q1; re-analysis/research/20260929-R-VIS-verify-M12-gap3.md Q1"
+      ],
+      "effect": "a carried cube is held at the wrong point, so it cannot be placed from the lift height alone",
+      "provenance": "the -41 was missing, so a carried cube could not be placed from the lift height alone",
+      "unresolved": "Steps 1-9 are built as before; HandlePickAndPlaceResult (DockingSystem.OnMessage) now stores success into DockingSystem.DockingSuccessByte (DockingComponent\u002B5, before the branch on blockStatus; no reader in the inventory) and DISCARDS the attach return: LastAttachResult and the log line are observation only and nothing acts on them (the engine does not; the earlier MISSING is settled). Still open, so the record stays IMPLEMENTATION_GAP: (a) BroadcastObjectPoseChanged 0x00506F88 is a counted stub (M12-027 RECOVERABLE_GAP); (b) SetPose\u0027s fromDistance -1.0 and the confirmer entry timestamp have no field, and the SetLocalizedTo(nullptr) branch has no counterpart; (c) step 7 uses M13-007\u0027s FindObjectOnTopOrUnderneath (M13-023 stand-in for tilted/non-cube pairs); (d) no pose tree: the on-top object follows through CarryingComponent.TopWrtCarried (M12-027); (e) Robot::ComputeLiftPose and its per-tick call are M12-027.\nB-M3M4-18 dispatch correction: the existing DockingSystem HandlePickAndPlaceResult body is reached from the Impl B8 subscriber (0x00532AD6 -\u003E 0x00533780), after both FactoryTest B8 subscribers and before the host endpoint. Removed its duplicate raw B8 delivery. With no attached recipient, a visible MISSING names M12-008; the carried-pose body is unchanged and its existing uncertainty is retained. Wording (re-analysis/research/20261013-delocalize-and-update-object-origin.md): the lift pivot (\u002B0x2E4) is parented to the robot pose (\u002B0x298, 0x0050FE9C/0x0051000E), not the origin.\nbuilt, awaiting strong verification: B-M11-1 (2026-10-14): Successful attach binds the one native carried node under shared lift, and on-top node under carried node. Public world-coordinate views are marked legacy snapshots; native UpdateObjectOrigin uses canonical node. Full relative-observation/broadcast/registration/lifetime remains unsettled (M12-027 row4 and M11-062); this append claims no complete attachment recovery. See jobs/status/B-M11-1.md for files/lines, binary ranges, tests and every MISSING.\nB-POSE-2 (2026-10-14, research/20261014-b-pose-1-check.md): item 4: the two top-cube tests again check independently that the top cube\u0027s pose w.r.t. the carried cube, read from the world poses after UpdateCarriedObjectPose (and after the pick-up dock), equals the offset measured before the attach (not Carrying.TopWrtCarried, which LiftGeometry computes by the same call); tolerance 8 f32 ulps at 512 mm (a test bound, not a source value).\nB-M11-8 (2026-10-14; fixes from re-analysis/research/20261014-b-m11-1-check.md; see jobs/status/B-M11-8.md): item 4: SetObjectAsAttachedToLift\u0027s tree writes (object to RobotLift, top to the object) take EngineRobot.PoseTreeGate.\nB-M3M4-23 (2026-10-15), built, awaiting strong verification: whole LiftGeometry.SetObjectAsAttachedToLift and Docking attach/release/carried-pose entries now acquire the world frame gate before queries, relative writes or PoseTreeGate. ApplyRelativeObservation and its broadcast share that same reentrant frame gate; source logs and world events run outside _gate. Existing native-pose/relative-input gaps remain unchanged.\n\nB-M12-3 (2026-10-15), built, awaiting strong verification: The live DockingSystem attachment now supplies LiftPose as the AddLiftRelativeObservation argument parent before its broadcast; confirmer stores a value copy of that argument. The previous flat attachment calculation, top-object path and release flatten remain separately labelled candidates/gaps. No claim of full CarryingComponent settlement.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M12RVisBuildTests.M12_008_ThePickedUpObjectHangsAtThePointBelowThePlateWithItsRotationKept; M12RVisBuildTests.M12_008_TheCubeOnTopFollowsAtOnceWhenThePickupResultArrives; M12RVisBuildTests.M12_008_ANonZeroAttachResultIsRecordedAndLoggedNotDecided; M12RVisBuildTests.M12_008_TheConfirmerWritesAreSynchronisedAndTheBroadcastCounterIsAtomic; M12RVisBuildTests.M12_008_ACubeOnTopIsRecordedDirtyAndFollowsTheCarriedOne; LiftGeometryTests.TheCarriedObjectFollowsTheRobot; M3M4X18BuilderTests, M11DelocalizationBuilderTests, CoreReviewTests.CORE008_ACarriedObjectSurvivesTheTreadsBoundaryDelocalization; M3M4X23BuilderTests; M12CheckedRowsBuilderTests; M12RVisBuildTests; M12RFix2StreamATests; M11RVisBuildTests; NavigationTests.BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther"
+    },
+    {
+      "id": "M12-013",
+      "subsystem": "M12-manipulation",
+      "title": "DockingErrorSignal begins with the timestamp, not the geometry",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "EXACT_SOURCE",
+      "authority": "libcozmoEngine.so 3.4.0-1204: DockingComponent::UpdateDockingErrorSignal 0x0063BE80 builds the struct at sp\u002B0xa0: word 0 = the timestamp (0x0063C14A), x \u002B0xa4 (0x0063C15E), y \u002B0xa8 (0x0063C174), z \u002B0xac (0x0063C180), angle \u002B0xb0 (0x0063C1CE); DockingErrorSignal::Pack 0x007C0B26 reads five words then two bytes",
+      "evidence": [
+        "0x0063BE80 UpdateDockingErrorSignal; 0x0063C14A str r6,[sp,#0xa0] (timestamp); 0x0063C15E/0x0063C174/0x0063C180/0x0063C1CE",
+        "0x007C0B26 Pack reads words at \u002B0, \u002B4, \u002B8, \u002B0xc, \u002B0x10 then bytes at \u002B0x14, \u002B0x15",
+        "the clamp is 40 degrees (M12-019)"
+      ],
+      "effect": "the robot reads a distance where the timestamp goes, shifting every field",
+      "provenance": "the record had x_dist in word 0 and shifted every field by one word",
+      "unresolved": "compare Docking.cs with UpdateDockingErrorSignal 0x0063BE80",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult"
+    },
+    {
+      "id": "M12-014",
+      "subsystem": "M12-manipulation",
+      "title": "The docking error signal\u0027s last two bytes are whatever was on the engine\u0027s stack",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 is the only builder and never writes the struct bytes at \u002B0x14/\u002B0x15 (stack \u002B0xb4/\u002B0xb5); nothing clears the struct (no memclr, no ctor call), and Pack 0x007C0B26 reads both bytes and sends them",
+      "evidence": [
+        "the fill writes five words \u002B0xa0..\u002B0xb3 (0x0063C14A, 0x0063C15E, 0x0063C174, 0x0063C180, 0x0063C1CE); no store to \u002B0xb4/\u002B0xb5",
+        "0x007C0B26 reads the bytes at \u002B0x14 and \u002B0x15 and sends them",
+        "the engine value is indeterminate, so this stack sends zero (SD2)"
+      ],
+      "effect": "two bytes of every error signal differ from the ones the app sent",
+      "provenance": "this stack sends zero; the engine value is uninitialised stack memory and cannot be reproduced",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult"
+    },
+    {
+      "id": "M11-038",
+      "subsystem": "M11-vision",
+      "title": "The BlockWorld game-broadcast entry points",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md and re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): BroadcastLocatedObjectStates 0x0061E6C0 builds tag 0x53 (LocatedObjectStates: one count byte, entries of 0x34 bytes, isConnected = 1 ^ ([obj\u002B0x40] \u003E\u003E 31), origin compare against [[robot\u002B0x294]\u002B0x10] at 0x0061EC22); BroadcastConnectedObjects 0x0061E91C builds tag 0x54 (12-byte entries via FindConnectedObjectHelper 0x0061F078); VisionSystem::CheckMailbox 0x006B2AD4 locks the mutex at this\u002B0x35C, moves the 11 result lists (each twice, then 11 clears) out of a deque of 0x9C-byte elements and pops it; BroadcastObjectObservation 0x0061FED8 projects the object with the camera at VisionComponent\u002B0x24, returns 1 with no message for a null ActiveCube cast, and sends RobotObservedObject (Size 69: timestamp [\u002B0x1C], family, type, ID, rect, ToPoseStruct3d, top-face orientation, isActive)",
+      "live_path": true,
+      "hardware_required": false,
+      "effect": "the game sees object observations and connected states",
+      "provenance": "the stack\u0027s BlockWorld broadcasts are to be compared against the engine\u0027s entry points",
+      "unresolved": "NOT BUILT: the stack has no EngineToGame message types or consumers for LocatedObjectStates (0x53), ConnectedObjectStates (0x54), RobotObservedObject (Size 69) or RobotMarkedObjectPoseUnknown, so BroadcastLocatedObjectStates and BroadcastConnectedObjects are counted stubs (UnbuiltBroadcastLocatedObjectStatesCalls) and CheckMailbox\u0027s result deque has no producer (M11-040). BroadcastObjectObservation is the ObjectObserved event (its rectangle is the marker corners\u0027, not Camera::ProjectObject\u0027s, and there is no top-face orientation). The wire order comes from CLAD only; the .so Pack bodies 0x00714A10, 0x00715370, 0x007153A4 are unread.\nbuilt, awaiting strong verification: B-M11-1 (2026-10-14): D19 BroadcastLocatedObjectStates tail at 0x006249EC -\u003E 0x0061E6C0 is now explicitly reached/counted and visibly MISSING. Payload/recipient not invented; no status change. See jobs/status/B-M11-1.md for files/lines, binary ranges, tests and every MISSING. Lead from OV110 (re-analysis/research/overnight/20261016-ov109-110-answer.md), to check: MarkObjectUnknown broadcasts RobotMarkedObjectPoseUnknown once per entry in its ID set, always with the original object\u0027s ID (0x005073AA..0x005073C0).\nB-M1-5 census follow-up (2026-10-17): MISSING beyond the checked backup/device app boundaries: BlockWorld.ObjectObserved is still a shared public/internal observation seam, invoked at the BroadcastObjectObservation0x0061FED8 call site0x006211DC. It feeds behavior/manipulation synchronously. The native host payload/recipient split is not established by the two adopted B-M1-5 reviews, and this record still names unread Pack bodies0x00714A10/0x00715370/0x007153A4. No blanket deferral, invented immutable native payload, exclusion or whole-host-order completion claim. Authority-6 preflight f3627f50 identified this lead; current manifest evidence/status was re-read. Manager recovery/scope of that host join remains required.\nB-M1-5 manager-clarification follow-up (2026-10-18), built, awaiting strong verification: Manager clarification14ae481e confirms the ObjectObserved host/local split and payload are outside B-M1-5; the existing MISSING remains. No exclusion or new native payload is inferred.\nB-M1-7 (2026-10-18), built, awaiting strong verification: Census correction: PoseStateChanged is MISSING complete native host/local delivery split/payload at pose broadcast helper0x0061D5C8 and RobotMarkedObjectPoseUnknown ctor0x005073B8/Broadcast0x005073C0. Existing inline pose consumer channel remains under cross-layer rule, not a non-report exclusion. M11-042 shares the current recorded boundary.\nB-M3M4-34 (2026-10-19), built, awaiting strong verification: B34 host API delivery correction: public world events are deferred until frame-lock release, preserving queue order and handler snapshots; native internal broadcasts/recipients stay synchronous. Production camera ObjectObserved handler can PlayLightAnim on a running engine without FrameGate deadlock. No new native broadcast payload recovery or support/exclusion decision inferred from this plumbing.",
+      "evidence": [
+        "BroadcastObjectObservation 0x0061FED8; BroadcastLocatedObjectStates 0x0061E6C0; BroadcastConnectedObjects 0x0061E91C; VisionSystem::CheckMailbox 0x006B2AD4",
+        "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md (items 5a-5c PASS)",
+        "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q6; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q6 PASS)"
+      ],
+      "test": "M11DelocalizationBuilderTests, CoreReviewTests.CORE008_ACarriedObjectSurvivesTheTreadsBoundaryDelocalization; B-M1-5: no new production host-delivery test for ObjectObserved; the unread payload/recipient split above remains MISSING. Shared FIFO tests do not certify this vision path.; B-M1-5 clarification: No new host-delivery production test; manager explicitly leaves the host/local/payload join outside the checked job scope.; B-M1-7: No host view built or new host regression; existing local pose tests are not native host-output proof.; M3M4ReviewFixTests.CameraHandoffReachesObjectObservedAndItsHostLightCommandDoesNotHoldFrameGate"
+    },
+    {
+      "subsystem": "M4-control",
+      "title": "The game SetHeadAngle/SetLiftHeight factories: the message fields into the action, the 32.0-while-carrying switch",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "effect": "the head or lift moves at a different speed",
+      "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the head and lift API is the game path (MD1): the caller\u0027s speed, acceleration and duration go into the action, with the app\u0027s 10/20/0 (head) and 10/20/0 (lift) as the defaults (MA10, MA11, MA12); engine-internal callers in this stack (behaviours, manipulation) pass the action defaults 15/20 explicitly (MA9). CozmoMotion.SetHeadAngleAsync / SetLiftHeightAsync.",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "MA10 game SetHeadAngle overwrites \u002B0x90..\u002B0x98 with the message values (0x0052ABE0..0x0052AC24)",
+        "MA12 game SetLiftHeight: 32.0 while carrying -\u003E PlaceObjectOnGroundAction (0x0052AC40..0x0052AC9E)",
+        "MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)",
+        "Re-read (cross-layer split): head: MoveHeadToAngleAction ctor blx 0x4A94FC at 0x0052AC18, then the ldm/stm of msg\u002B4..\u002B0xC into action\u002B0x90 (0x0052AC1C..0x0052AC24). Lift: vcmp.f32 s16,s0 against 32.0 at 0x0052AC54; the carried test ldr.w r0,[r5,#0x284]; ldr r0,[r0,#8]; adds r0,#1; beq (0x0052AC5E..0x0052AC66); PlaceObjectOnGroundAction ctor blx 0x4A940C at 0x0052AC72; otherwise movt r3,#0x40A0 (5.0) and MoveLiftToHeightAction(h, 5.0, 0) blx 0x4A9508 at 0x0052AC92, then msg\u002B4..\u002B0xC into \u002B0x88..\u002B0x90 (0x0052AC96..0x0052AC9E)",
+        "Handoffs: the factories return the action; queueing is ActionList::QueueActionNow 0x0053DCA0 (M8-015); PlaceObjectOnGroundAction: M15-022 and M12-015; the carried ObjectID [robot\u002B0x284]\u002B8: M12-008; the app\u0027s 10/20/0 (MA11): policy M4-034"
+      ],
+      "status": "EXACT_SOURCE",
+      "unresolved": "Settled EXACT_SOURCE by the Opus final settling pass (2026-10-11, HEAD 8f035387; jobs/B-M3M4.md \u0022Final settling pass\u0022). Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed to the factories. MA11 (the app\u0027s 10/20/0) is an app input: policy M4-034 (new, manager ruling). The DEFECT text below is stale: the game path queues on the engine ActionList (Motion.cs) and ActionQueue.QueueNow is implemented (Actions/ActionQueue.cs). Build round: the carry seam (IsCarryingObject/PlaceObjectOnGroundAsync, Motion.cs) silently runs the lift when it is null: make it a visible handoff naming M12-008/M15-022. The manager is to confirm M12-008 owns CarryingComponent\u002B8. Before: Codex review of B-CORE2 (re-analysis/research/20260930-B-CORE2-review.md), checked by the manager\u0027s Opus verifier where noted: DEFECT. Stop-before-unlock and the AreAllTracksLockedBy gate hold (Motion.cs:904-919); the game path\u0027s ActionQueue::QueueNow replacement (0x0053E24C..0x0053E35E) is absent, so a repeated game move fails 0x03000019 (Motion.cs:831-844). The queue semantics are in Codex\u0027s 20260930-bcore-extractions.md (unchecked). Before: built, awaiting strong verification: B-CORE2 batch 4 (head/lift/action timeout). ~IActionRunner\u0027s teardown now stops the track before the lock release: RunAsync/UpdateActions stop (gated on AreAllTracksLockedBy(mask, owner) 0x00541138/0x0054115E) then unlock (0x0054120C..0x0054122A), and the lock owner is a per-action tag (the engine\u0027s to_string(\u002B0x60), counter 0x0053FE54..0x0053FE68 store 0x0053FEC6) instead of the old constant. Citation corrected: 0x005408EC is IActionRunner::UnlockTracks, called only from the IAction constructor (0x00540CB0) and IAction::Reset (0x00540D02); the action\u0027s end release is inline in ~IActionRunner. Still out of scope: the QueueNow part (a repeated game move never gets 0x03000019) awaits Codex extraction. Tests: M4ControlTests.M4_003_MA_ALockedTrackFailsTheHeadMoveWith03000019, M4ControlTests.M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack, M4ControlTests.M4_016_MA17_TheDefaultActionTimeoutIs30Seconds.\n\nB-M13-4 (2026-10-15), partial build, awaiting strong verification; BLOCKED: Necessary turn-diagnostic owner: TurnInPlaceAction reserves its tag from the existing process-wide ActionRunnerTagCounter using the existing constructor loop, then releases it with disposal after its C4 handle. This supplies the checked \u002B60 diagnostic argument without inventing tag0; full native turn IActionRunner scheduling/base effects remain explicitly unbuilt.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M4ControlTests.M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults, M4ControlTests.M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset, ControlTests.TheHeadAndLiftDefaultsAreTheAppsGamePathValues, M4ControlTests.M4_003_MA_ALockedTrackFailsTheHeadMoveWith03000019, M4ControlTests.M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack; M13CheckedRowsBuilderTests; M13RVisBuildTests; M4AbortSleepTests; M13X1BuilderTests; M13X2BuilderTests",
+      "id": "M4-003"
+    },
+    {
+      "id": "M8-015",
+      "subsystem": "M8-framework",
+      "title": "ActionList/ActionQueue/IAction lifecycle, cancellation and Robot teardown",
+      "location": "cozmo-stack/src/Cozmo.Robot/Actions/ActionList.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0053E6A8..0x0053E6E0; 0x005409E2..0x00540A40; 0x00541146..0x00541238; 0x0053FAB2; Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1\u2013T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "P3/P4 full ActionList/ActionQueue/IAction lifecycle: ActionList 0x0053F580..0x0053F5F2, ActionQueue 0x0053F5F4..0x0053F70C, IActionRunner 0x00540370..0x0054063E, clock/timeout 0x00540D4A..0x00540E80, CheckIfDone 0x005549B8..0x005549F4 (20261006-M1M2-missing-triage.md P3/P4).",
+        "re-analysis/research/20261012-m8-play-animation-actions.md rows C2..C7, L14..L23, D5, S2..S4 and re-analysis/research/20261012-m8-play-animation-actions-check.md (the \u002B0x57 gate on L17/L18/L20, the DeleteActionAndIter guard set at queue\u002B0x10, ActionWatcher Start/EndUpdating 0x00540386/0x0054057E/0x00540630, the UpdateInternal status string 0x00540D46..0x00540F1C).",
+        "re-analysis/research/overnight/20261014-ov18-m8-015-check.md: L1-L9 0x00540370..0x0054063A, 0x00540D1C..0x00540F9C, 0x00540750..0x005407C0, 0x005409DC..0x00540A44; Q1-Q7 0x0053F580..0x0053F708, 0x0053DCE4..0x0053DD92, 0x0053E24C..0x0053E2F6, 0x0053DF2C..0x0053DFC8, 0x0053DE10..0x0053DE5C, 0x0053E690..0x0053E700; D1-D6, D12 0x0053F9E4..0x0053FB06, 0x00541084..0x00541286, 0x00541BB4..0x00541C04, 0x0054187E..0x005418DE; T2 List Clear 0x0053D916..0x0053D93A, 0x0053F938..0x0053F950, 0x0053FB5C..0x0053FB82; QueueAction front end 0x0053D93C..0x0053DAC8; position table 0x0053DA24..0x0053DB70.",
+        "re-analysis/research/overnight/20261015-ov56-58-check.md: teardown mechanics from OV56: ~Robot order 0x005110EE..0x00511156; AbortAll 0x00511952..0x0051198C (0x0063BE2A..0x0063BE36, 0x00517DFE..0x00517E0A); ActionList::Cancel clearing gate and slot order 0x0053DE18..0x0053DE54; ActionQueue::Cancel 0x0053E69A..0x0053E6FA (early exit 0x0053E6E4); QueueNow/QueueAtEnd 0x0053E25A..0x0053E36E; DeleteActionAndIter 0x0053F9E4..0x0053FAB2 (re-entrancy set, INTERRUPTED/no-interface gates); result codes 0x0053FDBA..0x0053FDD4, 0x005409E2..0x00540A40; Clear lock-out 0x0053D91A..0x0053D938, 0x0053DCEA..0x0053DD00, 0x0053DCAA, 0x0053DF40, 0x0053F93C, 0x0053F970..0x0053F9AC; ~ActionList double Clear 0x0053D8F6..0x0053D90E; IBehavior StartActing reject-delete 0x005BDC04, Init failure 0x005BCCC6..0x005BCD06."
+      ],
+      "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
+      "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
+      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): rows exist (re-analysis/research/20261004-actionlist-extraction.md) and the code is built (Actions/IActionRunner.cs, ActionList.cs, ActionQueue.cs, ActionWatcher.cs); the status is not changed in this pass (its layer\u0027s turn). Owner, by the overlap ruling, of the IActionRunner base that M4-016 hands off to (IAction::UpdateInternal 0x00540D1C..0x00540F9E: the timer, the 30 s timeout slot, the TimedOut warning \u002B0x57 0x00540E7C / sWarningF 0x00540EB6, Cancel, SetTag, PrepForCompletion), of ActionList::Cancel(-1) from AbortAll (0x0051195A, M4-026) and HandleRobotStopped (0x0053546E, M4-019), and of ActionList::QueueActionNow 0x0053DCA0 from the game factories (M4-003). Build round: the IActionRunner.cs lines tagged M4-016 and the ActionList/ActionQueue/ActionWatcher lines tagged M7-020 are retagged M8-015. Before: RECOVERABLE_GAP includes P3/P4 queue lifecycle: ActionList/ActionQueue Update 0x0053F580..0x0053F70C; IActionRunner 0x00540370..0x0054063E; first-clock/timeout 0x00540D4A..0x00540E80; CheckIfDone 0x005549B8..0x005549F4. Retain teardown cancel/delete 0x0053E6A8..0x0053E6E0, 0x005409E2..0x00540A40, 0x00541146..0x00541238, 0x0053FAB2. Results, track locks, child order/descendants UNKNOWN. Source: 20261006-M1M2-missing-triage.md P3/P4/S5. R-M8-PLAY adds the IActionRunner/IAction rows above; it stays RECOVERABLE_GAP until ActionList/ActionQueue are covered too. M12-024 read (re-analysis/research/20261013-m12-024-driving-lifecycle.md): open for this record: whether ActionQueue::DeleteActionAndIter\u0027s RobotCompletedAction broadcast (0x0053FA5E..0x0053FAB2) reaches the driving handler synchronously inside PlayEndAnim\u0027s Cancel (re-entrance), and the ActionList tick order that sets how long a drive holds RUNNING during its end animation.\nB-M5-19 built, awaiting strong verification: real driving completions exposed managed map enumerators spanning Cancel callbacks. Both Cancel overloads now read the next ascending map key after the callback, as the native C6 loop does (0x0053E736 then 0x0053E786..0x0053E7A2); appended parallel queues remain reachable. The id overload ports ActionList.Cancel.DuplicateTags warning when more than one queue reports a match, with no error flag. Existing queue delete snapshot / destructor / E2G broadcast sequence is retained. Parallel behavior legs are still serialised in the pre-existing callers, outside this job. OV06 check (re-analysis/research/overnight/20261014-ov06-m12-040-check.md): owns R8: a dock action that survives Cancel(-1) (clearing flag 0x0053DE18..0x0053DE1E; pending loop stops at a DeleteActionAndIter result != 1 at 0x0053E6E4; callbacks re-queuing) is destroyed at ~Robot\u0027s ActionList::Clear 0x00511146 / ~ActionList 0x00511156 via ActionQueue::Clear 0x0053F96A..0x0053F9B0; its dtor can send a second AbortDocking and calls RemoveDisableReactionsLock through the already-null robot\u002B0x44 (0x00557520..0x00557570), reading [0x4C] at 0x005A3A84 (M1-034 standing rule if reachable). Reachability depends on DeleteActionAndIter 0x0053F9E4.. (unread). OV18 check (re-analysis/research/overnight/20261014-ov18-m8-015-check.md): IMPLEMENTATION_GAP for the runner, queue, list and watcher rows read, plus the QueueAction front end (null, external-actions-disabled, BAD_TAG) and the position table (NOW_AND_CLEAR_REMAINING goes to QueueActionNext). R8: a started action cannot survive Cancel(-1); pending survivors are M8-024; the 0x005A3A84 null read is unreachable. Still unread here: SetTag 0x00540098..0x00540192, watcher 0x00541974..0x00541B9C and 0x00541C08..0x00541F68, the drive CheckIfDone gates; L10, D7-D11, R5 not re-verified. The evidence \u0022CheckIfDone 0x005549B8..0x005549F4\u0022 is PlaceObjectOnGroundAction\u0027s. OV20/21 check (re-analysis/research/overnight/20261014-ov20-21-check.md): owns PrepForCompletion\u0027s AlreadyPrepped Debug (Actions, \u0022IActionRunner.PrepForCompletion.AlreadyPrepped\u0022 \u0022%s [%d]\u0022 name/tag when \u002B0x55 is set, no \u002B0x57 gate; 0x00540750..0x005407C0); M8-017 owns the call order that triggers it. OV56 check (re-analysis/research/overnight/20261015-ov56-58-check.md): the teardown mechanics rows above are owned here; job B-M8-5 aligns the built ActionList/ActionQueue code with them.\nB-M8-2 (2026-10-15), built, awaiting strong verification: checked OV18 L1-L9/Q1-Q7/D1-D6/D12 front-end and position corrections in live ActionList/ActionQueue/ActionRunner/ActionWatcher. Preserved saved edits; corrected their unfinished compile errors. Native f32/NaN waits, repeated virtual timeout log read, no RUNNING callbacks, live callback drain, delete/unlink before synchronous game broadcast, independent Prep-cache watcher snapshot, unsigned stop owners, destructor error/tag-release/stop log, exact available runner diagnostics and queue retry-store order built. EngineRobot supplies real robot ID and engine timer. M8-007 TRACKS_LOCKED stores/WatcherEnd/returns, then Queue deletes without ActionCompleted. BLOCKED/MISSING: T2 left/right/node postorder requires checked map insertion/balancing shape; managed ascending multi-queue Clear remains explicitly incomplete. Invalid-position Error exact key/format/EnumToString, QueueAtFront success/refusal diagnostics, Movement.WhoIsLocking/TracksLockedBecause recipient, destructor own-profile \u002B0x58/ClearCustomMotionProfile recipient, VizManager/SetSdkStatus recipients, full ActionResult EnumToString and native names absent on concrete actions remain stack-channel MISSING. Existing watcher D7-D11, SetTag and concrete descendants are not certified by this build. M8-024 pending-survivor census explicitly reported at Clear; no new reachability claim. M1-034 skips native freed pending successor/callback-self-erase tails with record/address visible. No status or evidence change; see jobs/status/B-M8-2.md. B-M8-5 (2026-10-16), built, awaiting strong verification: OV56 mechanics compared with current live ActionList/ActionQueue/ActionRunner/RobotLifetime/AbortAll. Existing clear lock-out, signed successor-after-Cancel, current Cancel/pending direct-delete, repeated-tag guard, destroy-unlink-broadcast, external/INTERRUPTED gate and result words retained; new teardown regressions exercise these. Actual SteppedBehavior.StartActing now visibly reports its missing native owned-runner/callback/NOW rejection join. Host handle/async work is not the native IActionRunner ownership graph, so rejection deletion and Clear double-delete cannot be claimed reproduced. M8-024 survivor census stays open. Later checked M13-029/NativePathComponent implementations retained, no regression to earlier unread labels. B-M8-7 built, awaiting strong verification: SteppedBehavior.Actions.cs adds the owned IActionRunner StartActing entry using existing A0/A1/A2/current-tag gates, direct deleting-destructor rejection (without queue Prep/snapshot/broadcast), callback assignment before tag and slot80, real ActionList NOW/zero-retries submission and NotQueued failure deletion. HandleActionComplete clears the matching tag/runner and bonus before invoking the installed callback in place, with no result filter or post-call callback restoration. Init/StopOnNextActionComplete clear the new callable. Concrete legacy host-handle runner production and the IBehavior subscription/capture lifetime owner remain visible MISSING joins; M8-024 census is unchanged. M1-034 skips null action reads at0x005BDBC8/0x005BDB10/0x005BDB4E, null ActionList at0x005BDB6C, and the freed-name read0x005BDB8C/second delete0x005BDC04 after queue deletion0x0053DCFE, preserving prior behavior state/callback/tag as applicable. BehaviorRunnerOwnershipTests covers all four reject branches, native warning bodies, result-insensitive completion, nested callback replacement, callback destruction gates and an actual behavior-start -\u003E ActionList -\u003E HandleActionComplete path with an explicit fixture recipient. No complete concrete-action or subscription-lifetime fidelity is claimed. Verifier 2026-10-16 (B-M8-7, PASS): before the owned StartActing entry is wired, StopActing must cancel the action by tag on the ActionList (0x005BD3DA..0x005BD3FE: ldr [this\u002B0x84], ActionList::Cancel(tag), clear-if-still-equal; M8-001); the stack\u0027s StopActing only stops its own animation. The completion-subscription MISSING (ctor 0x005BBB74 -\u003E HandleActionComplete) fires only inside the unwired owned path. Ownership note 2026-10-16 (split from M2-023; re-analysis/research/20261013-small-reads-2-check.md): IActionRunner re-Init (0x00540D1C..0x00540F9C; Init only from UpdateInternal 0x00540F34) is this record\u0027s.\n\nB-M2M15-2 reconciliation: preserved later B-M8-2/7/8 action runtime, including no RUNNING completion callback, initialized nonzero Init -\u003E CheckIfDone, and timeout warning/result; no older runner code restored. Play slot replacement uses RetainedSubscription.Replace (append new then retire prior). Direct fake-runner regression is unit coverage only.\nB-M1-5 (2026-10-17), built, awaiting strong verification: RobotCompletedAction now has a copied typed host view ActionCompletionReport through the common FIFO before synchronous local animation-hub delivery at the existing D6 join (0x0053FAAA). Concrete completion payloads remain with their owning actions; NativeCompletionCache is the current runner cache, not a claim to a recovered full native union. Lead from M5-055 (2026-10-19, re-analysis/research/20261019-m5-settling-b.md): ~CozmoEngine removes the BaseStationTimer (0x004EC6B4) before RemoveRobots; a later getInstance() makes a zeroed timer, so an action destructor under ~Robot\u0027s ActionList teardown that reads the time sees 0. The stack does not remove the timer first. To check when M8-015 is built. NEEDS-EXPRESSION-ADMISSION-1 (2026-11-01), checked449/449/source-diff, pending gate/Claude: real TriggerAnimationAction constructor MISSING callback can reenter Stop/retire after an unadmitted NativeLastFaceRunner has allocated SmartFace subscriptions. Targeted never-admitted face retirement now releases its own handles without watcher/completion delivery; generic action teardown was not rewritten. Actual callback regression verifies no abandoned face subscriptions or stale queued child. Ordinary admitted WatcherEnding remains unchanged; broader action/callable/teardown claims remain partial.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "; M5X19BuilderTests; M5X15BuilderTests; M5X17BuilderTests; M5X18BuilderTests; NavigationTests; FreeplayTests; ActionListTests; M8ActionCheckedRowsTests; ActionListTests; ActionCompletionTests; M8TeardownCheckedRowsTests; M4AbortSleepTests.M4_026_A1_TheResultIsTheEnginesFailIfAnyFailed; BehaviorRunnerOwnershipTests; M2M15HandlerBuilderTests.RunningNeverInvokesCompletionCallbacksAndNonzeroInitWithInitializedFlagStillChecks; B-M1-5 ReportOrderingRegressionTests.CliffStopPublishesAnimationAbortBeforeRobotStoppedAndCompletionHasAHostView (production queue/action cancellation/host completion); concrete completion-union recovery remains with M8-020."
+    }
+  ],
+  "provenance": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs",
+      "sha256": "55b9d0213249626555d56dc27331837b7b300827b989009501c48f5a5c25c619"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
+      "sha256": "ea04f4d26f9ffc53ce983c41150c913d9593223d9d2cea42c2d21fc482b6419f"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs",
+      "sha256": "88011137ed34f00cbfca59398a569bd1961f949a250d2dd3b627323547a8656f"
+    },
+    {
+      "path": "re-analysis/acceptance/hardware/scripts/m15-cube-hw-1.md",
+      "sha256": "ca6a4921356fb0ca45bdcb5fe89259f9bff30524e8d45734ab828910427a36aa"
+    },
+    {
+      "path": "re-analysis/fidelity_manifest.json",
+      "sha256": "8b04e095e4cc905b24d1c0280b72a94360fc0eb104aaee6ca325b03a41efef76"
+    }
+  ],
+  "errors": [],
+  "acceptance": "NOT_JUDGED: manager review required; hardware success does not raise provenance"
+}

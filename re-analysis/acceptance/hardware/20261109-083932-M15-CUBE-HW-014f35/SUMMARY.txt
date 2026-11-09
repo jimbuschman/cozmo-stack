@@ -1,0 +1,17 @@
+Cube pickup and put-down test. Nothing here passes or fails.
+
+direct-pickup: admitted=false result= carryingAfter=false (External actions are disabled by a reaction)
+direct-place: admitted=true result=0x00000000 carryingAfter=false (Native lift action ended)
+drive-pickup: admitted=true result=0x02000000 carryingAfter=false (Native cube pickup ended)
+drive-place: admitted=true result=0x00000000 carryingAfter=false (Native lift action ended)
+
+Cube reports seen: 55
+
+Startup: engine readiness delivered after 1204 ms; connect callback completed; 0 error-level engine log(s)
+
+Your notes: {"pickedFirst":"no","placedFirst":"no","pickedSecond":"no","placedSecond":"no","odd":"he drove once, missed cube "}
+
+Known gaps reported: 128
+
+Run errors:
+None.
