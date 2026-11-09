@@ -29,6 +29,31 @@ public class NativeBouncerFaceInputTests
         Assert.Null(moved.NativeObservationOrigin);
     }
 
+    /// <summary>
+    /// M14-009: GetFaceIDsObservedSince 0x004F59EE and HasAnyFaces 0x004F5A84 apply ShouldReturnFace's third gate,
+    /// Robot::IsPoseInWorldOrigin (0x0051290C: pose.HasSameRootAs(the robot's current origin)). A face whose
+    /// observation origin is not under the current origin is not returned; the same face is once its root matches.
+    /// The bool is the id >= 1 test (0x004F5A24..0x004F5A2E), so a session id 0 face is dropped only when it is set.
+    /// </summary>
+    [Fact]
+    public void PublicFaceQueriesReturnOnlyFacesInTheCurrentOrigin()
+    {
+        using var rig=new Rig();
+        var robot=rig.Robot.Engine.Robot!;
+        using var foreign=new Pose3d("foreign");
+        var origin=robot.GetNativeOrigin(robot.CurrentOriginId);
+        rig.Vision.Faces.AddOrUpdateNativeFace(new TrackedFace(new DetectedFace(7,new FaceRect(0,0,10,10)),10),Pose3d.Identity,false,foreign.Node!);
+        Assert.Empty(rig.Vision.Faces.GetFaceIDsObservedSince(0));
+        Assert.False(rig.Vision.Faces.HasAnyFaces());
+        foreign.SetParent(origin);
+        Assert.Equal(new[]{7},rig.Vision.Faces.GetFaceIDsObservedSince(0));
+        Assert.True(rig.Vision.Faces.HasAnyFaces(10));
+        Assert.False(rig.Vision.Faces.HasAnyFaces(11));                          // node+0x1C < ts rejects
+        rig.Vision.Faces.AddOrUpdateNativeFace(new TrackedFace(new DetectedFace(0,new FaceRect(0,0,10,10)),12),Pose3d.Identity,false,origin.Node!);
+        Assert.Equal(new[]{0,7},rig.Vision.Faces.GetFaceIDsObservedSince(0));
+        Assert.Equal(new[]{7},rig.Vision.Faces.GetFaceIDsObservedSince(0,requireId:true));
+    }
+
     [Fact]
     public void ObservationResolvesHistoryRootIdThroughRegisteredOriginWithoutAddingOwner()
     {

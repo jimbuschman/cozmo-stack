@@ -938,7 +938,7 @@ public class M7BatchThreeATests
     {
         using var rig = new Rig();
         PickUp(rig);
-        rig.Vision.Faces.AddOrUpdateFace(MakeFace(1, 1000), Pose3d.Identity, false);
+        rig.Vision.Faces.AddOrUpdateNativeFace(MakeFace(1, 1000), Pose3d.Identity, false, rig.Robot.Engine.Robot!.GetNativeOrigin(rig.Robot.Engine.Robot.CurrentOriginId).Node!);   // M14-009: in the current origin
         var unnamed = RunStartAnim(rig);
         Assert.Equal("AcknowledgeFaceUnnamed", FirstTrigger(unnamed, "AcknowledgeFaceUnnamed", "ReactToPickup"));   // trigger 2
 
@@ -948,7 +948,7 @@ public class M7BatchThreeATests
         SteppedBehavior.MissingReported += On;
         try
         {
-            rig.Vision.Faces.AddOrUpdateFace(MakeFace(2, 1100, "Jim"), Pose3d.Identity, false);
+            rig.Vision.Faces.AddOrUpdateNativeFace(MakeFace(2, 1100, "Jim"), Pose3d.Identity, false, rig.Robot.Engine.Robot!.GetNativeOrigin(rig.Robot.Engine.Robot.CurrentOriginId).Node!);   // M14-009: in the current origin
             var named = RunStartAnim(rig);
             Assert.Contains(reported, r => r.Contains("SayTextAction"));
             Assert.Equal("(none)", FirstTrigger(named, "AcknowledgeFaceNamed", "AcknowledgeFaceUnnamed", "ReactToPickup"));   // no stand-in animation

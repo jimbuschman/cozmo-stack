@@ -241,7 +241,7 @@ public class FaceTests
         var regression = world.AddOrUpdateFace(Face(1, 420, 90, 300, 900), robot, false);
         Assert.NotNull(regression); Assert.Equal(1, regression!.Face.Id); Assert.Equal(900u, regression.Face.LastObservedTimestamp);
         Assert.Equal(new[] { 1, 2 }, world.GetFaceIDs().OrderBy(i => i));
-        Assert.Equal(new[] { 2 }, world.GetFaceIDs(namedOnly: true));
+        Assert.Equal(new[] { 1, 2 }, world.GetFaceIDs(requireId: true));             // 0x004F5A24..0x004F5A2E: the bool tests id >= 1, not the name
         Assert.True(world.HasAnyFaces(900)); Assert.False(world.HasAnyFaces(1201));
         // 15 s after id 1's last observation the unnamed face is forgotten, the named one stays
         var removed = world.Update(900 + FaceWorld.UnnamedFaceLifetimeMs + 1);

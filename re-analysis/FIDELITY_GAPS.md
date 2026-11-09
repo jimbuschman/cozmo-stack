@@ -7,10 +7,10 @@ Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 279 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 280 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 361 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 360 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 71 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -37,7 +37,7 @@ remains after both, and they do not go away by working harder on this repository
 | M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
-| M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
+| M14-faces — Face and pet pipeline | 14 | 1 | 10 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 111 | 3 | 82 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
@@ -65,7 +65,7 @@ status.
 | M11-vision | INVENTORY_APPROVED | 22 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
-| M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
+| M14-faces | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
@@ -3183,15 +3183,6 @@ B-M1-7 (2026-10-18), built, awaiting strong verification: Census correction from
 POUNCE-REAL-FRAMES-1 WIP boundary (2026-11-01): native new-entry rotation at004F4596 queries original VC LIVE IMU history with TrackedFace timestamp and raw byte+10 selecting window0 or5, body threshold3F060A92/head3E32B8C2. Current face model does not recover that raw datum/consumer. New native face entries with unknown predicate now emit M14-008 MISSING and are skipped; existing by-ID updates retain their source bypass. Supplied detector geometry/order tests explicitly supply a nullable known predicate, not a natural face-producer claim. Legacy raw-ID/time ImuDataHistory is not a valid native replacement. No whole M14 settlement or status/approval change; see HANDOFF-POUNCE-REAL-FRAMES-1.md.
 
 POUNCE-REAL-FRAMES-1 final validation (2026-11-02) supersedes its prior WIP/pending-gate checkpoints: affected410/410 and full3 d843bc7d7581/7581 PASS0skip9m44s; compiler/gate/shutdown/postflight0. One consolidated handoff READY FOR CLAUDE. Mode3 delivery and finite Init/IMU/worker/quality-rectangle/physical-marker/live-world joins are built; this record remains open with its other named gaps. Only M11-098 and M15-107 own paths are proposed for Claude settlement, with explicit M1-034/libm boundaries; no Codex status/approval/hardware change. See jobs/trial-m13/HANDOFF-POUNCE-REAL-FRAMES-1.md.
-
-**M14-009 — Face return eligibility and enrollment forwarding** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
-* effect: which stored faces are returned and which enrollment mode reaches the vision system change
-* rests on: libcozmoEngine.so
-* best authority: FaceWorld::ShouldReturnFace 0x004F55B8 and FaceWorld::Enroll 0x004F5C9E, read; the enrollment chain resolves to FaceRecognizer::SetAllowedEnrollments 0x008658AC
-* evidence: 0x004F55B8..0x004F55E2 rejects a stale entry, optionally rejects id<1, and requires Robot::IsPoseInWorldOrigin on the face pose.; 0x004F5C9E..0x004F5CB2 selects mode 4 for a nonzero id and -1 for zero; the tail-call 0x8CAC3C resolves through VisionComponent 0x00657A58 / VisionSystem 0x006B3394 / FaceTracker 0x0086B276 / Impl 0x0086E372 to FaceRecognizer::SetAllowedEnrollments 0x008658AC, which stores the mode at +0x108/+0x10c, the id at +0x100 and the entry data at +0x104 (C1-F11).
-* outstanding: ShouldReturnFace (F10) and Enroll's mode selection (4 for a nonzero id, -1 for zero) are built. The enrollment target forward is VisionSystem.SetFaceEnrollmentMode -> FaceRecognizer.SetAllowedEnrollments (M14-011, built), which stores the mode/id/track. The M14-011 recognizer is the album owner.
 
 **M14-010 — FaceTracker OKAO call order, detector output handling and enrollment gates** (live path)
 

@@ -338,6 +338,7 @@ public sealed partial class VisionSystem : IDisposable
         };
         Faces.NativeMainPose=()=>_robot.Engine.Robot?.GetCheckedMainPose();
         Faces.NativePoseScope=()=>World.EnterPoseMutation();
+        Faces.NativeOwner=()=>_robot.Engine.Robot; // M14-009: IsPoseInWorldOrigin reads this robot's current origin
         World.CurrentRobotPose = () => robot.Engine.Robot?.MainPose;
         // fidelity: M1-053
         // Supplied by localization/vision (M11-053/055/035), not the incoming packet or camera receipt time.
@@ -1990,7 +1991,20 @@ public sealed partial class VisionSystem : IDisposable
                     }
                     faces.Add(tf);
                     FaceObservation? observation;
-                    if (offline) observation=Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast);
+                    if (offline)
+                    {
+                        // M14-009: with a native robot, the offline path also anchors the face to its observation origin,
+                        // so the face queries' IsPoseInWorldOrigin gate can be evaluated; the offline gates are unchanged.
+                        PoseTreeNode? offlineOrigin=null;
+                        if(_robot.Engine.Robot is { } offlineOwner)
+                        {
+                            using var faceMutation=World.EnterPoseMutation();
+                            lock(offlineOwner.PoseTreeGate) offlineOrigin=ResolveFaceObservationOrigin(History,offlineOwner,timestamp);
+                        }
+                        observation=offlineOrigin is null
+                            ? Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast)
+                            : Faces.AddOrUpdateNativeFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast, offlineOrigin);
+                    }
                     else
                     {
                         using var faceMutation=World.EnterPoseMutation();
