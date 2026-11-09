@@ -159,7 +159,7 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | Turn, Meet interaction and named enrollment batch gate | PASS | scripts/test-full.sh on 969b3dee passed 7963/7963, zero failed or skipped, 16m57s. Three bounded handoffs are READY FOR CLAUDE. |
 | TURN-ACTUAL-MAIN-1 | UPSTREAM | Main includes Claude's equivalent migration at 3bfcbff4. The duplicate manager change was dropped during rebase. |
 | TRACK-FACE-CALLERS-1 | CHECKED, BATCH GATE PENDING | Retained tracking for both live standalone Interact bindings, legacy tracker removed, M14-003 location moved and open paths listed. Affected 166/166, rebased 65/65, manager 46/46 and rebased 25/25. HANDOFF-TRACK-FACE-CALLERS-1.md. |
-| PLACE-GROUND-CALLERS-1 | CHECKED, BATCH GATE PENDING | Seven callers use the retained Ground action, including canonical FistBump and the exact-32 host lift. Affected 358/358, manager 24/24. HANDOFF-PLACE-GROUND-CALLERS-1.md. |
+| PLACE-GROUND-CALLERS-1 | CHECKED, BATCH GATE PENDING | Seven callers use the retained Ground action, including canonical FistBump and the exact-32 host lift. Affected 358/358, manager 24/24, standalone rescope 13/13. HANDOFF-PLACE-GROUND-CALLERS-1.md. |
 | FACE-RETURN-ORIGIN-1 | UPSTREAM | Main contains Claude's implementation and M14-009 settlement at 66b4275b. The separate manager implementation was dropped during rebase. |
 | WWISE-SELECT-PROBE-1 | CHECKED, BATCH GATE PENDING | Native retry cadence, source-ID gate, and shared managed playback/singing selection. Affected 79/79, manager 78/78. HANDOFF-WWISE-SELECT-PROBE-1.md. |
 | Settlement batch gate on 83abe66b | SUPERSEDED | Stopped after main landed its separate face-origin implementation at 66b4275b. The rebased tip requires a new run. |

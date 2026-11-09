@@ -14,6 +14,22 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class FreeplayTests
 {
+    [Fact]
+    public void StandaloneFreeplayBindsThePublicGroundPlacementCallers()
+    {
+        var obb = ObbRoot(); Assert.NotNull(obb);
+        using var rig = new Rig();
+        using var stack = FreeplayStack.CreateStandalone(obb!, rig.Robot, Ctx(rig), () => 0, rig.Vision, rig.M);
+
+        Assert.IsType<CubeLiftWorkoutBehavior>(stack.Bound["CubeLiftWorkout"]);
+        Assert.IsType<CubeLiftWorkoutBehavior>(stack.Bound["SparksCubeLiftWorkout"]);
+        Assert.IsType<BringCubeToBeaconBehavior>(stack.Bound["Hiking_BringCubeToBeacon"]);
+        Assert.IsType<BringCubeToBeaconBehavior>(stack.Bound["SparksBringCubeToBeacon"]);
+        Assert.IsType<StackBlocksBehavior>(stack.Bound["StackBlocks"]);
+        Assert.IsType<StackBlocksBehavior>(stack.Bound["SparksStackBlock"]);
+        Assert.IsType<RamIntoBlockBehavior>(stack.Bound["RamIntoBlock"]);
+    }
+
     // reach: standalone Freeplay manager and shipped config, with a supplied strategy observation (T4/T6).
     [Fact]
     public void AcknowledgeObjectReactionUsesTheStandaloneConfiguredOwner()
