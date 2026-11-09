@@ -168,3 +168,4 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | GROUND-VERIFY-MARKER-1 | CHECKED | Concrete-marker BadPose, original error flag and diagnostic. Affected 55/55, final Ground 15/15. Awaiting batch gate. HANDOFF-GROUND-VERIFY-MARKER-1.md. |
 | AI-BODY-CUBE-PICKUP-1 | CHECKED | Direct and drive pickup through the retained queue, live docking correction and original-owner carry. Affected 439/439. Awaiting batch gate. HANDOFF-AI-BODY-CUBE-PICKUP-1.md. |
 | VOICE-PICKUP-REACTION-1 | CHECKED | Canonical named and unnamed authored pickup reaction, with retained wait and original-owner track retirement. Affected 97/97 and manager 48/48. Awaiting batch gate. HANDOFF-VOICE-PICKUP-REACTION-1.md. |
+| MEET-COZMO-RENAME-1 | CHECKED | Native identity save/report and independent configured Meet rename speech. Affected 167/167, final rename 7/7, manager integration 53/53. Awaiting batch gate. HANDOFF-MEET-COZMO-RENAME-1.md. |

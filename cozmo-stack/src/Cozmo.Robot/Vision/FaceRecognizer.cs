@@ -882,6 +882,19 @@ public sealed class FaceRecognizer
         }
     }
 
+    // 0x867A24..0x867C4C: exact ID and old UTF-8 bytes, no FaceWorld or album mutation.
+    internal int RenameFace(int id,string oldName,string newName)
+    {
+        lock(_gate)
+        {
+            if(!_faces.TryGetValue(id,out var entry)){var log=Log;LogCallbackDeferral.Run(()=>log?.Invoke($"FaceRecognizer.RenameFace: unknown ID {id}"));return 1;}
+            if(!System.Text.Encoding.UTF8.GetBytes(entry.Name).AsSpan().SequenceEqual(System.Text.Encoding.UTF8.GetBytes(oldName)))
+            {var log=Log;LogCallbackDeferral.Run(()=>log?.Invoke("FaceRecognizer.RenameFace: old name does not match [redacted]"));return 1;}
+            entry.Name=newName;
+            return 0;
+        }
+    }
+
     // EraseFace differs from RemoveUser(int): a missing face is a failure.
     internal int EraseFace(int id)
     {

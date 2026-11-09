@@ -312,6 +312,7 @@ public sealed partial class VisionSystem : IDisposable
     private readonly Action<byte[], byte[]> _faceAlbumLoaded;
     private readonly bool _stockRecognizer;
     private readonly Action<NativeObservedObject> _nativeObjectObserved;
+    private readonly RetainedSubscription _renameRequest;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -424,6 +425,18 @@ public sealed partial class VisionSystem : IDisposable
         robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
         if (robot.Engine.ConnectionFaceAlbumResult is { } loaded)
             _faceAlbumLoaded(loaded.Album, loaded.Enrollment);
+        _renameRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x8C,false,value=>
+        {
+            try
+            {
+                if(value is NativeRenameFaceRequest request && robot.Engine.Robot is {} owner)
+                    RenameStockEnrolledFace(owner,request);
+            }
+            catch(Exception error)
+            {
+                robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "VisionComponent.RenameFace.HandlerFailed", error.Message);
+            }
+        });
     }
 
     private readonly Action<uint> _doubleTapEnded;
@@ -1033,6 +1046,25 @@ public sealed partial class VisionSystem : IDisposable
             _robot.Engine.AnimationMessages.Deliver(0x57, true, new NativeErasedEnrolledFace(id, string.Empty));
         }
         return true;
+    }
+
+    // 0x657B24: mutation under the vision gate; save then report without waiting for NV replies.
+    private void RenameStockEnrolledFace(EngineRobot owner,NativeRenameFaceRequest request)
+    {
+        var recognizer=Recognizer;int removal=Volatile.Read(ref _removals);
+        bool Current()=>_stockRecognizer && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) &&
+            removal==Volatile.Read(ref _removals) && ReferenceEquals(Recognizer,recognizer) && recognizer.OwnsStockDetector(_stockFaceDetector);
+        using(LogCallbackDeferral.EnterGated(_busy))
+        {
+            if(!Current() || !recognizer.IsAvailable || recognizer.RenameFace(request.Id,request.OldName,request.NewName)!=0)return;
+        }
+        if(!Current())return;
+        try { SaveFaceAlbumToRobot(owner,recognizer,removal,_robot.Engine.NvStorage,null,null); }
+        catch(Exception error)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.RenameFace.SaveFailed",error.Message);
+        }
+        if(Current())owner.PublishFaceRenamed(request.Id,request.NewName);
     }
 
     // fidelity: M14-012
@@ -2189,6 +2221,7 @@ public sealed partial class VisionSystem : IDisposable
                 throw new InvalidOperationException("Dispose VisionSystem outside its Processor callback.");
             _disposed = true;
         }
+        _renameRequest.Dispose();
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;
