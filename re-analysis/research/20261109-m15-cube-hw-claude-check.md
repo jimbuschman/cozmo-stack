@@ -66,3 +66,32 @@ Not obtained yet: nothing was carried, so no 0x44 ground placement ran.
   - **Root cause:** the far-side approach (PICKUP-PREDOCK-SIDE-1). **That job is now a safety priority.**
 - **Put-down:** the engine owner was no longer carrying (the pickup failed), so the 32 mm lift ran as a plain move.
   The M15-022 placement observation is still not obtained.
+
+## Run 4 (f2b86a, abcda91f): upright cube, direct round only
+
+**Cause of runs 2 and 3, confirmed by the operator:** the cube had been lying on its side. That explained the far-side
+approach (PICKUP-PREDOCK-SIDE-1, the engine's own result) and the dock against the lit top face. This run used the
+corrected setup, with the cube upright and its lights on top.
+
+**What the operator saw:** picked up "yes", put down "yes", nothing odd.
+
+**Pickup:**
+- **Admission:** admitted on the 4th attempt (the AcknowledgeObject retry).
+- **The dock:** 0x42 went out with the native defaults (60/200/500, method 2, final flag 1). The firmware raised
+  IS_PICKING_OR_PLACING 92 ms later, and the stack sent 28 0x48 corrections.
+- **The result:** 0xB8 reported success at 22.07 s, and IsCarryingBlock was set in the next state. The busy flag
+  cleared at 23.13 s, and the action completed 0x00000000 with the cube carried.
+- **No overshoot:** the 13 mm overshoot of run 3 is not seen. DOCK-OVERSHOOT-1 is closed as physical: it was the
+  tipped cube's lit face.
+
+**Put-down (the M15-022 observation):**
+- 0x44 went out at 25.12 s, and IS_PICKING_OR_PLACING was set in the next state (54 ms).
+- 0xB8 came at 26.16 s while busy was still set. IsCarryingBlock cleared in the state with it.
+- IS_PICKING_OR_PLACING cleared at 26.79 s, the wheels stopped at 27.09 s, and the action completed 0x00000000 at
+  27.70 s.
+- That is the order CheckIfDone's latch path predicts (busy latched, then RUNNING while moving).
+- **Record:** M15-022 gets HARDWARE_VERIFIED on this bundle. Its status is unchanged.
+
+**Speech:** no BufferStarved in the stack log.
+
+**Next:** the drive round (`--with-drive`) with the cube upright, the operator near the edge.

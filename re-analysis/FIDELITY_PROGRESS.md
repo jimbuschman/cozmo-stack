@@ -44,5 +44,5 @@ ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M5-animation.
 
 | level | records |
 | --- | ---: |
-| HARDWARE_VERIFIED | 14 |
-| NONE | 747 |
+| HARDWARE_VERIFIED | 15 |
+| NONE | 746 |

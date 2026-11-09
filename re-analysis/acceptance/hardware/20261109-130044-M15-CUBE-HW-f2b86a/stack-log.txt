@@ -1,0 +1,445 @@
+MISSING: M13-038 PublicStateBroadcaster::Update0x0064D5DC native manager/current-requested/carrying/reaction/needs input joins are unbound; checked broadcaster and both client owners are built, no host Freeplay state substituted
+MISSING: M7-027/M12-017: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/+E4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points remain unbuilt; TracePrinter B0/EC diagnostics and CF CrashReport are bound
+MISSING: M7-028 LiftLoadTest[0] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown
+MISSING: M7-028 LiftLoadTest[1] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown
+M5-027/M5-057 subscription 0xAE: idle push/remove inputs supplied by the host API (M5-057); concrete ownership/unlink is built (M5-056)
+M5-027/M5-057 subscription 0xAF: idle push/remove inputs supplied by the host API (M5-057); concrete ownership/unlink is built (M5-056)
+M5-061 subscription 0xAD: replay input owned by M5-061; concrete ownership/unlink is built (M5-056)
+M9-029 subscription 0xC4: custom-song input owned by M9-029; concrete ownership/unlink is built (M5-056)
+MISSING: M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built
+MISSING: DevTurnInPlaceTest: original app initiator is UNKNOWN; manager entry starts despite false IsRunnable; shared reaction/action completion owners remain M7-014/M8-001/M8-015/M8-017/M13-022 gaps
+MISSING: BehaviorContainer::CreateBehavior case 0x59CA78 (DockingTestSimple -> BehaviorDockingTestSimple, constructor 0x5CAFB0, 656 bytes): class not implemented. This stack has no constructor that builds BehaviorDockingTestSimple from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CBC4 (FactoryCentroidExtractor -> BehaviorFactoryCentroidExtractor, constructor 0x5CF80C, 528 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryCentroidExtractor from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CBE4 (FactoryTest -> BehaviorFactoryTest, constructor 0x5D0438, 880 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryTest from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CD04 (LiftLoadTest -> BehaviorLiftLoadTest, constructor 0x5D3F10, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorLiftLoadTest from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CE66 (PlayAnimWithFace -> BehaviorPlayAnimSequenceWithFace, constructor 0x5C0630, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorPlayAnimSequenceWithFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CC04 (FeedingEat -> BehaviorFeedingEat, constructor 0x5D5794, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingEat from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner
+MISSING: BehaviorContainer::CreateBehavior case 0x59CC24 (FeedingSearchForCube -> BehaviorFeedingSearchForCube, constructor 0x5D6C64, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingSearchForCube from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CDC4 (PeekABoo -> BehaviorPeekABoo, constructor 0x5F62D0, 368 bytes): class not implemented. This stack has no constructor that builds BehaviorPeekABoo from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CF46 (RespondPossiblyRoll -> BehaviorRespondPossiblyRoll, constructor 0x5DE324, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorRespondPossiblyRoll from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CF06 (PyramidThankYou -> BehaviorPyramidThankYou, constructor 0x5DE048, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPyramidThankYou from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked
+MISSING: InteractWithFaces factory supports only the checked Meet configuration with original owners
+MISSING: PounceOnMotion factory: only configured Hiking_PounceOnMotion with actual Robot/manipulation owner is checked
+MISSING: BehaviorContainer::CreateBehavior case 0x59CF26 (RequestGameSimple -> BehaviorRequestGameSimple, constructor 0x5EA168, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorRequestGameSimple from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CFC6 (Singing -> BehaviorSinging, constructor 0x5EE8DC, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorSinging from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CDE4 (PickUpAndPutDownCube -> BehaviorPickUpAndPutDownCube, constructor 0x5DB65C, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPickUpAndPutDownCube from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings
+MISSING: BehaviorContainer::CreateBehavior case 0x59D026 (TrackLaser -> BehaviorTrackLaser, constructor 0x5FA250, 472 bytes): class not implemented. This stack has no constructor that builds BehaviorTrackLaser from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CB84 (ExploreVisitPossibleMarker -> BehaviorExploreVisitPossibleMarker, constructor 0x5E3CD8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorExploreVisitPossibleMarker from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: M15-056 GuardDog checked disconnect unit constructor0x005F2946 has no native Robot subscription/input owner; full M15-067 lifecycle remains unbuilt
+MISSING: BehaviorContainer::CreateBehavior case 0x59CCA4 (GuardDog -> BehaviorGuardDog, constructor 0x5F28DC, 344 bytes): class not implemented. This stack has no constructor that builds BehaviorGuardDog from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CDA4 (OnboardingShowCube -> BehaviorOnboardingShowCube, constructor 0x600AC0, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorOnboardingShowCube from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D0F2 (RamIntoBlock -> BehaviorRamIntoBlock, constructor 0x60473C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorRamIntoBlock from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D112 (ReactToCliff -> BehaviorReactToCliff, constructor 0x604CD0, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToCliff from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D132 (ReactToCubeMoved -> BehaviorAcknowledgeCubeMoved, constructor 0x60219C, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorAcknowledgeCubeMoved from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D152 (ReactToFrustration -> BehaviorReactToFrustration, constructor 0x605904, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToFrustration from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D172 (ReactToImpact -> BehaviorReactToImpact, constructor 0x60617C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToImpact from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D192 (ReactToMotorCalibration -> BehaviorReactToMotorCalibration, constructor 0x60658C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToMotorCalibration from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D1B2 (ReactToOnCharger -> BehaviorReactToOnCharger, constructor 0x606A18, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToOnCharger from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D1D2 (ReactToPet -> BehaviorReactToPet, constructor 0x606E98, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPet from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D1F2 (ReactToPickup -> BehaviorReactToPickup, constructor 0x607724, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPickup from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D212 (ReactToPlacedOnSlope -> BehaviorReactToPlacedOnSlope, constructor 0x607FB8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPlacedOnSlope from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D232 (ReactToPyramid -> BehaviorReactToPyramid, constructor 0x608310, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPyramid from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D252 (ReactToReturnedToTreads -> BehaviorReactToReturnedToTreads, constructor 0x6084E4, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToReturnedToTreads from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D272 (ReactToRobotOnBack -> BehaviorReactToRobotOnBack, constructor 0x6087B8, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnBack from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D292 (ReactToRobotOnFace -> BehaviorReactToRobotOnFace, constructor 0x608A9C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D2B2 (ReactToRobotOnSide -> BehaviorReactToRobotOnSide, constructor 0x608D38, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnSide from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D2D2 (ReactToRobotShaken -> BehaviorReactToRobotShaken, constructor 0x609104, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotShaken from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D312 (ReactToStackOfCubes -> BehaviorReactToStackOfCubes, constructor 0x609880, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToStackOfCubes from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D332 (ReactToUnexpectedMovement -> BehaviorReactToUnexpectedMovement, constructor 0x609A58, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToUnexpectedMovement from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CB00 (DriveToFace -> BehaviorDriveToFace, constructor 0x5DA550, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorDriveToFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CFA6 (SearchForFace -> BehaviorSearchForFace, constructor 0x5C9158, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorSearchForFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: Robot::Robot builds a second BehaviorContainer (robot+0x48, BehaviorSystemManager, constructor 0x005A5812) over the same configs, so the engine constructs every behaviour twice; only the BehaviorManager's (robot+0x44) is built here: the second manager's use is UNKNOWN (no direct caller of its Update, InitConfiguration, InitializeEventHandlers, GetCurrentBehavior or FindBehaviorByID)
+MISSING: M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt
+MISSING: M13-039 client needs cache +0x2C read at 0x005924C4: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero
+MISSING: M13-039 client needs cache +0x30 read at 0x00592514: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero
+MISSING: M13-039 client needs cache +0x34 read at 0x00592560: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero
+MISSING: M13-039 ActivityID EnumToString0x0059202C / RobotAudioClient source channel0x0059201C input absent; activity audio decisions still proceed
+MISSING: M8-012 BehaviorManager::SendDasTransitionMessage 0x005A22B4..0x005A24AC: typed BehaviorTransition/displayNameKey delivery is unbuilt; DasTransition is only a callback seam
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: FistBump -> FistBump has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Frustration -> ReactToFrustrationMajor has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: NoPreDockPoses -> RamIntoBlock has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Sparked -> ReactToSparked has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription
+MISSING: M7-019 RamIntoBlock configured factory owner unavailable; reaction-owned existing adapter supplies the strategy recipient, not the native factory identity or a recovered Ram body
+M15-035 manager ruling 2026-10-15 (OV28-29-30 check, by analogy with M2-017): never-written inventory words 2..63 are supplied as zero until decoded; the report is retained
+MISSING: M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed
+MISSING: M11-072: precise native component/container subscription retirement points are not supplied by the checked recipient rows; managed token storage retires at Robot destruction end. Full teardown ordering remains M8-023/M7-018; no native destructor ordering is claimed for these new UI handles
+MISSING: M11-066 Robot ctor main (+0x298) and forward (+0x2A4) pose names have no checked row; empty names retained
+MISSING: M11-077: RemoveOwner is built (0x008448B4..0x00844914); NotLastOwner 0x0084510E..0x0084515E needs native shared-control use_count, and final-node destruction/bookkeeping 0x0084605C..0x0084609C -> 0x008D148C remains unbuilt; C# reachability is not used as a native reference count
+MISSING: M11-069 AIComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)
+MISSING: M11-069 BehaviorManager.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)
+MISSING: M11-069 MovementComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)
+MISSING: M11-016 FaceTracker internal Init/algorithm and its possible error diagnostics remain unavailable
+info: Connected to robot!
+MISSING: M15-039: writeAsJson 0x0084C328..0x0084C4B6 calls StyledStreamWriter(tab). Its shipped formatting/comment/escaping body has no checked builder row; stats serialization/open/write/close and result-dependent WriteStatsFailed are not built
+info: robot firmware: 2457 (app: 2381)
+warning: robot firmware 2457 is not 2381 (policy M1-040: accepted)
+warning: policy M1-040: the original's result OutdatedApp is not applied; the robot is accepted
+Robot.Trace level=2 formatWord=0x00000270 [macaddr.soft_ap] fmt#624 [162, 32, 166, 9, 79, 50]
+Robot.Trace level=2 formatWord=0x00000272 [boot_count.phase] fmt#626 [40]
+Robot.Trace level=2 formatWord=0x0000015B [client.connections_since_boot] fmt#347 [2]
+Robot.Trace level=3 formatWord=0x00000278 [hardware.revision] fmt#632 [0]
+Robot.Trace level=2 formatWord=0x00000131 [CozmoBot.Radio.Connected] fmt#305
+warning: overtime -209.0 ms
+MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported
+debug: overtime -149.0 ms
+MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported
+debug: overtime -89.0 ms
+MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported
+debug: overtime -29.0 ms
+MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported
+Robot.Trace level=1 formatWord=0x00000131 [Messages.Process_syncTime.Recvd] fmt#305
+Robot.Trace level=2 formatWord=0x0000015B [watchdog_reset_count] fmt#347 [0]
+Robot.Trace level=1 formatWord=0x00000166 [Messages.Process_imageRequest.Recvd] fmt#358 [1, 4]
+Robot.Trace level=1 formatWord=0x0000012E [Localization.UpdatePoseWithKeyFrame.SettingPose] fmt#302 [0, 0, 0]
+MISSING: M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); system readiness remains unbound; the initial-exposure config prefix is built
+Robot.Trace level=2 formatWord=0x00000243 [Messages.Update.GyroCalibrated] fmt#579 [1042822808, -1105446800, -1092404541]
+MISSING: M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event
+Robot.Trace level=1 formatWord=0x00000131 [HeadController.CalibratedWhileApplyingPower] fmt#305
+MISSING: M8-026 GetWorldOrigin 0x004A4C54 at 0x0056AC92 has no bound Robot/world-origin provider; ProcessClearQuad unit is built
+MISSING: M13-038 PublicStateBroadcaster Update0x0064D5DC at Robot::Update: native input owner/caller join is absent; checked Update(input) is built, no publication or tick ordering invented
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.SetCliffDetectThreshold.NewLevel] fmt#347 [50]
+MISSING: IBehavior::IsRunnableBase robot+0x34a (0x005bd876): no source for the byte; the vtable+0x24 gate is not consulted
+MISSING: IBehavior::IsRunnableBase +0x74 state (0x005bd7e6) and +0x70 unlock (0x005bd810) inputs: no source in this stack; not tested
+MISSING: M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; normal queue path is not classified SDK-only
+Robot.Trace level=1 formatWord=0x00000166 [Messages.Process_imageRequest.Recvd] fmt#358 [1, 0]
+MISSING: M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp +0xE4 owner is unbuilt; rollback of +0xE4/+0xE8 is not substituted with the processed clock
+MISSING: M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership
+MISSING: M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only
+MISSING: M11-058/M11-055 DecodeJPEG Tic/Toc 0x006B4B76/0x006B4C6C native timing producer unbuilt; no host timer substituted
+MISSING: M14-010 face motion reset has no prior admitted VisionPoseData
+MISSING: M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted
+MISSING: M11-035 DetectingLaserPoints producer/handler unavailable; no processed bit or native success invented
+MISSING: M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted
+MISSING: M11-037 CheckForCollisionWithRobot 0x0062593C..0x00625B88: complete native object/world/Robot::GetPose input binding and owned footprint recipients are not supplied by these wrapper rows; collision predicate/modify unit remains unbuilt
+MISSING: M11-044 ComputeAndInsertStateAt native auxiliary key/index ownership after0x00531BAA is not in the adopted history-query rows; bounded timestamp/pose cache only, no invented key/index producer
+ObjectPoseConfirmer.AddVisualObservation.NewEntry: ObjectID:0 at (174.93, 4.72, 16.59), currently Dirty
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+MISSING: M11-044 ComputeAndInsertStateAt 0x0067F8A2 -> auxiliary key/index ownership after 0x00531BAA remains unbuilt; existing checked timestamp/pose cache is used
+MISSING: M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound
+MISSING: M8-015 destructor owns-profile byte+0x58/ClearCustomMotionProfile0x005410F6 recipient is not bound; Path.HasCustomMotionProfile is a different input; no invented profile reset
+MISSING: M8-026 / M11-074 ClearRobotToMarkers 0x00506A98 -> ProcessClearQuad 0x0067F708: native robot/marker-corner quad producer is unbuilt; checked whiteboard unit awaits that join
+Observed active object of type Block_LIGHTCUBE2 but it's not connected. Is the battery plugged in?
+new object 0 Block_LIGHTCUBE2 Dirty at (175.88, 4.66, 18.00) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / cache 0x0062C5A2..0x0062C616: native current-origin family query, predicate and pose-root/distance joins are unbuilt; existing all-pairs snapshot is a candidate, not the processed-ID/old-cache source path
+MISSING: IBehavior::Init/Resume 'SparkBehaviorDisables' lock (0x005BCD16..0x005BCD44, 0x005BCFAC..0x005BCFDE): this+0x70 and [[this+0x2C]+0x44]+0x58 (the active spark) have no source in this stack (M15 spark layer); the lock is not taken
+MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs
+MISSING: M8-017 StoreUnionAndDelete native shared-control external-owner retention is not bound; existing direct child cleanup remains incomplete for aliased or retained children (0x0054F0CC..0x0054F0EC)
+seen object 0 Block_LIGHTCUBE2 Dirty at (175.88, 4.66, 18.00) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.55, 4.65, 18.29) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.46, 6.31, 17.71) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E and node+0x20 release0x0066352E..0x00663560: native captured-owner finalization/producer census is unbuilt; managed delegate retirement does not certify no side effects
+MISSING: M8-017 DeleteActions native temporary shared ownership and last-release recipient 0x0054EC0E..0x0054EC20 are not bound; existing direct child cleanup is a candidate sole-owner path
+MISSING: RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made
+seen object 0 Block_LIGHTCUBE2 Known at (175.75, 5.92, 17.52) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.58, 5.52, 17.99) yaw=94deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.46, 6.28, 17.66) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.61, 5.92, 17.73) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.42, 6.00, 17.83) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.47, 5.86, 17.93) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier contains undefined words; skip full public payload, retain scalar/local delivery.
+MISSING: Concrete object-interaction completion fields unavailable: full public 5A payload withheld; defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; no cross-action unused-word policy is applied.
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=-1 formatWord=0x00000262 [SteeringController.ExecutePointTurn_2.Params] fmt#610 [6510, 0, 1160973472]
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ExitPointTurn] fmt#305
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ManagePointTurn.StoppingBecause0Vel] fmt#305
+seen object 0 Block_LIGHTCUBE2 Known at (175.31, 6.15, 17.90) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M15-081 M11-010/M12-033/M13-026 stacked-cube look unavailable: M11-010 ghost visibility reason
+seen object 0 Block_LIGHTCUBE2 Known at (173.73, 6.28, 14.30) yaw=94deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.83, 5.78, 13.81) yaw=92deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.16, 6.00, 13.88) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.16, 6.00, 13.88) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.16, 6.00, 13.88) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.16, 6.00, 13.88) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+M1-034 Socialize objective recipient 0x005B07C2: skip pre-first-selection uninitialized phase read for Socialize
+seen object 0 Block_LIGHTCUBE2 Known at (174.16, 6.00, 13.88) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.79, 6.40, 13.81) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.72, 6.28, 13.90) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (173.62, 6.41, 13.95) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.27, 7.74, 17.08) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.12, 7.67, 17.14) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.15, 7.81, 17.01) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.00, 7.85, 17.07) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.54, 7.13, 16.44) yaw=94deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.17, 7.79, 17.04) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.10, 7.84, 17.14) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.20, 7.89, 17.27) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.10, 7.77, 17.22) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.03, 7.99, 17.07) yaw=96deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.27, 7.60, 17.39) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.27, 7.60, 17.39) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.27, 7.60, 17.39) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.27, 7.60, 17.39) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.27, 7.60, 17.39) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.27, 7.60, 17.39) yaw=95deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=1 formatWord=0x00000276 [Messages.Process_dockWithObject.Recvd] fmt#630 [0, 2, 1, 1114636288, 1128792064, 1140457472, 0]
+seen object 0 Block_LIGHTCUBE2 Known at (174.04, 6.03, 14.29) yaw=94deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.00, 5.76, 14.59) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=-1 formatWord=0x0000024C [PathFollower.StartPathTraversal] fmt#588 [0, 1114636288, 1128792064, 1128792064]
+seen object 0 Block_LIGHTCUBE2 Known at (174.10, 5.67, 14.23) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.SetCliffDetectThreshold.NewLevel] fmt#347 [400]
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (174.07, 5.61, 14.42) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=2 formatWord=0x00000131 [PathFollower.PathComplete] fmt#305
+Robot.Trace level=-1 formatWord=0x00000131 [DockingController.Update.FinishedPathButErrorSignalTooLarge_1] fmt#305
+Robot.Trace level=-1 formatWord=0x00000131 [DockingController.Update.ExecutingHannsManeuver] fmt#305
+Robot.Trace level=1 formatWord=0x00000211 [SteeringController.SetGains] fmt#529 [1028443341, 1094713344, 1101004800, 1053609165]
+Robot.Trace level=-1 formatWord=0x0000024C [PathFollower.StartPathTraversal] fmt#588 [0, 1084722486, 1082130432, 1082130432]
+Robot.Trace level=-1 formatWord=0x00000279 [SteeringController.ExecutePointTurn.Params] fmt#633 [12150, -1047685053, 1133903872, 1130704609, 1130704609, 1085757620, 1, 0]
+Robot.Trace level=-1 formatWord=0x00000216 [SteeringController.ManagePointTurn.OOR] fmt#534 [-1052881084, -1061567869, -1051374316, 12565, 0]
+Robot.Trace level=-1 formatWord=0x00000216 [SteeringController.ManagePointTurn.InRange] fmt#534 [-1061979856, -1052675090, -1047969895, 12700, 0]
+BlockWorld.AddConnectedActiveObject.FoundMatchingObjectWithNoActiveID: Block_LIGHTCUBE2 0
+MISSING: M11-013 / M11-041 | CozmoCubes host ByObjectId/ConnectionChanged still expose reported radio slots, including synthetic slots above4; source HandleActiveObjectConnectionState 0x00533B3C uses the Robot-owned BlockWorld returned ID and its own slot gate. Host-view migration remains unbuilt.
+MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ExitPointTurn] fmt#305
+marker LightCubeJ_Left: reprojection 3.9 px too large
+Robot.Trace level=2 formatWord=0x00000131 [PathFollower.PathComplete] fmt#305
+Robot.Trace level=1 formatWord=0x00000211 [SteeringController.SetGains] fmt#529 [1036831949, 1094713344, 1101004800, 1056964608]
+Robot.Trace level=-1 formatWord=0x0000024C [PathFollower.StartPathTraversal] fmt#588 [0, 1101004800, 1120403456, 1120403456]
+Robot.Trace level=2 formatWord=0x00000131 [PathFollower.PathComplete] fmt#305
+MISSING: M11-066 shared main pose still receives the existing history raw-pose candidate; complete native raw-pose writer/input binding is not built here
+Robot.Trace level=1 formatWord=0x00000235 [PAP.StartBackingOut.Dist] fmt#565 [1114636288, 1065353216]
+MISSING: ReactToCliffBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToMotorCalibrationBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToImpactBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToPickupBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToReturnedToTreadsBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotOnBackBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotOnFaceBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotOnSideBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotShakenBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+Robot.Trace level=1 formatWord=0x0000015B [LiftController.Update.CheckingForLoad] fmt#347 [15335]
+Robot.Trace level=1 formatWord=0x00000274 [LiftController.Update.LoadDetected] fmt#628 [35]
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.EnableCliffDetector] fmt#347 [1]
+Robot.Trace level=-1 formatWord=0x0000027E [DockingController.Update.Success] fmt#638 [-1041865719, 1084606030, 1103821008, -1086675616, 5910]
+Robot.Trace level=1 formatWord=0x00000235 [PAP.StartBackingOut.Dist] fmt#565 [1108082688, 1058362709]
+MISSING: M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object's +0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.EnableCliffDetector] fmt#347 [1]
+seen object 0 Block_LIGHTCUBE2 Dirty at (187.17, -7.99, 19.50) yaw=93deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M1-034 M12-052 Ground completion 0x00554AE0..00554AFA: four uninitialized objectInteractionCompleted ID slots; full raw/API payload unavailable, defined saved-carry/count1/false and scalar result retained; PlaceRel normalization policy does not apply
+seen object 0 Block_LIGHTCUBE2 Known at (187.96, -10.74, 20.04) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-065/M11-066 legacy flattened IsSameAs inputs lack checked parent/root bindings; arithmetic only is built
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.77, 20.05) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.97, -10.75, 20.06) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.97, -10.78, 20.04) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.97, -10.83, 20.05) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.96, -10.80, 20.03) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.98, -10.82, 20.02) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.98, -10.75, 20.00) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Observed active object of type Block_LIGHTCUBE2 but it's not connected. Is the battery plugged in?
+seen object 0 Block_LIGHTCUBE2 Known at (187.98, -10.79, 20.01) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.96, -10.83, 20.01) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.97, -10.79, 20.07) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.97, -10.79, 20.03) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.83, 20.08) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.80, 20.01) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.94, -10.83, 20.02) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+BlockWorld.AddConnectedActiveObject.FoundMatchingObjectWithNoActiveID: Block_LIGHTCUBE2 0
+seen object 0 Block_LIGHTCUBE2 Known at (187.97, -10.85, 20.02) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.80, 20.02) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.80, 20.07) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.96, -10.80, 20.03) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.92, -10.83, 20.09) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.96, -10.76, 20.01) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.80, 20.06) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.94, -10.81, 20.08) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.93, -10.86, 20.07) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.75, 20.01) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.97, -10.85, 20.05) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.85, 20.07) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.75, 20.01) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.96, -10.81, 20.02) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.96, -10.80, 20.07) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.94, -10.76, 20.08) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.69, 20.08) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.92, -10.83, 20.08) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.82, 20.01) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.87, 20.00) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.83, 20.05) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.95, -10.79, 20.01) yaw=85deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (187.94, -10.87, 20.03) yaw=84deg via LightCubeJ_Left rms=0.24px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join
+MISSING: M11-078/M11-090 Vision teardown: native result lists/deque 0x006586EC..0x00658A92/0x006B9F68..0x006BA092, ImageCache null-before-tree 0x006B1E9C..0x006B2142, Camera/ImageCache/CLAHE, FaceRecognizer trees, Block/MarkerlessObject and ProtoHandle reset/remove need their owned native recipients; host caches/GC are not those owners. Capture finalizers and allocator recipients remain unread; SDK CustomObject is unreachable
+MISSING: M11-055 Profiler timer producers/Tic/Toc and VisionSystem::Init PerformanceLogging binding 0x006B0E5C..0x006B0F2A are not built; native timer input boundary only, no host Stopwatch data substituted
+MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E and node+0x20 release0x0066352E..0x00663560: native captured-owner finalization/producer census is unbuilt; managed delegate retirement does not certify no side effects

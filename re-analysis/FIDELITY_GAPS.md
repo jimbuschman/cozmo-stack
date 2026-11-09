@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 22 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 22 | 0 | 0 | 1 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
