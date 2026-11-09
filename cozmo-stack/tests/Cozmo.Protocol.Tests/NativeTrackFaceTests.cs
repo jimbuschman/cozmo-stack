@@ -2,6 +2,8 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Vision;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Animation;
+using Cozmo.Transport;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -9,6 +11,250 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeTrackFaceTests
 {
+    private sealed class ImmediateAction : ActionRunner
+    {
+        internal ImmediateAction():base(8,0) { }
+        protected override string ActionName=>"front fixture";
+        public override bool CanInterrupt()=>false;
+        public override uint CheckIfDone()=>EngineActionResult.Success;
+    }
+
+    [Fact]
+    public void RetiredCompanionBeforeInitFailsAndRestoresIdleWithoutSubscription()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;var p=f.Rig.Robot.Animations.Scheduler.LiveIdleParameters;
+        p.SetParam(LiveIdleParam.EyeDartMaxDistance_pix,7f);
+        uint tag=ActionRunnerTagCounter.Global.NextIdTag();
+        Assert.True(ActionRunnerTagCounter.Global.TryReserve(tag));ActionRunnerTagCounter.Global.Release(tag);
+        int subscriptions=f.Rig.Engine.AnimationMessages.Count(0x47,true);
+        var ended=new List<RobotCompletedAction>();owner.ActionList.RegisterActionEndedCallback(ended.Add);
+        var runner=new NativeTrackFaceRunner(f.M,owner,-7,true,BitConverter.UInt32BitsToSingle(0x3D8EFA35),false,-1,-1,tag);
+        int mark=f.Rig.Mark();owner.ActionList.QueueAction(QueueActionPosition.Now,runner);f.Rig.Tick();
+        Assert.Equal(0x03000000u,Assert.Single(ended.Where(x=>x.Tag==runner.Tag)).Result);
+        Assert.Equal(subscriptions,f.Rig.Engine.AnimationMessages.Count(0x47,true));
+        Assert.Equal(7f,p[LiveIdleParam.EyeDartMaxDistance_pix]);
+        Assert.Equal(0,owner.NativeTrackingFaceId);
+        Assert.DoesNotContain(f.Rig.SentSince(mark),m=>m is SetHeadAngle or SetBodyAngle);
+    }
+
+    [Fact]
+    public void MissingInterfaceInitSetsErrorAndNeverInstallsSubscription()
+    {
+        bool previous=EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+            var owner=f.Robot;owner.HasExternalInterface=false;EngineErrorState.ErrorFlagSet=false;
+            int count=f.Rig.Engine.AnimationMessages.Count(0x47,true);
+            var ended=new List<RobotCompletedAction>();owner.ActionList.RegisterActionEndedCallback(ended.Add);
+            var runner=new NativeTrackFaceRunner(f.M,owner,-7);
+            owner.ActionList.QueueAction(QueueActionPosition.Now,runner);f.Rig.Tick();
+            Assert.Equal(0x03000000u,Assert.Single(ended.Where(x=>x.Tag==runner.Tag)).Result);
+            Assert.True(EngineErrorState.ErrorFlagSet);
+            Assert.Equal(count,f.Rig.Engine.AnimationMessages.Count(0x47,true));
+            Assert.Equal(0,owner.NativeTrackingFaceId);
+        }
+        finally {EngineErrorState.ErrorFlagSet=previous;}
+    }
+
+    [Fact]
+    public void FrontInterruptReinitializesAndReplacesFaceSubscription()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;int baseline=f.Rig.Engine.AnimationMessages.Count(0x47,true);
+        var track=new NativeTrackFaceRunner(f.M,owner,-7);
+        owner.ActionList.QueueAction(QueueActionPosition.Now,track);f.Rig.Tick();
+        Assert.Equal(baseline+1,f.Rig.Engine.AnimationMessages.Count(0x47,true));
+        owner.ActionList.QueueAction(QueueActionPosition.NowAndResume,new ImmediateAction());
+        for(int i=0;i<10 && !ReferenceEquals(owner.ActionList.GetCurrentAction(),track);i++)f.Rig.Tick();
+        Assert.Same(track,owner.ActionList.GetCurrentAction());
+        f.Rig.Tick();
+        Assert.Equal(baseline+1,f.Rig.Engine.AnimationMessages.Count(0x47,true));
+        f.Rig.Engine.AnimationMessages.Deliver(0x47,true,new NativeChangedFace(-7,-8));
+        Assert.Equal(unchecked((uint)-8),track.GetCompletionUnion());
+        Assert.Equal(-7,owner.NativeTrackingFaceId);
+        owner.ActionList.Cancel(track.Tag);
+        Assert.Equal(baseline,f.Rig.Engine.AnimationMessages.Count(0x47,true));
+    }
+
+    [Fact]
+    public void CancellationDuringReinitRetiresBothFaceSubscriptions()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;var hub=f.Rig.Engine.AnimationMessages;
+        int baseline=hub.Count(0x47,true);
+        var runner=new NativeTrackFaceRunner(f.M,owner,-7);
+        owner.ActionList.QueueAction(QueueActionPosition.Now,runner);f.Rig.Tick();
+        bool cancelled=false;
+        hub.ReleaseObserved=message=>
+        {
+            if(!cancelled && message=="unlink E2G 47")
+            {cancelled=true;owner.ActionList.Cancel(runner.Tag);}
+        };
+        try
+        {
+            owner.ActionList.QueueAction(QueueActionPosition.NowAndResume,new ImmediateAction());
+            for(int i=0;i<10 && !cancelled;i++)f.Rig.Tick();
+            Assert.True(cancelled);
+            Assert.False(owner.ActionList.ContainsRunner(runner));
+            Assert.Equal(baseline,hub.Count(0x47,true));
+            Assert.Equal(0,owner.NativeTrackingFaceId);
+        }
+        finally {hub.ReleaseObserved=null;}
+    }
+
+    [Fact]
+    public void SuccessorStartedDuringSubscriptionReleaseKeepsItsTrackingState()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;var hub=f.Rig.Engine.AnimationMessages;
+        var old=new NativeTrackFaceRunner(f.M,owner,-7);
+        owner.ActionList.QueueAction(QueueActionPosition.Now,old);f.Rig.Tick();
+        NativeTrackFaceRunner? successor=null;int mark=-1;
+        hub.ReleaseObserved=message=>
+        {
+            if(successor is not null || message!="unlink E2G 47")return;
+            successor=new NativeTrackFaceRunner(f.M,owner,-8){SuppressTrackLocking=true};
+            owner.ActionList.QueueAction(QueueActionPosition.InParallel,successor);
+            owner.ActionList.Update();
+            mark=f.Rig.Mark();
+        };
+        try
+        {
+            owner.ActionList.Cancel(old.Tag);
+            Assert.NotNull(successor);
+            Assert.True(owner.ActionList.ContainsRunner(successor));
+            Assert.Equal(-8,owner.NativeTrackingFaceId);
+            Assert.False(f.Rig.Robot.Motion.AreAnyTracksLocked(5));
+            Assert.Equal(1f,f.Rig.Robot.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.EyeDartMaxDistance_pix]);
+            Assert.DoesNotContain(f.Rig.SentSince(mark),m=>m is MoveHead or DriveWheels);
+        }
+        finally {hub.ReleaseObserved=null;if(successor is not null)owner.ActionList.Cancel(successor.Tag);}
+    }
+
+    [Fact]
+    public void SuccessorStartedDuringStopSendDoesNotReceiveOldMotorStop()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;
+        var old=new NativeTrackFaceRunner(f.M,owner,-7);
+        owner.ActionList.QueueAction(QueueActionPosition.Now,old);f.Rig.Tick();
+        NativeTrackFaceRunner? successor=null;int mark=-1;
+        owner.SendFault=message=>
+        {
+            if(successor is null && message is DriveWheels)
+            {
+                successor=new NativeTrackFaceRunner(f.M,owner,-8){SuppressTrackLocking=true};
+                owner.ActionList.QueueAction(QueueActionPosition.InParallel,successor);
+                owner.ActionList.Update();mark=f.Rig.Mark();
+            }
+            return null;
+        };
+        try
+        {
+            owner.ActionList.Cancel(old.Tag);
+            Assert.NotNull(successor);
+            Assert.Equal(-8,owner.NativeTrackingFaceId);
+            Assert.False(f.Rig.Robot.Motion.AreAnyTracksLocked(5));
+            Assert.DoesNotContain(f.Rig.SentSince(mark),m=>m is MoveHead or DriveWheels);
+        }
+        finally {owner.SendFault=null;if(successor is not null)owner.ActionList.Cancel(successor.Tag);}
+    }
+
+    [Fact]
+    public void LostCompanionAfterInitCompletesSuccessfully()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        uint tag=ActionRunnerTagCounter.Global.NextIdTag();Assert.True(ActionRunnerTagCounter.Global.TryReserve(tag));
+        try
+        {
+            var ended=new List<RobotCompletedAction>();f.Robot.ActionList.RegisterActionEndedCallback(ended.Add);
+            var runner=new NativeTrackFaceRunner(f.M,f.Robot,-7,true,BitConverter.UInt32BitsToSingle(0x3D8EFA35),false,-1,-1,tag);
+            f.Robot.ActionList.QueueAction(QueueActionPosition.Now,runner);f.Rig.Tick();
+            Assert.True(f.Robot.ActionList.ContainsRunner(runner));
+            ActionRunnerTagCounter.Global.Release(tag);f.Rig.Tick();
+            Assert.Equal(0u,Assert.Single(ended.Where(x=>x.Tag==runner.Tag)).Result);
+        }
+        finally {ActionRunnerTagCounter.Global.Release(tag);}
+    }
+
+    [Fact]
+    public void UnrelatedActualMainRootSetsErrorAfterConsumingFreshFace()
+    {
+        bool previous=EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+            var owner=f.Robot;
+            var face=new TrackedFace(new DetectedFace(-9,new FaceRect(0,0,10,10)),10)
+            {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100)};
+            f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+            var oldParent=owner.MainPose.Node!.Parent;
+            owner.MainPose.ClearParent();
+            try
+            {
+                var logs=new List<EngineLogEntry>();f.Rig.Engine.LogEntry+=logs.Add;
+                var runner=new NativeTrackFaceRunner(f.M,owner,-9);
+                owner.ActionList.QueueAction(QueueActionPosition.Now,runner);
+                EngineErrorState.ErrorFlagSet=false;int mark=f.Rig.Mark();f.Rig.Tick();
+                Assert.True(EngineErrorState.ErrorFlagSet);
+                Assert.Contains(logs,e=>e.Name=="TrackFaceAction.UpdateTracking.PoseOriginError");
+                Assert.DoesNotContain(f.Rig.SentSince(mark),m=>m is SetHeadAngle or SetBodyAngle);
+                Assert.True(owner.ActionList.ContainsRunner(runner));
+                owner.ActionList.Cancel(runner.Tag);
+            }
+            finally {owner.MainPose.Node!.SetParent(oldParent);}
+        }
+        finally {EngineErrorState.ErrorFlagSet=previous;}
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NativeHeadOrBodySendFailureEndsWithMotorFailure(bool failHead)
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;
+        var face=new TrackedFace(new DetectedFace(-9,new FaceRect(0,0,10,10)),10)
+        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100)};
+        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+        int head=0,body=0;
+        owner.SendFault=message=>
+        {
+            if(message is SetHeadAngle){head++;if(failHead)return false;}
+            if(message is SetBodyAngle){body++;if(!failHead)return false;}
+            return null;
+        };
+        try
+        {
+            var ended=new List<RobotCompletedAction>();owner.ActionList.RegisterActionEndedCallback(ended.Add);
+            var runner=new NativeTrackFaceRunner(f.M,owner,-9);
+            owner.ActionList.QueueAction(QueueActionPosition.Now,runner);f.Rig.Tick();
+            Assert.Equal(0x03000016u,Assert.Single(ended.Where(x=>x.Tag==runner.Tag)).Result);
+            Assert.Equal(1,head);Assert.Equal(failHead?0:1,body);
+        }
+        finally {owner.SendFault=null;}
+    }
+
+    [Fact]
+    public void OffTreadsBodyIsRefusedAfterEligibleHeadCommand()
+    {
+        using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
+        var owner=f.Robot;
+        var face=new TrackedFace(new DetectedFace(-9,new FaceRect(0,0,10,10)),10)
+        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100)};
+        f.Rig.State(RobotStatusFlag.IsPickedUp | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+        Assert.NotEqual(OffTreadsState.OnTreads,f.Rig.Robot.Sensors.OffTreadsState);
+        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+        var ended=new List<RobotCompletedAction>();owner.ActionList.RegisterActionEndedCallback(ended.Add);
+        var runner=new NativeTrackFaceRunner(f.M,owner,-9);
+        int mark=f.Rig.Mark();owner.ActionList.QueueAction(QueueActionPosition.Now,runner);
+        owner.ActionList.Update();
+        Assert.Equal(0x0300000Au,Assert.Single(ended.Where(x=>x.Tag==runner.Tag)).Result);
+        Assert.Single(f.Rig.SentSince(mark).OfType<SetHeadAngle>());
+        Assert.Empty(f.Rig.SentSince(mark).OfType<SetBodyAngle>());
+    }
     [Fact]
     public void CancelPendingManualTrackerKeepsTheActiveTrackerIdentity()
     {
