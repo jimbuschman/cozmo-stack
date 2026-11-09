@@ -2651,7 +2651,7 @@ public class EngineAppLayerTests
     {
         "AnimationScheduler._generation", "CozmoAudio._removals", "CozmoAudio._clock", "CozmoAudio._scheduled",
         // Host continuation epochs must remain monotonic across reset to prevent stale work from claiming a replacement.
-        "AnimationScheduler._idleMutationVersion", "AnimationScheduler._streamMutationEpoch",
+        "AnimationScheduler._idleMutationVersion", "AnimationScheduler._streamMutationEpoch", "PathComponent._scopeGeneration", "DrivingAnimationHandler._generation",
         "VisionSystem._removals", "VisionSystem._groundEpoch", "VisionSystem._nativeInitializationEpoch", "VisionSystem.<Enabled>k__BackingField",
         // M5 gap4 R2, R3: IKeyFrame::sRNG is a process static that is never reseeded, and the context RNG belongs to the
         // CozmoContext, not to the Robot; neither is rebuilt with a new Robot
@@ -2767,9 +2767,11 @@ public class EngineAppLayerTests
         vision.Calibration = Cozmo.Robot.Vision.CameraCalibration.Nominal(160, 120);   // as a read from the robot would
         vision.Enabled = true;
 
+        long oldPathGeneration = robot.Motion.Path.ScopeGeneration;
         rig.Disconnected();
         rig.Tick();
         Assert.Null(rig.Engine.Robot);
+        Assert.True(robot.Motion.Path.ScopeGeneration > oldPathGeneration);
         robot.Animations.WaitForTickerStop();
         Assert.False(robot.Animations.IsTicking, "the animation tick loop kept running");
 

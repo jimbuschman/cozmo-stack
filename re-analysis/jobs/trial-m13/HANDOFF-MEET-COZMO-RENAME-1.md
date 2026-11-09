@@ -19,6 +19,8 @@
 - `MeetRenameTests.cs` sends the public request and checks signed ID and UTF-8 report, failed identity with independent speech staging, reentrant log/stop, old-owner rejection, report before NV replies and restoration from the actual two write payloads. The real Meet chooser keeps enrollment and rename candidates, and the retained rename action reaches the authored clip and non-silent robot audio. A second request during that action updates identity without replaying speech.
 - `FaceIdentityTests.cs` shares the stock retained album fixture. `M7BatchThreeBTests.cs` verifies the factory catalog includes the new supported class. The affected suite passed 167/167 and the final rebuilt rename cases passed 7/7. The independent manager run passed 53/53 across rename, Ground, pickup, pickup voice and fidelity checks.
 
+- The full-gate fixture correction in `M5X13BuilderTests.cs` checks that the host vision rename subscription unlinks once before robot teardown while preserving the existing ordered checks. The focused gate correction run passed 11/11.
+
 ## MISSING
 
 - Native registration order between the two independent 0x8C recipients remains unverified. The Vision save-attempt/report order and the later Meet chooser admission are established.

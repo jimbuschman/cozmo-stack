@@ -23,6 +23,8 @@
 
 The affected suite passed 439/439, including the new pickup, docking and drive-ownership tests, existing manipulation, path and vision routes, and fidelity validation.
 
+- The full-gate fixture correction in `EngineAppLayerTests.cs` keeps the path and driving-animation continuation epochs outside the reconstructed-device field comparison and asserts that disconnect advances the path epoch. The focused gate correction run passed 11/11.
+
 ## MISSING
 
 - Physical pickup outcome and packet timing on real firmware require an operator capture. Automated coverage drives the fake robot and the actual stack's request and marker routes.
