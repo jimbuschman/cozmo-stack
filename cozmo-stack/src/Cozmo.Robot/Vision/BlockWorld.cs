@@ -3035,6 +3035,7 @@ public sealed partial class BlockWorld
     public uint UpdateObjectOrigins(uint oldOriginId, uint newOriginId, Pose3d oldOriginWrtNew)
     {
         using var frameMutation=EnterPoseMutation();
+        var snapshotOwner=NativeSnapshotOwner?.Invoke();
         ClearConfirmer();                                                                                              // 0x00620594
         uint flag = 0;
         var first = new BlockWorldFilter { OriginMode = OriginMode.Custom };
@@ -3044,7 +3045,12 @@ public sealed partial class BlockWorld
             lock (_gate)                                                                                               // 0x00620642..0x0062064C
                 foreach (var k in _located.Keys.Where(k => k.Origin == oldOriginId).ToList()) _located.Remove(k);
         FindLocatedObjectHelper(new BlockWorldFilter(), AddInExistingPose, false);                                     // 0x006206BE..0x006206E0
-        UnbuiltBroadcastLocatedObjectStatesCalls++;                                                                    // 0x006206E6 (M11-038: no message type)
+        if(snapshotOwner is {} owner)
+        {
+            if(!owner.Lifetime.Destroying && ReferenceEquals(NativeSnapshotOwner?.Invoke(),owner))BroadcastLocatedObjectStates(owner,()=>!owner.Lifetime.Destroying && ReferenceEquals(NativeSnapshotOwner?.Invoke(),owner)); // 0x006206E6
+        }
+        else UnbuiltBroadcastLocatedObjectStatesCalls++; // standalone fixture without a Robot/UI owner
+        if(snapshotOwner is not null && (snapshotOwner.Lifetime.Destroying || !ReferenceEquals(NativeSnapshotOwner?.Invoke(),snapshotOwner)))return 0;
         NativeConfigurations?.ForceUpdate(); // source 0x006206EA, independent from host extension flags.
         if (BlockConfigurationManagerForceUpdate is { } force) force(); else if(NativeConfigurations is null)UnwiredForceUpdateCalls++;
         return 0;

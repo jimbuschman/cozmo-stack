@@ -42,7 +42,7 @@ public sealed partial class BlockWorld
     /// <paramref name="mapOrigin"/> is the argument, AddNewOrigin's return, which goes only to CreateLocalizedMemoryMap (r5,
     /// 0x006249D6). The two differ only after a failed AddOriginWithID, when the current origin is unchanged (B-M11-8 round 2).
     /// </summary>
-    internal IReadOnlyList<ObservableObject> FinishDelocalization(uint currentOrigin,uint mapOrigin)
+    internal IReadOnlyList<ObservableObject> FinishDelocalization(uint currentOrigin,uint mapOrigin,EngineRobot? owner=null,Func<bool>? current=null)
     {
         using var frameMutation=EnterPoseMutation();
         var deleted=new List<ObservableObject>();
@@ -59,8 +59,8 @@ public sealed partial class BlockWorld
                 }
         }
         CreateLocalizedMemoryMap(mapOrigin);SelectedObjectId=null;
-        UnbuiltBroadcastLocatedObjectStatesCalls++;
-        Behavior.SteppedBehavior.ReportMissing("M11-038 BroadcastLocatedObjectStates 0x006249EC -> 0x0061E6C0 payload/recipient remains unbuilt; tail call accounted"); // B-M11-8 item 6: stack channel, not the engine log stream.
+        if(owner is not null)BroadcastLocatedObjectStates(owner,current);
+        else UnbuiltBroadcastLocatedObjectStatesCalls++; // Standalone fixture has no native Robot/UI owner.
         return deleted;
     }
 }

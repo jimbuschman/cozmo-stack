@@ -16,7 +16,7 @@ namespace Cozmo.Conformance;
 /// <see cref="CozmoMotion.QueueAiPickupCubeAsync"/> picks it up (first in place, then with a drive) and the public
 /// 32 mm <see cref="CozmoMotion.QueueAiLiftHeightAsync"/> puts it down through the native ground action (M15-022).
 /// Nothing is graded. The bundle records each action's engine result, the robot's IS_PICKING_OR_PLACING /
-/// IS_CARRYING_BLOCK / IS_MOVING transitions, and the dock (0x47), place (0x44), docking-correction (0x48) and
+/// IS_CARRYING_BLOCK / IS_MOVING transitions, and the dock (0x42), place (0x44), docking-correction (0x48) and
 /// PickAndPlaceResult (0xB8) messages in host capture order, for the manager to judge. The firmware's busy/release
 /// order against PickAndPlaceResult is the M15-022 hardware observation.
 /// </summary>
@@ -76,7 +76,7 @@ public static class M15CubeHw
 internal sealed class M15CubeRun
 {
     const uint WatchedFlags = (uint)(RobotStatusFlag.IsPickingOrPlacing | RobotStatusFlag.IsCarryingBlock | RobotStatusFlag.IsMoving | RobotStatusFlag.AreWheelsMoving | RobotStatusFlag.LiftInPos);
-    static readonly byte[] WatchedTags = { 0x47, 0x44, 0x48, 0xB8 };
+    static readonly RobotMessageId[] WatchedTags = { RobotMessageId.DockWithObject, RobotMessageId.PlaceObjectOnGround, RobotMessageId.DockingErrorSignal, RobotMessageId.PickAndPlaceResult };
     readonly string root, bundle, resources; readonly IPAddress ip; readonly List<JsonObject> records; readonly string[] argv; readonly bool yes, withDrive;
     readonly Stopwatch clock = Stopwatch.StartNew(); readonly ConcurrentQueue<JsonObject> events = new();
     readonly ConcurrentQueue<(double T, bool Out, byte[] Raw, Frame? Frame, string? Error)> frames = new();
@@ -256,7 +256,7 @@ internal sealed class M15CubeRun
     // Per phase: the watched messages both ways and the status transitions, in host capture order. Observations only.
     JsonObject Timeline(IEnumerable<M5Hw.WireMessage> wire, double from, double to)
     {
-        var items = wire.Where(m => m.Payload.Length > 0 && m.AtMs >= from && m.AtMs <= to && Array.IndexOf(WatchedTags, m.Payload[0]) >= 0)
+        var items = wire.Where(m => m.Payload.Length > 0 && m.AtMs >= from && m.AtMs <= to && Array.IndexOf(WatchedTags, (RobotMessageId)m.Payload[0]) >= 0)
             .Select(m => (m.AtMs, (JsonNode)new JsonObject { ["atMs"] = m.AtMs, ["dir"] = m.Outbound ? "out" : "in", ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload) }))
             .Concat(transitions.Where(t => t.T >= from && t.T <= to)
             .Select(t => (t.T, (JsonNode)new JsonObject { ["atMs"] = t.T, ["robotTimestamp"] = t.Timestamp, ["status"] = Flags(t.Status) })))
@@ -297,7 +297,7 @@ internal sealed class M15CubeRun
                 ["missingReported"] = JsonSerializer.SerializeToNode(missing), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors),
                 ["acceptance"] = "NOT_JUDGED: manager review required; hardware success does not raise provenance" };
             File.WriteAllText(Path.Combine(bundle, "result.json"), report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.WriteAllText(Path.Combine(bundle, "README.txt"), "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x47), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made.");
+            File.WriteAllText(Path.Combine(bundle, "README.txt"), "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made.");
         }
         catch (Exception e) { Console.Error.WriteLine("Could not write the results folder: " + e.Message); }
     }

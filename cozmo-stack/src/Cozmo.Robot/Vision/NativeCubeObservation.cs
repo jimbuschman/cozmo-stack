@@ -35,19 +35,7 @@ internal static class NativeCubeObservation
         }
         var tq=top.Quaternion;
         float angle=CozmoEngine.PublicationAngle(new EngineLocalizationPose(0,0,0,tq.W,tq.X,tq.Y,tq.Z,0));
-        using var flat=cube.NativePose.GetWithRespectToRoot();
-        using var root=cube.NativePose.FindRoot();
-        if(!owner.TryGetNativeOriginOwner(root.Id,out _)) PoseDiagnostics.Verify("Pose3d.ToPoseStruct3d.UnknownOrigin", $"VERIFY(originList.ContainsOriginID(originID)): ID:{root.Id}");
-        if(cube.NativePose.HasParent)
-        {
-            Pose3d parent=null!;
-            if(flat.TryGetParent(ref parent))
-            {
-                using(parent) if(parent.Id!=root.Id) PoseDiagnostics.Verify("Pose3d.ToPoseStruct3d.BadParent", $"VERIFY(IsRoot() || flattenedPose.GetParent().GetID() == originID): ParentID:{parent.Id} OriginID:{root.Id}");
-            }
-        }
-        var t=flat.Translation; var q=flat.Quaternion;
-        var pose=new EngineGamePose((float)t.X,(float)t.Y,(float)t.Z,(float)q.W,(float)q.X,(float)q.Y,(float)q.Z,root.Id);
+        if(!NativeObjectPose.TryConvert(cube.NativePose,owner,out var pose))return false;
         report=new(cube.LastObservedTimestamp,(uint)cube.Family,(uint)cube.Type,cube.ObjectId,x,y,w,h,pose,angle,true);
         return true;
     }
@@ -66,6 +54,29 @@ internal static class NativeCubeObservation
             if(i==0) minY=maxY=py; else { if(py<minY)minY=py; if(py>maxY)maxY=py; }
         }
         return(minX,minY,maxX-minX,maxY-minY);
+    }
+}
+
+internal static class NativeObjectPose
+{
+    internal static bool TryConvert(Pose3d input,EngineRobot owner,out EngineGamePose pose)
+    {
+        pose=default;
+        if(input.Node is null){SteppedBehavior.ReportMissing("M1-034/M11-038 null object pose at 0x00846DB6: row skipped");return false;}
+        using var flat=input.GetWithRespectToRoot();
+        using var root=flat.FindRoot(); // 0x00846D44 reads the flattened output, including root-copy ID zero.
+        if(!owner.TryGetNativeOriginOwner(root.Id,out _)) PoseDiagnostics.Verify("Pose3d.ToPoseStruct3d.UnknownOrigin", $"VERIFY(originList.ContainsOriginID(originID)): ID:{root.Id}");
+        if(input.HasParent)
+        {
+            Pose3d parent=null!;
+            if(flat.TryGetParent(ref parent))
+            {
+                using(parent) if(parent.Id!=root.Id) PoseDiagnostics.Verify("Pose3d.ToPoseStruct3d.BadParent", $"VERIFY(IsRoot() || flattenedPose.GetParent().GetID() == originID): ParentID:{parent.Id} OriginID:{root.Id}");
+            }
+        }
+        var t=flat.Translation; var q=flat.Quaternion;
+        pose=new EngineGamePose((float)t.X,(float)t.Y,(float)t.Z,(float)q.W,(float)q.X,(float)q.Y,(float)q.Z,root.Id);
+        return true;
     }
 }
 

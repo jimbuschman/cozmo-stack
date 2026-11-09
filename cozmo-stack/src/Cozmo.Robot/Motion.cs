@@ -27,6 +27,7 @@ public sealed partial class EngineRobot
     // fidelity: M4-033
     internal TouchSensorComponent? TouchSensor { get; set; } = new();
     internal int NativeTrackingFaceId { get; set; } // MovementComponent +0x24, independent of +0x20 object ID.
+    internal long NativeTrackingFaceGeneration;
 }
 
 /// <summary>Why a motion call finished.</summary>
@@ -628,12 +629,13 @@ public sealed class CozmoMotion
     /// value is OR'd only when the key was found and erased and the track still has entries (0x0063FF1A..0x0063FF22). The
     /// message goes only when the u8 mask is not zero (0x0063FF96), reliable and not hot, its result ignored.
     /// </summary>
-    private bool UnlockTracksLocked(byte mask, string who, EngineRobot? scopedOwner = null)
+    private bool UnlockTracksLocked(byte mask, string who, EngineRobot? scopedOwner = null, Func<bool>? current = null)
     {
         byte enable = 0;
         bool stillLocked = false;
         for (int b = 0; b < _trackLocks.Length; b++)
         {
+            if(current is not null && !current())return stillLocked;
             if ((mask & (1 << b)) == 0) continue;
             var tree = _trackLocks[b];
             int at = FindLock(tree, who);
@@ -655,7 +657,7 @@ public sealed class CozmoMotion
         {
             var message=new EnableAnimTracks { Field0 = enable };
             if(scopedOwner is null)SendOnAbortPath(message);
-            else scopedOwner.SendCheckedOwned(message);
+            else scopedOwner.SendCheckedOwned(message,current);
         }
         return stillLocked;
     }
@@ -851,13 +853,14 @@ public sealed class CozmoMotion
     /// </summary>
     private void DirectDriveCheckSpeedAndLockTracksLocked(float speed, ref bool flag, byte mask, string key, string debug, Func<bool>? current = null, EngineRobot? scopedOwner = null)
     {
+        if(current is not null && !current())return;
         // fidelity: M4-026
         // A9 / row 1b (0x0063EFB0..0x0063F0BC). The helper takes two strings: the lock key (stack argument 0) and a debug name (argument 1).
         if (Math.Abs(speed) < 1e-5f)
         {
             flag = false;
             // AreAllTracksLocked, then UnlockTracks; only a result of exactly 1 (a found key that left its track locked) logs.
-            bool stillLocked = AreAllTracksLockedLocked(mask) && UnlockTracksLocked(mask, key, scopedOwner);
+            bool stillLocked = AreAllTracksLockedLocked(mask) && UnlockTracksLocked(mask, key, scopedOwner,current);
             if (current is not null && !current()) return;
             if (stillLocked)
             {
@@ -1320,11 +1323,11 @@ bool requireCalibration = true)
             _robot.SendMessage(new MoveHead { SpeedRadPerSec = 0f });
         }
     }
-    internal void StopHeadOwned(EngineRobot owner)
+    internal void StopHeadOwned(EngineRobot owner, Func<bool>? current = null)
     {
         lock (_gate)
         {
-            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner);
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && (current?.Invoke() ?? true);
             if(!Current())return;
             if(StopGateLocked()) DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddHead,HeadTrack,DirectDriveHead,DirectDriveHead,Current,owner);
             if(Current())owner.SendCheckedOwned(new MoveHead { SpeedRadPerSec=0f },Current);
@@ -1374,11 +1377,11 @@ bool requireCalibration = true)
             _robot.SendMessage(new DriveWheels(0f, 0f, 0f, 0f));
         }
     }
-    internal void StopBodyOwned(EngineRobot owner)
+    internal void StopBodyOwned(EngineRobot owner, Func<bool>? current = null)
     {
         lock (_gate)
         {
-            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner);
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && (current?.Invoke() ?? true);
             if(!Current())return;
             if(StopGateLocked())
             {

@@ -367,6 +367,7 @@ public sealed partial class CozmoRobot : IDisposable
                                  { lock (_lightLoadingLogs) _cubeLoadingLogs.Add((level, channel, key, text)); }));
         LocalizationWorld.SourceLog = (l, c, k, t) => Engine.EmitSourceLog(l, c, k, t);
         Engine.DelocalizationWorld=LocalizationWorld;
+        LocalizationWorld.NativeSnapshotOwner=()=>Engine.Robot;
         LocalizationWorld.DelocalizeRuntime=()=>Engine.Robot?.Delocalize(Carrying.IsCarryingObject);
         LocalizationWorld.Log += Engine.EmitStackLog;
         // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.

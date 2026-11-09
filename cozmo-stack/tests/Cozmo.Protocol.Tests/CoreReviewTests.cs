@@ -958,11 +958,17 @@ public class CoreReviewTests
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22));
         var cube = Assert.Single(rig.Frame().Objects).Object;
         Assert.Equal(0u,rig.M.Docking.SetObjectAsAttachedToLift(cube.ObjectId,cube.Markers[0].Code));
+        var tags=new List<ushort>();LocatedObjectStatesReport? snapshot=null;
+        rig.Robot.Engine.EngineToGameMessage+=(tag,_)=>{if(tag is 0x53 or 0x32)tags.Add(tag);};
+        rig.Robot.Engine.LocatedObjectStates+=r=>snapshot=r;
 
         rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsPickedUp));
 
         Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
         Assert.Equal(rig.Robot.Engine.Robot!.CurrentOriginId,cube.OriginId); // U6–U11 moved through the actual carried tree.
+        Assert.Equal(new ushort[]{0x53,0x32},tags);
+        var row=Assert.Single(Assert.IsType<LocatedObjectStatesReport>(snapshot).Objects);
+        Assert.Equal(cube.ObjectId,row.ObjectId);Assert.Equal(rig.Robot.Engine.Robot.CurrentOriginId,row.Pose.OriginId);
     }
 
     /// <summary>
