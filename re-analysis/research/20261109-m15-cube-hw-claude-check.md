@@ -95,3 +95,40 @@ corrected setup, with the cube upright and its lights on top.
 **Speech:** no BufferStarved in the stack log.
 
 **Next:** the drive round (`--with-drive`) with the cube upright, the operator near the edge.
+
+## Run 5 (7e34f9, abcda91f): upright cube, with --with-drive
+
+**What the operator saw:** both rounds were picked up and put down ("yes" ×4), and nothing odd.
+
+**Direct round:**
+- The pickup and the put-down both returned 0x00000000.
+- **The put-down order:** 0x44, then busy set, then 0xB8 (IsCarryingBlock cleared in the same state), then busy
+  cleared about 600 ms later, then completion. It repeats run 4's order.
+
+**Drive round:**
+- **The approach:** admitted on the first attempt. He drove to the near side of the upright cube with no far-side
+  route, docked (0x42 and 20 0x48 corrections), and 0xB8 reported success at 45.45 s. He carried the cube.
+- **The action result was 0x03000015,** `PickupObjectAction.Verify.ObjectDidntMoveAsExpected`.
+- **The native check:** Verify 0x00553BE0 (decomp lines 128–163, M12-007) reads the located cube's last-moved time
+  whenever its active ID is >= 0. It fails with 0x3000015 if that time plus the low-dock 500 ms window is older than
+  the verify start.
+- **Why the check failed here:**
+  - The cube's radio link dropped six times between rounds. The robot sent ActiveObjectConnectionState with
+    connected=0 at 27.27, 33.79 and 40.33 s, and with connected=1 at 29.73, 36.84 and 45.92 s. The stack sent no
+    disconnect.
+  - The cube was disconnected through the whole drive and lift. That is why no ObjectMoved (0xB4) arrived for the lift.
+  - It reconnected at 45.92 s, before LiftLoad (0xDA) arrived at 46.83 s and Verify got past its lift-load wait. On
+    reconnect the active ID is valid again (M11-041), so the native check ran against a stale motion time and failed.
+- **Conclusion:** this is the engine's defined result for a cube whose radio was down during the lift. It is not a
+  stack defect.
+- **The put-down after it:** the failed Verify unattaches the carried object (SetCarriedObjectAsUnattached), so the
+  32 mm put-down ran as a plain lift move ("Native lift action ended"). The cube still went down physically.
+- **Cube radio:**
+  - Earlier runs had one connection message each. This run had seven.
+  - The power reports stay at 0x93–0x96, so there is no battery evidence either way.
+  - The first drop came when the operator handled the cube between rounds, which fits a loose battery contact. That
+    is an observation for the operator, not a finding.
+- **Records:** no status change. M12-007's not-seen-recently branch was observed on hardware, which records the robot's
+  side only.
+
+**PICKUP-PREDOCK-SIDE-1 and DOCK-OVERSHOOT-1:** with an upright cube, neither recurs, in either round.
