@@ -4496,7 +4496,7 @@
       "id": "M12-015",
       "subsystem": "M12-manipulation",
       "title": "PlaceObjectOnGround sends three zero offsets and a constant speed triple",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/GroundPlacement.cs",
       "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204: the builder 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88, reads the first three words as integer locals converted with vcvt.f32.s32 (0x00632BAE/0x00632BB2/0x00632BB6) and the next three from the constant triple 0x00C7CD90 = 100 (0x42C80000), 200 (0x43480000), 500 (0x43FA0000)",
       "evidence": [

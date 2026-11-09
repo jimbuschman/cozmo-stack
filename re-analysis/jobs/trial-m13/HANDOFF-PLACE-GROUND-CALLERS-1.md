@@ -23,7 +23,7 @@
 ## Records
 
 - **M15-022.** The Ground leaf now has one retained implementation. The record also owns the AtPose composition. The canonical retained composition already exists, while the manual Bring Beacon sequence remains its separate host adapter. The verify child's second-pass RUNNING and visual child are present at the recipient for 0x54AE40–0x54AEB8 and 0x54AED8–0x54AF26. Generic TrackObject is outside the false Ground flag. On a failed concrete marker transform, source returns 0x03000005 (0x54A3D8, 0x54A65C–0x54A6B8, 0x54A704). The managed runner skips the marker. No supported carry sequence with intact canonical pose ownership reproduced that condition. Wider pose precision and physical busy/release timing remain open.
-- **M12-015.** All migrated callers use the existing checked 0x44 payload through the original carrying/docking owner. No new firmware behavior is claimed.
+- **M12-015.** All migrated callers use the existing checked 0x44 payload through the original carrying/docking owner. The manifest's location follows the wire builder from the removed legacy action to GroundPlacement.cs. The independent fidelity check caught the stale location. No new firmware behavior is claimed.
 - **M12-052.** Defined local completion survives; the raw/API payload with four undefined words remains withheld under M1-034.
 - **M4-003, M4-016 and M8-015.** The legacy lift entry retains the 32 mm branch and the migrated host actions use the retained native action and scalar completion. Other lift actions and generic action-list ownership remain outside this job.
 - **M7-018.** The configured FistBump ground slot now uses its original retained action at 0x5F1FB0–0x5F1FCA. The rest of FistBump is outside this verified slice.
