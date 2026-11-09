@@ -30,11 +30,12 @@ public static class M15CubeHw
     public const float LookHeadRad = -0.15f;
     public const string SetupText = "Setup:\n"
         + "1. Put Cozmo on a clear table, well away from the edge, NOT on his charger. He will move a little.\n"
-        + "2. Put ONE light cube on the table about 10 cm (4 in) straight in front of his face, a marker side facing him.\n"
+        + "2. Put ONE light cube on the table about 10 cm (4 in) straight in front of his face,\n"
+        + "   UPRIGHT with its lights on top, one side marker facing him. Never on its side.\n"
         + "   Keep the other cubes out of his view.\n"
         + "3. Good, even light helps him see the marker.";
     public const string MoveText = "Now move the cube about 25 cm (10 in) in front of him and a little to one side,\n"
-        + "a marker side still facing roughly toward him. He will drive to it. Press Enter when it is in place.";
+        + "still UPRIGHT (lights on top) with a side marker facing roughly toward him. He will drive to it. Press Enter when it is in place.";
 
     public static List<JsonObject> LoadRecords(string path)
     {

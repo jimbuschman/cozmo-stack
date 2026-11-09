@@ -1,10 +1,16 @@
 # Operator decisions
 
-## Far-side drive pickup
+None open.
 
-PICKUP-PREDOCK-SIDE-1 reproduced the native far-side-only approach from both captured cube orientations. The third run fell off the table after the cliff stop. The hardware harness now requires explicit opt-in for its drive round. Decide whether the standalone AI drive-pickup API should reject far-side-only approaches as a COMPATIBILITY_POLICY, or retain the native result. If approved, define the geometric filter and API result before building it. No general table-edge safety is established by either capture.
+## Closed: far-side drive pickup (2026-11-09)
 
-## Next capability and settlement proposals
+- **The decision:** no policy. The native result is kept.
+- **Why:** the operator confirmed the cube was lying on its side. On a cube lying on its side, the far-side Bottom face
+  is the engine's only allowed approach.
+- **What changed instead:** the hardware guide and the harness prompt now require the cube upright, lights on top.
+- **The check:** `research/20261109-codex-predock-overshoot-marker-claude-check.md`.
 
-1. **AI-BODY-TRACK-FACE-REQUEST-1.** Trace the original explicit TrackToFace direct 0x26 and nested 0x1E admission into factory 0x52ACC0–0x52ACE6. Verify the app recipient and exact tag/queue semantics, then expose the source-supported signed face ID and head-only options through the retained TrackFace runner. Exercise current-root observations, face-ID remap, cancellation and exact variant-3 completion. Keep the RequestGameSimple and PeekABoo behavior owners separate.
-2. **BLOCKWORLD-POSE-QUEUE-SETTLEMENT-1 (M11-063).** The frame flag writer and queue gates are already built. Verify the complete live call path against 0x624F78–0x624F7E, 0x6250D4–0x6250D8 and 0x624808–0x6248B8. Exercise first pose, repeated writes, a real frame with failure supplied at the localization result boundary, and cliff ingress with the flag clear. Check that the flag, retained old pose and configuration force recipient match source. Limit settlement to the queue writer and its own defined state, with the separate M11-037 consumers, M11-064 failure handling and M11-038 app reports identified by record.
+## Next capability proposals (from Codex, still queued)
+
+1. **AI-BODY-TRACK-FACE-REQUEST-1:** the explicit TrackToFace request ingress (factory 0x52ACC0–0x52ACE6).
+2. **BLOCKWORLD-POSE-QUEUE-SETTLEMENT-1 (M11-063).**
