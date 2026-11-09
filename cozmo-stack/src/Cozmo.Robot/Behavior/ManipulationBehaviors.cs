@@ -371,10 +371,18 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
 
     private void TransitionToFailedToStack(ActionResult why)
     {
+        var owner = M.Robot.Engine.Robot;
         CurrentPhase = Phase.FailedToStack;
         Log($"failed to stack ({why}): backing up and placing the block on the ground");
-        RunAction("DriveStraight(-40 mm)", ct => new DriveStraightAction(M, -40, 100f).RunAsync(ct), _ =>
-            RunAction("PlaceObjectOnGround", ct => new PlaceObjectOnGroundAction(M).RunAsync(ct), _ => { CurrentPhase = Phase.Idle; Finish(); }));
+        if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return;
+        RunAction("DriveStraight(-40 mm)", ct =>
+            owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)
+                ? Task.FromResult(ActionResult.CancelledWhileRunning) : new DriveStraightAction(M, -40, 100f).RunAsync(ct), _ =>
+        {
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return;
+            RunAction("PlaceObjectOnGround", ct => M.PlaceObjectOnGroundAsync(owner, ct), _ =>
+            { if (owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return; CurrentPhase = Phase.Idle; Finish(); });
+        });
     }
 }
 

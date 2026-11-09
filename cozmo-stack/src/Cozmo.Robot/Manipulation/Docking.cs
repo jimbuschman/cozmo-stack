@@ -648,7 +648,7 @@ public sealed class DockingSystem : IDisposable
         }
         DockingSuccessByte = false;
         Log?.Invoke("PlaceObjectOnGround sent");
-        Send(PlaceObjectOnGroundAction.Message(flag));
+        Send(GroundPlacement.Message(flag));
         return false;
     }
 
@@ -658,7 +658,7 @@ public sealed class DockingSystem : IDisposable
         _native.Success = false;
         Log?.Invoke("PlaceObjectOnGround sent");
         if (!current()) return true;
-        var message = PlaceObjectOnGroundAction.Message(false);
+        var message = GroundPlacement.Message(false);
         Sent.Add(message);
         return !owner.SendCheckedOwned(message);
     }

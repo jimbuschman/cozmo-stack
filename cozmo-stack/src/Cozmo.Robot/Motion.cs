@@ -1070,8 +1070,9 @@ bool requireCalibration = true)
     {
         // fidelity: M4-003
         // MA12: if the height is exactly 32.0 and something is carried, run PlaceObjectOnGroundAction instead.
-        if (heightMm == LowDockHeightMm && IsCarryingObject?.Invoke() == true && PlaceObjectOnGroundAsync is not null)
-            return PlaceObjectOnGroundAsync();
+        var place = PlaceObjectOnGroundAsync;
+        if (heightMm == LowDockHeightMm && IsCarryingObject?.Invoke() == true && place is not null)
+            return place();
         if (heightMm == LowDockHeightMm && (IsCarryingObject is null || PlaceObjectOnGroundAsync is null))
             Behavior.SteppedBehavior.ReportMissing("M12-008 / M15-022 | the game SetLiftHeight switch at 32.0 mm while carrying (CarryingComponent(+0x284)+8, M12-008; PlaceObjectOnGroundAction, M15-022 / M12-015): the seam is not wired on this robot, so the plain lift action runs");
         var a = BuildLiftAction(heightMm, maxSpeedRadPerSec, accelRadPerSec2, durationSec, timeout, suppressTrackLocking);

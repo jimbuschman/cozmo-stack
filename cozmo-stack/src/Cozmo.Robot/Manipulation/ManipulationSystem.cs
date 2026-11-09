@@ -79,7 +79,9 @@ public sealed class ManipulationSystem : IDisposable
         robot.Motion.IsCarryingObject = () => Docking.Carrying.IsCarryingObject;
         robot.Motion.PlaceObjectOnGroundAsync = async () =>
         {
-            var result = await new PlaceObjectOnGroundAction(this).RunAsync(CancellationToken.None);
+            if (nativeOwner is null || nativeOwner.Lifetime.Destroying || !ReferenceEquals(robot.Engine.Robot, nativeOwner))
+                return new MotionOutcome(MotionResult.Failed, "MISSING: original ground-placement owner retired");
+            var result = await PlaceObjectOnGroundAsync(nativeOwner, CancellationToken.None);
             return new MotionOutcome(result == ActionResult.Success ? MotionResult.Acknowledged : MotionResult.Failed,
                 $"PlaceObjectOnGroundAction: {result}");
         };
@@ -121,6 +123,57 @@ public sealed class ManipulationSystem : IDisposable
             var ownedHook6=vision.World.CarriedPrimaryId;
             _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.CarriedPrimaryId,ownedHook6))vision.World.CarriedPrimaryId=null;});
         }
+    }
+
+    /// <summary>Queues the original robot's ground-placement action and returns its native scalar result.</summary>
+    public Task<ActionResult> PlaceObjectOnGroundAsync(CancellationToken cancellationToken = default) =>
+        PlaceObjectOnGroundAsync(Robot.Engine.Robot, cancellationToken);
+
+    internal Task<ActionResult> PlaceObjectOnGroundAsync(EngineRobot? owner, CancellationToken cancellationToken,
+        Action<NativePlaceGroundRunner, Task<ActionResult>>? admitted = null)
+    {
+        var engine = Robot.Engine;
+        using var lease = engine.EnterSynchronousOwner();
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromResult((ActionResult)EngineActionResult.NotStarted);
+        if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner) ||
+            owner.CarryingOwner is null || owner.DockingOwner is null || owner.BehaviorManagerOwner is null ||
+            !ReferenceEquals(Vision, Robot.Vision) || !ReferenceEquals(World, Robot.LocalizationWorld))
+            throw new InvalidOperationException("MISSING: M15-022 original ground-placement owners unavailable");
+        var runner = new NativePlaceGroundRunner(this, owner) { HostFailureCleanup = true };
+        var completion = new TaskCompletionSource<(uint Result, bool OwnerRetired)>(TaskCreationOptions.RunContinuationsAsynchronously);
+        runner.AiNativeEnded = completion;
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner) && !cancellationToken.IsCancellationRequested;
+        if (!Current())
+        {
+            runner.RetireNeverAdmittedTree();
+            return Task.FromResult((ActionResult)EngineActionResult.NotStarted);
+        }
+        int result = owner.ActionList.QueueActionGuardedNow(runner, 0, Current);
+        if (result != 0)
+        {
+            if (!runner.DestructionObserved && runner.CanDetachWatcherForRetirement()) runner.RetireNeverAdmittedTree();
+            throw new InvalidOperationException("MISSING: M15-022 ground-placement action admission failed");
+        }
+        var task = AwaitGroundPlacement(runner, completion, owner, cancellationToken);
+        admitted?.Invoke(runner, task);
+        return task;
+    }
+
+    private async Task<ActionResult> AwaitGroundPlacement(NativePlaceGroundRunner runner,
+        TaskCompletionSource<(uint Result, bool OwnerRetired)> completion, EngineRobot owner, CancellationToken cancellationToken)
+    {
+        using var registration = cancellationToken.Register(() => Robot.Engine.PostGameMessage(() =>
+        {
+            if (!owner.Lifetime.Destroying && ReferenceEquals(Robot.Engine.Robot, owner) && owner.ActionList.ContainsRunner(runner))
+                owner.ActionList.Cancel(runner.Tag);
+        }));
+        var ended = await completion.Task.ConfigureAwait(false);
+        using (Robot.Engine.EnterSynchronousOwner()) { }
+        if (ended.OwnerRetired) return ActionResult.CancelledWhileRunning;
+        if (runner.HostUnavailable is { } missing)
+            throw new InvalidOperationException("MISSING: M15-022 ground-placement verification unavailable: " + missing);
+        return (ActionResult)ended.Result;
     }
     private readonly List<Action> _installedCallbacks=new();
     private readonly bool _ownsSharedServices,_ownsWhiteboard,_standalone;

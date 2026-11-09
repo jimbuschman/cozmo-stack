@@ -715,7 +715,7 @@ public class NavigationTests
             if (Environment.GetEnvironmentVariable("COZMO_TESTS_WITHOUT_ASSETS") == "1") return;
             throw new Xunit.Sdk.XunitException("the marker library is missing, so this live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
         }
-        using var rig = new Rig();
+        using var rig = new Rig(resources: PickupPyramidNativeExecutionTests.Resources());
         SupplyRequestedPickupLoad(rig);
         rig.Cube = CubeAt(330, -20);
         Assert.Single(rig.Frame().Objects);
@@ -758,6 +758,7 @@ public class NavigationTests
             {
                 rig.Pump();
                 while (firmwareTicks.TryDequeue(out var tick)) tick.TrySetResult();
+                if (bring.LastPlaceAction is not null) rig.NativeGroundCapture = true;
                 if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame();
                 PlacingFirmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false);
                 SignalTestContext.AdvanceBehavior(bring);
@@ -766,6 +767,9 @@ public class NavigationTests
         }
         catch (TimeoutException) { throw new TimeoutException("the placement did not finish: " + string.Join(" | ", bring.Trace) + " || sent: " + string.Join(",", rig.Sent.Select(m => m.GetType().Name).Where(n => !n.StartsWith("Backpack")))); }
         bring.Stop(BehaviorStopReason.Completed);
+        Assert.True(rig.NativeGroundCapturedFrames > 0, $"native ground frames: {rig.NativeGroundCapturedFrames}/{rig.NativeGroundCaptureAttempts}");
+        Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
+            $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
         var trace = bring.Trace.ToList();
         int needs = trace.FindIndex(l => l == "needs action PickupCube");
         int decided = trace.FindIndex(l => l.Contains("TransitionToObjectPickedUp: Decided to place '") && l.Contains("on the floor at ["));
@@ -959,7 +963,7 @@ public class NavigationTests
         using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null || Lib is null) return;
-        using var rig = new Rig();
+        using var rig = new Rig(resources: PickupPyramidNativeExecutionTests.Resources());
         SupplyRequestedPickupLoad(rig);
         rig.M.Workouts = WorkoutComponent.FromObb(obb);
 
@@ -967,7 +971,7 @@ public class NavigationTests
         Assert.Single(rig.Frame().Objects);
         var ctx = Ctx(rig);
         var b = new CubeLiftWorkoutBehavior(rig.M, "CubeLiftWorkout");
-        PlaceObjectOnGroundAction? putDown=null;Task<ActionResult>? putDownTask=null;
+        NativePlaceGroundRunner? putDown=null;Task<ActionResult>? putDownTask=null;
         bool highSent=false,sawLatch=false,lowSent=false;
         b.ManualPutDownStartedForTest=(action,task)=>{putDown=action;putDownTask=task;};
         try
@@ -982,9 +986,13 @@ public class NavigationTests
                 else
                 {rig.State(flags:(uint)RobotStatusFlag.IsPickingOrPlacing);highSent=true;}
             }
-            return (putDownTask is null||putDownTask.IsCompleted)&&!rig.M.Docking.Carrying.IsCarryingObject;
+            if (putDown is not null) rig.NativeGroundCapture = true;
+            return !rig.M.Docking.Carrying.IsCarryingObject;
         });
         Assert.True(highSent);Assert.True(sawLatch);Assert.True(lowSent);
+        Assert.True(rig.NativeGroundCapturedFrames > 0, $"native ground frames: {rig.NativeGroundCapturedFrames}/{rig.NativeGroundCaptureAttempts}");
+        Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
+            $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
         Assert.NotNull(putDown);Assert.True(putDown.StatusLatched);
         Assert.NotNull(putDownTask);Assert.True(putDownTask.IsCompletedSuccessfully);
         Assert.Equal(ActionResult.Success,putDownTask.GetAwaiter().GetResult());

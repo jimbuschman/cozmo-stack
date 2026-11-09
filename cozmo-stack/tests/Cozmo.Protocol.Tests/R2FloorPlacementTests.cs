@@ -78,11 +78,11 @@ public class R2FloorPlacementTests : IDisposable
         Assert.Equal(0x41A00000u, B(BringCubeToBeaconBehavior.StackFilterDistMm));
         Assert.Equal(0x3EC90FDBu, B(BringCubeToBeaconBehavior.StackFilterAngleRad));
         Assert.Equal(0xB727C5ACu, B(AIWhiteboard.NegSlack));
-        Assert.Equal(0x41F00000u, B(PlaceObjectOnGroundAction.TimeoutSec));
+        Assert.Equal(0x41F00000u, B(GroundPlacement.TimeoutSec));
         Assert.Equal(0x3E56A09E19D672B6UL, unchecked((ulong)BitConverter.DoubleToInt64Bits(BeaconFloorGeometry.NormalizeTolerance)));
         Assert.Equal(new[] { 1, 1, 10, 1 }, new[] { 0, 1, 2, 3 }.Select(i => AIWhiteboard.FailureCap((ObjectActionFailure)i)).ToArray());
         Assert.Equal(0, AIWhiteboard.FailureCap(ObjectActionFailure.Any));                 // a failure above 3 has a cap of 0 (0x0056B8A4 table, "failure > 3 -> 0")
-        var b = PlaceObjectOnGroundAction.Message().ToBytes();
+        var b = GroundPlacement.Message().ToBytes();
         Assert.Equal(0u, BitConverter.ToUInt32(b, 1)); Assert.Equal(0u, BitConverter.ToUInt32(b, 5)); Assert.Equal(0u, BitConverter.ToUInt32(b, 9));
         Assert.Equal(0x42C80000u, BitConverter.ToUInt32(b, 13)); Assert.Equal(0x43480000u, BitConverter.ToUInt32(b, 17)); Assert.Equal(0x43FA0000u, BitConverter.ToUInt32(b, 21));
     }
@@ -534,57 +534,6 @@ public class R2FloorPlacementTests : IDisposable
 
     // ------------------------------------------------------------------------------------------- M15-022: the action
 
-    /// <summary>
-    /// M15-022 (2.6, 2.7, 2.8): Init sends the PlaceObjectOnGround message (0x44) FIRST and then calls StopAllMotors (0x00554894); without a carried object it fails with 0x03000011 and still runs StopAllMotors.
-    /// CheckIfDone never reads DockingComponent+5 or the carry state: with the IS_PICKING_OR_PLACING bit never raised the action stays RUNNING until the IAction timeout (30.0f, 0x41F00000) and fails with
-    /// 0x03000018, even though the robot's BLOCK_PLACED result arrived (and released the carried object: HandlePickAndPlaceResult 0x00533780 is the only release).
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public async Task M15_022_InitSendsTheMessageThenStopsMotorsAndTheActionWaitsForTheStatusGate()
-    {
-        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        double clock = 100; rig.M.ClockSec = () => clock;
-        var notCarrying = new PlaceObjectOnGroundAction(rig.M);
-        Assert.Equal(ActionResult.NotCarryingObjectAbort, await notCarrying.RunAsync(default));
-        Assert.Contains(notCarrying.Trace, l => l.Contains("CheckPreconditions.NotCarryingObject"));
-        rig.Pump();
-        Assert.Contains(rig.Sent, m => m is StopAllMotors);
-        Assert.DoesNotContain(rig.Sent, m => m is PlaceObjectOnGround);
-        rig.Sent.Clear();
-        var obj = Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
-        // M12-006 A4: the happy release input is a native pose in the robot tree, not a flat adapter root.
-        obj.NativePose.SetParent(rig.Robot.Engine.Robot!.GetNativeOrigin(rig.Robot.Engine.Robot.CurrentOriginId));
-        rig.M.Docking.Carrying.SetCarrying(7);
-        var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedSubActions(ActionResult.Success) };
-        var task = action.RunAsync(default);
-        SpinUntil(() => rig.Sent.Any(m => m is StopAllMotors), () => rig.Pump());
-        Assert.True(rig.Sent.FindIndex(m => m is PlaceObjectOnGround) < rig.Sent.FindIndex(m => m is StopAllMotors));       // the message, then StopAllMotors
-        Assert.NotNull(action.VerifyAction);
-        Assert.Equal(7u, action.VerifyAction!.ObjectId);
-        SpinUntil(() => !rig.M.Docking.Carrying.IsCarryingObject, () => rig.Pump());           // the robot's BLOCK_PLACED result released it
-        Assert.False(rig.M.Docking.DockingSuccessByte == false);                              // the success byte is the message's (stored by HandlePickAndPlaceResult), nothing here reads it
-        SignalTestContext.StepContinuation();
-        Assert.False(task.IsCompleted);                                                       // not carrying any more, status gate never opened: still RUNNING
-        clock = 100 + 29.9;
-        SignalTestContext.StepContinuation();
-        Assert.False(task.IsCompleted);
-        clock = 100 + 30.0;                                                                   // now >= start + 30.0f
-        SignalTestContext.Run(task);
-        Assert.Equal(ActionResult.Timeout, await task);
-        Assert.Equal(0x03000018u, (uint)ActionResult.Timeout);
-    }
-
-    private sealed class FixedSubActions : IDockSubActionExecutor
-    {
-        private readonly ActionResult _r;
-        public int Calls;
-        public FixedSubActions(ActionResult r) => _r = r;
-        public Task<ActionResult> RunAsync(DockSubAction action, List<string> trace, CancellationToken cancel) { Calls++; return Task.FromResult(_r); }
-    }
-
     private static void Firmware(Rig rig, ref int raisedAt, ref bool cleared, Func<bool>? latched = null)
     {
         // the robot's side of a put-down: IS_PICKING_OR_PLACING is reported while it lowers the lift, then it clears
@@ -594,153 +543,6 @@ public class R2FloorPlacementTests : IDisposable
             else if (!cleared && (latched?.Invoke() ?? true)) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
         else if (!cleared) rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);                  // a camera frame (rig.Frame) reports a fresh state: keep reporting the bit while the lift lowers
         }
-    }
-
-    /// <summary>
-    /// M15-022 (2.7): the status gate. With the bit raised the action latches (+0x84) and stays RUNNING; with the bit clear and the latch set it runs its verify action and ITS result is the action's: a failure
-    /// logs "PlaceObjectOnGroundAction.CheckIfDone.FaceAndVerifyFailed" and is returned (the object clear, ClearLocatedObjectByIDInCurOrigin, is MISSING). The result never depends on whether the cube was
-    /// released.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public async Task M15_022_TheActionsResultIsTheVerifyActionsAfterTheStatusGate()
-    {
-        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
-        foreach (var verify in new[] { ActionResult.Success, ActionResult.VisualObservationFailed })
-        {
-            using var signals_rig = SignalTestContext.Install();
-            using var rig = new Rig();
-            rig.M.ClockSec = () => 100.0; // explicit action clock; this unit grades status/verify, not elapsed time
-            Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
-            rig.M.Docking.Carrying.SetCarrying(7);
-            var sub = new FixedSubActions(verify);
-            var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = sub };
-            int raised = 0; bool cleared = false;
-            var task = action.RunAsync(default);
-            SignalTestContext.Run(task, () => { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
-            Assert.True(task.IsCompleted, $"{verify}: raised={raised} cleared={cleared} latched={action.StatusLatched} sent={string.Join(",", rig.Sent.Select(m => m.GetType().Name).Distinct())}");
-            Assert.Equal(verify, task.Result);
-            Assert.True(action.StatusLatched);
-            Assert.Equal(1, sub.Calls);
-            Assert.Equal(verify != ActionResult.Success, action.Trace.Any(l => l.Contains("FaceAndVerifyFailed")));
-        }
-    }
-
-    // reach: unit (controlled standalone action clock, actual polling/status input and substituted verify executor).
-    [Fact]
-    public void M15_022_ADelayedPollDoesNotSpendTheControlledActionClockWhileTransportAdvances()
-    {
-        using var signals=SignalTestContext.Install();
-        using var cancel=new CancellationTokenSource();
-        using var rig=new Rig();
-        double heldActionSec=rig.M.ClockSec();
-        Assert.Equal(rig.Clock.NowMs/1000.0,heldActionSec);
-        Cube(rig,7,InOrigin(rig,At(100,0,22)));
-        rig.M.Docking.Carrying.SetCarrying(7);
-        using var manager=new BehaviorManager(Ctx(rig));
-        manager.AddReaction(new ObjectPositionStrategy(),new IdleBehavior());
-        var verify=new FixedSubActions(ActionResult.Success);
-        var action=new PlaceObjectOnGroundAction(rig.M){ReactionLocks=manager,SubActions=verify};
-        Task<ActionResult>? task=null;
-        try
-        {
-            task=action.RunAsync(cancel.Token);
-            // Hold ALL captured fixture callbacks: Pump advances the rig but never drains this context.
-            // The action has reached its real Task.Delay(1); callback identity is not inspected.
-            double transportStart=rig.Clock.NowMs;
-            while(rig.Clock.NowMs-transportStart<=31000)rig.Pump(maxRounds:1);
-            Assert.True(rig.Clock.NowMs-transportStart>30000);
-            Assert.False(task.IsCompleted);Assert.False(action.StatusLatched);Assert.Equal(0,verify.Calls);
-            Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated,"placeOnGroundAction"));
-            rig.State(flags:(uint)RobotStatusFlag.IsPickingOrPlacing);
-            SignalTestContext.Until(()=>task.IsCompleted||action.StatusLatched);
-            Assert.True(action.StatusLatched,$"The resumed status poll must latch before completion; result={(task.IsCompleted?task.Result:ActionResult.Running)}");
-            Assert.False(task.IsCompleted);Assert.Equal(0,verify.Calls);
-            rig.State(flags:(uint)(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos));
-            Assert.False(rig.Robot.State.Latest!.Has(RobotStatusFlag.IsPickingOrPlacing));
-            SignalTestContext.Run(task);
-            Assert.Equal(ActionResult.Success,task.Result);Assert.True(action.StatusLatched);Assert.Equal(1,verify.Calls);
-            Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated,"placeOnGroundAction"));
-            Assert.Equal(heldActionSec,rig.M.ClockSec());
-        }
-        finally
-        {
-            cancel.Cancel();
-            if(task is not null)SignalTestContext.Run(task); // every failure path joins before rig/clock/context/input disposal
-        }
-    }
-
-    private sealed class ObjectPositionStrategy : ReactionTriggerStrategy
-    {
-        public override ReactionTrigger Trigger => ReactionTrigger.ObjectPositionUpdated;
-        public override string Basis => "test";
-        public override bool ShouldResumeLast => false;
-        public override bool CanInterruptOtherTriggeredBehavior => false;
-        public override bool CanInterruptSelf => false;
-        protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior) => false;
-        public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
-    }
-
-    private sealed class IdleBehavior : IBehavior
-    {
-        public string Id => "react"; public string Class => "Idle";
-        public bool IsRunnable(BehaviorContext c) => true;
-        public double EvaluateScore(BehaviorContext c) => 1;
-        public Task StartAsync(BehaviorContext c, BehaviorScope s, CancellationToken t) => Task.CompletedTask;
-        public bool Update(BehaviorContext c, double nowMs) => false;
-        public void Stop(BehaviorStopReason r) { }
-    }
-
-    /// <summary>
-    /// M15-022 (2.6 step 6, 0x005548C6; destructor 0x005546D0 -> 0x00554708): with result 0 Init takes DisableReactionsWithLock("placeOnGroundAction", table 0x00C55A21, true): of the 21 triggers
-    /// only index 8 (ObjectPositionUpdated) is set; the destructor removes it. With a failed Init (not carrying) the lock is never taken.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public async Task M15_022_InitTakesTheReactionLockOnObjectPositionUpdatedAndTheEndRemovesIt()
-    {
-        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.M.ClockSec = () => 100.0; // explicit standalone action clock; transport pumping does not measure this lock unit
-        var ctx = Ctx(rig);
-        using var manager = new BehaviorManager(ctx);
-        manager.AddReaction(new ObjectPositionStrategy(), new IdleBehavior());
-        manager.AddReaction(new AlwaysOffStrategy(ReactionTrigger.CubeMoved), new IdleBehavior());
-        Assert.Equal(21, PlaceObjectOnGroundAction.ReactionLockTable.ToMask().Length);
-        Assert.Equal(new[] { 8 }, PlaceObjectOnGroundAction.ReactionLockTable.ToMask().Select((v, i) => (v, i)).Where(p => p.v).Select(p => p.i).ToArray());
-        Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
-        rig.M.Docking.Carrying.SetCarrying(7);
-        var verify = new FixedSubActions(ActionResult.Success);
-        var action = new PlaceObjectOnGroundAction(rig.M) { ReactionLocks = manager, SubActions = verify };
-        var task = action.RunAsync(default);
-        Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
-        Assert.False(manager.HasDisableLock(ReactionTrigger.CubeMoved, "placeOnGroundAction"));
-        int raised = 0; bool cleared = false;
-        SignalTestContext.Run(task, () => { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
-        Assert.Equal(ActionResult.Success, await task);
-        Assert.Equal(1, raised); Assert.True(action.StatusLatched); Assert.True(cleared);
-        Assert.False(rig.Robot.State.Latest!.Has(RobotStatusFlag.IsPickingOrPlacing));
-        Assert.Equal(1, verify.Calls);
-        Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
-        // not carrying: Init fails with 0x03000011 and never takes the lock
-        rig.M.Docking.Carrying.UnsetCarrying();
-        var failing = new PlaceObjectOnGroundAction(rig.M) { ReactionLocks = manager };
-        Assert.Equal(ActionResult.NotCarryingObjectAbort, await failing.RunAsync(default));
-        Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
-    }
-
-    private sealed class AlwaysOffStrategy : ReactionTriggerStrategy
-    {
-        private readonly ReactionTrigger _t;
-        public AlwaysOffStrategy(ReactionTrigger t) => _t = t;
-        public override ReactionTrigger Trigger => _t;
-        public override string Basis => "test";
-        public override bool ShouldResumeLast => false;
-        public override bool CanInterruptOtherTriggeredBehavior => false;
-        public override bool CanInterruptSelf => false;
-        protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior) => false;
-        public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
     }
 
     /// <summary>
@@ -786,7 +588,7 @@ public class R2FloorPlacementTests : IDisposable
             throw new Xunit.Sdk.XunitException("re-analysis/obb (the shipped config and animation assets) is missing, so the live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
         }
         using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
+        using var rig = new Rig(resources: PickupPyramidNativeExecutionTests.Resources());
         rig.M.ClockSec=()=>100; // Positive supplied-input unit; manager/transport clocks still advance.
         var previousDockResult=rig.OnDockResult;
         rig.OnDockResult=()=>
@@ -836,11 +638,14 @@ public class R2FloorPlacementTests : IDisposable
             stack.Manager.Update(clock * 1000, clock);
             rig.Pump();
             while (firmwareTicks.TryDequeue(out var tick)) tick.TrySetResult();
+            if (bring.LastPlaceAction is not null) rig.NativeGroundCapture = true;
             if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); Firmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false);
             SignalTestContext.AdvanceBehavior(bring);
         }
         Assert.False(stack.Manager.IsRunning(bring), string.Join(" | ", bring.Trace));
         Assert.Contains(bring.Trace, l => l.Contains("onPlaceActionResult.Done: Successfully placed cube"));
+        Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
+            $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
         Assert.Single(rig.Sent.OfType<PlaceObjectOnGround>());
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
     }
@@ -959,63 +764,6 @@ public class R2FloorPlacementTests : IDisposable
         Assert.False(rig.M.Docking.CanPickUpObject(obj));
         obj.Pose = InOrigin(rig,At(300, 0, 70));
         Assert.True(rig.M.Docking.CanPickUpObject(obj));
-    }
-
-    /// <summary>
-    /// PlaceObjectOnGroundAction::Init 0x005548C6 takes the lock for EVERY action: a bare action built by any caller (PutDown, FistBump, Motion's lift-height-32 path, ManipTool) takes it through the
-    /// ManipulationSystem's native robot manager; before a native robot exists the absent recipient is reported MISSING once.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public async Task M15_022_ABareActionTakesTheLockThroughTheManipulationSystemsManager()
-    {
-        // A / reach: unit: old supplied world-pose inputs had parent=null; retain coordinates and use the production origin.
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.M.ClockSec = () => 100.0; // explicit standalone action clock; transport pumping does not measure this lock unit
-        var ctx = Ctx(rig);
-        using var manager = new BehaviorManager(ctx);
-        manager.AddReaction(new ObjectPositionStrategy(), new IdleBehavior());
-        Cube(rig, 7, InOrigin(rig,At(100, 0, 22)));
-        var missing = new List<string>();
-        void OnMissing(string s) => missing.Add(s);
-        SteppedBehavior.ResetMissingForTests();
-        SteppedBehavior.MissingReported += OnMissing;
-        try
-        {
-            rig.M.Docking.Carrying.SetCarrying(7);
-            var verifyBare = new FixedSubActions(ActionResult.Success);
-            var bare = new PlaceObjectOnGroundAction(rig.M) { SubActions = verifyBare };
-            var t1 = bare.RunAsync(default);
-            Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));      // the local unit override has not been attached; native owner receives the call
-            // B-M7-4 / unit: old ReactionLocks=null and recipient MISSING; now the native manager exists.
-            Assert.NotNull(rig.M.ReactionLocks);
-            // This resource-free canonical manager has an empty reaction map; the explicit local override below grades held-lock state.
-            Assert.DoesNotContain(missing, m => m.Contains("placeOnGroundAction"));
-            int raised1 = 0; bool cleared1 = false;
-
-            SignalTestContext.Run(t1, () => { rig.Pump(); Firmware(rig, ref raised1, ref cleared1, () => bare.StatusLatched); });
-            Assert.Equal(ActionResult.Success, await t1);
-            Assert.Equal(1, raised1); Assert.True(bare.StatusLatched); Assert.True(cleared1);
-            Assert.False(rig.Robot.State.Latest!.Has(RobotStatusFlag.IsPickingOrPlacing));
-            Assert.Equal(1, verifyBare.Calls);
-            Assert.False(rig.M.ReactionLocks!.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
-        }
-        finally { SteppedBehavior.MissingReported -= OnMissing; }
-        rig.Sent.Clear();
-        rig.M.Docking.Carrying.SetCarrying(7);
-        rig.M.ReactionLocks = manager;
-        var verifyOverride = new FixedSubActions(ActionResult.Success);
-        var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = verifyOverride };
-        var task = action.RunAsync(default);
-        Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
-        int raised = 0; bool cleared = false;
-        SignalTestContext.Run(task, () => { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
-        Assert.Equal(ActionResult.Success, await task);
-        Assert.Equal(1, raised); Assert.True(action.StatusLatched); Assert.True(cleared);
-        Assert.False(rig.Robot.State.Latest!.Has(RobotStatusFlag.IsPickingOrPlacing));
-        Assert.Equal(1, verifyOverride.Calls);
-        Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
     }
 
     /// <summary>

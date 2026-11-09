@@ -204,8 +204,27 @@ public sealed class FistBumpBehavior : SteppedBehavior
         {
             case PutDown:
                 // 0x005F1FB0..0x005F1FCA: PlaceObjectOnGroundAction, then the state store 0x005F2364
-                StartAction("PlaceObjectOnGroundAction", PlaceObjectOnGroundRunner(), () => { });
-                _state = TurnToFace;
+                int epoch = CallbackEpoch;
+                var owner = Context.Robot.Engine.Robot;
+                if (PlaceObjectOnGround is null && _manipulation is { } m && owner is not null &&
+                    owner.NativeBehaviorRuntime is { } runtime && ReferenceEquals(runtime.Manipulation, m) &&
+                    runtime.Bound.TryGetValue(Id, out var configured) && ReferenceEquals(configured, this))
+                {
+                    bool Current() => CallbackMayRun(epoch) && !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner);
+                    try
+                    {
+                        var ground = new NativePlaceGroundRunner(m, owner) { HostFailureCleanup = true };
+                        StartActing(ground, null, Current);
+                    }
+                    catch (NativeActionUnavailable error)
+                    {
+                        ReportMissing("M15-022 FistBump ground placement unavailable: " + error.Message);
+                        if (Current()) Finish();
+                        return;
+                    }
+                }
+                else StartAction("PlaceObjectOnGroundAction", PlaceObjectOnGroundRunner(), () => { });
+                if (CallbackMayRun(epoch) && ReferenceEquals(Context.Robot.Engine.Robot, owner)) _state = TurnToFace;
                 break;
 
             case TurnToFace:
@@ -392,7 +411,8 @@ public sealed class FistBumpBehavior : SteppedBehavior
     {
         if (PlaceObjectOnGround is { } p) return p;
         if (_manipulation is not { } m) return null;
-        return ct => new PlaceObjectOnGroundAction(m).RunAsync(ct);
+        var owner = m.Robot.Engine.Robot;
+        return ct => m.PlaceObjectOnGroundAsync(owner, ct);
     }
 
     /// <summary>A <c>TriggerAnimationAction(trigger, 1, 1, 0, 60.0, 0)</c> started with <c>StartActing</c> and an empty completion.</summary>
