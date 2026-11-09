@@ -313,6 +313,7 @@ public sealed partial class VisionSystem : IDisposable
     private readonly bool _stockRecognizer;
     private readonly Action<NativeObservedObject> _nativeObjectObserved;
     private readonly RetainedSubscription _renameRequest;
+    private readonly RetainedSubscription _eraseRequest;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -435,6 +436,18 @@ public sealed partial class VisionSystem : IDisposable
             catch(Exception error)
             {
                 robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "VisionComponent.RenameFace.HandlerFailed", error.Message);
+            }
+        });
+        _eraseRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x89,false,value=>
+        {
+            try
+            {
+                if(value is NativeEraseFaceRequest request)
+                    EraseStockEnrolledFace(request.Owner,request.Id);
+            }
+            catch(Exception error)
+            {
+                robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.EraseFace.HandlerFailed",error.Message);
             }
         });
     }
@@ -1036,13 +1049,17 @@ public sealed partial class VisionSystem : IDisposable
             if (!Current() || !recognizer.IsAvailable || recognizer.EraseFace(id) != 0) return false;
         }
         if (!Current()) return false;
-        SaveFaceAlbumToRobot();
+        try { SaveFaceAlbumToRobot(owner,recognizer,removal,_robot.Engine.NvStorage,null,null); }
+        catch(Exception error)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.EraseFace.SaveFailed",error.Message);
+        }
         if (!Current()) return false;
         if (owner.HasExternalInterface)
         {
             byte[] body = new byte[5];
             System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body, id);
-            _robot.Engine.DeliverAnimationReportToApp(0x57, body);
+            _robot.Engine.DeliverAnimationReportToApp(0x57, body,_robot.Engine.CaptureFaceErased(new FaceErasedReport(id,string.Empty)));
             _robot.Engine.AnimationMessages.Deliver(0x57, true, new NativeErasedEnrolledFace(id, string.Empty));
         }
         return true;
@@ -1991,7 +2008,7 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null):null;
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? (obj,prefix)=>PublishObservedCube(sourceOwner,obj,prefix,()=>!StaleFrame()) : null):null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
             if (worldFrame is not null)
             {
@@ -2222,6 +2239,7 @@ public sealed partial class VisionSystem : IDisposable
             _disposed = true;
         }
         _renameRequest.Dispose();
+        _eraseRequest.Dispose();
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;

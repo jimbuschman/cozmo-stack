@@ -71,6 +71,9 @@ public sealed record AiDriveActionResult(bool Admitted, uint? EngineResult, stri
 /// <summary>The native turn result and its pose-frame change count.</summary>
 public sealed record AiTurnActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, uint? RelocalizationCount = null);
 
+/// <summary>The terminal native result and selected authored animation name.</summary>
+public sealed record AiAnimationActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, string? AnimationName = null);
+
 /// <summary>An advisory view of one robot owner and its last published engine state.</summary>
 public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
 
@@ -118,6 +121,34 @@ public sealed class CozmoMotion
     /// </summary>
     public Task<AiHeadActionResult> QueueAiHeadAngleAsync(float radians, CancellationToken cancellationToken = default) =>
         QueueAiMoveAsync(radians, true, cancellationToken);
+
+    /// <summary>Queues an authored trigger after existing actions; cancellation addresses only this runner.
+    /// Clips requiring a speech provider and concurrent shared-audio handoff are reported as unavailable.</summary>
+    public async Task<AiAnimationActionResult> QueueAiAnimationAsync(Behavior.AnimationTrigger trigger, uint loops = 1,
+        bool useSafeLiftMotion = true, bool ignoreBodyTrack = false, bool ignoreHeadTrack = false,
+        bool ignoreLiftTrack = false, CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested) return new(false,null,"Request cancelled before admission");
+        var engine=_robot.Engine; var owner=engine.Robot;
+        Animation.TriggerAnimationAction action;
+        Task<AiHeadActionResult> task;
+        using (engine.EnterSynchronousOwner())
+        {
+            if (cancellationToken.IsCancellationRequested) return new(false,null,"Request cancelled before admission");
+            if (owner is null || !AiOwnerReady(engine,owner) || !owner.HasExternalInterface)
+                return new(false,null,"Robot is not ready for an authored animation");
+            uint tag=AllocateAiTag();
+            if(tag==0)return new(false,null,"No external action tag is available");
+            int mask=(ignoreHeadTrack?1:0)|(ignoreLiftTrack?2:0)|(ignoreBodyTrack?4:0);
+            var request=new Animation.DrivingAnimationRequest(trigger,unchecked((int)loops),true,mask,60f,false);
+            action=useSafeLiftMotion ? new Animation.TriggerLiftSafeAnimationAction(_robot,request) : new Animation.TriggerAnimationAction(_robot,request);
+            action.UseBoundedOrdinaryAuthoredAudio(owner);
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native authored animation ended",true,()=>AiOwnerReady(engine,owner) && owner.HasExternalInterface);
+        }
+        var result=await task.ConfigureAwait(false);
+        return new(result.Admitted,result.EngineResult,action.HostUnavailable ?? result.Detail,result.OwnerRetired,
+            result.Admitted ? action.GetAnimationCompletionName() : null);
+    }
 
     /// <summary>Queues a lift request after existing actions. A 32 mm request while carrying places the object on the ground.</summary>
     public async Task<AiLiftActionResult> QueueAiLiftHeightAsync(float heightMm, CancellationToken cancellationToken = default)
@@ -287,6 +318,7 @@ public sealed class CozmoMotion
         else if(action is Vision.NativeTurnInPlaceRunner turn)turn.AiNativeEnded=completion;
         else if(action is Manipulation.NativePickupObjectRunner pickup)pickup.AiNativeEnded=completion;
         else if(action is Manipulation.NativeDriveToPickupBeaconRunner drivePickup)drivePickup.AiNativeEnded=completion;
+        else if(action is Animation.TriggerAnimationAction animation)animation.AiNativeEnded=completion;
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)
@@ -526,6 +558,9 @@ public sealed class CozmoMotion
 
     /// <summary>Robot+0x2FC as the engine keeps it: −25° until the head is calibrated, then the RS6-clamped report.</summary>
     public float HeadAngleRad { get { lock (_gate) return _headAngle; } }
+    // Vision holds the pose tree while publishing; motion can log while holding _gate.
+    // A single atomic snapshot avoids taking that lock in the reverse order.
+    internal float ObservationHeadAngleRad => Volatile.Read(ref _headAngle);
     /// <summary>MC+0xA/+0xB/+0xC: whether the head, lift and body are moving, from the last handled state.</summary>
     public bool HeadMoving { get { lock (_gate) return _headMoving; } }
     public bool LiftMoving { get { lock (_gate) return _liftMoving; } }

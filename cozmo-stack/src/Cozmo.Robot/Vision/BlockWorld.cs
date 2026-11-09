@@ -1574,9 +1574,13 @@ public sealed partial class BlockWorld
     // fidelity: M11-036, M11-037, M11-006, M11-010
     public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate=null)
     {
-        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate);
+        return UpdateObservedMarkers(markers,camera,timestamp,pd,worldRotatingGate,null);
     }
-    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate)
+    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport)
+    {
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeCubeReport);
+    }
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport)
     {
         _missingMapTimeReported=_missingPoseChangedReported=false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
@@ -1611,7 +1615,7 @@ public sealed partial class BlockWorld
             AddLiftOccluder(camera, pd);                                           // 0x00624FA4
             _didObjectsChange = false;                                             // 0x00624FAC
             var instances = CreateObjectsFromMarkers(markers, camera);             // 0x00624FC4 (always succeeds, 0x00625616)
-            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations);   // 0x0062505A
+            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeCubeReport);   // 0x0062505A
             if (status != 0)
             {
                 Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed", "");
@@ -1778,7 +1782,7 @@ public sealed partial class BlockWorld
     /// <c>Rejigger</c> do not exist in this stack, so <c>LocalizeRobot</c> is a stub that counts its calls and the pairs it would have localized to, and returns 0.
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
-    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations)
+    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeCubeReport)
     {
         var robotPos = (CurrentRobotPose?.Invoke() ?? pd.RobotPose).Translation;
         var potentials = new PotentialObjectsForLocalizingTo(this);                // 0x00620B0C
@@ -1822,7 +1826,11 @@ public sealed partial class BlockWorld
             EmitPublicLog($"{(before is null ? "new" : "seen")} {located} via {string.Join(",", located.LastObservedMarkers)} rms={located.LastReprojectionRmsPx:F2}px");
             observations.Add(observation);
             if(!(located.IsActive&&located.Family==(ObjectFamily)2&&!CubeGeometry.IsCube(located.Type)))
-                NativeObjectObserved?.Invoke(new NativeObservedObject(located.LastObservedTimestamp,(uint)located.Family,(uint)located.Type,located.ObjectId));
+            {
+                var prefix=new NativeObservedObject(located.LastObservedTimestamp,(uint)located.Family,(uint)located.Type,located.ObjectId);
+                if(nativeCubeReport is not null && located.IsActive && located.Family==(ObjectFamily)2 && CubeGeometry.IsCube(located.Type)) nativeCubeReport(located,prefix);
+                else NativeObjectObserved?.Invoke(prefix);
+            }
             else Source(EngineLogLevel.Error,null,"BlockWorld.BroadcastObjectObservation.InvalidActiveCube","Active family2 object is not an ActiveCube");
             DeliverPublic(ObjectObserved,observation);                                   // BroadcastObjectObservation 0x0061FED8 (0x006211DC)
             _didObjectsChange = true;                                              // 0x006211E6
