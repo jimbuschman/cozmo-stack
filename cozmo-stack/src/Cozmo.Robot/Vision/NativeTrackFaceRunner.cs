@@ -22,6 +22,7 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
     private float _savedIdle = -1;
     private RetainedSubscription? _changed;
     private readonly object _stopGate = new();
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     private bool OwnerCurrent => !_owner.Lifetime.Destroying && ReferenceEquals(_owner.Engine.Robot, _owner);
     private bool Current => OwnerCurrent && !_ending && !DestructionObserved;
     private bool CleanupCurrent => OwnerCurrent && (!_ending || Interlocked.Read(ref _owner.NativeTrackingFaceGeneration)==_endingGeneration);
@@ -217,5 +218,6 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
             }
             base.WatcherEnding();
         });
+        AiNativeEnded?.TrySetResult((State,_owner.Lifetime.Destroying || !ReferenceEquals(_owner.Engine.Robot,_owner)));
     }
 }
