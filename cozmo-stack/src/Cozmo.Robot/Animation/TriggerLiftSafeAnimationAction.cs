@@ -30,6 +30,7 @@ internal class TriggerAnimationAction : ActionRunner
     private bool _ordinarySelected;
     private bool _directDiagnosticReported;
     private bool _destroyed;
+    private readonly object _trackGate=new();
     private bool _started, _ended, _failed;
     private uint _loops;
     private byte _animationTag;
@@ -84,12 +85,16 @@ internal class TriggerAnimationAction : ActionRunner
     protected override string ActionName=>"PlayAnimation"+(_group??"");
     protected override float EngineClockSeconds=>_robot.Engine.Timer.SecondsF;
     public override bool CanInterrupt()=>false;
-    protected override bool AreAnyTracksLocked(uint mask)=>_robot.Motion.AreAnyTracksLocked((byte)mask);
-    protected override void LockTracks(uint mask,string owner)=>_robot.Motion.LockTracks((byte)mask,owner,ActionName);
-    protected override void UnlockTracksInternal(uint mask,string owner)=>_robot.Motion.UnlockTracks((byte)mask,owner);
-    protected override bool AreAllTracksLockedBy(uint mask,string owner)=>_robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
+    private bool OwnerCurrent=>_scopedOwner is null || !_scopedOwner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,_scopedOwner);
+    protected override bool AreAnyTracksLocked(uint mask)=>OwnerCurrent && _robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override void LockTracks(uint mask,string owner)
+    {if(_scopedOwner is null)_robot.Motion.LockTracks((byte)mask,owner,ActionName);else LogCallbackDeferral.RunGated(_trackGate,()=>{if(OwnerCurrent&&!_destroyed&&!DestructionObserved)_robot.Motion.LockTracksOwned((byte)mask,owner,ActionName,_scopedOwner);});}
+    protected override void UnlockTracksInternal(uint mask,string owner)
+    {if(_scopedOwner is null)_robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_trackGate,()=>{if(OwnerCurrent)_robot.Motion.UnlockTracksOwned((byte)mask,owner,_scopedOwner);});}
+    protected override bool AreAllTracksLockedBy(uint mask,string owner)=>OwnerCurrent && _robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
     public override int Init()
     {
+        if(_scopedOwner is not null && (_destroyed || DestructionObserved))return unchecked((int)EngineActionResult.Cancelled);
         if (_scopedOwner is { } original && (original.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, original))) return 0x03000000;
         if(_directClip is not null)
         {
@@ -197,7 +202,8 @@ internal class TriggerAnimationAction : ActionRunner
         string name = eventId <= 3 ? ((AnimEvent)eventId).ToString() : "(null)";
         _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "PlayAnimation.AnimationEventHandler",
             $"Event {name} received at time {unchecked((int)message.Timestamp)} while playing animation tag {_animationTag}");
-        _robot.Engine.BroadcastAnimationEvent(new(message.Timestamp, eventId));
+        if(_scopedOwner is null || OwnerCurrent && !_destroyed && !DestructionObserved)
+            _robot.Engine.BroadcastAnimationEvent(new(message.Timestamp, eventId));
     }
     // E2G 0x5F: 0x005457D8..0x00545862, no started gate and no byte truncation of the incoming tag.
     private void Aborted(uint tag)

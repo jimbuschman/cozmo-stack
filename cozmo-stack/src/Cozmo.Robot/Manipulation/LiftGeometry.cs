@@ -107,8 +107,21 @@ public static class LiftGeometry
     public static uint SetObjectAsAttachedToLift(CarryingComponent carrying, BlockWorld world,
                                                  BlockConfigurationManager? configurations, VisionPoseData? state,
                                                  uint? objectId, MarkerType markerCode, Action<string>? log = null, Pose3d? liveLiftPose = null)
+        => SetObjectAsAttachedToLiftCore(carrying,world,configurations,state,objectId,markerCode,log,liveLiftPose,null,null);
+
+    internal static uint SetObjectAsAttachedToLift(CarryingComponent carrying, BlockWorld world,
+        BlockConfigurationManager? configurations, VisionPoseData? state, uint? objectId, MarkerType markerCode,
+        Action<string>? log, Pose3d? liveLiftPose, EngineRobot owner, Func<bool> current)
+        => SetObjectAsAttachedToLiftCore(carrying,world,configurations,state,objectId,markerCode,log,liveLiftPose,owner,current);
+
+    private static uint SetObjectAsAttachedToLiftCore(CarryingComponent carrying, BlockWorld world,
+        BlockConfigurationManager? configurations, VisionPoseData? state, uint? objectId, MarkerType markerCode,
+        Action<string>? log, Pose3d? liveLiftPose, EngineRobot? owner, Func<bool>? current)
     {
         using var frameMutation=world.EnterPoseMutation();
+        bool Current()=>owner is null || !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot,owner) && ReferenceEquals(owner.CarryingOwner,carrying) && (current?.Invoke() ?? true);
+        if(!Current())return AttachFailed;
+        if(owner is not null)liveLiftPose=owner.LiftPose;
         if (objectId is not { } id) { log?.Invoke("SetObjectAsAttachedToLift: no object id (-1)"); return AttachFailed; }
         if (carrying.IsCarryingObject) { log?.Invoke("SetObjectAsAttachedToLift: already carrying an object"); return AttachFailed; }
         var obj = world.GetLocatedObjectById(id);
@@ -116,6 +129,7 @@ public static class LiftGeometry
         var markers = obj.Markers.Where(m => m.Code == markerCode).ToList();
         if (markers.Count == 0) { log?.Invoke($"SetObjectAsAttachedToLift: object {id} has no marker {markerCode}"); return AttachFailed; }
         if (markers.Count >= 2) log?.Invoke($"SetObjectAsAttachedToLift: object {id} has {markers.Count} markers {markerCode}; using the first");
+        if(!Current())return AttachFailed;
         var marker = markers[0];
         if (state is not { } st) { log?.Invoke("SetObjectAsAttachedToLift: no robot pose to take the lift pose from"); return AttachFailed; }
         using var liftLocal=LiftPoseInRobotFrame(st.LiftAngleRad);
@@ -132,12 +146,16 @@ public static class LiftGeometry
         {
             var tmp = top.Pose.WithRespectTo(obj.Pose);
             var r = ObjectPoseConfirmerRelative.AddObjectRelativeObservation(world, top, obj.Pose.Compose(tmp));
+            if(!Current())return AttachFailed;
             if (r != 0) { log?.Invoke($"SetObjectAsAttachedToLift: AddObjectRelativeObservation returned {r}"); return r; }
             topId = top.ObjectId; topWrtCarried = tmp;
         }
-        carrying.AttachToLiftChecked(world, id, marker, objWrtLift, topId, topWrtCarried);
+        if(owner is null)carrying.AttachToLiftChecked(world, id, marker, objWrtLift, topId, topWrtCarried);
+        else if(!carrying.AttachToLiftChecked(world,id,marker,objWrtLift,topId,topWrtCarried,owner,Current))return AttachFailed;
+        if(!Current())return AttachFailed;
         if(world.NativeConfigurations is { } nativeConfigurations)nativeConfigurations.ForceUpdate();
         else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-008 0x006331BC: native configuration owner unavailable; attachment native-force write skipped");
+        if(!Current())return AttachFailed;
         if (configurations is not null) configurations.ForceUpdate = true;
         var argument = liftWorld.Compose(objWrtLift);
         if (liveLiftPose is not null)
@@ -147,6 +165,7 @@ public static class LiftGeometry
             argument.SetParent(liveLiftPose);
             obj.NativeCarryingTree = true;
         }
+        if(!Current())return AttachFailed;
         return ObjectPoseConfirmerRelative.AddLiftRelativeObservation(world, obj, argument);
     }
 }

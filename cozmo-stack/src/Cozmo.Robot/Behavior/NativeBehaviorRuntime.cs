@@ -503,6 +503,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeMeetInteractWithFaces>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeEnrollFaceBehavior>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeRespondToRenameFace>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeSparksLookInPlace>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeHikingLookInPlace>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeHikingPounce>())candidate.Dispose();

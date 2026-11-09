@@ -304,20 +304,20 @@ public sealed class ManipulationSystem : IDisposable
 
     public Pose3d? RobotPose() => Vision.History.Latest?.RobotPose;
 
-    internal Pose3d NativeMainSnapshot()=>Robot.Engine.Robot?.CopyCheckedMainPose()
+    internal Pose3d NativeMainSnapshot(EngineRobot? scopedOwner=null)=>(scopedOwner??Robot.Engine.Robot)?.CopyCheckedMainPose()
         ??throw new NativeActionUnavailable("M12-029 actual MAIN owner unavailable");
-    internal List<PreActionObstacle> NativeObstacles(Pose3d main)
+    internal List<PreActionObstacle> NativeObstacles(Pose3d main,EngineRobot? scopedOwner=null)
     {
-        var owner=Robot.Engine.Robot??throw new NativeActionUnavailable("M12-036 actual Robot owner unavailable");
+        var owner=scopedOwner??Robot.Engine.Robot??throw new NativeActionUnavailable("M12-036 actual Robot owner unavailable");
         var carrying=owner.CarryingOwner??throw new NativeActionUnavailable("M12-036 actual carrying owner unavailable");
         using var root=main.GetWithRespectToRoot();
-        var obstacles=PreActionValidity.GetObstacles(World.FindLocatedMatchingObjects(new BlockWorldFilter()),carrying.GetCarryingObjects(),root,NativeHeight(),0f);
+        var obstacles=PreActionValidity.GetObstacles(World.FindLocatedMatchingObjects(new BlockWorldFilter()),carrying.GetCarryingObjects(),root,NativeHeight(owner),0f);
         if(obstacles.Any(o=>o.IsStandIn))throw new NativeActionUnavailable("M12-036 native obstacle footprint input unavailable; no planar stand-in on the native approach");
         return obstacles;
     }
-    internal float NativeHeight()
+    internal float NativeHeight(EngineRobot? scopedOwner=null)
     {
-        float lift=Robot.Engine.Robot?.NativeLiftAngle??throw new NativeActionUnavailable("M12-036 actual synchronized raw lift input unavailable");
+        float lift=(scopedOwner??Robot.Engine.Robot)?.NativeLiftAngle??throw new NativeActionUnavailable("M12-036 actual synchronized raw lift input unavailable");
         float height=66f*MathF.Sin(lift);height=height+45f;height=height+0f;height=height+5f;
         float floor=BitConverter.UInt32BitsToSingle(0x42876666);return height>floor?height:floor;
     }

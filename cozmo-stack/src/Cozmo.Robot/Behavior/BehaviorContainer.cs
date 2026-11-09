@@ -319,6 +319,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeMeetInteractWithFaces(ctx,json),
         [BehaviorClass.EnrollFace] = (ctx,json)=>new NativeEnrollFaceBehavior(ctx,json),
+        [BehaviorClass.RespondToRenameFace] = (ctx,json)=>new NativeRespondToRenameFace(ctx,json),
         [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
         [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
         [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
@@ -475,6 +476,11 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("EnrollFace factory supports only the checked configuration with original owners");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
+        if (cls == BehaviorClass.RespondToRenameFace && (BehaviorConfigLoader.ExtractIdFromConfig(config) != BehaviorID.RespondToRenameFace || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("RespondToRenameFace factory requires its checked configuration and original owners");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
         if (cls == BehaviorClass.Bouncer && (ctx.Vision is null || ctx.Manipulation is null || ctx.BouncerOwner is null))
         {
             SteppedBehavior.ReportMissing("Bouncer factory: actual vision, manipulation and native Robot owners unavailable");
@@ -482,9 +488,9 @@ public sealed class BehaviorFactory
         }
         IBehavior behavior;
         try { behavior = entry.Construct(ctx, config); }
-        catch (NotSupportedException error) when (cls == BehaviorClass.AcknowledgeObject)
+        catch (NotSupportedException error) when (cls is BehaviorClass.AcknowledgeObject or BehaviorClass.RespondToRenameFace)
         {
-            SteppedBehavior.ReportMissing(error.Message + "; AcknowledgeObject configuration skipped, prior owner retained");
+            SteppedBehavior.ReportMissing(error.Message + $"; {cls} configuration skipped, prior owner retained");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
         var completionOwner=cls==BehaviorClass.Bouncer?ctx.BouncerOwner:cls==BehaviorClass.BringCubeToBeacon?ctx.BringBeaconOwner:ctx.NativeRobot;

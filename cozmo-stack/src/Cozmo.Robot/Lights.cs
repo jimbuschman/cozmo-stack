@@ -1104,7 +1104,11 @@ public sealed class CubeLightComponent
         StopLightAnimForObjectId(id,trigger,EngineLayer,resume,current);
     }
     internal bool PlayNativeInteracting(uint id)=>PlayLightAnimForObjectId(id,"Interacting",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
+    internal bool PlayNativeInteracting(uint id,Func<bool> current)=>PlayLightAnimForObjectId(id,"Interacting",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0,current);
+    internal void StopNativeInteracting(uint id,Func<bool> current)=>StopLightAnimForObjectId(id,"Interacting",EngineLayer,false,current);
     internal bool PlayNativeDrivingTo(uint id)=>PlayLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
+    internal bool PlayNativeDrivingTo(uint id,Func<bool> current)=>PlayLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0,current);
+    internal void StopNativeDrivingTo(uint id,Func<bool> current)=>StopLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,current);
     internal void StopNativeDrivingTo(uint id)
     {
         ObjectType? type=null;lock(_gate)foreach(var entry in _infos)if(entry.Value.ObjectId==id){type=entry.Key;break;}

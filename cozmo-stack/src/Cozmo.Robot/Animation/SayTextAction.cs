@@ -9,12 +9,15 @@ internal sealed class SayTextAction : ActionRunner
     private readonly EngineRobot _owner;
     private readonly TextToSpeechComponent _speech;
     private readonly byte _operation;
+    internal string Text { get; }
+    internal int CannedTracks => _cannedTracks;
     internal float Pitch { get; }
     private volatile bool _retired;
     private bool _taken;
     private readonly bool _direct;
     private readonly bool _fitName;
     private AnimationTrigger? _cannedTrigger;
+    private int _cannedTracks;
     private Task<CannedSpeechLease>? _cannedOpening;
     private CannedSpeechLease? _cannedSession;
     private AnimationClip? _fittedClip;
@@ -27,13 +30,15 @@ internal sealed class SayTextAction : ActionRunner
     private TriggerAnimationAction? _child;
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? HostCompletion;
     internal TriggerAnimationAction? ChildForTest => _child;
-    internal void SetCannedTrigger(AnimationTrigger trigger) => _cannedTrigger = trigger;
+    internal void SetCannedTrigger(AnimationTrigger trigger, int tracksToLock = 0)
+    { _cannedTrigger = trigger; _cannedTracks = tracksToLock; }
 
     internal SayTextAction(CozmoRobot robot, EngineRobot owner, string text, byte style, float durationScalar, float pitch, bool direct = false,
         TextToSpeechComponent? speechForTest = null, Func<float[], Task<IDirectSpeechSession>>? openForTest = null, bool fitName = false)
         : base(0x20, 0)
     {
         _robot = robot;
+        Text = text;
         _owner = owner;
         _speech = speechForTest ?? owner.SpeechComponent;
         _openForTest = openForTest;
@@ -116,7 +121,7 @@ internal sealed class SayTextAction : ActionRunner
                 }
                 _cannedSession = _cannedOpening.Result;
                 if (_retired || _owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, _owner)) return 0x03000000;
-                var child = new TriggerLiftSafeAnimationAction(_robot, new(trigger, 1, true, 0, 60f, false));
+                var child = new TriggerLiftSafeAnimationAction(_robot, new(trigger, 1, true, _cannedTracks, 60f, false));
                 if (DestructionObserved || _retired || _owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, _owner))
                 {
                     child.RetireNeverAdmittedTree();

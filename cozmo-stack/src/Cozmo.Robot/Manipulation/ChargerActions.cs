@@ -536,18 +536,20 @@ public sealed class MountChargerAction
 
         private readonly ManipulationSystem _m;
         private readonly EngineRobot? _owner;
+        private readonly Func<bool>? _parentCurrent;
         // TURN-ACTUAL-MAIN-1: every TurnInPlaceAction reads the actual native MainPose yaw (0x005464C6 -> Robot::GetPose 0x004EA398); the history-pose adapter is gone.
-        internal LivePanTiltRobot(ManipulationSystem m,EngineRobot? owner=null){_m=m;_owner=owner;}
+        internal LivePanTiltRobot(ManipulationSystem m,EngineRobot? owner=null,Func<bool>? parentCurrent=null){_m=m;_owner=owner;_parentCurrent=parentCurrent;}
         private EngineRobot CheckedOwner()
         {
             var owner=_owner??_m.Robot.Engine.Robot;
-            if(owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_m.Robot.Engine.Robot,owner))throw new NativeActionUnavailable("Turn action's original robot owner is unavailable");
+            if(owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_m.Robot.Engine.Robot,owner) || _parentCurrent is not null && !_parentCurrent())throw new NativeActionUnavailable("Turn action's original robot owner is unavailable");
             return owner;
         }
         public object StateGate => _m.Robot.Animations.NativeLayerGate;
         public SourceLogSink SourceLog => (level,channel,key,text) => _m.Robot.Engine.EmitSourceLog(level,channel,key,text);
         public string OffTreadsName => Enum.GetName(_m.Robot.Sensors.OffTreadsState) ?? "(null)";
-        private bool Current => _owner is null || !_owner.Lifetime.Destroying && ReferenceEquals(_m.Robot.Engine.Robot,_owner);
+        private bool OwnerCurrent => _owner is null || !_owner.Lifetime.Destroying && ReferenceEquals(_m.Robot.Engine.Robot,_owner);
+        private bool Current => OwnerCurrent && (_parentCurrent?.Invoke()??true);
         public void RemoveKeepFaceAlive(int duration) { if(Current)_m.Robot.Animations.WithTrackLayers(layers => { if(Current)layers.RemoveKeepFaceAlive(duration); }); }
         public byte AddEyeShift(byte tag, float x)
         {
@@ -555,7 +557,7 @@ public sealed class MountChargerAction
                 BitConverter.Int32BitsToSingle(0x3F8CCCCD),BitConverter.Int32BitsToSingle(0x3F59999A),BitConverter.Int32BitsToSingle(0x3DCCCCCD)); });
             return tag;
         }
-        public void RemoveEyeShift(byte tag, int duration) { if(Current)_m.Robot.Animations.WithTrackLayers(layers => { if(Current)layers.RemoveEyeShift(tag,duration); }); }
+        public void RemoveEyeShift(byte tag, int duration) { if(OwnerCurrent)_m.Robot.Animations.WithTrackLayers(layers => { if(OwnerCurrent)layers.RemoveEyeShift(tag,duration); }); }
         public bool OnTreads => _m.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
         public uint OriginId => _owner is null ? _m.Robot.Engine.Robot?.PoseFrameId ?? 0 : CheckedOwner().PoseFrameId;
         public float PoseAngleAroundZ
@@ -579,9 +581,9 @@ public sealed class MountChargerAction
         public bool HeadMoving => _m.Robot.Motion.HeadMoving;
 
         public uint TurnInPlace(float targetRad, float speed, float accel, float toleranceRad, ushort numHalfRevolutions, bool isAbsolute, out byte actionId)
-        { if(_owner is not null)CheckedOwner(); return _m.Robot.Motion.TurnInPlace(targetRad, speed, accel, toleranceRad, numHalfRevolutions, isAbsolute, out actionId,_owner); }
+        { if(!Current){actionId=0;return 1;} return _m.Robot.Motion.TurnInPlace(targetRad, speed, accel, toleranceRad, numHalfRevolutions, isAbsolute, out actionId,_owner,()=>Current); }
         public uint MoveHeadToAngle(float angleRad, float speed, float accel, float durationSec, out byte actionId) =>
-            _m.Robot.Motion.MoveHeadToAngle(angleRad, speed, accel, durationSec, out actionId,_owner);
+            _m.Robot.Motion.MoveHeadToAngle(angleRad, speed, accel, durationSec, out actionId,_owner,()=>Current);
     }
 }
 

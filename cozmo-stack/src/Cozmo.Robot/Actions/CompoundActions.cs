@@ -365,6 +365,7 @@ public class CompoundActionSequential : CompoundAction
         float now = EngineClockSeconds;
         if (!(_deadline < 0f) && !(now >= _deadline)) return EngineActionResult.Running;
         uint result = child.Update();
+        if (DestructionObserved) return State; // M1-034: a child callback retired this compound.
         SourceStatus = child.SourceStatus;                                              // S3
 
         return (result >> 24) switch                                              // S4
@@ -382,6 +383,7 @@ public class CompoundActionSequential : CompoundAction
     {
         var child = Children[_iterator];
         RunCompletionCallbacks(result);                                            // S5 BEFORE predicate
+        if (DestructionObserved) return State;
         if (ShouldIgnoreFailure(child, result))
         {
             ChildLog(child, EngineLogLevel.Info, "Actions", "CompoundActionSequential.UpdateInternal", n => $"Ignoring failure for {n}[{unchecked((int)child.Tag)}] moving to next action");
@@ -432,8 +434,10 @@ public class CompoundActionSequential : CompoundAction
     {
         var child = Children[_iterator];
         ChildLog(child, EngineLogLevel.Info, "Unnamed", "CompoundActionSequential.Update.NextAction", n => $"Moving to action {n} [{unchecked((int)child.Tag)}]");
+        if (DestructionObserved) return State;
         child.SuppressTrackLocking = SuppressTrackLocking;                         // S8
         uint result = child.Update();
+        if (DestructionObserved) return State;
         if (result == EngineActionResult.Running) return EngineActionResult.Running;
         bool erased = StoreCompletionUnionAndDelete(child);
         if (!erased) _iterator++;

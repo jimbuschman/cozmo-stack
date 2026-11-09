@@ -111,6 +111,9 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     public const double DefaultComputingPathTimeoutSec = 4.0;
 
     private readonly ManipulationSystem _m;
+    private EngineRobot? _scopedOwner;
+    private Func<bool>? _scopedParentCurrent;
+    private readonly object _scopedCleanupGate=new();
 
     public DriveToPoseAction(ManipulationSystem m) : base(12, 4)
     {
@@ -123,6 +126,18 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     private List<Pose3d> _ownedGoals=new();
     internal DriveToPoseAction(ManipulationSystem m,bool head,bool manual):this(m)
     {_native=true;_nativeHead=head;_nativeManual=manual;RequiredTrackMask=manual?0u:4u;SeedNativeEmptyCompletion();}
+    internal DriveToPoseAction(ManipulationSystem m,bool head,bool manual,EngineRobot owner,Func<bool>? parentCurrent=null):this(m,head,manual)
+    {
+        _scopedOwner=owner;
+        _scopedParentCurrent=parentCurrent;
+        AbortPath=()=>
+        {
+            long generation=_m.Robot.Motion.Path.ScopeGeneration;
+            _m.Paths.AbortOwned(owner,()=>OwnerCurrent()&&_m.Robot.Motion.Path.ScopeGeneration==generation);
+        };
+    }
+    private bool OwnerCurrent()=>_scopedOwner is null || !_scopedOwner.Lifetime.Destroying && ReferenceEquals(_m.Robot.Engine.Robot,_scopedOwner);
+    private bool ExecutionCurrent()=>_scopedOwner is null || OwnerCurrent()&&!DestructionObserved&&!_destroyed&&(_scopedParentCurrent?.Invoke()??true);
     internal bool SetNativeGoals(IReadOnlyList<Pose3d> goals)
     {
         if(State!=EngineActionResult.NotStarted)return false;
@@ -136,21 +151,25 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     private TaskCompletionSource<ActionResult>? _done;
     internal Action<string>? LifecycleCallObserved;
     protected override float EngineClockSeconds => _m.Robot.Engine.Timer.SecondsF;
-    protected override bool AreAnyTracksLocked(uint mask) => _m.Robot.Motion.AreAnyTracksLocked((byte)mask);
-    protected override void LockTracks(uint mask, string owner) => _m.Robot.Motion.LockTracks((byte)mask, owner, "DriveToPose");
-    protected override void UnlockTracksInternal(uint mask, string owner) => _m.Robot.Motion.UnlockTracks((byte)mask, owner);
-    protected override bool AreAllTracksLockedBy(uint mask, string owner) => _m.Robot.Motion.AreAllTracksLockedBy((byte)mask, owner);
+    protected override bool AreAnyTracksLocked(uint mask) => OwnerCurrent() && _m.Robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override void LockTracks(uint mask, string owner) { if(_scopedOwner is null)_m.Robot.Motion.LockTracks((byte)mask,owner,"DriveToPose");else if(OwnerCurrent())_m.Robot.Motion.LockTracksOwned((byte)mask,owner,"DriveToPose",_scopedOwner); }
+    protected override void UnlockTracksInternal(uint mask, string owner)
+    {if(_scopedOwner is null)_m.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_scopedCleanupGate,()=>{if(OwnerCurrent())_m.Robot.Motion.UnlockTracksOwned((byte)mask,owner,_scopedOwner);});}
+    protected override bool AreAllTracksLockedBy(uint mask, string owner) => OwnerCurrent() && _m.Robot.Motion.AreAllTracksLockedBy((byte)mask, owner);
+    protected override void StopBodyTrack()
+    {if(_scopedOwner is not null)LogCallbackDeferral.RunGated(_scopedCleanupGate,()=>{if(OwnerCurrent())_m.Robot.Motion.StopBodyOwned(_scopedOwner);});}
     protected override string ActionName => "DriveToPose"; // 0x0055A374.
     public override bool CanInterrupt() => false; // vptr+0x14 -> 0x0052B0B3.
     public override uint CheckIfDone()
     {
+        if(!ExecutionCurrent())return EngineActionResult.Cancelled;
         if (_m.DriveTickForTest is { } input) return (uint)CheckIfDone(input(this));
         if(_native)
         {
             using var mutation=_m.World.EnterPoseMutation();
-            var owner=_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
+            var owner=_scopedOwner??_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
             var nativePath=_m.Robot.Motion.Path;
-            return (uint)CheckIfDone(new DriveToPoseTick(nativePath.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,owner.GetCheckedMainPose(),_m.NativeHeight(),nativePath.Field42,nativePath.Field44,unchecked((sbyte)nativePath.Field40)));
+            return (uint)CheckIfDone(new DriveToPoseTick(nativePath.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,owner.GetCheckedMainPose(),_m.NativeHeight(owner),nativePath.Field42,nativePath.Field44,unchecked((sbyte)nativePath.Field40)));
         }
         using var nativePose=Goal?.HasParent==true?_m.CopyPreActionRobotPose():null;
         if((nativePose??_m.RobotPose()) is not {} pose){MissingSource("live pose input unavailable");return (uint)ActionResult.Running;}
@@ -198,36 +217,59 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     }
     private int InitNative()
     {
+        if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         using var mutation=_m.World.EnterPoseMutation();
-        DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);DeadlineSec=-1;
+        if(_scopedOwner is {} scoped && DrivingAnimations is Animation.DrivingAnimationHandler actual)
+            actual.InitOwned(scoped,ExecutionCurrent,(byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);
+        else DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);
+        if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
+        DeadlineSec=-1;
         if(!_nativeGoalsSet)return 0x0300000F;
-        var owner=_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
+        var owner=_scopedOwner??_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
         if(!owner.TryGetNativeOriginOwner(owner.CurrentOriginId,out var origin)||origin is null)
             throw new NativeActionUnavailable("M12-023 current world origin owner unavailable");
         foreach(var goal in _ownedGoals)if(!goal.TryWithRespectTo(origin,goal))return 0x03000005;
         _goalIndex.Value=0;
         var native=_m.Robot.Motion.Path;
-        int result=native.StartNativeDrivingToPose(_m,_ownedGoals,_goalIndex,_nativeManual,IgnoreObstacleIds);
+        int result=native.StartNativeDrivingToPose(_m,_ownedGoals,_goalIndex,_nativeManual,IgnoreObstacleIds,_scopedOwner,_scopedOwner is null?null:ExecutionCurrent);
+        if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         if(result!=0)return 0x03000013;
-        if(_nativeHead&&_m.Robot.Motion.MoveHeadToAngle(BitConverter.UInt32BitsToSingle(0xBE860A92),2f,5f,0f,out _)!=0)return 0x03000016;
+        if(_nativeHead&&_m.Robot.Motion.MoveHeadToAngle(BitConverter.UInt32BitsToSingle(0xBE860A92),2f,5f,0f,out _,_scopedOwner)!=0)return 0x03000016;
+        if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         return 0;
     }
     private void CleanupSource()
     {
         if (_destroyed) return; _destroyed=true;
-        bool active=_m.PathIsActiveForTest?.Invoke()??_m.Robot.Motion.Path.IsActive;
-        if(active){LifecycleCallObserved?.Invoke("Abort");AbortPath();} // M12-032 P3/P30.
+        long pathGeneration=_m.Robot.Motion.Path.ScopeGeneration;
+        bool CleanupCurrent()=>OwnerCurrent()&&(_scopedOwner is null||_m.Robot.Motion.Path.ScopeGeneration==pathGeneration);
+        bool active=CleanupCurrent()&&(_m.PathIsActiveForTest?.Invoke()??_m.Robot.Motion.Path.IsActive);
+        if(active){LifecycleCallObserved?.Invoke("Abort");if(CleanupCurrent())AbortPath();} // M12-032 P3/P30.
 
         foreach (bool which in new[]{true,false})
         {
+            if(!CleanupCurrent())break;
             LifecycleCallObserved?.Invoke("ErasePlanner:"+which);
+            if(!CleanupCurrent())break;
             if(_m.ErasePlannerObstaclesForTest is { } erase)erase(which);
             else MissingSource("EraseAllPlannerObstacles("+(which?"1":"0")+") 0x0055A626/0x0055A632 visualizer handoff absent");
         }
-        LifecycleCallObserved?.Invoke("DestroyDriving"); DrivingAnimations.ActionIsBeingDestroyed();
+        if(CleanupCurrent())
+        {
+            LifecycleCallObserved?.Invoke("DestroyDriving");
+            if(_scopedOwner is {} scoped && DrivingAnimations is Animation.DrivingAnimationHandler actual)actual.ActionIsBeingDestroyed(scoped,CleanupCurrent);
+            else if(CleanupCurrent())DrivingAnimations.ActionIsBeingDestroyed();
+        }
         if(_native){foreach(var goal in _ownedGoals)goal.Dispose();_ownedGoals.Clear();PreActionObjectPose?.Dispose();PreActionObjectPose=null;}
     }
     public void Dispose() { if(_destroyed)return;CleanupSource();base.WatcherEnding(); }
+    internal override bool RetireNeverAdmittedTree()
+    {
+        if(!base.RetireNeverAdmittedTree())return false;
+        foreach(var goal in _ownedGoals)goal.Dispose();
+        _ownedGoals.Clear();PreActionObjectPose?.Dispose();PreActionObjectPose=null;
+        return true;
+    }
     public override void WatcherEnding()
     {
         Dispose();
@@ -292,8 +334,11 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     // fidelity: M12-023
     public ActionResult CheckIfDone(DriveToPoseTick tick)
     {
+        if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
         var result = ActionResult.FollowingPathButNotTraversing;
-        if (DrivingAnimations.State == 3) return ActionResult.Running;
+        int drivingState=DrivingAnimations.State;
+        if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
+        if (drivingState == 3) return ActionResult.Running;
         if ((uint)tick.PathStatus > 4) return ActionResult.Running;
         switch ((DriveToPoseStatus)tick.PathStatus)
         {
@@ -306,13 +351,17 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
                 if ((float)tick.NowSec < (float)DeadlineSec) return ActionResult.Running;
                 _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","DriveToPoseAction.CheckIfDone.ComputingPathTimeout",
                     FormattableString.Invariant($"Robot has been planning for more than {(float)PlanningTimeoutSec:F6} seconds, aborting"));
+                if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
                 AbortPath();
+                if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
                 DeadlineSec = -1.0;
                 return ActionResult.PathPlanningFailedAbort;
             case DriveToPoseStatus.WaitingToBeginPath:
                 return ActionResult.Running;
             case DriveToPoseStatus.FollowingPath:
-                DrivingAnimations.PlayStartAnim();
+                if(_scopedOwner is {} scoped && DrivingAnimations is Animation.DrivingAnimationHandler actual)actual.PlayStartAnimOwned(scoped,ExecutionCurrent);
+                else DrivingAnimations.PlayStartAnim();
+                if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
                 DeadlineSec = -1.0;
                 int previous=FollowingPathTicks; FollowingPathTicks=unchecked(previous+1);
                 if(previous%10==0)
@@ -321,13 +370,18 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
                 return ActionResult.Running;
             default:
                 result = ReadyState(GoalAtIndex(), tick.RobotPose, tick.RobotHeightMm, tick.PathIdAt0x42, tick.PathIdAt0x44);
+                if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
                 break;
         }
         if (!DrivingAnimations.InputsReady)
         { MissingSource("M5-063 current driving-animation selection is unavailable; end-call decision stopped"); return ActionResult.Running; }
-        if (result != ActionResult.Running && result != ActionResult.PathPlanningFailedAbort
-            && DrivingAnimations.PlayEndAnim() != 0)
-            result = ActionResult.Running;
+        if (result != ActionResult.Running && result != ActionResult.PathPlanningFailedAbort)
+        {
+            uint end=_scopedOwner is {} scoped && DrivingAnimations is Animation.DrivingAnimationHandler actual
+                ? actual.PlayEndAnimOwned(scoped,ExecutionCurrent) : DrivingAnimations.PlayEndAnim();
+            if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
+            if(end!=0)result=ActionResult.Running;
+        }
         return result;
     }
 
@@ -406,6 +460,7 @@ public delegate ActionResult PosesFunction(ObservableObject obj, out IReadOnlyLi
 public sealed class DriveToObjectAction
 {
     internal bool NativeInputs;
+    internal EngineRobot? NativeOwner;
     // fidelity: M12-011
     /// <summary><c>+0x14C</c>: Radians 0x3E060A92 (7.5 degrees), the ctor's <c>GetPossiblePoses</c> angle tolerance (research Q12.6, 0x0055850C).</summary>
     public static readonly double PreActionAngleToleranceRad = BitConverter.UInt32BitsToSingle(0x3E060A92);
@@ -516,13 +571,13 @@ public sealed class DriveToObjectAction
     public ActionResult GetPossiblePoses(ObservableObject obj, out IReadOnlyList<PreActionPose> posesOut, ref bool alreadyInPosition)
     {
         posesOut = Array.Empty<PreActionPose>();
-        using var robot = NativeInputs ? _m.NativeMainSnapshot() : _m.CopyPreActionRobotPose();
+        using var robot = NativeInputs ? _m.NativeMainSnapshot(NativeOwner) : _m.CopyPreActionRobotPose();
         if (robot is null) return ActionResult.Abort;
         if(NativeInputs)_trace.Add("NativePreActionInputs MAIN="+NativePoseTrace(robot)+" object="+NativePoseTrace(obj.NativePose));
         if(NativeInputs)_m.World.SelectedObjectId=obj.ObjectId;
         var output = DockPreActionPoses.Get(new PreActionPoseInput(obj, ActionType, FlagA: false, PreActionAngleToleranceRad, DistanceFromMarkerMm, UseApproachAngle, ApproachAngleRad),
-                                            robot.Value, NativeInputs?_m.Robot.Engine.Robot!.CarryingOwner!.CarriedObjectId:_m.Docking.Carrying.CarriedObjectId,
-                                            () => NativeInputs?_m.NativeObstacles(robot.Value):_m.GetObstacles(robot.Value), _trace);
+                                            robot.Value, NativeInputs?(NativeOwner??_m.Robot.Engine.Robot)!.CarryingOwner!.CarriedObjectId:_m.Docking.Carrying.CarriedObjectId,
+                                            () => NativeInputs?_m.NativeObstacles(robot.Value,NativeOwner):_m.GetObstacles(robot.Value), _trace);
         if (output.Result != ActionResult.Success) return output.Result;
         if (output.Poses.Count == 0)
         {

@@ -122,6 +122,35 @@ public sealed partial class VisionSystem : IDisposable
         return MathF.Abs(before.RateZ)>threshold||MathF.Abs(after.RateZ)>threshold;
     }
 
+    // Docking 0x0063BEA4..0x0063BEBE calls WasBodyRotatingTooFast with its own threshold.
+    internal bool NativeDockingRotatingTooFast(EngineRobot owner, uint timestamp)
+    {
+        NativeImageImu[]? history = null;
+        lock (_groundGate)
+        {
+            if (ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
+                ReferenceEquals(_robot.Engine.Robot, owner) && _nativeImu is not null)
+            {
+                if (_nativeVisionWhileMoving) return false;
+                history = _nativeImu.Snapshot();
+            }
+        }
+        if (history is null)
+        {
+            SteppedBehavior.ReportMissing("M12-019 original docking IMU owner unavailable");
+            return true;
+        }
+        NativeImageImu before = default, after = default;
+        if (!NativeImageImuHistory.TryBracket(history, timestamp, ref before, ref after))
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.WasBodyRotatingTooFast.NoIMUData", "No IMU data for docking rotation query");
+            return true;
+        }
+        float threshold = BitConverter.UInt32BitsToSingle(0x41B758B4);
+        if (MathF.Abs(before.RateZ) > threshold) return true;
+        return !(MathF.Abs(after.RateZ) <= threshold);
+    }
+
     // FaceWorld 0x004F456E uses a different body threshold and history count from marker processing.
     internal bool? NativeFaceRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack)
     {
@@ -283,6 +312,7 @@ public sealed partial class VisionSystem : IDisposable
     private readonly Action<byte[], byte[]> _faceAlbumLoaded;
     private readonly bool _stockRecognizer;
     private readonly Action<NativeObservedObject> _nativeObjectObserved;
+    private readonly RetainedSubscription _renameRequest;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -395,6 +425,18 @@ public sealed partial class VisionSystem : IDisposable
         robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
         if (robot.Engine.ConnectionFaceAlbumResult is { } loaded)
             _faceAlbumLoaded(loaded.Album, loaded.Enrollment);
+        _renameRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x8C,false,value=>
+        {
+            try
+            {
+                if(value is NativeRenameFaceRequest request && robot.Engine.Robot is {} owner)
+                    RenameStockEnrolledFace(owner,request);
+            }
+            catch(Exception error)
+            {
+                robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "VisionComponent.RenameFace.HandlerFailed", error.Message);
+            }
+        });
     }
 
     private readonly Action<uint> _doubleTapEnded;
@@ -789,6 +831,7 @@ public sealed partial class VisionSystem : IDisposable
     public VisionFrameResult? LastResult { get; private set; }
 
     internal event Action<VisionFrameResult>? DockingMarkersProcessed; // M11-064 UpdateVisionMarkers, before LocalHandlerFailed
+    internal event Action<EngineRobot, uint>? NativeDockingMarkersProcessed;
     public event Action<VisionFrameResult>? FrameProcessed;
     public event Action<string>? Log;
     public SourceLogSink? SourceLog { get; set; }
@@ -1003,6 +1046,25 @@ public sealed partial class VisionSystem : IDisposable
             _robot.Engine.AnimationMessages.Deliver(0x57, true, new NativeErasedEnrolledFace(id, string.Empty));
         }
         return true;
+    }
+
+    // 0x657B24: mutation under the vision gate; save then report without waiting for NV replies.
+    private void RenameStockEnrolledFace(EngineRobot owner,NativeRenameFaceRequest request)
+    {
+        var recognizer=Recognizer;int removal=Volatile.Read(ref _removals);
+        bool Current()=>_stockRecognizer && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) &&
+            removal==Volatile.Read(ref _removals) && ReferenceEquals(Recognizer,recognizer) && recognizer.OwnsStockDetector(_stockFaceDetector);
+        using(LogCallbackDeferral.EnterGated(_busy))
+        {
+            if(!Current() || !recognizer.IsAvailable || recognizer.RenameFace(request.Id,request.OldName,request.NewName)!=0)return;
+        }
+        if(!Current())return;
+        try { SaveFaceAlbumToRobot(owner,recognizer,removal,_robot.Engine.NvStorage,null,null); }
+        catch(Exception error)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.RenameFace.SaveFailed",error.Message);
+        }
+        if(Current())owner.PublishFaceRenamed(request.Id,request.NewName);
     }
 
     // fidelity: M14-012
@@ -1939,7 +2001,14 @@ public sealed partial class VisionSystem : IDisposable
                 if (worldFrame.Status != 0)
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.UpdateVisionResults.BlockWorldUpdateFailed","");
                 if (keptMarkers.Count != 0)
+                {
+                    if (queueForEngine && sourceOwner is not null && !sourceOwner.Lifetime.Destroying &&
+                        ReferenceEquals(_robot.Engine.Robot, sourceOwner) && !RemovedSince(removal))
+                        NativeDockingMarkersProcessed?.Invoke(sourceOwner, timestamp);
+                    if (queueForEngine && (sourceOwner is null || sourceOwner.Lifetime.Destroying ||
+                        !ReferenceEquals(_robot.Engine.Robot, sourceOwner) || RemovedSince(removal))) return null;
                     DockingMarkersProcessed?.Invoke(new VisionFrameResult(imageId,timestamp,pd,keptMarkers,objects,forgotten,sw.Elapsed));
+                }
                 if (worldFrame.Status != 0)
                 {
                     handlerFailed=true;
@@ -2152,6 +2221,7 @@ public sealed partial class VisionSystem : IDisposable
                 throw new InvalidOperationException("Dispose VisionSystem outside its Processor callback.");
             _disposed = true;
         }
+        _renameRequest.Dispose();
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;

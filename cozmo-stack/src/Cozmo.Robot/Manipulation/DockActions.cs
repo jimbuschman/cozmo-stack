@@ -677,6 +677,9 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
     private Pose3d? _savedPose;
     private uint _verifyStartedAt,_loadDeadline;
     private bool _turnDone;
+    internal EngineRobot? ScopedOwner { get; set; }
+    internal Func<bool>? ScopedActionCurrent { get; set; }
+    private bool ScopedCurrent => (ScopedOwner is null || !ScopedOwner.Lifetime.Destroying && ReferenceEquals(M.Robot.Engine.Robot,ScopedOwner)) && (ScopedActionCurrent?.Invoke() ?? true);
     internal Pose3d? SavedVerificationPose=>_savedPose;
     internal ActionResult SelectNative(ObservableObject target,out DockAction action)=>SelectDockActionResult(target,out action);
     internal uint VerifyStartedAt=>_verifyStartedAt;
@@ -695,7 +698,8 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
     {
         using var mutation=M.World.EnterPoseMutation();
         action=DockAction.PickupLow;
-        var robot=M.Robot.Engine.Robot;
+        var robot=ScopedOwner??M.Robot.Engine.Robot;
+        if(!ScopedCurrent)return ActionResult.CancelledWhileRunning;
         if(robot?.CarryingOwner is not {} carrying)
         {Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Pickup Select00553A1C actual Robot/carry owner unavailable");return ActionResult.Running;}
         if((carrying.CarriedObjectId??uint.MaxValue)!=uint.MaxValue)return (ActionResult)0x03000017;
@@ -713,7 +717,8 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
     }
     internal ActionResult VerifyPrefix(ObservableObject? target,DockResult result)
     {
-        var owner=M.Robot.Engine.Robot;
+        if(!ScopedCurrent)return ActionResult.CancelledWhileRunning;
+        var owner=ScopedOwner??M.Robot.Engine.Robot;
         if(owner?.StoredState is not {} state)
         {Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Pickup Verify00553BF8 requires actual synchronized Robot.StoredState.Timestamp; no public history/result/manual clock fallback");return ActionResult.Running;}
         uint now=state.Timestamp;if(_verifyStartedAt==0)_verifyStartedAt=now;
@@ -730,12 +735,12 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
             if(target.GetNativeMotionState(out uint motionTimestamp))
             {
                 if(now>unchecked(_verifyStartedAt+StillMovingAllowanceMs))
-                {_trace.Add("PickupObjectAction.Verify.ObjectStillMoving");M.Docking.ReleaseCarriedObject(forget:true);return ActionResult.PickupObjectStillMoving;}
+                {_trace.Add("PickupObjectAction.Verify.ObjectStillMoving");if(ScopedOwner is null)M.Docking.ReleaseCarriedObject(forget:true);else M.Docking.ReleaseCarriedObject(ScopedOwner,true,()=>ScopedCurrent);return ScopedCurrent?ActionResult.PickupObjectStillMoving:ActionResult.CancelledWhileRunning;}
                 return ActionResult.Running;
             }
             uint timeout=SelectedDockAction==DockAction.PickupLow?LowDockObservationTimeoutMs:HighDockObservationTimeoutMs;
             if(_verifyStartedAt>unchecked(motionTimestamp+timeout))
-            {M.Docking.ReleaseCarriedObject(forget:true);return ActionResult.PickupObjectNotSeenRecently;}
+            {if(ScopedOwner is null)M.Docking.ReleaseCarriedObject(forget:true);else M.Docking.ReleaseCarriedObject(ScopedOwner,true,()=>ScopedCurrent);return ScopedCurrent?ActionResult.PickupObjectNotSeenRecently:ActionResult.CancelledWhileRunning;}
         }
         return ActionResult.Success;
     }
@@ -764,13 +769,14 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
     internal ActionResult VerifyCarrying()
     {
         using var mutation=M.World.EnterPoseMutation();
-        uint raw=M.Docking.Carrying.CarriedObjectId??uint.MaxValue;
+        if(!ScopedCurrent)return ActionResult.CancelledWhileRunning;
+        uint raw=(ScopedOwner?.CarryingOwner??M.Docking.Carrying).CarriedObjectId??uint.MaxValue;
         if(raw==uint.MaxValue){_trace.Add("PickupObjectAction.Verify.ExpectedCarryingObject");return ActionResult.PickupRetry;}
         var carried=M.World.GetLocatedObjectByIdHelper(raw);
         if(carried is null)return ActionResult.BadObject;
         if(!CubeGeometry.IsCube(carried.Type))
         {Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Pickup Verify passive virtual30/34/38 tolerances/ambiguities unavailable; no empty ambiguity fallback");return ActionResult.Running;}
-        var main=M.Robot.Engine.Robot!.GetCheckedMainPose();Pose3d parent=null!;
+        var main=(ScopedOwner??M.Robot.Engine.Robot!).GetCheckedMainPose();Pose3d parent=null!;
         if(!main.TryGetParent(ref parent))return ActionResult.BadObject;
         using(parent)_savedPose!.SetParent(parent); //00553EB2..EC8, AFTER the stored-pose turn and carried lookup.
         var size=CubeGeometry.SizeOf(carried.Type);
@@ -784,9 +790,12 @@ public sealed class PickupObjectAction : DockActionBase, IDisposable
         if(matched.ObjectId!=raw)
         {
             M.World.CopyWithNewPose(carried,matched.NativePose,matched);
+            if(!ScopedCurrent)return ActionResult.CancelledWhileRunning;
             var delete=new BlockWorldFilter();delete.AllowedIds.Add(matched.ObjectId);M.World.DeleteLocatedObjects(delete);
         }
-        M.Docking.UnsetCarryingObjects(false);
+        if(!ScopedCurrent)return ActionResult.CancelledWhileRunning;
+        if(ScopedOwner is null)M.Docking.UnsetCarryingObjects(false);
+        else if(!M.Docking.UnsetCarryingObjects(ScopedOwner,false,()=>ScopedCurrent))return ActionResult.CancelledWhileRunning;
         return ActionResult.PickupRetry;
     }
 
