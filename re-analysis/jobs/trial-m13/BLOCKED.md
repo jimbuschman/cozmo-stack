@@ -1,1 +1,7 @@
-# No outstanding operator decision
+# Next settlement decision
+
+**GROUND-AT-POSE-SETTLEMENT-1 (M15-022).** Start with the manual BringCubeToBeacon binding, which still runs a host drive task followed by a separate Ground action. Compare its actual public standalone admission with the retained DriveToPlaceCarriedObject and PlaceObjectOnGround compound at 0x554AFC–0x554BAC, including the Ground completion proxy, exact failure scalar and callback order at 0x5DFF14 and 0x5E188C. Reuse the canonical compound on this caller if the checked inputs and owner are available. Keep unrelated Bring behavior intact.
+
+Audit every remaining Ground entry for its original owner's reaction manager. The ordinary CozmoRobot binding constructs one even without Freeplay. Prove which real entry points can still run without it and close or record that boundary at the lock call 0x5548C6 and destructor 0x5546D0. Test both the standalone caller and the public exact-32 lift route with fake firmware busy and release, actual scoped lock and unchanged callback order.
+
+This is smaller than finishing the generic ITrackAction lifecycle for M14-003, which still has separate stop, update timeout, sound, eye shift and driving-animation end branches. Ask Claude to assess settlement of the engine-side M15-022 path after the caller and lock audit. Record physical firmware busy/release ordering separately, and keep any remaining settlement blocker explicit if the whole record cannot close.
