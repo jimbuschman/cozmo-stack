@@ -165,3 +165,4 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | Settlement batch gate on 83abe66b | SUPERSEDED | Stopped after main landed its separate face-origin implementation at 66b4275b. The rebased tip requires a new run. |
 | FACE-RETURN-ORIGIN-OWNER-FIX | READY FOR CLAUDE | Preserve main's origin and positive-ID semantics, fix the face-log lock inversion and share the current-owner predicate. Affected 167/167 plus reaction 1/1, manager 34/34. HANDOFF-FACE-RETURN-ORIGIN-OWNER-FIX.md. |
 | Tracking, placement, face owner and Wwise selection batch gate | PASS | scripts/test-full.sh on 9c6719a5 passed 7983/7983, zero failed or skipped, 19m04s total. Four handoffs are READY FOR CLAUDE. |
+| GROUND-VERIFY-MARKER-1 | CHECKED | Concrete-marker BadPose, original error flag and diagnostic. Affected 55/55, final Ground 15/15. Awaiting batch gate. HANDOFF-GROUND-VERIFY-MARKER-1.md. |

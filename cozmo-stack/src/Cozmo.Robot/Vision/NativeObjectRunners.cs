@@ -31,7 +31,17 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
         {
             if(_code!=AnyCode&&unchecked((short)marker.Code)!=_code)continue;
             if(!marker.PoseOnObject.TryWithRespectTo(main,relative))
-            {Behavior.SteppedBehavior.ReportMissing("TurnTowardsObject marker pose conversion failed0054A36C; marker skipped");continue;}
+            {
+                if(_code!=AnyCode)
+                {
+                    string custom=_id==uint.MaxValue?"custom ":"";
+                    M.Robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"TurnTowardsObjectAction.Init.MarkerOriginProblem",$"Could not get pose of marker with code {_code} of {custom}object {unchecked((int)target.ObjectId)} w.r.t. robot pose.");
+                    if(DestructionObserved || !ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                    return 0x03000005; // 0x0054A3D8, 0x0054A65C..0x0054A6B8
+                }
+                Behavior.SteppedBehavior.ReportMissing("TurnTowardsObject marker pose conversion failed0054A36C; marker skipped");continue;
+            }
             var t=relative.Translation;float x=(float)t.X,y=(float)t.Y,z=(float)t.Z;
             float distance=x*x;distance=distance+y*y;
             if(_code!=AnyCode){distance=distance+z*z;distance=MathF.Sqrt(distance);}

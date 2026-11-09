@@ -2,6 +2,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -9,6 +10,96 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class GroundPlacementCallerTests
 {
+    [Fact]
+    public void AnyMarkerTurnStillSkipsAnUnrelatedRootWhenAnotherMarkerIsValid()
+    {
+        // reach: retained turn recipient, with one invalid and other valid marker poses.
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var target = f.Add(7);
+        using var otherRoot = new Pose3d("disconnected marker root");
+        target.Markers[0].PoseOnObject.SetParent(otherRoot);
+        var turn = new NativeTurnTowardsObjectRunner(f.M, 7, NativeTurnTowardsObjectRunner.AnyCode, 0, false, false);
+        try { Assert.Equal(0, turn.Init()); }
+        finally { turn.Prep(); turn.WatcherEnding(); }
+    }
+
+    [Fact]
+    public void ConcreteMarkerFailureStopsEvenAfterAnEarlierMatchingCandidate()
+    {
+        // reach: concrete-code turn selection, with duplicate code supplied to exercise native iteration.
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var definition = CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1)[0];
+        var target = new ObservableObject(7, ObjectType.Block_LIGHTCUBE1, new[] { definition, definition, definition })
+        {
+            Pose = new Pose3d(Rotation3d.Identity, new Vec3(150, 0, 22), parent: f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),
+            OriginId = f.Robot.CurrentOriginId,
+            PoseState = PoseState.Known,
+        };
+        f.M.World.AddLocatedObject(target);
+        using var otherRoot = new Pose3d("disconnected marker root");
+        target.Markers[1].PoseOnObject.SetParent(otherRoot);
+        var turn = new NativeTurnTowardsObjectRunner(f.M, 7, unchecked((short)definition.Code), 0, false, false);
+        bool priorError = Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+        try
+        {
+            int mark = f.Rig.Mark();
+            Assert.Equal(unchecked((int)0x03000005), turn.Init());
+            Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+            Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is SetHeadAngle or SetBodyAngle);
+        }
+        finally
+        {
+            turn.Prep(); turn.WatcherEnding();
+            Cozmo.Transport.EngineErrorState.ErrorFlagSet = priorError;
+        }
+    }
+
+    [Fact]
+    public async Task GroundVerificationReturnsBadPoseWhenSelectedMarkerHasAnotherRoot()
+    {
+        // reach: public placement, retained Ground child, busy rise/fall and exact-marker turn.
+        using var scene = new StackFirmwareScene(true);
+        var f = scene.F;
+        var owner = f.Robot;
+        uint id = scene.Top;
+        var target = f.M.World.GetLocatedObjectByIdHelper(id)!;
+        ushort markerCode = owner.CarryingOwner!.NativeMarkerCode;
+        var selected = Assert.Single(target.Markers.Where(marker => (ushort)marker.Code == markerCode));
+        var logs = new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += logs.Enqueue;
+        f.M.World.SelectedObjectId = id;
+        using var otherRoot = new Pose3d("disconnected marker root");
+        var task = f.M.PlaceObjectOnGroundAsync();
+        var runner = Assert.IsType<NativePlaceGroundRunner>(owner.ActionList.GetCurrentAction());
+        f.Rig.Tick();
+        f.Rig.State(RobotStatusFlag.IsPickingOrPlacing | RobotStatusFlag.HeadInPos);
+        Assert.True(runner.StatusLatched);
+        Assert.NotNull(runner.VerifyChild);
+        Assert.Equal(EngineActionResult.NotStarted, runner.VerifyChild!.State);
+        f.Rig.Data(new PickAndPlaceResult { Field1 = true, Field3 = (byte)BlockStatus.BlockPlaced });
+        f.Rig.Tick();
+        selected.PoseOnObject.SetParent(otherRoot);
+        int mark = f.Rig.Mark();
+        bool priorError = Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+        try
+        {
+            f.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            Assert.Equal(ActionResult.BadPose, await task.WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+        }
+        finally { Cozmo.Transport.EngineErrorState.ErrorFlagSet = priorError; }
+        Assert.False(owner.ActionList.ContainsRunner(runner));
+        var entry = Assert.Single(logs.Where(log => log.Name == "TurnTowardsObjectAction.Init.MarkerOriginProblem"));
+        Assert.Equal(EngineLogLevel.Error, entry.Level);
+        Assert.EndsWith($"Could not get pose of marker with code {unchecked((short)markerCode)} of object {unchecked((int)id)} w.r.t. robot pose.", entry.Text);
+        Assert.Null(f.M.World.SelectedObjectId);
+        Assert.Same(target, f.M.World.GetLocatedObjectByIdHelper(id));
+        Assert.False(owner.BehaviorManagerOwner!.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, GroundPlacement.ReactionLockName));
+        Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is SetHeadAngle or SetBodyAngle);
+    }
+
     [Fact]
     public async Task ManualTaskUsesTheRealGroundActionAndReturnsAfterUnlink()
     {
