@@ -1203,6 +1203,7 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     private Pose3d? _placePose;
     private Action? _releasePlaceCompletion;
     private long _placeGeneration;
+    internal Action? PlacementPoseRetiredForTest;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>M.Robot.Engine.EnterSynchronousOwner();
     protected override bool KeepsRunningWithoutAction=>base.KeepsRunningWithoutAction || HasCurrentAction;
     public enum Phase { Idle, PickingUp, StackingOn, PlacingAt }
@@ -1588,7 +1589,11 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
         Log(FormattableString.Invariant($"start PlaceObjectOnGroundAtPose({pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}) attempt {attempt}"));
         if(!Current()){ReportMissing("M15-022 ground-at-pose original owner unavailable");return;}
         Pose3d next;
-        using(M.World.EnterPoseMutation()) { next=new Pose3d(pose);var previous=_placePose;_placePose=next;previous?.Dispose(); }
+        using(M.World.EnterPoseMutation())
+        {
+            next=new Pose3d(pose);var previous=_placePose;_placePose=next;previous?.Dispose();
+            if(previous is not null && PlacementPoseRetiredForTest is {} hook)LogCallbackDeferral.Run(hook);
+        }
         if(!Current())return;
         if(_releasePlaceCompletion is null)
         {

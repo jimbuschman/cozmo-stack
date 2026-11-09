@@ -474,32 +474,32 @@ public class R2FloorPlacementTests : IDisposable
     [Fact]
     public void RetryPoseRetirementCannotSubscribeOrQueueOnReplacementRobot()
     {
-        // Explicit pose-owner seam forces the native diagnostic at retry copy retirement;
+        // Explicit pose-owner seam queues a callback at the retry pose-retirement boundary;
         // the real manual callback, pose gate, owner replacement and completion hub run.
         using var signals=SignalTestContext.Install();using var rig=new Rig();var ctx=Ctx(rig);
         var (bring,target)=StartedBring(rig,ctx);rig.M.Docking.Carrying.SetCarrying(target);
         var field=typeof(BringCubeToBeaconBehavior).GetField("_placePose",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
-        field.SetValue(bring,new Pose3d("retry owner"));
+        var previousPose=new Pose3d("retry owner");field.SetValue(bring,previousPose);
         using var candidate=InOrigin(rig,At(12.5,-30.25));
         var original=rig.Robot.Engine.Robot!;EngineRobot? replacement=null;int afterReplacement=-1;
-        SteppedBehavior.ResetMissingForTests();
-        void OnMissing(string value)
+        bring.PlacementPoseRetiredForTest=()=>
         {
-            if(replacement is not null || !value.Contains("M11-077:",StringComparison.Ordinal))return;
+            Assert.False(Monitor.IsEntered(rig.M.World.FrameGate));
+            Assert.Null(previousPose.Node);
+            Assert.NotNull(Assert.IsType<Pose3d>(field.GetValue(bring)).Node);
             rig.Robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
             rig.Robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
             replacement=rig.Robot.Engine.Robot;
             afterReplacement=rig.Robot.Engine.AnimationMessages.Count(RobotCompletedAction.UnionTag,true);
-        }
-        SteppedBehavior.MissingReported+=OnMissing;
+        };
         try
         {
             bring.PlaceCompleted(ActionResult.PlacementGoalNotFree,candidate,1);
-            Assert.NotNull(replacement);Assert.NotSame(original,replacement);
+            Assert.True(replacement is not null,$"trace: {string.Join(" | ",bring.Trace)}; owner={ReferenceEquals(original,rig.Robot.Engine.Robot)}; carried={rig.M.Docking.Carrying.CarriedObjectId}; target={target}");Assert.NotSame(original,replacement);
             Assert.Equal(afterReplacement,rig.Robot.Engine.AnimationMessages.Count(RobotCompletedAction.UnionTag,true));
             Assert.Null(replacement!.ActionList.GetCurrentAction());
         }
-        finally { SteppedBehavior.MissingReported-=OnMissing;bring.Stop(BehaviorStopReason.Cancelled); }
+        finally { bring.PlacementPoseRetiredForTest=null;bring.Stop(BehaviorStopReason.Cancelled); }
     }
 
     /// <summary>
