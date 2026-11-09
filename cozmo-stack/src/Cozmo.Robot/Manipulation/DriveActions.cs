@@ -1125,9 +1125,27 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     {
         TimeoutSeconds=_m.StraightTimeoutForTest?.Invoke(this)??BitConverter.Int32BitsToSingle(0x41F00000);
         _done=new(TaskCreationOptions.RunContinuationsAsynchronously);AddCompletionCallback(r=>{if(r!=EngineActionResult.Running)_done.TrySetResult((ActionResult)r);});
-        if(_m.Robot.Engine.Robot is not {} owner){Missing("ActionList owner absent");throw new InvalidOperationException("MISSING: DriveStraight ActionList owner");}
-        owner.ActionList.QueueAction(QueueActionPosition.Now,this,0);
-        using var cancellation=cancel.Register(()=>owner.ActionList.Cancel(Tag));
+        var owner = _nativeOwner ?? _m.Robot.Engine.Robot;
+        if(owner is null){Missing("ActionList owner absent");throw new InvalidOperationException("MISSING: DriveStraight ActionList owner");}
+        if (_nativeOwner is not null)
+        {
+            if (!ExecutionCurrent()) { RetireNeverAdmittedTree(); return ActionResult.Abort; }
+            if (owner.ActionList.QueueActionGuardedNow(this, 0, ExecutionCurrent) != 0)
+            {
+                if (!DestructionObserved && CanDetachWatcherForRetirement()) RetireNeverAdmittedTree();
+                return ActionResult.Abort;
+            }
+        }
+        else owner.ActionList.QueueAction(QueueActionPosition.Now,this,0);
+        using var cancellation=cancel.Register(()=>
+        {
+            if (_nativeOwner is null) owner.ActionList.Cancel(Tag);
+            else
+            {
+                using var lease = owner.Engine.EnterSynchronousOwner();
+                if (NativeOwnerCurrent() && owner.ActionList.ContainsRunner(this)) owner.ActionList.Cancel(Tag);
+            }
+        });
         return await _done.Task;
     }
 

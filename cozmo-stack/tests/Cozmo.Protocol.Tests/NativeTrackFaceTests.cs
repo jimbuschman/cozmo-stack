@@ -10,6 +10,44 @@ namespace Cozmo.Protocol.Tests;
 public sealed class NativeTrackFaceTests
 {
     [Fact]
+    public void CancelPendingManualTrackerKeepsTheActiveTrackerIdentity()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var owner = f.Robot;
+        var active = new NativeTrackFaceRunner(f.M, owner, -5);
+        owner.ActionList.QueueAction(QueueActionPosition.Now, active);
+        f.Rig.Tick();
+        Assert.Equal(-5, owner.NativeTrackingFaceId);
+        var pending = new NativeTrackFaceRunner(f.M, owner, -6, true,
+            BitConverter.UInt32BitsToSingle(0x3D8EFA35), false, -1, -1, 0, manualScope: true);
+        owner.ActionList.QueueAction(QueueActionPosition.AtEnd, pending);
+        owner.ActionList.Cancel(pending.Tag);
+        Assert.True(owner.ActionList.ContainsRunner(active));
+        Assert.Equal(-5, owner.NativeTrackingFaceId);
+        owner.ActionList.Cancel(active.Tag);
+    }
+
+    [Fact]
+    public void RejectedParallelManualTrackerDoesNotStopTheActiveTracker()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var owner = f.Robot;
+        var active = new NativeTrackFaceRunner(f.M, owner, -5);
+        owner.ActionList.QueueAction(QueueActionPosition.Now, active);
+        f.Rig.Tick();
+        Assert.Equal(-5, owner.NativeTrackingFaceId);
+        var rejected = new NativeTrackFaceRunner(f.M, owner, -6, true,
+            BitConverter.UInt32BitsToSingle(0x3D8EFA35), false, -1, -1, 0, manualScope: true);
+        owner.ActionList.QueueAction(QueueActionPosition.InParallel, rejected);
+        int mark = f.Rig.Mark();
+        f.Rig.Tick();
+        Assert.True(owner.ActionList.ContainsRunner(active));
+        Assert.Equal(-5, owner.NativeTrackingFaceId);
+        Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is MoveHead or DriveWheels);
+        owner.ActionList.Cancel(active.Tag);
+    }
+
+    [Fact]
     public void VerifiedTurnRejectsMissingInitialFaceWithoutMoving()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
@@ -173,13 +211,112 @@ public sealed class NativeTrackFaceTests
     private sealed class OneFace : IFaceDetector
     {
         internal int Calls;
+        internal double EyeX = 120, EyeY = 110;
         public bool IsAvailable => true;
         public string Description => "supplied face";
         public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp)
         {
             Calls++;
-            return new[] { new DetectedFace(-7, new FaceRect(100, 70, 90, 90), new Vec2(120, 110), new Vec2(160, 110), RollRad: 0) { NativeNewEntryRotatingTooFast = false } };
+            return new[] { new DetectedFace(-7, new FaceRect(100, 70, 90, 90), new Vec2(EyeX, EyeY), new Vec2(EyeX + 40, EyeY), RollRad: 0) { NativeNewEntryRotatingTooFast = false } };
         }
+    }
+
+    private sealed class UnrelatedAction : ActionRunner
+    {
+        internal UnrelatedAction() : base(8, 0) { }
+        protected override string ActionName => "unrelated fixture";
+        public override bool CanInterrupt() => false;
+        public override uint CheckIfDone() => EngineActionResult.Running;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ManualInteractUsesTheCapturedFaceOnTheOriginalActionList(bool replaceOwner)
+    {
+        using var signals = SignalTestContext.Install();
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        var vision = f.M.Vision;
+        var detector = new OneFace();
+        vision.FaceDetector = detector;
+        f.Head = .1f;
+        f.Motors();
+        f.Image(500, modes: 1 << 2);
+        Assert.NotNull(vision.Faces.GetNativeFace(f.Robot, -7)?.NativeTrackingTranslation);
+        var context = new BehaviorContext { Robot = f.Rig.Robot, Triggers = new AnimationTriggerMap() };
+        var behavior = new InteractWithFacesBehavior(vision, m: f.M) { TrackTimeScale = .1 };
+        behavior.ActionTaskRunner = SignalTestContext.Schedule;
+        behavior.StartAsync(context, new BehaviorScope(), default).GetAwaiter().GetResult();
+        var owner = f.Robot;
+        var unrelated = new UnrelatedAction();
+        owner.ActionList.QueueAction(QueueActionPosition.InParallel, unrelated);
+        var tags = new HashSet<byte>();
+        int sentMark = f.Rig.Mark();
+        ushort? pathId = null;
+        bool started = false, completed = false, sawHeadOnly = false, sawBoth = false;
+        bool driveHead = false, driveBody = false, timedHead = false, timedBody = false;
+        var previousPhase = behavior.CurrentPhase;
+        try
+        {
+            for (int i = 0; i < 800 && !(sawBoth && timedHead && timedBody); i++)
+            {
+                behavior.Update(context, f.Rig.Engine.Timer.TimeStampMs);
+                SignalTestContext.Drain();
+                f.Motors();
+                foreach (var message in f.Rig.SentSince(sentMark))
+                {
+                    if (message is ExecutePath path) pathId = path.EventId;
+                    if (previousPhase == InteractWithFacesBehavior.Phase.DrivingForward && behavior.CurrentPhase == previousPhase && sawHeadOnly)
+                    { driveHead |= message is SetHeadAngle; driveBody |= message is SetBodyAngle; }
+                    if (previousPhase == InteractWithFacesBehavior.Phase.TrackingFace && sawBoth)
+                    { timedHead |= message is SetHeadAngle; timedBody |= message is SetBodyAngle; }
+                }
+                sentMark = f.Rig.Mark();
+                byte tag = f.Rig.Robot.Animations.CurrentTag;
+                if (tag != 0 && tags.Add(tag))
+                {
+                    f.Rig.Data(new AnimationStarted { AnimId = tag });
+                    f.Rig.Data(new AnimationEnded { AnimId = tag });
+                }
+                if (behavior.NativeTracker is { } tracker)
+                {
+                    if (behavior.CurrentPhase == InteractWithFacesBehavior.Phase.DrivingForward)
+                    {
+                        sawHeadOnly |= tracker.RequiredTrackMask == 1 && owner.ActionList.ContainsRunner(tracker);
+                        detector.EyeY = 70;
+                        if (pathId is { } id && !started)
+                        { f.Rig.Data(new PathFollowingEvent { EventId = id, EventType = 0 }); started = true; }
+                        else if (pathId is { } finished && started && !completed && driveHead)
+                        { f.Rig.Data(new PathFollowingEvent { EventId = finished, EventType = 2 }); completed = true; }
+                    }
+                    else if (behavior.CurrentPhase == InteractWithFacesBehavior.Phase.TrackingFace)
+                    {
+                        sawBoth |= tracker.RequiredTrackMask == 5 && owner.ActionList.ContainsRunner(tracker);
+                        detector.EyeX = 75; detector.EyeY = 140;
+                    }
+                }
+                previousPhase = behavior.CurrentPhase;
+                f.Image((uint)(501 + i), modes: 1 << 2);
+                Thread.Sleep(2);
+            }
+            Assert.True(sawHeadOnly && driveHead && !driveBody && sawBoth && timedHead && timedBody,
+                $"headOnly={sawHeadOnly} driveHead={driveHead} driveBody={driveBody} both={sawBoth} timedHead={timedHead} timedBody={timedBody}; {string.Join(" | ", behavior.Trace)}");
+            var tracked = Assert.IsType<NativeTrackFaceRunner>(behavior.NativeTracker);
+            if (replaceOwner)
+            {
+                f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId, false);
+                f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId, withRic: false);
+                int mark = f.Rig.Mark();
+                behavior.Stop(BehaviorStopReason.Interrupted);
+                f.Rig.Tick();
+                Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is SetHeadAngle or SetBodyAngle or MoveHead or DriveWheels);
+                return;
+            }
+            behavior.Stop(BehaviorStopReason.Interrupted);
+            Assert.False(owner.ActionList.ContainsRunner(tracked));
+            Assert.True(owner.ActionList.ContainsRunner(unrelated));
+        }
+        finally { behavior.Stop(BehaviorStopReason.Interrupted); if (!replaceOwner) owner.ActionList.Cancel(unrelated.Tag); }
     }
 
     [Fact]

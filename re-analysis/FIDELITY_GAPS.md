@@ -3131,7 +3131,7 @@ B-POSE-2 (2026-10-14, research/20261014-b-pose-1-check.md): item 8: MISSING (sta
 
 **M14-003 — TrackFaceAction: the durations it turns in, and the flags it starts with** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/NativeTrackFaceRunner.cs`
 * effect: face tracking cadence, angular tolerances, motor speeds and optional animation/eye behavior change
 * rests on: ITrackAction's constructor and CheckIfDone, read
 * best authority: ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read

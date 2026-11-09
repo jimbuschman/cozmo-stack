@@ -104,15 +104,6 @@ public sealed class M5X17BuilderTests
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void TrackInitRepeatsAndStoredResultAndUnconditionalDestructionMatchT1T3()
-    {
-        using var r=new SourceRig();var h=new Handler();using var track=new TrackFaceAction(r.Vision,1){DrivingHandlerForTest=h,DrivingAnimation=true};
-        track.InitDrivingLifecycle(5,99,true,0);Assert.True(h.Arguments.Item4);Assert.Contains("Start",h.Calls);Assert.Equal(0x02000001u,track.StoredDrivingResult);
-        Assert.Equal(0x01000000u,track.FinishWithDrivingAnimation(0x03000008));h.State=3;Assert.Equal(0x01000000u,track.DrivingCompletionGate());h.State=4;Assert.Equal(0x03000008u,track.DrivingCompletionGate());
-        track.DrivingAnimation=false;track.Dispose();Assert.Equal("Destroy",h.Calls.Last());
-    }
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
     public void ActivityClockStrategyAndBroadcasterPrecedeGatedDrivingAndIdleMissingCalls()
     {
         var a=new Activity{Id="a",Strategy=new ActivityStrategy(),DriveStartAnim=(AnimationTrigger)0x95,IdleAnim=(AnimationTrigger)0x91};var calls=new List<string>();

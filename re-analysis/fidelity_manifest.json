@@ -5623,7 +5623,7 @@
     {
       "subsystem": "M14-faces",
       "title": "TrackFaceAction: the durations it turns in, and the flags it starts with",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/NativeTrackFaceRunner.cs",
       "effect": "face tracking cadence, angular tolerances, motor speeds and optional animation/eye behavior change",
       "provenance": "ITrackAction's constructor and CheckIfDone, read",
       "authority": "ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read",

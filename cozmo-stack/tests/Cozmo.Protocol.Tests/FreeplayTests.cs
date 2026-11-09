@@ -22,6 +22,8 @@ public class FreeplayTests
         using var rig = new Rig();
         var ctx = Ctx(rig);
         using var stack = FreeplayStack.CreateStandalone(obb!, rig.Robot, ctx, () => 0, rig.Vision, rig.M);
+        Assert.IsType<InteractWithFacesBehavior>(stack.Bound["InteractWithFaces"]);
+        Assert.IsType<InteractWithFacesBehavior>(stack.Bound["MeetCozmo_InteractWithFaces"]);
         var configured = Assert.IsType<AcknowledgeObjectBehavior>(stack.Bound["AcknowledgeObject"]);
         var entry = Assert.Single(stack.Manager.Reactions.Where(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated));
         Assert.Same(configured, entry.Behavior);

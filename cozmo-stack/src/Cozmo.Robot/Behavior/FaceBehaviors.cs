@@ -448,14 +448,70 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
     public Phase CurrentPhase { get; private set; }
     public int? TargetFaceId { get; private set; }
     public double? TrackSeconds { get; private set; }
-    public TrackFaceAction? Tracker { get; private set; }
+    private EngineRobot? _trackOwner;
+    private NativeSmartFaceReference? _trackFace;
+    private NativeTrackFaceRunner? _tracker;
+    private long _trackGeneration;
+    internal NativeTrackFaceRunner? NativeTracker => _tracker;
+
+    private bool CurrentRun(EngineRobot? owner, long generation) => owner is not null &&
+        Interlocked.Read(ref _trackGeneration) == generation && !owner.Lifetime.Destroying && ReferenceEquals(Context.Robot.Engine.Robot, owner);
+
+    private bool StartTracker(EngineRobot? owner, long generation, bool headOnly)
+    {
+        if (!CurrentRun(owner, generation))
+        { ReportMissing("M14-003 manual Interact tracking needs its original robot and manipulation owner"); return false; }
+        using var lease = owner!.Engine.EnterSynchronousOwner();
+        if (!CurrentRun(owner, generation)) return false;
+        if (!owner.HasExternalInterface)
+        { ReportMissing("M14-003 manual Interact tracking requires the original face-change interface"); return false; }
+        var motion = _m ?? owner.NativeBehaviorRuntime?.Manipulation;
+        if (motion is null || !ReferenceEquals(motion.Robot, Context.Robot) || !ReferenceEquals(motion.Vision, V))
+        { ReportMissing("M14-003 manual Interact tracking needs its original manipulation owner"); return false; }
+        int id = _trackFace?.Id ?? 0;
+        var face = V.Faces.GetNativeFace(owner, id);
+        if (!CurrentRun(owner, generation)) return false;
+        if (face?.NativeTrackingTranslation is null)
+        { ReportMissing("M14-003 manual Interact tracking needs a current-origin historical face position"); return false; }
+        var runner = new NativeTrackFaceRunner(motion, owner, id, headOnly,
+            BitConverter.UInt32BitsToSingle(0x3D8EFA35), false, -1, -1, 0, manualScope: true);
+        if (!CurrentRun(owner, generation)) { runner.RetireNeverAdmittedTree(); return false; }
+        _tracker = runner;
+        int result = owner.ActionList.QueueActionGuardedInParallel(runner, 0, () => CurrentRun(owner, generation));
+        if (result == 0 && CurrentRun(owner, generation) && owner.ActionList.ContainsRunner(runner)) return true;
+        if (ReferenceEquals(_tracker, runner)) _tracker = null;
+        if (!owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) && owner.ActionList.ContainsRunner(runner)) owner.ActionList.Cancel(runner.Tag);
+        else if (!runner.DestructionObserved && runner.CanDetachWatcherForRetirement()) runner.RetireNeverAdmittedTree();
+        ReportMissing("M14-003 manual Interact native tracker admission failed");
+        return false;
+    }
+
+    private void StopTracker()
+    {
+        var runner = _tracker; _tracker = null;
+        var owner = _trackOwner;
+        if (runner is null || owner is null) return;
+        using var lease = owner.Engine.EnterSynchronousOwner();
+        if (!owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) && owner.ActionList.ContainsRunner(runner))
+            owner.ActionList.Cancel(runner.Tag);
+    }
 
     /// <summary>The tracker holds a smart face id subscribed to the face world; stopping releases it.</summary>
     protected override void OnStop(BehaviorStopReason reason)
     {
-        Tracker?.Dispose();
-        Tracker = null;
+        Interlocked.Increment(ref _trackGeneration);
+        var runner = _tracker;
+        var face = _trackFace;
+        var owner = _trackOwner;
+        _tracker = null;
+        _trackFace = null;
+        _trackOwner = null;
+        face?.Dispose();
         base.OnStop(reason);
+        if (runner is null || owner is null) return;
+        using var lease = owner.Engine.EnterSynchronousOwner();
+        if (!owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) && owner.ActionList.ContainsRunner(runner))
+            owner.ActionList.Cancel(runner.Tag);
     }
 
     private int? SelectFaceToTrack()
@@ -469,16 +525,43 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
 
     protected override void OnStart()
     {
-        TargetFaceId = SelectFaceToTrack();
-        if (TargetFaceId is null) { Log("BehaviorInteractWithFaces.Init.NoValidTarget"); Finish(); return; }
+        long generation = Interlocked.Increment(ref _trackGeneration);
+        var owner = _trackOwner = Context.Robot.Engine.Robot;
+        var target = SelectFaceToTrack();
+        if (Interlocked.Read(ref _trackGeneration) != generation || !ReferenceEquals(Context.Robot.Engine.Robot, owner)) return;
+        TargetFaceId = target;
+        if (target is null)
+        {
+            Log("BehaviorInteractWithFaces.Init.NoValidTarget");
+            if (Interlocked.Read(ref _trackGeneration) == generation && ReferenceEquals(Context.Robot.Engine.Robot, owner)) Finish();
+            return;
+        }
+        if (!CurrentRun(owner, generation))
+        {
+            ReportMissing("M14-003 manual Interact has no original robot owner");
+            if (Interlocked.Read(ref _trackGeneration) == generation && ReferenceEquals(Context.Robot.Engine.Robot, owner)) Finish();
+            return;
+        }
+        _trackFace?.Dispose();
+        _trackFace = new NativeSmartFaceReference(Context.Robot, TargetFaceId.Value, owner);
         CurrentPhase = Phase.VerifyFace;
         using var turn = new TurnTowardsFaceAction(V, TargetFaceId.Value, Math.PI, sayName: true) { RequireVerifiedFace = true /* fidelity: M13-014, 0x005C229C stores the ctor's sayName bool at +0x193 */, SayNameTrigger = AnimationTrigger.InteractWithFacesInitialNamed, NoNameTrigger = AnimationTrigger.InteractWithFacesInitialUnnamed };
         turn.EmotionEvent += EmotionEvent;
         RunFaceAction($"VerifyFace: TurnTowardsFace({TargetFaceId})", turn.RunAsync, r =>
         {
-            foreach (var l in turn.Trace) Log("  " + l);
-            if (r != FaceActionResult.Success) { Log($"initial reaction failed: {r}"); Finish(); return; }
-            PlayReaction(turn.Reaction, TransitionToGlancingDown);
+            if (!CurrentRun(owner, generation)) return;
+            foreach (var l in turn.Trace)
+            {
+                Log("  " + l);
+                if (!CurrentRun(owner, generation)) return;
+            }
+            if (r != FaceActionResult.Success)
+            {
+                Log($"initial reaction failed: {r}");
+                if (CurrentRun(owner, generation)) Finish();
+                return;
+            }
+            PlayReaction(turn.Reaction, () => { if (CurrentRun(owner, generation)) TransitionToGlancingDown(owner, generation); });
         });
     }
 
@@ -501,45 +584,44 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
         return !map.HasCollisionRayWithTypes(new Vision.Vec2(from.X, from.Y), new Vision.Vec2(to.X, to.Y));
     }
 
-    private void TransitionToGlancingDown()
+    private void TransitionToGlancingDown(EngineRobot? owner, long generation)
     {
+        if (!CurrentRun(owner, generation)) return;
         CurrentPhase = Phase.GlancingDown;
-        if (_m is null) { Log("no manipulation system: skipping the glance and the drive forward"); TransitionToTrackingFace(); return; }
+        if (_m is null) { TransitionToTrackingFace(owner, generation); return; }
         CurrentPhase = Phase.DrivingForward;
         // TransitionToDrivingForward 0x005C254E: the ideal 40 mm when the map says the way is clear, -15 mm
         // when it does not, both at 40 mm/s
         double distance = CanDriveIdealDistanceForward() ? DriveForwardMm : DriveBackwardMm;
         if (distance < 0) Log("the memory map has something in the way: backing off instead of driving in");
-        Tracker?.Dispose();
-        Tracker = new TrackFaceAction(V, TargetFaceId!.Value) { PanToleranceRad = TrackToleranceRad, TiltToleranceRad = TrackToleranceRad };
-        RunAction($"DriveStraight({distance} mm) with TrackFace", async ct =>
-        {
-            using var trackCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            var track = Tracker.RunAsync(TimeSpan.FromSeconds(30), trackCts.Token);
-            var r = await new DriveStraightAction(_m, distance, DriveSpeedMmps).RunAsync(ct);
-            trackCts.Cancel();
-            await track;
-            return r;
-        }, _ => TransitionToTrackingFace(), ActionResult.Abort);
+        if (!StartTracker(owner, generation, headOnly: true)) { if (CurrentRun(owner, generation)) Finish(); return; }
+        RunAction($"DriveStraight({distance} mm) with TrackFace", ct =>
+            CurrentRun(owner, generation) ? new DriveStraightAction(_m, owner!, distance, DriveSpeedMmps).RunAsync(ct) : Task.FromResult(ActionResult.Abort),
+            _ => { if (!CurrentRun(owner, generation)) return; StopTracker(); if (CurrentRun(owner, generation)) TransitionToTrackingFace(owner, generation); }, ActionResult.Abort);
     }
 
-    private void TransitionToTrackingFace()
+    private void TransitionToTrackingFace(EngineRobot? owner, long generation)
     {
+        if (!CurrentRun(owner, generation)) return;
         CurrentPhase = Phase.TrackingFace;
         TrackSeconds = (MinTrackSec + Context.Random.NextDouble() * (MaxTrackSec - MinTrackSec)) * TrackTimeScale;
         Log($"BehaviorInteractWithFaces.TrackTime: will track for {TrackSeconds / TrackTimeScale:F1} seconds");
-        Tracker?.Dispose();
-        Tracker = new TrackFaceAction(V, TargetFaceId!.Value) { PanToleranceRad = TrackToleranceRad, TiltToleranceRad = TrackToleranceRad };
+        if (!StartTracker(owner, generation, headOnly: false)) { if (CurrentRun(owner, generation)) Finish(); return; }
         PlayTrigger(AnimationTrigger.InteractWithFaceTrackingIdle, () => { });
-        RunAction("TrackFaceAction", ct => Tracker.RunAsync(TimeSpan.FromSeconds(TrackSeconds.Value), ct), _ => TransitionToTriggerEmotionEvent(), false);
+        if (!CurrentRun(owner, generation)) return;
+        RunAction("tracking deadline", async ct => { await Task.Delay(TimeSpan.FromSeconds(TrackSeconds.Value), ct); return true; },
+            _ => { if (!CurrentRun(owner, generation)) return; StopTracker(); if (CurrentRun(owner, generation)) TransitionToTriggerEmotionEvent(owner, generation); }, false);
     }
 
-    private void TransitionToTriggerEmotionEvent()
+    private void TransitionToTriggerEmotionEvent(EngineRobot? owner, long generation)
     {
+        if (!CurrentRun(owner, generation)) return;
         CurrentPhase = Phase.TriggerEmotionEvent;
         var face = V.Faces.GetFace(TargetFaceId!.Value);
         EmotionEvent(face is { HasName: true } ? "InteractWithNamedFace" : "InteractWithUnnamedFace");
+        if (!CurrentRun(owner, generation)) return;
         ReportMissing("M7-019 InteractedWithFace objective 0x0C belongs to the native timer-expiry boundary before StopActing; the full native face owner is not recovered");
+        if (!CurrentRun(owner, generation)) return;
         CurrentPhase = Phase.Idle;
         Finish();
     }
