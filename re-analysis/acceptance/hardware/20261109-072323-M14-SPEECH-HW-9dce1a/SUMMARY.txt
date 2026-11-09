@@ -1,0 +1,14 @@
+First robot speech test. Nothing here passes or fails.
+
+say: admitted=true result=0x00000000 (Native speech action ended)
+cancel: admitted=true result=0x02000000 (Native speech action ended)
+after-cancel: admitted=true result=0x00000000 (Native speech action ended)
+
+Startup: engine readiness delivered after 665 ms; connect callback completed; 0 error-level engine log(s)
+
+Your notes: {"heardFirst":"yes","voice":"sounds was better, not sure if it was still maybe a LITTLE too slow or not. might have been ok.","cutOff":"didn\u0027t hear it","heardThird":"yes","odd":""}
+
+Known gaps reported: 103
+
+Run errors:
+None.

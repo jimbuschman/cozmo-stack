@@ -170,8 +170,9 @@ internal sealed class M14SpeechRun
         double? cancelledAt = null;
         if (cancelAfterFirstAudio)
         {
-            if (Poll(() => audioSeen > 0 || task.IsCompleted, 30000) && !task.IsCompleted) { cancelledAt = Now; cts.Cancel(); }
-            else errors.Enqueue($"{name}: no 0x8E audio message seen before the action ended or 30 s passed; not cancelled");
+            // About one second of audio first (30 messages at 30 per second), so the operator can hear where it is cut off (2026-11-09: cutting after the first message left nothing audible).
+            if (Poll(() => audioSeen >= 30 || task.IsCompleted, 30000) && !task.IsCompleted) { cancelledAt = Now; cts.Cancel(); }
+            else errors.Enqueue($"{name}: fewer than 30 0x8E audio messages seen before the action ended or 30 s passed; not cancelled");
         }
         bool finished = Poll(() => task.IsCompleted, 60000);
         watchAudio = false;

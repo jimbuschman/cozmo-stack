@@ -1,0 +1,692 @@
+{
+  "testId": "M14-SPEECH-HW",
+  "createdUtc": "2026-11-09T12:31:06.2829618Z",
+  "commit": "2c47b1913d34d7a4db2e5b9f410d924222f487d4",
+  "argv": [
+    "m14-speech-hw",
+    "--resources",
+    "re-analysis/obb/assets/cozmo_resources"
+  ],
+  "resources": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\re-analysis\\obb\\assets\\cozmo_resources",
+  "banks": "C:\\Users\\JimBu\\source\\repos\\jimbuschman\\cozmo-stack\\re-analysis\\obb\\sound_meta",
+  "connected": true,
+  "startup": {
+    "gate": {
+      "outcome": "Ready",
+      "ready": true,
+      "waitedMs": 9478.6701,
+      "budgetMs": 60000,
+      "failureReason": null,
+      "description": "engine readiness delivered after 9479 ms; connect callback completed",
+      "rule": "M2-021: request connection only after IsReadyDelivered; cancellation or startup failure takes priority. The 60-second budget is host coverage, not recovered engine timing."
+    },
+    "records": [
+      "M2-021",
+      "M5-010"
+    ],
+    "sources": [
+      "M2-021: unity/scripts/csharp/StartupManager.cs:322-341; unity/scripts/csharp/ConnectionFlowController.cs:670-673; native ConnectToRobot 0x004ED020..0x004ED07C has no loader gate",
+      "M5-010: AnimationStreamer constructor 0x0057A0D4..0x0057A282 reads/caches neutral/reset source once"
+    ],
+    "errorCount": 0,
+    "errors": [],
+    "badNeutralAnimGroup": false,
+    "cachedNeutralFaceAvailable": true,
+    "positiveVerdictAllowed": true,
+    "reason": null,
+    "summary": "engine readiness delivered after 9479 ms; connect callback completed; 0 error-level engine log(s)",
+    "window": "engine-log subscription registered in BeforeStart through connection setup completion, or startup interruption before cleanup; construction before BeforeStart is not captured",
+    "interrupted": null
+  },
+  "phases": [
+    {
+      "phase": "say",
+      "text": "Hello. I am Cozmo.",
+      "startMs": 47914.6116,
+      "endMs": 63624.0921,
+      "cancelledAtMs": null,
+      "admitted": true,
+      "engineResult": "0x00000000",
+      "ownerRetired": false,
+      "detail": "Native speech action ended",
+      "wire": {
+        "byTag": [
+          {
+            "tag": "0x03",
+            "count": 261,
+            "payloadLengths": [
+              32
+            ],
+            "firstMs": 47998.1498,
+            "lastMs": 63572.9652
+          },
+          {
+            "tag": "0x04",
+            "count": 3,
+            "payloadLengths": [
+              41
+            ],
+            "firstMs": 48886.4574,
+            "lastMs": 55283.6115
+          },
+          {
+            "tag": "0x0C",
+            "count": 1,
+            "payloadLengths": [
+              2
+            ],
+            "firstMs": 48886.4574,
+            "lastMs": 48886.4574
+          },
+          {
+            "tag": "0x10",
+            "count": 3,
+            "payloadLengths": [
+              6
+            ],
+            "firstMs": 48886.4574,
+            "lastMs": 55283.6115
+          },
+          {
+            "tag": "0x11",
+            "count": 261,
+            "payloadLengths": [
+              22
+            ],
+            "firstMs": 47998.1498,
+            "lastMs": 63572.9652
+          },
+          {
+            "tag": "0x57",
+            "count": 14,
+            "payloadLengths": [
+              8
+            ],
+            "firstMs": 48579.0168,
+            "lastMs": 62533.7417
+          },
+          {
+            "tag": "0x8E",
+            "count": 88,
+            "payloadLengths": [
+              745
+            ],
+            "firstMs": 58149.0884,
+            "lastMs": 63435.8017
+          },
+          {
+            "tag": "0x8F",
+            "count": 20,
+            "payloadLengths": [
+              1
+            ],
+            "firstMs": 57946.0614,
+            "lastMs": 63504.0831
+          },
+          {
+            "tag": "0x9A",
+            "count": 1,
+            "payloadLengths": [
+              1
+            ],
+            "firstMs": 63504.0831,
+            "lastMs": 63504.0831
+          },
+          {
+            "tag": "0x9B",
+            "count": 1,
+            "payloadLengths": [
+              2
+            ],
+            "firstMs": 57946.0614,
+            "lastMs": 57946.0614
+          }
+        ],
+        "first8E": 58149.0884,
+        "first8F": 57946.0614,
+        "first9B": 57946.0614,
+        "first8D": null
+      }
+    },
+    {
+      "phase": "cancel",
+      "text": "This sentence is cut off partway through, so you should hear only the start of it.",
+      "startMs": 65625.6122,
+      "endMs": 92118.9018,
+      "cancelledAtMs": 92076.9224,
+      "admitted": true,
+      "engineResult": "0x02000000",
+      "ownerRetired": false,
+      "detail": "Native speech action ended",
+      "wire": {
+        "byTag": [
+          {
+            "tag": "0x03",
+            "count": 441,
+            "payloadLengths": [
+              32
+            ],
+            "firstMs": 65679.9694,
+            "lastMs": 92072.6401
+          },
+          {
+            "tag": "0x04",
+            "count": 5,
+            "payloadLengths": [
+              41
+            ],
+            "firstMs": 74014.0676,
+            "lastMs": 88473.3019
+          },
+          {
+            "tag": "0x10",
+            "count": 5,
+            "payloadLengths": [
+              6
+            ],
+            "firstMs": 74014.0676,
+            "lastMs": 88473.3019
+          },
+          {
+            "tag": "0x11",
+            "count": 441,
+            "payloadLengths": [
+              22
+            ],
+            "firstMs": 65679.9694,
+            "lastMs": 92072.6401
+          },
+          {
+            "tag": "0x57",
+            "count": 24,
+            "payloadLengths": [
+              8
+            ],
+            "firstMs": 65918.3992,
+            "lastMs": 90815.7886
+          },
+          {
+            "tag": "0x8E",
+            "count": 1,
+            "payloadLengths": [
+              745
+            ],
+            "firstMs": 92072.6401,
+            "lastMs": 92072.6401
+          },
+          {
+            "tag": "0x8F",
+            "count": 786,
+            "payloadLengths": [
+              1
+            ],
+            "firstMs": 65679.9694,
+            "lastMs": 92072.6401
+          },
+          {
+            "tag": "0x97",
+            "count": 787,
+            "payloadLengths": [
+              5,
+              8,
+              9,
+              12,
+              14,
+              16,
+              17,
+              20,
+              23,
+              25,
+              26,
+              28,
+              29,
+              30,
+              31,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              43,
+              44,
+              46,
+              47
+            ],
+            "firstMs": 65679.9694,
+            "lastMs": 92072.6401
+          },
+          {
+            "tag": "0x9B",
+            "count": 1,
+            "payloadLengths": [
+              2
+            ],
+            "firstMs": 91902.2074,
+            "lastMs": 91902.2074
+          }
+        ],
+        "first8E": 92072.6401,
+        "first8F": 65679.9694,
+        "first9B": 91902.2074,
+        "first8D": null
+      }
+    },
+    {
+      "phase": "after-cancel",
+      "text": "I can talk again.",
+      "startMs": 94119.3327,
+      "endMs": 105133.5379,
+      "cancelledAtMs": null,
+      "admitted": true,
+      "engineResult": "0x00000000",
+      "ownerRetired": false,
+      "detail": "Native speech action ended",
+      "wire": {
+        "byTag": [
+          {
+            "tag": "0x03",
+            "count": 183,
+            "payloadLengths": [
+              32
+            ],
+            "firstMs": 94180.5359,
+            "lastMs": 105084.3927
+          },
+          {
+            "tag": "0x11",
+            "count": 183,
+            "payloadLengths": [
+              22
+            ],
+            "firstMs": 94180.5359,
+            "lastMs": 105084.3927
+          },
+          {
+            "tag": "0x57",
+            "count": 11,
+            "payloadLengths": [
+              8
+            ],
+            "firstMs": 94214.7721,
+            "lastMs": 104541.5669
+          },
+          {
+            "tag": "0x8E",
+            "count": 74,
+            "payloadLengths": [
+              745
+            ],
+            "firstMs": 101110.903,
+            "lastMs": 104982.216
+          },
+          {
+            "tag": "0x8F",
+            "count": 219,
+            "payloadLengths": [
+              1
+            ],
+            "firstMs": 94147.2901,
+            "lastMs": 105084.3927
+          },
+          {
+            "tag": "0x97",
+            "count": 293,
+            "payloadLengths": [
+              5,
+              8,
+              12,
+              16,
+              17,
+              26,
+              28,
+              30,
+              32,
+              33,
+              34,
+              35,
+              36,
+              37,
+              38,
+              39,
+              40,
+              41,
+              43,
+              44,
+              46
+            ],
+            "firstMs": 94180.5359,
+            "lastMs": 105084.3927
+          },
+          {
+            "tag": "0x9A",
+            "count": 1,
+            "payloadLengths": [
+              1
+            ],
+            "firstMs": 105016.4448,
+            "lastMs": 105016.4448
+          },
+          {
+            "tag": "0x9B",
+            "count": 2,
+            "payloadLengths": [
+              2
+            ],
+            "firstMs": 100870.6576,
+            "lastMs": 105084.3927
+          }
+        ],
+        "first8E": 101110.903,
+        "first8F": 94147.2901,
+        "first9B": 100870.6576,
+        "first8D": null
+      }
+    }
+  ],
+  "operator": {
+    "heardFirst": "yes",
+    "voice": "slow, jizzery. ",
+    "cutOff": "all i head was \u0022i can talk again\u0022 ont he second one. ",
+    "heardThird": "yes",
+    "odd": "slow and chunky sounding"
+  },
+  "missingReported": [
+    "MISSING: M13-038 PublicStateBroadcaster::Update0x0064D5DC native manager/current-requested/carrying/reaction/needs input joins are unbound; checked broadcaster and both client owners are built, no host Freeplay state substituted",
+    "MISSING: M7-027/M12-017: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/\u002BE4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points remain unbuilt; TracePrinter B0/EC diagnostics and CF CrashReport are bound",
+    "MISSING: M7-028 LiftLoadTest[0] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown",
+    "MISSING: M7-028 LiftLoadTest[1] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown",
+    "MISSING: M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built",
+    "MISSING: DevTurnInPlaceTest: original app initiator is UNKNOWN; manager entry starts despite false IsRunnable; shared reaction/action completion owners remain M7-014/M8-001/M8-015/M8-017/M13-022 gaps",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CA78 (DockingTestSimple -\u003E BehaviorDockingTestSimple, constructor 0x5CAFB0, 656 bytes): class not implemented. This stack has no constructor that builds BehaviorDockingTestSimple from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CBC4 (FactoryCentroidExtractor -\u003E BehaviorFactoryCentroidExtractor, constructor 0x5CF80C, 528 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryCentroidExtractor from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CBE4 (FactoryTest -\u003E BehaviorFactoryTest, constructor 0x5D0438, 880 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryTest from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CD04 (LiftLoadTest -\u003E BehaviorLiftLoadTest, constructor 0x5D3F10, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorLiftLoadTest from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CE66 (PlayAnimWithFace -\u003E BehaviorPlayAnimSequenceWithFace, constructor 0x5C0630, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorPlayAnimSequenceWithFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CC04 (FeedingEat -\u003E BehaviorFeedingEat, constructor 0x5D5794, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingEat from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CC24 (FeedingSearchForCube -\u003E BehaviorFeedingSearchForCube, constructor 0x5D6C64, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingSearchForCube from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CDC4 (PeekABoo -\u003E BehaviorPeekABoo, constructor 0x5F62D0, 368 bytes): class not implemented. This stack has no constructor that builds BehaviorPeekABoo from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CF46 (RespondPossiblyRoll -\u003E BehaviorRespondPossiblyRoll, constructor 0x5DE324, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorRespondPossiblyRoll from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CF06 (PyramidThankYou -\u003E BehaviorPyramidThankYou, constructor 0x5DE048, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPyramidThankYou from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked",
+    "MISSING: InteractWithFaces factory supports only the checked Meet configuration with original owners",
+    "MISSING: PounceOnMotion factory: only configured Hiking_PounceOnMotion with actual Robot/manipulation owner is checked",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CF26 (RequestGameSimple -\u003E BehaviorRequestGameSimple, constructor 0x5EA168, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorRequestGameSimple from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CFC6 (Singing -\u003E BehaviorSinging, constructor 0x5EE8DC, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorSinging from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CDE4 (PickUpAndPutDownCube -\u003E BehaviorPickUpAndPutDownCube, constructor 0x5DB65C, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPickUpAndPutDownCube from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D026 (TrackLaser -\u003E BehaviorTrackLaser, constructor 0x5FA250, 472 bytes): class not implemented. This stack has no constructor that builds BehaviorTrackLaser from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CB84 (ExploreVisitPossibleMarker -\u003E BehaviorExploreVisitPossibleMarker, constructor 0x5E3CD8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorExploreVisitPossibleMarker from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: M15-056 GuardDog checked disconnect unit constructor0x005F2946 has no native Robot subscription/input owner; full M15-067 lifecycle remains unbuilt",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CCA4 (GuardDog -\u003E BehaviorGuardDog, constructor 0x5F28DC, 344 bytes): class not implemented. This stack has no constructor that builds BehaviorGuardDog from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CDA4 (OnboardingShowCube -\u003E BehaviorOnboardingShowCube, constructor 0x600AC0, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorOnboardingShowCube from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D0F2 (RamIntoBlock -\u003E BehaviorRamIntoBlock, constructor 0x60473C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorRamIntoBlock from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D112 (ReactToCliff -\u003E BehaviorReactToCliff, constructor 0x604CD0, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToCliff from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D132 (ReactToCubeMoved -\u003E BehaviorAcknowledgeCubeMoved, constructor 0x60219C, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorAcknowledgeCubeMoved from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D152 (ReactToFrustration -\u003E BehaviorReactToFrustration, constructor 0x605904, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToFrustration from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D172 (ReactToImpact -\u003E BehaviorReactToImpact, constructor 0x60617C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToImpact from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D192 (ReactToMotorCalibration -\u003E BehaviorReactToMotorCalibration, constructor 0x60658C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToMotorCalibration from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D1B2 (ReactToOnCharger -\u003E BehaviorReactToOnCharger, constructor 0x606A18, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToOnCharger from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D1D2 (ReactToPet -\u003E BehaviorReactToPet, constructor 0x606E98, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPet from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D1F2 (ReactToPickup -\u003E BehaviorReactToPickup, constructor 0x607724, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPickup from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D212 (ReactToPlacedOnSlope -\u003E BehaviorReactToPlacedOnSlope, constructor 0x607FB8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPlacedOnSlope from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D232 (ReactToPyramid -\u003E BehaviorReactToPyramid, constructor 0x608310, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPyramid from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D252 (ReactToReturnedToTreads -\u003E BehaviorReactToReturnedToTreads, constructor 0x6084E4, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToReturnedToTreads from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D272 (ReactToRobotOnBack -\u003E BehaviorReactToRobotOnBack, constructor 0x6087B8, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnBack from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D292 (ReactToRobotOnFace -\u003E BehaviorReactToRobotOnFace, constructor 0x608A9C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D2B2 (ReactToRobotOnSide -\u003E BehaviorReactToRobotOnSide, constructor 0x608D38, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnSide from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D2D2 (ReactToRobotShaken -\u003E BehaviorReactToRobotShaken, constructor 0x609104, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotShaken from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D312 (ReactToStackOfCubes -\u003E BehaviorReactToStackOfCubes, constructor 0x609880, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToStackOfCubes from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59D332 (ReactToUnexpectedMovement -\u003E BehaviorReactToUnexpectedMovement, constructor 0x609A58, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToUnexpectedMovement from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CB00 (DriveToFace -\u003E BehaviorDriveToFace, constructor 0x5DA550, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorDriveToFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: BehaviorContainer::CreateBehavior case 0x59CFA6 (SearchForFace -\u003E BehaviorSearchForFace, constructor 0x5C9158, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorSearchForFace from its config (the class is another layer\u0027s, or is built by hand per behaviour id outside the factory); no stand-in is made",
+    "MISSING: Robot::Robot builds a second BehaviorContainer (robot\u002B0x48, BehaviorSystemManager, constructor 0x005A5812) over the same configs, so the engine constructs every behaviour twice; only the BehaviorManager\u0027s (robot\u002B0x44) is built here: the second manager\u0027s use is UNKNOWN (no direct caller of its Update, InitConfiguration, InitializeEventHandlers, GetCurrentBehavior or FindBehaviorByID)",
+    "MISSING: M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt",
+    "MISSING: M13-039 client needs cache \u002B0x2C read at 0x005924C4: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero",
+    "MISSING: M13-039 client needs cache \u002B0x30 read at 0x00592514: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero",
+    "MISSING: M13-039 client needs cache \u002B0x34 read at 0x00592560: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero",
+    "MISSING: M13-039 ActivityID EnumToString0x0059202C / RobotAudioClient source channel0x0059201C input absent; activity audio decisions still proceed",
+    "MISSING: M8-012 BehaviorManager::SendDasTransitionMessage 0x005A22B4..0x005A24AC: typed BehaviorTransition/displayNameKey delivery is unbuilt; DasTransition is only a callback seam",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: FistBump -\u003E FistBump has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Frustration -\u003E ReactToFrustrationMajor has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: NoPreDockPoses -\u003E RamIntoBlock has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Sparked -\u003E ReactToSparked has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior",
+    "MISSING: M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription",
+    "MISSING: M7-019 RamIntoBlock configured factory owner unavailable; reaction-owned existing adapter supplies the strategy recipient, not the native factory identity or a recovered Ram body",
+    "MISSING: M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed",
+    "MISSING: M11-072: precise native component/container subscription retirement points are not supplied by the checked recipient rows; managed token storage retires at Robot destruction end. Full teardown ordering remains M8-023/M7-018; no native destructor ordering is claimed for these new UI handles",
+    "MISSING: M11-066 Robot ctor main (\u002B0x298) and forward (\u002B0x2A4) pose names have no checked row; empty names retained",
+    "MISSING: M11-077: RemoveOwner is built (0x008448B4..0x00844914); NotLastOwner 0x0084510E..0x0084515E needs native shared-control use_count, and final-node destruction/bookkeeping 0x0084605C..0x0084609C -\u003E 0x008D148C remains unbuilt; C# reachability is not used as a native reference count",
+    "MISSING: M11-038 BroadcastLocatedObjectStates 0x006249EC -\u003E 0x0061E6C0 payload/recipient remains unbuilt; tail call accounted",
+    "MISSING: M11-069 AIComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)",
+    "MISSING: M11-069 BehaviorManager.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)",
+    "MISSING: M11-069 MovementComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)",
+    "MISSING: M11-016 FaceTracker internal Init/algorithm and its possible error diagnostics remain unavailable",
+    "MISSING: M15-039: writeAsJson 0x0084C328..0x0084C4B6 calls StyledStreamWriter(tab). Its shipped formatting/comment/escaping body has no checked builder row; stats serialization/open/write/close and result-dependent WriteStatsFailed are not built",
+    "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported",
+    "MISSING: M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); system readiness remains unbound; the initial-exposure config prefix is built",
+    "MISSING: M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event",
+    "MISSING: M8-026 GetWorldOrigin 0x004A4C54 at 0x0056AC92 has no bound Robot/world-origin provider; ProcessClearQuad unit is built",
+    "MISSING: M13-038 PublicStateBroadcaster Update0x0064D5DC at Robot::Update: native input owner/caller join is absent; checked Update(input) is built, no publication or tick ordering invented",
+    "MISSING: M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp \u002B0xE4 owner is unbuilt; rollback of \u002B0xE4/\u002B0xE8 is not substituted with the processed clock",
+    "MISSING: M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership",
+    "MISSING: M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only",
+    "MISSING: M11-058/M11-055 DecodeJPEG Tic/Toc 0x006B4B76/0x006B4C6C native timing producer unbuilt; no host timer substituted",
+    "MISSING: M14-010 face motion reset has no prior admitted VisionPoseData",
+    "MISSING: M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted",
+    "MISSING: M11-035 DetectingLaserPoints producer/handler unavailable; no processed bit or native success invented",
+    "MISSING: M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted",
+    "MISSING: M11-037 CheckForCollisionWithRobot 0x0062593C..0x00625B88: complete native object/world/Robot::GetPose input binding and owned footprint recipients are not supplied by these wrapper rows; collision predicate/modify unit remains unbuilt",
+    "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported",
+    "MISSING: IBehavior::IsRunnableBase robot\u002B0x34a (0x005bd876): no source for the byte; the vtable\u002B0x24 gate is not consulted",
+    "MISSING: IBehavior::IsRunnableBase \u002B0x74 state (0x005bd7e6) and \u002B0x70 unlock (0x005bd810) inputs: no source in this stack; not tested",
+    "MISSING: M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; normal queue path is not classified SDK-only",
+    "MISSING: M11-013 / M11-041 | CozmoCubes host ByObjectId/ConnectionChanged still expose reported radio slots, including synthetic slots above4; source HandleActiveObjectConnectionState 0x00533B3C uses the Robot-owned BlockWorld returned ID and its own slot gate. Host-view migration remains unbuilt.",
+    "MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp\u002B0x20 remains false",
+    "MISSING: M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object\u0027s \u002B0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen",
+    "MISSING: RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client\u002B0x38] set to 0; the stand-in has no state byte, so the check is not made",
+    "MISSING: M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound",
+    "MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E and node\u002B0x20 release0x0066352E..0x00663560: native captured-owner finalization/producer census is unbuilt; managed delegate retirement does not certify no side effects",
+    "MISSING: M8-015 destructor owns-profile byte\u002B0x58/ClearCustomMotionProfile0x005410F6 recipient is not bound; Path.HasCustomMotionProfile is a different input; no invented profile reset",
+    "MISSING: M4-018 | Update.PlayingPrevious 0x00637AA4: native ObjectID unavailable",
+    "MISSING: M11-045 robot.play_area_size at 0x00624F32: tree does not yet contain all map content (B-M3M4-20); event value unavailable",
+    "MISSING: M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join",
+    "MISSING: M11-078/M11-090 Vision teardown: native result lists/deque 0x006586EC..0x00658A92/0x006B9F68..0x006BA092, ImageCache null-before-tree 0x006B1E9C..0x006B2142, Camera/ImageCache/CLAHE, FaceRecognizer trees, Block/MarkerlessObject and ProtoHandle reset/remove need their owned native recipients; host caches/GC are not those owners. Capture finalizers and allocator recipients remain unread; SDK CustomObject is unreachable",
+    "MISSING: M11-055 Profiler timer producers/Tic/Toc and VisionSystem::Init PerformanceLogging binding 0x006B0E5C..0x006B0F2A are not built; native timer input boundary only, no host Stopwatch data substituted",
+    "MISSING: M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot\u002B0x258]\u002B0x28] != 0 before it: the real calibration gate is applied; M11-035 has no UpdateAllResults status hook"
+  ],
+  "records": [
+    {
+      "id": "M14-006",
+      "subsystem": "M14-faces",
+      "title": "Text to speech is not implemented",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs:69",
+      "effect": "SayTextAction says nothing",
+      "provenance": "deferred; the app owns text to speech",
+      "authority": "Acapela (libacattsandroid.so) plus the Anki Wave Portal Wwise source plug-in; both third-party binaries",
+      "evidence": [
+        "libacattsandroid.so",
+        "PluginInfo.xml Anki Wave Portal"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "unresolved": "the voice model and the plug-in are third-party binaries\nManager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfigs (0x00522280..0x00523042) loads tts_config.json (\u002B0x1F0); this record owns its consumer (M1-054 keeps the load order).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": null
+    },
+    {
+      "id": "M14-013",
+      "subsystem": "M14-faces",
+      "title": "Pet/face-world and speech lifetime recipients",
+      "location": "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1\u2013T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: L1 0x0051128C..0x005112D2, 0x005114A6..0x005114B4; L2 0x0050BC4C..0x0050BC6E; L3 0x004F5E9E..0x004F5EE8, 0x004EAE94..0x004EAEC6, 0x004EF1B8..0x004EF1CE; L5-L7 0x0069E464..0x0069E49A, 0x007FB900..0x007FB918, 0x007FBB80, 0x007FC684..0x007FC770, 0x007FD0BE..0x007FD128, in-flight 0x0069F430..0x0069F518, CreateAudioData 0x0069EF10..0x0069F03E."
+      ],
+      "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
+      "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
+      "unresolved": "S10: pet/face/speech owners 0x0051128C..0x005112C6 and 0x005114A6..0x005114B4; M14-006 world/speech consumer. Recursive/audio owners only if identified. Source triage S10. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov31-32-33-check.md): IMPLEMENTATION_GAP for L1-L3 and the speech teardown order. The in-flight synthesis branch is reachable only if a host TTS replaces M14-006 (BLOCKED_EXTERNAL) and is not built. Pose diagnostics are M11-077/M11-084; StopExecution is M5-064/M1-047. M1-034 points (not shown reachable): 0x007FB900 null queue, 0x004EF1BE null handle. B-M14-1 (2026-10-16), bounded diagnostics/tests, awaiting strong verification; BLOCKED: actual Robot removal L1 already nulls pet3C, face38, block34, then later speech268 before recipient interfaces; regression now drives that entry. Missing owners now identify M14-013 on the stack channel. VisionSystem owns retained Dictionary-backed FaceWorld/PetWorld and clears them only from later RobotRemoved.ResetToConstructed; this is not native tree/pose/handle destruction. FaceEntry borrows TrackedFace.HeadPose; native-owned wrapper/census and tree insertion topology are absent, so no guessed postorder Dispose or host event unsubscription. Existing M11-077 Pose3d.Dispose remains partial and is not duplicated. Native speech client/Dispatch/provider/bundle graph is absent; transport SerialExecutor drains queued work and cannot substitute for the checked reverse cancellation/detached-batch join. No dummy empty native owners/tasks/provider, no TTS generation, no Wwise stop/completion invented. The checked no-callback property is asserted on nonempty existing host resets only and does not certify native L2/L3. See jobs/status/B-M14-1.md.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M14LifetimeCheckedRowsTests"
+    },
+    {
+      "id": "M6-013",
+      "subsystem": "M6-wwise-bank",
+      "title": "Robot_Bus FX chain in slot order: two Parametric EQs and the Peak Limiter before the Hijack, with their settings and algorithms",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusFx.cs",
+      "evidence": [
+        "FX loop 0xA4FD84..0xA4FEF4; registration .init_array 0x4DEB18 / 0x4DEB8C",
+        "EQ coefficients 0xAA25E0, execute 0xAA2A84, biquad 0xAA2324; ShareSets 0x6767FC1F, 0x174901C6",
+        "limiter setup 0xAA19CC, DSP 0xAA0EB4; ShareSet 0xDF2230FF"
+      ],
+      "effect": "the robot audio is equalised and limited differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "a standalone class built from re-analysis/inventory/M6-wwise-bank.md gapC 3.1, 4.1..4.9, the gapC addendum and gapE \u00A70 (WwiseBusFx.cs): the Robot_Bus chain in slot order EQ 0x6767FC1F -\u003E EQ 0x174901C6 -\u003E Peak Limiter 0xDF2230FF -\u003E Hijack while the bus state is 1 (gapC 3.1, D2.4); the two EQ ShareSet settings (gapC 4.2); the EQ coefficient routine (gapC 4.3), scalar direct-form-I biquad with the row\u0027s accumulation order (gapC 4.4, 0xAA2324) and the output-gain ramp with the scalar-tail restart quirk (gapC 4.4); the limiter settings and defaults (gapC 4.5), the setup L = u32(float(sr)*0.009) = 431 at 48 kHz with attack = expf(-2.2/(L/2)) and release = expf(-2.2/(sr*release)) (gapC 4.6), and the unlinked/mono DSP with the peak-hold detector, fast log, fast-pow gain, first-buffer pre-scan and the L-sample tail (gapC 4.7). The fast pow is the shared M6-010 WwiseGain.DbToLinear (gapC 1.11). WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler and the M6-014 bus lifetime are untouched",
+      "unresolved": "not wired into the live voice/bus graph (M6-014/M6-017); it does not implement IWwiseBusInsertFx, so the M6-014 bus cannot run it until a later wiring pass adapts it. CHOICES reported to the manager, not settled by the rows: (1) the frozen row gapC 4.3 names the Butterworth LP/HP and RBJ band-pass/notch/peaking/shelf designs and gives their intermediates (c and b0 for LP/HP; w0, alpha, A for RBJ; S = 1) but does NOT transcribe the numerator/denominator polynomials; the LP/HP companion terms here are the same Butterworth design the inventory writes out in full for the voice filter (gapE 1.6) and the RBJ terms are the named cookbook\u0027s; (2) the row\u0027s shelf alpha = sin\u00B7sqrt2/2 is used literally, which is not the usual RBJ S = 1 alpha = sin(w0/2)\u00B7sqrt2; (3) the output-gain ramp\u0027s NEON lane increments and the exact scalar-tail restart split are not transcribed, so the aligned part uses a single per-sample delta and the tail restarts from prev; (4) the limiter\u0027s fastpow10 cutoff is not stated, so the shared M6-010 fast pow is used unchanged (it returns 0.999039 at 0 dB, a factor the detector and output gain both carry). NOT BUILT, named in the rows with no arithmetic: the linked limiter detector (0xAA1464) and LFE variant (0xAA09B8) are refused with NotSupportedException (the shipped ShareSet is channelLink = 0). The EQ processLFE shipped value is not in gapC 4.2 and defaults false (inert on the mono bus); per-planar-channel EQ state is not modelled (the shipped bus is mono, 0x4101)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "Cozmo.Protocol.Tests.WwiseBusFxTests, WwiseEqPluginTests (the EQ plug-in 0x690003 and its param object against the engine under Unicorn: emu_eq.py, 1902 lives \u002B 3505 coefficient rows; host tanf/sinf/cosf/powf proof tables), WwiseLimiterPluginTests (the Peak Limiter 0x6E0003 P2 path: emu_limiter.py, 3176 lives; P1/P3/LFE swap are required stops), WwiseCompressorTests (the Compressor plug-in 0x006C0003 Init 0xA9FB28, Reset 0xA9FA68, Execute 0xA9FC70 with workers 0xAA0298 and 0xA9FEEC (the linked worker, C41.5), the creators 0xAA0538/0xAA0808 and the parameter object 0xAA0660/0xAA07A0/0xAA0734 against the engine under Unicorn: emu_comp.py, 5346 lives (2550 execute the linked worker); the host expf/powf proof tables)"
+    },
+    {
+      "id": "M6-016",
+      "subsystem": "M6-wwise-bank",
+      "title": "The engine robot-audio path: alternatives drawn up front, wall-clock posting, event_volume per playing id, routing 7..10 to Robot_Bus_1..4, queued callbacks, states, PopRobotAudioMessage, abort",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRobotAudioPath.cs",
+      "evidence": [
+        "InitAnimation 0x0059687E..0x00596914; BeginBuffering 0x00597F12..0x00597F8E; lambda 0x0059818C..0x005982A0",
+        "routing 0x0059962A..0x005999A4",
+        "callbacks 0x00599E6A..0x00599EB8, 0x008D8D40, drain 0x008D88CC from 0x004ED6C4",
+        "UpdateLoading 0x00597C9E..0x00597D7E; PopRobotAudioMessage 0x00597DB4..0x00597E8E; abort 0x0059678E..0x005967B8"
+      ],
+      "effect": "animation sounds reach the robot differently",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "a standalone class built from re-analysis/inventory/M6-wwise-bank.md rows M6 A1..A25 (minus the unbuilt rows named in unresolved), gapC 2.8 and gapE 6.1..6.4: A1 states; A2 the up-front draw and the \u002B0x3D flag; A3 the no-events/no-buffer/OnDevice branches and Dispatch::Create(queue, 2); A4 PrepareAnimation/Update dispatch; A5 wall-clock Dispatch::After; A6/A7/A8 the lambda, PostCozmoEvent, the playing id and event_volume per playing id; A9 Complete/Error; A11 the 7..10 (and 6) routing; A19 UpdateLoading; A20 UpdateAudioFramesReady; A21 PopRobotAudioMessage; A22 the no-stream silence; A23 abort; gapE 6.1..6.4 the queued context and drain. WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler are untouched",
+      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): overlap ruling: PopRobotAudioMessage 0x00597DB4..0x00597E8E is this record\u0027s whole function: the state gate (ldrb.w [\u002B0x3C]; cmp #3, 0x00597DD4..0x00597DDA), PopNextAudioFrameData (blx 0x4AF5B0, 0x00597DE0), the per-sample loop with no volume scaling (M3 row C7, 0x00597DFC..0x00597E12), the zero pad below 744 (cmp.w r1,#0x2E8 at 0x00597E16, memclr 0x00597E34; M3 row C5), the AudioSample ctor (blx 0x4ADCB4, 0x00597E4E) and the event-index tail 0x00597E56..0x00597E8E. encodeMuLaw (called per sample, blx 0x4AF5BC) stays M3-010\u0027s. Also this record\u0027s, per M3-024\u0027s split: RobotAudioAnimationOnDevice\u0027s playback (Dispatch::After 0x005975A2) and InitAnimation\u0027s draws. CreateAudioAnimation is M6-028 (new) and UpdateAnimationIsReady M6-027 (new). M3DeviceTests.M3_010_C5_AShortFrameIsPaddedWith00 exercises this record\u0027s pad. Before: not wired into the runtime (WwisePlayback, WwiseAudioSource, WwiseSongRenderer, AnimationScheduler); the wired subsystem is M6-017\u0027s job. Not built from this record\u0027s rows: A3\u0027s OnDevice path (game object 6, 0x00596DC8) throws NotSupportedException, and A2\u0027s \u002B0x3D is carried without its UNKNOWN use; A10\u0027s audio-thread scheduling and A12\u0027s mix rate are M6-017/M6-018; A13..A18 are the Hijack/bus records M6-013..M6-015; A24\u0027s robot_volume RTPC reach is unread (RECOVERABLE_GAP); A25\u0027s second Hijack registration is M6-015",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseRobotAudioPathTests.M6_016_A2_InitAnimationDrawsEveryKeyframesAlternativeUpFront; WwiseRobotAudioPathTests.M6_016_A2_AnEventIdOfZeroIsNotPushedAndTheIndexCountsPushedEvents; WwiseRobotAudioPathTests.M6_016_A2_ARejectedRefDoesNotAdvanceThePushedEventIndex; WwiseRobotAudioPathTests.M6_016_A2_Flag3DIsSetOnlyWhenAnEventIsPushed; WwiseRobotAudioPathTests.M6_016_A3_NoEventsCompletesWithoutCreatingADispatchQueue; WwiseRobotAudioPathTests.M6_016_A3_GameObject6TakesTheUnbuiltOnDevicePath; WwiseRobotAudioPathTests.M6_016_A3_AMissingBufferIsState5WithAnError; WwiseRobotAudioPathTests.M6_016_A11_GameObjects7To10RouteToRobotBus1To4WithAuxOneAndDryMuted; WwiseRobotAudioPathTests.M6_016_A5_BeginBufferingPostsAtWallClockOffsetsFromTheFirstEvent; WwiseRobotAudioPathTests.M6_016_A6_A8_EachLambdaPostsAndSetsEventVolumeForItsPlayingId; WwiseRobotAudioPathTests.M6_016_A8_AFailedPostEventIsAnImmediateErrorCallback; WwiseRobotAudioPathTests.M6_016_A9_CompleteAndErrorCallbacksAreQueuedUntilTheDrain; WwiseRobotAudioPathTests.M6_016_A19_DataStartsTheStreamOnlyWhenTheNextEventsTimeIsReached; WwiseRobotAudioPathTests.M6_016_A19_NoStreamCompletesOnceEveryEventHasACallback; WwiseRobotAudioPathTests.M6_016_A19_ACompleteStreamWithNoDataIsPoppedBackToState1; WwiseRobotAudioPathTests.M6_016_A19_OnceStartedACompleteStreamThatIsNotDueReturnsToState1; WwiseRobotAudioPathTests.M6_016_A20_NoDataStallsAndErrorEventsAreSkipped; WwiseRobotAudioPathTests.M6_016_A21_PopRobotAudioMessageEncodesMuLawAndZeroPadsTo744; WwiseRobotAudioPathTests.M6_016_A23_AbortStopsFlushesResetsStopsAllAndCompletes; WwiseRobotAudioPathTests.M6_016_A23_APostedLambdaAfterAbortDoesNothing; WwiseRobotAudioPathTests.M6_016_A22_TheUseGameAuxZeroNurtureEventSendsNothingToTheRobot"
+    },
+    {
+      "id": "M6-017",
+      "subsystem": "M6-wwise-bank",
+      "title": "Audio-thread frame model: Perform order, sink-driven frames, EndOfEvent after the bus pass of the last frame",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseFrameDriver.cs",
+      "evidence": [
+        "Perform 0x9AF8A8 / 0x9AF9F4..0x9AFAB8; audio thread 0xA4087C; RenderAudio 0x9AFD10",
+        "PBI teardown 0xA38600 / flush 0xA38420; EndOfEvent 0xA03618",
+        "C11 correction: the three gate bytes have writers and the branch is dynamic. gate1 0x108DAF0 written at 0x9EB090/0x9EBBA8/0x9EC00C/0x9EC1B4; gate2 0x108DB08 at 0x9EAE18/0x9EC47C/0x9EC4A0; gate3 0x1052430 at 0x9EAE24/0x9EBBAC/0x9EC488/0x9EC4A8; SetOutputDevice 0x9EC418 (call site 0x9AE3B0); output-device state struct 0x108DAE8",
+        "C11 audio thread: SoundEngine::Init 0x0099E3EC (thread-active byte 0x0108D949) -\u003E FUN_009B0200 -\u003E FUN_00A40940 (sem_init 0x4D6784, pthread_create 0x4A6934, entry 0x00A4087C, sem engine\u002B0x54); thread loop Perform 0x9AF8A8 then sem_wait 0x4D679C; sem_post helper 0x00A40924",
+        "C11 render pump: RenderAudio veneer 0x0099F130 -\u003E 0x9AFD10(engine,1) (sem_post engine\u002B0x54 when the thread flag is set, else Perform); engine tick CozmoEngine::Update 0x004ED4D4 -\u003E AudioMultiplexer::UpdateAudioController 0x008DF3DA -\u003E AudioEngineController::Update 0x008D2928 -\u003E FUN_008D88C0; robot pump RobotAudioClient::ProcessEvents 0x00599FE2 -\u003E ProcessAudioQueue 0x008D2946 -\u003E FUN_008D88C0",
+        "C11: the four Perform group members (0xA36AC4, 0x9FF308, 0x9D3C98, 0x9E6D2C) and the voice engine inside LEngine (0xA57FF8 -\u003E 0x44D4C) are M6-022"
+      ],
+      "effect": "audio events end at different times",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the standalone modules already built: WwiseEventRuntime (M6-006) supplies the message pump, the pending-action drain and the audio manager tick (\u002B0x4C); WwiseFrameDriver (new) applies gapD D1.6\u0027s Perform order and D3.5\u0027s EndOfEvent position around a caller-supplied render seam. The three render steps (the row\u0027s \u0022buses\u0022 group, LEngine 0xA57FF8, PBI-notification flush 0xA38420), the sink (gapB T2) and the frames-per-Perform count (D1.7) are caller inputs; M6-008..M6-016 plug into the render seam. The record stays IMPLEMENTATION_GAP while unwired.",
+      "unresolved": "not wired into the runtime (WwisePlayback, WwiseAudioSource, WwiseSongRenderer, AnimationScheduler); the wiring pass is separate. C11 corrected the frame model: the gate bytes have writers (the bus-pass arg is (gate2==0)?1:gate3 and the frames-per-Perform branch is dynamic; the runtime value depends on the Wwise output-device state and is HARDWARE_ONLY). The audio-thread lifecycle is now read (SoundEngine::Init -\u003E FUN_009B0200 -\u003E FUN_00A40940 pthread_create entry 0x00A4087C, semaphore engine\u002B0x54, sem_post 0x00A40924) and is part of this record\u0027s production path. The four group members and the voice engine inside LEngine are M6-022. The render pass is a caller seam; D1.7\u0027s frames-per-Perform count is the device path (0x9D4778 -\u003E 0x9EBE6C(0)) or the clock-paced branch, and the device/sink pacing (gapB T2) is HARDWARE_ONLY. M6-006\u0027s only public tick advance is AdvanceFrame(), which also pumps and drains; after the driver\u0027s explicit pump and drain those calls are no-ops, so the order stays messages -\u003E drain -\u003E render -\u003E tick. The pending-action drain is M6-006\u0027s minimal play-count model (0xA04F54 internals unread); the EndOfEvent callback-manager internals (D3.3) and the post-Term latency (D2) remain those records\u0027 gaps.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseFrameDriverTests.M6_017_D1_6_ThePerformOrderIsMessagesDrainRenderThenTick; WwiseFrameDriverTests.M6_017_D1_8_NoFrameIsProducedUntilTheSinkHasRoom; WwiseFrameDriverTests.M6_017_D1_6_AZeroCountPerformStillPumpsAndDrainsOnceAndRendersNoFrame; WwiseFrameDriverTests.M6_017_D3_5_EndOfEventFiresAfterTheLastFramesBusPassAndBeforeTheNextPartialFlush"
+    },
+    {
+      "id": "M6-018",
+      "subsystem": "M6-wwise-bank",
+      "title": "Mix rate 48000 Hz and frame 1024 samples (phone-dependent in the original: min(native, 48000) and hardware rounding)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRuntimeSettings.cs",
+      "evidence": [
+        "platform init 0x00A57724: rate cache 0x0108DF90 = min(getNativeOutputSampleRate, 48000), 48000 default 0x00A578B4..0x00A578C8",
+        "frame rounding 0x00A577B8..0x00A57830; SetRate 0xA1C75C / SetFrame 0xA1C7D4"
+      ],
+      "effect": "derived timings and resampling differ",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "status": "IMPLEMENTATION_GAP",
+      "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
+      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-022",
+      "subsystem": "M6-wwise-bank",
+      "title": "The live voice and bus engine: the 0xA57FF8 wrapper and 0xA44D4C render body, the voice pass, the bus pass, idle removal, the per-voice DSP chain, the four Perform group members, the PBI flush, the 0x108DAE8 output-device state and its three gate bytes, and the JNI audio-route poll",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseVoiceEngine.cs",
+      "effect": "the live voice and bus graph renders differently, or not at all",
+      "provenance": "read from libcozmoEngine.so in re-analysis/research/20260927-B1-voice-engine-extraction.md (rows B1-V1..V30), citation-checked in re-analysis/research/20260928-I-M6b-citation-check.md, and gap-passed in re-analysis/research/20260928-I-M6b-gap1-extraction.md; frozen as correction C11. The four group members\u0027 Wwise class names are UNKNOWN (no RTTI/symbols). The callee bodies C11 named but did not give were read by the five C12 passes (re-analysis/research/20260928-B-M6b-voice-callees.md, -bus-group-callees.md, -bus-metering.md, -source-classes.md, -modulator-evaluator.md), frozen as correction C12. The six bodies the B-M6b-2 build left MISSING (the V7 state-machine callees, the modulator coefficient recompute, the 0x9E2BD0/0x9E52F8 pool/record layer, 0x9FD910, the bus metering stage and the insert-FX slot vtables) were read by re-analysis/research/20260928-B-M6b-2-missing-bodies.md, frozen as correction C15. The V7 completion branch 0xA552F0/0xA4C620 and the budget-step gate were read by re-analysis/research/20260928-B-M6b-2-v7-completion.md, frozen as correction C16. The V7 P2F==0 branch, the four parameter ramps and the C8 seam argument sets were settled by re-analysis/research/20260928-B-M6b-2-v7-p2f-branch.md, frozen as correction C17. The 0xA4BC58 output arguments, the [sp\u002B0x2e] gate and the ramp targets were settled by re-analysis/research/20260928-B-M6b-2-ramp-targets.md, frozen as correction C18. The 0xA4C584 bit argument source (the saved bus-\u003Evt\u002B0x3C return) was corrected by re-analysis/research/20260928-B-M6b-2-v7-p2f-branch.md and frozen as correction C19.",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+      "evidence": [
+        "wrapper 0xA57FF8 -\u003E 0xA57D64 \u002B 0xA44D4C; render body 0xA44D4C pre-loop over the output-device list 0x108DB04 (0xA44D5C..0xA44DA0); throttle 0x108DA9C/0x108D870\u002B0x4c (0xA44DAC..0xA44DD4)",
+        "voice pass 0xA44948 (pre-pass 0x9D3CC0/0xA43D24/0xA39564; voice list base 0x108DF54, head \u002B0x14, next \u002B0xD0, state \u002B0xDC); bus pass 0xA44C18; idle removal 0xA43F64",
+        "voice mix dispatcher 0xA44630; params fill 0xA54F1C; source execute 0xA548C0; pitch 0xA53134; resampler execute 0xA52D4C; mix-in 0xA4FBEC; mixer 0xA45E9C",
+        "callee bodies 0xA4C60C -\u003E 0xA766B8 (0xA766F0 LPF / 0xA77480 HPF), 0xA56E00 -\u003E 0xA56A7C, 0xA03E8C, 0xA05574, 0xA56650, 0xA4F9E0, 0x9E9E78, 0x9E9F08, 0xA55750, 0xA4AF50, 0x9D3CC0",
+        "group members 0xA36AC4, 0x9FF308, 0x9D3C98, 0x9E6D2C; Perform call order 0x9AFA4C..0x9AFAA8; PBI flush 0xA38420",
+        "output-device state struct 0x108DAE8 (gate1 0x108DAF0 at \u002B8, 0x108DAFC at \u002B0x14, list 0x108DB04 at \u002B0x1C, gate2 0x108DB08 at \u002B0x20, 0x108DB0C at \u002B0x24, 0x108DB18 at \u002B0x30); gate3 0x1052430",
+        "gate writers: gate1 0x9EB090/0x9EBBA8/0x9EC00C/0x9EC1B4; gate2 0x9EAE18/0x9EC47C/0x9EC4A0; gate3 0x9EAE24/0x9EBBAC/0x9EC488/0x9EC4A8; module init 0x9EADE8; term 0x9EAF90; device advance 0x9EBA54; SetOutputDevice 0x9EC418 (call site 0x9AE3B0); frame count 0x9D4778 -\u003E 0x9EC38C -\u003E 0x9EBE6C",
+        "JNI audio-route poll 0xA57D64..0xA5803C (GetEnv/AttachCurrentThread, FindClass, NewStringUTF, GetMethodID, CallObjectMethodV 0x593E58, CallBooleanMethodV 0xA58008, result 0x108DF98, notify 0x9EA66C)",
+        "C12 voice callees (report 20260928-B-M6b-voice-callees.md): device node vt\u002B0x2c=0x9E935C / vt\u002B0x30=0x9E9420, node vtable 0x103B498 (0xA44D4C pre-loop); 0xA43D24 ducking/volume pre-pass (0xA43D24..0xA43EFC; 0xA55750 -\u003E bus \u002B0x88/\u002B0x8C -\u003E 0xA4AF50 -\u003E 0xA437E0 -\u003E 0xA4B4B0; container 0x108DF50, bus count 0x108DF54, voice count 0x108DF5C, voice head 0x108DF64); 0xA39564 node cleanup (0xA39564..0xA395FC); 0xA54F1C full state machine (0xA54F1C..0xA5574C) with 0xA4B4B0 and 0xA4BC58 (0xA4BC58..0xA4C000); 0xA44630 full order (0xA44630..0xA44938); 0xA548C0 and bus vt\u002B0x58 = 0x9C07C4 (0x103ACE0); 0xA52D4C / 0xA5268C / 0xA4721C / 0xA47224 (0xA52D4C..0xA53134); 0xA55D04 / 0xA55A84 / 0xA54A30 and the state-0x11 tail (0xA44A94..0xA44BFC); 0xA01BD8 (0xA01BD8..0xA01CA0); 0x9E84C8 (0x9E84C8..0x9E859C)",
+        "C12 bus-output/group callees (report 20260928-B-M6b-bus-group-callees.md): 0xA4FEF8 branch/mask and non-FX path 0xA50120 (0xA4FEF8..0xA50174, 0xA50EA4..0xA50F04); 0xA4F754 SetInsertFx and 0xA4E974 per-slot create/init/reset (0xA4F754..0xA4F9AB, 0xA4E974..0xA4ECD4) and 0xA4E7CC slot drop; 0xA38420 PBI flush and 0x9D3470 (0xA38420..0xA385D7), PBI vtable 0x103B768 (\u002B0x10=0xA029DC, \u002B4=0x009FF54C), ContinuousPBI 0x103D3B0 (\u002B0x10=0xA6ACC0), queue 0xA38600/0xA01800; 0xA3587C (0xA3587C..0xA358B0); 0x9FDD90 (0x9FDD90..0x9FDE48); 0x9D3644/0x9D3864/0xA01800/0xA41854/0xA431A8/0xA54480 (0x9D3644..0x9D3830, 0x9D3864..0x9D3C58); 0x9E6D2C purge (0x9E6D2C..0x9E6E10, 0x9E2AE4..0x9E2BC8, 0x9E21FC..0x9E24AC, 0x9E2510..0x9E2550, 0x9D8A24..0x9D8F54)",
+        "C12 bus-output tail (report 20260928-B-M6b-bus-metering.md): 0xA4FEF8 tail 0xA4FF40..0xA50FD0 is the bus level-analysis/metering stage (min/max peak 0xA50D48, RMS 0xA50C84, filtered peak 0xA501B0, 0xA52164 at 0xA500B0; flag byte at [out\u002B0x18]\u002B0x20; buffer fields \u002B0/\u002B4/\u002B0xc/\u002B0xe/\u002B0x10/\u002B0x14/\u002B0x18); 0xA4D994 bus gain/param update (0xA4D994..0xA4DD43) with 0xA25FF8; 0x9C806C callback dispatch (0x9C806C..0x9C8104); 0xA52164 biquad\u002Bloudness (0xA52164..0xA5266B)",
+        "C12 source classes (report 20260928-B-M6b-source-classes.md): factory 0xA562B8 dispatch on (mode, plugin\u003E\u003E16); shipped plugin ids 0x00040001 Vorbis / 0x00020001 ADPCM; Vorbis via registered-plugin 0x9CC3EC (vtables 0x103E0B8 streamed / 0x103E138 in-memory); real render slots 0xA73D34 (ADPCM t1) / 0xA72554 (ADPCM t3) / 0xAB0448 (Vorbis streamed) / 0xAB1550 (Vorbis in-memory); vt\u002B0x4C = 0xA72B14 (bit6 of [[source\u002B0xC]\u002B0x1BE]); [source\u002B0xC] is the PBI, not the bus; source-class field layouts",
+        "C12 modulator evaluator (report 20260928-B-M6b-modulator-evaluator.md): 0x9E2BD0 (0x9E2BD0..0x9E52F3) per-voice LFO (five shapes 0..4) \u002B transition evaluator and pool allocator; type-0 records 0x4C (list [arg\u002B0x20]) and type-1 records 0x30 (list [arg\u002B0x14]); 0x9E52F8 (0x9E52F8..0x9E5E8B) five-segment ramp"
+      ],
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "not built and not wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler (the wiring is B-M6b-3). C12/C15 supply the callee bodies. Remaining gaps: the bus metering DSP identity and per-lane mapping 0xA50044..0xA50FD0 (scalar flow, offsets, loop bounds, gains and store targets are EXACT_SOURCE; the filter identity is RECOVERABLE_GAP); 0xA25FF8 (called by 0xA4D994) RECOVERABLE_GAP; the 0xA4B93C sub-callees 0x9BE28C/0x9BDA88/0x9BD368/0x9BF8E4/0xA5E694 and 0x9EEDA4 RECOVERABLE_GAP; whether the shipped media exercises the 0xA022E8/0xA0228C/0xA01768 states UNKNOWN; the bus insert-FX effect object class (registry-assigned via 0x9CC2AC) and the [node\u002B0x70] device sub-object identity UNKNOWN; the callback registry 0x0108D95C owner RECOVERABLE_GAP; the source-class, voice/bus insert-FX and four group members\u0027 Wwise class names UNKNOWN. HARDWARE_ONLY: the native device frame count 0x9EBE6C\u0027s sink value, the OpenSL pacing, and the runtime value of the gate bytes (the bus-pass arg (gate2==0)?1:gate3 and the frames-per-Perform branch); the code paths and writers are settled. The downstream node of the voice\u002B0x1C0 wrapper ([voice\u002B0x1C4]) and the meaning of the V7 r2/E4/E0 values are UNKNOWN; whether the shipped media exercises the 0xA552F0 paths is UNKNOWN; the writer of [r6\u002B0x164] is RECOVERABLE_GAP. Also UNKNOWN/RECOVERABLE_GAP: the [device\u002B0x70] sub-object identity and its vt\u002B0x24 body and the [device\u002B0x80] object identity (C8/C17, modelled as the Route7C seam); the semantic names of E4/E0/P2F and the four ramp fields; whether the shipped media exercises the 0xA5532C P2F==0 path; the modulator transition-ramp per-sample order (0x9E52F8 stage-B/C first-sample convention; the settled segment boundaries/slopes are EXACT_SOURCE); the writer of [r6\u002B0x164] (sample scale). Also UNKNOWN: the Wwise meaning of the [sp\u002B0x2e] flag, the P2F byte and the connection bit [conn\u002B0x6C]\u00262; whether the shipped media exercises the [sp\u002B0x2e]==0 copy-skip path. The Play -\u003E PBI -\u003E voice -\u003E source creation bridge that creates the voices this engine renders is a separate record, M6-025 (correction C21). OV97 answer (re-analysis/research/overnight/20261016-ov97-99-answer.md): the bus-pass argument (gate2 == 0) ? 1 : gate3 is constant 1 (0x108DB08 stays 0: its only setter path, message 0x35, is unreachable); gate1 (0x108DAF0) stays dynamic.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "WwiseVoiceEngineTests, WwisePitchNodeTests.M6_022_The_voice_order_with_the_pitch_node_matches_the_engine_on_1600_random_scenarios, WwisePitchNodeTests.M6_022_The_voice_order_slot_walks_and_0xA548C0_match_the_engine_for_the_cases_that_stop_before_the_pitch_pass, WwisePitchNodeTests.M6_022_The_first_buffer_starts_with_the_silent_frames_of_the_play_delay, WwisePitchNodeTests.M6_022_The_start_offset_skips_the_first_frames_and_skip_everything_consumes_the_block, WwiseMixKernelTests.M6_022_The_voice_mix_0xA4FBEC_matches_the_engine_gate_pad_state_and_gain_composition, WwiseMixKernelTests.M6_012_The_matrix_mixer_0xA45E9C_matches_the_engine_for_1_and_2_channels_each_side, WwiseMixKernelTests.M6_012_The_ramped_accumulate_0xA46668_matches_the_engine_bit_for_bit_with_lane_gains, WwiseVorbisEngineTests.R4_8_TheStopOffsetGetterReturnsTheOffsetAndStoresMinusOne, WwiseRtpcDeliveryTests.C37_1_L7_10_ThePrePassStepMatchesTheEngine, WwiseRtpcDeliveryTests.C37_1_AnEventVolumeSetReachesTheVoiceGainThroughTheLiveEntries, WwiseCompressorTests (the voice insert-FX Compressor plug-in object: C40.6, T-F1, T-F4..T-F7; the wrapper bodies 0xA793D4, 0x9CF644, 0xA6C22C and the linked worker 0xA9FEEC are not built); WwiseAuxRouteTests.C40_4_TheAuxWalkSumsTheMatchingEntriesAsTheEngineDoes_0xA447D8, WwiseAuxRouteTests.C40_4_TheVoiceTailBuildsMergesAndDispatchesTheSends_0xA4B93C (against the engine under Unicorn: emu_aux.py)"
+    },
+    {
+      "id": "M8-020",
+      "subsystem": "M8-framework",
+      "title": "PlayAnimationAction: construction, Init, robot/game animation handlers, CheckIfDone, animationCompleted, destructor streamer stop",
+      "location": "cozmo-stack/src/Cozmo.Robot/Actions/IActionRunner.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m8-play-animation-actions.md rows C1, C8..C11, P1..P12, D1..D3, L2..L8: ctor 0x00543C08..0x00543CBE (\u002B0x84 loops, \u002B0x8B 0, \u002B0x8C interrupt, \u002B0x90 null, \u002B0x94 timeout; 60.0f -\u003E FLT_MAX only when loops == 0), Init 0x00543F20 (cozmo_sings_custom remap 0x0054417C/0x00544190, lookup robot[0]-\u003E\u002B0x20-\u003E\u002B0x48, SetStreamingAnimation(robot\u002B0x60, anim, loops, interrupt, flag) -\u003E \u002B0x8B, tag 0 -\u003E failed, 0x03000001; R2E 0xCA/0xCB/0xD5 via 0x00519F8C and E2G 0x5F via external-interface vtable \u002B0x28; callbacks 0x005452F1, 0x0054541D, 0x0054561D, 0x005457F5 and AnimationEvent forward 0x00545750), CheckIfDone 0x005441C0, GetCompletionUnion 0x005441DE (0x0075C544, 0x006C22DC), destructor 0x00543DAC (StillStreaming info 0x00543DF2 on robot\u002B0x98 == \u002B0x90; SetStreamingAnimation(null, 1, true, false) at 0x00543E26; releases \u002B0xB4, \u002B0xAC, \u002B0xA4, \u002B0x9C), vtable 0x01021584 slots \u002B0x1C/\u002B0x20/\u002B0x2C (0x00545210).",
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md additions 2 (the null SetStreamingAnimation tail: \u002B0x73 store and the idle Abort)."
+      ],
+      "effect": "Whether an animation action plays, how it ends, what it reports, and what stopping it does to the streamer.",
+      "provenance": "Codex research R-M8-PLAY (2026-10-12), Opus-checked (109/109 rows confirmed), manager-adopted.",
+      "unresolved": "Build after M8-015 (the action runtime), which it depends on, with M5-008/M5-023 (the streamer). It cannot settle while M8-015 is a RECOVERABLE_GAP. UNKNOWN: the C\u002B\u002B default constructor arguments. R-M9-029: the \u0022cozmo_sings_custom\u0022 remap (0x00543F3A..0x00543F96) is reachable only from CodeLab (M9-029 policy); the stack rejects that name.\nB-M5-19 built, awaiting strong verification: driving calls now have a concrete ActionRunner bridge to existing animation playback, checked type 0x1A/timeout/track gate and terminal queue delivery. This is a partial bridge, not the complete native PlayAnimationAction port. Visible MISSING: CA/CB/D5/5F concrete-action subscriptions and exact start/end/event ordering, animationCompleted string union, cached Animation pointer retry/destructor including null==null idle Abort, and concrete track-stop lifecycle; completion currently comes from the existing playback ticket. The bridge still completes its action and the drive receives E2G 0x5A. No settlement or complete production-path claim.\nB-M5-20 (2026-10-15), built, awaiting strong verification: ported the checked C10 constructor rule: loops==0 AND binary32 timeout==60.0f (0x42700000) stores maximum finite float 0x7F7FFFFF; all other inputs, including adjacent floats and NaN payloads, are retained. Concrete-action MISSING is scoped once per drive via the existing stack diagnostic reporter, not the engine log. Full CA/CB/D5/5F/cached-pointer lifecycle remains unbuilt as already recorded. Ownership note 2026-10-16 (split from M2-023/M2-020; re-analysis/research/20261013-small-reads-2-check.md): the CA, CB and D5 handler bodies (0x005452F0..0x0054534E, 0x0054541C..0x005454F4, 0x0054561C..0x0054569E, 0x00545750..0x00545792) and their handle wiring are this record\u0027s. M2-022 answer (2026-10-16, re-analysis/research/20261016-m2-022-answer.md): subscriptions 0xCA/0xCB/0xD5 and E2G 0x5F (0x543FAE..0x5440F2); D5 gate \u002B0x88 and tag byte vs \u002B0x8B, log, AnimationEvent {ev\u002B0 u32, ev\u002B5 u8}, Broadcast via ctx\u002B4 unchecked (0x545692..0x54577A); ~PlayAnimationAction releases four handles (0x543DAC..0x543E4E).\n\nB-M2M15-2 built, awaiting strong verification: TriggerLiftSafeAnimationAction now retains/replaces CA,CB,D5 and UI5F slots after real playback starts, using its own returned animation tag. CA match sets started after Info; CB requires start/tag and decrements finite u32 loops, zero loops never ends. D5 uses payload\u002B4 tag/\u002B5 event and forwards timestamp/event to typed API and E2G60 before local emit. UI5F compares full uint without started gate. CheckIfDone uses ended/failed flags, no ticket-completion success. Destructor releases UI5F,D5,CB,CA before base. Streamer Abort producer delivers app5F before RobotEventHandler/local action. Remaining completion-union/cached Animation-pointer lifecycle is not certified. Unit callback tests substitute direct Init, so only M5X19 real behavior/queue/streamer path is production coverage; firmware acknowledgments derive from delivered Start/End.\nB-DELIV-1 (2026-10-17), built, awaiting strong verification: 5F and forwarded60 app delivery use the common FIFO; raw/typed60 views remain adjacent and payload copies survive until dispatch. The existing synchronous local5F/60 subscribers and robot abort8D stay in their native place; only host invocation is deferred. Source authority is adopted research/20261017-b-m2m15-2-check.md finding1 (Broadcast6625B0 -\u003E DeliverToGame661594 -\u003E buffer65D8B8).\nB-M1-5 (2026-10-17), built, awaiting strong verification: Real ActionList queue/tick action Init and received CA/D5/D4 inputs cover 60-before-tap and 5F-before-RobotStopped. No direct Init or app producer substitution in these tests. Public ActionCompleted exposes the existing completion cache as such; no concrete completion-union serializer is invented. Existing completion-union/cached Animation-pointer lifecycle gaps remain. AWaitingHost is corrected to unit, not production coverage.\nB-M1-6 (2026-10-18), built, awaiting strong verification: Case-A regression now asserts host FIFO 5F, ActionCompleted, RobotStopped in the same tick. Existing completion-cache payload limitation retained.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "; M5X19BuilderTests; M5X15BuilderTests; M5X17BuilderTests; M5X18BuilderTests; NavigationTests; FreeplayTests; ActionListTests; M5X20BuilderTests.ForeverTimeoutChangesOnlyAnExactlyDefaultBinary32Timeout, M5X20BuilderTests.ConcreteActionGapIsReportedOncePerDriveEvenWithRepeatedInitTags; M2M15HandlerBuilderTests; M5X19BuilderTests.BehaviorDriveWithDefaultInputsPlaysItsEndAnimationThenReturnsSuccess; B-DELIV-1 AppDeliveryTests.AnAbortHostCanReplaceTheAnimationWithoutRecursiveDeliveryOrAnIncompleteMutation, AWaitingHostDoesNotHoldTheSchedulerOrTickLock (production); M2M15HandlerBuilderTests.D5UsesPayloadOffsetFiveAndQueuesAppBeforeSynchronousLocalRecipients (unit direct action/dispatch); B-M1-5 ReportOrderingRegressionTests both cases (production queue/tick then robot CA/D5/D4; no direct Init). Correction: AppDeliveryTests.AWaitingHostDoesNotHoldTheSchedulerOrTickLock is unit, not production.; B-M1-6: ReportOrderingRegressionTests.CliffStopPublishesAnimationAbortBeforeRobotStoppedAndCompletionHasAHostView (production real ActionList/tick/received D4)."
+    }
+  ],
+  "provenance": [
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/M14SpeechHw.cs",
+      "sha256": "0597ef6b9a3dc5a34b9b7245dd43561994157078cb95cd9523d0d781f4ff5b16"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
+      "sha256": "ea04f4d26f9ffc53ce983c41150c913d9593223d9d2cea42c2d21fc482b6419f"
+    },
+    {
+      "path": "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs",
+      "sha256": "88011137ed34f00cbfca59398a569bd1961f949a250d2dd3b627323547a8656f"
+    },
+    {
+      "path": "re-analysis/acceptance/hardware/scripts/m14-speech-hw-1.md",
+      "sha256": "6cfee8b68cd123f11596a554c437d553d4be3902d5312b1bfb2e1258c63f57ac"
+    },
+    {
+      "path": "re-analysis/fidelity_manifest.json",
+      "sha256": "8b04e095e4cc905b24d1c0280b72a94360fc0eb104aaee6ca325b03a41efef76"
+    }
+  ],
+  "errors": [],
+  "acceptance": "NOT_JUDGED: manager review required; hardware success does not raise provenance"
+}
