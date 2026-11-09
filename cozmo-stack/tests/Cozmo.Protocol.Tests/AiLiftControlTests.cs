@@ -109,8 +109,8 @@ public sealed class AiLiftControlTests
             var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
             Assert.True(result.Admitted); Assert.True(result.OwnerRetired);
             Assert.DoesNotContain(f.Rig.SentSince(afterReplacement), m => m is SetHeadAngle or SetBodyAngle or SetLiftHeight);
-            Assert.False(originalManager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, PlaceObjectOnGroundAction.ReactionLockName));
-            Assert.False(f.Rig.Engine.Robot!.BehaviorManagerOwner!.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, PlaceObjectOnGroundAction.ReactionLockName));
+            Assert.False(originalManager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, GroundPlacement.ReactionLockName));
+            Assert.False(f.Rig.Engine.Robot!.BehaviorManagerOwner!.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, GroundPlacement.ReactionLockName));
         }
         finally { original.SendFault = null; }
     }
@@ -161,7 +161,7 @@ public sealed class AiLiftControlTests
         rig.Tick();
         Assert.Single(rig.SentSince(mark).OfType<PlaceObjectOnGround>());
         Assert.False(manager.IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated));
-        Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, PlaceObjectOnGroundAction.ReactionLockName));
+        Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, GroundPlacement.ReactionLockName));
         placementCancel.Cancel(); rig.Tick();
         Assert.Equal(0x02000000u, (await carried.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
         Assert.True(manager.IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated));

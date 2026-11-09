@@ -3,6 +3,7 @@ using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Vision;
 
+// fidelity: M14-003
 // TrackFaceAction 0x565ADC; the enrollment profile is configured at 0x5FEC84.
 internal sealed class NativeTrackFaceRunner : NativeVisionRunner
 {
@@ -12,6 +13,8 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
     private readonly float _clampMin, _clampMax;
     private readonly uint _stopOnTag;
     private readonly bool _guardedOwner;
+    private readonly bool _manualScope;
+    private bool _installedTracking;
     private float _nextClamp = -1f;
     private int _faceId;
     private uint _timestamp;
@@ -36,11 +39,12 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
 
     // Meet's explicit profile 0x005C2590..25CC; the existing enrollment profile keeps its own defaults.
     internal NativeTrackFaceRunner(ManipulationSystem m, EngineRobot owner, int faceId, bool headOnly,
-        float tolerance, bool clamp, float clampMin, float clampMax, uint stopOnTag)
+        float tolerance, bool clamp, float clampMin, float clampMax, uint stopOnTag, bool manualScope = false)
         : base(m, 0x23, headOnly ? 1u : 5u)
     {
         _owner=owner; ScopedOwner=owner; _guardedOwner=true; _faceId=faceId; _headOnly=headOnly; _tolerance=tolerance;
         _clamp=clamp; _clampMin=clampMin; _clampMax=clampMax; _stopOnTag=stopOnTag;
+        _manualScope=manualScope;
         TimeoutSeconds=float.MaxValue;
     }
 
@@ -60,6 +64,7 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
             if (Current && p is NativeChangedFace change && change.OldId == _faceId) _faceId = change.NewId;
         });
         _owner.NativeTrackingFaceId = _faceId;
+        _installedTracking = true;
         _timestamp = 0;
         return 0;
     }
@@ -164,17 +169,18 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
     public override uint GetCompletionUnion() => unchecked((uint)_faceId);
     public override void WatcherEnding()
     {
-        _owner.NativeTrackingFaceId = 0;
+        if (!_manualScope || _installedTracking) _owner.NativeTrackingFaceId = 0;
         _changed?.Dispose(); _changed = null;
         if (Current)
         {
             if (_savedIdle >= 0) M.Robot.Animations.WithTrackLayers(_ => M.Robot.Animations.Scheduler.LiveIdleParameters.SetParam(LiveIdleParam.EyeDartMaxDistance_pix, _savedIdle));
-            if (Current && State != EngineActionResult.NotStarted)
+            if (Current && State != EngineActionResult.NotStarted && (!_manualScope || _installedTracking))
             {
                 if (!_headOnly) StopBodyTrack();
                 if (Current) StopHeadTrack();
             }
-            if (Current) M.Robot.Animations.DrivingAnimations.ActionIsBeingDestroyed(_owner, () => Current);
+            // ITrackAction destructor 0x564848 invokes the shared handler even when animation is disabled.
+            if (Current && (!_manualScope || _installedTracking)) M.Robot.Animations.DrivingAnimations.ActionIsBeingDestroyed(_owner, () => Current);
         }
         base.WatcherEnding();
     }

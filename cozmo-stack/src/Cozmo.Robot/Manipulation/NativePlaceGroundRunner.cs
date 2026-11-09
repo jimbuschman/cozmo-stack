@@ -16,9 +16,12 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     private readonly object _stopGate = new();
     private Behavior.ScopedAcquisition? _reactionLease;
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
+    internal bool HostFailureCleanup;
+    internal string? HostUnavailable;
     private bool Current => !_ending && !_owner.Lifetime.Destroying && ReferenceEquals(_owner.Engine.Robot, _owner) && !DestructionObserved;
     protected override string ActionName=>"PlaceObjectOnGround";
     internal uint SavedObject=>_saved;
+    internal bool StatusLatched => _latched;
     internal NativeTurnTowardsObjectRunner? VerifyChild=>_verify;
     internal NativePlaceGroundRunner(ManipulationSystem m):this(m,m.Robot.Engine.Robot ?? throw new NativeActionUnavailable("Ground Robot owner unavailable")){}
     internal NativePlaceGroundRunner(ManipulationSystem m,EngineRobot owner):base(m,0x18,7)
@@ -43,9 +46,10 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     {
         int depth=Watcher?.HostUpdateDepth??0;
         try { return base.Update(); }
-        catch(NativeActionUnavailable error) when(AiNativeEnded is not null)
+        catch(NativeActionUnavailable error) when(AiNativeEnded is not null || HostFailureCleanup)
         {
             Watcher?.UnwindUnavailableHostUpdate(depth);
+            HostUnavailable = error.Message;
             Behavior.SteppedBehavior.ReportMissing("M15-022 placement verification unavailable: "+error.Message);
             _owner.ActionList.DeferHostCleanup(()=>{if(_owner.ActionList.ContainsRunner(this))_owner.ActionList.Cancel(Tag);});
             return EngineActionResult.Running;
@@ -70,7 +74,7 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
         if(result==0 && _manager is not null)
         {
             var lease = _reactionLease = new Behavior.ScopedAcquisition();
-            bool acquired = _manager.DisableScopedReactions(PlaceObjectOnGroundAction.ReactionLockName,PlaceObjectOnGroundAction.ReactionLockTable,lease);
+            bool acquired = _manager.DisableScopedReactions(GroundPlacement.ReactionLockName,GroundPlacement.ReactionLockTable,lease);
             if (!Current || !acquired) return unchecked((int)EngineActionResult.Cancelled);
             lease.Completed = true;
         }
@@ -96,9 +100,9 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
         if (lease is not null)
         {
             lease.Cancel();
-            _manager?.RemoveScopedReactions(PlaceObjectOnGroundAction.ReactionLockName,lease);
+            _manager?.RemoveScopedReactions(GroundPlacement.ReactionLockName,lease);
         }
-        else if(State!=EngineActionResult.NotStarted)_manager?.RemoveDisableReactionsLock(PlaceObjectOnGroundAction.ReactionLockName);
+        else if(State!=EngineActionResult.NotStarted)_manager?.RemoveDisableReactionsLock(GroundPlacement.ReactionLockName);
         var verify = _verify; _verify = null;
         verify?.Prep();verify?.WatcherEnding();base.WatcherEnding();
         AiNativeEnded?.TrySetResult((State,_owner.Lifetime.Destroying || !ReferenceEquals(_owner.Engine.Robot,_owner)));

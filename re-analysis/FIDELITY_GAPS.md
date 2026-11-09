@@ -7,10 +7,10 @@ Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 280 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 281 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 360 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 359 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 71 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -29,7 +29,7 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 64 | 0 | 0 | 0 | 4 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 53 | 0 | 0 | 0 | 3 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 0 | 0 | 1 | yes | yes |
-| M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 36 | 0 | 0 | no | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 35 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 31 | 1 | 22 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
@@ -57,7 +57,7 @@ status.
 | M3-device | ACCEPTED | 39 | 0 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 42 | 0 | 0 | 3 |
 | M5-animation | ACCEPTED | 56 | 0 | 0 | 1 |
-| M6-wwise-bank | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
+| M6-wwise-bank | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 1 |
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
@@ -351,15 +351,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: PostEvent 0x009A6704 / core 0x9A0EF8; pump 0x9AE0B0; ExecuteEvent 0x9AA3DC; EnqueueOrExecute 0x9AA0FC; drain 0x9A9F88; Perform 0x9AF8A8; Play 0xA62D38 / 0xA62A1C; Stop 0xA663C8; Seek 0xA645C8; Switch PlayInternal 0xA2C730
 * outstanding: compare the code against the inventory rows (the step after approval) The Play target's PlayInternal creation path (node vt+0x128, the PBI creator and the voice/source attach) is a separate record, M6-025 (correction C21).
-
-**M6-007 — Random/sequence step selection: global time-seeded 64-bit LCG, shared state, k-th eligible, shuffle, avoid list, weights, sequence wrap/ping-pong** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSelection.cs`
-* effect: a different alternative plays
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
-* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
-* evidence: LCG 0xA08A7C..0xA08AC0; SetSeed 0x99DB58 from SoundEngine::Init 0x99EF80; state 0xA09698 / 0xA099BC; SelectPlayable 0xA0A3B4; SelectRandomly 0xA08A44; avoid 0xA08694; sequence 0xA0A524..0xA0A6E8
-* outstanding: compare the code against the inventory rows (the step after approval)
 
 **M6-008 — Continuous containers: loop semantics, next chosen at voice start, modes 1/2 cross-fades, mode 4 same-voice chaining, mode 5 trigger rate, EndOfEvent at the last PBI Term** (live path)
 
@@ -3131,7 +3122,7 @@ B-POSE-2 (2026-10-14, research/20261014-b-pose-1-check.md): item 8: MISSING (sta
 
 **M14-003 — TrackFaceAction: the durations it turns in, and the flags it starts with** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/NativeTrackFaceRunner.cs`
 * effect: face tracking cadence, angular tolerances, motor speeds and optional animation/eye behavior change
 * rests on: ITrackAction's constructor and CheckIfDone, read
 * best authority: ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read

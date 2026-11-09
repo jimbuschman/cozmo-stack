@@ -394,12 +394,15 @@ public sealed class RamIntoBlockBehavior : ManipulationBehavior
         TargetObjectId = t.ObjectId;
         if (M.Docking.Carrying.IsCarryingObject)
         {
+            var owner = M.Robot.Engine.Robot;
             CurrentPhase = Phase.PuttingDown;
             RunAction("turn and PlaceObjectOnGround", async ct =>
             {
+                if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return ActionResult.CancelledWhileRunning;
                 await M.TurnTowardsObjectAsync(t.ObjectId, Math.PI, ct);
-                return await new PlaceObjectOnGroundAction(M).RunAsync(ct);
-            }, _ => Finish());
+                if (owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return ActionResult.CancelledWhileRunning;
+                return await M.PlaceObjectOnGroundAsync(owner, ct);
+            }, _ => { if (owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(M.Robot.Engine.Robot, owner)) Finish(); });
             return;
         }
         CurrentPhase = Phase.Aligning;
@@ -451,7 +454,7 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
     public int WeakLiftsPlanned { get; private set; }
     public int LiftsDone { get; private set; }
     // Observation only: no production action/task retention or alternate execution path.
-    internal Action<PlaceObjectOnGroundAction,Task<ActionResult>>? ManualPutDownStartedForTest { get; set; }
+    internal Action<NativePlaceGroundRunner,Task<ActionResult>>? ManualPutDownStartedForTest { get; set; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) =>
         M.Workouts?.GetCurrentWorkout() is not null && !M.Docking.Carrying.IsCarryingObject && ClosestCube(o => o.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative) is not null;
@@ -495,8 +498,10 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
     private void PuttingDown()
     {
         CurrentPhase = Phase.PuttingDown;
+        var owner = M.Robot.Engine.Robot;
         PlayTrigger(Workout!.PutDown, () =>
         {
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return;
             CurrentPhase = Phase.CheckPutDown;
             // C7: animation completion does not itself unattach; the native caller is EndIteration.
 
@@ -505,11 +510,8 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
                 CurrentPhase = Phase.ManualPutDown;
                 RunAction("PlaceObjectOnGround", ct =>
                 {
-                    var action=new PlaceObjectOnGroundAction(M);
-                    var task=action.RunAsync(ct);
-                    ManualPutDownStartedForTest?.Invoke(action,task);
-                    return task;
-                }, _ => PostLift());
+                    return M.PlaceObjectOnGroundAsync(owner, ct, ManualPutDownStartedForTest);
+                }, _ => { if (owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(M.Robot.Engine.Robot, owner)) PostLift(); });
             }
             else PostLift();
         });
@@ -1485,8 +1487,8 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     // fidelity: M15-024
     public static readonly float StackFilterDistMm = BitConverter.Int32BitsToSingle(0x41A00000), StackFilterAngleRad = BitConverter.Int32BitsToSingle(0x3EC90FDB);
 
-    /// <summary>Test seam: the <see cref="PlaceObjectOnGroundAction"/> the latest <c>TryToPlaceAt</c> ran (not engine behaviour).</summary>
-    internal PlaceObjectOnGroundAction? LastPlaceAction { get; private set; }
+    /// <summary>Test seam: the <see cref="NativePlaceGroundRunner"/> the latest <c>TryToPlaceAt</c> ran (not engine behaviour).</summary>
+    internal NativePlaceGroundRunner? LastPlaceAction { get; private set; }
 
     /// <summary>Test seam: when set, every candidate <c>(i, j)</c> the search tests is appended in the order tested (not engine behaviour).</summary>
     internal List<(int I, int J)>? CandidateLog { get; set; }
@@ -1573,21 +1575,22 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
         CurrentPhase = Phase.PlacingAt;
         _actionsStarted++;
         var trace = new List<string>();
+        var owner = M.Robot.Engine.Robot;
         RunAction(FormattableString.Invariant($"PlaceObjectOnGroundAtPose({pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}) attempt {attempt}"), async ct =>
         {
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return ActionResult.CancelledWhileRunning;
             var drive = new DriveToPlaceCarriedObjectAction(M, pose, true, false, false, true, BeaconFloorGeometry.Ten);
             var r = await drive.RunAsync(ct);
+            if (owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return ActionResult.CancelledWhileRunning;
             trace.AddRange(drive.Trace.Select(l => "  " + l));
             if (r != ActionResult.Success) { trace.Add($"Current action DriveToPlaceCarriedObject[0] failed with {r}"); return r; }       // 0x0054F7F2..0x0054F8F4
-            var place = new PlaceObjectOnGroundAction(M) { ReactionLocks = Scope.Manager };
-            LastPlaceAction = place;
-            r = await place.RunAsync(ct);
-            trace.AddRange(place.Trace.Select(l => "  " + l));
+            r = await M.PlaceObjectOnGroundAsync(owner, ct, (action, _) => LastPlaceAction = action);
             if (r != ActionResult.Success) trace.Add($"Current action PlaceObjectOnGround[1] failed with {r}");
             return r;
         }, r =>
         {
-            foreach (var l in trace) Log(l);
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return;
+            foreach (var l in trace) { Log(l); if (owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return; }
             PlaceCompleted(r, pose, attempt);
         });
     }

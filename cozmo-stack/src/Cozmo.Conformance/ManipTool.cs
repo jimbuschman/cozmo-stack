@@ -193,7 +193,7 @@ public static class ManipTool
             case "--putdown":
             {
                 if (!m.Docking.Carrying.IsCarryingObject) { m.Docking.Carrying.SetCarrying(cube.ObjectId); Say("assuming the cube is on the lift (place it there by hand first)"); }
-                var r = await new PlaceObjectOnGroundAction(m).RunAsync(cts.Token);
+                var r = await m.PlaceObjectOnGroundAsync(cts.Token);
                 succeeded = r == ActionResult.Success && !m.Docking.Carrying.IsCarryingObject;
                 outcome = $"PlaceObjectOnGround success={(succeeded ? "yes" : "no")}; action={r}; carrying={m.Docking.Carrying.IsCarryingObject}";
                 break;

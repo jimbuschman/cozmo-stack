@@ -104,10 +104,8 @@ public sealed class WwiseSongRenderer
     public WwiseEnvelopeRuntime EnvelopeRuntime { get; } = new();
     /// <summary>
     /// One render at a time, so two prewarms in flight at once (a song and a get-in, or two songs queued
-    /// back to back) cannot tear this renderer's own <c>_selection</c> state. This gate does <b>not</b>
-    /// cover the shared global LCG: the ordinary-event path draws from the same <see cref="WwiseRng"/>
-    /// under the audio source's own lock, so <see cref="WwiseRng.Next"/> synchronises its state itself
-    /// (M9-015).
+    /// back to back) cannot overlap this renderer's work. The shared selection owner synchronizes container
+    /// state across this renderer and ordinary playback; the RNG also synchronizes its own state (M9-015).
     /// </summary>
     private readonly object _renderGate = new();
 
@@ -121,10 +119,15 @@ public sealed class WwiseSongRenderer
     /// <param name="decode">Media id to mono PCM at <see cref="CozmoAudio.SampleRate"/>, or null when it cannot be decoded.</param>
     /// <param name="rng">The single global LCG the whole engine shares; null makes a fresh time-seeded one.</param>
     public WwiseSongRenderer(WwiseSoundLibrary lib, Func<uint, short[]?> decode, WwiseRng? rng = null)
+        : this(lib, decode, new WwiseSelection(rng ?? new WwiseRng(), sharedAcrossGameObjects: true))
+    {
+    }
+
+    internal WwiseSongRenderer(WwiseSoundLibrary lib, Func<uint, short[]?> decode, WwiseSelection selection)
     {
         _lib = lib;
         _decode = decode;
-        _selection = new WwiseSelection(rng ?? new WwiseRng(), sharedAcrossGameObjects: true);
+        _selection = selection;
         MidiRuntime = new WwiseMidiRuntime(_selection.Rng);
     }
 
@@ -421,8 +424,11 @@ public sealed class WwiseSongRenderer
                     }
                     return total;
                 }
-                uint pick = PickIndex(rs);
-                return Trigger(pick, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators,
+                uint? pick;
+                try { pick = PickIndex(rs); }
+                catch (NotSupportedException error) { problems.Add(error.Message); return 0; }
+                if (pick is null) { problems.Add($"container {rs.Id} selected no item"); return 0; }
+                return Trigger(pick.Value, key, velocity, startMs, heldMs, noteOff, gainDb, cents, playOn, modulators,
                                sink, ref voices, problems, depth + 1, branch);
             }
 
@@ -504,16 +510,16 @@ public sealed class WwiseSongRenderer
     /// path (M9-022; M6-007 §3.5..§3.7): the k-th eligible item with the blocked/avoid list, the shuffle
     /// played bits, or the sequence cursor. This is the live singing path's selection; the former
     /// <c>WeightedPick</c>/<c>NextInSequence</c> pair drew from <see cref="Random"/> and is rejected by the
-    /// inventory. A container whose state cannot produce an item returns index 0 rather than dropping the
-    /// voice, because the caller cannot place a voice with no recording.
+    /// inventory. An exhausted selection drops this voice.
     /// </summary>
     // fidelity: M9-015, M9-022
-    private uint PickIndex(WwiseRandomSequenceNode rs)
+    private uint? PickIndex(WwiseRandomSequenceNode rs)
     {
-        if (rs.Playlist.Count == 0) return 0;
+        if (rs.Playlist.Count == 0) return null;
         var settings = WwiseContainerSelectionSettings.FromNode(rs);
-        int index = _selection.NextIndex(rs.Id, SingingGameObject, settings);
-        return rs.Playlist[index < 0 ? 0 : index].ChildId;
+        int index = _selection.NextIndex(rs.Id, SingingGameObject, settings,
+            candidate => _lib.IsStepPlayable(rs.Playlist[candidate].ChildId));
+        return index < 0 ? null : rs.Playlist[index].ChildId;
     }
 
 }

@@ -227,8 +227,7 @@ public class WwiseSelectionTests
     // ---------------------------------------------------------------- §3.5 playability probe
 
     /// <summary>
-    /// When the chosen node is not playable, shuffle and standard-with-avoid probe forward from idx+1,
-    /// skipping played/blocked items (§3.5).
+    /// Native A0A3B4 retries standard selection in playlist order and updates the avoid list for each probe.
     /// </summary>
     [Fact]
     public void AnUnplayablePickProbesForwardSkippingBlockedItems()
@@ -239,6 +238,67 @@ public class WwiseSelectionTests
         // Seed 0 draws k = 0, so index 0 would be chosen; make it unplayable.
         int pick = state.SelectNext(rng, index => index != 0);
         Assert.Equal(1, pick);
+    }
+
+    [Theory]
+    [InlineData(WwiseRandomMode.Standard, 2, 2, 3, 100000, 1, 6, 740882966u)]
+    [InlineData(WwiseRandomMode.Shuffle, 1, 1, 1, 50000, 13, 4, 1708849955u)]
+    [InlineData(WwiseRandomMode.Raw2, 0, 3, 3, 150000, 1, 1, 740882966u)]
+    public void NativeRetryTraceKeepsTheExpectedStateAndDrawCount(WwiseRandomMode mode, int avoid,
+        int remaining, int counter, int weight, int played, int blocked, uint nextDraw)
+    {
+        var state = new WwiseSelectionState(WwiseContainerSelectionSettings.Random(4, mode, avoid));
+        var rng = new WwiseRng(0);
+        var attempts = new List<int>();
+        int picked = state.SelectNext(rng, index => { attempts.Add(index); return index == 2; });
+        Assert.Equal(mode == WwiseRandomMode.Shuffle ? new[] { 0, 3, 2 } : new[] { 0, 1, 2 }, attempts);
+        Assert.Equal(2, picked);
+        Assert.Equal(remaining, state.Remaining);
+        Assert.Equal(counter, state.Counter);
+        Assert.Equal(weight, state.RemainingWeight);
+        for (int i = 0; i < 4; i++)
+        {
+            Assert.Equal((played & (1 << i)) != 0, state.IsPlayed(i));
+            Assert.Equal((blocked & (1 << i)) != 0, state.IsBlocked(i));
+        }
+        Assert.Equal(nextDraw, rng.Next());
+    }
+
+    [Fact]
+    public void SingletonDoesNotProbeOrConsumeRandomState()
+    {
+        var rng = new WwiseRng(0);
+        var state = new WwiseSelectionState(Shuffle(1, 1));
+        Assert.Equal(0, state.SelectNext(rng, _ => throw new InvalidOperationException()));
+        Assert.Equal(1, state.Counter);
+        Assert.Equal(0u, rng.Next());
+    }
+
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 1)]
+    public void UnplayableSequenceStepsAcrossAllCandidates(bool pingPong, int next)
+    {
+        var state = new WwiseSelectionState(WwiseContainerSelectionSettings.Sequence(3, pingPong));
+        var rng = new WwiseRng(0);
+        var attempts = new List<int>();
+        Assert.Equal(-1, state.SelectNext(rng, i => { attempts.Add(i); return false; }));
+        Assert.Equal(new[] { 0, 1, 2 }, attempts);
+        Assert.Equal(next, state.SelectNext(rng));
+        Assert.Equal(0u, rng.Next());
+    }
+
+    [Fact]
+    public void ShuffleExhaustionRetainsAllFourNativeDraws()
+    {
+        var state = new WwiseSelectionState(Shuffle(4, 1));
+        var rng = new WwiseRng(0);
+        var attempts = new List<int>();
+        Assert.Equal(-1, state.SelectNext(rng, i => { attempts.Add(i); return false; }));
+        Assert.Equal(new[] { 0, 3, 2, 1 }, attempts);
+        Assert.Equal(0, state.Remaining);
+        Assert.Equal(0, state.Counter);
+        Assert.Equal(1669437588u, rng.Next());
     }
 
     // ---------------------------------------------------------------- §3.4 where the state lives

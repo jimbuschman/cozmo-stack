@@ -178,7 +178,13 @@ public static class WwisePlayback
                     return parts.Count == 0 ? null : new WwisePlaySequence(parts);
                 }
                 // fidelity: M9-022
-                int index = selection.NextIndex(rs.Id, GameObject, WwiseContainerSelectionSettings.FromNode(rs));
+                int index;
+                try
+                {
+                    index = selection.NextIndex(rs.Id, GameObject, WwiseContainerSelectionSettings.FromNode(rs),
+                        candidate => lib.IsStepPlayable(rs.Playlist[candidate].ChildId));
+                }
+                catch (NotSupportedException error) { problems.Add(error.Message); return null; }
                 if (index < 0) { problems.Add($"container {rs.Id} selected no item"); return null; }
                 return Walk(lib, rs.Playlist[index].ChildId, gainDb, cents, switches, selection, problems, depth + 1);
             }

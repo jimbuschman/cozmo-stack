@@ -170,6 +170,7 @@ internal sealed class ActionList : IDisposable
     public int QueueAction(QueueActionPosition position, IActionRunner? incoming, byte retries = 0) => QueueActionCore(position,incoming,retries,null);
     internal int QueueActionGuardedNow(IActionRunner incoming,byte retries,Func<bool> current) => QueueActionCore(QueueActionPosition.Now,incoming,retries,current);
     internal int QueueActionGuardedAtEnd(IActionRunner incoming,byte retries,Func<bool> current) => QueueActionCore(QueueActionPosition.AtEnd,incoming,retries,current);
+    internal int QueueActionGuardedInParallel(IActionRunner incoming,byte retries,Func<bool> current) => QueueActionCore(QueueActionPosition.InParallel,incoming,retries,current);
     private int QueueActionCore(QueueActionPosition position,IActionRunner? incoming,byte retries,Func<bool>? hostAdmissionCurrent)
     {
         if(hostAdmissionCurrent is null&&incoming is ActionRunner runner)runner.MarkQueueAdmission();
@@ -233,7 +234,9 @@ internal sealed class ActionList : IDisposable
                     if(hostAdmissionCurrent is not null && incoming is ActionRunner accepted)accepted.MarkQueueAdmission();
                     return QueueAtEndMain(incoming,retries);
                 case QueueActionPosition.InParallel:
-                    return AddConcurrent(incoming,retries);
+                    int added = AddConcurrent(incoming,retries);
+                    if(added == 0 && hostAdmissionCurrent is not null && incoming is ActionRunner concurrent)concurrent.MarkQueueAdmission();
+                    return added;
                 default:
                     return InvalidPosition();
             }

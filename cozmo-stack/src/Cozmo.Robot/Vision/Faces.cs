@@ -412,9 +412,8 @@ public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew,
 /// entry's last is rejected ("Face observed before previous observation"). <c>RobotObservedFace</c> is
 /// broadcast with the pose and the maximum expression. <c>Update()</c> (0x004F52xx): unnamed faces not seen for
 /// 15000 ms (0x3A98) are removed ("Removing unnamed face %d at t=%d, because it hasn't been seen since
-/// t=%d"; "robot.vision.remove_unobserved_session_only_face"). Queries: <c>GetFaceIDsObservedSince(ts)</c>,
-/// <c>HasAnyFaces(ts)</c>, <c>GetLastObservedFace(pose)</c>, <c>GetFace(id)</c>, all restricted to faces whose
-/// pose is in the robot's current origin (<c>IsPoseInWorldOrigin</c>, see <see cref="ShouldReturnFace(FaceEntry, uint, bool, PoseTreeNode?)"/>).
+/// t=%d"; "robot.vision.remove_unobserved_session_only_face"). Observation-list queries check the robot's
+/// current origin (see <see cref="ShouldReturnFace"/>). The managed raw face and last-observation views are separate.
 /// </summary>
 public sealed partial class FaceWorld
 {
@@ -464,7 +463,7 @@ public sealed partial class FaceWorld
             ? on && native.Z < 0 : face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z;
         if (below) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev;
-        lock (_gate)
+        using (LogCallbackDeferral.EnterGated(_gate))
         {
             // C2-F7: the reachable match is the map lookup keyed by the TrackedFace id at +0. The
             // pose/overlap loop is dead because FaceTracker::IsRecognitionSupported 0x0086B244 is
@@ -480,15 +479,17 @@ public sealed partial class FaceWorld
                     return null;
                 }
                 // C2-F7c: WasRotatingTooFast 0x004F4596 gates the new-entry path only.
-                if (rotatingTooFast.Value) { Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping"); return null; }
+                if (rotatingTooFast.Value) { LogCallbackDeferral.Run(() => Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping")); return null; }
                 entry = new FaceEntry { Id = face.Id, FirstObservedTimestamp = face.Timestamp };
                 _faces[face.Id] = entry; isNew = true;
-                Log?.Invoke($"FaceWorld.UpdateFace.NewFace: Added new face with ID={face.Id} at t={face.Timestamp}.");
+                string message = $"FaceWorld.UpdateFace.NewFace: Added new face with ID={face.Id} at t={face.Timestamp}.";
+                LogCallbackDeferral.Run(() => Log?.Invoke(message));
             }
             else if (face.Timestamp <= entry.LastObservedTimestamp)
             {
                 // C2-F7b: a timestamp regression logs and continues with delta 0; it does not reject.
-                Log?.Invoke($"FaceWorld.UpdateFace.BadTimeStamp: Face observed before previous observation ({face.Timestamp} <= {entry.LastObservedTimestamp})");
+                string message = $"FaceWorld.UpdateFace.BadTimeStamp: Face observed before previous observation ({face.Timestamp} <= {entry.LastObservedTimestamp})";
+                LogCallbackDeferral.Run(() => Log?.Invoke(message));
             }
             prev = entry.HeadPose;
             // C2-F7c: on the found path a no-parts observation keeps the entry's existing translation
@@ -579,22 +580,16 @@ public sealed partial class FaceWorld
     // fidelity: M14-009
     /// <summary>
     /// <c>FaceWorld::GetFaceIDsObservedSince(ts, bool)</c> 0x004F59EE..0x004F5A6E: for each entry, the
-    /// <see cref="ShouldReturnFace(FaceEntry, uint, bool, PoseTreeNode?)"/> gates in the native order (last
+    /// <see cref="ShouldReturnFace"/> gates in the native order (last
     /// observed at node+0x1C not below <paramref name="timestamp"/>; with <paramref name="requireId"/> the id at
     /// node+0x14 at least 1; <c>IsPoseInWorldOrigin(node+0x108)</c>), inserting the key into a <c>std::set&lt;int&gt;</c>,
     /// so the ids come back ascending. The bool is the engine's id test, not a name test.
     /// </summary>
     public IReadOnlyList<int> GetFaceIDsObservedSince(uint timestamp, bool requireId = false)
     {
-        var owner = NativeOwner?.Invoke();
-        if (owner is null)
-            lock (_gate) return _faces.Values.Where(f => ShouldReturnFace(f, timestamp, requireId)).Select(f => f.Id).OrderBy(id => id).ToList();
-        using var mutation = NativePoseScope?.Invoke();
-        lock (owner.PoseTreeGate) lock (_gate)
-        {
-            owner.TryGetNativeOriginOwner(owner.CurrentOriginId, out var origin);
-            return _faces.Values.Where(f => ShouldReturnFace(f, timestamp, requireId, origin?.Node)).Select(f => f.Id).OrderBy(id => id).ToList();
-        }
+        return QueryCurrentOrigin((root, bare, missing) => _faces.Values
+            .Where(f => ShouldReturnFaceForQuery(f, timestamp, requireId, root, bare, missing))
+            .Select(f => f.Id).OrderBy(id => id).ToList());
     }
     public IReadOnlyList<int> GetFaceIDs(bool requireId = false) => GetFaceIDsObservedSince(0, requireId);
 
@@ -650,33 +645,48 @@ public sealed partial class FaceWorld
     /// <c>pose.HasSameRootAs(currentOrigin)</c>: the robot's PoseOriginList at +0x294, its current origin at +0x14,
     /// then the veneer 0x008CAE2C to <c>HasSameRootAs</c> (PLT 0x004A4C78), 0x0051290C..0x00512916. A delocalize does
     /// NOT clear the faces (FaceWorld::OnRobotDelocalized 0x004F55E4..0x004F563A only erases viz objects), so a face
-    /// seen before one is in an old origin and is not returned. This overload has no robot, so it reports that gate
-    /// MISSING; the queries use the overload with the current origin.
+    /// seen before one is in an old origin and is not returned. An attached world uses its current robot;
+    /// a bare host-only world retains its timestamp and ID checks.
     /// </remarks>
     public bool ShouldReturnFace(FaceEntry entry, uint time, bool requireId = false)
     {
-        if (entry.LastObservedTimestamp < time) return false;
-        if (requireId && entry.Id < 1) return false;
-        Behavior.SteppedBehavior.ReportMissing("M14-009 FaceWorld::ShouldReturnFace without a native robot: Robot::IsPoseInWorldOrigin(entry+0xF4) cannot be evaluated, so a face from an old origin is still returned");
-        return true;
+        return QueryCurrentOrigin((root, bare, missing) => ShouldReturnFaceForQuery(entry, time, requireId, root, bare, missing));
     }
 
-    // fidelity: M14-009
-    /// <summary>
-    /// <see cref="ShouldReturnFace(FaceEntry, uint, bool)"/> with the robot's current origin node: the third gate is
-    /// the face pose's root against that origin's root (<c>HasSameRootAs</c>). With no current origin owner or no
-    /// native observation origin on the entry the gate cannot be evaluated: reported MISSING and the face is not returned.
-    /// </summary>
-    internal static bool ShouldReturnFace(FaceEntry entry, uint time, bool requireId, PoseTreeNode? currentOrigin)
+    private static bool ShouldReturnFaceForQuery(FaceEntry entry, uint time, bool requireId,
+        PoseTreeNode? root, bool bare, Action missing)
     {
-        if (entry.LastObservedTimestamp < time) return false;
-        if (requireId && entry.Id < 1) return false;
-        if (currentOrigin is null || entry.NativeObservationOrigin is null)
+        if (entry.LastObservedTimestamp < time || (requireId && entry.Id < 1)) return false;
+        if (bare && entry.NativeObservationOrigin is null) return true;
+        if (root is null || entry.NativeObservationOrigin is null) { missing(); return false; }
+        return PoseTreeNode.HasSameRoot(entry.NativeObservationOrigin, root);
+    }
+
+    private T QueryCurrentOrigin<T>(Func<PoseTreeNode?, bool, Action, T> query)
+    {
+        bool missing = false;
+        T result;
+        using (NativePoseScope?.Invoke())
         {
-            Behavior.SteppedBehavior.ReportMissing("M14-009 Robot::IsPoseInWorldOrigin 0x0051290C: " + (currentOrigin is null ? "the robot has no current native origin owner" : $"face {entry.Id} has no native observation origin") + "; the face is not returned");
-            return false;
+            var owner = NativeOwner?.Invoke();
+            bool bare = NativeOwner is null;
+            if (owner is null)
+            {
+                lock (_gate) result = query(null, bare, () => missing = true);
+            }
+            else
+            {
+                lock (owner.PoseTreeGate) lock (_gate)
+                {
+                    PoseTreeNode? root = null;
+                    if (!owner.Lifetime.Destroying && ReferenceEquals(NativeOwner?.Invoke(), owner) &&
+                        owner.TryGetNativeOriginOwner(owner.CurrentOriginId, out var origin)) root = origin?.Node;
+                    result = query(root, false, () => missing = true);
+                }
+            }
         }
-        return PoseTreeNode.HasSameRoot(entry.NativeObservationOrigin, currentOrigin);
+        if (missing) Behavior.SteppedBehavior.ReportMissing("M14-009 current robot or native face origin unavailable; face query withheld");
+        return result;
     }
 
     // fidelity: M14-009

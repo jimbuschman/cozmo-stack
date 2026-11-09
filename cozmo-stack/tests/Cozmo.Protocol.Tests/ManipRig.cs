@@ -209,6 +209,12 @@ internal sealed class Rig : IDisposable
     /// <summary>How many images of the same view <see cref="Frame"/> processes while the view holds an object the world has not located at that pose yet.</summary>
     public int SightingsPerFrame = 2;
 
+    // Opt-in real camera ingress for native ground verification; ordinary offline frames stay unchanged.
+    public bool NativeGroundCapture;
+    public int NativeGroundCaptureAttempts, NativeGroundCapturedFrames;
+    public int NativeGroundMarkerReports, NativeGroundObjectReports;
+    private bool _nativeGroundSubscriptions;
+
     /// <summary>
     /// Whether some rendered object still has nothing to confirm against: the world has no located object of its type, or that object's confirmer count is below 2
     /// (<c>IsReferencePoseConfirmed</c> is count &gt; 1, 0x00506340; a first sighting and a mismatching one leave the count at 1, 0x00506A46..0x00506A4E).
@@ -235,7 +241,51 @@ internal sealed class Rig : IDisposable
         if (Cube is { } c && Lib is not null) MarkerRenderer.DrawCube(frame, Lib, cam, ObjectType.Block_LIGHTCUBE1, c);
         if (Lib is not null) foreach (var (type, pose) in MoreCubes) MarkerRenderer.DrawObject(frame, Lib, cam, type, pose);
         if (Charger is { } ch && Lib is not null) MarkerRenderer.DrawObject(frame, Lib, cam, ObjectType.Charger_Basic, ch);
-        return Vision.ProcessImage(frame, T, T, pd);
+        if (!NativeGroundCapture) return Vision.ProcessImage(frame, T, T, pd);
+        if (NativeGroundCapture)
+        {
+            Vision.Enabled = true;
+            if (!_nativeGroundSubscriptions)
+            {
+                _nativeGroundSubscriptions = true;
+                Robot.Engine.AnimationMessages.SubscribeMessage(0x43, true, payload =>
+                { if (NativeGroundCapture && payload is ProcessedImageReport report && report.Modes.Contains((uint)VisionMode.DetectingMarkers)) NativeGroundMarkerReports++; });
+                Robot.Engine.AnimationMessages.SubscribeMessage(0x44, true, payload =>
+                { if (NativeGroundCapture && payload is NativeObservedObject) NativeGroundObjectReports++; });
+            }
+            NativeGroundCaptureAttempts++;
+            uint before = Vision.NativeInitializationForTest?.MotionPose.FrameCount ?? 0;
+            var owner = Robot.Engine.Robot!;
+            owner.HandleFirmwareVersion(new FirmwareVersion { Signature = System.Text.Encoding.UTF8.GetBytes("{\"sim\":true}") });
+            Vision.SetNativeOuterCalibration(Cal);
+            using var history = HistRobotState.From(owner.GetCheckedMainPose(), owner.StoredState!);
+            using var camera = owner.CopyHistoricalCameraPose(history);
+            using var flat = camera.GetWithRespectToRoot();
+            var nativeCamera = new CameraModel(Cal, flat);
+            var nativeImage = new GrayImage(Cal.Columns, Cal.Rows);
+            nativeImage.Fill(150);
+            if (Cube is { } nativeCube && Lib is not null) MarkerRenderer.DrawCube(nativeImage, Lib, nativeCamera, ObjectType.Block_LIGHTCUBE1, nativeCube);
+            if (Lib is not null) foreach (var (type, pose) in MoreCubes) MarkerRenderer.DrawObject(nativeImage, Lib, nativeCamera, type, pose);
+            const int chunkSize = 1200;
+            int chunks = (nativeImage.Pixels.Length + chunkSize - 1) / chunkSize;
+            var gate = Robot.Engine.HasCameraCalibration;
+            Robot.Engine.HasCameraCalibration = () => false;
+            try
+            {
+                for (int i = 0; i < chunks; i++)
+                    Send(new ImageChunk { ImageId = T, FrameTimestamp = T, ImageEncoding = 1, ImageResolution = 4,
+                        ImageChunkCount = checked((byte)chunks), ChunkId = checked((byte)i), Data = nativeImage.Pixels.Skip(i * chunkSize).Take(chunkSize).ToArray() });
+                Tick();
+                Vision.WaitForProcessorIdle();
+                Send(new ImageImuData { ImageId = unchecked(T + 1), Line2Number = 0 });
+                Tick();
+            }
+            finally { Robot.Engine.HasCameraCalibration = gate; }
+            Robot.Engine.VisionUpdateAllResultsFailed?.Invoke();
+            Tick();
+            if ((Vision.NativeInitializationForTest?.MotionPose.FrameCount ?? 0) > before) NativeGroundCapturedFrames++;
+        }
+        return Vision.LastResult ?? new VisionFrameResult(T, T, pd, Array.Empty<ObservedMarker>(), Array.Empty<ObjectObservation>(), Array.Empty<ObservableObject>(), TimeSpan.Zero);
     }
 
     /// <summary>

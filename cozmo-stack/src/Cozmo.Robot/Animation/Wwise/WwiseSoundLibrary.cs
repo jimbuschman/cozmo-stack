@@ -131,6 +131,21 @@ public sealed class WwiseSoundLibrary : IDisposable
         }
     }
 
+    // SelectPlayable 0xA0A588 calls the resolved node's +0x48 before walking its contents.
+    internal bool IsStepPlayable(uint id)
+    {
+        lock (_gate)
+        {
+            if (!_objects.ContainsKey(id)) return false;
+            return Node(id) switch
+            {
+                WwiseSoundNode sound => sound.MediaId != 0,
+                WwiseRandomSequenceNode or WwiseSwitchNode or WwiseBlendNode or WwiseActorMixerNode => true,
+                _ => throw new NotSupportedException($"MISSING: M6-007 node {id} playability is not recovered"),
+            };
+        }
+    }
+
     /// <summary>
     /// Runs the hierarchy reader over every object of the types it covers and reports, per type, how
     /// many there are and how many consumed their payload exactly, with the first problems. This is the

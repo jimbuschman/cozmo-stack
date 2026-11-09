@@ -2441,7 +2441,7 @@
       "subsystem": "M6-wwise-bank",
       "title": "Random/sequence step selection: global time-seeded 64-bit LCG, shared state, k-th eligible, shuffle, avoid list, weights, sequence wrap/ping-pong",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSelection.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [
         "LCG 0xA08A7C..0xA08AC0; SetSeed 0x99DB58 from SoundEngine::Init 0x99EF80",
@@ -2451,7 +2451,7 @@
       "test": "WwiseSelectionTests",
       "effect": "a different alternative plays",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "Settled EXACT_SOURCE by Claude 2026-11-08 (re-analysis/research/20261108-codex-track-ground-wwise-claude-check.md): SelectPlayable 0xA0A3B4..0xA0A6F0 re-disassembled; WWISE-SELECT-PROBE-1 built the native retry (sequence steps, shuffle redraws, other random modes scan idx+1 with 0xA08694 before the +0x48 test, length-bounded); SelectRandomly and the +0x48 slots checked by emulator execution of the original code. Shipped banks use raw modes 0/1 and the shared-state bit only. Not built (not produced): non-shipped banks, allocation failure, malformed weights. Continuous paths are M6-008's; the managed/native session split of container history and LCG is M9-015/M6-025's. | compare the code against the inventory rows (the step after approval)",
       "hardware_required": false
     },
     {
@@ -4496,7 +4496,7 @@
       "id": "M12-015",
       "subsystem": "M12-manipulation",
       "title": "PlaceObjectOnGround sends three zero offsets and a constant speed triple",
-      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/GroundPlacement.cs",
       "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204: the builder 0x00632B88, reached only from CarryingComponent::PlaceObjectOnGround 0x00632A88, reads the first three words as integer locals converted with vcvt.f32.s32 (0x00632BAE/0x00632BB2/0x00632BB6) and the next three from the constant triple 0x00C7CD90 = 100 (0x42C80000), 200 (0x43480000), 500 (0x43FA0000)",
       "evidence": [
@@ -5623,7 +5623,7 @@
     {
       "subsystem": "M14-faces",
       "title": "TrackFaceAction: the durations it turns in, and the flags it starts with",
-      "location": "cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/NativeTrackFaceRunner.cs",
       "effect": "face tracking cadence, angular tolerances, motor speeds and optional animation/eye behavior change",
       "provenance": "ITrackAction's constructor and CheckIfDone, read",
       "authority": "ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read",

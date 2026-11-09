@@ -300,36 +300,6 @@ public class FaceTests
     }
 
     /// <summary>
-    /// The numbers the face actions wait and turn by, as the engine's constructors set them.
-    /// TurnTowardsFaceAction puts 10 at +0x188 (0x0054B798) and IVisuallyVerifyAction the same 10 at +0x8C
-    /// (0x0056873E); ITrackAction's constructor sets the tolerances to 2 degrees, the pan duration to 0.4 s
-    /// and the tilt duration to 0.15 s (0x00564758), the maximum head angle to 0.776672 rad, the sound
-    /// thresholds to 10 degrees, and leaves the eye movement and the driving animation off. This stack had
-    /// five frames and a hundred-millisecond poll, both invented.
-    /// </summary>
-    [Fact]
-    public void TheFaceActionConstantsAreTheEnginesOwn()
-    {
-        Assert.Equal(10, TurnTowardsFaceAction.FramesToWaitForFace);
-        Assert.Equal(0.4, TrackFaceAction.PanDurationSec, 6);
-        Assert.Equal(0.15, TrackFaceAction.TiltDurationSec, 6);
-        Assert.Equal(0.5, TrackFaceAction.DesiredTimeToReachTargetSec, 6);
-        // R-FIX M14-003: the binary32 words the constructor 0x00564xxx stores (0x005646BC..0x0056473A), not rounded decimals
-        Assert.Equal(0x3D0EFA35u, BitConverter.SingleToUInt32Bits((float)TrackFaceAction.MinToleranceRad));
-        Assert.Equal(0x3F46D3F2u, BitConverter.SingleToUInt32Bits((float)TrackFaceAction.MaxHeadAngleRad));
-        Assert.Equal(0x3E32B8C2u, BitConverter.SingleToUInt32Bits((float)TrackFaceAction.MinAngleForSoundRad));
-        Assert.Equal((double)(float)TrackFaceAction.MinToleranceRad, TrackFaceAction.MinToleranceRad);
-        Assert.Equal(10000, TrackFaceAction.TrackAccelRadPerSec2);
-        Assert.Equal(60, TrackFaceAction.UpdateIntervalMs);   // the 60 ms basestation tick, not the M5 33 ms keep-alive
-
-        using var rig = FaceRig((7, new Vec3(400, 0, 250), null));
-        var track = new TrackFaceAction(rig.Vision, 7);
-        Assert.False(track.MoveEyes);
-        Assert.False(track.DrivingAnimation);
-        track.Dispose();
-    }
-
-    /// <summary>
     /// TurnTowardsImagePointAction turns by the angle the pixel subtends and nothing else:
     /// Robot::ComputeTurnTowardsImagePointAngles 0x0051879C is atan2(-(u - cx), fx) added to the heading
     /// and atan2(-(v - cy), fy) added to the head angle. A point at the image centre asks for no turn at
@@ -398,47 +368,6 @@ public class FaceTests
         Assert.False(strategy.ShouldTrigger(ctx, null, 200, runnable));  // both have reacted now
     }
 
-    [Fact]
-    public void TrackFaceFollowsTheFaceWithinItsTolerances()
-    {
-        using var signals = SignalTestContext.Install();
-        using var rig = FaceRig((7, new Vec3(400, 0, 250), null));
-        rig.Frame();
-        var track = new TrackFaceAction(rig.Vision, 7) { PanToleranceRad = 0.0698132, TiltToleranceRad = 0.0698132 };
-        var epoch = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        int elapsedMs = 0;
-        track.UtcNow = () => epoch.AddMilliseconds(elapsedMs);
-        int updateWaits = 0;
-        track.UpdateWaitObserved += () => updateWaits++;
-        var task = track.RunAsync(TimeSpan.FromMilliseconds(600), default);
-        while (!task.IsCompleted)
-        {
-            // the person walks sideways; the fake robot follows on each command
-            rig.FaceDetector.Faces[0] = (7, new Vec3(400, Math.Min(200, elapsedMs * 0.5), 250), null);
-            rig.Pump(); rig.Frame();
-            // Transport notifications also wake the signal context. Only the tracker's own
-            // completed update starts the next 60 ms tracking period.
-            if (updateWaits > 0)
-            {
-                elapsedMs += TrackFaceAction.UpdateIntervalMs * updateWaits;
-                updateWaits = 0;
-            }
-            if (!task.IsCompleted && SignalTestContext.Drain() == 0) SignalTestContext.StepContinuation();
-        }
-        Assert.True(task.Result);
-        Assert.True(track.Updates >= 3);
-        Assert.True(track.Turns >= 1, $"turns {track.Turns}");
-        Assert.InRange(rig.Angle, 0.3, 0.6);                                          // ended facing about atan(200/400)
-        // the command that went out is the recovered tracking pan and tilt, not a look-at solve done again:
-        // atan((z - 49) / planar distance) for the head, the body's heading plus the pan for the body
-        Assert.NotEmpty(rig.PanTilts);
-        var (pan, tilt) = rig.PanTilts[^1];
-        Assert.Equal(track.LastCommand!.Value.Pan, pan, 6);
-        Assert.Equal(track.LastCommand!.Value.Tilt, tilt, 6);
-        Assert.InRange(tilt, 0.3, 0.6);                                               // atan(201/~447)
-        track.Dispose();
-    }
-
     // ------------------------------------------------------------------ the behaviours
 
     [Fact]
@@ -461,7 +390,7 @@ public class FaceTests
     // default never greets; the window is measured from +0x54, not per face). AcknowledgeFaceNativeTests covers B1..S1.
 
     [Fact]
-    public void InteractWithFacesVerifiesDrivesTracksAndFiresTheEmotionEvent()
+    public void InteractWithFacesWithholdsTrackingWithoutNativeHistoricalPosition()
     {
         using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(450, 60, 260), null));
@@ -472,14 +401,8 @@ public class FaceTests
         RunToEnd(rig, b, ctx, ms: 15000);
         Assert.Equal(7, b.TargetFaceId);
         Assert.Contains(b.Trace, l => l.Contains("InteractWithFacesInitialUnnamed"));
-        Assert.Contains(b.Trace, l => l.Contains("DriveStraight(40 mm)"));
-        Assert.Contains(b.Trace, l => l.Contains("will track for"));
-        Assert.InRange(b.TrackSeconds!.Value / b.TrackTimeScale, 8, 15);
-        Assert.Contains(b.Trace, l => l.Contains("InteractWithFaceTrackingIdle"));
-        Assert.Contains(b.Trace, l => l.Contains("emotion event InteractWithUnnamedFace"));
-        // Objective 0x0C belongs to the separate, still-MISSING timer owner (0x005C235A..0x005C2388);
-        // the mood callback at 0x005C2930..0x005C29D6 does not report it.
-        Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine l && Math.Abs(l.XEndMm - l.XStartMm) is > 39 and < 41);
+        Assert.DoesNotContain(b.Trace, l => l.Contains("DriveStraight(40 mm)"));
+        Assert.DoesNotContain(rig.Sent, m => m is AppendPathSegmentLine);
     }
 
     [Theory]

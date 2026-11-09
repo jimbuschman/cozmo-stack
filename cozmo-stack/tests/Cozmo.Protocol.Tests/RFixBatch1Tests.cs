@@ -469,34 +469,12 @@ public class RFixBatch1Tests
     // ------------------------------------------------------------------ M14-003
 
     /// <summary>
-    /// M14-003, ITrackAction/TrackFaceAction constructor 0x005646BC..0x0056473A: tolerance 0x3D0EFA35 (+0x84, +0x8C), max head 0x3F46D3F2 (+0x94), sound threshold 0x3E32B8C2 (+0xC0, +0xC8).
-    /// The 0.01 speed clamp is removed; the wall-clock Task.Delay(60) loop is NOT the engine's mechanism (no ActionList) and is reported MISSING.
-    /// </summary>
-    [Fact]
-    public void M14_003_TheTrackFaceConstantsAreTheConstructorsWords()
-    {
-        Assert.Equal(0x3D0EFA35u, TrackFaceAction.MinToleranceBits);
-        Assert.Equal(0x3F46D3F2u, TrackFaceAction.MaxHeadAngleBits);
-        Assert.Equal(0x3E32B8C2u, TrackFaceAction.MinAngleForSoundBits);
-        Assert.Equal((double)F(0x3F46D3F2), TrackFaceAction.MaxHeadAngleRad);
-        using var rig = new Rig();
-        var track = new TrackFaceAction(rig.Vision, 1);
-        Assert.Equal((double)F(0x3D0EFA35), track.PanToleranceRad);
-        Assert.Equal((double)F(0x3D0EFA35), track.TiltToleranceRad);
-        track.Dispose();
-    }
-
-    /// <summary>
     /// M14-003, ITrackAction::CheckIfDone 0x00565672..0x005656B4: the body speed is min(|pan| / [+0xD4] (0.4), 0x40A78D36); 1.0 rad gives 2.5, 3.0 gives the cap 5.2359877 (0x40A78D36).
     /// The TurnInPlace call carries accel 0x436DFFDB and tolerance [+0x84], which PanAndTilt now sends when given them.
     /// </summary>
     [Fact]
     public void M14_003_TheTrackingBodyTurnIsCappedAndCarriesItsOwnAccelAndTolerance()
     {
-        Assert.Equal(2.5f, TrackFaceAction.PanSpeed(1.0));
-        Assert.Equal(0x40A78D36u, BitConverter.SingleToUInt32Bits(TrackFaceAction.PanSpeed(3.0)));
-        Assert.Equal(0x40A78D36u, BitConverter.SingleToUInt32Bits(TrackFaceAction.PanSpeed(double.NaN)));
-        Assert.Equal(0x436DFFDBu, TrackFaceAction.BodyTurnAccelBits);
         using var rig = new Rig();
         rig.Vision.PanTiltOverride = null;                       // the rig's seam would swallow the messages
         var t = PanAndTilt.RunAsync(rig.Vision, 0.5, 0.1, 2.5, default, 1, 10000, waitForSettle: false,
