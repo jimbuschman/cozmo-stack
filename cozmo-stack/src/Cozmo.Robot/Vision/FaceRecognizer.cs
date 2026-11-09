@@ -850,15 +850,19 @@ public sealed class FaceRecognizer
         lock (_gate) { RemoveUserCore(entry); return 0; }
     }
 
-    private void RemoveUserCore(EnrolledFaceEntry entry, bool currentTrackOnly = false)
+    private void RemoveUserCore(EnrolledFaceEntry entry, bool currentTrackOnly = false, bool orderedErase = false)
     {
         _trackToFace.Remove(entry.CurrentTrack);
         if (!currentTrackOnly) _trackToFace.Remove(entry.PreviousTrack);
-        foreach (var albumEntry in entry.AlbumEntries.Keys)
+        foreach (var albumEntry in orderedErase ? entry.AlbumEntries.Keys.OrderBy(key=>key) : entry.AlbumEntries.Keys.AsEnumerable())
         {
             _albumEntryToFaceId.Remove(albumEntry);
             if (_album is not null && _okao.ClearUser(_album, albumEntry) != 0)
-                Log?.Invoke($"RemoveUser: OKAO_FR_ClearUser failed for album entry {albumEntry}");
+            {
+                var log=Log;
+                if(orderedErase)LogCallbackDeferral.Run(()=>log?.Invoke($"RemoveUser: OKAO_FR_ClearUser failed for album entry {albumEntry}"));
+                else log?.Invoke($"RemoveUser: OKAO_FR_ClearUser failed for album entry {albumEntry}");
+            }
         }
         _faces.Remove(entry.FaceID);
     }
@@ -900,8 +904,13 @@ public sealed class FaceRecognizer
     {
         lock (_gate)
         {
-            if (!_faces.TryGetValue(id, out var entry)) return 1;
-            RemoveUserCore(entry, currentTrackOnly: true);
+            if (!_faces.TryGetValue(id, out var entry))
+            {
+                var source=SourceLog;
+                LogCallbackDeferral.Run(()=>source?.Invoke(EngineLogLevel.Warning,null,"FaceRecognizer.EraseFace.NotFound",$"Did not find a record for ID={id}"));
+                return 1;
+            }
+            RemoveUserCore(entry, currentTrackOnly: true, orderedErase: true);
             return 0;
         }
     }

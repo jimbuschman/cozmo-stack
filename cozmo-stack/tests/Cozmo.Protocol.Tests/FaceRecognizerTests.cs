@@ -1,4 +1,5 @@
 using Cozmo.Robot.Vision;
+using Cozmo.Robot;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -10,6 +11,24 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class FaceRecognizerTests
 {
+    [Fact]
+    public void EraseClearsAlbumEntriesInSignedOrderAndContinuesAfterFailure()
+    {
+        var okao=new FakeOkaoRecognizer { ClearUserFailure=2 };
+        var recognizer=new FaceRecognizer(okao);
+        recognizer.SetAllowedEnrollments(1,0);
+        Assert.Equal(0,recognizer.RegisterNewUser(new OkaoFaceFeature(),out int id));
+        var entry=Assert.Single(recognizer.EnrolledFaces);
+        entry.AlbumEntries.Clear();
+        foreach(int key in new[]{9,2,-1})entry.AlbumEntries[key]=new EnrolledFaceAlbumEntry {AlbumEntryId=key};
+        okao.ClearedUsers.Clear();
+        bool logged=false;
+        recognizer.Log+=_=>{logged=true;throw new InvalidOperationException("fixture listener failure");};
+        using(LogCallbackDeferral.EnterGated(new object()))Assert.Equal(0,recognizer.EraseFace(id));
+        Assert.True(logged);
+        Assert.Equal(new[]{-1,2,9},okao.ClearedUsers);
+        Assert.Empty(recognizer.EnrolledFaces);
+    }
     [Fact]
     public void AssignNameUsesExistingEnrollmentAndNamesTheMergeSurvivor()
     {
@@ -1042,7 +1061,9 @@ public class FaceRecognizerTests
             return 0;
         }
 
-        public int ClearUser(OkaoAlbumHandle album, int albumEntry) { _states[album].Entries.Remove(albumEntry); return 0; }
+        public readonly List<int> ClearedUsers = new();
+        public int? ClearUserFailure;
+        public int ClearUser(OkaoAlbumHandle album, int albumEntry) { ClearedUsers.Add(albumEntry); if(ClearUserFailure==albumEntry)return 1; _states[album].Entries.Remove(albumEntry); return 0; }
 
         public int ClearData(OkaoAlbumHandle album, int albumEntry, int dataIndex)
         {

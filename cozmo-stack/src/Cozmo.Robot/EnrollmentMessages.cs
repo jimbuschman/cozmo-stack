@@ -6,15 +6,29 @@ namespace Cozmo.Robot;
 // G2E 0x87, 0x00737CEE..0x00737D3A. The app supplies observed ID zero.
 internal sealed record NativeEnrollmentRequest(string Name, int ObservedId, int SaveId, bool Save, bool SayName, bool UseMusic);
 internal sealed record NativeRenameFaceRequest(int Id, string OldName, string NewName);
+internal sealed record NativeEraseFaceRequest(int Id, EngineRobot Owner);
 
 /// <summary>An enrolled face renamed by the native recognizer (E2G 0x1D).</summary>
 public sealed record FaceRenamedReport(int Id, string Name);
+
+/// <summary>An enrolled face erased by the recognizer (E2G 0x57).</summary>
+public sealed record FaceErasedReport(int Id, string Name);
 
 /// <summary>The result, face ID, and name delivered by FaceEnrollmentCompleted (E2G 0x56).</summary>
 public sealed record FaceEnrollmentCompletedReport(byte Result, int Id, string Name);
 
 public sealed partial class CozmoRobot
 {
+    /// <summary>Requests erasure of one enrolled face by signed ID.</summary>
+    public void EraseEnrolledFaceById(int id)
+    {
+        var owner=Engine.Robot;
+        Engine.PostGameMessage(()=>
+        {
+            if(owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot,owner))
+                Engine.AnimationMessages.Deliver(0x89,false,new NativeEraseFaceRequest(id,owner));
+        });
+    }
     /// <summary>Requests a rename of an enrolled face; Meet activity admission remains separate.</summary>
     public void UpdateEnrolledFaceById(int id,string oldName,string newName)
     {
@@ -57,6 +71,9 @@ public sealed partial class CozmoRobot
 
 public sealed partial class CozmoEngine
 {
+    /// <summary>Raised after a successful single enrolled-face erase.</summary>
+    public event Action<FaceErasedReport>? FaceErased;
+    internal Action? CaptureFaceErased(FaceErasedReport report)=>CaptureAppEvent(FaceErased,report);
     /// <summary>Raised after a successful enrolled-face rename.</summary>
     public event Action<FaceRenamedReport>? FaceRenamed;
     internal Action? CaptureFaceRenamed(FaceRenamedReport report)=>CaptureAppEvent(FaceRenamed,report);
