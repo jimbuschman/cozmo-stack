@@ -1,1 +1,6 @@
-# No outstanding operator decision
+# Next capability and settlement decisions
+
+Proposed order alternates an AI body capability with the smallest remaining settlement candidate identified in the recent handoffs.
+
+1. **AI-BODY-CUBE-WORLD-STATE-1.** Trace the real request or connection-time recipients for BlockWorld's located and connected state reports at 0x61E6C0 and 0x61E91C, through serializers 0x714EE2 and 0x7153A4 and the external-interface gate. Recover the list source, ordering, origin and connection fields, and distinguish the snapshots from 0x44 observation events. Expose only the source-established immutable app views using the existing FIFO. M11-038 remains open for pose-unknown and mailbox paths. This gives outside AI the engine's own distinction between a located cube and a radio connection.
+2. **TRACK-FACE-LIFECYCLE-SETTLEMENT-1 (M14-003).** Verify the retained TrackFaceAction path end to end at 0x564D34–0x564DF8 and 0x565120–0x56594D. Close the remaining virtual-init result, generic stop and update timeout, source tracking modes, enabled sound and eye-shift behavior, and driving-animation end and stored-result branches that actually reach TrackFaceAction. Cover both stock Meet and retained public standalone callers. Keep TrackObject/Pet/Laser and face pose production in their own records. If a generic branch has no TrackFace caller, demonstrate it from the source and the shipped inputs before asking Claude to settle the record.
