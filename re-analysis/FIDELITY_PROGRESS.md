@@ -8,12 +8,12 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 278 |
+| EXACT_SOURCE | 279 |
 | EQUIVALENT_IMPLEMENTATION | 12 |
 | COMPATIBILITY_POLICY | 71 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 362 |
+| IMPLEMENTATION_GAP | 361 |
 | RECOVERABLE_GAP | 22 |
 | **total** | **761** |
 
@@ -26,7 +26,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M3-device | ACCEPTED | 2026-10-18 | 64 | 39 | 21 | 4 | 0 | 0 | 0 |
 | M4-control | INVENTORY_APPROVED | 2026-11-07 | 53 | 40 | 10 | 3 | 0 | 0 | 0 |
 | M5-animation | ACCEPTED | 2026-10-19 | 65 | 53 | 11 | 1 | 0 | 0 | 0 |
-| M6-wwise-bank | INVENTORY_APPROVED | 2026-10-18 | 45 | 1 | 2 | 0 | 38 | 4 | 41 |
+| M6-wwise-bank | INVENTORY_APPROVED | 2026-10-18 | 45 | 2 | 2 | 0 | 37 | 4 | 40 |
 | M7-behaviour | INVENTORY_APPROVED | 2026-10-30 | 31 | 7 | 0 | 0 | 22 | 2 | 23 |
 | M8-framework | INVENTORY_APPROVED | 2026-10-16 | 27 | 1 | 1 | 0 | 23 | 2 | 25 |
 | M9-wwise-music | INVENTORY_APPROVED | 2026-10-16 | 46 | 5 | 2 | 1 | 37 | 1 | 38 |

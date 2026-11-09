@@ -7,10 +7,10 @@ Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 278 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 279 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 362 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 361 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 71 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -29,7 +29,7 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 64 | 0 | 0 | 0 | 4 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 53 | 0 | 0 | 0 | 3 | yes | yes |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 0 | 0 | 1 | yes | yes |
-| M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 37 | 0 | 0 | no | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 36 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 31 | 1 | 22 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
@@ -57,7 +57,7 @@ status.
 | M3-device | ACCEPTED | 39 | 0 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 42 | 0 | 0 | 3 |
 | M5-animation | ACCEPTED | 56 | 0 | 0 | 1 |
-| M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
+| M6-wwise-bank | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 7 | 0 | 0 | 1 |
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
@@ -342,15 +342,6 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
 * evidence: Init 0x00A47038, SetPitch 0x00A47384, Execute 0x00A47178, kernel table 0x0103C0B8; kernels 0x00A48F5C, 0x00A4913C, 0x00A49E40, ramp 0x00A4A2D8
 * outstanding: wiring: WwiseAudioSource.ToRobotRate/Lanczos is deliberately untouched until the live voice/mixer (M6 batches 3-4) can replace it with WwiseResampler; the row's format offsets (which fields carry channels and the input rate) are not in the rows and are carried as named fields on WwiseResamplerFormat. Not read by the rows, and refused with NotSupportedException rather than guessed: the stereo int16 kernel 0x00A49634, the float stereo kernels, and the float mono bypass 0x00A479F4 and ramp 0x00A4A958 (a float Execute is valid only in the read mode 1, kernel 0x00A49E40). Execute's zero-input 0x11/17 and the ctor's initial phase 0x10000 (+0x2C, 0x00A46D80..0x00A46D88) are cited from outside the scoped rows (gapD D2.8; the ctor).
-
-**M6-005 — FNV-1 32-bit with ASCII lowercasing over at most 0x103 bytes** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHash.cs`
-* effect: event and object ids hash differently
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md
-* best authority: libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)
-* evidence: GetIDFromString 0x0099DB84: strncpy copies min(strlen+1, 0x103) bytes (0x0099DBB0), then lowercases and hashes strlen bytes (0x0099DBD4/0x0099DC04); for a NUL-terminated name of length L the hashed input is min(L, 0x102) bytes
-* outstanding: compare the code against the inventory rows (the step after approval)
 
 **M6-006 — Control path: queued PostEvent, ExecuteEvent, EnqueueOrExecute (frames + remainder; PlayAndContinue one frame early), drain order, Play/Stop/Seek execute, switch resolution** (live path)
 

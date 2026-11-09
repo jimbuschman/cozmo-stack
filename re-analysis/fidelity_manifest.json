@@ -2404,7 +2404,7 @@
       "subsystem": "M6-wwise-bank",
       "title": "FNV-1 32-bit with ASCII lowercasing over at most 0x103 bytes",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHash.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [
         "GetIDFromString 0x0099DB84: strncpy copies min(strlen+1, 0x103) bytes (0x0099DBB0), then lowercases and hashes strlen bytes (0x0099DBD4/0x0099DC04); for a NUL-terminated name of length L the hashed input is min(L, 0x102) bytes"
@@ -2413,7 +2413,7 @@
       "test": "WwiseHashTests",
       "effect": "event and object ids hash differently",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
-      "unresolved": "compare the code against the inventory rows (the step after approval)",
+      "unresolved": "Settled EXACT_SOURCE by Claude 2026-11-08 (re-analysis/research/20261108-settle-m6-005-claude-check.md): GetIDFromString 0x0099DB84 (ARM) re-disassembled; FNV-1 (multiply 16777619 by shift chain 0x0099DC20..0x0099DC38, then eor), basis 0x811C9DC5, ASCII A-Z lowercasing only, exact for every name of at most 0x102 bytes. Not built: L >= 0x103 hashes past the 0x103-byte copy (undefined read, M1-034 standing rule; the stack hashes 0x102 bytes); a null name (native 0) and non-ASCII names (native hashes bytes) are never produced: the production caller SingingBehavior.cs:98 passes shipped ASCII switch names.",
       "hardware_required": false
     },
     {
