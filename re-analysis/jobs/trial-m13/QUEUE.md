@@ -183,3 +183,5 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | Cube world state and TrackFace lifecycle gate on 2174bfa7 | PASS | scripts/test-full.sh passed 8089/8089, zero failed or skipped, 26m28s test duration. Both handoffs are READY FOR CLAUDE. |
 | MARKER-LIBRARY-DIAG-1 | CHECKED | Once-only startup warning from the configured marker decoder, with extraction and override remedies. Affected 343/343, manager 224/224. Awaiting batch gate. HANDOFF-MARKER-LIBRARY-DIAG-1.md. |
 | Marker library diagnostic batch gate on 936ec1d9 | FAILED | 8090/8092 passed, zero skipped. The two named PickupReactionVoiceTests cases reached the 20 s deadline without a StartOfAnimation tag. Investigating before rerun. |
+| PICKUP-PREDOCK-SIDE-1 | CHECKED | Both capture poses yield the same far-side-only goal in native filtering. Scoped replay 2/2, related pickup tests 44/44. Host safety decision in BLOCKED.md. Awaiting batch gate. HANDOFF-PICKUP-PREDOCK-SIDE-1.md. |
+| DOCK-OVERSHOOT-1 | RELEASED | Priority hardware action 28206fad. Trace the direct-pickup dock request and live correction against run 3 and native geometry. |
