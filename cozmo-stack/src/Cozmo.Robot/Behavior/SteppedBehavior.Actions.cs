@@ -24,10 +24,10 @@ public abstract partial class SteppedBehavior
                 payload=>{if(payload is RobotCompletedAction completed)HandleActionComplete(completed);});
     }
     // Host callers without a native container can own a constructor-lifetime lease. Never release an existing/native binding.
-    internal Action? AcquireActionCompletionOwner(CozmoRobot robot)
+    internal Action? AcquireActionCompletionOwner(CozmoRobot robot,EngineRobot? actualOwner=null)
     {
         if(_actionCompletionSubscription is not null)return null;
-        BindActionCompletionOwner(robot);
+        BindActionCompletionOwner(robot,actualOwner);
         var owned=_actionCompletionSubscription;
         if(owned is null)return null;
         return ()=>{if(!ReferenceEquals(_actionCompletionSubscription,owned))return;_actionCompletionSubscription=null;owned.Dispose();};

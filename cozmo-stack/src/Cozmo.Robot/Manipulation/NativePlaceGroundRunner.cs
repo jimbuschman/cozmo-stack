@@ -12,13 +12,13 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     private readonly EngineRobot _owner;
     private readonly CarryingComponent _carrying;
     private readonly DockingComponentData _docking;
-    private readonly Behavior.BehaviorManager? _manager;
+    private readonly Behavior.BehaviorManager _manager;
     private readonly object _stopGate = new();
     private Behavior.ScopedAcquisition? _reactionLease;
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     internal bool HostFailureCleanup;
     internal string? HostUnavailable;
-    private bool Current => !_ending && !_owner.Lifetime.Destroying && ReferenceEquals(_owner.Engine.Robot, _owner) && !DestructionObserved;
+    private bool Current => !_ending && !_owner.Lifetime.Destroying && ReferenceEquals(_owner.Engine.Robot, _owner) && !DestructionObserved && (ScopedParentCurrent?.Invoke()??true);
     protected override string ActionName=>"PlaceObjectOnGround";
     internal uint SavedObject=>_saved;
     internal bool StatusLatched => _latched;
@@ -30,7 +30,7 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
         ScopedOwner=owner;
         _carrying=owner.CarryingOwner ?? throw new NativeActionUnavailable("Ground carrying owner unavailable");
         _docking=owner.DockingOwner ?? throw new NativeActionUnavailable("Ground docking owner unavailable");
-        _manager=owner.BehaviorManagerOwner;
+        _manager=owner.BehaviorManagerOwner ?? throw new NativeActionUnavailable("Ground behavior manager owner unavailable");
     }
     // fidelity: M12-052 - saved carried ID completion projection only; lifecycle/wire owners retained.
     public override byte? GetCompletionVariant()=>0;
@@ -60,18 +60,22 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
         _latched=false;
         if (!Current) return unchecked((int)EngineActionResult.Cancelled);
         uint id=_carrying.CarriedObjectId??uint.MaxValue;int result;
-        if(id==uint.MaxValue)result=0x03000011;
+        if(id==uint.MaxValue)
+        {
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"PlaceObjectOnGroundAction.CheckPreconditions.NotCarryingObject","");
+            result=0x03000011;
+        }
         else
         {
             _saved=id;bool failed=M.Docking.PlaceObjectOnGroundOwned(_owner,_carrying,()=>Current);
             if (!Current) return unchecked((int)EngineActionResult.Cancelled);
-            _verify=new(M,id,unchecked((short)_carrying.NativeMarkerCode),0f,true,false){SuppressTrackLocking=true,Watcher=Watcher,ScopedOwner=_owner};
+            _verify=new(M,id,unchecked((short)_carrying.NativeMarkerCode),0f,true,false){SuppressTrackLocking=true,Watcher=Watcher,ScopedOwner=_owner,ScopedParentCurrent=()=>Current};
             result=failed?0x03000016:0;
         }
-        LogCallbackDeferral.RunGated(_stopGate,()=>{if(Current)M.Robot.Motion.StopAllMotors();});
+        LogCallbackDeferral.RunGated(_stopGate,()=>{if(Current)M.Robot.Motion.StopAllMotorsOwned(_owner,()=>Current);});
         if (!Current) return unchecked((int)EngineActionResult.Cancelled);
         _latched=false;
-        if(result==0 && _manager is not null)
+        if(result==0)
         {
             var lease = _reactionLease = new Behavior.ScopedAcquisition();
             bool acquired = _manager.DisableScopedReactions(GroundPlacement.ReactionLockName,GroundPlacement.ReactionLockTable,lease);
@@ -83,13 +87,17 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     public override uint CheckIfDone()
     {
         if (!Current) return EngineActionResult.Cancelled;
-        if (_owner.StoredState is null) throw new NativeActionUnavailable("Ground actual raw robot state unavailable");
         if(_docking.Active!=0){_latched=true;return EngineActionResult.Running;}
-        if(!_latched||M.Robot.Motion.BodyMoving)return EngineActionResult.Running;
+        if(!_latched||_owner.NativeMovementIsMoving)return EngineActionResult.Running;
         uint result=EngineActionResult.Running;
         LogCallbackDeferral.RunGated(_stopGate,()=>{if(Current)result=_verify!.Update();});
         if (!Current) return EngineActionResult.Cancelled;
-        if(result!=0&&result!=EngineActionResult.Running)M.World.ClearLocatedObjectByIdInCurrentOrigin(_saved);
+        if(result!=0&&result!=EngineActionResult.Running)
+        {
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"PlaceObjectOnGroundAction.CheckIfDone.FaceAndVerifyFailed",$"FaceAndVerify action reported failure, just clearing object {unchecked((int)_saved)}.");
+            if(!Current)return EngineActionResult.Cancelled;
+            M.World.ClearLocatedObjectByIdInCurrentOrigin(_saved);
+        }
         return result;
     }
     public override void WatcherEnding()
@@ -100,9 +108,9 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
         if (lease is not null)
         {
             lease.Cancel();
-            _manager?.RemoveScopedReactions(GroundPlacement.ReactionLockName,lease);
+            _manager.RemoveScopedReactions(GroundPlacement.ReactionLockName,lease);
         }
-        else if(State!=EngineActionResult.NotStarted)_manager?.RemoveDisableReactionsLock(GroundPlacement.ReactionLockName);
+        else if(State!=EngineActionResult.NotStarted)_manager.RemoveDisableReactionsLock(GroundPlacement.ReactionLockName);
         var verify = _verify; _verify = null;
         verify?.Prep();verify?.WatcherEnding();base.WatcherEnding();
         AiNativeEnded?.TrySetResult((State,_owner.Lifetime.Destroying || !ReferenceEquals(_owner.Engine.Robot,_owner)));

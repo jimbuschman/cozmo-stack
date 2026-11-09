@@ -1199,6 +1199,13 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior, IDisposabl
 // fidelity: M15-009, M15-008, M15-019, M15-020, M15-021, M15-022, M15-023, M15-024, M15-025
 public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
 {
+    private EngineRobot? _placeOwner;
+    private Pose3d? _placePose;
+    private Action? _releasePlaceCompletion;
+    private long _placeGeneration;
+    internal Action? PlacementPoseRetiredForTest;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>M.Robot.Engine.EnterSynchronousOwner();
+    protected override bool KeepsRunningWithoutAction=>base.KeepsRunningWithoutAction || HasCurrentAction;
     public enum Phase { Idle, PickingUp, StackingOn, PlacingAt }
 
     public BringCubeToBeaconBehavior(ManipulationSystem m, string id = "Hiking_BringCubeToBeacon", double recentFailureCooldownSec = 45)
@@ -1280,6 +1287,8 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     /// </summary>
     protected override void OnStart()
     {
+        _placeOwner=M.Robot.Engine.Robot;
+        Interlocked.Increment(ref _placeGeneration);
         Scope.DisableReactions();
         Candidate = null;                                                                                    // [this+0x12C] = -1
         int startedBefore = _actionsStarted;
@@ -1574,25 +1583,52 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     {
         CurrentPhase = Phase.PlacingAt;
         _actionsStarted++;
-        var trace = new List<string>();
-        var owner = M.Robot.Engine.Robot;
-        RunAction(FormattableString.Invariant($"PlaceObjectOnGroundAtPose({pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}) attempt {attempt}"), async ct =>
+        var owner=_placeOwner;
+        long generation=Interlocked.Read(ref _placeGeneration);
+        bool Current()=>owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(M.Robot.Engine.Robot,owner) && Interlocked.Read(ref _placeGeneration)==generation && EngineRunning;
+        Log(FormattableString.Invariant($"start PlaceObjectOnGroundAtPose({pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}) attempt {attempt}"));
+        if(!Current()){ReportMissing("M15-022 ground-at-pose original owner unavailable");return;}
+        Pose3d next;
+        using(M.World.EnterPoseMutation())
         {
-            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return ActionResult.CancelledWhileRunning;
-            var drive = new DriveToPlaceCarriedObjectAction(M, pose, true, false, false, true, BeaconFloorGeometry.Ten);
-            var r = await drive.RunAsync(ct);
-            if (owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return ActionResult.CancelledWhileRunning;
-            trace.AddRange(drive.Trace.Select(l => "  " + l));
-            if (r != ActionResult.Success) { trace.Add($"Current action DriveToPlaceCarriedObject[0] failed with {r}"); return r; }       // 0x0054F7F2..0x0054F8F4
-            r = await M.PlaceObjectOnGroundAsync(owner, ct, (action, _) => LastPlaceAction = action);
-            if (r != ActionResult.Success) trace.Add($"Current action PlaceObjectOnGround[1] failed with {r}");
-            return r;
-        }, r =>
+            next=new Pose3d(pose);var previous=_placePose;_placePose=next;previous?.Dispose();
+            if(previous is not null && PlacementPoseRetiredForTest is {} hook)LogCallbackDeferral.Run(hook);
+        }
+        if(!Current())return;
+        if(_releasePlaceCompletion is null)
         {
-            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return;
-            foreach (var l in trace) { Log(l); if (owner.Lifetime.Destroying || !ReferenceEquals(M.Robot.Engine.Robot, owner)) return; }
-            PlaceCompleted(r, pose, attempt);
-        });
+            var lease=AcquireActionCompletionOwner(M.Robot,owner);
+            if(!Current()){lease?.Invoke();return;}
+            _releasePlaceCompletion=lease;
+        }
+        NativePlaceGroundAtBeaconRunner action;
+        try { action=new NativePlaceGroundAtBeaconRunner(M,owner!,next,Current); }
+        catch(NativeActionUnavailable error)
+        {
+            ReportMissing("M15-022 ground-at-pose admission unavailable: "+error.Message);
+            if(Current())Finish();
+            return;
+        }
+        if(!Current()){action.RetireNeverAdmittedTree();return;}
+        LastPlaceAction=action.Ground;
+        action.Unavailable=error=>
+        {
+            if(!Current())return;
+            uint tag=CurrentRunnerTag;
+            ReportMissing("M15-022 ground-at-pose unavailable: "+error.Message);
+            if(!Current())return;
+            owner!.ActionList.DeferHostCleanup(()=>{if(Current() && CurrentRunnerTag==tag)Stop(BehaviorStopReason.Interrupted);});
+        };
+        action.Drive.Unavailable=action.Unavailable;
+        StartActing(action,done=>{if(Current())PlaceCompleted((ActionResult)done.Result,next,attempt,Current);},Current);
+    }
+
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Interlocked.Increment(ref _placeGeneration);
+        using(M.World.EnterPoseMutation()){_placePose?.Dispose();_placePose=null;}_placeOwner=null;
+        _releasePlaceCompletion?.Invoke();_releasePlaceCompletion=null;
+        base.OnStop(reason);
     }
 
     /// <summary>
@@ -1602,30 +1638,35 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     /// 0x005E1B32..0x005E1B56: when the target is still located, <c>SetFailedToUse(obj, PlaceObjectAt = 2, pose)</c> with the CANDIDATE pose.
     /// </summary>
     // fidelity: M15-021, M15-024, M15-025
-    internal void PlaceCompleted(ActionResult r, Pose3d pose, int attempt)
+    internal void PlaceCompleted(ActionResult r, Pose3d pose, int attempt, Func<bool>? current=null)
     {
+        if(current is not null&&!current())return;
         uint category = (uint)r >> 24;
         if (category == 0)
         {
             Log($"info: Behaviors.{Id}.onPlaceActionResult.Done: Successfully placed cube");
+            if(current is not null&&!current())return;
             FireEmotionEvents();
+            if(current is not null&&!current())return;
             CurrentPhase = Phase.Idle; Finish();
             return;
         }
         if (category == 4)
         {
-            uint? carried = M.Docking.Carrying.CarriedObjectId;                                                     // [[robot+0x284]+8]; null = -1
+            uint? carried = current is null ? M.Docking.Carrying.CarriedObjectId : _placeOwner?.CarryingOwner?.CarriedObjectId;                    // [[robot+0x284]+8]; null = -1
             bool carryingTarget = carried is not null && carried == Candidate;                                      // 0x005E1928..0x005E1944
             if (carryingTarget && attempt <= 2)
             {
                 Log(FormattableString.Invariant($"info: Behaviors.{Id}.onPlaceActionResult.Done.CanRetry: Failed to place '{Candidate}' at pose [{pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}]"));
+                if(current is not null&&!current())return;
                 TryToPlaceAt(pose, attempt + 1);                                                                    // 0x005E19F8 adds r3,r0,#1
                 return;
             }
             Log(FormattableString.Invariant($"info: Behaviors.{Id}.onPlaceActionResult.CannotRetry: Failed to place '{Candidate}' at pose [{pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}] (attempt={attempt}/3) (carrying={(carryingTarget ? "yes" : "no")})"));
         }
         else Log($"info: Behaviors.{Id}.onPlaceActionResult.NoRetryAllowed: Failed to place (no retry allowed by action)");
-        if (Candidate is { } id && M.World.GetLocatedObjectById(id) is { } obj) M.Whiteboard.SetFailedToUse(obj, ObjectActionFailure.PlaceObjectAt, pose);   // 0x005E1B32..0x005E1B56
+        if(current is not null&&!current())return;
+        if (Candidate is { } id && M.World.GetLocatedObjectByIdHelper(id) is { } obj) M.Whiteboard.SetFailedToUse(obj, ObjectActionFailure.PlaceObjectAt, pose);   // 0x005E1B32..0x005E1B56
         CurrentPhase = Phase.Idle; Finish();
     }
 

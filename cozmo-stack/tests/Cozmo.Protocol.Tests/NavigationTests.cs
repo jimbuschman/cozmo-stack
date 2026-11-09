@@ -716,6 +716,7 @@ public class NavigationTests
             throw new Xunit.Sdk.XunitException("the marker library is missing, so this live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
         }
         using var rig = new Rig(resources: PickupPyramidNativeExecutionTests.Resources());
+        Assert.True(rig.M.LoadPlanner(ObbRoot() ?? throw new Xunit.Sdk.XunitException("shipped planner assets required")));
         SupplyRequestedPickupLoad(rig);
         rig.Cube = CubeAt(330, -20);
         Assert.Single(rig.Frame().Objects);
@@ -767,7 +768,7 @@ public class NavigationTests
         }
         catch (TimeoutException) { throw new TimeoutException("the placement did not finish: " + string.Join(" | ", bring.Trace) + " || sent: " + string.Join(",", rig.Sent.Select(m => m.GetType().Name).Where(n => !n.StartsWith("Backpack")))); }
         bring.Stop(BehaviorStopReason.Completed);
-        Assert.True(rig.NativeGroundCapturedFrames > 0, $"native ground frames: {rig.NativeGroundCapturedFrames}/{rig.NativeGroundCaptureAttempts}");
+        Assert.True(rig.NativeGroundCapturedFrames > 0, $"native ground frames: {rig.NativeGroundCapturedFrames}/{rig.NativeGroundCaptureAttempts}; trace: {string.Join(" | ",bring.Trace)}");
         Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
             $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
         var trace = bring.Trace.ToList();

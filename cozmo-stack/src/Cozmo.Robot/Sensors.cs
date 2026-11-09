@@ -1086,6 +1086,8 @@ public sealed class CozmoSensors
                     // SC10 (0x00512AD0..0x00512B52): the body-radio-mode count comes after SetOnCharger (SetBodyRadioMode at
                     // 0x00512B46 follows SetOnCharger's threshold send at 0x00512AB4) and before MovementComponent::Update.
                     er?.CountBodyRadioMode(s);
+                    if(er is not null && !er.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,er))
+                        er.NativeMovementIsMoving=s.Has(RobotStatusFlag.IsMoving); // 0x0063E30A..31A
                     // fidelity: M10-002, M10-006
                     // MovementComponent::CheckForUnexpectedMovement (0x0063E398) is tail-called from MovementComponent::Update
                     // (0x0063E392), which UpdateFullRobotState runs before the origin check (B1, 0x00512B5C): every synced state.

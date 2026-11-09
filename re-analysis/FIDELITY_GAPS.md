@@ -8,9 +8,9 @@ Manifest of **761 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 281 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 12 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EQUIVALENT_IMPLEMENTATION | 13 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 359 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 358 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 71 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 10 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 111 | 3 | 82 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 111 | 3 | 81 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -66,7 +66,7 @@ status.
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 22 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -3368,15 +3368,6 @@ B-M1-9 (2026-10-18), built, awaiting strong verification: B-M1-9 supplies the M1
 * evidence: TryToPlaceAt builds a CompoundActionSequential of DriveToPlaceCarriedObjectAction(placeOnGround = 1, +0x178 = 0, +0x179 = 1, padding 10.0f) and PlaceObjectOnGroundAction; callback 0x005E188C: success -> FireEmotionEvents (no NeedActionCompleted); a RETRY category retries with the same pose only while still carrying the target and attempt <= 2 (3 attempts); categories 1, 2, 3 or a non-retryable RETRY end in SetFailedToUse(obj, 2, candidate pose) (0x005E1B56); extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md
 * outstanding: built, awaiting strong verification (R-FIX2, 2026-10-04): TryToPlaceAt (0x005DFEF4) and the callback 0x005E188C: three attempts, the same-pose retry only while carrying the target and attempt <= 2, success calls FireEmotionEvents with no needs call, every non-zero non-4 category and a non-retryable RETRY end in SetFailedToUse(obj, 2, candidate pose) (0x005E1B56) after the log; the compound's default RetriesRemain is 0 (0x00540836), so a sub-action's RETRY ends it with that result. Still open: the compound's own timeout slot is not read; DriveToPlaceCarriedObjectAction extends DriveToObjectAction whose own IAction timeout slot is unread (M12-030's C# has none).
 
-**M15-022 — PlaceObjectOnGroundAtPoseAction composition and PlaceObjectOnGroundAction Init/CheckIfDone** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
-* effect: where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers
-* rests on: libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: PlaceObjectOnGroundAction Init sends message 0x44 (0, 0, 0, 100, 200, 500 as raw bits), builds a TurnTowardsObject verify action and calls StopAllMotors; CheckIfDone never reads DockingComponent+5, its result is the verify action's (extraction sections 2.3..2.8; construction of PlaceObjectOnGroundAtPoseAction at 0x005DFF14); M12-015 owns only the wire message of PlaceObjectOnGround (its evidence does not cover the action); extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md
-* outstanding: built, awaiting strong verification (R-FIX2, 2026-10-04): PlaceObjectOnGroundAction as the engine's one class: Init (0x00554794) sends message 0x44 then builds the verify action, StopAllMotors, the reaction lock 'placeOnGroundAction' (table 0x00C55A21, only trigger 8 set) removed in the destructor (0x005546D0) when the state is not NOT_STARTED; CheckIfDone (0x005549B0) gates on the IS_PICKING_OR_PLACING latch, never reads DockingComponent+5, the result is the verify action's; the 30.0f timeout slot (0x0052B0C2); the verify child is TurnTowardsObjectAction built from Init 0x0054A1F0 and CheckIfDone 0x0054ADD4 with the visual-verify byte clear (the marker choice with vsqrt.f32; the head-angle fallback GetAbsoluteHeadAngleToLookAtPose 0x0054B428 and ComputeHeadAngleToSeePose 0x00518344 built, confirmed by a Unicorn run of the shipped instructions; the head-cam z used there is the engine's -8.0: see M11-054); every caller takes the lock through ManipulationSystem.ReactionLocks when a freeplay stack exists. Still open: TurnTowardsObjectAction's TrackObjectAction branch (+0x192 set, 0x0054AE08) and its unreachable VisuallyVerifyObjectAction branch (0x0054AED8) are unbuilt, the single RUNNING tick (0x0054AE40..0x0054AEB8) is not modelled, a marker whose with-respect-to fails (0x03000005) is not coded; ComputeHeadAngleToSeePose's pose algebra is the stack's double Pose3d narrowed to f32; M12-015 owns only the wire message; whether the firmware raises IS_PICKING_OR_PLACING for message 0x44, and its order against PickAndPlaceResult, is HARDWARE_ONLY; callers without a manager (ManipTool, Motion with no stack) do not take the lock (reported MISSING).
-
 **M15-023 — The NoFreePoses branch: FailedToFindLocationInBeacon stamp, the log, the 'HikingNoLocationAtBeacon' event and the IsRunnable cooldown** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
@@ -4071,6 +4062,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M6-021 | M6-wwise-bank | COMPATIBILITY_POLICY | The injectable RNG seed seam: WwiseSelection's constructor takes a seed for tests; the live default is Unix seconds, matching the engine's time(NULL) | libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40) |
 | M6-044 | M6-wwise-bank | COMPATIBILITY_POLICY | Wwise Term JNI step 0xA57960: the JavaVM is an app input; the stack has none | libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio). |
 | M8-010 | M8-framework | COMPATIBILITY_POLICY | Behaviour inventory classifier rules | not applicable: this is bookkeeping, not robot behaviour |
+| M15-022 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | PlaceObjectOnGroundAtPoseAction composition and PlaceObjectOnGroundAction Init/CheckIfDone | libcozmoEngine.so 3.4.0-1204 |
 | M1-049 | M1-transport | COMPATIBILITY_POLICY | Android bind/unbind trigger gates and native signal bridge | Unity/Java app and libcozmoEngine.so native network callback. |
 | M1-051 | M1-transport | COMPATIBILITY_POLICY | SDK mode entry and lifecycle state writers | libcozmoEngine.so 3.4.0-1204 SDK/UI lifecycle. |
 | M1-052 | M1-transport | COMPATIBILITY_POLICY | SDK connection callback virtual targets | libcozmoEngine.so 3.4.0-1204 communication-change callback. |

@@ -9,11 +9,11 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | status | records |
 | --- | ---: |
 | EXACT_SOURCE | 281 |
-| EQUIVALENT_IMPLEMENTATION | 12 |
+| EQUIVALENT_IMPLEMENTATION | 13 |
 | COMPATIBILITY_POLICY | 71 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 359 |
+| IMPLEMENTATION_GAP | 358 |
 | RECOVERABLE_GAP | 22 |
 | **total** | **761** |
 
@@ -35,7 +35,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M12-manipulation | INVENTORY_APPROVED | 2026-10-28 | 52 | 15 | 1 | 1 | 33 | 2 | 34 |
 | M13-navigation | INVENTORY_APPROVED | 2026-10-28 | 41 | 9 | 1 | 1 | 29 | 1 | 28 |
 | M14-faces | INVENTORY_APPROVED | 2026-10-29 | 14 | 2 | 0 | 1 | 10 | 1 | 11 |
-| M15-freeplay | INVENTORY_APPROVED | 2026-11-02 | 111 | 18 | 6 | 2 | 82 | 3 | 85 |
+| M15-freeplay | INVENTORY_APPROVED | 2026-11-02 | 111 | 18 | 7 | 2 | 81 | 3 | 84 |
 | tools | UNREVIEWED |  | 5 | 1 | 4 | 0 | 0 | 0 | 0 |
 
 ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M5-animation.

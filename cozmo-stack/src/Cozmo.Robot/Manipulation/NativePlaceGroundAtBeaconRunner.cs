@@ -1,4 +1,5 @@
 using Cozmo.Robot.Vision;
+using Cozmo.Transport;
 namespace Cozmo.Robot.Manipulation;
 
 // M12-030 00559DC6..0055A006: derived Init/Check bypass generic drive overrides.
@@ -6,37 +7,53 @@ internal sealed class NativeDriveToPlaceCarriedBeaconRunner:NativeDriveToObjectR
 {
     private readonly ManipulationSystem _m;
     private readonly Pose3d _placement;
+    private readonly EngineRobot _owner;
     protected override string ActionName=>"DriveToPlaceCarriedObject";
-    internal NativeDriveToPlaceCarriedBeaconRunner(ManipulationSystem m,Pose3d placement)
-        :base(m,m.Robot.Engine.Robot!.CarryingOwner!.CarriedObjectId??uint.MaxValue,PreActionType.PlaceOnGround)
-    {_m=m;_placement=new Pose3d(placement);Type=0xD;}
+    internal NativeDriveToPlaceCarriedBeaconRunner(ManipulationSystem m,EngineRobot owner,Pose3d placement,Func<bool>? current=null)
+        :base(m,owner,owner.CarryingOwner?.CarriedObjectId??uint.MaxValue,PreActionType.PlaceOnGround,current)
+    {_m=m;_owner=owner;_placement=new Pose3d(placement);Type=0xD;}
     public override int Init()
     {
         using var mutation=_m.World.EnterPoseMutation();
-        uint id=_m.Robot.Engine.Robot!.CarryingOwner!.CarriedObjectId??uint.MaxValue;
-        if(id==uint.MaxValue)return 0x03000011;
+        if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
+        uint id=_owner.CarryingOwner?.CarriedObjectId??uint.MaxValue;
+        if(id==uint.MaxValue)
+        {
+            _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"DriveToPlaceCarriedObjectAction.CheckPreconditions.NotCarryingObject",$"Robot {unchecked((int)_owner.NativeRobotId)} cannot place an object because it is not carrying anything.");
+            return 0x03000011;
+        }
         Action.ObjectId=id;
         var original=_m.World.GetLocatedObjectByIdHelper(id);
-        if(original is null||!CubeGeometry.IsCube(original.Type))return 0x03000004;
+        if(original is null||(!CubeGeometry.IsCube(original.Type) && original.Type!=Cozmo.Protocol.ObjectType.Charger_Basic))
+        {
+            _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"DriveToPlaceCarriedObjectAction.CheckPreconditions.NoObjectWithID",$"Robot {unchecked((int)_owner.NativeRobotId)}'s block world does not have an ActionableObject with ID={unchecked((int)id)}.");
+            EngineErrorState.StoreAndMaybeBreak();return 0x03000004;
+        }
         var clone=original.CloneNative();
         clone.InitPose(_placement,PoseState.Known);
         try{return InitHelper(clone);}finally{clone.NativePose.Dispose();}
     }
     public override uint CheckIfDone()
     {
+        if(!ExecutionCurrent())return EngineActionResult.Cancelled;
         uint result=Sequence.Update();
+        if(!ExecutionCurrent())return EngineActionResult.Cancelled;
         using var mutation=_m.World.EnterPoseMutation();
-        var carried=_m.World.GetLocatedObjectByIdHelper(Action.ObjectId);
+        uint carriedId=_owner.CarryingOwner?.CarriedObjectId??uint.MaxValue;
+        var carried=_m.World.GetLocatedObjectByIdHelper(carriedId);
         if(carried is null)return result;
-        if(!Footprint.TryGetBoundingQuadXY(carried,_placement,0f,out var reference))
+        if(!carried.TryObservableBoundingQuad50(_placement,0f,out var reference))
             throw new NativeActionUnavailable("M12-030/M13-007 actual carried placement footprint unavailable");
-        var filter=new BlockWorldFilter();filter.IgnoreIds.Add(Action.ObjectId);
+        var filter=new BlockWorldFilter();filter.IgnoreIds.Add(carriedId);
+        bool blocked=false;
         foreach(var other in _m.World.FindLocatedMatchingObjects(filter))
         {
-            if(!Footprint.TryGetBoundingQuadXY(other,other.NativePose,10f,out var quad))
+            if(!other.TryObservableBoundingQuad50(other.NativePose,10f,out var quad))
                 throw new NativeActionUnavailable("M12-030/M13-007 actual obstacle footprint unavailable");
-            if(quad!.Intersects(reference!))return 0x04000008;
+            if(!ExecutionCurrent())return EngineActionResult.Cancelled;
+            if(quad!.Intersects(reference!))blocked=true;
         }
+        if(blocked){_m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"DriveToPlaceCarriedObjectAction.CheckIfDone.GoalNotFree","");return 0x04000008;}
         return result;
     }
     internal override bool RetireNeverAdmittedTree(){if(!base.RetireNeverAdmittedTree())return false;_placement.Dispose();return true;}
@@ -63,17 +80,19 @@ internal sealed class NativePlaceGroundAtBeaconRunner:CompoundActionSequential
             _hostUnavailable=true;Unavailable?.Invoke(error);
             return EngineActionResult.Running; // no fabricated native completion
         }
-    }    internal NativePlaceGroundAtBeaconRunner(ManipulationSystem m,Pose3d pose,Func<bool>? current=null):base(()=>m.Robot.Engine.Timer.SecondsF)
+    }    internal NativePlaceGroundAtBeaconRunner(ManipulationSystem m,Pose3d pose,Func<bool>? current=null):this(m,m.Robot.Engine.Robot ?? throw new NativeActionUnavailable("Ground-at-pose Robot owner unavailable"),pose,current){}
+    internal NativePlaceGroundAtBeaconRunner(ManipulationSystem m,EngineRobot owner,Pose3d pose,Func<bool>? current=null):base(()=>m.Robot.Engine.Timer.SecondsF)
     {
-        current??=()=>true;SourceLog=(l,c,k,t)=>m.Robot.Engine.EmitSourceLog(l,c,k,t);SeedNativeEmptyCompletion();
+        var parent=current;current=()=>!owner.Lifetime.Destroying && ReferenceEquals(m.Robot.Engine.Robot,owner) && (parent?.Invoke()??true);SourceLog=(l,c,k,t)=>m.Robot.Engine.EmitSourceLog(l,c,k,t);SeedNativeEmptyCompletion();
         if(!current())return;
-        Drive=new(m,pose);
+        Drive=new(m,owner,pose,current);
         if(!current()){Drive.RetireNeverAdmittedTree();return;}
-        AddAction(Drive,false,false);
+        if(!AddActionGuarded(Drive,false,current)){Drive.RetireNeverAdmittedTree();return;}
         if(!current())return;
-        Ground=new(m);
+        try { Ground=new(m,owner){ScopedParentCurrent=current}; }
+        catch { RetireNeverAdmittedTree(); throw; }
         if(!current()){Ground.RetireNeverAdmittedTree();return;}
-        AddAction(Ground,false,false);
+        if(!AddActionGuarded(Ground,false,current)){Ground.RetireNeverAdmittedTree();return;}
         if(!current())return;
         SetNativeCompletionProxy(Ground.Tag);
     }

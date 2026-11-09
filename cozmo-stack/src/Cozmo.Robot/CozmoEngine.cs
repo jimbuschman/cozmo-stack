@@ -1166,6 +1166,8 @@ public sealed partial class EngineRobot
     /// (RS1 timestamp, RS7 lift angle, RS10 battery, RS11 status word; M2 App. B). Null before any.
     /// </summary>
     internal RobotState? StoredState { get; private set; }
+    // MovementComponent+9, written by MovementComponent::Update at 0x0063E30A.
+    internal bool NativeMovementIsMoving;
 
     // fidelity: M4-022
     /// <summary>Robot+0x34D: the RobotStates counted without IS_BODY_ACC_MODE since the last SetBodyRadioMode.</summary>

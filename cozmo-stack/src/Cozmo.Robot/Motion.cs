@@ -1417,6 +1417,28 @@ bool requireCalibration = true)
         }
     }
 
+    internal void StopAllMotorsOwned(EngineRobot owner,Func<bool> current)
+    {
+        bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && current();
+        lock(_gate)
+        {
+            if(!Current())return;
+            if(StopGateLocked())
+            {
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddHead,HeadTrack,DirectDriveHead,DirectDriveHead,Current,owner);
+                if(!Current())return;
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddLift,LiftTrack,DirectDriveLift,DirectDriveLift,Current,owner);
+                if(!Current())return;
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddBody,BodyTrack,DirectDriveWheels,DirectDriveWheels,Current,owner);
+                if(!Current())return;
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddBody,BodyTrack,DirectDriveWheels,DirectDriveArc,Current,owner);
+                if(!Current())return;
+                DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddBody,BodyTrack,DirectDriveWheels,DirectDriveTurnInPlace,Current,owner);
+            }
+            if(Current())owner.SendCheckedOwned(new StopAllMotors(),Current);
+        }
+    }
+
     // fidelity: M4-007
     /// <summary>
     /// <see cref="StopAllMotors"/>, then this stack's wait for the robot to report the wheels stopped. Never gated on

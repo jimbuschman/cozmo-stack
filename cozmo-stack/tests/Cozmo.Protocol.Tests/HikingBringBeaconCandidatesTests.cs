@@ -11,6 +11,44 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class HikingBringBeaconCandidatesTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RetainedGroundDriveChecksNewObstacleAgainstCurrentCarry(bool carryDisappears)
+    {
+        // Real queue/drive; candidate chosen before the independently inserted world obstacle.
+        using var scene=new BringBeaconFirmwareScene(carrying:true);var f=scene.F;
+        using var goal=NativeOriginPose(f);
+        var parent=new NativePlaceGroundAtBeaconRunner(f.M,f.Robot,goal);
+        var completions=new List<RobotCompletedAction>();
+        using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction a)completions.Add(a);});
+        Assert.Equal(0,f.Robot.ActionList.QueueAction(QueueActionPosition.Now,parent,0));
+        f.Rig.Tick();
+        Assert.True(parent.Drive.Initialized,scene.Describe(parent));
+        Assert.False(parent.Ground.Initialized);
+        uint oldTarget=parent.Drive.Action.ObjectId;
+        Assert.NotNull(f.M.World.GetLocatedObjectByIdHelper(oldTarget));
+        using var obstaclePose=NativeOriginPose(f);
+        var obstacle=f.M.World.AddCollisionObstacle(obstaclePose);
+        Assert.NotNull(f.M.World.GetLocatedObjectByIdHelper(obstacle.ObjectId));
+        if(carryDisappears)f.Robot.CarryingOwner!.UnsetCarrying();
+        int mark=f.Rig.Mark();f.Rig.Tick();
+        Assert.Empty(f.Rig.SentSince(mark).OfType<PlaceObjectOnGround>());
+        Assert.False(parent.Ground.Initialized);
+        if(carryDisappears)
+        {
+            Assert.NotNull(f.M.World.GetLocatedObjectByIdHelper(oldTarget));
+            Assert.False(parent.DestructionObserved);
+            Assert.DoesNotContain(completions,c=>c.Tag==parent.Tag && c.Result==0x04000008);
+            f.Robot.ActionList.Cancel(parent.Tag);
+        }
+        else
+        {
+            Assert.True(parent.DestructionObserved,scene.Describe(parent));
+            var completed=Assert.Single(completions.Where(c=>c.Tag==parent.Tag));
+            Assert.Equal(0x04000008u,completed.Result);
+        }
+    }
     private static Pose3d NativeOriginPose(Fixture f)
     {
         var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
@@ -536,7 +574,7 @@ public sealed class HikingBringBeaconCandidatesTests
     // Detector/clock/ready-link/firmware are the explicit BringBeaconFirmwareScene inputs;
     // raw robot state is deliberately withdrawn only after the real ground leaf starts.
     [Fact]
-    public void GroundLeafUnavailableRetiresOnlyOwnedRunWithoutFalseCompletionOrFailureMemory()
+    public void GroundLeafWithoutRawStateWaitsForTheBusyLatch()
     {
         using var scene=new BringBeaconFirmwareScene(carrying:true);var f=scene.F;
         f.Robot.Progression!.Unlocked.Remove(10);
@@ -550,26 +588,18 @@ public sealed class HikingBringBeaconCandidatesTests
         Assert.True(parent.Ground.Initialized,scene.Describe(parent)+" | "+string.Join(" | ",scene.Trace.TakeLast(60)));
         Assert.False(parent.DestructionObserved);
         var stateProperty=typeof(EngineRobot).GetProperty("StoredState",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
-        var saved=f.Robot.StoredState;var replacement=new ReplacementAction();bool missing=false;
+        var saved=f.Robot.StoredState;
         var completions=new List<RobotCompletedAction>();
         using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction a)completions.Add(a);});
-        SteppedBehavior.ResetMissingForTests();
-        void OnMissing(string text)
-        {
-            if(missing||!text.Contains("Ground actual raw robot state unavailable"))return;
-            missing=true;f.Rig.Robot.ExecuteBehaviorById(255,0);f.Robot.ActionList.QueueAction(QueueActionPosition.AtEnd,replacement);
-        }
-        SteppedBehavior.MissingReported+=OnMissing;
         try
         {
             stateProperty.SetValue(f.Robot,null);
             f.Robot.ActionList.Update();
-            Assert.True(missing);Assert.True(parent.DestructionObserved);Assert.Null(behavior.OwnedRunner);
+            Assert.False(parent.DestructionObserved);Assert.Same(parent,behavior.OwnedRunner);Assert.False(parent.Ground.StatusLatched);
             Assert.DoesNotContain(completions,a=>a.Tag==parent.Tag&&a.Result==0);
             Assert.Empty(f.M.Whiteboard.GetObjectFailureTable(ObjectActionFailure.PlaceObjectAt));
-            Assert.False(replacement.DestructionObserved);Assert.Same(replacement,f.Robot.ActionList.GetCurrentAction());
         }
-        finally{stateProperty.SetValue(f.Robot,saved);SteppedBehavior.MissingReported-=OnMissing;}
+        finally{stateProperty.SetValue(f.Robot,saved);}
     }    private sealed class DriveIdentityProbe:NativeDriveToObjectRunner
     {
         internal DriveIdentityProbe(ManipulationSystem m,uint target):base(m,target){}

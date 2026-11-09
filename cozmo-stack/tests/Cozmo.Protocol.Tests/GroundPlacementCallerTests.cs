@@ -11,6 +11,22 @@ namespace Cozmo.Protocol.Tests;
 public sealed class GroundPlacementCallerTests
 {
     [Fact]
+    public void GroundWaitsForIsMovingRatherThanWheelMotion()
+    {
+        // Public adapter, real retained action, native busy latch and reaction owner.
+        using var scene=new StackFirmwareScene(true);var f=scene.F;
+        _=f.M.PlaceObjectOnGroundAsync();
+        var runner=Assert.IsType<NativePlaceGroundRunner>(f.Robot.ActionList.GetCurrentAction());
+        f.Rig.Tick();
+        Assert.True(f.Robot.BehaviorManagerOwner!.HasDisableLock(ReactionTrigger.ObjectPositionUpdated,GroundPlacement.ReactionLockName));
+        f.Rig.State(RobotStatusFlag.IsPickingOrPlacing|RobotStatusFlag.HeadInPos);
+        Assert.True(runner.StatusLatched);
+        f.Rig.State(RobotStatusFlag.IsMoving|RobotStatusFlag.HeadInPos);
+        Assert.Equal(EngineActionResult.NotStarted,runner.VerifyChild!.State);
+        f.Rig.State(RobotStatusFlag.AreWheelsMoving|RobotStatusFlag.HeadInPos);
+        Assert.NotEqual(EngineActionResult.NotStarted,runner.VerifyChild.State);
+    }
+    [Fact]
     public void AnyMarkerTurnStillSkipsAnUnrelatedRootWhenAnotherMarkerIsValid()
     {
         // reach: retained turn recipient, with one invalid and other valid marker poses.
@@ -229,7 +245,7 @@ public sealed class GroundPlacementCallerTests
         f.Rig.Tick();
         f.Rig.State(RobotStatusFlag.IsPickingOrPlacing | RobotStatusFlag.HeadInPos);
         Assert.True(runner.StatusLatched);
-        f.Rig.State(RobotStatusFlag.AreWheelsMoving | RobotStatusFlag.HeadInPos);
+        f.Rig.State(RobotStatusFlag.IsMoving | RobotStatusFlag.HeadInPos);
         Assert.False(task.IsCompleted);
         Assert.Equal(EngineActionResult.NotStarted, runner.VerifyChild!.State);
         cancel.Cancel(); f.Rig.Tick();
