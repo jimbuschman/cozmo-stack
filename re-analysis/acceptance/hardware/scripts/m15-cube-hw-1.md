@@ -51,3 +51,7 @@ marker faces him squarely.
 ## What to send back
 
 Send the folder named at the end, under `re-analysis/acceptance/hardware/`.
+
+## Driving round (opt-in)
+
+The second round, where he drives to a cube further away, runs only with `--with-drive`. It stays off until the far-side approach bug (PICKUP-PREDOCK-SIDE-1) is fixed: on 2026-11-09 it took him to the table edge and he fell off.

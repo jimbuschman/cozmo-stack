@@ -49,11 +49,12 @@ public static class M15CubeHw
         try
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
-            bool validate = false, yes = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            bool validate = false, yes = false, withDrive = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
                     case "--validate": validate = true; break;
                     case "--yes": yes = true; break;
+                    case "--with-drive": withDrive = true; break;
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
@@ -66,9 +67,9 @@ public static class M15CubeHw
                 throw new ArgumentException("The cube marker library is not on this PC, so Cozmo cannot read cube markers. With Python installed and resources/lib/armeabi-v7a/libcozmoEngine.so present, run: python re-analysis/tools/extract_marker_library.py resources/lib/armeabi-v7a/libcozmoEngine.so, then rebuild.");
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + TestId + "-" + Guid.NewGuid().ToString("N")[..6]);
-            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes).Execute();
+            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive).Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
@@ -76,7 +77,7 @@ internal sealed class M15CubeRun
 {
     const uint WatchedFlags = (uint)(RobotStatusFlag.IsPickingOrPlacing | RobotStatusFlag.IsCarryingBlock | RobotStatusFlag.IsMoving | RobotStatusFlag.AreWheelsMoving | RobotStatusFlag.LiftInPos);
     static readonly byte[] WatchedTags = { 0x47, 0x44, 0x48, 0xB8 };
-    readonly string root, bundle, resources; readonly IPAddress ip; readonly List<JsonObject> records; readonly string[] argv; readonly bool yes;
+    readonly string root, bundle, resources; readonly IPAddress ip; readonly List<JsonObject> records; readonly string[] argv; readonly bool yes, withDrive;
     readonly Stopwatch clock = Stopwatch.StartNew(); readonly ConcurrentQueue<JsonObject> events = new();
     readonly ConcurrentQueue<(double T, bool Out, byte[] Raw, Frame? Frame, string? Error)> frames = new();
     readonly ConcurrentQueue<(double T, uint Timestamp, uint Status)> transitions = new();
@@ -86,8 +87,8 @@ internal sealed class M15CubeRun
     CozmoRobot? robot; RobotConnectionResponse? response; bool connected; HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup; Task<string?>? pendingRead;
     uint? lastStatus;
     double Now => clock.Elapsed.TotalMilliseconds;
-    public M15CubeRun(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, bool yes)
-    { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.yes = yes; }
+    public M15CubeRun(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, bool yes, bool withDrive)
+    { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.yes = yes; this.withDrive = withDrive; }
     void Event(string kind, JsonObject data) { data["atMs"] = Now; data["kind"] = kind; events.Enqueue(data); }
     bool Poll(Func<bool> predicate, int ms) { double end = Now + ms; while (Now < end) { if (predicate()) return true; if (cancel.Token.WaitHandle.WaitOne(10)) cancel.Token.ThrowIfCancellationRequested(); } return predicate(); }
     JsonObject[] EngineLogs() => events.Where(e => e["kind"]?.GetValue<string>() == "engine-log").ToArray();
@@ -153,14 +154,22 @@ internal sealed class M15CubeRun
             Event("look-head", new() { ["targetRad"] = M15CubeHw.LookHeadRad, ["finished"] = looked, ["result"] = looked && look.IsCompletedSuccessfully ? look.Result.ToString() : null });
 
             RunPair(robot, "direct", drive: false);
-            if (!yes)
+            // The drive round is opt-in (2026-11-09: the drive pickup approached the far side of the cube and took Cozmo off
+            // the table, PICKUP-PREDOCK-SIDE-1). Run it with --with-drive once that is fixed.
+            if (withDrive && !yes)
             {
                 Console.WriteLine("\n" + M15CubeHw.MoveText); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
                 RunPair(robot, "drive", drive: true);
-                Ask("pickedFirst", "First time (cube right in front): did he pick the cube up? [yes/no/tried and missed]");
-                Ask("placedFirst", "First time: did he put it down on the table? [yes/no/dropped it]");
-                Ask("pickedSecond", "Second time (he drove): did he reach the cube and pick it up? [yes/no/tried and missed]");
-                Ask("placedSecond", "Second time: did he put it down? [yes/no/dropped it]");
+            }
+            if (!yes)
+            {
+                Ask("pickedFirst", "Did he pick the cube up (cube right in front)? [yes/no/tried and missed]");
+                Ask("placedFirst", "Did he put it down on the table? [yes/no/dropped it]");
+                if (withDrive)
+                {
+                    Ask("pickedSecond", "Second time (he drove): did he reach the cube and pick it up? [yes/no/tried and missed]");
+                    Ask("placedSecond", "Second time: did he put it down? [yes/no/dropped it]");
+                }
                 Ask("odd", "Anything odd (bumped the cube, wrong cube, lift jerky, face or sounds strange)? Type it, or just press Enter.");
             }
         }
