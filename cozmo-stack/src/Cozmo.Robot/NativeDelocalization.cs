@@ -117,9 +117,15 @@ public sealed partial class EngineRobot
         });
         // 0x00510D5A..0x00510D62: OnRobotDelocalized(AddNewOrigin's return). The zombie keep compares with the list's current origin
         // (0x00620948..0x00620952), unchanged on a failure; the argument reaches only CreateLocalizedMemoryMap (0x006249D6).
-        world?.FinishDelocalization(CurrentOriginId,newId);
+        // Constructor delocalization runs before the new owner is inserted into Robots.
+        bool Current()=>!Lifetime.Destroying && (Engine.Robot is null || ReferenceEquals(Engine.Robot,this));
+        world?.FinishDelocalization(CurrentOriginId,newId,this,Current);
+        if(!Current())return;
         foreach(var stage in new[]{"FaceWorld","AIComponent","BehaviorManager","MovementComponent"})
+        {
             Engine.DelocalizationComponentHook?.Invoke(stage); // FaceWorld gets newId too (0x00510D68); its body has no observable output.
+            if(!Current())return;
+        }
         if(HasExternalInterface)
         {
             Engine.DeliverDelocalizationToApp(CurrentOriginId); // E1–E4: app first, synchronous subscribers afterwards.

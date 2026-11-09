@@ -62,12 +62,12 @@ public sealed class M11DelocalizationBuilderTests
     public void DelocalizationQueuesAppThenRunsKnownSubscribersBeforeHostDispatch()
     {
         using var rig=new Rig();var r=rig.Robot.Engine.Robot!;var order=new List<string>();
-        rig.Robot.Engine.EngineToGameMessage+=(tag,body)=>{Assert.Equal((ushort)0x32,tag);Assert.Empty(body.ToArray());order.Add("app");};
+        rig.Robot.Engine.EngineToGameMessage+=(tag,body)=>{if(tag==0x53){Assert.Equal(new byte[]{0},body.ToArray());order.Add("objects");}else{Assert.Equal((ushort)0x32,tag);Assert.Empty(body.ToArray());order.Add("app");}};
         rig.Robot.Engine.DelocalizationConfigurationHook=()=>order.Add("configuration");rig.Robot.Engine.DelocalizationCubeHook=()=>order.Add("cubes");
         uint before=r.CurrentOriginId,delivered=rig.Robot.Engine.NativeUiDeliveryCount;r.Delocalize(false);rig.Robot.Engine.DrainAppDelivery();
-        Assert.Equal(before+1,r.CurrentOriginId);Assert.Equal(new[]{"configuration","cubes","app"},order);Assert.Equal(new Vec3(-20,0,0),r.ForwardPose.Translation);
+        Assert.Equal(before+1,r.CurrentOriginId);Assert.Equal(new[]{"configuration","cubes","objects","app"},order);Assert.Equal(new Vec3(-20,0,0),r.ForwardPose.Translation);
         Assert.Equal(1u,r.PoseFrameId);Assert.Equal((byte)1,r.VisionPoseUpdated);
-        Assert.Equal(delivered+1,rig.Robot.Engine.NativeUiDeliveryCount); // E3 increments once before app delivery.
+        Assert.Equal(delivered+2,rig.Robot.Engine.NativeUiDeliveryCount); // 53 before 32, each enqueued once.
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
