@@ -182,11 +182,26 @@ public sealed class PickupReactionVoiceTests
         manager.RemoveDisableReactionsLock("pickup-audio-fixture");manager.CheckReactions(owner.Engine.Timer.Seconds);
         Assert.Same(behavior,manager.Current);
         int mark=f.Rig.Mark();byte? tag=null;uint? actionTag=null;bool ended=false,stopped=false;int startIndex=-1;
-        var until=DateTime.UtcNow+TimeSpan.FromSeconds(20);
+        var diagnostics=new System.Collections.Concurrent.ConcurrentQueue<string>();
+        void CaptureStack(string message)=>diagnostics.Enqueue(message);
+        void CaptureSource(EngineLogEntry entry)
+        {
+            if(entry.Name is "IAction.Update.TimedOut" or "IActionRunner.Update.ActionCompleted")
+                diagnostics.Enqueue($"{owner.Engine.Timer.SecondsF:F3} {entry.Name}: {entry.Text}");
+        }
+        owner.Engine.StackLogLine+=CaptureStack;owner.Engine.LogEntry+=CaptureSource;
+        var wall=System.Diagnostics.Stopwatch.StartNew();float initialEngineTime=owner.Engine.Timer.SecondsF;
+        TimeSpan lastTick=TimeSpan.Zero;
+        SayTextAction? observedSay=null;TriggerAnimationAction? observedChild=null;int iterations=0;
+        var until=TimeSpan.FromSeconds(60);
         try
         {
-            while(DateTime.UtcNow<until && !ended && !stopped)
+            while(wall.Elapsed<until && !ended && !stopped)
             {
+                iterations++;
+                TimeSpan tick=wall.Elapsed;
+                f.Rig.DefaultTickMs=(tick-lastTick).TotalMilliseconds;
+                lastTick=tick;
                 sink.CompleteOne();var stream=f.Rig.Robot.Animations.Scheduler.Stream;
                 f.Rig.Data(new AnimationState{NumAudioFramesPlayed=stream.FramesStreamed,NumAnimBytesPlayed=stream.BytesStreamed});
                 f.Motors(RobotStatusFlag.IsPickedUp | RobotStatusFlag.IsBodyAccMode);
@@ -197,6 +212,8 @@ public sealed class PickupReactionVoiceTests
                     TriggerAnimationAction ordinary when !named=>ordinary,
                     _=>null
                 };
+                if(behavior.OwnedRunner is SayTextAction sayAction)observedSay=sayAction;
+                if(child is not null)observedChild=child;
                 if(tag is null && child is not null && child.AnimationTagForTest!=0 &&
                     sent.OfType<StartOfAnimation>().Any(s=>s.AnimId==child.AnimationTagForTest))
                 {
@@ -214,14 +231,31 @@ public sealed class PickupReactionVoiceTests
                 }
                 await Task.Delay(10);
             }
-            Assert.NotNull(tag);Assert.True(cancel?stopped:ended);
+            string Detail()
+            {
+                var sent=f.Rig.SentSince(mark);
+                return $"named={named} cancel={cancel} wall={wall.Elapsed.TotalSeconds:F2}s engine={initialEngineTime:F2}->{owner.Engine.Timer.SecondsF:F2}s loops={iterations} " +
+                    $"behavior={behavior.EngineRunning}/{behavior.OwnedRunner?.GetType().Name ?? "null"} say={observedSay?.State:X8}/{observedSay?.Initialized} " +
+                    $"sayStart={observedSay?.StartTime:F2} child={observedChild?.State:X8}/{observedChild?.Initialized} " +
+                    $"childStart={observedChild?.StartTime:F2} tag={tag} sentStart={sent.OfType<StartOfAnimation>().Count()} " +
+                    $"audio={sent.OfType<AudioSample>().Count()} end={sent.OfType<EndOfAnimation>().Count()} " +
+                    $"logs={string.Join(" | ",diagnostics.TakeLast(30))}";
+            }
+            if(tag is null)Assert.Fail("No owned animation tag. "+Detail());
+            if(!(cancel?stopped:ended))Assert.Fail("Audio/terminal milestone missing. "+Detail());
             Assert.Contains(f.Rig.SentSince(mark).Skip(startIndex+1).OfType<AudioSample>(),s=>s.Samples.Any(b=>b!=0xFF && b!=0x7F));
             Assert.Empty(needs);
             if(cancel)Assert.Contains(f.Rig.SentSince(mark),m=>m is AbortAnimation);
             else {for(int i=0;i<5 && behavior.OwnedRunner is not null;i++)f.Motors(RobotStatusFlag.IsPickedUp);Assert.Null(behavior.OwnedRunner);}
+            if(named)
+            {
+                Assert.NotNull(observedSay);
+                if(observedSay!.State==EngineActionResult.Timeout)Assert.Fail("Named SayText timed out. "+Detail());
+                if(!cancel && observedSay.State!=EngineActionResult.Success)Assert.Fail("Named SayText did not complete successfully. "+Detail());
+            }
             Assert.NotNull(actionTag);
             Assert.False(f.Rig.Robot.Motion.AreAllTracksLockedBy(4,unchecked((int)actionTag.Value).ToString(System.Globalization.CultureInfo.InvariantCulture)));
         }
-        finally {owner.Engine.Needs.Log-=OnNeeds;manager.Stop(BehaviorStopReason.Interrupted,owner.Engine.Timer.SecondsF);}
+        finally {owner.Engine.StackLogLine-=CaptureStack;owner.Engine.LogEntry-=CaptureSource;owner.Engine.Needs.Log-=OnNeeds;manager.Stop(BehaviorStopReason.Interrupted,owner.Engine.Timer.SecondsF);}
     }
 }
