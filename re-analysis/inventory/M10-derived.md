@@ -47,7 +47,7 @@
 | M10-010 | IMPLEMENTATION_GAP | The physical flag robot+0x14 is 0 until FirmwareVersion arrives; then it is set to json["sim"].isNull(). While not physical: the unexpected-movement check does nothing, the on-back centre is the sim value, and the tap filter does not queue (M4 CD10e). | A4, B2 |
 | M10-011 | IMPLEMENTATION_GAP | Falling events. HandleFallingStarted broadcasts FallingStarted{ts}. HandleFallingStopped registers NeedsAction 17 when intensity > 1000, emits DAS, and broadcasts FallingStopped{duration, intensity}. | C1, C2 |
 | M10-012 | IMPLEMENTATION_GAP | The IMU filter state +0x378..+0x38F starts at 0; the raw accel and gyro are written only by UFRS. | gap1 5a, gap2 7a |
-| M10-013 | IMPLEMENTATION_GAP (a forced policy, to build) | The raw accel/gyro (+0x360..+0x374) before the first RobotState. The engine never initialises them, so they hold heap contents. This stack uses 0 (MD1). | gap2 7b |
+| M10-013 | COMPATIBILITY_POLICY (operator, 2026-11-09; built in OffTreads.cs) | The raw accel/gyro (+0x360..+0x374) before the first RobotState. The engine never initialises them, so they hold heap contents. This stack uses 0 (MD1). | gap2 7b |
 
 ## Decisions (the manager's, recorded for audit)
 

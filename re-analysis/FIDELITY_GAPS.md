@@ -10,8 +10,8 @@ Manifest of **761 records** over 16 subsystems.
 | EXACT_SOURCE | 281 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 13 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 358 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 71 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| IMPLEMENTATION_GAP | 356 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 73 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -33,12 +33,12 @@ remains after both, and they do not go away by working harder on this repository
 | M7-behaviour — Idle, mood and reactions | 31 | 1 | 22 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
-| M10-derived — Derived robot state and reaction strategies | 17 | 0 | 13 | 0 | 0 | yes | no |
+| M10-derived — Derived robot state and reaction strategies | 17 | 0 | 12 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 10 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 111 | 3 | 81 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 111 | 3 | 80 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -1526,15 +1526,6 @@ REACT-TO-OBSTACLE-1 (2026-11-01): constructor-zero byte 0x00569A80, actual origi
 * outstanding: built, awaiting strong verification (R-FIX2, 2026-10-03): HandleFallingStopped's order (0x005350AA..0x0053519C): Register(17 = 'Fall') then the DAS event then the broadcast, condition > 1000.0f (0x5352A8); FreeplayStack subscribes Sensors.NeedsActionCompleted to NeedsManager.RegisterNeedsActionCompleted("Fall"). Still open: the HandleFallingStopped info log (0x535084) and the DAS int-rounded intensity are not reproduced (log only). Log-key check (2026-10-16, re-analysis/research/20261016-logkey-sites-check.md L1): the stack FallingStarted log has the wrong key, text and channel; native sChanneledInfoF 0x00534F6A "Unnamed" "Robot.HandleFallingStarted.FallingStarted" "timestamp: %u". Fix: job B-LOG-1.
 B-M1-5 (2026-10-17), built, awaiting strong verification: FallingStarted/FallingStopped host reports now use the common FIFO; internal reaction callbacks remain synchronous and the Fall needs-action precedes the stopped report. Payloads copied at publication; no intensity/time gate changes.
 NEEDS-PROOF-1 (2026-11-01): previous legacy FreeplayStack-only Fall join did not cover canonical CreateNative. Actual sensor handler now directly registers Fall with captured original context Needs before public action notification, source DAS and game broadcast (005350AA..C2/00535144/0053519C). Strict impact>1000, original-owner retirement guards and distinct-custom-Needs-only standalone forwarding prevent new-owner routing and duplicate native registration. Actual firmware-message tests cover1000/1001, order and replacement. No whole-record settlement; see HANDOFF-NEEDS-PROOF-1.md.
-
-**M10-013 — Raw accel/gyro before the first RobotState: heap contents in the engine; 0 here (forced policy)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/OffTreads.cs`
-* effect: the slope reaction could differ before the first state
-* rests on: the existing stack code; not yet compared against re-analysis/inventory/M10-derived.md
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: gap2 7b: no ctor store to +0x35C..+0x377; operator new(0x530) without memset (0x52EE8E..0x52EE9C)
-* outstanding: The forced policy MD1 (0 before the first RobotState) is implemented; the record stays a forced choice and is COMPATIBILITY_POLICY at the next approval.
 
 **M10-014 — BlockFilter and gyro-drift lifetime effects** (live path)
 
@@ -3770,15 +3761,6 @@ Manager (2026-10-18; research/overnight/20261018-ov127-check.md): LoadRobotConfi
 * evidence: re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.; ctor stores 3 to +0x14 at 0x00572A0E; AIComponent::Update 0x00569F24..0x00569F4C calls AIInformationAnalyzer, AIWhiteboard, SevereNeedsComponent::Update (0x00569F38), BehaviorHelperComponent, FreeplayDataTracker in that order.; Update 0x00572BD0..0x00572C3E: selected == 3 returns; else IsNeedAtBracket(selected, Critical 3) (0x00572BEA); false logs and calls Clear (0x00572C38).; Clear 0x00572C8C..0x00572D6E: RemoveDrivingAnimations (robot+0x24C, 0x00572CF6), AnimationStreamer::RemoveIdleAnimation (robot+0x60, 0x00572D26), BehaviorManager::RemoveDisableReactionsLock (0x00572D56), each with 'severe_need_component_lock' (0x00BEE67C, 26 bytes); then +0x14 = 3 (0x00572D6A).; Set 0x00572E48..0x005731C0: idle map from 0x00C596C4 (Energy 1 -> 0x137, Repair 0 -> 0x143); driving triplets Energy 1 -> 0x134/0x133/0x132 (0x0105A9F8), Repair 0 -> 0x140/0x13F/0x13E (0x0105AA08); PushDrivingAnimations 0x005730E2, PushIdleAnimation 0x00573152, DisableReactionsWithLock(lock, table, true) 0x005731A0 with the table from map 0x0105A9D8 (init 0x004D71B4; pairs at 0x010237A0: Energy and Repair -> 0x00C59670, Play -> 0x00C5969A all false); then +0x14 = need (0x005731B4).; Callers: wake handler 0x00572E00..0x00572E42 (Repair Critical -> Set 0, else Energy Critical -> Set 1, else nothing); BehaviorPlayAnimOnNeedsChange ShouldGetInBePlayed 0x005BFECA..0x005BFEF6 and StopInternal 0x005BFEF8..0x005BFF16 (Set(config need) when it differs from the selected need and is Critical, regardless of stop reason); BehaviorExpressNeeds::StopInternal 0x005EE7D8..0x005EE7E8 (Clear when own+0x134); PlayNeedsGetOutAnimIfNeeded destructor 0x0054504C..0x0054505E and CheckIfDone 0x005451C8..0x005451EE (Clear under the own+0xC9/+0x88/trigger 0x23F guards).
 * outstanding: IMPLEMENTATION_GAP: to build (B-M15-12). The stack keeps a per-need HashSet (Needs.cs _severeExpressed) and no selected-need scalar; AIComponent.Update omits the SevereNeeds phase. BehaviorExpressNeeds +0x134/+0x135 are the config bools shouldClearExpressedState/caresAboutExpressedState (default false, ctor 0x005EE186; reads 0x005EE300/0x005EE32E; +0x135 gates IsRunnable at 0x005EE570..0x005EE5B0 on the selected need), added 2026-10-25 from the check addendum. UNKNOWN (stays visible MISSING when built): the PlayNeedsGetOutAnimIfNeeded action is not built in the stack; exhaustive indirect-caller census; a shipped witness that selects Play 2 through PlayAnimOnNeedsChange. The wakeup input is M15-073. NEEDS-EXPRESSION-ADMISSION-1 (2026-11-01), checked449/449, pending gate/Claude: actual canonical PlayAnimOnNeedsChange Stop005BFEF8 rechecks live selected!=need AND refreshed Critical bracket and calls actual SevereNeeds.Set only on true, regardless stop reason/result. No Set at Start or completion. Three natural severe activities, Play selected2 and real driving/idle/reaction effects are exercised. Express flag-only Clear and unselected destructor/standalone disposal no-extra-Clear are checked; whole M15-082 proposed separately. This is a concrete caller witness, not a whole selected-need/other-caller census settlement.
 
-**M15-073 — App input: NotifyCozmoWakeup (G2E 166) to the SevereNeedsComponent wake handler** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/AIComponent.cs`
-* effect: Whether a need that is Critical at wakeup starts its severe expression (driving/idle animations and reaction locks).
-* rests on: Manager record (2026-10-25) under the 2026-10-09 app-boundary scope rule.
-* best authority: libcozmoEngine.so 3.4.0-1204; app sender authority 2.
-* evidence: re-analysis/research/20261021-m15-severe-need-input.md (row 39), checked by re-analysis/research/20261025-r-m15-severe-input-claude-check.md.; SevereNeedsComponent::Init 0x00572A64..0x00572A86 subscribes only when HasExternalInterface(); helper 0x00572B10..0x00572B96 registers G2E 0xA6 (166); the callback 0x005734F2..0x00573504 forwards to the wake handler 0x00572E00.; App sender: unity/scripts/csharp/ConnectionFlowController.cs WakeupSequence 600..611 (wake animation, then NotifyCozmoWakeup); Cozmo.Hub/NeedsHub.cs:95.
-* outstanding: IMPLEMENTATION_GAP until built (B-M15-12), then COMPATIBILITY_POLICY (operator, 2026-10-25: 'do it'): the stack sends NotifyCozmoWakeup (G2E 166) itself, once per robot connection, at the point the app ran WakeupSequence: when the stack reports the robot connected and ready. It is delivered through the same game-to-engine subscription the engine uses (Init 0x00572A64..0x00572A86). The app sent it right after starting the wake animation (ConnectionFlowController.cs:608-610), not after it finished; the app's SDK and simulator branches did not send it, and the stack has neither. The host C# API call stays as well. The app's wake animation itself (GetAnimationForWakeUp: ConnectWakeUp, OnboardingWakeUpDriveOffCharger or a needs-based choice) is app flow, not covered by this record.
-
 **M15-074 — PlayNeedsGetOutAnimIfNeeded action: per-need get-out trigger at Init, SevereNeeds clear on first start or destruction, offered through the C# API** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
@@ -4058,6 +4040,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M3-019 | M3-device | COMPATIBILITY_POLICY | The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true | libcozmoEngine.so 3.4.0-1204 |
 | M3-020 | M3-device | COMPATIBILITY_POLICY | A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure | libcozmoEngine.so 3.4.0-1204 |
 | M5-032 | M5-animation | EQUIVALENT_IMPLEMENTATION | DrawFace: 64x128 canvas, the face transform via shipped cv::warpAffine INTER_NEAREST BORDER_CONSTANT 0, row extent, interlace clearing, scan-line shift | libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped) |
+| M10-013 | M10-derived | COMPATIBILITY_POLICY | Raw accel/gyro before the first RobotState: heap contents in the engine; 0 here (forced policy) | libcozmoEngine.so 3.4.0-1204 |
 | M3-037 | M3-device | COMPATIBILITY_POLICY | A raw gray/RGB payload shorter than rows*cols (or *3): the engine decodes bytes past the vector's size from a recycled allocation (undefined); M1-034 standing rule: this stack skips that frame's decode and logs it | libcozmoEngine.so 3.4.0-1204 |
 | M6-021 | M6-wwise-bank | COMPATIBILITY_POLICY | The injectable RNG seed seam: WwiseSelection's constructor takes a seed for tests; the live default is Unix seconds, matching the engine's time(NULL) | libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40) |
 | M6-044 | M6-wwise-bank | COMPATIBILITY_POLICY | Wwise Term JNI step 0xA57960: the JavaVM is an app input; the stack has none | libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio). |
@@ -4103,6 +4086,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M3-064 | M3-device | COMPATIBILITY_POLICY | The DataPlatform external path (DataPlatformExternalPath, scope 4; app input: temporaryCachePath) | libcozmoEngine.so 3.4.0-1204; Unity C#. |
 | M4-052 | M4-control | EQUIVALENT_IMPLEMENTATION | Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY | libcozmoEngine.so 3.4.0-1204. |
 | M4-053 | M4-control | COMPATIBILITY_POLICY | Re-request a pooled cube after its disconnected slot is reset (operator-approved host input; ReconnectPooledCubes) | libcozmoEngine.so 3.4.0-1204; Unity C#. |
+| M15-073 | M15-freeplay | COMPATIBILITY_POLICY | App input: NotifyCozmoWakeup (G2E 166) to the SevereNeedsComponent wake handler | libcozmoEngine.so 3.4.0-1204; app sender authority 2. |
 | M15-077 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorRollBlock, all four shipped instances (Hiking_RollCube, RollBlockOnSide, RollBlockOnSideLowScore, SparksRollBlock): cache 7/6 target choice and failure filter, Init, TransitionToPerformingAction, RollBlockHelper, DriveToRollObjectAction and RollObjectAction, the axis-change retarget, success animation/objective/needs and stop/reset | libcozmoEngine.so 3.4.0-1204 |
 | M15-080 | M15-freeplay | EQUIVALENT_IMPLEMENTATION | BehaviorAcknowledgeFace lifecycle: ctor state, runnable gates (not while carrying/charger/+0x355, target set non-empty), Init/Update begin, BeginIteration (GetBestFaceToTrack ranking, TurnTowardsFaceAction arguments and triggers, 3-image wait, greeting gate and callback), FinishIteration loop, listener wiring and Stop clearing | libcozmoEngine.so 3.4.0-1204 |
 | M15-096 | M15-freeplay | COMPATIBILITY_POLICY | ActivityStrategyFPPlayWithHumans: game request predicates and the DenyGameStart rejection cooldown | libcozmoEngine.so 3.4.0-1204 |

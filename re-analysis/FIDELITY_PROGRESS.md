@@ -10,10 +10,10 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | --- | ---: |
 | EXACT_SOURCE | 281 |
 | EQUIVALENT_IMPLEMENTATION | 13 |
-| COMPATIBILITY_POLICY | 71 |
+| COMPATIBILITY_POLICY | 73 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 358 |
+| IMPLEMENTATION_GAP | 356 |
 | RECOVERABLE_GAP | 22 |
 | **total** | **761** |
 
@@ -30,12 +30,12 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M7-behaviour | INVENTORY_APPROVED | 2026-10-30 | 31 | 7 | 0 | 0 | 22 | 2 | 23 |
 | M8-framework | INVENTORY_APPROVED | 2026-10-16 | 27 | 1 | 1 | 0 | 23 | 2 | 25 |
 | M9-wwise-music | INVENTORY_APPROVED | 2026-10-16 | 46 | 5 | 2 | 1 | 37 | 1 | 38 |
-| M10-derived | INVENTORY_APPROVED | 2026-10-16 | 17 | 4 | 0 | 0 | 13 | 0 | 13 |
+| M10-derived | INVENTORY_APPROVED | 2026-11-09 | 17 | 4 | 1 | 0 | 12 | 0 | 12 |
 | M11-vision | INVENTORY_APPROVED | 2026-11-03 | 104 | 20 | 3 | 1 | 74 | 6 | 80 |
 | M12-manipulation | INVENTORY_APPROVED | 2026-10-28 | 52 | 15 | 1 | 1 | 33 | 2 | 34 |
 | M13-navigation | INVENTORY_APPROVED | 2026-10-28 | 41 | 9 | 1 | 1 | 29 | 1 | 28 |
 | M14-faces | INVENTORY_APPROVED | 2026-10-29 | 14 | 2 | 0 | 1 | 10 | 1 | 11 |
-| M15-freeplay | INVENTORY_APPROVED | 2026-11-02 | 111 | 18 | 7 | 2 | 81 | 3 | 84 |
+| M15-freeplay | INVENTORY_APPROVED | 2026-11-09 | 111 | 18 | 8 | 2 | 80 | 3 | 83 |
 | tools | UNREVIEWED |  | 5 | 1 | 4 | 0 | 0 | 0 | 0 |
 
 ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M5-animation.

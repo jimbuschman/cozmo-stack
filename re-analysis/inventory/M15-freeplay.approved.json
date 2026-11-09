@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-11-02",
+  "approved": "2026-11-09",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "061958fe45f07b5e7b924d986f01add879760afe5f0fa32b872716662b60f8f4",
+  "inventory_sha256": "c8cd19cd319cc4d54a9cf58b6bf7bbe116dc301ecc2d34a254fc1c57cfa12f74",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -305,7 +305,7 @@
       "hardware_required": false
     },
     "M15-022": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "PlaceObjectOnGroundAtPoseAction composition and PlaceObjectOnGroundAction Init/CheckIfDone",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -861,7 +861,7 @@
       "hardware_required": false
     },
     "M15-073": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "App input: NotifyCozmoWakeup (G2E 166) to the SevereNeedsComponent wake handler",
       "authority": "libcozmoEngine.so 3.4.0-1204; app sender authority 2.",
       "evidence": [
@@ -958,7 +958,7 @@
       "hardware_required": false
     },
     "M15-080": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "BehaviorAcknowledgeFace lifecycle: ctor state, runnable gates (not while carrying/charger/+0x355, target set non-empty), Init/Update begin, BeginIteration (GetBestFaceToTrack ranking, TurnTowardsFaceAction arguments and triggers, 3-image wait, greeting gate and callback), FinishIteration loop, listener wiring and Stop clearing",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

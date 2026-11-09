@@ -1054,6 +1054,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP: SevereNeedsComponent live selected need (+0x14, ctor 3 at 0x00572A0E); Set 0x00572E48..0x005731C0, Clear 0x00572C8C..0x00572D6E, Update 0x00572BD0 at AI phase 0x00569F38; callers 0x00572E00, 0x005BFEF8, 0x005EE7D8, 0x0054504C, 0x005451C8 | M15-072 (new) |
 | New IMPLEMENTATION_GAP, to become COMPATIBILITY_POLICY when built: NotifyCozmoWakeup G2E 166 (Init 0x00572A64, callback 0x005734F2) supplied by a host C# API call; no auto-send | M15-073 (new) |
 
+**M15-073 now COMPATIBILITY_POLICY (operator, 2026-11-09).** Built in B-M15-12 and checked (`research/20261025-b-m15-12-claude-check.md`). Per the operator's 2026-10-25 decision the stack also sends NotifyCozmoWakeup itself, once per connection, when the robot is connected and ready (CozmoRobot.cs TryAutomaticWake); the host API call stays. This replaces "no auto-send" in the row above.
+
+
 ## Row 73, the get-out action (manager, 2026-10-25; research/20261025-b-m13-29-rows-72-74-claude-check.md)
 
 | Change | Records |
