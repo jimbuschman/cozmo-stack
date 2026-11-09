@@ -40,3 +40,29 @@ Hardware evidence never raises provenance. No record status changes.
 ## M15-022 hardware observation
 
 Not obtained yet: nothing was carried, so no 0x44 ground placement ran.
+
+## Run 3 (e9520f): docked and missed; then drove off the table
+
+- **Direct pickup.** It was admitted after 3 attempts (the AcknowledgeObject retry worked).
+  - **What happened:** he docked with live 0x48 corrections, PickAndPlaceResult 0xB8 reported success, and
+    IS_CARRYING_BLOCK went up. Then the firmware logged `LiftController.Update.NoLoadDetected`. The engine re-saw the
+    cube on the table and failed the pickup with 0x03000015 (PickupObjectNotSeenRecently).
+  - **Geometry:**
+    - Before docking the cube was at X = 137.1, so its near face was at about 115. The first 0x48 gave x = 116.7 from
+      a robot at -1.5, which is consistent.
+    - At lift-up the robot centre was at x = 105.8. With the robot front at +22.1 mm (M11-094), the body reached
+      about 128, roughly 13 mm into the cube face.
+    - After the miss the cube was at X = 149.4, pushed about 12 mm.
+  - **Conclusion:** the dock overshot and pushed the cube instead of sliding the fork in. Queued as DOCK-OVERSHOOT-1
+    (the 0x47 dock request and 0x48 slot-offset geometry against the native).
+- **Drive pickup:** the same far-side approach as run 2 (planner goal about 430 mm away, desired final heading
+  3.107 rad).
+  - **The stop:** at x = 410.6 the firmware stopped on the table edge (`ProxSensors.UpdateCliff.StoppingDueToCliff`).
+    The engine sent stop commands at once (0x32 zero wheels, 0x3B), and the wheels read 0 from 40.43 s.
+  - **The fall:** the heading kept changing with the wheels stopped (from 40.5 s), then OnFace, OnLeftSide and InAir.
+    He tipped off the edge after stopping from about 200 mm/s with his front already over it.
+  - **The stack's part:** it sent no forward motion after the stop. The cliff reaction's animation keyframes came
+    after the tip began.
+  - **Root cause:** the far-side approach (PICKUP-PREDOCK-SIDE-1). **That job is now a safety priority.**
+- **Put-down:** the engine owner was no longer carrying (the pickup failed), so the 32 mm lift ran as a plain move.
+  The M15-022 placement observation is still not obtained.

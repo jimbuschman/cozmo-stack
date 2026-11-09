@@ -1,0 +1,1496 @@
+MISSING: M13-038 PublicStateBroadcaster::Update0x0064D5DC native manager/current-requested/carrying/reaction/needs input joins are unbound; checked broadcaster and both client owners are built, no host Freeplay state substituted
+MISSING: M7-027/M12-017: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/+E4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points remain unbuilt; TracePrinter B0/EC diagnostics and CF CrashReport are bound
+MISSING: M7-028 LiftLoadTest[0] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown
+MISSING: M7-028 LiftLoadTest[1] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown
+M5-027/M5-057 subscription 0xAE: idle push/remove inputs supplied by the host API (M5-057); concrete ownership/unlink is built (M5-056)
+M5-027/M5-057 subscription 0xAF: idle push/remove inputs supplied by the host API (M5-057); concrete ownership/unlink is built (M5-056)
+M5-061 subscription 0xAD: replay input owned by M5-061; concrete ownership/unlink is built (M5-056)
+M9-029 subscription 0xC4: custom-song input owned by M9-029; concrete ownership/unlink is built (M5-056)
+MISSING: M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built
+MISSING: DevTurnInPlaceTest: original app initiator is UNKNOWN; manager entry starts despite false IsRunnable; shared reaction/action completion owners remain M7-014/M8-001/M8-015/M8-017/M13-022 gaps
+MISSING: BehaviorContainer::CreateBehavior case 0x59CA78 (DockingTestSimple -> BehaviorDockingTestSimple, constructor 0x5CAFB0, 656 bytes): class not implemented. This stack has no constructor that builds BehaviorDockingTestSimple from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CBC4 (FactoryCentroidExtractor -> BehaviorFactoryCentroidExtractor, constructor 0x5CF80C, 528 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryCentroidExtractor from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CBE4 (FactoryTest -> BehaviorFactoryTest, constructor 0x5D0438, 880 bytes): class not implemented. This stack has no constructor that builds BehaviorFactoryTest from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CD04 (LiftLoadTest -> BehaviorLiftLoadTest, constructor 0x5D3F10, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorLiftLoadTest from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CE66 (PlayAnimWithFace -> BehaviorPlayAnimSequenceWithFace, constructor 0x5C0630, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorPlayAnimSequenceWithFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CC04 (FeedingEat -> BehaviorFeedingEat, constructor 0x5D5794, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingEat from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner
+MISSING: BehaviorContainer::CreateBehavior case 0x59CC24 (FeedingSearchForCube -> BehaviorFeedingSearchForCube, constructor 0x5D6C64, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorFeedingSearchForCube from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CDC4 (PeekABoo -> BehaviorPeekABoo, constructor 0x5F62D0, 368 bytes): class not implemented. This stack has no constructor that builds BehaviorPeekABoo from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CF46 (RespondPossiblyRoll -> BehaviorRespondPossiblyRoll, constructor 0x5DE324, 336 bytes): class not implemented. This stack has no constructor that builds BehaviorRespondPossiblyRoll from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CF06 (PyramidThankYou -> BehaviorPyramidThankYou, constructor 0x5DE048, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPyramidThankYou from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked
+MISSING: InteractWithFaces factory supports only the checked Meet configuration with original owners
+MISSING: PounceOnMotion factory: only configured Hiking_PounceOnMotion with actual Robot/manipulation owner is checked
+MISSING: BehaviorContainer::CreateBehavior case 0x59CF26 (RequestGameSimple -> BehaviorRequestGameSimple, constructor 0x5EA168, 552 bytes): class not implemented. This stack has no constructor that builds BehaviorRequestGameSimple from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CFC6 (Singing -> BehaviorSinging, constructor 0x5EE8DC, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorSinging from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CDE4 (PickUpAndPutDownCube -> BehaviorPickUpAndPutDownCube, constructor 0x5DB65C, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorPickUpAndPutDownCube from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings
+MISSING: BehaviorContainer::CreateBehavior case 0x59D026 (TrackLaser -> BehaviorTrackLaser, constructor 0x5FA250, 472 bytes): class not implemented. This stack has no constructor that builds BehaviorTrackLaser from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CB84 (ExploreVisitPossibleMarker -> BehaviorExploreVisitPossibleMarker, constructor 0x5E3CD8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorExploreVisitPossibleMarker from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: M15-056 GuardDog checked disconnect unit constructor0x005F2946 has no native Robot subscription/input owner; full M15-067 lifecycle remains unbuilt
+MISSING: BehaviorContainer::CreateBehavior case 0x59CCA4 (GuardDog -> BehaviorGuardDog, constructor 0x5F28DC, 344 bytes): class not implemented. This stack has no constructor that builds BehaviorGuardDog from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CDA4 (OnboardingShowCube -> BehaviorOnboardingShowCube, constructor 0x600AC0, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorOnboardingShowCube from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D0F2 (RamIntoBlock -> BehaviorRamIntoBlock, constructor 0x60473C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorRamIntoBlock from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D112 (ReactToCliff -> BehaviorReactToCliff, constructor 0x604CD0, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToCliff from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D132 (ReactToCubeMoved -> BehaviorAcknowledgeCubeMoved, constructor 0x60219C, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorAcknowledgeCubeMoved from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D152 (ReactToFrustration -> BehaviorReactToFrustration, constructor 0x605904, 328 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToFrustration from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D172 (ReactToImpact -> BehaviorReactToImpact, constructor 0x60617C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToImpact from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D192 (ReactToMotorCalibration -> BehaviorReactToMotorCalibration, constructor 0x60658C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToMotorCalibration from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D1B2 (ReactToOnCharger -> BehaviorReactToOnCharger, constructor 0x606A18, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToOnCharger from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D1D2 (ReactToPet -> BehaviorReactToPet, constructor 0x606E98, 320 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPet from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D1F2 (ReactToPickup -> BehaviorReactToPickup, constructor 0x607724, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPickup from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D212 (ReactToPlacedOnSlope -> BehaviorReactToPlacedOnSlope, constructor 0x607FB8, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPlacedOnSlope from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D232 (ReactToPyramid -> BehaviorReactToPyramid, constructor 0x608310, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToPyramid from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D252 (ReactToReturnedToTreads -> BehaviorReactToReturnedToTreads, constructor 0x6084E4, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToReturnedToTreads from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D272 (ReactToRobotOnBack -> BehaviorReactToRobotOnBack, constructor 0x6087B8, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnBack from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D292 (ReactToRobotOnFace -> BehaviorReactToRobotOnFace, constructor 0x608A9C, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D2B2 (ReactToRobotOnSide -> BehaviorReactToRobotOnSide, constructor 0x608D38, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotOnSide from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D2D2 (ReactToRobotShaken -> BehaviorReactToRobotShaken, constructor 0x609104, 304 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToRobotShaken from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D312 (ReactToStackOfCubes -> BehaviorReactToStackOfCubes, constructor 0x609880, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToStackOfCubes from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59D332 (ReactToUnexpectedMovement -> BehaviorReactToUnexpectedMovement, constructor 0x609A58, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorReactToUnexpectedMovement from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CB00 (DriveToFace -> BehaviorDriveToFace, constructor 0x5DA550, 296 bytes): class not implemented. This stack has no constructor that builds BehaviorDriveToFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: BehaviorContainer::CreateBehavior case 0x59CFA6 (SearchForFace -> BehaviorSearchForFace, constructor 0x5C9158, 288 bytes): class not implemented. This stack has no constructor that builds BehaviorSearchForFace from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made
+MISSING: Robot::Robot builds a second BehaviorContainer (robot+0x48, BehaviorSystemManager, constructor 0x005A5812) over the same configs, so the engine constructs every behaviour twice; only the BehaviorManager's (robot+0x44) is built here: the second manager's use is UNKNOWN (no direct caller of its Update, InitConfiguration, InitializeEventHandlers, GetCurrentBehavior or FindBehaviorByID)
+MISSING: M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt
+MISSING: M13-039 client needs cache +0x2C read at 0x005924C4: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero
+MISSING: M13-039 client needs cache +0x30 read at 0x00592514: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero
+MISSING: M13-039 client needs cache +0x34 read at 0x00592560: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero
+MISSING: M13-039 ActivityID EnumToString0x0059202C / RobotAudioClient source channel0x0059201C input absent; activity audio decisions still proceed
+MISSING: M8-012 BehaviorManager::SendDasTransitionMessage 0x005A22B4..0x005A24AC: typed BehaviorTransition/displayNameKey delivery is unbuilt; DasTransition is only a callback seam
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: FistBump -> FistBump has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Frustration -> ReactToFrustrationMajor has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: NoPreDockPoses -> RamIntoBlock has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: Sparked -> ReactToSparked has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior
+MISSING: M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription
+MISSING: M7-019 RamIntoBlock configured factory owner unavailable; reaction-owned existing adapter supplies the strategy recipient, not the native factory identity or a recovered Ram body
+M15-035 manager ruling 2026-10-15 (OV28-29-30 check, by analogy with M2-017): never-written inventory words 2..63 are supplied as zero until decoded; the report is retained
+MISSING: M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed
+MISSING: M11-072: precise native component/container subscription retirement points are not supplied by the checked recipient rows; managed token storage retires at Robot destruction end. Full teardown ordering remains M8-023/M7-018; no native destructor ordering is claimed for these new UI handles
+MISSING: M11-066 Robot ctor main (+0x298) and forward (+0x2A4) pose names have no checked row; empty names retained
+MISSING: M11-077: RemoveOwner is built (0x008448B4..0x00844914); NotLastOwner 0x0084510E..0x0084515E needs native shared-control use_count, and final-node destruction/bookkeeping 0x0084605C..0x0084609C -> 0x008D148C remains unbuilt; C# reachability is not used as a native reference count
+MISSING: M11-038 BroadcastLocatedObjectStates 0x006249EC -> 0x0061E6C0 payload/recipient remains unbuilt; tail call accounted
+MISSING: M11-069 AIComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)
+MISSING: M11-069 BehaviorManager.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)
+MISSING: M11-069 MovementComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)
+MISSING: M11-016 FaceTracker internal Init/algorithm and its possible error diagnostics remain unavailable
+info: Connected to robot!
+MISSING: M15-039: writeAsJson 0x0084C328..0x0084C4B6 calls StyledStreamWriter(tab). Its shipped formatting/comment/escaping body has no checked builder row; stats serialization/open/write/close and result-dependent WriteStatsFailed are not built
+info: robot firmware: 2457 (app: 2381)
+warning: robot firmware 2457 is not 2381 (policy M1-040: accepted)
+warning: policy M1-040: the original's result OutdatedApp is not applied; the robot is accepted
+Robot.Trace level=2 formatWord=0x00000270 [macaddr.soft_ap] fmt#624 [162, 32, 166, 9, 79, 50]
+Robot.Trace level=2 formatWord=0x00000272 [boot_count.phase] fmt#626 [36]
+Robot.Trace level=2 formatWord=0x0000015B [client.connections_since_boot] fmt#347 [3]
+Robot.Trace level=3 formatWord=0x00000278 [hardware.revision] fmt#632 [0]
+Robot.Trace level=2 formatWord=0x00000131 [CozmoBot.Radio.Connected] fmt#305
+warning: overtime -343.0 ms
+MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported
+Robot.Trace level=1 formatWord=0x00000131 [Messages.Process_syncTime.Recvd] fmt#305
+Robot.Trace level=2 formatWord=0x0000015B [watchdog_reset_count] fmt#347 [0]
+Robot.Trace level=1 formatWord=0x00000166 [Messages.Process_imageRequest.Recvd] fmt#358 [1, 4]
+Robot.Trace level=1 formatWord=0x0000012E [Localization.UpdatePoseWithKeyFrame.SettingPose] fmt#302 [0, 0, 0]
+MISSING: M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); system readiness remains unbound; the initial-exposure config prefix is built
+Robot.Trace level=2 formatWord=0x00000243 [Messages.Update.GyroCalibrated] fmt#579 [1045692485, -1102907422, -1092351752]
+MISSING: M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event
+Robot.Trace level=1 formatWord=0x00000131 [HeadController.CalibratedWhileApplyingPower] fmt#305
+MISSING: M8-026 GetWorldOrigin 0x004A4C54 at 0x0056AC92 has no bound Robot/world-origin provider; ProcessClearQuad unit is built
+MISSING: M13-038 PublicStateBroadcaster Update0x0064D5DC at Robot::Update: native input owner/caller join is absent; checked Update(input) is built, no publication or tick ordering invented
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.SetCliffDetectThreshold.NewLevel] fmt#347 [50]
+MISSING: M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp +0xE4 owner is unbuilt; rollback of +0xE4/+0xE8 is not substituted with the processed clock
+MISSING: M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership
+MISSING: M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only
+MISSING: M11-058/M11-055 DecodeJPEG Tic/Toc 0x006B4B76/0x006B4C6C native timing producer unbuilt; no host timer substituted
+MISSING: IBehavior::IsRunnableBase robot+0x34a (0x005bd876): no source for the byte; the vtable+0x24 gate is not consulted
+MISSING: IBehavior::IsRunnableBase +0x74 state (0x005bd7e6) and +0x70 unlock (0x005bd810) inputs: no source in this stack; not tested
+MISSING: M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; normal queue path is not classified SDK-only
+Robot.Trace level=1 formatWord=0x00000166 [Messages.Process_imageRequest.Recvd] fmt#358 [1, 0]
+MISSING: M11-013 / M11-041 | CozmoCubes host ByObjectId/ConnectionChanged still expose reported radio slots, including synthetic slots above4; source HandleActiveObjectConnectionState 0x00533B3C uses the Robot-owned BlockWorld returned ID and its own slot gate. Host-view migration remains unbuilt.
+MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false
+MISSING: M14-010 face motion reset has no prior admitted VisionPoseData
+MISSING: M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted
+MISSING: M11-035 DetectingLaserPoints producer/handler unavailable; no processed bit or native success invented
+MISSING: M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted
+MISSING: M11-037 CheckForCollisionWithRobot 0x0062593C..0x00625B88: complete native object/world/Robot::GetPose input binding and owned footprint recipients are not supplied by these wrapper rows; collision predicate/modify unit remains unbuilt
+MISSING: M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound
+MISSING: M8-015 destructor owns-profile byte+0x58/ClearCustomMotionProfile0x005410F6 recipient is not bound; Path.HasCustomMotionProfile is a different input; no invented profile reset
+MISSING: M11-044 ComputeAndInsertStateAt native auxiliary key/index ownership after0x00531BAA is not in the adopted history-query rows; bounded timestamp/pose cache only, no invented key/index producer
+ObjectPoseConfirmer.AddVisualObservation.NewEntry: ObjectID:0 at (138.55, -6.74, 16.90), currently Dirty
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+MISSING: M11-044 ComputeAndInsertStateAt 0x0067F8A2 -> auxiliary key/index ownership after 0x00531BAA remains unbuilt; existing checked timestamp/pose cache is used
+MISSING: M8-026 / M11-074 ClearRobotToMarkers 0x00506A98 -> ProcessClearQuad 0x0067F708: native robot/marker-corner quad producer is unbuilt; checked whiteboard unit awaits that join
+new object 0 Block_LIGHTCUBE2 Dirty at (138.73, -6.53, 16.73) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / cache 0x0062C5A2..0x0062C616: native current-origin family query, predicate and pose-root/distance joins are unbuilt; existing all-pairs snapshot is a candidate, not the processed-ID/old-cache source path
+MISSING: IBehavior::Init/Resume 'SparkBehaviorDisables' lock (0x005BCD16..0x005BCD44, 0x005BCFAC..0x005BCFDE): this+0x70 and [[this+0x2C]+0x44]+0x58 (the active spark) have no source in this stack (M15 spark layer); the lock is not taken
+MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs
+MISSING: M8-017 StoreUnionAndDelete native shared-control external-owner retention is not bound; existing direct child cleanup remains incomplete for aliased or retained children (0x0054F0CC..0x0054F0EC)
+seen object 0 Block_LIGHTCUBE2 Dirty at (138.56, -6.81, 16.96) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E and node+0x20 release0x0066352E..0x00663560: native captured-owner finalization/producer census is unbuilt; managed delegate retirement does not certify no side effects
+MISSING: M8-017 DeleteActions native temporary shared ownership and last-release recipient 0x0054EC0E..0x0054EC20 are not bound; existing direct child cleanup is a candidate sole-owner path
+MISSING: RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made
+seen object 0 Block_LIGHTCUBE2 Dirty at (138.71, -6.44, 14.67) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Dirty at (138.61, -6.16, 15.88) yaw=1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-037 CheckForUnobservedObjects pads 0x00621E8C..0x00622102 use the retained flat camera/object adapter; complete native object/camera pose-owner binding is unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier contains undefined words; skip full public payload, retain scalar/local delivery.
+MISSING: Concrete object-interaction completion fields unavailable: full public 5A payload withheld; defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; no cross-action unused-word policy is applied.
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=-1 formatWord=0x00000262 [SteeringController.ExecutePointTurn_2.Params] fmt#610 [8280, 0, 1160973472]
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ExitPointTurn] fmt#305
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ManagePointTurn.StoppingBecause0Vel] fmt#305
+MISSING: M15-081 M11-010/M12-033/M13-026 stacked-cube look unavailable: M11-010 ghost visibility reason
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+MISSING: M11-044 SetLocalizedTo marker loop 0x005123AE..0x00512456: native marker-node pose/camera owner binding is unbuilt; no squared-distance producer is inferred from the retained flat model
+MISSING: M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object's +0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (138.30, -6.32, 17.06) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+object 0 unobserved (shouldBeVisible:True hasNothingBehind:False reason:IsVisible)
+M1-034 Socialize objective recipient 0x005B07C2: skip pre-first-selection uninitialized phase read for Socialize
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+seen object 0 Block_LIGHTCUBE2 Known at (137.94, -5.79, 16.58) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.85, -5.88, 17.29) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.85, -5.88, 17.29) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.85, -5.88, 17.29) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M14-001/M11-066 TrackedFace::UpdateTranslation 0x0087E042..0x0087E064: the native writes the camera-frame translation into the head pose, keeps the head pose's own rotation and calls SetParent(camera); the stack's consumers read a flattened world pose, so the head pose takes the camera's rotation and the camera-applied translation
+MISSING: M14-011 native concurrent recognition cadence is not reproduced: FR and DT/PT share one serialized emulator
+MISSING: M14-008 native face47 complete app report unavailable; no truncated wire payload; checked LOCAL ID projection only
+seen object 0 Block_LIGHTCUBE2 Known at (137.11, -5.35, 15.31) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=1 formatWord=0x00000276 [Messages.Process_dockWithObject.Recvd] fmt#630 [0, 2, 1, 1114636288, 1128792064, 1140457472, 0]
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=-1 formatWord=0x0000024C [PathFollower.StartPathTraversal] fmt#588 [0, 1114636288, 1128792064, 1128792064]
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.SetCliffDetectThreshold.NewLevel] fmt#347 [400]
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (137.13, -5.60, 15.32) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=2 formatWord=0x00000131 [PathFollower.PathComplete] fmt#305
+Robot.Trace level=-1 formatWord=0x0000027E [DockingController.Update.Success] fmt#638 [-1062906739, 1047191460, 1113212038, 1073750797, 745]
+Robot.Trace level=-1 formatWord=0x0000024C [PathFollower.StartPathTraversal] fmt#588 [0, 1101004800, 1120403456, 1120403456]
+Robot.Trace level=2 formatWord=0x00000131 [PathFollower.PathComplete] fmt#305
+MISSING: M11-066 shared main pose still receives the existing history raw-pose candidate; complete native raw-pose writer/input binding is not built here
+Robot.Trace level=1 formatWord=0x00000235 [PAP.StartBackingOut.Dist] fmt#565 [1114636288, 1065353216]
+MISSING: ReactToCliffBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToMotorCalibrationBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToImpactBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToPickupBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToReturnedToTreadsBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotOnBackBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotOnFaceBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotOnSideBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+MISSING: ReactToRobotShakenBehavior: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)
+Robot.Trace level=1 formatWord=0x0000015B [LiftController.Update.CheckingForLoad] fmt#347 [14595]
+Robot.Trace level=1 formatWord=0x00000131 [LiftController.Update.NoLoadDetected] fmt#305
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.EnableCliffDetector] fmt#347 [1]
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+MISSING: M12-046/M12-006 DeleteLocatedObjects 0x00633930 body remains unread in the put-down rows; invoke existing world implementation with captured IDs/default origin-mode0 filter
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M8-015 ActionCompleted full ActionResult EnumToString recipient0x005405CA missing for0x03000015
+warning: Robot.Update.ActionList failed
+ObjectPoseConfirmer.AddVisualObservation.NewEntry: ObjectID:0 at (149.40, -3.41, 17.21), currently Dirty
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+new object 0 Block_LIGHTCUBE2 Known at (149.36, -3.39, 17.28) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (149.51, -3.40, 17.25) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.51, -3.43, 16.93) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.39, -3.37, 17.29) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.39, -3.43, 17.36) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.41, -3.42, 17.26) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.39, -3.37, 17.33) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.40, -3.42, 17.27) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.36, -3.42, 17.29) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.42, -3.47, 17.26) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.45, -3.47, 17.34) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.37, -3.35, 17.33) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.35, -3.36, 17.38) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.34, -3.43, 17.40) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.36, -3.37, 17.30) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.36, -3.35, 17.30) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.36, -3.40, 17.32) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.36, -3.38, 17.38) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.34, -3.47, 17.34) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.35, -3.36, 17.39) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.33, -3.44, 17.34) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.34, -3.34, 17.40) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.31, -3.41, 17.43) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.32, -3.38, 17.41) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (149.35, -3.34, 17.37) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+seen object 0 Block_LIGHTCUBE2 Known at (275.14, -14.40, 12.02) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (275.89, -14.38, 11.97) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (275.89, -14.38, 11.97) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (275.89, -14.38, 11.97) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (275.89, -14.38, 11.97) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (275.89, -14.38, 11.97) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (275.89, -14.38, 11.97) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (275.89, -14.38, 11.97) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.52, -10.61, 15.94) yaw=1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.52, -10.61, 15.94) yaw=1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (276.92, -10.89, 15.74) yaw=1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.98, -11.40, 15.32) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.89, -10.88, 15.55) yaw=1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.83, -11.41, 15.66) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.79, -10.62, 15.70) yaw=1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.85, -11.45, 15.51) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.94, -11.29, 15.60) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (276.64, -11.43, 16.03) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+object 0 unobserved (shouldBeVisible:True hasNothingBehind:False reason:IsVisible)
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.21, -11.57, 15.34) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+object 0 unobserved (shouldBeVisible:True hasNothingBehind:False reason:IsVisible)
+Robot.Trace level=-1 formatWord=0x00000262 [SteeringController.ExecutePointTurn_2.Params] fmt#610 [25015, 0, 1160973472]
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ExitPointTurn] fmt#305
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ManagePointTurn.StoppingBecause0Vel] fmt#305
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+M1-034 Socialize objective recipient 0x005B07C2: skip pre-first-selection uninitialized phase read for Socialize
+seen object 0 Block_LIGHTCUBE2 Known at (277.69, -10.02, 15.25) yaw=-0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (277.84, -10.29, 14.77) yaw=-1deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.83, -9.89, 14.71) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (277.90, -9.96, 14.87) yaw=0deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.13, -11.43, 14.57) yaw=-4deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.55, -10.74, 14.18) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump recipient at 0x004FF052..0x004FF30A remain incomplete
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M13-033 PrintPlan 0x00500532 -> 0x00855E7C output remains unbuilt
+MISSING: M13-033 PrintPlan 0x0050058A -> 0x00855E7C output remains unbuilt
+MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt
+MISSING: M13-034 AppendToPath cached primitive paths/MotionPrimitive.Create and RelativePathTurn.ExtendPath are unbuilt; existing ToPath geometry remains a labelled candidate, not the native AppendToPath implementation
+MISSING: M13-034 final turn uses the retained ToPath candidate's lattice endpoint; native GetEndPose cached heading/primitive paths remain unbuilt (0x0085BF5C)
+MISSING: M13-034 ApplyMotionProfile two-pass length/end-pose/split calls require source-backed M13-011 PathSegment helpers (0x0085BC00..0x0085C034); only checked profile-field assignment built, continuity/deceleration/splitting remain unbuilt
+MISSING: M12-002 PathSegment.Print 0x00507F36 -> 0x0085C034 text/body has no checked row; segment print is unbuilt
+MISSING: M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt
+Robot.Trace level=1 formatWord=0x0000015B [Messages.Process_executePath.StartingPath] fmt#347 [1]
+Robot.Trace level=-1 formatWord=0x0000024C [PathFollower.StartPathTraversal] fmt#588 [0, 1128792064, 1117813774, 1120371698]
+MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (278.36, -10.65, 14.24) yaw=-2deg via LightCubeJ_Top rms=0.10px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.UpdateCliff.StoppingDueToCliff] fmt#347 [1]
+Robot.Trace level=2 formatWord=0x0000015B [ProxSensors.EnableCliffDetector] fmt#347 [1]
+MISSING: M12-024 | EraseAllPlannerObstacles(1) 0x0055A626/0x0055A632 visualizer handoff absent
+MISSING: M12-024 | EraseAllPlannerObstacles(0) 0x0055A626/0x0055A632 visualizer handoff absent
+MISSING: M8-015 host action producer at IBehavior::StartActing 0x005BDACC supplies a handle/async closure instead of a concrete IActionRunner; owned-runner StartActing is built, concrete host-action construction remains unwired
+MISSING: M11-062 Robot::GetPose VERIFY root checks 0x004EA398..0x004EA46C; flattened host pose has no full Pose3d root-ID owner
+MISSING: M11-091 markerless +0x50 body/caller census 0x00502C32; existing candidate is not a checked override closure
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: Robot::Update's behaviour debug string (robot+0x4C = activity + ' ' + BehaviorID + '-' + IBehavior+0x58, 0x00513F6A..0x00513F9C) sent to VizManager::SetText and SetSdkStatus(Behavior): the sender and the SDK-status path are M11/M12 and not built
+Robot.Trace level=1 formatWord=0x0000025C [IMUFilter.PDWhileStationary] fmt#604 [-970756082, -986322360, -971843337, 1087624598, 1082274980, -1063558116, 1]
+Robot.Trace level=2 formatWord=0x00000131 [IMUFilter.PokeDetected.Gyro] fmt#305
+Robot.OfftreadsState.TreadStateChanged: OnTreads -> OnFace
+MISSING: Robot.OfftreadsState.TreadStateChanged info at 0x005120D0; M10 log port deferred
+MISSING: ReactToMotorCalibrationBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToImpactBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToPickupBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToReturnedToTreadsBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToRobotOnBackBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToRobotOnFaceBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToRobotOnSideBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToRobotShakenBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+MISSING: ReactToCliffBehavior: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)
+Robot.OfftreadsState.TreadStateChanged: OnFace -> OnLeftSide
+MISSING: Robot.OfftreadsState.TreadStateChanged info at 0x005120D0; M10 log port deferred
+Robot.Trace level=2 formatWord=0x00000131 [IMUFilter.PokeDetected.Accel] fmt#305
+Robot.OfftreadsState.TreadStateChanged: OnLeftSide -> InAir
+MISSING: Robot.OfftreadsState.TreadStateChanged info at 0x005120D0; M10 log port deferred
+MISSING: M14-006 ordinary authored audio requires the shared device, banks and archive
+MISSING: M8-015 ActionCompleted full ActionResult EnumToString recipient0x005405CA missing for0x03000000
+warning: Robot.Update.ActionList failed
+ObjectPoseConfirmer.AddVisualObservation.NewEntry: ObjectID:0 at (-110.80, -132.05, 17.54), currently Dirty
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+Robot.OfftreadsState.TreadStateChanged: InAir -> OnTreads
+MISSING: Robot.OfftreadsState.TreadStateChanged info at 0x005120D0; M10 log port deferred
+ObjectPoseConfirmer.AddVisualObservation.NewEntry: ObjectID:0 at (172.78, -9.51, 15.78), currently Dirty
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+new object 0 Block_LIGHTCUBE2 Known at (172.72, -9.63, 16.22) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+PotentialObjectsForLocalizingTo.LocalizeRobot.StoringMatchedObjectID: Match in current frame not farthest. Storing ID=0 to recheck
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (172.79, -9.74, 15.74) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.80, -9.65, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.87, -9.50, 15.82) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.74, -9.67, 16.01) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.72, -9.63, 16.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.70, -9.86, 16.00) yaw=-7deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+Robot.Trace level=-1 formatWord=0x00000262 [SteeringController.ExecutePointTurn_2.Params] fmt#610 [34700, 0, 1160973472]
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ExitPointTurn] fmt#305
+Robot.Trace level=-1 formatWord=0x00000131 [SteeringController.ManagePointTurn.StoppingBecause0Vel] fmt#305
+seen object 0 Block_LIGHTCUBE2 Known at (172.76, -9.58, 16.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+PotentialObjectsForLocalizingTo.LocalizeRobot.StoringMatchedObjectID: Match in current frame not farthest. Storing ID=0 to recheck
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+M1-034 Socialize objective recipient 0x005B07C2: skip pre-first-selection uninitialized phase read for Socialize
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.40, -8.53, 13.51) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+PotentialObjectsForLocalizingTo.LocalizeRobot.StoringMatchedObjectID: Match in current frame not farthest. Storing ID=0 to recheck
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt
+object 0 unobserved (shouldBeVisible:True hasNothingBehind:False reason:IsVisible)
+BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for 0
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.08, 13.16) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.31, 13.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.18, 12.99) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.14, 13.22) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.77, -9.39, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.73, -9.19, 13.28) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.31, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.17, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.15, 12.97) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.16, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.71, -9.40, 13.26) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.19, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.77, -9.25, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.28, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.83, -9.10, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.12, -9.02, 13.00) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.31, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.14, 13.22) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.12, -9.12, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.13, -9.12, 13.01) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -9.21, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.12, -9.06, 12.87) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.08, -9.06, 13.10) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.22, 13.29) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.11, -9.13, 13.05) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.20, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.20, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -9.02, 13.26) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -9.11, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.14, 13.45) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.10, -9.06, 13.10) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.01, 13.30) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.25, 13.39) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.17, 13.17) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -9.08, 13.19) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -9.25, 12.90) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -9.09, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.38, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -9.15, 13.18) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -9.19, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -9.27, 13.19) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.12, -9.18, 12.85) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.19, 13.34) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.26, 13.17) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.11, 13.19) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -9.26, 13.22) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -8.96, 12.82) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.28, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.24, 12.86) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.02, 12.92) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -9.06, 12.79) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.11, 12.81) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.32, 13.00) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.16, 12.81) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.16, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.20, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.33, 13.04) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.31, 12.94) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.12, 12.84) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.29, 12.97) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.23, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.15, 12.99) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.17, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.17, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.25, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.41, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.25, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.32, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.30, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.13, 12.87) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.10, 13.08) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.10, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.27, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.29, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.42, 13.04) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.18, 13.01) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.79, -9.06, 12.90) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.21, 12.80) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -8.95, 12.76) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.71, -9.22, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.70, -9.04, 12.97) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.08, 12.77) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.71, -9.23, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.76, -9.20, 12.71) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.66, -9.29, 13.05) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.79, -9.16, 12.83) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.74, -9.19, 12.91) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.08, 12.70) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.70, -9.26, 12.79) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.72, -9.20, 12.87) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.64, -9.32, 12.87) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.06, 12.76) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.68, -9.12, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.83, -9.17, 12.86) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.78, -9.11, 13.00) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.26, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.26, 12.84) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.29, 13.04) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.17, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.30, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.15, 12.99) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.17, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.17, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.19, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.16, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -9.34, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.83, -9.08, 13.23) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -8.91, 13.00) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.09, 13.01) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.07, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.06, 12.94) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.10, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.24, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.09, 12.83) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.76, -9.42, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.11, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.11, 12.85) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.19, 13.19) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -9.01, 12.93) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.13, 13.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.22, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.18, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -9.17, 12.86) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.11, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.17, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.12, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.09, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.89, 12.98) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.19, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.22, 12.99) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.28, 12.97) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.15, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.27, 13.05) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.10, 12.86) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.19, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.16, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.26, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.08, -8.96, 12.75) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -9.05, 12.91) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.27, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.32, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.23, 12.95) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.18, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.17, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.14, 13.00) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.31, 13.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.10, 13.00) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.27, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.20, 12.99) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.22, 12.97) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.14, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.23, 12.95) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.05, 12.89) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.38, 13.00) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.42, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.04, 12.92) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.14, 12.92) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.06, 13.06) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -8.91, 13.08) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.06, 12.98) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.16, 13.05) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.13, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.21, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.77, -9.25, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.06, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.12, 12.95) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.24, 12.97) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -9.14, 12.79) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.22, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.03, -9.00, 12.90) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.19, 13.15) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.03, 13.16) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.18, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.11, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.25, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.24, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.72, -9.19, 13.29) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.14, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -9.09, 12.70) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.16, 12.84) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.08, 12.85) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.75, -9.08, 12.84) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.78, -9.11, 12.77) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.67, -9.30, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.72, -9.03, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.69, -9.14, 12.94) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.74, -9.16, 12.73) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.68, -9.16, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.68, -9.12, 13.01) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -8.95, 12.90) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.76, -9.18, 12.74) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.66, -9.19, 12.81) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.75, -9.21, 12.82) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.75, -8.99, 12.89) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.59, -9.24, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.76, -9.06, 12.82) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.55, -9.31, 13.15) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -9.03, 12.91) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.79, -9.13, 12.80) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.16, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.83, -9.21, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -9.24, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.20, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.10, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -8.99, 13.14) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.07, 12.92) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.10, 12.92) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.75, -9.19, 13.15) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.04, 13.04) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.79, -9.23, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.01, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.02, 13.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.12, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.70, -9.24, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.06, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.05, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -8.87, 12.96) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.79, -9.18, 13.18) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.83, -9.09, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.07, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.00, 12.86) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.27, 12.95) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.28, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -8.90, 13.12) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.10, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.13, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.17, 12.91) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -8.94, 12.98) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.17, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.03, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.19, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.01, 13.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.24, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.13, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.02, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.02, 13.05) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.19, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.14, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.20, 13.26) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -8.95, 12.93) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.11, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -9.07, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.12, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.02, 12.95) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.20, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -8.94, 13.01) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -8.92, 13.14) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.74, -9.02, 13.26) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -9.33, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.06, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.94, 13.07) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.13, 13.17) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.19, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -8.96, 12.86) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.04, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.21, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.17, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.06, 13.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.04, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.05, 13.00) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.23, 13.19) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.67, -9.26, 13.37) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.21, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.18, 13.00) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.08, 13.15) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.78, -9.30, 13.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.13, 13.26) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.11, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.14, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.20, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.25, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -9.16, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.83, -9.20, 13.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.15, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.79, -9.14, 13.18) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.10, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.13, 12.89) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -9.18, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.09, 13.17) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.83, -9.09, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -8.98, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.72, -9.19, 12.99) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.63, -9.19, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.62, -9.24, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.67, -9.14, 12.85) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.62, -9.03, 12.96) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.60, -8.96, 13.01) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.58, -9.16, 12.92) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.73, -8.97, 12.91) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.51, -9.25, 12.97) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.65, -9.08, 12.91) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.59, -9.23, 12.87) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.59, -8.99, 12.95) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.64, -9.16, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.63, -9.08, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.71, -9.11, 12.94) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.63, -9.00, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.66, -9.06, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.69, -9.15, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.66, -9.12, 13.01) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.18, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.24, 13.03) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -9.14, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -8.95, 13.19) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.77, -9.01, 13.32) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -9.14, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.76, -9.15, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -8.98, 12.91) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.71, -9.15, 13.30) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.02, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.23, 12.95) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -9.01, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -8.99, 13.19) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.11, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.07, 13.35) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -8.92, 13.26) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.00, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -9.06, 13.44) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -8.91, 13.51) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-045 robot.play_area_size at 0x00624F32: tree does not yet contain all map content (B-M3M4-20); event value unavailable
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -8.85, 13.35) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -8.83, 13.34) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -8.96, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -8.89, 13.30) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -8.90, 13.23) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.10, -9.01, 13.06) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -9.00, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -8.86, 13.22) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.09, -9.04, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -8.88, 13.24) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.10, 13.31) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.12, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -8.96, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.05, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -8.97, 13.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.13, -8.95, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -8.84, 13.39) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.05, 13.22) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -9.01, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.05, 13.18) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.00, 13.43) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.03, 13.27) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.08, -8.79, 13.12) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.03, 13.32) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.05, 13.18) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.03, 13.36) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.13, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.10, -8.96, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -8.93, 13.21) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -8.98, 13.36) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.03, -8.91, 13.38) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.00, 13.41) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.03, 13.37) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -8.98, 13.15) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.20, 13.46) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -8.91, 13.16) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.03, -8.89, 13.16) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -9.02, 13.22) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.15, -9.07, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -8.86, 13.29) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -8.97, 13.34) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -8.96, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -8.86, 13.14) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.09, -8.86, 13.15) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -8.92, 13.12) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.08, -8.87, 13.05) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -8.89, 13.37) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.06, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -8.91, 13.19) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.89, 13.23) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.98, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.86, -8.96, 13.44) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -8.80, 13.12) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.21, -8.80, 13.00) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -8.95, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.15, 13.18) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.16, -8.89, 13.04) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.09, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -8.92, 13.39) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.11, 13.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.03, -9.06, 13.39) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.82, 13.12) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -8.87, 13.47) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -8.94, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.14, -8.91, 13.01) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.85, 13.03) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.93, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -8.97, 13.07) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -8.85, 12.99) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.79, -8.88, 13.10) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.07, 12.74) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.77, -8.93, 12.84) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -8.91, 12.80) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.77, -9.08, 12.98) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.81, -8.91, 12.79) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.82, -8.93, 12.99) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -8.72, 12.99) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.71, -8.93, 13.01) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.76, -9.05, 12.88) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.80, -8.91, 12.90) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.78, -9.01, 12.90) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.77, -8.91, 13.05) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.87, -8.97, 12.93) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -8.85, 13.11) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.85, -9.03, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -8.78, 13.23) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -8.90, 13.23) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.08, -9.14, 13.14) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -9.10, 13.13) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -9.03, 13.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -8.92, 13.33) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.95, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -8.85, 13.28) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -9.10, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.96, 13.28) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -8.99, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.10, -8.83, 13.17) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.91, 13.17) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.07, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -8.96, 13.16) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -9.05, 13.23) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.97, 13.12) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.00, 13.30) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.15, 13.08) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.97, -9.05, 13.27) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -8.98, 13.34) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.05, 13.29) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -9.03, 13.20) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.12, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.98, -9.11, 13.33) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.03, -9.15, 13.11) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.10, 13.29) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.95, 13.21) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -8.87, 13.19) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -9.08, 13.35) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.09, 13.35) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -8.89, 13.34) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.95, 13.23) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.01, 13.21) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.01, -9.00, 13.18) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.09, -8.82, 13.15) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -8.93, 13.22) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.08, -9.00, 13.17) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.03, -8.95, 13.25) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.94, 13.23) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.09, -9.05, 13.15) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.18, -8.96, 12.92) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -8.81, 13.24) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.09, -8.93, 13.24) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.10, -9.00, 13.02) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.84, 13.30) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -8.87, 13.38) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.93, -9.11, 13.28) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -8.84, 13.35) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.88, 13.34) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -9.11, 13.28) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.09, -8.93, 13.16) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -9.00, 13.30) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.20, 13.43) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.95, -8.91, 13.27) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.05, -8.98, 13.30) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.03, -8.97, 13.19) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.99, -8.95, 13.25) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.00, 13.22) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.92, -8.84, 13.44) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.04, -8.91, 13.13) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.12, -8.84, 13.22) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -9.11, 13.10) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.91, 13.16) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.07, -9.10, 13.09) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.00, -9.03, 13.23) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.06, -8.89, 13.18) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.89, -9.01, 13.37) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.96, -8.95, 13.31) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.88, -9.14, 13.24) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (172.02, -9.04, 13.27) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -8.96, 13.33) yaw=-5deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.91, -9.03, 13.31) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.84, -9.00, 13.47) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.90, -9.08, 13.48) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+seen object 0 Block_LIGHTCUBE2 Known at (171.94, -9.05, 13.31) yaw=-6deg via LightCubeJ_Top rms=0.08px
+MISSING: M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)
+MISSING: M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join
+MISSING: M11-078/M11-090 Vision teardown: native result lists/deque 0x006586EC..0x00658A92/0x006B9F68..0x006BA092, ImageCache null-before-tree 0x006B1E9C..0x006B2142, Camera/ImageCache/CLAHE, FaceRecognizer trees, Block/MarkerlessObject and ProtoHandle reset/remove need their owned native recipients; host caches/GC are not those owners. Capture finalizers and allocator recipients remain unread; SDK CustomObject is unreachable
+MISSING: M11-055 Profiler timer producers/Tic/Toc and VisionSystem::Init PerformanceLogging binding 0x006B0E5C..0x006B0F2A are not built; native timer input boundary only, no host Stopwatch data substituted
+MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E and node+0x20 release0x0066352E..0x00663560: native captured-owner finalization/producer census is unbuilt; managed delegate retirement does not certify no side effects
