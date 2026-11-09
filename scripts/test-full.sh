@@ -18,7 +18,13 @@ mkdir -p .scratch; log=.scratch/test-full.log
 python re-analysis/tools/fidelity.py --check > "$log" 2>&1 || { tail -20 "$log"; echo "test-full: fidelity.py --check failed."; exit 1; }
 key=$(gate_key HEAD)
 echo "test-full: full suite for $(git rev-parse --short HEAD); log in $log"
-if ! dotnet test cozmo-stack/Cozmo.sln --blame-hang --blame-hang-timeout 5m >> "$log" 2>&1; then
+# Build first and stop the compiler servers before the tests: VBCSCompiler held 4.2 GB through a whole run and the
+# suite was killed for low memory twice (operator, 2026-11-08).
+if ! dotnet build cozmo-stack/Cozmo.sln >> "$log" 2>&1; then
+    grep -E "error CS|error MSB" "$log" | head -20; echo "test-full: build FAILED."; exit 1
+fi
+dotnet build-server shutdown >/dev/null 2>&1
+if ! dotnet test cozmo-stack/Cozmo.sln --no-build --blame-hang --blame-hang-timeout 5m >> "$log" 2>&1; then
     grep -E "\[FAIL\]|Failed!|error CS|hang|Blame|active test" "$log" | head -20; echo "test-full: FAILED."; exit 1
 fi
 grep -E "Passed!" "$log" | tail -1

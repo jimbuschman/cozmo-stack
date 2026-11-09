@@ -2811,8 +2811,10 @@ public class M12RVisBuildTests : IDisposable
         obj.Pose=replacement;
 
         // M4-016: stop pumping as soon as the carry lift is queued, so the engine clock stays well inside the 30 s IAction timeout.
-        SignalTestContext.Until(() => !(!flip.LiftRaised), () => { rig.Pump(); });
-        Assert.True(flip.LiftRaised);
+        // Also stop if the flip ends early: nothing posts after it returns, so waiting on LiftRaised alone hangs for 2 minutes.
+        SignalTestContext.Until(() => flip.LiftRaised || task.IsCompleted, () => { rig.Pump(); });
+        Assert.True(flip.LiftRaised, "the flip ended before the carry lift: " + (task.IsCompletedSuccessfully ? task.Result.ToString() : task.Status.ToString())
+            + "\n" + string.Join("\n", flip.Trace));
         // The flip runs on an async Task: CheckIfDone stores [this+0x13C] (LiftRaised) BEFORE it calls
         // ActionList::QueueAction (0x0055F15C before 0x0055F16A), so the flag can be observed before the carry
         // action is on the wire. Wait (bounded) for the 92 mm SetLiftHeight to actually appear instead of a
