@@ -29,6 +29,10 @@ The affected suite passed 439/439, including the new pickup, docking and drive-o
 - The live 0x48 camera translation has no independently captured end-to-end XYZ oracle. The packet admission and the native clamp/yaw corpus cover separate boundaries. The phone's libm remains under M13-023(e).
 - Request angle, custom profile, selected-object fallback and other game-message flags remain outside this explicit host request. Broader paths in the named records remain open as specified there.
 
+## Workers
+
+Reader requested gpt-6.1-sol at medium effort. Builders and reviewer used the configured default request. Runtime model identity was not observed. Source-review corrections addressed B8 and teardown reentry, stale path writes and the interacting-lights callback. The manager resolved the reaction-lock type mismatch using the original 0xC55A21 table. The two integrated carry-replacement test failures were old-fixture cleanup dereferences and passed with captured components.
+
 ## Records
 
 - **M8-015 and M4-014.** The bounded public pickup uses the original list, native type and track mask. Generic queue and lock claims remain separate.

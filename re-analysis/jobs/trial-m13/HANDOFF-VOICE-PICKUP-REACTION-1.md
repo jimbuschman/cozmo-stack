@@ -22,6 +22,10 @@
 - Direct coverage of differing raw versus processed image stamps and replacement of the whole robot during this reaction is pending. The tests cover stale roots and same-owner cancellation.
 - Calibration telemetry, off-treads classification and the existing pet/hiccup input limitations retain their separate scope.
 
+## Workers
+
+Reader requested gpt-6.1-sol at medium effort. Builder and reviewer used the configured default request. Runtime model identity was not observed. Review corrected the missing-native startup fallback, including late map loading. Manager review kept the new animation-event guard scoped and added assertions for the acquired and released body-track lock. The reader resolved the processed-image getter, eager RNG order and exact mask at the cited call sites.
+
 ## Records
 
 - M7-015, M7-019 and M7-021 still cover broader trigger, reaction and calibration obligations. This job addresses the pickup reaction's face branch.
