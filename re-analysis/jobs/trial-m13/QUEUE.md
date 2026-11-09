@@ -162,3 +162,5 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | PLACE-GROUND-CALLERS-1 | CHECKED, BATCH GATE PENDING | Seven callers use the retained Ground action, including canonical FistBump and the exact-32 host lift. Affected 358/358, manager 24/24. HANDOFF-PLACE-GROUND-CALLERS-1.md. |
 | FACE-RETURN-ORIGIN-1 | UPSTREAM | Main contains Claude's implementation and M14-009 settlement at 66b4275b. The separate manager implementation was dropped during rebase. |
 | WWISE-SELECT-PROBE-1 | CHECKED, BATCH GATE PENDING | Native retry cadence, source-ID gate, and shared managed playback/singing selection. Affected 79/79, manager 78/78. HANDOFF-WWISE-SELECT-PROBE-1.md. |
+| Settlement batch gate on 83abe66b | SUPERSEDED | Stopped after main landed its separate face-origin implementation at 66b4275b. The rebased tip requires a new run. |
+| FACE-RETURN-ORIGIN-OWNER-FIX | CHECKED, BATCH GATE PENDING | Preserve main's origin and positive-ID semantics, fix the face-log lock inversion and share the current-owner predicate. Affected 167/167 plus reaction 1/1, manager 34/34. HANDOFF-FACE-RETURN-ORIGIN-OWNER-FIX.md. |
