@@ -1991,7 +1991,7 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null):null;
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? (obj,prefix)=>PublishObservedCube(sourceOwner,obj,prefix,()=>!StaleFrame()) : null):null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
             if (worldFrame is not null)
             {

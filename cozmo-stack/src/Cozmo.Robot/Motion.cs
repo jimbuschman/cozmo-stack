@@ -526,6 +526,9 @@ public sealed class CozmoMotion
 
     /// <summary>Robot+0x2FC as the engine keeps it: −25° until the head is calibrated, then the RS6-clamped report.</summary>
     public float HeadAngleRad { get { lock (_gate) return _headAngle; } }
+    // Vision holds the pose tree while publishing; motion can log while holding _gate.
+    // A single atomic snapshot avoids taking that lock in the reverse order.
+    internal float ObservationHeadAngleRad => Volatile.Read(ref _headAngle);
     /// <summary>MC+0xA/+0xB/+0xC: whether the head, lift and body are moving, from the last handled state.</summary>
     public bool HeadMoving { get { lock (_gate) return _headMoving; } }
     public bool LiftMoving { get { lock (_gate) return _liftMoving; } }

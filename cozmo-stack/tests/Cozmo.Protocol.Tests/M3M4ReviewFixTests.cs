@@ -117,6 +117,29 @@ public sealed class M3M4ReviewFixTests
         f.Data(new ObjectConnectionState{ObjectID=0,FactoryID=0x1234,ObjectType=Type,Connected=true});
         Assert.True(SpinWait.SpinUntil(()=>f.Robot.LocalizationWorld.ConnectedObjects.Count==1,TimeSpan.FromSeconds(5)));
         int callbacks=0,insideGate=0,played=0;var errors=new ConcurrentQueue<Exception>();
+        var raw=new ConcurrentQueue<byte[]>();var typed=new ConcurrentQueue<RobotObservedObjectReport>();
+        int locals=0,queuedBeforeLocal=0,hostInsideGate=0;
+        float historicalImageY=float.NaN;
+        uint beforeUi=f.Robot.Engine.NativeUiDeliveryCount;
+        f.Robot.Engine.EngineToGameMessage+=(tag,body)=>{if(tag==0x44){if(Monitor.IsEntered(f.Vision.World.FrameGate))Interlocked.Increment(ref hostInsideGate);raw.Enqueue(body.ToArray());}};
+        f.Robot.Engine.RobotObservedObject+=typed.Enqueue;
+        using var local=f.Robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,p=>
+        {
+            if(p is NativeObservedObject observed)
+            {
+                if(f.Robot.Engine.NativeUiDeliveryCount>beforeUi)Interlocked.Increment(ref queuedBeforeLocal);
+                if(locals==0)
+                {
+                    var obj=f.Vision.World.GetLocatedObjectByIdHelper(observed.ObjectId)!;
+                    using var neck=new Pose3d(Rotation3d.Identity,HeadGeometry.NeckPositionMm,"RobotNeck",f.Robot.Engine.Robot!.GetCheckedMainPose());
+                    using var nominal=new Pose3d(HeadGeometry.DefaultHeadCamRotation,HeadGeometry.EngineHeadCamPositionMm);nominal.SetParent(neck);
+                    using var historicCamera=HeadGeometry.GetCameraPose(nominal,-0.15f);
+                    using var relative=new Pose3d();Assert.True(obj.NativePose.TryWithRespectTo(historicCamera,relative));
+                    historicalImageY=NativeCubeObservation.Rectangle(relative,f.Vision.Calibration).Y;
+                }
+                Interlocked.Increment(ref locals);
+            }
+        });
         f.Vision.World.ObjectObserved+=_=>
         {
             try
@@ -133,6 +156,23 @@ public sealed class M3M4ReviewFixTests
         Assert.True(SpinWait.SpinUntil(()=>Volatile.Read(ref callbacks)>0,TimeSpan.FromSeconds(5)));
         Assert.Empty(errors);Assert.Equal(0,insideGate);Assert.True(played>0);Assert.True(f.Wire.Count>wire);
         Assert.NotEmpty(f.Vision.LastResult!.Markers);
+        Assert.True(SpinWait.SpinUntil(()=>!raw.IsEmpty&&!typed.IsEmpty,TimeSpan.FromSeconds(5)));
+        Assert.Equal(1,locals);Assert.Equal(1,queuedBeforeLocal);Assert.Equal(0,hostInsideGate);
+        var bytes=Assert.Single(raw);var report=Assert.Single(typed);Assert.Equal(69,bytes.Length);
+        Assert.Equal(report.Timestamp,System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(0,4)));
+        Assert.Equal(report.ObjectId,System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(12,4)));
+        Assert.Equal((byte)1,bytes[68]);Assert.True(report.IsActive);
+        Assert.NotEqual(-0.15f,f.Robot.Motion.HeadAngleRad);
+        Assert.True(float.IsFinite(historicalImageY));
+        Assert.True(float.IsFinite(report.ImageY));
+        Assert.NotEqual(historicalImageY,report.ImageY); // Historical marker camera differs from the retained camera.
+        f.State(166);f.Image(image,3,166);
+        Assert.True(SpinWait.SpinUntil(()=>raw.Count==2 && typed.Count==2,TimeSpan.FromSeconds(5)));
+        Assert.Equal(2,locals); // A second accepted sighting is not deduplicated.
+        f.Robot.Engine.Robot!.HasExternalInterface=false;
+        f.State(199);f.Image(image,4,199);
+        Assert.True(SpinWait.SpinUntil(()=>Volatile.Read(ref callbacks)>=3,TimeSpan.FromSeconds(5)));
+        Assert.Equal(2,raw.Count);Assert.Equal(2,typed.Count);Assert.Equal(2,locals);
     }
 
     // reach: production - camera packet framing with no raw state; native query failure diagnostic and no handoff.
@@ -241,6 +281,10 @@ public sealed class M3M4ReviewFixTests
         using var f=new Live(state:false);f.State(100);f.Vision.SkipProcessorPass=true;
         Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
         using var replaced=new ManualResetEventSlim();using var returned=new ManualResetEventSlim();var old=f.Robot.Engine.Robot!;
+        int observed=0;
+        f.Robot.Engine.RobotObservedObject+=_=>Interlocked.Increment(ref observed);
+        f.Robot.Engine.EngineToGameMessage+=(tag,_)=>{if(tag==0x44)Interlocked.Increment(ref observed);};
+        using var local=f.Robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,_=>Interlocked.Increment(ref observed));
         f.Robot.Camera.FrameForVision+=_=>returned.Set();
         void OnMissing(string text)
         {
@@ -257,6 +301,7 @@ public sealed class M3M4ReviewFixTests
             Assert.Null(f.Vision.PendingGroundForTest);
             Assert.False(f.Vision.HasPendingFrameForTest);
             Assert.Equal(0,f.Vision.FramesProcessed);
+            Assert.Equal(0,observed);
         }
         finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported-=OnMissing;f.Vision.SkipProcessorPass=false; }
     }
