@@ -1,4 +1,5 @@
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
@@ -378,6 +379,38 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
     private double _scale = 1.0;                   // +0x120
     private readonly VisionSystem? _vision;
     private EngineRandom? _rng;
+    private ManipulationSystem? _nativeManipulation;
+    private EngineRobot? _nativeOwner;
+    private BehaviorManager? _nativeManager;
+    private long _nativeGeneration;
+    private bool _nativeRetired;
+    internal bool NativeBound => _nativeManipulation is not null;
+
+    internal void MarkNative(CozmoRobot robot,EngineRobot owner,BehaviorManager manager)
+    {if(_nativeOwner is null){_nativeOwner=owner;_nativeManager=manager;BindActionCompletionOwner(robot,owner);}}
+
+    internal void BindNative(ManipulationSystem manipulation,EngineRobot owner,BehaviorManager manager)
+    {
+        if(_nativeOwner is not null && !ReferenceEquals(_nativeOwner,owner))return;
+        MarkNative(manipulation.Robot,owner,manager);
+        if(ReferenceEquals(_nativeManager,manager))_nativeManipulation=manipulation;
+    }
+    internal void RetireNativeBinding()
+    {
+        _nativeRetired=true;
+        Interlocked.Increment(ref _nativeGeneration);
+        RetireActionCompletionOwner();
+    }
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>_nativeOwner?.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting(){if(_nativeOwner is not null)Interlocked.Increment(ref _nativeGeneration);}
+    protected override long CaptureHostExecutionVersion()=>Interlocked.Read(ref _nativeGeneration);
+    protected override bool HostExecutionVersionCurrent(long version)=>_nativeOwner is null ||
+        !_nativeRetired && Interlocked.Read(ref _nativeGeneration)==version && !_nativeOwner.Lifetime.Destroying && ReferenceEquals(_nativeOwner.Engine.Robot,_nativeOwner) &&
+        ReferenceEquals(_nativeOwner.BehaviorManagerOwner,_nativeManager) &&
+        (_nativeManipulation is null || _nativeOwner.NativeBehaviorRuntime is {IsRetired:false} runtime && ReferenceEquals(runtime.Manipulation,_nativeManipulation));
+    protected override bool HostStopContinuationCurrent(long version)=>_nativeOwner is null || Interlocked.Read(ref _nativeGeneration)==unchecked(version+1);
+    protected override bool HostResumeContinuationCurrent(long version)=>_nativeOwner is null || Interlocked.Read(ref _nativeGeneration)==version || Interlocked.Read(ref _nativeGeneration)==unchecked(version+1);
+    protected override void OnStop(BehaviorStopReason reason){if(_nativeOwner is not null)Interlocked.Increment(ref _nativeGeneration);}
 
     /// <param name="vision">The face and pet worlds <c>StartAnim</c> asks (<c>robot+0x38</c>, <c>robot+0x3C</c>, <c>GetLastImageTimeStamp</c>); null: no vision system, which is reported.</param>
     public ReactToPickupBehavior(VisionSystem? vision = null, string id = "ReactToPickup", EngineRandom? rng = null) : base(id, "ReactToPickup")
@@ -410,18 +443,32 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
 
     private EngineRandom Rng => _rng ??= new EngineRandom(Context.Random);
 
-    private float NowSeconds => (float)(NowMs / 1000.0);
+    private float NowSeconds => _nativeOwner?.Engine.Timer.SecondsF ?? (float)(NowMs / 1000.0);
 
     /// <summary><c>InitInternal</c> 0x0060775E: +0x120 = 1.0, then <c>WaitAction(0.5f)</c> with <c>StartAnim</c> as its completion.</summary>
     protected override void OnStart()
     {
         _scale = 1.0;
+        if(_nativeOwner is not null && _nativeManipulation is null)
+        {InitFailed=true;ReportMissing("M7-019 ReactToPickup original manipulation owner unavailable");return;}
+        if(_nativeOwner is {HasExternalInterface:false})
+        {InitFailed=true;ReportMissing("M8-015 ReactToPickup original action-completion interface unavailable");return;}
+        if(_nativeOwner is { } owner && _nativeManipulation is { } m)
+        {
+            long generation=CaptureHostExecutionVersion();
+            bool Current()=>HostExecutionVersionCurrent(generation);
+            var wait=new NativeTimedWaitRunner(m,InitialWaitSec){ScopedOwner=owner,ScopedParentCurrent=Current};
+            StartActing(wait,_=>{if(Current())StartNativeAnim(generation);},Current);
+            return;
+        }
         Wait(InitialWaitSec, StartAnim);
     }
 
     /// <summary><c>UpdateInternal</c>: the three gates and the retry (see the class summary).</summary>
     protected override void OnUpdate()
     {
+        long generation=CaptureHostExecutionVersion();
+        bool Current()=>HostExecutionVersionCurrent(generation);
         if (HasCurrentAction) return;                                                           // 0x00607BBA: return 1
         var sensors = Context.Robot.Sensors;
         if (sensors.OffTreadsState != OffTreadsState.InAir) { Finish(); return; }               // 0x00607BC4: robot+0x355 != 1 returns 2
@@ -429,8 +476,9 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
         {
             string line = "info: BehaviorReactToPickup.OnCharger: Stopping behavior because we are on the charger";
             Log(line);
+            if(!Current())return;
             Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, null, "BehaviorReactToPickup.OnCharger", "Stopping behavior because we are on the charger");
-            Finish();
+            if(Current())Finish();
             return;
         }
         float now = NowSeconds;                                                                 // BaseStationTimer::GetCurrentTimeInSeconds
@@ -438,14 +486,94 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
         ushort raw = sensors.CliffDataRawStored[0];                                             // GetCliffDataRaw(0) = [component+0xE]
         if ((raw >> 4) <= CliffRawLimit)                                                        // 0x00607C4A cmp r0,#0x18; bhi
         {
-            StartAnim();
+            if(_nativeOwner is null)StartAnim();else StartNativeAnim(generation);
             return;
         }
         string das = $"info: DAS BehaviorReactToPickup.CalibratingHead: {raw}";
         Log(das);
+        if(!Current())return;
         Context.Robot.Engine.Log(das);
+        if(!Current())return;
         Context.Robot.Engine.Log("MISSING: BehaviorReactToPickup.CalibratingHead engine event fields; higher-layer port deferred");
-        CalibrateHead(() => { });                                                               // CalibrateMotorAction(robot, true, false), empty callback
+        if(Current())CalibrateHead(() => { });                                                  // CalibrateMotorAction(robot, true, false), empty callback
+    }
+
+    private void StartNativeAnim(long generation)
+    {
+        var owner=_nativeOwner!;
+        var m=_nativeManipulation!;
+        bool Current()=>HostExecutionVersionCurrent(generation);
+        if(!Current())return;
+        if(owner.CarryingOwner is not {} carrying)
+        {ReportMissing("M12-006 ReactToPickup original carrying owner unavailable");return;}
+        if((carrying.CarriedObjectId??uint.MaxValue)!=uint.MaxValue)
+        {
+            m.Docking.ReleaseCarriedObject(owner,true,Current);
+            if(!Current())return;
+        }
+        if(_nativeManager is not {} manager)
+        {ReportMissing("M7-019 ReactToPickup original spark manager unavailable");return;}
+        bool hard=manager.ActiveSparkId!=0x55 && manager.ActiveSparkSoft==0;
+        IReadOnlyList<int> faces;
+        string? name=null;
+        try
+        {
+            using(m.World.EnterPoseMutation())
+            {
+                uint stamp=m.Robot.CameraSettings.LastProcessedImageTimestamp;
+                uint since=stamp>RecentFaceWindowMs?stamp-RecentFaceWindowMs:0;
+                faces=m.Vision.Faces.GetNativeFaceIds(owner,since);
+                if(!hard && faces.Count!=0)
+                    foreach(int id in faces)
+                        if(m.Vision.Faces.GetNativeFace(owner,id) is {HasName:true} face){name=face.Name;break;}
+            }
+        }
+        catch(InvalidOperationException error)
+        {ReportMissing("M14-009 ReactToPickup face query unavailable: "+error.Message);return;}
+        if(!Current())return;
+        ActionRunner? action=null;
+        try
+        {
+            if(!hard && faces.Count!=0 && !string.IsNullOrEmpty(name))
+            {
+                string? resources=owner.Engine.Options.ResourcesPath;
+                if(resources is null)throw new NativeActionUnavailable("M14-006 pickup speech resources unavailable");
+                var metadata=SpeechMetadata.Load(resources);
+                if(!metadata.TrySelect("Name_Normal",name,owner.Engine.ContextRandom,out var selection))
+                    throw new NativeActionUnavailable("M14-006 pickup Name_Normal intent unavailable");
+                if(!Current())return;
+                var speech=new SayTextAction(m.Robot,owner,name,selection.Style,selection.Duration,selection.Pitch);
+                action=speech;
+                if(!Current())return;
+                speech.SetCannedTrigger(AnimationTrigger.AcknowledgeFaceNamed,4);
+            }
+            else
+            {
+                AnimationTrigger trigger;
+                int tracks;
+                if(!hard && faces.Count!=0){trigger=AnimationTrigger.AcknowledgeFaceUnnamed;tracks=4;}
+                else if(!hard && m.Vision.Pets.Pets.OrderBy(p=>p.Id).FirstOrDefault() is {} pet)
+                {trigger=pet.Type==PetType.Cat?AnimationTrigger.PetDetectionShort_Cat:AnimationTrigger.PetDetectionShort_Dog;tracks=4;}
+                else {trigger=m.Whiteboard.HiccupsActive?AnimationTrigger.HiccupRobotPickedUp:AnimationTrigger.ReactToPickup;tracks=0;}
+                if(!Current())return;
+                var animation=new TriggerAnimationAction(m.Robot,new(trigger,1,true,tracks,AnimationTimeout,false));
+                action=animation;
+                if(!Current())return;
+                animation.UseOrdinaryAuthoredAudio(owner);
+            }
+            if(!Current())return;
+            StartActing(action,null,Current);
+            action=null; // StartActing owns accepted and rejected runners.
+        }
+        catch(Exception error) when(error is NativeActionUnavailable or IOException or UnauthorizedAccessException or FormatException or InvalidOperationException or System.Text.Json.JsonException)
+        {if(Current())ReportMissing("M14-006 ReactToPickup authored action unavailable: "+error.Message);}
+        finally {if(action is not null && action.CanRetireNeverAdmittedTree())action.RetireNeverAdmittedTree();}
+        if(!Current())return;
+        double scale=_scale;
+        double draw=owner.Engine.ContextRandom.RandDblInRange(RetryLowerFactor*scale,RetryUpperFactor*scale);
+        if(!Current())return;
+        _deadline=owner.Engine.Timer.SecondsF+(float)draw;
+        _scale=scale+RetryScaleStep;
     }
 
     /// <summary>

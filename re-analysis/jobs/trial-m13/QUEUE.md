@@ -167,3 +167,4 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | Tracking, placement, face owner and Wwise selection batch gate | PASS | scripts/test-full.sh on 9c6719a5 passed 7983/7983, zero failed or skipped, 19m04s total. Four handoffs are READY FOR CLAUDE. |
 | GROUND-VERIFY-MARKER-1 | CHECKED | Concrete-marker BadPose, original error flag and diagnostic. Affected 55/55, final Ground 15/15. Awaiting batch gate. HANDOFF-GROUND-VERIFY-MARKER-1.md. |
 | AI-BODY-CUBE-PICKUP-1 | CHECKED | Direct and drive pickup through the retained queue, live docking correction and original-owner carry. Affected 439/439. Awaiting batch gate. HANDOFF-AI-BODY-CUBE-PICKUP-1.md. |
+| VOICE-PICKUP-REACTION-1 | CHECKED | Canonical named and unnamed authored pickup reaction, with retained wait and original-owner track retirement. Affected 97/97 and manager 48/48. Awaiting batch gate. HANDOFF-VOICE-PICKUP-REACTION-1.md. |

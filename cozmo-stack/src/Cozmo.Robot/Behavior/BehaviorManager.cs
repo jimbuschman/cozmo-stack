@@ -151,6 +151,8 @@ public sealed partial class BehaviorManager : IDisposable
             {
                 if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
                 if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
+                if(reg.Behavior is ReactToPickupBehavior pickup && nativeOwner is not null)
+                    pickup.MarkNative(_context.Robot,nativeOwner,this);
                 AddReaction(reg.Strategy,reg.Behavior);
             }
             if (_hostDisposed) return;
@@ -171,12 +173,14 @@ public sealed partial class BehaviorManager : IDisposable
         if(context.Arbiter is {} arb)arb.ManagerDispatchesReactions=true;
         if (!_nativeReactionMapLoaded && bound.TryGetValue("AcknowledgeObject", out var configured))
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
-        InitializeRobotReactions(resources,vision,manipulation,bound); // explicit late resource input, only if startup map was absent
-        BindReactionDependencies(manipulation,bound);
+        var nativeOwner=_requestOwner;
+        if(nativeOwner is null && context.Robot.Engine.Robot is {} current && ReferenceEquals(current.BehaviorManagerOwner,this))nativeOwner=current;
+        InitializeRobotReactions(resources,vision,manipulation,bound,nativeOwner); // explicit late resource input, only if startup map was absent
+        BindReactionDependencies(manipulation,bound,nativeOwner);
     }
 
     internal void BindReactionDependencies(Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,
-        IReadOnlyDictionary<string,IBehavior> bound)
+        IReadOnlyDictionary<string,IBehavior> bound, EngineRobot? nativeOwner = null)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         if (_hostDisposed) return;
@@ -189,7 +193,11 @@ public sealed partial class BehaviorManager : IDisposable
         foreach(var motor in Reactions.Select(r=>r.Behavior).OfType<ReactToMotorCalibrationBehavior>())
             motor.BindManipulation(manipulation);
         foreach (var pickup in Reactions.Select(r => r.Behavior).OfType<ReactToPickupBehavior>())
+        {
             pickup.WhiteboardHiccupByte = () => manipulation.Whiteboard.HiccupsActive;
+            if ((nativeOwner??_context.Robot.Engine.Robot) is { } owner && ReferenceEquals(owner.BehaviorManagerOwner,this) &&
+                ReferenceEquals(owner.NativeBehaviorRuntime?.Manipulation,manipulation)) pickup.BindNative(manipulation,owner,this);
+        }
         foreach (var back in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnBackBehavior>())
             back.Whiteboard = manipulation.Whiteboard;
         foreach (var face in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnFaceBehavior>())
@@ -1509,15 +1517,18 @@ public sealed partial class BehaviorManager : IDisposable
         foreach(var behavior in _behaviors.OfType<SteppedBehavior>())behavior.RetireActionCompletionOwner();
         List<IReactionTriggerStrategy> strategies;
         List<AcknowledgeObjectBehavior> objectOwners;
+        List<ReactToPickupBehavior> pickupOwners;
         lock (_gate)
         {
             strategies = _map.Values.SelectMany(i => i.Entries).Select(r => r.Strategy).Distinct().ToList();
             objectOwners = _behaviors.OfType<AcknowledgeObjectBehavior>()
                 .Concat(_map.Values.SelectMany(i => i.Entries).Select(r => r.Behavior).OfType<AcknowledgeObjectBehavior>())
                 .Distinct().ToList();
+            pickupOwners=_map.Values.SelectMany(i=>i.Entries).Select(r=>r.Behavior).OfType<ReactToPickupBehavior>().Distinct().ToList();
             _map.Clear(); // destruction retires both entries and their per-trigger locks
         }
         foreach (var s in strategies) if (s is IDisposable d) d.Dispose();
+        foreach(var pickup in pickupOwners)pickup.RetireNativeBinding();
         foreach (var objectOwner in objectOwners) objectOwner.ReleaseHostGhost(); // host cleanup after stop/cancel and unsubscribe
         if(_context.Robot.Sensors.RequestCurrentBehaviorEndImmediately?.Target==this)
             _context.Robot.Sensors.RequestCurrentBehaviorEndImmediately=null;
