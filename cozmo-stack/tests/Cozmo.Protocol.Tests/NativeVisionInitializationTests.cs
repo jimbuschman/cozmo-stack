@@ -10,6 +10,63 @@ namespace Cozmo.Protocol.Tests;
 [Collection("ObjectID process statics")]
 public sealed class NativeVisionInitializationTests
 {
+    [Theory]
+    [InlineData(true,false)]
+    [InlineData(true,true)]
+    [InlineData(false,false)]
+    public void CanonicalStartupReportsMissingMarkerLibraryOnceWithoutChangingInit(bool missing,bool reenter)
+    {
+        var prior=AllVisionModesSchedule.CopyDefault();bool oldError=EngineErrorState.ErrorFlagSet;
+        var quality=ImageQualitySettings.Globals;
+        var oldQuality=(quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High);
+        var oldComponent=(VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
+        try
+        {
+            string resources=Ancestors(AppContext.BaseDirectory)
+                .Select(dir=>Path.Combine(dir,"re-analysis","obb","assets","cozmo_resources"))
+                .First(path=>File.Exists(Path.Combine(path,"config","engine","vision_config.json")));
+            // Minimal parsed library is enough to exercise presence; no marker decoding is simulated.
+            byte[] bytes=new byte[24+2*(1024+1024+5+5+12+12+12+12)];
+            "CZMKNN02"u8.CopyTo(bytes);BitConverter.GetBytes(1024).CopyTo(bytes,12);
+            var decoder=missing ? MarkerDecoder.WithoutLibraryForTest() : new MarkerDecoder(MarkerLibrary.Parse(bytes));
+            var detector=new MarkerDetector(decoder:decoder);
+            using var backup=new BackupTestResources();
+            using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions
+                {ResourcesPath=resources,BlockPoolPath="",VisionDetector=detector}));
+            var messages=new List<string>();NativeVisionStageResult? reentry=null;
+            rig.Engine.StackLogLine+=line=>
+            {
+                if(!line.Contains("M11-001 marker library"))return;
+                messages.Add(line);
+                if(reenter)
+                {
+                    var vision=rig.Robot.Vision;
+                    reentry=vision.InitializeNativeVision(vision.NativeInitializationForTest!.Owner);
+                }
+            };
+            rig.ToSynced();
+            var vision=rig.Robot.Vision;var owner=rig.Engine.Robot!;
+            Assert.Same(detector,vision.Detector);
+            Assert.True(vision.NativeInitializationForTest!.Initialized);
+            Assert.Equal(missing?1:0,messages.Count);
+            if(missing)
+            {
+                if(reenter)Assert.True(reentry.HasValue && reentry.Value.Available && reentry.Value.Result==0);
+                Assert.Contains("extract_marker_library.py",messages[0]);
+                Assert.Contains("COZMO_MARKER_LIBRARY",messages[0]);
+            }
+            if(!reenter)Assert.False(owner.VisionNvTailUnavailable);
+            var repeat=vision.InitializeNativeVision(owner);
+            Assert.True(repeat.Available);Assert.Equal(0u,repeat.Result);
+            Assert.Equal(missing?1:0,messages.Count);
+        }
+        finally
+        {
+            AllVisionModesSchedule.RestoreDefaultForTest(prior);EngineErrorState.ErrorFlagSet=oldError;
+            (quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High)=oldQuality;
+            (VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=oldComponent;
+        }
+    }
     private static FirmwareJsonValue Config(int max=4,int min=60,int maxSize=240,int first=4,int next=8,int threshold=900,int lost=2,int steady=15)
     {
         string text=$"{{\"PetTracker\":{{\"MaxPets\":{max},\"MinFaceSize\":{min},\"MaxFaceSize\":{maxSize},\"InitialSearchCycle\":{first},\"NewSearchCycle\":{next},\"DetectionThreshold\":{threshold},\"TrackLostCount\":{lost},\"TrackSteadiness\":{steady}}}}}";

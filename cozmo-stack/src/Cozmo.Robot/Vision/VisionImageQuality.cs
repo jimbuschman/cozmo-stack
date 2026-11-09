@@ -5,6 +5,7 @@ namespace Cozmo.Robot.Vision;
 
 public sealed partial class VisionSystem
 {
+    private int _missingMarkerLibraryReported;
     // fidelity: M11-080, M11-057
     internal readonly ImageQualityProcessor QualityProcessor=new();
     internal Func<IReadOnlyList<ImageQualityRectangle>>? QualityRectangleInput;
@@ -65,6 +66,12 @@ public sealed partial class VisionSystem
         bool Current(){lock(_groundGate)return ReferenceEquals(_nativeInitialization,state)&&ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&epoch==_nativeInitializationEpoch;}
         NativeVisionStageResult Missing(){if(Current())state.MarkUnavailable();return NativeVisionStageResult.Missing;}
         var engine=_robot.Engine;
+        if(!Current())return Missing();
+        if(!Detector.Decoder.HasLibrary && Interlocked.CompareExchange(ref _missingMarkerLibraryReported,1,0)==0)
+        {
+            engine.EmitStackLog("MISSING: M11-001 marker library is unavailable; extract it from libcozmoEngine.so with re-analysis/tools/extract_marker_library.py and rebuild, or set COZMO_MARKER_LIBRARY to the extracted file. Marker decoding is unavailable.");
+            if(!Current())return Missing();
+        }
         if(suppliedConfig is null && (!engine.VisionConfigurationRead || !engine.VisionConfigurationReadSucceeded && engine.VisionConfiguration.Kind!=FirmwareJsonKind.Null))
         {SteppedBehavior.ReportMissing("M11-059 actual vision configuration input unavailable; Init result is unknown");return Missing();}
         var root=suppliedConfig??engine.VisionConfiguration;

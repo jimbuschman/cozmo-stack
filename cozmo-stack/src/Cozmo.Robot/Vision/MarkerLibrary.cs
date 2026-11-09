@@ -197,7 +197,11 @@ public sealed class MarkerDecoder
     private readonly MarkerLibrary? _lib;
 
     /// <summary>Without a library (none embedded on this machine) the decoder decodes nothing and says why; the rest of the vision system still runs.</summary>
-    public MarkerDecoder(MarkerLibrary? library = null) => _lib = library ?? MarkerLibrary.EmbeddedOrNull;
+    public MarkerDecoder(MarkerLibrary? library = null) : this(library, useEmbeddedFallback: true) { }
+
+    // Exercise the missing-resource startup path without changing machine assets.
+    internal static MarkerDecoder WithoutLibraryForTest() => new(null, useEmbeddedFallback: false);
+    private MarkerDecoder(MarkerLibrary? library, bool useEmbeddedFallback) => _lib = library ?? (useEmbeddedFallback ? MarkerLibrary.EmbeddedOrNull : null);
 
     /// <summary>The library in use, or an exception naming how to obtain one.</summary>
     public MarkerLibrary Library => _lib ?? MarkerLibrary.Embedded;
