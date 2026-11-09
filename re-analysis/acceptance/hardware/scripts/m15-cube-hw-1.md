@@ -16,6 +16,10 @@ afterwards.
 
 The shipped engine library must be in `resources/lib/armeabi-v7a`, as for the earlier tests. It is never committed.
 
+The cube marker library must also be built on this PC. It is extracted from that engine library by
+`python re-analysis/tools/extract_marker_library.py resources/lib/armeabi-v7a/libcozmoEngine.so` (Python required), then rebuilt in.
+The test stops at the start with that instruction if it is missing. Cozmo raises his head a little before looking for the cube.
+
 ## Setup
 
 1. **The table:** a clear table, well away from the edge, with Cozmo **off** his charger. He moves a little in this

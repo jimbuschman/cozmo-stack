@@ -25,6 +25,9 @@ public static class M15CubeHw
     public const string TestId = "M15-CUBE-HW";
     public static readonly string[] RecordIds = { "M15-022", "M12-015", "M12-052", "M12-005", "M12-008", "M12-013", "M12-014", "M11-038", "M4-003", "M8-015" };
     public const float PlaceHeightMm = 32f;
+    /// <summary>Head angle for looking at a cube on the table 10..25 cm ahead (about -9 degrees). Run 1 (2026-11-09) kept the
+    /// default -0.42 rad, which put the cube at the image's top edge with its marker cut off. Not a source value.</summary>
+    public const float LookHeadRad = -0.15f;
     public const string SetupText = "Setup:\n"
         + "1. Put Cozmo on a clear table, well away from the edge, NOT on his charger. He will move a little.\n"
         + "2. Put ONE light cube on the table about 10 cm (4 in) straight in front of his face, a marker side facing him.\n"
@@ -59,6 +62,8 @@ public static class M15CubeHw
             if (validate) { Console.WriteLine($"{TestId}: {records.Count} valid records; no network opened."); return 0; }
             if (Robot.Emulation.ShippedLibraries.FindLibDir() is null)
                 throw new ArgumentException("The shipped libraries (resources/lib/armeabi-v7a, libcozmoEngine.so) are not on this PC.");
+            if (!Robot.Vision.MarkerLibrary.IsAvailable)
+                throw new ArgumentException("The cube marker library is not on this PC, so Cozmo cannot read cube markers. With Python installed and resources/lib/armeabi-v7a/libcozmoEngine.so present, run: python re-analysis/tools/extract_marker_library.py resources/lib/armeabi-v7a/libcozmoEngine.so, then rebuild.");
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + TestId + "-" + Guid.NewGuid().ToString("N")[..6]);
             return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes).Execute();
@@ -143,6 +148,9 @@ internal sealed class M15CubeRun
             if (!connected) throw new InvalidOperationException("Not connected; nothing ran.");
             robot.StartCamera();
             Event("camera-started", new());
+            var look = robot.Motion.QueueAiHeadAngleAsync(M15CubeHw.LookHeadRad, cancel.Token);
+            bool looked = Poll(() => look.IsCompleted, 10000);
+            Event("look-head", new() { ["targetRad"] = M15CubeHw.LookHeadRad, ["finished"] = looked, ["result"] = looked && look.IsCompletedSuccessfully ? look.Result.ToString() : null });
 
             RunPair(robot, "direct", drive: false);
             if (!yes)
