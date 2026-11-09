@@ -37,21 +37,21 @@ internal sealed class NativeTurnInPlaceRunner : NativeVisionRunner
     internal NativeTurnInPlaceRunner(ManipulationSystem m,TurnInPlaceSpec spec,EngineRobot? owner=null):base(m,0x28,4)
     {
         ScopedOwner=owner;
-        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,true,owner),(float)spec.AngleRad,spec.IsAbsolute,Tag);
+        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,owner),(float)spec.AngleRad,spec.IsAbsolute,Tag);
         _turn.SetTolerance((float)spec.ToleranceRad);_turn.Byte0xD8=spec.Byte0xD8;
         if(spec.MaxSpeedSet){_turn.SetMaxSpeed((float)spec.MaxSpeedRadPerSec);_turn.SetAccel((float)spec.AccelRadPerSec2);}
     }
     // DevTurn GenerateTestAction 0x005CAA2A..7A: setters are unconditional and ordered.
     internal NativeTurnInPlaceRunner(ManipulationSystem m,float angle,float accel,float speed,float tolerance):base(m,0x28,4)
     {
-        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,true),angle,false,Tag);
+        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m),angle,false,Tag);
         _turn.SetAccel(accel); _turn.SetMaxSpeed(speed); _turn.SetTolerance(tolerance); _turn.Variability0xB8=0;
     }
     internal NativeTurnInPlaceRunner(ManipulationSystem m, EngineRobot owner, float angle, float speed, float accel, float tolerance, bool absolute):base(m,0x28,4)
     {
         ScopedOwner=owner;
         _aiTurn=true;
-        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,true,owner),angle,absolute,Tag);
+        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,owner),angle,absolute,Tag);
         _turn.NormalizePositionTolerance=true;
         _turn.SetMaxSpeed(speed);
         _turn.SetAccel(accel);

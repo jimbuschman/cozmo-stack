@@ -535,10 +535,9 @@ public sealed class MountChargerAction
             RobotMessageId.MotorActionAck, m => callback(((MotorActionAck)m).ActionId), "TurnAction");
 
         private readonly ManipulationSystem _m;
-        private readonly bool _actualMain;
         private readonly EngineRobot? _owner;
-        public LivePanTiltRobot(ManipulationSystem m):this(m,false){}
-        internal LivePanTiltRobot(ManipulationSystem m,bool actualMain,EngineRobot? owner=null){_m=m;_actualMain=actualMain;_owner=owner;}
+        // TURN-ACTUAL-MAIN-1: every TurnInPlaceAction reads the actual native MainPose yaw (0x005464C6 -> Robot::GetPose 0x004EA398); the history-pose adapter is gone.
+        internal LivePanTiltRobot(ManipulationSystem m,EngineRobot? owner=null){_m=m;_owner=owner;}
         private EngineRobot CheckedOwner()
         {
             var owner=_owner??_m.Robot.Engine.Robot;
@@ -570,9 +569,7 @@ public sealed class MountChargerAction
                 {
                     using var logs=Pose3d.UseSourceLog(SourceLog,_m.Robot.Engine.Das.ForceFlushNow);
                     var main = native.GetCheckedMainPose(); // Preserve the checked source VERIFY calls.
-                    if(_actualMain){angle=(float)main.AngleAroundZ;return;}
-                    SteppedBehavior.ReportMissing("M11-066/M13-022 Robot::GetPose yaw at 0x005464C6 -> 0x004EA398: full live MainPose input binding is unbuilt; the constructor-owned node is not substituted for the existing labelled history-pose input");
-                    angle=_m.RobotPose() is {} pose ? (float)pose.AngleAroundZ : 0f;
+                    angle=(float)main.AngleAroundZ;
                 });
                 return angle;
             }
