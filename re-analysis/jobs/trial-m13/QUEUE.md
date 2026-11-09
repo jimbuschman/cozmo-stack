@@ -182,3 +182,4 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | TRACK-FACE-LIFECYCLE-SETTLEMENT-1 | READY FOR CLAUDE | Concrete TrackFace lifecycle, original owner and scoped subscription/resume. Affected 327/327, focused 25/25, manager integration 329/329. HANDOFF-TRACK-FACE-LIFECYCLE-SETTLEMENT-1.md. |
 | Cube world state and TrackFace lifecycle gate on 2174bfa7 | PASS | scripts/test-full.sh passed 8089/8089, zero failed or skipped, 26m28s test duration. Both handoffs are READY FOR CLAUDE. |
 | MARKER-LIBRARY-DIAG-1 | CHECKED | Once-only startup warning from the configured marker decoder, with extraction and override remedies. Affected 343/343, manager 224/224. Awaiting batch gate. HANDOFF-MARKER-LIBRARY-DIAG-1.md. |
+| Marker library diagnostic batch gate on 936ec1d9 | FAILED | 8090/8092 passed, zero skipped. The two named PickupReactionVoiceTests cases reached the 20 s deadline without a StartOfAnimation tag. Investigating before rerun. |
