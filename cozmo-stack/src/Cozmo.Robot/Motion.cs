@@ -62,6 +62,9 @@ public sealed record AiHeadActionResult(bool Admitted, uint? EngineResult, strin
 /// <summary>Result of an outside-AI lift request; OwnerRetired is captured when its original action ends.</summary>
 public sealed record AiLiftActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
 
+/// <summary>The terminal scalar from an admitted native cube pickup.</summary>
+public sealed record AiPickupActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
+
 /// <summary>Result of an outside-AI straight-drive request; OwnerRetired is captured when its original action ends.</summary>
 public sealed record AiDriveActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
 
@@ -121,6 +124,46 @@ public sealed class CozmoMotion
     {
         var result = await QueueAiMoveAsync(heightMm, false, cancellationToken).ConfigureAwait(false);
         return new AiLiftActionResult(result.Admitted, result.EngineResult, result.Detail, result.OwnerRetired);
+    }
+
+    /// <summary>
+    /// Queues the native pickup after existing actions, using its default docking profile. Cancellation
+    /// addresses this runner; native pending and active destruction can abort shared docking and path state.
+    /// </summary>
+    public async Task<AiPickupActionResult> QueueAiPickupCubeAsync(uint objectId, bool driveToObject,
+        CancellationToken cancellationToken = default)
+    {
+        if(objectId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
+        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        var engine=_robot.Engine;
+        var owner=engine.Robot;
+        Task<AiHeadActionResult> task;
+        ActionRunner action;
+        using(engine.EnterSynchronousOwner())
+        {
+            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for an action");
+            var runtime=owner.NativeBehaviorRuntime;
+            if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation ||
+                owner.CarryingOwner is null || owner.DockingOwner is null || owner.BehaviorManagerOwner is null || !owner.HasExternalInterface)
+                return new(false,null,"MISSING: original pickup, carrying, docking or vision owner unavailable");
+            uint tag=AllocateAiTag();
+            if(tag==0)return new(false,null,"No external action tag is available");
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
+            action=driveToObject
+                ? new Manipulation.NativeDriveToPickupBeaconRunner(manipulation,objectId,Current,owner)
+                : new Manipulation.NativePickupObjectRunner(manipulation,owner,objectId,false,true);
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native cube pickup ended",true,
+                ()=>Current() && AiOwnerReady(engine,owner));
+        }
+        var result=await task.ConfigureAwait(false);
+        string? missing=action switch
+        {
+            Manipulation.NativePickupObjectRunner pickup=>pickup.HostUnavailable,
+            Manipulation.NativeDriveToPickupBeaconRunner compound=>compound.HostUnavailable,
+            _=>null
+        };
+        return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired);
     }
 
     /// <summary>
@@ -242,6 +285,8 @@ public sealed class CozmoMotion
         if (action is MoveAction move) { move.AiNativeEnded = completion; move.AiOwner = owner; }
         else if(action is Manipulation.NativePlaceGroundRunner ground)ground.AiNativeEnded=completion;
         else if(action is Vision.NativeTurnInPlaceRunner turn)turn.AiNativeEnded=completion;
+        else if(action is Manipulation.NativePickupObjectRunner pickup)pickup.AiNativeEnded=completion;
+        else if(action is Manipulation.NativeDriveToPickupBeaconRunner drivePickup)drivePickup.AiNativeEnded=completion;
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)
@@ -425,21 +470,23 @@ public sealed class CozmoMotion
     }
 
     // fidelity: M13-021 - native component primitives, no action/track/connection gate.
-    internal uint MoveHeadToAngle(float angle, float speed, float accel, float duration, out byte id, EngineRobot? scopedOwner = null)
+    internal uint MoveHeadToAngle(float angle, float speed, float accel, float duration, out byte id, EngineRobot? scopedOwner = null, Func<bool>? current = null)
     {
+        if(current is not null && !current()){id=0;return 1;}
         id = NextActionId();
         var message = new SetHeadAngle(angle, speed, accel, duration, id);
-        return (scopedOwner is null ? _robot.SendMessage(message, reliable: true) : scopedOwner.SendCheckedOwned(message)) ? 0u : 1u;
+        return (scopedOwner is null ? _robot.SendMessage(message, reliable: true) : scopedOwner.SendCheckedOwned(message,current)) ? 0u : 1u;
     }
     // MovementComponent::EnableLiftPower 0x00640634/0x00640654; exact tag 0x50 payload [motor 2, bool].
     internal bool SetNativeLiftPower(EngineRobot owner,bool enable)
         =>ReferenceEquals(_robot.Engine.Robot,owner) && _robot.SendMessage(new EnableMotorPower{Field0=2,Field1=enable?(byte)1:(byte)0},reliable:true,flush:false);
-    internal uint TurnInPlace(float angle, float speed, float accel, float tolerance, ushort halfRevs, bool absolute, out byte id, EngineRobot? scopedOwner = null)
+    internal uint TurnInPlace(float angle, float speed, float accel, float tolerance, ushort halfRevs, bool absolute, out byte id, EngineRobot? scopedOwner = null, Func<bool>? current = null)
     {
+        if(current is not null && !current()){id=0;return 1;}
         id = NextActionId();
         var message = new SetBodyAngle { AngleRad=angle, MaxSpeedRadPerSec=speed, AccelRadPerSec2=accel,
             ToleranceRad=tolerance, NumHalfRevolutions=halfRevs, IsAbsolute=absolute, ActionId=id };
-        return (scopedOwner is null ? _robot.SendMessage(message, reliable: true) : scopedOwner.SendCheckedOwned(message)) ? 0u : 1u;
+        return (scopedOwner is null ? _robot.SendMessage(message, reliable: true) : scopedOwner.SendCheckedOwned(message,current)) ? 0u : 1u;
     }
 
     // fidelity: M4-001
@@ -1263,6 +1310,16 @@ bool requireCalibration = true)
             _robot.SendMessage(new MoveLift { SpeedRadPerSec = 0f });
         }
     }
+    internal void StopLiftOwned(EngineRobot owner)
+    {
+        lock (_gate)
+        {
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner);
+            if(!Current())return;
+            if(StopGateLocked()) DirectDriveCheckSpeedAndLockTracksLocked(0f,ref _ddLift,LiftTrack,DirectDriveLift,DirectDriveLift,Current,owner);
+            if(Current())owner.SendCheckedOwned(new MoveLift { SpeedRadPerSec=0f },Current);
+        }
+    }
 
     // fidelity: M4-015
     /// <summary>
@@ -1426,19 +1483,21 @@ bool requireCalibration = true)
 
     // Native PanTilt owns these children; only its compound ticks/queues them.
     // Normal head9C1/9D0 matches the existing ctor; C11.3 proves A8 remainszero, so its gated eye branch cannot run.
-    internal ActionRunner CreateNativeHeadChild(float angle,float tolerance,float speed,float accel,EngineRobot? scopedOwner=null)
+    internal ActionRunner CreateNativeHeadChild(float angle,float tolerance,float speed,float accel,EngineRobot? scopedOwner=null,Func<bool>? parentCurrent=null)
     {
         var child=BuildHeadAction(angle,speed,accel,0,null,tolerance);
         child.AiOwner=scopedOwner;
+        child.AiParentCurrent=parentCurrent;
         lock(_gate)_actions.Add(child);
         return child;
     }
-    internal ActionRunner CreateNativeLiftChild(float height,float tolerance,EngineRobot? scopedOwner=null)
+    internal ActionRunner CreateNativeLiftChild(float height,float tolerance,EngineRobot? scopedOwner=null,Func<bool>? parentCurrent=null)
     {
         MoveAction? child=null;
         child=new MoveAction(this,false,height,tolerance,"lift",id=>new SetLiftHeight(child!.Target,DefaultLiftSpeedRadPerSec,DefaultLiftAccelRadPerSec2,0,id));
         child.SetName(MoveAction.LiftName(height));
         child.AiOwner=scopedOwner;
+        child.AiParentCurrent=parentCurrent;
         lock(_gate)_actions.Add(child);
         return child;
     }
@@ -1480,6 +1539,7 @@ bool requireCalibration = true)
     {
         internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
         internal EngineRobot? AiOwner;
+        internal Func<bool>? AiParentCurrent;
         public override byte? GetCompletionVariant() => 6; // head 0x12 and lift 0x13: 0x0053FEEC..0x0053FF14
         internal override bool RetireNeverAdmittedTree()
         {
@@ -1549,14 +1609,14 @@ bool requireCalibration = true)
         protected override bool AreAnyTracksLocked(uint mask) => Owner.AreAnyTracksLocked((byte)mask);
         // fidelity: M4-014
         // Row 3: IActionRunner::Update's LockTracks (0x00540584) passes the tag's decimal string as the key and the action's name (+0x48) as the debug name.
-        protected override void LockTracks(uint mask, string owner) => Owner.LockTracks((byte)mask, owner, ActionName);
+        protected override void LockTracks(uint mask, string owner) { if(AiOwner is null)Owner.LockTracks((byte)mask,owner,ActionName);else if(AiOwnerCurrent)Owner.LockTracksOwned((byte)mask,owner,ActionName,AiOwner); }
         private bool AiOwnerCurrent => AiOwner is null || !AiOwner.Lifetime.Destroying && ReferenceEquals(Owner._robot.Engine.Robot,AiOwner);
         private readonly object _aiCleanupGate = new();
-        protected override void UnlockTracksInternal(uint mask, string owner) { if(AiOwner is null)Owner.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.UnlockTracks((byte)mask,owner);}); }
+        protected override void UnlockTracksInternal(uint mask, string owner) { if(AiOwner is null)Owner.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.UnlockTracksOwned((byte)mask,owner,AiOwner);}); }
         protected override bool AreAllTracksLockedBy(uint mask, string owner) => AiOwnerCurrent && Owner.AreAllTracksLockedBy((byte)mask, owner);
-        protected override void StopHeadTrack() { if(AiOwner is null)Owner.StopHead();else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.StopHead();}); }
-        protected override void StopLiftTrack() { if(AiOwner is null)Owner.StopLift();else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.StopLift();}); }
-        protected override void StopBodyTrack() { if(AiOwner is null)Owner.StopBody();else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.StopBody();}); }
+        protected override void StopHeadTrack() { if(AiOwner is null)Owner.StopHead();else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.StopHeadOwned(AiOwner);}); }
+        protected override void StopLiftTrack() { if(AiOwner is null)Owner.StopLift();else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.StopLiftOwned(AiOwner);}); }
+        protected override void StopBodyTrack() { if(AiOwner is null)Owner.StopBody();else LogCallbackDeferral.RunGated(_aiCleanupGate,()=>{if(AiOwnerCurrent)Owner.StopBodyOwned(AiOwner);}); }
         protected override bool HeadTrackMoving => Owner._headMoving;
         protected override bool LiftTrackMoving => Owner._liftMoving;
         protected override bool BodyTrackMoving => Owner._bodyMoving;
@@ -1612,10 +1672,10 @@ bool requireCalibration = true)
             {
                 if (!IsHead) LiftInitHeightLocked();
                 if (AiOwner is { } original && (DestructionObserved || original.Lifetime.Destroying ||
-                    !ReferenceEquals(Owner._robot.Engine.Robot, original))) return unchecked((int)EngineActionResult.Running);
+                    !ReferenceEquals(Owner._robot.Engine.Robot, original) || AiParentCurrent is not null && !AiParentCurrent())) return unchecked((int)EngineActionResult.Running);
                 if (Owner.InPositionLocked(this)) { InPositionLatched = true; return 0; }
                 Id = Owner.NextActionId();                       // MA8: taken in MoveHeadToAngle / MoveLiftToHeight
-                if (!(AiOwner is { } owner ? owner.SendCheckedOwned(Build(Id)) : Owner._robot.SendMessage(Build(Id)))) return (int)ResultSendFailed;
+                if (!(AiOwner is { } owner ? owner.SendCheckedOwned(Build(Id),()=>!DestructionObserved && (AiParentCurrent?.Invoke()??true)) : Owner._robot.SendMessage(Build(Id)))) return (int)ResultSendFailed;
                 Sent = true;
                 return 0;
             }

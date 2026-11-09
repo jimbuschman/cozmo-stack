@@ -15,6 +15,11 @@ public sealed partial class CozmoEngine
 internal sealed partial class PathComponent
 {
     internal Func<RobotMessage,bool>? SendPathMessage;
+    private Func<bool>? _scopedCurrent;
+    private Func<RobotMessage,bool>? _scopedSend;
+    private long _scopeGeneration;
+    internal long ScopeGeneration=>_scopeGeneration;
+    private bool ScopeCurrent()=>_scopedCurrent?.Invoke()??true;
     private IReadOnlyList<PathSegment> _dolerPath=Array.Empty<PathSegment>();
     internal ushort LastDoledIndex=0xFFFF;
     internal uint DoleSegmentCount;
@@ -63,14 +68,21 @@ internal sealed partial class PathComponent
         Field48=true;
     }
     internal void ClearNativeCustomMotionProfile()=>Field48=false;
-    internal int StartNativeDrivingToPose(ManipulationSystem m,IReadOnlyList<Vision.Pose3d> originalGoals,PathGoalIndex index,bool manual,IEnumerable<uint>? ignore)
+    internal int StartNativeDrivingToPose(ManipulationSystem m,IReadOnlyList<Vision.Pose3d> originalGoals,PathGoalIndex index,bool manual,IEnumerable<uint>? ignore,EngineRobot? scopedOwner=null,Func<bool>? current=null)
     {
         // 64ACC4: the empty-vector failure precedes every write/old-plan cancellation.
         if(originalGoals.Count==0)return 1;
-        var owner=m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-032 actual Robot owner unavailable");
+        if(current is not null&&!current())return 1;
+        var owner=scopedOwner??m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-032 actual Robot owner unavailable");
         if(owner.CarryingOwner is null)throw new NativeActionUnavailable("M12-032 actual carrying owner unavailable");
-        if(Field47){PlannerSlot10?.Invoke();Field47=false;}
-        if(IsActive)Abort(SendNative);
+        Func<RobotMessage,bool>? send=scopedOwner is null?null:message=>m.Paths.SendOwned(scopedOwner,current!,message);
+        long generation=++_scopeGeneration;
+        Func<bool>? scopedGuard=current is null?null:()=>generation==_scopeGeneration&&current();
+        _scopedCurrent=scopedGuard;_scopedSend=send;
+        if(Field47){PlannerSlot10?.Invoke();if(current is not null&&!current())return 1;Field47=false;}
+        if(scopedGuard is not null&&!scopedGuard())return 1;
+        if(IsActive)Abort(send??SendNative,scopedGuard);
+        if(scopedGuard is not null&&!scopedGuard())return 1;
         Field46=manual;_goalIndex=index;SharedPath=index;ParamsOrigin=owner.CurrentOriginId;
         if(!owner.TryGetNativeOriginOwner(ParamsOrigin,out var currentOrigin)||currentOrigin is null)
             throw new NativeActionUnavailable("M12-032 actual current origin owner unavailable");
@@ -89,11 +101,14 @@ internal sealed partial class PathComponent
                 if(!Vision.PoseTreeNode.HasSameRoot(goal.Node,currentOrigin.Node)){SetStatus(0);return 1;}
             }
             var planners=m.GetNativePlanners();planners.ConfigureNative(start,goals,NativeMotionProfile,ignore);SetNativePlanners(planners);
+            if(scopedGuard is not null&&!scopedGuard())return 1;
             ObjectsChangedInput=()=>m.World.DidObjectsChange;
             _computeModel=null;PlannerSlot10=planners.Stop;
             SelectPlanner(goals.Count);
-            if(!StartPlanner()){SetStatus(0);return 1;}
-            SetStatus(1);
+            if(!StartPlanner()){if(scopedGuard?.Invoke()??true)SetStatus(0,scopedGuard);return 1;}
+            if(scopedGuard is not null&&!scopedGuard())return 1;
+            SetStatus(1,scopedGuard);
+            if(scopedGuard is not null&&!scopedGuard())return 1;
             if(!Field48)NativeMotionProfile=ChooseNativeProfile(owner,originalGoals);
             planners.Profile=NativeMotionProfile;
             return 0;
@@ -109,7 +124,7 @@ internal sealed partial class PathComponent
     private void Info(string key,string text)=>_robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Planner",key,text);
     private void Warning(string key,string text)=>_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,key,text);
     private void Error(string key,string text){_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,text);EngineErrorState.StoreAndMaybeBreak();}
-    private void Verify(string key,string text){_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,text);EngineErrorState.ErrorFlagSet=true;_robot.Engine.Das.ForceFlushNow();}
+    private void Verify(string key,string text,Func<bool>? current=null){_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,text);if(current is not null&&!current())return;EngineErrorState.ErrorFlagSet=true;_robot.Engine.Das.ForceFlushNow();}
     private string Name(int status)=>StatusName?.Invoke(status)??StatusNames[status];
     internal void SetStatus(int next,Func<bool>? current=null)
     {
@@ -119,10 +134,10 @@ internal sealed partial class PathComponent
         Info("PathComponent.TransitionStatus",text);
         if(current is null||current())DriveToPoseStatus=next;
     }
-    private bool SendNative(RobotMessage message)=>SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
+    private bool SendNative(RobotMessage message)=>!ScopeCurrent()?false:_scopedSend?.Invoke(message)??SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
     // fidelity: M13-029 - ErasePath builds a local Viz tag21 and sends nothing.
     private void ErasePath() => ErasePathHook?.Invoke(CozmoEngine.RobotId);
-    private void ResetMachine(){_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
+    private void ResetMachine(){_scopeGeneration++;_scopedCurrent=null;_scopedSend=null;_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
     internal void ClearDoler(){_dolerPath=Array.Empty<PathSegment>();LastDoledIndex=0xFFFF;DoleSegmentCount=0;}
     internal void SetDolerPath(IReadOnlyList<PathSegment> path,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
@@ -156,11 +171,11 @@ internal sealed partial class PathComponent
             LastDoledIndex=unchecked((ushort)i);
         }
     }
-    internal void UpdateDoler(sbyte segment)
+    internal void UpdateDoler(sbyte segment,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
         int d=segment-(short)LastDoledIndex;
         if(d < -4 || unchecked(DoleSegmentCount-1)<=unchecked((uint)(short)LastDoledIndex))return;
-        _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter.Update.Doling",$"currPathIdx: {segment}, doling upto {d+5} path segments");Dole(d+5);
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter.Update.Doling",$"currPathIdx: {segment}, doling upto {d+5} path segments");if(current is null||current())Dole(d+5,current,send);
     }
     internal int ExecutePath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
@@ -177,12 +192,14 @@ internal sealed partial class PathComponent
     }
     internal int ExecuteCustomPath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
+        _scopeGeneration++;_scopedCurrent=null;_scopedSend=null;
         if(Field47){PlannerSlot10?.Invoke();if(current is not null&&!current())return 1;Field47=false;}_computeModel=null;_plan=null;PlannerSlot10=null;
         return ExecutePath(path,manual,reserve,current,send);
     }
     internal int StartDrivingToPose(int goals,PathGoalIndex index,bool manual,Func<PathPlannerModelResult> compute,Action stop,Action<string> missing)
     {
         if(goals==0){Warning("PathComponent.StartDrivingToPose.NoTargetPoses","Can't start driving with no provided targets");return 1;}
+        _scopeGeneration++;_scopedCurrent=null;_scopedSend=null;
         _modelMissing=missing;
         if(Field47){PlannerSlot10?.Invoke();Field47=false;}
         if(IsActive){Info("PathComponent.StartDrivingToPose.AlreadyBusy",$"Path component status was '{Name(DriveToPoseStatus)}'. Aborting current plan");Abort(SendNative);}
@@ -222,26 +239,38 @@ internal sealed partial class PathComponent
     internal void SetPlannerModelForTest(Func<PathPlannerModelResult> compute,Func<PathPlannerModelResult>? fallback=null){_computeModel=compute;_fallbackModel=fallback;}
     internal void UpdatePlanning()
     {
-        switch(PlannerStatus)
+        var current=_scopedCurrent;var send=_scopedSend;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
+        int status=PlannerStatus;if(!IsCurrent())return;
+        switch(status)
         {
             case 3:
                 Info("PathComponent.Update.Planner.CompleteNoPlan","Running planner complete with no plan");
-                if(DriveToPoseStatus is 2 or 3 or 5 or 6){Info("PathComponent.Update.Planner.NoPlanWhileTraversing","Planner completed with empty plan while we were already following a plan. clearing plan");Abort(SendNative);}
-                Field47=false;ErasePath();SetStatus(4);break;
+                if(!IsCurrent())return;
+                if(DriveToPoseStatus is 2 or 3 or 5 or 6){Info("PathComponent.Update.Planner.NoPlanWhileTraversing","Planner completed with empty plan while we were already following a plan. clearing plan");if(!IsCurrent())return;Abort(send??SendNative,current);}
+                if(!IsCurrent())return;Field47=false;ErasePath();if(IsCurrent())SetStatus(4,current);break;
             case 2:Field47=false;HandlePlanComplete();break;
             case 0:
-                if(ReplanWithFallbackPlanner()){SetStatus(1);Info("PathComponent.Update.Planner.Error","Running planner returned error status, using fallback planner instead");}
-                else{Abort(SendNative);SetStatus(6);Info("PathComponent.Update.Planner.Error","Running planner returned error status");}break;
+                bool fallback=ReplanWithFallbackPlanner();if(!IsCurrent())return;
+                if(fallback){SetStatus(1,current);if(IsCurrent())Info("PathComponent.Update.Planner.Error","Running planner returned error status, using fallback planner instead");}
+                else{Abort(send??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);if(IsCurrent())Info("PathComponent.Update.Planner.Error","Running planner returned error status");}break;
         }
     }
     internal void HandlePlanComplete()
     {
+        var current=_scopedCurrent;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
         if(_nativePlanners?.Current is not null)_plan=_nativePlanners.Read();
+        if(!IsCurrent())return;
         if(_plan is not {} plan)return;
         if((byte)plan.Path.Count!=0)
         {
-            if(PlannerSkipSafetyCheck is {} skip && !skip() && PlannerPathIsSafe is {} safe && !safe())
-            {if(ReplanWithFallbackPlanner())Info("PathComponent.Update.Planner.Collisions","Planner returned a path with obstacles, using fallback planner instead");else{Abort(SendNative);SetStatus(6);Info("PathComponent.Update.Planner.Collisions.ReplanFail","Planner returned a path with obstacles, can't get valid fallback plan, failing");}return;}
+            bool? skipped=PlannerSkipSafetyCheck?.Invoke();if(!IsCurrent())return;
+            bool? safe=skipped==false?PlannerPathIsSafe?.Invoke():null;if(!IsCurrent())return;
+            if(skipped==false && safe==false)
+            {bool fallback=ReplanWithFallbackPlanner();if(!IsCurrent())return;if(fallback)Info("PathComponent.Update.Planner.Collisions","Planner returned a path with obstacles, using fallback planner instead");else{Abort(_scopedSend??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);if(IsCurrent())Info("PathComponent.Update.Planner.Collisions.ReplanFail","Planner returned a path with obstacles, can't get valid fallback plan, failing");}return;}
             else if(_nativePlanners?.Current is {} selected)
             {
                 if(!selected.SkipsSafetyCheck && _nativePlanners.Lattice is not null)MissingOnce("M13-034 slot 0x18 -> 0x1C PathIsSafe body needs separately-owned PathSegment geometry helpers; candidate short path safety is not claimed source-backed");
@@ -250,85 +279,111 @@ internal sealed partial class PathComponent
         }
         if(_nativePlanners?.Current is {} chosen)_robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.plan_complete",chosen.Name,new Dictionary<string,string>{{"$data",((byte)plan.Path.Count).ToString(System.Globalization.CultureInfo.InvariantCulture)}});
         else{ModelGap();MissingOnce("M12-032 robot.plan_complete 0x0064A024 native planner-name payload unavailable");}
+        if(!IsCurrent())return;
         if((byte)plan.Path.Count!=0)
         {
             Info("PathComponent.Update.Planner.CompleteWithPlan","Running planner complete with a plan");
-            int r=ExecutePath(plan.Path,Field46);if(r!=0){Warning("Robot.PathComponent.UnableToExecuteCompletedPath","Planner completed a path, but couldn't execute it for some reason");SetStatus(0);}
-            if(_goalIndex is {} index)index.Value=plan.Index;
+            if(!IsCurrent())return;
+            int r=ExecutePath(plan.Path,Field46,current:current,send:_scopedSend);if(!IsCurrent())return;if(r!=0){Warning("Robot.PathComponent.UnableToExecuteCompletedPath","Planner completed a path, but couldn't execute it for some reason");if(!IsCurrent())return;SetStatus(0,current);}
+            if(IsCurrent()&&_goalIndex is {} index)index.Value=plan.Index;
         }
         else
         {
-            if(DriveToPoseStatus is 2 or 3){Info("PathComponent.Update.Planner.PlanComplete.EmptyPlan","Planner completed with empty plan while we were already following a plan. clearing plan");ClearPath(SendNative);}
-            else Info("PathComponent.Update.Planner.CompleteWithPlan.EmptyPlan","Planner completed but with an empty plan");Field47=false;ErasePath();SetStatus(4);
+            if(DriveToPoseStatus is 2 or 3){Info("PathComponent.Update.Planner.PlanComplete.EmptyPlan","Planner completed with empty plan while we were already following a plan. clearing plan");if(!IsCurrent())return;ClearPath(SendNative,current);}
+            else Info("PathComponent.Update.Planner.CompleteWithPlan.EmptyPlan","Planner completed but with an empty plan");if(!IsCurrent())return;Field47=false;ErasePath();if(IsCurrent())SetStatus(4,current);
         }
     }
     internal void Update()
     {
+        var current=_scopedCurrent;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
         if(Field47)UpdatePlanning();
+        if(!IsCurrent())return;
         if(DriveToPoseStatus==3)HandlePossibleOriginChanges();
+        if(!IsCurrent())return;
         if(IsWaitingForRobotResponse && _robot.Engine.Timer.SecondsF > Field3C+1f)
-        {Error("PathComponent.SentUnreceivedPath",$"robot did not start executing path. Last send = {Field42}, last recv = {Field44}");Abort(SendNative);SetStatus(6);}
+        {Error("PathComponent.SentUnreceivedPath",$"robot did not start executing path. Last send = {Field42}, last recv = {Field44}");if(!IsCurrent())return;Abort(_scopedSend??SendNative,current);if(IsCurrent())SetStatus(6,current);}
     }
     internal void UpdateCurrentPathSegment(sbyte segment)
     {
+        var current=_scopedCurrent;var send=_scopedSend;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
         if(Field42!=0 && Field44==Field42)
         {
             Field40=unchecked((byte)segment);
-            if(segment<=-1 && DriveToPoseStatus==3 && Field47){Info("PathComponent.UpdateRobotData.ComputingNewPlan",$"Actively replanning and finished following path ID {Field42}");SetStatus(1);}
+            if(segment<=-1 && DriveToPoseStatus==3 && Field47){Info("PathComponent.UpdateRobotData.ComputingNewPlan",$"Actively replanning and finished following path ID {Field42}");if(!IsCurrent())return;SetStatus(1,current);}
         }
-        if(DriveToPoseStatus==3)UpdateDoler(unchecked((sbyte)Field40));
+        if(IsCurrent()&&DriveToPoseStatus==3)UpdateDoler(unchecked((sbyte)Field40),current,send);
     }
     private static string EventName(byte type)=>type switch{0=>"PATH_STARTED",1=>"PATH_INTERRUPTED",2=>"PATH_COMPLETED",_=>"(null)"};
     internal void OnPathEvent(PathFollowingEvent e)
     {
+        var current=_scopedCurrent;var send=_scopedSend;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
         _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Planner","PathComponent.ReceivedPathEvent",$"ID:{e.EventId} Event:{EventName(e.EventType)}");
+        if(!IsCurrent())return;
         ushort id=e.EventId;
         if(e.EventType==0)
         {
             if(DriveToPoseStatus>4 || id==Field4A){Info("PathComponent.PathEvent.OldPathStartedWhileWaitingForCancel",$"The robot started path {id} which is about to be canceled. Status is {Name(DriveToPoseStatus)}");return;}
             if(DriveToPoseStatus is 2 or 3)
-            {if(id!=Field42)Verify("PathComponent.PathEvent.StartingUnexpectedPathID",$"VERIFY(payload.pathID == _lastSentPathID): Last sent ID:{Field42}, starting ID:{id}");Field44=id;SetStatus(3);}
-            else{Verify("PathComponent.PathEvent.UnexpectedStatus",$"VERIFY(ERobotDriveToPoseStatus::WaitingToBeginPath == _driveToPoseStatus || ERobotDriveToPoseStatus::FollowingPath == _driveToPoseStatus): Expecting to be WaitingToBeginPath or FollowingPath, not {Name(DriveToPoseStatus)}");Abort(SendNative);}return;
+            {if(id!=Field42)Verify("PathComponent.PathEvent.StartingUnexpectedPathID",$"VERIFY(payload.pathID == _lastSentPathID): Last sent ID:{Field42}, starting ID:{id}",current);if(!IsCurrent())return;Field44=id;SetStatus(3,current);}
+            else{Verify("PathComponent.PathEvent.UnexpectedStatus",$"VERIFY(ERobotDriveToPoseStatus::WaitingToBeginPath == _driveToPoseStatus || ERobotDriveToPoseStatus::FollowingPath == _driveToPoseStatus): Expecting to be WaitingToBeginPath or FollowingPath, not {Name(DriveToPoseStatus)}",current);if(IsCurrent())Abort(send??SendNative,current);}return;
         }
-        if(e.EventType is not (1 or 2) || SwallowCanceled(e))return;
+        if(e.EventType is not (1 or 2) || SwallowCanceled(e,current))return;
+        if(!IsCurrent())return;
         if(e.EventType==2)
-        {if(id!=Field42)Verify("PathComponent.PathEvent.CompletingUnexpectedPathID",$"VERIFY(payload.pathID == _lastSentPathID): Last sent ID:{Field42}, completing ID:{id}");}
+        {if(id!=Field42)Verify("PathComponent.PathEvent.CompletingUnexpectedPathID",$"VERIFY(payload.pathID == _lastSentPathID): Last sent ID:{Field42}, completing ID:{id}",current);}
         else
-        {if(id!=Field44)Verify("PathComponent.PathEvent.InterruptingUnexpectedPathID",$"VERIFY(payload.pathID == _lastRecvdPathID): Last received ID:{Field44}, completing ID:{id}");if(id!=Field42)return;}
-        Field47=false;ErasePath();SetStatus(4);
+        {if(id!=Field44)Verify("PathComponent.PathEvent.InterruptingUnexpectedPathID",$"VERIFY(payload.pathID == _lastRecvdPathID): Last received ID:{Field44}, completing ID:{id}",current);if(!IsCurrent()||id!=Field42)return;}
+        if(!IsCurrent())return;Field47=false;ErasePath();if(IsCurrent())SetStatus(4,current);
     }
-    internal bool SwallowCanceled(PathFollowingEvent e)
+    internal bool SwallowCanceled(PathFollowingEvent e,Func<bool>? current=null)
     {
         if(DriveToPoseStatus<5)return Field4A!=0 && e.EventId==Field4A;
-        if(e.EventId==Field4A)SetStatus(DriveToPoseStatus==5?4:0);
+        if(e.EventId==Field4A)SetStatus(DriveToPoseStatus==5?4:0,current);
         else Warning("PathComponent.PathEvent.CanceledPathDifferentPathComplete",$"We are in status '{Name(DriveToPoseStatus)}' waiting for path {Field4A} to cancel, but got message that path {e.EventId} is {EventName(e.EventType)}");
         return true;
     }
     internal void HandlePossibleOriginChanges()
     {
+        var current=_scopedCurrent;var send=_scopedSend;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
         if(_computeModel is null)return;
         if(CurrentOriginInput is null || ContainsOriginInput is null){MissingOnce("M12-032 origin validation/VERIFY 0x00649830/0x00649852 inputs unbuilt");return;}
-        if(!ContainsOriginInput(ParamsOrigin)){Abort(SendNative);SetStatus(6);MissingOnce("M12-032 Replan.NotPossible info 0x00649898 arguments unbuilt");return;}
-        if(ParamsOrigin!=CurrentOriginInput())
+        bool contains=ContainsOriginInput(ParamsOrigin);if(!IsCurrent())return;
+        if(!contains){Abort(send??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);if(IsCurrent())MissingOnce("M12-032 Replan.NotPossible info 0x00649898 arguments unbuilt");return;}
+        uint origin=CurrentOriginInput();if(!IsCurrent())return;
+        if(ParamsOrigin!=origin)
         {if(RejiggerInput is {} rejigger)rejigger();else MissingOnce("M12-032 RejiggerTargetsAndReplan 0x006499D0..0x00649B44 unbuilt origin transform helpers; logs/VERIFY at 0x00649A12/0x00649A9C/0x00649AFE/0x00649B14 not fabricated");}
-        else if(ObjectsChangedInput?.Invoke()==true)RestartPlannerIfNeeded();
+        else if(ObjectsChangedInput?.Invoke()==true&&IsCurrent())RestartPlannerIfNeeded();
     }
     internal void RestartPlannerIfNeeded()
     {
+        var current=_scopedCurrent;var send=_scopedSend;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
         if(Field47)return;
         if(_nativePlanners?.Current is not null)
         {
             int code=_nativePlanners.Restart();
-            if(code==1){_robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Planner","PathComponent.Replan.Running","ComputeNewPathIfNeeded running");Field47=true;}
+            if(!IsCurrent())return;
+            if(code==1){_robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Planner","PathComponent.Replan.Running","ComputeNewPathIfNeeded running");if(IsCurrent())Field47=true;}
             else if(code==0)
             {
-                if(ReplanWithFallbackPlanner())Info("PathComponent.RestartIfNeeded.Error.Fallback","computing a new path resulted in an error, switching to fallback");
-                else{Info("PathComponent.RestartIfNeeded.Error.NoFallback","computing a new path resulted in an error but couldn't use fallback. Failing");Abort(SendNative);SetStatus(6);}
+                bool fallback=ReplanWithFallbackPlanner();if(!IsCurrent())return;
+                if(fallback)Info("PathComponent.RestartIfNeeded.Error.Fallback","computing a new path resulted in an error, switching to fallback");
+                else{Info("PathComponent.RestartIfNeeded.Error.NoFallback","computing a new path resulted in an error but couldn't use fallback. Failing");if(!IsCurrent())return;Abort(send??SendNative,current);if(IsCurrent())SetStatus(6,current);}
             }
             return;
         }
         if(ComputeNewPathIfNeeded is null){ModelGap();return;}
-        if(ComputeNewPathIfNeeded()){Field47=true;MissingOnce("M12-032 RestartPlannerIfNeeded log at 0x00649C64 arguments unbuilt");}
-        else if(!ReplanWithFallbackPlanner()){Abort(SendNative);SetStatus(6);MissingOnce("M12-032 RestartPlannerIfNeeded failure info/debug at 0x00649C9E/0x00649CE0 arguments unbuilt");}
+        bool restarted=ComputeNewPathIfNeeded();if(!IsCurrent())return;
+        if(restarted){Field47=true;MissingOnce("M12-032 RestartPlannerIfNeeded log at 0x00649C64 arguments unbuilt");}
+        else if(!ReplanWithFallbackPlanner()&&IsCurrent()){Abort(send??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);if(IsCurrent())MissingOnce("M12-032 RestartPlannerIfNeeded failure info/debug at 0x00649C9E/0x00649CE0 arguments unbuilt");}
     }
 }

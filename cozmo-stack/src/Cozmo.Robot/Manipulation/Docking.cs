@@ -119,6 +119,17 @@ public sealed partial class CarryingComponent
         SetCarryingObject(world, objectId, (ushort)marker.Code);
     }
 
+    internal bool AttachToLiftChecked(BlockWorld world, uint objectId, KnownMarker marker,
+        Pose3d objectWrtLift, uint? onTopId, Pose3d? topWrtCarried, EngineRobot owner, Func<bool> current)
+    {
+        lock (_gate)
+        {
+            if (!current()) return false;
+            _dockMarker=marker; _objectWrtLift=objectWrtLift; _onTopId=onTopId; _topWrtCarried=topWrtCarried;
+        }
+        return SetCarryingObject(world, objectId, (ushort)marker.Code, owner, current);
+    }
+
     private Pose3d? _objectWrtLift;
     private uint? _onTopId;
     private Pose3d? _topWrtCarried;
@@ -182,7 +193,11 @@ public sealed class DockingSystem : IDisposable
     /// does not reset it. The Moved (CD10a) and Stopped (CD10b) broadcasts exclude a cube whose id equals it.
     /// </summary>
     private readonly DockingComponentData _native;
+    private readonly EngineRobot? _nativeOwner;
     private bool _nativeRequest; //explicit legacy Task adapter does not replace native retained-field ownership
+    private volatile bool _legacyDockSelected;
+    private long _nativeDockGeneration;
+    internal long NativeDockGeneration => Interlocked.Read(ref _nativeDockGeneration);
 
     public uint? DockTargetObjectId { get => _native.TargetId; private set => _native.TargetId = value; }
 
@@ -191,6 +206,7 @@ public sealed class DockingSystem : IDisposable
     internal DockingSystem(CozmoRobot robot, VisionSystem vision, EngineRobot? nativeOwner)
     {
         _robot = robot; _vision = vision;
+        _nativeOwner = nativeOwner;
         _native = nativeOwner?.DockingOwner ?? new DockingComponentData();
         Carrying = nativeOwner?.CarryingOwner ?? new CarryingComponent();
         _nativeUnset = UnsetCarryingObjects;
@@ -201,6 +217,7 @@ public sealed class DockingSystem : IDisposable
         robot.MessageInternal += OnMessage;
         robot.Engine.PickAndPlaceRoute += OnNativePickAndPlace;
         vision.DockingMarkersProcessed += OnFrame; // M11-064: signal before UpdateAllResults error
+        vision.NativeDockingMarkersProcessed += OnNativeFrame;
         // Everything this instance installs on the vision system is remembered, so Dispose can take back
         // what it put there - and only what it put there. A replacement installs its own and owns them
         // from that moment; a late disposal of the old one must not clear the new one's.
@@ -271,6 +288,30 @@ public sealed class DockingSystem : IDisposable
         return subscriptions!;
     }
 
+    internal IDisposable? RegisterActionHandlers(EngineRobot robot, DockActionBase owner, DockAction action)
+    {
+        if (!NativeOwnerCurrent(robot)) return null;
+        DockActionSubscriptions? subscriptions = null;
+        LogCallbackDeferral.RunGated(owner.NativeDockGate, () =>
+        {
+            if (!NativeOwnerCurrent(robot)) return;
+            owner.SetSelectedDockAction(action);
+            owner.Subscriptions ??= new DockActionSubscriptions(_robot, owner, robot);
+            var installed = owner.Subscriptions;
+            installed.Init(action);
+            if (NativeOwnerCurrent(robot)) subscriptions = installed;
+            else
+            {
+                installed.Dispose();
+                if (ReferenceEquals(owner.Subscriptions, installed)) owner.Subscriptions = null;
+            }
+        });
+        return subscriptions;
+    }
+
+    private bool NativeOwnerCurrent(EngineRobot owner) => ReferenceEquals(_nativeOwner, owner) &&
+        !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner) && ReferenceEquals(owner.DockingOwner, _native);
+
     private sealed class HandlerRegistration : IDisposable
     {
         private readonly DockingSystem _owner; private readonly int _id; private int _disposed;
@@ -314,21 +355,38 @@ public sealed class DockingSystem : IDisposable
     // fidelity: M12-006
     public uint SetCarriedObjectAsUnattached(bool deleteLocated)
     {
-        using var frameMutation = _vision.World.EnterPoseMutation();
         if (_robot.Engine.Robot is not {} robot)
         { Behavior.SteppedBehavior.ReportMissing("M12-006 native Robot::GetPose recipient absent; preserve carrying state"); return 1; }
+        return SetCarriedObjectAsUnattached(robot, deleteLocated, false, null);
+    }
+
+    internal bool ReleaseCarriedObject(EngineRobot owner, bool forget, Func<bool>? current = null)
+        => SetCarriedObjectAsUnattached(owner, forget, true, current) == 0;
+
+    private uint SetCarriedObjectAsUnattached(EngineRobot robot, bool deleteLocated, bool owned, Func<bool>? current)
+    {
+        bool Current() => !owned || NativeOwnerCurrent(robot) && ReferenceEquals(robot.CarryingOwner, Carrying) && (current?.Invoke() ?? true);
+        if (!Current()) return 1;
+        using var frameMutation = _vision.World.EnterPoseMutation();
         uint result=1;
         using var diagnostics=Pose3d.UseSourceLog((l,c,k,t)=>_robot.Engine.EmitSourceLog(l,c,k,t),_robot.Engine.Das.ForceFlushNow);
         LogCallbackDeferral.RunGated(robot.PoseTreeGate,()=>
         {
+            if(!Current())return;
             if(Carrying.CarriedObjectId is not {} id)
             {
                 CarrySource(EngineLogLevel.Warning,"CarryingObjectNotSpecified","Robot not carrying object, but told to place one. (Possibly actually rolling or balancing or popping a wheelie.");return;
             }
-            if(!Place(id,false))return; // A2/A4: neither UnSet nor deletion on primary failure.
+            if(!Place(id,false) || !Current())return; // A2/A4: neither UnSet nor deletion on primary failure.
             if(Carrying.CarriedOnTopId is {} topId)Place(topId,true); // A8: top failure still UnSets.
+            if(!Current())return;
             var ids=Carrying.GetCarryingObjects();
-            Carrying.UnsetCarrying(false);
+            if(owned)
+            {
+                if(!UnsetCarryingObjects(robot,false,current) || !Current())return;
+            }
+            else Carrying.UnsetCarrying(false);
+            if(!Current())return;
             if(deleteLocated)
             {
                 var filter=new BlockWorldFilter();filter.AllowedIds.UnionWith(ids);
@@ -337,7 +395,7 @@ public sealed class DockingSystem : IDisposable
             }
             result=0;
         });
-        return result;
+        return Current() ? result : 1;
 
         bool Place(uint id,bool top)
         {
@@ -368,13 +426,26 @@ public sealed class DockingSystem : IDisposable
     // fidelity: M12-045
     internal void UnsetCarryingObjects(bool topOnly)
     {
-        using var frameMutation=_vision.World.EnterPoseMutation();
         if(_robot.Engine.Robot is not {} robot)
         {Behavior.SteppedBehavior.ReportMissing("M12-045 UnSetCarryingObjects Robot/LiftPose recipient absent; preserve state");return;}
+        UnsetCarryingObjectsCore(robot,topOnly,false,null);
+    }
+
+    internal bool UnsetCarryingObjects(EngineRobot owner, bool topOnly, Func<bool>? current = null)
+        => UnsetCarryingObjectsCore(owner, topOnly, true, current);
+
+    private bool UnsetCarryingObjectsCore(EngineRobot robot, bool topOnly, bool owned, Func<bool>? current)
+    {
+        bool Current() => !owned || NativeOwnerCurrent(robot) && ReferenceEquals(robot.CarryingOwner, Carrying) && (current?.Invoke() ?? true);
+        if(!Current())return false;
+        bool completed=false;
+        using var frameMutation=_vision.World.EnterPoseMutation();
         LogCallbackDeferral.RunGated(robot.PoseTreeGate,()=>
         {
+            if(!Current())return;
             foreach(uint id in Carrying.GetCarryingObjects())
             {
+                if(!Current())return;
                 if(topOnly&&Carrying.CarriedOnTopId!=id)continue;
                 var obj=_vision.World.GetLocatedObjectByIdHelper(id);
                 if(obj is null)
@@ -390,9 +461,23 @@ public sealed class DockingSystem : IDisposable
                 else if(parent is not null&&parent.Parent is not null)
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"Robot.UnSetCarryingObjects.StillAttachedToSomething",FormattableString.Invariant($"Setting carried object '{unchecked((int)id)}' as not being carried, but the pose is still attached to something (other cube?!)"));
             }
-            if(!topOnly&&Carrying.CarriedObjectId is not null)Send(new CarryStateUpdate{State=CarryState.CARRY_NONE});
+            if(!Current())return;
+            if(!topOnly&&Carrying.CarriedObjectId is not null)
+            {
+                var message=new CarryStateUpdate{State=CarryState.CARRY_NONE};
+                if(owned)
+                {
+                    robot.SendCheckedOwned(message,Current);
+                    if(!Current())return;
+                    Sent.Add(message);
+                }
+                else Send(message);
+            }
+            if(!Current())return;
             Carrying.ClearNativeCarryingFields(topOnly);
+            completed=Current();
         });
+        return completed && Current();
     }
 
     private void UpdateSharedRobotPose()
@@ -518,6 +603,27 @@ public sealed class DockingSystem : IDisposable
         return result;
     }
 
+    private uint SetObjectAsAttachedToLift(EngineRobot owner, uint objectId, MarkerType markerCode, Func<bool> current)
+    {
+        if (!current()) return LiftGeometry.AttachFailed;
+        uint result = LiftGeometry.AttachFailed;
+        using var frameMutation = _vision.World.EnterPoseMutation();
+        LogCallbackDeferral.RunGated(owner.PoseTreeGate, () =>
+        {
+            if (!current()) return;
+            result = LiftGeometry.SetObjectAsAttachedToLift(Carrying, _vision.World, Configurations,
+                owner.PoseHistory.Latest, objectId, markerCode, Log, owner.LiftPose, owner, current);
+            if (!current() || result != 0) return;
+            if (_vision.World.GetObjectById(objectId) is not { } obj || Carrying.ObjectWrtLift is not { } local) return;
+            if (!obj.NativeCarryingTree) { obj.NativePose.Assign(local); obj.NativePose.SetParent(owner.LiftPose); obj.NativeCarryingTree=true; }
+            if (!current()) return;
+            if (Carrying.CarriedOnTopId is { } topId && Carrying.TopWrtCarried is { } topLocal &&
+                _vision.World.GetObjectById(topId) is { } top)
+            { top.NativePose.Assign(topLocal); top.NativePose.SetParent(obj.NativePose); top.NativeCarryingTree=true; }
+        });
+        return current() ? result : LiftGeometry.AttachFailed;
+    }
+
     /// <summary>
     /// The engine's message for a dock, field for field.
     ///
@@ -582,7 +688,9 @@ public sealed class DockingSystem : IDisposable
         {
             if (_pending is not null) throw new InvalidOperationException("a dock is already running");
             tcs = _pending = new TaskCompletionSource<DockResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Interlocked.Increment(ref _nativeDockGeneration);
             _nativeRequest=false;
+            _legacyDockSelected=true;
             _active = (target.ObjectId, marker, placementOffsetX, placementOffsetY, placementOffsetAngle, action);
             // fidelity: M4-009
             // C11.1 D2 (0x0063BAAC/0x0063BAB6): DockWithObject copies the docked object's ObjectID into +0xC.
@@ -672,37 +780,104 @@ public sealed class DockingSystem : IDisposable
         return _robot.SendMessage(message, reliable: true);
     }
 
+    internal bool AbortNativeDock(EngineRobot owner, Func<bool>? current = null)
+    {
+        if (!NativeOwnerCurrent(owner) || current is not null && !current()) return false;
+        var message = new AbortDocking();
+        bool sent = owner.SendCheckedOwned(message, () => NativeOwnerCurrent(owner) && (current?.Invoke() ?? true));
+        if (sent) Sent.Add(message);
+        return sent;
+    }
+
     //0063BA44..BD50: retained canonical request state, independent of legacy pending Tasks.
     internal bool StartNativeDock(uint id,short code,DockAction action,PathMotionProfile profile,DockingMethod method=DockingMethod.Method2,bool flagC1=true)
+        => StartNativeDockCore(_robot.Engine.Robot,id,code,action,profile,method,flagC1,false,null);
+
+    internal bool StartNativeDock(EngineRobot owner,uint id,short code,DockAction action,PathMotionProfile profile,
+        DockingMethod method=DockingMethod.Method2,bool flagC1=true,Func<bool>? current=null)
+        => StartNativeDockCore(owner,id,code,action,profile,method,flagC1,true,current);
+
+    private bool StartNativeDockCore(EngineRobot? owner,uint id,short code,DockAction action,PathMotionProfile profile,
+        DockingMethod method,bool flagC1,bool owned,Func<bool>? current)
     {
+        bool OwnerCurrent() => !owned || owner is not null && NativeOwnerCurrent(owner) && (current?.Invoke() ?? true);
+        if (!OwnerCurrent()) return false;
+        long generation = Interlocked.Increment(ref _nativeDockGeneration);
+        bool Current() => NativeDockGeneration == generation && OwnerCurrent() && NativeDockGeneration == generation;
         using var mutation=_vision.World.EnterPoseMutation();
+        if (!Current()) return false;
         var target=_vision.World.GetLocatedObjectByIdHelper(id);if(target is null)return false;
         _nativeRequest=true;
         _native.MarkerCode=unchecked((ushort)code);_native.TargetId=id;
         var markers=target.Markers.Where(m=>unchecked((short)m.Code)==code).ToArray();
         if(markers.Length==0)return false;
         if(markers.Length>1)Log?.Invoke("DockWithObject.MultipleMarkers: first matching marker retained");
+        if (!Current()) return false;
         bool child=false;
         for(var node=markers[0].PoseOnObject.Node?.Parent;node is not null;node=node.Parent)
             if(ReferenceEquals(node,target.NativePose.Node)){child=true;break;}
         if(!child)return false;
         _vision.World.MarkDirty(id);
+        if (!Current()) return false;
         _native.Success=false;_native.Slot14=0;_native.Slot18=0;_native.Slot1C=0;
+        _legacyDockSelected=false;
         var message=Message(profile.DockSpeedMmps,profile.DockAccelMmps2,profile.DockDecelMmps2,action,false,method,flagC1);
-        Sent.Add(message);return _robot.SendMessage(message,reliable:true);
+        if(!owned)
+        {
+            Sent.Add(message);
+            if(owner is null)return _robot.SendMessage(message,reliable:true);
+            return owner.SendCheckedOwned(message,Current) && Current();
+        }
+        bool sent=owner!.SendCheckedOwned(message,Current);
+        if(!Current())return false;
+        if(sent)Sent.Add(message);
+        return sent;
     }
-    private void NativeDockingError(VisionFrameResult result)
+    private void OnNativeFrame(EngineRobot owner, uint timestamp)
     {
+        long generation = NativeDockGeneration;
+        if (!NativeOwnerCurrent(owner) || _legacyDockSelected) return;
         if((_native.TargetId??uint.MaxValue)==uint.MaxValue)return;
-        // The exact native consumer must not borrow legacy PoseEstimation/history-nearest/double clamp.
-        Behavior.SteppedBehavior.ReportMissing("M12-013/M12-019 native UpdateDockingErrorSignal0063BE80: computed-state/body-IMU and native f32 ClampPoseToFlat inputs not fully bound; no PnP/legacy signal substituted");
+        if (_vision.NativeDockingRotatingTooFast(owner, timestamp)) return;
+        if (NativeDockGeneration != generation || !NativeOwnerCurrent(owner) || _legacyDockSelected) return;
+        uint targetId = _native.TargetId!.Value;
+        ushort code = _native.MarkerCode;
+        DockingErrorSignal? signal = null;
+        using (_vision.World.EnterPoseMutation())
+        {
+            LogCallbackDeferral.RunGated(owner.PoseTreeGate, () =>
+            {
+                if (NativeDockGeneration != generation || !NativeOwnerCurrent(owner) || _legacyDockSelected || _native.TargetId != targetId || _native.MarkerCode != code) return;
+                var target = _vision.World.GetLocatedObjectByIdHelper(targetId);
+                if (target is null) return;
+                var markers = target.Markers.Where(marker => unchecked((ushort)marker.Code) == code).ToArray();
+                if (markers.Length != 1) return;
+                var computed = owner.PoseHistory.GetComputedStateAt(timestamp);
+                if (computed is null) return;
+                using var statePose = new Pose3d(computed);
+                using var relative = new Pose3d("");
+                if (!Pose3d.GetWithRespectTo(markers[0].PoseOnObject, statePose, relative)) return;
+                using var root = relative.GetWithRespectToRoot();
+                Rotation3d flat = NativeDockingGeometry.Clamp(relative.Quaternion, root.Quaternion);
+                float x = (float)relative.Translation.X - BitConverter.UInt32BitsToSingle(_native.Slot14);
+                float y = (float)relative.Translation.Y + BitConverter.UInt32BitsToSingle(_native.Slot18);
+                float z = (float)relative.Translation.Z;
+                float yaw = flat.AngleAroundZ;
+                double angle = (double)yaw + Math.PI / 2;
+                angle += (double)BitConverter.UInt32BitsToSingle(_native.Slot1C);
+                signal = new DockingErrorSignal { Timestamp=timestamp, XDist=x, YDist=y, ZDist=z,
+                    Angle=(float)angle, Field5=false, Field6=false };
+            });
+        }
+        if (signal is null) return;
+        bool Current() => NativeDockGeneration == generation && NativeOwnerCurrent(owner) && !_legacyDockSelected && _native.TargetId == targetId && _native.MarkerCode == code;
+        if (owner.SendCheckedOwned(signal, Current) && Current()) { Sent.Add(signal); ErrorSignalsSent++; }
     }
     private void OnFrame(VisionFrameResult r)
     {
-        if(_nativeRequest&&r.Markers.Count!=0)NativeDockingError(r);
         // fidelity: M12-013, M12-014, M12-019
         (uint ObjectId, KnownMarker Marker, double OffX, double OffY, double OffAngle, DockAction Action) active;
-        lock (_gate) { if (_active is not { } a) return; active = a; }
+        lock (_gate) { if (!_legacyDockSelected || _active is not { } a) return; active = a; }
         if (r.PoseData.RotatingTooFast) return;
         var seen = r.Markers.FirstOrDefault(m => m.Code == active.Marker.Code);
         if (seen is null) return;
@@ -766,7 +941,17 @@ public sealed class DockingSystem : IDisposable
             case PickAndPlaceResult r:
             {
                 var result = new DockResult(r.Field0, r.Field1, r.Field2, (BlockStatus)r.Field3);
+                bool owned = _nativeRequest;
+                long generation = NativeDockGeneration;
+                var owner = _nativeOwner;
+                uint? originalTarget = _native.TargetId;
+                ushort originalMarker = _native.MarkerCode;
+                bool Current() => NativeDockGeneration == generation && (!owned || owner is not null && NativeOwnerCurrent(owner) &&
+                    ReferenceEquals(owner.CarryingOwner, Carrying) && _nativeRequest &&
+                    _native.TargetId == originalTarget && _native.MarkerCode == originalMarker);
+                if (!Current()) break;
                 Log?.Invoke($"PickAndPlaceResult: {result}");
+                if (!Current()) break;
                 // HandlePickAndPlaceResult 0x00533780 stores [msg+4] (success) into DockingComponent+5 (0x00533790..0x0053379A) before it branches on blockStatus (M12-008).
                 // Nothing in the inventory reads that byte, so it is stored here and consumed by nothing.
                 // fidelity: M12-008
@@ -784,14 +969,22 @@ public sealed class DockingSystem : IDisposable
                     // instruction returns): a failed attach changes nothing (no rollback, message or retry). LastAttachResult and the log line
                     // are this stack's observation only; nothing acts on them.
                     // fidelity: M12-008
-                    uint attach = SetObjectAsAttachedToLift(d.ObjectId, d.Marker.Code);
+                    uint attach = owned ? SetObjectAsAttachedToLift(owner!, d.ObjectId, d.Marker.Code, Current)
+                                        : SetObjectAsAttachedToLift(d.ObjectId, d.Marker.Code);
+                    if (!Current()) break;
                     LastAttachResult = attach;
                     if (attach != 0) Log?.Invoke($"SetObjectAsAttachedToLift returned {attach} (discarded by HandlePickAndPlaceResult, M12-008)");
+                    if (!Current()) break;
                     // The engine parents the object on top of the carried one to it at once (SetParent 0x00633006..0x00633010); the per-tick
                     // recomposition is this stack's substitute for the pose tree (M12-027), so run it now rather than at the next frame.
                     UpdateCarriedObjectPose();
                 }
-                if (result.Succeeded && result.Status == BlockStatus.BlockPlaced) { ReleaseCarriedObject(); _vision.EnableModeImmediately(1,true); }
+                if (result.Succeeded && result.Status == BlockStatus.BlockPlaced)
+                {
+                    if (owned) ReleaseCarriedObject(owner!, false, Current); else ReleaseCarriedObject();
+                    if (!Current()) break;
+                    _vision.EnableModeImmediately(1,true);
+                }
                 TaskCompletionSource<DockResult>? tcs; lock (_gate) tcs = _pending;
                 tcs?.TrySetResult(result);
                 break;
@@ -825,6 +1018,7 @@ public sealed class DockingSystem : IDisposable
         _robot.MessageInternal -= OnMessage;
         _robot.Engine.PickAndPlaceRoute -= OnNativePickAndPlace;
         _vision.DockingMarkersProcessed -= OnFrame;
+        _vision.NativeDockingMarkersProcessed -= OnNativeFrame;
         _vision.FrameProcessed -= _carriedPose;
         if (ReferenceEquals(_vision.IsCarryingObject, _isCarrying)) _vision.IsCarryingObject = null;
         if (ReferenceEquals(_vision.CarriedObjects, _carriedObjects)) _vision.CarriedObjects = null;

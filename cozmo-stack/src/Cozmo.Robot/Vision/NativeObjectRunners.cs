@@ -63,7 +63,7 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
             _finished=true;
             if(_track)throw new NotSupportedException("MISSING native TurnObject TrackObject recipient0054A9");
             if(!_verify)return 0;
-            _verification=new(M,_id,_code){SuppressTrackLocking=true,Watcher=Watcher,ScopedOwner=ScopedOwner};
+            _verification=new(M,_id,_code){SuppressTrackLocking=true,Watcher=Watcher,ScopedOwner=ScopedOwner,ScopedParentCurrent=()=>ScopedCurrent && !DestructionObserved};
             uint first=_verification.Update();if(first!=0)return first;
             if(DestructionObserved || !ScopedCurrent)return EngineActionResult.Cancelled;
         }
@@ -91,12 +91,15 @@ internal sealed class NativeVerifyObjectRunner:NativeVisionRunner
         if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         _parallel?.Prep();_parallel?.WatcherEnding();
         _parallel=new CompoundActionParallel(()=>M.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,Watcher=Watcher,SourceLog=SourceLog};
-        _parallel.AddAction(M.Robot.Motion.CreateNativeLiftChild(CozmoMotion.OutOfFovHeightMm,5f,ScopedOwner),false,false);
-        _parallel.AddAction(new NativeWaitForImagesRunner(M,_images,(VisionMode)1,0){ScopedOwner=ScopedOwner},false,false);
+        _parallel.AddAction(M.Robot.Motion.CreateNativeLiftChild(CozmoMotion.OutOfFovHeightMm,5f,ScopedOwner,()=>ScopedCurrent && !DestructionObserved),false,false);
+        if(DestructionObserved||!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
+        _parallel.AddAction(new NativeWaitForImagesRunner(M,_images,(VisionMode)1,0){ScopedOwner=ScopedOwner,ScopedParentCurrent=()=>ScopedCurrent && !DestructionObserved},false,false);
+        if(DestructionObserved||!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         _seen=false;_markerAccepted=_code==NativeTurnTowardsObjectRunner.AnyCode;
         if(M.Robot.Engine.Robot?.HasExternalInterface!=true)
             throw new NotSupportedException("M1-034 VerifyObject native external owner absent at44 subscription");
-        var next=M.Robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,p=>{if(!_seen&&p is NativeObservedObject o&&o.ObjectId==_id)_seen=true;});
+        var next=M.Robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,p=>{if(ScopedCurrent&&!_seen&&p is NativeObservedObject o&&o.ObjectId==_id)_seen=true;});
+        if(DestructionObserved||!ScopedCurrent){next.Dispose();return unchecked((int)EngineActionResult.Cancelled);}
         var old=_observed;_observed=next;old?.Dispose();
         return 0;
     }

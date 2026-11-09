@@ -20,8 +20,16 @@ public sealed partial class CarryingComponent
     // 0x00633E78..0x00633F0E takes an ObjectID and a marker, not an object pointer.
     // The null test is on the located lookup result. A miss preserves all carry fields.
     internal bool SetCarryingObject(BlockWorld world, uint id, ushort marker)
+        => SetCarryingObjectCore(world,id,marker,null,null);
+
+    internal bool SetCarryingObject(BlockWorld world, uint id, ushort marker, EngineRobot owner, Func<bool> current)
+        => SetCarryingObjectCore(world,id,marker,owner,current);
+
+    private bool SetCarryingObjectCore(BlockWorld world, uint id, ushort marker, EngineRobot? owner, Func<bool>? current)
     {
         using var mutation = world.EnterPoseMutation();
+        bool Current()=>owner is null || !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot,owner) && ReferenceEquals(owner.CarryingOwner,this) && (current?.Invoke() ?? true);
+        if(!Current())return false;
         if (world.GetLocatedObjectByIdHelper(id) is null)
         {
             string text = FormattableString.Invariant($"Object {unchecked((int)id)} no longer exists in the world. Can't set it as robot's carried object.");
@@ -30,13 +38,18 @@ public sealed partial class CarryingComponent
             EngineErrorState.StoreAndMaybeBreak();
             return false;
         }
+        if(!Current())return false;
         lock (_gate) { NativeMarkerCode = marker; _carried = id; }
         if (world.LocalizedToObjectId == id) world.SetLocalizedTo(null);
+        if(!Current())return false;
         uint? top;
         lock (_gate) top = _onTopId;
-        SendSetCarryState(top is not null && top != uint.MaxValue ? CarryState.CARRY_2_BLOCK : CarryState.CARRY_1_BLOCK);
+        var state=top is not null && top != uint.MaxValue ? CarryState.CARRY_2_BLOCK : CarryState.CARRY_1_BLOCK;
+        if(owner is null)SendSetCarryState(state);
+        else owner.SendCheckedOwned(new CarryStateUpdate { State=state },Current);
+        if(!Current())return false;
         Changed?.Invoke(id);
-        return true;
+        return Current();
     }
 
     internal void SendSetCarryState(CarryState state)

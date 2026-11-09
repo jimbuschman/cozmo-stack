@@ -10,18 +10,20 @@ internal abstract class NativeVisionRunner : ActionRunner
 {
     protected readonly ManipulationSystem M;
     internal EngineRobot? ScopedOwner { get; set; }
+    internal Func<bool>? ScopedParentCurrent { get; set; }
     private readonly object _scopeCleanupGate = new();
-    protected bool ScopedCurrent => ScopedOwner is null || !ScopedOwner.Lifetime.Destroying && ReferenceEquals(M.Robot.Engine.Robot, ScopedOwner);
+    protected bool ScopedOwnerCurrent => ScopedOwner is null || !ScopedOwner.Lifetime.Destroying && ReferenceEquals(M.Robot.Engine.Robot, ScopedOwner);
+    protected bool ScopedCurrent => ScopedOwnerCurrent && (ScopedParentCurrent?.Invoke()??true);
     protected NativeVisionRunner(ManipulationSystem m,int type,uint tracks):base(type,tracks)
     {M=m;SourceLog=(level,channel,key,text)=>m.Robot.Engine.EmitSourceLog(level,channel,key,text);}
     protected override float EngineClockSeconds=>M.Robot.Engine.Timer.SecondsF;
     protected override bool AreAnyTracksLocked(uint mask)=>ScopedCurrent && M.Robot.Motion.AreAnyTracksLocked((byte)mask);
-    protected override void LockTracks(uint mask,string owner){if(ScopedCurrent)M.Robot.Motion.LockTracks((byte)mask,owner,ActionName);}
-    protected override void UnlockTracksInternal(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.UnlockTracks((byte)mask,owner);});}
-    protected override bool AreAllTracksLockedBy(uint mask,string owner)=>ScopedCurrent && M.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
-    protected override void StopHeadTrack(){if(ScopedOwner is null)M.Robot.Motion.StopHead();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopHeadOwned(ScopedOwner);});}
-    protected override void StopLiftTrack(){if(ScopedOwner is null)M.Robot.Motion.StopLift();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopLift();});}
-    protected override void StopBodyTrack(){if(ScopedOwner is null)M.Robot.Motion.StopBody();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedCurrent)M.Robot.Motion.StopBodyOwned(ScopedOwner);});}
+    protected override void LockTracks(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.LockTracks((byte)mask,owner,ActionName);else if(ScopedCurrent)M.Robot.Motion.LockTracksOwned((byte)mask,owner,ActionName,ScopedOwner);}
+    protected override void UnlockTracksInternal(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedOwnerCurrent)M.Robot.Motion.UnlockTracksOwned((byte)mask,owner,ScopedOwner);});}
+    protected override bool AreAllTracksLockedBy(uint mask,string owner)=>ScopedOwnerCurrent && M.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
+    protected override void StopHeadTrack(){if(ScopedOwner is null)M.Robot.Motion.StopHead();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedOwnerCurrent)M.Robot.Motion.StopHeadOwned(ScopedOwner);});}
+    protected override void StopLiftTrack(){if(ScopedOwner is null)M.Robot.Motion.StopLift();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedOwnerCurrent)M.Robot.Motion.StopLiftOwned(ScopedOwner);});}
+    protected override void StopBodyTrack(){if(ScopedOwner is null)M.Robot.Motion.StopBody();else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedOwnerCurrent)M.Robot.Motion.StopBodyOwned(ScopedOwner);});}
     protected override bool HeadTrackMoving=>M.Robot.Motion.HeadMoving;
     protected override bool LiftTrackMoving=>M.Robot.Motion.LiftMoving;
     protected override bool BodyTrackMoving=>M.Robot.Motion.BodyMoving;
@@ -37,7 +39,7 @@ internal sealed class NativeTurnInPlaceRunner : NativeVisionRunner
     internal NativeTurnInPlaceRunner(ManipulationSystem m,TurnInPlaceSpec spec,EngineRobot? owner=null):base(m,0x28,4)
     {
         ScopedOwner=owner;
-        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,owner),(float)spec.AngleRad,spec.IsAbsolute,Tag);
+        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,owner,()=>ScopedCurrent && !DestructionObserved),(float)spec.AngleRad,spec.IsAbsolute,Tag);
         _turn.SetTolerance((float)spec.ToleranceRad);_turn.Byte0xD8=spec.Byte0xD8;
         if(spec.MaxSpeedSet){_turn.SetMaxSpeed((float)spec.MaxSpeedRadPerSec);_turn.SetAccel((float)spec.AccelRadPerSec2);}
     }
@@ -51,7 +53,7 @@ internal sealed class NativeTurnInPlaceRunner : NativeVisionRunner
     {
         ScopedOwner=owner;
         _aiTurn=true;
-        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,owner),angle,absolute,Tag);
+        _turn=new TurnInPlaceAction(new MountChargerAction.LivePanTiltRobot(m,owner,()=>ScopedCurrent && !DestructionObserved),angle,absolute,Tag);
         _turn.NormalizePositionTolerance=true;
         _turn.SetMaxSpeed(speed);
         _turn.SetAccel(accel);
@@ -64,16 +66,16 @@ internal sealed class NativeTurnInPlaceRunner : NativeVisionRunner
     public override uint GetCompletionUnion()=>_aiTurn ? _turn.OriginChanges0xD4 : base.GetCompletionUnion();
     public override int Init()
     {
-        if (_aiTurn && (!ScopedCurrent || DestructionObserved)) return unchecked((int)EngineActionResult.Cancelled);
+        if (ScopedOwner is not null && (!ScopedCurrent || DestructionObserved)) return unchecked((int)EngineActionResult.Cancelled);
         _turn.BindOwnedRunnerTag(Tag);
         try { return unchecked((int)_turn.Init()); }
-        catch (NativeActionUnavailable) when (_aiTurn && !ScopedCurrent) { return unchecked((int)EngineActionResult.Cancelled); }
+        catch (NativeActionUnavailable) when (ScopedOwner is not null && !ScopedCurrent) { return unchecked((int)EngineActionResult.Cancelled); }
     }
     public override uint CheckIfDone()
     {
-        if (_aiTurn && (!ScopedCurrent || DestructionObserved)) return EngineActionResult.Cancelled;
+        if (ScopedOwner is not null && (!ScopedCurrent || DestructionObserved)) return EngineActionResult.Cancelled;
         try { return _turn.CheckIfDone(); }
-        catch (NativeActionUnavailable) when (_aiTurn && !ScopedCurrent) { return EngineActionResult.Cancelled; }
+        catch (NativeActionUnavailable) when (ScopedOwner is not null && !ScopedCurrent) { return EngineActionResult.Cancelled; }
     }
     internal override bool RetireNeverAdmittedTree()
     {
@@ -109,12 +111,15 @@ internal class NativePanTiltRunner : NativeVisionRunner
         Compound.TimeoutWarningEnabled=TimeoutWarningEnabled; //549C58..5C outer57 -> embeddedCF.
         var p=Parameters;
         var turn=new NativeTurnInPlaceRunner(M,new TurnInPlaceSpec(p.PanAngleRad,p.PanIsAbsolute,p.PanToleranceRad,p.Byte0x126,
-            p.HasMaxSpeed,p.MaxSpeedRadPerSec,p.MaxAccelRadPerSec2,p.HasMaxSpeed&&p.MaxAccelRadPerSec2!=0),ScopedOwner);
+            p.HasMaxSpeed,p.MaxSpeedRadPerSec,p.MaxAccelRadPerSec2,p.HasMaxSpeed&&p.MaxAccelRadPerSec2!=0),ScopedOwner){ScopedParentCurrent=()=>ScopedCurrent && !DestructionObserved};
+        if(DestructionObserved || !ScopedCurrent){turn.RetireNeverAdmittedTree();return unchecked((int)EngineActionResult.Cancelled);}
         Compound.AddAction(turn,false,false);
+        if(DestructionObserved || !ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         float head=p.HeadIsAbsolute?new Radians((float)p.HeadAngleRad).Value:new Radians(M.Robot.Motion.HeadAngleRad+(float)p.HeadAngleRad).Value;
         float speed=p.HasHeadSpeedAccel?BitConverter.UInt32BitsToSingle(p.HeadSpeedAccelWord0):15f;
         float accel=p.HasHeadSpeedAccel?BitConverter.UInt32BitsToSingle(p.HeadSpeedAccelWord1):20f;
-        Compound.AddAction(M.Robot.Motion.CreateNativeHeadChild(head,(float)p.HeadToleranceRad,speed,accel,ScopedOwner),false,false);
+        Compound.AddAction(M.Robot.Motion.CreateNativeHeadChild(head,(float)p.HeadToleranceRad,speed,accel,ScopedOwner,()=>ScopedCurrent && !DestructionObserved),false,false);
+        if(DestructionObserved || !ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         Compound.SuppressTrackLocking=true;
         uint result=Compound.Update();
         if(DestructionObserved || !ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
@@ -166,14 +171,15 @@ internal sealed class NativeWaitForImagesRunner : NativeVisionRunner
     internal bool Subscribed=>_subscription is not null;
     public override int Init()
     {
+        if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         _wait.Init();
         var replacement=M.Robot.Engine.AnimationMessages.SubscribeMessage(0x43,true,payload=>
-        {if(payload is ProcessedImageReport report)_wait.HandleRobotProcessedImage(report.Timestamp,report.Modes.Select(mode=>(VisionMode)mode).ToArray());});
+        {if(ScopedCurrent && payload is ProcessedImageReport report)_wait.HandleRobotProcessedImage(report.Timestamp,report.Modes.Select(mode=>(VisionMode)mode).ToArray());});
         var previous=_subscription;_subscription=replacement;previous?.Dispose();
         return 0;
     }
     public override uint CheckIfDone()
-    {uint result=_wait.CheckIfDone();if(result==0){_subscription?.Dispose();_subscription=null;}return result;}
+    {if(!ScopedCurrent)return EngineActionResult.Cancelled;uint result=_wait.CheckIfDone();if(result==0){_subscription?.Dispose();_subscription=null;}return result;}
     public override void WatcherEnding(){_subscription?.Dispose();_subscription=null;base.WatcherEnding();}
 }
 
@@ -204,24 +210,31 @@ internal sealed class NativeVisuallyVerifyNoObjectRunner : NativeVisionRunner
     }
     public override int Init()
     {
+        if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         RetireChildren();
         _position=new CompoundActionParallel(()=>M.Robot.Engine.Timer.SecondsF){SourceLog=SourceLog,SuppressTrackLocking=true};
-        _position.AddAction(new NativeTurnTowardsPoseRunner(M,_pose,Radians.Pi),false,false);
-        _position.AddAction(M.Robot.Motion.CreateNativeLiftChild(CozmoMotion.OutOfFovHeightMm,5f),false,false);
+        _position.AddAction(new NativeTurnTowardsPoseRunner(M,_pose,Radians.Pi){ScopedOwner=ScopedOwner,ScopedParentCurrent=()=>ScopedCurrent && !DestructionObserved},false,false);
+        if(DestructionObserved||!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
+        _position.AddAction(M.Robot.Motion.CreateNativeLiftChild(CozmoMotion.OutOfFovHeightMm,5f,ScopedOwner,()=>ScopedCurrent && !DestructionObserved),false,false);
+        if(DestructionObserved||!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         _position.Watcher=Watcher;
-        _wait=new NativeWaitForImagesRunner(M,10,(VisionMode)1,0){Watcher=Watcher};
+        _wait=new NativeWaitForImagesRunner(M,10,(VisionMode)1,0){Watcher=Watcher,ScopedOwner=ScopedOwner,ScopedParentCurrent=()=>ScopedCurrent && !DestructionObserved};
         return 0;
     }
     public override uint CheckIfDone()
     {
+        if(!ScopedCurrent)return EngineActionResult.Cancelled;
         if(_position is not null)
         {
-            uint result=_position.Update();if(result!=0)return result;
+            uint result=_position.Update();
+            if(DestructionObserved||!ScopedCurrent)return EngineActionResult.Cancelled;
+            if(result!=0)return result;
             _position.Prep();_position.WatcherEnding();_position=null;
             return EngineActionResult.Running; // distinct positioning-success transition tick.
         }
         if(_wait is null)return 0x03000012;
         uint waited=_wait.Update();
+        if(DestructionObserved||!ScopedCurrent)return EngineActionResult.Cancelled;
         using var mutation=M.World.EnterPoseMutation();
         var match=NativeClosestSpatialQuery.Find(M.World,_pose,_halfSize,_filter);
         return match is null?waited:0x0300001D;

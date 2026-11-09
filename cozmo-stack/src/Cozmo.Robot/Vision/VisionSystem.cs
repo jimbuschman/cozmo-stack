@@ -122,6 +122,35 @@ public sealed partial class VisionSystem : IDisposable
         return MathF.Abs(before.RateZ)>threshold||MathF.Abs(after.RateZ)>threshold;
     }
 
+    // Docking 0x0063BEA4..0x0063BEBE calls WasBodyRotatingTooFast with its own threshold.
+    internal bool NativeDockingRotatingTooFast(EngineRobot owner, uint timestamp)
+    {
+        NativeImageImu[]? history = null;
+        lock (_groundGate)
+        {
+            if (ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
+                ReferenceEquals(_robot.Engine.Robot, owner) && _nativeImu is not null)
+            {
+                if (_nativeVisionWhileMoving) return false;
+                history = _nativeImu.Snapshot();
+            }
+        }
+        if (history is null)
+        {
+            SteppedBehavior.ReportMissing("M12-019 original docking IMU owner unavailable");
+            return true;
+        }
+        NativeImageImu before = default, after = default;
+        if (!NativeImageImuHistory.TryBracket(history, timestamp, ref before, ref after))
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.WasBodyRotatingTooFast.NoIMUData", "No IMU data for docking rotation query");
+            return true;
+        }
+        float threshold = BitConverter.UInt32BitsToSingle(0x41B758B4);
+        if (MathF.Abs(before.RateZ) > threshold) return true;
+        return !(MathF.Abs(after.RateZ) <= threshold);
+    }
+
     // FaceWorld 0x004F456E uses a different body threshold and history count from marker processing.
     internal bool? NativeFaceRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack)
     {
@@ -789,6 +818,7 @@ public sealed partial class VisionSystem : IDisposable
     public VisionFrameResult? LastResult { get; private set; }
 
     internal event Action<VisionFrameResult>? DockingMarkersProcessed; // M11-064 UpdateVisionMarkers, before LocalHandlerFailed
+    internal event Action<EngineRobot, uint>? NativeDockingMarkersProcessed;
     public event Action<VisionFrameResult>? FrameProcessed;
     public event Action<string>? Log;
     public SourceLogSink? SourceLog { get; set; }
@@ -1939,7 +1969,14 @@ public sealed partial class VisionSystem : IDisposable
                 if (worldFrame.Status != 0)
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.UpdateVisionResults.BlockWorldUpdateFailed","");
                 if (keptMarkers.Count != 0)
+                {
+                    if (queueForEngine && sourceOwner is not null && !sourceOwner.Lifetime.Destroying &&
+                        ReferenceEquals(_robot.Engine.Robot, sourceOwner) && !RemovedSince(removal))
+                        NativeDockingMarkersProcessed?.Invoke(sourceOwner, timestamp);
+                    if (queueForEngine && (sourceOwner is null || sourceOwner.Lifetime.Destroying ||
+                        !ReferenceEquals(_robot.Engine.Robot, sourceOwner) || RemovedSince(removal))) return null;
                     DockingMarkersProcessed?.Invoke(new VisionFrameResult(imageId,timestamp,pd,keptMarkers,objects,forgotten,sw.Elapsed));
+                }
                 if (worldFrame.Status != 0)
                 {
                     handlerFailed=true;
