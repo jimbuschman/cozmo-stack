@@ -471,6 +471,37 @@ public class R2FloorPlacementTests : IDisposable
         return (bring, bring.Candidate!.Value);
     }
 
+    [Fact]
+    public void RetryPoseRetirementCannotSubscribeOrQueueOnReplacementRobot()
+    {
+        // Explicit pose-owner seam forces the native diagnostic at retry copy retirement;
+        // the real manual callback, pose gate, owner replacement and completion hub run.
+        using var signals=SignalTestContext.Install();using var rig=new Rig();var ctx=Ctx(rig);
+        var (bring,target)=StartedBring(rig,ctx);rig.M.Docking.Carrying.SetCarrying(target);
+        var field=typeof(BringCubeToBeaconBehavior).GetField("_placePose",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+        field.SetValue(bring,new Pose3d("retry owner"));
+        using var candidate=InOrigin(rig,At(12.5,-30.25));
+        var original=rig.Robot.Engine.Robot!;EngineRobot? replacement=null;int afterReplacement=-1;
+        SteppedBehavior.ResetMissingForTests();
+        void OnMissing(string value)
+        {
+            if(replacement is not null || !value.Contains("M11-077:",StringComparison.Ordinal))return;
+            rig.Robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+            rig.Robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+            replacement=rig.Robot.Engine.Robot;
+            afterReplacement=rig.Robot.Engine.AnimationMessages.Count(RobotCompletedAction.UnionTag,true);
+        }
+        SteppedBehavior.MissingReported+=OnMissing;
+        try
+        {
+            bring.PlaceCompleted(ActionResult.PlacementGoalNotFree,candidate,1);
+            Assert.NotNull(replacement);Assert.NotSame(original,replacement);
+            Assert.Equal(afterReplacement,rig.Robot.Engine.AnimationMessages.Count(RobotCompletedAction.UnionTag,true));
+            Assert.Null(replacement!.ActionList.GetCurrentAction());
+        }
+        finally { SteppedBehavior.MissingReported-=OnMissing;bring.Stop(BehaviorStopReason.Cancelled); }
+    }
+
     /// <summary>
     /// M15-021/M15-025 (4.2.1..4.2.5), the callback 0x005E188C by result category. 0: "Successfully placed cube" and FireEmotionEvents, NO NeedActionCompleted, NO SetFailedToUse. 4 (RETRY) with the carried id
     /// equal to the target and attempt &lt;= 2: the SAME pose again with attempt + 1 (CanRetry). 4 with attempt 3, or not carrying the target: CannotRetry "(attempt=%d/3) (carrying=yes|no)" and the failure tail.
@@ -631,11 +662,19 @@ public class R2FloorPlacementTests : IDisposable
         };
         Assert.True(stack.Manager.SwitchToBehaviorBase(bring, 0).GetAwaiter().GetResult());
         int raised = 0; bool cleared = false;
+        NativePlaceGroundAtBeaconRunner? retained=null;bool sawGround=false;
 
         while (stack.Manager.IsRunning(bring))
         {
             clock += 0.033;
             stack.Manager.Update(clock * 1000, clock);
+            if(bring.OwnedRunner is NativePlaceGroundAtBeaconRunner compound)
+            {
+                retained=compound;
+                Assert.Equal(0xD,compound.Drive.Type);
+                Assert.Equal(0x18,compound.Ground.Type);
+                if(compound.Ground.Initialized){sawGround=true;Assert.True(compound.Drive.DestructionObserved);}
+            }
             rig.Pump();
             while (firmwareTicks.TryDequeue(out var tick)) tick.TrySetResult();
             if (bring.LastPlaceAction is not null) rig.NativeGroundCapture = true;
@@ -643,7 +682,8 @@ public class R2FloorPlacementTests : IDisposable
             SignalTestContext.AdvanceBehavior(bring);
         }
         Assert.False(stack.Manager.IsRunning(bring), string.Join(" | ", bring.Trace));
-        Assert.Contains(bring.Trace, l => l.Contains("onPlaceActionResult.Done: Successfully placed cube"));
+        Assert.NotNull(retained);Assert.True(sawGround);
+        Assert.True(bring.Trace.Any(l => l.Contains("onPlaceActionResult.Done: Successfully placed cube")),string.Join(" | ",bring.Trace));
         Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
             $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
         Assert.Single(rig.Sent.OfType<PlaceObjectOnGround>());

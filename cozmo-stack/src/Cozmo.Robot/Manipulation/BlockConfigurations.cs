@@ -808,6 +808,23 @@ public static class ObjectFootprint
         }
         return points;
     }
+
+    // MarkerlessObject::GetBoundingQuadXY 0x00502C32..0x00502D42. This checked native slot path is
+    // separate from the older BlockWorld helper below, whose other caller semantics remain open.
+    internal static bool TryNativeMarkerlessBoundingQuadXY(Vec3 size, Pose3d pose, float padding, out Quadrilateral? quad)
+    {
+        quad = null;
+        using var flat = pose.GetWithRespectToRoot(); // 0x00502C50
+        var points = BlockProjectedCorners(size, flat.Quaternion, padding);
+        Point2f[] corners;
+        try { corners = MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(points)); }
+        catch (NotSupportedException) { return false; }
+        var sorted = SortQuadrilateral(corners);
+        float x = (float)flat.Translation.X, y = (float)flat.Translation.Y;
+        Point2f Translate(Point2f point) => new(x + point.X, y + point.Y);
+        quad = new Quadrilateral(Translate(sorted[0]), Translate(sorted[1]), Translate(sorted[2]), Translate(sorted[3]));
+        return true;
+    }
     // fidelity: M11-062 — 0x005025F0 / 0x00502C32; reuse M13-024, never a second minAreaRect.
     internal static Quadrilateral MarkerlessBoundingQuadXY(Vec3 size, Pose3d pose, float padding, Action<string> missing)
     {

@@ -159,7 +159,7 @@ internal sealed class NativeBringCubeToBeaconBehavior:SteppedBehavior,IDisposabl
     {
         if(!HostExecutionVersionCurrent(epoch))return;
         var next=new Pose3d(pose);_retryPose?.Dispose();_retryPose=next;
-        var runner=new NativePlaceGroundAtBeaconRunner(_m,next,()=>HostExecutionVersionCurrent(epoch));
+        var runner=new NativePlaceGroundAtBeaconRunner(_m,_robot,next,()=>HostExecutionVersionCurrent(epoch));
         if(!HostExecutionVersionCurrent(epoch)){runner.RetireNeverAdmittedTree();return;}
         ActionConstructedForTest?.Invoke(runner);
         if(!HostExecutionVersionCurrent(epoch)){runner.RetireNeverAdmittedTree();return;}

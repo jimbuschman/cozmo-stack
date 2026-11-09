@@ -144,5 +144,5 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
         Action.PosesFunction=Action.GetPossiblePoses; // release helper capture after preparing the children.
         _sequence.WatcherEnding();base.WatcherEnding();
     }
-    private bool ExecutionCurrent()=>ScopedOwner is null || ScopedCurrent&&!DestructionObserved&&(_parentCurrent?.Invoke()??true);
+    protected bool ExecutionCurrent()=>ScopedOwner is null || ScopedCurrent&&!DestructionObserved&&(_parentCurrent?.Invoke()??true);
 }

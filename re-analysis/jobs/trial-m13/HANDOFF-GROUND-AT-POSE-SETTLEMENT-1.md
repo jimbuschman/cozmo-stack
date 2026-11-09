@@ -1,0 +1,36 @@
+# GROUND-AT-POSE-SETTLEMENT-1
+
+## Source path
+
+- The retained placement-at-pose action owns one copied pose and two sequential children. DriveToPlaceCarriedObject uses pre-action type 2, no approach-angle or manual profile, goal checking enabled and 10 mm padding. Ground follows only Drive success. Both AddAction flags are false. The compound proxies the Ground tag and completion variant while retaining the actual sequence scalar (0x554AFC–0x554BAC, 0x559CD4–0x559D68, 0x54F20C–0x54F3EA).
+- The manual standalone Bring binding uses the same retained action as canonical Bring. It owns a copy of the callback pose and signed attempt, and admits the original robot's compound at Now (0x5DFEDC–0x5DFFC4). A category-4 result retries the same pose only while the target is still carried and the attempt is at most two. Other terminal failures remember the actual candidate in the current origin. Success raises the existing emotion events (0x5E188C–0x5E1B56).
+- Drive Init reads the original robot's current carried object, copies its actionable geometry into a temporary clone at the candidate pose and uses the native drive helper (0x559DC6–0x559F44). Check updates the inner sequence first, then reads the current carried ID again for the goal predicate. The default current-origin query ignores that ID, uses the target's virtual footprint at zero padding and each obstacle's virtual footprint at 10 mm, and visits all matching candidates before deciding whether the goal is free (0x559FAE–0x55A1B0, 0x627516–0x627530). Overlap returns 0x04000008.
+- The markerless virtual footprint obtains the ordered box corners, flattens the supplied native pose, adds doubled padding in float32, rotates the eight points and fits the projected XY quad. It adds the flattened translation after fitting and ordering (0x5025F0–0x50267E, 0x502C32–0x502D42, 0x4E65C6, 0x4E68CC). Existing map callers keep their separate path.
+- Ground initializes the retained marker verification and stops all motors, then takes the original reaction manager's lock on success (0x554794–0x5548D8). The check latches the docking busy byte and waits for it and MovementComponent's IS_MOVING bit to clear before verifying (0x5549B0–0x5549E6, 0x63E30A–0x63E31A). Verification failure logs and clears the original saved ID before returning the exact child result (0x5549EA–0x554A3A). The destructor retires its lock before retiring the verify child (0x5546E2–0x55473C).
+
+## Files and tests
+
+- `CubeGameBehaviors.cs` routes the live standalone Bring placement phase into `NativePlaceGroundAtBeaconRunner.cs`. `NativeBringCubeToBeaconBehavior.cs` passes its retained original robot to the same compound. The sequence keeps the Ground completion proxy and copies the manual callback pose and attempt. `SteppedBehavior.Actions.cs` allows this manual owner to acquire its completion subscription against the captured robot. Admission rechecks ownership after deferred pose diagnostics and releases a stale acquisition.
+- `NativeDriveToObjectRunner.cs` exposes the checked owner guard to the placement child. `NativePlaceGroundAtBeaconRunner.cs` re-reads current carry and uses the virtual footprint dispatch. `ObservableMapSlots.cs` and `BlockConfigurations.cs` add the markerless virtual without changing the older map helper.
+- `NativePlaceGroundRunner.cs`, `Sensors.cs` and `CozmoEngine.cs` use the original movement byte at its actual update point. `Motion.cs` stops motors through the captured owner. The Ground constructor now requires the original reaction manager. The normal CozmoRobot lifetime supplies it before Freeplay binding. The conformance tool, manual Ground callers and exact-32 lift routes all reach the guarded retained action. Low-level direct wire sends are separate.
+- `R2FloorPlacementTests.cs` reaches the shipped standalone Bring binding, real Drive and Ground children and 0x44 success. Direct disposition tests cover the retry and failure rules, while repeated manual category-4 admissions were not separately exercised end to end.
+- `HikingBringBeaconCandidatesTests.cs` inserts a collision obstacle after the actual placement Drive initializes, checks 0x04000008 through the retained compound, and checks that clearing current carry changes the goal predicate with the initial target still located. Neither failure case sends 0x44. `GroundPlacementCallerTests.cs` exercises the public bit-0 and bit-15 distinction, Ground lock and retained verification.
+- `NativeMarkerlessFootprintTests.cs` checks type dimensions and padding, and matches the eight stored native float words for a tilted collision box under a rotated parent. The manager independently executed 0x502C32 and the shipped OpenCV fitter with the host atan2 adapter.
+
+The combined affected run passed 91/91, the two live goal controls passed 2/2, and the independent manager run passed 302/302 before the final callback guard. The rebuilt final callback run passed 3/3, including replacement at the deferred retry-pose diagnostic with no extra subscription or action on the successor. The final independent run passed 305/305.
+
+## MISSING
+
+- Physical firmware busy and release timing relative to PickAndPlaceResult requires operator evidence. The engine branches and fake firmware tests cover the separate defined state sequence.
+- M15-019 still owns initial candidate selection. Its existing pre-admission geometry can withhold a candidate for a charger or markerless obstacle. The in-flight virtual route after placement admission is checked here.
+- The Ground completion union has four undefined native ID words. The existing M1-034 policy withholds that full report while the scalar and defined fields continue to serve the retained callback (0x554AE0–0x554AFA, M12-052).
+
+## Workers
+
+Reader requested gpt-6.1-sol at medium effort. Builders and reviewer used the configured default request. Runtime model identity was not observed. Review corrected the movement-byte write position and retry-time completion-owner acquisition. The reader resolved the current-carry footprint predicate and concrete markerless virtual. Interim fixture corrections accounted for the raw bit change, the constructed zero state, retained behavior liveness and the native completion scalar type.
+
+## Records
+
+- **M15-022 engine-side action path complete.** Both live Bring callers use the original-owner compound, and every admitted Ground runner requires the original reaction manager. The checked result covers Drive failure, Ground verification, saved-ID cleanup and the defined completion scalar. Initial candidate selection has a separate M15-019 gap upstream of this action. Physical busy/release timing remains a separate hardware check.
+- M12-015 supplies the 0x44 wire, and M12-052 supplies the defined completion projection. M13-026 supplies the native head-camera solve and its existing host libm boundary. M12-030, M11-088, M11-091 and M13-024 supply the checked drive and geometry leaves. Broader approach flags, map producers and fitter numerics stay with those records.
+- M15-019 and M15-021 cover the broader Bring candidate search and lifecycle. This job starts at placement admission and leaves other phases to those records.
