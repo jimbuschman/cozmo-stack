@@ -4,13 +4,11 @@ namespace Cozmo.Robot.Animation.Wwise;
 
 /// <summary>
 /// The Wwise random/sequence step selection engine (M6-007, gapA §3). This is the runtime's own choice of
-/// which playlist item a RanSeq container plays next. It is deliberately independent of the existing
-/// <see cref="WwisePlayback"/>/<see cref="WwiseAudioSource"/> types so that M9 singing (which still runs on
-/// the old path) cannot be disturbed by it.
+/// which playlist item a RanSeq container plays next. Ordinary playback and singing share selection state
+/// within a managed audio source. Continuous selection has its separate M6-008 implementation.
 ///
 /// The frozen rows are M6-wwise-bank.md Appendix B §3.1..§3.9. Addresses are libcozmoEngine.so VAs; they are
-/// citations, not call targets. Only the step path is implemented here: the continuous paths (0xA0ABC4,
-/// 0xA09F04) are not read and are out of scope for this record.
+/// citations, not call targets. Continuous paths (0xA0ABC4, 0xA09F04) are covered separately by M6-008.
 /// </summary>
 /// <remarks>
 /// Bank flag bits named in the rows, on the RanSeq's +0x91 byte (the mapping is §2.6):
@@ -33,8 +31,8 @@ public static class WwiseSelectionRows
 ///
 /// <code>s = s*0x5851F42D4C957F2D + 1; output = (u32)(s&gt;&gt;32) &gt;&gt; 1</code>
 ///
-/// The engine advances this one LCG on its audio thread, so this class is the process-wide state that the
-/// music renderer and the ordinary-event playback path both draw from (M9-015). They run under different
+/// The engine advances one LCG on its audio thread. Within a managed session the music renderer and the
+/// ordinary-event playback path draw from one instance (M9-015). They run under different
 /// locks — the renderer under its own render gate, the ordinary path under the audio source's gate — so
 /// <see cref="Next"/> synchronises the read-modify-write itself. Only the synchronisation is added; the
 /// arithmetic and the output are unchanged.
@@ -99,6 +97,10 @@ public enum WwiseRandomMode
 
     /// <summary>randomMode 1: the shuffle path, which also excludes played items (§3.6b).</summary>
     Shuffle = 1,
+    /// <summary>Raw mode 2; not present in the shipped playlist census.</summary>
+    Raw2 = 2,
+    /// <summary>Raw mode 3; not present in the shipped playlist census.</summary>
+    Raw3 = 3,
 }
 
 /// <summary>
@@ -125,8 +127,7 @@ public sealed record WwiseContainerSelectionSettings(
     /// <summary>
     /// The settings a shipped RanSeq node gives its selection state (M6-007 §2.6, §3.9). The bank bits on
     /// <see cref="WwiseRandomSequenceNode.Flags"/> are bit2 ping-pong and bit4 one shared state; the mode
-    /// is <see cref="WwiseRandomSequenceNode.IsSequence"/>; a non-zero
-    /// <see cref="WwiseRandomSequenceNode.RandomMode"/> is the shuffle path; any playlist weight other
+    /// is <see cref="WwiseRandomSequenceNode.IsSequence"/>; raw random mode 1 is shuffle; any playlist weight other
     /// than <see cref="WwiseSelectionRows.DefaultWeight"/> means weights are in use.
     /// </summary>
     public static WwiseContainerSelectionSettings FromNode(WwiseRandomSequenceNode rs)
@@ -143,7 +144,7 @@ public sealed record WwiseContainerSelectionSettings(
             rs.Playlist.Count,
             usesWeights ? weights : null,
             rs.IsSequence ? WwiseSelectionMode.Sequence : WwiseSelectionMode.Random,
-            rs.RandomMode != 0 ? WwiseRandomMode.Shuffle : WwiseRandomMode.Standard,
+            (WwiseRandomMode)(rs.RandomMode & 3),
             rs.AvoidRepeatCount,
             usesWeights,
             (rs.Flags & 0x04) != 0);
@@ -240,14 +241,13 @@ public sealed class WwiseSelectionState
     /// <item>Length 0 → −1 (none).</item>
     /// <item>Length 1 → item 0, with <b>no</b> RNG draw and no state change (the rows establish the absence of
     /// a draw; with one item the bookkeeping is unobservable).</item>
-    /// <item>Sequence → §3.7, which never draws and never probes.</item>
-    /// <item>Random → §3.6, then — for shuffle and for standard-with-avoid — a linear playability probe.</item>
+    /// <item>Sequence retries by stepping; shuffle redraws; standard scans forward after an unavailable child.</item>
     /// </list>
     /// </summary>
     /// <param name="rng">The shared global LCG.</param>
     /// <param name="isPlayable">
     /// The node's playability check (node vfunc +0x48). Null means every item is playable. It is consulted
-    /// only for the random path, and only in the modes the rows give a retry.
+    /// for each multi-item candidate, after its selection bookkeeping.
     /// </param>
     public int SelectNext(WwiseRng rng, Func<int, bool>? isPlayable = null)
     {
@@ -255,16 +255,25 @@ public sealed class WwiseSelectionState
 
         if (_length == 0) return -1;
         if (_length == 1) return 0;
-        if (Mode == WwiseSelectionMode.Sequence) return SequenceStep();
-
-        int index = SelectRandomly(rng);
-        if (index < 0) return -1;
-
-        bool canProbe = _randomMode == WwiseRandomMode.Shuffle || _avoidRepeat > 0;
-        if (canProbe && isPlayable is not null && !isPlayable(index))
-            index = Probe(index, isPlayable);
-
-        return index;
+        if (Mode == WwiseSelectionMode.Random && (uint)_randomMode > 3)
+            throw new NotSupportedException($"MISSING: M6-007 step random mode {(int)_randomMode}");
+        int index = Mode == WwiseSelectionMode.Sequence ? SequenceStep() : SelectRandomly(rng);
+        if (isPlayable is null) return index;
+        bool scanForward = Mode == WwiseSelectionMode.Random && _randomMode != WwiseRandomMode.Shuffle;
+        for (int attempts = 0; attempts < _length && index >= 0; attempts++)
+        {
+            bool accepted = attempts == 0 || !scanForward || IsEligible(index);
+            if (accepted)
+            {
+                if (attempts > 0 && scanForward)
+                    ApplyAvoidHistory(index);
+                if (isPlayable(index)) return index;
+            }
+            if (attempts + 1 == _length) break;
+            index = Mode == WwiseSelectionMode.Sequence ? SequenceStep()
+                : scanForward ? (index + 1) % _length : SelectRandomly(rng);
+        }
+        return -1;
     }
 
     /// <summary>
@@ -324,7 +333,7 @@ public sealed class WwiseSelectionState
     /// shuffle excludes both played and blocked items.
     /// </summary>
     private bool IsEligible(int index)
-        => _randomMode == WwiseRandomMode.Shuffle
+        => _randomMode != WwiseRandomMode.Standard
             ? !_played[index] && !_blocked[index]
             : _avoidRepeat > 0
                 ? !_blocked[index]
@@ -366,7 +375,7 @@ public sealed class WwiseSelectionState
                 _played[index] = true;
                 _counter--;
             }
-            ApplyStandardAvoid(index);
+            ApplyAvoidHistory(index);
         }
         else
         {
@@ -383,7 +392,7 @@ public sealed class WwiseSelectionState
     /// weight. When the list is longer than <c>min(avoid, len−1)</c>, the oldest entry is unblocked and its
     /// weight and item restored. (0xA08694)
     /// </summary>
-    private void ApplyStandardAvoid(int index)
+    private void ApplyAvoidHistory(int index)
     {
         if (_avoidRepeat <= 0) return;
 
@@ -424,30 +433,6 @@ public sealed class WwiseSelectionState
                 _remainingWeight += WeightAt(oldest);
             }
         }
-    }
-
-    /// <summary>
-    /// §3.5 retry: a linear probe from idx+1 (mod len), skipping played/blocked, then the post-pick
-    /// bookkeeping, up to len tries. Only shuffle and standard-with-avoid take this path.
-    /// </summary>
-    /// <remarks>
-    /// The row names only the helper 0xA08694 for the probe. It is applied here as the same post-pick
-    /// recording used on the primary path so that the probed item is not immediately re-chosen; the row does
-    /// not split the helper's played and avoid parts for the probe. This is a low-risk unresolved detail: no
-    /// shipped Cozmo.bnk container reaches it, because the probe exists only for children that fail the
-    /// playability check.
-    /// </remarks>
-    private int Probe(int from, Func<int, bool> isPlayable)
-    {
-        int candidate = (from + 1) % _length;
-        for (int tries = 0; tries < _length; tries++, candidate = (candidate + 1) % _length)
-        {
-            if (_played[candidate] || _blocked[candidate]) continue;
-            if (!isPlayable(candidate)) continue;
-            ApplyAfterPick(candidate);
-            return candidate;
-        }
-        return -1;
     }
 
     /// <summary>
@@ -505,6 +490,7 @@ public sealed class WwiseSelectionState
 public sealed class WwiseSelection
 {
     private readonly bool _sharedAcrossGameObjects;
+    private readonly object _gate = new();
     private readonly Dictionary<uint, WwiseSelectionState> _shared = new();
     private readonly SortedDictionary<(uint Container, int GameObject), WwiseSelectionState> _perObject = new();
 
@@ -521,6 +507,11 @@ public sealed class WwiseSelection
 
     /// <summary>The state for a container and game object, created on first use (§3.4).</summary>
     public WwiseSelectionState StateFor(uint containerId, int gameObject, WwiseContainerSelectionSettings settings)
+    {
+        lock (_gate) return StateForLocked(containerId, gameObject, settings);
+    }
+
+    private WwiseSelectionState StateForLocked(uint containerId, int gameObject, WwiseContainerSelectionSettings settings)
     {
         if (_sharedAcrossGameObjects)
         {
@@ -544,5 +535,9 @@ public sealed class WwiseSelection
     /// <summary>The next playlist index for a container play on a game object (§3.5).</summary>
     public int NextIndex(uint containerId, int gameObject, WwiseContainerSelectionSettings settings,
                          Func<int, bool>? isPlayable = null)
-        => StateFor(containerId, gameObject, settings).SelectNext(Rng, isPlayable);
+    {
+        if (settings.Length == 0) return -1;
+        if (settings.Length == 1) return 0;
+        lock (_gate) return StateForLocked(containerId, gameObject, settings).SelectNext(Rng, isPlayable);
+    }
 }
