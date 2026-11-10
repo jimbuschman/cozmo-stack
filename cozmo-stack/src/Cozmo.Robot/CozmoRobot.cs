@@ -524,7 +524,10 @@ public sealed partial class CozmoRobot : IDisposable
             _vision = new Vision.VisionSystem(this,Engine.Options.VisionCalibration,Engine.Options.VisionDetector,Engine.Options.VisionOkaoRecognizer);
         Engine.BindRobotLifetime += native => _vision?.BindNativeGroundOwner(native);
         Engine.NativeVisionConstructor = native => _vision is { } vision
-            ? vision.InitializeNativeVision(native) : global::Cozmo.Robot.Vision.NativeVisionStageResult.Missing;
+            ? vision.InitializeNativeVision(native,null,true) : global::Cozmo.Robot.Vision.NativeVisionStageResult.Missing;
+        Engine.NativeVisionAttemptCurrent = (native,epoch) => _vision?.NativeVisionAttemptCurrent(native,epoch) == true;
+        Engine.NativeVisionOwnerCurrent = native => _vision?.NativeVisionOwnerCurrent(native) == true;
+        Engine.NativeVisionComplete = (native,epoch) => _vision?.CompleteNativeVisionComponent(native,epoch) == true;
         if (Engine.Robot is { } groundOwner) _vision?.BindNativeGroundOwner(groundOwner);
         Engine.BindRobotLifetime+=native=>{BindNativeMood(native);BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
         if(Engine.Robot is {} severeOwner){BindNativeMood(severeOwner);BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}

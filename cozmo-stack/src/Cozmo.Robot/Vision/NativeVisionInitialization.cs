@@ -107,6 +107,8 @@ internal sealed class NativeVisionInitialization
     private volatile bool _motionKnowledgeKnown=true;
     internal bool AvailabilityKnown => _availabilityKnown;
     internal bool Initialized => _initialized;
+    internal bool ComponentInitialized { get; set; }
+    internal bool ComponentAvailabilityKnown { get; set; } = true;
     internal bool MotionKnowledgeKnown=>_motionKnowledgeKnown;
     internal void MarkMotionUnavailable()=>_motionKnowledgeKnown=false;
     internal bool Reset338 { get; private set; }
@@ -163,7 +165,7 @@ internal sealed class NativeVisionMotionConstructor(EngineRobot owner,VisionSyst
     internal uint Timestamp { get; }=0;
 }
 
-internal readonly record struct NativeVisionStageResult(bool Available,uint Result)
+internal readonly record struct NativeVisionStageResult(bool Available,uint Result,int Epoch = 0)
 {
     internal static NativeVisionStageResult Success=>new(true,0);
     internal static NativeVisionStageResult Failure(uint value)=>new(true,value);
