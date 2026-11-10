@@ -1917,16 +1917,15 @@ public sealed partial class VisionSystem : IDisposable
                                 !NativeMotionPoseState.BodySame(currentFacePose, previousFacePose, 10f, threshold);
                         }
                         else if (queueForEngine) SteppedBehavior.ReportMissing("M14-010 face motion reset has no prior admitted VisionPoseData");
-                        if ((ModeEnableMask & ((1 << 10) | (1 << 11) | (1 << 12) | (1 << 13))) != 0)
-                            SteppedBehavior.ReportMissing("M14-010 enabled expression, smile, gaze or blink modes have no OKAO EX/SM/GB recipient");
                         var recognizer = Recognizer;
                         if (_stockRecognizer && recognizer.OwnsStockDetector(okao) && recognizer.IsAvailable)
                         {
                             recognizer.InitializeStock();
-                            completeStockFaceReport = (ModeEnableMask & 0x3C00) == 0;
-                            (detectedFaces, faceIdChanges) = okao.DetectRecognized(faceImage, timestamp, reset, recognizer);
+                            completeStockFaceReport = true;
+                            int attributeMask=ModeEnableMask & 0x3C00; // captured for this detector execution
+                            (detectedFaces, faceIdChanges) = okao.DetectRecognized(faceImage, timestamp, reset, recognizer, attributeMask);
                         }
-                        else if (!_stockRecognizer) detectedFaces = okao.Detect(faceImage, timestamp, reset);
+                        else if (!_stockRecognizer) detectedFaces = okao.Detect(faceImage, timestamp, reset, ModeEnableMask & 0x3C00);
                         else SteppedBehavior.ReportMissing("M14-011 detector/recognizer owner changed during face frame; frame skipped");
                     }
                     else detectedFaces = faceDetector.Detect(faceImage, timestamp);
@@ -2241,7 +2240,7 @@ public sealed partial class VisionSystem : IDisposable
                     {
                         if(queueForEngine && !ReferenceEquals(reportOwner,sourceOwner))return null;
                         RobotObservedFaceReport? report = null;
-                        if(!offline && queueForEngine && ReferenceEquals(reportOwner,sourceOwner) && completeStockFaceReport && d.NativeFeatures is { } features &&
+                        if(!offline && queueForEngine && ReferenceEquals(reportOwner,sourceOwner) && completeStockFaceReport && d.NativeFeatures is { } features && d.NativeAttributes is { } attributes &&
                             snapshot.Translation is { } translation && snapshot.Rotation is { } rotation && snapshot.Origin is { } faceOrigin &&
                             string.Equals(snapshot.Name ?? "",d.Name ?? "",StringComparison.Ordinal))
                         {
@@ -2257,7 +2256,8 @@ public sealed partial class VisionSystem : IDisposable
                                         using var parent=Pose3d.WrapExisting(faceOrigin);
                                         using var pose=new Pose3d(rotation,translation,parent:parent);
                                         if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
-                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth);
+                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth)
+                                            { Expression=attributes.Expression, Smile=attributes.Smile, Gaze=attributes.Gaze, Blink=attributes.Blink, ExpressionScores=attributes.Scores };
                                     }
                                 }
                             }

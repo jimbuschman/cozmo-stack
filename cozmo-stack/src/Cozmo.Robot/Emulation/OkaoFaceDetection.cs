@@ -118,7 +118,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
     /// <summary>Production projection of the source FaceTracker's DT and PT results.</summary>
     internal IReadOnlyList<DetectedFace> DetectTracked(ReadOnlySpan<byte> gray, int width, int height,
         Func<int[], DetectedFace, bool, bool, DetectedFace>? recognize = null,
-        Func<int, bool>? knownTrack = null, int enrollmentTrack = 0)
+        Func<int, bool>? knownTrack = null, int enrollmentTrack = 0, int attributeMask = 0)
     {
         if (_faulted) throw new InvalidOperationException("OKAO detector is faulted after an emulation error; create a new one");
         if (gray.Length != width * height) throw new ArgumentException("image size does not match width × height");
@@ -135,6 +135,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
                 _scratch = _m.Malloc(256);
                 if (_scratch == 0) throw new EmulationAbort("OKAO part output allocation failed");
             }
+            if ((attributeMask & 0x3C00) != 0) EnsureAttributeHandles();
             if (recognize is not null && _frPtResult == 0)
             {
                 _frPtResult = _m.Call(_m.Symbol("OKAO_PT_CreateResultHandle"), new[] { _co });
@@ -188,19 +189,19 @@ public sealed partial class OkaoFaceDetection : IDisposable
                 int? third = null;
                 bool facing = false;
                 NativeFaceFeatures? features = null;
-                bool noParts = false;
+                bool partsReady = false;
                 result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_SetPositionFromHandle"), new[] { _pt, _res, (uint)index }));
                 if (result == 0)
                 {
                     result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_DetectPoint_GRAY"),
                         new[] { _pt, _buf, (uint)width, (uint)height }, new uint[] { 0, _ptResult }));
-                    noParts = result == -8;
                     if (result == 0)
                     {
                         _m.Fill(_scratch, 256, 0);
                         result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_GetResult"), new[] { _ptResult, 12u, _scratch, _scratch + 96 }));
                         if (result == 0)
                         {
+                            partsReady = true;
                             var points = new (int X,int Y)[12];
                             for (int i=0;i<points.Length;i++) points[i]=(unchecked((int)_m.R32(_scratch+(uint)(i*8))),unchecked((int)_m.R32(_scratch+(uint)(i*8+4))));
                             features = NativeFaceFeatures.FromPoints(points);
@@ -221,11 +222,12 @@ public sealed partial class OkaoFaceDetection : IDisposable
                         }
                     }
                 }
-                if (noParts) features = NativeFaceFeatures.Empty;
-                else if (result != 0) features = null; // Withhold the full report on other incomplete parts/direction results.
+                if (!partsReady) features = NativeFaceFeatures.Empty; // Defined PT return failures leave the fresh vectors empty.
                 if (result != 0 && result != -8) Diagnostic?.Invoke($"M14-010 OKAO parts returned {result}");
+                var attributes = partsReady && (attributeMask & 0x3C00) != 0
+                    ? ReadAttributes(attributeMask, width, height) : NativeFaceAttributes.Default;
                 var face = new DetectedFace(unchecked(-raw[2]), new FaceRect(x, y, right - x, bottom - y), leftEye, rightEye,
-                    Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100, NativeFeatures = features };
+                    ExpressionValues: (attributeMask & (1 << 10)) != 0 ? attributes.Scores : null, Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100, NativeFeatures = features, NativeAttributes = attributes };
                 bool enrollable = raw[3] > 500 && raw[9] == 0 && facing && leftEye is { } le && rightEye is { } re && roll is { } angle &&
                     TrackedFace.GetIntraEyeDistance(le, re, angle) >= 16;
                 faces.Add(recognize?.Invoke(raw, face, enrollable, excluded.Contains(raw[2])) ?? face);
@@ -274,6 +276,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
                 if (_frFeature != 0) FrCall("OKAO_FR_DeleteFeatureHandle", _frFeature);
                 if (_frScratchFeature != 0) FrCall("OKAO_FR_DeleteFeatureHandle", _frScratchFeature);
                 if (_frPtResult != 0) FrCall("OKAO_PT_DeleteResultHandle", _frPtResult);
+                DeleteAttributeHandles();
                 if (_ptResult != 0) FrCall("OKAO_PT_DeleteResultHandle", _ptResult);
             }
         }
