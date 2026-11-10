@@ -34,6 +34,7 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
     internal bool? NativeTrackerFlagChanged { get; init; }
     internal int NativeEnrollmentCount { get; init; }
     internal NativeFaceFeatures? NativeFeatures { get; init; }
+    internal NativeFaceAttributes? NativeAttributes { get; init; }
     // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
     internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
@@ -94,18 +95,21 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp)
         => Detect(image, timestamp, false);
     internal IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp, bool resetTracking)
-        => DetectCore(image, timestamp, resetTracking, null, null);
+        => DetectCore(image, timestamp, resetTracking, null, null, 0);
+
+    internal IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp, bool resetTracking, int attributeMask)
+        => DetectCore(image, timestamp, resetTracking, null, null, attributeMask);
 
     internal (IReadOnlyList<DetectedFace> Faces, IReadOnlyList<(int OldId, int NewId, string? Name)> Changes) DetectRecognized(
-        GrayImage image, uint timestamp, bool resetTracking, FaceRecognizer recognizer)
+        GrayImage image, uint timestamp, bool resetTracking, FaceRecognizer recognizer, int attributeMask = 0)
     {
         var changes = new List<(int, int, string?)>();
-        var faces = recognizer.WithStockFrame(() => DetectCore(image, timestamp, resetTracking, recognizer, changes));
+        var faces = recognizer.WithStockFrame(() => DetectCore(image, timestamp, resetTracking, recognizer, changes, attributeMask));
         return (faces, changes);
     }
 
     private IReadOnlyList<DetectedFace> DetectCore(GrayImage image, uint timestamp, bool resetTracking,
-        FaceRecognizer? recognizer, List<(int OldId, int NewId, string? Name)>? changes)
+        FaceRecognizer? recognizer, List<(int OldId, int NewId, string? Name)>? changes, int attributeMask)
     {
         var diagnostics = new List<string>();
         IReadOnlyList<DetectedFace> faces;
@@ -128,7 +132,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                     _detector.ResetTracking();
                     if (recognizer is not null) { recognizer.ClearStockTracking(); _pendingTrack = 0; }
                 }
-                if (recognizer is null) faces = _detector.DetectTracked(image.Pixels, image.Width, image.Height);
+                if (recognizer is null) faces = _detector.DetectTracked(image.Pixels, image.Width, image.Height,attributeMask:attributeMask);
                 else
                 {
                     var machine = _detector;
@@ -167,7 +171,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                         if (identity.PreviousId is { } old) changes!.Add((old, identity.Id, identity.Name));
                         return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name, NativeEnrollmentCount = identity.EnrollmentCount };
                     }
-                    faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack);
+                    faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack,attributeMask);
                 }
             }
             catch { _faulted = true; throw; }

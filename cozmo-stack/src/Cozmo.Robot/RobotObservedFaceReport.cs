@@ -10,12 +10,15 @@ public readonly record struct FaceAttributePair(bool Valid, float First, float S
 public sealed record RobotObservedFaceReport(int FaceId, uint Timestamp, EngineGamePose Pose, FaceRect Rect, string Name,
     IReadOnlyList<Vec2> LeftEye, IReadOnlyList<Vec2> RightEye, IReadOnlyList<Vec2> Nose, IReadOnlyList<Vec2> Mouth)
 {
-    /// <summary>The disabled optional modes report neutral expression and zero scores.</summary>
-    public FacialExpression Expression => FacialExpression.Neutral;
-    public FaceAttributePair Smile => default;
-    public FaceAttributePair Gaze => default;
-    public FaceAttributePair Blink => default;
-    public IReadOnlyList<byte> ExpressionScores { get; } = Array.AsReadOnly(new byte[5]);
+    /// <summary>Disabled optional modes retain neutral expression and zero scores.</summary>
+    public FacialExpression Expression { get; internal init; } = FacialExpression.Neutral;
+    /// <summary>Smile amount and confidence, in that order.</summary>
+    public FaceAttributePair Smile { get; internal init; }
+    /// <summary>Gaze left/right and up/down, in that order.</summary>
+    public FaceAttributePair Gaze { get; internal init; }
+    /// <summary>Left and right eye close ratios, in that order.</summary>
+    public FaceAttributePair Blink { get; internal init; }
+    public IReadOnlyList<byte> ExpressionScores { get; internal init; } = Array.AsReadOnly(new byte[5]);
 
     internal byte[] PackBody()
     {

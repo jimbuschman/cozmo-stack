@@ -560,14 +560,22 @@ public sealed class FaceIdentityTests
         Assert.Contains(rawFaces, data => { using var reader=new BinaryReader(new MemoryStream(data)); return reader.ReadInt32()==7 && reader.ReadUInt32()>0; });
         Assert.Contains(localReports, r => r.Id == 7);
         int completeBefore = observedReports.Count, localBefore = localReports.Count;
-        vision.ModeEnableMask |= 1 << 10;
+        var processed = new List<ProcessedImageReport>();
+        using var processedSub = fixture.Rig.Engine.AnimationMessages.SubscribeMessage(0x43, true,
+            p => processed.Add(Assert.IsType<ProcessedImageReport>(p)));
+        vision.ModeEnableMask |= 0x3C00;
         fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
         fixture.NativeCameraFrame(id++, lastImage!);
+        vision.ModeEnableMask &= ~0x3C00; // Worker finished; consume its captured modes below.
         fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
         fixture.Rig.Tick();
-        Assert.Equal(completeBefore, observedReports.Count);
+        Assert.True(observedReports.Count > completeBefore);
         Assert.True(localReports.Count > localBefore);
-        vision.ModeEnableMask &= ~(1 << 10);
+        var attributed = observedReports.Skip(completeBefore).First(r => r.FaceId == 7);
+        Assert.True(attributed.Gaze.Valid);
+        Assert.True(attributed.Blink.Valid);
+        Assert.Contains(processed, p => p.Timestamp == attributed.Timestamp &&
+            p.Modes.Contains(2u) && !p.Modes.Any(mode => mode is >= 10 and <= 13));
         fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
         fixture.NativeCameraFrame(id++, lastImage!);
         fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
