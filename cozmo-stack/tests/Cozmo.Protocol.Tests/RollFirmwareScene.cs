@@ -65,7 +65,8 @@ internal sealed class RollFirmwareScene:IDisposable
         F.M.Vision.Enabled=true;F.M.Vision.ModeEnableMask=1<<1;uint stamp=F.Robot.StoredState!.Timestamp;
         F.M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied per-frame mode schedule
         uint id=++_image;
-        F.Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});F.Rig.Tick();
+        F.Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=239});
+        F.Rig.Data(new ImageImuData{ImageId=id+10000,RateX=0,RateY=0,RateZ=0,Line2Number=239});F.Rig.Tick();
         var cal=F.M.Vision.Calibration!;var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
         using var hist=HistRobotState.From(F.Robot.GetCheckedMainPose(),F.Robot.StoredState!);using var camera=F.Robot.CopyHistoricalCameraPose(hist);using var flat=camera.GetWithRespectToRoot();var model=new CameraModel(cal,flat);
         // Independent scripted physical cube; no native goal or estimated world pose is used to draw it.

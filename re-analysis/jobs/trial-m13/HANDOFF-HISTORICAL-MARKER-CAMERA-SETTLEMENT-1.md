@@ -13,6 +13,8 @@
 - Vision/NativeRobotStateHistory.cs exposes marker status/resolved time without changing callers using the existing bool/cache. Vision/VisionSystem.cs adds the captured-owner gates, outer historical camera and diagnostics.
 - PickupPyramidNativeExecutionTests and M3M4ReviewFixTests use the actual queued camera worker, source-shaped IMU inputs and the original owner. They cover 20°/s body allowing the marker stage, 31°/s body, 11°/s head and a missing bracket dropping only that stage, face/frame continuation, image-time camera with distinct current state and inner calibration, and silent frame-ID mismatch. Additional supplied boundary fixtures cover distinct root allocations with the same numeric ID, timestamp mismatch and callback-driven owner replacement. RobotStateHistoryAdmissionTests checks the status/time overload. Final 11/11 focused and 262/262 affected passed. The batch gate is recorded in QUEUE.md.
 
+- The full gate on 1a57a939 exposed rendered scenes with incomplete IMU brackets. ManipRig.cs, RollFirmwareScene.cs and PopFirmwareScene.cs now supply end-of-image and subsequent zero-rate samples before F2. The rendered wheelie scene also supplies simulated firmware and the original outer calibration. The existing behavior assertions and harness tick remain. The final affected rerun passed 147/147, including the previously timed-out workout.
+
 ## MISSING
 
 - Complete computed key/index ownership and per-marker calibration carrier remain open under M11-044/M11-097 and this record. The VisionSystem mailbox, world consumers, solve and broader camera geometry remain separate. No whole record settlement or hardware acceptance is proposed.

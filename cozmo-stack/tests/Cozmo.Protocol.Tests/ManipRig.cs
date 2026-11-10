@@ -190,7 +190,7 @@ internal sealed class Rig : IDisposable
                               Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
         // M11-004: the image IMU sample that arrives with every frame; zero rates mean "not rotating". The
         // rotating gate's fail-safe (no bracket -> true) would otherwise skip faces and unobserved checks.
-        Send(new ImageImuData { ImageId = T, RateX = 0, RateY = 0, RateZ = 0, Line2Number = 0 });
+        Send(new ImageImuData { ImageId = T, RateX = 0, RateY = 0, RateZ = 0, Line2Number = NativeGroundCapture ? checked((byte)(Cal.Rows-1)) : (byte)0 });
     }
 
     /// <summary>
@@ -272,12 +272,12 @@ internal sealed class Rig : IDisposable
             Robot.Engine.HasCameraCalibration = () => false;
             try
             {
+                Send(new ImageImuData { ImageId = unchecked(T + 10000), RateX = 0, RateY = 0, RateZ = 0, Line2Number = checked((byte)(Cal.Rows-1)) });
                 for (int i = 0; i < chunks; i++)
                     Send(new ImageChunk { ImageId = T, FrameTimestamp = T, ImageEncoding = 1, ImageResolution = 4,
                         ImageChunkCount = checked((byte)chunks), ChunkId = checked((byte)i), Data = nativeImage.Pixels.Skip(i * chunkSize).Take(chunkSize).ToArray() });
                 Tick();
                 Vision.WaitForProcessorIdle();
-                Send(new ImageImuData { ImageId = unchecked(T + 1), Line2Number = 0 });
                 Tick();
             }
             finally { Robot.Engine.HasCameraCalibration = gate; }
