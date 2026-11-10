@@ -115,6 +115,9 @@ internal sealed class NativeVisionInitialization
     internal bool Reset328 { get; private set; }
     internal NativeVisionPetInitialization Pet { get; set; }=new();
     internal OkaoPetDetector? StockPet { get; set; }
+    internal OkaoFaceDetector? StockFace { get; set; }
+    internal FaceRecognizer? StockFaceRecognizer { get; set; }
+    internal int StockFaceEpoch { get; set; }
     internal NativeMotionPoseState MotionPose { get; }=new();
     internal NativeVisionFaceConstructor? Face { get; private set; }
     internal NativeVisionMotionConstructor? Motion { get; private set; }
