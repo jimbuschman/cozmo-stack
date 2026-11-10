@@ -290,3 +290,15 @@ Committed tip 524f8f96 passed scripts/test-full.sh with 8,290/8,290 tests, zero 
 | TRACKED-FACE-SETTLEMENT-2 | CHECKED | Target settlement: M14-001. Exact detached and historical public geometry, previous wrapper, explicit legacy steering, and native cache isolation. Affected 299/299, manager 43/43. Remaining arithmetic boundary is named below. HANDOFF-TRACKED-FACE-SETTLEMENT-2.md. |
 | TRACKED-FACE-LIBM-PROOF-1 | PROPOSED | Target settlement: M14-001. Close the Android cosf import at 0x0087DCD6 and any reachable square-root parity boundary, or provide reviewed equivalence evidence for those calls only. No work started. |
 | Full gate for 4d00a96f | FAILED | 8,293/8,304 passed. Eleven legacy cache-seeding fixtures in KnockOverNativeTests, LookForFaceAndCubeNativeTests, OrdinaryFreeplayNativeTests, PickupPyramidNativeExecutionTests and SharedChildrenNativeTests failed after native cache isolation. Corrections migrate those fixtures to explicit checked native inputs and retain their assertions. |
+
+### Full gate for the motion history, localization, pet report and tracked face jobs
+
+Committed tip 667ebd55 passed scripts/test-full.sh with 8304/8304 tests and zero failures.
+
+| Job | State | Handoff |
+| --- | --- | --- |
+| M11-097-TRACK-MOTION-HISTORY-1 | READY FOR CLAUDE | HANDOFF-M11-097-TRACK-MOTION-HISTORY-1.md |
+| M11-044-LOCALIZATION-MARKER-CAMERA-1 | READY FOR CLAUDE | HANDOFF-M11-044-LOCALIZATION-MARKER-CAMERA-1.md |
+| M11-044-LOCALIZE-SAME-ORIGIN-1 | READY FOR CLAUDE | HANDOFF-M11-044-LOCALIZE-SAME-ORIGIN-1.md |
+| PET-REPORT-SETTLEMENT-1 | READY FOR CLAUDE | HANDOFF-PET-REPORT-SETTLEMENT-1.md |
+| TRACKED-FACE-SETTLEMENT-2 | READY FOR CLAUDE | HANDOFF-TRACKED-FACE-SETTLEMENT-2.md |
