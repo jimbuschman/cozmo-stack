@@ -2343,35 +2343,54 @@ public sealed partial class BlockWorld
     // fidelity: M11-062
     internal List<ObservableObject> DeleteLocatedObjects(BlockWorldFilter filter)
     {
+        var owner = NativeSnapshotOwner?.Invoke();
         using var frameMutation=EnterPoseMutation();
+        uint origin = CurrentOriginId;
+        uint ownerOrigin = owner?.CurrentOriginId ?? 0;
+        bool Current() => CurrentOriginId == origin && ReferenceEquals(NativeSnapshotOwner?.Invoke(),owner) &&
+            (owner is null || (!owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot,owner) &&
+            owner.CurrentOriginId == ownerOrigin));
+        if (!Current()) return new();
         // Null entries are erased before ID/predicate filtering (native 0x0061D402).
         KeyValuePair<(uint Origin,int Family,int Type,int Id),ObservableObject>[] nulls;
         lock (_gate) nulls=_located.Where(kv => kv.Value is null).ToArray();
         foreach (var pair in nulls)
         {
+            if (!Current()) return new();
             Source(EngineLogLevel.Warning, null, "BlockWorld.DeleteLocatedObjects.NullObject",
                 $"Deleting null object in origin {unchecked((int)pair.Key.Origin)} with Family:{(ObjectFamily)pair.Key.Family} Type:{(ObjectType)pair.Key.Type} ID:{pair.Key.Id}");
-            lock (_gate) _located.Remove(pair.Key);
+            if (!Current()) return new();
+            lock (_gate) { if (_located.TryGetValue(pair.Key, out var entry) && entry is null) _located.Remove(pair.Key); }
         }
         var victims = FindLocatedMatchingObjects(filter);
         var deleted = new List<ObservableObject>();
         var notifications = new List<(ObservableObject Original,ObservableObject Clone,Pose3d Pose,PoseState State)>();
         foreach (var o in victims)
         {
+            if (!Current()) return deleted;
+            var key = KeyOf(o);
+            lock (_gate) { if (!_located.TryGetValue(key, out var initial) || !ReferenceEquals(initial,o)) continue; }
+            (ObservableObject Original,ObservableObject Clone,Pose3d Pose,PoseState State)? notification = null;
             if (o.OriginId == CurrentOriginId)
             {
                 ClearLocatedObjectHelper(o);
+                if (!Current()) return deleted;
                 var clone = o.CloneNative(); clone.ObjectId = o.ObjectId;
                 if (clone.IsActive) { clone.ActiveId = o.ActiveId; clone.FactoryId = o.FactoryId; }
-                notifications.Add((o,clone,o.Pose,o.PoseState));
+                notification = (o,clone,o.Pose,o.PoseState);
             }
-            lock (_gate) { if (!_located.Remove(KeyOf(o))) continue; }
+            lock (_gate) { if (!_located.TryGetValue(key, out var found) || !ReferenceEquals(found,o) || !_located.Remove(key)) continue; }
             deleted.Add(o);
+            if (notification is { } n) notifications.Add(n);
         }
         foreach (var n in notifications)
         {
+            if (!Current()) return deleted;
             lock (_gate) { _confirmations.Remove(unchecked((int)n.Clone.ObjectId)); n.Original.Confirmation = null; } // DeletedObjectInCurrentOrigin, before broadcast
             BroadcastObjectPoseChanged(n.Clone,n.Pose,n.State);
+            if (!Current()) return deleted;
+            if (owner?.HasExternalInterface == true) owner.Engine.PublishLocatedObjectDeleted(n.Clone.ObjectId);
+            if (!Current()) return deleted;
             DeliverPublic(LocatedObjectDeleted,n.Clone.ObjectId); // RobotDeletedLocatedObject, uint32/Size 4 API view
         }
         return deleted;
