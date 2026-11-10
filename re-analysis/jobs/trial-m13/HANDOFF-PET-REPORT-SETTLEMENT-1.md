@@ -1,0 +1,22 @@
+# PET-REPORT-SETTLEMENT-1
+
+## Claims and evidence
+
+- Stock PetTracker uses its retained OMCV guest at 0x0087C980–0x0087CB86. The checked lost-count setter is at 0x0087C4B6. A successful detector result keeps the signed ID and score, including tracked score -1, and sets the tracked flag only when its raw word equals 1. Count zero is an authoritative completed mode-9 result at 0x006B5326. The defined Detect/Count/Info failures exit without mailbox publication at 0x006B52CA–0x006B531C and 0x006B5692.
+- PetWorld receives completed mode 9 at 0x0065457E and 0x00655360–0x00655366. A prior-map ID increments its existing count at 0x0050B838–0x0050B8AE and bypasses the IMU check. An absent ID sends its image timestamp to the original owner with f32 body threshold 0x3F060A92, head 0x3E32B8C2, and mode 0 or 5 from the tracked flag at 0x0050B8C8–0x0050B8F4. Mode zero uses the bracketing measurements and rejects a missing bracket at 0x006562BE–0x00656342. Mode five uses up to five measurements from the checked window at 0x00538F86–0x005391A6. Rejected absent IDs do not block the successful map swap. Missing prior IDs disappear when the map is replaced at 0x0050B96C–0x0050B99E.
+- Reports traverse signed ID order from the replacement map at 0x0050B9A2–0x0050B9A8 and 0x0050BA74–0x0050BA9A. Fresh-track verification and detection telemetry precede the per-ID report at 0x0050B9AC–0x0050BA04. The external interface gates the 0x48 broadcast at 0x0050BA60–0x0050BA68. The original broadcast enqueues the app recipient before local delivery at 0x00662526 and 0x00662552. The native pack at 0x00713BE0–0x00713C44 writes 33 bytes. The stack's separate compatibility callback and supplied profiles keep their existing boundaries.
+
+## Files and tests
+
+- StockPetDetectorTests.cs composes the existing shipped detector, original owner's F4 IMU, queued F2 camera frame, PetWorld replacement and raw/typed/local report. Low-rate and high-rate runs use the same 17-image corpus and leave the vision-while-moving bypass disabled. The tests check retained lost ID1 with increasing count under motion, immediate empty-map retirement, accepted or rejected ID2 after reacquisition, per-frame report count and independently decoded raw fields.
+- The manager reran the original ARM guest corpus, which returns first ID1 on frame 5, retained ID1 on frames 6–9, empty on frames 10–12, new ID2 on frame 13, retained ID2 on frames 14–15 and empty on frames 16–17. The independent original PetWorld probe confirmed the owner pointer, timestamp, threshold bits and mode 0/5 selection. The original mode-zero head probe verified exact threshold and unordered comparisons, and the missing-bracket Info followed by rejection. Previous independent original Pack coverage remains in HANDOFF-AI-BODY-OBSERVED-PET-REPORT-1.md.
+
+- The stock no-bracket fixture verifies completed mode 9 without an accepted pet. VisionSystem.cs captures the original Info diagnostic at the mode-zero lookup and delivers it through the existing owner-fenced post-frame log path. This keeps host callbacks outside the vision frame gate.
+- The stock strategy fixture feeds the third observation into the installed PetInitialDetection and ReactToPet pair. It supplies the test action gate for admission, verifies the actual manager selects the configured behavior and signed target 1, then stops it and checks the cooldown listener. The source strategy at 0x00611AE4–0x00611CB2 and 0x00611DD0–0x00611F28 was checked in HANDOFF-PET-REACTION-1.md. The retained InitReactedTo at 0x00611FA4 has no source call in the checked stock path.
+
+- An initial high-rate fixture selected an earlier low-rate successor. The final fixture supplies high rates through the blank interval. Builder affected tests passed 253/253, final focused 26/26, and manager independent 41/41 including unchanged NativeOkaoOracleTests and AcapelaTtsTests. The verifier checked the full stock path and the owner-fenced Info callback.
+
+## MISSING and settlement
+
+- Unbound host profiles and unavailable/faulted libraries are outside the checked stock recipient. The wider authored clip/media variants belong to their existing animation/audio records. No hardware run was made.
+- Propose **M14-014 EXACT_SOURCE** for the supported PetWorld broadcast after Claude's review. M11-016 owns stock detection and M11-033/M11-098 own shared IMU input and history. Also propose **M14-004 EXACT_SOURCE** for strategy admission and cooldown, using the stock manager witness and prior behavior checks. No fidelity status or approval changed.

@@ -285,3 +285,4 @@ Committed tip 524f8f96 passed scripts/test-full.sh with 8,290/8,290 tests, zero 
 | LOCALIZE-SAME-ORIGIN-GEOMETRY-1 | PROPOSED | Close M11-044's automatic single same-origin history and MAIN update after both candidate owner jobs. Start at 0x00515612–0x00515778 and 0x005159B6–0x00515A8C. |
 | LOCALIZE-CROSS-ORIGIN-1 | PROPOSED | Close M11-044's cross-origin Rejigger, world/map/face origin and Flatten join at 0x0051590C–0x005159B2 after single same-origin coverage. |
 | LOCALIZE-TO-MAT-HISTORY-1 | PROPOSED | Trace the separate M11-044 localization history and marker recipient at 0x00515CBC–0x00516142 and establish whether a stock supported caller reaches it. |
+| PET-REPORT-SETTLEMENT-1 | CHECKED | Target settlement: M14-014 and M14-004, both EXACT_SOURCE proposed for Claude. Stock loss, empty swap, new-ID IMU, report recipients and configured strategy witness. Affected 253/253, final 26/26, manager 41/41. HANDOFF-PET-REPORT-SETTLEMENT-1.md. |
