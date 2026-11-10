@@ -7,10 +7,10 @@ Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 282 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EXACT_SOURCE | 283 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EQUIVALENT_IMPLEMENTATION | 15 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 354 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 352 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 73 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,8 +34,8 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 12 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 73 | 0 | 1 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 72 | 0 | 1 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 32 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 9 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 111 | 3 | 80 | 1 | 1 | no | no |
@@ -62,8 +62,8 @@ status.
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
-| M11-vision | INVENTORY_APPROVED | 23 | 0 | 0 | 0 |
-| M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
+| M11-vision | INVENTORY_APPROVED | 24 | 0 | 0 | 0 |
+| M12-manipulation | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 22 | 0 | 0 | 1 |
@@ -1805,15 +1805,6 @@ B-M1-5 manager-clarification follow-up (2026-10-18), built, awaiting strong veri
 B-M1-7 (2026-10-18), built, awaiting strong verification: Census correction: PoseStateChanged is MISSING complete native host/local delivery split/payload at pose broadcast helper0x0061D5C8 and RobotMarkedObjectPoseUnknown ctor0x005073B8/Broadcast0x005073C0. Existing inline pose consumer channel remains under cross-layer rule, not a non-report exclusion. M11-042 shares the current recorded boundary.
 B-M3M4-34 (2026-10-19), built, awaiting strong verification: B34 host API delivery correction: public world events are deferred until frame-lock release, preserving queue order and handler snapshots; native internal broadcasts/recipients stay synchronous. Production camera ObjectObserved handler can PlayLightAnim on a running engine without FrameGate deadlock. No new native broadcast payload recovery or support/exclusion decision inferred from this plumbing.
 
-**M11-039 — The calibration-install path into MarkerDetector::Init** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs`
-* effect: the marker detector is configured with the camera calibration
-* rests on: the stack's calibration install is to be compared against the engine's
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: VisionSystem::UpdateCameraCalibration 0x006B1E3E; Camera::SetCalibration 0x006B1E5E; MarkerDetector::Init 0x006B1E78; Parameters::Initialize 0x008752E4/0x008752E6
-* outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): Camera::SetCalibration (0x85DEDC) returns 1 only for a non-null pointer that differs from the stored one; MarkerDetector::Init is gated on it (0x006B1E6C/0x006B1E78); a null pointer with a stored calibration logs 'Camera.SetCalibration.NullCalibration'. Still open: a constructor-supplied calibration no longer runs Init in WaitForConnectionCalibrationAsync (the detector's defaults are the shipped ones).
-
 **M11-040 — The VisionComponent mailbox and processor thread** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
@@ -2489,15 +2480,6 @@ B-M3M4-18 built, awaiting strong verification: each IDockAction registration now
 B-M12-3 (2026-10-15), built, awaiting strong verification: Correction to the older appended-DA note: the engine-shaped live action replaces its C5/DA slots on re-Init; only its E2G vector appends. Public standalone RegisterActionHandlers(DockAction) remains a legacy test/host adapter, not this native action owner. +C2 is per action and direct DA writes cause no public C5/DA host-event callback. Async scheduler and full destructor cleanup remain visible MISSING. Ownership note 2026-10-16 (split from M2-023/M2-020; re-analysis/research/20261013-small-reads-2-check.md): the DA (0x00557E82..0x00557E9C) and C5 (QueueAction(5) -> AddConcurrentAction 0x0053DF2C..0x0053E004, no Init) handler bodies and the E4/DA/C5 handle wiring are this record's; B-M12-3 built DA and C5 up to the unbuilt TriggerLiftSafeAnimationAction (0x00544710). B-M12-3 check (2026-10-16, re-analysis/research/20261016-b-m12-3-check.md): FAIL. Retirement does not order against an in-flight delivery (blocking race; fix in B-M12-7); the note "retirement excluded with callbacks" overstates it. C5 on a match must construct TriggerLiftSafeAnimationAction and QueueAction(5) (0x00557CC8..0x00557CFA); both exist in the stack; the "not built" MISSING text is wrong. No tests for C5 InvalidAnimation/ActionMismatch/Playing.
 
 B-M2M15-2 built, awaiting strong verification: preserved current DockActionSubscriptions, per-action +C2/gate and +E4 append/C5-DA replacement. On matching C5, now constructs existing TriggerLiftSafeAnimationAction(1,false,0,0x42700000,false) and submits QueueAction(5,a,0); no Init, dedupe latch or extra host notification. Sentinel, HasResponse (including empty stored name), unsigned byte mismatch and warning/Info paths retained. Regression dispatches real robot signal into directly registered concrete dock owners; native async scheduler join0x005521AC and previously recorded B-M12-7 retirement race remain outside this publication. No whole-dock coverage claim.
-
-**M12-019 — The docking-error-signal clamp is 40 degrees** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
-* effect: the error signal's angle is clamped to the wrong range
-* rests on: the 40-degree clamp had no record; the 20-degree pose-confirm clamp is M11-006
-* best authority: libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194
-* evidence: 0x0063C182/0x0063C188 form 0x3F32B8C2 (40 deg); 0x0063C194 blx 0x4A6FD0 (ClampPoseToFlat); distinct from the 20 degrees M11-006 records for the pose-confirmation path (0x3EB2B8C2)
-* outstanding: built, awaiting strong verification (R-FIX2, 2026-10-03): the docking-error-signal clamp is binary32 0x3F32B8C2 (0x0063C182..0x0063C194) with a one-ulp test on each side through BlockWorld.ClampPoseToFlat. Still open: the clamp's arithmetic inside BlockWorld is double.
 
 **M12-020 — The production callers of ComputePreActionPoseDistThreshold** (live path)
 
@@ -4003,6 +3985,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M9-029 | M9-wwise-music | COMPATIBILITY_POLICY | SetStreamingAnimation custom-song branch (CreateCustomSongAnimation) | libcozmoEngine.so 3.4.0-1204. |
 | M11-012 | M11-vision | COMPATIBILITY_POLICY | The nominal camera calibration stand-in | not applicable: the live path reads the robot own calibration and fails closed without it |
 | M12-014 | M12-manipulation | COMPATIBILITY_POLICY | The docking error signal's last two bytes are whatever was on the engine's stack | libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 is the only builder and never writes the struct bytes at +0x14/+0x15 (stack +0xb4/+0xb5); nothing clears the struct (no memclr, no ctor call), and Pack 0x007C0B26 reads both bytes and sends them |
+| M12-019 | M12-manipulation | EQUIVALENT_IMPLEMENTATION | The docking-error-signal clamp is 40 degrees | libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194 |
 | M13-026 | M13-navigation | EQUIVALENT_IMPLEMENTATION | GetAbsoluteHeadAngleToLookAtPose and Robot::ComputeHeadAngleToSeePose | libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3): TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose 0x0054B428: h = z + (-49.0) (0xC2440000); d = sqrt(x*x + y*y) (float vsqrt, NaN falls back to sqrtf); D = d + 13.0; a = (300.0 - D)/150.0 (0x43960000, 0x43160000); b = (0.0 - h)/-10.0; t1 = clamp01(a) * 0.0872664601 (5 degrees) and t2 = clamp01(b) * 0.130899698 (7.5 degrees) (0 for <=0 or NaN, the value for 0<x<1, 1 for >=1); A = atan2f(h, D); result = ((t2 + (A + t1)) + 0.0698131695 (4 degrees, 0x3D8EFA35)) as Radians. Robot::ComputeHeadAngleToSeePose 0x00518344: GetWithRespectTo(pose, robot+0x2CC) failing -> warning and 0x06000000; p = (sqrt(tx*tx+ty*ty), 0, tz); the camera copied from [robot+0x258]+0x24, a null calibration -> error and 1; tol = (float)calibration.nrows * f + 9.99999975e-06; theta = 0, index 1; each iteration: camPose = Robot::GetCameraPose(theta), inv = camPose.GetInverse(), q = T.rotation * p + T.translation; if not q.z > 1e-5f -> 'BadProjectedZ' warning and 1; dv = calibration.focal_y * (q.y/q.z); converged iff tol >= |dv| (writes headAngle = theta via Radians::operator=(float), returns 0 unless the index is 25 -> 'MaxIterations' warning and 1); else theta += -0.8f * atan2f(dv, focal_y); after 25 non-converged iterations the code returns 0 (success) WITHOUT writing headAngle (r0 = 26 passes the 'cmp r0,#0x19; bne' test). Confirmed by reading (register trace) in the verifier; not emulated |
 | M14-003 | M14-faces | EQUIVALENT_IMPLEMENTATION | TrackFaceAction: the durations it turns in, and the flags it starts with | ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read |
 | M15-018 | M15-freeplay | COMPATIBILITY_POLICY | NeedsStateOnRobot state version 0 / unsupported: the engine reads uninitialised fields | libcozmoEngine.so |

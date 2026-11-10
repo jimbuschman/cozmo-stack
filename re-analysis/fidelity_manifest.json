@@ -4577,7 +4577,7 @@
       "subsystem": "M12-manipulation",
       "title": "The docking-error-signal clamp is 40 degrees",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "authority": "libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194",
       "evidence": [
         "0x0063C182/0x0063C188 form 0x3F32B8C2 (40 deg); 0x0063C194 blx 0x4A6FD0 (ClampPoseToFlat)",
@@ -4585,10 +4585,10 @@
       ],
       "effect": "the error signal's angle is clamped to the wrong range",
       "provenance": "the 40-degree clamp had no record; the 20-degree pose-confirm clamp is M11-006",
-      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the docking-error-signal clamp is binary32 0x3F32B8C2 (0x0063C182..0x0063C194) with a one-ulp test on each side through BlockWorld.ClampPoseToFlat. Still open: the clamp's arithmetic inside BlockWorld is double.",
+      "unresolved": "settled EQUIVALENT_IMPLEMENTATION (Claude check research/20261109-codex-turn-clamp-unknown-delete-calib-claude-check.md, 2026-11-09): both live correction paths (the 0x48 recipient and legacy DockAsync OnFrame) call NativeDockingGeometry.Clamp, which follows ClampPoseToFlat 0x00877330..0x008774EC in f32: the root Z row's signed dominant column (0x0087733C..0x0087736C), the Radians gate against 0x3F32B8C2 (0x0063C182..0x0063C188, compare 0x0087737E), the local column dot and acos (0x008773D2..0x00877412), the 0x3727C5AC epsilon on the angle and the cross length (0x00877422..0x008774AA), then the left-multiply into the local rotation (0x008774BA..0x008774CC). Yaw is widened for pi/2 and narrowed once (0x0063C1A2..0x0063C1CE). Only acosf and the cross-length sqrt are the host's libm (M13-023(e)), hence EQUIVALENT_IMPLEMENTATION. Expectations come from the shipped ARM clamp run under the emulator. The pose inputs, marker choice and the 20-degree confirm clamp (M11-006) are other records.",
       "hardware_required": false,
       "live_path": true,
-      "test": "ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult"
+      "test": "NativeDockingCorrectionTests.RealFrameSendsNativeOracleClampAngle"
     },
     {
       "id": "M12-020",
@@ -8967,7 +8967,7 @@
       "subsystem": "M11-vision",
       "title": "The calibration-install path into MarkerDetector::Init",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/MarkerDetector.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "live_path": true,
       "hardware_required": false,
@@ -8976,8 +8976,8 @@
       "evidence": [
         "VisionSystem::UpdateCameraCalibration 0x006B1E3E; Camera::SetCalibration 0x006B1E5E; MarkerDetector::Init 0x006B1E78; Parameters::Initialize 0x008752E4/0x008752E6"
       ],
-      "test": "",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): Camera::SetCalibration (0x85DEDC) returns 1 only for a non-null pointer that differs from the stored one; MarkerDetector::Init is gated on it (0x006B1E6C/0x006B1E78); a null pointer with a stored calibration logs 'Camera.SetCalibration.NullCalibration'. Still open: a constructor-supplied calibration no longer runs Init in WaitForConnectionCalibrationAsync (the detector's defaults are the shipped ones)."
+      "test": "RFixBatch3Tests",
+      "unresolved": "settled EXACT_SOURCE (Claude check research/20261109-codex-turn-clamp-unknown-delete-calib-claude-check.md, 2026-11-09): UpdateCameraCalibration 0x006B1E3E calls Camera::SetCalibration 0x0085DEDC, which returns 0 for null with none stored and for the same pointer, installs a distinct non-null pointer (0x0085DEF0..0x0085DF08) and returns 1, and for null with one stored calls VERIFY (0x0085DF12; error log, error flag, logger flush) and returns 0. Only a 1 reaches MarkerDetector::Init with rows/cols (0x006B1E6C..0x006B1E78), which resets the parameters. The stack follows each branch; the NV install and detector reset run under the captured owner. The stock constructor starts uncalibrated and does not call Init (0x006B0016, 0x006B00F0); a host-supplied constructor calibration is a stack input, not an engine path. The NV read is M3-022, the image drop M11-049."
     },
     {
       "id": "M11-040",
