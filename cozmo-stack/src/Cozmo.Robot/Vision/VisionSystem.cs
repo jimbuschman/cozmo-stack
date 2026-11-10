@@ -81,6 +81,9 @@ public sealed partial class VisionSystem : IDisposable
     internal Action<IReadOnlyList<ImageQualityRectangle>>? NativeQualityRectanglesObservedForTest;
     internal Action<CameraCalibration,Pose3d>? NativeMarkerCameraObservedForTest;
     internal Func<IReadOnlyList<ObservedMarker>,IReadOnlyList<ObservedMarker>>? NativeMarkerListForTest;
+    internal readonly record struct NativeMarkerCarrier(ObservedMarker Marker, uint CameraId);
+    internal Func<IReadOnlyList<NativeMarkerCarrier>,IReadOnlyList<NativeMarkerCarrier>>? NativeMarkerCarriersForTest;
+    internal Action<RobotStateHistory,uint>? NativeMarkerKeyComputedForTest;
     internal NativeVisionInitialization? NativeInitializationForTest { get { lock (_groundGate) return _nativeInitialization; } }
     internal bool NativeMotionReadyFor(EngineRobot owner)
     {
@@ -1905,6 +1908,10 @@ public sealed partial class VisionSystem : IDisposable
                 markers=corrected;
             }
             if(markerMode)processedMask|=1<<DetectingMarkers;
+            // Detector and CLAHE retain the stock inner Camera ID 0 with every marker.
+            // Capture it on the worker with this frame rather than inferring it at delivery.
+            IReadOnlyList<NativeMarkerCarrier>? capturedNativeMarkers = queueForEngine
+                ? markers.Select(marker => new NativeMarkerCarrier(marker, 0)).ToArray() : null;
             if (RemovedSince(removal)) return null;
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
             Func<bool>? petSessionCurrent=null;
@@ -2108,7 +2115,12 @@ public sealed partial class VisionSystem : IDisposable
             // adapter retains its supplied-pose semantics; queued results use the captured owner.
             bool stateComputed = markerMode;
             var sourceMarkers=queueForEngine && NativeMarkerListForTest is {} markerFixture ? markerFixture(markers) : markers;
+            IReadOnlyList<NativeMarkerCarrier>? nativeMarkers = queueForEngine && NativeMarkerListForTest is not null
+                ? sourceMarkers.Select(marker => new NativeMarkerCarrier(marker, 0)).ToArray() : capturedNativeMarkers;
+            if (nativeMarkers is not null && NativeMarkerCarriersForTest is { } carrierFixture)
+                nativeMarkers = carrierFixture(nativeMarkers);
             var keptMarkers = sourceMarkers;
+            uint historicalKey = 0;
             BlockWorldFrameResult? worldFrame;
             using(World.EnterPoseMutation())
             {
@@ -2124,7 +2136,9 @@ public sealed partial class VisionSystem : IDisposable
                     if(sourceOwner is null || StaleFrame())stateComputed=false;
                     else
                     {
-                        uint status=sourceOwner.PoseHistory.ComputeAndInsertKeyedState(timestamp,historicalResult,out uint resolvedTime);
+                        uint status=sourceOwner.PoseHistory.ComputeAndInsertKeyedState(timestamp,historicalResult,out uint resolvedTime,out historicalKey);
+                        if (status == 0) NativeMarkerKeyComputedForTest?.Invoke(sourceOwner.PoseHistory, historicalKey);
+                        if (StaleFrame()) return null;
                         if(status!=0)
                         {
                             stateComputed=false;
@@ -2182,8 +2196,10 @@ public sealed partial class VisionSystem : IDisposable
                 if(stateComputed)
                 {
                     var kept = new List<ObservedMarker>(sourceMarkers.Count);
-                    foreach (var m in sourceMarkers)
+                    var candidates = nativeMarkers ?? sourceMarkers.Select(marker => new NativeMarkerCarrier(marker, 0)).ToArray();
+                    foreach (var carrier in candidates)
                     {
+                        var m = carrier.Marker;
                         if (m.Timestamp != timestamp)
                         {
                             if(queueForEngine)
@@ -2195,11 +2211,15 @@ public sealed partial class VisionSystem : IDisposable
                             if(queueForEngine)MarkerPublicLog(detail);else Log?.Invoke(detail);
                             continue;
                         }
+                        if (queueForEngine && sourceOwner is not null && carrier.CameraId == sourceOwner.NativeRobotId &&
+                            !sourceOwner.PoseHistory.IsValidComputedKey(historicalKey))
+                        {
+                            MarkerSourceLog(EngineLogLevel.Warning, null, "VisionComponent.Update.InvalidHistStateKey", $"key={unchecked((int)historicalKey)}");
+                            continue;
+                        }
                         kept.Add(m);
                     }
                     keptMarkers = kept;
-                    // Stock detector Camera ID 0 differs from the outer robot Camera ID 1;
-                    // the native same-camera key gate is therefore not entered here.
                 }
             }
             // fidelity: M11-035, M11-036 — UpdateVisionMarkers (0x00654D60) calls

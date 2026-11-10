@@ -61,6 +61,10 @@ public sealed class RobotStateHistoryAdmissionTests
             time=0;key=99;state=null;
             Assert.Equal(0u,second.History.ComputeAndInsertNative(200,ref time,ref state,true,ref key));
             Assert.Equal(0u,key);Assert.True(second.History.IsValidComputedKey(0));
+            using var copied = new HistRobotState();
+            Assert.Equal(0u, second.History.ComputeAndInsertKeyedState(200, copied, out uint resolved, out uint copiedKey));
+            Assert.Equal(200u, resolved); Assert.Equal(0u, copiedKey);
+            Assert.True(second.History.IsValidComputedKey(copiedKey));
             second.History.Clear();Assert.Equal(0,RobotStateHistory.ComputedKeyCounterForTest);
         }
         finally { RobotStateHistory.ComputedKeyCounterForTest=previous; }
