@@ -12,7 +12,7 @@
 - ObjectPoseUnknownReport.cs adds immutable typed and raw delivery. BlockWorld.cs binds it before deletion. FlipBlockAction.cs and NativeFlipBlockRunner.cs keep the terminal call with the captured owner.
 - ObjectPoseUnknownTests checks two reports with the same original ID, app queue admission before each local delivery, local delivery before deletion, raw/typed order, no-interface deletion, absent and located Flip, and origin/owner replacement during delivery.
 - SparksStackNativeTests verifies a real camera-miss invalidation reaches the local 0x52 report. M12RVisBuildTests now expects actual deletion instead of a host tombstone for the Flip terminal. The earlier M11 tests cover propagation past a carried middle.
-- Broad 244/244, actual-camera plus focused 6/6, and final original-owner/Flip suite 70/70 passed. Three earlier failures came from obsolete Flip tombstone assertions and a replacement fixture outside engine ownership. The batch gate is recorded in QUEUE.md.
+- Broad 244/244, actual-camera plus focused 6/6, and final original-owner/Flip suite 70/70 passed. Three earlier failures came from obsolete Flip tombstone assertions and a replacement fixture outside engine ownership. The first batch gate found another stale tombstone assertion in NavigationTests. It now checks removal with the old object state retained. Related rerun passed 56/56. The batch gate is recorded in QUEUE.md.
 
 ## MISSING
 

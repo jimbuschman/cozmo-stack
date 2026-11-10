@@ -10,7 +10,7 @@
 ## Files and tests
 
 - LocatedObjectDeletedReport.cs packs and delivers the report. Vision/BlockWorld.cs binds it to the shared deletion tail after pose effects and before the existing public world event.
-- LocatedObjectDeletedTests uses the attached world to check both IDs after all erasures, 0x52 then 0x4C, raw/typed bytes and the real dock subscription's matching-target invalidation. It covers external-interface suppression with standalone delivery, non-current origin erasure and replacement during the first local report. The dock test installs the real subscription directly. SparksStackNativeTests reaches the real camera-miss invalidation and asserts the 0x4C report. Affected 155/155 and final focused 5/5 passed after fixture fixes for app draining outside the engine owner lock and selecting all origins. The batch gate is recorded in QUEUE.md.
+- LocatedObjectDeletedTests uses the attached world to check both IDs after all erasures, 0x52 then 0x4C, raw/typed bytes and the real dock subscription's matching-target invalidation. It covers external-interface suppression with standalone delivery, non-current origin erasure and replacement during the first local report. The dock test installs the real subscription directly. The retained dock next-tick result and same-key replacement identity guard have no dedicated regression in this job. SparksStackNativeTests reaches the real camera-miss invalidation and asserts the 0x4C report. Affected 155/155 and final focused 5/5 passed after fixture fixes for app draining outside the engine owner lock and selecting all origins. The batch gate is recorded in QUEUE.md.
 
 ## MISSING
 
