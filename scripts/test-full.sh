@@ -28,7 +28,9 @@ trap 'touch "$mem.stop"; kill $sampler 2>/dev/null; dotnet build-server shutdown
 # suite was killed for low memory twice (operator, 2026-11-08).
 # Two build nodes, not one per core: the 2026-11-09 run's low point (2.4 GB free) was the build, at 4.4 GB for
 # dotnet/MSBuild/VBCSCompiler, not the tests (1.1 GB peak).
-if ! dotnet build cozmo-stack/Cozmo.sln -maxcpucount:2 >> "$log" 2>&1; then
+# No shared compiler server and no node reuse: the 2026-11-09 23:47 run was killed in the build with VBCSCompiler
+# and two nodes at 3.6 GB; each compile now runs in its own csc that exits with its project.
+if ! dotnet build cozmo-stack/Cozmo.sln -maxcpucount:2 -nodeReuse:false -p:UseSharedCompilation=false >> "$log" 2>&1; then
     grep -E "error CS|error MSB" "$log" | head -20; echo "test-full: build FAILED."; exit 1
 fi
 dotnet build-server shutdown >/dev/null 2>&1
