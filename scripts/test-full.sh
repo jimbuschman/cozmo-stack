@@ -24,7 +24,13 @@ if ! dotnet build cozmo-stack/Cozmo.sln >> "$log" 2>&1; then
     grep -E "error CS|error MSB" "$log" | head -20; echo "test-full: build FAILED."; exit 1
 fi
 dotnet build-server shutdown >/dev/null 2>&1
-if ! dotnet test cozmo-stack/Cozmo.sln --no-build --blame-hang --blame-hang-timeout 5m >> "$log" 2>&1; then
+# Sample memory during the tests and log each test's completion time, so a low-memory kill names the tests that were
+# running (operator, 2026-11-09). The sampler stops with the script.
+mem=.scratch/test-mem.log; : > "$mem"; rm -f "$mem.stop"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/sample-test-memory.ps1 -Out "$(cygpath -w "$root")\.scratch\test-mem.log" -Log "$(cygpath -w "$root")\.scratch\test-full.log" &
+sampler=$!
+trap 'touch "$mem.stop"; kill $sampler 2>/dev/null; dotnet build-server shutdown >/dev/null 2>&1' EXIT
+if ! dotnet test cozmo-stack/Cozmo.sln --no-build --blame-hang --blame-hang-timeout 5m --logger "console;verbosity=normal" >> "$log" 2>&1; then
     grep -E "\[FAIL\]|Failed!|error CS|hang|Blame|active test" "$log" | head -20; echo "test-full: FAILED."; exit 1
 fi
 grep -E "Passed!" "$log" | tail -1

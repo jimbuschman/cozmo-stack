@@ -104,6 +104,9 @@ public sealed unsafe partial class ArmMachine : IDisposable
     private Exception? _pending;
     private string _fault = "";
     private bool _disposed;
+    // Native bytes reported to the GC (about 200 MB per machine). Owners such as the speech provider dispose their machine
+    // only at robot teardown, so without this an undisposed machine stays committed until an unrelated collection finalizes it.
+    private long _pressure;
     private Exception? _executionFailure;
     private long _deadline;
     // Sampling bounds the extra guest execution after expiry to at most 64 translated blocks.
@@ -189,6 +192,8 @@ public sealed unsafe partial class ArmMachine : IDisposable
         var alloc = NativeMemory.AllocZeroed((nuint)size + 0x1000);
         var ptr = (byte*)(((nuint)alloc + 0xFFF) & ~(nuint)0xFFF);
         var r = new Region { Base = address, Size = size, Ptr = ptr, Alloc = alloc };
+        long bytes = (long)size + 0x1000;
+        GC.AddMemoryPressure(bytes); _pressure += bytes;
         _regions.Add(r);
         Check(uc_mem_map_ptr(_uc, address, size, UC_PROT_ALL, ptr), $"map 0x{address:X8}");
         return r;
@@ -201,6 +206,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
         _disposed = true;
         if (_uc != 0) { uc_close(_uc); _uc = 0; }
         foreach (var r in _regions) NativeMemory.Free(r.Alloc);
+        if (_pressure > 0) { GC.RemoveMemoryPressure(_pressure); _pressure = 0; }
         _regions.Clear();
         _lastRegion = default;
         if (_self.IsAllocated) _self.Free();
