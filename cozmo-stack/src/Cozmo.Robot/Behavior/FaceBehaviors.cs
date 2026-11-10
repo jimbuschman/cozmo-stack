@@ -962,6 +962,8 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
     private readonly HashSet<int> _reactedTo = new();
     private readonly object _gate = new();
     private readonly ReactToPetBehavior? _behavior;
+    private readonly NativeReactToPetBehavior? _nativeBehavior;
+    private readonly EngineRobot? _nativeOwner;
     private readonly Func<double>? _clockSec;
     // M14-004: [this+0x40] is a binary32 time (ctor -1.0f); RecentlyReacted 0x00611DD0..0x00611E14 compares (last + 60.0f) with the
     // binary32 clock in float: vmov.f32 s2,#-1.0 / vcmpe / ble (not recently reacted if last <= -1), vadd.f32 s16, last, 0x42700000, vcmpe s16, now / gt.
@@ -975,6 +977,26 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
         _behavior = behavior;
         _clockSec = clockSec;
         behavior.Reacted += OnReacted;
+    }
+
+    internal PetInitialDetectionStrategy(PetWorld world, NativeReactToPetBehavior behavior, EngineRobot owner, Func<double> clockSec) : this(world)
+    {
+        _nativeBehavior=behavior;_nativeOwner=owner;_clockSec=clockSec;
+        behavior.AddListener(OnNativeReacted);
+    }
+    private bool NativeCurrent=>_nativeOwner is null || !_nativeOwner.Lifetime.Destroying && ReferenceEquals(_nativeOwner.Engine.Robot,_nativeOwner);
+    private IReadOnlyList<PetEntry>? CurrentPets()=>_nativeOwner is null?_world.Pets:_world.GetNativePets(_nativeOwner);
+    private void OnNativeReacted(IReadOnlyCollection<int> ids)
+    {
+        if(!NativeCurrent)return;
+        var pets=CurrentPets();if(pets is null)return;
+        lock(_gate)
+        {
+            if(!NativeCurrent)return;
+            _reactedTo.Clear();foreach(var pet in pets)_reactedTo.Add(pet.Id);
+            foreach(int id in ids)_reactedTo.Add(id);
+            _lastReactedSec=_nativeOwner!.Engine.Timer.SecondsF;
+        }
     }
 
     public override ReactionTrigger Trigger => ReactionTrigger.PetInitialDetection;
@@ -1005,7 +1027,7 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
         lock (_gate)
         {
             _reactedTo.Clear();
-            foreach (var p in _world.Pets) _reactedTo.Add(p.Id);
+            foreach (var p in CurrentPets() ?? Array.Empty<PetEntry>()) _reactedTo.Add(p.Id);
             foreach (var id in reacted) _reactedTo.Add(id);
             _lastReactedSec = (float)nowSec;
         }
@@ -1013,7 +1035,9 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
 
     protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
-        var pets = _world.Pets;
+        if(!NativeCurrent)return false;
+        var pets = CurrentPets();
+        if(pets is null){SteppedBehavior.ReportMissing("M14-004 native PetWorld owner unavailable");return false;}
         List<int> targets;
         lock (_gate)
         {
@@ -1022,19 +1046,44 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
                 foreach (var p in pets) _reactedTo.Add(p.Id);                                     // UpdateReactedTo
                 return false;
             }
-            targets = pets.Where(p => !_reactedTo.Contains(p.Id) && p.TimesObserved >= MinTimesObserved).Select(p => p.Id).ToList();
+            targets = pets.Where(p => !_reactedTo.Contains(p.Id) && p.TimesObserved >= MinTimesObserved).Select(p => p.Id).Distinct().OrderBy(id=>id).ToList();
         }
         if (targets.Count == 0) return false;
         if (rc.Context.Robot.Sensors.OnChargerPlatform) return false;
         lock (_gate) _targets = targets;
+        if(!NativeCurrent)return false;
+        _nativeBehavior?.SetTargets(targets);
+        if(!NativeCurrent)return false;
         return behavior.IsRunnable(rc.Context);
     }
 
-    public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
+    public override void EnabledStateChanged(BehaviorContext context, bool enabled)
+    {
+        if(_nativeOwner is null || !NativeCurrent)return;
+        var pets=CurrentPets();if(pets is null)return;
+        lock(_gate)foreach(var pet in pets)_reactedTo.Add(pet.Id);
+    }
+
+    protected override void SetupForceTriggerBehavior(ReactionContext rc,IBehavior behavior)
+    {
+        if(_nativeOwner is null || !NativeCurrent || _nativeBehavior is null)return;
+        var pets=CurrentPets();if(pets is null)return;
+        var ids=pets.Select(p=>p.Id).Distinct().OrderBy(id=>id).ToArray();
+        if(ids.Length==0)
+        {
+            _nativeOwner.Engine.EmitSourceLog(EngineLogLevel.Warning,null,
+                "ReactionTriggerStrategyPetInitialDetection.SetupForceTriggerBehavior","No pet targets found");
+            return;
+        }
+        if(!NativeCurrent)return;
+        _nativeBehavior.SetTargets(ids);
+        lock(_gate)_targets=ids;
+    }
 
     public void Dispose()
     {
         if (_behavior is not null) _behavior.Reacted -= OnReacted;
+        if (_nativeBehavior is not null) _nativeBehavior.RemoveListener(OnNativeReacted);
     }
 }
 

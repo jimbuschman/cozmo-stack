@@ -318,6 +318,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeMeetInteractWithFaces(ctx,json),
+        [BehaviorClass.ReactToPet] = (ctx,json)=>new NativeReactToPetBehavior(ctx,json),
         [BehaviorClass.EnrollFace] = (ctx,json)=>new NativeEnrollFaceBehavior(ctx,json),
         [BehaviorClass.RespondToRenameFace] = (ctx,json)=>new NativeRespondToRenameFace(ctx,json),
         [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
@@ -470,6 +471,11 @@ public sealed class BehaviorFactory
         {
             SteppedBehavior.ReportMissing("InteractWithFaces factory supports only the checked Meet configuration with original owners");
             status=BehaviorCreateStatus.NotImplemented; return null;
+        }
+        if (cls == BehaviorClass.ReactToPet && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.ReactToPet || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("ReactToPet factory requires the checked configuration and original owners");
+            status=BehaviorCreateStatus.NotImplemented;return null;
         }
         if (cls == BehaviorClass.EnrollFace && (BehaviorConfigLoader.ExtractIdFromConfig(config) != BehaviorID.EnrollFace || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
         {

@@ -761,7 +761,8 @@ public static class ShippedBehaviors
                                                                                 List<string>? unbound = null,
                                                                                 AcknowledgeObjectBehavior? acknowledgeObject = null,
                                                                                 Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null,
-                                                                                AcknowledgeFaceBehavior? acknowledgeFace = null)
+                                                                                AcknowledgeFaceBehavior? acknowledgeFace = null,
+                                                                                IBehavior? nativePet = null, EngineRobot? nativePetOwner = null, bool nativePetExpected = false)
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
@@ -825,9 +826,15 @@ public static class ShippedBehaviors
             var ackFace = acknowledgeFace ?? new AcknowledgeFaceBehavior(vision) { NativeRetainedProfile = true };
             built.Add((ackFace.Id, ReactionTrigger.FacePositionUpdated, ackFace,
                        new FacePositionUpdatedStrategy(vision.Faces, ackFace, () => vision.History.Latest?.RobotPose, clockSec ?? (() => robot.Engine.Timer.Seconds))));
-            var reactToPet = new ReactToPetBehavior(vision);
-            built.Add((reactToPet.Id, ReactionTrigger.PetInitialDetection, reactToPet,
-                       new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => robot.Engine.Timer.Seconds))));
+            if(nativePet is NativeReactToPetBehavior actualPet && nativePetOwner is not null)
+                built.Add((actualPet.Id,ReactionTrigger.PetInitialDetection,actualPet,
+                    new PetInitialDetectionStrategy(vision.Pets,actualPet,nativePetOwner,clockSec ?? (()=>robot.Engine.Timer.Seconds))));
+            else if(!nativePetExpected)
+            {
+                var reactToPet = new ReactToPetBehavior(vision);
+                built.Add((reactToPet.Id, ReactionTrigger.PetInitialDetection, reactToPet,
+                           new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => robot.Engine.Timer.Seconds))));
+            }
         }
         if (ramIntoBlock is not null && whiteboard is not null)
             built.Add(("RamIntoBlock", ReactionTrigger.NoPreDockPoses, ramIntoBlock,
