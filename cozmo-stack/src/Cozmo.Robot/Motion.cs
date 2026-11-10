@@ -75,6 +75,9 @@ public sealed record AiTurnActionResult(bool Admitted, uint? EngineResult, strin
 /// <summary>The terminal native result and selected authored animation name.</summary>
 public sealed record AiAnimationActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, string? AnimationName = null);
 
+/// <summary>The native terminal result and signed face ID retained by the tracking action.</summary>
+public sealed record AiTrackFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, int? FaceId = null);
+
 /// <summary>An advisory view of one robot owner and its last published engine state.</summary>
 public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
 
@@ -122,6 +125,32 @@ public sealed class CozmoMotion
     /// </summary>
     public Task<AiHeadActionResult> QueueAiHeadAngleAsync(float radians, CancellationToken cancellationToken = default) =>
         QueueAiMoveAsync(radians, true, cancellationToken);
+
+    /// <summary>Queues face tracking after existing actions. The tracker follows fresh observations until the action ends; cancellation targets this runner.</summary>
+    public async Task<AiTrackFaceActionResult> QueueAiTrackFaceAsync(int faceId, bool headOnly, CancellationToken cancellationToken = default)
+    {
+        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        var engine=_robot.Engine;var owner=engine.Robot;
+        Task<AiHeadActionResult> task;
+        Vision.NativeTrackFaceRunner action;
+        using(engine.EnterSynchronousOwner())
+        {
+            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for face tracking");
+            var runtime=owner.NativeBehaviorRuntime;
+            if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation)
+                return new(false,null,"MISSING: original face-tracking owner unavailable");
+            uint tag=AllocateAiTag();
+            if(tag==0)return new(false,null,"No external action tag is available");
+            action=new Vision.NativeTrackFaceRunner(manipulation,owner,faceId,headOnly,
+                BitConverter.UInt32BitsToSingle(0x3D0EFA35),false,-1,-1,0);
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native face tracking ended",true,
+                ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime));
+        }
+        var result=await task.ConfigureAwait(false);
+        return new(result.Admitted,result.EngineResult,result.Detail,result.OwnerRetired,
+            result.Admitted ? unchecked((int)action.PreparedCompletionUnion) : null);
+    }
 
     /// <summary>Queues an authored trigger after existing actions; cancellation addresses only this runner.
     /// Clips requiring a speech provider and concurrent shared-audio handoff are reported as unavailable.</summary>
@@ -320,6 +349,7 @@ public sealed class CozmoMotion
         else if(action is Manipulation.NativePickupObjectRunner pickup)pickup.AiNativeEnded=completion;
         else if(action is Manipulation.NativeDriveToPickupBeaconRunner drivePickup)drivePickup.AiNativeEnded=completion;
         else if(action is Animation.TriggerAnimationAction animation)animation.AiNativeEnded=completion;
+        else if(action is Vision.NativeTrackFaceRunner trackFace)trackFace.AiNativeEnded=completion;
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)

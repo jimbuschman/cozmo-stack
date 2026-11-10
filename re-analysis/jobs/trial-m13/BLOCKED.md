@@ -1,16 +1,4 @@
-# Operator decisions
+# Next capability and settlement decisions
 
-None open.
-
-## Closed: far-side drive pickup (2026-11-09)
-
-- **The decision:** no policy. The native result is kept.
-- **Why:** the operator confirmed the cube was lying on its side. On a cube lying on its side, the far-side Bottom face
-  is the engine's only allowed approach.
-- **What changed instead:** the hardware guide and the harness prompt now require the cube upright, lights on top.
-- **The check:** `research/20261109-codex-predock-overshoot-marker-claude-check.md`.
-
-## Next capability proposals (from Codex, still queued)
-
-1. **AI-BODY-TRACK-FACE-REQUEST-1:** the explicit TrackToFace request ingress (factory 0x52ACC0–0x52ACE6).
-2. **BLOCKWORLD-POSE-QUEUE-SETTLEMENT-1 (M11-063).**
+1. **AI-BODY-TURN-TO-FACE-1.** Trace the stock one-shot TurnTowardsFace request into the retained face-turn action, including signed ID versus native last-face selection, max angle and the result payload. If the stock request matches the retained recipient, expose the checked explicit-face profile through the AI queue. Test current-root and absent-face branches, verification, cancellation and original-owner completion. Keep name speech and broader behavior producers separate unless the bounded stock request invokes them.
+2. **DOCK-CORRECTION-CLAMP-SETTLEMENT-1 (M12-019).** Verify the live 40-degree docking clamp at 0x0063C182–0x0063C194 and the retained ARM geometry at 0x00877330. Cover the strict threshold and both axis signs in the actual 0x48 recipient with same-timestamp, non-flat poses. Check whether any live legacy correction path still uses the older double clamp. Scope settlement to the record's own clamp and keep camera estimation, pose history, and physical docking outcomes separate.

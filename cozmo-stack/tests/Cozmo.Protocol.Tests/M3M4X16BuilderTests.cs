@@ -227,6 +227,58 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Equal(7u,result.Status);Assert.True(w.PoseChangeWindow);Assert.False(tail);
         Assert.Contains("BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed",keys);Assert.True(EngineErrorState.ErrorFlagSet);
     }
+
+    [Fact]
+    public void RenderedFrameKeepsFirstOldPoseOnDuplicateAndFailureUntilNextFrame()
+    {
+        // Rendered image through direct ProcessImage and the actual detector/BlockWorld frame.
+        // Camera pose and schedules are supplied; no camera transport is claimed. Only the
+        // localization-result callback supplies repeated producer calls and the M11-044 failure.
+        using var robot=Robot();var vision=robot.Vision;var world=vision.World;
+        vision.Calibration=CameraCalibration.Nominal();vision.Enabled=false;
+        vision.ModeEnableMask=1<<(int)VisionMode.DetectingMarkers;
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
+        var native=Assert.IsType<NativeConfigurationManager>(world.NativeConfigurations);
+        var keys=new List<string>();robot.Engine.LogEntry+=e=>keys.Add(e.Name);
+        var observed=new List<(uint Id,PoseState State)>();
+        world.SetObjectPoseChanged=(id,state)=>{Assert.Contains(id,native.Pending);observed.Add((id,state));};
+        bool tail=false;world.BlockConfigurationManagerUpdate=()=>{Assert.False(world.PoseChangeWindow);tail=true;};
+        var cal=vision.Calibration;var pd=new VisionPoseData(100,Pose3d.Identity,-.15,0,false,false);
+        var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
+        MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,new CameraModel(cal,pd.CameraPose),ObjectType.Block_LIGHTCUBE1,At(150,0,22));
+        Assert.NotEmpty(vision.ProcessImage(image,99,99,pd).Markers); // first nonconfirming sighting
+        tail=false;keys.Clear();observed.Clear();
+        var listField=typeof(BlockWorld).GetField("_poseChanges",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+        List<PoseChange> Queue()=>(List<PoseChange>)listField.GetValue(world)!;
+        uint capturedId=0;bool reached=false;
+        world.LocalizeRobotResultForTest=()=>
+        {
+            reached=true;Assert.True(world.PoseChangeWindow);
+            var obj=Assert.Single(world.LocatedObjects);capturedId=obj.ObjectId;
+            Assert.Contains(obj.ObjectId,native.Pending); // actual first-pose setter already notified the native configuration owner
+            Assert.Equal(0,world.PoseChangeCount); // native Unknown -> first pose did not queue
+            var origin=robot.Engine.Robot!.GetNativeOrigin(robot.Engine.Robot.CurrentOriginId);
+            using var old=new Pose3d(Rotation3d.Identity,new Vec3(11,12,13),parent:origin);
+            world.BroadcastObjectPoseChanged(obj,old,PoseState.Known);
+            Assert.Equal(1,world.PoseChangeCount);
+            using var changed=new Pose3d(Rotation3d.Identity,new Vec3(90,91,92));old.Assign(changed);
+            world.BroadcastObjectPoseChanged(obj,null,PoseState.Unknown); // duplicate precedes first-state/null branch
+            Assert.Equal(1,world.PoseChangeCount);
+            Assert.Equal(new Vec3(11,12,13),Assert.Single(Queue()).Pose.Translation);
+            Assert.Same(origin.Node,Queue()[0].Pose.Node!.Parent);
+            Assert.Equal((obj.ObjectId,obj.PoseState),observed[^1]);
+            return 7;
+        };
+        var first=vision.ProcessImage(image,100,100,pd);
+        Assert.NotEmpty(first.Markers);Assert.True(reached);Assert.True(world.PoseChangeWindow);Assert.False(tail);
+        Assert.Equal(capturedId,Assert.Single(Queue()).Id);Assert.Equal(new Vec3(11,12,13),Queue()[0].Pose.Translation);Assert.Equal(PoseState.Known,Queue()[0].State);
+        Assert.Single(keys.Where(k=>k=="BlockWorld.OnObjectPoseChanged.FirstPoseForObject"));
+        Assert.Single(keys.Where(k=>k=="BlockWorld.OnObjectPoseChanged.MultipleChanges"));
+        world.LocalizeRobotResultForTest=null;
+        var empty=new GrayImage(cal.Columns,cal.Rows);empty.Fill(150);
+        var next=vision.ProcessImage(empty,101,101,pd);
+        Assert.Empty(next.Markers);Assert.False(world.PoseChangeWindow);Assert.Equal(0,world.PoseChangeCount);Assert.True(tail);
+    }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void VisionFailureStillCallsDockingBeforeLocalHandlerError()

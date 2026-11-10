@@ -256,10 +256,15 @@ public sealed class RobotStateHistoryAdmissionTests
     public void DetectedCliffUsesInterpolatedRobotHistoryAndIsPlacedInTheWorld()
     {
         using var f=new Fixture();f.Send(f.State(100,0));f.Send(f.State(200,10));
+        var world=f.Rig.Robot.LocalizationWorld;
+        Assert.False(world.PoseChangeWindow);Assert.Equal(0,world.PoseChangeCount);
+        int mark=f.Rig.Log.Count;
         f.Rig.Data(new CliffEvent{Timestamp=150,DetectedFlags=1});f.Rig.Tick();
         var cliff=Assert.Single(f.Rig.Robot.LocalizationWorld.Objects,o=>o.Type==ObjectType.CliffDetection);
         Assert.Equal(5f,(float)cliff.Pose.Translation.X);Assert.Equal(PoseState.Known,cliff.PoseState);
         Assert.Contains(f.Rig.Log,l=>l.Contains("RobotImplMessaging.HandleCliffEvent.Detected"));
         Assert.DoesNotContain(f.Rig.Log,l=>l.Contains("M11-097 ComputeStateAt(timestamp, true)"));
+        Assert.False(world.PoseChangeWindow);Assert.Equal(0,world.PoseChangeCount);
+        Assert.DoesNotContain(f.Rig.Log.Skip(mark),l=>l.Contains("BlockWorld.OnObjectPoseChanged.FirstPoseForObject") || l.Contains("BlockWorld.OnObjectPoseChanged.MultipleChanges"));
     }
 }
