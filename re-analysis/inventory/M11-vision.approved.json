@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-11-03",
+  "approved": "2026-11-10",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "e079f3b64ae1c30585f817b55ee7cc81f12651f36cef549d1281f80f5fc59085",
+  "inventory_sha256": "7c8842997561ead38128794d21dea1f27b8954540cd3b31f835e2eb3a5df968d",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -487,7 +487,7 @@
       "hardware_required": false
     },
     "M11-039": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The calibration-install path into MarkerDetector::Init",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -610,7 +610,7 @@
       "hardware_required": false
     },
     "M11-050": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "UpdateVisionMarkers steps between ComputeAndInsertStateAt and UpdateObservedMarkers",
       "authority": "libcozmoEngine.so 3.4.0-1204, UpdateVisionMarkers: result of ComputeAndInsertStateAt (0x00654D92) at 0x00654D96..0x00654D9E: 0 continues at 0x00654E50; 0x06000000 jumps to 0x006550A0 with no log; any other non-zero result logs with the frame timestamp and GetOldestTimeStamp/GetNewestTimeStamp (0x00654DE2) and jumps to 0x0065507E (UpdateObservedMarkers never reached). Success path: 0x00654E56 Robot::IsPoseInWorldOrigin(state pose) false -> 0x00655028 error log then 0x006550A0 (return 0, markers dropped); 0x00654E78 VisionComponent::WasRotatingTooFast(key, 0x3F060A92 = 0.5236, 0x3E32B8C2 = 0.1745, 0) non-zero -> 0x006550A0 skipping everything (the C# only has a (0.1745, 0.1745, 0) gate, 0x00621C9A); 0x00654E8E Robot::GetHistoricalCamera(state, ts); per-marker loop 0x00654E94..0x00655020: a marker whose timestamp differs from the result timestamp (0x00654F0C) is an sErrorF drop; a marker whose camera field equals [VisionComponent+0x24] (0x00654F10..0x00654F16) with RobotStateHistory::IsValidKey(key) false (0x00654F24) is a warning drop (0x00654FDA); otherwise the marker camera is replaced by the historical camera and the marker is pushed to a NEW list (0x00654F88) which alone goes to UpdateObservedMarkers (0x00654DEC..0x00654DF4). So marker camera poses, and object poses, come from the computed state.",
       "evidence": [
@@ -715,13 +715,16 @@
       "hardware_required": false
     },
     "M11-059": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "VisionComponent::Init and VisionSystem::Init: the config reads, IsInitialized and the face-album load-or-erase branch",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "VisionComponent::Init 0x00650D20..0x006510F6; VisionSystem::Init 0x006B0658..0x006B141A; VisionSystem::IsInitialized 0x006B2CD6 (+0x58) and its readers Update 0x006B4D66 and HandleDefaultCameraParams 0x00657CA8..0x00657CB0 / 0x00657D62..0x00657DA0; LoadFaceAlbumFromRobot 0x006512A0; the file branch 0x0065100C..0x00651086",
       "evidence": [
-        "VisionComponent::Init 0x00650D20: ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA; rows 4a..4l; vision_config.json:46 = 16); VisionSystem::Init (0x006B0658) called at 0x00650E36 (blx 0x4BA200), then cmp r6,#0; beq.w 0x650FB4 (0x00650E3C..0x00650E3E); non-zero: sErrorF 0x00650E58, the debug-break gate 0x00650E90..0x00650E9A, return 0x00650FB0",
-        "Zero: 0x00650FB4, a branch at 0x00650FE8..0x00650FFC, then LoadFaceAlbumFromRobot blx 0x4BA23C at 0x0065108A (body 0x006512A0 reads 0x184000 at 0x006512F0 and 0x183000 at 0x00651330); the other branch 0x0065100C..0x00651086 (EraseAllFaces 0x00651014, BroadcastLoadedNamesAndIDs 0x00651032) is unread; VisionSystem::IsInitialized 0x006B2CD6",
-        "re-analysis/research/overnight/20261014-ov15-16-17-check.md: C1-C5 0x00650D56..0x00650FAE; A1-A7 0x00650FF8..0x00651630; S1-S10 VisionSystem::Init (profiler keys at 0x006B0E96/0x006B0ECC, SetAutoExposureParams 0x006B0A14, schedules 0x006B13C0.., +0x58 = 1 at 0x006B141A); SetExposureParameters 0x0085F374..0x0085F4AA; N1 Robot ctor gate 0x005103BC..0x005103D4; N2 LoadRobotConfigs 0x0052267C."
+        "VisionComponent::Init 0x00650D20: clears +0x10 (0x00650D30); reads TimeBeforeErrorMessage_ms (u32, 0x0105104C), RepeatedErrorMessageInverval_ms (u32, 0x01051050), InitialExposureTime_ms (u16, 0x01051054) and DropStatsWindowLength_sec (f32) with MissingJsonParameter / errG / return 1 on a missing key (0x00650D56..0x00650FAE); calls VisionSystem::Init at 0x00650E36 and on a nonzero result logs VisionSystemInitFailed (0x00650E58), sets errG (0x00650E90..0x00650E9A) and returns it.",
+        "FaceAlbum selector (GetValueOptional<string> 0x00650FD6): empty or \"robot\" (length-5 compare 0x00650FFA..0x00651010) takes LoadFaceAlbumFromRobot (blx at 0x0065108A; body 0x006512A0 clears +0x2F4/+0x300 at 0x006512C4..0x006512D8, reads 0x184000 at 0x006512F0 then 0x183000 at 0x00651330, logs Initiated at 0x006513B0); anything else takes the file branch: EraseAllFaces 0x00651014, LoadFaceAlbum 0x00651028, BroadcastLoadedNamesAndIDs 0x00651032 before the result test, LoadFaceAlbumFromFileFailed 0x00651036..0x0065105A, list clear 0x00651082. Completion: +0x98 = \"VisionComponent\", +0x10 = 1 (0x006510E2), +0x9C = vcvt.u32.f32(window*15) (0x006510C8..0x006510E4), return 0 (0x006510F6).",
+        "VisionSystem::Init 0x006B0658: clears +0x338/+0x58/+0x328 (0x006B0674..0x006B067C); model path from [ctx+8] (0x006B068A..0x006B0696); ImageQuality group and six reads into 0x01051088..0x01051094; MidValue/MaxChangeFraction/SubSample then SetAutoExposureParams 0x006B0A14; profiler keys (0x006B0E96/0x006B0ECC); FaceTracker, MotionDetector, PetTracker::Init (failure logs PetTrackerInitFailed, errG, return); InitialVisionModes and InitialModeSchedules (0x006B13C0..); AllVisionModesSchedule push_front, CLAHE 32.0/(4,4), +0x350 = 4, +0x354 = 0x20, +0x58 = 1 at 0x006B141A, return 0.",
+        "IsInitialized 0x006B2CD6 (ldrb +0x58) is read by VisionSystem::Update at 0x006B4D66 and by HandleDefaultCameraParams at 0x00657CA8..0x00657CB0: when clear, that handler logs NotInitialized (sErrorF 0x00657D72), joins the error tail at 0x00657DE4 and sends nothing (no SetCameraSettings, SetCameraExposureParams or SetNextCameraParams).",
+        "Robot constructor gate N1 0x005103BC..0x005103D4: Init only with a data platform ([r1,#8]); its Result is ignored; the backup reads follow. The context: VisionComponent+0x18 is the constructor's CozmoContext (0x006500A8 ctor) and VisionSystem+0x5C is its own constructor argument (str.w r8,[r4,#0x5c] at 0x006B0010), so the NullDataPlatform branch at 0x006B068A is unreachable through N1.",
+        "re-analysis/research/overnight/20261014-ov15-16-17-check.md (C1-C5, A1-A7, S1-S10, N1, N2); the five Codex handoffs VISION-INIT-SETTLEMENT-1, FACE-GUEST-INIT-1, FACE-ALBUM-FILE-BOUNDARY-1, FACE-NV-ALBUM-RESTORE-1, FACE-ALBUM-FILE-REQUEST-1 (checked 2026-11-10); .scratch census in research/20261110-vision-init-camera-gate-claude-check.md."
       ],
       "live_path": true,
       "hardware_required": false
@@ -762,7 +765,7 @@
       "hardware_required": false
     },
     "M11-063": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BlockWorld+0x74: the writer of the pose-change queue flag that gates OnObjectPoseChanged logs and queue",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [

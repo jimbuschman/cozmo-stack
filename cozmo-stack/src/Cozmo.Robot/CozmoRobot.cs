@@ -280,6 +280,11 @@ public sealed partial class CozmoRobot : IDisposable
     /// <summary>The robot-owned vision system and world model, constructed before connection.</summary>
     public Vision.VisionSystem Vision => _vision ?? throw new InvalidOperationException("World-less unit-test composition has no VisionSystem.");
     internal bool IsCanonicalVision(Vision.VisionSystem vision) => ReferenceEquals(_vision, vision);
+    /// <summary>
+    /// The canonical VisionSystem's worker init flag (VisionSystem::IsInitialized, +0x58) for <paramref name="owner"/>, for
+    /// the M11-059 gate in <see cref="CameraSettings"/>; null without a VisionSystem or when the flag is not knowable.
+    /// </summary>
+    internal bool? NativeVisionWorkerInitialized(EngineRobot owner) => _vision?.NativeWorkerInitializedFor(owner);
     /// <summary>Backpack LEDs and the infrared headlight.</summary>
     public CozmoLights Lights { get; }
     /// <summary>Everything the robot reports about itself: power, motion, IMU and cliffs.</summary>

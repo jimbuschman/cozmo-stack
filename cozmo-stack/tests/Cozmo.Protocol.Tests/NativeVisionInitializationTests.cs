@@ -322,6 +322,182 @@ public sealed class NativeVisionInitializationTests
         Assert.True(owner.VisionNvTailUnavailable);
         Assert.False(owner.ReadyToStream);
     }
+    private static DefaultCameraParams RobotDefaults(float maxGain,float gain,ushort min,ushort max)
+        =>new(){Field0=maxGain,Field1=gain,Field2=min,Field3=max,Field4=new byte[17]};
+    private static int SentCount(M4ControlTests.Rig rig){lock(rig.Port.Sent)return rig.Port.Sent.Count;}
+    private static List<RobotMessage> SentAfter(M4ControlTests.Rig rig,int from)
+    {lock(rig.Port.Sent)return rig.Port.Sent.Skip(from).Select(b=>RobotMessage.Parse(b)).ToList();}
+    /// <summary>The shipped vision_config.json (JsonCpp comments allowed) with one key removed, re-serialised as plain JSON.</summary>
+    private static string WithoutKey(string shippedText,string[] path)
+    {
+        var options=new System.Text.Json.JsonDocumentOptions{CommentHandling=System.Text.Json.JsonCommentHandling.Skip,AllowTrailingCommas=true};
+        var root=System.Text.Json.Nodes.JsonNode.Parse(shippedText,documentOptions:options)!.AsObject();
+        var parent=root;for(int i=0;i<path.Length-1;i++)parent=parent[path[i]]!.AsObject();
+        Assert.True(parent.Remove(path[^1]));
+        return root.ToJsonString();
+    }
+    /// <summary>
+    /// M11-059: VisionComponent::HandleDefaultCameraParams reads VisionSystem::IsInitialized at 0x00657CA8..0x00657CB0
+    /// (<c>ldr r0,[r5,#0x1c]; blx 0x006B2CD6</c> = <c>ldrb r0,[r0,#0x58]</c>; <c>beq 0x00657D62</c>). A VisionSystem::Init
+    /// that fails after entry leaves +0x58 clear (cleared at 0x006B0674..0x006B067C, set only by the tail at 0x006B141A), so
+    /// the handler takes 0x00657D62..0x00657DA0: sErrorF "VisionComponent.HandleDefaultCameraParams.NotInitialized"
+    /// (0x00657D72), the error tail at 0x00657DE4, and never SetCameraSettings, SetCameraExposureParams or
+    /// SetNextCameraParams: nothing on the wire, nothing queued, the constructor limits (M3-021 1a: 66, 1, 0.1, 4.0) and
+    /// the empty gamma table untouched. Two defined failures: a missing InitialVisionModes (VisionSystem::Init's schedule
+    /// read) and a missing ImageQuality.TooBrightValue (the quality-settings read).
+    /// </summary>
+    // reach: production — the engine reads its own vision_config.json (the shipped file with one key removed) in the Robot
+    // constructor's Init, and DefaultCameraParams arrives through the port and the message dispatch.
+    [Theory]
+    [InlineData("InitialVisionModes")]
+    [InlineData("ImageQuality/TooBrightValue")]
+    public void M11_059_DefaultCameraParamsAfterADefinedSystemInitFailureSendsNothing(string removedKeyPath)
+    {
+        string[] removed=removedKeyPath.Split('/');
+        var prior=AllVisionModesSchedule.CopyDefault();bool oldError=EngineErrorState.ErrorFlagSet;
+        var quality=ImageQualitySettings.Globals;
+        var oldQuality=(quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High);
+        var oldComponent=(VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
+        try
+        {
+            using var backup=new BackupTestResources();
+            var options=backup.Options(new CozmoEngineOptions{BlockPoolPath=""});
+            string config=Path.Combine(options.ResourcesPath!,"config","engine","vision_config.json");
+            File.WriteAllText(config,WithoutKey(File.ReadAllText(config),removed));
+            using var rig=new M4ControlTests.Rig(engineOptions:options);
+            var logs=new List<EngineLogEntry>();var missing=new List<string>();
+            rig.Engine.LogEntry+=logs.Add;rig.Engine.StackLogLine+=missing.Add;
+            rig.ToSynced();
+            var state=rig.Robot.Vision.NativeInitializationForTest!;
+            Assert.Contains(logs,e=>e.Name=="VisionSystem.Init.MissingJsonParameter"&&e.Text.EndsWith(removed[^1]));
+            Assert.Contains(logs,e=>e.Name=="VisionComponent.Init.VisionSystemInitFailed");
+            Assert.True(state.AvailabilityKnown);Assert.False(state.Initialized);
+            Assert.False(rig.Robot.CameraSettings.VisionSystemInitialized);
+            EngineErrorState.ErrorFlagSet=false;logs.Clear();
+            int before=SentCount(rig);
+            rig.Data(RobotDefaults(3f,1.5f,1,50));rig.Tick();
+            var error=Assert.Single(logs.Where(e=>e.Name=="VisionComponent.HandleDefaultCameraParams.NotInitialized"));
+            Assert.Equal(EngineLogLevel.Error,error.Level);
+            Assert.True(EngineErrorState.ErrorFlagSet);
+            Assert.Empty(SentAfter(rig,before).OfType<SetCameraParams>());
+            var camera=rig.Robot.CameraSettings;
+            Assert.Null(camera.NextCameraParams);
+            Assert.Equal((66,1,0.1f,4.0f),(camera.MaxExposureMs,camera.MinExposureMs,camera.MinGain,camera.MaxGain));
+            Assert.Empty(camera.GammaTable);
+            Assert.DoesNotContain(logs,e=>e.Name=="VisionComponent.SetCameraSettings");
+            // The engine's own branch, not a stack gap: no MISSING for the gate.
+            Assert.DoesNotContain(missing,line=>line.Contains("M11-059")&&line.Contains("HandleDefaultCameraParams"));
+        }
+        finally
+        {
+            AllVisionModesSchedule.RestoreDefaultForTest(prior);EngineErrorState.ErrorFlagSet=oldError;
+            (quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High)=oldQuality;
+            (VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=oldComponent;
+        }
+    }
+    /// <summary>
+    /// M11-059 with M3-021 (1k, A19, A22): after a VisionSystem::Init that reached its tail (+0x58 = 1 at 0x006B141A),
+    /// HandleDefaultCameraParams passes the gate at 0x00657CB0 and runs SetCameraSettings(16, gain): SetCameraParams
+    /// {f32 gain, u16 16, false} on the wire (the initial exposure is vision_config.json:46 InitialExposureTime_ms = 16,
+    /// read at 0x00650DAE..0x00650DCA) and SetNextCameraParams(16, gain) queued; no NotInitialized log and no gap report.
+    /// </summary>
+    // reach: production — the shipped vision_config.json read by the engine, Init in the Robot constructor, DefaultCameraParams through the port.
+    [Fact]
+    public void M11_059_DefaultCameraParamsAfterASuccessfulInitPassesTheGate()
+    {
+        var prior=AllVisionModesSchedule.CopyDefault();bool oldError=EngineErrorState.ErrorFlagSet;
+        var quality=ImageQualitySettings.Globals;
+        var oldQuality=(quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High);
+        var oldComponent=(VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
+        try
+        {
+            using var backup=new BackupTestResources();
+            using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions{BlockPoolPath=""}));
+            var logs=new List<EngineLogEntry>();var missing=new List<string>();
+            rig.Engine.LogEntry+=logs.Add;rig.Engine.StackLogLine+=missing.Add;
+            rig.ToSynced();
+            Assert.True(rig.Robot.Vision.NativeInitializationForTest!.Initialized);
+            Assert.True(rig.Robot.CameraSettings.VisionSystemInitialized);
+            int before=SentCount(rig);
+            rig.Data(RobotDefaults(3f,1.5f,1,50));rig.Tick();
+            var sent=Assert.Single(SentAfter(rig,before).OfType<SetCameraParams>());
+            Assert.Equal((1.5f,(ushort)16,false),(sent.Gain,sent.ExposureMs,sent.AutoExposureEnabled));
+            Assert.Equal((16,1.5f),rig.Robot.CameraSettings.NextCameraParams!.Value);
+            Assert.DoesNotContain(logs,e=>e.Name=="VisionComponent.HandleDefaultCameraParams.NotInitialized");
+            Assert.DoesNotContain(missing,line=>line.Contains("M11-059")&&line.Contains("HandleDefaultCameraParams"));
+        }
+        finally
+        {
+            AllVisionModesSchedule.RestoreDefaultForTest(prior);EngineErrorState.ErrorFlagSet=oldError;
+            (quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High)=oldQuality;
+            (VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=oldComponent;
+        }
+    }
+    /// <summary>
+    /// M11-059: the exposure HandleDefaultCameraParams sends is the configured InitialExposureTime_ms, not a constant.
+    /// VisionComponent::Init stores the key as u16 at .data 0x01051054 (0x00650DAE..0x00650DCA); the handler loads that
+    /// global at 0x00657CB2..0x00657CBA (ldrh) and passes it to SetCameraSettings at 0x00657CC8..0x00657CCA. With the
+    /// shipped file's value changed from 16 to 17, the wire and the queued pair carry 17.
+    /// </summary>
+    // reach: production — the engine reads its own vision_config.json (the shipped file with one value changed); DefaultCameraParams through the port.
+    [Fact]
+    public void M11_059_TheConfiguredInitialExposureReachesTheWire()
+    {
+        var prior=AllVisionModesSchedule.CopyDefault();bool oldError=EngineErrorState.ErrorFlagSet;
+        var quality=ImageQualitySettings.Globals;
+        var oldQuality=(quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High);
+        var oldComponent=(VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs);
+        try
+        {
+            using var backup=new BackupTestResources();
+            var options=backup.Options(new CozmoEngineOptions{BlockPoolPath=""});
+            string config=Path.Combine(options.ResourcesPath!,"config","engine","vision_config.json");
+            string text=File.ReadAllText(config);
+            var changed=System.Text.RegularExpressions.Regex.Replace(text,@"(""InitialExposureTime_ms""\s*:\s*)16\b","${1}17");
+            Assert.NotEqual(text,changed);
+            File.WriteAllText(config,changed);
+            using var rig=new M4ControlTests.Rig(engineOptions:options);
+            rig.ToSynced();
+            Assert.True(rig.Robot.CameraSettings.VisionSystemInitialized);
+            int before=SentCount(rig);
+            rig.Data(RobotDefaults(3f,1.5f,1,50));rig.Tick();
+            var sent=Assert.Single(SentAfter(rig,before).OfType<SetCameraParams>());
+            Assert.Equal((1.5f,(ushort)17,false),(sent.Gain,sent.ExposureMs,sent.AutoExposureEnabled));
+            Assert.Equal((17,1.5f),rig.Robot.CameraSettings.NextCameraParams!.Value);
+        }
+        finally
+        {
+            AllVisionModesSchedule.RestoreDefaultForTest(prior);EngineErrorState.ErrorFlagSet=oldError;
+            (quality.TooBright,quality.TooDark,quality.MeterFromDetections,quality.Low,quality.Mid,quality.High)=oldQuality;
+            (VisionSystem.TimeBeforeQualityErrorMs,VisionSystem.RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs)=oldComponent;
+        }
+    }
+    /// <summary>
+    /// A stack limitation, not engine behaviour: without a VisionSystem the stack cannot read +0x58, so the M11-059 gate
+    /// reports MISSING and takes the NotInitialized branch (nothing on the wire, nothing queued) instead of answering true.
+    /// </summary>
+    // reach: unit — world-less composition (OmitVisionForTest); production always builds the VisionSystem.
+    [Fact]
+    public void M11_059_UnknownInitStateReportsMissingAndSendsNothing()
+    {
+        bool oldError=EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var rig=new M4ControlTests.Rig(attachWorld:false);
+            var logs=new List<EngineLogEntry>();var missing=new List<string>();
+            rig.Engine.LogEntry+=logs.Add;rig.Engine.StackLogLine+=missing.Add;
+            rig.ToSynced();
+            Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+            Assert.False(rig.Robot.CameraSettings.VisionSystemInitialized);
+            int before=SentCount(rig);
+            rig.Data(RobotDefaults(3f,1.5f,1,50));rig.Tick();
+            Assert.Contains(missing,line=>line.Contains("M11-059")&&line.Contains("HandleDefaultCameraParams")&&line.Contains("stack limitation"));
+            Assert.Contains(logs,e=>e.Name=="VisionComponent.HandleDefaultCameraParams.NotInitialized");
+            Assert.Empty(SentAfter(rig,before).OfType<SetCameraParams>());
+            Assert.Null(rig.Robot.CameraSettings.NextCameraParams);
+        }
+        finally{EngineErrorState.ErrorFlagSet=oldError;}
+    }
     [Fact]
     public void SuppliedDefinedInitFailureSkipsAlbumAndKeepsBackupOrder()
     {

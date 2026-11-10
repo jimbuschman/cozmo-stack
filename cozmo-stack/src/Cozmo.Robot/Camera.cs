@@ -643,11 +643,29 @@ public sealed partial class CameraSettings
     public byte[] GammaTable { get; private set; } = Array.Empty<byte>();
     /// <summary>VisionComponent +0x329: auto-exposure, 1 from the constructor (1n: <c>strh #0x100</c> at +0x328).</summary>
     public bool AutoExposureEnabled { get; private set; } = true;
+    // fidelity: M11-059
     /// <summary>
-    /// VisionSystem::IsInitialized (+0x58, 1g): set when VisionComponent::Init has read vision_config.json. This stack
-    /// retains the legacy true view; full system readiness is still the explicit M11-059 gap reported by HandleDefaultCameraParams.
+    /// VisionSystem::IsInitialized (1g; 0x006B2CD6: <c>ldrb r0,[r0,#0x58]</c>), which HandleDefaultCameraParams reads at
+    /// 0x00657CA8..0x00657CB0 (<c>ldr r0,[r5,#0x1c]; blx 0x006B2CD6; beq 0x00657D62</c>). The worker flag +0x58 is
+    /// cleared when VisionSystem::Init is entered (0x006B0674..0x006B067C) and set only by its tail (0x006B141A); here it
+    /// is the current owner's <see cref="Vision.NativeVisionInitialization.Initialized"/>, not ComponentInitialized
+    /// (VisionComponent +0x10). False when the flag is clear and also when this stack cannot know it;
+    /// <see cref="VisionSystemInitializedKnown"/> tells those apart.
     /// </summary>
-    public bool VisionSystemInitialized => true;
+    public bool VisionSystemInitialized => VisionSystemInitializedKnown == true;
+    /// <summary>
+    /// The current owner's worker flag, or null when the stack cannot know it (no Robot owner, a destroying owner, no
+    /// VisionSystem, or an Init whose outcome the stack could not establish). Null is never answered as true.
+    /// </summary>
+    internal bool? VisionSystemInitializedKnown
+    {
+        get
+        {
+            var owner = _robot.Engine.Robot;
+            if (owner is null || owner.Lifetime.Destroying) return null;
+            return _robot.NativeVisionWorkerInitialized(owner);
+        }
+    }
     /// <summary>VisionComponent +0x32A: the colour flag (A24, 3a), 0 from the constructor (0x00650180).</summary>
     public bool ColorImagesEnabled { get; private set; }
     /// <summary>VisionComponent +0x48: 0 from the constructor (2a); set to 1 only by the NV calibration callback, on every path (1j, 2d).</summary>
@@ -734,10 +752,12 @@ public sealed partial class CameraSettings
         _nextCameraParamsPending=true;
     }
 
-    // fidelity: M3-021
+    // fidelity: M3-021, M11-059
     /// <summary>
     /// VisionComponent::HandleDefaultCameraParams (A19, 1k; 0x00657CA0..0x00657D34), with no time-sync gate
-    /// (0x00537114..0x0053712A). It needs VisionSystem::IsInitialized; the initial exposure (16) must lie in
+    /// (0x00537114..0x0053712A). It needs VisionSystem::IsInitialized (0x00657CA8..0x00657CB0; the not-initialized tail
+    /// 0x00657D62..0x00657DA0 logs NotInitialized at 0x00657D72, joins the error tail at 0x00657DE4 and sends nothing);
+    /// the initial exposure (16) must lie in
     /// [msg+8, msg+0xA], otherwise BadInitialExposureTime and nothing more. Then SetCameraSettings(16, gain = f32
     /// msg+4) first, against the limits in force (the constructor's on the first message), and only after it
     /// SetCameraExposureParams(16, min msg+8, max msg+0xA, gain msg+4, minGain 0.1, maxGain f32 msg+0, gamma msg+0xC):
@@ -746,10 +766,18 @@ public sealed partial class CameraSettings
     /// </summary>
     internal void Handle(DefaultCameraParams m)
     {
-        // MISSING: M11-059 | VisionSystem::IsInitialized (0x006B2CD6) and the initial exposure (vision_config.json InitialExposureTime_ms, read by
-        // VisionComponent::Init 0x00650DAE..0x00650DCA) are M11-059's. The config prefix writes initial exposure; full readiness remains unbound.
-        Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); system readiness remains unbound; the initial-exposure config prefix is built");
-        if (!VisionSystemInitialized) { Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.NotInitialized", ""); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return; }
+        // 0x00657CA8..0x00657CB0: ldr r0,[r5,#0x1c]; blx VisionSystem::IsInitialized (0x006B2CD6, +0x58); beq 0x00657D62.
+        bool? initialized = VisionSystemInitializedKnown;
+        if (initialized is null)
+            Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: this stack cannot establish VisionSystem::IsInitialized (+0x58) for the current owner (no Robot owner, no VisionSystem, or an Init whose outcome is unknown); it takes the NotInitialized branch and sends nothing. That is a stack limitation, not the engine's behaviour");
+        if (initialized != true)
+        {
+            // 0x00657D62..0x00657DA0: sErrorF NotInitialized (0x00657D72), then the error tail at 0x00657DE4; SetCameraSettings,
+            // SetCameraExposureParams and SetNextCameraParams are never reached.
+            Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.NotInitialized", "");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return;
+        }
         ushort min = m.Field2, max = m.Field3;
         if (!(min <= ConfiguredInitialExposureTimeMs && ConfiguredInitialExposureTimeMs <= max))
         {

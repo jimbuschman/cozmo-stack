@@ -84,8 +84,12 @@ public class M3M4X12BuilderTests : IDisposable
     [Fact]
     public void CameraPendingClearGapIsVisibleAndDoesNotEmitStaleOverwriteWarning()
     {
-        using var robot = CozmoRobot.CreateOffline(); var missing = new List<string>(); var keys = new List<string?>();
+        // M11-059: HandleDefaultCameraParams's gate (0x00657CA8..0x00657CB0) needs a VisionSystem::Init that reached its tail
+        // (+0x58 = 1 at 0x006B141A); the shipped vision_config.json in these resources gives this offline robot one.
+        using var backup = new BackupTestResources();
+        using var robot = CozmoRobot.CreateOffline(engineOptions: backup.Options()); var missing = new List<string>(); var keys = new List<string?>();
         robot.Engine.StackLogLine += missing.Add; robot.Engine.LogEntry += e => keys.Add(e.Name);
+        Assert.True(robot.CameraSettings.VisionSystemInitialized);
         robot.CameraSettings.Handle(new DefaultCameraParams { Field0 = 3f, Field1 = 1.5f, Field2 = 1, Field3 = 50, Field4 = new byte[17] });
         Assert.True(robot.CameraSettings.SetCameraSettings(20, 1.5f));
         // Historical name; this unit now asserts the restored native overwrite warning, not a pending-clear gap.

@@ -119,9 +119,16 @@ public sealed class M11DecodeBoundaryTests
             Assert.Equal(30f,vision.PendingDropStatsSeconds);
             // All C reads passed; first omitted S field is TooBrightValue. No successful full Init is inferred.
             Assert.Equal("(tc0000) : TooBrightValue",Assert.Single(logs.Where(e=>e.Name=="VisionSystem.Init.MissingJsonParameter")).Text);
-            robot.CameraSettings.Handle(new Cozmo.Protocol.DefaultCameraParams{Field0=4,Field1=1,Field2=1,Field3=66});
-            Assert.Equal((17,1f),robot.CameraSettings.NextCameraParams!.Value);
-            Assert.Contains(logs,e=>e.Name=="VisionSystem.SetCameraExposureParams.Success"&&e.Text.Contains("Current Gain:17ms"));
+            // M11-059: this Init entered VisionSystem::Init (+0x58 cleared at 0x006B0674..0x006B067C) and failed before its tail
+            // (0x006B141A), so HandleDefaultCameraParams's gate (0x00657CA8..0x00657CB0) takes 0x00657D62..0x00657DA0: the
+            // NotInitialized error (0x00657D72), the error tail (0x00657DE4), and no SetCameraSettings or SetNextCameraParams.
+            Assert.False(robot.CameraSettings.VisionSystemInitialized);
+            EngineErrorState.ErrorFlagSet=false;
+            robot.CameraSettings.Handle(new Cozmo.Protocol.DefaultCameraParams{Field0=4,Field1=1,Field2=1,Field3=66,Field4=new byte[17]});
+            Assert.Contains(logs,e=>e.Name=="VisionComponent.HandleDefaultCameraParams.NotInitialized"&&e.Level==EngineLogLevel.Error);
+            Assert.True(EngineErrorState.ErrorFlagSet);
+            Assert.Null(robot.CameraSettings.NextCameraParams);
+            Assert.DoesNotContain(logs,e=>e.Name=="VisionSystem.SetCameraExposureParams.Success");
         });
     }
     private static void RunConfig(string? absent,Action<CozmoRobot,VisionSystem,List<EngineLogEntry>> check)

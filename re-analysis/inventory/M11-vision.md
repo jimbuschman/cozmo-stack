@@ -1788,3 +1788,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New EQUIVALENT_IMPLEMENTATION (libm atan2f only): the marker homography gate | M11-103 (new) |
 | New EXACT_SOURCE: detector capacities and the over-list frame failure | M11-104 (new) |
 | Notes: built against the oracle, not settled here | M11-002, M11-005, M11-020, M11-023, M11-026, M11-028, M11-031 |
+
+## VISION-INIT-SETTLEMENT-2 and VISION-INIT-CAMERA-GATE-1 (manager, 2026-11-10; research/20261110-vision-init-camera-gate-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| VisionSystem::Init 0x006B0658..0x006B141A and the file branch 0x0065100C..0x00651086 (EraseAllFaces 0x00651014, LoadFaceAlbum 0x00651028, BroadcastLoadedNamesAndIDs 0x00651032, LoadFaceAlbumFromFileFailed 0x00651036..0x0065105A, list clear 0x00651082) are read; the "unread" evidence is replaced. IsInitialized readers: Update 0x006B4D66 and HandleDefaultCameraParams 0x00657CA8..0x00657CB0 (tail 0x00657D62..0x00657DA0, NotInitialized 0x00657D72). +0x58 zeroed by the constructor 0x006B000A. VisionComponent+0x18 is the constructor's CozmoContext and VisionSystem+0x5C its own argument (0x006B0010), so the NullDataPlatform branch is unreachable through N1. The last gap (the always-true gate) is built. IMPLEMENTATION_GAP -> EXACT_SOURCE | M11-059 |
+| Drop stats +0x98/+0x9C: logging only; the sole consumer FUN_00653E30 (from SetNextImage 0x00652B04) stores only its own counters (0x00653E46, 0x00653E54, 0x00653FF0..0x00653FF2). Not built. | M11-059 (boundary) |
+| Calibration-image capture and tool-code reading (AddCalibrationImage 0x006B3C4C, ComputeCalibration 0x006B84D8, ReadToolCode 0x006B5B98 under VisionSystem::Update 0x006B4D5C; G2E ClearCalibrationImages 0x005283F4; ClearToolCodeImages 0x006B43A0 uncalled): not supported, manager exclusion as factory/app calibration machinery, reversible. | M11-059 (boundary), M11-012 |
+

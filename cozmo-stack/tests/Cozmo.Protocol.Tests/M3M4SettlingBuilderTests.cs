@@ -186,6 +186,10 @@ public sealed class M3M4SettlingBuilderTests
         try
         {
             Directory.CreateDirectory(Path.Combine(root,"animations"));File.WriteAllText(Path.Combine(root,"animations","a.json"),"{\"a\":[]}");
+            // M11-059: HandleDefaultCameraParams's gate (0x00657CA8..0x00657CB0) needs a VisionSystem::Init that reached its tail
+            // (+0x58 = 1 at 0x006B141A), so the shipped vision_config.json is supplied with the resources.
+            Directory.CreateDirectory(Path.Combine(root,"config","engine"));
+            File.Copy(Path.Combine(Path.GetDirectoryName(BackupTestResources.ShippedConfig())!,"vision_config.json"),Path.Combine(root,"config","engine","vision_config.json"));
             var pairs=new ConcurrentQueue<(int,float)>();var nativeThreads=new ConcurrentQueue<int>();int engineThread=0;
             CameraSettings? tickCamera=null;
             using var robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions

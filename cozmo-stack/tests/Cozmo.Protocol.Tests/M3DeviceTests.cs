@@ -125,11 +125,16 @@ public class M3DeviceTests
     public void B5_CameraZeroMinimumAndSuccessUseTheCheckedTexts()
     {
         using var rig = new Rig();
+        // M11-059: HandleDefaultCameraParams's gate (0x00657CA8..0x00657CB0) needs the connected Robot's VisionSystem::Init to
+        // have reached its tail (+0x58 = 1 at 0x006B141A); the rig's resources carry the shipped vision_config.json.
+        rig.ToSuccess();
+        Assert.True(rig.Robot.CameraSettings.VisionSystemInitialized);
         var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
         rig.Robot.CameraSettings.Handle(Defaults(3f, 1.5f, 0, 50));
         Assert.Equal(new[] { "VisionComponent.SetCameraSettings", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", "VisionSystem.SetCameraExposureParams.Success" }, entries.Select(e => e.Name));
         Assert.Equal(EngineLogLevel.Debug, entries[1].Level); Assert.Equal("Will use 1.", entries[1].Text);
-        Assert.Equal("(tc0000) : Params already requested (16ms,1.50) but not sent. Replacing with (16ms,1.50)",entries[2].Text);
+        // ToSuccess ran four engine ticks, so the engine's tick-count prefix is tc0004.
+        Assert.Equal("(tc0004) : Params already requested (16ms,1.50) but not sent. Replacing with (16ms,1.50)",entries[2].Text);
         Assert.Equal("Current Gain:16ms Limits:[0 50], Current Exposure:1.500 Limits:[0.100 3.000]", entries[3].Text);
         Assert.Equal(1, rig.Robot.CameraSettings.MinExposureMs);
     }

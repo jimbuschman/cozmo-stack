@@ -94,6 +94,24 @@ public sealed partial class VisionSystem : IDisposable
     {
         lock(_groundGate)return ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner);
     }
+    // fidelity: M11-059
+    /// <summary>
+    /// VisionSystem::IsInitialized (0x006B2CD6: <c>ldrb r0,[r0,#0x58]</c>) for <paramref name="owner"/>: the worker flag
+    /// +0x58, cleared when VisionSystem::Init is entered (0x006B0674..0x006B067C) and set only by its tail (0x006B141A).
+    /// Here it is the current owner's <see cref="NativeVisionInitialization.Initialized"/>, not ComponentInitialized
+    /// (VisionComponent +0x10). Null when this stack cannot know the flag: no state for this owner, a superseded or
+    /// destroying owner, or an Init whose outcome the stack could not establish (<see cref="NativeVisionInitialization.AvailabilityKnown"/>
+    /// or ComponentAvailabilityKnown false). A caller must never read null as true.
+    /// </summary>
+    internal bool? NativeWorkerInitializedFor(EngineRobot owner)
+    {
+        lock(_groundGate)
+        {
+            if(_disposed||!ReferenceEquals(_groundOwner,owner)||owner.Lifetime.Destroying||!ReferenceEquals(_robot.Engine.Robot,owner))return null;
+            if(_nativeInitialization is not {} state||!ReferenceEquals(state.Owner,owner)||!state.AvailabilityKnown||!state.ComponentAvailabilityKnown)return null;
+            return state.Initialized;
+        }
+    }
 
     // 0x65805C: explicit original-owner recipient; message subscription is a separate source boundary.
     internal void SetNativeVisionWhileMoving(EngineRobot owner,bool enabled)
