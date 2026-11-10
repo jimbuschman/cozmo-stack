@@ -64,11 +64,12 @@ public sealed class SharedChildrenNativeTests
     }
     private static void Face(Fixture f,bool named)
     {
+        var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);var position=new Vec3(100,0,60);
         for(uint stamp=1;stamp<=4;stamp++)
         {
             var tracked=new TrackedFace(new DetectedFace(11,new FaceRect(0,0,10,10),new Vec2(3,4),new Vec2(7,4),Name:named?"Ada":null),stamp)
-            {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId))};
-            f.M.Vision.Faces.AddOrUpdateFace(tracked,f.Robot.GetCheckedMainPose(),false);
+            {HeadPose=new Pose3d(Rotation3d.Identity,position,parent:origin),NativeTrackingTranslation=position,NativeTrackingRotation=Rotation3d.Identity};
+            f.M.Vision.Faces.AddOrUpdateNativeFace(tracked,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot);
         }
     }
     [Fact]

@@ -17,6 +17,8 @@
 
 - The first broader run exposed two synthetic enrollment fixtures without native pose sidecars. The final affected suite passed 299/299 after migrating those inputs and fixing mixed-ID reseeding. The manager independently passed 43/43, including unchanged NativeOkaoOracleTests and AcapelaTtsTests. The verifier rechecked the mixed provenance correction.
 
+- The first full gate at 4d00a96f passed 8,293/8,304. Eleven tests in five classes had seeded the native cache through legacy observations. Their fixtures now supply exact native pose inputs and retain the separate legacy projection where the behavior consumes it. The original assertions are unchanged. The first affected rerun passed 148/152, and the four remaining cases passed after restoring those fixture projections and ordered timestamps. Production code did not change in this correction.
+
 ## Remaining gap and settlement
 
 - **TRACKED-FACE-LIBM-PROOF-1** is the remaining M14-001 settlement work. TrackedFace::GetIntraEyeDistance calls Android cosf at 0x0087DCD6 and the cache uses square root for distance. The current probes exercise the ARM control and arithmetic using a host import for external libm. They do not establish full phone libm parity. The follow-up must identify the reachable arithmetic boundary and either demonstrate parity over the supported domain or provide a reviewed equivalence classification.

@@ -316,11 +316,13 @@ public sealed class PickupPyramidNativeExecutionTests
     {
         //Injected LOCAL46 recipient unit, actual LastFace motor/Needs/Mood/error-boundary lifecycle.
         using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Add();var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        uint faceStamp=0;
         void Face(string? name)
         {
-            var tracked=new TrackedFace(new DetectedFace(11,new FaceRect(0,0,20,20),new Vec2(5,5),new Vec2(15,5),Name:name),1)
-            {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(150,0,60),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId))};
-            f.M.Vision.Faces.AddOrUpdateFace(tracked,f.Robot.GetCheckedMainPose(),false);
+            var position=new Vec3(150,0,60);
+            var tracked=new TrackedFace(new DetectedFace(11,new FaceRect(0,0,20,20),new Vec2(5,5),new Vec2(15,5),Name:name),++faceStamp)
+            {HeadPose=new Pose3d(Rotation3d.Identity,position,parent:origin),NativeTrackingTranslation=position,NativeTrackingRotation=Rotation3d.Identity};
+            f.M.Vision.Faces.AddOrUpdateNativeFace(tracked,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot);
         }
         for(int i=0;i<4;i++)Face(null);
         var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
@@ -336,7 +338,7 @@ public sealed class PickupPyramidNativeExecutionTests
             Assert.Equal(0,f.Robot.ActionList.QueueAction(QueueActionPosition.InParallel,unrelated));
             f.Motors();Assert.Equal(0,last.FaceState);
             typeof(CozmoEngine).GetProperty("UiMessageProcessingEnabled",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(f.Rig.Engine,uiEnabled);
-            Face("Ada");f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(11,1));
+            Face("Ada");f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(11,faceStamp));
             for(int i=0;i<30&&(parent.HasCurrentAction||!sequence.DestructionObserved);i++)f.Motors();
             Assert.False(parent.HasCurrentAction,"face="+last.FaceState+" verified="+last.VerifiedId+" tree="+Describe(last)+" missing="+string.Join(" | ",missing));Assert.False(callback);Assert.True(sequence.DestructionObserved);Assert.True(last.DestructionObserved);Assert.True(pickup.DestructionObserved);
             Assert.DoesNotContain(f.Rig.SentSince(0),m=>m is DockWithObject);

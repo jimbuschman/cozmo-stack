@@ -547,9 +547,10 @@ public sealed class OrdinaryFreeplayNativeTests
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();
         f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
+        var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);var position=new Vec3(200,0,100);
         var face=new TrackedFace(new DetectedFace(31,new FaceRect(0,0,10,10),Name:"Ada"),100)
-        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,100),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId))};
-        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateFace(face,f.Robot.GetCheckedMainPose(),false));
+        {HeadPose=new Pose3d(Rotation3d.Identity,position),NativeTrackingTranslation=position,NativeTrackingRotation=Rotation3d.Identity};
+        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot));
         var find=Assert.IsType<NativeFindFacesSocialize>(f.Runtime.Bound["FindFaces_socialize"]);
         Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(find.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         var lift=Assert.IsAssignableFrom<ActionRunner>(find.OwnedRunner);lift.State=0x03000018;f.Robot.ActionList.Update();
