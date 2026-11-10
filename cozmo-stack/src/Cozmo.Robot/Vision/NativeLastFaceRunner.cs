@@ -52,6 +52,8 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     private int _sayTrigger,_noNameTrigger;
     private readonly float _maximum;
     private readonly EngineRobot? _actualOwner;
+    private bool _aiPublic;
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     private int _imagesToWait = 10;
     internal bool RequireVerifiedFace { get; set; }
     internal Func<int, AnimationTrigger>? NamedTriggerCallback;
@@ -85,6 +87,13 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     internal int VerifiedId=>_verified.Id;
     internal ActionRunner? ChildForTest=>_child;
     internal int RequestedId=>_requested.Id;
+    internal void ConfigurePublicRequest()
+    {
+        _aiPublic=true;
+        Parameters.SetMaxPanSpeed(0);Parameters.SetPanAccel(0);Parameters.SetPanTolerance(0);
+        Parameters.SetMaxTiltSpeed(0);Parameters.SetTiltAccel(0);Parameters.SetTiltTolerance(0);
+    }
+    public override byte? GetCompletionVariant()=>_aiPublic ? (byte)6 : base.GetCompletionVariant();
     internal override ActionWatcher? Watcher
     {get=>base.Watcher;set{base.Watcher=value;if(_child is not null)_child.Watcher=value;}}
     private void SetChild(ActionRunner? next)
@@ -286,12 +295,15 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     {
         if(!base.RetireNeverAdmittedTree())return false;
         foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();
+        if(_aiPublic)GoalPose.Dispose();
         return true;
     }
     public override void WatcherEnding()
     {
         SetChild(null);Unlock();foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();
         base.WatcherEnding();
+        if(AiNativeEnded is {} ended && _actualOwner is {} owner)
+            ended.TrySetResult((State,owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot,owner)));
     }
 }
 
