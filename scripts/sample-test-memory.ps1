@@ -6,7 +6,7 @@ $deadline = (Get-Date).AddMinutes(90)
 while (-not (Test-Path "$Out.stop") -and (Get-Date) -lt $deadline) {
   $os = Get-CimInstance Win32_OperatingSystem
   $th = (Get-Process testhost -ErrorAction SilentlyContinue | Measure-Object PrivateMemorySize64 -Sum).Sum
-  $dn = (Get-Process dotnet,VBCSCompiler,MSBuild -ErrorAction SilentlyContinue | Measure-Object PrivateMemorySize64 -Sum).Sum
+  $dn = (Get-Process dotnet,VBCSCompiler,MSBuild,csc -ErrorAction SilentlyContinue | Measure-Object PrivateMemorySize64 -Sum).Sum
   $last = ""
   try {
     $fs = [IO.File]::Open($Log, 'Open', 'Read', 'ReadWrite')
