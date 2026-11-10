@@ -69,10 +69,10 @@ public sealed class DriveOffPilotVisionTests
         vision.Enabled=false;
         rig.CameraGrayFrame(1,stamp,pixels);
         Assert.Equal(stamp+1,state.LastReceivedTimestamp);Assert.Equal(777u,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
-        vision.Enabled=true;state.EnterSystem();
+        vision.Enabled=true;state.ComponentInitialized=false;
         rig.CameraGrayFrame(2,stamp,pixels);
         Assert.Equal(stamp+1,state.LastReceivedTimestamp);Assert.Equal(777u,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
-        state.MarkUnavailable();
+        state.ComponentAvailabilityKnown=false;
         rig.CameraGrayFrame(3,stamp,pixels);
         Assert.Equal(stamp+1,state.LastReceivedTimestamp);Assert.Equal(777u,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
         vision.Dispose();

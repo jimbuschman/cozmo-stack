@@ -51,10 +51,21 @@ public sealed partial class VisionSystem
     }
 
     internal NativeVisionStageResult InitializeNativeVision(EngineRobot owner)
-        => InitializeNativeVision(owner,null);
+        => InitializeNativeVision(owner,null,false);
 
     // Supplied config is an explicitly labeled source-input unit seam; production uses the engine owner.
     internal NativeVisionStageResult InitializeNativeVision(EngineRobot owner,FirmwareJsonValue? suppliedConfig)
+        => InitializeNativeVision(owner,suppliedConfig,false);
+
+    internal NativeVisionStageResult InitializeNativeVision(EngineRobot owner,FirmwareJsonValue? suppliedConfig,bool deferComponentCompletion)
+    {
+        var outcome=InitializeNativeVisionCore(owner,suppliedConfig);
+        if(outcome.Available && outcome.Result==0 && !deferComponentCompletion && ReferenceEquals(_robot.Engine.Robot,owner))
+            CompleteNativeVisionComponent(owner,outcome.Epoch);
+        return outcome;
+    }
+
+    private NativeVisionStageResult InitializeNativeVisionCore(EngineRobot owner,FirmwareJsonValue? suppliedConfig)
     {
         NativeVisionInitialization? state;int epoch;
         lock(_groundGate)
@@ -62,10 +73,21 @@ public sealed partial class VisionSystem
             state=_nativeInitialization;
             if(state is null||!ReferenceEquals(state.Owner,owner)||owner.Lifetime.Destroying)return NativeVisionStageResult.Missing;
             epoch=++_nativeInitializationEpoch;
+            state.ComponentInitialized=false;
+            state.ComponentAvailabilityKnown=true;
         }
         bool Current(){lock(_groundGate)return !_disposed && ReferenceEquals(_nativeInitialization,state)&&ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&epoch==_nativeInitializationEpoch;}
-        NativeVisionStageResult Missing(){if(Current())state.MarkUnavailable();return NativeVisionStageResult.Missing;}
+        bool systemEntered=false;
+        NativeVisionStageResult Missing(){lock(_groundGate){if(Current()){if(systemEntered)state.MarkUnavailable();state.ComponentAvailabilityKnown=false;}}return NativeVisionStageResult.Missing;}
         var engine=_robot.Engine;
+        NativeVisionStageResult SystemFailure(NativeVisionStageResult result)
+        {
+            if(!result.Available || result.Result==0)return result;
+            engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.Init.VisionSystemInitFailed","");
+            if(!Current())return NativeVisionStageResult.Missing;
+            EngineErrorState.StoreAndMaybeBreak();
+            return result with { Epoch=epoch };
+        }
         if(!Current())return Missing();
         if(!Detector.Decoder.HasLibrary && Interlocked.CompareExchange(ref _missingMarkerLibraryReported,1,0)==0)
         {
@@ -79,19 +101,23 @@ public sealed partial class VisionSystem
         {
             if(!ReadComponentQualityPrefix(root,Current))return Current()?NativeVisionStageResult.Failure(1):Missing();
             if(!Current())return Missing();
-            state.EnterSystem();
+            lock(_groundGate)
+            {
+                if(!Current())return Missing();
+                state.EnterSystem();systemEntered=true;
+            }
             if(!QualityProcessor.Settings.Load(root,QualityProcessor.SourceLog!,Current))
-            {if(!Current())return Missing();state.Failure(1);return NativeVisionStageResult.Failure(1);}
+            {if(!Current())return Missing();state.Failure(1);return SystemFailure(NativeVisionStageResult.Failure(1));}
             if(!Current())return Missing();
             var exposure=LoadExposureParameters(root,Current);
             if(!exposure.Available)return Missing();
-            if(exposure.Result!=0){state.Failure(exposure.Result);return exposure;}
+            if(exposure.Result!=0){state.Failure(exposure.Result);return SystemFailure(exposure);}
             var performance=InitMember(root,"PerformanceLogging");
             var info=InitMember(performance,"TimeBetweenProfilerInfoPrints_sec");
-            if(info is null||info.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerInfoPrints_sec",1);if(error.Available)state.Failure(error.Result);return error;}
+            if(info is null||info.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerInfoPrints_sec",1);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             float infoMs=Json.AsFloat(info)*1000f;
             var das=InitMember(performance,"TimeBetweenProfilerDasLogs_sec");
-            if(das is null||das.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerDasLogs_sec",1);if(error.Available)state.Failure(error.Result);return error;}
+            if(das is null||das.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerDasLogs_sec",1);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             float dasMs=Json.AsFloat(das)*1000f;
             if(!float.IsFinite(infoMs)||!float.IsFinite(dasMs)||(double)infoMs>=9223372036854775808d||(double)infoMs< -9223372036854775808d||(double)dasMs>=9223372036854775808d||(double)dasMs< -9223372036854775808d)
             {SteppedBehavior.ReportMissing("M11-059 profiler period exceptional f32-to-i64 conversion unavailable");return Missing();}
@@ -114,25 +140,49 @@ public sealed partial class VisionSystem
                 pet=InitializeStockPet(state,root,petLibraries,Current);
             }
             if(!Current())return Missing();
-            if(pet!=0){var error=InitError(Current,"VisionSystem.Init.PetTrackerInitFailed",state.Pet.FailedStage??"",pet);if(error.Available)state.Failure(error.Result);return error;}
+            if(pet!=0){var error=InitError(Current,"VisionSystem.Init.PetTrackerInitFailed",state.Pet.FailedStage??"",pet);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             var modes=InitMember(root,"InitialVisionModes");
-            if(modes is null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","InitialVisionModes",1);if(error.Available)state.Failure(error.Result);return error;}
+            if(modes is null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","InitialVisionModes",1);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             if(!TryApplyInitialVisionModes(modes,Current))return Missing();
             var schedules=ApplyNativeInitialSchedules(root,Current);
             if(!schedules.Available)return Missing();
-            if(schedules.Result!=0){state.Failure(schedules.Result);return schedules;}
+            if(schedules.Result!=0){state.Failure(schedules.Result);return SystemFailure(schedules);}
             lock(_groundGate)
             {
                 if(!Current())return NativeVisionStageResult.Missing;
                 PushNativeSchedule(AllVisionModesSchedule.CopyDefault());
                 state.Finish();
             }
-            return NativeVisionStageResult.Success;
+            return NativeVisionStageResult.Success with { Epoch=epoch };
         }
         catch(Exception e) when(e is JsonLogicError or JsonRuntimeError or OutOfMemoryException)
         {
             SteppedBehavior.ReportMissing("M1-034/M11-059 Vision Init terminating input/allocation unavailable; initialization unit skipped");
             return Missing();
+        }
+    }
+
+    internal bool NativeVisionAttemptCurrent(EngineRobot owner,int epoch)
+    {
+        lock(_groundGate) return !_disposed && _nativeInitialization is { } state &&
+            ReferenceEquals(state.Owner,owner) && ReferenceEquals(_groundOwner,owner) &&
+            !owner.Lifetime.Destroying && _nativeInitializationEpoch==epoch;
+    }
+
+    internal bool NativeVisionOwnerCurrent(EngineRobot owner)
+    {
+        lock(_groundGate) return !_disposed && ReferenceEquals(_groundOwner,owner) &&
+            ReferenceEquals(_nativeInitialization?.Owner,owner) && !owner.Lifetime.Destroying;
+    }
+
+    internal bool CompleteNativeVisionComponent(EngineRobot owner,int epoch)
+    {
+        lock(_groundGate)
+        {
+            if(!NativeVisionAttemptCurrent(owner,epoch) || !_nativeInitialization!.Initialized)return false;
+            _nativeInitialization!.ComponentInitialized=true;
+            _nativeInitialization.ComponentAvailabilityKnown=true;
+            return true;
         }
     }
 

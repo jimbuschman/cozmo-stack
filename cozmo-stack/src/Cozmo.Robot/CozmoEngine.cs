@@ -820,7 +820,11 @@ public sealed partial class EngineRobot
         ConstructorDelocalize();
         InitDelocalizationStrategyRecipients();
         if (queueConnectionReads) QueueConnectionReads();
-        else InvokeNativeVisionConstructor();
+        else
+        {
+            var vision=InvokeNativeVisionConstructor();
+            if(vision.Available && vision.Result==0) Engine.NativeVisionComplete?.Invoke(this,vision.Epoch);
+        }
     }
 
     // fidelity: M3-033, M3-034
@@ -857,6 +861,14 @@ public sealed partial class EngineRobot
         var nv = Engine.NvStorage;
         if (nv is not null) { Progression!.Init(); Inventory!.Init(); }
         var outcome = InvokeNativeVisionConstructor();
+        bool CurrentVision() => !Lifetime.Destroying && Engine.NativeVisionAttemptCurrent?.Invoke(this,outcome.Epoch)==true;
+        bool LiveVisionOwner() => !Lifetime.Destroying && Engine.NativeVisionOwnerCurrent?.Invoke(this)==true;
+        void HoldPartialTail()
+        {
+            if(!LiveVisionOwner())return;
+            VisionNvTailUnavailable=true;
+            Behavior.SteppedBehavior.ReportMissing("M11-059 superseded Vision Init left the ordered NV tail incomplete");
+        }
         if (nv is null || Lifetime.Destroying) return;
         if (!outcome.Available)
         {
@@ -865,6 +877,7 @@ public sealed partial class EngineRobot
             return;
         }
         if (outcome.Result != 0) goto backupReads;
+        if (!CurrentVision()) { HoldPartialTail(); return; }
         var root = Engine.VisionConfiguration;
         FirmwareJsonValue? album = root.Kind == FirmwareJsonKind.Object
             ? root.Members.GetValueOrDefault(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes("FaceAlbum"))) : null;
@@ -880,13 +893,19 @@ public sealed partial class EngineRobot
         if (Engine.FaceAlbumReadsGate is { } faceGate)
         {
             bool enabled=faceGate();
-            if (Lifetime.Destroying) return;
-            if (!enabled) goto backupReads;
+            if (!CurrentVision()) { HoldPartialTail(); return; }
+            if (!enabled)
+            {
+                if (Engine.NativeVisionComplete?.Invoke(this,outcome.Epoch)!=true) { HoldPartialTail(); return; }
+                goto backupReads;
+            }
         }
-        if (Lifetime.Destroying) return;
+        if (!CurrentVision()) { HoldPartialTail(); return; }
+        var albumData=new List<byte>();
+        _faceAlbum=albumData;
         // #3 FaceAlbum 0x184000: the empty callback fills VC+0x2F4 (the album bytes).
-        nv.Read(0x184000, _ => { }, _faceAlbum);
-        if (Lifetime.Destroying) return;
+        nv.Read(0x184000, _ => { }, albumData);
+        if (!CurrentVision()) { HoldPartialTail(); return; }
         // #4 FaceEnrollment 0x183000: on terminal success the engine's callback consumes VC+0x2F4 and
         // installs both (0x65A860). Raised at completion, so a VisionSystem built after the response still
         // adopts it; with none subscribed the result is kept and the read still drains.
@@ -895,14 +914,18 @@ public sealed partial class EngineRobot
         // (0x0065A916, warning, "NVResult = %s").
         nv.Read(0x183000, r =>
         {
-            if (Lifetime.Destroying) return;
+            if (!CurrentVision()) return;
             if (r.Result == -1)
                 Engine.EmitSourceLog(EngineLogLevel.Info, null, "VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound", "");
             else if (r.Result != 0)
                 Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail", $"NVResult = {NvStorageComponent.NvResultName(r.Result)}");
-            if (r.Result != 0 || Lifetime.Destroying) return;
-            Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
+            if (r.Result != 0 || !CurrentVision()) return;
+            Engine.RaiseConnectionFaceAlbumLoaded(albumData.ToArray(), r.Data);
         });
+        if (!CurrentVision()) { if(LiveVisionOwner())goto backupReads; return; }
+        Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionComponent.LoadFaceAlbumToRobot.Initiated","Initiated load of album and enroll data from NVStorage");
+        if (!CurrentVision() || Engine.NativeVisionComplete?.Invoke(this,outcome.Epoch)!=true)
+        { if(LiveVisionOwner())goto backupReads; return; }
     backupReads:
         if (Lifetime.Destroying) return;
         Engine.Backup?.ReadAll(); // M15-033: configured ascending set and counted native backup sink.
@@ -913,7 +936,7 @@ public sealed partial class EngineRobot
         _ => Behavior.SteppedBehavior.ReportMissing($"{record} | {what}: this stack has no component for it, so the read completes and its result is dropped");
 
     /// <summary>The album bytes from #3 (the engine's VC+0x2F4); cleared when #3 is armed, filled on completion.</summary>
-    private readonly List<byte> _faceAlbum = new();
+    private List<byte> _faceAlbum = new();
 
     // fidelity: M3-034
     /// <summary>
@@ -1987,6 +2010,9 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     internal Func<bool>? FaceAlbumReadsGate;
     internal Func<EngineRobot, Vision.NativeVisionStageResult>? NativeVisionConstructor;
+    internal Func<EngineRobot,int,bool>? NativeVisionAttemptCurrent;
+    internal Func<EngineRobot,bool>? NativeVisionOwnerCurrent;
+    internal Func<EngineRobot,int,bool>? NativeVisionComplete;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>

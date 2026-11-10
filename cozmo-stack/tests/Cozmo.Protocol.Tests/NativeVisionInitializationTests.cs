@@ -86,10 +86,18 @@ public sealed class NativeVisionInitializationTests
                 .First(path=>File.Exists(Path.Combine(path,"config","engine","vision_config.json")));
             using var backup=new BackupTestResources();
             using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions{ResourcesPath=resources,BlockPoolPath=""}));
+            bool? workerAtInitiated=null,componentAtInitiated=null;
+            rig.Engine.LogEntry+=entry=>
+            {
+                if(entry.Name!="VisionComponent.LoadFaceAlbumToRobot.Initiated")return;
+                var current=rig.Robot.Vision.NativeInitializationForTest!;
+                workerAtInitiated=current.Initialized;componentAtInitiated=current.ComponentInitialized;
+            };
             rig.ToSynced();
             var owner=rig.Engine.Robot!;var vision=rig.Robot.Vision;
             var state=Assert.IsType<NativeVisionInitialization>(vision.NativeInitializationForTest);
             Assert.Same(owner,state.Owner);Assert.True(state.AvailabilityKnown);Assert.True(state.Initialized);
+            Assert.True(workerAtInitiated);Assert.False(componentAtInitiated);Assert.True(state.ComponentInitialized);
             Assert.Equal(60000,state.ProfilerInfoMs);Assert.Equal(600000,state.ProfilerDasMs);
             Assert.Equal((32d,4,4),(state.ClaheClipLimit,state.ClaheTilesX,state.ClaheTilesY));
             Assert.Equal(0x839E,vision.ModeEnableMask);var front=Assert.IsType<AllVisionModesSchedule>(vision.Schedules);
@@ -125,15 +133,20 @@ public sealed class NativeVisionInitializationTests
             var empty=new FirmwareJsonValue{Kind=FirmwareJsonKind.Object};
             var prefixFailure=vision.InitializeNativeVision(owner,empty);
             Assert.True(prefixFailure.Available);Assert.Equal(1u,prefixFailure.Result);
-            Assert.True(state.AvailabilityKnown);Assert.True(state.Initialized);
+            Assert.True(state.AvailabilityKnown);Assert.True(state.Initialized);Assert.False(state.ComponentInitialized);
             // A failure after entering VisionSystem::Init does clear +58 (0x6B0678).
             var systemFailure=new FirmwareJsonValue();
             Assert.True(Json.TryParseInto(File.ReadAllBytes(Path.Combine(resources,"config","engine","vision_config.json")),systemFailure));
             var section=systemFailure.Members[Convert.ToHexString(Encoding.UTF8.GetBytes("ImageQuality"))];
             section.Members.Remove(Convert.ToHexString(Encoding.UTF8.GetBytes("TooBrightValue")));
+            var failures=new List<string>();
+            rig.Engine.LogEntry+=entry=>failures.Add(entry.Name);
+            EngineErrorState.ErrorFlagSet=false;
             var afterEntry=vision.InitializeNativeVision(owner,systemFailure);
             Assert.True(afterEntry.Available);Assert.Equal(1u,afterEntry.Result);
             Assert.True(state.AvailabilityKnown);Assert.False(state.Initialized);
+            Assert.False(state.ComponentInitialized);Assert.True(EngineErrorState.ErrorFlagSet);
+            Assert.Contains("VisionComponent.Init.VisionSystemInitFailed",failures);
             // 0x6B0976 converts MidValue before the later SubSample lookup.
             var badExposure=new FirmwareJsonValue();
             Assert.True(Json.TryParseInto(File.ReadAllBytes(Path.Combine(resources,"config","engine","vision_config.json")),badExposure));
@@ -164,6 +177,57 @@ public sealed class NativeVisionInitializationTests
     }
     private static IEnumerable<string> Ancestors(string path)
     { for(var dir=new DirectoryInfo(path);dir is not null;dir=dir.Parent)yield return dir.FullName; }
+    [Fact]
+    public void InitiatedCallbackSupersedingSameOwnerCannotPublishOldComponentReadiness()
+    {
+        string resources=Ancestors(AppContext.BaseDirectory)
+            .Select(dir=>Path.Combine(dir,"re-analysis","obb","assets","cozmo_resources"))
+            .First(path=>File.Exists(Path.Combine(path,"config","engine","vision_config.json")));
+        using var backup=new BackupTestResources();
+        using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions{ResourcesPath=resources,BlockPoolPath=""}));
+        bool observed=false;
+        rig.Engine.LogEntry+=entry=>
+        {
+            if(entry.Name!="VisionComponent.LoadFaceAlbumToRobot.Initiated")return;
+            observed=true;
+            var vision=rig.Robot.Vision;var state=vision.NativeInitializationForTest!;
+            Assert.True(state.Initialized);Assert.False(state.ComponentInitialized);
+            var result=vision.InitializeNativeVision(state.Owner,new FirmwareJsonValue{Kind=FirmwareJsonKind.Object});
+            Assert.True(result.Available);Assert.NotEqual(0u,result.Result);
+        };
+        rig.ToSynced();
+        Assert.True(observed);
+        Assert.True(rig.Robot.Vision.NativeInitializationForTest!.Initialized);
+        Assert.False(rig.Robot.Vision.NativeInitializationForTest.ComponentInitialized);
+        Assert.False(rig.Engine.Robot!.VisionNvTailUnavailable);
+        rig.State();var tags=new List<uint>();
+        for(int i=0;i<40 && tags.Count<5;i++)
+        {
+            rig.Tick();if(rig.Engine.NvStorage!.InFlightTag is not {} tag)continue;
+            tags.Add(tag);rig.Data(new NVOpResult{Tag=tag,Op=0,Result=1,Data=Array.Empty<byte>()});rig.Tick();
+        }
+        Assert.Equal(new uint[]{0x182000,0x195000,0x184000,0x183000,0x180000},tags);
+    }
+    [Fact]
+    public void SupersedingDuringFirstAlbumEnqueueWithholdsIncompleteTail()
+    {
+        string resources=Ancestors(AppContext.BaseDirectory)
+            .Select(dir=>Path.Combine(dir,"re-analysis","obb","assets","cozmo_resources"))
+            .First(path=>File.Exists(Path.Combine(path,"config","engine","vision_config.json")));
+        using var backup=new BackupTestResources();
+        using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions{ResourcesPath=resources,BlockPoolPath=""}));
+        bool observed=false;
+        rig.Engine.LogEntry+=entry=>
+        {
+            if(entry.Name!="NVStorageComponent.Read.QueueingReadRequest" || entry.Text!="NVEntry_FaceAlbumData")return;
+            observed=true;var vision=rig.Robot.Vision;
+            vision.InitializeNativeVision(vision.NativeInitializationForTest!.Owner,new FirmwareJsonValue{Kind=FirmwareJsonKind.Object});
+        };
+        rig.ToSynced();
+        Assert.True(observed);Assert.True(rig.Engine.Robot!.VisionNvTailUnavailable);
+        Assert.False(rig.Robot.Vision.NativeInitializationForTest!.ComponentInitialized);
+        Assert.False(rig.Engine.Robot.ReadyToStream);
+    }
     [Fact]
     public void MissingOriginalVisionRecipientHoldsOrderedNvTailAndReadiness()
     {
@@ -204,11 +268,10 @@ public sealed class NativeVisionInitializationTests
             using var fixture=new PickupPyramidNativeExecutionTests.Fixture();
             var vision=fixture.Rig.Robot.Vision;var owner=fixture.Robot;
             Assert.True(SpinWait.SpinUntil(()=>vision.Enabled,TimeSpan.FromSeconds(5)));
-            var input=new FirmwareJsonValue();
-            Assert.True(Json.TryParseInto(File.ReadAllBytes(Path.Combine(fixture.Rig.Engine.Options.ResourcesPath!,"config","engine","vision_config.json")),input));
-            input.Members[Convert.ToHexString(Encoding.UTF8.GetBytes("ImageQuality"))].Members.Remove(Convert.ToHexString(Encoding.UTF8.GetBytes("TooBrightValue")));
+            var input=new FirmwareJsonValue{Kind=FirmwareJsonKind.Object};
             var result=vision.InitializeNativeVision(owner,input);
-            Assert.True(result.Available);Assert.Equal(1u,result.Result);Assert.False(vision.NativeInitializationForTest!.Initialized);
+            Assert.True(result.Available);Assert.Equal(1u,result.Result);Assert.True(vision.NativeInitializationForTest!.Initialized);
+            Assert.False(vision.NativeInitializationForTest.ComponentInitialized);
             int before=vision.FramesProcessed;var seen=new ManualResetEventSlim();
             void OnLog(EngineLogEntry entry){if(entry.Name=="VisionComponent.SetNextImage.NotInitialized")seen.Set();}
             fixture.Rig.Engine.LogEntry+=OnLog;

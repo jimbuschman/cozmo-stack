@@ -1418,8 +1418,8 @@ public sealed partial class VisionSystem : IDisposable
             if(!ReferenceEquals(_groundOwner,frameOwner) || frameOwner.Lifetime.Destroying ||
                 !ReferenceEquals(_robot.Engine.Robot,frameOwner) || removal!=Volatile.Read(ref _removals))return;
             var initialization=_nativeInitialization;
-            unavailable=initialization is null || !ReferenceEquals(initialization.Owner,frameOwner) || !initialization.AvailabilityKnown;
-            uninitialized=!unavailable && !initialization!.Initialized;
+            unavailable=initialization is null || !ReferenceEquals(initialization.Owner,frameOwner) || !initialization.ComponentAvailabilityKnown;
+            uninitialized=!unavailable && !initialization!.ComponentInitialized;
             enabled=Enabled;
             previous=0;rollback=false;
             if(!unavailable && !uninitialized && enabled)
