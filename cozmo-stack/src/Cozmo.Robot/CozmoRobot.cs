@@ -279,6 +279,7 @@ public sealed partial class CozmoRobot : IDisposable
     private readonly Vision.VisionSystem? _vision;
     /// <summary>The robot-owned vision system and world model, constructed before connection.</summary>
     public Vision.VisionSystem Vision => _vision ?? throw new InvalidOperationException("World-less unit-test composition has no VisionSystem.");
+    internal bool IsCanonicalVision(Vision.VisionSystem vision) => ReferenceEquals(_vision, vision);
     /// <summary>Backpack LEDs and the infrared headlight.</summary>
     public CozmoLights Lights { get; }
     /// <summary>Everything the robot reports about itself: power, motion, IMU and cliffs.</summary>
