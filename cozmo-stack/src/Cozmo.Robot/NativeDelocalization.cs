@@ -71,6 +71,37 @@ public sealed partial class EngineRobot
     internal readonly object PoseTreeGate=new();
     internal RobotStateHistory PoseHistory {get;}=new();
     internal byte VisionPoseUpdated;
+    private long _visionPoseVersion;
+    internal void MarkVisionPoseUpdated() { VisionPoseUpdated = 1; _visionPoseVersion++; }
+    internal void SendPendingVisionLocalization()
+    {
+        using var frame = Engine.DelocalizationWorld?.EnterPoseMutation();
+        using var gate = LogCallbackDeferral.EnterGated(PoseTreeGate);
+        if (VisionPoseUpdated == 0 || Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this)) return;
+        long version = _visionPoseVersion;
+        using var sample = new HistRobotState();
+        if (!PoseHistory.CopyLatestVisionOnly(sample, out uint timestamp))
+            Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.SendAbsLocUpdate.NoVizPoseFound", "");
+        else
+        {
+            using var flat = sample.Pose.GetWithRespectToRoot();
+            if (!flat.HasParent)
+                Behavior.SteppedBehavior.ReportMissing("M1-034/M11-044 SendAbsLocalizationUpdate: missing flattened pose parent");
+            else
+            {
+                using var root = flat.FindRoot();
+                if (!TryGetNativeOriginOwner(root.Id, out _))
+                {
+                    Engine.EmitSourceLog(EngineLogLevel.Error, null, "Robot.SendAbsLocUpdate.InvalidPoseOriginID", $"{unchecked((int)root.Id)}");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                }
+                else if (!Lifetime.Destroying && ReferenceEquals(Engine.Robot, this))
+                    SendCheckedOwned(new AbsoluteLocalizationUpdate { Timestamp = timestamp, PoseFrameId = sample.State.PoseFrameId,
+                        PoseOriginId = root.Id, PoseX = (float)flat.Translation.X, PoseY = (float)flat.Translation.Y, PoseAngleRad = (float)flat.AngleAroundZ });
+            }
+        }
+        if (_visionPoseVersion == version && !Lifetime.Destroying && ReferenceEquals(Engine.Robot, this)) VisionPoseUpdated = 0;
+    }
     internal bool HasExternalInterface=true;
     internal bool TryGetNativeOriginOwner(uint id,out Pose3d? origin)
     {
@@ -179,7 +210,7 @@ public sealed partial class EngineRobot
     internal uint SetNewPose(Pose3d value)
     {
         using(var root=value.GetWithRespectToRoot())SetPose(root);
-        VisionPoseUpdated=1;PoseFrameId=unchecked(PoseFrameId+1);
+        MarkVisionPoseUpdated();PoseFrameId=unchecked(PoseFrameId+1);
         // B-M11-8 item 8: the head angle is Robot+0x2FC (Motion.HeadAngleRad: ctor 0xBEDF66F3 at 0x0051007C..0x00510086;
         // SetHeadAngle 0x00513358 writes it only when +0x314 is set, clamping below 0xBEFA35DD to 0xBEDF66F3 and above
         // 0x3F543B67 to 0x3F46D3F2), not the last state's report.

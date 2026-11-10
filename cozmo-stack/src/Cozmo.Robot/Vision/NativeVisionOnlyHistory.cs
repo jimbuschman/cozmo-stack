@@ -14,6 +14,22 @@ public sealed partial class RobotStateHistory
     }
     internal readonly SortedDictionary<uint,VisionOnlyStamp> VisionOnly=new();
     internal bool RejectEmplaceForTest;
+    internal bool CopyLatestVisionOnly(HistRobotState output, out uint timestamp)
+    {
+        uint selected = 0;
+        bool found = WithGate(() =>
+        {
+            lock (_gate)
+            {
+                if (VisionOnly.Count == 0) return false;
+                var last = VisionOnly.Last(); selected = last.Key;
+                output.Pose.Assign(last.Value.Pose);
+                output.State = Cozmo.Protocol.RobotState.Read(new Cozmo.Protocol.CladReader(last.Value.State));
+                return true;
+            }
+        });
+        timestamp = selected; return found;
+    }
     internal uint AddVisionOnlyState(uint timestamp,Pose3d pose,uint frame,float head,float lift)
         => WithGate(()=>AddVisionOnlyStateCore(timestamp,pose,frame,head,lift));
     private uint AddVisionOnlyStateCore(uint timestamp,Pose3d pose,uint frame,float head,float lift)
