@@ -5,6 +5,7 @@ using Fixture=Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.Fixture;
 
 namespace Cozmo.Protocol.Tests;
 
+[Collection("ObjectID process statics")]
 public sealed class NativePetReportTests
 {
     private sealed class Detector : IPetDetector

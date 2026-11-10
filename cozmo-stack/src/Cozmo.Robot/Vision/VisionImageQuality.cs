@@ -63,7 +63,7 @@ public sealed partial class VisionSystem
             if(state is null||!ReferenceEquals(state.Owner,owner)||owner.Lifetime.Destroying)return NativeVisionStageResult.Missing;
             epoch=++_nativeInitializationEpoch;
         }
-        bool Current(){lock(_groundGate)return ReferenceEquals(_nativeInitialization,state)&&ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&epoch==_nativeInitializationEpoch;}
+        bool Current(){lock(_groundGate)return !_disposed && ReferenceEquals(_nativeInitialization,state)&&ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&epoch==_nativeInitializationEpoch;}
         NativeVisionStageResult Missing(){if(Current())state.MarkUnavailable();return NativeVisionStageResult.Missing;}
         var engine=_robot.Engine;
         if(!Current())return Missing();
@@ -101,7 +101,18 @@ public sealed partial class VisionSystem
             SteppedBehavior.ReportMissing("M11-016 FaceTracker internal Init/algorithm and its possible error diagnostics remain unavailable");
             if(!Current())return Missing();
             state.ReplaceMotion(this,root);
-            uint pet=state.Pet.Initialize(root);
+            uint pet;
+            string? petLibraries = suppliedConfig is null ? Emulation.ShippedLibraries.FindLibDir() : null;
+            if (petLibraries is null)
+            {
+                RetireStockPet(state,Current);
+                if (suppliedConfig is null) SteppedBehavior.ReportMissing("M11-016/M11-080 shipped pet guest libraries unavailable; stock pet detector withheld");
+                pet=state.Pet.Initialize(root);
+            }
+            else
+            {
+                pet=InitializeStockPet(state,root,petLibraries,Current);
+            }
             if(!Current())return Missing();
             if(pet!=0){var error=InitError(Current,"VisionSystem.Init.PetTrackerInitFailed",state.Pet.FailedStage??"",pet);if(error.Available)state.Failure(error.Result);return error;}
             var modes=InitMember(root,"InitialVisionModes");
@@ -123,6 +134,86 @@ public sealed partial class VisionSystem
             SteppedBehavior.ReportMissing("M1-034/M11-059 Vision Init terminating input/allocation unavailable; initialization unit skipped");
             return Missing();
         }
+    }
+
+    private void RetireStockPet(NativeVisionInitialization state,Func<bool> current)
+    {
+        OkaoPetDetector? prior;
+        lock (_groundGate)
+        {
+            if (!current()) return;
+            prior=state.StockPet;
+            state.StockPet=null;
+        }
+        prior?.Retire();
+    }
+
+    private uint InitializeStockPet(NativeVisionInitialization state,FirmwareJsonValue root,string libraries,Func<bool> current)
+    {
+        Emulation.OkaoPetDetection? guest=null;
+        var petInitialization=new NativeVisionPetInitialization();
+        RetireStockPet(state,current);
+        if(!current())return 1;
+        bool Adopt(bool ready)
+        {
+            var detector=new OkaoPetDetector(guest!);
+            detector.Warning=(key,text)=>{if(current())_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,key,text);};
+            detector.Error=key=>{_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,"");Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();};
+            if(ready)detector.MarkReady();
+            OkaoPetDetector? previous;
+            lock(_groundGate)
+            {
+                if(!current())return false;
+                previous=state.StockPet;
+                state.StockPet=detector;
+                if(ready)petInitialization.MarkNativeInitialized(guest!.VersionMajor,guest.VersionMinor);
+                state.Pet=petInitialization;
+                guest=null;
+            }
+            previous?.Retire();
+            return true;
+        }
+        try
+        {
+            guest=new Emulation.OkaoPetDetection(libraries);
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","PetTracker.OmcvVersion",
+                $"Initializing with FaceLibVision version {guest.VersionMajor}.{guest.VersionMinor}");
+            if(!current()){guest.Dispose();return 1;}
+            uint parsed=petInitialization.ReadParameters(root);
+            if(parsed!=0)
+            {
+                string stage=petInitialization.FailedStage??"";
+                string key=stage=="PetTracker"?"PetTracker.Init.MissingConfigGroup":"PetTracker.Init.MissingParameter";
+                string text=stage=="PetTracker"?"Expecting 'PetTracker'":$"PetTracker.{stage}";
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,text);
+                lock(_groundGate) { if(current())state.Pet=petInitialization; }
+                if(current())Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                guest.Dispose();return parsed;
+            }
+            guest.Initialize(petInitialization.Parameters);
+            if(!Adopt(true)){guest?.Dispose();return 1;}
+            return 0;
+        }
+        catch(Emulation.PetGuestFailure failure)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,failure.Key,failure.Message);
+            if(current())Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            // A partially initialized pair stays attached to this owner until its normal retirement.
+            if(guest is not null)Adopt(false);
+            guest?.Dispose();
+            return failure.Result;
+        }
+        catch(Exception e) when(e is not JsonLogicError and not JsonRuntimeError and not OutOfMemoryException)
+        {
+            guest?.Dispose();
+            RetireStockPet(state,current);
+            SteppedBehavior.ReportMissing($"M11-016/M11-080 stock pet guest unavailable: {e.Message}");
+            if(!current())return 1;
+            uint result=petInitialization.Initialize(root); // unrelated vision continues with the existing host-only Init result
+            lock(_groundGate) { if(current())state.Pet=petInitialization; }
+            return result;
+        }
+        finally { guest?.Dispose(); }
     }
     // ImageCache admission is evaluated for the owner captured at frame handoff.
     private bool NativeDecodedAdmission(EngineRobot? owner,int removal)
