@@ -465,6 +465,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New RECOVERABLE_GAP: PetWorld::Update's RobotObservedPet game broadcast (0x0050B7F4; ctor 0x0050BA60, Broadcast 0x0050BA68), body and payload unread; PetObserved stays inline | M14-014 (new) |
 
+## M14-001 evidence completed and settled (manager, 2026-11-10; research/20261110-settle-m14-001-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| Added to authority and evidence: the DetectFaces pose detach 0x006B37BC..0x006B37EC, the origin reparent 0x004F42B4..0x004F42F2, the last-observed-face cache update 0x004F4956..0x004F4A38 (inline vsqrt.f32, ble keeps the old pose) and its getter 0x004F5AE2..0x004F5B38 (the bool is the world-origin requirement). IMPLEMENTATION_GAP -> EQUIVALENT_IMPLEMENTATION (cosf 0x0087DCD6 only) | M14-001 |
+
 ## M14-014 read and settled (manager, 2026-11-10; research/20261110-codex-pet-face-localization-batch-claude-check.md)
 
 Re-approved under the standing authorisation for cited inventory corrections.

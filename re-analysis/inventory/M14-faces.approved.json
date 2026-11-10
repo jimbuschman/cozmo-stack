@@ -2,17 +2,21 @@
   "subsystem": "M14-faces",
   "approved": "2026-11-10",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "5c62a2368d7f586d39b3a5383f989eca333ec6181c1aed20f800f20a2940824a",
+  "inventory_sha256": "4911c3854bb3e44241c5123ff54d881fee8da13e80321a93cd2661ca79cbbb54",
   "records": {
     "M14-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "TrackedFace geometry, FaceWorld match and forgetting rules",
-      "authority": "FaceWorld::AddOrUpdateFace 0x004F4278, FaceTracker::IsRecognitionSupported 0x0086B244, FaceWorld::Update 0x004F52F8, TrackedFace::UpdateTranslation 0x0087DE24 and TrackedFace::GetIntraEyeDistance 0x0087DC68, read",
+      "authority": "FaceWorld::AddOrUpdateFace 0x004F4278, FaceTracker::IsRecognitionSupported 0x0086B244, FaceWorld::Update 0x004F52F8, TrackedFace::UpdateTranslation 0x0087DE24 and TrackedFace::GetIntraEyeDistance 0x0087DC68, VisionSystem::DetectFaces pose detach 0x006B37BC..0x006B37EC, and the last-observed-face cache update 0x004F4956..0x004F4A38 with its getter FaceWorld::GetLastObservedFace 0x004F5AE2..0x004F5B38, read",
       "evidence": [
         "0x0086B244 is `movs r0,#1; bx lr`, so 0x004F43D6 `blx IsRecognitionSupported` / 0x004F43DE `cbz r0,#0x004F440C` never branches: the pose/overlap loop 0x004F440C..0x004F4536 is dead, and the reachable match is the map at FaceWorld+4 searched by lower_bound on the TrackedFace id at +0 (0x004F43EC..0x004F4556); an absent id creates an entry keyed by that id (0x004F45EA/0x004F45FC). The 220^2 constant 0x004F4428 and the overlap-0.5 instructions are on the dead branch.",
         "0x004F5380..0x004F53AC removes an unnamed entry when lastObserved+15000 is behind the last image timestamp.",
         "0x0087DE3C tests the parts-detected byte +0x30; 0x0087DE42..0x0087DE5E takes the eye centres +0x34..+0x40 through GetIntraEyeDistance 0x0087DC68 (sqrt(dx^2+dy^2)/cos(+0xec), divisor 1.0 when |cos|<1e-5, 6.0 when dist<1e-5); 0x0087DE60..0x0087DF1C derives the box eye distance |0.5*w| floored at 6.0; 0x0087DF20..0x0087E068 halves the (zeroed in the box branch) eye-slot sum for the midpoint, scales fx*62.0/eyeDistance (0x42780000) and parents the pose to Camera+0xc.",
-        "0x004F4596 WasRotatingTooFast is on the new-entry path only; the found path 0x004F4558..0x004F456C is not gated. On the found path, a no-parts observation (TrackedFace+0x30 == 0) replaces the local pose translation with the entry's existing translation (0x004F4784..0x004F47A8) before writing it back to entry+0xf4 (0x004F47BE); the rotation stays from the TrackedFace pose."
+        "0x004F4596 WasRotatingTooFast is on the new-entry path only; the found path 0x004F4558..0x004F456C is not gated. On the found path, a no-parts observation (TrackedFace+0x30 == 0) replaces the local pose translation with the entry's existing translation (0x004F4784..0x004F47A8) before writing it back to entry+0xf4 (0x004F47BE); the rotation stays from the TrackedFace pose.",
+        "VisionSystem::DetectFaces composes the head pose with respect to the root (0x006B37BC..0x006B37D0), clears the parent (0x006B37E4) and stores the detached transform at face+0xFC (0x006B37EC); UpdateTranslation had placed it under the camera (0x0087E042..0x0087E064).",
+        "FaceWorld::AddOrUpdateFace takes the historical origin (0x004F42B4..0x004F42C4) and copies and reparents the detached transform to it (0x004F42D0..0x004F42F2).",
+        "The last-observed-face cache: updated only when the entry count is above 3 or the name is non-empty (0x004F4956..0x004F496E). With the same image stamp (0x004F4972..0x004F497C) the old and new poses are each taken with respect to the robot pose and their f32 lengths compared (inline vsqrt.f32 at 0x004F49B4 and 0x004F4A02; sqrtf is called only for a NaN result); the old one is kept when old <= new or unordered (ble at 0x004F4A24); otherwise the pose (+0x14) and stamp (+0x20) are replaced (0x004F4A26..0x004F4A38).",
+        "FaceWorld::GetLastObservedFace 0x004F5AE2..0x004F5B38: a zero stamp returns 0; a pose in the current world origin is copied; otherwise the bool argument set returns 0 and clear flattens and reparents to the world origin (cbz r7 at 0x004F5B0A); returns the stamp. The bool is the world-origin requirement, not a name filter."
       ],
       "live_path": true,
       "hardware_required": false
