@@ -80,6 +80,9 @@ public sealed record AiTrackFaceActionResult(bool Admitted, uint? EngineResult, 
 
 /// <summary>The terminal native result of a turn toward a face.</summary>
 public sealed record AiTurnToFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
+/// <summary>The result of a queued turn toward an object.</summary>
+public sealed record AiTurnToObjectActionResult(bool Admitted, uint? EngineResult, string Detail,
+    bool OwnerRetired = false, ObjectInteractionCompletion? ObjectInteraction = null);
 
 /// <summary>An advisory view of one robot owner and its last published engine state.</summary>
 public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
@@ -179,6 +182,35 @@ public sealed class CozmoMotion
         }
         var result=await task.ConfigureAwait(false);
         return new(result.Admitted,result.EngineResult,result.Detail,result.OwnerRetired);
+    }
+
+    /// <summary>Queues a turn toward an observed object; cancellation targets this action.</summary>
+    public async Task<AiTurnToObjectActionResult> QueueAiTurnToObjectAsync(uint objectId, float maximumTurnRadians, CancellationToken cancellationToken = default)
+    {
+        if (objectId > int.MaxValue) return new(false, null, "Object ID must be a nonnegative signed world ID");
+        if (!float.IsFinite(maximumTurnRadians)) return new(false, null, "Maximum turn angle must be finite");
+        if (cancellationToken.IsCancellationRequested) return new(false, null, "Request cancelled before admission");
+        var engine = _robot.Engine;
+        var owner = engine.Robot;
+        Task<AiHeadActionResult> task;
+        Vision.NativeTurnTowardsObjectRunner action;
+        using (engine.EnterSynchronousOwner())
+        {
+            if (cancellationToken.IsCancellationRequested) return new(false, null, "Request cancelled before admission");
+            if (owner is null || !AiOwnerReady(engine, owner)) return new(false, null, "Robot is not ready to turn toward an object");
+            var runtime = owner.NativeBehaviorRuntime;
+            if (runtime is null || runtime.IsRetired || runtime.Manipulation is not { } manipulation)
+                return new(false, null, "MISSING: original object-turn owner unavailable");
+            uint tag = AllocateAiTag();
+            if (tag == 0) return new(false, null, "No external action tag is available");
+            bool Current() => AiOwnerReady(engine, owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime, runtime);
+            action = new Vision.NativeTurnTowardsObjectRunner(manipulation, objectId, Vision.NativeTurnTowardsObjectRunner.AnyCode, maximumTurnRadians, false, false);
+            action.ConfigurePublicRequest(owner, Current);
+            task = AdmitAiAction(action, owner, tag, cancellationToken, "Native object turn ended", true, Current);
+        }
+        var result = await task.ConfigureAwait(false);
+        return new(result.Admitted, result.EngineResult, result.Detail, result.OwnerRetired,
+            result.Admitted ? action.PreparedObjectInteractionCompletion : null);
     }
 
     /// <summary>Queues an authored trigger after existing actions; cancellation addresses only this runner.
@@ -380,6 +412,7 @@ public sealed class CozmoMotion
         else if(action is Animation.TriggerAnimationAction animation)animation.AiNativeEnded=completion;
         else if(action is Vision.NativeTrackFaceRunner trackFace)trackFace.AiNativeEnded=completion;
         else if(action is Vision.NativeLastFaceRunner lastFace)lastFace.AiNativeEnded=completion;
+        else if(action is Vision.NativeTurnTowardsObjectRunner turnObject)turnObject.AiNativeEnded=completion;
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)

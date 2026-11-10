@@ -9,11 +9,28 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
     private readonly short _code;
     private readonly bool _verify,_track;
     private bool _refine=true,_finished;
+    private bool _publicRequest;
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     private NativeVerifyObjectRunner? _verification;
     protected override string ActionName=>"TurnTowardsObject";
     internal NativeTurnTowardsObjectRunner(ManipulationSystem m,uint id,short code,float maximum,bool verify,bool track)
         :base(m,Pose3d.Identity,maximum,0x2C)
     {_id=id;_code=code;_verify=verify;_track=track;}
+    internal void ConfigurePublicRequest(EngineRobot owner, Func<bool> current)
+    {
+        _publicRequest = true;
+        ScopedOwner = owner;
+        ScopedParentCurrent = current;
+        Parameters.SetMaxPanSpeed(0); Parameters.SetPanAccel(0); Parameters.SetPanTolerance(0);
+        Parameters.SetMaxTiltSpeed(0); Parameters.SetTiltAccel(0); Parameters.SetTiltTolerance(0);
+    }
+    public override byte? GetCompletionVariant() => _publicRequest ? (byte)0 : base.GetCompletionVariant();
+    public override ObjectInteractionCompletion? GetObjectInteractionCompletion()
+    {
+        if (!_publicRequest) return base.GetObjectInteractionCompletion();
+        Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: native interaction words are undefined; retain defined metadata only.");
+        return new ObjectInteractionCompletion(_id, 0, 0, 0, 0, 1, false, false);
+    }
     internal void SetTolerances(float pan,float tilt)
     {Parameters.SetPanTolerance(pan);Parameters.SetTiltTolerance(tilt);}
     internal override ActionWatcher? Watcher
@@ -23,7 +40,11 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
         if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         using var mutation=M.World.EnterPoseMutation();
         var target=M.World.GetLocatedObjectByIdHelper(_id);
-        if(target is null)return 0x03000004;
+        if(target is null)
+        {
+            if (_publicRequest) M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "TurnTowardsObjectAction.Init.ObjectNotFound", $"Object with ID={unchecked((int)_id)} no longer exists in the world.");
+            return ScopedCurrent && !DestructionObserved ? 0x03000004 : unchecked((int)EngineActionResult.Cancelled);
+        }
         var main=(ScopedOwner??M.Robot.Engine.Robot!).GetCheckedMainPose();
         using var selected=new Pose3d("");using var relative=new Pose3d("");
         float best=float.MaxValue;bool found=false;
@@ -40,7 +61,8 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
                     Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                     return 0x03000005; // 0x0054A3D8, 0x0054A65C..0x0054A6B8
                 }
-                Behavior.SteppedBehavior.ReportMissing("TurnTowardsObject marker pose conversion failed0054A36C; marker skipped");continue;
+                if (!_publicRequest) Behavior.SteppedBehavior.ReportMissing("TurnTowardsObject marker pose conversion failed0054A36C; marker skipped");
+                continue;
             }
             var t=relative.Translation;float x=(float)t.X,y=(float)t.Y,z=(float)t.Z;
             float distance=x*x;distance=distance+y*y;
@@ -48,7 +70,12 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
             if(!(distance<best))continue;
             best=distance;selected.Assign(relative);found=true;
         }
-        if(!found){Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return 0x03000002;}
+        if(!found)
+        {
+            if (_publicRequest) M.Robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "TurnTowardsObjectAction.Init.NoValidPose", $"Could not get a valid closest marker pose of object {(int)target.Type}");
+            if (!ScopedCurrent || DestructionObserved) return unchecked((int)EngineActionResult.Cancelled);
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return 0x03000002;
+        }
         AssignGoal(selected);
         if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         return base.Init();
@@ -70,7 +97,19 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
         return _verification?.Update()??0; //source immediate first-success joins the retained child update again.
     }
     public override void Prep(){_verification?.Prep();base.Prep();}
-    public override void WatcherEnding(){_verification?.Prep();_verification?.WatcherEnding();_verification=null;base.WatcherEnding();}
+    internal override bool RetireNeverAdmittedTree()
+    {
+        if (!base.RetireNeverAdmittedTree()) return false;
+        if (_publicRequest) GoalPose.Dispose();
+        return true;
+    }
+    public override void WatcherEnding()
+    {
+        _verification?.Prep(); _verification?.WatcherEnding(); _verification = null;
+        base.WatcherEnding();
+        if (AiNativeEnded is { } ended && ScopedOwner is { } owner)
+            ended.TrySetResult((State, owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot, owner)));
+    }
 }
 
 //00568... IVisuallyVerifyObject: real retained44 + lift/Wait43 parallel recipient.
