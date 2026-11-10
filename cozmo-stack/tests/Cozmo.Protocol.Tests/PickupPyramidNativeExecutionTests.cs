@@ -137,8 +137,11 @@ public sealed class PickupPyramidNativeExecutionTests
                 using var pose=new Pose3d(Rotation3d.Identity,new Vec3(cubeX,0,22));
                 MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,new CameraModel(cal,flatCamera),ObjectType.Block_LIGHTCUBE1,pose);
             }
+            // Capture the vision system before the frame is queued: a worker callback may replace the Robot
+            // (NativeMotionIntegrationTests does), and M resolves through the current Robot's runtime.
+            var visionForWait=M.Vision;
             Rig.CameraGrayFrame(id,stamp,image.Pixels);
-            M.Vision.WaitForProcessorIdle();Rig.Engine.VisionUpdateAllResultsFailed!();Rig.Tick();
+            visionForWait.WaitForProcessorIdle();Rig.Engine.VisionUpdateAllResultsFailed!();Rig.Tick();
         }
         // Supplied changing camera/IMU input; does not change the selected activity or vision modes.
         internal void NativeCameraFrame(uint id,byte value)=>NativeCameraFrame(id,Enumerable.Repeat(value,320*240).ToArray());

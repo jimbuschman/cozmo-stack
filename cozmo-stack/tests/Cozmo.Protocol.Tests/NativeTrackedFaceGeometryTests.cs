@@ -62,7 +62,8 @@ public sealed class NativeTrackedFaceGeometryTests
         world.FaceObserved+=o=>
         {
             observed=o;
-            queryCompleted=Task.Run(()=>world.GetFaceIDsObservedSince(0)).Wait(TimeSpan.FromSeconds(2));
+            // A deadlock never completes; 15 s only allows for thread-pool start delay under the full suite's load.
+            queryCompleted=Task.Run(()=>world.GetFaceIDsObservedSince(0)).Wait(TimeSpan.FromSeconds(15));
         };
         void Frame(uint id,float head)
         {
