@@ -159,6 +159,8 @@ public sealed class NativeMotionIntegrationTests
         using var f=new Fixture();var vision=f.M.Vision;var engine=f.Rig.Engine;var owner=f.Robot;
         owner.HandleFirmwareVersion(new FirmwareVersion{Signature=System.Text.Encoding.UTF8.GetBytes(physical?"{}":"{\"sim\":true}")});
         vision.SetNativeOuterCalibration(vision.Calibration!);
+        // The rolling-shutter fixture deliberately supplies moving IMU data; admit its markers through the native moving-vision input.
+        f.Rig.Robot.SetVisionWhileMoving(true);f.Rig.Tick();
         Assert.Equal(physical,vision.NativeWorkerPhysicalForTest);
         Assert.True(ImageQualitySettings.Globals.MeterFromDetections);Assert.Null(vision.QualityRectangleInput);
         vision.ModeEnableMask=(1<<1)|(1<<7);vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();

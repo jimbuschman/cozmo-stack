@@ -25,7 +25,10 @@ public sealed partial class RobotStateHistory
     internal object? NativePoseTreeGate; // robot-owned histories share every native pose writer's gate
     private readonly SortedDictionary<uint,HistRobotState> _entries=new();
     private readonly SortedDictionary<uint,Pose3d> _computed=new();
-    // Native auxiliary indices (+0x24/+0x30). Their insertion owner is still M11-044, named at that join below.
+    private readonly SortedDictionary<uint,HistRobotState> _computedStates=new();
+    private static int _computedKeyCounter;
+    internal static int ComputedKeyCounterForTest { get=>Volatile.Read(ref _computedKeyCounter); set=>Volatile.Write(ref _computedKeyCounter,value); }
+    // Native auxiliary indices (+0x24/+0x30), independently inserted.
     internal readonly SortedDictionary<uint,uint> ComputedTimeToKey=new(),ComputedKeyToTime=new();
     private readonly Dictionary<uint,Pose3d> _hostOrigins=new(); // only the standalone Add(RobotState) host adapter
     private static readonly object AdmissionGate=new();
@@ -116,6 +119,7 @@ public sealed partial class RobotStateHistory
         lock(_gate)
         {
             ClearRaw();foreach(var p in _computed.Values)p.Dispose();_computed.Clear();
+            foreach(var state in _computedStates.Values)state.Dispose();_computedStates.Clear();
             foreach(var v in VisionOnly.Values)v.Pose.Dispose();VisionOnly.Clear();ComputedTimeToKey.Clear();ComputedKeyToTime.Clear();
         }
     }
@@ -134,6 +138,7 @@ public sealed partial class RobotStateHistory
             foreach(uint key in VisionOnly.Keys.TakeWhile(k=>k<cutoff).ToArray()){VisionOnly[key].Pose.Dispose();VisionOnly.Remove(key);}
             if(hadVision&&VisionOnly.Count==0)SourceLog?.Invoke(EngineLogLevel.Debug,"RobotStateHistory","RobotStateHistory.CullToWindowSize.VisStatesEmpty",$"_visStates is empty after culling to window size {WindowMs}");
             foreach(uint key in _computed.Keys.TakeWhile(k=>k<cutoff).ToArray()){_computed[key].Dispose();_computed.Remove(key);}
+            foreach(uint key in _computedStates.Keys.TakeWhile(k=>k<cutoff).ToArray()){_computedStates[key].Dispose();_computedStates.Remove(key);}
             var removedTimes=ComputedTimeToKey.Keys.TakeWhile(k=>k<cutoff).ToArray();
             if(removedTimes.Length>0)
             {
@@ -303,39 +308,94 @@ public sealed partial class RobotStateHistory
     {uint origin=0;bool result=WithGate(()=>ComputeAndInsertCore(timestamp,out origin));originId=origin;return result;}
     internal bool ComputeAndInsertStateAt(uint timestamp,HistRobotState output,out uint originId)
     {uint origin=0;bool result=WithGate(()=>ComputeAndInsertCore(timestamp,out origin,output));originId=origin;return result;}
-    internal uint ComputeAndInsertMarkerState(uint timestamp,HistRobotState output,out uint resolvedTime)
+    internal uint ComputeAndInsertKeyedState(uint timestamp,HistRobotState output,out uint resolvedTime)
     {
-        uint time=0;uint result=WithGate(()=>ComputeAndInsertStatusCore(timestamp,output,ref time,out _));
+        uint time=0;uint result=WithGate(()=>ComputeAndInsertStatusCore(timestamp,output,ref time,out _,requestKey:true));
         resolvedTime=time;return result;
     }
     // FaceWorld's observation-time history lookup: retain the selected node allocation,
     // not a Pose3d wrapper (which would add a logical PoseBase owner).
-    internal bool ComputeFaceObservationOriginId(uint timestamp,out uint originId)
+    internal bool ComputeFaceObservationOriginId(uint timestamp,out uint originId,bool native=true)
     {
-        uint id=0; bool found=WithGate(()=>ComputeAndInsertCore(timestamp,out id));
+        uint id=0;
+        bool found=WithGate(()=>
+        {
+            if(native)return ComputeAndInsertCore(timestamp,out id,requestKey:true);
+            using var value=new HistRobotState();uint time=0;
+            if(ComputeStateAtCore(timestamp,ref time,value,true)!=0 || value.Pose.Node is not { } node)return false;
+            id=node.Root().Id;InsertComputedStateAt(timestamp,value.Pose);return true;
+        });
         originId=id; return found;
     }
-    private bool ComputeAndInsertCore(uint timestamp,out uint originId,HistRobotState? output=null)
+    private bool ComputeAndInsertCore(uint timestamp,out uint originId,HistRobotState? output=null,bool requestKey=false)
     {
         using var owned=output is null?new HistRobotState():null;var value=output??owned!;uint time=0;
-        return ComputeAndInsertStatusCore(timestamp,value,ref time,out originId)==0;
+        return ComputeAndInsertStatusCore(timestamp,value,ref time,out originId,requestKey)==0;
     }
-    private uint ComputeAndInsertStatusCore(uint timestamp,HistRobotState value,ref uint time,out uint originId)
+    private uint ComputeAndInsertStatusCore(uint timestamp,HistRobotState value,ref uint time,out uint originId,bool requestKey)
     {
         lock(_gate)
         {
-            originId=0;uint result=ComputeStateAt(timestamp,ref time,value,true);
+            originId=0;HistRobotState? state=null;uint key=0;
+            uint result=ComputeAndInsertNativeCore(timestamp,ref time,ref state,requestKey,ref key,true);
             if(result!=0)return result;
+            value.Assign(state!);
             if(value.Pose.Node is not { } poseNode)return 1;
             originId=poseNode.Root().Id;
-            InsertComputedStateAt(timestamp,value.Pose);
-            Behavior.SteppedBehavior.ReportMissing("M11-044 ComputeAndInsertStateAt native auxiliary key/index ownership after0x00531BAA is not in the adopted history-query rows; bounded timestamp/pose cache only, no invented key/index producer");
             return 0;
         }
     }
+    // The state output is borrowed from this history. On compute failure it becomes null;
+    // key is untouched unless the caller requests it and the query succeeds.
+    internal uint ComputeAndInsertNative(uint timestamp,ref uint resolvedTime,ref HistRobotState? state,bool requestKey,ref uint key,bool interpolate=true)
+    {
+        uint time=resolvedTime, selectedKey=key;HistRobotState? selected=state;
+        uint result=WithGate(()=>ComputeAndInsertNativeCore(timestamp,ref time,ref selected,requestKey,ref selectedKey,interpolate));
+        resolvedTime=time;state=selected;key=selectedKey;return result;
+    }
+    private uint ComputeAndInsertNativeCore(uint timestamp,ref uint time,ref HistRobotState? state,bool requestKey,ref uint key,bool interpolate)
+    {
+        using var candidate=new HistRobotState();
+        uint result=ComputeStateAtCore(timestamp,ref time,candidate,interpolate);
+        if(result!=0){state=null;return result;}
+        if(_computed.Remove(time,out var seed))seed.Dispose();
+        if(_computedStates.TryGetValue(time,out var existing))
+        {
+            existing.Assign(candidate);state=existing;
+            if(requestKey)
+            {
+                if(!ComputedTimeToKey.TryGetValue(time,out uint existingKey))ComputedTimeToKey.Add(time,existingKey=0);
+                key=existingKey;
+            }
+            return 0;
+        }
+        var owned=HistRobotState.From(candidate.Pose,candidate.State);
+        _computedStates.Add(time,owned);state=owned;
+        uint next=unchecked((uint)Interlocked.Increment(ref _computedKeyCounter));
+        ComputedKeyToTime.TryAdd(next,time);
+        ComputedTimeToKey.TryAdd(time,next);
+        if(requestKey)key=next;
+        return 0;
+    }
+    internal uint GetComputedNative(uint timestamp,ref HistRobotState? state,bool requestKey,ref uint key)
+    {
+        HistRobotState? selected=state;uint selectedKey=key;
+        uint result=WithGate(()=>
+        {
+            if(!_computedStates.TryGetValue(timestamp,out var found))return 1u;
+            selected=found;
+            if(!requestKey)return 0u;
+            if(ComputedTimeToKey.TryGetValue(timestamp,out uint mapped)){selectedKey=mapped;return 0u;}
+            Log(EngineLogLevel.Warning,"RobotStateHistory.GetComputedStateAt.KeyNotFound","");return 1u;
+        });
+        state=selected;key=selectedKey;return result;
+    }
+    internal bool IsValidComputedKey(uint key)=>WithGate(()=>ComputedKeyToTime.ContainsKey(key));
+    internal Pose3d? GetComputedNativePoseAt(uint timestamp)
+    {lock(_gate)return _computedStates.GetValueOrDefault(timestamp)?.Pose;}
     internal void InsertComputedStateAt(uint timestamp,Pose3d pose)
     {WithGate(()=>{if(_computed.Remove(timestamp,out var prior))prior.Dispose();_computed[timestamp]=new Pose3d(pose);return 0;});}
-    public Pose3d? GetComputedStateAt(uint timestamp){lock(_gate)return _computed.GetValueOrDefault(timestamp);}
+    public Pose3d? GetComputedStateAt(uint timestamp){lock(_gate)return _computed.TryGetValue(timestamp,out var seed)?seed:_computedStates.GetValueOrDefault(timestamp)?.Pose;}
     // fidelity: M11-055
     internal EngineLocalizationPose? PublicationPose
     {get{var latest=Latest;return latest is {} p?EngineLocalizationPose.FromPlanar((float)p.RobotPose.Translation.X,(float)p.RobotPose.Translation.Y,(float)p.RobotPose.Translation.Z,(float)p.RobotPose.AngleAroundZ,OriginId):null;}}

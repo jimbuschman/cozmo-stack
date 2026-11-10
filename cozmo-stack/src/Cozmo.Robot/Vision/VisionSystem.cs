@@ -2053,7 +2053,7 @@ public sealed partial class VisionSystem : IDisposable
                     if(sourceOwner is null || StaleFrame())stateComputed=false;
                     else
                     {
-                        uint status=sourceOwner.PoseHistory.ComputeAndInsertMarkerState(timestamp,historicalResult,out uint resolvedTime);
+                        uint status=sourceOwner.PoseHistory.ComputeAndInsertKeyedState(timestamp,historicalResult,out uint resolvedTime);
                         if(status!=0)
                         {
                             stateComputed=false;
@@ -2127,17 +2127,15 @@ public sealed partial class VisionSystem : IDisposable
                         kept.Add(m);
                     }
                     keptMarkers = kept;
-                    // Stock detector output shares one camera input; a general per-marker
-                    // camera identity carrier and native key/index remain unbuilt.
-                    if(queueForEngine && kept.Count!=0 && ReferenceEquals(cal,markerCamera.Calibration))
-                        MarkerMissing("M11-050 same-calibration marker IsValidKey 0x00654F24 requires unrecovered computed-history key/index; no invented validity result");
+                    // Stock detector Camera ID 0 differs from the outer robot Camera ID 1;
+                    // the native same-camera key gate is therefore not entered here.
                 }
             }
             // fidelity: M11-035, M11-036 — UpdateVisionMarkers (0x00654D60) calls
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? (obj,prefix)=>PublishObservedCube(sourceOwner,obj,prefix,()=>!StaleFrame()) : null):null;
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? (obj,prefix)=>PublishObservedCube(sourceOwner,obj,prefix,()=>!StaleFrame()) : null,queueForEngine && sourceOwner is not null ? sourceOwner.PoseHistory.GetComputedNativePoseAt : null):null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
             if(queueForEngine && StaleFrame())return null;
             if (worldFrame is not null)
@@ -2215,7 +2213,7 @@ public sealed partial class VisionSystem : IDisposable
                         if(_robot.Engine.Robot is { } offlineOwner)
                         {
                             using var faceMutation=World.EnterPoseMutation();
-                            lock(offlineOwner.PoseTreeGate) offlineOrigin=ResolveFaceObservationOrigin(History,offlineOwner,timestamp);
+                            lock(offlineOwner.PoseTreeGate) offlineOrigin=ResolveFaceObservationOrigin(History,offlineOwner,timestamp,native:false);
                         }
                         observation=offlineOrigin is null
                             ? Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast)
@@ -2379,9 +2377,9 @@ public sealed partial class VisionSystem : IDisposable
         }
     }
 
-    internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp)
+    internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp,bool native=true)
     {
-        if(!history.ComputeFaceObservationOriginId(timestamp,out uint originId))
+        if(!history.ComputeFaceObservationOriginId(timestamp,out uint originId,native))
         { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation-time historical pose unavailable; face update skipped"); return null; }
         if(!owner.TryGetNativeOriginOwner(originId,out var origin) || origin?.Node is not { } node)
         { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation origin ID has no registered native PoseOriginList owner; face update skipped"); return null; }

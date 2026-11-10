@@ -852,7 +852,7 @@ public sealed class DockingSystem : IDisposable
                 if (target is null) return;
                 var markers = target.Markers.Where(marker => unchecked((ushort)marker.Code) == code).ToArray();
                 if (markers.Length != 1) return;
-                var computed = owner.PoseHistory.GetComputedStateAt(timestamp);
+                var computed = owner.PoseHistory.GetComputedNativePoseAt(timestamp);
                 if (computed is null) return;
                 using var statePose = new Pose3d(computed);
                 using var relative = new Pose3d("");

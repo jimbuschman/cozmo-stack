@@ -542,6 +542,9 @@ public sealed class FaceIdentityTests
             if (name == "face_s10_3") { lastImage = images[frame.GetProperty("image").GetString()!]; break; }
         }
         var recognized = Assert.Single(vision.LastFaces);
+        HistRobotState? faceState=null;uint faceKey=0;
+        Assert.Equal(0u,fixture.Robot.PoseHistory.GetComputedNative(recognized.Timestamp,ref faceState,true,ref faceKey));
+        Assert.NotNull(faceState);Assert.True(fixture.Robot.PoseHistory.IsValidComputedKey(faceKey));
         Assert.Equal(7, recognized.Id);
         Assert.Equal("Drawn", recognized.Name);
         Assert.Equal(775, recognized.Detection.Score); // DT confidence, not FR score

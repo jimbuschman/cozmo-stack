@@ -1141,7 +1141,7 @@ public sealed partial class BlockWorld
     public Func<uint?>? MovementComponentObjectId { get; set; }
     /// <summary><c>Robot::WasObjectTappedRecently(ObjectID)</c> (0x0050D19A). Unwired: false.</summary>
     public Func<uint, bool>? WasObjectTappedRecently { get; set; }
-    /// <summary><c>RobotStateHistory::GetComputedStateAt(ts)</c>: the robot's pose at a time, null when that call fails. Unwired: always fails.</summary>
+    /// <summary><c>RobotStateHistory::GetComputedStateAt(ts)</c>: the robot's pose at a time, null when that call fails.</summary>
     public Func<uint, Pose3d?>? ComputedRobotPoseAt { get; set; }
     /// <summary><c>Robot::GetPose()</c> (Robot+0x298), the robot's CURRENT pose. Unwired: the frame's paired pose is used.</summary>
     public Func<Pose3d?>? CurrentRobotPose { get; set; }
@@ -1572,13 +1572,13 @@ public sealed partial class BlockWorld
     // fidelity: M11-036, M11-037, M11-006, M11-010
     public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate=null)
     {
-        return UpdateObservedMarkers(markers,camera,timestamp,pd,worldRotatingGate,null);
+        return UpdateObservedMarkers(markers,camera,timestamp,pd,worldRotatingGate,null,null);
     }
-    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport)
+    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose=null)
     {
-        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeCubeReport);
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeCubeReport,nativeComputedPose);
     }
-    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport)
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
     {
         _missingMapTimeReported=_missingPoseChangedReported=false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
@@ -1613,7 +1613,7 @@ public sealed partial class BlockWorld
             AddLiftOccluder(camera, pd);                                           // 0x00624FA4
             _didObjectsChange = false;                                             // 0x00624FAC
             var instances = CreateObjectsFromMarkers(markers, camera);             // 0x00624FC4 (always succeeds, 0x00625616)
-            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeCubeReport);   // 0x0062505A
+            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeCubeReport,nativeComputedPose);   // 0x0062505A
             if (status != 0)
             {
                 Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed", "");
@@ -1780,10 +1780,10 @@ public sealed partial class BlockWorld
     /// <c>Rejigger</c> do not exist in this stack, so <c>LocalizeRobot</c> is a stub that counts its calls and the pairs it would have localized to, and returns 0.
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
-    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeCubeReport)
+    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
     {
         var robotPos = (CurrentRobotPose?.Invoke() ?? pd.RobotPose).Translation;
-        var potentials = new PotentialObjectsForLocalizingTo(this);                // 0x00620B0C
+        var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose); // 0x00620B0C
         foreach (var instance in instances)
         {
             float dx = (float)(instance.Pose.Translation.X - robotPos.X);
@@ -3438,11 +3438,13 @@ internal sealed class PotentialObjectsForLocalizingTo
     }
 
     private readonly BlockWorld _w;
+    private readonly Func<uint,Pose3d?>? _computedPose;
     private readonly SortedDictionary<uint, Pair> _map = new();
 
-    public PotentialObjectsForLocalizingTo(BlockWorld world)
+    public PotentialObjectsForLocalizingTo(BlockWorld world,Func<uint,Pose3d?>? computedPose=null)
     {
         _w = world;
+        _computedPose = computedPose;
         bool localized = _w.LocalizedToObjectId is not null;
         Gate = localized ? _w.RobotMovedSinceLocalized : true;
     }
@@ -3484,8 +3486,8 @@ internal sealed class PotentialObjectsForLocalizingTo
         if (inWorldOrigin)
         {
             uint lastUpdated = _w.EntryFor(matched.ObjectId)?.LastPoseUpdatedTime ?? 0;   // GetLastPoseUpdatedTime 0x0050780C
-            var a = _w.ComputedRobotPoseAt?.Invoke(lastUpdated);
-            var b = a is null ? null : _w.ComputedRobotPoseAt?.Invoke(ts);
+            var a = (_computedPose ?? _w.ComputedRobotPoseAt)?.Invoke(lastUpdated);
+            var b = a is null ? null : (_computedPose ?? _w.ComputedRobotPoseAt)?.Invoke(ts);
             if (a is { } pa && b is { } pb && pb.IsSameAs(pa, SameRobotTolerance, SameRobotAngle, out _)
                 && !observed.Pose.IsSameAs(matched.Pose, SameRobotTolerance, SameRobotAngle, out _))
             {

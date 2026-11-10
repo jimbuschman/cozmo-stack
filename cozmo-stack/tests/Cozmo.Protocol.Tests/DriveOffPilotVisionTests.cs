@@ -295,6 +295,9 @@ public sealed class DriveOffPilotVisionTests
             Assert.Equal(frames,reports.Select(r=>r.Timestamp));
             Assert.True(frames.First()<frames.Last());
             Assert.Equal(new[]{0u,frames.First()},previousTimestamps);
+            HistRobotState? computed=null;uint key=uint.MaxValue;
+            Assert.Equal(0u,rig.Engine.Robot!.PoseHistory.GetComputedNative(frames.First(),ref computed,true,ref key));
+            Assert.NotNull(computed);Assert.True(rig.Engine.Robot.PoseHistory.IsValidComputedKey(key));
             Assert.Equal(before,mood.HistoryCounts[0]); // first handler failed; later success did not clear aggregate.
             Assert.Equal(reports.Last().Timestamp,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
             Assert.Equal(0,vision.PendingResultCount);
