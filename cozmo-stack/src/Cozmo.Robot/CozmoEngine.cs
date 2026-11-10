@@ -885,9 +885,31 @@ public sealed partial class EngineRobot
             (album.Kind != FirmwareJsonKind.String ||
              (album.Bytes.Length != 0 && !album.Bytes.AsSpan().SequenceEqual("robot"u8))))
         {
-            VisionNvTailUnavailable = true;
-            Behavior.SteppedBehavior.ReportMissing("M11-059 non-robot FaceAlbum selection and ordered NV continuation unavailable");
-            return;
+            if(album.Kind!=FirmwareJsonKind.String || Engine.NativeVisionFileTail is null)
+            {
+                VisionNvTailUnavailable=true;
+                Behavior.SteppedBehavior.ReportMissing("M11-059 file FaceAlbum selector or recipient unavailable");
+                return;
+            }
+            string directory;
+            try { directory=new System.Text.UTF8Encoding(false,true).GetString(album.Bytes); }
+            catch(System.Text.DecoderFallbackException)
+            {
+                VisionNvTailUnavailable=true;
+                Behavior.SteppedBehavior.ReportMissing("M11-059 file FaceAlbum path cannot be represented by the host");
+                return;
+            }
+            if(directory.Contains('\0'))
+            {
+                VisionNvTailUnavailable=true;
+                Behavior.SteppedBehavior.ReportMissing("M11-059 file FaceAlbum path contains an unsupported NUL byte");
+                return;
+            }
+            if(!Engine.NativeVisionFileTail(this,directory,outcome.Epoch) || !CurrentVision())
+            { HoldPartialTail();return; }
+            if(Engine.NativeVisionComplete?.Invoke(this,outcome.Epoch)!=true)
+            { HoldPartialTail();return; }
+            goto backupReads;
         }
         // 0x650FD6..65108A: absent, empty, or "robot" selects the NV pair.
         if (Engine.FaceAlbumReadsGate is { } faceGate)
@@ -2013,6 +2035,7 @@ public sealed partial class CozmoEngine : IDisposable
     internal Func<EngineRobot,int,bool>? NativeVisionAttemptCurrent;
     internal Func<EngineRobot,bool>? NativeVisionOwnerCurrent;
     internal Func<EngineRobot,int,bool>? NativeVisionComplete;
+    internal Func<EngineRobot,string,int,bool>? NativeVisionFileTail;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>

@@ -99,6 +99,22 @@ internal sealed class UiSubscriptionHub : IDisposable
         }
     }
 
+    internal void DeliverIsolated(ushort tag,bool engineToGame,object? payload,Func<bool> current,Action<Exception> failed)
+    {
+        var snapshot=new List<LinkedListNode<Action<object?>?>>();
+        lock(_gate)
+        {
+            if(!(engineToGame?_e2g:_g2e).TryGetValue(tag,out var signal))return;
+            for(var node=signal.Nodes.First;node is not null;node=node.Next)snapshot.Add(node);
+        }
+        foreach(var node in snapshot)
+        {
+            if(!current())return;
+            Action<object?>? callback;lock(_gate)callback=node.Value;
+            try { callback?.Invoke(payload); } catch(Exception error) { failed(error); }
+        }
+    }
+
     internal int SubscriberCountForTest(ushort tag,bool engineToGame)
     {lock(_gate){var map=engineToGame?_e2g:_g2e;return map.TryGetValue(tag,out var signal)?signal.Nodes.Count:0;}}
     public void Dispose()
