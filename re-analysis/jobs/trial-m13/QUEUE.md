@@ -274,3 +274,5 @@ Committed tip 524f8f96 passed scripts/test-full.sh with 8,290/8,290 tests, zero 
 | AI-BODY-TURN-TO-OBJECT-1 | READY FOR CLAUDE | HANDOFF-AI-BODY-TURN-TO-OBJECT-1.md |
 | M11-050-MARKER-KEY-CARRIER-1 | READY FOR CLAUDE | HANDOFF-M11-050-MARKER-KEY-CARRIER-1.md |
 | M14-008-FACE-LIFECYCLE-CLOSURE-1 | READY FOR CLAUDE | HANDOFF-M14-008-FACE-LIFECYCLE-CLOSURE-1.md |
+| M11-097-TRACK-MOTION-HISTORY-1 | RELEASED | Target M11-097's remaining motion-tracking history caller. Trace TrackMotionAction::UpdateTracking at 0x0056761C–0x00567718 and its mode-zero query at 0x0056768C through the shipped 0x49 producer, factory callers and existing action runner. Bind the original recipient only where the stock path is supported, and identify any missing producer, caller or action input. The three TrackGroundPoint queries remain a separate caller group. |
+| M11-097-TRACK-MOTION-HISTORY-1 | CHECKED | Source-only handoff. Mode-zero recipient verified on shipped ARM; no supported constructor/queue caller found. M11-097 join remains MISSING. Affected existing tests 71/71. HANDOFF-M11-097-TRACK-MOTION-HISTORY-1.md. |
