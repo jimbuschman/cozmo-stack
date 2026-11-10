@@ -402,6 +402,7 @@ public sealed partial class VisionSystem : IDisposable
             _robot.Engine.PublishFaceIdReport(tag,payload);
         };
         Faces.NativeGeneration=()=>Volatile.Read(ref _removals);
+        World.NativeLocalizationGeneration=()=>Volatile.Read(ref _removals);
         World.NativeObjectObserved=_nativeObjectObserved=observation=>
         {
             if(_robot.Engine.Robot?.HasExternalInterface!=true)return;

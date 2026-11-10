@@ -974,8 +974,7 @@ public sealed partial class BlockWorld
     public byte Robot2C5 { get { lock (_gate) return _robot2C5; } }
     /// <summary>
     /// <c>Robot+0x2C8</c>: written -1.0f by <c>Delocalize</c>; <see cref="SetLocalizedTo"/> stores the minimum, over the object's markers, of the squared length of the marker pose's translation in the camera
-    /// frame (0x005123AE..0x00512456, 0x0050240A..0x00512428: skip when [node+0x50] &lt; r8; skip when the stored value is >= 0 and d2 >= it). That store is NOT built (it needs the marker-pose-to-camera
-    /// transform this stack does not have; counted in <see cref="UnbuiltSetLocalizedToMarkerLoops"/>). The engine has no reader of +0x2C8.
+    /// frame (0x005123AE..0x00512456: skip older markers and retain the existing minimum). The attached explicit recipient uses the current camera; automatic localization retains its partial adapter.
     /// </summary>
     public float Robot2C8 { get { lock (_gate) return _robot2C8; } }
     /// <summary><c>Robot+0x2C0</c>: the frame-id-mismatch counter of <c>UpdateFullRobotState</c> (M11-053: incremented on a state whose frame id differs from Robot+0x2B0, Delocalize at 101; not built here). Both Delocalize callers write 0 before the call: the tread boundary (0x00512B9C) and the frame mismatch (0x00512F88); the counting itself is CozmoSensors'.</summary>
@@ -988,25 +987,26 @@ public sealed partial class BlockWorld
 
     /// <summary>
     /// The marker loop of <c>SetLocalizedTo</c> (0x005123AE..0x00512456): for each marker of the object <c>GetWithRespectTo(marker pose, [Robot+0x258]+0x30)</c> (the camera pose); false when any
-    /// of those calls fails. This stack has no pose tree, so the loop is not built: unwired it is treated as SUCCEEDING, counted in <see cref="UnbuiltSetLocalizedToMarkerLoops"/>. The wrong
-    /// direction of that stand-in: a call the engine would fail (marker and camera poses in different origins) succeeds here and the fields are written where the engine writes nothing. The
-    /// running minimum of squared marker distance the loop stores into Robot+0x2C8 is recovered (see <see cref="Robot2C8"/>) but not built for the same reason.
+    /// of those calls fails. This optional host fixture adapter remains separate from the attached current-camera recipient.
     /// </summary>
     public Func<ObservableObject, bool>? MarkerPosesRelativeToCamera { get; set; }
     // fidelity: M11-044 - supplied native GetWithRespectTo result per marker, in list order.
     internal Func<ObservableObject, KnownMarker, Pose3d?>? MarkerPoseInCamera;
+    internal Func<EngineRobot, EngineRobot.CurrentCameraScope>? NativeCurrentCamera;
+    internal Func<int>? NativeLocalizationGeneration;
     /// <summary>How many times <see cref="SetLocalizedTo"/> ran an object through it without <see cref="MarkerPosesRelativeToCamera"/> (the loop was not run; M11-044).</summary>
     public int UnbuiltSetLocalizedToMarkerLoops { get; private set; }
 
     /// <summary>
     /// <c>Robot::SetLocalizedTo(obj)</c> 0x0051238C. An object whose ID is -1 is the IdNotSet error (0x005123A0 -> 0x005124FC): returns 1 and writes nothing. Otherwise the marker loop
-    /// (0x005123AE..0x00512456, see <see cref="MarkerPosesRelativeToCamera"/>): a failed marker call is an error (0x0051254E) returning 1 with NO writes; then Robot+0x2B8 = the object's ID
+    /// (0x005123AE..0x00512456): a failed marker conversion returns false while preserving any earlier minimum writes; then Robot+0x2B8 = the object's ID
     /// (0x00512458), Robot+0x2BC = 0 (0x00512468) and Robot+0x2C4 = 1 (0x0051245E). Null: Robot+0x2B8 = -1 (0x005124F6) and Robot+0x2C4 = 1 (0x005124EE), Robot+0x2BC untouched. Returns
-    /// false where the engine returns 1. NOT BUILT: the running minimum stored into Robot+0x2C8 by the loop (0x00512442; see <see cref="Robot2C8"/>), the robot-side text,
-    /// <c>AIComponent::OnRobotRelocalized</c> (0x0051246C) and the visualizer call.
+    /// false where the engine returns 1. The relocalization callback and visualizer call remain unbuilt.
     /// </summary>
     // fidelity: M11-044
-    public bool SetLocalizedTo(ObservableObject? obj)
+    public bool SetLocalizedTo(ObservableObject? obj) => SetLocalizedToCore(obj, true);
+
+    private bool SetLocalizedToCore(ObservableObject? obj, bool useNativeCamera)
     {
         using var frameMutation=EnterPoseMutation();
         if (obj is null) { lock(_gate){_localizedTo=ObservableObject.UnassignedId;_robot2C4=1;}return true; }
@@ -1015,7 +1015,31 @@ public sealed partial class BlockWorld
             Source(EngineLogLevel.Error,null,"Robot.SetLocalizedTo.IdNotSet","Cannot localize to an object with no ID set");
             EngineErrorState.StoreAndMaybeBreak(); return false;
         }
-        if (MarkerPoseInCamera is { } relative)
+        var owner = useNativeCamera ? NativeSnapshotOwner?.Invoke() : null;
+        int generation = NativeLocalizationGeneration?.Invoke() ?? 0;
+        // Explicit offline/host fixtures may supply the legacy flattened object model.
+        // Real attached objects with checked native poses take the owned camera route.
+        bool offlineFlat = obj.Markers.Count != 0 && owner?.Engine.IsOfflineEngine == true &&
+            (!ReferenceEquals(obj.PoseWorld, this) || obj.Pose.HasLegacyFrameInput);
+        bool native = useNativeCamera && NativeSnapshotOwner is not null && !offlineFlat && MarkerPoseInCamera is null && MarkerPosesRelativeToCamera is null;
+        bool Current() => !native || owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) &&
+            ReferenceEquals(NativeSnapshotOwner?.Invoke(), owner) && (NativeLocalizationGeneration?.Invoke() ?? 0) == generation;
+        if (native && obj.Markers.Count != 0 && (!Current() || NativeCurrentCamera is null || !ReferenceEquals(obj.PoseWorld, this) || obj.Pose.HasLegacyFrameInput))
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 SetLocalizedTo: original camera or native marker owner unavailable; marker loop withheld");
+            return false;
+        }
+        using var poseGate = native && owner is not null ? LogCallbackDeferral.EnterGated(owner.PoseTreeGate) : null;
+        using var camera = native && obj.Markers.Count != 0 ? NativeCurrentCamera!(owner!) : null;
+        if (!Current()) return false;
+        Func<ObservableObject, KnownMarker, Pose3d?>? relative = MarkerPoseInCamera;
+        if (native && camera is not null) relative = (_, marker) =>
+        {
+            var result = new Pose3d("");
+            if (marker.PoseOnObject.TryWithRespectTo(camera.Pose, result)) return result;
+            result.Dispose(); return null;
+        };
+        if (relative is not null)
         {
             uint threshold=0;
             foreach(var marker in obj.Markers)
@@ -1026,7 +1050,13 @@ public sealed partial class BlockWorld
                     return false;
                 }
                 if(observed < threshold)continue;
+                if (native && marker.PoseOnObject.Node is null)
+                {
+                    Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 SetLocalizedTo: native marker pose node unavailable");
+                    return false;
+                }
                 using var pose=relative(obj,marker);
+                if (!Current()) return false;
                 if(pose is null)
                 {
                     Source(EngineLogLevel.Error,null,"Robot.SetLocalizedTo.MarkerOriginProblem","Could not get pose of marker w.r.t. robot camera");
@@ -1038,6 +1068,7 @@ public sealed partial class BlockWorld
                 {_robot2C8=squared;threshold=observed;}
             }
         }
+        else if (native && obj.Markers.Count == 0) { }
         else if (MarkerPosesRelativeToCamera is { } loop)
         {
             if (!loop(obj))
@@ -1051,6 +1082,7 @@ public sealed partial class BlockWorld
             UnbuiltSetLocalizedToMarkerLoops++;
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 SetLocalizedTo marker loop 0x005123AE..0x00512456: native marker-node pose/camera owner binding is unbuilt; no squared-distance producer is inferred from the retained flat model");
         }
+        if (!Current()) return false;
         lock (_gate)
         {
             _localizedTo = obj.ObjectId;
@@ -1130,9 +1162,9 @@ public sealed partial class BlockWorld
             EmitPublicLog($"Robot.LocalizeToObject.UnlocalizedObject: Refusing to localize to object {existing.ObjectId}, which claims not to be localizable.");
             return 1;
         }
-        EmitPublicLog("MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt");
+        EmitPublicLog("MISSING: M11-044 LocalizeToObject history/current MAIN update 0x005159B6..D2 and Rejigger/Flatten origin changes remain unbuilt; M13-032 UpdateMapOrigins caller 0x0051590C remains unavailable; partial localization fields only");
         UnbuiltLocalizeToObjectCalls++;
-        return SetLocalizedTo(existing) ? 0u : 1u;
+        return SetLocalizedToCore(existing, false) ? 0u : 1u;
     }
 
     /// <summary>The <c>MovementComponent</c> bytes +0xA (head NOT in position, status bit 0x200 clear) and +0xC (wheels moving, 0x8000), from the newest robot state. Unwired: both 0.</summary>

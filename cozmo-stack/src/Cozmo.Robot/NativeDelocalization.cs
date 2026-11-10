@@ -34,6 +34,21 @@ public sealed partial class EngineRobot
         var camera=HeadGeometry.GetCameraPose(headcam,state.State.HeadAngle);
         camera.PreComposeWith(neck);camera.SetParent(state.Pose);return camera;
     }
+    // Current outer camera uses accepted head angle and the live MAIN node, not history.
+    internal sealed class CurrentCameraScope : IDisposable
+    {
+        private readonly Pose3d _neck;
+        internal Pose3d Pose { get; }
+        internal CurrentCameraScope(EngineRobot owner, float acceptedHeadAngle)
+        {
+            _neck = new Pose3d(Rotation3d.Identity, HeadGeometry.NeckPositionMm, "RobotNeck", owner.GetCheckedMainPose());
+            using var headcam = new Pose3d(HeadGeometry.DefaultHeadCamRotation, HeadGeometry.EngineHeadCamPositionMm);
+            headcam.SetParent(_neck);
+            Pose = HeadGeometry.GetCameraPose(headcam, acceptedHeadAngle);
+        }
+        public void Dispose() { Pose.Dispose(); _neck.Dispose(); }
+    }
+    internal CurrentCameraScope CopyCurrentCameraPose(float acceptedHeadAngle) => new(this, acceptedHeadAngle);
     internal uint NativeRobotId {get;}
     internal uint NativeBodyId {get;private set;} // Robot+0x1C, constructor zero 0x0050FC3C
     private static readonly Pose3d MissingOrigin=new(""); // MissingOrigin's native name is not a checked input in this job.
