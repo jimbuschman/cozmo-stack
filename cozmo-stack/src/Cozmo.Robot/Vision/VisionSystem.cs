@@ -351,6 +351,7 @@ public sealed partial class VisionSystem : IDisposable
     private readonly Action<NativeObservedObject> _nativeObjectObserved;
     private readonly RetainedSubscription _renameRequest;
     private readonly RetainedSubscription _eraseRequest;
+    private readonly RetainedSubscription _fileAlbumRequest;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -486,6 +487,11 @@ public sealed partial class VisionSystem : IDisposable
             {
                 robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.EraseFace.HandlerFailed",error.Message);
             }
+        });
+        _fileAlbumRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x8F,false,value=>
+        {
+            if(value is NativeLoadFaceAlbumFileRequest request && ReferenceEquals(request.Vision,this))
+                HandleFileAlbumRequest(request);
         });
     }
 
@@ -1272,20 +1278,7 @@ public sealed partial class VisionSystem : IDisposable
             owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
         void Completed(NvResult result, Action<NvResult>? callback)
         {
-            if (!Current()) return;
-            if (result.Result != 0)
-            {
-                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.SaveFaceAlbumToRobot.NVWriteFailed", $"NVResult = {NvStorageComponent.NvResultName(result.Result)}");
-                if (!Current()) return;
-                if (owner!.HasExternalInterface)
-                {
-                    var report = new EngineErrorCodeReport(3);
-                    _robot.Engine.DeliverAnimationReportToApp(0x7C, new byte[] { 3 });
-                    _robot.Engine.AnimationMessages.Deliver(0x7C, true, report);
-                }
-                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-            }
-            if (Current()) callback?.Invoke(result);
+            if(owner is not null)CompleteFaceAlbumSave(owner,result,Current,callback,false);
         }
         if (!Current()) return;
         byte[] album, enrollment;
@@ -1313,12 +1306,10 @@ public sealed partial class VisionSystem : IDisposable
         {
             // C5-13: erase the album first, then the enrollment only when the album erase succeeded.
             Log?.Invoke("SaveFaceAlbumToRobot: EmptyAlbumData");
-            if (Current() && nv!.Erase(FaceAlbumNvTag, r => Completed(r, albumCompleted)) != 0 && Current())
-                nv.Erase(FaceEnrollmentNvTag, r => Completed(r, enrollmentCompleted));
+            if(Current())AdmitFaceAlbumSave(nv!,album,enrollment,Current,r=>Completed(r,albumCompleted),r=>Completed(r,enrollmentCompleted),false);
             return;
         }
-        if (Current() && nv!.Write(FaceAlbumNvTag, album, r => Completed(r, albumCompleted)) != 0 && Current())
-            nv.Write(FaceEnrollmentNvTag, enrollment, r => Completed(r, enrollmentCompleted));
+        if(Current())AdmitFaceAlbumSave(nv!,album,enrollment,Current,r=>Completed(r,albumCompleted),r=>Completed(r,enrollmentCompleted),false);
     }
 
     /// <summary>
@@ -2557,6 +2548,7 @@ public sealed partial class VisionSystem : IDisposable
         }
         _renameRequest.Dispose();
         _eraseRequest.Dispose();
+        _fileAlbumRequest.Dispose();
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;
