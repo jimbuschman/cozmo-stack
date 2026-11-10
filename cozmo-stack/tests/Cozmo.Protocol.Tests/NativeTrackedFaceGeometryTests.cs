@@ -77,7 +77,12 @@ public sealed class NativeTrackedFaceGeometryTests
         var oldNativeTranslation=first.NativeTrackingTranslation;
         var oldNativeRotation=first.NativeTrackingRotation;
         Assert.False(input.HeadPose.HasParent);
+        Assert.Equal(input.NativeTrackingTranslation, input.HeadPose.Translation);
+        Assert.Equal(input.NativeTrackingRotation, input.HeadPose.Quaternion);
         using var firstRoot=Pose3d.WrapExisting(f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId).Node!);
+        Assert.Same(firstRoot.Node, oldPose.Node!.Parent);
+        Assert.Equal(oldNativeTranslation, oldPose.Translation);
+        Assert.Equal(oldNativeRotation, oldPose.Quaternion);
         using var cached=new Pose3d();
         Assert.True(world.CopyNativeLastFace(firstRoot,true,cached));
         Assert.Equal(oldNativeTranslation,cached.Translation);
@@ -96,12 +101,21 @@ public sealed class NativeTrackedFaceGeometryTests
         Assert.NotEqual(oldNativeRotation,updated.NativeTrackingRotation);
         Assert.NotEqual(oldNativeTranslation,second.NativeTrackingTranslation);
         Assert.False(second.HeadPose.HasParent);
+        Assert.Equal(second.NativeTrackingTranslation, second.HeadPose.Translation);
+        Assert.Equal(second.NativeTrackingRotation, second.HeadPose.Quaternion);
         using var newRoot=Pose3d.WrapExisting(f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId).Node!);
         Assert.NotSame(firstRoot.Node,newRoot.Node);
+        Assert.Same(newRoot.Node, updated.HeadPose.Node!.Parent);
+        Assert.Same(firstRoot.Node, oldPose.Node!.Parent);
         Assert.True(world.CopyNativeLastFace(newRoot,true,cached));
         Assert.Equal(oldNativeTranslation,cached.Translation);
         Assert.Equal(second.NativeTrackingRotation,cached.Quaternion);
         Assert.False(world.CopyNativeLastFace(firstRoot,true,cached));
+        Assert.True(world.ChangeFaceID(7,8));
+        world.ResetToConstructed();
+        Assert.Equal(oldTranslation, oldPose.Translation); Assert.Equal(oldRotation, oldPose.Quaternion);
+        Assert.Same(firstRoot.Node, oldPose.Node!.Parent);
+        Assert.False(world.CopyNativeLastFace(newRoot,false,cached));
     }
 
     [Fact]
@@ -119,12 +133,12 @@ public sealed class NativeTrackedFaceGeometryTests
         };
         var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         using var cached=new Pose3d();
-        Assert.True(world.CopyNativeLastFace(origin,false,cached));
-        Assert.Equal(20,cached.Translation.X);
+        Assert.False(world.CopyNativeLastFace(origin,false,cached));
+        Assert.Same(previous,world.GetLastObservedFace());
         Assert.Null(world.AddOrUpdateNativeFace(incoming,Pose3d.Identity,false,origin.Node!,true,requireNativePose:true));
         Assert.Same(previous,world.GetFace(7));Assert.Equal(10u,previous.LastObservedTimestamp);
         Assert.Equal(new Vec3(20,0,50),previous.HeadPose.Translation);
-        Assert.True(world.CopyNativeLastFace(origin,false,cached));Assert.Equal(20,cached.Translation.X);
+        Assert.False(world.CopyNativeLastFace(origin,false,cached));
     }
 
     [Fact]
@@ -143,5 +157,60 @@ public sealed class NativeTrackedFaceGeometryTests
         Assert.Null(world.GetFace(7));
         using var cached=new Pose3d();
         Assert.False(world.CopyNativeLastFace(f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId),true,cached));
+    }
+
+    [Fact]
+    public void LegacyWritesNeverSeedOrDisplaceNativeCacheAndClearEntryNativeProvenance()
+    {
+        using var f = new Fixture(sourceNvEmpty:true);
+        var world = f.M.Vision.Faces; var owner = f.Robot; var origin = owner.GetNativeOrigin(owner.CurrentOriginId);
+        using var cached = new Pose3d();
+        TrackedFace Legacy(int id, uint stamp, float x) => new(new DetectedFace(id, new FaceRect(1,2,10,10), Name:"Legacy"), stamp)
+        { HeadPose = new Pose3d(Rotation3d.Identity, new Vec3(x,0,60)) };
+        world.AddOrUpdateFace(Legacy(7,10,2), Pose3d.Identity,false);
+        Assert.False(world.CopyNativeLastFace(origin,true,cached));
+        Assert.False(world.CopyNativeLastFace(origin,false,cached));
+        var native = new TrackedFace(new DetectedFace(8,new FaceRect(1,2,10,10),new Vec2(2,2),new Vec2(3,2),Name:"Native"),10)
+        { HeadPose = new Pose3d(Rotation3d.Identity,new Vec3(100,0,60)), NativeTrackingTranslation = new Vec3(100,0,60), NativeTrackingRotation = Rotation3d.Identity };
+        Assert.NotNull(world.AddOrUpdateNativeFace(native,Pose3d.Identity,false,origin.Node!,true,requireNativePose:true,expectedOwner:owner));
+        Assert.True(world.CopyNativeLastFace(origin,true,cached)); Assert.Equal(100,cached.Translation.X);
+        world.AddOrUpdateFace(Legacy(7,10,1),Pose3d.Identity,false); // same stamp, closer
+        world.AddOrUpdateFace(Legacy(8,20,3),Pose3d.Identity,false); // same ID, later stamp
+        Assert.True(world.CopyNativeLastFace(origin,true,cached)); Assert.Equal(100,cached.Translation.X);
+        Assert.Null(world.GetFace(8)!.NativeTrackingTranslation);
+        var noParts = new TrackedFace(new DetectedFace(8,new FaceRect(1,2,10,10),Name:"Native"),21)
+        { HeadPose = new Pose3d(Rotation3d.Identity,new Vec3(200,0,60)), NativeTrackingTranslation = new Vec3(200,0,60), NativeTrackingRotation = Rotation3d.Identity };
+        Assert.Null(world.AddOrUpdateNativeFace(noParts,Pose3d.Identity,false,origin.Node!,true,requireNativePose:true,expectedOwner:owner));
+        world.RemoveFaceByID(8); Assert.True(world.CopyNativeLastFace(origin,true,cached));
+        world.ClearAllFaces(); Assert.False(world.CopyNativeLastFace(origin,true,cached));
+    }
+
+    [Fact]
+    public void FirstNativeObservationDoesNotInheritSameIdLegacyCountOrName()
+    {
+        using var f = new Fixture(sourceNvEmpty:true);
+        var world = f.M.Vision.Faces; var owner = f.Robot; var origin = owner.GetNativeOrigin(owner.CurrentOriginId);
+        for (uint i = 1; i <= 4; i++)
+        {
+            var legacy = new TrackedFace(new DetectedFace(7,new FaceRect(1,2,10,10),Name:i==1?"Host":null),i)
+            { HeadPose = new Pose3d(Rotation3d.Identity,new Vec3(20,0,60)) };
+            world.AddOrUpdateFace(legacy,Pose3d.Identity,false);
+        }
+        var previous = world.GetFace(7)!.HeadPose;
+        using var cached = new Pose3d(); Assert.False(world.CopyNativeLastFace(origin,false,cached));
+        var rejected = new TrackedFace(new DetectedFace(7,new FaceRect(1,2,10,10),new Vec2(2,2),new Vec2(3,2)),100)
+        { HeadPose = new Pose3d(Rotation3d.Identity,new Vec3(100,0,60)), NativeTrackingTranslation = new Vec3(100,0,60), NativeTrackingRotation = Rotation3d.Identity };
+        Assert.Null(world.AddOrUpdateNativeFace(rejected,Pose3d.Identity,true,origin.Node!,true,requireNativePose:true,expectedOwner:owner));
+        Assert.Equal(4,world.GetFace(7)!.TimesObserved); Assert.Same(previous,world.GetFace(7)!.HeadPose);
+        for (uint i = 1; i <= 4; i++)
+        {
+            var native = new TrackedFace(new DetectedFace(7,new FaceRect(1,2,10,10),new Vec2(2,2),new Vec2(3,2)),100+i)
+            { HeadPose = new Pose3d(Rotation3d.Identity,new Vec3(100,0,60)), NativeTrackingTranslation = new Vec3(100,0,60), NativeTrackingRotation = Rotation3d.Identity };
+            var observation = world.AddOrUpdateNativeFace(native,Pose3d.Identity,false,origin.Node!,true,requireNativePose:true,expectedOwner:owner)!;
+            Assert.Equal((int)i, observation.NativeSnapshot!.Count);
+            Assert.False(observation.Face.HasName);
+            if (i == 1) Assert.Same(previous,observation.PreviousPose);
+            Assert.Equal(i == 4, world.CopyNativeLastFace(origin,true,cached));
+        }
     }
 }

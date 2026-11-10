@@ -149,7 +149,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     }
     private bool CopyFacePose(FaceEntry face, Pose3d destination)
     {
-        if (_actualOwner is null) { destination.Assign(face.HeadPose); return true; }
+        if (_actualOwner is null) { destination.Assign(face.LegacyHeadPose); return true; }
         if (face.NativeTrackingTranslation is not { } point || face.NativeObservationOrigin is null)
         {
             Behavior.SteppedBehavior.ReportMissing("M14-001 native camera-frame face position unavailable; LastFace turn withheld");

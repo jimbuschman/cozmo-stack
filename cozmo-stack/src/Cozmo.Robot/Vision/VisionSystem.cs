@@ -409,7 +409,6 @@ public sealed partial class VisionSystem : IDisposable
             SteppedBehavior.ReportMissing("M11-038 native44 complete app report unavailable; checked immutable LOCAL prefix only, no truncated wire");
             _robot.Engine.AnimationMessages.Deliver(0x44,true,observation);
         };
-        Faces.NativeMainPose=()=>_robot.Engine.Robot?.GetCheckedMainPose();
         Faces.NativePoseScope=()=>World.EnterPoseMutation();
         Faces.NativeOwner=()=>_robot.Engine.Robot; // M14-009: IsPoseInWorldOrigin reads this robot's current origin
         World.CurrentRobotPose = () => robot.Engine.Robot?.MainPose;
@@ -2290,9 +2289,10 @@ public sealed partial class VisionSystem : IDisposable
                         var pose = ComposeNativeFacePose(tf.NativeCameraTranslation, frames.Camera, frames.Robot);
                         tf.NativeTrackingTranslation = pose.Translation;
                         tf.NativeTrackingRotation = pose.Rotation;
-                        // Keep the legacy public pose for manual adapters; the detached native transform is stored above.
+                        // Keep the old flat view only for explicit legacy steering consumers.
                         tf.HeadPose.Dispose();
-                        tf.HeadPose = new Pose3d(processingCamera.Pose, processingCamera.Pose.Apply(tf.NativeCameraTranslation));
+                        tf.LegacyHeadPose = new Pose3d(processingCamera.Pose, processingCamera.Pose.Apply(tf.NativeCameraTranslation));
+                        tf.HeadPose = new Pose3d(pose.Rotation, pose.Translation);
                     }
                     else if (queueForEngine && !offline)
                     {

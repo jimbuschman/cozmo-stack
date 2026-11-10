@@ -294,12 +294,12 @@ public class FreeplayTests
         var faces=f.M.Vision.Faces; var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         using var output=new Pose3d("");
         var weak=new TrackedFace(new DetectedFace(87,new FaceRect(0,0,10,10)),1)
-            { HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60),parent:origin) };
-        faces.AddOrUpdateFace(weak,f.Robot.GetCheckedMainPose(),false);
+            { HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60)), NativeTrackingTranslation=new Vec3(100,0,60), NativeTrackingRotation=Rotation3d.Identity };
+        faces.AddOrUpdateNativeFace(weak,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot);
         Assert.False(faces.CopyNativeLastFace(origin,true,output));
         var tracked=new TrackedFace(new DetectedFace(88,new FaceRect(0,0,10,10),Name:"Ada"),1)
-            { HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60),parent:origin) };
-        faces.AddOrUpdateFace(tracked,f.Robot.GetCheckedMainPose(),false);
+            { HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60)), NativeTrackingTranslation=new Vec3(100,0,60), NativeTrackingRotation=Rotation3d.Identity };
+        faces.AddOrUpdateNativeFace(tracked,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot);
         Assert.True(faces.CopyNativeLastFace(origin,true,output));
         using var foreign=new Pose3d("foreign"); Assert.False(faces.CopyNativeLastFace(foreign,true,output));
         faces.RemoveFaceByID(88); Assert.True(faces.CopyNativeLastFace(origin,true,output));

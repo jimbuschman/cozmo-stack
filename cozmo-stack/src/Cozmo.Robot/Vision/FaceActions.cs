@@ -366,11 +366,11 @@ public class TurnTowardsFaceAction : IDisposable
         Pose3d? pose = null;
         if (IsValidId(FaceId))                                                           // 0x0054BD66..0x0054BD9A
         {
-            if (_v.Faces.GetFace(FaceId) is { } f && robot is not null) pose = f.HeadPose;   // GetFace null or GetWithRespectTo failing: silent
+            if (_v.Faces.GetFace(FaceId) is { } f && robot is not null) pose = f.LegacyHeadPose;   // GetFace null or GetWithRespectTo failing: silent
         }
         else if (_v.Faces.GetLastObservedFace() is { } last)                             // 0x0054BD9C..0x0054BE6A: GetLastObservedFace(pose, false)
         {
-            if (robot is not null) pose = last.HeadPose;
+            if (robot is not null) pose = last.LegacyHeadPose;
             else Note("TurnTowardsFaceAction.Init.BadLastObservedFacePose: Could not get last observed face pose w.r.t. robot pose");
         }
         if (pose is null)
@@ -415,7 +415,7 @@ public class TurnTowardsFaceAction : IDisposable
             }
             if (_v.Faces.GetFace(messageFaceId) is not { } face) return;                 // null: ignore
             if (_v.History.Latest?.RobotPose is not { } robot) return;                   // GetWithRespectTo failing: ignore
-            var rel = face.HeadPose.WithRespectTo(robot).Translation;
+            var rel = face.LegacyHeadPose.WithRespectTo(robot).Translation;
             float d2 = (float)(rel.X * rel.X + rel.Y * rel.Y + rel.Z * rel.Z);           // 3-D, +0x20/+0x24/+0x28
             if (!(d2 < _bestDistSq)) return;                                             // strict
             SetVerified(messageFaceId);                                                  // FaceWorld::UpdateSmartFaceToID
@@ -497,7 +497,7 @@ public class TurnTowardsFaceAction : IDisposable
         _needs.Add(NeedsActionSeeFace);                                                  // RegisterNeedsActionCompleted(SeeFace 0x2E)
         EmotionEvent?.Invoke("LookAtFaceVerified");
         float maxTurn = Math.Min(MathF.Abs((float)MaxTurnAngleRad), (float)FineTuneMaxTurnRad);         // Radians(min([+0x170], 0.7853982))
-        _child = new TurnTowardsPoseAction(_v, face.HeadPose, maxTurn);
+        _child = new TurnTowardsPoseAction(_v, face.LegacyHeadPose, maxTurn);
     }
 
     /// <summary>The final step 0x0054C622: <c>SetTurnedTowardsFace(+0x18C, true)</c> when the verified id is valid; success.</summary>

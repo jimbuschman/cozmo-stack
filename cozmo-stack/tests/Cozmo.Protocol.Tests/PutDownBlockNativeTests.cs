@@ -52,9 +52,10 @@ public sealed class PutDownBlockNativeTests
         }
         internal FaceEntry Face(int id,uint time,Vec3 position,bool named=false)
         {
-            var tracked=new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),Name:named?"Ada":null),time)
-            {HeadPose=new Pose3d(Rotation3d.Identity,position,parent:Robot.GetNativeOrigin(Robot.CurrentOriginId))};
-            return M.Vision.Faces.AddOrUpdateFace(tracked,Robot.GetCheckedMainPose(),false)!.Face;
+            var origin=Robot.GetNativeOrigin(Robot.CurrentOriginId);
+            var tracked=new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),new Vec2(1,1),new Vec2(2,1),Name:named?"Ada":null),time)
+            {HeadPose=new Pose3d(Rotation3d.Identity,position),LegacyHeadPose=new Pose3d(Rotation3d.Identity,position,parent:origin),NativeTrackingTranslation=position,NativeTrackingRotation=Rotation3d.Identity};
+            return M.Vision.Faces.AddOrUpdateNativeFace(tracked,Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:Robot)!.Face;
         }
         internal void Motors()
         {

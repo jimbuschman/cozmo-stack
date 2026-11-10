@@ -170,7 +170,7 @@ internal static class BestFaceToTrack
             Pose3d relative;
             // The stack's face poses are the flat legacy poses the face actions already take relative to the robot this way (M11-066 labelled
             // adapter inside WithRespectTo); unrelated roots are the engine's GetWithRespectTo false -> skip.
-            try { relative = face.HeadPose.WithRespectTo(robotPose); }
+            try { relative = face.LegacyHeadPose.WithRespectTo(robotPose); }
             catch (InvalidOperationException) { continue; }
             float cost = Cost(relative.Translation, robotHeadAngle, face.HasName, surchargeUnnamed);
             if (cost < bestCost) { best = id; bestCost = cost; }                   // strict <: a tie keeps the lower id
@@ -685,7 +685,7 @@ public sealed class DriveToFaceBehavior : FaceBehavior
             if (r != FaceActionResult.Success) { Finish(); return; }
             var f = V.Faces.GetFace(face.Id); var robot = V.History.Latest?.RobotPose;
             if (f is null || robot is null) { Finish(); return; }
-            var d = f.HeadPose.Translation - robot.Value.Translation;
+            var d = f.LegacyHeadPose.Translation - robot.Value.Translation;
             DistanceMm = Math.Sqrt(d.X * d.X + d.Y * d.Y);
             if (DistanceMm <= CloseEnoughMm) { CurrentPhase = Phase.AlreadyCloseEnough; Log($"already close enough ({DistanceMm:F0} mm)"); if (CurrentRun()) TransitionToTrackingFace(runOwner, runGeneration); return; }
             CurrentPhase = Phase.DrivingToFace;
@@ -886,7 +886,7 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "ReactionTriggerStrategyFacePositionUpdated", $"could not get the distance to face {id}");
             return;
         }
-        var d = robot.Translation - face.HeadPose.Translation;
+        var d = robot.Translation - face.LegacyHeadPose.Translation;
         double dist = Math.Sqrt(d.X * d.X + d.Y * d.Y + d.Z * d.Z);
         bool inMap, wasClose;
         double last;
