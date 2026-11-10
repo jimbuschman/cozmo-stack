@@ -22,4 +22,4 @@ Reader requested gpt-6.1-sol at medium effort. Builder and independent reviewer 
 
 ## Records
 
-- M13-014 and M14-002 own the retained one-shot face turn and its verification default. M14-001 owns the face position, M13-020/M13-026 the motor and head projection inputs, and M8-015/M8-022 the action queue and watcher. No broader record settlement is proposed.
+- M14-002 owns the verification frame default. The retained face turn also serves M13-014 and other behavior callers. M14-001 owns the face position, M13-020/M13-026 the motor and head projection inputs, and M8-015 the action queue and watcher. No broader record settlement is proposed.

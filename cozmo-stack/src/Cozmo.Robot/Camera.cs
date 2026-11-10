@@ -849,8 +849,8 @@ public sealed partial class CameraSettings
         }
         // fidelity: M3-022
         // Order (0x0065AB68): SetCameraCalibration (0x0065ADE0; the install, which starts processing) runs first, and only then the
-        // +0x48 store (0x0065AE80), on every path. MISSING: M11-039 | the install's consumer chain into MarkerDetector::Init is
-        // M11-039's, and the readers of +0x48 (the image drop) are M11-049's; the two events below are this stack's seam to them.
+        // +0x48 store (0x0065AE80), on every path. The install reaches the retained detector; the readers of +0x48
+        // (the image drop) remain M11-049's. The two events below are this stack's seam to them.
         if (installed is not null)
         {
             NativeCalibrationInstalled?.Invoke(owner, installed);

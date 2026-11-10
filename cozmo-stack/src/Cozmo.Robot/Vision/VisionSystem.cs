@@ -253,20 +253,23 @@ public sealed partial class VisionSystem : IDisposable
         movingSubscription?.Dispose();
     }
 
-    internal void SetNativeOuterCalibration(CameraCalibration calibration)
+    internal void SetNativeOuterCalibration(CameraCalibration calibration,EngineRobot? expectedOwner=null)
     {
         EngineRobot? owner;
         int epoch;
         lock (_groundGate)
         {
             owner = _groundOwner;
+            if(expectedOwner is not null && !ReferenceEquals(owner,expectedOwner))return;
             if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner)) { _groundPendingOuter=calibration; return; }
             if (ReferenceEquals(_groundOuterCalibration, calibration)) { if (ReferenceEquals(_groundPendingOuter,calibration)) _groundPendingOuter=null; _nativeWorkerPhysical=owner.IsPhysicalRobot; return; }
             _groundOuterCalibration = calibration;
             _groundPendingOuter = null;
             epoch = ++_groundEpoch;
+            // Non-null Camera::SetCalibration and detector initialization have no callbacks.
+            // Keep owner admission and the inner install in one native-lifetime interval.
+            UpdateCameraCalibration(calibration);
         }
-        UpdateCameraCalibration(calibration);
         lock (_groundGate)
             if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying || epoch != _groundEpoch || !ReferenceEquals(_groundOuterCalibration, calibration)) return;
         InstallNativeGroundCalibration(calibration);
@@ -472,8 +475,7 @@ public sealed partial class VisionSystem : IDisposable
     /// <summary>SetCameraCalibration from the connection-time NV read (1j).</summary>
     private void OnCalibrationInstalled(EngineRobot owner, CameraCalibration c)
     {
-        lock (_groundGate) if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying) return;
-        SetNativeOuterCalibration(c);
+        SetNativeOuterCalibration(c,owner);
     }
 
     // fidelity: M11-039
@@ -490,7 +492,12 @@ public sealed partial class VisionSystem : IDisposable
         if (calibration is null)
         {
             if (current is not null)
+            {
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"Camera.SetCalibration.NullCalibration","VERIFY(calib != nullptr): Camera already calibrated. Cannot set with nullptr.");
+                EngineErrorState.ErrorFlagSet=true; // sVerifyFailedReturnFalse 0x0080D9F4; no debug-break call.
+                _robot.Engine.FlushSourceLogger();
                 Log?.Invoke("Camera.SetCalibration.NullCalibration: VERIFY(calib != nullptr): Camera already calibrated. Cannot set with nullptr.");
+            }
             return;
         }
         if (ReferenceEquals(calibration, current)) return;
@@ -556,8 +563,11 @@ public sealed partial class VisionSystem : IDisposable
         {
             if(locked)DrainRetiredMotionStates();
             if (!locked) Log?.Invoke($"vision reset: a frame was still being processed after {RemovalWait.TotalSeconds:F0} s; it is discarded at its next check");
-            if(!StillRetired())return;
-            Calibration = _constructedCalibration;
+            lock(_groundGate)
+            {
+                if(_groundOwner is not null || removal!=Volatile.Read(ref _removals))return;
+                Calibration = _constructedCalibration;
+            }
             // fidelity: M3-034 — removal destroys VC+0x2F4/+0x300 (0x0051116C, ~VisionComponent0x0065258E).
             // The robot-owned host instance survives; discard the retained raw NV vectors with that owner.
             _serializedFaceAlbum = Array.Empty<byte>();
