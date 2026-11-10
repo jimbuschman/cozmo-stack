@@ -267,7 +267,7 @@ public sealed class StoredEnrolledFace
 /// shipped native library in the same emulator as its detector.
 /// </summary>
 // fidelity: M14-011
-public sealed class FaceRecognizer
+public sealed partial class FaceRecognizer
 {
     public const int MaxAlbumEntries = 1000;
     public const int MaxResults = 10;
@@ -1198,32 +1198,38 @@ public sealed class FaceRecognizer
     }
 
     // C4-7/N6 SanityCheckBookkeeping: count == LUT size; every LUT key registered; every owned entry in the LUT with its owner; each failure logs.
-    private bool CheckConsistency(OkaoAlbumHandle loaded, List<EnrolledFaceEntry> parsed)
+    private bool CheckConsistency(OkaoAlbumHandle loaded, List<EnrolledFaceEntry> parsed,bool deferLog=false)
     {
+        void Warn(string message)
+        {
+            if(!deferLog){Log?.Invoke(message);return;}
+            var handlers=Log;
+            LogCallbackDeferral.Run(()=>EventFan.Raise(handlers,message,error=>Behavior.SteppedBehavior.ReportMissing("M1-034 M14-011 face log handler skipped: "+error.Message)));
+        }
         var lut = new Dictionary<int, int>();
         foreach (var e in parsed)
             foreach (var a in e.AlbumEntries.Keys) lut[a] = e.FaceID;
 
         if (_okao.GetRegisteredUserNum(loaded, out int userCount) != 0)
         {
-            Log?.Invoke("SanityCheckBookkeeping: OKAO_FR_GetRegisteredUserNum failed");
+            Warn("SanityCheckBookkeeping: OKAO_FR_GetRegisteredUserNum failed");
             return false;
         }
         if (userCount != lut.Count)
         {
-            Log?.Invoke($"SanityCheckBookkeeping: FaceLibNumEntries={userCount}, AlbumEntryToFaceIDSize={lut.Count}");
+            Warn($"SanityCheckBookkeeping: FaceLibNumEntries={userCount}, AlbumEntryToFaceIDSize={lut.Count}");
             return false;
         }
         foreach (var key in lut.Keys)
         {
             if (_okao.IsRegistered(loaded, key, 0, out int result) != 0)
             {
-                Log?.Invoke($"SanityCheckBookkeeping: OKAO_FR_IsRegistered failed for album entry {key}");
+                Warn($"SanityCheckBookkeeping: OKAO_FR_IsRegistered failed for album entry {key}");
                 return false;
             }
             if (result == 0)
             {
-                Log?.Invoke($"SanityCheckBookkeeping: album entry {key} is not registered");
+                Warn($"SanityCheckBookkeeping: album entry {key} is not registered");
                 return false;
             }
         }
@@ -1231,7 +1237,7 @@ public sealed class FaceRecognizer
             foreach (var a in e.AlbumEntries.Keys)
                 if (!lut.TryGetValue(a, out int owner) || owner != e.FaceID)
                 {
-                    Log?.Invoke($"SanityCheckBookkeeping: album entry {a} does not map back to face {e.FaceID}");
+                    Warn($"SanityCheckBookkeeping: album entry {a} does not map back to face {e.FaceID}");
                     return false;
                 }
         return true;

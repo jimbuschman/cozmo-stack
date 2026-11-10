@@ -528,6 +528,7 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.NativeVisionAttemptCurrent = (native,epoch) => _vision?.NativeVisionAttemptCurrent(native,epoch) == true;
         Engine.NativeVisionOwnerCurrent = native => _vision?.NativeVisionOwnerCurrent(native) == true;
         Engine.NativeVisionComplete = (native,epoch) => _vision?.CompleteNativeVisionComponent(native,epoch) == true;
+        Engine.NativeVisionFileTail = (native,path,epoch) => _vision?.StartupFileAlbum(native,path,epoch) == true;
         if (Engine.Robot is { } groundOwner) _vision?.BindNativeGroundOwner(groundOwner);
         Engine.BindRobotLifetime+=native=>{BindNativeMood(native);BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
         if(Engine.Robot is {} severeOwner){BindNativeMood(severeOwner);BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}
