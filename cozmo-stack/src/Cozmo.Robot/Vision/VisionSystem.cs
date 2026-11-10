@@ -68,7 +68,10 @@ public sealed partial class VisionSystem : IDisposable
     private NativeVisionInitialization? _nativeInitialization;
     private int _nativeInitializationEpoch;
     private readonly System.Collections.Concurrent.ConcurrentQueue<NativeVisionInitialization> _retiredMotionStates=new();
-    private void DrainRetiredMotionStates(){while(_retiredMotionStates.TryDequeue(out var state))state.MotionPose.Dispose();}
+    private void DrainRetiredMotionStates()
+    {
+        while(_retiredMotionStates.TryDequeue(out var state)){state.MotionPose.Dispose();state.StockPet?.Retire();}
+    }
     private NativeImageImuHistory? _nativeImu;
     private bool _nativeVisionWhileMoving;
     private RetainedSubscription? _nativeImuSubscription;
@@ -736,7 +739,13 @@ public sealed partial class VisionSystem : IDisposable
         recognizer.SourceLog = (l,c,k,t) => _robot.Engine.EmitSourceLog(l,c,k,t);
         return recognizer;
     }
-    public IPetDetector PetDetector { get; set; } = new OkaoPetDetector();
+    private readonly OkaoPetDetector _unavailablePetDetector = new();
+    private IPetDetector? _petDetectorOverride;
+    public IPetDetector PetDetector
+    {
+        get { lock (_groundGate) return _petDetectorOverride ?? (_nativeInitialization is { Initialized:true } state ? state.StockPet : null) ?? _unavailablePetDetector; }
+        set { lock (_groundGate) _petDetectorOverride = value ?? throw new ArgumentNullException(nameof(value)); }
+    }
     /// <summary>Replaceable body-and-head turn for the face actions (tests move a fake robot with it).</summary>
     public Func<Pose3d, double, CancellationToken, Task<bool>>? TurnOverride { get; set; }
     /// <summary>Replaceable pan-and-tilt (absolute body heading, head angle) for the explorer behaviours.</summary>
@@ -1907,7 +1916,8 @@ public sealed partial class VisionSystem : IDisposable
             if(markerMode)processedMask|=1<<DetectingMarkers;
             if (RemovedSince(removal)) return null;
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
-            bool StaleFrame()=>RemovedSince(removal) || (queueForEngine && (_disposed || sourceOwner is null)) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner));
+            Func<bool>? petSessionCurrent=null;
+            bool StaleFrame()=>RemovedSince(removal) || (queueForEngine && (_disposed || sourceOwner is null)) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)) || petSessionCurrent is not null && !petSessionCurrent();
             bool faceMode=ShouldProcessVisionMode((int)VisionMode.DetectingFaces);
             var faceDetector = FaceDetector;
             bool stockFaceDetector = ReferenceEquals(faceDetector, _stockFaceDetector);
@@ -1955,14 +1965,43 @@ public sealed partial class VisionSystem : IDisposable
             if(StaleFrame())return null;
             if(detectedFaces is not null)foreach(var face in detectedFaces)qualityRectangles.Add(NativeQualityRectangles.Detection(face.Rect));
             bool petMode=ShouldProcessVisionMode((int)VisionMode.DetectingPets);
-            var petDetector=PetDetector;
+            IPetDetector petDetector;bool ownerStock;
+            lock (_groundGate)
+            {
+                ownerStock=queueForEngine && _petDetectorOverride is null && nativeState?.StockPet is not null;
+                petDetector = _petDetectorOverride ?? (queueForEngine ? nativeState?.StockPet : null) ?? _unavailablePetDetector;
+            }
             bool petAvailable=petMode && petDetector.IsAvailable;
+            if (ownerStock && petAvailable && petDetector is OkaoPetDetector capturedPet)
+                petSessionCurrent=()=>
+                {
+                    lock (_groundGate) return ReferenceEquals(_nativeInitialization,nativeState) && nativeState!.Initialized &&
+                        ReferenceEquals(nativeState.StockPet,capturedPet) && capturedPet.ReadySnapshot;
+                };
             if(petMode&&!petAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             var petImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
             bool nativePetProfile=petMode && petAvailable && petDetector.ProvidesNativeResults;
             bool completePetProfile=nativePetProfile;
-            var detectedPets = petMode && petAvailable ? petDetector.Detect(petImage,timestamp)?.ToArray() : null;
+            DetectedPet[]? detectedPets;
+            try { detectedPets = petMode && petAvailable ? petDetector.Detect(petImage,timestamp)?.ToArray() : null; }
+            catch (Emulation.PetGuestFailure failure) when (petDetector is OkaoPetDetector)
+            {
+                if (StaleFrame()) return null;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,failure.Key,failure.Message);
+                if (StaleFrame()) return null;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionSystem.DetectPets.PetTrackerUpdateFailed","");
+                if (StaleFrame()) return null;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionSystem.Update.DetectPetsFailed","");
+                if (!StaleFrame()) Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                return null;
+            }
+            catch (Exception e) when (petDetector is OkaoPetDetector)
+            {
+                ((OkaoPetDetector)petDetector).Retire();
+                SteppedBehavior.ReportMissing($"M11-016/M11-080 stock pet guest faulted; frame withheld: {e.Message}");
+                return null;
+            }
             if(completePetProfile && detectedPets is not null && detectedPets.Any(p=>p.TrackerResultFlag is null || p.Type is not (PetType.Cat or PetType.Dog)))
             {
                 completePetProfile=false;
@@ -2505,6 +2544,10 @@ public sealed partial class VisionSystem : IDisposable
         lock(_busy)
         {
             DiscardPreparedResults();
+            OkaoPetDetector? pet;
+            lock (_groundGate) { pet=_nativeInitialization?.StockPet; if (_nativeInitialization is { } state) state.StockPet=null; }
+            pet?.Retire();
+            DrainRetiredMotionStates();
             try
             {
                 _stockFaceDetector.RetireRecognition();

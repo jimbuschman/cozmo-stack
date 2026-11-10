@@ -916,10 +916,85 @@ public interface IPetDetector
     IReadOnlyList<DetectedPet> Detect(GrayImage image, uint timestamp);
 }
 
-public sealed class OkaoPetDetector : IPetDetector
+public sealed class OkaoPetDetector : IPetDetector, IDisposable
 {
-    public bool IsAvailable => false;
-    public IReadOnlyList<DetectedPet> Detect(GrayImage image, uint timestamp) => Array.Empty<DetectedPet>();
+    private readonly object _gate = new();
+    private readonly Emulation.OkaoPetDetection? _guest;
+    private volatile bool _ready, _faulted, _disposed;
+    private int _retireRequested;
+    internal Action<string,string>? Warning { get; set; }
+    internal Action<string>? Error { get; set; }
+    private readonly List<string> _disposalErrors = new();
+    public OkaoPetDetector() { }
+    internal OkaoPetDetector(Emulation.OkaoPetDetection guest) => _guest=guest;
+    internal void MarkReady() { lock (_gate) _ready=true; }
+    internal void OverrideDetectResultForTest(int result) => OverrideDetectForTest(() => result);
+    internal void OverrideDetectForTest(Func<int> result) { lock (_gate) _guest!.OverrideDetectForTest(result); }
+    internal bool DisposedForTest => _disposed;
+    internal bool ReadySnapshot => _ready && !_faulted && !_disposed && Volatile.Read(ref _retireRequested)==0;
+    public bool IsAvailable => ReadySnapshot;
+    public bool ProvidesNativeResults => IsAvailable;
+    public IReadOnlyList<DetectedPet> Detect(GrayImage image, uint timestamp)
+    {
+        var warnings = new List<(string Key,string Text)>();
+        IReadOnlyList<DetectedPet>? result=null;
+        Exception? failure=null;
+        lock (_gate)
+        {
+            if (!_ready || _faulted || _disposed || Volatile.Read(ref _retireRequested)!=0 || _guest is null) return Array.Empty<DetectedPet>();
+            _guest.Warning=(key,text)=>warnings.Add((key,text));
+            try { result=_guest.Detect(image); }
+            catch (Emulation.PetGuestFailure e) { failure=e; }
+            catch (Exception e) { _faulted=true; failure=e; }
+            finally
+            {
+                _guest.Warning=null;
+                if (Volatile.Read(ref _retireRequested)!=0) DisposeLocked();
+            }
+        }
+        PublishDisposalErrors();
+        foreach(var warning in warnings) Warning?.Invoke(warning.Key,warning.Text);
+        if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+        return result!;
+    }
+    private void DisposeLocked()
+    {
+        if (_disposed) return;
+        _disposed=true;
+        if (_guest is null) return;
+        try { _guest.Dispose(); }
+        finally { _disposalErrors.AddRange(_guest.DisposalErrors); }
+    }
+    private void PublishDisposalErrors()
+    {
+        string[] errors;
+        lock (_gate) { errors=_disposalErrors.ToArray();_disposalErrors.Clear(); }
+        foreach(string error in errors) Error?.Invoke(error);
+    }
+    internal void Retire()
+    {
+        if (Interlocked.Exchange(ref _retireRequested,1)!=0) return;
+        if (!Monitor.TryEnter(_gate))
+        {
+            _ = Task.Run(() =>
+            {
+                try { lock (_gate) DisposeLocked(); PublishDisposalErrors(); }
+                catch (Exception e) { Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-016/M11-080 pet guest retirement failed: " + e.Message); }
+            });
+            return;
+        }
+        Exception? failure=null;
+        try { DisposeLocked(); } catch (Exception e) { failure=e; } finally { Monitor.Exit(_gate); }
+        PublishDisposalErrors();
+        if(failure is not null)Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-016/M11-080 pet guest retirement failed: " + failure.Message);
+    }
+    public void Dispose()
+    {
+        Exception? failure=null;
+        try { lock (_gate) DisposeLocked(); } catch(Exception e) { failure=e; }
+        PublishDisposalErrors();
+        if(failure is not null)Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-016/M11-080 pet guest retirement failed: " + failure.Message);
+    }
 }
 
 public sealed class PetEntry
