@@ -30,7 +30,9 @@ trap 'touch "$mem.stop"; kill $sampler 2>/dev/null; dotnet build-server shutdown
 # dotnet/MSBuild/VBCSCompiler, not the tests (1.1 GB peak).
 # No shared compiler server and no node reuse: the 2026-11-09 23:47 run was killed in the build with VBCSCompiler
 # and two nodes at 3.6 GB; each compile now runs in its own csc that exits with its project.
-if ! dotnet build cozmo-stack/Cozmo.sln -maxcpucount:2 -nodeReuse:false -p:UseSharedCompilation=false >> "$log" 2>&1; then
+# Workstation GC with memory conservation for the build processes: three runs on 2026-11-10 still peaked at
+# 3.6-4.2 GB in the build with two nodes and no compiler server.
+if ! DOTNET_gcServer=0 DOTNET_GCConserveMemory=7 dotnet build cozmo-stack/Cozmo.sln -maxcpucount:2 -nodeReuse:false -p:UseSharedCompilation=false >> "$log" 2>&1; then
     grep -E "error CS|error MSB" "$log" | head -20; echo "test-full: build FAILED."; exit 1
 fi
 dotnet build-server shutdown >/dev/null 2>&1
