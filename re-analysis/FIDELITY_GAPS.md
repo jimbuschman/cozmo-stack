@@ -8,9 +8,9 @@ Manifest of **761 records** over 16 subsystems.
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 283 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 15 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| EQUIVALENT_IMPLEMENTATION | 16 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 352 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 351 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 73 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -37,7 +37,7 @@ remains after both, and they do not go away by working harder on this repository
 | M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 72 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 32 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
-| M14-faces — Face and pet pipeline | 14 | 1 | 9 | 1 | 0 | no | no |
+| M14-faces — Face and pet pipeline | 14 | 1 | 8 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 111 | 3 | 80 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
@@ -65,7 +65,7 @@ status.
 | M11-vision | INVENTORY_APPROVED | 24 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
-| M14-faces | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
+| M14-faces | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 22 | 0 | 0 | 1 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
@@ -3088,15 +3088,6 @@ B-POSE-2 (2026-10-14, research/20261014-b-pose-1-check.md): item 8: MISSING (sta
 * outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): RecentlyReacted keeps a binary32 timestamp and compares last + 60.0f in f32 (0x00611DD0..0x00611E14). Still open: InitReactedTo is uncalled (C2-F4).
 B-M1-7 (2026-10-18), built, awaiting strong verification: Census correction: PetWorld.Update has native RobotObservedPet ctor0x0050BA60/Broadcast0x0050BA68. Current record owns the strategy and PetWorld input interface (inventory F29 at0x00655360/0x0050B7F4), not the complete Update output. No dedicated record owns that broadcast/body; manager must add/scope its record. PetObserved is MISSING complete native host/local split/payload, remains inline, not an exclusion; no record created by builder.
 
-**M14-005 — TurnTowardsImagePoint turns by the angle the pixel subtends** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
-* effect: the head/body angles used to turn toward an image point and the failure behavior change
-* rests on: Robot::ComputeTurnTowardsImagePointAngles and TurnTowardsImagePointAction::Init, read
-* best authority: Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read
-* evidence: There is no distance in it. ComputeTurnTowardsImagePointAngles 0x0051879C subtracts the calibration's centre from the point (the two-float loop at 0x005187CC), takes the historical state at the image's timestamp through RobotStateHistory::ComputeStateAt, and computes atan2(-(v - cy), fy) for the head (0x0051886C with the focal length at calibration+8) and atan2(-(u - cx), fx) for the body (0x0051888E, focal length at +4). The head angle is added to the head angle in that state and the body angle to its heading, so both come out absolute.; TurnTowardsImagePointAction 0x0054B59C is a PanAndTiltAction: Init 0x0054B664 asks for those two angles, writes them into the pan and tilt fields at +0x114 and +0x11C, and runs PanAndTiltAction::Init. When the history cannot answer it warns "TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed" and turns nowhere.; This stack aimed at a point 200 mm along the ray through the pixel, a range it invented, and then turned towards that pose. It now computes the same two angles and pans and tilts to them.
-* outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): ComputeTurnTowardsImagePointAngles in binary32 with atan2f (0x0051886C, 0x0051888E) and operator+(float, Radians) (0x0084C97A). Still open: atan2f is MathF.Atan2 (libm stand-in); the Radians rescale is double code (the engine's 0x0084C87C is f32; identical in range).
-
 **M14-007 — The memory map, and the question the face behaviour asks it before driving in** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
@@ -3988,6 +3979,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M12-019 | M12-manipulation | EQUIVALENT_IMPLEMENTATION | The docking-error-signal clamp is 40 degrees | libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194 |
 | M13-026 | M13-navigation | EQUIVALENT_IMPLEMENTATION | GetAbsoluteHeadAngleToLookAtPose and Robot::ComputeHeadAngleToSeePose | libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q3, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q3): TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose 0x0054B428: h = z + (-49.0) (0xC2440000); d = sqrt(x*x + y*y) (float vsqrt, NaN falls back to sqrtf); D = d + 13.0; a = (300.0 - D)/150.0 (0x43960000, 0x43160000); b = (0.0 - h)/-10.0; t1 = clamp01(a) * 0.0872664601 (5 degrees) and t2 = clamp01(b) * 0.130899698 (7.5 degrees) (0 for <=0 or NaN, the value for 0<x<1, 1 for >=1); A = atan2f(h, D); result = ((t2 + (A + t1)) + 0.0698131695 (4 degrees, 0x3D8EFA35)) as Radians. Robot::ComputeHeadAngleToSeePose 0x00518344: GetWithRespectTo(pose, robot+0x2CC) failing -> warning and 0x06000000; p = (sqrt(tx*tx+ty*ty), 0, tz); the camera copied from [robot+0x258]+0x24, a null calibration -> error and 1; tol = (float)calibration.nrows * f + 9.99999975e-06; theta = 0, index 1; each iteration: camPose = Robot::GetCameraPose(theta), inv = camPose.GetInverse(), q = T.rotation * p + T.translation; if not q.z > 1e-5f -> 'BadProjectedZ' warning and 1; dv = calibration.focal_y * (q.y/q.z); converged iff tol >= |dv| (writes headAngle = theta via Radians::operator=(float), returns 0 unless the index is 25 -> 'MaxIterations' warning and 1); else theta += -0.8f * atan2f(dv, focal_y); after 25 non-converged iterations the code returns 0 (success) WITHOUT writing headAngle (r0 = 26 passes the 'cmp r0,#0x19; bne' test). Confirmed by reading (register trace) in the verifier; not emulated |
 | M14-003 | M14-faces | EQUIVALENT_IMPLEMENTATION | TrackFaceAction: the durations it turns in, and the flags it starts with | ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read |
+| M14-005 | M14-faces | EQUIVALENT_IMPLEMENTATION | TurnTowardsImagePoint turns by the angle the pixel subtends | Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read |
 | M15-018 | M15-freeplay | COMPATIBILITY_POLICY | NeedsStateOnRobot state version 0 / unsupported: the engine reads uninitialised fields | libcozmoEngine.so |
 | TOOL-001 | tools | COMPATIBILITY_POLICY | Conformance CLI pass and fail criteria | not applicable: the harness is not part of the app |
 | TOOL-002 | tools | COMPATIBILITY_POLICY | The fake robot side answers place docks without a marker signal | not applicable: this is the test double, not the robot |

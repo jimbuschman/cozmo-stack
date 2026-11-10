@@ -2652,7 +2652,8 @@ public class EngineAppLayerTests
         "AnimationScheduler._generation", "CozmoAudio._removals", "CozmoAudio._clock", "CozmoAudio._scheduled",
         // Host continuation epochs must remain monotonic across reset to prevent stale work from claiming a replacement.
         "AnimationScheduler._idleMutationVersion", "AnimationScheduler._streamMutationEpoch", "PathComponent._scopeGeneration", "DrivingAnimationHandler._generation",
-        "VisionSystem._removals", "VisionSystem._groundEpoch", "VisionSystem._nativeInitializationEpoch", "VisionSystem.<Enabled>k__BackingField",
+        "PetWorld._nativeEpoch",
+        "VisionSystem._removals", "VisionSystem._groundEpoch", "VisionSystem._nativeInitializationEpoch", "VisionSystem._nativeFaceEpoch", "VisionSystem.<Enabled>k__BackingField",
         // M5 gap4 R2, R3: IKeyFrame::sRNG is a process static that is never reseeded, and the context RNG belongs to the
         // CozmoContext, not to the Robot; neither is rebuilt with a new Robot
         "AnimationScheduler._keyframeRng", "AnimationScheduler._contextRng",
@@ -2768,10 +2769,18 @@ public class EngineAppLayerTests
         vision.Enabled = true;
 
         long oldPathGeneration = robot.Motion.Path.ScopeGeneration;
+        var petEpochField = typeof(Cozmo.Robot.Vision.PetWorld).GetField("_nativeEpoch", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        long oldPetEpoch = (long)petEpochField.GetValue(vision.Pets)!;
+        var faceEpochField=typeof(Cozmo.Robot.Vision.VisionSystem).GetField("_nativeFaceEpoch",System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        int oldFaceEpoch=(int)faceEpochField.GetValue(vision)!;
+        Assert.True(oldFaceEpoch>0);
         rig.Disconnected();
         rig.Tick();
         Assert.Null(rig.Engine.Robot);
         Assert.True(robot.Motion.Path.ScopeGeneration > oldPathGeneration);
+        Assert.True((long)petEpochField.GetValue(vision.Pets)! > oldPetEpoch);
+        Assert.Equal(oldFaceEpoch,(int)faceEpochField.GetValue(vision)!);
+        Assert.Empty(vision.Pets.Pets);
         robot.Animations.WaitForTickerStop();
         Assert.False(robot.Animations.IsTicking, "the animation tick loop kept running");
 

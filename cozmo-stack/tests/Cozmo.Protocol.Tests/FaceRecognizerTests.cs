@@ -641,16 +641,22 @@ public class FaceRecognizerTests
         Assert.False(back.AlbumEntries[5].SessionOnly);
 
         // A vector-length mismatch installs no entries (C3-20).
-        var mismatch = new StoredEnrolledFace { FaceID = 9 };
+        var mismatch = new StoredEnrolledFace { FaceID = 9, Timestamp28Seconds=100 };
         mismatch.AlbumEntryIds.Add(1);
         var noEntries = FaceRecognizer.FromStorage(mismatch, 20_000_000);
         Assert.Empty(noEntries.AlbumEntries);
+        Assert.Equal(100_000_000,noEntries.Timestamp28Micros); // unequal vectors bypass native clipping
 
         // A restored future time is clipped to now (C3-20).
-        var future = new StoredEnrolledFace { FaceID = 10 };
+        var future = new StoredEnrolledFace { FaceID = 10, Timestamp28Seconds=200, Timestamp30Seconds=150 };
         future.AlbumEntryIds.Add(2); future.AlbumEntrySeconds.Add(100);
         var clipped = FaceRecognizer.FromStorage(future, 20_000_000);
-        Assert.Equal(20_000_000, clipped.AlbumEntries[2].LastSeenMicros);
+        Assert.Equal(20_000_000, clipped.Timestamp28Micros);Assert.Equal(20_000_000, clipped.Timestamp30Micros);
+        Assert.Equal(100_000_000, clipped.AlbumEntries[2].LastSeenMicros);
+        future.AlbumEntryIds.Add(2);future.AlbumEntrySeconds.Add(-8);
+        var duplicate=FaceRecognizer.FromStorage(future,20_000_000);
+        Assert.Equal(2,duplicate.CurrentAlbumEntryId);Assert.True(duplicate.AlbumEntries[2].SessionOnly);
+        Assert.Equal(-8_000_000,duplicate.AlbumEntries[2].LastSeenMicros);
     }
 
     /// <summary>C3-19/C3-21/C4-1: the packed record round-trips and the size is exact (23 + 8*n1 + 4*n2 + len).</summary>
@@ -694,11 +700,12 @@ public class FaceRecognizerTests
         BitConverter.GetBytes(0xDEADBEEFu).CopyTo(bad, 0);
         Assert.Null(FaceRecognizer.DeserializeEnrollment(bad, 0, out _));
 
-        // A header-only container (8 bytes) is rejected by the size > 11 gate.
+        // The eight-byte native header is sufficient for an empty map.
         var header = new List<byte>();
         header.AddRange(BitConverter.GetBytes(StoredEnrolledFace.VersionPrefix));
         header.AddRange(BitConverter.GetBytes(1234));
-        Assert.Null(FaceRecognizer.DeserializeEnrollment(header.ToArray(), 0, out _));
+        Assert.Empty(FaceRecognizer.DeserializeEnrollment(header.ToArray(), 0, out int headerNext)!);
+        Assert.Equal(1234,headerNext);
 
         // A valid one-record container parses and carries nextFaceID.
         var good = EnrollmentFor((7, 5, "Jim"));

@@ -5,6 +5,7 @@ namespace Cozmo.Robot.Vision;
 
 public sealed partial class VisionSystem
 {
+    internal Func<string,uint?>? StockFaceCreateOverrideForTest;
     private int _missingMarkerLibraryReported;
     // fidelity: M11-080, M11-057
     internal readonly ImageQualityProcessor QualityProcessor=new();
@@ -51,10 +52,21 @@ public sealed partial class VisionSystem
     }
 
     internal NativeVisionStageResult InitializeNativeVision(EngineRobot owner)
-        => InitializeNativeVision(owner,null);
+        => InitializeNativeVision(owner,null,false);
 
     // Supplied config is an explicitly labeled source-input unit seam; production uses the engine owner.
     internal NativeVisionStageResult InitializeNativeVision(EngineRobot owner,FirmwareJsonValue? suppliedConfig)
+        => InitializeNativeVision(owner,suppliedConfig,false);
+
+    internal NativeVisionStageResult InitializeNativeVision(EngineRobot owner,FirmwareJsonValue? suppliedConfig,bool deferComponentCompletion)
+    {
+        var outcome=InitializeNativeVisionCore(owner,suppliedConfig);
+        if(outcome.Available && outcome.Result==0 && !deferComponentCompletion && ReferenceEquals(_robot.Engine.Robot,owner))
+            CompleteNativeVisionComponent(owner,outcome.Epoch);
+        return outcome;
+    }
+
+    private NativeVisionStageResult InitializeNativeVisionCore(EngineRobot owner,FirmwareJsonValue? suppliedConfig)
     {
         NativeVisionInitialization? state;int epoch;
         lock(_groundGate)
@@ -62,10 +74,21 @@ public sealed partial class VisionSystem
             state=_nativeInitialization;
             if(state is null||!ReferenceEquals(state.Owner,owner)||owner.Lifetime.Destroying)return NativeVisionStageResult.Missing;
             epoch=++_nativeInitializationEpoch;
+            state.ComponentInitialized=false;
+            state.ComponentAvailabilityKnown=true;
         }
-        bool Current(){lock(_groundGate)return ReferenceEquals(_nativeInitialization,state)&&ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&epoch==_nativeInitializationEpoch;}
-        NativeVisionStageResult Missing(){if(Current())state.MarkUnavailable();return NativeVisionStageResult.Missing;}
+        bool Current(){lock(_groundGate)return !_disposed && ReferenceEquals(_nativeInitialization,state)&&ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&epoch==_nativeInitializationEpoch;}
+        bool systemEntered=false;int faceEpoch=0;
+        NativeVisionStageResult Missing(){lock(_groundGate){if(Current()){if(systemEntered)state.MarkUnavailable();state.ComponentAvailabilityKnown=false;}}return NativeVisionStageResult.Missing;}
         var engine=_robot.Engine;
+        NativeVisionStageResult SystemFailure(NativeVisionStageResult result)
+        {
+            if(!result.Available || result.Result==0)return result;
+            engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.Init.VisionSystemInitFailed","");
+            if(!Current())return NativeVisionStageResult.Missing;
+            EngineErrorState.StoreAndMaybeBreak();
+            return result with { Epoch=epoch };
+        }
         if(!Current())return Missing();
         if(!Detector.Decoder.HasLibrary && Interlocked.CompareExchange(ref _missingMarkerLibraryReported,1,0)==0)
         {
@@ -79,50 +102,271 @@ public sealed partial class VisionSystem
         {
             if(!ReadComponentQualityPrefix(root,Current))return Current()?NativeVisionStageResult.Failure(1):Missing();
             if(!Current())return Missing();
-            state.EnterSystem();
+            lock(_groundGate)
+            {
+                if(!Current())return Missing();
+                state.EnterSystem();systemEntered=true;faceEpoch=++_nativeFaceEpoch;
+            }
             if(!QualityProcessor.Settings.Load(root,QualityProcessor.SourceLog!,Current))
-            {if(!Current())return Missing();state.Failure(1);return NativeVisionStageResult.Failure(1);}
+            {if(!Current())return Missing();state.Failure(1);return SystemFailure(NativeVisionStageResult.Failure(1));}
             if(!Current())return Missing();
             var exposure=LoadExposureParameters(root,Current);
             if(!exposure.Available)return Missing();
-            if(exposure.Result!=0){state.Failure(exposure.Result);return exposure;}
+            if(exposure.Result!=0){state.Failure(exposure.Result);return SystemFailure(exposure);}
             var performance=InitMember(root,"PerformanceLogging");
             var info=InitMember(performance,"TimeBetweenProfilerInfoPrints_sec");
-            if(info is null||info.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerInfoPrints_sec",1);if(error.Available)state.Failure(error.Result);return error;}
+            if(info is null||info.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerInfoPrints_sec",1);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             float infoMs=Json.AsFloat(info)*1000f;
             var das=InitMember(performance,"TimeBetweenProfilerDasLogs_sec");
-            if(das is null||das.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerDasLogs_sec",1);if(error.Available)state.Failure(error.Result);return error;}
+            if(das is null||das.Kind==FirmwareJsonKind.Null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","TimeBetweenProfilerDasLogs_sec",1);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             float dasMs=Json.AsFloat(das)*1000f;
             if(!float.IsFinite(infoMs)||!float.IsFinite(dasMs)||(double)infoMs>=9223372036854775808d||(double)infoMs< -9223372036854775808d||(double)dasMs>=9223372036854775808d||(double)dasMs< -9223372036854775808d)
             {SteppedBehavior.ReportMissing("M11-059 profiler period exceptional f32-to-i64 conversion unavailable");return Missing();}
             state.SetProfiler((long)infoMs,(long)dasMs);
             string path=engine.Options.ResourcesPath is {} resources?Path.Combine(resources,"config","engine","vision"):string.Empty;
             state.ReplaceFace(path,root);
-            SteppedBehavior.ReportMissing("M11-016 FaceTracker internal Init/algorithm and its possible error diagnostics remain unavailable");
+            if(suppliedConfig is null && _stockRecognizer && ReferenceEquals(FaceDetector,_stockFaceDetector))
+                InitializeStockFace(state,root,path,faceEpoch,Current);
             if(!Current())return Missing();
             state.ReplaceMotion(this,root);
-            uint pet=state.Pet.Initialize(root);
+            uint pet;
+            string? petLibraries = suppliedConfig is null ? Emulation.ShippedLibraries.FindLibDir() : null;
+            if (petLibraries is null)
+            {
+                RetireStockPet(state,Current);
+                if (suppliedConfig is null) SteppedBehavior.ReportMissing("M11-016/M11-080 shipped pet guest libraries unavailable; stock pet detector withheld");
+                pet=state.Pet.Initialize(root);
+            }
+            else
+            {
+                pet=InitializeStockPet(state,root,petLibraries,Current);
+            }
             if(!Current())return Missing();
-            if(pet!=0){var error=InitError(Current,"VisionSystem.Init.PetTrackerInitFailed",state.Pet.FailedStage??"",pet);if(error.Available)state.Failure(error.Result);return error;}
+            if(pet!=0){var error=InitError(Current,"VisionSystem.Init.PetTrackerInitFailed",state.Pet.FailedStage??"",pet);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             var modes=InitMember(root,"InitialVisionModes");
-            if(modes is null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","InitialVisionModes",1);if(error.Available)state.Failure(error.Result);return error;}
+            if(modes is null){var error=InitError(Current,"VisionSystem.Init.MissingJsonParameter","InitialVisionModes",1);if(error.Available)state.Failure(error.Result);return SystemFailure(error);}
             if(!TryApplyInitialVisionModes(modes,Current))return Missing();
             var schedules=ApplyNativeInitialSchedules(root,Current);
             if(!schedules.Available)return Missing();
-            if(schedules.Result!=0){state.Failure(schedules.Result);return schedules;}
+            if(schedules.Result!=0){state.Failure(schedules.Result);return SystemFailure(schedules);}
             lock(_groundGate)
             {
                 if(!Current())return NativeVisionStageResult.Missing;
                 PushNativeSchedule(AllVisionModesSchedule.CopyDefault());
+                if(suppliedConfig is not null && state.StockFace is not null)state.StockFaceEpoch=faceEpoch;
                 state.Finish();
             }
-            return NativeVisionStageResult.Success;
+            return NativeVisionStageResult.Success with { Epoch=epoch };
         }
         catch(Exception e) when(e is JsonLogicError or JsonRuntimeError or OutOfMemoryException)
         {
             SteppedBehavior.ReportMissing("M1-034/M11-059 Vision Init terminating input/allocation unavailable; initialization unit skipped");
             return Missing();
         }
+    }
+
+    private void InitializeStockFace(NativeVisionInitialization state,FirmwareJsonValue root,string path,int epoch,Func<bool> current)
+    {
+        var originalStock=_stockFaceDetector;
+        var detector=CreateStockFaceDetector();
+        var recognizer=CreateFaceRecognizer(new NativeOkaoFaceRecognizer(detector));
+        bool adopted=false;
+        try
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionSystem.Init.InstantiatingFaceTracker",$"With model path {path}.");
+            if(!current())return;
+            var face=InitMember(root,"FaceDetection");var recognition=InitMember(root,"FaceRecognition");
+            var mode=InitMember(face,"DetectionMode");var run=InitMember(recognition,"RunMode");
+            if(face?.Kind!=FirmwareJsonKind.Object || face.Members.Count!=1 ||
+               recognition?.Kind!=FirmwareJsonKind.Object || recognition.Members.Count!=1 ||
+               mode?.Kind!=FirmwareJsonKind.String || !mode.Bytes.AsSpan().SequenceEqual("video"u8) ||
+               run?.Kind!=FirmwareJsonKind.String || !run.Bytes.AsSpan().SequenceEqual("asynchronous"u8))
+            {
+                detector.SetStockStatus(3);
+                SteppedBehavior.ReportMissing("M11-016 nonstock face detector or recognition configuration unavailable");
+            }
+            else
+            {
+                try
+                {
+                    detector.CreateStagedStock(StockFaceCreateOverrideForTest);
+                    var version=detector.UseSession(machine=>machine.StockVersion());
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","FaceTrackerImpl.Init.FaceLibVersion",$"Initializing with FaceLibVision version {version.Major}.{version.Minor}");
+                    if(!current())return;
+                    detector.UseSession(machine=>{machine.InitializeStockHandles();return 0;});
+                    recognizer.InitializeStock();
+                    detector.SetStockStatus(1);
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","FaceTrackerImpl.Init.Success","FaceLib Vision handles created successfully.");
+                }
+                catch(Emulation.FaceGuestFailure failure)
+                {
+                    detector.SetStockStatus(2);
+                    if(failure.Key.StartsWith("MISSING ",StringComparison.Ordinal))SteppedBehavior.ReportMissing(failure.Key);
+                    else _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,failure.Key,"");
+                    if(!current())return;
+                    EngineErrorState.StoreAndMaybeBreak();
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceTrackerImpl.Constructor.InitFailed","");
+                    if(!current())return;
+                    EngineErrorState.StoreAndMaybeBreak();
+                }
+                catch(Exception e) when(e is not OutOfMemoryException)
+                {
+                    detector.SetStockStatus(3);
+                    SteppedBehavior.ReportMissing($"M11-016 stock face guest unavailable: {e.Message}");
+                }
+            }
+            if(!current())return;
+            OkaoFaceDetector oldDetector;FaceRecognizer oldRecognizer;
+            lock(_groundGate)
+            {
+                if(!current() || !ReferenceEquals(_stockFaceDetector,originalStock) || !ReferenceEquals(FaceDetector,originalStock))return;
+                oldDetector=_stockFaceDetector;oldRecognizer=Recognizer;
+                _stockFaceDetector=detector;FaceDetector=detector;Recognizer=recognizer;
+                state.StockFace=detector;state.StockFaceRecognizer=recognizer;state.StockFaceEpoch=epoch;adopted=true;
+            }
+            _=Task.Run(()=>RetireFaceSession(oldDetector,oldRecognizer));
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionSystem.Init.DoneInstantiatingFaceTracker","");
+        }
+        finally { if(!adopted) _=Task.Run(()=>RetireFaceSession(detector,recognizer)); }
+    }
+
+    private void RetireFaceSession(OkaoFaceDetector detector,FaceRecognizer recognizer)
+    {
+        bool albumFailed=false,shutdownSkipped=false;
+        try
+        {
+            lock(_busy)
+            {
+                try
+                {
+                    detector.RetireRecognition();
+                    if(detector.NativeUsable)albumFailed=recognizer.ShutdownStockDeferred();
+                    else shutdownSkipped=true;
+                }
+                finally { detector.Dispose(); }
+            }
+        }
+        catch(Exception e) { SteppedBehavior.ReportMissing($"M11-055 face guest retirement failed: {e.Message}"); }
+        if(shutdownSkipped)SteppedBehavior.ReportMissing("M1-034 M14-011 faulted recognition owner skipped guest shutdown");
+        if(albumFailed)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceRecognizer.Shutdown.FaceLibAlbumHandleDeleteFail","");
+            EngineErrorState.StoreAndMaybeBreak();
+        }
+        ReportFaceCleanup(detector);
+    }
+
+    private void ReportFaceCleanup(OkaoFaceDetector detector)
+    {
+        foreach(string operation in detector.TakeCleanupFailures())
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,operation,"");
+            EngineErrorState.StoreAndMaybeBreak();
+        }
+    }
+
+    internal bool NativeVisionAttemptCurrent(EngineRobot owner,int epoch)
+    {
+        lock(_groundGate) return !_disposed && _nativeInitialization is { } state &&
+            ReferenceEquals(state.Owner,owner) && ReferenceEquals(_groundOwner,owner) &&
+            !owner.Lifetime.Destroying && _nativeInitializationEpoch==epoch;
+    }
+
+    internal bool NativeVisionOwnerCurrent(EngineRobot owner)
+    {
+        lock(_groundGate) return !_disposed && ReferenceEquals(_groundOwner,owner) &&
+            ReferenceEquals(_nativeInitialization?.Owner,owner) && !owner.Lifetime.Destroying;
+    }
+
+    internal bool CompleteNativeVisionComponent(EngineRobot owner,int epoch)
+    {
+        lock(_groundGate)
+        {
+            if(!NativeVisionAttemptCurrent(owner,epoch) || !_nativeInitialization!.Initialized)return false;
+            _nativeInitialization!.ComponentInitialized=true;
+            _nativeInitialization.ComponentAvailabilityKnown=true;
+            return true;
+        }
+    }
+
+    private void RetireStockPet(NativeVisionInitialization state,Func<bool> current)
+    {
+        OkaoPetDetector? prior;
+        lock (_groundGate)
+        {
+            if (!current()) return;
+            prior=state.StockPet;
+            state.StockPet=null;
+        }
+        prior?.Retire();
+    }
+
+    private uint InitializeStockPet(NativeVisionInitialization state,FirmwareJsonValue root,string libraries,Func<bool> current)
+    {
+        Emulation.OkaoPetDetection? guest=null;
+        var petInitialization=new NativeVisionPetInitialization();
+        RetireStockPet(state,current);
+        if(!current())return 1;
+        bool Adopt(bool ready)
+        {
+            var detector=new OkaoPetDetector(guest!);
+            detector.Warning=(key,text)=>{if(current())_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,key,text);};
+            detector.Error=key=>{_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,"");Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();};
+            if(ready)detector.MarkReady();
+            OkaoPetDetector? previous;
+            lock(_groundGate)
+            {
+                if(!current())return false;
+                previous=state.StockPet;
+                state.StockPet=detector;
+                if(ready)petInitialization.MarkNativeInitialized(guest!.VersionMajor,guest.VersionMinor);
+                state.Pet=petInitialization;
+                guest=null;
+            }
+            previous?.Retire();
+            return true;
+        }
+        try
+        {
+            guest=new Emulation.OkaoPetDetection(libraries);
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","PetTracker.OmcvVersion",
+                $"Initializing with FaceLibVision version {guest.VersionMajor}.{guest.VersionMinor}");
+            if(!current()){guest.Dispose();return 1;}
+            uint parsed=petInitialization.ReadParameters(root);
+            if(parsed!=0)
+            {
+                string stage=petInitialization.FailedStage??"";
+                string key=stage=="PetTracker"?"PetTracker.Init.MissingConfigGroup":"PetTracker.Init.MissingParameter";
+                string text=stage=="PetTracker"?"Expecting 'PetTracker'":$"PetTracker.{stage}";
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,key,text);
+                lock(_groundGate) { if(current())state.Pet=petInitialization; }
+                if(current())Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                guest.Dispose();return parsed;
+            }
+            guest.Initialize(petInitialization.Parameters);
+            if(!Adopt(true)){guest?.Dispose();return 1;}
+            return 0;
+        }
+        catch(Emulation.PetGuestFailure failure)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,failure.Key,failure.Message);
+            if(current())Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            // A partially initialized pair stays attached to this owner until its normal retirement.
+            if(guest is not null)Adopt(false);
+            guest?.Dispose();
+            return failure.Result;
+        }
+        catch(Exception e) when(e is not JsonLogicError and not JsonRuntimeError and not OutOfMemoryException)
+        {
+            guest?.Dispose();
+            RetireStockPet(state,current);
+            SteppedBehavior.ReportMissing($"M11-016/M11-080 stock pet guest unavailable: {e.Message}");
+            if(!current())return 1;
+            uint result=petInitialization.Initialize(root); // unrelated vision continues with the existing host-only Init result
+            lock(_groundGate) { if(current())state.Pet=petInitialization; }
+            return result;
+        }
+        finally { guest?.Dispose(); }
     }
     // ImageCache admission is evaluated for the owner captured at frame handoff.
     private bool NativeDecodedAdmission(EngineRobot? owner,int removal)

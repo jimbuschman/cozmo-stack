@@ -5,7 +5,7 @@ using System.Text;
 namespace Cozmo.Robot.Vision;
 
 // fidelity: M11-059
-// Finite PetTracker::Init result producer only; detector/classifier remains unavailable.
+// Configuration and the explicitly supplied host-only initialization fixture.
 internal sealed class NativeVisionPetInitialization
 {
     internal sealed class OwnedHandle
@@ -32,11 +32,9 @@ internal sealed class NativeVisionPetInitialization
         if(value.Kind!=FirmwareJsonKind.Object)throw new JsonLogicError("Json::Value::find requires objectValue");
         return value.Members.GetValueOrDefault(Convert.ToHexString(Encoding.UTF8.GetBytes(key)));
     }
-    internal uint Initialize(FirmwareJsonValue root)
+    internal uint ReadParameters(FirmwareJsonValue root)
     {
         Initialized=false;FailedStage=null;Parameters.Clear(); // diagnostic copy of this invocation's local map
-        // Actual nonnull version outputs: 2,0 (93392C -> 934050).
-        VersionMajor=2;VersionMinor=0;
         var pet=Find(root,"PetTracker");
         if(pet is null||pet.Kind==FirmwareJsonKind.Null)return Fail("PetTracker",0x03000000);
         foreach(string key in new[]{"MaxPets","MinFaceSize","MaxFaceSize","InitialSearchCycle","NewSearchCycle","DetectionThreshold","TrackLostCount","TrackSteadiness"})
@@ -45,6 +43,13 @@ internal sealed class NativeVisionPetInitialization
             if(value is null||value.Kind==FirmwareJsonKind.Null)return Fail(key,0x03000000);
             Parameters[key]=Json.AsInt(value);
         }
+        return 0;
+    }
+    internal uint Initialize(FirmwareJsonValue root)
+    {
+        // Host-only fixture preserves the established synthetic allocator/validator seam.
+        VersionMajor=2;VersionMinor=0;
+        uint parsed=ReadParameters(root);if(parsed!=0)return parsed;
         int max=Parameters["MaxPets"];
         if(max<1||max>35){Common=null;return Fail("CommonHandle",0x01000000);}
         try
@@ -81,6 +86,14 @@ internal sealed class NativeVisionPetInitialization
         Steadiness=steady;Initialized=true;return 0;
     }
     private uint Fail(string stage,uint result){FailedStage=stage;return result;}
+    internal void MarkNativeInitialized(byte major,byte minor)
+    {
+        VersionMajor=major;VersionMinor=minor;HandleMode=1;AngleMask=0x803803;
+        InitialCycle=Parameters["InitialSearchCycle"];NewCycle=Parameters["NewSearchCycle"];
+        MinFaceSize=Parameters["MinFaceSize"];MaxFaceSize=Parameters["MaxFaceSize"];
+        Threshold=Parameters["DetectionThreshold"];Lost=Parameters["TrackLostCount"];Steadiness=Parameters["TrackSteadiness"];
+        Initialized=true;
+    }
 }
 
 // The result token belongs to one original worker owner. Later algorithms remain separate.
@@ -94,11 +107,17 @@ internal sealed class NativeVisionInitialization
     private volatile bool _motionKnowledgeKnown=true;
     internal bool AvailabilityKnown => _availabilityKnown;
     internal bool Initialized => _initialized;
+    internal bool ComponentInitialized { get; set; }
+    internal bool ComponentAvailabilityKnown { get; set; } = true;
     internal bool MotionKnowledgeKnown=>_motionKnowledgeKnown;
     internal void MarkMotionUnavailable()=>_motionKnowledgeKnown=false;
     internal bool Reset338 { get; private set; }
     internal bool Reset328 { get; private set; }
-    internal NativeVisionPetInitialization Pet { get; }=new();
+    internal NativeVisionPetInitialization Pet { get; set; }=new();
+    internal OkaoPetDetector? StockPet { get; set; }
+    internal OkaoFaceDetector? StockFace { get; set; }
+    internal FaceRecognizer? StockFaceRecognizer { get; set; }
+    internal int StockFaceEpoch { get; set; }
     internal NativeMotionPoseState MotionPose { get; }=new();
     internal NativeVisionFaceConstructor? Face { get; private set; }
     internal NativeVisionMotionConstructor? Motion { get; private set; }
@@ -149,7 +168,7 @@ internal sealed class NativeVisionMotionConstructor(EngineRobot owner,VisionSyst
     internal uint Timestamp { get; }=0;
 }
 
-internal readonly record struct NativeVisionStageResult(bool Available,uint Result)
+internal readonly record struct NativeVisionStageResult(bool Available,uint Result,int Epoch = 0)
 {
     internal static NativeVisionStageResult Success=>new(true,0);
     internal static NativeVisionStageResult Failure(uint value)=>new(true,value);

@@ -133,7 +133,8 @@ public sealed class PutDownBlockNativeTests
         using var f=new Fixture();f.Rig.State(x:100);using var output=new Pose3d("");var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         f.Face(1,10,new Vec3(110,0,50),true);f.Face(2,10,new Vec3(20,0,50),true);
         Assert.True(f.M.Vision.Faces.CopyNativeLastFace(origin,false,output));Assert.Equal(110,output.Translation.X);
-        f.Face(3,10,new Vec3(double.NaN,0,50),true);Assert.True(f.M.Vision.Faces.CopyNativeLastFace(origin,false,output));Assert.True(double.IsNaN(output.Translation.X));
+        f.Face(3,10,new Vec3(90,0,50),true);Assert.True(f.M.Vision.Faces.CopyNativeLastFace(origin,false,output));Assert.Equal(110,output.Translation.X); // equal distance keeps the first.
+        f.Face(4,10,new Vec3(double.NaN,0,50),true);Assert.True(f.M.Vision.Faces.CopyNativeLastFace(origin,false,output));Assert.Equal(110,output.Translation.X); // 0x4F4A1C..24 ARM BLE keeps old on unordered.
     }
     [Fact]
     public void QueuedLastFaceHasOneCoreTagAndRealWaitPrioritySignedFaceAndFineTune()

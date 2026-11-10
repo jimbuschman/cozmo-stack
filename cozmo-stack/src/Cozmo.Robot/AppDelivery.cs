@@ -8,6 +8,12 @@ public sealed partial class CozmoEngine
     private readonly object _appDeliveryGate=new();
     private readonly Queue<Action> _appDeliveries=new();
     private int _appDeliveryDraining;
+    internal Action? CaptureAppEvent(Action? handlers)
+    {
+        if(handlers is null)return null;
+        var subscribers=handlers.GetInvocationList();
+        return ()=>{foreach(Action subscriber in subscribers)RunIsolated(subscriber);};
+    }
     internal Func<bool>? AnimationMutationLockHeld;
     internal Action? WaitForAnimationMutation;
 

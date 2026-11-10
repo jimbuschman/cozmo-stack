@@ -34,6 +34,7 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
     internal bool? NativeTrackerFlagChanged { get; init; }
     internal int NativeEnrollmentCount { get; init; }
     internal NativeFaceFeatures? NativeFeatures { get; init; }
+    internal NativeFaceAttributes? NativeAttributes { get; init; }
     // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
     internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
@@ -64,6 +65,23 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     private readonly bool _librariesPresent;
     private Emulation.OkaoFaceDetection? _detector;
     private bool _faulted, _disposed, _retiring;
+    // 0 is the legacy lazy facade; 1 is initialized, 2 is a defined native failure,
+    // 3 is an unavailable/faulted host guest.
+    private int _stockStatus;
+    private string[] _cleanupFailures=Array.Empty<string>();
+    internal string[] TakeCleanupFailures(){lock(_gate){var failures=_cleanupFailures;_cleanupFailures=Array.Empty<string>();return failures;}}
+    internal int StockStatus => Volatile.Read(ref _stockStatus);
+    internal void SetStockStatus(int status)=>Volatile.Write(ref _stockStatus,status);
+    internal void CreateStagedStock(Func<string,uint?>? createOverride)
+    {
+        lock(_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed,this);
+            string path=_libDir ?? throw new FileNotFoundException("M14-010 shipped OKAO libraries unavailable");
+            _detector=new Emulation.OkaoFaceDetection(path,0,true);
+            _detector.StockCreateOverrideForTest=createOverride;
+        }
+    }
     private Task<int>? _recognitionWorker;
     private int _pendingTrack;
     private bool _pendingRegistrationAllowed;
@@ -74,13 +92,14 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
         _libDir = Emulation.ShippedLibraries.FindLibDir();
         _librariesPresent = _libDir is not null && File.Exists(Path.Combine(_libDir, "libcozmoEngine.so"));
     }
-    public bool IsAvailable { get { lock (_gate) return !_disposed && !_retiring && !_faulted && _librariesPresent; } }
+    public bool IsAvailable { get { lock (_gate) return !_disposed && !_retiring && !_faulted && _librariesPresent && _stockStatus is not (2 or 3); } }
     public string Description => "Shipped Omron OKAO face detector on the embedded ARM emulator";
     internal T UseSession<T>(Func<Emulation.OkaoFaceDetection, T> operation)
     {
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_stockStatus is 2 or 3) throw new InvalidOperationException("Stock face initialization did not succeed");
             if (_faulted) throw new InvalidOperationException("OKAO face detector is faulted");
             try
             {
@@ -88,30 +107,35 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                 _detector ??= new Emulation.OkaoFaceDetection(path);
                 return operation(_detector);
             }
+            catch (Emulation.FaceGuestFailure) { throw; }
             catch { _faulted = true; throw; }
         }
     }
     public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp)
         => Detect(image, timestamp, false);
     internal IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp, bool resetTracking)
-        => DetectCore(image, timestamp, resetTracking, null, null);
+        => DetectCore(image, timestamp, resetTracking, null, null, 0);
+
+    internal IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp, bool resetTracking, int attributeMask)
+        => DetectCore(image, timestamp, resetTracking, null, null, attributeMask);
 
     internal (IReadOnlyList<DetectedFace> Faces, IReadOnlyList<(int OldId, int NewId, string? Name)> Changes) DetectRecognized(
-        GrayImage image, uint timestamp, bool resetTracking, FaceRecognizer recognizer)
+        GrayImage image, uint timestamp, bool resetTracking, FaceRecognizer recognizer, int attributeMask = 0)
     {
         var changes = new List<(int, int, string?)>();
-        var faces = recognizer.WithStockFrame(() => DetectCore(image, timestamp, resetTracking, recognizer, changes));
+        var faces = recognizer.WithStockFrame(() => DetectCore(image, timestamp, resetTracking, recognizer, changes, attributeMask));
         return (faces, changes);
     }
 
     private IReadOnlyList<DetectedFace> DetectCore(GrayImage image, uint timestamp, bool resetTracking,
-        FaceRecognizer? recognizer, List<(int OldId, int NewId, string? Name)>? changes)
+        FaceRecognizer? recognizer, List<(int OldId, int NewId, string? Name)>? changes, int attributeMask)
     {
         var diagnostics = new List<string>();
         IReadOnlyList<DetectedFace> faces;
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_stockStatus is 2 or 3) throw new InvalidOperationException("Stock face initialization did not succeed");
             if (_retiring) throw new InvalidOperationException("OKAO face detector is retiring");
             if (_faulted) throw new InvalidOperationException("OKAO face detector is faulted");
             try
@@ -128,7 +152,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                     _detector.ResetTracking();
                     if (recognizer is not null) { recognizer.ClearStockTracking(); _pendingTrack = 0; }
                 }
-                if (recognizer is null) faces = _detector.DetectTracked(image.Pixels, image.Width, image.Height);
+                if (recognizer is null) faces = _detector.DetectTracked(image.Pixels, image.Width, image.Height,attributeMask:attributeMask);
                 else
                 {
                     var machine = _detector;
@@ -167,7 +191,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                         if (identity.PreviousId is { } old) changes!.Add((old, identity.Id, identity.Name));
                         return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name, NativeEnrollmentCount = identity.EnrollmentCount };
                     }
-                    faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack);
+                    faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack,attributeMask);
                 }
             }
             catch { _faulted = true; throw; }
@@ -187,7 +211,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     public void Dispose()
     {
         RetireRecognition();
-        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _detector = null; _recognitionWorker = null; }
+        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _cleanupFailures=_detector?.StockCleanupFailures.ToArray() ?? Array.Empty<string>(); _detector = null; _recognitionWorker = null; }
     }
 }
 
@@ -288,6 +312,14 @@ public sealed class TrackedFace
     /// </summary>
     public void UpdateTranslation(CameraModel camera)
     {
+        UpdateNativeCameraTranslation(camera.Calibration);
+        // Compatibility adapter for standalone callers without the historical pose carriers.
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M14-001/M11-066 TrackedFace::UpdateTranslation 0x0087E042..0x0087E064: the native writes the camera-frame translation into the head pose, keeps the head pose's own rotation and calls SetParent(camera); the stack's consumers read a flattened world pose, so the head pose takes the camera's rotation and the camera-applied translation");
+        HeadPose = new Pose3d(camera.Pose, camera.Pose.Apply(NativeCameraTranslation));
+    }
+
+    internal void UpdateNativeCameraTranslation(CameraCalibration cal)
+    {
         float eyeDistance;
         float ax = 0f, ay = 0f, bx = 0f, by = 0f;          // [sp+0x58] and [sp+0x50]: the eye slots, zero in the box branch
         if (HasEyeParts)
@@ -320,7 +352,6 @@ public sealed class TrackedFace
         }
         float mx = (bx + ax) * 0.5f, my = (by + ay) * 0.5f; // 0x0087DF2E..0x0087DF5C
 
-        var cal = camera.Calibration;
         float fx = (float)cal.FocalLengthX, fy = (float)cal.FocalLengthY, cx = (float)cal.CenterX, cy = (float)cal.CenterY, skew = (float)cal.Skew;
         // GetInvCalibrationMatrix<float> 0x0085EF3A..0x0085EF9E: [1/fx, -skew/fy, cy*skew/fy - cx/fx; 0, 1/fy, -cy/fy; 0, 0, 1]
         float a0 = 1.0f / fx;
@@ -341,11 +372,6 @@ public sealed class TrackedFace
         float tx = scale * rx, ty = scale * ry, tz = scale * rz;                                   // 0x0087E026..0x0087E038
         NativeCameraTranslation = new Vec3(tx, ty, tz);
         DistanceMm = scale;
-        // MISSING: M14-001/M11-066 0x0087E042..0x0087E064: the native writes (tx, ty, tz) into the head pose's own translation,
-        // keeping the head pose's own rotation, and calls SetParent(camera). The stack's face consumers read a flattened
-        // world pose (no camera-parented tree here), so the previous flattening (camera rotation, camera-applied point) is kept.
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M14-001/M11-066 TrackedFace::UpdateTranslation 0x0087E042..0x0087E064: the native writes the camera-frame translation into the head pose, keeps the head pose's own rotation and calls SetParent(camera); the stack's consumers read a flattened world pose, so the head pose takes the camera's rotation and the camera-applied translation");
-        HeadPose = new Pose3d(camera.Pose, camera.Pose.Apply(new Vec3(tx, ty, tz)));
     }
 }
 
@@ -459,25 +485,42 @@ public sealed partial class FaceWorld
     public FaceObservation? AddOrUpdateFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast)
         => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,null);
 
-    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin, bool? onTreads = null)
-        => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin,onTreads: onTreads);
-
-    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, Func<bool?> rotationInput, PoseTreeNode origin, bool? onTreads = null)
-        => AddOrUpdateFaceCore(face,robotPoseAtFrame,null,origin,rotationInput,onTreads);
-
-    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin, Func<bool?>? rotationInput = null, bool? onTreads = null)
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin, bool? onTreads = null, bool requireNativePose = false, EngineRobot? expectedOwner = null, int? expectedGeneration = null)
     {
+        using var mutation = requireNativePose ? NativePoseScope?.Invoke() : null;
+        return AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin,onTreads: onTreads,requireNativePose:requireNativePose,expectedOwner:expectedOwner,expectedGeneration:expectedGeneration);
+    }
+
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, Func<bool?> rotationInput, PoseTreeNode origin, bool? onTreads = null, bool requireNativePose = false, EngineRobot? expectedOwner = null, int? expectedGeneration = null)
+    {
+        using var mutation = requireNativePose ? NativePoseScope?.Invoke() : null;
+        return AddOrUpdateFaceCore(face,robotPoseAtFrame,null,origin,rotationInput,onTreads,requireNativePose,expectedOwner,expectedGeneration);
+    }
+
+    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin, Func<bool?>? rotationInput = null, bool? onTreads = null, bool requireNativePose = false, EngineRobot? expectedOwner = null, int? expectedGeneration = null)
+    {
+        var nativeOwner = requireNativePose ? expectedOwner ?? NativeOwner?.Invoke() : null;
+        int generation = expectedGeneration ?? NativeGeneration?.Invoke() ?? 0;
+        bool CurrentNative() => !requireNativePose || nativeOwner is not null && NativeOwnerCurrent(nativeOwner, generation);
+        if (!CurrentNative()) return null;
         bool below = onTreads is { } on && face.NativeTrackingTranslation is { } native
             ? on && native.Z < 0 : face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z;
-        if (below) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
+        if (below) { LogCallbackDeferral.Run(() => Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}")); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev; NativeFaceSnapshot snapshot;
         using (LogCallbackDeferral.EnterGated(_gate))
         {
+            if (!CurrentNative()) return null;
             // C2-F7: the reachable match is the map lookup keyed by the TrackedFace id at +0. The
             // pose/overlap loop is dead because FaceTracker::IsRecognitionSupported 0x0086B244 is
             // `movs r0,#1; bx lr`, so the 0x004F43DE cbz never branches and no generated id exists.
             entry = _faces.TryGetValue(face.Id, out var byId) ? byId : null;
             bool existing = entry is not null;
+            if (requireNativePose && (origin is null || face.NativeTrackingTranslation is null || face.NativeTrackingRotation is null ||
+                existing && !face.HasEyeParts && entry!.NativeTrackingTranslation is null))
+            {
+                Behavior.SteppedBehavior.ReportMissing("M14-001 native tracked-face pose or prior no-parts translation unavailable; face withheld");
+                return null;
+            }
             if (entry is null)
             {
                 rotatingTooFast = rotationInput?.Invoke() ?? rotatingTooFast;
@@ -488,6 +531,7 @@ public sealed partial class FaceWorld
                 }
                 // C2-F7c: WasRotatingTooFast 0x004F4596 gates the new-entry path only.
                 if (rotatingTooFast.Value) { LogCallbackDeferral.Run(() => Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping")); return null; }
+                if (!CurrentNative()) return null;
                 entry = new FaceEntry { Id = face.Id, FirstObservedTimestamp = face.Timestamp };
                 _faces[face.Id] = entry; isNew = true;
                 string message = $"FaceWorld.UpdateFace.NewFace: Added new face with ID={face.Id} at t={face.Timestamp}.";
@@ -520,11 +564,35 @@ public sealed partial class FaceWorld
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
             snapshot = new(entry.Id,entry.LastObservedTimestamp,entry.TimesObserved,entry.Name,entry.Rect,
                 entry.NativeTrackingTranslation,entry.NativeTrackingRotation,entry.NativeObservationOrigin);
+            // Queued native callers hold the world/pose scope; cache this exact prepared native pose.
+            if (requireNativePose)
+            {
+                using var parent = Pose3d.WrapExisting(origin!);
+                using var nativePose = new Pose3d(entry.NativeTrackingRotation!.Value, entry.NativeTrackingTranslation!.Value, parent: parent);
+                if (CurrentNative()) UpdateNativeLastFace(entry, nativePose, nativeOwner, generation);
+            }
         }
         var obs = new FaceObservation(entry, face.Timestamp, isNew, prev)
         { NativeSnapshot = snapshot };
-        UpdateNativeLastFace(entry);
-        FaceObserved?.Invoke(obs);
+        if (!requireNativePose) UpdateNativeLastFace(entry);
+        if (requireNativePose)
+        {
+            var capturedOwner = nativeOwner;
+            if (capturedOwner is null) return obs;
+            var handlers = FaceObserved;
+            LogCallbackDeferral.Run(() =>
+            {
+                if (handlers is null) return;
+                foreach (Action<FaceObservation> handler in handlers.GetInvocationList())
+                {
+                    if (capturedOwner.Lifetime.Destroying || !ReferenceEquals(NativeOwner?.Invoke(), capturedOwner) ||
+                        (NativeGeneration?.Invoke() ?? 0) != generation) return;
+                    lock (_gate) if (!_faces.TryGetValue(entry.Id, out var current) || !ReferenceEquals(current, entry)) return;
+                    capturedOwner.Engine.RunIsolated(() => handler(obs));
+                }
+            });
+        }
+        else FaceObserved?.Invoke(obs);
         return obs;
     }
 
@@ -853,19 +921,100 @@ public sealed partial class FaceWorld
 }
 
 /// <summary>A pet as the detector reports it (the engine's OKAO pet detector fills <c>Vision::TrackedPet</c>).</summary>
-public sealed record DetectedPet(int Id, PetType Type, FaceRect Rect, int Score = 0);
+public sealed record DetectedPet(int Id, PetType Type, FaceRect Rect, int Score = 0)
+{
+    /// <summary>The native tracker result flag, when supplied by a complete native-shaped detector.</summary>
+    public bool? TrackerResultFlag { get; init; }
+}
 
 /// <summary>The pet detection seam (<c>PetTracker</c> in vision_config.json: max 4 pets, face size 60..240 px, threshold 900). OKAO again; unavailable here.</summary>
 public interface IPetDetector
 {
     bool IsAvailable { get; }
+    /// <summary>True only when every successful result, including an empty result, has the native tracker fields.</summary>
+    bool ProvidesNativeResults => false;
     IReadOnlyList<DetectedPet> Detect(GrayImage image, uint timestamp);
 }
 
-public sealed class OkaoPetDetector : IPetDetector
+public sealed class OkaoPetDetector : IPetDetector, IDisposable
 {
-    public bool IsAvailable => false;
-    public IReadOnlyList<DetectedPet> Detect(GrayImage image, uint timestamp) => Array.Empty<DetectedPet>();
+    private readonly object _gate = new();
+    private readonly Emulation.OkaoPetDetection? _guest;
+    private volatile bool _ready, _faulted, _disposed;
+    private int _retireRequested;
+    internal Action<string,string>? Warning { get; set; }
+    internal Action<string>? Error { get; set; }
+    private readonly List<string> _disposalErrors = new();
+    public OkaoPetDetector() { }
+    internal OkaoPetDetector(Emulation.OkaoPetDetection guest) => _guest=guest;
+    internal void MarkReady() { lock (_gate) _ready=true; }
+    internal void OverrideDetectResultForTest(int result) => OverrideDetectForTest(() => result);
+    internal void OverrideDetectForTest(Func<int> result) { lock (_gate) _guest!.OverrideDetectForTest(result); }
+    internal bool DisposedForTest => _disposed;
+    internal bool ReadySnapshot => _ready && !_faulted && !_disposed && Volatile.Read(ref _retireRequested)==0;
+    public bool IsAvailable => ReadySnapshot;
+    public bool ProvidesNativeResults => IsAvailable;
+    public IReadOnlyList<DetectedPet> Detect(GrayImage image, uint timestamp)
+    {
+        var warnings = new List<(string Key,string Text)>();
+        IReadOnlyList<DetectedPet>? result=null;
+        Exception? failure=null;
+        lock (_gate)
+        {
+            if (!_ready || _faulted || _disposed || Volatile.Read(ref _retireRequested)!=0 || _guest is null) return Array.Empty<DetectedPet>();
+            _guest.Warning=(key,text)=>warnings.Add((key,text));
+            try { result=_guest.Detect(image); }
+            catch (Emulation.PetGuestFailure e) { failure=e; }
+            catch (Exception e) { _faulted=true; failure=e; }
+            finally
+            {
+                _guest.Warning=null;
+                if (Volatile.Read(ref _retireRequested)!=0) DisposeLocked();
+            }
+        }
+        PublishDisposalErrors();
+        foreach(var warning in warnings) Warning?.Invoke(warning.Key,warning.Text);
+        if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+        return result!;
+    }
+    private void DisposeLocked()
+    {
+        if (_disposed) return;
+        _disposed=true;
+        if (_guest is null) return;
+        try { _guest.Dispose(); }
+        finally { _disposalErrors.AddRange(_guest.DisposalErrors); }
+    }
+    private void PublishDisposalErrors()
+    {
+        string[] errors;
+        lock (_gate) { errors=_disposalErrors.ToArray();_disposalErrors.Clear(); }
+        foreach(string error in errors) Error?.Invoke(error);
+    }
+    internal void Retire()
+    {
+        if (Interlocked.Exchange(ref _retireRequested,1)!=0) return;
+        if (!Monitor.TryEnter(_gate))
+        {
+            _ = Task.Run(() =>
+            {
+                try { lock (_gate) DisposeLocked(); PublishDisposalErrors(); }
+                catch (Exception e) { Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-016/M11-080 pet guest retirement failed: " + e.Message); }
+            });
+            return;
+        }
+        Exception? failure=null;
+        try { DisposeLocked(); } catch (Exception e) { failure=e; } finally { Monitor.Exit(_gate); }
+        PublishDisposalErrors();
+        if(failure is not null)Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-016/M11-080 pet guest retirement failed: " + failure.Message);
+    }
+    public void Dispose()
+    {
+        Exception? failure=null;
+        try { lock (_gate) DisposeLocked(); } catch(Exception e) { failure=e; }
+        PublishDisposalErrors();
+        if(failure is not null)Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-016/M11-080 pet guest retirement failed: " + failure.Message);
+    }
 }
 
 public sealed class PetEntry
@@ -879,42 +1028,132 @@ public sealed class PetEntry
 
 /// <summary>
 /// <c>Anki::Cozmo::PetWorld</c> (0x0050B7E4..0x0050BC40): pets by id with the same rotating-too-fast skip
-/// (0.174533 / 0.523599), "robot.vision.detected_pet" on a first sighting and <c>RobotObservedPet</c> per
-/// observation; <c>GetKnownPetsWithType</c>, <c>GetPetByID</c>. Pets are image-plane entities (no head pose);
-/// a pet not reported for <see cref="TrackLostFrames"/> frames is dropped (vision_config <c>TrackLostCount</c> 2).
+/// (0.174533 / 0.523599), tracker-flag telemetry and <c>RobotObservedPet</c> per observation.
+/// Native-shaped results replace the entire map immediately; the legacy host adapter retains unseen pets
+/// for <see cref="TrackLostFrames"/> frames. Pets are image-plane entities (no head pose).
 /// </summary>
 public sealed class PetWorld
 {
     public const int TrackLostFrames = 2;
     private readonly Dictionary<int, (PetEntry Pet, int Missed)> _pets = new();
+    private readonly object _nativeGate = new();
+    private Dictionary<int, (PetEntry Pet, DetectedPet Input)> _nativePets = new();
+    private EngineRobot? _nativeOwner;
+    private bool _nativeCurrent;
+    private long _nativeEpoch;
     public event Action<PetEntry, bool>? PetObserved;
-    public IReadOnlyList<PetEntry> Pets => _pets.Values.Select(p => p.Pet).ToList();
+    internal void BindNativeOwner(EngineRobot owner)
+    {
+        lock (_nativeGate)
+        {
+            if (ReferenceEquals(_nativeOwner, owner)) return;
+            _nativeOwner = owner;
+            _nativePets = new();
+            _nativeCurrent = true;
+            _nativeEpoch++;
+        }
+    }
+    public IReadOnlyList<PetEntry> Pets
+    {
+        get { lock (_nativeGate) return _nativeCurrent ? _nativePets.OrderBy(p => p.Key).Select(p => p.Value.Pet).ToList() : _pets.Values.Select(p => p.Pet).ToList(); }
+    }
+    internal IReadOnlyList<PetEntry>? GetNativePets(EngineRobot owner)
+    {
+        lock (_nativeGate)
+            return _nativeCurrent && ReferenceEquals(_nativeOwner, owner)
+                ? _nativePets.OrderBy(p => p.Key).Select(p => p.Value.Pet).ToArray() : null;
+    }
 
     public void Update(IReadOnlyList<DetectedPet> seen, uint timestamp, bool rotatingTooFast)
     {
         if (rotatingTooFast) return;
+        lock (_nativeGate) { _nativeCurrent = false; _nativeEpoch++; }
         var ids = new HashSet<int>();
         foreach (var d in seen)
         {
             ids.Add(d.Id);
-            bool isNew = !_pets.TryGetValue(d.Id, out var cur);
-            var pet = isNew ? new PetEntry { Id = d.Id, Type = d.Type } : cur.Pet;
-            pet.Rect = d.Rect; pet.LastObservedTimestamp = timestamp; pet.TimesObserved++; pet.Type = d.Type;
-            _pets[d.Id] = (pet, 0);
+            bool isNew;
+            PetEntry pet;
+            lock (_nativeGate)
+            {
+                isNew = !_pets.TryGetValue(d.Id, out var cur);
+                pet = isNew ? new PetEntry { Id = d.Id, Type = d.Type } : cur.Pet;
+                pet.Rect = d.Rect; pet.LastObservedTimestamp = timestamp; pet.TimesObserved++; pet.Type = d.Type;
+                _pets[d.Id] = (pet, 0);
+            }
             PetObserved?.Invoke(pet, isNew);
         }
-        foreach (var id in _pets.Keys.ToList())
+        lock (_nativeGate)
         {
-            if (ids.Contains(id)) continue;
-            var (pet, missed) = _pets[id];
-            if (++missed > TrackLostFrames) _pets.Remove(id); else _pets[id] = (pet, missed);
+            foreach (var id in _pets.Keys.ToList())
+            {
+                if (ids.Contains(id)) continue;
+                var (pet, missed) = _pets[id];
+                if (++missed > TrackLostFrames) _pets.Remove(id); else _pets[id] = (pet, missed);
+            }
         }
     }
 
-    public PetEntry? GetPetByID(int id) => _pets.TryGetValue(id, out var p) ? p.Pet : null;
+    internal bool UpdateNative(IReadOnlyList<DetectedPet> seen, uint timestamp, Func<bool, bool?> rotating,
+        Func<bool> current, Action<DetectedPet, PetEntry, Func<bool>> publish, Action<Action> isolate)
+    {
+        Dictionary<int, (PetEntry Pet, DetectedPet Input)> prior;
+        long initialEpoch;
+        lock (_nativeGate) { prior = _nativePets; initialEpoch = _nativeEpoch; }
+        bool StillInitial() => current() && initialEpoch == Interlocked.Read(ref _nativeEpoch);
+        var next = new Dictionary<int, (PetEntry Pet, DetectedPet Input)>();
+        foreach (var input in seen)
+        {
+            if (!StillInitial()) return false;
+            bool existing = prior.TryGetValue(input.Id, out var old);
+            if (!existing)
+            {
+                bool? tooFast = rotating(input.TrackerResultFlag!.Value);
+                if (!StillInitial() || tooFast is null) return false;
+                if (tooFast.Value) continue;
+            }
+            var pet = new PetEntry { Id = input.Id, Type = input.Type, Rect = input.Rect, LastObservedTimestamp = timestamp,
+                TimesObserved = existing ? unchecked(old.Pet.TimesObserved + 1) : 1 };
+            next.TryAdd(input.Id, (pet, input));
+        }
+        long epoch;
+        lock (_nativeGate)
+        {
+            if (!StillInitial()) return false;
+            _nativePets = next;
+            _nativeCurrent = true;
+            epoch = ++_nativeEpoch;
+        }
+        bool CurrentEpoch() => current() && epoch == Interlocked.Read(ref _nativeEpoch);
+        var ordered = next.OrderBy(p => p.Key).ToArray();
+        foreach (var item in ordered)
+        {
+            if (!CurrentEpoch()) return false;
+            publish(item.Value.Input, item.Value.Pet, CurrentEpoch);
+        }
+        foreach (var item in ordered)
+        {
+            if (!CurrentEpoch()) return false;
+            if (PetObserved is { } handlers)
+                foreach (Action<PetEntry, bool> handler in handlers.GetInvocationList())
+                {
+                    if (!CurrentEpoch()) return false;
+                    isolate(() => handler(item.Value.Pet, !prior.ContainsKey(item.Key)));
+                }
+        }
+        return CurrentEpoch();
+    }
+
+    public PetEntry? GetPetByID(int id)
+    {
+        lock (_nativeGate) return _nativeCurrent ? (_nativePets.TryGetValue(id, out var n) ? n.Pet : null) : (_pets.TryGetValue(id, out var p) ? p.Pet : null);
+    }
 
     // fidelity: M1-025, M1-015
     /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no pets. Subscribers are kept.</summary>
-    internal void ResetToConstructed() => _pets.Clear();
-    public IReadOnlyList<PetEntry> GetKnownPetsWithType(PetType type) => _pets.Values.Select(p => p.Pet).Where(p => type == PetType.Unknown || p.Type == type).ToList();
+    internal void ResetToConstructed()
+    {
+        lock (_nativeGate) { _pets.Clear(); _nativePets = new(); _nativeOwner = null; _nativeCurrent = false; _nativeEpoch++; }
+    }
+    public IReadOnlyList<PetEntry> GetKnownPetsWithType(PetType type) => Pets.Where(p => type == PetType.Unknown || p.Type == type).ToList();
 }

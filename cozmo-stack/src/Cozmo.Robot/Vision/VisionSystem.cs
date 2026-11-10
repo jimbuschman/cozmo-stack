@@ -66,9 +66,13 @@ public sealed partial class VisionSystem : IDisposable
     private bool _nativeWorkerPhysical; // worker+0x50: ctor false, refreshed by SetCameraCalibration tail
     internal bool NativeWorkerPhysicalForTest { get { lock(_groundGate)return _nativeWorkerPhysical; } }
     private NativeVisionInitialization? _nativeInitialization;
+    private int _nativeFaceEpoch;
     private int _nativeInitializationEpoch;
     private readonly System.Collections.Concurrent.ConcurrentQueue<NativeVisionInitialization> _retiredMotionStates=new();
-    private void DrainRetiredMotionStates(){while(_retiredMotionStates.TryDequeue(out var state))state.MotionPose.Dispose();}
+    private void DrainRetiredMotionStates()
+    {
+        while(_retiredMotionStates.TryDequeue(out var state)){state.MotionPose.Dispose();state.StockPet?.Retire();}
+    }
     private NativeImageImuHistory? _nativeImu;
     private bool _nativeVisionWhileMoving;
     private RetainedSubscription? _nativeImuSubscription;
@@ -176,6 +180,9 @@ public sealed partial class VisionSystem : IDisposable
 
     // FaceWorld 0x004F456E uses a different body threshold and history count from marker processing.
     internal bool? NativeFaceRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack)
+        => NativeObservationRotatingTooFast(owner,timestamp,changedTrack,"M14-008 native face");
+
+    private bool? NativeObservationRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack, string label)
     {
         NativeImageImu[]? history = null;
         lock (_groundGate)
@@ -188,7 +195,7 @@ public sealed partial class VisionSystem : IDisposable
         }
         if (history is null)
         {
-            SteppedBehavior.ReportMissing("M14-008 native face rotation gate has no original-owner IMU history");
+            SteppedBehavior.ReportMissing($"{label} rotation gate has no original-owner IMU history");
             return null;
         }
         return NativeFaceRotationFromHistory(history, timestamp, changedTrack);
@@ -244,6 +251,7 @@ public sealed partial class VisionSystem : IDisposable
             if(_nativeInitialization is {} displaced)_retiredMotionStates.Enqueue(displaced);
             if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
             _groundOwner = owner;
+            Pets.BindNativeOwner(owner);
             _nativeWorkerPhysical=false;
             _nativeVisionWhileMoving=false;
             _nativeInitialization=new NativeVisionInitialization(owner) { LastReceivedTimestamp=receivedTimestamp };_nativeInitializationEpoch++;
@@ -452,8 +460,8 @@ public sealed partial class VisionSystem : IDisposable
         // CozmoRobot.ConnectAsync returns and the caller builds this VisionSystem. The engine raises the result
         // when #4 completes; subscribe here and adopt a result that already completed.
         _faceAlbumLoaded = AdoptFaceAlbum;
-        robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
-        if (robot.Engine.ConnectionFaceAlbumResult is { } loaded)
+        if(!_stockRecognizer)robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
+        if (!_stockRecognizer && robot.Engine.ConnectionFaceAlbumResult is { } loaded)
             _faceAlbumLoaded(loaded.Album, loaded.Enrollment);
         _renameRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x8C,false,value=>
         {
@@ -616,24 +624,27 @@ public sealed partial class VisionSystem : IDisposable
             World.ResetToConstructed();
             if(!StillRetired())return;
             Faces.ResetToConstructed();
-            var oldFaceDetector = _stockFaceDetector;
-            var oldRecognizer = Recognizer;
-            _stockFaceDetector = CreateStockFaceDetector();
-            if (ReferenceEquals(FaceDetector, oldFaceDetector)) FaceDetector = _stockFaceDetector;
-            if (_stockRecognizer) Recognizer = CreateFaceRecognizer(new NativeOkaoFaceRecognizer(_stockFaceDetector));
+            OkaoFaceDetector oldFaceDetector;FaceRecognizer oldRecognizer;
+            lock(_groundGate)
+            {
+                if(_groundOwner is not null || removal!=Volatile.Read(ref _removals))return;
+                oldFaceDetector = _stockFaceDetector;
+                oldRecognizer = Recognizer;
+                _stockFaceDetector = CreateStockFaceDetector();
+                if (ReferenceEquals(FaceDetector, oldFaceDetector)) FaceDetector = _stockFaceDetector;
+                if (_stockRecognizer) Recognizer = CreateFaceRecognizer(new NativeOkaoFaceRecognizer(_stockFaceDetector));
+            }
             void RetireFaceOwner()
             {
-                try
-                {
-                    oldFaceDetector.RetireRecognition();
-                    if (_stockRecognizer && oldFaceDetector.NativeUsable) oldRecognizer.Shutdown();
-                    else if (_stockRecognizer) SteppedBehavior.ReportMissing("M1-034 M14-011 faulted recognition owner skipped guest shutdown");
-                }
-                finally { oldFaceDetector.Dispose(); }
+                if (_stockRecognizer) RetireFaceSession(oldFaceDetector,oldRecognizer);
+                else { lock(_busy) oldFaceDetector.Dispose(); }
             }
-            if (locked) RetireFaceOwner();
-            else _ = Task.Run(() => { lock (_busy) RetireFaceOwner(); });
-            Pets.ResetToConstructed();
+            _ = Task.Run(RetireFaceOwner);
+            lock (_groundGate)
+            {
+                if (_groundOwner is not null || removal != Volatile.Read(ref _removals)) return;
+                Pets.ResetToConstructed();
+            }
             LastFaces = Array.Empty<TrackedFace>();
             FramesProcessed = 0;
             FramesDropped = 0;
@@ -670,6 +681,12 @@ public sealed partial class VisionSystem : IDisposable
 
     /// <summary>The robot's calibration; null until read from NV storage (<see cref="NvCalibrationReader"/>) or set.</summary>
     public CameraCalibration? Calibration { get; set; }
+    internal CameraCalibration? NativeOuterCalibrationFor(EngineRobot owner)
+    {
+        lock (_groundGate)
+            return ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
+                ReferenceEquals(_robot.Engine.Robot, owner) ? _groundOuterCalibration : null;
+    }
     public MarkerDetector Detector { get; }
     public BlockWorld World { get; }
     // fidelity: M11-069, M11-070
@@ -722,7 +739,13 @@ public sealed partial class VisionSystem : IDisposable
         recognizer.SourceLog = (l,c,k,t) => _robot.Engine.EmitSourceLog(l,c,k,t);
         return recognizer;
     }
-    public IPetDetector PetDetector { get; set; } = new OkaoPetDetector();
+    private readonly OkaoPetDetector _unavailablePetDetector = new();
+    private IPetDetector? _petDetectorOverride;
+    public IPetDetector PetDetector
+    {
+        get { lock (_groundGate) return _petDetectorOverride ?? (_nativeInitialization is { Initialized:true } state ? state.StockPet : null) ?? _unavailablePetDetector; }
+        set { lock (_groundGate) _petDetectorOverride = value ?? throw new ArgumentNullException(nameof(value)); }
+    }
     /// <summary>Replaceable body-and-head turn for the face actions (tests move a fake robot with it).</summary>
     public Func<Pose3d, double, CancellationToken, Task<bool>>? TurnOverride { get; set; }
     /// <summary>Replaceable pan-and-tilt (absolute body heading, head angle) for the explorer behaviours.</summary>
@@ -1395,8 +1418,8 @@ public sealed partial class VisionSystem : IDisposable
             if(!ReferenceEquals(_groundOwner,frameOwner) || frameOwner.Lifetime.Destroying ||
                 !ReferenceEquals(_robot.Engine.Robot,frameOwner) || removal!=Volatile.Read(ref _removals))return;
             var initialization=_nativeInitialization;
-            unavailable=initialization is null || !ReferenceEquals(initialization.Owner,frameOwner) || !initialization.AvailabilityKnown;
-            uninitialized=!unavailable && !initialization!.Initialized;
+            unavailable=initialization is null || !ReferenceEquals(initialization.Owner,frameOwner) || !initialization.ComponentAvailabilityKnown;
+            uninitialized=!unavailable && !initialization!.ComponentInitialized;
             enabled=Enabled;
             previous=0;rollback=false;
             if(!unavailable && !uninitialized && enabled)
@@ -1720,7 +1743,7 @@ public sealed partial class VisionSystem : IDisposable
         {lock(_busy)return ProcessCapture(cache,imageId,cameraTimestamp,removal,capturedPose,true,sourceOwner,ground);}
         if(queueForEngine && !NativeDecodedAdmission(sourceOwner,removal))return null;
         if(queueForEngine && Calibration is null){WarnNoCalibration(removal);return null;}
-        NativeVisionInitialization? nativeState=null;
+        NativeVisionInitialization? nativeState=null;int nativeFaceEpoch=0;
         if(queueForEngine)
         {
             if(ground is null)
@@ -1731,7 +1754,7 @@ public sealed partial class VisionSystem : IDisposable
             lock(_groundGate)
             {
                 if(!ReferenceEquals(_groundOwner,sourceOwner)||_nativeInitialization is not {} state||!ReferenceEquals(state.Owner,sourceOwner))return null;
-                nativeState=state;
+                nativeState=state;nativeFaceEpoch=state.StockFaceEpoch;
             }
             lock(_busy)
             {
@@ -1747,10 +1770,10 @@ public sealed partial class VisionSystem : IDisposable
         GrayImage gray;
         try { gray = cache.GetGray(); }
         catch (InvalidOperationException e) { Log?.Invoke($"frame {imageId}: {e.Message}"); return null; }
-        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine,nativeState,sourceOwner);
+        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine,nativeState,sourceOwner,nativeFaceEpoch);
     }
 
-    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null)
+    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,int nativeFaceEpoch=0)
     {
         var calibration = Calibration;
         if (calibration is null) { WarnNoCalibration(removal); return null; }
@@ -1769,7 +1792,7 @@ public sealed partial class VisionSystem : IDisposable
         var poseData = WithRotatingGate(pd.Value, effective);
         return ProcessImage(gray, imageId, effective, poseData, calibration, removal,
                             effective != cameraTimestamp ? cameraTimestamp : null,queueForEngine:queueForEngine,nativeState:nativeState,sourceOwner:sourceOwner,
-                            edgeGround:edgeGround is null?null:EdgeGroundInput(edgeGround));
+                            edgeGround:edgeGround is null?null:EdgeGroundInput(edgeGround),nativeFaceEpoch:nativeFaceEpoch);
     }
 
     // fidelity: M11-017 -- VisionPoseData::Set 0x006AF330..0x006AF38A: H at +0x7C, the visible byte at +0x78, the RobotState status at +0x5C.
@@ -1815,7 +1838,7 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M1-025, M1-015
     // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
     private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
-                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,OverheadEdgeGroundInput? edgeGround=null)
+                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,OverheadEdgeGroundInput? edgeGround=null,int nativeFaceEpoch=0)
     {
         var sw = Stopwatch.StartNew();
         var cal = gray.Width == calibration.Columns && gray.Height == calibration.Rows ? calibration : calibration.Scaled(gray.Width, gray.Height);
@@ -1893,17 +1916,37 @@ public sealed partial class VisionSystem : IDisposable
             if(markerMode)processedMask|=1<<DetectingMarkers;
             if (RemovedSince(removal)) return null;
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
-            bool StaleFrame()=>RemovedSince(removal) || (queueForEngine && (_disposed || sourceOwner is null)) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner));
+            Func<bool>? petSessionCurrent=null;
+            Func<bool>? faceSessionCurrent=null;
+            bool StaleFrame()=>RemovedSince(removal) || (queueForEngine && (_disposed || sourceOwner is null)) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)) || petSessionCurrent is not null && !petSessionCurrent() || faceSessionCurrent is not null && !faceSessionCurrent();
             bool faceMode=ShouldProcessVisionMode((int)VisionMode.DetectingFaces);
-            var faceDetector = FaceDetector;
+            IFaceDetector faceDetector;FaceRecognizer capturedRecognizer;
+            lock(_groundGate)
+            {
+                faceDetector=queueForEngine && ReferenceEquals(FaceDetector,_stockFaceDetector) && nativeState?.StockFace is { } stock ? stock : FaceDetector;
+                capturedRecognizer=queueForEngine && ReferenceEquals(faceDetector,nativeState?.StockFace) ? nativeState!.StockFaceRecognizer! : Recognizer;
+                if(queueForEngine && ReferenceEquals(faceDetector,nativeState?.StockFace) && faceDetector is OkaoFaceDetector selected)
+                {
+                    faceSessionCurrent=()=>{lock(_groundGate)return ReferenceEquals(_nativeInitialization,nativeState) && _nativeFaceEpoch==nativeFaceEpoch && nativeState!.StockFaceEpoch==nativeFaceEpoch && ReferenceEquals(nativeState.StockFace,selected) && ReferenceEquals(nativeState.StockFaceRecognizer,capturedRecognizer);};
+                }
+            }
             bool stockFaceDetector = ReferenceEquals(faceDetector, _stockFaceDetector);
-            if(faceMode&&!faceDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 face detector unavailable; its detection and quality rectangles are omitted");
+            if(faceMode&&!faceDetector.IsAvailable && !(faceDetector is OkaoFaceDetector failed && failed.StockStatus is 2 or 3))SteppedBehavior.ReportMissing("M11-016/M11-080 face detector unavailable; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             var faceImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
             IReadOnlyList<DetectedFace>? detectedFaces = null;
             bool completeStockFaceReport = false;
             IReadOnlyList<(int OldId, int NewId, string? Name)> faceIdChanges = Array.Empty<(int, int, string?)>();
-            if (faceMode && faceDetector.IsAvailable)
+            if (faceMode && stockFaceDetector && faceDetector is OkaoFaceDetector failedFace && failedFace.StockStatus==2)
+            {
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceTrackerImpl.Update.NotInitialized","");
+                if(StaleFrame())return null;
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                detectedFaces=Array.Empty<DetectedFace>();
+            }
+            else if (faceMode && stockFaceDetector && faceDetector is OkaoFaceDetector unavailableFace && unavailableFace.StockStatus==3)
+                SteppedBehavior.ReportMissing("M11-016 stock face guest initialization unavailable; face mode omitted");
+            else if (faceMode && faceDetector.IsAvailable)
             {
                 try
                 {
@@ -1917,16 +1960,15 @@ public sealed partial class VisionSystem : IDisposable
                                 !NativeMotionPoseState.BodySame(currentFacePose, previousFacePose, 10f, threshold);
                         }
                         else if (queueForEngine) SteppedBehavior.ReportMissing("M14-010 face motion reset has no prior admitted VisionPoseData");
-                        if ((ModeEnableMask & ((1 << 10) | (1 << 11) | (1 << 12) | (1 << 13))) != 0)
-                            SteppedBehavior.ReportMissing("M14-010 enabled expression, smile, gaze or blink modes have no OKAO EX/SM/GB recipient");
-                        var recognizer = Recognizer;
+                        var recognizer = capturedRecognizer;
                         if (_stockRecognizer && recognizer.OwnsStockDetector(okao) && recognizer.IsAvailable)
                         {
                             recognizer.InitializeStock();
-                            completeStockFaceReport = (ModeEnableMask & 0x3C00) == 0;
-                            (detectedFaces, faceIdChanges) = okao.DetectRecognized(faceImage, timestamp, reset, recognizer);
+                            completeStockFaceReport = true;
+                            int attributeMask=ModeEnableMask & 0x3C00; // captured for this detector execution
+                            (detectedFaces, faceIdChanges) = okao.DetectRecognized(faceImage, timestamp, reset, recognizer, attributeMask);
                         }
-                        else if (!_stockRecognizer) detectedFaces = okao.Detect(faceImage, timestamp, reset);
+                        else if (!_stockRecognizer) detectedFaces = okao.Detect(faceImage, timestamp, reset, ModeEnableMask & 0x3C00);
                         else SteppedBehavior.ReportMissing("M14-011 detector/recognizer owner changed during face frame; frame skipped");
                     }
                     else detectedFaces = faceDetector.Detect(faceImage, timestamp);
@@ -1942,12 +1984,50 @@ public sealed partial class VisionSystem : IDisposable
             if(StaleFrame())return null;
             if(detectedFaces is not null)foreach(var face in detectedFaces)qualityRectangles.Add(NativeQualityRectangles.Detection(face.Rect));
             bool petMode=ShouldProcessVisionMode((int)VisionMode.DetectingPets);
-            if(petMode&&!PetDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted");
+            IPetDetector petDetector;bool ownerStock;
+            lock (_groundGate)
+            {
+                ownerStock=queueForEngine && _petDetectorOverride is null && nativeState?.StockPet is not null;
+                petDetector = _petDetectorOverride ?? (queueForEngine ? nativeState?.StockPet : null) ?? _unavailablePetDetector;
+            }
+            bool petAvailable=petMode && petDetector.IsAvailable;
+            if (ownerStock && petAvailable && petDetector is OkaoPetDetector capturedPet)
+                petSessionCurrent=()=>
+                {
+                    lock (_groundGate) return ReferenceEquals(_nativeInitialization,nativeState) && nativeState!.Initialized &&
+                        ReferenceEquals(nativeState.StockPet,capturedPet) && capturedPet.ReadySnapshot;
+                };
+            if(petMode&&!petAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             var petImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
-            var detectedPets = petMode && PetDetector.IsAvailable ? PetDetector.Detect(petImage,timestamp) : null;
+            bool nativePetProfile=petMode && petAvailable && petDetector.ProvidesNativeResults;
+            bool completePetProfile=nativePetProfile;
+            DetectedPet[]? detectedPets;
+            try { detectedPets = petMode && petAvailable ? petDetector.Detect(petImage,timestamp)?.ToArray() : null; }
+            catch (Emulation.PetGuestFailure failure) when (petDetector is OkaoPetDetector)
+            {
+                if (StaleFrame()) return null;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,failure.Key,failure.Message);
+                if (StaleFrame()) return null;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionSystem.DetectPets.PetTrackerUpdateFailed","");
+                if (StaleFrame()) return null;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionSystem.Update.DetectPetsFailed","");
+                if (!StaleFrame()) Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                return null;
+            }
+            catch (Exception e) when (petDetector is OkaoPetDetector)
+            {
+                ((OkaoPetDetector)petDetector).Retire();
+                SteppedBehavior.ReportMissing($"M11-016/M11-080 stock pet guest faulted; frame withheld: {e.Message}");
+                return null;
+            }
+            if(completePetProfile && detectedPets is not null && detectedPets.Any(p=>p.TrackerResultFlag is null || p.Type is not (PetType.Cat or PetType.Dog)))
+            {
+                completePetProfile=false;
+                SteppedBehavior.ReportMissing("M14-014 supplied pet result lacks native tracker flags or supported type; native update withheld");
+            }
             if(StaleFrame())return null;
-            if(petMode && PetDetector.IsAvailable && detectedPets is null)
+            if(petMode && petAvailable && detectedPets is null)
                 SteppedBehavior.ReportMissing("M11-016/M11-080 attached pet detector returned null; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             if(detectedPets is not null)foreach(var pet in detectedPets)qualityRectangles.Add(NativeQualityRectangles.Detection(pet.Rect));
@@ -2189,20 +2269,26 @@ public sealed partial class VisionSystem : IDisposable
                 foreach (var d in detected)
                 {
                     var tf = new TrackedFace(d, timestamp);
-                    tf.UpdateTranslation(processingCamera);
-                    if (StaleFrame()) return null;
-                    if (nativeFaceFrames is { } frames)
+                    if (queueForEngine && nativeFaceFrames is { } frames)
                     {
+                        tf.UpdateNativeCameraTranslation(processingCamera.Calibration);
+                        if (StaleFrame()) return null;
                         // TrackedFace starts at +X pi/2; DetectFaces parents it to
                         // the historical camera, then flattens to root (0x6B37B0..EC).
-                        var pose = new Transform3d(Rotation3d.FromAngleAxis(BitConverter.UInt32BitsToSingle(0x3FC90FDB), new Vec3(1, 0, 0)), tf.NativeCameraTranslation);
-                        var cameraFrame = frames.Camera;
-                        var robotFrame = frames.Robot;
-                        pose.PreComposeWith(ref cameraFrame);
-                        pose.PreComposeWith(ref robotFrame);
+                        var pose = ComposeNativeFacePose(tf.NativeCameraTranslation, frames.Camera, frames.Robot);
                         tf.NativeTrackingTranslation = pose.Translation;
                         tf.NativeTrackingRotation = pose.Rotation;
+                        // Keep the legacy public pose for manual adapters; the detached native transform is stored above.
+                        tf.HeadPose.Dispose();
+                        tf.HeadPose = new Pose3d(processingCamera.Pose, processingCamera.Pose.Apply(tf.NativeCameraTranslation));
                     }
+                    else if (queueForEngine && !offline)
+                    {
+                        SteppedBehavior.ReportMissing("M14-001 tracked face has no original historical camera/robot carrier; face withheld");
+                        continue;
+                    }
+                    else tf.UpdateTranslation(processingCamera);
+                    if (StaleFrame()) return null;
                     faces.Add(tf);
                     FaceObservation? observation;
                     if (offline)
@@ -2227,13 +2313,14 @@ public sealed partial class VisionSystem : IDisposable
                             SteppedBehavior.ReportMissing("M14-008 FaceWorld native Robot origin owner unavailable; face update skipped");
                             continue;
                         }
+                        if (queueForEngine && !ReferenceEquals(owner, sourceOwner)) return null;
                         lock(owner.PoseTreeGate)
                         {
                             var originNode=ResolveFaceObservationOrigin(History,owner,timestamp);
                             if(originNode is null)continue;
                             observation=d.NativeTrackerFlagChanged is { } changed
-                                ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)
-                                : Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads);
+                                ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads,requireNativePose:queueForEngine,expectedOwner:sourceOwner,expectedGeneration:removal)
+                                : Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads,requireNativePose:queueForEngine,expectedOwner:sourceOwner,expectedGeneration:removal);
                         }
                     }
                     if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
@@ -2241,7 +2328,7 @@ public sealed partial class VisionSystem : IDisposable
                     {
                         if(queueForEngine && !ReferenceEquals(reportOwner,sourceOwner))return null;
                         RobotObservedFaceReport? report = null;
-                        if(!offline && queueForEngine && ReferenceEquals(reportOwner,sourceOwner) && completeStockFaceReport && d.NativeFeatures is { } features &&
+                        if(!offline && queueForEngine && ReferenceEquals(reportOwner,sourceOwner) && completeStockFaceReport && d.NativeFeatures is { } features && d.NativeAttributes is { } attributes &&
                             snapshot.Translation is { } translation && snapshot.Rotation is { } rotation && snapshot.Origin is { } faceOrigin &&
                             string.Equals(snapshot.Name ?? "",d.Name ?? "",StringComparison.Ordinal))
                         {
@@ -2257,7 +2344,8 @@ public sealed partial class VisionSystem : IDisposable
                                         using var parent=Pose3d.WrapExisting(faceOrigin);
                                         using var pose=new Pose3d(rotation,translation,parent:parent);
                                         if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
-                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth);
+                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth)
+                                            { Expression=attributes.Expression, Smile=attributes.Smile, Gaze=attributes.Gaze, Blink=attributes.Blink, ExpressionScores=attributes.Scores };
                                     }
                                 }
                             }
@@ -2282,7 +2370,35 @@ public sealed partial class VisionSystem : IDisposable
             if (detectedPets is {} pets)
             {
                 if (RemovedSince(removal)) return null;
-                Pets.Update(pets, timestamp, processingPose.RotatingTooFast);
+                if (queueForEngine && sourceOwner is not null && completePetProfile)
+                {
+                    bool CurrentPet() => !StaleFrame();
+                    bool ok = Pets.UpdateNative(pets, timestamp,
+                        flag => NativeObservationRotatingTooFast(sourceOwner, timestamp, flag, "M14-014 native pet"), CurrentPet,
+                        (input, pet, currentEpoch) =>
+                        {
+                            if (!input.TrackerResultFlag!.Value)
+                            {
+                                if (pet.TimesObserved != 1)
+                                {
+                                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "PetWorld.Update.NewPetDetectionShouldBeObservedOnce",
+                                        $"VERIFY(knownPet.GetNumTimesObserved() == 1): ID:{pet.Id} NumTimesObserved:{pet.TimesObserved}");
+                                    if (!currentEpoch()) return;
+                                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                                    _robot.Engine.Das.ForceFlushNow();
+                                    if (!currentEpoch()) return;
+                                }
+                                _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.vision.detected_pet", pet.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                    new Dictionary<string, string> { { "$data", pet.Type == PetType.Cat ? "Cat" : "Dog" } });
+                            }
+                            if (!currentEpoch() || !sourceOwner.HasExternalInterface) return;
+                            var report = new RobotObservedPetReport(pet.Id, timestamp, unchecked((uint)pet.TimesObserved), (float)input.Score, pet.Rect, pet.Type);
+                            _robot.Engine.PublishRobotObservedPet(report);
+                            if (currentEpoch()) _robot.Engine.AnimationMessages.Deliver(0x48, true, report);
+                        }, _robot.Engine.RunIsolated);
+                    if (!ok && StaleFrame()) return null;
+                }
+                else if(!nativePetProfile || !queueForEngine) Pets.Update(pets, timestamp, processingPose.RotatingTooFast);
                 if(queueForEngine && StaleFrame())return null;
             }
             // The ground in front of the robot, on this frame's own pose data: the detector needs the
@@ -2378,6 +2494,14 @@ public sealed partial class VisionSystem : IDisposable
         }
     }
 
+    internal static Transform3d ComposeNativeFacePose(Vec3 translation, Transform3d camera, Transform3d robot)
+    {
+        var pose = new Transform3d(Rotation3d.FromAngleAxis(BitConverter.UInt32BitsToSingle(0x3FC90FDB), new Vec3(1, 0, 0)), translation);
+        pose.PreComposeWith(ref camera);
+        pose.PreComposeWith(ref robot);
+        return pose;
+    }
+
     internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp,bool native=true)
     {
         if(!history.ComputeFaceObservationOriginId(timestamp,out uint originId,native))
@@ -2436,17 +2560,28 @@ public sealed partial class VisionSystem : IDisposable
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;
+        bool stockAlbumFailed=false;
         lock(_busy)
         {
             DiscardPreparedResults();
+            OkaoPetDetector? pet;
+            lock (_groundGate) { pet=_nativeInitialization?.StockPet; if (_nativeInitialization is { } state) state.StockPet=null; }
+            pet?.Retire();
+            DrainRetiredMotionStates();
             try
             {
                 _stockFaceDetector.RetireRecognition();
-                if (_stockRecognizer && _stockFaceDetector.NativeUsable) Recognizer.Shutdown();
+                if (_stockRecognizer && _stockFaceDetector.NativeUsable) stockAlbumFailed=Recognizer.ShutdownStockDeferred();
                 else if (_stockRecognizer) SteppedBehavior.ReportMissing("M1-034 M14-011 faulted recognition owner skipped guest shutdown");
             }
             finally { _stockFaceDetector.Dispose(); }
         }
+        if(stockAlbumFailed)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceRecognizer.Shutdown.FaceLibAlbumHandleDeleteFail","");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        }
+        ReportFaceCleanup(_stockFaceDetector);
         if(_robot.Engine.VisionUpdateAllResultsFailed==DrainPreparedResults)_robot.Engine.VisionUpdateAllResultsFailed=null;
         // V3-V7 depend on native recipient ownership, not host reset/GC.
         SteppedBehavior.ReportMissing("M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join");

@@ -147,7 +147,9 @@ public sealed partial class BehaviorManager : IDisposable
                 ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound,
                 acknowledgeObject:_configuredAcknowledgeObject,
                 nativeHiccup: row => CreateNativeHiccup(row,manipulation,bound,nativeOwner ?? _context.Robot.Engine.Robot),
-                acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null))
+                acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null,
+                nativePet: bound is not null && bound.TryGetValue("ReactToPet",out var pet) ? pet as NativeReactToPetBehavior : null,
+                nativePetOwner:nativeOwner, nativePetExpected:nativeOwner is not null))
             {
                 if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
                 if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);

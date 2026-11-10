@@ -106,7 +106,7 @@ public static class TurnTowardsImagePoint
     /// 0x005187E2); head = <c>atan2f(-dv, fy) + headAngle</c> (<c>vadd.f32</c> 0x00518878) assigned through <c>Radians::operator=(float)</c>; body =
     /// <c>operator+(float, Radians)</c> 0x0084C97B: <c>Radians(atan2f(-du, fx))</c> plus the heading, one <c>vadd.f32</c> (0x0084C99C), rescaled.
     /// MISSING (libm f32 stand-in): the engine calls bionic <c>atan2f</c> (PLT 0x4A4510); <c>MathF.Atan2</c> is not claimed bit-equal to it.
-    /// The rescale is <see cref="EngineRadians.Rescale"/> (double arithmetic on a binary32 value; the engine's 0x0084C87C is binary32).
+    /// The rescale uses the native binary32 <see cref="Radians.Rescale(float)"/> path.
     /// </remarks>
     public static (double BodyRad, double HeadRad) Angles(CameraCalibration cal, double u, double v,
                                                           double headingRad, double headAngleRad)
@@ -114,9 +114,9 @@ public static class TurnTowardsImagePoint
         float du = (float)u - (float)cal.CenterX, dv = (float)v - (float)cal.CenterY;
         float headDelta = MathF.Atan2(-dv, (float)cal.FocalLengthY);       // 0x0051886C
         float head = headDelta + (float)headAngleRad;                        // 0x00518878
-        float bodyDelta = (float)EngineRadians.Rescale(MathF.Atan2(-du, (float)cal.FocalLengthX));   // 0x0051888E, Radians(float)
+        float bodyDelta = Radians.Rescale(MathF.Atan2(-du, (float)cal.FocalLengthX));   // 0x0051888E, Radians(float)
         float body = bodyDelta + (float)headingRad;                          // 0x0084C99C
-        return (EngineRadians.Rescale(body), EngineRadians.Rescale(head));
+        return (Radians.Rescale(body), Radians.Rescale(head));
     }
 
     /// <summary>
@@ -126,6 +126,40 @@ public static class TurnTowardsImagePoint
     /// </summary>
     public static async Task<bool> RunAsync(VisionSystem v, double u, double v_, uint imageTimestamp, CancellationToken cancel)
     {
+        var engine = v.Robot.Engine;
+        var owner = engine.Robot;
+        var runtime = owner?.NativeBehaviorRuntime;
+        if (runtime is { IsRetired: false, Manipulation: { } manipulation } &&
+            ReferenceEquals(manipulation.Vision, v) && ReferenceEquals(manipulation.Robot, v.Robot))
+        {
+            NativeImagePointRunner runner;
+            using (engine.EnterSynchronousOwner())
+            {
+                bool Current() => !owner!.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner) &&
+                    ReferenceEquals(owner.NativeBehaviorRuntime, runtime) && !runtime.IsRetired && !cancel.IsCancellationRequested;
+                if (!Current()) return false;
+                runner = new NativeImagePointRunner(manipulation, owner, (float)u, (float)v_, imageTimestamp);
+                runner.ScopedParentCurrent = () => ReferenceEquals(owner.NativeBehaviorRuntime, runtime) && !runtime.IsRetired;
+                if (!Current() || owner.ActionList.QueueActionGuardedNow(runner, 0, Current) != 0)
+                {
+                    if (!runner.DestructionObserved && runner.CanDetachWatcherForRetirement()) runner.RetireNeverAdmittedTree();
+                    return false;
+                }
+            }
+            using var registration = cancel.Register(() => engine.PostGameMessage(() =>
+            {
+                if (!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner) && owner.ActionList.ContainsRunner(runner))
+                    owner.ActionList.Cancel(runner.Tag);
+            }));
+            uint result = await runner.Completion.Task.ConfigureAwait(false);
+            using (engine.EnterSynchronousOwner()) { }
+            return result == EngineActionResult.Success && !owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner);
+        }
+        if (v.Robot.IsCanonicalVision(v))
+        {
+            SteppedBehavior.ReportMissing("M14-005: attached image-point turn has no matching original manipulation owner");
+            return false;
+        }
         if (v.Calibration is not { } cal) return false;
         using var historical=new HistRobotState();uint outTime=0;
         // fidelity: M11-097 — OV12 ComputeTurnTowardsImagePointAngles caller flag0 at0x005187F6.
