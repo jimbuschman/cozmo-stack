@@ -193,7 +193,7 @@ public sealed class NativeVisionInitializationTests
         Assert.Equal(new uint[]{0x182000,0x195000,0x180000},orderedTags);
     }
     [Fact]
-    public void ActualCameraFrameStopsAtKnownUninitializedWorkerAdmission()
+    public void ActualCameraFrameStopsAtKnownUninitializedComponentAdmission()
     {
         var prior=AllVisionModesSchedule.CopyDefault();bool oldError=EngineErrorState.ErrorFlagSet;
         var quality=ImageQualitySettings.Globals;
@@ -210,7 +210,7 @@ public sealed class NativeVisionInitializationTests
             var result=vision.InitializeNativeVision(owner,input);
             Assert.True(result.Available);Assert.Equal(1u,result.Result);Assert.False(vision.NativeInitializationForTest!.Initialized);
             int before=vision.FramesProcessed;var seen=new ManualResetEventSlim();
-            void OnLog(EngineLogEntry entry){if(entry.Name=="VisionSystem.Update.NotInitialized")seen.Set();}
+            void OnLog(EngineLogEntry entry){if(entry.Name=="VisionComponent.SetNextImage.NotInitialized")seen.Set();}
             fixture.Rig.Engine.LogEntry+=OnLog;
             try
             {
@@ -346,9 +346,12 @@ public sealed class NativeVisionInitializationTests
             using var resources=new BackupTestResources();using var rig=new M4ControlTests.Rig(resources.Options().ResourcesPath);rig.ToSynced();
             var vision=rig.Robot.Vision;EngineRobot? replacement=null;object? pipeline=null;AllVisionModesSchedule? front=null;
             CameraCalibration? replacementCalibration=null;
+            rig.Robot.CameraSettings.LastProcessedImageTimestamp=123;
             void OnRemoved()
             {
                 replacement=rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+                Assert.Equal(0u,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
+                rig.Robot.CameraSettings.LastProcessedImageTimestamp=345;
                 pipeline=vision.QualityProcessor.Pipeline;front=vision.Schedules;
                 replacementCalibration=CameraCalibration.Nominal();vision.Calibration=replacementCalibration;
                 replacement!.PoseHistory.Add(new RobotState{Timestamp=345,PoseOriginId=1,Pose=new RobotPose(),Accel=new AccelData(),Gyro=new GyroData(),CliffDataRaw=new ushort[4]});
@@ -360,6 +363,7 @@ public sealed class NativeVisionInitializationTests
             Assert.Same(replacement,vision.NativeInitializationForTest!.Owner);
             Assert.Same(pipeline,vision.QualityProcessor.Pipeline);Assert.Same(front,vision.Schedules);
             Assert.Same(replacementCalibration,vision.Calibration);Assert.Equal(1,replacement!.PoseHistory.Count);
+            Assert.Equal(345u,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
             Assert.Equal(30f,vision.PendingDropStatsSeconds);
         }
         finally

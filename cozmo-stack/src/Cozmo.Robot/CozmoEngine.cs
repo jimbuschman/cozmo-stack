@@ -1333,11 +1333,13 @@ public sealed partial class EngineRobot
         // 0x00513C66..0x00513C6A: VizManager::SendStartRobotUpdate (0x004A7DA4, through context+0x24) sits between the two gates. It is
         // debug visualisation on the app side and out of scope (manager, 2026-10-09); nothing is built for it.
         // fidelity: M3-032
-        // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below. No source for that result exists in this
-        // stack (see CozmoEngine.VisionUpdateAllResultsFailed), so with no hook the gate is reported MISSING once and the tick continues.
+        // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below.
+        // The bound vision component supplies its FIFO aggregate; an absent hook remains a visible missing input.
         if (Engine.HasCameraCalibration?.Invoke() == true && Engine.VisionUpdateAllResultsFailed is { } visionGate)
         {
-            if (visionGate())
+            bool visionFailed=visionGate();
+            if(Lifetime.Destroying || !ReferenceEquals(Engine.Robot,this))return;
+            if (visionFailed)
             {
                 // G2 (0x00513C7E..0x00513C9A): sWarningF with the key Robot.Update.VisionComponentUpdateFail and an empty format, then
                 // the return to 0x00514484, which skips everything below.

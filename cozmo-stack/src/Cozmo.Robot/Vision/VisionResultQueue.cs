@@ -18,13 +18,15 @@ public sealed record ProcessedImageReport(uint Timestamp,IReadOnlyList<uint> Mod
 
 public sealed partial class VisionSystem
 {
-    private sealed class PreparedVisionResult(int removal,Pose3d ownedPose,object poseTreeGate,Func<bool> consume):IDisposable
+    private sealed class PreparedVisionResult(int removal,EngineRobot? owner,Pose3d ownedPose,object poseTreeGate,Func<bool> consume):IDisposable
     {
         internal int Removal {get;}=removal;
+        internal EngineRobot? Owner {get;}=owner;
         internal bool Consume()=>consume();
         public void Dispose(){lock(poseTreeGate)ownedPose.Dispose();}
     }
     private readonly ConcurrentQueue<PreparedVisionResult> _preparedResults=new();
+    private readonly object _resultGate=new();
     public event Action<ProcessedImageReport>? ProcessedImage;
     internal int PendingResultCount=>_preparedResults.Count;
 
@@ -33,15 +35,40 @@ public sealed partial class VisionSystem
     private bool DrainPreparedResults()
     {
         bool failed=false;
-        while(_preparedResults.TryDequeue(out var result))
+        var drainOwner=_robot.Engine.Robot;
+        int removal=Volatile.Read(ref _removals);
+        bool CurrentDrain()=>!_disposed && !RemovedSince(removal) && ReferenceEquals(_robot.Engine.Robot,drainOwner) &&
+            (drainOwner is null || !drainOwner.Lifetime.Destroying);
+        while(true)
         {
+            PreparedVisionResult? result;
+            lock(_resultGate)
+            {
+                if(!CurrentDrain() || !_preparedResults.TryDequeue(out result))break;
+            }
             using(result)
-                if(!RemovedSince(result.Removal))failed|=result.Consume();
+                if(result.Removal==removal && result.Owner is { } owner && ReferenceEquals(drainOwner,owner))
+                {
+                    bool resultFailed=result.Consume();
+                    if(CurrentDrain())failed|=resultFailed;
+                }
         }
-        return failed;
+        return CurrentDrain() && failed;
     }
-    private void DiscardPreparedResults()
-    {while(_preparedResults.TryDequeue(out var result))result.Dispose();}
+    private void DiscardPreparedResults(EngineRobot? retiringOwner=null, bool discardAll=true)
+    {
+        var discarded=new List<PreparedVisionResult>();
+        lock(_resultGate)
+        {
+            while(_preparedResults.TryDequeue(out var result))discarded.Add(result);
+            if(!discardAll)
+            {
+                foreach(var result in discarded.Where(r=>!ReferenceEquals(r.Owner,retiringOwner)))_preparedResults.Enqueue(result);
+                discarded.RemoveAll(r=>!ReferenceEquals(r.Owner,retiringOwner));
+            }
+        }
+        foreach(var result in discarded)result.Dispose();
+    }
 
     // ComputeMean 0x006B2CDC; mode8 at 0x006B5136..514A. All sampled
     // coordinates start at zero and advance by10; integer division truncates.
@@ -52,13 +79,13 @@ public sealed partial class VisionSystem
         {sum=unchecked(sum+image[x,y]);count++;}
         return (byte)Math.Clamp(sum/count,0,255);
     }
-    private void PublishProcessedImage(uint timestamp,ushort mask,byte mean)
+    private void PublishProcessedImage(EngineRobot owner,uint timestamp,ushort mask,byte mean,Func<bool> current)
     {
         var modes=Array.AsReadOnly(Enumerable.Range(0,16).Where(i=>(mask&(1<<i))!=0).Select(i=>(uint)i).ToArray());
         var report=new ProcessedImageReport(timestamp,modes,(mask&0x100)!=0?mean:(byte)0);
-        if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
+        if(!current() || !owner.HasExternalInterface)return;
         _robot.Engine.DeliverAnimationReportToApp(ProcessedImageReport.UnionTag,report.PackBody(),
             _robot.Engine.CaptureAppEvent(ProcessedImage,report));
-        _robot.Engine.AnimationMessages.Deliver(ProcessedImageReport.UnionTag,true,report);
+        if(current())_robot.Engine.AnimationMessages.Deliver(ProcessedImageReport.UnionTag,true,report);
     }
 }
