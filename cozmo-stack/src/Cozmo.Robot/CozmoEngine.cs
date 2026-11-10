@@ -936,13 +936,19 @@ public sealed partial class EngineRobot
         // (0x0065A916, warning, "NVResult = %s").
         nv.Read(0x183000, r =>
         {
+          try
+          {
             if (!CurrentVision()) return;
             if (r.Result == -1)
                 Engine.EmitSourceLog(EngineLogLevel.Info, null, "VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound", "");
             else if (r.Result != 0)
                 Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail", $"NVResult = {NvStorageComponent.NvResultName(r.Result)}");
             if (r.Result != 0 || !CurrentVision()) return;
-            Engine.RaiseConnectionFaceAlbumLoaded(albumData.ToArray(), r.Data);
+            byte[] album=albumData.ToArray();
+            Engine.NativeVisionNvRestore?.Invoke(this,outcome.Epoch,album,r.Data);
+            if(CurrentVision())Engine.RaiseConnectionFaceAlbumLoaded(album,r.Data);
+          }
+          finally { albumData.Clear(); }
         });
         if (!CurrentVision()) { if(LiveVisionOwner())goto backupReads; return; }
         Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionComponent.LoadFaceAlbumToRobot.Initiated","Initiated load of album and enroll data from NVStorage");
@@ -2036,6 +2042,7 @@ public sealed partial class CozmoEngine : IDisposable
     internal Func<EngineRobot,bool>? NativeVisionOwnerCurrent;
     internal Func<EngineRobot,int,bool>? NativeVisionComplete;
     internal Func<EngineRobot,string,int,bool>? NativeVisionFileTail;
+    internal Func<EngineRobot,int,byte[],byte[],bool>? NativeVisionNvRestore;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>
