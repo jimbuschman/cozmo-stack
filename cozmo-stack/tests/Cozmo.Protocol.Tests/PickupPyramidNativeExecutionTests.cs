@@ -528,6 +528,67 @@ public sealed class PickupPyramidNativeExecutionTests
     }
 
     [Theory]
+    [InlineData(0u, false, true, false)]  // stock ID 0 versus outer ID 1 bypasses key
+    [InlineData(1u, false, true, false)]  // equal IDs and actual key present
+    [InlineData(1u, true, false, true)]   // equal IDs and removed key
+    [InlineData(0u, true, true, false)]   // different IDs ignore removed key
+    public void MarkerCameraIdentityChecksTheOriginalHistoryKey(uint cameraId, bool invalidate, bool accepted, bool warning)
+    {
+        using var f = new Fixture(); f.Add();
+        var vision = f.M.Vision;
+        var logs = new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += logs.Add;
+        uint observedKey = 0; bool computed = false;
+        vision.NativeMarkerKeyComputedForTest = (history, key) =>
+        {
+            computed = true; observedKey = key;
+            if (invalidate) history.ComputedKeyToTime.Remove(key);
+        };
+        vision.NativeMarkerCarriersForTest = carriers =>
+        {
+            Assert.All(carriers, c => Assert.Equal(0u, c.CameraId)); // actual stock detector provenance
+            return carriers.Select(c => c with { CameraId = cameraId }).ToArray();
+        };
+        VisionFrameResult? docking = null;
+        vision.DockingMarkersProcessed += frame => docking = frame;
+        try
+        {
+            f.Image(700, true);
+            Assert.True(computed);
+            Assert.NotEmpty(vision.LastResult!.Markers); // raw detector list is independent of filtering
+            Assert.Equal(accepted, docking is not null);
+            if (accepted) Assert.NotEmpty(docking!.Markers);
+            var keyLogs = logs.Where(e => e.Name == "VisionComponent.Update.InvalidHistStateKey").ToArray();
+            Assert.Equal(warning ? 1 : 0, keyLogs.Length);
+            if (warning) Assert.Contains(unchecked((int)observedKey).ToString(), keyLogs[0].Text);
+        }
+        finally { vision.NativeMarkerKeyComputedForTest = null; vision.NativeMarkerCarriersForTest = null; }
+    }
+
+    [Fact]
+    public void MarkerTimestampMismatchPrecedesEqualCameraKeyCheck()
+    {
+        using var f = new Fixture(); f.Add();
+        var vision = f.M.Vision;
+        vision.NativeMarkerKeyComputedForTest = (history, key) => history.ComputedKeyToTime.Remove(key);
+        vision.NativeMarkerCarriersForTest = carriers => carriers.Select(c => c with
+        { CameraId = 1, Marker = c.Marker with { Timestamp = c.Marker.Timestamp + 1 } }).ToArray();
+        var logs = new List<EngineLogEntry>(); f.Rig.Engine.LogEntry += logs.Add;
+        bool prior = Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            f.Image(701, true);
+            Assert.Contains(logs, e => e.Name == "VisionComponent.UpdateVisionMarkers.MismatchedTimestamps");
+            Assert.DoesNotContain(logs, e => e.Name == "VisionComponent.Update.InvalidHistStateKey");
+        }
+        finally
+        {
+            vision.NativeMarkerKeyComputedForTest = null; vision.NativeMarkerCarriersForTest = null;
+            Cozmo.Transport.EngineErrorState.ErrorFlagSet = prior;
+        }
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void MarkerDiagnosticReplacementCannotDeliverOldFrame(bool sourceLog)

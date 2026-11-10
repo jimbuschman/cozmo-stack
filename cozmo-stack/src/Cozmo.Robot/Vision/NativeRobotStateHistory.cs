@@ -310,7 +310,12 @@ public sealed partial class RobotStateHistory
     {uint origin=0;bool result=WithGate(()=>ComputeAndInsertCore(timestamp,out origin,output));originId=origin;return result;}
     internal uint ComputeAndInsertKeyedState(uint timestamp,HistRobotState output,out uint resolvedTime)
     {
-        uint time=0;uint result=WithGate(()=>ComputeAndInsertStatusCore(timestamp,output,ref time,out _,requestKey:true));
+        return ComputeAndInsertKeyedState(timestamp, output, out resolvedTime, out _);
+    }
+    internal uint ComputeAndInsertKeyedState(uint timestamp,HistRobotState output,out uint resolvedTime,out uint key)
+    {
+        uint time=0, selectedKey=0;uint result=WithGate(()=>ComputeAndInsertStatusCore(timestamp,output,ref time,out _,requestKey:true,out selectedKey));
+        key=selectedKey;
         resolvedTime=time;return result;
     }
     // FaceWorld's observation-time history lookup: retain the selected node allocation,
@@ -330,16 +335,17 @@ public sealed partial class RobotStateHistory
     private bool ComputeAndInsertCore(uint timestamp,out uint originId,HistRobotState? output=null,bool requestKey=false)
     {
         using var owned=output is null?new HistRobotState():null;var value=output??owned!;uint time=0;
-        return ComputeAndInsertStatusCore(timestamp,value,ref time,out originId,requestKey)==0;
+        return ComputeAndInsertStatusCore(timestamp,value,ref time,out originId,requestKey,out _)==0;
     }
-    private uint ComputeAndInsertStatusCore(uint timestamp,HistRobotState value,ref uint time,out uint originId,bool requestKey)
+    private uint ComputeAndInsertStatusCore(uint timestamp,HistRobotState value,ref uint time,out uint originId,bool requestKey,out uint selectedKey)
     {
         lock(_gate)
         {
-            originId=0;HistRobotState? state=null;uint key=0;
+            originId=0;selectedKey=0;HistRobotState? state=null;uint key=0;
             uint result=ComputeAndInsertNativeCore(timestamp,ref time,ref state,requestKey,ref key,true);
             if(result!=0)return result;
             value.Assign(state!);
+            selectedKey=key;
             if(value.Pose.Node is not { } poseNode)return 1;
             originId=poseNode.Root().Id;
             return 0;
