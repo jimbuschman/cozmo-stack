@@ -6,7 +6,7 @@ $deadline = (Get-Date).AddMinutes(90)
 while (-not (Test-Path "$Out.stop") -and (Get-Date) -lt $deadline) {
   $os = Get-CimInstance Win32_OperatingSystem
   $th = (Get-Process testhost -ErrorAction SilentlyContinue | Measure-Object PrivateMemorySize64 -Sum).Sum
-  $dn = (Get-Process dotnet -ErrorAction SilentlyContinue | Measure-Object PrivateMemorySize64 -Sum).Sum
+  $dn = (Get-Process dotnet,VBCSCompiler,MSBuild -ErrorAction SilentlyContinue | Measure-Object PrivateMemorySize64 -Sum).Sum
   $last = ""
   try {
     $fs = [IO.File]::Open($Log, 'Open', 'Read', 'ReadWrite')
@@ -14,6 +14,6 @@ while (-not (Test-Path "$Out.stop") -and (Get-Date) -lt $deadline) {
     $tail = (New-Object IO.StreamReader($fs)).ReadToEnd(); $fs.Dispose()
     $last = ($tail -split "`n" | Where-Object { $_ -match '^\s+(Passed|Failed|Skipped) ' } | Select-Object -Last 1).Trim()
   } catch {}
-  "{0:HH:mm:ss} testhost={1} dotnet={2} free={3} last={4}" -f (Get-Date), [int]($th/1MB), [int]($dn/1MB), [int]($os.FreePhysicalMemory/1KB), $last | Add-Content -Path $Out
+  "{0:HH:mm:ss} testhost={1} build+dotnet={2} free={3} last={4}" -f (Get-Date), [int]($th/1MB), [int]($dn/1MB), [int]($os.FreePhysicalMemory/1KB), $last | Add-Content -Path $Out
   Start-Sleep -Seconds 5
 }
