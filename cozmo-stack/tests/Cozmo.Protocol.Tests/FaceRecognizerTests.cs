@@ -12,6 +12,64 @@ namespace Cozmo.Protocol.Tests;
 public class FaceRecognizerTests
 {
     [Fact]
+    public void StockTrackReacquisitionCopiesTracksBeforeNormalizationAndRemovesOldKey()
+    {
+        var okao = new FakeOkaoRecognizer();
+        var recognizer = new FaceRecognizer(okao);
+        var feature = new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1, 0);
+        recognizer.CurrentTrack = 3;
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int id));
+        okao.IdentifyResults.Add((0, 1000));
+        recognizer.ConsumeStockFeature(feature, 3, true);
+        Assert.Equal(-3, recognizer.LookupStockTrack(3).PreviousId);
+        recognizer.ConsumeStockFeature(feature, 9, true);
+        Assert.False(recognizer.HasStockTrack(3));
+        var copied = recognizer.LookupStockTrack(9);
+        Assert.Equal((id, 9, 3), (copied.Id, copied.CurrentTrack, copied.PreviousTrack));
+        var normalized = recognizer.LookupStockTrack(9);
+        Assert.Equal((9, 9), (normalized.CurrentTrack, normalized.PreviousTrack));
+    }
+
+    [Fact]
+    public void StockRemapUsesOnlyLastEndpointsForDuplicateSuppression()
+    {
+        var changes = new List<(int OldId, int NewId, string? Name)>();
+        OkaoFaceDetector.AppendStockFaceIdChanges(changes, 17, "Ada", null, 9, 3);
+        Assert.Equal((-9, 17, "Ada"), Assert.Single(changes));
+        OkaoFaceDetector.AppendStockFaceIdChanges(changes, 17, "Ada", null, 9, 3);
+        Assert.Single(changes);
+        changes.Add((-8, 22, null));
+        OkaoFaceDetector.AppendStockFaceIdChanges(changes, 17, "Ada", null, 9, 3);
+        Assert.Equal(3, changes.Count);
+        OkaoFaceDetector.AppendStockFaceIdChanges(changes, 18, "Other", -4, 9, 3);
+        Assert.Equal(new[] { (-9, 17), (-8, 22), (-9, 17), (-4, 18) }, changes.Select(c => (c.OldId, c.NewId)));
+    }
+
+    [Fact]
+    public void StockNamedConflictRebindsTrackWithoutMergingIdentities()
+    {
+        var okao = new FakeOkaoRecognizer();
+        var recognizer = new FaceRecognizer(okao);
+        var feature = new OkaoFaceFeature();
+        recognizer.SetAllowedEnrollments(1, 0);
+        recognizer.CurrentTrack = 3;
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int a));
+        Assert.Equal(0, recognizer.RegisterNewUser(feature, out int b));
+        var first = recognizer.EnrolledFaces.Single(f => f.FaceID == a);
+        first.Name = "First";
+        recognizer.EnrolledFaces.Single(f => f.FaceID == b).Name = "Second";
+        okao.IdentifyResults.Add((0, 1000));
+        recognizer.ConsumeStockFeature(feature, 3, true);
+        recognizer.LookupStockTrack(3);
+        okao.IdentifyResults.Clear();
+        okao.IdentifyResults.Add((1, 1000));
+        recognizer.ConsumeStockFeature(feature, 3, true);
+        Assert.Equal(b, recognizer.LookupStockTrack(3).Id);
+        Assert.Equal((0, 0), (first.CurrentTrack, first.PreviousTrack));
+        Assert.Equal(2, recognizer.EnrolledFaces.Count);
+    }
+    [Fact]
     public void EraseClearsAlbumEntriesInSignedOrderAndContinuesAfterFailure()
     {
         var okao=new FakeOkaoRecognizer { ClearUserFailure=2 };

@@ -188,7 +188,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                             _recognitionWorker = null;
                         }
                         var identity = recognizer.LookupStockTrack(track);
-                        if (identity.PreviousId is { } old) changes!.Add((old, identity.Id, identity.Name));
+                        AppendStockFaceIdChanges(changes!, identity.Id, identity.Name, identity.PreviousId, identity.CurrentTrack, identity.PreviousTrack);
                         return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name, NativeEnrollmentCount = identity.EnrollmentCount };
                     }
                     faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack,attributeMask);
@@ -198,6 +198,15 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
         }
         foreach (string message in diagnostics) Diagnostic?.Invoke(message);
         return faces;
+    }
+    internal static void AppendStockFaceIdChanges(List<(int OldId, int NewId, string? Name)> changes,
+        int id, string? name, int? previousId, int currentTrack, int previousTrack)
+    {
+        if (previousId is { } old) changes.Add((old, id, name));
+        if (id == 0 || currentTrack == previousTrack) return;
+        int oldTrack = unchecked(-currentTrack);
+        if (changes.Count != 0 && (changes[^1].OldId == oldTrack || changes[^1].NewId == id)) return;
+        changes.Add((oldTrack, id, name));
     }
     internal void RetireRecognition()
     {
