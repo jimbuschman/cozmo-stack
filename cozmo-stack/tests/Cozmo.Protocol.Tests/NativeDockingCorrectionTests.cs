@@ -101,10 +101,18 @@ public sealed class NativeDockingCorrectionTests
         f.Robot.DockingOwner!.Active = 0; // raw target, not Active, controls the source gate
         int mark = f.Rig.Mark();
         uint timestamp = f.Robot.StoredState!.Timestamp;
-        f.Image(501, cube: true);
+        // A later host-only seed must not replace the native state used by this docking frame.
+        f.M.Vision.NativeMarkerCameraObservedForTest = (_,_) =>
+        {
+            using var seed=new Pose3d(Rotation3d.Identity,new Vec3(500,0,0));
+            f.Robot.PoseHistory.InsertComputedStateAt(timestamp,seed);
+        };
+        try { f.Image(501, cube: true); }
+        finally { f.M.Vision.NativeMarkerCameraObservedForTest=null; }
         Assert.NotEmpty(f.M.Vision.LastResult!.Markers);
         var signal = Assert.Single(f.Rig.SentSince(mark).OfType<DockingErrorSignal>());
         Assert.Equal(timestamp, signal.Timestamp);
+        Assert.InRange(signal.XDist,127f,129f);
         Assert.False(signal.Field5);
         Assert.False(signal.Field6);
     }

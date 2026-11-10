@@ -88,6 +88,7 @@ internal sealed class NativeVisionInitialization
 {
     internal NativeVisionInitialization(EngineRobot owner){Owner=owner;}
     internal EngineRobot Owner { get; }
+    internal uint LastReceivedTimestamp { get; set; }
     private volatile bool _availabilityKnown=true;
     private volatile bool _initialized;
     private volatile bool _motionKnowledgeKnown=true;

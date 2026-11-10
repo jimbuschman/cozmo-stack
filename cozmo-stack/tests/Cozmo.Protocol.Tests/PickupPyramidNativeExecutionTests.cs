@@ -114,7 +114,7 @@ public sealed class PickupPyramidNativeExecutionTests
             }
             var state=Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos|extra,origin:Robot.CurrentOriginId,frame:Robot.PoseFrameId,x:X,y:Y,head:Head,liftAngle:Lift);state.Pose.Angle=Yaw;Rig.Data(state);WaitCompletedAnimationCallbacks();Rig.Tick();
         }
-        internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1)
+        internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1,float imuHead=0,float imuBody=0,bool imuBracket=true)
         {
             // Rendered-marker unit input uses the native nonphysical branch; physical correction remains M11-033.
             if(cube)
@@ -125,7 +125,10 @@ public sealed class PickupPyramidNativeExecutionTests
             M.Vision.Enabled=true;M.Vision.ModeEnableMask=modes;
             M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules(); // supplied per-test mode schedule
             uint stamp=Robot.StoredState!.Timestamp;
-            Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
+            // Source-shaped bracket: current sample is just before image time; the
+            // next unassociated sample supplies the native zero-time successor.
+            Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=imuHead,RateZ=imuBody,Line2Number=239});
+            if(imuBracket)Rig.Data(new ImageImuData{ImageId=id+10000,RateX=0,RateY=imuHead,RateZ=imuBody,Line2Number=239});Rig.Tick();
             var cal=M.Vision.Calibration!;var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
             if(cube)
             {
@@ -477,6 +480,76 @@ public sealed class PickupPyramidNativeExecutionTests
         Assert.All(faceTimesAtWorld,t=>Assert.True(t.Face<t.World,$"world callback must precede this frame's face mutation; initialWorldFace={initialWorldFace}, diagnostics={string.Join(" | ",diagnostic)}, events={string.Join(" | ",eventOrder)}"));
         foreach(var worldEvent in eventOrder.Where(e=>e.Kind=="world"))
             Assert.True(eventOrder.IndexOf(worldEvent)<eventOrder.FindIndex(e=>e.Kind=="face"&&e.Stamp==worldEvent.Stamp));
+    }
+
+    [Theory]
+    [InlineData(0f,0.34906584f,true,true)]  // body 20 degrees/s: marker gate allows it
+    [InlineData(0f,0.54105204f,true,false)] // body 31 degrees/s: marker gate drops it
+    [InlineData(0.19198622f,0f,true,false)] // head 11 degrees/s: marker gate drops it
+    [InlineData(0f,0f,false,false)]         // no native bracket: marker gate drops it
+    public void RealMixedWorkerUsesMarkerImuGateWithoutDroppingFaceOrFrame(float head,float body,bool bracket,bool reachesWorld)
+    {
+        using var f=new Fixture();f.Add();f.M.Vision.FaceDetector=new SuppliedFaceDetector();
+        int worldUpdates=0;f.M.World.BlockConfigurationManagerUpdate=()=>worldUpdates++;
+        int processed=f.M.Vision.FramesProcessed;
+        f.Image(400,true,modes:(1<<1)|(1<<2),imuHead:head,imuBody:body,imuBracket:bracket);
+        Assert.NotEmpty(f.M.Vision.LastResult!.Markers); // detector still produced the marker
+        Assert.Equal(processed+1,f.M.Vision.FramesProcessed);Assert.Single(f.M.Vision.LastFaces);
+        Assert.Equal(reachesWorld?1:0,worldUpdates);
+    }
+
+    [Fact]
+    public void MarkerResultDropsMismatchedTimestampBeforeRetainingOrderedMatches()
+    {
+        // Real worker and frame, with only its detector-result list supplied at the
+        // consumer boundary to produce a timestamp mismatch the stock detector cannot.
+        using var f=new Fixture();f.Add();var vision=f.M.Vision;
+        vision.NativeMarkerListForTest=markers=>
+        {
+            var first=Assert.Single(markers.Take(1));
+            return new[]{first with{Timestamp=first.Timestamp+1},first,first};
+        };
+        var busy=typeof(VisionSystem).GetField("_busy",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(vision)!;
+        var logs=new List<EngineLogEntry>();bool sourceBusy=false,sourceWorld=false;
+        f.Rig.Engine.LogEntry+=entry=>{if(entry.Name=="VisionComponent.UpdateVisionMarkers.MismatchedTimestamps"){sourceBusy=Monitor.IsEntered(busy);sourceWorld=Monitor.IsEntered(f.M.World.FrameGate);}logs.Add(entry);};
+        bool publicLog=false,insideBusy=false,insideWorld=false;
+        vision.Log+=message=>{if(!message.Contains("MismatchedTimestamps"))return;publicLog=true;insideBusy=Monitor.IsEntered(busy);insideWorld=Monitor.IsEntered(f.M.World.FrameGate);};
+        VisionFrameResult? docking=null;vision.DockingMarkersProcessed+=r=>docking=r;
+        bool prior=Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            Cozmo.Transport.EngineErrorState.ErrorFlagSet=false;f.Image(500,true);
+            Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+            Assert.Single(logs.Where(e=>e.Name=="VisionComponent.UpdateVisionMarkers.MismatchedTimestamps"));
+            Assert.NotNull(docking);Assert.Equal(2,docking!.Markers.Count);Assert.All(docking.Markers,m=>Assert.Equal(docking.Timestamp,m.Timestamp));
+            Assert.True(publicLog);Assert.False(insideBusy);Assert.False(insideWorld);Assert.False(sourceBusy);Assert.False(sourceWorld);
+        }
+        finally{vision.NativeMarkerListForTest=null;Cozmo.Transport.EngineErrorState.ErrorFlagSet=prior;}
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MarkerDiagnosticReplacementCannotDeliverOldFrame(bool sourceLog)
+    {
+        using var f=new Fixture();f.Add();var vision=f.M.Vision;var original=f.Robot;
+        vision.NativeMarkerListForTest=markers=>{var first=Assert.Single(markers.Take(1));return new[]{first with{Timestamp=first.Timestamp+1},first};};
+        int frames=0;bool replaced=false;vision.FrameProcessed+=_=>frames++;
+        void Replace()
+        {
+            if(replaced)return;replaced=true;
+            f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+            f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        }
+        if(sourceLog)f.Rig.Engine.LogEntry+=entry=>{if(entry.Name=="VisionComponent.UpdateVisionMarkers.MismatchedTimestamps")Replace();};
+        else vision.Log+=message=>{if(message.Contains("MismatchedTimestamps"))Replace();};
+        bool prior=Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            f.Image(600,true);
+            Assert.True(replaced);Assert.NotSame(original,f.Rig.Engine.Robot);Assert.Equal(0,frames);
+        }
+        finally{vision.NativeMarkerListForTest=null;Cozmo.Transport.EngineErrorState.ErrorFlagSet=prior;}
     }
     [Fact]
     public void RealWorkerReleasesFrameAndPoseGatesBeforePublicFrameAndProcessedImageRecipients()

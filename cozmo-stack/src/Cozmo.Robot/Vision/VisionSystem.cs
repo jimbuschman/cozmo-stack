@@ -75,6 +75,8 @@ public sealed partial class VisionSystem : IDisposable
     private RetainedSubscription? _nativeVisionWhileMovingSubscription;
     internal int NativeGroundEpochForTest { get { lock (_groundGate) return _groundEpoch; } }
     internal Action<IReadOnlyList<ImageQualityRectangle>>? NativeQualityRectanglesObservedForTest;
+    internal Action<CameraCalibration,Pose3d>? NativeMarkerCameraObservedForTest;
+    internal Func<IReadOnlyList<ObservedMarker>,IReadOnlyList<ObservedMarker>>? NativeMarkerListForTest;
     internal NativeVisionInitialization? NativeInitializationForTest { get { lock (_groundGate) return _nativeInitialization; } }
     internal bool NativeMotionReadyFor(EngineRobot owner)
     {
@@ -99,6 +101,27 @@ public sealed partial class VisionSystem : IDisposable
             NativeImageImu before=default,after=default;
             return NativeImageImuHistory.TryBracket(_nativeImu.Snapshot(),timestamp,ref before,ref after);
         }
+    }
+    // UpdateVisionMarkers 0x00654E60: zero-count head then body gate at the resolved history time.
+    private bool NativeMarkerRotatingTooFast(EngineRobot owner,uint timestamp,Action<EngineLogLevel,string?,string,string> sourceLog,Action<string> missing)
+    {
+        NativeImageImu[]? history=null;
+        lock(_groundGate)
+        {
+            if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,owner)&&_nativeImu is not null)
+            { if(_nativeVisionWhileMoving)return false;history=_nativeImu.Snapshot(); }
+        }
+        if(history is null)
+        {missing("M11-050 original marker IMU owner unavailable");return true;}
+        NativeImageImu before=default,after=default;
+        if(!NativeImageImuHistory.TryBracket(history,timestamp,ref before,ref after))
+        {
+            sourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.VisionComponent.WasHeadRotatingTooFast.NoIMUData",$"Could not get next/previous imu data for timestamp {timestamp}");
+            return true;
+        }
+        float head=BitConverter.UInt32BitsToSingle(0x3E32B8C2),body=BitConverter.UInt32BitsToSingle(0x3F060A92);
+        if(MathF.Abs(before.RateY)>head || MathF.Abs(after.RateY)>head)return true;
+        return MathF.Abs(before.RateZ)>body || MathF.Abs(after.RateZ)>body;
     }
     // M11-004: 0x621C9A queries this original owner's LIVE VC+B0 history in the world handler.
     internal bool NativeWorldRotatingTooFast(EngineRobot owner,uint timestamp)
@@ -213,6 +236,9 @@ public sealed partial class VisionSystem : IDisposable
         var imu=new NativeImageImuHistory();
         lock (_groundGate)
         {
+            bool sameOwner=ReferenceEquals(_groundOwner,owner);
+            uint receivedTimestamp=sameOwner ? _nativeInitialization?.LastReceivedTimestamp ?? 0 : 0;
+            if(!sameOwner)_robot.CameraSettings.LastProcessedImageTimestamp=0;
             oldSubscription=_nativeImuSubscription;_nativeImuSubscription=null;
             oldMovingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;_nativeImu=imu;
             if(_nativeInitialization is {} displaced)_retiredMotionStates.Enqueue(displaced);
@@ -220,7 +246,7 @@ public sealed partial class VisionSystem : IDisposable
             _groundOwner = owner;
             _nativeWorkerPhysical=false;
             _nativeVisionWhileMoving=false;
-            _nativeInitialization=new NativeVisionInitialization(owner);_nativeInitializationEpoch++;
+            _nativeInitialization=new NativeVisionInitialization(owner) { LastReceivedTimestamp=receivedTimestamp };_nativeInitializationEpoch++;
             PendingDropStatsSeconds=-1f; // per-owner diagnostic; native Init's source is a local value
             _groundOuterCalibration = null;
             _groundInstalled = null;
@@ -358,12 +384,12 @@ public sealed partial class VisionSystem : IDisposable
         // fidelity: M11-044
         // What the localization candidates and the frame sequence read from the robot: its current pose (Robot::GetPose), the robot states behind
         // RobotStateHistory::GetComputedStateAt, the MovementComponent bytes +0xA/+0xC, Robot::GetLastImageTimeStamp and BaseStationTimer::GetCurrentTimeInSeconds.
-        Faces.NativePublish=(tag,payload)=>
+        Faces.NativePublish=(owner,tag,payload)=>
         {
-            if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
-            Behavior.SteppedBehavior.ReportMissing($"M14-008 native face{tag:X2} complete app report unavailable; no truncated wire payload; checked LOCAL ID projection only");
-            _robot.Engine.AnimationMessages.Deliver(tag,true,payload);
+            if(owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface)return;
+            _robot.Engine.PublishFaceIdReport(tag,payload);
         };
+        Faces.NativeGeneration=()=>Volatile.Read(ref _removals);
         World.NativeObjectObserved=_nativeObjectObserved=observation=>
         {
             if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
@@ -526,12 +552,17 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     // 0x00511162..16C / 0x0065258E: the destroyed VisionComponent owns its LUT.
     // A newer, already-bound owner must survive this retained-facade reset.
-    private void RetireDestroyedGroundOwner()
+    private (EngineRobot? Owner,int Removal)? RetireDestroyedGroundOwner()
     {
-        RetainedSubscription? subscription,movingSubscription;
+        RetainedSubscription? subscription=null,movingSubscription=null;
+        EngineRobot? retiredOwner;
+        int removal;
         lock (_groundGate)
         {
-            if (_groundOwner is not { Lifetime.Destroying: true }) return;
+            if (_groundOwner is { Lifetime.Destroying: false }) return null;
+            retiredOwner=_groundOwner;
+            removal=Interlocked.Increment(ref _removals);
+            if(retiredOwner is null)return (null,removal);
             subscription=_nativeImuSubscription;_nativeImuSubscription=null;_nativeImu=null;
             movingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;
             _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;_nativeWorkerPhysical=false;
@@ -545,16 +576,22 @@ public sealed partial class VisionSystem : IDisposable
             _groundEpoch++; // host stale-work token; intentionally monotonic across owners
         }
         subscription?.Dispose();movingSubscription?.Dispose();
+        return (retiredOwner,removal);
     }
     internal void ResetToConstructed()
     {
-        RetireDestroyedGroundOwner();
-        int removal=Interlocked.Increment(ref _removals);
+        if(RetireDestroyedGroundOwner() is not { } retired)return;
+        var (retiringOwner,removal)=retired;
+        DiscardPreparedResults(retiringOwner,discardAll:false);
         bool StillRetired(){lock(_groundGate)return _groundOwner is null && removal==Volatile.Read(ref _removals);}
         // fidelity: M11-061, M4-017, M1-025, M4-027
         // CB33/CC26/CC27: removal deletes this owner; a new owner's request deque is empty.
         // The retained-host reset remains the M4-027 candidate; do not replay requests on a later robot.
-        lock (_modeGate) _limitedExposureRequests.Clear();
+        lock(_groundGate)
+        {
+            if(_groundOwner is not null || removal!=Volatile.Read(ref _removals))return;
+            lock (_modeGate) _limitedExposureRequests.Clear();
+        }
         RemovalInvalidated?.Invoke();
         // The callback may synchronously bind a new owner. The old removal must not reset its facade state.
         if(!StillRetired())return;
@@ -602,8 +639,12 @@ public sealed partial class VisionSystem : IDisposable
             FramesDropped = 0;
             LastResult = null;
             ResetQualityReceiver();
-            DiscardPreparedResults();
-            _robot.CameraSettings.LastProcessedImageTimestamp = 0;
+            if(!StillRetired())return;
+            lock(_groundGate)
+            {
+                if(_groundOwner is not null || removal!=Volatile.Read(ref _removals))return;
+                _robot.CameraSettings.LastProcessedImageTimestamp = 0;
+            }
             LastRawFrameTimestamp = null;
             _warnedNoCalibration = false;
         }
@@ -1322,7 +1363,7 @@ public sealed partial class VisionSystem : IDisposable
     private volatile bool _processorRun = true;
     // Native +0x4B has no shipped writer; internal input seam exercises its checked read.
     internal volatile bool SkipProcessorPass;
-    private bool _disposed;
+    private volatile bool _disposed;
 
     /// <summary>The Processor thread's sleep between polls: <c>sleep_for(2,000,000 ns)</c> (0x001E8480 built at 0x00651FDA, called at 0x0065225E).</summary>
     // fidelity: M11-040
@@ -1336,7 +1377,7 @@ public sealed partial class VisionSystem : IDisposable
     private void OnFrame(CameraFrame f)
     {
         Interlocked.Increment(ref _motionFrameInputs);
-        if(!Enabled||!_processorRun||_disposed)return;
+        if(!_processorRun||_disposed)return;
         EngineRobot? frameOwner;
         lock (_groundGate) frameOwner=_groundOwner;
         int removal=Volatile.Read(ref _removals);
@@ -1346,8 +1387,38 @@ public sealed partial class VisionSystem : IDisposable
             bool current=frameOwner is not null && !frameOwner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,frameOwner) && removal==Volatile.Read(ref _removals);
             lock (_groundGate) return current && ReferenceEquals(frameOwner,_groundOwner);
         }
-        SteppedBehavior.ReportMissing("M11-040 SetNextImage timestamp rollback 0x00652B36..0x00652B76: last-received timestamp +0xE4 owner is unbuilt; rollback of +0xE4/+0xE8 is not substituted with the processed clock");
         if (!CurrentFrameOwner()) return;
+        uint previous;
+        bool rollback, unavailable=false, uninitialized=false, enabled=false;
+        lock(_groundGate)
+        {
+            if(!ReferenceEquals(_groundOwner,frameOwner) || frameOwner.Lifetime.Destroying ||
+                !ReferenceEquals(_robot.Engine.Robot,frameOwner) || removal!=Volatile.Read(ref _removals))return;
+            var initialization=_nativeInitialization;
+            unavailable=initialization is null || !ReferenceEquals(initialization.Owner,frameOwner) || !initialization.AvailabilityKnown;
+            uninitialized=!unavailable && !initialization!.Initialized;
+            enabled=Enabled;
+            previous=0;rollback=false;
+            if(!unavailable && !uninitialized && enabled)
+            {
+                previous=initialization!.LastReceivedTimestamp;
+                rollback=previous!=0 && f.Timestamp<previous;
+                if(rollback)
+                {
+                    initialization.LastReceivedTimestamp=0;
+                    _robot.CameraSettings.LastProcessedImageTimestamp=0;
+                }
+                else initialization.LastReceivedTimestamp=f.Timestamp;
+            }
+        }
+        if(unavailable) { SteppedBehavior.ReportMissing("M11-040 SetNextImage original VisionComponent initialization unavailable");return; }
+        if(uninitialized) { _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.SetNextImage.NotInitialized",$"t={f.Timestamp}({unchecked((int)f.Timestamp)})");return; }
+        if(!enabled)return;
+        if(rollback)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.SetNextImage.UnexpectedTimeStamp",$"Current:{f.Timestamp} Last:{previous}");
+            return;
+        }
         CameraCalibration? pendingOuter;
         lock (_groundGate) pendingOuter=_groundPendingOuter;
         if (pendingOuter is not null) SetNativeOuterCalibration(pendingOuter);
@@ -1434,7 +1505,7 @@ public sealed partial class VisionSystem : IDisposable
     /// slot: a slot still occupied is a dropped frame (DropStats, "SetNextImage.DroppedFrame", 0x00653070..0x006530C8) and the newest image
     /// replaces it (latest wins, 0x006530CC..0x00653140). The Processor takes the pending image, processes it, and on completion discards the
     /// current image and any image that arrived meanwhile without counting it (0x00652234..0x0065224C), then sleeps 2 ms and polls again.
-    /// NOT BUILT (M11-040): the synchronous mode (<c>SetIsSynchronous</c>, <c>Start</c>/<c>Stop</c>), the timestamp monotonicity test
+    /// NOT BUILT (M11-040): the synchronous mode (<c>SetIsSynchronous</c>, <c>Start</c>/<c>Stop</c>)
     /// and the drop-statistics events. Production captures the source ground pose and matrix at hand-in; the native IMU deque,
     /// worker anchor and motion consumption remain unavailable.
     /// </summary>
@@ -1822,7 +1893,7 @@ public sealed partial class VisionSystem : IDisposable
             if(markerMode)processedMask|=1<<DetectingMarkers;
             if (RemovedSince(removal)) return null;
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
-            bool StaleFrame()=>RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner));
+            bool StaleFrame()=>RemovedSince(removal) || (queueForEngine && (_disposed || sourceOwner is null)) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner));
             bool faceMode=ShouldProcessVisionMode((int)VisionMode.DetectingFaces);
             var faceDetector = FaceDetector;
             bool stockFaceDetector = ReferenceEquals(faceDetector, _stockFaceDetector);
@@ -1830,6 +1901,7 @@ public sealed partial class VisionSystem : IDisposable
             if(StaleFrame())return null;
             var faceImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
             IReadOnlyList<DetectedFace>? detectedFaces = null;
+            bool completeStockFaceReport = false;
             IReadOnlyList<(int OldId, int NewId, string? Name)> faceIdChanges = Array.Empty<(int, int, string?)>();
             if (faceMode && faceDetector.IsAvailable)
             {
@@ -1851,6 +1923,7 @@ public sealed partial class VisionSystem : IDisposable
                         if (_stockRecognizer && recognizer.OwnsStockDetector(okao) && recognizer.IsAvailable)
                         {
                             recognizer.InitializeStock();
+                            completeStockFaceReport = (ModeEnableMask & 0x3C00) == 0;
                             (detectedFaces, faceIdChanges) = okao.DetectRecognized(faceImage, timestamp, reset, recognizer);
                         }
                         else if (!_stockRecognizer) detectedFaces = okao.Detect(faceImage, timestamp, reset);
@@ -1946,16 +2019,25 @@ public sealed partial class VisionSystem : IDisposable
                 IReadOnlyList<ObjectObservation> objects;
                 IReadOnlyList<ObservableObject> forgotten;
                 VisionFrameResult result;
+                List<Action>? markerDeferredLogs=null;
+                void MarkerSourceLog(EngineLogLevel level,string? channel,string key,string text)
+                    =>(markerDeferredLogs??=new()).Add(()=>_robot.Engine.EmitSourceLog(level,channel,key,text));
+                void MarkerPublicLog(string text)
+                {
+                    var handlers=Log;
+                    (markerDeferredLogs??=new()).Add(()=>EventFan.Raise(handlers,text,e=>_robot.Engine.EmitStackLog("M1-034 Vision log subscriber skipped: "+e)));
+                }
+                void MarkerMissing(string text)=>(markerDeferredLogs??=new()).Add(()=>SteppedBehavior.ReportMissing(text));
                 using var resultCameraPose=processingPose.CameraPose;
                 var processingCamera=new CameraModel(cal,resultCameraPose);
                 lock(_busy)
                 {
-                if(RemovedSince(removal))return null;
-            // fidelity: M11-044 — UpdateVisionMarkers puts a computed state at the result's timestamp in the history before a result with markers reaches BlockWorld
-            // (RobotStateHistory::ComputeAndInsertStateAt, 0x00654D92); GetComputedStateAt (Insert P5) finds only those.
-            // A failure (no raw state at or after the timestamp) logs (0x00654DE2) and jumps to 0x0065507E: UpdateObservedMarkers is never reached and the function returns 0.
+                if(queueForEngine ? StaleFrame() : RemovedSince(removal))return null;
+            // UpdateVisionMarkers 0x00654D76..0x006550A8. The direct/offline
+            // adapter retains its supplied-pose semantics; queued results use the captured owner.
             bool stateComputed = markerMode;
-            var keptMarkers = markers;
+            var sourceMarkers=queueForEngine && NativeMarkerListForTest is {} markerFixture ? markerFixture(markers) : markers;
+            var keptMarkers = sourceMarkers;
             BlockWorldFrameResult? worldFrame;
             using(World.EnterPoseMutation())
             {
@@ -1963,63 +2045,99 @@ public sealed partial class VisionSystem : IDisposable
             using var nativeResultCameraPose=new Pose3d("");
             var markerCamera=processingCamera;
             // fidelity: M11-036, M11-050
-            // UpdateVisionMarkers 0x00654D60..0x006550AC, for a result that has markers (an empty list goes straight to UpdateObservedMarkers, 0x00654D76..0x00654DEC): after the computed state
-            // (0x00654D92) the engine (b) drops the frame, logging, when Robot::IsPoseInWorldOrigin(state pose) is false (0x00654E56, log 0x00655028..0x00655074), (c) drops it, silently, when
-            // WasRotatingTooFast(t, body 0x3F060A92, head 0x3E32B8C2, 0) (0x00654E62..0x00654E7E): NOT BUILT, see below, (d) takes Robot::GetHistoricalCamera(state, ts) (0x00654E8E) and drops each marker whose
-            // timestamp differs from the result's (error log, 0x00654F0C), and passes only the kept list to UpdateObservedMarkers (0x00654DEC..0x00654DF4). A drop in (a)..(c) returns without
-            // calling it, so none of the world's per-frame sequence runs for that frame.
-            // NOT BUILT (c): the rotation gate. The engine's ImuDataHistory keys its samples by a timestamp that ImuDataHistory::CalculateTimestampForImageIMU 0x00538C00 computes later, from SetNextImage
-            // (0x00652C16) with the image's own timestamp, the constant 65.0f (0x42820000) and line2Number; GetImuDataBeforeAndAfter 0x00538D82 needs two samples and takes the first sample STRICTLY after t.
-            // This stack keys samples by ImageId (a frame counter on fw2457) and has image timestamp 0 there, so it cannot build the engine's keys: the gate is skipped, never turned into a drop.
-            // (a) the 0x06000000 silent branch (0x00654D9A; the producer, M11-052's origin-mismatch return, is not built, so ComputeAndInsertStateAt cannot return it), the IsValidKey warning
-            // drop (0x00654F24; the key table at RobotStateHistory+0x28 has no counterpart and the check cannot fail right after the insert), the post-call BlockWorldUpdateFailed warning (0x00654DFA; the
-            // world returns no Result) and the DockingComponent::UpdateDockingErrorSignal call for a non-empty kept list (0x00654E4A; M12's DockingSystem runs from FrameProcessed). The historical camera is
-            // the camera built from pd above: History.At is the nearer raw state, which is what the interpolation stand-in of ComputeAndInsertStateAt stores (M11-052).
-            if (markerMode && markers.Count > 0)
+            if (markerMode && sourceMarkers.Count > 0)
             {
-                uint stateOrigin = 0;
-                bool originKnown = false;
                 if (offline) History.InsertComputedStateAt(timestamp, processingPose.RobotPose);   // LOCAL: the caller's pose data stands for the raw state
+                else if(queueForEngine)
+                {
+                    if(sourceOwner is null || StaleFrame())stateComputed=false;
+                    else
+                    {
+                        uint status=sourceOwner.PoseHistory.ComputeAndInsertKeyedState(timestamp,historicalResult,out uint resolvedTime);
+                        if(status!=0)
+                        {
+                            stateComputed=false;
+                            if(status!=0x06000000)
+                            {
+                                string detail=$"Time: {timestamp}, hist: {sourceOwner.PoseHistory.OldestTimeStamp} to {sourceOwner.PoseHistory.NewestTimeStamp}";
+                                MarkerSourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound",detail);
+                                MarkerPublicLog("VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: "+detail);
+                            }
+                        }
+                        else if(!sourceOwner.TryGetNativeOriginOwner(sourceOwner.CurrentOriginId,out var origin) || origin?.Node is null || historicalResult.Pose.Node is null)
+                        {stateComputed=false;MarkerMissing("M11-050 historical marker origin owner unavailable; marker handler skipped");}
+                        else if(!PoseTreeNode.HasSameRoot(historicalResult.Pose.Node,origin.Node))
+                        {
+                            stateComputed=false;
+                            string detail=$"Ignoring observed marker from origin {historicalResult.Pose.GetNamedPathToRoot(false)} (robot origin is {origin.Name})";
+                            MarkerSourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.UpdateVisionMarkers.OldOrigin",detail);
+                            MarkerPublicLog("VisionComponent.UpdateVisionMarkers.OldOrigin: "+detail);
+                        }
+                        else if(NativeMarkerRotatingTooFast(sourceOwner,resolvedTime,MarkerSourceLog,MarkerMissing))stateComputed=false;
+                        else if(StaleFrame())stateComputed=false;
+                        else
+                        {
+                            CameraCalibration? outer;
+                            lock(_groundGate)outer=ReferenceEquals(_groundOwner,sourceOwner)&&!sourceOwner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,sourceOwner)?_groundOuterCalibration:null;
+                            if(outer is null)
+                            {stateComputed=false;MarkerMissing("M11-050 original outer historical camera calibration unavailable; marker handler skipped");}
+                            else
+                            {
+                                using var nativeCamera=sourceOwner.CopyHistoricalCameraPose(historicalResult);
+                                nativeResultCameraPose.AssignInputValue(nativeCamera);
+                                markerCamera=new CameraModel(outer,nativeResultCameraPose);
+                                NativeMarkerCameraObservedForTest?.Invoke(outer,nativeResultCameraPose);
+                                if(StaleFrame())stateComputed=false;
+                            }
+                        }
+                    }
+                }
                 else
                 {
-                    stateComputed=History.ComputeAndInsertStateAt(timestamp,historicalResult,out stateOrigin);originKnown=stateComputed;
-                    if(stateComputed)
+                    stateComputed=History.ComputeAndInsertStateAt(timestamp,historicalResult,out uint stateOrigin);
+                    if(!stateComputed)Log?.Invoke($"VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: {timestamp}, hist: {History.OldestTimeStamp} to {History.NewestTimeStamp}");
+                    else
                     {
-                        if(_robot.Engine.Robot is not {} cameraOwner||Calibration is not {} installed)
+                        // Preserve the existing direct ProcessCapture adapter's historical camera.
+                        if(_robot.Engine.Robot is not {} cameraOwner || Calibration is not {} installed)
                         {SteppedBehavior.ReportMissing("M11-050 native historical Camera owner/calibration unavailable; result withheld");return null;}
                         using var nativeCamera=cameraOwner.CopyHistoricalCameraPose(historicalResult);
                         nativeResultCameraPose.AssignInputValue(nativeCamera);
                         markerCamera=new CameraModel(installed,nativeResultCameraPose);
+                        if(!IsPoseInWorldOrigin(stateOrigin)){stateComputed=false;Log?.Invoke($"VisionComponent.UpdateVisionMarkers.OldOrigin: Ignoring observed marker from origin {stateOrigin} (robot origin is {_robot.Engine.Robot?.CurrentOriginId})");}
                     }
                 }
-                if (!stateComputed)
-                    Log?.Invoke($"VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: {timestamp}, hist: {History.OldestTimeStamp} to {History.NewestTimeStamp}");
-                else if (originKnown && !IsPoseInWorldOrigin(stateOrigin))
+                if(queueForEngine && StaleFrame())stateComputed=false;
+                if(stateComputed)
                 {
-                    stateComputed = false;
-                    Log?.Invoke($"VisionComponent.UpdateVisionMarkers.OldOrigin: Ignoring observed marker from origin {stateOrigin} (robot origin is {_robot.Engine.Robot?.CurrentOriginId})");
-                }
-                else
-                {
-                    var kept = new List<ObservedMarker>(markers.Count);
-                    foreach (var m in markers)
+                    var kept = new List<ObservedMarker>(sourceMarkers.Count);
+                    foreach (var m in sourceMarkers)
                     {
                         if (m.Timestamp != timestamp)
                         {
-                            Log?.Invoke($"VisionComponent.UpdateVisionMarkers.MismatchedTimestamps: Marker t={m.Timestamp} vs. ProcResult t={timestamp}");
+                            if(queueForEngine)
+                            {
+                                MarkerSourceLog(EngineLogLevel.Error,null,"VisionComponent.UpdateVisionMarkers.MismatchedTimestamps",$"Marker t={m.Timestamp} vs. ProcResult t={timestamp}");
+                                EngineErrorState.StoreAndMaybeBreak();
+                            }
+                            string detail=$"VisionComponent.UpdateVisionMarkers.MismatchedTimestamps: Marker t={m.Timestamp} vs. ProcResult t={timestamp}";
+                            if(queueForEngine)MarkerPublicLog(detail);else Log?.Invoke(detail);
                             continue;
                         }
                         kept.Add(m);
                     }
                     keptMarkers = kept;
+                    // Stock detector Camera ID 0 differs from the outer robot Camera ID 1;
+                    // the native same-camera key gate is therefore not entered here.
                 }
             }
             // fidelity: M11-035, M11-036 — UpdateVisionMarkers (0x00654D60) calls
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? (obj,prefix)=>PublishObservedCube(sourceOwner,obj,prefix,()=>!StaleFrame()) : null):null;
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? (obj,prefix)=>PublishObservedCube(sourceOwner,obj,prefix,()=>!StaleFrame()) : null,queueForEngine && sourceOwner is not null ? sourceOwner.PoseHistory.GetComputedNativePoseAt : null):null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
+            if(queueForEngine && StaleFrame())return null;
             if (worldFrame is not null)
             {
                 objects = worldFrame.Objects;
@@ -2035,6 +2153,7 @@ public sealed partial class VisionSystem : IDisposable
                     if (queueForEngine && (sourceOwner is null || sourceOwner.Lifetime.Destroying ||
                         !ReferenceEquals(_robot.Engine.Robot, sourceOwner) || RemovedSince(removal))) return null;
                     DockingMarkersProcessed?.Invoke(new VisionFrameResult(imageId,timestamp,pd,keptMarkers,objects,forgotten,sw.Elapsed));
+                    if(queueForEngine && StaleFrame())return null;
                 }
                 if (worldFrame.Status != 0)
                 {
@@ -2051,9 +2170,8 @@ public sealed partial class VisionSystem : IDisposable
             // 0x0065457E), motion (0x006545E8), overhead edges (0x00654652), tool code (0x006546BC),
             // computed calibration (0x00654726), image quality (0x00654790), laser points (0x006547FA), then
             // CheckMailbox 0x00654A74 and the RobotProcessedImage broadcast 0x00654A14/0x00654A1C. This
-            // stack runs the marker, face, pet and overhead-edge handlers in that relative order; the
-            // motion, tool-code, computed-calibration, image-quality and laser-point handlers, CheckMailbox
-            // and the RobotProcessedImage layout are not built (see M11-035's unresolved).
+            // stack runs the supported marker, face, pet, motion, overhead-edge and quality handlers in that order.
+            // Tool-code, computed-calibration and laser-point recipients remain unavailable.
             // VisionSystem::Update in DetectingFaces mode: FaceTracker::Update, TrackedFace::UpdateTranslation(processingCamera), FaceWorld::AddOrUpdateFace
             // fidelity: M14-008
             if (detectedFaces is {} detected)
@@ -2095,7 +2213,7 @@ public sealed partial class VisionSystem : IDisposable
                         if(_robot.Engine.Robot is { } offlineOwner)
                         {
                             using var faceMutation=World.EnterPoseMutation();
-                            lock(offlineOwner.PoseTreeGate) offlineOrigin=ResolveFaceObservationOrigin(History,offlineOwner,timestamp);
+                            lock(offlineOwner.PoseTreeGate) offlineOrigin=ResolveFaceObservationOrigin(History,offlineOwner,timestamp,native:false);
                         }
                         observation=offlineOrigin is null
                             ? Faces.AddOrUpdateFace(tf, processingPose.RobotPose, processingPose.RotatingTooFast)
@@ -2119,14 +2237,44 @@ public sealed partial class VisionSystem : IDisposable
                         }
                     }
                     if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
-                    if(observation is not null && (observation.Face.TimesObserved>3||observation.Face.HasName) && _robot.Engine.Robot is {HasExternalInterface:true})
+                    if(observation?.NativeSnapshot is { } snapshot && (snapshot.Count>3||!string.IsNullOrEmpty(snapshot.Name)) && _robot.Engine.Robot is {HasExternalInterface:true} reportOwner)
                     {
-                        Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace full app report fields remain unavailable; no truncated wire report published; delivering checked LOCAL46 ID/timestamp projection only");
-                        _robot.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(observation.Face.Id,timestamp));
+                        if(queueForEngine && !ReferenceEquals(reportOwner,sourceOwner))return null;
+                        RobotObservedFaceReport? report = null;
+                        if(!offline && queueForEngine && ReferenceEquals(reportOwner,sourceOwner) && completeStockFaceReport && d.NativeFeatures is { } features &&
+                            snapshot.Translation is { } translation && snapshot.Rotation is { } rotation && snapshot.Origin is { } faceOrigin &&
+                            string.Equals(snapshot.Name ?? "",d.Name ?? "",StringComparison.Ordinal))
+                        {
+                            string name=snapshot.Name ?? "";
+                            try
+                            {
+                                var bytes=new System.Text.UTF8Encoding(false,true).GetBytes(name);
+                                if(bytes.Length<=255)
+                                {
+                                    using var faceMutation=World.EnterPoseMutation();
+                                    lock(reportOwner.PoseTreeGate)
+                                    {
+                                        using var parent=Pose3d.WrapExisting(faceOrigin);
+                                        using var pose=new Pose3d(rotation,translation,parent:parent);
+                                        if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
+                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth);
+                                    }
+                                }
+                            }
+                            catch(System.Text.EncoderFallbackException) { }
+                        }
+                        if(StaleFrame())return null;
+                        if(report is null) Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace complete stock pose, parts, name or optional-mode input unavailable; delivering local ID/timestamp only");
+                        else _robot.Engine.PublishRobotObservedFace(report);
+                        if(StaleFrame())return null;
+                        _robot.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(snapshot.Id,snapshot.Timestamp));
+                        if(queueForEngine && StaleFrame())return null;
                     }
                 }
                 LastFaces = faces;
-                Faces.Update(timestamp);
+                if(queueForEngine && sourceOwner is not null) Faces.UpdateNative(_robot.CameraSettings.LastProcessedImageTimestamp,sourceOwner,()=>!StaleFrame());
+                else Faces.Update(timestamp);
+                if(queueForEngine && StaleFrame())return null;
                 // fidelity: M14-011
                 // Stock FaceTracker recognition is processed before this observation pass; optional
                 // enrollment pose modes and positive-ID merge/remap transitions remain MISSING.
@@ -2135,6 +2283,7 @@ public sealed partial class VisionSystem : IDisposable
             {
                 if (RemovedSince(removal)) return null;
                 Pets.Update(pets, timestamp, processingPose.RotatingTooFast);
+                if(queueForEngine && StaleFrame())return null;
             }
             // The ground in front of the robot, on this frame's own pose data: the detector needs the
             // camera where it was when the image was taken and the lift angle it had then, which is what
@@ -2150,10 +2299,13 @@ public sealed partial class VisionSystem : IDisposable
                     _robot.Engine.DeliverAnimationReportToApp(0x49,motion.PackBody());
                     if(RemovedSince(removal)||sourceOwner.Lifetime.Destroying||!ReferenceEquals(_robot.Engine.Robot,sourceOwner))return null;
                     _robot.Engine.AnimationMessages.Deliver(0x49,true,motion);
+                    if(StaleFrame())return null;
                 }
             }
             if(overheadEdges is {} overhead)_robot.Engine.Robot?.NativeBehaviorRuntime?.ApplyOverhead(overhead,this);
+            if(queueForEngine && StaleFrame())return null;
             if(queueForEngine && quality is {} qualityResult)handlerFailed|=UpdateImageQuality(timestamp,qualityResult)!=0;
+            if(queueForEngine && StaleFrame())return null;
             result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed)
             {
                 OverheadEdges = overheadEdges,
@@ -2163,6 +2315,11 @@ public sealed partial class VisionSystem : IDisposable
             FramesProcessed++;
             LastResult = result;
                 }
+            if(markerDeferredLogs is not null)foreach(var dispatch in markerDeferredLogs)
+            {
+                dispatch();
+                if(queueForEngine && StaleFrame())return null;
+            }
             // Native result state is committed before optional host callbacks; a host
             // callback may dispose/join the worker without holding its processing lock.
             // Raised under the lock a removal waits on, so a frame the removal discarded never raises it afterwards.
@@ -2171,12 +2328,29 @@ public sealed partial class VisionSystem : IDisposable
             try
             {
                 if(!queueForEngine)FrameProcessed?.Invoke(result);
-                else EventFan.Raise(FrameProcessed,result,e=>_robot.Engine.EmitStackLog("M1-034 Vision FrameProcessed subscriber skipped: "+e));
+                else if(FrameProcessed is { } handlers)
+                {
+                    foreach(Action<VisionFrameResult> handler in handlers.GetInvocationList())
+                    {
+                        if(StaleFrame())break;
+                        try { handler(result); }
+                        catch(Exception e) { _robot.Engine.EmitStackLog("M1-034 Vision FrameProcessed subscriber skipped: "+e); }
+                    }
+                }
             }
             finally
             {
-                _robot.CameraSettings.LastProcessedImageTimestamp = result.Timestamp;
-                if(queueForEngine)PublishProcessedImage(timestamp,processedMask,imageMean);
+                if(!queueForEngine) _robot.CameraSettings.LastProcessedImageTimestamp = result.Timestamp;
+                else
+                {
+                    bool committed;
+                    lock(_groundGate)
+                    {
+                        committed=!StaleFrame() && ReferenceEquals(_groundOwner,sourceOwner);
+                        if(committed)_robot.CameraSettings.LastProcessedImageTimestamp = result.Timestamp;
+                    }
+                    if(committed && sourceOwner is not null)PublishProcessedImage(sourceOwner,timestamp,processedMask,imageMean,()=>!StaleFrame());
+                }
             }
             return result;
 
@@ -2187,17 +2361,26 @@ public sealed partial class VisionSystem : IDisposable
                 Pose3d ownedPose;
                 lock(poseTreeGate)ownedPose=new Pose3d(pd.RobotPose);
                 var ownedData=pd with{RobotPose=ownedPose};
-                _preparedResults.Enqueue(new PreparedVisionResult(removal,ownedPose,poseTreeGate,()=>
-                {ApplyResult(ownedData);return handlerFailed;}));
+                bool enqueued=false;
+                lock(_resultGate)
+                {
+                    if(!StaleFrame())
+                    {
+                        _preparedResults.Enqueue(new PreparedVisionResult(removal,sourceOwner,ownedPose,poseTreeGate,()=>
+                        {ApplyResult(ownedData);return handlerFailed;}));
+                        enqueued=true;
+                    }
+                }
+                if(!enqueued)lock(poseTreeGate)ownedPose.Dispose();
                 return null;
             }
             return ApplyResult(pd);
         }
     }
 
-    internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp)
+    internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp,bool native=true)
     {
-        if(!history.ComputeFaceObservationOriginId(timestamp,out uint originId))
+        if(!history.ComputeFaceObservationOriginId(timestamp,out uint originId,native))
         { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation-time historical pose unavailable; face update skipped"); return null; }
         if(!owner.TryGetNativeOriginOwner(originId,out var origin) || origin?.Node is not { } node)
         { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation origin ID has no registered native PoseOriginList owner; face update skipped"); return null; }

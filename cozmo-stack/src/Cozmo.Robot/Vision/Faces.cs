@@ -33,6 +33,7 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
     public int? NativeFaceDirectionThirdDegrees { get; init; }
     internal bool? NativeTrackerFlagChanged { get; init; }
     internal int NativeEnrollmentCount { get; init; }
+    internal NativeFaceFeatures? NativeFeatures { get; init; }
     // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
     internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
@@ -399,7 +400,13 @@ public sealed class FaceEntry
     public override string ToString() => $"face {Id}{(HasName ? " " + Name : "")} at {HeadPose.Translation} t={LastObservedTimestamp}";
 }
 
-public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew, Pose3d PreviousPose);
+public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew, Pose3d PreviousPose)
+{
+    internal NativeFaceSnapshot? NativeSnapshot { get; init; }
+}
+
+internal sealed record NativeFaceSnapshot(int Id, uint Timestamp, int Count, string? Name, FaceRect Rect,
+    Vec3? Translation, Rotation3d? Rotation, PoseTreeNode? Origin);
 
 /// <summary>
 /// The engine's <c>FaceWorld</c> (0x004F3B30..0x004F5B10). <c>AddOrUpdateFace(TrackedFace)</c> (0x004F4278):
@@ -431,6 +438,7 @@ public sealed partial class FaceWorld
 
     private readonly object _gate = new();
     private readonly Dictionary<int, FaceEntry> _faces = new();
+    private readonly HashSet<FaceEntry> _removingFaces = new();
     private bool _enrollmentCompleted;
     internal bool EnrollmentCompleted { get { lock (_gate) return _enrollmentCompleted; } }
     internal void ApplyEnrollmentCount(int count) { if (count >= 1) lock (_gate) _enrollmentCompleted = true; }
@@ -462,7 +470,7 @@ public sealed partial class FaceWorld
         bool below = onTreads is { } on && face.NativeTrackingTranslation is { } native
             ? on && native.Z < 0 : face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z;
         if (below) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
-        FaceEntry? entry; bool isNew = false; Pose3d prev;
+        FaceEntry? entry; bool isNew = false; Pose3d prev; NativeFaceSnapshot snapshot;
         using (LogCallbackDeferral.EnterGated(_gate))
         {
             // C2-F7: the reachable match is the map lookup keyed by the TrackedFace id at +0. The
@@ -510,9 +518,12 @@ public sealed partial class FaceWorld
             entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
+            snapshot = new(entry.Id,entry.LastObservedTimestamp,entry.TimesObserved,entry.Name,entry.Rect,
+                entry.NativeTrackingTranslation,entry.NativeTrackingRotation,entry.NativeObservationOrigin);
         }
+        var obs = new FaceObservation(entry, face.Timestamp, isNew, prev)
+        { NativeSnapshot = snapshot };
         UpdateNativeLastFace(entry);
-        var obs = new FaceObservation(entry, face.Timestamp, isNew, prev);
         FaceObserved?.Invoke(obs);
         return obs;
     }
@@ -521,24 +532,67 @@ public sealed partial class FaceWorld
     // fidelity: M14-008
     public IReadOnlyList<int> Update(uint lastProcessedImageTimestamp)
     {
+        var owner=NativeOwner?.Invoke();int generation=NativeGeneration?.Invoke() ?? 0;
         using var mutation=NativePoseScope?.Invoke();
-        List<int> expired;
-        lock(_gate)expired=_faces.Values.Where(e=>!e.HasName&&lastProcessedImageTimestamp>e.LastObservedTimestamp&&lastProcessedImageTimestamp-e.LastObservedTimestamp>UnnamedFaceLifetimeMs).Select(e=>e.Id).ToList();
-        foreach(int id in expired)
+        KeyValuePair<int,FaceEntry>[] expired;
+        lock(_gate)expired=_faces.Where(p=>!p.Value.HasName&&lastProcessedImageTimestamp>p.Value.LastObservedTimestamp&&lastProcessedImageTimestamp-p.Value.LastObservedTimestamp>UnnamedFaceLifetimeMs).ToArray();
+        var standaloneResult=NativeOwner is null?expired.Select(p=>p.Value.Id).ToArray():null;
+        var removed=new List<int>();
+        foreach(var pair in expired)
         {
-            Log?.Invoke($"FaceWorld.Update.DeletingOldFace: Removing unnamed face {id} at t={lastProcessedImageTimestamp}.");
-            RemoveNativeFace(id,true);
+            if(!NativeOwnerCurrent(owner,generation))break;
+            DeferPublicLog($"FaceWorld.Update.DeletingOldFace: Removing unnamed face {pair.Key} at t={lastProcessedImageTimestamp}.",owner,generation);
+            if(RemoveNativeFaceCore(pair.Key,true,owner,generation,pair.Value,true))removed.Add(pair.Key);
         }
-        return expired;
+        return standaloneResult ?? (IReadOnlyList<int>)removed;
+    }
+
+    internal IReadOnlyList<int> UpdateNative(uint priorTimestamp,EngineRobot owner,Func<bool> current)
+    {
+        int generation=NativeGeneration?.Invoke() ?? 0;
+        using var mutation=NativePoseScope?.Invoke();
+        KeyValuePair<int,FaceEntry>[] expired;
+        lock(_gate)expired=_faces.Where(p=>!p.Value.HasName && priorTimestamp>unchecked(p.Value.LastObservedTimestamp+UnnamedFaceLifetimeMs))
+            .OrderBy(p=>p.Key).ToArray();
+        var removed=new List<int>();
+        foreach(var pair in expired)
+        {
+            if(!current() || !NativeOwnerCurrent(owner,generation))break;
+            lock(_gate)
+                if(!_faces.TryGetValue(pair.Key,out var entry) || !ReferenceEquals(entry,pair.Value) || entry.HasName ||
+                    priorTimestamp<=unchecked(entry.LastObservedTimestamp+UnnamedFaceLifetimeMs))continue;
+            DeferPublicLog($"FaceWorld.Update.DeletingOldFace: Removing unnamed face {pair.Key} at t={priorTimestamp}.",owner,generation);
+            if(RemoveNativeFaceCore(pair.Key,true,owner,generation,pair.Value,true))removed.Add(pair.Key);
+        }
+        return removed;
+    }
+
+    private bool NativeOwnerCurrent(EngineRobot? owner,int generation)
+        => (NativeGeneration is null || NativeGeneration()==generation) &&
+           (NativeOwner is null || ReferenceEquals(NativeOwner(),owner)) &&
+           (owner is null || (!owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot,owner)));
+
+    private void DeferPublicLog(string message,EngineRobot? owner,int generation)
+    {
+        var handlers=Log;
+        if(handlers is not null)LogCallbackDeferral.Run(()=>{if(NativeOwnerCurrent(owner,generation))handlers(message);});
+    }
+    private void DeferFaceDeleted(int id,EngineRobot? owner,int generation)
+    {
+        var handlers=FaceDeleted;
+        if(handlers is not null)LogCallbackDeferral.Run(()=>{if(NativeOwnerCurrent(owner,generation))handlers(id);});
     }
 
     /// <summary>Native47 follows unique insertion/removal, including an absent old ID; public events remain a separate adapter.</summary>
     public bool ChangeFaceID(int oldId,int newId,string? newName=null)
     {
+        var owner=NativeOwner?.Invoke();int generation=NativeGeneration?.Invoke() ?? 0;
         using var mutation=NativePoseScope?.Invoke();
+        if(!NativeOwnerCurrent(owner,generation))return false;
         bool found;
         lock(_gate)
         {
+            if(!NativeOwnerCurrent(owner,generation))return false;
             found=_faces.TryGetValue(oldId,out var old);
             if(old is not null)
             {
@@ -552,10 +606,14 @@ public sealed partial class FaceWorld
                 _faces.Remove(oldId); //native remove(false): no4B, including old==new.
             }
         }
-        NativePublish?.Invoke(0x47,new NativeChangedFace(oldId,newId));
-        if(!found){Log?.Invoke($"FaceWorld.ChangeFaceID.UnknownOldID: ID {oldId} does not exist, cannot update to {newId}");return false;}
-        Log?.Invoke($"FaceWorld.ChangeFaceID.Success: Updating old face {oldId} to new ID {newId}");
-        FaceIdChanged?.Invoke(oldId,newId);return true;
+        if(!found && oldId>=1)DeferPublicLog($"FaceWorld.ChangeFaceID.UnknownOldID: ID {oldId} does not exist, cannot update to {newId}",owner,generation);
+        if(!NativeOwnerCurrent(owner,generation))return found;
+        if(owner is not null)NativePublish?.Invoke(owner,0x47,new NativeChangedFace(oldId,newId));
+        if(!NativeOwnerCurrent(owner,generation) || !found)return found;
+        DeferPublicLog($"FaceWorld.ChangeFaceID.Success: Updating old face {oldId} to new ID {newId}",owner,generation);
+        var changed=FaceIdChanged;
+        if(changed is not null)LogCallbackDeferral.Run(()=>{if(NativeOwnerCurrent(owner,generation))changed(oldId,newId);});
+        return true;
     }
 
     public FaceEntry? GetFace(int id) { lock (_gate) return _faces.GetValueOrDefault(id); }
@@ -718,15 +776,56 @@ public sealed partial class FaceWorld
     public void RemoveFaceByID(int id)=>RemoveNativeFace(id,true);
     internal bool RemoveNativeFace(int id,bool publish)
     {
+        var owner=NativeOwner?.Invoke();int generation=NativeGeneration?.Invoke() ?? 0;
         using var mutation=NativePoseScope?.Invoke();
-        lock(_gate)if(!_faces.ContainsKey(id))return false;
-        if(publish)NativePublish?.Invoke(0x4B,new NativeDeletedFace(id)); //found iterator; BEFORE erase.
-        bool removed;lock(_gate){if(_faces.TryGetValue(id,out var entry))entry.NativeObservationOrigin=null;removed=_faces.Remove(id);}
-        if(removed){Log?.Invoke($"FaceWorld.RemoveFaceByID: Removing face {id}");FaceDeleted?.Invoke(id);}
-        return removed;
+        return RemoveNativeFaceCore(id,publish,owner,generation,null,true);
     }
 
-    public void ClearAllFaces() { List<int> ids; lock (_gate) { ids = _faces.Keys.ToList(); foreach(var entry in _faces.Values)entry.NativeObservationOrigin=null; _faces.Clear(); _nativeLastStamp=0; } foreach (var id in ids) FaceDeleted?.Invoke(id); }
+    private bool RemoveNativeFaceCore(int id,bool publish,EngineRobot? owner,int generation,FaceEntry? expected,bool notifyPublic)
+    {
+        if(!NativeOwnerCurrent(owner,generation))return false;
+        FaceEntry entry;
+        lock(_gate)
+        {
+            if(!NativeOwnerCurrent(owner,generation))return false;
+            if(!_faces.TryGetValue(id,out entry!) || (expected is not null && !ReferenceEquals(expected,entry)) || !_removingFaces.Add(entry))return false;
+        }
+        try
+        {
+            if(publish && owner is not null)NativePublish?.Invoke(owner,0x4B,new NativeDeletedFace(id));
+            if(!NativeOwnerCurrent(owner,generation))return false;
+            lock(_gate)
+            {
+                if(!NativeOwnerCurrent(owner,generation))return false;
+                if(!_faces.TryGetValue(id,out var current) || !ReferenceEquals(current,entry))return false;
+                entry.NativeObservationOrigin=null;_faces.Remove(id);
+            }
+            if(notifyPublic){DeferPublicLog($"FaceWorld.RemoveFaceByID: Removing face {id}",owner,generation);DeferFaceDeleted(id,owner,generation);}
+            return true;
+        }
+        finally { lock(_gate)_removingFaces.Remove(entry); }
+    }
+
+    public void ClearAllFaces()
+    {
+        if(NativeOwner is null)
+        {
+            List<int> ids;lock(_gate){ids=_faces.Keys.ToList();foreach(var entry in _faces.Values)entry.NativeObservationOrigin=null;_faces.Clear();_nativeLastStamp=0;}
+            foreach(var id in ids)FaceDeleted?.Invoke(id);return;
+        }
+        var owner=NativeOwner();int generation=NativeGeneration?.Invoke() ?? 0;
+        using var mutation=NativePoseScope?.Invoke();
+        KeyValuePair<int,FaceEntry>[] entries;lock(_gate)entries=_faces.OrderBy(p=>p.Key).ToArray();
+        var removed=new List<int>();
+        foreach(var pair in entries)
+        {
+            if(!NativeOwnerCurrent(owner,generation))return;
+            if(RemoveNativeFaceCore(pair.Key,true,owner,generation,pair.Value,false))removed.Add(pair.Key);
+        }
+        if(!NativeOwnerCurrent(owner,generation))return;
+        lock(_gate){if(!NativeOwnerCurrent(owner,generation))return;_nativeLastStamp=0;}
+        foreach(var id in removed)DeferFaceDeleted(id,owner,generation);
+    }
 
     /// <summary>
     /// <c>FaceWorld::OnRobotDelocalized</c> 0x004F55E4..0x004F563A: for each face whose +0x120 is not the sentinel it

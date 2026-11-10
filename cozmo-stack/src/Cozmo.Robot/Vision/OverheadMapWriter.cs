@@ -7,11 +7,9 @@ internal sealed record OverheadHistorySample(uint Result,Pose3d? Pose,uint Oldes
     public void Dispose()=>Pose?.Dispose();
     internal static OverheadHistorySample Read(RobotStateHistory history,uint timestamp)
     {
-        using var value=new HistRobotState();uint time=0;
-        uint result=history.ComputeStateAt(timestamp,ref time,value,true);
+        using var value=new HistRobotState();
+        uint result=history.ComputeAndInsertKeyedState(timestamp,value,out _);
         if(result!=0)return new(result,null,history.OldestTimeStamp,history.NewestTimeStamp);
-        history.InsertComputedStateAt(timestamp,value.Pose);
-        SteppedBehavior.ReportMissing("M11-044 ComputeAndInsertStateAt 0x0067F8A2 -> auxiliary key/index ownership after 0x00531BAA remains unbuilt; existing checked timestamp/pose cache is used");
         return new(0,new Pose3d(value.Pose),history.OldestTimeStamp,history.NewestTimeStamp);
     }
 }

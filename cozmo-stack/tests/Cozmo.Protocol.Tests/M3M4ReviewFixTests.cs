@@ -83,10 +83,10 @@ public sealed class M3M4ReviewFixTests
         }
         private void In(ReliableMessageType type,byte[] body)=>Robot.Transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(type,body,_seq++),1)));
         internal void Data(RobotMessage message)=>In(ReliableMessageType.SingleReliableMessage,message.ToBytes());
-        internal void State(uint ts,float x=0)
+        internal void State(uint ts,float x=0,float head=-0.15f)
         {
             var native=Robot.Engine.Robot!;
-            Data(new RobotState{Timestamp=ts,PoseOriginId=native.CurrentOriginId,PoseFrameId=native.PoseFrameId,Pose=new RobotPose{X=x},HeadAngle=-0.15f,
+            Data(new RobotState{Timestamp=ts,PoseOriginId=native.CurrentOriginId,PoseFrameId=native.PoseFrameId,Pose=new RobotPose{X=x},HeadAngle=head,
                 BatteryVoltage=4,Status=(uint)(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos),
                 Accel=new AccelData{Z=9800},Gyro=new GyroData(),CliffDataRaw=new ushort[]{500,500,500,500}});
             Assert.True(SpinWait.SpinUntil(()=>native.PoseHistory.NewestTimeStamp==ts,TimeSpan.FromSeconds(5)));
@@ -101,6 +101,8 @@ public sealed class M3M4ReviewFixTests
         }
         internal void Image(GrayImage image,uint id,uint timestamp)
         {
+            Data(new ImageImuData{ImageId=id,Line2Number=239});
+            Data(new ImageImuData{ImageId=id+10000,Line2Number=239});
             const int chunkSize=1200;int count=(image.Pixels.Length+chunkSize-1)/chunkSize;
             for(int i=0;i<count;i++)Data(new ImageChunk{ImageId=id,FrameTimestamp=timestamp,ImageEncoding=1,ImageResolution=4,
                 ImageChunkCount=(byte)count,ChunkId=(byte)i,Data=image.Pixels.Skip(i*chunkSize).Take(chunkSize).ToArray()});
@@ -228,6 +230,77 @@ public sealed class M3M4ReviewFixTests
         Assert.Equal(150u,f.Vision.LastResult!.Timestamp);
         Assert.Equal(0f,(float)f.Vision.LastResult.PoseData.RobotPose.Translation.X); // query at newest100, not later interpolated150/x5
         Assert.Equal(100u,consumedTime);Assert.Equal(status,consumedStatus);Assert.Equal(-0.15f,consumedHead);Assert.Equal(h,consumedH);
+    }
+
+    [Fact]
+    public void MarkerWorkerUsesOuterCalibrationAndImageTimeCameraAfterCurrentStateChanges()
+    {
+        using var f=new Live();f.Vision.SkipProcessorPass=true;
+        CameraCalibration? seen=null;Vec3 position=default;int calls=0;
+        f.Vision.NativeMarkerCameraObservedForTest=(cal,camera)=>
+        {
+            seen=cal;using var flat=camera.GetWithRespectToRoot();position=flat.Translation;calls++;
+        };
+        using var handed=new ManualResetEventSlim();f.Robot.Camera.FrameForVision+=_=>handed.Set();
+        var outer=f.Vision.Calibration!;f.Image(f.Render(),1,100);
+        Assert.True(handed.Wait(TimeSpan.FromSeconds(5)));
+        Assert.NotNull(f.Vision.PendingGroundForTest);
+        try
+        {
+            f.State(200,20,0.4f);
+            var inner=outer with {FocalLengthX=outer.FocalLengthX+20};
+            f.Vision.UpdateCameraCalibration(inner);Assert.Same(inner,f.Vision.Calibration);
+        }
+        finally { f.Vision.SkipProcessorPass=false; }
+        Assert.True(SpinWait.SpinUntil(()=>f.Vision.FramesProcessed>0,TimeSpan.FromSeconds(5)));
+        Assert.Equal(1,calls);Assert.Same(outer,seen);
+        // Independent neck/camera translation at image-time head -0.15 and x=0;
+        // the later current state (x=20, head=0.4) must not supply the marker camera.
+        double x=-13+17.52*Math.Cos(.15)-8*Math.Sin(.15);
+        double z=49-17.52*Math.Sin(.15)-8*Math.Cos(.15);
+        Assert.InRange(position.X,x-.01,x+.01);Assert.InRange(position.Z,z-.01,z+.01);
+    }
+
+    [Fact]
+    public void MarkerWorkerSilentlySkipsMismatchedHistoryButFinishesFrame()
+    {
+        using var f=new Live();f.Vision.SkipProcessorPass=true;
+        using var handed=new ManualResetEventSlim();f.Robot.Camera.FrameForVision+=_=>handed.Set();
+        int worldCalls=0;f.Vision.World.BlockConfigurationManagerUpdate=()=>worldCalls++;
+        f.Image(f.Render(),1,150);Assert.True(handed.Wait(TimeSpan.FromSeconds(5)));
+        try
+        {
+            f.Robot.Engine.InvokeEngineRequest(()=>{using var p=new Pose3d(f.Robot.Engine.Robot!.MainPose);f.Robot.Engine.Robot.SetNewPose(p);return true;});
+            f.State(200,10);
+        }
+        finally { f.Vision.SkipProcessorPass=false; }
+        Assert.True(SpinWait.SpinUntil(()=>f.Vision.FramesProcessed>0,TimeSpan.FromSeconds(5)));
+        Assert.NotEmpty(f.Vision.LastResult!.Markers);Assert.Equal(0,worldCalls);
+        Assert.Contains(f.Logs,e=>e.Name=="RobotStateHistory.GetRawStateAt.MisMatchedFrameIds");
+        Assert.DoesNotContain(f.Logs,e=>e.Name=="VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound");
+    }
+
+    [Fact]
+    public void MarkerWorkerRejectsDifferentRootWithSameNumericOrigin()
+    {
+        using var f=new Live();f.Vision.SkipProcessorPass=true;
+        using var handed=new ManualResetEventSlim();f.Robot.Camera.FrameForVision+=_=>handed.Set();
+        int worldCalls=0;f.Vision.World.BlockConfigurationManagerUpdate=()=>worldCalls++;
+        f.Image(f.Render(),1,100);Assert.True(handed.Wait(TimeSpan.FromSeconds(5)));
+        var owner=f.Robot.Engine.Robot!;
+        using var otherRoot=new Pose3d("other allocation"){Id=owner.CurrentOriginId};
+        using var otherPose=new Pose3d(Rotation3d.Identity,Vec3.Zero,parent:otherRoot);
+        try
+        {
+            // Explicit history-owner unit input: the native result has the same numeric ID
+            // but belongs to a different tree allocation from the owner's current origin.
+            var raw=owner.StoredState!;owner.PoseHistory.Clear();
+            Assert.Equal(0u,owner.PoseHistory.AddRawOdomState(100,otherPose,raw));
+        }
+        finally { f.Vision.SkipProcessorPass=false; }
+        Assert.True(SpinWait.SpinUntil(()=>f.Vision.FramesProcessed>0,TimeSpan.FromSeconds(5)));
+        Assert.NotEmpty(f.Vision.LastResult!.Markers);Assert.Equal(0,worldCalls);
+        Assert.Contains(f.Logs,e=>e.Name=="VisionComponent.UpdateVisionMarkers.OldOrigin");
     }
 
     // The supplied observer pauses the worker only; camera packets and both handoffs use the real path.

@@ -9,6 +9,135 @@ namespace Cozmo.Protocol.Tests;
 [Collection("ObjectID process statics")]
 public sealed class RobotStateHistoryAdmissionTests
 {
+    [Fact]
+    public void ComputedStatesUseResolvedTimeAndStableBorrowedStateWithOptionalKeys()
+    {
+        using var f=new Fixture();f.Send(f.State(100,0));f.Send(f.State(200,10));
+        uint time=999,key=777;HistRobotState? state=null;
+        Assert.Equal(0u,f.History.ComputeAndInsertNative(150,ref time,ref state,false,ref key,interpolate:false));
+        Assert.Equal(100u,time);Assert.Equal(777u,key);Assert.NotNull(state);
+        var first=state;var pose=state!.Pose;var node=pose.Node;
+        Assert.True(f.History.ComputedTimeToKey.TryGetValue(100,out uint firstKey));
+        Assert.True(f.History.IsValidComputedKey(firstKey));
+        using var revised=new Pose3d(state.Pose);
+        revised.Node!.Transform=new Transform3d(Rotation3d.Identity,new Vec3(25,0,0));
+        Assert.Equal(0u,f.History.AddVisionOnlyState(100,revised,9,0.75f,0.5f));
+        time=0;key=55;
+        Assert.Equal(0u,f.History.ComputeAndInsertNative(100,ref time,ref state,true,ref key));
+        Assert.Same(first,state);Assert.Same(pose,state!.Pose);Assert.Same(node,state.Pose.Node);Assert.Equal(firstKey,key);
+        Assert.Equal(25f,(float)state.Pose.Translation.X);Assert.Equal(0.75f,state.State.HeadAngle);
+        f.History.ComputedTimeToKey.Remove(100);
+        var warnings=new List<string>();
+        f.History.SourceLog=(level,channel,name,text)=>{if(level==EngineLogLevel.Warning)warnings.Add(name);};
+        var previous=state;key=55;
+        Assert.Equal(1u,f.History.GetComputedNative(100,ref state,true,ref key));
+        Assert.Same(previous,state);Assert.Equal(55u,key);
+        Assert.Contains("RobotStateHistory.GetComputedStateAt.KeyNotFound",warnings);
+        time=0;
+        Assert.Equal(0u,f.History.ComputeAndInsertNative(100,ref time,ref state,false,ref key));
+        Assert.False(f.History.ComputedTimeToKey.ContainsKey(100));
+        Assert.Equal(0u,f.History.ComputeAndInsertNative(100,ref time,ref state,true,ref key));
+        Assert.Equal(0u,key);Assert.False(f.History.ComputedKeyToTime.ContainsKey(0));
+        time=42;key=88;state=previous;
+        Assert.Equal(1u,f.History.ComputeAndInsertNative(999,ref time,ref state,true,ref key));
+        Assert.Null(state);Assert.Equal(88u,key);
+    }
+
+    [Fact]
+    public void ComputedKeysWrapAcrossHistoriesAndPreserveExistingIndexEntries()
+    {
+        int previous=RobotStateHistory.ComputedKeyCounterForTest;
+        try
+        {
+            RobotStateHistory.ComputedKeyCounterForTest=-2;
+            using var first=new Fixture();first.Send(first.State(100));
+            first.History.ComputedKeyToTime.Add(uint.MaxValue,900);
+            first.History.ComputedTimeToKey.Add(100,42);
+            uint time=0,key=0;HistRobotState? state=null;
+            Assert.Equal(0u,first.History.ComputeAndInsertNative(100,ref time,ref state,true,ref key));
+            Assert.Equal(uint.MaxValue,key);Assert.Equal(900u,first.History.ComputedKeyToTime[uint.MaxValue]);
+            Assert.Equal(42u,first.History.ComputedTimeToKey[100]);
+            using var second=new Fixture();second.Send(second.State(200));
+            time=0;key=99;state=null;
+            Assert.Equal(0u,second.History.ComputeAndInsertNative(200,ref time,ref state,true,ref key));
+            Assert.Equal(0u,key);Assert.True(second.History.IsValidComputedKey(0));
+            second.History.Clear();Assert.Equal(0,RobotStateHistory.ComputedKeyCounterForTest);
+        }
+        finally { RobotStateHistory.ComputedKeyCounterForTest=previous; }
+    }
+
+    [Fact]
+    public void OfflinePoseSeedDoesNotInventFullStateAndLastPoseWriterWins()
+    {
+        using var f=new Fixture();f.Send(f.State(100,1));
+        using var seed=new Pose3d(Rotation3d.Identity,new Vec3(70,0,0));
+        int before=RobotStateHistory.ComputedKeyCounterForTest;
+        f.History.InsertComputedStateAt(100,seed);
+        HistRobotState? state=null;uint key=4,time=0;
+        Assert.Equal(1u,f.History.GetComputedNative(100,ref state,true,ref key));
+        Assert.Null(state);Assert.Equal(4u,key);Assert.Equal(before,RobotStateHistory.ComputedKeyCounterForTest);
+        Assert.Equal(70,(float)f.History.GetComputedStateAt(100)!.Translation.X);
+        Assert.Equal(0u,f.History.ComputeAndInsertNative(100,ref time,ref state,true,ref key));
+        Assert.Equal(1,(float)f.History.GetComputedStateAt(100)!.Translation.X);
+        f.History.InsertComputedStateAt(100,seed);
+        Assert.Equal(70,(float)f.History.GetComputedStateAt(100)!.Translation.X);
+        Assert.Equal(0u,f.History.GetComputedNative(100,ref state,true,ref key));
+        Assert.Equal(1,(float)state!.Pose.Translation.X);
+    }
+
+    [Fact]
+    public void OfflineFaceOriginSeedsPoseWithoutAllocatingNativeKey()
+    {
+        using var f=new Fixture();f.Send(f.State(100,1));
+        int before=RobotStateHistory.ComputedKeyCounterForTest;
+        Assert.True(f.History.ComputeFaceObservationOriginId(100,out _,native:false));
+        Assert.Equal(before,RobotStateHistory.ComputedKeyCounterForTest);
+        Assert.NotNull(f.History.GetComputedStateAt(100));
+        HistRobotState? state=null;uint key=9;
+        Assert.Equal(1u,f.History.GetComputedNative(100,ref state,true,ref key));
+        Assert.Null(state);Assert.Equal(9u,key);
+    }
+
+    [Fact]
+    public void OverheadHistoryRequestsNativeKeyAndReturnsOwnedCopy()
+    {
+        using var f=new Fixture();f.Send(f.State(100,1));
+        using var sample=OverheadHistorySample.Read(f.History,100);
+        Assert.Equal(0u,sample.Result);Assert.NotNull(sample.Pose);
+        HistRobotState? state=null;uint key=0;
+        Assert.Equal(0u,f.History.GetComputedNative(100,ref state,true,ref key));
+        Assert.True(f.History.IsValidComputedKey(key));Assert.NotSame(state!.Pose,sample.Pose);
+    }
+
+    [Fact]
+    public void CullingRemovesActualComputedStatesAndKeyPrefix()
+    {
+        int previous=RobotStateHistory.ComputedKeyCounterForTest;
+        try
+        {
+            RobotStateHistory.ComputedKeyCounterForTest=0;
+            using var f=new Fixture();f.Send(f.State(100));f.Send(f.State(1000));
+            uint time=0,key=0;HistRobotState? state=null;
+            Assert.Equal(0u,f.History.ComputeAndInsertNative(100,ref time,ref state,true,ref key));Assert.Equal(1u,key);
+            Assert.Equal(0u,f.History.ComputeAndInsertNative(1000,ref time,ref state,true,ref key));Assert.Equal(2u,key);
+            f.Send(f.State(4000));
+            Assert.False(f.History.IsValidComputedKey(1));Assert.True(f.History.IsValidComputedKey(2));
+            var before=state;key=99;
+            Assert.Equal(1u,f.History.GetComputedNative(100,ref state,true,ref key));
+            Assert.Same(before,state);Assert.Equal(99u,key);
+            Assert.Equal(0u,f.History.GetComputedNative(1000,ref state,true,ref key));Assert.Equal(2u,key);
+        }
+        finally { RobotStateHistory.ComputedKeyCounterForTest=previous; }
+    }
+    [Fact]
+    public void MarkerHistoryQueryPropagatesStatusAndResolvedTime()
+    {
+        using var f=new Fixture();f.Send(f.State(100,0));f.NewFrame();f.Send(f.State(200,10));
+        using var result=new HistRobotState();
+        Assert.Equal(0u,f.History.ComputeAndInsertKeyedState(100,result,out uint exact));Assert.Equal(100u,exact);
+        Assert.Equal(0x06000000u,f.History.ComputeAndInsertKeyedState(150,result,out uint mismatch));Assert.Equal(0u,mismatch);
+        Assert.Equal(1u,f.History.ComputeAndInsertKeyedState(300,result,out uint missing));Assert.Equal(0u,missing);
+    }
     private sealed class Fixture:IDisposable
     {
         internal readonly M4ControlTests.Rig Rig=new();
@@ -114,7 +243,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(100u,output.State.Timestamp); // newest matching raw wins over vision
     }
 
-    // reach: unit (seeds only auxiliary indices whose insertion owner remains MISSING at M11-044/0x00531BAA;
+    // reach: unit (seeds non-monotonic auxiliary indices to isolate the cull rule;
     // raw timestamps come from dispatch; tests the checked native prefix-erasure unit).
     [Fact]
     public void CullingKeepsTheCutoffAndErasesTheKeyIndexPrefixRatherThanPairs()
