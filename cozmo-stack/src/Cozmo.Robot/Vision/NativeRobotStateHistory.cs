@@ -303,6 +303,11 @@ public sealed partial class RobotStateHistory
     {uint origin=0;bool result=WithGate(()=>ComputeAndInsertCore(timestamp,out origin));originId=origin;return result;}
     internal bool ComputeAndInsertStateAt(uint timestamp,HistRobotState output,out uint originId)
     {uint origin=0;bool result=WithGate(()=>ComputeAndInsertCore(timestamp,out origin,output));originId=origin;return result;}
+    internal uint ComputeAndInsertMarkerState(uint timestamp,HistRobotState output,out uint resolvedTime)
+    {
+        uint time=0;uint result=WithGate(()=>ComputeAndInsertStatusCore(timestamp,output,ref time,out _));
+        resolvedTime=time;return result;
+    }
     // FaceWorld's observation-time history lookup: retain the selected node allocation,
     // not a Pose3d wrapper (which would add a logical PoseBase owner).
     internal bool ComputeFaceObservationOriginId(uint timestamp,out uint originId)
@@ -312,15 +317,20 @@ public sealed partial class RobotStateHistory
     }
     private bool ComputeAndInsertCore(uint timestamp,out uint originId,HistRobotState? output=null)
     {
+        using var owned=output is null?new HistRobotState():null;var value=output??owned!;uint time=0;
+        return ComputeAndInsertStatusCore(timestamp,value,ref time,out originId)==0;
+    }
+    private uint ComputeAndInsertStatusCore(uint timestamp,HistRobotState value,ref uint time,out uint originId)
+    {
         lock(_gate)
         {
-            originId=0;using var owned=output is null?new HistRobotState():null;var value=output??owned!;uint time=0;
-            if(ComputeStateAt(timestamp,ref time,value,true)!=0)return false;
-            if(value.Pose.Node is not { } poseNode)return false;
+            originId=0;uint result=ComputeStateAt(timestamp,ref time,value,true);
+            if(result!=0)return result;
+            if(value.Pose.Node is not { } poseNode)return 1;
             originId=poseNode.Root().Id;
             InsertComputedStateAt(timestamp,value.Pose);
             Behavior.SteppedBehavior.ReportMissing("M11-044 ComputeAndInsertStateAt native auxiliary key/index ownership after0x00531BAA is not in the adopted history-query rows; bounded timestamp/pose cache only, no invented key/index producer");
-            return true;
+            return 0;
         }
     }
     internal void InsertComputedStateAt(uint timestamp,Pose3d pose)

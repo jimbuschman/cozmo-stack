@@ -9,6 +9,15 @@ namespace Cozmo.Protocol.Tests;
 [Collection("ObjectID process statics")]
 public sealed class RobotStateHistoryAdmissionTests
 {
+    [Fact]
+    public void MarkerHistoryQueryPropagatesStatusAndResolvedTime()
+    {
+        using var f=new Fixture();f.Send(f.State(100,0));f.NewFrame();f.Send(f.State(200,10));
+        using var result=new HistRobotState();
+        Assert.Equal(0u,f.History.ComputeAndInsertMarkerState(100,result,out uint exact));Assert.Equal(100u,exact);
+        Assert.Equal(0x06000000u,f.History.ComputeAndInsertMarkerState(150,result,out uint mismatch));Assert.Equal(0u,mismatch);
+        Assert.Equal(1u,f.History.ComputeAndInsertMarkerState(300,result,out uint missing));Assert.Equal(0u,missing);
+    }
     private sealed class Fixture:IDisposable
     {
         internal readonly M4ControlTests.Rig Rig=new();
