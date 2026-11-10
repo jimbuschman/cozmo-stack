@@ -32,10 +32,11 @@ public class M5X13BuilderTests : IDisposable
         Assert.Equal(1, hub.Count(0xB4, false));
         Assert.Equal(1, hub.Count(0x8C, false));
         Assert.Equal(1, hub.Count(0x89, false));
+        Assert.Equal(1, hub.Count(0x8F, false));
         hub.ReleaseObserved = line => { if (line.StartsWith("unlink")) order.Enqueue(line); };
         robot.Engine.DestructionObserved = phase =>
         {
-            if (phase == "robots") { Assert.Equal(0, hub.Count(0x5A, true)); Assert.Equal(0, hub.Count(0x32, true)); Assert.Equal(0, hub.Count(0x8C, false)); Assert.Equal(0, hub.Count(0x89, false)); }
+            if (phase == "robots") { Assert.Equal(0, hub.Count(0x5A, true)); Assert.Equal(0, hub.Count(0x32, true)); Assert.Equal(0, hub.Count(0x8C, false)); Assert.Equal(0, hub.Count(0x89, false)); Assert.Equal(0,hub.Count(0x8F,false)); }
             order.Enqueue(phase);
         };
         robot.Animations.LoaderDestructionObserved = phase => { order.Enqueue(phase); if (phase == "abort") resume.Set(); };
@@ -58,7 +59,7 @@ public class M5X13BuilderTests : IDisposable
             // retires the constructor's 6B/6D/6C handle vector from the back before the streamer owners.
             Assert.Equal(new[] { "unlink G2E F7", "unlink G2E E0", "unlink G2E DF", "unlink G2E DE", "unlink G2E DD", "unlink G2E DC", "unlink G2E DB", "unlink G2E 96", "unlink G2E A2", "unlink G2E A3", "unlink G2E A3", "unlink G2E C3", "unlink G2E EB", "unlink G2E EA", "unlink G2E E9", "unlink G2E E6", "unlink G2E E5", "unlink G2E E7", "unlink G2E A6", "unlink G2E E1", "unlink G2E 6C", "unlink G2E 6D", "unlink G2E 6B", "unlink E2G 0D", "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
                 "unlink G2E C4", "unlink G2E AD", "unlink G2E AF", "unlink G2E AE",
-                "unlink G2E B4", "robots", "abort", "join", "loader", "hub" }, order.Where(line => line is not ("unlink G2E 95" or "unlink E2G 35" or "unlink E2G 32" or "unlink G2E 8C" or "unlink G2E 89")));
+                "unlink G2E B4", "robots", "abort", "join", "loader", "hub" }, order.Where(line => line is not ("unlink G2E 95" or "unlink E2G 35" or "unlink E2G 32" or "unlink G2E 8C" or "unlink G2E 89" or "unlink G2E 8F")));
             // The host VisionSystem releases its rename handler before robot teardown.
             // This fixture has no configured Meet responder, and native 8C ordering remains separate.
             var shutdown = order.ToArray();
@@ -66,6 +67,8 @@ public class M5X13BuilderTests : IDisposable
             Assert.True(Array.IndexOf(shutdown, "unlink G2E 8C") < Array.IndexOf(shutdown, "robots"));
             Assert.Single(shutdown.Where(line => line == "unlink G2E 89"));
             Assert.True(Array.IndexOf(shutdown, "unlink G2E 89") < Array.IndexOf(shutdown, "robots"));
+            Assert.Single(shutdown.Where(line => line == "unlink G2E 8F"));
+            Assert.True(Array.IndexOf(shutdown, "unlink G2E 8F") < Array.IndexOf(shutdown, "robots"));
             // M11-072: no-resource fixture has R2/R5; completed deletion retires their tokens.
             // Their exact native component retirement points remain MISSING, outside the ordering assertion.
             Assert.Equal(2, order.Count(line => line == "unlink E2G 32"));
