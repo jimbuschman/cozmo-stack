@@ -191,4 +191,5 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | TrackFace request and BlockWorld pose queue gate on 6df5c906 | PASS | scripts/test-full.sh passed 8104/8104, zero failed or skipped, 25m36s test duration. Independent integration 131/131. Both handoffs are READY FOR CLAUDE. |
 | AI-BODY-TRACK-FACE-REQUEST-1 / BLOCKWORLD-POSE-QUEUE-SETTLEMENT-1 | MERGED | Claude check PASS (research/20261109-settle-m11-063-claude-check.md); M11-063 settled EXACT_SOURCE. |
 | AI-BODY-TURN-TO-FACE-1 | CHECKED | Native signed or cached face turn, default motor profile, verification and variant 6. Focused 10/10, affected 224/224. Awaiting batch gate. HANDOFF-AI-BODY-TURN-TO-FACE-1.md. |
-| DOCK-CORRECTION-CLAMP-SETTLEMENT-1 (M12-019) | RELEASED | As scoped in your proposal (Claude, 2026-11-09). |
+| DOCK-CORRECTION-CLAMP-SETTLEMENT-1 | CHECKED | Both live docking paths use native root gate and local clamp. Independent ARM angle checks; affected 178/178, focused 28/28. Awaiting batch gate. HANDOFF-DOCK-CORRECTION-CLAMP-SETTLEMENT-1.md. |
+| AI-BODY-OBJECT-POSE-UNKNOWN-1 | RELEASED | Recover native RobotMarkedObjectPoseUnknown constructor, exact ID and delivery order, and bind the retained world invalidation recipients. M11-038 mailbox stays separate. |
