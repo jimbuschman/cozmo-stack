@@ -2622,7 +2622,7 @@ public class M12RVisBuildTests : IDisposable
             foreach (var l in rig.Sent.OfType<SetLiftHeight>().Skip(acked).ToList()) { rig.Send(new MotorActionAck { ActionId = l.ActionId }); acked++; }
             LiftReports(rig, 0.0);
         }, ms: 60000);
-        Assert.Equal(PoseState.Unknown, obj.PoseState);
+        Assert.Null(rig.Vision.World.GetLocatedObjectById(7));
     }
 
     /// <summary>
@@ -2689,7 +2689,7 @@ public class M12RVisBuildTests : IDisposable
         Assert.False(flip.LiftRaised);
         Assert.Equal(new[] { 45f }, rig.Sent.OfType<SetLiftHeight>().Select(m => m.HeightMm));
         Assert.Empty(rig.Sent.OfType<AppendPathSegmentLine>());
-        Assert.Equal(PoseState.Unknown, obj.PoseState);
+        Assert.Null(rig.Vision.World.GetLocatedObjectById(7));
     }
 
     /// <summary>
@@ -2786,7 +2786,7 @@ public class M12RVisBuildTests : IDisposable
         Assert.Contains(flip.Trace, l => l.Contains("is not located (warning); compound result Success"));
         obj.PoseState = PoseState.Known;
         Assert.Equal(ActionResult.Retry, flip.CheckIfDoneTick(ActionResult.Retry));    // not RUNNING with the object: marked Unknown, the compound's result
-        Assert.Equal(PoseState.Unknown, obj.PoseState);
+        Assert.Null(rig.Vision.World.GetLocatedObjectById(7));
         Assert.Contains(flip.Trace, l => l.Contains("compound result Retry; object 7 marked Unknown"));
         Assert.Empty(rig.Pump().OfType<SetLiftHeight>());                              // a finished compound never queues the carry lift
     }

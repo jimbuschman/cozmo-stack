@@ -1197,10 +1197,8 @@ public sealed partial class BlockWorld
 
     public event Action<ObjectObservation>? ObjectObserved;
     // fidelity: M11-038
-    // BroadcastObjectObservation 0x0061FED8 is this observation event. BroadcastLocatedObjectStates 0x0061E6C0, BroadcastConnectedObjects
-    // 0x0061E91C, the RobotMarkedObjectPoseUnknown broadcast and VisionSystem::CheckMailbox 0x006B2AD4 have no message type or consumer in
-    // this stack (there is no EngineToGame channel): MISSING (M11-038). PoseStateChanged is this stack's consumer channel for the
-    // pose-state broadcasts and for a located object being deleted.
+    // BroadcastObjectObservation 0x0061FED8 is this observation event. PoseStateChanged is this stack's consumer channel for the
+    // pose-state broadcasts and for a located object being deleted. RobotMarkedObjectPoseUnknown is delivered separately as tag 0x52.
     public event Action<ObservableObject, PoseState, PoseState>? PoseStateChanged;
     // fidelity: M4-049 — native vtable +0xC gate precedes this recipient.
     internal Action<uint,PoseState,PoseState>? ActiveObjectPoseStateChanged;
@@ -2295,13 +2293,19 @@ public sealed partial class BlockWorld
     /// is warned about (0x00507288) and is NOT added, but it still becomes the current object (<c>mov r7, fp</c> at 0x0050728E, then <c>cmp r7,#0; bne 0x005071D2</c> at 0x0050731C..0x0050731E):
     /// the walk CONTINUES and the objects on top of the carried cube are found and deleted. The walk ends when nothing is found on top. Nothing underneath is ever looked at. Then
     /// <c>RobotMarkedObjectPoseUnknown</c> is broadcast once per set entry, each with the ORIGINAL object's ID (0x005073AA..0x005073B8), and <c>DeleteLocatedObjects</c> removes the set
-    /// (0x005073F4); the confirmer entry is not erased. The deleted objects are returned. The broadcast has no message type in this stack (M11-038): <see cref="PoseStateChanged"/>
-    /// reports each deletion.
+    /// (0x005073F4); the confirmer entry is not erased. The deleted objects are returned, and <see cref="PoseStateChanged"/> reports each deletion.
     /// </summary>
     // fidelity: M11-007
-    internal IReadOnlyList<ObservableObject> MarkObjectUnknown(ObservableObject obj, bool propagate)
+    internal IReadOnlyList<ObservableObject> MarkObjectUnknown(ObservableObject obj, bool propagate, EngineRobot? expectedOwner = null, Func<bool>? admissionCurrent = null)
     {
+        var owner = expectedOwner ?? NativeSnapshotOwner?.Invoke();
         using var frameMutation=EnterPoseMutation();
+        uint origin = CurrentOriginId;
+        uint ownerOrigin = owner?.CurrentOriginId ?? 0;
+        bool Current() => (admissionCurrent?.Invoke() ?? true) && (owner is null || (!owner.Lifetime.Destroying &&
+            ReferenceEquals(owner.Engine.Robot, owner) && ReferenceEquals(NativeSnapshotOwner?.Invoke(), owner) &&
+            CurrentOriginId == origin && owner.CurrentOriginId == ownerOrigin));
+        if (!Current()) return Array.Empty<ObservableObject>();
         var victims = new List<ObservableObject> { obj };
         if (propagate)
         {
@@ -2320,6 +2324,12 @@ public sealed partial class BlockWorld
         }
         var f = new BlockWorldFilter();
         foreach (var v in victims) f.AllowedIds.Add(v.ObjectId);
+        foreach (var _ in f.AllowedIds)
+        {
+            if (!Current()) return Array.Empty<ObservableObject>();
+            if (owner?.HasExternalInterface == true) owner.Engine.PublishObjectPoseUnknown(obj.ObjectId);
+        }
+        if (!Current()) return Array.Empty<ObservableObject>();
         return DeleteLocatedObjects(f);
     }
 
