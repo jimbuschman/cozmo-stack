@@ -26,7 +26,9 @@ sampler=$!
 trap 'touch "$mem.stop"; kill $sampler 2>/dev/null; dotnet build-server shutdown >/dev/null 2>&1' EXIT
 # Build first and stop the compiler servers before the tests: VBCSCompiler held 4.2 GB through a whole run and the
 # suite was killed for low memory twice (operator, 2026-11-08).
-if ! dotnet build cozmo-stack/Cozmo.sln >> "$log" 2>&1; then
+# Two build nodes, not one per core: the 2026-11-09 run's low point (2.4 GB free) was the build, at 4.4 GB for
+# dotnet/MSBuild/VBCSCompiler, not the tests (1.1 GB peak).
+if ! dotnet build cozmo-stack/Cozmo.sln -maxcpucount:2 >> "$log" 2>&1; then
     grep -E "error CS|error MSB" "$log" | head -20; echo "test-full: build FAILED."; exit 1
 fi
 dotnet build-server shutdown >/dev/null 2>&1
