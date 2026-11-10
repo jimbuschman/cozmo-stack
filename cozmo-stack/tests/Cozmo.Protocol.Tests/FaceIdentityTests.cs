@@ -538,6 +538,7 @@ public sealed class FaceIdentityTests
             if (name == "face_s10_2")
             {
                 Assert.Equal(-1, Assert.Single(vision.LastFaces).Id);
+                Assert.True(Assert.Single(vision.LastFaces).Detection.NativeFacingCamera); // native PT direction (-5,0,1)
                 var detector = Assert.IsType<OkaoFaceDetector>(vision.FaceDetector);
                 Assert.True(SpinWait.SpinUntil(() => detector.RecognitionWorkCompleted, TimeSpan.FromSeconds(10)), "native FR extraction did not complete");
             }
@@ -595,6 +596,39 @@ public sealed class FaceIdentityTests
         vision.AdoptFaceAlbum(Array.Empty<byte>(), Array.Empty<byte>());
         Assert.Equal(0, eraseReports);
         Assert.Contains(vision.Recognizer.EnrolledFaces, x => x.FaceID == 7 && x.Name == "Drawn");
+    }
+
+    [Fact]
+    public void RestoredUtf8NameRetainsItsOriginalNarrowBytesInStockObservation()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        byte[] name = System.Text.Encoding.UTF8.GetBytes("Zoë");
+        var stored = new StoredEnrolledFace { FaceID = 7, Name = System.Text.Encoding.Latin1.GetString(name), Timestamp28Seconds = 1, Timestamp30Seconds = 1 };
+        stored.AlbumEntryIds.Add(3); stored.AlbumEntrySeconds.Add(1);
+        var enrollment = new List<byte>(); enrollment.AddRange(BitConverter.GetBytes(StoredEnrolledFace.VersionPrefix));
+        enrollment.AddRange(BitConverter.GetBytes(8)); stored.Pack(enrollment);
+        using var fixture = new Fixture(sourceNvEmpty: true, sourceNvStored: tag => tag switch
+        { VisionSystem.FaceAlbumNvTag => Album(), VisionSystem.FaceEnrollmentNvTag => enrollment.ToArray(), _ => null });
+        var vision = fixture.M.Vision;
+        var raw = new List<byte[]>(); fixture.Rig.Engine.EngineToGameMessage += (tag, body) => { if (tag == 0x46) raw.Add(body.ToArray()); };
+        vision.Enabled = true; vision.ModeEnableMask = 1 << 2; vision.Schedules = AllVisionModesSchedule.InitDefaultSchedules();
+        fixture.Rig.Robot.SetVisionWhileMoving(true); fixture.Rig.Tick();
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "okao", "okao_oracle.json")));
+        var root = doc.RootElement;
+        var images = root.GetProperty("images").EnumerateObject().ToDictionary(p => p.Name, p => Convert.FromBase64String(p.Value.GetString()!));
+        uint id = 100;
+        foreach (var frame in root.GetProperty("frames").EnumerateArray())
+        {
+            fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            fixture.NativeCameraFrame(id++, images[frame.GetProperty("image").GetString()!]);
+            fixture.Rig.Engine.VisionUpdateAllResultsFailed!(); fixture.Rig.Tick();
+            if (frame.GetProperty("name").GetString() == "face_s10_2")
+                Assert.True(SpinWait.SpinUntil(() => Assert.IsType<OkaoFaceDetector>(vision.FaceDetector).RecognitionWorkCompleted, TimeSpan.FromSeconds(10)));
+            if (frame.GetProperty("name").GetString() == "face_s10_3") break;
+        }
+        var report = Assert.Single(raw.Where(body => BitConverter.ToInt32(body) == 7));
+        Assert.Equal(name.Length, report[56]);
+        Assert.Equal(name, report.AsSpan(57, name.Length).ToArray());
     }
 
     [Fact]

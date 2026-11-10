@@ -196,7 +196,9 @@ public sealed partial class FaceRecognizer
         var entry=new EnrolledFaceEntry { FaceID=id,Score=1000,CurrentAlbumEntryId=-1,
             Timestamp28Micros=Math.Min(unchecked(Seconds(Get("enrollmentTime"))*MicrosPerSecond),now),
             Timestamp30Micros=Math.Min(unchecked(Seconds(Get("lastDataUpdateTime"))*MicrosPerSecond),now),
-            Name=Encoding.Latin1.GetString(Json.AsStringBytes(Get("name"))) };
+            };
+        byte[] nameBytes = Json.AsStringBytes(Get("name"));
+        entry.SetNativeName(Encoding.Latin1.GetString(nameBytes), nameBytes);
         var items=Get("albumEntries");
         if(items.Kind!=FirmwareJsonKind.Array)return entry;
         bool first=true;

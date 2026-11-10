@@ -289,7 +289,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
                 var attributes = partsReady && (attributeMask & 0x3C00) != 0
                     ? ReadAttributes(attributeMask, width, height) : NativeFaceAttributes.Default;
                 var face = new DetectedFace(unchecked(-raw[2]), new FaceRect(x, y, right - x, bottom - y), leftEye, rightEye,
-                    ExpressionValues: (attributeMask & (1 << 10)) != 0 ? attributes.Scores : null, Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100, NativeFeatures = features, NativeAttributes = attributes };
+                    ExpressionValues: (attributeMask & (1 << 10)) != 0 ? attributes.Scores : null, Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100, NativeFeatures = features, NativeAttributes = attributes, NativeFacingCamera = facing, NativeNameBytes = Array.Empty<byte>() };
                 bool enrollable = raw[3] > 500 && raw[9] == 0 && facing && leftEye is { } le && rightEye is { } re && roll is { } angle &&
                     TrackedFace.GetIntraEyeDistance(le, re, angle) >= 16;
                 faces.Add(recognize?.Invoke(raw, face, enrollable, excluded.Contains(raw[2])) ?? face);
