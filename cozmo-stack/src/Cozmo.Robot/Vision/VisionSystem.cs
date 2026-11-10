@@ -2344,23 +2344,19 @@ public sealed partial class VisionSystem : IDisposable
                             string.Equals(snapshot.Name ?? "",d.Name ?? "",StringComparison.Ordinal))
                         {
                             string name=snapshot.Name ?? "";
-                            try
+                            var bytes=snapshot.NameBytes;
+                            if(bytes is not null)
                             {
-                                var bytes=new System.Text.UTF8Encoding(false,true).GetBytes(name);
-                                if(bytes.Length<=255)
+                                using var faceMutation=World.EnterPoseMutation();
+                                lock(reportOwner.PoseTreeGate)
                                 {
-                                    using var faceMutation=World.EnterPoseMutation();
-                                    lock(reportOwner.PoseTreeGate)
-                                    {
-                                        using var parent=Pose3d.WrapExisting(faceOrigin);
-                                        using var pose=new Pose3d(rotation,translation,parent:parent);
-                                        if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
-                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth)
-                                            { Expression=attributes.Expression, Smile=attributes.Smile, Gaze=attributes.Gaze, Blink=attributes.Blink, ExpressionScores=attributes.Scores };
-                                    }
+                                    using var parent=Pose3d.WrapExisting(faceOrigin);
+                                    using var pose=new Pose3d(rotation,translation,parent:parent);
+                                    if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
+                                        report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth)
+                                        { Expression=attributes.Expression, Smile=attributes.Smile, Gaze=attributes.Gaze, Blink=attributes.Blink, ExpressionScores=attributes.Scores, NativeNameBytes=bytes.ToArray() };
                                 }
                             }
-                            catch(System.Text.EncoderFallbackException) { }
                         }
                         if(StaleFrame())return null;
                         if(report is null) Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace complete stock pose, parts, name or optional-mode input unavailable; delivering local ID/timestamp only");

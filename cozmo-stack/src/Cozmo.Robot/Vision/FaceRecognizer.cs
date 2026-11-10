@@ -143,7 +143,11 @@ public sealed class EnrolledFaceEntry
     /// <summary>The face id (<c>faceID</c>).</summary>
     public int FaceID { get; set; }
     /// <summary>The known name; empty for a session-only face.</summary>
-    public string Name { get; set; } = string.Empty;
+    private string _name = string.Empty;
+    private byte[]? _nativeNameBytes = Array.Empty<byte>();
+    public string Name { get => _name; set { _name = value; _nativeNameBytes = null; } }
+    internal byte[]? NativeNameBytes => _nativeNameBytes?.ToArray();
+    internal void SetNativeName(string name, byte[] bytes) { _name = name; _nativeNameBytes = bytes.ToArray(); }
     /// <summary>
     /// <c>EnrolledFaceEntry +0x04</c>.  Its merge rule is exact (C3-18: copied from the other entry only
     /// when it equals that entry's face id), but its source-level name is UNKNOWN, so it stays by offset.
@@ -384,11 +388,11 @@ public sealed partial class FaceRecognizer
         }
     }
 
-    internal (int Id, string? Name, int? PreviousId, int EnrollmentCount,int CurrentTrack,int PreviousTrack) LookupStockTrack(int track)
+    internal (int Id, string? Name, int? PreviousId, int EnrollmentCount,int CurrentTrack,int PreviousTrack,byte[]? NameBytes) LookupStockTrack(int track)
     {
         lock (_gate)
         {
-            if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null, 0,0,0);
+            if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null, 0,0,0,Array.Empty<byte>());
             int oldId = face.Offset04;
             if (EnrollmentTargetId != 0 && EnrollmentTargetId != id && EnrollmentTargetId == oldId)
                 EnrollmentTargetId = id;
@@ -406,7 +410,7 @@ public sealed partial class FaceRecognizer
             }
             face.Offset04 = id; // 0x863F00: normalize after copying the result.
             face.PreviousTrack = face.CurrentTrack;
-            return (id, face.Name.Length == 0 ? null : face.Name, previous, completed,copiedCurrent,copiedPrevious);
+            return (id, face.Name, previous, completed,copiedCurrent,copiedPrevious,face.NativeNameBytes);
         }
     }
 
@@ -904,12 +908,12 @@ public sealed partial class FaceRecognizer
             if (saveId == 0)
             {
                 if (!_faces.TryGetValue(selectedId, out var selected)) return 1;
-                selected.Name = name;
+                selected.SetNativeName(name, System.Text.Encoding.UTF8.GetBytes(name));
                 return 0;
             }
             if (!_faces.TryGetValue(saveId, out var target) || target.Name.Length == 0) return 1;
             if (MergeFaces(saveId, selectedId) != 0) return 1;
-            target.Name = name;
+            target.SetNativeName(name, System.Text.Encoding.UTF8.GetBytes(name));
             return 0;
         }
     }
@@ -920,9 +924,9 @@ public sealed partial class FaceRecognizer
         lock(_gate)
         {
             if(!_faces.TryGetValue(id,out var entry)){var log=Log;LogCallbackDeferral.Run(()=>log?.Invoke($"FaceRecognizer.RenameFace: unknown ID {id}"));return 1;}
-            if(!System.Text.Encoding.UTF8.GetBytes(entry.Name).AsSpan().SequenceEqual(System.Text.Encoding.UTF8.GetBytes(oldName)))
+            if(!(entry.NativeNameBytes ?? System.Text.Encoding.UTF8.GetBytes(entry.Name)).AsSpan().SequenceEqual(System.Text.Encoding.UTF8.GetBytes(oldName)))
             {var log=Log;LogCallbackDeferral.Run(()=>log?.Invoke("FaceRecognizer.RenameFace: old name does not match [redacted]"));return 1;}
-            entry.Name=newName;
+            entry.SetNativeName(newName,System.Text.Encoding.UTF8.GetBytes(newName));
             return 0;
         }
     }
@@ -1017,7 +1021,11 @@ public sealed partial class FaceRecognizer
 
         // C3-18 scalar merge.
         if (other.Offset04 == other.FaceID) self.Offset04 = other.Offset04;
-        if (self.Name.Length == 0) self.Name = other.Name;
+        if (self.Name.Length == 0)
+        {
+            if (other.NativeNameBytes is { } bytes) self.SetNativeName(other.Name, bytes);
+            else self.Name = other.Name;
+        }
         self.Timestamp30Micros = Math.Min(self.Timestamp30Micros, other.Timestamp30Micros);
         self.Timestamp28Micros = Math.Max(self.Timestamp28Micros, other.Timestamp28Micros);
         self.Score = Math.Max(self.Score, other.Score);
@@ -1061,7 +1069,8 @@ public sealed partial class FaceRecognizer
     // fidelity: M14-011
     public static EnrolledFaceEntry FromStorage(StoredEnrolledFace stored, long nowMicros)
     {
-        var entry = new EnrolledFaceEntry { FaceID = stored.FaceID, Name = stored.Name, Score = RegisteredUserScore };
+        var entry = new EnrolledFaceEntry { FaceID = stored.FaceID, Score = RegisteredUserScore };
+        entry.SetNativeName(stored.Name, System.Text.Encoding.Latin1.GetBytes(stored.Name));
         entry.Timestamp28Micros = stored.Timestamp28Seconds * MicrosPerSecond;
         entry.Timestamp30Micros = stored.Timestamp30Seconds * MicrosPerSecond;
         if (stored.AlbumEntryIds.Count != stored.AlbumEntrySeconds.Count)
