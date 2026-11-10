@@ -670,6 +670,12 @@ public sealed partial class VisionSystem : IDisposable
 
     /// <summary>The robot's calibration; null until read from NV storage (<see cref="NvCalibrationReader"/>) or set.</summary>
     public CameraCalibration? Calibration { get; set; }
+    internal CameraCalibration? NativeOuterCalibrationFor(EngineRobot owner)
+    {
+        lock (_groundGate)
+            return ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
+                ReferenceEquals(_robot.Engine.Robot, owner) ? _groundOuterCalibration : null;
+    }
     public MarkerDetector Detector { get; }
     public BlockWorld World { get; }
     // fidelity: M11-069, M11-070
