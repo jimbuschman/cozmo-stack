@@ -121,13 +121,13 @@ public sealed class FlipBlockAction
     /// 0x0055F164 position 5; 0x0055F16A QueueAction), its id goes to [+0x13C] and the tick returns RUNNING (null). The flip NEVER waits on that lift. Returns null for RUNNING.
     /// </summary>
     // fidelity: M13-028
-    internal ActionResult? CheckIfDoneTick(ActionResult? compoundResult)
+    internal ActionResult? CheckIfDoneTick(ActionResult? compoundResult, EngineRobot? expectedOwner = null, Func<bool>? admissionCurrent = null)
     {
         var obj = _m.World.GetLocatedObjectById(ObjectId);                                        // per tick, before the RUNNING test
         if (compoundResult is { } done)
         {
             if (obj is null) { _trace.Add($"FlipBlockAction.CheckIfDone: object {ObjectId} is not located (warning); compound result {done}"); return done; }
-            _m.World.MarkUnknown(ObjectId);                                                       // MarkObjectUnknown(obj, true), 0x0055F186
+            _m.World.MarkObjectUnknown(obj, true, expectedOwner, admissionCurrent);                // 0x0055F186
             _trace.Add($"FlipBlockAction.CheckIfDone: compound result {done}; object {ObjectId} marked Unknown");
             return done;
         }
@@ -163,6 +163,9 @@ public sealed class FlipBlockAction
     internal event Action? CheckTickObserved;
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
+        var owner = _m.World.NativeSnapshotOwner?.Invoke();
+        bool Current() => ReferenceEquals(_m.World.NativeSnapshotOwner?.Invoke(), owner) &&
+            (owner is null || (!owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner)));
         var target = _m.World.GetLocatedObjectById(ObjectId);
         if (target is null) { _trace.Add("FlipBlockAction.Init.NullObject"); return ActionResult.BadObject; }
         using var robot = _m.CopyPreActionRobotPose();
@@ -195,7 +198,8 @@ public sealed class FlipBlockAction
             while (true)
             {
                 ActionResult? compoundResult = compound.IsCompleted ? await compound : null;
-                var checkedResult = CheckIfDoneTick(compoundResult);
+                if (!Current()) { compoundCancel.Cancel(); return ActionResult.Abort; }
+                var checkedResult = CheckIfDoneTick(compoundResult, owner, Current);
                 CheckTickObserved?.Invoke();
                 if (checkedResult is { } result)
                 {

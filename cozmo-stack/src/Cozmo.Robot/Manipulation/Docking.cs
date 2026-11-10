@@ -893,7 +893,7 @@ public sealed class DockingSystem : IDisposable
         if (solved is null) return;
         var markerInWorld = camera.Pose.Compose(solved.ObjectInCamera);
         var wrtRobot = markerInWorld.WithRespectTo(r.PoseData.RobotPose);
-        var flat = BlockWorld.ClampPoseToFlat(wrtRobot, ClampToFlatAngleRad);
+        var flat = NativeDockingGeometry.Clamp(wrtRobot.Quaternion, markerInWorld.Quaternion);
         double x = wrtRobot.Translation.X - active.OffX, y = wrtRobot.Translation.Y + active.OffY, z = wrtRobot.Translation.Z;
         double angle = flat.AngleAroundZ + Math.PI / 2 + active.OffAngle;
         // The timestamp is the first word, not the last: UpdateDockingErrorSignal writes its only

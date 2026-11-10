@@ -227,9 +227,15 @@ public sealed class SparksStackNativeTests
         // This is an upstream vision-loss observation, separate from Ground's P9 Clear-only recipient.
         using var scene=new StackFirmwareScene(true){HideGroundCube=true};var f=scene.F;f.X=200;scene.Motors();
         var logs=new List<string>();var deleted=new List<uint>();f.M.World.Log+=logs.Add;f.M.World.LocatedObjectDeleted+=deleted.Add;
+        var unknown=new List<uint>();
+        using var unknownSub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x52,true,p=>unknown.Add(Assert.IsType<ObjectPoseUnknownReport>(p).ObjectId));
+        var nativeDeleted=new List<uint>();
+        using var deletedSub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x4C,true,p=>nativeDeleted.Add(Assert.IsType<uint>(p)));
         f.Rig.Engine.LogEntry+=e=>logs.Add(e.Name+":"+e.Text);
         var ground=new NativePlaceGroundRunner(f.M);f.Robot.ActionList.QueueAction(QueueActionPosition.Now,ground,0);
         for(int i=0;i<60&&!ground.DestructionObserved;i++)scene.Step();f.Rig.Engine.DrainAppDelivery();
+        Assert.Contains(scene.Top,unknown);
+        Assert.Contains(scene.Top,nativeDeleted);
         Directory.CreateDirectory(Path.Combine(".scratch","sparks-stack-build"));File.WriteAllLines(Path.Combine(".scratch","sparks-stack-build","negative-vision-producer.log"),logs);
         Assert.Equal(0x0300001Du,ground.State);Assert.Equal(new[]{scene.Top},deleted);
         Assert.Contains(logs,l=>l.Contains($"ObjectPoseConfirmer.MarkObjectUnobserved.MakingUnknown: object {scene.Top}"));

@@ -44,12 +44,16 @@ internal sealed class NativeFlipBlockRunner:NativeVisionRunner
     }
     public override uint CheckIfDone()
     {
+        var owner=M.World.NativeSnapshotOwner?.Invoke();
         uint result=Sequence.Update();
         using var mutation=M.World.EnterPoseMutation();
+        bool Current() => ReferenceEquals(M.World.NativeSnapshotOwner?.Invoke(),owner) &&
+            (owner is null || (!owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot,owner)));
+        if(!Current())return EngineActionResult.Cancelled;
         var obj=M.World.GetLocatedObjectByIdHelper(Target);
         if(result!=EngineActionResult.Running)
         {
-            if(obj is not null)M.World.MarkObjectUnknown(obj,true);
+            if(obj is not null)M.World.MarkObjectUnknown(obj,true,owner,Current);
             else M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,"Actions","FlipBlockAction.CheckIfDone.NullObject","Object no longer located");
             return result;
         }

@@ -559,9 +559,10 @@ public class NavigationTests
         AssertForwardLine(line,sourceMain,sourceYaw,sourceDistance);
         Assert.Equal(150f, line.Speed.SpeedMmps);
         // the lift already reports 45 mm (angle 0), so the initial MoveLiftToHeightAction sends nothing (M4-016 MA15); whether a carry-height lift was queued depends on a poll tick catching the fake robot
-        // between its instant jump and the path's completion, so only the deterministic CheckIfDoneTick tests (M13_028_*) assert it. The object is marked Unknown when the compound is done (0x0055F186).
+        // between its instant jump and the path's completion, so only the deterministic CheckIfDoneTick tests (M13_028_*) assert it. The terminal helper removes the located object without rewriting its state (0x0055F186).
         Assert.DoesNotContain(45f, rig.LiftHeights);
-        Assert.Equal(PoseState.Unknown, obj.PoseState);
+        Assert.Equal(PoseState.Known, obj.PoseState);
+        Assert.Null(rig.M.World.GetLocatedObjectById(obj.ObjectId));
         // with the check on, a robot away from every flipping pose is refused. The cube is at 300 mm
         // rather than 400: past about 350 mm its marker covers fewer than the hundred pixels
         // component_minimumNumPixels asks for, so the engine's own front end would not see it either.

@@ -405,7 +405,10 @@ public class RFixBatch3Tests : IDisposable
         Assert.Equal(999, vision.Detector.Quads.Parameters.MinQuadArea);
 
         // null with nothing stored: SetCalibration returns 0 without the log (0x0085DEEE: cbz r6 -> return 0), Init is not run
-        vision.UpdateCameraCalibration(null);
+        bool initialError=Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet=false;
+        try { vision.UpdateCameraCalibration(null);Assert.False(Cozmo.Transport.EngineErrorState.ErrorFlagSet); }
+        finally { Cozmo.Transport.EngineErrorState.ErrorFlagSet=initialError; }
         Assert.Empty(logs);
         Assert.Equal(999, vision.Detector.Quads.Parameters.MinQuadArea);
         Assert.Null(vision.Calibration);
@@ -430,9 +433,37 @@ public class RFixBatch3Tests : IDisposable
 
         // null with a calibration stored: the VERIFY log, nothing installed, Init not run
         Dirty(vision);
-        vision.UpdateCameraCalibration(null);
-        Assert.Contains(logs, l => l.StartsWith("Camera.SetCalibration.NullCalibration"));
-        Assert.Same(second, vision.Calibration);
-        Assert.Equal(999, vision.Detector.Quads.Parameters.MinQuadArea);
+        bool previousError=Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        var source=new List<EngineLogEntry>();var sequence=new List<string>();
+        robot.Engine.LogEntry+=entry=>{if(entry.Name=="Camera.SetCalibration.NullCalibration"){source.Add(entry);sequence.Add("source");}};
+        robot.Engine.LoggerProviderFlush=()=>{Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);sequence.Add("flush");};
+        vision.Log+=_=>sequence.Add("legacy");
+        try
+        {
+            Cozmo.Transport.EngineErrorState.ErrorFlagSet=false;
+            vision.UpdateCameraCalibration(null);
+            Assert.Contains(logs, l => l.StartsWith("Camera.SetCalibration.NullCalibration"));
+            var error=Assert.Single(source);Assert.Equal(EngineLogLevel.Error,error.Level);
+            Assert.EndsWith("VERIFY(calib != nullptr): Camera already calibrated. Cannot set with nullptr.",error.Text);
+            Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+            Assert.Equal(new[]{"source","flush","legacy"},sequence);
+            Assert.Same(second, vision.Calibration);
+            Assert.Equal(999, vision.Detector.Quads.Parameters.MinQuadArea);
+        }
+        finally { robot.Engine.LoggerProviderFlush=null;Cozmo.Transport.EngineErrorState.ErrorFlagSet=previousError; }
+    }
+
+    [Fact]
+    public void StaleCalibrationCallbackCannotInstallIntoReplacementOwner()
+    {
+        using var rig=new M4ControlTests.Rig();var vision=rig.Robot.Vision;rig.ToSynced();
+        var original=rig.Engine.Robot!;
+        rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+        rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        var replacement=rig.Engine.Robot!;Assert.NotSame(original,replacement);
+        var installed=CameraCalibration.Nominal();vision.SetNativeOuterCalibration(installed,replacement);
+        Assert.Same(installed,vision.Calibration);Dirty(vision);
+        vision.SetNativeOuterCalibration(CameraCalibration.Nominal(),original);
+        Assert.Same(installed,vision.Calibration);Assert.Equal(999,vision.Detector.Quads.Parameters.MinQuadArea);
     }
 }

@@ -2512,6 +2512,9 @@ public class M3DeviceTests
         rig.ToSuccess();                                            // body hardware 7: distortion kept
         Assert.False(rig.Robot.CameraSettings.VisionEnabled);
         SendConnectionReadsUntilCalibration(rig);                   // M3-026/M3-033: the queued reads go out from Update
+        typeof(QuadDetector).GetProperty("Parameters")!.SetValue(vision.Detector.Quads,new QuadDetectorParameters{MinQuadArea=999});
+        int? areaAtInstall=null;bool? enabledAtInstall=null;
+        rig.Robot.CameraSettings.CalibrationInstalled+=_=>{areaAtInstall=vision.Detector.Quads.Parameters.MinQuadArea;enabledAtInstall=rig.Robot.CameraSettings.VisionEnabled;};
         var data = Calibration56()[..Math.Min(size, 56)];
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = (sbyte)result, Length = 0, Data = data });
         rig.Tick();
@@ -2523,11 +2526,14 @@ public class M3DeviceTests
             Assert.Equal((290.0, 291.0, 320, 240), (cal.FocalLengthX, cal.FocalLengthY, cal.Columns, cal.Rows));
             Assert.Equal(0.01, cal.DistortionCoefficients[0], 6);    // hardware 7: not zeroed
             Assert.Same(cal, vision.Calibration);
+            Assert.Equal(25,areaAtInstall);Assert.False(enabledAtInstall);
+            Assert.Equal(25,vision.Detector.Quads.Parameters.MinQuadArea);
         }
         else
         {
             Assert.Null(rig.Robot.CameraSettings.Calibration);
             Assert.Null(vision.Calibration);
+            Assert.Null(areaAtInstall);Assert.Equal(999,vision.Detector.Quads.Parameters.MinQuadArea);
         }
     }
 
