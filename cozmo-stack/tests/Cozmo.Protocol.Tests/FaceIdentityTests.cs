@@ -486,6 +486,21 @@ public sealed class FaceIdentityTests
         });
         var vision = fixture.M.Vision;
         Assert.Contains(vision.Recognizer.EnrolledFaces, x => x.FaceID == 7 && x.Name == "Drawn");
+        var observedReports = new List<RobotObservedFaceReport>();
+        fixture.Rig.Engine.RobotObservedFace += observedReports.Add;
+        var rawFaces = new List<byte[]>();
+        fixture.Rig.Engine.EngineToGameMessage += (tag,body) => { if(tag==0x46)rawFaces.Add(body.ToArray()); };
+        var localReports = new List<NativeObservedFace>();
+        uint appCountBeforeObservation=0;
+        vision.Faces.FaceObserved += _ => appCountBeforeObservation=fixture.Rig.Engine.NativeUiDeliveryCount;
+        using var observedSub = fixture.Rig.Engine.AnimationMessages.SubscribeMessage(0x46,true,p =>
+        {
+            var local=Assert.IsType<NativeObservedFace>(p);
+            Assert.DoesNotContain(observedReports,r=>r.FaceId==local.Id && r.Timestamp==local.Timestamp);
+            if(local.Id==7 && (vision.ModeEnableMask & 0x3C00)==0)
+                Assert.True(fixture.Rig.Engine.NativeUiDeliveryCount>appCountBeforeObservation);
+            localReports.Add(local);
+        });
         var initialExport = vision.GetSerializedFaceData();
         Assert.Equal(album, initialExport.Album);
         Assert.NotEmpty(initialExport.Enrollment);
@@ -533,6 +548,18 @@ public sealed class FaceIdentityTests
         Assert.Equal(new[] { (-1, 7) }, changes);
         Assert.Equal(new[] { "change:Drawn", "observe:Drawn" }, order);
         Assert.Equal("Drawn", vision.Faces.GetFace(7)?.Name);
+        Assert.Contains(observedReports, r => r.FaceId == 7 && r.Name == "Drawn" && r.LeftEye.Count > 0);
+        Assert.Contains(rawFaces, data => { using var reader=new BinaryReader(new MemoryStream(data)); return reader.ReadInt32()==7 && reader.ReadUInt32()>0; });
+        Assert.Contains(localReports, r => r.Id == 7);
+        int completeBefore = observedReports.Count, localBefore = localReports.Count;
+        vision.ModeEnableMask |= 1 << 10;
+        fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+        fixture.NativeCameraFrame(id++, lastImage!);
+        fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
+        fixture.Rig.Tick();
+        Assert.Equal(completeBefore, observedReports.Count);
+        Assert.True(localReports.Count > localBefore);
+        vision.ModeEnableMask &= ~(1 << 10);
         fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
         fixture.NativeCameraFrame(id++, lastImage!);
         fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
@@ -555,6 +582,42 @@ public sealed class FaceIdentityTests
     }
 
     [Fact]
+    public void UnnamedStockCameraPublishesOnFourthAcceptedObservation()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var fixture = new Fixture(sourceNvEmpty:true);
+        var vision=fixture.M.Vision;
+        vision.Enabled=true;vision.ModeEnableMask=(1<<2)|(1<<7);
+        vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
+        fixture.Rig.Robot.SetVisionWhileMoving(true);fixture.Rig.Tick();
+        using var doc=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Fixtures","okao","okao_oracle.json")));
+        var root=doc.RootElement;
+        var images=root.GetProperty("images").EnumerateObject().ToDictionary(p=>p.Name,p=>Convert.FromBase64String(p.Value.GetString()!));
+        var frames=root.GetProperty("frames").EnumerateArray().ToArray();
+        byte[] last=images[frames.Last(f=>f.GetProperty("name").GetString()=="face_s10_3").GetProperty("image").GetString()!];
+        var observedCounts=new List<int>();var reports=new List<RobotObservedFaceReport>();
+        fixture.Rig.Engine.RobotObservedFace+=reports.Add;
+        using var sub=fixture.Rig.Engine.AnimationMessages.SubscribeMessage(0x46,true,p=>
+        { var local=Assert.IsType<NativeObservedFace>(p);observedCounts.Add(vision.Faces.GetFace(local.Id)!.TimesObserved); });
+        uint timestamp=100;
+        void Frame(byte[] image)
+        {
+            fixture.Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos);
+            fixture.NativeCameraFrame(timestamp++,image);fixture.Rig.Engine.VisionUpdateAllResultsFailed!();fixture.Rig.Tick();
+        }
+        foreach(var frame in frames)
+        {
+            Frame(images[frame.GetProperty("image").GetString()!]);
+            if(frame.GetProperty("name").GetString()=="face_s10_3")break;
+        }
+        for(int i=0;i<12&&observedCounts.Count==0;i++)Frame(last);
+        Assert.NotEmpty(observedCounts);Assert.Equal(4,observedCounts[0]);
+        for(int i=0;i<12&&reports.Count==0;i++)Frame(last);
+        fixture.Rig.Engine.DrainAppDelivery();
+        Assert.Contains(reports,r=>r.Name=="");
+    }
+
+    [Fact]
     public void OwnerRemovalDuringIdentityChangeStopsTheOldObservation()
     {
         if (ShippedLibraries.FindLibDir() is null) return;
@@ -568,6 +631,9 @@ public sealed class FaceIdentityTests
         var vision = fixture.M.Vision;
         var original = fixture.Rig.Engine.Robot;
         int changes = 0, positiveObservations = 0;
+        var publishedFaces = new List<int>();
+        fixture.Rig.Engine.EngineToGameMessage += (tag,body) =>
+        { if(tag==0x46) { using var reader=new BinaryReader(new MemoryStream(body.ToArray())); publishedFaces.Add(reader.ReadInt32()); } };
         vision.Faces.FaceObserved += observation => { if (observation.Face.Id == 7) positiveObservations++; };
         vision.Faces.FaceIdChanged += (_, _) =>
         {
@@ -602,6 +668,7 @@ public sealed class FaceIdentityTests
         }
         Assert.Equal(1, changes);
         Assert.Equal(0, positiveObservations);
+        Assert.DoesNotContain(7,publishedFaces);
         Assert.NotSame(original, fixture.Rig.Engine.Robot);
         Assert.Empty(vision.Faces.Faces);
     }

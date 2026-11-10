@@ -33,6 +33,7 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
     public int? NativeFaceDirectionThirdDegrees { get; init; }
     internal bool? NativeTrackerFlagChanged { get; init; }
     internal int NativeEnrollmentCount { get; init; }
+    internal NativeFaceFeatures? NativeFeatures { get; init; }
     // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
     internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
@@ -399,7 +400,13 @@ public sealed class FaceEntry
     public override string ToString() => $"face {Id}{(HasName ? " " + Name : "")} at {HeadPose.Translation} t={LastObservedTimestamp}";
 }
 
-public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew, Pose3d PreviousPose);
+public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew, Pose3d PreviousPose)
+{
+    internal NativeFaceSnapshot? NativeSnapshot { get; init; }
+}
+
+internal sealed record NativeFaceSnapshot(int Id, uint Timestamp, int Count, string? Name, FaceRect Rect,
+    Vec3? Translation, Rotation3d? Rotation, PoseTreeNode? Origin);
 
 /// <summary>
 /// The engine's <c>FaceWorld</c> (0x004F3B30..0x004F5B10). <c>AddOrUpdateFace(TrackedFace)</c> (0x004F4278):
@@ -462,7 +469,7 @@ public sealed partial class FaceWorld
         bool below = onTreads is { } on && face.NativeTrackingTranslation is { } native
             ? on && native.Z < 0 : face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z;
         if (below) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
-        FaceEntry? entry; bool isNew = false; Pose3d prev;
+        FaceEntry? entry; bool isNew = false; Pose3d prev; NativeFaceSnapshot snapshot;
         using (LogCallbackDeferral.EnterGated(_gate))
         {
             // C2-F7: the reachable match is the map lookup keyed by the TrackedFace id at +0. The
@@ -510,9 +517,12 @@ public sealed partial class FaceWorld
             entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
+            snapshot = new(entry.Id,entry.LastObservedTimestamp,entry.TimesObserved,entry.Name,entry.Rect,
+                entry.NativeTrackingTranslation,entry.NativeTrackingRotation,entry.NativeObservationOrigin);
         }
+        var obs = new FaceObservation(entry, face.Timestamp, isNew, prev)
+        { NativeSnapshot = snapshot };
         UpdateNativeLastFace(entry);
-        var obs = new FaceObservation(entry, face.Timestamp, isNew, prev);
         FaceObserved?.Invoke(obs);
         return obs;
     }

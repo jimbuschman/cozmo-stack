@@ -1853,6 +1853,7 @@ public sealed partial class VisionSystem : IDisposable
             if(StaleFrame())return null;
             var faceImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
             IReadOnlyList<DetectedFace>? detectedFaces = null;
+            bool completeStockFaceReport = false;
             IReadOnlyList<(int OldId, int NewId, string? Name)> faceIdChanges = Array.Empty<(int, int, string?)>();
             if (faceMode && faceDetector.IsAvailable)
             {
@@ -1874,6 +1875,7 @@ public sealed partial class VisionSystem : IDisposable
                         if (_stockRecognizer && recognizer.OwnsStockDetector(okao) && recognizer.IsAvailable)
                         {
                             recognizer.InitializeStock();
+                            completeStockFaceReport = (ModeEnableMask & 0x3C00) == 0;
                             (detectedFaces, faceIdChanges) = okao.DetectRecognized(faceImage, timestamp, reset, recognizer);
                         }
                         else if (!_stockRecognizer) detectedFaces = okao.Detect(faceImage, timestamp, reset);
@@ -2189,10 +2191,37 @@ public sealed partial class VisionSystem : IDisposable
                         }
                     }
                     if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
-                    if(observation is not null && (observation.Face.TimesObserved>3||observation.Face.HasName) && _robot.Engine.Robot is {HasExternalInterface:true})
+                    if(observation?.NativeSnapshot is { } snapshot && (snapshot.Count>3||!string.IsNullOrEmpty(snapshot.Name)) && _robot.Engine.Robot is {HasExternalInterface:true} reportOwner)
                     {
-                        Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace full app report fields remain unavailable; no truncated wire report published; delivering checked LOCAL46 ID/timestamp projection only");
-                        _robot.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(observation.Face.Id,timestamp));
+                        if(queueForEngine && !ReferenceEquals(reportOwner,sourceOwner))return null;
+                        RobotObservedFaceReport? report = null;
+                        if(!offline && queueForEngine && ReferenceEquals(reportOwner,sourceOwner) && completeStockFaceReport && d.NativeFeatures is { } features &&
+                            snapshot.Translation is { } translation && snapshot.Rotation is { } rotation && snapshot.Origin is { } faceOrigin &&
+                            string.Equals(snapshot.Name ?? "",d.Name ?? "",StringComparison.Ordinal))
+                        {
+                            string name=snapshot.Name ?? "";
+                            try
+                            {
+                                var bytes=new System.Text.UTF8Encoding(false,true).GetBytes(name);
+                                if(bytes.Length<=255)
+                                {
+                                    using var faceMutation=World.EnterPoseMutation();
+                                    lock(reportOwner.PoseTreeGate)
+                                    {
+                                        using var parent=Pose3d.WrapExisting(faceOrigin);
+                                        using var pose=new Pose3d(rotation,translation,parent:parent);
+                                        if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
+                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth);
+                                    }
+                                }
+                            }
+                            catch(System.Text.EncoderFallbackException) { }
+                        }
+                        if(StaleFrame())return null;
+                        if(report is null) Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace complete stock pose, parts, name or optional-mode input unavailable; delivering local ID/timestamp only");
+                        else _robot.Engine.PublishRobotObservedFace(report);
+                        if(StaleFrame())return null;
+                        _robot.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(snapshot.Id,snapshot.Timestamp));
                     }
                 }
                 LastFaces = faces;

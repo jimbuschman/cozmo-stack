@@ -187,17 +187,23 @@ public sealed partial class OkaoFaceDetection : IDisposable
                 double? roll = null;
                 int? third = null;
                 bool facing = false;
+                NativeFaceFeatures? features = null;
+                bool noParts = false;
                 result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_SetPositionFromHandle"), new[] { _pt, _res, (uint)index }));
                 if (result == 0)
                 {
                     result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_DetectPoint_GRAY"),
                         new[] { _pt, _buf, (uint)width, (uint)height }, new uint[] { 0, _ptResult }));
+                    noParts = result == -8;
                     if (result == 0)
                     {
                         _m.Fill(_scratch, 256, 0);
                         result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_GetResult"), new[] { _ptResult, 12u, _scratch, _scratch + 96 }));
                         if (result == 0)
                         {
+                            var points = new (int X,int Y)[12];
+                            for (int i=0;i<points.Length;i++) points[i]=(unchecked((int)_m.R32(_scratch+(uint)(i*8))),unchecked((int)_m.R32(_scratch+(uint)(i*8+4))));
+                            features = NativeFaceFeatures.FromPoints(points);
                             leftEye = new Vec2(unchecked((int)_m.R32(_scratch)), unchecked((int)_m.R32(_scratch + 4)));
                             rightEye = new Vec2(unchecked((int)_m.R32(_scratch + 8)), unchecked((int)_m.R32(_scratch + 12)));
                             result = unchecked((int)_m.Call(_m.Symbol("OKAO_PT_GetFaceDirection"), new[] { _ptResult, _scratch + 144, _scratch + 148, _scratch + 152 }));
@@ -215,9 +221,11 @@ public sealed partial class OkaoFaceDetection : IDisposable
                         }
                     }
                 }
+                if (noParts) features = NativeFaceFeatures.Empty;
+                else if (result != 0) features = null; // Withhold the full report on other incomplete parts/direction results.
                 if (result != 0 && result != -8) Diagnostic?.Invoke($"M14-010 OKAO parts returned {result}");
                 var face = new DetectedFace(unchecked(-raw[2]), new FaceRect(x, y, right - x, bottom - y), leftEye, rightEye,
-                    Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100 };
+                    Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100, NativeFeatures = features };
                 bool enrollable = raw[3] > 500 && raw[9] == 0 && facing && leftEye is { } le && rightEye is { } re && roll is { } angle &&
                     TrackedFace.GetIntraEyeDistance(le, re, angle) >= 16;
                 faces.Add(recognize?.Invoke(raw, face, enrollable, excluded.Contains(raw[2])) ?? face);
