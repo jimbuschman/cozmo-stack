@@ -1,4 +1,7 @@
-# Next capability and settlement decisions
+# Operator decisions
 
-1. **AI-BODY-TURN-TO-FACE-1.** Trace the stock one-shot TurnTowardsFace request into the retained face-turn action, including signed ID versus native last-face selection, max angle and the result payload. If the stock request matches the retained recipient, expose the checked explicit-face profile through the AI queue. Test current-root and absent-face branches, verification, cancellation and original-owner completion. Keep name speech and broader behavior producers separate unless the bounded stock request invokes them.
-2. **DOCK-CORRECTION-CLAMP-SETTLEMENT-1 (M12-019).** Verify the live 40-degree docking clamp at 0x0063C182–0x0063C194 and the retained ARM geometry at 0x00877330. Cover the strict threshold and both axis signs in the actual 0x48 recipient with same-timestamp, non-flat poses. Check whether any live legacy correction path still uses the older double clamp. Scope settlement to the record's own clamp and keep camera estimation, pose history, and physical docking outcomes separate.
+None open.
+
+Capability and settlement proposals don't belong here, and they don't wait for approval. Add them to QUEUE.md as rows
+and start them, per AUTONOMY.md ("Empty queue: scope the next job yourself"). This file is only for decisions
+AGENTS.md reserves to the operator.

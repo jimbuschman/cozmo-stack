@@ -7,10 +7,10 @@ Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 281 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 282 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 14 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 355 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 354 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 73 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 12 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 74 | 0 | 1 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 73 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 9 | 1 | 0 | no | no |
@@ -62,7 +62,7 @@ status.
 | M8-framework | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
-| M11-vision | INVENTORY_APPROVED | 22 | 0 | 0 | 0 |
+| M11-vision | INVENTORY_APPROVED | 23 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
@@ -2026,21 +2026,6 @@ B-M3M4-19 built, awaiting strong verification: unsupported candidate pose-tree c
 
 B-M13-4 (2026-10-15), partial build, awaiting strong verification; BLOCKED: Removed the old equal-angle stop from MarkerlessBoundingQuadXY; it now reuses M13-023's literal four-item sort and Quad slot layout. Other canonical-corner/minAreaRect/degenerate-hull/full footprint input gaps remain; no whole markerless path settlement. B-M11-3 partial, awaiting strong verification: OV10 O5 object and quad overloads now copy caller filter, pad candidate quads (and target only in object overload), append Intersects and invoke real DeleteLocatedObjects without an added self-ID exclusion, under FrameGate. Existing AddLocatedObject prox-only caller filter remains its own choice. F5 allowed families{2,6} and plain timestamp refresh confirmed; complete current-origin/family-map presence and operator[] empty-map lifecycle remain unbuilt in flattened located storage. No synthetic persistent empty-map set is shipped. Geometry/deletion recipients remain their recorded boundaries.
 B-M1-7 (2026-10-18), built, awaiting strong verification: Census correction: LocatedObjectDeleted is MISSING complete native host/local split/payload for BlockWorld.DeleteLocatedObjects, whose checked range0x0061D0A6..0x0061D602 is in this record evidence. Native RobotDeletedLocatedObject ctor0x0061D5DC/Broadcast0x0061D5E4 follows pose broadcast helper0x0061D5C8. Existing inline local deletion hook remains; not a non-report exclusion and no host view built in B-M1-7.
-
-**M11-063 — BlockWorld+0x74: the writer of the pose-change queue flag that gates OnObjectPoseChanged logs and queue** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
-* effect: Whether a new cliff (or any object) logs FirstPoseForObject and is queued as a PoseChange.
-* rests on: Opus check of R-CLIFF-WORLD (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-cliff-world-helpers-check.md: OnObjectPoseChanged 0x00624808..0x006248B8 tests byte BlockWorld+0x74 (MultipleChanges 0x006248EC, FirstPoseForObject 0x00624924, PoseChange push); no strb to +0x74 found in 0x00610000..0x00630000.; re-analysis/research/20261013-blockworld-flag-and-map-helper.md Q1: constructor +0x74 = 0 (0x0061BD8A, strb [sl,#0x28] with sl = this+0x4C) and list setup (0x0061BD7C/0x0061BD86); UpdateObservedMarkers clears the PoseChange list (0x00624F78) and sets +0x74 = 1 (0x00624F7E), runs CreateObjectsFromMarkers, AddAndUpdateObjects, CheckForUnobservedObjects, UpdatePoseOfStackedObjects, then clears it (0x006250D4..0x006250D8) before BlockConfigurationManager::Update (0x0062520C) and UpdateMarkerlessObjects (0x0062521A). Reader 0x00624808..0x006248B8: flag 0 -> SetObjectPoseChanged only; flag 1 and queued -> MultipleChanges info (0x006248EC, 0x00BF8F50), not pushed; flag 1 and old 0 -> FirstPoseForObject info (0x00BF8F99, 0x00624924), not pushed; else emplace_back. Consumer UpdatePoseOfStackedObjects 0x00621794..0x00621AF4. Cliffs come from HandleCliffEvent on the same thread before UpdateAllRobots (0x004ED62E before 0x004ED648), so the flag is 0. The earlier note "no strb to +0x74" was wrong (da.py stops at undecodable halfwords).
-* outstanding: Read 2026-10-13 (re-analysis/research/20261013-blockworld-flag-and-map-helper.md): build from the rows (job B-M3M4-16); in normal running a cliff logs nothing and is not queued. The stuck-flag path after a failed localization is M11-064. The consumer rows belong to M11-037. Previous notes: RECOVERABLE_GAP: find the writer(s) of BlockWorld+0x74 (possibly outside 0x00610000..0x00630000, or a wider store) and its value during normal running; then the queue consumer.
-B-M3M4-16 (2026-10-13), built, awaiting strong verification: Flag-zero, queued MultipleChanges, first-state-zero FirstPoseForObject and append branches built; every branch invokes the configuration setter dependency or visible MISSING M11-037. Cliff emits no family-6 pose-state API message and no queue entry at flag zero. Error path preserves flag/list.
-B-M3M4-19 built, awaiting strong verification: serialized cliff/frame flag window prevents a cliff entering a successful frame's flag=1 interval. Source first-pose/duplicate branches and failure flag retention remain unchanged; bounded actual-frame-lock and inverse configuration/object-lock regressions added.
-B-M3M4-23 (2026-10-15), built, awaiting strong verification: all BlockWorld pose/state/map-entry mutator roots now share FrameGate with UpdateObservedMarkers/AddMarkerless. A lift attach cannot mutate or broadcast inside a concurrent successful frame append window. Broadcast snapshots its source Info/MISSING decision under _gate and dispatches outside _gate, retaining keys/text/order and the native failed-frame flag behavior.
-B-M3M4-28 (2026-10-15), built, awaiting strong verification: robot-message handler scopes close the remaining between-mutator frame windows for MovementLocatedLoop, connection-state handling and DelocalizeRobot. Existing order _busy -> FrameGate -> _gate/PoseTreeGate, with no new lock/thread or flag behavior.
-
-B-M12-3 (2026-10-15), built, awaiting strong verification: Necessary M12-027 dependency: pose-change queue copies the old pose into its node (0x0062496E..0x006249A8) and drops those wrappers on list clear, so AddLiftRelativeObservation can release its stack temporary after broadcast. Existing queue gates/order remain. Full pose destruction effects remain M11-077.
 
 **M11-064 — UpdateObservedMarkers: the robot.play_area_size event (60 s gate, GetExploredRegionAreaM2) and the localization-failure chain (AddAndUpdateFailed early return, BlockWorldUpdateFailed, LocalHandlerFailed)** (live path)
 

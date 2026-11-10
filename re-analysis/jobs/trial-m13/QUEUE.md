@@ -189,3 +189,6 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | AI-BODY-TRACK-FACE-REQUEST-1 | READY FOR CLAUDE | Signed explicit face tracking, original owner and variant-3 completion through the existing AI queue. Affected 223/223, final 9/9. HANDOFF-AI-BODY-TRACK-FACE-REQUEST-1.md. |
 | BLOCKWORLD-POSE-QUEUE-SETTLEMENT-1 | READY FOR CLAUDE | Verified existing M11-063 window, copy/duplicate/failure behavior, native configuration and normal cliff. Related 167/167, focused 2/2, manager integration 131/131. HANDOFF-BLOCKWORLD-POSE-QUEUE-SETTLEMENT-1.md. |
 | TrackFace request and BlockWorld pose queue gate on 6df5c906 | PASS | scripts/test-full.sh passed 8104/8104, zero failed or skipped, 25m36s test duration. Independent integration 131/131. Both handoffs are READY FOR CLAUDE. |
+| AI-BODY-TRACK-FACE-REQUEST-1 / BLOCKWORLD-POSE-QUEUE-SETTLEMENT-1 | MERGED | Claude check PASS (research/20261109-settle-m11-063-claude-check.md); M11-063 settled EXACT_SOURCE. |
+| AI-BODY-TURN-TO-FACE-1 | RELEASED | As scoped in your proposal (Claude, 2026-11-09). |
+| DOCK-CORRECTION-CLAMP-SETTLEMENT-1 (M12-019) | RELEASED | As scoped in your proposal (Claude, 2026-11-09). |
