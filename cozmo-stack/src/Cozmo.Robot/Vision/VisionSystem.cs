@@ -460,8 +460,8 @@ public sealed partial class VisionSystem : IDisposable
         // CozmoRobot.ConnectAsync returns and the caller builds this VisionSystem. The engine raises the result
         // when #4 completes; subscribe here and adopt a result that already completed.
         _faceAlbumLoaded = AdoptFaceAlbum;
-        robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
-        if (robot.Engine.ConnectionFaceAlbumResult is { } loaded)
+        if(!_stockRecognizer)robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
+        if (!_stockRecognizer && robot.Engine.ConnectionFaceAlbumResult is { } loaded)
             _faceAlbumLoaded(loaded.Album, loaded.Enrollment);
         _renameRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x8C,false,value=>
         {

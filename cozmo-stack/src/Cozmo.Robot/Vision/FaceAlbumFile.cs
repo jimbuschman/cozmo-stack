@@ -73,27 +73,8 @@ public sealed partial class FaceRecognizer
             var entries=parsed.Values.ToList();
             if(!CheckConsistency(loaded,entries,deferLog:true))return (true,1,reports);
             if(!current())return (false,1,reports);
-            if(_okao.GetAlbumMaxNum(_album,out int currentUsers,out int currentData)!=0 ||
-               _okao.GetAlbumMaxNum(loaded,out int loadedUsers,out int loadedData)!=0)return (true,1,reports);
-            if(loadedUsers>currentUsers || loadedData>currentData)return (true,1,reports);
-            if(loadedUsers==currentUsers && loadedData==currentData)
-            {
-                if(InstallAlbum(loaded)!=0)return (true,1,reports);
-                transferred=true;
-            }
-            else
-            {
-                if(_okao.ClearAlbum(_album)!=0)return (true,1,reports);
-                for(int entry=0;entry<loadedUsers;entry++)
-                    for(int slot=0;slot<loadedData;slot++)
-                    {
-                        if(!current())return (false,1,reports);
-                        if(_okao.IsRegistered(loaded,entry,slot,out int registered)!=0)return (true,1,reports);
-                        if(registered==0)continue;
-                        if(_okao.GetFeatureFromAlbum(loaded,entry,slot,out var feature)!=0 ||
-                           _okao.RegisterData(_album,feature,entry,slot)!=0)return (true,1,reports);
-                    }
-            }
+            int install=InstallNativeCandidate(loaded,current,out transferred);
+            if(install!=0)return (current(),1,reports);
             if(!current())return (false,1,reports);
             _albumEntryToFaceId.Clear();_faces.Clear();_trackToFace.Clear();
             foreach(var entry in entries)
@@ -110,6 +91,74 @@ public sealed partial class FaceRecognizer
             return (true,1,reports);
         }
         finally { if(!transferred)_okao.DeleteAlbumHandle(loaded); }
+    }
+
+    // 0x868948..868BE4: equal dimensions transfer; a smaller candidate is copied then deleted.
+    private int InstallNativeCandidate(OkaoAlbumHandle loaded,Func<bool> current,out bool transferred)
+    {
+        transferred=false;
+        if(_album is null || _okao.GetAlbumMaxNum(_album,out int currentUsers,out int currentData)!=0 ||
+           _okao.GetAlbumMaxNum(loaded,out int loadedUsers,out int loadedData)!=0)return 1;
+        if(loadedUsers>currentUsers || loadedData>currentData)return 1;
+        if(loadedUsers==currentUsers && loadedData==currentData)
+        {
+            var old=_album;_album=loaded;transferred=true;
+            _okao.DeleteAlbumHandle(old);return 0;
+        }
+        if(_okao.ClearAlbum(_album)!=0)return 1;
+        for(int entry=0;entry<loadedUsers;entry++)
+            for(int slot=0;slot<loadedData;slot++)
+            {
+                if(!current() || _okao.IsRegistered(loaded,entry,slot,out int registered)!=0)return 1;
+                if(registered==0)continue;
+                if(_okao.GetFeatureFromAlbum(loaded,entry,slot,out var feature)!=0 ||
+                   _okao.RegisterData(_album,feature,entry,slot)!=0)return 1;
+            }
+        return 0;
+    }
+
+    internal (bool Success,IReadOnlyList<FileLoadedFace> Reports) RestoreStockNv(byte[] albumData,byte[] enrollmentData,Func<bool> current)
+    {
+        using var gate=LogCallbackDeferral.EnterGated(_gate);
+        var empty=Array.Empty<FileLoadedFace>();
+        if(!current() || _common is null || _album is null || _okao is not NativeOkaoFaceRecognizer native || !native.IsAvailable || albumData.Length==0)return (false,empty);
+        var loaded=_okao.RestoreAlbum(_common,albumData,albumData.Length,out _);
+        if(loaded is null)return (false,empty);
+        bool transferred=false;
+        try
+        {
+            if(_okao.GetRegisteredUserNum(loaded,out _)!=0 || native.GetRegisteredAllDataNum(loaded,out _)!=0)return (false,empty);
+            var entries=DeserializeEnrollment(enrollmentData,()=>Now,out int nextFaceId);
+            if(entries is null || !current() || !CheckConsistency(loaded,entries,deferLog:true) || !current())return (false,empty);
+            if(InstallNativeCandidate(loaded,current,out transferred)!=0 || !current())return (false,empty);
+            _nextFaceId=nextFaceId;_albumEntryToFaceId.Clear();_faces.Clear();_trackToFace.Clear();
+            foreach(var entry in entries)
+            {
+                _faces[entry.FaceID]=entry;
+                foreach(int id in entry.AlbumEntries.Keys)_albumEntryToFaceId[id]=entry.FaceID;
+            }
+            long now=Now;
+            var reports=entries.OrderBy(entry=>entry.FaceID).Select(entry=>
+            {
+                long last=entry.AlbumEntries.Count==0?0:Math.Max(0,entry.AlbumEntries.Values.Max(value=>value.LastSeenMicros));
+                return new FileLoadedFace(unchecked(now-entry.Timestamp28Micros)/MicrosPerSecond,
+                    unchecked(now-entry.Timestamp30Micros)/MicrosPerSecond,unchecked(now-last)/MicrosPerSecond,
+                    entry.FaceID,Encoding.Latin1.GetBytes(entry.Name));
+            }).ToArray();
+            return (true,reports);
+        }
+        finally {if(!transferred)_okao.DeleteAlbumHandle(loaded);}
+    }
+
+    internal void NotifyStockFacesLoaded(IReadOnlyList<FileLoadedFace> reports,Func<bool> current)
+    {
+        if(FacesLoaded is not {} handlers)return;
+        var values=reports.Select(report=>(report.Id,Encoding.Latin1.GetString(report.Name))).ToArray();
+        foreach(Action<IReadOnlyList<(int FaceID,string Name)>> handler in handlers.GetInvocationList())
+        {
+            if(!current())return;
+            try {handler(values);}catch(Exception error){Behavior.SteppedBehavior.ReportMissing("M1-034 M14-011 FacesLoaded handler skipped: "+error.Message);}
+        }
     }
 
     private static EnrolledFaceEntry ParseFileEntry(int id,FirmwareJsonValue value,long now)
@@ -149,6 +198,44 @@ public sealed partial class VisionSystem
 {
     public event Action<LoadedKnownFaceReport>? LoadedKnownFace;
 
+    internal bool RestoreStockNv(EngineRobot owner,int epoch,byte[] album,byte[] enrollment)
+    {
+        var recognizer=Recognizer;int removal=Volatile.Read(ref _removals);
+        bool Current()=>_stockRecognizer && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) &&
+            NativeVisionAttemptCurrent(owner,epoch) && removal==Volatile.Read(ref _removals) &&
+            ReferenceEquals(Recognizer,recognizer) && recognizer.OwnsStockDetector(_stockFaceDetector);
+        if(!Current())return false;
+        if(!recognizer.IsAvailable && _stockFaceDetector.StockStatus==2)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.Failure",$"Failed setting {album.Length}-byte album data and {enrollment.Length}-byte enroll data");
+            return false;
+        }
+        if(!recognizer.IsAvailable)
+        {Behavior.SteppedBehavior.ReportMissing("M14-011 stock NV restore guest unavailable");return false;}
+        (bool Success,IReadOnlyList<FileLoadedFace> Reports) result;
+        try
+        {
+            using(LogCallbackDeferral.EnterGated(_busy))
+            {
+                if(!Current())return false;
+                result=recognizer.RestoreStockNv(album,enrollment,Current);
+            }
+        }
+        catch(Exception ex) when(ex is not OutOfMemoryException)
+        {Behavior.SteppedBehavior.ReportMissing($"M14-011 stock NV restore guest failed: {ex.Message}");return false;}
+        if(!Current())return false;
+        if(!result.Success)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.Failure",$"Failed setting {album.Length}-byte album data and {enrollment.Length}-byte enroll data");
+            return false;
+        }
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionComponent.LoadFaceAlbumFromRobot.Success",$"Finished setting {album.Length}-byte album data and {enrollment.Length}-byte enroll data");
+        if(!Current() || !PublishAlbumErase(owner,Current))return false;
+        foreach(var face in result.Reports)if(!PublishLoadedFace(owner,face,Current))return false;
+        recognizer.NotifyStockFacesLoaded(result.Reports,Current);
+        return Current();
+    }
+
     internal bool StartupFileAlbum(EngineRobot owner,string directory,int epoch)
     {
         var recognizer=Recognizer;int removal=Volatile.Read(ref _removals);var nv=_robot.Engine.NvStorage;
@@ -168,9 +255,9 @@ public sealed partial class VisionSystem
             _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceRecognizer.GetSerializedData.GetSerializedAlbumFail","");
             if(!Current())return false;
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.SaveFaceAlbumToRobot.GetSerializedFaceDataFailed","GetSerializedFaceData failed");
-            if(!Current() || !PublishFileErase(owner,Current))return false;
+            if(!Current() || !PublishAlbumErase(owner,Current))return false;
             _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceTrackerImpl.LoadAlbum.NotInitialized","");
-            if(!Current() || !PublishFileErase(owner,Current))return false;
+            if(!Current() || !PublishAlbumErase(owner,Current))return false;
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.Init.LoadFaceAlbumFromFileFailed",$"AlbumFile: {directory}");
             return Current();
         }
@@ -211,7 +298,7 @@ public sealed partial class VisionSystem
             }
             if(nv!.Erase(FaceAlbumNvTag,Saved)==0 || !Current())return false;
             if(nv.Erase(FaceEnrollmentNvTag,Saved)==0 || !Current())return false;
-            if(!PublishFileErase(owner,Current))return false;
+            if(!PublishAlbumErase(owner,Current))return false;
             (bool Available,int Result,IReadOnlyList<FileLoadedFace> Reports) loaded;
             using(LogCallbackDeferral.EnterGated(_busy))
             {
@@ -219,27 +306,10 @@ public sealed partial class VisionSystem
                 loaded=recognizer.LoadFileAlbum(directory,Current);
             }
             if(!loaded.Available)return false;
-            if(!Current() || !PublishFileErase(owner,Current))return false;
+            if(!Current() || !PublishAlbumErase(owner,Current))return false;
             foreach(var face in loaded.Reports)
             {
-                if(!Current())return false;
-                _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.BroadcastLoadedNamesAndIDs",FormattableString.Invariant($"broadcasting loaded face id: {face.Id}"));
-                if(!Current())return false;
-                if(owner.HasExternalInterface)
-                {
-                    string name=Encoding.Latin1.GetString(face.Name);
-                    var report=new LoadedKnownFaceReport(face.SinceEnrolled,face.SinceUpdated,face.SinceSeen,face.Id,name);
-                    using var bytes=new MemoryStream();using(var writer=new BinaryWriter(bytes,Encoding.UTF8,true))
-                    {writer.Write(face.SinceEnrolled);writer.Write(face.SinceUpdated);writer.Write(face.SinceSeen);writer.Write(face.Id);byte length=unchecked((byte)face.Name.Length);writer.Write(length);writer.Write(face.Name,0,length);}
-                    var detailed=_robot.Engine.CaptureAppEvent(LoadedKnownFace,report);
-                    var legacy=_robot.Engine.CaptureAppEvent(LoadedFaceName,face.Id,name);
-                    _robot.Engine.DeliverAnimationReportToApp(0x1C,bytes.ToArray(),()=>{detailed?.Invoke();legacy?.Invoke();});
-                    _robot.Engine.AnimationMessages.DeliverIsolated(0x1C,true,report,Current,FileHandlerFailed);
-                    if(!Current())return false;
-                    if(LoadedFaceNameInternal is {} handlers)
-                        foreach(Action<int,string> handler in handlers.GetInvocationList())
-                        { if(!Current())return false;try {handler(face.Id,name);}catch(Exception ex){FileHandlerFailed(ex);} }
-                }
+                if(!PublishLoadedFace(owner,face,Current))return false;
             }
             if(loaded.Result!=0 && Current())
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.Init.LoadFaceAlbumFromFileFailed",$"AlbumFile: {directory}");
@@ -249,7 +319,7 @@ public sealed partial class VisionSystem
         { Behavior.SteppedBehavior.ReportMissing($"M11-059 file album host/guest operation unavailable: {ex.Message}");return false; }
     }
 
-    private bool PublishFileErase(EngineRobot owner,Func<bool> current)
+    private bool PublishAlbumErase(EngineRobot owner,Func<bool> current)
     {
         if(!current())return false;
         if(!owner.HasExternalInterface)return true;
@@ -259,6 +329,27 @@ public sealed partial class VisionSystem
         if(EnrolledFacesErasedInternal is {} handlers)
             foreach(Action handler in handlers.GetInvocationList())
             {if(!current())return false;try {handler();}catch(Exception ex){FileHandlerFailed(ex);}}
+        return current();
+    }
+
+    private bool PublishLoadedFace(EngineRobot owner,FileLoadedFace face,Func<bool> current)
+    {
+        if(!current())return false;
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.BroadcastLoadedNamesAndIDs",FormattableString.Invariant($"broadcasting loaded face id: {face.Id}"));
+        if(!current())return false;
+        if(!owner.HasExternalInterface)return true;
+        string name=Encoding.Latin1.GetString(face.Name);
+        var report=new LoadedKnownFaceReport(face.SinceEnrolled,face.SinceUpdated,face.SinceSeen,face.Id,name);
+        using var bytes=new MemoryStream();using(var writer=new BinaryWriter(bytes,Encoding.UTF8,true))
+        {writer.Write(face.SinceEnrolled);writer.Write(face.SinceUpdated);writer.Write(face.SinceSeen);writer.Write(face.Id);byte length=unchecked((byte)face.Name.Length);writer.Write(length);writer.Write(face.Name,0,length);}
+        var detailed=_robot.Engine.CaptureAppEvent(LoadedKnownFace,report);
+        var legacy=_robot.Engine.CaptureAppEvent(LoadedFaceName,face.Id,name);
+        _robot.Engine.DeliverAnimationReportToApp(0x1C,bytes.ToArray(),()=>{detailed?.Invoke();legacy?.Invoke();});
+        _robot.Engine.AnimationMessages.DeliverIsolated(0x1C,true,report,current,FileHandlerFailed);
+        if(!current())return false;
+        if(LoadedFaceNameInternal is {} handlers)
+            foreach(Action<int,string> handler in handlers.GetInvocationList())
+            { if(!current())return false;try {handler(face.Id,name);}catch(Exception ex){FileHandlerFailed(ex);} }
         return current();
     }
 

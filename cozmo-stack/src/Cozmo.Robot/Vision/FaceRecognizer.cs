@@ -1040,7 +1040,7 @@ public sealed partial class FaceRecognizer
     /// <summary>
     /// The inverse <c>EnrolledFaceEntry(EnrolledFaceStorage)</c> 0x00860728 (C3-20): restores face
     /// id/name, score 1000, multiplies the seconds by 1,000,000, makes the first album id the current
-    /// entry, inserts each non--1 id, warns on a length mismatch and clips future times to now.
+    /// entry, inserts each non--1 id, warns on a length mismatch and clips the two leading future times to now.
     /// </summary>
     // fidelity: M14-011
     public static EnrolledFaceEntry FromStorage(StoredEnrolledFace stored, long nowMicros)
@@ -1055,40 +1055,44 @@ public sealed partial class FaceRecognizer
         }
         for (int i = 0; i < stored.AlbumEntryIds.Count; i++)
         {
-            long micros = stored.AlbumEntrySeconds[i] * MicrosPerSecond;
-            if (micros > nowMicros) micros = nowMicros;
+            long micros = unchecked(stored.AlbumEntrySeconds[i] * MicrosPerSecond);
             if (i == 0) entry.CurrentAlbumEntryId = stored.AlbumEntryIds[i];
             if (stored.AlbumEntryIds[i] != -1)
                 entry.AlbumEntries[stored.AlbumEntryIds[i]] = new EnrolledFaceAlbumEntry
-                { AlbumEntryId = stored.AlbumEntryIds[i], LastSeenMicros = micros, SessionOnly = i == 0 };
+                { AlbumEntryId = stored.AlbumEntryIds[i], LastSeenMicros = micros, SessionOnly = entry.CurrentAlbumEntryId == stored.AlbumEntryIds[i] };
         }
+        if(entry.Timestamp28Micros>nowMicros)entry.Timestamp28Micros=nowMicros;
+        if(entry.Timestamp30Micros>nowMicros)entry.Timestamp30Micros=nowMicros;
         return entry;
     }
 
     /// <summary>
     /// C3-21/C4-1: the enrollment-data container.  Bytes 0..3 are the <c>0x0002FACE</c> u32 LE prefix and
     /// 4..7 the int32 LE nextFaceID; then zero or more records concatenated with no count or prefix.
-    /// Rejects an empty buffer and a buffer of 11 bytes or fewer; the loop runs while
+    /// Requires an eight-byte header; the loop runs while
     /// <c>offset &lt; size-3</c>; a malformed record aborts the whole load (null).
     /// </summary>
     // fidelity: M14-011
     public static List<EnrolledFaceEntry>? DeserializeEnrollment(byte[] data, long nowMicros, out int nextFaceId)
+        => DeserializeEnrollment(data,()=>nowMicros,out nextFaceId);
+
+    private static List<EnrolledFaceEntry>? DeserializeEnrollment(byte[] data,Func<long> clock,out int nextFaceId)
     {
         nextFaceId = 0;
-        if (data is null || data.Length == 0) return null;
-        if (data.Length <= 11) return null;
+        if (data is null || data.Length < 8) return null;
         if (BitConverter.ToUInt32(data, 0) != StoredEnrolledFace.VersionPrefix) return null;
         nextFaceId = BitConverter.ToInt32(data, 4);
-        var entries = new List<EnrolledFaceEntry>();
+        var entries = new SortedDictionary<int,EnrolledFaceEntry>();
         int pos = StoredEnrolledFace.HeaderBytes;
         while (pos < data.Length - 3)
         {
             if (pos == data.Length) return null;
             var s = StoredEnrolledFace.Unpack(data, ref pos);
             if (s is null) return null;
-            entries.Add(FromStorage(s, nowMicros));
+            long now=s.AlbumEntryIds.Count==s.AlbumEntrySeconds.Count?clock():0;
+            entries[s.FaceID]=FromStorage(s,now);
         }
-        return entries;
+        return entries.Values.ToList();
     }
 
     /// <summary>

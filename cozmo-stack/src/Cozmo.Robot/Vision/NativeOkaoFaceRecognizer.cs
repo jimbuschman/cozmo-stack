@@ -29,6 +29,12 @@ internal sealed class NativeOkaoFaceRecognizer : IOkaoFaceRecognizer
         return result.Result;
     }
 
+    internal int GetRegisteredAllDataNum(OkaoAlbumHandle album,out int count)
+    {
+        var result=Run(m=>m.FrOneOut("OKAO_FR_GetRegisteredAllDataNum",new[]{Album(m,album)}));
+        count=result.Value;return result.Result;
+    }
+
     public int Identify(OkaoFaceFeature feature, OkaoAlbumHandle album, int maxResults, int[] ids, int[] scores, out int count)
     {
         var result = Run(m => m.FrIdentify(Feature(m, feature), Album(m, album), maxResults, ids, scores));

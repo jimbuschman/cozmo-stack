@@ -16,7 +16,7 @@ public sealed class FaceAlbumFileStartupTests
         string config=Path.Combine(options.ResourcesPath!,"config","engine","vision_config.json");
         File.WriteAllText(config,File.ReadAllText(config).Replace("\"FaceAlbum\" : \"robot\"","\"FaceAlbum\" : "+JsonSerializer.Serialize(directory)));
     }
-    private static void EmptyGuestAlbum(string directory)
+    internal static void EmptyGuestAlbum(string directory)
     {
         string libraries=ShippedLibraries.FindLibDir() ?? throw new InvalidOperationException("shipped guest unavailable");
         using var guest=new OkaoFaceDetection(libraries,0,true);
@@ -25,7 +25,7 @@ public sealed class FaceAlbumFileStartupTests
         finally { Assert.Equal(0,guest.FrCall("OKAO_FR_DeleteAlbumHandle",album)); }
     }
 
-    private static void SmallGuestAlbum(string directory)
+    internal static void SmallGuestAlbum(string directory)
     {
         string libraries=ShippedLibraries.FindLibDir()!;
         using var doc=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Fixtures","okao","okao_oracle.json")));
