@@ -427,6 +427,18 @@ public sealed class FaceRecognizer
         }
     }
 
+    // Stock owner retirement reports the returned error after releasing the worker gate.
+    internal bool ShutdownStockDeferred()
+    {
+        lock(_gate)
+        {
+            if(_album is not { } album)return false;
+            int result=_okao.DeleteAlbumHandle(album);
+            _album=null;
+            return result!=0;
+        }
+    }
+
     public event Action<string>? Log;
     /// <summary>The loaded faces reported at the end of <see cref="SetSerializedData"/> (C3-24).</summary>
     public event Action<IReadOnlyList<(int FaceID, string Name)>>? FacesLoaded;

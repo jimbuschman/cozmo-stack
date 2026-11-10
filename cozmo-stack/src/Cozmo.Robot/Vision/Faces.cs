@@ -65,6 +65,23 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     private readonly bool _librariesPresent;
     private Emulation.OkaoFaceDetection? _detector;
     private bool _faulted, _disposed, _retiring;
+    // 0 is the legacy lazy facade; 1 is initialized, 2 is a defined native failure,
+    // 3 is an unavailable/faulted host guest.
+    private int _stockStatus;
+    private string[] _cleanupFailures=Array.Empty<string>();
+    internal string[] TakeCleanupFailures(){lock(_gate){var failures=_cleanupFailures;_cleanupFailures=Array.Empty<string>();return failures;}}
+    internal int StockStatus => Volatile.Read(ref _stockStatus);
+    internal void SetStockStatus(int status)=>Volatile.Write(ref _stockStatus,status);
+    internal void CreateStagedStock(Func<string,uint?>? createOverride)
+    {
+        lock(_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed,this);
+            string path=_libDir ?? throw new FileNotFoundException("M14-010 shipped OKAO libraries unavailable");
+            _detector=new Emulation.OkaoFaceDetection(path,0,true);
+            _detector.StockCreateOverrideForTest=createOverride;
+        }
+    }
     private Task<int>? _recognitionWorker;
     private int _pendingTrack;
     private bool _pendingRegistrationAllowed;
@@ -75,13 +92,14 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
         _libDir = Emulation.ShippedLibraries.FindLibDir();
         _librariesPresent = _libDir is not null && File.Exists(Path.Combine(_libDir, "libcozmoEngine.so"));
     }
-    public bool IsAvailable { get { lock (_gate) return !_disposed && !_retiring && !_faulted && _librariesPresent; } }
+    public bool IsAvailable { get { lock (_gate) return !_disposed && !_retiring && !_faulted && _librariesPresent && _stockStatus is not (2 or 3); } }
     public string Description => "Shipped Omron OKAO face detector on the embedded ARM emulator";
     internal T UseSession<T>(Func<Emulation.OkaoFaceDetection, T> operation)
     {
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_stockStatus is 2 or 3) throw new InvalidOperationException("Stock face initialization did not succeed");
             if (_faulted) throw new InvalidOperationException("OKAO face detector is faulted");
             try
             {
@@ -89,6 +107,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                 _detector ??= new Emulation.OkaoFaceDetection(path);
                 return operation(_detector);
             }
+            catch (Emulation.FaceGuestFailure) { throw; }
             catch { _faulted = true; throw; }
         }
     }
@@ -116,6 +135,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_stockStatus is 2 or 3) throw new InvalidOperationException("Stock face initialization did not succeed");
             if (_retiring) throw new InvalidOperationException("OKAO face detector is retiring");
             if (_faulted) throw new InvalidOperationException("OKAO face detector is faulted");
             try
@@ -191,7 +211,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     public void Dispose()
     {
         RetireRecognition();
-        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _detector = null; _recognitionWorker = null; }
+        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _cleanupFailures=_detector?.StockCleanupFailures.ToArray() ?? Array.Empty<string>(); _detector = null; _recognitionWorker = null; }
     }
 }
 

@@ -36,6 +36,12 @@ public sealed partial class OkaoFaceDetection
     internal int FrCall(string name, params uint[] args) => unchecked((int)_m.Call(_m.Symbol(name), args));
     internal uint FrCreateAlbum()
     {
+        if(_stockEager)
+        {
+            if(_frFeature==0)_frFeature=StockCreate("OKAO_FR_CreateFeatureHandle","FaceRecognizer.Init.FaceLibFeatureHandleAllocFail",_co);
+            if(_frScratchFeature==0)_frScratchFeature=StockCreate("OKAO_FR_CreateFeatureHandle","FaceRecognizer.Init.FaceLibMergeFeatureHandleAllocFail",_co);
+            return StockCreate("OKAO_FR_CreateAlbumHandle","FaceRecognizer.Init.FaceLibAlbumHandleAllocFail",_co,1000,4);
+        }
         if (_frFeature == 0) _frFeature = _m.Call(_m.Symbol("OKAO_FR_CreateFeatureHandle"), new[] { _co });
         if (_frScratchFeature == 0) _frScratchFeature = _m.Call(_m.Symbol("OKAO_FR_CreateFeatureHandle"), new[] { _co });
         if (_frFeature == 0 || _frScratchFeature == 0) throw new EmulationAbort("OKAO FR feature allocation failed");

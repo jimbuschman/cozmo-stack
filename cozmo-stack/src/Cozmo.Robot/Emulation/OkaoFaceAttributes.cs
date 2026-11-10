@@ -6,8 +6,18 @@ public sealed partial class OkaoFaceDetection
 {
     private uint _ex, _exResult, _sm, _smResult, _gb, _gbResult, _attributeImpl, _attributeFace;
 
-    // The native owner creates these unconditionally; this host allocates them on the first
-    // optional request so the existing default detector/oracle allocation path is unchanged.
+    private void InitializeStockAttributes()
+    {
+        _ex=StockCreate("OKAO_EX_CreateHandle","FaceTrackerImpl.Init.FaceLibEstimateExpressionHandleAllocFail",_co);
+        _exResult=StockCreate("OKAO_EX_CreateResultHandle","FaceTrackerImpl.Init.FaceLibExpressionResultHandleAllocFail",_co);
+        _sm=StockCreate("OKAO_SM_CreateHandle","FaceTrackerImpl.Init.FaceLibSmileDetectionHandleAllocFail");
+        _smResult=StockCreate("OKAO_SM_CreateResultHandle","FaceTrackerImpl.Init.FaceLibSmileResultHandleAllocFail");
+        _gb=StockCreate("OKAO_GB_CreateHandle","FaceTrackerImpl.Init.FaceLibGazeBlinkDetectionHandleAllocFail");
+        _gbResult=StockCreate("OKAO_GB_CreateResultHandle","FaceTrackerImpl.Init.FaceLibGazeBlinkResultHandleAllocFail");
+    }
+
+    // The stock owner creates handles eagerly; the independent legacy oracle keeps lazy allocation.
+    // Scratch carriers are allocated only when the host first projects optional attributes.
     private void EnsureAttributeHandles()
     {
         if (_attributeImpl != 0) return;
@@ -17,12 +27,12 @@ public sealed partial class OkaoFaceDetection
             if (handle == 0) throw new EmulationAbort(name + " returned null");
             return handle;
         }
-        _ex = Create("OKAO_EX_CreateHandle", _co);
-        _exResult = Create("OKAO_EX_CreateResultHandle", _co);
-        _sm = Create("OKAO_SM_CreateHandle");
-        _smResult = Create("OKAO_SM_CreateResultHandle");
-        _gb = Create("OKAO_GB_CreateHandle");
-        _gbResult = Create("OKAO_GB_CreateResultHandle");
+        if(_ex==0)_ex = Create("OKAO_EX_CreateHandle", _co);
+        if(_exResult==0)_exResult = Create("OKAO_EX_CreateResultHandle", _co);
+        if(_sm==0)_sm = Create("OKAO_SM_CreateHandle");
+        if(_smResult==0)_smResult = Create("OKAO_SM_CreateResultHandle");
+        if(_gb==0)_gb = Create("OKAO_GB_CreateHandle");
+        if(_gbResult==0)_gbResult = Create("OKAO_GB_CreateResultHandle");
         _attributeImpl = _m.Malloc(0x138);
         _attributeFace = _m.Malloc(0x110);
         if (_attributeImpl == 0 || _attributeFace == 0) throw new EmulationAbort("OKAO attribute carrier allocation failed");
@@ -65,5 +75,15 @@ public sealed partial class OkaoFaceDetection
         if (_ex != 0) FrCall("OKAO_EX_DeleteHandle", _ex);
         if (_attributeFace != 0) _m.Free(_attributeFace);
         if (_attributeImpl != 0) _m.Free(_attributeImpl);
+    }
+
+    private void DeleteStockAttributes(Action<string,uint,string> delete)
+    {
+        delete("OKAO_SM_DeleteHandle",_sm,"FaceTrackerImpl.Destructor.FaceLibSmileDetectHandleDeleteFail");
+        delete("OKAO_SM_DeleteResultHandle",_smResult,"FaceTrackerImpl.Destructor.FaceLibSmileResultHandleDeleteFail");
+        delete("OKAO_GB_DeleteHandle",_gb,"FaceTrackerImpl.Destructor.FaceLibGazeBlinkDetectHandleDeleteFail");
+        delete("OKAO_GB_DeleteResultHandle",_gbResult,"FaceTrackerImpl.Destructor.FaceLibGazeBlinkResulttHandleDeleteFail");
+        delete("OKAO_EX_DeleteResultHandle",_exResult,"FaceTrackerImpl.Destructor.FaceLibExpressionResultHandleDeleteFail");
+        delete("OKAO_EX_DeleteHandle",_ex,"FaceTrackerImpl.Destructor.FaceLibEstimateExpressionHandleDeleteFail");
     }
 }

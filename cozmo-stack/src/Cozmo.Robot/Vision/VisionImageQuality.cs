@@ -5,6 +5,7 @@ namespace Cozmo.Robot.Vision;
 
 public sealed partial class VisionSystem
 {
+    internal Func<string,uint?>? StockFaceCreateOverrideForTest;
     private int _missingMarkerLibraryReported;
     // fidelity: M11-080, M11-057
     internal readonly ImageQualityProcessor QualityProcessor=new();
@@ -77,7 +78,7 @@ public sealed partial class VisionSystem
             state.ComponentAvailabilityKnown=true;
         }
         bool Current(){lock(_groundGate)return !_disposed && ReferenceEquals(_nativeInitialization,state)&&ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying&&epoch==_nativeInitializationEpoch;}
-        bool systemEntered=false;
+        bool systemEntered=false;int faceEpoch=0;
         NativeVisionStageResult Missing(){lock(_groundGate){if(Current()){if(systemEntered)state.MarkUnavailable();state.ComponentAvailabilityKnown=false;}}return NativeVisionStageResult.Missing;}
         var engine=_robot.Engine;
         NativeVisionStageResult SystemFailure(NativeVisionStageResult result)
@@ -104,7 +105,7 @@ public sealed partial class VisionSystem
             lock(_groundGate)
             {
                 if(!Current())return Missing();
-                state.EnterSystem();systemEntered=true;
+                state.EnterSystem();systemEntered=true;faceEpoch=++_nativeFaceEpoch;
             }
             if(!QualityProcessor.Settings.Load(root,QualityProcessor.SourceLog!,Current))
             {if(!Current())return Missing();state.Failure(1);return SystemFailure(NativeVisionStageResult.Failure(1));}
@@ -124,7 +125,8 @@ public sealed partial class VisionSystem
             state.SetProfiler((long)infoMs,(long)dasMs);
             string path=engine.Options.ResourcesPath is {} resources?Path.Combine(resources,"config","engine","vision"):string.Empty;
             state.ReplaceFace(path,root);
-            SteppedBehavior.ReportMissing("M11-016 FaceTracker internal Init/algorithm and its possible error diagnostics remain unavailable");
+            if(suppliedConfig is null && _stockRecognizer && ReferenceEquals(FaceDetector,_stockFaceDetector))
+                InitializeStockFace(state,root,path,faceEpoch,Current);
             if(!Current())return Missing();
             state.ReplaceMotion(this,root);
             uint pet;
@@ -151,6 +153,7 @@ public sealed partial class VisionSystem
             {
                 if(!Current())return NativeVisionStageResult.Missing;
                 PushNativeSchedule(AllVisionModesSchedule.CopyDefault());
+                if(suppliedConfig is not null && state.StockFace is not null)state.StockFaceEpoch=faceEpoch;
                 state.Finish();
             }
             return NativeVisionStageResult.Success with { Epoch=epoch };
@@ -159,6 +162,106 @@ public sealed partial class VisionSystem
         {
             SteppedBehavior.ReportMissing("M1-034/M11-059 Vision Init terminating input/allocation unavailable; initialization unit skipped");
             return Missing();
+        }
+    }
+
+    private void InitializeStockFace(NativeVisionInitialization state,FirmwareJsonValue root,string path,int epoch,Func<bool> current)
+    {
+        var originalStock=_stockFaceDetector;
+        var detector=CreateStockFaceDetector();
+        var recognizer=CreateFaceRecognizer(new NativeOkaoFaceRecognizer(detector));
+        bool adopted=false;
+        try
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionSystem.Init.InstantiatingFaceTracker",$"With model path {path}.");
+            if(!current())return;
+            var face=InitMember(root,"FaceDetection");var recognition=InitMember(root,"FaceRecognition");
+            var mode=InitMember(face,"DetectionMode");var run=InitMember(recognition,"RunMode");
+            if(face?.Kind!=FirmwareJsonKind.Object || face.Members.Count!=1 ||
+               recognition?.Kind!=FirmwareJsonKind.Object || recognition.Members.Count!=1 ||
+               mode?.Kind!=FirmwareJsonKind.String || !mode.Bytes.AsSpan().SequenceEqual("video"u8) ||
+               run?.Kind!=FirmwareJsonKind.String || !run.Bytes.AsSpan().SequenceEqual("asynchronous"u8))
+            {
+                detector.SetStockStatus(3);
+                SteppedBehavior.ReportMissing("M11-016 nonstock face detector or recognition configuration unavailable");
+            }
+            else
+            {
+                try
+                {
+                    detector.CreateStagedStock(StockFaceCreateOverrideForTest);
+                    var version=detector.UseSession(machine=>machine.StockVersion());
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","FaceTrackerImpl.Init.FaceLibVersion",$"Initializing with FaceLibVision version {version.Major}.{version.Minor}");
+                    if(!current())return;
+                    detector.UseSession(machine=>{machine.InitializeStockHandles();return 0;});
+                    recognizer.InitializeStock();
+                    detector.SetStockStatus(1);
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","FaceTrackerImpl.Init.Success","FaceLib Vision handles created successfully.");
+                }
+                catch(Emulation.FaceGuestFailure failure)
+                {
+                    detector.SetStockStatus(2);
+                    if(failure.Key.StartsWith("MISSING ",StringComparison.Ordinal))SteppedBehavior.ReportMissing(failure.Key);
+                    else _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,failure.Key,"");
+                    if(!current())return;
+                    EngineErrorState.StoreAndMaybeBreak();
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceTrackerImpl.Constructor.InitFailed","");
+                    if(!current())return;
+                    EngineErrorState.StoreAndMaybeBreak();
+                }
+                catch(Exception e) when(e is not OutOfMemoryException)
+                {
+                    detector.SetStockStatus(3);
+                    SteppedBehavior.ReportMissing($"M11-016 stock face guest unavailable: {e.Message}");
+                }
+            }
+            if(!current())return;
+            OkaoFaceDetector oldDetector;FaceRecognizer oldRecognizer;
+            lock(_groundGate)
+            {
+                if(!current() || !ReferenceEquals(_stockFaceDetector,originalStock) || !ReferenceEquals(FaceDetector,originalStock))return;
+                oldDetector=_stockFaceDetector;oldRecognizer=Recognizer;
+                _stockFaceDetector=detector;FaceDetector=detector;Recognizer=recognizer;
+                state.StockFace=detector;state.StockFaceRecognizer=recognizer;state.StockFaceEpoch=epoch;adopted=true;
+            }
+            _=Task.Run(()=>RetireFaceSession(oldDetector,oldRecognizer));
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionSystem.Init.DoneInstantiatingFaceTracker","");
+        }
+        finally { if(!adopted) _=Task.Run(()=>RetireFaceSession(detector,recognizer)); }
+    }
+
+    private void RetireFaceSession(OkaoFaceDetector detector,FaceRecognizer recognizer)
+    {
+        bool albumFailed=false,shutdownSkipped=false;
+        try
+        {
+            lock(_busy)
+            {
+                try
+                {
+                    detector.RetireRecognition();
+                    if(detector.NativeUsable)albumFailed=recognizer.ShutdownStockDeferred();
+                    else shutdownSkipped=true;
+                }
+                finally { detector.Dispose(); }
+            }
+        }
+        catch(Exception e) { SteppedBehavior.ReportMissing($"M11-055 face guest retirement failed: {e.Message}"); }
+        if(shutdownSkipped)SteppedBehavior.ReportMissing("M1-034 M14-011 faulted recognition owner skipped guest shutdown");
+        if(albumFailed)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceRecognizer.Shutdown.FaceLibAlbumHandleDeleteFail","");
+            EngineErrorState.StoreAndMaybeBreak();
+        }
+        ReportFaceCleanup(detector);
+    }
+
+    private void ReportFaceCleanup(OkaoFaceDetector detector)
+    {
+        foreach(string operation in detector.TakeCleanupFailures())
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,operation,"");
+            EngineErrorState.StoreAndMaybeBreak();
         }
     }
 

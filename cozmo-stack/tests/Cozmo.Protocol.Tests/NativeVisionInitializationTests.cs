@@ -10,6 +10,12 @@ namespace Cozmo.Protocol.Tests;
 [Collection("ObjectID process statics")]
 public sealed class NativeVisionInitializationTests
 {
+    private sealed class SuppliedFaceDetector : IFaceDetector
+    {
+        public bool IsAvailable=>true;
+        public string Description=>"test detector";
+        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp)=>Array.Empty<DetectedFace>();
+    }
     [Theory]
     [InlineData(true,false)]
     [InlineData(true,true)]
@@ -86,9 +92,10 @@ public sealed class NativeVisionInitializationTests
                 .First(path=>File.Exists(Path.Combine(path,"config","engine","vision_config.json")));
             using var backup=new BackupTestResources();
             using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions{ResourcesPath=resources,BlockPoolPath=""}));
-            bool? workerAtInitiated=null,componentAtInitiated=null;
+            bool? workerAtInitiated=null,componentAtInitiated=null;var startupLogs=new List<string>();
             rig.Engine.LogEntry+=entry=>
             {
+                startupLogs.Add(entry.Name??"");
                 if(entry.Name!="VisionComponent.LoadFaceAlbumToRobot.Initiated")return;
                 var current=rig.Robot.Vision.NativeInitializationForTest!;
                 workerAtInitiated=current.Initialized;componentAtInitiated=current.ComponentInitialized;
@@ -98,6 +105,12 @@ public sealed class NativeVisionInitializationTests
             var state=Assert.IsType<NativeVisionInitialization>(vision.NativeInitializationForTest);
             Assert.Same(owner,state.Owner);Assert.True(state.AvailabilityKnown);Assert.True(state.Initialized);
             Assert.True(workerAtInitiated);Assert.False(componentAtInitiated);Assert.True(state.ComponentInitialized);
+            if(Cozmo.Robot.Emulation.ShippedLibraries.FindLibDir() is not null)
+            {
+                Assert.Equal(1,state.StockFace!.StockStatus);
+                Assert.True(startupLogs.IndexOf("FaceTrackerImpl.Init.FaceLibVersion")>=0);
+                Assert.True(startupLogs.IndexOf("FaceTrackerImpl.Init.Success")<startupLogs.IndexOf("VisionComponent.LoadFaceAlbumToRobot.Initiated"));
+            }
             Assert.Equal(60000,state.ProfilerInfoMs);Assert.Equal(600000,state.ProfilerDasMs);
             Assert.Equal((32d,4,4),(state.ClaheClipLimit,state.ClaheTilesX,state.ClaheTilesY));
             Assert.Equal(0x839E,vision.ModeEnableMask);var front=Assert.IsType<AllVisionModesSchedule>(vision.Schedules);
@@ -177,6 +190,78 @@ public sealed class NativeVisionInitializationTests
     }
     private static IEnumerable<string> Ancestors(string path)
     { for(var dir=new DirectoryInfo(path);dir is not null;dir=dir.Parent)yield return dir.FullName; }
+    [Fact]
+    public void FaceVersionCallbackCanInstallCustomDetectorWithoutBeingOverwritten()
+    {
+        if(Cozmo.Robot.Emulation.ShippedLibraries.FindLibDir() is null)return;
+        string resources=Ancestors(AppContext.BaseDirectory)
+            .Select(dir=>Path.Combine(dir,"re-analysis","obb","assets","cozmo_resources"))
+            .First(path=>File.Exists(Path.Combine(path,"config","engine","vision_config.json")));
+        using var backup=new BackupTestResources();
+        using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions{ResourcesPath=resources,BlockPoolPath=""}));
+        var custom=new SuppliedFaceDetector();bool observed=false;
+        rig.Engine.LogEntry+=entry=>
+        {
+            if(entry.Name!="FaceTrackerImpl.Init.FaceLibVersion")return;
+            observed=true;rig.Robot.Vision.FaceDetector=custom;
+        };
+        rig.ToSynced();Assert.True(observed);Assert.Same(custom,rig.Robot.Vision.FaceDetector);
+    }
+    [Fact]
+    public void SuppliedSuccessfulReinitializationRetainsStockSessionForActualFrames()
+    {
+        using var fixture=new PickupPyramidNativeExecutionTests.Fixture();
+        var vision=fixture.Rig.Robot.Vision;var owner=fixture.Robot;
+        var detector=vision.FaceDetector;
+        var config=new FirmwareJsonValue();
+        Assert.True(Json.TryParseInto(File.ReadAllBytes(Path.Combine(fixture.Rig.Engine.Options.ResourcesPath!,"config","engine","vision_config.json")),config));
+        var result=vision.InitializeNativeVision(owner,config);
+        Assert.True(result.Available);Assert.Equal(0u,result.Result);Assert.Same(detector,vision.FaceDetector);
+        Assert.True(vision.NativeInitializationForTest!.ComponentInitialized);
+        fixture.Rig.Robot.SetVisionWhileMoving(true);fixture.Rig.Tick();
+        int before=vision.FramesProcessed;fixture.Image(370,modes:1<<2);
+        Assert.True(vision.FramesProcessed>before);
+    }
+    [Theory]
+    [InlineData("OKAO_PT_CreateHandle","FacetrackerImpl.Init.FaceLibPartDetectorHandleAllocFail")]
+    [InlineData("OKAO_FR_CreateAlbumHandle","FaceRecognizer.Init.FaceLibAlbumHandleAllocFail")]
+    public void StockFaceDefinedFailureDoesNotRetryAndProcessesEmptyMode(string failedCall,string errorKey)
+    {
+        if(Cozmo.Robot.Emulation.ShippedLibraries.FindLibDir() is null)return;
+        bool oldError=EngineErrorState.ErrorFlagSet;
+        try
+        {
+        string resources=Ancestors(AppContext.BaseDirectory)
+            .Select(dir=>Path.Combine(dir,"re-analysis","obb","assets","cozmo_resources"))
+            .First(path=>File.Exists(Path.Combine(path,"config","engine","vision_config.json")));
+        using var backup=new BackupTestResources();
+        using var rig=new M4ControlTests.Rig(engineOptions:backup.Options(new CozmoEngineOptions{ResourcesPath=resources,BlockPoolPath=""}));
+        int calls=0;var logs=new List<string>();
+        rig.Robot.Vision.StockFaceCreateOverrideForTest=name=>{calls++;return name==failedCall?0u:null;};
+        rig.Engine.LogEntry+=entry=>logs.Add(entry.Name??"");
+        rig.ToSynced();var vision=rig.Robot.Vision;var state=vision.NativeInitializationForTest!;
+        Assert.True(state.Initialized);Assert.True(state.ComponentInitialized);
+        Assert.Equal(2,state.StockFace!.StockStatus);Assert.False(state.StockFace.IsAvailable);
+        Assert.Contains(errorKey,logs);Assert.Contains("FaceTrackerImpl.Constructor.InitFailed",logs);
+        int atFailure=calls;rig.Calibrate();rig.State(head:-.15f);
+        for(int i=0;i<12;i++)
+        {
+            rig.Tick();if(rig.Engine.NvStorage!.InFlightTag is {} tag)
+                rig.Data(new NVOpResult{Tag=tag,Op=0,Result=0,Data=Array.Empty<byte>()});
+        }
+        vision.Enabled=true;vision.ModeEnableMask=1<<2;vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
+        vision.Calibration=CameraCalibration.Nominal();vision.SetNativeOuterCalibration(vision.Calibration);
+        rig.Robot.SetVisionWhileMoving(true);rig.Tick();
+        uint timestamp=rig.Engine.Robot!.PoseHistory.NewestTimeStamp;
+        rig.Data(new ImageImuData{ImageId=71,Line2Number=239});
+        rig.Data(new ImageImuData{ImageId=10071,Line2Number=239});rig.Tick();
+        rig.CameraGrayFrame(71,timestamp,Enumerable.Repeat((byte)150,320*240).ToArray());
+        vision.WaitForProcessorIdle();rig.Tick();
+        Assert.Contains("FaceTrackerImpl.Update.NotInitialized",logs);
+        Assert.Equal(atFailure,calls);
+        }
+        finally { EngineErrorState.ErrorFlagSet=oldError; }
+    }
     [Fact]
     public void InitiatedCallbackSupersedingSameOwnerCannotPublishOldComponentReadiness()
     {
