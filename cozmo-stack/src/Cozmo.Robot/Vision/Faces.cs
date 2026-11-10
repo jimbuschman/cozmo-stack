@@ -1037,6 +1037,12 @@ public sealed class PetWorld
     {
         get { lock (_nativeGate) return _nativeCurrent ? _nativePets.OrderBy(p => p.Key).Select(p => p.Value.Pet).ToList() : _pets.Values.Select(p => p.Pet).ToList(); }
     }
+    internal IReadOnlyList<PetEntry>? GetNativePets(EngineRobot owner)
+    {
+        lock (_nativeGate)
+            return _nativeCurrent && ReferenceEquals(_nativeOwner, owner)
+                ? _nativePets.OrderBy(p => p.Key).Select(p => p.Value.Pet).ToArray() : null;
+    }
 
     public void Update(IReadOnlyList<DetectedPet> seen, uint timestamp, bool rotatingTooFast)
     {
