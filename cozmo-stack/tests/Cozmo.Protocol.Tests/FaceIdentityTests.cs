@@ -598,6 +598,57 @@ public sealed class FaceIdentityTests
     }
 
     [Fact]
+    public void ReacquiredStockCameraTrackReportsItsNewNegativeIdBeforeObservation()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        byte[] album = Album(), enrollment = Enrollment();
+        using var fixture = new Fixture(sourceNvEmpty: true, sourceNvStored: tag => tag switch
+        {
+            VisionSystem.FaceAlbumNvTag => album,
+            VisionSystem.FaceEnrollmentNvTag => enrollment,
+            _ => null,
+        });
+        var vision = fixture.M.Vision;
+        vision.Enabled = true;
+        vision.ModeEnableMask = 1 << 2;
+        vision.Schedules = AllVisionModesSchedule.InitDefaultSchedules();
+        fixture.Rig.Robot.SetVisionWhileMoving(true);
+        fixture.Rig.Tick();
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "okao", "okao_oracle.json")));
+        var root = doc.RootElement;
+        var frame = root.GetProperty("frames").EnumerateArray().Single(f => f.GetProperty("name").GetString() == "face_s10_2");
+        byte[] image = Convert.FromBase64String(root.GetProperty("images").GetProperty(frame.GetProperty("image").GetString()!).GetString()!);
+        var wire = new List<(ushort Tag, byte[] Body)>();
+        fixture.Rig.Engine.EngineToGameMessage += (tag, body) =>
+        {
+            if (tag is 0x46 or 0x47) wire.Add((tag, body.ToArray()));
+        };
+        uint timestamp = 100;
+        void Send(byte[] pixels, bool waitForRecognition)
+        {
+            fixture.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            fixture.NativeCameraFrame(timestamp++, pixels);
+            fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
+            fixture.Rig.Tick();
+            if (waitForRecognition)
+            {
+                var detector = Assert.IsType<OkaoFaceDetector>(vision.FaceDetector);
+                SpinWait.SpinUntil(() => detector.RecognitionWorkCompleted, TimeSpan.FromSeconds(2));
+            }
+        }
+        for (int i = 0; i < 6; i++) Send(image, true);
+        Assert.Contains(wire, x => x.Tag == 0x47 && Convert.ToHexString(x.Body) == "FFFFFFFF07000000");
+        for (int i = 0; i < 20; i++) Send(new byte[320 * 240], false);
+        for (int i = 0; i < 8; i++) Send(image, true);
+        int change = wire.FindIndex(x => x.Tag == 0x47 && Convert.ToHexString(x.Body) == "FEFFFFFF07000000");
+        Assert.True(change >= 0, "missing reacquired track -2 to identity 7");
+        Assert.Contains(wire.Skip(change + 1), x => x.Tag == 0x46 && BitConverter.ToInt32(x.Body) == 7);
+        int changeCount = wire.Count(x => x.Tag == 0x47);
+        Send(image, true);
+        Assert.Equal(changeCount, wire.Count(x => x.Tag == 0x47));
+    }
+
+    [Fact]
     public void UnnamedStockCameraPublishesOnFourthAcceptedObservation()
     {
         if (ShippedLibraries.FindLibDir() is null) return;

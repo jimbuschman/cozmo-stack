@@ -363,35 +363,41 @@ public sealed partial class FaceRecognizer
             CurrentTrack = track;
             RegistrationAllowed = registrationAllowed;
             if (EnrollmentCancelled) { EnrollmentCancelled = false; return; }
-            if (RecognizeFace(feature, out int id, out int score) != 0 || id == 0 || !_faces.TryGetValue(id, out var face)) return;
+            int status = RecognizeFaceCore(feature, out int id, out int score, stockWriter: true);
+            if (status != 0 || id == 0 || !_faces.TryGetValue(id, out var face)) return;
             if (_trackToFace.TryGetValue(track, out int previous) && previous != id)
             {
-                // This distinct track-map replacement is not the positive previous-ID
-                // transition produced by MergeFaces and published in LookupStockTrack.
-                Behavior.SteppedBehavior.ReportMissing("M14-011 replacing a different existing track-to-face mapping is not connected");
-                return;
+                if(!_faces.TryGetValue(previous,out var oldFace) || oldFace.Name.Length==0 || face.Name.Length==0)
+                {
+                    Behavior.SteppedBehavior.ReportMissing("M14-011 unnamed or missing identity replacement/merge ordering remains unavailable");
+                    return;
+                }
+                var source = SourceLog;
+                string message = $"While tracking face {unchecked(-track)} with ID={previous} ({oldFace.Name}), recognized as ID={id} ({face.Name}). Not merging!";
+                LogCallbackDeferral.Run(() => source?.Invoke(EngineLogLevel.Warning, null, "FaceRecognizer.UpdateRecognitionData.ConfusedTwoNamedIDs", message));
+                oldFace.CurrentTrack = 0;
+                oldFace.PreviousTrack = 0;
+                _trackToFace.Remove(track);
             }
-            foreach (int oldTrack in _trackToFace.Where(kv => kv.Value == id && kv.Key != track).Select(kv => kv.Key).ToArray())
-                _trackToFace.Remove(oldTrack);
-            if (face.CurrentTrack != track) { face.PreviousTrack = face.CurrentTrack; face.CurrentTrack = track; }
             face.Score = score;
             _trackToFace[track] = id;
         }
     }
 
-    internal (int Id, string? Name, int? PreviousId, int EnrollmentCount) LookupStockTrack(int track)
+    internal (int Id, string? Name, int? PreviousId, int EnrollmentCount,int CurrentTrack,int PreviousTrack) LookupStockTrack(int track)
     {
         lock (_gate)
         {
-            if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null, 0);
+            if (!_trackToFace.TryGetValue(track, out int id) || !_faces.TryGetValue(id, out var face)) return (0, null, null, 0,0,0);
             int oldId = face.Offset04;
             if (EnrollmentTargetId != 0 && EnrollmentTargetId != id && EnrollmentTargetId == oldId)
                 EnrollmentTargetId = id;
             int? previous = null;
             if (oldId != id)
             {
-                previous = oldId == 0 ? -track : oldId; // Tracker 0x86DBC6..DBD8.
+                previous = oldId == 0 ? unchecked(-track) : oldId; // Tracker 0x86DBC6..DBD8.
             }
+            int copiedCurrent=face.CurrentTrack,copiedPrevious=face.PreviousTrack;
             int completed = 0;
             if (EnrollmentCount == 0 && EnrollmentMode >= 1 && id == EnrollmentTargetId)
             {
@@ -400,7 +406,7 @@ public sealed partial class FaceRecognizer
             }
             face.Offset04 = id; // 0x863F00: normalize after copying the result.
             face.PreviousTrack = face.CurrentTrack;
-            return (id, face.Name.Length == 0 ? null : face.Name, previous, completed);
+            return (id, face.Name.Length == 0 ? null : face.Name, previous, completed,copiedCurrent,copiedPrevious);
         }
     }
 
@@ -622,7 +628,10 @@ public sealed partial class FaceRecognizer
     /// on a failure the engine propagates.
     /// </summary>
     // fidelity: M14-011
-    public int RecognizeFace(OkaoFaceFeature feature, out int faceID, out int score)
+    public int RecognizeFace(OkaoFaceFeature feature, out int faceID, out int score) =>
+        RecognizeFaceCore(feature, out faceID, out score, stockWriter: false);
+
+    private int RecognizeFaceCore(OkaoFaceFeature feature, out int faceID, out int score, bool stockWriter)
     {
         faceID = 0; score = 0;
         lock (_gate)
@@ -674,7 +683,7 @@ public sealed partial class FaceRecognizer
                             Log?.Invoke("RecognizeFace.UsingLowerRankedMatch");
                             MergeFaces(namedId, topId);
                             faceID = namedId; score = scores[lower];
-                            if (UpdateExistingAlbumEntry(ids[lower], feature) != 0)
+                            if (UpdateExistingAlbumEntryCore(ids[lower], feature, stockWriter) != 0)
                                 Log?.Invoke("RecognizeFace: UpdateExistingAlbumEntry failed on the lower-ranked path");
                             ReplaceEnrollmentTrackIfTarget(namedId);
                             return 0;
@@ -684,7 +693,7 @@ public sealed partial class FaceRecognizer
 
                 // C3-6 ordinary path.
                 faceID = topId; score = scores[0];
-                if (UpdateExistingAlbumEntry(ids[0], feature) != 0)
+                if (UpdateExistingAlbumEntryCore(ids[0], feature, stockWriter) != 0)
                     Log?.Invoke("RecognizeFace: UpdateExistingAlbumEntry failed on the confident path");
                 ReplaceEnrollmentTrackIfTarget(topId);
                 return 0;
@@ -702,7 +711,7 @@ public sealed partial class FaceRecognizer
                 {
                     if (GetFaceIDforAlbumEntry(ids[i]) != EnrollmentTargetId) continue;
                     score = scores[i];
-                    if (UpdateExistingAlbumEntry(ids[i], feature) != 0) return 1;
+                    if (UpdateExistingAlbumEntryCore(ids[i], feature, stockWriter) != 0) return 1;
                     break;
                 }
                 faceID = EnrollmentTargetId;
@@ -777,7 +786,10 @@ public sealed partial class FaceRecognizer
     /// writes <c>entry.Timestamp30Micros = now</c> and the session flag.
     /// </summary>
     // fidelity: M14-011
-    public int UpdateExistingAlbumEntry(int albumEntry, OkaoFaceFeature feature)
+    public int UpdateExistingAlbumEntry(int albumEntry, OkaoFaceFeature feature) =>
+        UpdateExistingAlbumEntryCore(albumEntry, feature, stockWriter: false);
+
+    private int UpdateExistingAlbumEntryCore(int albumEntry, OkaoFaceFeature feature, bool stockWriter)
     {
         lock (_gate)
         {
@@ -788,7 +800,11 @@ public sealed partial class FaceRecognizer
 
             long now = Now;
             album.LastSeenMicros = now;                                            // C3-12 SetAlbumEntryLastSeenTime
-            if (entry.CurrentTrack != CurrentTrack) { entry.PreviousTrack = entry.CurrentTrack; entry.CurrentTrack = CurrentTrack; }
+            if (entry.CurrentTrack != CurrentTrack)
+            {
+                if (stockWriter) _trackToFace.Remove(entry.CurrentTrack); // 0x865B74..7E, exact old key
+                entry.PreviousTrack = entry.CurrentTrack; entry.CurrentTrack = CurrentTrack;
+            }
 
             if (_okao.GetRegisteredUsrDataNum(_album, albumEntry, out int dataCount) != 0) return 1;   // C3-12
 
