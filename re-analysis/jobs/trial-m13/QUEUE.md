@@ -258,3 +258,15 @@ Current authority: operator scope correction in AUTONOMY.md and REVIEW N6. Settl
 | M11-050-MARKER-KEY-CARRIER-1 | CHECKED | Settlement proposed for M11-050 supported marker path. Original Camera IDs and exact same-owner key membership after timestamp gate. Affected 127/127, final 6/6, manager 120/120. HANDOFF-M11-050-MARKER-KEY-CARRIER-1.md. |
 | M14-008-FACE-LIFECYCLE-CLOSURE-1 | RELEASED | Target settlement: M14-008. Reconcile the latest stock face attributes, tracker identity, enrollment flag, and 0x46/0x47/0x4B handoffs against the record. Trace the remaining expiry telemetry and observation count at 0x004F47C2–0x004F47CC and 0x004F53F0–0x004F54A8. Prove the existing overlap deletion branch cannot reach stock, and build only remaining reachable lifecycle differences. |
 | M14-008-FACE-LIFECYCLE-CLOSURE-1 | CHECKED | Settlement proposed for the supported stock M14-008 handoff. Exact frontal count, recognition/expiry/remap events and raw name bytes. Affected 139/139, final 22/22, manager 148/148 and 5/5. HANDOFF-M14-008-FACE-LIFECYCLE-CLOSURE-1.md. |
+
+### Full gate for the file request, identity transitions, object turn, marker carrier and face lifecycle
+
+Committed tip 524f8f96 passed scripts/test-full.sh with 8,290/8,290 tests, zero failures or skips. Lowest free memory was 13,186 MB and peak testhost memory was 1,314 MB.
+
+| Job | State | Handoff |
+| --- | --- | --- |
+| FACE-ALBUM-FILE-REQUEST-1 | READY FOR CLAUDE | HANDOFF-FACE-ALBUM-FILE-REQUEST-1.md |
+| FACE-TRACKER-IDENTITY-TRANSITIONS-1 | READY FOR CLAUDE | HANDOFF-FACE-TRACKER-IDENTITY-TRANSITIONS-1.md |
+| AI-BODY-TURN-TO-OBJECT-1 | READY FOR CLAUDE | HANDOFF-AI-BODY-TURN-TO-OBJECT-1.md |
+| M11-050-MARKER-KEY-CARRIER-1 | READY FOR CLAUDE | HANDOFF-M11-050-MARKER-KEY-CARRIER-1.md |
+| M14-008-FACE-LIFECYCLE-CLOSURE-1 | READY FOR CLAUDE | HANDOFF-M14-008-FACE-LIFECYCLE-CLOSURE-1.md |
