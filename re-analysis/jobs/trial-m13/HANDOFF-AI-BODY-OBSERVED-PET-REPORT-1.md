@@ -13,6 +13,8 @@
 - NativePetReportTests sends firmware F2 images to an attached fake robot, waits for the worker and checks the normal engine tick drain before asserting local, typed and raw observations. It covers signed order, first duplicate, score conversion, repeated counts, authoritative empty results, unavailable or incomplete input, interface suppression and owner replacement. Separate tests reach the rotation-admission seam and host callback reentry. The tracker flag test verifies telemetry and the error flag. The first queued fixture checks isolation of a throwing compatibility subscriber.
 - The manager ran the original ARM Pack and SafeMessageBuffer with two independent payloads, including a negative ID, maximum u32 count, large integer-to-f32 score and signed zero rectangle coordinate. Both returned the expected 33 bytes. The builder passed 145/145 affected tests and 6/6 final focused tests. The manager passed 43/43 independent tests.
 
+- Full batch gate exposed a stale teardown expectation in EngineAppLayerTests.cs. The corrected test verifies the host continuation epoch advances across disconnect while the pet map and every other compared field reset. Affected 237/237 and independent teardown/pet 17/17 passed.
+
 ## MISSING
 
 - The stock OMCV pet detector and its failure/lost-track path remain open under M11-016. Legacy supplied profiles cannot establish a native report. Malformed opt-in results may supply host metering rectangles and processed-mode bookkeeping while native continuity and reports are withheld. Missing original-owner IMU prevents a native commit when a new ID requires it. Tests check the rotation decision seam and three-count map independently of a live rotating frame and full PetInitialDetection trigger. No hardware run was made.
