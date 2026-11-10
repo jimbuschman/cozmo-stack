@@ -19,13 +19,21 @@ public sealed record RobotObservedFaceReport(int FaceId, uint Timestamp, EngineG
     /// <summary>Left and right eye close ratios, in that order.</summary>
     public FaceAttributePair Blink { get; internal init; }
     public IReadOnlyList<byte> ExpressionScores { get; internal init; } = Array.AsReadOnly(new byte[5]);
+    internal byte[]? NativeNameBytes { get; init; }
 
     internal byte[] PackBody()
     {
         var w = new CladWriter();
         w.I32(FaceId).U32(Timestamp).F32(Pose.X).F32(Pose.Y).F32(Pose.Z)
             .F32(Pose.Q0).F32(Pose.Q1).F32(Pose.Q2).F32(Pose.Q3).U32(Pose.OriginId);
-        w.F32((float)Rect.X).F32((float)Rect.Y).F32((float)Rect.Width).F32((float)Rect.Height).String8(Name).I8((sbyte)Expression);
+        w.F32((float)Rect.X).F32((float)Rect.Y).F32((float)Rect.Width).F32((float)Rect.Height);
+        if (NativeNameBytes is { } raw)
+        {
+            int length = unchecked((byte)raw.Length);
+            w.U8((byte)length).Bytes(raw.AsSpan(0, length));
+        }
+        else w.String8(Name);
+        w.I8((sbyte)Expression);
         foreach (var pair in new[] { Smile, Gaze, Blink }) w.Bool(pair.Valid).F32(pair.First).F32(pair.Second);
         foreach (byte score in ExpressionScores) w.U8(score);
         foreach (var points in new[] { LeftEye, RightEye, Nose, Mouth })

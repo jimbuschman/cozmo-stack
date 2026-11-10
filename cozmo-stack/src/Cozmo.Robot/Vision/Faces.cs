@@ -35,6 +35,8 @@ public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, V
     internal int NativeEnrollmentCount { get; init; }
     internal NativeFaceFeatures? NativeFeatures { get; init; }
     internal NativeFaceAttributes? NativeAttributes { get; init; }
+    internal bool? NativeFacingCamera { get; init; }
+    internal byte[]? NativeNameBytes { get; init; }
     // Explicit supplied native new-entry rotation predicate. Null means that input is unavailable.
     internal bool? NativeNewEntryRotatingTooFast { get; init; }
 }
@@ -188,8 +190,8 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                             _recognitionWorker = null;
                         }
                         var identity = recognizer.LookupStockTrack(track);
-                        if (identity.PreviousId is { } old) changes!.Add((old, identity.Id, identity.Name));
-                        return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name, NativeEnrollmentCount = identity.EnrollmentCount };
+                        AppendStockFaceIdChanges(changes!, identity.Id, identity.Name, identity.PreviousId, identity.CurrentTrack, identity.PreviousTrack);
+                        return identity.Id == 0 ? face : face with { Id = identity.Id, Name = identity.Name, NativeEnrollmentCount = identity.EnrollmentCount, NativeNameBytes = identity.NameBytes };
                     }
                     faces = machine.DetectTracked(image.Pixels, image.Width, image.Height, Project, recognizer.HasStockTrack, recognizer.EnrollmentTrack,attributeMask);
                 }
@@ -198,6 +200,15 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
         }
         foreach (string message in diagnostics) Diagnostic?.Invoke(message);
         return faces;
+    }
+    internal static void AppendStockFaceIdChanges(List<(int OldId, int NewId, string? Name)> changes,
+        int id, string? name, int? previousId, int currentTrack, int previousTrack)
+    {
+        if (previousId is { } old) changes.Add((old, id, name));
+        if (id == 0 || currentTrack == previousTrack) return;
+        int oldTrack = unchecked(-currentTrack);
+        if (changes.Count != 0 && (changes[^1].OldId == oldTrack || changes[^1].NewId == id)) return;
+        changes.Add((oldTrack, id, name));
     }
     internal void RetireRecognition()
     {
@@ -418,6 +429,8 @@ public sealed class FaceEntry
     public uint LastObservedTimestamp { get; internal set; }
     public uint FirstObservedTimestamp { get; internal set; }
     public int TimesObserved { get; internal set; }
+    internal uint NativeFrontalObservations { get; set; }
+    internal byte[]? NativeNameBytes { get; set; }
     public string? Name { get; internal set; }
     public bool HasName => !string.IsNullOrEmpty(Name);
     public FacialExpression Expression { get; internal set; }
@@ -431,7 +444,7 @@ public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew,
     internal NativeFaceSnapshot? NativeSnapshot { get; init; }
 }
 
-internal sealed record NativeFaceSnapshot(int Id, uint Timestamp, int Count, string? Name, FaceRect Rect,
+internal sealed record NativeFaceSnapshot(int Id, uint Timestamp, int Count, string? Name, byte[]? NameBytes, FaceRect Rect,
     Vec3? Translation, Rotation3d? Rotation, PoseTreeNode? Origin);
 
 /// <summary>
@@ -543,6 +556,8 @@ public sealed partial class FaceWorld
                 string message = $"FaceWorld.UpdateFace.BadTimeStamp: Face observed before previous observation ({face.Timestamp} <= {entry.LastObservedTimestamp})";
                 LogCallbackDeferral.Run(() => Log?.Invoke(message));
             }
+            int priorCount = entry.TimesObserved;
+            uint delta = existing && face.Timestamp > entry.LastObservedTimestamp ? face.Timestamp - entry.LastObservedTimestamp : 0;
             prev = entry.HeadPose;
             // C2-F7c: on the found path a no-parts observation keeps the entry's existing translation
             // (0x004F4784..0x004F47A8); its rotation still comes from the TrackedFace. A new entry, and a
@@ -561,8 +576,26 @@ public sealed partial class FaceWorld
             entry.NativeTrackingRotation = face.NativeTrackingRotation;
             entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
-            if (face.Name is { Length: > 0 }) entry.Name = face.Name;
-            snapshot = new(entry.Id,entry.LastObservedTimestamp,entry.TimesObserved,entry.Name,entry.Rect,
+            if (requireNativePose && face.Detection.NativeFacingCamera is { } facing)
+            {
+                entry.Name = face.Name ?? "";
+                entry.NativeNameBytes = face.Detection.NativeNameBytes?.ToArray();
+                if (facing) entry.NativeFrontalObservations = unchecked(entry.NativeFrontalObservations + 1);
+                if (nativeOwner is not null)
+                {
+                    string? key = null, data = "0"; bool advanceAfterEvent = false;
+                    if (priorCount == 0 && entry.HasName) { key = "robot.vision.face_recognition.immediate_recognition"; data = "1"; }
+                    else if (!entry.HasName && entry.Id > 0 && entry.NativeFrontalObservations == 30)
+                    { key = "robot.vision.face_recognition.persistent_session_only"; advanceAfterEvent = true; }
+                    else if (delta >= 10001 && entry.Id > 0 && (entry.HasName || entry.NativeFrontalObservations >= 30))
+                    { key = "robot.vision.face_recognition.re_recognized"; data = entry.HasName ? "1" : "0"; }
+                    if (key is not null) nativeOwner.Engine.EmitSourceLog(EngineLogLevel.Event, null, key,
+                        entry.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), new Dictionary<string,string> { ["$data"] = data });
+                    if (advanceAfterEvent) entry.NativeFrontalObservations++;
+                }
+            }
+            else if (face.Name is { Length: > 0 }) entry.Name = face.Name;
+            snapshot = new(entry.Id,entry.LastObservedTimestamp,entry.TimesObserved,entry.Name,entry.NativeNameBytes?.ToArray(),entry.Rect,
                 entry.NativeTrackingTranslation,entry.NativeTrackingRotation,entry.NativeObservationOrigin);
             // Queued native callers hold the world/pose scope; cache this exact prepared native pose.
             if (requireNativePose)
@@ -626,11 +659,25 @@ public sealed partial class FaceWorld
         foreach(var pair in expired)
         {
             if(!current() || !NativeOwnerCurrent(owner,generation))break;
+            bool emit = false; uint lastObserved = 0;
             lock(_gate)
+            {
                 if(!_faces.TryGetValue(pair.Key,out var entry) || !ReferenceEquals(entry,pair.Value) || entry.HasName ||
                     priorTimestamp<=unchecked(entry.LastObservedTimestamp+UnnamedFaceLifetimeMs))continue;
+            }
             DeferPublicLog($"FaceWorld.Update.DeletingOldFace: Removing unnamed face {pair.Key} at t={priorTimestamp}.",owner,generation);
-            if(RemoveNativeFaceCore(pair.Key,true,owner,generation,pair.Value,true))removed.Add(pair.Key);
+            if(RemoveNativeFaceCore(pair.Key,true,owner,generation,pair.Value,true, () =>
+            {
+                if (emit) owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.vision.remove_unobserved_session_only_face",
+                    pair.Key.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    new Dictionary<string,string> { ["$data"] = lastObserved.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            }, entry =>
+            {
+                if (entry.HasName || priorTimestamp <= unchecked(entry.LastObservedTimestamp + UnnamedFaceLifetimeMs)) return false;
+                emit = entry.Id >= 1 && entry.NativeFrontalObservations >= 30;
+                lastObserved = entry.LastObservedTimestamp;
+                return true;
+            }))removed.Add(pair.Key);
         }
         return removed;
     }
@@ -657,7 +704,7 @@ public sealed partial class FaceWorld
         var owner=NativeOwner?.Invoke();int generation=NativeGeneration?.Invoke() ?? 0;
         using var mutation=NativePoseScope?.Invoke();
         if(!NativeOwnerCurrent(owner,generation))return false;
-        bool found;
+        bool found; bool reportRemap = false;
         lock(_gate)
         {
             if(!NativeOwnerCurrent(owner,generation))return false;
@@ -670,12 +717,17 @@ public sealed partial class FaceWorld
                     _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),Rect=old.Rect,NativeTrackingRotation=old.NativeTrackingRotation,
                         LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeObservationOrigin=old.NativeObservationOrigin,NativeTrackingTranslation=old.NativeTrackingTranslation,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
                         FirstObservedTimestamp=old.FirstObservedTimestamp}); //existing host metadata, NOT native aux114.
+                if (oldId != newId && oldId > 0 && newId > 0 && _faces.TryGetValue(newId, out var destination) &&
+                    destination.Id > 0 && (destination.HasName || destination.NativeFrontalObservations >= 30)) reportRemap = true;
                 old.NativeObservationOrigin=null;
                 _faces.Remove(oldId); //native remove(false): no4B, including old==new.
             }
         }
         if(!found && oldId>=1)DeferPublicLog($"FaceWorld.ChangeFaceID.UnknownOldID: ID {oldId} does not exist, cannot update to {newId}",owner,generation);
         if(!NativeOwnerCurrent(owner,generation))return found;
+        if (reportRemap && owner is not null)
+            owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.vision.update_face_id", newId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                new Dictionary<string,string> { ["$data"] = oldId.ToString(System.Globalization.CultureInfo.InvariantCulture) });
         if(owner is not null)NativePublish?.Invoke(owner,0x47,new NativeChangedFace(oldId,newId));
         if(!NativeOwnerCurrent(owner,generation) || !found)return found;
         DeferPublicLog($"FaceWorld.ChangeFaceID.Success: Updating old face {oldId} to new ID {newId}",owner,generation);
@@ -849,17 +901,20 @@ public sealed partial class FaceWorld
         return RemoveNativeFaceCore(id,publish,owner,generation,null,true);
     }
 
-    private bool RemoveNativeFaceCore(int id,bool publish,EngineRobot? owner,int generation,FaceEntry? expected,bool notifyPublic)
+    private bool RemoveNativeFaceCore(int id,bool publish,EngineRobot? owner,int generation,FaceEntry? expected,bool notifyPublic,Action? beforePublish=null,Func<FaceEntry,bool>? stillEligible=null)
     {
         if(!NativeOwnerCurrent(owner,generation))return false;
         FaceEntry entry;
         lock(_gate)
         {
             if(!NativeOwnerCurrent(owner,generation))return false;
-            if(!_faces.TryGetValue(id,out entry!) || (expected is not null && !ReferenceEquals(expected,entry)) || !_removingFaces.Add(entry))return false;
+            if(!_faces.TryGetValue(id,out entry!) || (expected is not null && !ReferenceEquals(expected,entry)) ||
+                (stillEligible is not null && !stillEligible(entry)) || !_removingFaces.Add(entry))return false;
         }
         try
         {
+            beforePublish?.Invoke();
+            if (!NativeOwnerCurrent(owner,generation)) return false;
             if(publish && owner is not null)NativePublish?.Invoke(owner,0x4B,new NativeDeletedFace(id));
             if(!NativeOwnerCurrent(owner,generation))return false;
             lock(_gate)

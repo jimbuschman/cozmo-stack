@@ -81,6 +81,9 @@ public sealed partial class VisionSystem : IDisposable
     internal Action<IReadOnlyList<ImageQualityRectangle>>? NativeQualityRectanglesObservedForTest;
     internal Action<CameraCalibration,Pose3d>? NativeMarkerCameraObservedForTest;
     internal Func<IReadOnlyList<ObservedMarker>,IReadOnlyList<ObservedMarker>>? NativeMarkerListForTest;
+    internal readonly record struct NativeMarkerCarrier(ObservedMarker Marker, uint CameraId);
+    internal Func<IReadOnlyList<NativeMarkerCarrier>,IReadOnlyList<NativeMarkerCarrier>>? NativeMarkerCarriersForTest;
+    internal Action<RobotStateHistory,uint>? NativeMarkerKeyComputedForTest;
     internal NativeVisionInitialization? NativeInitializationForTest { get { lock (_groundGate) return _nativeInitialization; } }
     internal bool NativeMotionReadyFor(EngineRobot owner)
     {
@@ -351,6 +354,7 @@ public sealed partial class VisionSystem : IDisposable
     private readonly Action<NativeObservedObject> _nativeObjectObserved;
     private readonly RetainedSubscription _renameRequest;
     private readonly RetainedSubscription _eraseRequest;
+    private readonly RetainedSubscription _fileAlbumRequest;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -486,6 +490,11 @@ public sealed partial class VisionSystem : IDisposable
             {
                 robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.EraseFace.HandlerFailed",error.Message);
             }
+        });
+        _fileAlbumRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x8F,false,value=>
+        {
+            if(value is NativeLoadFaceAlbumFileRequest request && ReferenceEquals(request.Vision,this))
+                HandleFileAlbumRequest(request);
         });
     }
 
@@ -1272,20 +1281,7 @@ public sealed partial class VisionSystem : IDisposable
             owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
         void Completed(NvResult result, Action<NvResult>? callback)
         {
-            if (!Current()) return;
-            if (result.Result != 0)
-            {
-                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.SaveFaceAlbumToRobot.NVWriteFailed", $"NVResult = {NvStorageComponent.NvResultName(result.Result)}");
-                if (!Current()) return;
-                if (owner!.HasExternalInterface)
-                {
-                    var report = new EngineErrorCodeReport(3);
-                    _robot.Engine.DeliverAnimationReportToApp(0x7C, new byte[] { 3 });
-                    _robot.Engine.AnimationMessages.Deliver(0x7C, true, report);
-                }
-                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-            }
-            if (Current()) callback?.Invoke(result);
+            if(owner is not null)CompleteFaceAlbumSave(owner,result,Current,callback,false);
         }
         if (!Current()) return;
         byte[] album, enrollment;
@@ -1313,12 +1309,10 @@ public sealed partial class VisionSystem : IDisposable
         {
             // C5-13: erase the album first, then the enrollment only when the album erase succeeded.
             Log?.Invoke("SaveFaceAlbumToRobot: EmptyAlbumData");
-            if (Current() && nv!.Erase(FaceAlbumNvTag, r => Completed(r, albumCompleted)) != 0 && Current())
-                nv.Erase(FaceEnrollmentNvTag, r => Completed(r, enrollmentCompleted));
+            if(Current())AdmitFaceAlbumSave(nv!,album,enrollment,Current,r=>Completed(r,albumCompleted),r=>Completed(r,enrollmentCompleted),false);
             return;
         }
-        if (Current() && nv!.Write(FaceAlbumNvTag, album, r => Completed(r, albumCompleted)) != 0 && Current())
-            nv.Write(FaceEnrollmentNvTag, enrollment, r => Completed(r, enrollmentCompleted));
+        if(Current())AdmitFaceAlbumSave(nv!,album,enrollment,Current,r=>Completed(r,albumCompleted),r=>Completed(r,enrollmentCompleted),false);
     }
 
     /// <summary>
@@ -1914,6 +1908,10 @@ public sealed partial class VisionSystem : IDisposable
                 markers=corrected;
             }
             if(markerMode)processedMask|=1<<DetectingMarkers;
+            // Detector and CLAHE retain the stock inner Camera ID 0 with every marker.
+            // Capture it on the worker with this frame rather than inferring it at delivery.
+            IReadOnlyList<NativeMarkerCarrier>? capturedNativeMarkers = queueForEngine
+                ? markers.Select(marker => new NativeMarkerCarrier(marker, 0)).ToArray() : null;
             if (RemovedSince(removal)) return null;
             // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
             Func<bool>? petSessionCurrent=null;
@@ -2117,7 +2115,12 @@ public sealed partial class VisionSystem : IDisposable
             // adapter retains its supplied-pose semantics; queued results use the captured owner.
             bool stateComputed = markerMode;
             var sourceMarkers=queueForEngine && NativeMarkerListForTest is {} markerFixture ? markerFixture(markers) : markers;
+            IReadOnlyList<NativeMarkerCarrier>? nativeMarkers = queueForEngine && NativeMarkerListForTest is not null
+                ? sourceMarkers.Select(marker => new NativeMarkerCarrier(marker, 0)).ToArray() : capturedNativeMarkers;
+            if (nativeMarkers is not null && NativeMarkerCarriersForTest is { } carrierFixture)
+                nativeMarkers = carrierFixture(nativeMarkers);
             var keptMarkers = sourceMarkers;
+            uint historicalKey = 0;
             BlockWorldFrameResult? worldFrame;
             using(World.EnterPoseMutation())
             {
@@ -2133,7 +2136,9 @@ public sealed partial class VisionSystem : IDisposable
                     if(sourceOwner is null || StaleFrame())stateComputed=false;
                     else
                     {
-                        uint status=sourceOwner.PoseHistory.ComputeAndInsertKeyedState(timestamp,historicalResult,out uint resolvedTime);
+                        uint status=sourceOwner.PoseHistory.ComputeAndInsertKeyedState(timestamp,historicalResult,out uint resolvedTime,out historicalKey);
+                        if (status == 0) NativeMarkerKeyComputedForTest?.Invoke(sourceOwner.PoseHistory, historicalKey);
+                        if (StaleFrame()) return null;
                         if(status!=0)
                         {
                             stateComputed=false;
@@ -2191,8 +2196,10 @@ public sealed partial class VisionSystem : IDisposable
                 if(stateComputed)
                 {
                     var kept = new List<ObservedMarker>(sourceMarkers.Count);
-                    foreach (var m in sourceMarkers)
+                    var candidates = nativeMarkers ?? sourceMarkers.Select(marker => new NativeMarkerCarrier(marker, 0)).ToArray();
+                    foreach (var carrier in candidates)
                     {
+                        var m = carrier.Marker;
                         if (m.Timestamp != timestamp)
                         {
                             if(queueForEngine)
@@ -2204,11 +2211,15 @@ public sealed partial class VisionSystem : IDisposable
                             if(queueForEngine)MarkerPublicLog(detail);else Log?.Invoke(detail);
                             continue;
                         }
+                        if (queueForEngine && sourceOwner is not null && carrier.CameraId == sourceOwner.NativeRobotId &&
+                            !sourceOwner.PoseHistory.IsValidComputedKey(historicalKey))
+                        {
+                            MarkerSourceLog(EngineLogLevel.Warning, null, "VisionComponent.Update.InvalidHistStateKey", $"key={unchecked((int)historicalKey)}");
+                            continue;
+                        }
                         kept.Add(m);
                     }
                     keptMarkers = kept;
-                    // Stock detector Camera ID 0 differs from the outer robot Camera ID 1;
-                    // the native same-camera key gate is therefore not entered here.
                 }
             }
             // fidelity: M11-035, M11-036 — UpdateVisionMarkers (0x00654D60) calls
@@ -2333,23 +2344,19 @@ public sealed partial class VisionSystem : IDisposable
                             string.Equals(snapshot.Name ?? "",d.Name ?? "",StringComparison.Ordinal))
                         {
                             string name=snapshot.Name ?? "";
-                            try
+                            var bytes=snapshot.NameBytes;
+                            if(bytes is not null)
                             {
-                                var bytes=new System.Text.UTF8Encoding(false,true).GetBytes(name);
-                                if(bytes.Length<=255)
+                                using var faceMutation=World.EnterPoseMutation();
+                                lock(reportOwner.PoseTreeGate)
                                 {
-                                    using var faceMutation=World.EnterPoseMutation();
-                                    lock(reportOwner.PoseTreeGate)
-                                    {
-                                        using var parent=Pose3d.WrapExisting(faceOrigin);
-                                        using var pose=new Pose3d(rotation,translation,parent:parent);
-                                        if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
-                                            report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth)
-                                            { Expression=attributes.Expression, Smile=attributes.Smile, Gaze=attributes.Gaze, Blink=attributes.Blink, ExpressionScores=attributes.Scores };
-                                    }
+                                    using var parent=Pose3d.WrapExisting(faceOrigin);
+                                    using var pose=new Pose3d(rotation,translation,parent:parent);
+                                    if(NativeObjectPose.TryConvert(pose,reportOwner,out var converted))
+                                        report=new(snapshot.Id,snapshot.Timestamp,converted,snapshot.Rect,name,features.LeftEye,features.RightEye,features.Nose,features.Mouth)
+                                        { Expression=attributes.Expression, Smile=attributes.Smile, Gaze=attributes.Gaze, Blink=attributes.Blink, ExpressionScores=attributes.Scores, NativeNameBytes=bytes.ToArray() };
                                 }
                             }
-                            catch(System.Text.EncoderFallbackException) { }
                         }
                         if(StaleFrame())return null;
                         if(report is null) Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace complete stock pose, parts, name or optional-mode input unavailable; delivering local ID/timestamp only");
@@ -2557,6 +2564,7 @@ public sealed partial class VisionSystem : IDisposable
         }
         _renameRequest.Dispose();
         _eraseRequest.Dispose();
+        _fileAlbumRequest.Dispose();
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;

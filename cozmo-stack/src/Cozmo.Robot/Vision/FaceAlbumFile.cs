@@ -35,19 +35,20 @@ public sealed partial class FaceRecognizer
         var reports=new List<FileLoadedFace>();
         if(!current() || _common is null || _album is null || !_okao.IsAvailable)return (true,1,reports);
         byte[] bytes;
-        try { bytes=File.ReadAllBytes(Path.Combine(directory,"data.bin")); }
+        try { bytes=File.ReadAllBytes(directory+"/data.bin"); }
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         { LogCallbackDeferral.Run(()=>SourceLog?.Invoke(EngineLogLevel.Warning,null,"FaceRecognizer.LoadAlbum.FileOpenFail",$"Filename: {directory}/data.bin"));return (true,1,reports); }
         if(!current())return (false,1,reports);
-        var loaded=_okao.RestoreAlbum(_common,bytes,bytes.Length,out int status);
+        var (loaded,restored)=RestoreNativeCandidate(bytes);
         if(loaded is null)return (true,1,reports);
-        if(status!=0){_okao.DeleteAlbumHandle(loaded);return (true,1,reports);}
         bool transferred=false;
         try
         {
             var parsed=new Dictionary<int,EnrolledFaceEntry>();
+            if(restored)
+            {
             byte[] metadata;
-            try { metadata=File.ReadAllBytes(Path.Combine(directory,"enrollData.json")); }
+            try { metadata=File.ReadAllBytes(directory+"/enrollData.json"); }
             catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             { metadata=Array.Empty<byte>(); }
             var root=new FirmwareJsonValue();
@@ -69,6 +70,7 @@ public sealed partial class FaceRecognizer
                 }
             }
             else LogCallbackDeferral.Run(()=>SourceLog?.Invoke(EngineLogLevel.Warning,null,"FaceRecognizer.LoadAlbum.EnrollDataFileReadFail",""));
+            }
             if(!current())return (false,1,reports);
             var entries=parsed.Values.ToList();
             if(!CheckConsistency(loaded,entries,deferLog:true))return (true,1,reports);
@@ -91,6 +93,21 @@ public sealed partial class FaceRecognizer
             return (true,1,reports);
         }
         finally { if(!transferred)_okao.DeleteAlbumHandle(loaded); }
+    }
+
+    // SetSerializedAlbum 0x867384 retains the returned candidate even if a later count fails.
+    private (OkaoAlbumHandle? Candidate,bool Success) RestoreNativeCandidate(byte[] bytes)
+    {
+        if(_common is null || bytes.Length==0 || _okao is not NativeOkaoFaceRecognizer native)return (null,false);
+        var loaded=_okao.RestoreAlbum(_common,bytes,bytes.Length,out _);
+        if(loaded is null)return (null,false);
+        if(_okao.GetRegisteredUserNum(loaded,out _)!=0)return (loaded,false);
+        if(native.GetRegisteredAllDataNum(loaded,out _)!=0)
+        {
+            LogCallbackDeferral.Run(()=>SourceLog?.Invoke(EngineLogLevel.Warning,null,"FaceRecognizer.SetSerializedAlbum.GetNumDataFailed",""));
+            return (loaded,false);
+        }
+        return (loaded,true);
     }
 
     // 0x868948..868BE4: equal dimensions transfer; a smaller candidate is copied then deleted.
@@ -122,12 +139,16 @@ public sealed partial class FaceRecognizer
         using var gate=LogCallbackDeferral.EnterGated(_gate);
         var empty=Array.Empty<FileLoadedFace>();
         if(!current() || _common is null || _album is null || _okao is not NativeOkaoFaceRecognizer native || !native.IsAvailable || albumData.Length==0)return (false,empty);
-        var loaded=_okao.RestoreAlbum(_common,albumData,albumData.Length,out _);
+        var (loaded,restored)=RestoreNativeCandidate(albumData);
         if(loaded is null)return (false,empty);
         bool transferred=false;
         try
         {
-            if(_okao.GetRegisteredUserNum(loaded,out _)!=0 || native.GetRegisteredAllDataNum(loaded,out _)!=0)return (false,empty);
+            if(!restored)
+            {
+                LogCallbackDeferral.Run(()=>SourceLog?.Invoke(EngineLogLevel.Warning,null,"FaceRecognizer.SetSerializedData.SetSerializedAlbumFail",""));
+                return (false,empty);
+            }
             var entries=DeserializeEnrollment(enrollmentData,()=>Now,out int nextFaceId);
             if(entries is null || !current() || !CheckConsistency(loaded,entries,deferLog:true) || !current())return (false,empty);
             if(InstallNativeCandidate(loaded,current,out transferred)!=0 || !current())return (false,empty);
@@ -175,7 +196,9 @@ public sealed partial class FaceRecognizer
         var entry=new EnrolledFaceEntry { FaceID=id,Score=1000,CurrentAlbumEntryId=-1,
             Timestamp28Micros=Math.Min(unchecked(Seconds(Get("enrollmentTime"))*MicrosPerSecond),now),
             Timestamp30Micros=Math.Min(unchecked(Seconds(Get("lastDataUpdateTime"))*MicrosPerSecond),now),
-            Name=Encoding.Latin1.GetString(Json.AsStringBytes(Get("name"))) };
+            };
+        byte[] nameBytes = Json.AsStringBytes(Get("name"));
+        entry.SetNativeName(Encoding.Latin1.GetString(nameBytes), nameBytes);
         var items=Get("albumEntries");
         if(items.Kind!=FirmwareJsonKind.Array)return entry;
         bool first=true;
