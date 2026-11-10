@@ -2211,20 +2211,26 @@ public sealed partial class VisionSystem : IDisposable
                 foreach (var d in detected)
                 {
                     var tf = new TrackedFace(d, timestamp);
-                    tf.UpdateTranslation(processingCamera);
-                    if (StaleFrame()) return null;
-                    if (nativeFaceFrames is { } frames)
+                    if (queueForEngine && nativeFaceFrames is { } frames)
                     {
+                        tf.UpdateNativeCameraTranslation(processingCamera.Calibration);
+                        if (StaleFrame()) return null;
                         // TrackedFace starts at +X pi/2; DetectFaces parents it to
                         // the historical camera, then flattens to root (0x6B37B0..EC).
-                        var pose = new Transform3d(Rotation3d.FromAngleAxis(BitConverter.UInt32BitsToSingle(0x3FC90FDB), new Vec3(1, 0, 0)), tf.NativeCameraTranslation);
-                        var cameraFrame = frames.Camera;
-                        var robotFrame = frames.Robot;
-                        pose.PreComposeWith(ref cameraFrame);
-                        pose.PreComposeWith(ref robotFrame);
+                        var pose = ComposeNativeFacePose(tf.NativeCameraTranslation, frames.Camera, frames.Robot);
                         tf.NativeTrackingTranslation = pose.Translation;
                         tf.NativeTrackingRotation = pose.Rotation;
+                        // Keep the legacy public pose for manual adapters; the detached native transform is stored above.
+                        tf.HeadPose.Dispose();
+                        tf.HeadPose = new Pose3d(processingCamera.Pose, processingCamera.Pose.Apply(tf.NativeCameraTranslation));
                     }
+                    else if (queueForEngine && !offline)
+                    {
+                        SteppedBehavior.ReportMissing("M14-001 tracked face has no original historical camera/robot carrier; face withheld");
+                        continue;
+                    }
+                    else tf.UpdateTranslation(processingCamera);
+                    if (StaleFrame()) return null;
                     faces.Add(tf);
                     FaceObservation? observation;
                     if (offline)
@@ -2249,13 +2255,14 @@ public sealed partial class VisionSystem : IDisposable
                             SteppedBehavior.ReportMissing("M14-008 FaceWorld native Robot origin owner unavailable; face update skipped");
                             continue;
                         }
+                        if (queueForEngine && !ReferenceEquals(owner, sourceOwner)) return null;
                         lock(owner.PoseTreeGate)
                         {
                             var originNode=ResolveFaceObservationOrigin(History,owner,timestamp);
                             if(originNode is null)continue;
                             observation=d.NativeTrackerFlagChanged is { } changed
-                                ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)
-                                : Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads);
+                                ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads,requireNativePose:queueForEngine,expectedOwner:sourceOwner,expectedGeneration:removal)
+                                : Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,d.NativeNewEntryRotatingTooFast,originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads,requireNativePose:queueForEngine,expectedOwner:sourceOwner,expectedGeneration:removal);
                         }
                     }
                     if(RemovedSince(removal) || sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,sourceOwner)))return null;
@@ -2427,6 +2434,14 @@ public sealed partial class VisionSystem : IDisposable
             }
             return ApplyResult(pd);
         }
+    }
+
+    internal static Transform3d ComposeNativeFacePose(Vec3 translation, Transform3d camera, Transform3d robot)
+    {
+        var pose = new Transform3d(Rotation3d.FromAngleAxis(BitConverter.UInt32BitsToSingle(0x3FC90FDB), new Vec3(1, 0, 0)), translation);
+        pose.PreComposeWith(ref camera);
+        pose.PreComposeWith(ref robot);
+        return pose;
     }
 
     internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp,bool native=true)

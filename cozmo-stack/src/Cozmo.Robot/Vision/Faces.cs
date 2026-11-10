@@ -292,6 +292,14 @@ public sealed class TrackedFace
     /// </summary>
     public void UpdateTranslation(CameraModel camera)
     {
+        UpdateNativeCameraTranslation(camera.Calibration);
+        // Compatibility adapter for standalone callers without the historical pose carriers.
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M14-001/M11-066 TrackedFace::UpdateTranslation 0x0087E042..0x0087E064: the native writes the camera-frame translation into the head pose, keeps the head pose's own rotation and calls SetParent(camera); the stack's consumers read a flattened world pose, so the head pose takes the camera's rotation and the camera-applied translation");
+        HeadPose = new Pose3d(camera.Pose, camera.Pose.Apply(NativeCameraTranslation));
+    }
+
+    internal void UpdateNativeCameraTranslation(CameraCalibration cal)
+    {
         float eyeDistance;
         float ax = 0f, ay = 0f, bx = 0f, by = 0f;          // [sp+0x58] and [sp+0x50]: the eye slots, zero in the box branch
         if (HasEyeParts)
@@ -324,7 +332,6 @@ public sealed class TrackedFace
         }
         float mx = (bx + ax) * 0.5f, my = (by + ay) * 0.5f; // 0x0087DF2E..0x0087DF5C
 
-        var cal = camera.Calibration;
         float fx = (float)cal.FocalLengthX, fy = (float)cal.FocalLengthY, cx = (float)cal.CenterX, cy = (float)cal.CenterY, skew = (float)cal.Skew;
         // GetInvCalibrationMatrix<float> 0x0085EF3A..0x0085EF9E: [1/fx, -skew/fy, cy*skew/fy - cx/fx; 0, 1/fy, -cy/fy; 0, 0, 1]
         float a0 = 1.0f / fx;
@@ -345,11 +352,6 @@ public sealed class TrackedFace
         float tx = scale * rx, ty = scale * ry, tz = scale * rz;                                   // 0x0087E026..0x0087E038
         NativeCameraTranslation = new Vec3(tx, ty, tz);
         DistanceMm = scale;
-        // MISSING: M14-001/M11-066 0x0087E042..0x0087E064: the native writes (tx, ty, tz) into the head pose's own translation,
-        // keeping the head pose's own rotation, and calls SetParent(camera). The stack's face consumers read a flattened
-        // world pose (no camera-parented tree here), so the previous flattening (camera rotation, camera-applied point) is kept.
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M14-001/M11-066 TrackedFace::UpdateTranslation 0x0087E042..0x0087E064: the native writes the camera-frame translation into the head pose, keeps the head pose's own rotation and calls SetParent(camera); the stack's consumers read a flattened world pose, so the head pose takes the camera's rotation and the camera-applied translation");
-        HeadPose = new Pose3d(camera.Pose, camera.Pose.Apply(new Vec3(tx, ty, tz)));
     }
 }
 
@@ -463,25 +465,42 @@ public sealed partial class FaceWorld
     public FaceObservation? AddOrUpdateFace(TrackedFace face, Pose3d robotPoseAtFrame, bool rotatingTooFast)
         => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,null);
 
-    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin, bool? onTreads = null)
-        => AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin,onTreads: onTreads);
-
-    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, Func<bool?> rotationInput, PoseTreeNode origin, bool? onTreads = null)
-        => AddOrUpdateFaceCore(face,robotPoseAtFrame,null,origin,rotationInput,onTreads);
-
-    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin, Func<bool?>? rotationInput = null, bool? onTreads = null)
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode origin, bool? onTreads = null, bool requireNativePose = false, EngineRobot? expectedOwner = null, int? expectedGeneration = null)
     {
+        using var mutation = requireNativePose ? NativePoseScope?.Invoke() : null;
+        return AddOrUpdateFaceCore(face,robotPoseAtFrame,rotatingTooFast,origin,onTreads: onTreads,requireNativePose:requireNativePose,expectedOwner:expectedOwner,expectedGeneration:expectedGeneration);
+    }
+
+    internal FaceObservation? AddOrUpdateNativeFace(TrackedFace face, Pose3d robotPoseAtFrame, Func<bool?> rotationInput, PoseTreeNode origin, bool? onTreads = null, bool requireNativePose = false, EngineRobot? expectedOwner = null, int? expectedGeneration = null)
+    {
+        using var mutation = requireNativePose ? NativePoseScope?.Invoke() : null;
+        return AddOrUpdateFaceCore(face,robotPoseAtFrame,null,origin,rotationInput,onTreads,requireNativePose,expectedOwner,expectedGeneration);
+    }
+
+    private FaceObservation? AddOrUpdateFaceCore(TrackedFace face, Pose3d robotPoseAtFrame, bool? rotatingTooFast, PoseTreeNode? origin, Func<bool?>? rotationInput = null, bool? onTreads = null, bool requireNativePose = false, EngineRobot? expectedOwner = null, int? expectedGeneration = null)
+    {
+        var nativeOwner = requireNativePose ? expectedOwner ?? NativeOwner?.Invoke() : null;
+        int generation = expectedGeneration ?? NativeGeneration?.Invoke() ?? 0;
+        bool CurrentNative() => !requireNativePose || nativeOwner is not null && NativeOwnerCurrent(nativeOwner, generation);
+        if (!CurrentNative()) return null;
         bool below = onTreads is { } on && face.NativeTrackingTranslation is { } native
             ? on && native.Z < 0 : face.HeadPose.Translation.Z < robotPoseAtFrame.Translation.Z;
-        if (below) { Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}"); return null; }
+        if (below) { LogCallbackDeferral.Run(() => Log?.Invoke($"FaceWorld.AddOrUpdateFace.IgnoringFaceBelowRobot z={face.HeadPose.Translation.Z:F1}")); return null; }
         FaceEntry? entry; bool isNew = false; Pose3d prev; NativeFaceSnapshot snapshot;
         using (LogCallbackDeferral.EnterGated(_gate))
         {
+            if (!CurrentNative()) return null;
             // C2-F7: the reachable match is the map lookup keyed by the TrackedFace id at +0. The
             // pose/overlap loop is dead because FaceTracker::IsRecognitionSupported 0x0086B244 is
             // `movs r0,#1; bx lr`, so the 0x004F43DE cbz never branches and no generated id exists.
             entry = _faces.TryGetValue(face.Id, out var byId) ? byId : null;
             bool existing = entry is not null;
+            if (requireNativePose && (origin is null || face.NativeTrackingTranslation is null || face.NativeTrackingRotation is null ||
+                existing && !face.HasEyeParts && entry!.NativeTrackingTranslation is null))
+            {
+                Behavior.SteppedBehavior.ReportMissing("M14-001 native tracked-face pose or prior no-parts translation unavailable; face withheld");
+                return null;
+            }
             if (entry is null)
             {
                 rotatingTooFast = rotationInput?.Invoke() ?? rotatingTooFast;
@@ -492,6 +511,7 @@ public sealed partial class FaceWorld
                 }
                 // C2-F7c: WasRotatingTooFast 0x004F4596 gates the new-entry path only.
                 if (rotatingTooFast.Value) { LogCallbackDeferral.Run(() => Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping")); return null; }
+                if (!CurrentNative()) return null;
                 entry = new FaceEntry { Id = face.Id, FirstObservedTimestamp = face.Timestamp };
                 _faces[face.Id] = entry; isNew = true;
                 string message = $"FaceWorld.UpdateFace.NewFace: Added new face with ID={face.Id} at t={face.Timestamp}.";
@@ -524,11 +544,35 @@ public sealed partial class FaceWorld
             if (face.Name is { Length: > 0 }) entry.Name = face.Name;
             snapshot = new(entry.Id,entry.LastObservedTimestamp,entry.TimesObserved,entry.Name,entry.Rect,
                 entry.NativeTrackingTranslation,entry.NativeTrackingRotation,entry.NativeObservationOrigin);
+            // Queued native callers hold the world/pose scope; cache this exact prepared native pose.
+            if (requireNativePose)
+            {
+                using var parent = Pose3d.WrapExisting(origin!);
+                using var nativePose = new Pose3d(entry.NativeTrackingRotation!.Value, entry.NativeTrackingTranslation!.Value, parent: parent);
+                if (CurrentNative()) UpdateNativeLastFace(entry, nativePose, nativeOwner, generation);
+            }
         }
         var obs = new FaceObservation(entry, face.Timestamp, isNew, prev)
         { NativeSnapshot = snapshot };
-        UpdateNativeLastFace(entry);
-        FaceObserved?.Invoke(obs);
+        if (!requireNativePose) UpdateNativeLastFace(entry);
+        if (requireNativePose)
+        {
+            var capturedOwner = nativeOwner;
+            if (capturedOwner is null) return obs;
+            var handlers = FaceObserved;
+            LogCallbackDeferral.Run(() =>
+            {
+                if (handlers is null) return;
+                foreach (Action<FaceObservation> handler in handlers.GetInvocationList())
+                {
+                    if (capturedOwner.Lifetime.Destroying || !ReferenceEquals(NativeOwner?.Invoke(), capturedOwner) ||
+                        (NativeGeneration?.Invoke() ?? 0) != generation) return;
+                    lock (_gate) if (!_faces.TryGetValue(entry.Id, out var current) || !ReferenceEquals(current, entry)) return;
+                    capturedOwner.Engine.RunIsolated(() => handler(obs));
+                }
+            });
+        }
+        else FaceObserved?.Invoke(obs);
         return obs;
     }
 
