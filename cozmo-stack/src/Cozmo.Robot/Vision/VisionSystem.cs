@@ -176,6 +176,9 @@ public sealed partial class VisionSystem : IDisposable
 
     // FaceWorld 0x004F456E uses a different body threshold and history count from marker processing.
     internal bool? NativeFaceRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack)
+        => NativeObservationRotatingTooFast(owner,timestamp,changedTrack,"M14-008 native face");
+
+    private bool? NativeObservationRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack, string label)
     {
         NativeImageImu[]? history = null;
         lock (_groundGate)
@@ -188,7 +191,7 @@ public sealed partial class VisionSystem : IDisposable
         }
         if (history is null)
         {
-            SteppedBehavior.ReportMissing("M14-008 native face rotation gate has no original-owner IMU history");
+            SteppedBehavior.ReportMissing($"{label} rotation gate has no original-owner IMU history");
             return null;
         }
         return NativeFaceRotationFromHistory(history, timestamp, changedTrack);
@@ -244,6 +247,7 @@ public sealed partial class VisionSystem : IDisposable
             if(_nativeInitialization is {} displaced)_retiredMotionStates.Enqueue(displaced);
             if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
             _groundOwner = owner;
+            Pets.BindNativeOwner(owner);
             _nativeWorkerPhysical=false;
             _nativeVisionWhileMoving=false;
             _nativeInitialization=new NativeVisionInitialization(owner) { LastReceivedTimestamp=receivedTimestamp };_nativeInitializationEpoch++;
@@ -633,7 +637,11 @@ public sealed partial class VisionSystem : IDisposable
             }
             if (locked) RetireFaceOwner();
             else _ = Task.Run(() => { lock (_busy) RetireFaceOwner(); });
-            Pets.ResetToConstructed();
+            lock (_groundGate)
+            {
+                if (_groundOwner is not null || removal != Volatile.Read(ref _removals)) return;
+                Pets.ResetToConstructed();
+            }
             LastFaces = Array.Empty<TrackedFace>();
             FramesProcessed = 0;
             FramesDropped = 0;
@@ -1947,12 +1955,21 @@ public sealed partial class VisionSystem : IDisposable
             if(StaleFrame())return null;
             if(detectedFaces is not null)foreach(var face in detectedFaces)qualityRectangles.Add(NativeQualityRectangles.Detection(face.Rect));
             bool petMode=ShouldProcessVisionMode((int)VisionMode.DetectingPets);
-            if(petMode&&!PetDetector.IsAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted");
+            var petDetector=PetDetector;
+            bool petAvailable=petMode && petDetector.IsAvailable;
+            if(petMode&&!petAvailable)SteppedBehavior.ReportMissing("M11-016/M11-080 pet detector unavailable; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             var petImage=qualityRectangles.Count==0?gray:NativeQualityRectangles.BlackOut(gray,qualityRectangles);
-            var detectedPets = petMode && PetDetector.IsAvailable ? PetDetector.Detect(petImage,timestamp) : null;
+            bool nativePetProfile=petMode && petAvailable && petDetector.ProvidesNativeResults;
+            bool completePetProfile=nativePetProfile;
+            var detectedPets = petMode && petAvailable ? petDetector.Detect(petImage,timestamp)?.ToArray() : null;
+            if(completePetProfile && detectedPets is not null && detectedPets.Any(p=>p.TrackerResultFlag is null || p.Type is not (PetType.Cat or PetType.Dog)))
+            {
+                completePetProfile=false;
+                SteppedBehavior.ReportMissing("M14-014 supplied pet result lacks native tracker flags or supported type; native update withheld");
+            }
             if(StaleFrame())return null;
-            if(petMode && PetDetector.IsAvailable && detectedPets is null)
+            if(petMode && petAvailable && detectedPets is null)
                 SteppedBehavior.ReportMissing("M11-016/M11-080 attached pet detector returned null; its detection and quality rectangles are omitted");
             if(StaleFrame())return null;
             if(detectedPets is not null)foreach(var pet in detectedPets)qualityRectangles.Add(NativeQualityRectangles.Detection(pet.Rect));
@@ -2288,7 +2305,35 @@ public sealed partial class VisionSystem : IDisposable
             if (detectedPets is {} pets)
             {
                 if (RemovedSince(removal)) return null;
-                Pets.Update(pets, timestamp, processingPose.RotatingTooFast);
+                if (queueForEngine && sourceOwner is not null && completePetProfile)
+                {
+                    bool CurrentPet() => !StaleFrame();
+                    bool ok = Pets.UpdateNative(pets, timestamp,
+                        flag => NativeObservationRotatingTooFast(sourceOwner, timestamp, flag, "M14-014 native pet"), CurrentPet,
+                        (input, pet, currentEpoch) =>
+                        {
+                            if (!input.TrackerResultFlag!.Value)
+                            {
+                                if (pet.TimesObserved != 1)
+                                {
+                                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "PetWorld.Update.NewPetDetectionShouldBeObservedOnce",
+                                        $"VERIFY(knownPet.GetNumTimesObserved() == 1): ID:{pet.Id} NumTimesObserved:{pet.TimesObserved}");
+                                    if (!currentEpoch()) return;
+                                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                                    _robot.Engine.Das.ForceFlushNow();
+                                    if (!currentEpoch()) return;
+                                }
+                                _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.vision.detected_pet", pet.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                    new Dictionary<string, string> { { "$data", pet.Type == PetType.Cat ? "Cat" : "Dog" } });
+                            }
+                            if (!currentEpoch() || !sourceOwner.HasExternalInterface) return;
+                            var report = new RobotObservedPetReport(pet.Id, timestamp, unchecked((uint)pet.TimesObserved), (float)input.Score, pet.Rect, pet.Type);
+                            _robot.Engine.PublishRobotObservedPet(report);
+                            if (currentEpoch()) _robot.Engine.AnimationMessages.Deliver(0x48, true, report);
+                        }, _robot.Engine.RunIsolated);
+                    if (!ok && StaleFrame()) return null;
+                }
+                else if(!nativePetProfile || !queueForEngine) Pets.Update(pets, timestamp, processingPose.RotatingTooFast);
                 if(queueForEngine && StaleFrame())return null;
             }
             // The ground in front of the robot, on this frame's own pose data: the detector needs the

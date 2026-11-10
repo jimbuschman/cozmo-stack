@@ -857,12 +857,18 @@ public sealed partial class FaceWorld
 }
 
 /// <summary>A pet as the detector reports it (the engine's OKAO pet detector fills <c>Vision::TrackedPet</c>).</summary>
-public sealed record DetectedPet(int Id, PetType Type, FaceRect Rect, int Score = 0);
+public sealed record DetectedPet(int Id, PetType Type, FaceRect Rect, int Score = 0)
+{
+    /// <summary>The native tracker result flag, when supplied by a complete native-shaped detector.</summary>
+    public bool? TrackerResultFlag { get; init; }
+}
 
 /// <summary>The pet detection seam (<c>PetTracker</c> in vision_config.json: max 4 pets, face size 60..240 px, threshold 900). OKAO again; unavailable here.</summary>
 public interface IPetDetector
 {
     bool IsAvailable { get; }
+    /// <summary>True only when every successful result, including an empty result, has the native tracker fields.</summary>
+    bool ProvidesNativeResults => false;
     IReadOnlyList<DetectedPet> Detect(GrayImage image, uint timestamp);
 }
 
@@ -883,42 +889,126 @@ public sealed class PetEntry
 
 /// <summary>
 /// <c>Anki::Cozmo::PetWorld</c> (0x0050B7E4..0x0050BC40): pets by id with the same rotating-too-fast skip
-/// (0.174533 / 0.523599), "robot.vision.detected_pet" on a first sighting and <c>RobotObservedPet</c> per
-/// observation; <c>GetKnownPetsWithType</c>, <c>GetPetByID</c>. Pets are image-plane entities (no head pose);
-/// a pet not reported for <see cref="TrackLostFrames"/> frames is dropped (vision_config <c>TrackLostCount</c> 2).
+/// (0.174533 / 0.523599), tracker-flag telemetry and <c>RobotObservedPet</c> per observation.
+/// Native-shaped results replace the entire map immediately; the legacy host adapter retains unseen pets
+/// for <see cref="TrackLostFrames"/> frames. Pets are image-plane entities (no head pose).
 /// </summary>
 public sealed class PetWorld
 {
     public const int TrackLostFrames = 2;
     private readonly Dictionary<int, (PetEntry Pet, int Missed)> _pets = new();
+    private readonly object _nativeGate = new();
+    private Dictionary<int, (PetEntry Pet, DetectedPet Input)> _nativePets = new();
+    private EngineRobot? _nativeOwner;
+    private bool _nativeCurrent;
+    private long _nativeEpoch;
     public event Action<PetEntry, bool>? PetObserved;
-    public IReadOnlyList<PetEntry> Pets => _pets.Values.Select(p => p.Pet).ToList();
+    internal void BindNativeOwner(EngineRobot owner)
+    {
+        lock (_nativeGate)
+        {
+            if (ReferenceEquals(_nativeOwner, owner)) return;
+            _nativeOwner = owner;
+            _nativePets = new();
+            _nativeCurrent = true;
+            _nativeEpoch++;
+        }
+    }
+    public IReadOnlyList<PetEntry> Pets
+    {
+        get { lock (_nativeGate) return _nativeCurrent ? _nativePets.OrderBy(p => p.Key).Select(p => p.Value.Pet).ToList() : _pets.Values.Select(p => p.Pet).ToList(); }
+    }
 
     public void Update(IReadOnlyList<DetectedPet> seen, uint timestamp, bool rotatingTooFast)
     {
         if (rotatingTooFast) return;
+        lock (_nativeGate) { _nativeCurrent = false; _nativeEpoch++; }
         var ids = new HashSet<int>();
         foreach (var d in seen)
         {
             ids.Add(d.Id);
-            bool isNew = !_pets.TryGetValue(d.Id, out var cur);
-            var pet = isNew ? new PetEntry { Id = d.Id, Type = d.Type } : cur.Pet;
-            pet.Rect = d.Rect; pet.LastObservedTimestamp = timestamp; pet.TimesObserved++; pet.Type = d.Type;
-            _pets[d.Id] = (pet, 0);
+            bool isNew;
+            PetEntry pet;
+            lock (_nativeGate)
+            {
+                isNew = !_pets.TryGetValue(d.Id, out var cur);
+                pet = isNew ? new PetEntry { Id = d.Id, Type = d.Type } : cur.Pet;
+                pet.Rect = d.Rect; pet.LastObservedTimestamp = timestamp; pet.TimesObserved++; pet.Type = d.Type;
+                _pets[d.Id] = (pet, 0);
+            }
             PetObserved?.Invoke(pet, isNew);
         }
-        foreach (var id in _pets.Keys.ToList())
+        lock (_nativeGate)
         {
-            if (ids.Contains(id)) continue;
-            var (pet, missed) = _pets[id];
-            if (++missed > TrackLostFrames) _pets.Remove(id); else _pets[id] = (pet, missed);
+            foreach (var id in _pets.Keys.ToList())
+            {
+                if (ids.Contains(id)) continue;
+                var (pet, missed) = _pets[id];
+                if (++missed > TrackLostFrames) _pets.Remove(id); else _pets[id] = (pet, missed);
+            }
         }
     }
 
-    public PetEntry? GetPetByID(int id) => _pets.TryGetValue(id, out var p) ? p.Pet : null;
+    internal bool UpdateNative(IReadOnlyList<DetectedPet> seen, uint timestamp, Func<bool, bool?> rotating,
+        Func<bool> current, Action<DetectedPet, PetEntry, Func<bool>> publish, Action<Action> isolate)
+    {
+        Dictionary<int, (PetEntry Pet, DetectedPet Input)> prior;
+        long initialEpoch;
+        lock (_nativeGate) { prior = _nativePets; initialEpoch = _nativeEpoch; }
+        bool StillInitial() => current() && initialEpoch == Interlocked.Read(ref _nativeEpoch);
+        var next = new Dictionary<int, (PetEntry Pet, DetectedPet Input)>();
+        foreach (var input in seen)
+        {
+            if (!StillInitial()) return false;
+            bool existing = prior.TryGetValue(input.Id, out var old);
+            if (!existing)
+            {
+                bool? tooFast = rotating(input.TrackerResultFlag!.Value);
+                if (!StillInitial() || tooFast is null) return false;
+                if (tooFast.Value) continue;
+            }
+            var pet = new PetEntry { Id = input.Id, Type = input.Type, Rect = input.Rect, LastObservedTimestamp = timestamp,
+                TimesObserved = existing ? unchecked(old.Pet.TimesObserved + 1) : 1 };
+            next.TryAdd(input.Id, (pet, input));
+        }
+        long epoch;
+        lock (_nativeGate)
+        {
+            if (!StillInitial()) return false;
+            _nativePets = next;
+            _nativeCurrent = true;
+            epoch = ++_nativeEpoch;
+        }
+        bool CurrentEpoch() => current() && epoch == Interlocked.Read(ref _nativeEpoch);
+        var ordered = next.OrderBy(p => p.Key).ToArray();
+        foreach (var item in ordered)
+        {
+            if (!CurrentEpoch()) return false;
+            publish(item.Value.Input, item.Value.Pet, CurrentEpoch);
+        }
+        foreach (var item in ordered)
+        {
+            if (!CurrentEpoch()) return false;
+            if (PetObserved is { } handlers)
+                foreach (Action<PetEntry, bool> handler in handlers.GetInvocationList())
+                {
+                    if (!CurrentEpoch()) return false;
+                    isolate(() => handler(item.Value.Pet, !prior.ContainsKey(item.Key)));
+                }
+        }
+        return CurrentEpoch();
+    }
+
+    public PetEntry? GetPetByID(int id)
+    {
+        lock (_nativeGate) return _nativeCurrent ? (_nativePets.TryGetValue(id, out var n) ? n.Pet : null) : (_pets.TryGetValue(id, out var p) ? p.Pet : null);
+    }
 
     // fidelity: M1-025, M1-015
     /// <summary>Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no pets. Subscribers are kept.</summary>
-    internal void ResetToConstructed() => _pets.Clear();
-    public IReadOnlyList<PetEntry> GetKnownPetsWithType(PetType type) => _pets.Values.Select(p => p.Pet).Where(p => type == PetType.Unknown || p.Type == type).ToList();
+    internal void ResetToConstructed()
+    {
+        lock (_nativeGate) { _pets.Clear(); _nativePets = new(); _nativeOwner = null; _nativeCurrent = false; _nativeEpoch++; }
+    }
+    public IReadOnlyList<PetEntry> GetKnownPetsWithType(PetType type) => Pets.Where(p => type == PetType.Unknown || p.Type == type).ToList();
 }
