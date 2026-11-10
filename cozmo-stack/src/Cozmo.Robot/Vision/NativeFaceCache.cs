@@ -8,7 +8,8 @@ internal sealed record NativeErasedEnrolledFace(int Id, string Name);
 // fidelity: M14-001, M14-008
 public sealed partial class FaceWorld
 {
-    internal Action<ushort,object>? NativePublish;
+    internal Action<EngineRobot,ushort,object>? NativePublish;
+    internal Func<int>? NativeGeneration;
     internal Func<Pose3d?>? NativeMainPose;
     internal Func<IDisposable>? NativePoseScope;
     private Pose3d? _nativeLastPose;

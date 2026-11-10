@@ -384,12 +384,12 @@ public sealed partial class VisionSystem : IDisposable
         // fidelity: M11-044
         // What the localization candidates and the frame sequence read from the robot: its current pose (Robot::GetPose), the robot states behind
         // RobotStateHistory::GetComputedStateAt, the MovementComponent bytes +0xA/+0xC, Robot::GetLastImageTimeStamp and BaseStationTimer::GetCurrentTimeInSeconds.
-        Faces.NativePublish=(tag,payload)=>
+        Faces.NativePublish=(owner,tag,payload)=>
         {
-            if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
-            Behavior.SteppedBehavior.ReportMissing($"M14-008 native face{tag:X2} complete app report unavailable; no truncated wire payload; checked LOCAL ID projection only");
-            _robot.Engine.AnimationMessages.Deliver(tag,true,payload);
+            if(owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface)return;
+            _robot.Engine.PublishFaceIdReport(tag,payload);
         };
+        Faces.NativeGeneration=()=>Volatile.Read(ref _removals);
         World.NativeObjectObserved=_nativeObjectObserved=observation=>
         {
             if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
@@ -2272,7 +2272,8 @@ public sealed partial class VisionSystem : IDisposable
                     }
                 }
                 LastFaces = faces;
-                Faces.Update(timestamp);
+                if(queueForEngine && sourceOwner is not null) Faces.UpdateNative(_robot.CameraSettings.LastProcessedImageTimestamp,sourceOwner,()=>!StaleFrame());
+                else Faces.Update(timestamp);
                 if(queueForEngine && StaleFrame())return null;
                 // fidelity: M14-011
                 // Stock FaceTracker recognition is processed before this observation pass; optional

@@ -489,7 +489,9 @@ public sealed class FaceIdentityTests
         var observedReports = new List<RobotObservedFaceReport>();
         fixture.Rig.Engine.RobotObservedFace += observedReports.Add;
         var rawFaces = new List<byte[]>();
-        fixture.Rig.Engine.EngineToGameMessage += (tag,body) => { if(tag==0x46)rawFaces.Add(body.ToArray()); };
+        var faceWire = new List<(ushort Tag,byte[] Body)>();
+        fixture.Rig.Engine.EngineToGameMessage += (tag,body) =>
+        { if(tag==0x46)rawFaces.Add(body.ToArray());if(tag is 0x46 or 0x47)faceWire.Add((tag,body.ToArray())); };
         var localReports = new List<NativeObservedFace>();
         uint appCountBeforeObservation=0;
         vision.Faces.FaceObserved += _ => appCountBeforeObservation=fixture.Rig.Engine.NativeUiDeliveryCount;
@@ -549,6 +551,9 @@ public sealed class FaceIdentityTests
         Assert.Equal("Drawn", recognized.Name);
         Assert.Equal(775, recognized.Detection.Score); // DT confidence, not FR score
         Assert.Equal(new[] { (-1, 7) }, changes);
+        int changeAt=faceWire.FindIndex(x=>x.Tag==0x47 && Convert.ToHexString(x.Body)=="FFFFFFFF07000000");
+        int observedAt=faceWire.FindIndex(x=>x.Tag==0x46 && BitConverter.ToInt32(x.Body)==7);
+        Assert.True(changeAt>=0 && observedAt>changeAt);
         Assert.Equal(new[] { "change:Drawn", "observe:Drawn" }, order);
         Assert.Equal("Drawn", vision.Faces.GetFace(7)?.Name);
         Assert.Contains(observedReports, r => r.FaceId == 7 && r.Name == "Drawn" && r.LeftEye.Count > 0);
