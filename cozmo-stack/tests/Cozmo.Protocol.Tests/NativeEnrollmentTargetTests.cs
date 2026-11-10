@@ -16,13 +16,13 @@ public sealed class NativeEnrollmentTargetTests
         var origin = owner.GetNativeOrigin(owner.CurrentOriginId);
         void Add(int id, uint time, Vec3 position, string? name = null)
         {
-            var face = new TrackedFace(new DetectedFace(id, new FaceRect(0, 0, 20, 20), Name: name), time)
+            var face = new TrackedFace(new DetectedFace(id, new FaceRect(0, 0, 20, 20), new Vec2(4,5), new Vec2(9,5), Name: name), time)
             {
                 HeadPose = new Pose3d(Rotation3d.Identity, position),
                 NativeTrackingTranslation = position,
                 NativeTrackingRotation = Rotation3d.Identity,
             };
-            Assert.NotNull(world.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!));
+            Assert.NotNull(world.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!,requireNativePose:true,expectedOwner:owner));
         }
         Add(1, 100, new Vec3(0, 0, 50));
         Add(2, 100, new Vec3(80, 80, 50));
@@ -49,13 +49,13 @@ public sealed class NativeEnrollmentTargetTests
         void Add(int id, uint time, string name)
         {
             var point = new Vec3(id * 10, 0, 50);
-            var face = new TrackedFace(new DetectedFace(id, new FaceRect(0, 0, 20, 20), Name: name), time)
+            var face = new TrackedFace(new DetectedFace(id, new FaceRect(0, 0, 20, 20), new Vec2(4,5), new Vec2(9,5), Name: name), time)
             {
                 HeadPose = new Pose3d(Rotation3d.Identity, point),
                 NativeTrackingTranslation = point,
                 NativeTrackingRotation = Rotation3d.Identity,
             };
-            Assert.NotNull(world.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!));
+            Assert.NotNull(world.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!,requireNativePose:true,expectedOwner:owner));
         }
         Add(1, 1000, "Named");
         Add(2, 999, "");
@@ -87,7 +87,7 @@ public sealed class NativeEnrollmentTargetTests
             NativeTrackingTranslation = new Vec3(20, 30, 40),
             NativeTrackingRotation = Rotation3d.Identity,
         };
-        Assert.NotNull(world.AddOrUpdateNativeFace(first, Pose3d.Identity, false, origin.Node!));
+        Assert.NotNull(world.AddOrUpdateNativeFace(first, Pose3d.Identity, false, origin.Node!,requireNativePose:true,expectedOwner:f.Robot));
         var rotation = Rotation3d.FromAngleAxis(.3f, new Vec3(0, 0, 1));
         var next = new TrackedFace(new DetectedFace(1, new FaceRect(0, 0, 20, 20)), 11)
         {
@@ -95,7 +95,7 @@ public sealed class NativeEnrollmentTargetTests
             NativeTrackingTranslation = new Vec3(90, 80, 70),
             NativeTrackingRotation = rotation,
         };
-        var entry = world.AddOrUpdateNativeFace(next, Pose3d.Identity, false, laterOrigin.Node!)!.Face;
+        var entry = world.AddOrUpdateNativeFace(next, Pose3d.Identity, false, laterOrigin.Node!,requireNativePose:true,expectedOwner:f.Robot)!.Face;
         Assert.Equal(new Vec3(20, 30, 40), entry.NativeTrackingTranslation);
         Assert.Equal(rotation, entry.NativeTrackingRotation);
         Assert.Same(laterOrigin.Node, entry.NativeObservationOrigin);

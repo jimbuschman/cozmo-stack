@@ -191,8 +191,9 @@ public sealed class KnockOverNativeTests
             bool inPosition=false;Assert.Equal(ActionResult.Success,interaction.GetPossiblePoses(cube,out var fallback,ref inPosition));Assert.True(Assert.Single(fallback).WorldPose.Translation.Y>0);Assert.False(inPosition);
             FaceEntry Face(int id,uint time,Pose3d parent,bool named)
             {
-                var tracked=new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),Name:named?"Ada":null),time){HeadPose=new Pose3d(Rotation3d.Identity,new(100,500,60),parent:parent)};
-                return f.M.Vision.Faces.AddOrUpdateFace(tracked,f.Robot.GetCheckedMainPose(),false)!.Face;
+                var tracked=new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),Name:named?"Ada":null),time)
+                {HeadPose=new Pose3d(Rotation3d.Identity,new(100,500,60)),NativeTrackingTranslation=new Vec3(100,500,60),NativeTrackingRotation=Rotation3d.Identity};
+                return f.M.Vision.Faces.AddOrUpdateNativeFace(tracked,f.Robot.GetCheckedMainPose(),false,parent.Node!,true,requireNativePose:true,expectedOwner:f.Robot)!.Face;
             }
             FaceEntry entry=null!;for(uint time=1;time<=4;time++)entry=Face(11,time,f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId),false);
             Assert.False(entry.HasName);Assert.Equal(4,entry.TimesObserved);
@@ -207,11 +208,13 @@ public sealed class KnockOverNativeTests
     {
         // reach: unit explicit tracked face poses, actual FaceWorld consumer/cache; K27 full copy then translation-only overwrite.
         using var f=new Fixture();using var firstParent=new Pose3d("previous-origin");using var nextParent=new Pose3d("incoming-history-origin");
-        var first=new TrackedFace(new DetectedFace(20,new FaceRect(0,0,10,10),Name:"Ada"),1){HeadPose=new Pose3d(Rotation3d.Identity,new(10,20,60),parent:firstParent)};
-        f.M.Vision.Faces.AddOrUpdateFace(first,f.Robot.GetCheckedMainPose(),false);
+        var first=new TrackedFace(new DetectedFace(20,new FaceRect(0,0,10,10),Name:"Ada"),1)
+        {HeadPose=new Pose3d(Rotation3d.Identity,new(10,20,60)),NativeTrackingTranslation=new Vec3(10,20,60),NativeTrackingRotation=Rotation3d.Identity};
+        f.M.Vision.Faces.AddOrUpdateNativeFace(first,f.Robot.GetCheckedMainPose(),false,firstParent.Node!,true,requireNativePose:true,expectedOwner:f.Robot);
         var rotation=Rotation3d.FromAngleAxis(.5f,new(0,0,1));
-        var next=new TrackedFace(new DetectedFace(20,new FaceRect(0,0,10,10),Name:"Ada"),2){HeadPose=new Pose3d(rotation,new(90,80,70),parent:nextParent)};
-        var entry=f.M.Vision.Faces.AddOrUpdateFace(next,f.Robot.GetCheckedMainPose(),false)!.Face;
+        var next=new TrackedFace(new DetectedFace(20,new FaceRect(0,0,10,10),Name:"Ada"),2)
+        {HeadPose=new Pose3d(rotation,new(90,80,70)),NativeTrackingTranslation=new Vec3(90,80,70),NativeTrackingRotation=rotation};
+        var entry=f.M.Vision.Faces.AddOrUpdateNativeFace(next,f.Robot.GetCheckedMainPose(),false,nextParent.Node!,true,requireNativePose:true,expectedOwner:f.Robot)!.Face;
         Assert.Equal(new Vec3(10,20,60),entry.HeadPose.Translation);Assert.Same(nextParent.Node,entry.HeadPose.Node!.Parent);Assert.Equal(rotation,entry.HeadPose.Quaternion);
         Assert.NotSame(next.HeadPose.Node,entry.HeadPose.Node);Assert.Equal(new Vec3(90,80,70),next.HeadPose.Translation);
         using var copied=new Pose3d("");Assert.False(f.M.Vision.Faces.CopyNativeLastFace(f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId),true,copied));Assert.True(f.M.Vision.Faces.CopyNativeLastFace(nextParent,true,copied));

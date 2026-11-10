@@ -1,0 +1,25 @@
+# TRACKED-FACE-SETTLEMENT-2
+
+## Claims and evidence
+
+- The queued public TrackedFace.HeadPose now exposes the detached native transform. UpdateTranslation places the native pose under the camera at 0x0087E042–0x0087E064. DetectFaces composes it through the camera/root at 0x006B37BC–0x006B37D0, clears the parent at 0x006B37E4 and stores the detached transform at 0x006B37EC. This is the incoming LastFaces transform even when FaceWorld retains a prior translation.
+- FaceWorld takes the historical origin at 0x004F42B4–0x004F42C4 and copies and reparents the detached transform at 0x004F42D0–0x004F42F2. Existing faces without parts retain only the previous local translation at 0x004F4784–0x004F47BE. The public entry exposes that prepared pose with its native parent. The host FaceObserved callback retains its previous published pose wrapper by replacement. The existing remap copies the exact entry pose as in 0x004F4000–0x004F4026.
+- The native cache only receives a prepared native entry. The original cache gate at 0x004F4956–0x004F4972 uses count above three or a nonempty name. Same-stamp candidates compare native distance to actual MAIN at 0x004F4990–0x004F4A24, retaining old on ties and unordered. The original getter at 0x004F5AE2–0x004F5B38 uses the actual root or its explicit flatten/reparent route. A host observation cannot seed or replace this native cache. Ordinary deletion leaves the native cache intact. Clear and owner reset retire it.
+- A checked parts observation replacing a same-ID host-only entry must pass the first-observation rotation guard before it reseeds eligibility. It does not inherit the host count, name, frontal count or timestamp delta. A mixed no-parts observation without authentic prior translation remains explicitly missing. These fences keep host writes from supplying native inputs to the count and rotation rules at 0x004F456E–0x004F4596 and 0x004F47C2–0x004F47D8.
+- Existing legacy steering paths explicitly use their prior host projection. This includes the manual Interact and face turn/fine-tune paths, the flat candidate selector and reaction-distance consumer, and the legacy flip side check. Those readers retain the prior host API behavior. The native behavior readers use the checked sidecars and cache.
+
+## Files and tests
+
+- VisionSystem.cs prepares the detached face and the explicit compatibility projection. Faces.cs owns the parented entry, prior wrapper and remap copy. NativeFaceCache.cs owns the native-only cache. FaceActions.cs, FaceBehaviors.cs, NativeLastFaceRunner.cs and FlipBlockAction.cs identify legacy readers explicitly.
+- The manager reran the original ARM eye, box and transform composition probes. The nonidentity composition returns native quaternion and translation words independently from the managed calculation. The shipped source matching and expiry at 0x004F43D6–0x004F43DE, 0x0086B244 and 0x004F5380–0x004F53AC were checked in earlier handoffs.
+
+- NativeTrackedFaceGeometryTests exercises queued F2 input, detached LastFaces and the historical entry pose, no-parts translation retention with new rotation/parent, the prior wrapper after remap/reset, native cache retirement and mixed writes. It checks first-native rotation rejection and counts one through four after same-ID legacy seeding. NativeTrackFaceTests retains both manual Interact variants. FreeplayTests, NativeEnrollmentTargetTests and PutDownBlockNativeTests use explicit native pose fixtures where their native recipients require them.
+
+- The first broader run exposed two synthetic enrollment fixtures without native pose sidecars. The final affected suite passed 299/299 after migrating those inputs and fixing mixed-ID reseeding. The manager independently passed 43/43, including unchanged NativeOkaoOracleTests and AcapelaTtsTests. The verifier rechecked the mixed provenance correction.
+
+- The first full gate at 4d00a96f passed 8,293/8,304. Eleven tests in five classes had seeded the native cache through legacy observations. Their fixtures now supply exact native pose inputs and retain the separate legacy projection where the behavior consumes it. The original assertions are unchanged. The first affected rerun passed 148/152, and the four remaining cases passed after restoring those fixture projections and ordered timestamps. Production code did not change in this correction.
+
+## Remaining gap and settlement
+
+- **TRACKED-FACE-LIBM-PROOF-1** is the remaining M14-001 settlement work. TrackedFace::GetIntraEyeDistance calls Android cosf at 0x0087DCD6 and the cache uses square root for distance. The current probes exercise the ARM control and arithmetic using a host import for external libm. They do not establish full phone libm parity. The follow-up must identify the reachable arithmetic boundary and either demonstrate parity over the supported domain or provide a reviewed equivalence classification.
+- The stock transform, matching, forgetting and cache representation are checked. The explicit legacy steering view is a host compatibility path. No record status or approval changed.

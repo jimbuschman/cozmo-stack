@@ -4,6 +4,7 @@ using Cozmo.Robot.Emulation;
 using Cozmo.Robot;
 using Cozmo.Protocol;
 using Cozmo.Robot.Vision;
+using Cozmo.Robot.Behavior;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -11,6 +12,13 @@ namespace Cozmo.Protocol.Tests;
 [Collection("ObjectID process statics")]
 public sealed class StockPetDetectorTests
 {
+    private sealed class ReactionGate : ActionRunner
+    {
+        internal ReactionGate() : base(8, 0) { }
+        protected override string ActionName => "stock pet reaction gate";
+        public override bool CanInterrupt() => true;
+        public override uint CheckIfDone() => EngineActionResult.Running;
+    }
     internal static readonly Dictionary<string,int> Settings = new()
     {
         ["MaxPets"]=4, ["MinFaceSize"]=60, ["MaxFaceSize"]=240, ["InitialSearchCycle"]=4,
@@ -105,6 +113,117 @@ public sealed class StockPetDetectorTests
         Assert.Equal(1u,reader.ReadUInt32());Assert.Equal(965f,reader.ReadSingle());
         Assert.Equal(116f,reader.ReadSingle());Assert.Equal(68f,reader.ReadSingle());
         Assert.Equal(96f,reader.ReadSingle());Assert.Equal(96f,reader.ReadSingle());Assert.Equal((byte)PetType.Cat,reader.ReadByte());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StockPetLossAndReacquisitionUseOriginalOwnerImuGate(bool rejectReacquisition)
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var scene = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var vision = scene.M.Vision;
+        vision.Enabled = true; vision.ModeEnableMask = 1 << 9; vision.Schedules = AllVisionModesSchedule.InitDefaultSchedules();
+        var local = new List<RobotObservedPetReport>(); var typed = new List<RobotObservedPetReport>(); var raw = new List<byte[]>();
+        var events = new List<EngineLogEntry>();
+        scene.Rig.Engine.LogEntry += e => { if (e.Name == "robot.vision.detected_pet") events.Add(e); };
+        scene.Rig.Engine.RobotObservedPet += typed.Add;
+        scene.Rig.Engine.EngineToGameMessage += (tag, body) => { if (tag == 0x48) raw.Add(body.ToArray()); };
+        using var sub = scene.Rig.Engine.AnimationMessages.SubscribeMessage(0x48, true, p => local.Add(Assert.IsType<RobotObservedPetReport>(p)));
+        byte[] photo = Photo(), blank = new byte[76800]; uint imageId = 1200;
+        int[] ids = { 0,0,0,0,1,1,1,1,1,0,0,0,2,2,2,0,0 };
+        int[] counts = { 0,0,0,0,1,2,3,4,5,0,0,0,1,2,3,0,0 };
+        for (int i = 0; i < 17; i++)
+        {
+            scene.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            uint stamp = scene.Robot.StoredState!.Timestamp;
+            float rate = i is >= 5 and <= 8 || rejectReacquisition && i >= 9 ? 1f : 0f;
+            uint currentId = imageId++;
+            scene.Rig.Data(new ImageImuData { ImageId = currentId, RateX = rate, RateY = rate, RateZ = rate, Line2Number = 239 });
+            scene.Rig.Data(new ImageImuData { ImageId = currentId + 10000, RateX = rate, RateY = rate, RateZ = rate, Line2Number = 239 });
+            scene.Rig.Tick();
+            int previous = local.Count;
+            scene.Rig.CameraGrayFrame(currentId, stamp, i == 0 || i >= 13 ? blank : photo);
+            vision.WaitForProcessorIdle(); scene.Rig.Tick(); scene.Rig.Engine.DrainAppDelivery();
+            bool expected = ids[i] != 0 && !(rejectReacquisition && i >= 12);
+            Assert.True(local.Count == previous + (expected ? 1 : 0), $"frame={i + 1}, expected={expected}, before={previous}, after={local.Count}, newID={(local.Count > previous ? local[^1].PetId : 0)}");
+            var pet = vision.Pets.Pets.SingleOrDefault();
+            if (!expected) { Assert.Null(pet); continue; }
+            Assert.NotNull(pet); Assert.Equal(ids[i], pet!.Id); Assert.Equal(counts[i], pet.TimesObserved);
+            var report = local[^1]; Assert.Equal(ids[i], report.PetId); Assert.Equal(stamp, report.Timestamp);
+            Assert.Equal((uint)counts[i], report.TimesObserved); Assert.Equal(counts[i] == 1 ? 965f : -1f, report.Score);
+            Assert.Equal(new FaceRect(116, 68, 96, 96), report.Rect); Assert.Equal(PetType.Cat, report.Type);
+            Assert.Equal(report, typed[^1]); Assert.Equal(local.Count, typed.Count); Assert.Equal(local.Count, raw.Count);
+            Assert.Equal(33, raw[^1].Length);
+            using var reader = new BinaryReader(new MemoryStream(raw[^1]));
+            Assert.Equal(ids[i], reader.ReadInt32()); Assert.Equal(stamp, reader.ReadUInt32());
+            Assert.Equal((uint)counts[i], reader.ReadUInt32()); Assert.Equal(counts[i] == 1 ? 965f : -1f, reader.ReadSingle());
+            Assert.Equal(116f, reader.ReadSingle()); Assert.Equal(68f, reader.ReadSingle());
+            Assert.Equal(96f, reader.ReadSingle()); Assert.Equal(96f, reader.ReadSingle()); Assert.Equal((byte)PetType.Cat, reader.ReadByte());
+        }
+        Assert.Equal(rejectReacquisition ? 1 : 2, events.Count);
+        Assert.All(events, e => Assert.Equal("Cat", e.Data["$data"]));
+    }
+
+    [Fact]
+    public void StockNewPetWithoutOwnerImuBracketIsNotCommitted()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var scene = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var vision = scene.M.Vision;
+        vision.Enabled = true; vision.ModeEnableMask = 1 << 9; vision.Schedules = AllVisionModesSchedule.InitDefaultSchedules();
+        var local = new List<RobotObservedPetReport>();
+        var processed = new List<ProcessedImageReport>();
+        var logs = new List<EngineLogEntry>();
+        var busy = typeof(VisionSystem).GetField("_busy", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(vision)!;
+        bool? logHeldBusy = null;
+        scene.Rig.Engine.LogEntry += e => { logs.Add(e); if (e.Name == "VisionComponent.VisionComponent.WasHeadRotatingTooFast.NoIMUData") logHeldBusy = Monitor.IsEntered(busy); };
+        using var sub = scene.Rig.Engine.AnimationMessages.SubscribeMessage(0x48, true, p => local.Add(Assert.IsType<RobotObservedPetReport>(p)));
+        using var processedSub = scene.Rig.Engine.AnimationMessages.SubscribeMessage(0x43, true, p => processed.Add(Assert.IsType<ProcessedImageReport>(p)));
+        byte[] photo = Photo(), blank = new byte[76800];
+        for (int i = 0; i < 5; i++)
+        {
+            scene.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            uint stamp = scene.Robot.StoredState!.Timestamp;
+            int before = vision.FramesProcessed;
+            scene.Rig.CameraGrayFrame((uint)(3000 + i), stamp, i == 0 ? blank : photo);
+            vision.WaitForProcessorIdle(); scene.Rig.Tick();
+            Assert.Equal(before + 1, vision.FramesProcessed);
+        }
+        Assert.Empty(local); Assert.Empty(vision.Pets.Pets);
+        Assert.Equal(5, processed.Count(p => p.Modes.Contains(9u)));
+        Assert.Contains(logs, e => e.Name == "VisionComponent.VisionComponent.WasHeadRotatingTooFast.NoIMUData" && e.Level == EngineLogLevel.Info);
+        Assert.False(logHeldBusy);
+    }
+
+    [Fact]
+    public void StockTrackedPetReachesConfiguredReactionStrategyAtThirdObservation()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var vision = f.M.Vision; vision.Enabled = true; vision.ModeEnableMask = 1 << 9;
+        vision.Schedules = AllVisionModesSchedule.InitDefaultSchedules();
+        byte[] photo = Photo(), blank = new byte[76800];
+        for (int i = 0; i < 7; i++)
+        {
+            f.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
+            uint stamp = f.Robot.StoredState!.Timestamp, id = (uint)(4000 + i);
+            f.Rig.Data(new ImageImuData { ImageId = id, Line2Number = 239 });
+            f.Rig.Data(new ImageImuData { ImageId = id + 10000, Line2Number = 239 });
+            f.Rig.Tick(); f.Rig.CameraGrayFrame(id, stamp, i == 0 ? blank : photo);
+            vision.WaitForProcessorIdle(); f.Rig.Tick();
+        }
+        Assert.Equal(3, Assert.Single(vision.Pets.Pets).TimesObserved);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var registration = Assert.Single(manager.Reactions.Where(r => r.Strategy.Trigger == ReactionTrigger.PetInitialDetection));
+        var strategy = Assert.IsType<PetInitialDetectionStrategy>(registration.Strategy);
+        var behavior = Assert.IsType<NativeReactToPetBehavior>(registration.Behavior);
+        f.Robot.ActionList.Clear(); Assert.Equal(0, f.Robot.ActionList.QueueAction(QueueActionPosition.Now, new ReactionGate(), 0));
+        manager.CheckReactions(f.Rig.Engine.Timer.Seconds);
+        Assert.Same(behavior, manager.Current); Assert.Equal(new[] { 1 }, behavior.Targets);
+        Assert.False(strategy.RecentlyReacted(f.Rig.Engine.Timer.Seconds));
+        manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+        Assert.True(strategy.RecentlyReacted(f.Rig.Engine.Timer.Seconds));
     }
 
     [Fact]

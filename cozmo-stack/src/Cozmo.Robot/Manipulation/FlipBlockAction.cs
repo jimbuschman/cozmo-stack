@@ -354,7 +354,7 @@ public sealed class DriveAndFlipBlockAction
             if (face is not null)
             {
                 // Faces.cs supplies a flat world value. Bind only this local comparison copy to the native frame.
-                using var facePose=new Pose3d(face.HeadPose);
+                using var facePose=new Pose3d(face.LegacyHeadPose);
                 if(!facePose.HasParent && robot.HasParent)
                 {Pose3d parent=null!;if(robot.TryGetParent(ref parent))using(parent)facePose.SetParent(parent);}
                 float da = Distance(pa, facePose), db = Distance(pb, facePose);

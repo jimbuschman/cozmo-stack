@@ -206,9 +206,10 @@ public sealed class LookForFaceAndCubeNativeTests
         Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal("Hiking",parent.DesiredActivityCacheForTest);
         f.Add(7);Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal("PlayAlone",parent.DesiredActivityCacheForTest);
         // Supplied named face observation goes through the actual FaceWorld last-pose cache.
+        var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         var face=new TrackedFace(new DetectedFace(31,new FaceRect(0,0,10,10),Name:"Ada"),123)
-        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,100),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId))};
-        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateFace(face,f.Robot.GetCheckedMainPose(),false));
+        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,100)),NativeTrackingTranslation=new Vec3(200,0,100),NativeTrackingRotation=Rotation3d.Identity};
+        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot));
         Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal("Socialize",parent.DesiredActivityCacheForTest);
         Assert.Same(initialActivity,f.Robot.BehaviorManagerOwner.Activity);Assert.Same(initialBehavior,f.Robot.BehaviorManagerOwner.Current);
         var world=f.M.World;var prior=f.Rig.Robot.LocalizationWorld.NativeConfigurations;
@@ -225,9 +226,10 @@ public sealed class LookForFaceAndCubeNativeTests
         var initialActivity=f.Robot.BehaviorManagerOwner!.Activity;var initialBehavior=f.Robot.BehaviorManagerOwner.Current;
         if(face)
         {
+            var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
             var tracked=new TrackedFace(new DetectedFace(31,new FaceRect(0,0,10,10),Name:"Ada"),123)
-            {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,100),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId))};
-            Assert.NotNull(f.M.Vision.Faces.AddOrUpdateFace(tracked,f.Robot.GetCheckedMainPose(),false));
+            {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,100)),NativeTrackingTranslation=new Vec3(200,0,100),NativeTrackingRotation=Rotation3d.Identity};
+            Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(tracked,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot));
         }
         if(cube){var item=f.Add(7);item.PoseState=PoseState.Dirty;}
         Assert.True(f.Runtime.CalculateLookDesired(look));Assert.Equal(expected,f.Runtime.FreeplayObserver.DesiredActivityCacheForTest);

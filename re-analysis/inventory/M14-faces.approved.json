@@ -1,8 +1,8 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-10-29",
+  "approved": "2026-11-10",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "f91606b8614090fcaae1a26d968f8d6a106d861586646080a6ccc6d58f3f37e1",
+  "inventory_sha256": "5c62a2368d7f586d39b3a5383f989eca333ec6181c1aed20f800f20a2940824a",
   "records": {
     "M14-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -30,7 +30,7 @@
       "hardware_required": false
     },
     "M14-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "TrackFaceAction: the durations it turns in, and the flags it starts with",
       "authority": "ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read",
       "evidence": [
@@ -44,7 +44,7 @@
       "hardware_required": false
     },
     "M14-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PetInitialDetection: a pet not reacted to, and a minute between reactions",
       "authority": "ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0 and ::UpdateReactedTo 0x00611E1C, read; ::InitReactedTo 0x00611FA4 has no caller in libcozmoEngine.so",
       "evidence": [
@@ -56,7 +56,7 @@
       "hardware_required": false
     },
     "M14-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "TurnTowardsImagePoint turns by the angle the pixel subtends",
       "authority": "Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read",
       "evidence": [
@@ -94,7 +94,7 @@
       "hardware_required": false
     },
     "M14-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Vision face-result handoff and FaceWorld lifecycle broadcasts",
       "authority": "VisionComponent::UpdateFaces 0x006551E0, FaceWorld::ChangeFaceID 0x004F3DB4 and FaceWorld 0x004F3C24, 0x004F4B70, 0x004F52F8, read",
       "evidence": [
@@ -106,7 +106,7 @@
       "hardware_required": false
     },
     "M14-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Face return eligibility and enrollment forwarding",
       "authority": "FaceWorld::ShouldReturnFace 0x004F55B8 and FaceWorld::Enroll 0x004F5C9E, read; the enrollment chain resolves to FaceRecognizer::SetAllowedEnrollments 0x008658AC",
       "evidence": [
@@ -171,13 +171,16 @@
       "hardware_required": false
     },
     "M14-014": {
-      "status": "RECOVERABLE_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PetWorld::Update output: the RobotObservedPet game broadcast",
-      "authority": "PetWorld::Update 0x0050B7F4 (F29 call site from VisionComponent::UpdatePets 0x00655360); MessageEngineToGame(RobotObservedPet&&) built at 0x0050BA60, Robot::Broadcast at 0x0050BA68",
+      "authority": "PetWorld::Update 0x0050B7F4..0x0050BAA0 (prior-ID count 0x0050B838..0x0050B8AE; absent-ID IMU test 0x0050B8C8..0x0050B8F4; map swap 0x0050B96C..0x0050B99E; report loop 0x0050B9A2..0x0050BA9A); MessageEngineToGame(RobotObservedPet&&) 0x0050BA60, Robot::Broadcast 0x0050BA68",
       "evidence": [
-        "VisionComponent::UpdatePets 0x00655360..0x00655366 forwards the tracked-pet list to PetWorld::Update 0x0050B7F4 (inventory F29).",
-        "Inside PetWorld::Update, MessageEngineToGame(RobotObservedPet&&) is constructed at 0x0050BA60 and passed to Robot::Broadcast at 0x0050BA68 (B-M1-7 census, research/20261018-b-m1-6-check-delivery.md finding 1; whole-.text constructor call-site scan).",
-        "The stack's public Faces.PetObserved (Faces.cs:501, raised :515) is an inline local observation, not that report: its host/local split, the conditions under which Update broadcasts, and the payload fields are unread."
+        "VisionComponent::UpdatePets 0x00655360..0x00655366 forwards the completed mode-9 tracked-pet list to PetWorld::Update 0x0050B7F4 (inventory F29).",
+        "An ID already in the prior map (lookup 0x0050B838..0x0050B874) is copied from the new input with count = old + 1 (0x0050B8A8..0x0050B8AE) and inserted without the IMU test.",
+        "An absent ID calls the rotating-too-fast test on robot+0x258 with the input timestamp (+0x14), body 0x3F060A92, head 0x3E32B8C2 and mode 5 when the tracked flag (+0x19) is set, else 0 (0x0050B8C8..0x0050B8F4); a nonzero result skips it, otherwise it is inserted with count 1 (0x0050B926..0x0050B93A).",
+        "The new map replaces the old one, and pets missing from the input disappear (0x0050B96C..0x0050B99E).",
+        "The report loop walks the new map in signed ID order (0x0050B9A2..0x0050B9A8, 0x0050BA74..0x0050BA9A). For an untracked entry (+0x25 == 0) it VERIFYs count == 1 (0x0050B9B2..0x0050B9C6) and logs robot.vision.detected_pet with the type (0x0050B9CA..0x0050BA04); then every entry builds RobotObservedPet from id, timestamp, count, score, rect and type (0x0050BA2A..0x0050BA60) and broadcasts it (0x0050BA68).",
+        "Faces.cs PetWorld.UpdateNative and VisionSystem.cs (the queued stock pet path) follow these steps; StockPetDetectorTests drives the shipped detector corpus through the original owner (HANDOFF-PET-REPORT-SETTLEMENT-1.md)."
       ],
       "live_path": true,
       "hardware_required": false

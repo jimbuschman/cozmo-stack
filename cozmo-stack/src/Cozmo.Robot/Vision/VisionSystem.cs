@@ -185,7 +185,7 @@ public sealed partial class VisionSystem : IDisposable
     internal bool? NativeFaceRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack)
         => NativeObservationRotatingTooFast(owner,timestamp,changedTrack,"M14-008 native face");
 
-    private bool? NativeObservationRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack, string label)
+    private bool? NativeObservationRotatingTooFast(EngineRobot owner, uint timestamp, bool changedTrack, string label, Action? noBracket = null)
     {
         NativeImageImu[]? history = null;
         lock (_groundGate)
@@ -201,17 +201,17 @@ public sealed partial class VisionSystem : IDisposable
             SteppedBehavior.ReportMissing($"{label} rotation gate has no original-owner IMU history");
             return null;
         }
-        return NativeFaceRotationFromHistory(history, timestamp, changedTrack);
+        return NativeFaceRotationFromHistory(history, timestamp, changedTrack, noBracket);
     }
 
-    internal static bool NativeFaceRotationFromHistory(IReadOnlyList<NativeImageImu> history, uint timestamp, bool changedTrack)
+    internal static bool NativeFaceRotationFromHistory(IReadOnlyList<NativeImageImu> history, uint timestamp, bool changedTrack, Action? noBracket = null)
     {
         float head = BitConverter.UInt32BitsToSingle(0x3E32B8C2);
         float body = BitConverter.UInt32BitsToSingle(0x3F060A92);
         if (!changedTrack)
         {
             NativeImageImu before = default, after = default;
-            if (!NativeImageImuHistory.TryBracket(history, timestamp, ref before, ref after)) return true;
+            if (!NativeImageImuHistory.TryBracket(history, timestamp, ref before, ref after)) { noBracket?.Invoke(); return true; }
             return MathF.Abs(before.RateY) > head || MathF.Abs(after.RateY) > head ||
                    MathF.Abs(before.RateZ) > body || MathF.Abs(after.RateZ) > body;
         }
@@ -402,13 +402,13 @@ public sealed partial class VisionSystem : IDisposable
             _robot.Engine.PublishFaceIdReport(tag,payload);
         };
         Faces.NativeGeneration=()=>Volatile.Read(ref _removals);
+        World.NativeLocalizationGeneration=()=>Volatile.Read(ref _removals);
         World.NativeObjectObserved=_nativeObjectObserved=observation=>
         {
             if(_robot.Engine.Robot?.HasExternalInterface!=true)return;
             SteppedBehavior.ReportMissing("M11-038 native44 complete app report unavailable; checked immutable LOCAL prefix only, no truncated wire");
             _robot.Engine.AnimationMessages.Deliver(0x44,true,observation);
         };
-        Faces.NativeMainPose=()=>_robot.Engine.Robot?.GetCheckedMainPose();
         Faces.NativePoseScope=()=>World.EnterPoseMutation();
         Faces.NativeOwner=()=>_robot.Engine.Robot; // M14-009: IsPoseInWorldOrigin reads this robot's current origin
         World.CurrentRobotPose = () => robot.Engine.Robot?.MainPose;
@@ -2289,9 +2289,10 @@ public sealed partial class VisionSystem : IDisposable
                         var pose = ComposeNativeFacePose(tf.NativeCameraTranslation, frames.Camera, frames.Robot);
                         tf.NativeTrackingTranslation = pose.Translation;
                         tf.NativeTrackingRotation = pose.Rotation;
-                        // Keep the legacy public pose for manual adapters; the detached native transform is stored above.
+                        // Keep the old flat view only for explicit legacy steering consumers.
                         tf.HeadPose.Dispose();
-                        tf.HeadPose = new Pose3d(processingCamera.Pose, processingCamera.Pose.Apply(tf.NativeCameraTranslation));
+                        tf.LegacyHeadPose = new Pose3d(processingCamera.Pose, processingCamera.Pose.Apply(tf.NativeCameraTranslation));
+                        tf.HeadPose = new Pose3d(pose.Rotation, pose.Translation);
                     }
                     else if (queueForEngine && !offline)
                     {
@@ -2381,7 +2382,12 @@ public sealed partial class VisionSystem : IDisposable
                 {
                     bool CurrentPet() => !StaleFrame();
                     bool ok = Pets.UpdateNative(pets, timestamp,
-                        flag => NativeObservationRotatingTooFast(sourceOwner, timestamp, flag, "M14-014 native pet"), CurrentPet,
+                        flag => NativeObservationRotatingTooFast(sourceOwner, timestamp, flag, "M14-014 native pet", () =>
+                            (markerDeferredLogs ??= new()).Add(() =>
+                            {
+                                if (!StaleFrame()) _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "VisionComponent", "VisionComponent.VisionComponent.WasHeadRotatingTooFast.NoIMUData",
+                                    $"Could not get next/previous imu data for timestamp {timestamp}");
+                            })), CurrentPet,
                         (input, pet, currentEpoch) =>
                         {
                             if (!input.TrackerResultFlag!.Value)

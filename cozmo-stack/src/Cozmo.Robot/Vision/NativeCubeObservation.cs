@@ -86,11 +86,8 @@ public sealed partial class VisionSystem
     {
         if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return;
         var calibration=Calibration;
-        using var neck=new Pose3d(Rotation3d.Identity,HeadGeometry.NeckPositionMm,"RobotNeck",owner.GetCheckedMainPose());
-        using var headcam=new Pose3d(HeadGeometry.DefaultHeadCamRotation,HeadGeometry.EngineHeadCamPositionMm);
-        headcam.SetParent(neck);
-        using var cameraPose=HeadGeometry.GetCameraPose(headcam,_robot.Motion.ObservationHeadAngleRad);
-        if(!NativeCubeObservation.TryCreate(obj,cameraPose,calibration,owner,out var report)) return;
+        using var cameraPose=owner.CopyCurrentCameraPose(_robot.Motion.ObservationHeadAngleRad);
+        if(!NativeCubeObservation.TryCreate(obj,cameraPose.Pose,calibration,owner,out var report)) return;
         if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return;
         _robot.Engine.DeliverObservedCubeToApp(report);
         _robot.Engine.AnimationMessages.Deliver(0x44,true,prefix);

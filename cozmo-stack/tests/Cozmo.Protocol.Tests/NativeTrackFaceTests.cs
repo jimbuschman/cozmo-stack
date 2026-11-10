@@ -188,8 +188,8 @@ public sealed class NativeTrackFaceTests
             using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
             var owner=f.Robot;
             var face=new TrackedFace(new DetectedFace(-9,new FaceRect(0,0,10,10)),10)
-            {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100)};
-            f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+            {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100), NativeTrackingRotation = Rotation3d.Identity};
+            f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!,requireNativePose:true,expectedOwner:owner);
             var oldParent=owner.MainPose.Node!.Parent;
             owner.MainPose.ClearParent();
             try
@@ -217,8 +217,8 @@ public sealed class NativeTrackFaceTests
         using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
         var owner=f.Robot;
         var face=new TrackedFace(new DetectedFace(-9,new FaceRect(0,0,10,10)),10)
-        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100)};
-        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100), NativeTrackingRotation = Rotation3d.Identity};
+        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!,requireNativePose:true,expectedOwner:owner);
         int head=0,body=0;
         owner.SendFault=message=>
         {
@@ -243,10 +243,10 @@ public sealed class NativeTrackFaceTests
         using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);
         var owner=f.Robot;
         var face=new TrackedFace(new DetectedFace(-9,new FaceRect(0,0,10,10)),10)
-        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100)};
+        {HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),NativeTrackingTranslation=new Vec3(200,100,100), NativeTrackingRotation = Rotation3d.Identity};
         f.Rig.State(RobotStatusFlag.IsPickedUp | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos);
         Assert.NotEqual(OffTreadsState.OnTreads,f.Rig.Robot.Sensors.OffTreadsState);
-        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!,requireNativePose:true,expectedOwner:owner);
         var ended=new List<RobotCompletedAction>();owner.ActionList.RegisterActionEndedCallback(ended.Add);
         var runner=new NativeTrackFaceRunner(f.M,owner,-9);
         int mark=f.Rig.Mark();owner.ActionList.QueueAction(QueueActionPosition.Now,runner);
@@ -317,9 +317,9 @@ public sealed class NativeTrackFaceTests
         var face=new TrackedFace(new DetectedFace(-12,new FaceRect(0,0,10,10)),10)
         {
             HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,0,49)),
-            NativeTrackingTranslation=new Vec3(200,0,49)
+            NativeTrackingTranslation=new Vec3(200,0,49), NativeTrackingRotation = Rotation3d.Identity
         };
-        var entry=f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,origin.Node!)!.Face;
+        var entry=f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,origin.Node!,requireNativePose:true,expectedOwner:owner)!.Face;
         uint driveTag=ActionRunnerTagCounter.Global.NextIdTag();
         Assert.True(ActionRunnerTagCounter.Global.TryReserve(driveTag));
         try
@@ -357,9 +357,9 @@ public sealed class NativeTrackFaceTests
         var face=new TrackedFace(new DetectedFace(-13,new FaceRect(0,0,10,10)),10)
         {
             HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(200,100,100)),
-            NativeTrackingTranslation=new Vec3(200,100,100)
+            NativeTrackingTranslation=new Vec3(200,100,100), NativeTrackingRotation = Rotation3d.Identity
         };
-        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+        f.M.Vision.Faces.AddOrUpdateNativeFace(face,Pose3d.Identity,false,owner.GetNativeOrigin(owner.CurrentOriginId).Node!,requireNativePose:true,expectedOwner:owner);
         bool replaced=false;
         int mark=-1;
         owner.SendFault=message=>
@@ -423,9 +423,9 @@ public sealed class NativeTrackFaceTests
         var face = new TrackedFace(new DetectedFace(-8, new FaceRect(0, 0, 10, 10)), 10)
         {
             HeadPose = new Pose3d(Rotation3d.Identity, new Vec3(200, 100, 100)),
-            NativeTrackingTranslation = new Vec3(200, 100, 100)
+            NativeTrackingTranslation = new Vec3(200, 100, 100), NativeTrackingRotation = Rotation3d.Identity
         };
-        f.M.Vision.Faces.AddOrUpdateNativeFace(face, Pose3d.Identity, false, owner.GetNativeOrigin(owner.CurrentOriginId).Node!);
+        f.M.Vision.Faces.AddOrUpdateNativeFace(face, Pose3d.Identity, false, owner.GetNativeOrigin(owner.CurrentOriginId).Node!, requireNativePose:true, expectedOwner:owner);
         bool changed = false;
         owner.SendFault = message =>
         {
@@ -677,9 +677,9 @@ public sealed class NativeTrackFaceTests
         var face = new TrackedFace(new DetectedFace(-5, new FaceRect(0, 0, 10, 10)), 10)
         {
             HeadPose = new Pose3d(Rotation3d.Identity, new Vec3(200, 100, 100)),
-            NativeTrackingTranslation = new Vec3(200, 100, 100)
+            NativeTrackingTranslation = new Vec3(200, 100, 100), NativeTrackingRotation = Rotation3d.Identity
         };
-        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!));
+        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!, requireNativePose:true, expectedOwner:f.Robot));
         var runner = new NativeTrackFaceRunner(f.M, f.Robot, -5);
         var reports = new List<RobotCompletedAction>();
         var app = new List<ActionCompletionReport>();

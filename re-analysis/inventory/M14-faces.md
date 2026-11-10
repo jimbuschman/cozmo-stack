@@ -465,6 +465,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New RECOVERABLE_GAP: PetWorld::Update's RobotObservedPet game broadcast (0x0050B7F4; ctor 0x0050BA60, Broadcast 0x0050BA68), body and payload unread; PetObserved stays inline | M14-014 (new) |
 
+## M14-014 read and settled (manager, 2026-11-10; research/20261110-codex-pet-face-localization-batch-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| PetWorld::Update body read (0x0050B7F4..0x0050BAA0): prior-ID count with no IMU test, absent-ID IMU test (mode 0/5), map replacement, ordered report loop with the 0x48 broadcast. RECOVERABLE_GAP -> EXACT_SOURCE | M14-014 |
+
 ## M14-002 correction (operator approved 2026-10-29; research/20261029-acknowledge-face-1-claude-check.md)
 
 | Change | Records |

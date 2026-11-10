@@ -261,6 +261,7 @@ public sealed class TrackedFace
     public FaceRect Rect => Detection.Rect;
     public string? Name => Detection.Name;
     public Pose3d HeadPose { get; internal set; } = Pose3d.Identity;
+    internal Pose3d? LegacyHeadPose { get; set; }
     internal Vec3 NativeCameraTranslation { get; private set; }
     internal Vec3? NativeTrackingTranslation { get; set; }
     internal Rotation3d? NativeTrackingRotation { get; set; }
@@ -420,6 +421,8 @@ public sealed class FaceEntry
 {
     public int Id { get; internal set; }
     public Pose3d HeadPose { get; internal set; }
+    internal Pose3d? LegacyProjection { get; set; }
+    internal Pose3d LegacyHeadPose => LegacyProjection ?? HeadPose;
     public FaceRect Rect { get; internal set; }
     public float? NativeDirectionDcRadians { get; internal set; }
     // Strong allocation reference, like native PoseTreeNode's parent edge; no PoseBase owner is added.
@@ -534,6 +537,27 @@ public sealed partial class FaceWorld
                 Behavior.SteppedBehavior.ReportMissing("M14-001 native tracked-face pose or prior no-parts translation unavailable; face withheld");
                 return null;
             }
+            bool replacingLegacy = requireNativePose && existing && entry!.NativeTrackingTranslation is null;
+            if (replacingLegacy)
+            {
+                rotatingTooFast = rotationInput?.Invoke() ?? rotatingTooFast;
+                if (rotatingTooFast is null)
+                {
+                    Behavior.SteppedBehavior.ReportMissing("M14-008 native new-face rotation predicate input unavailable; new face entry skipped");
+                    return null;
+                }
+                if (rotatingTooFast.Value)
+                {
+                    LogCallbackDeferral.Run(() => Log?.Invoke("FaceWorld.AddOrUpdateFace: rotating too fast, skipping"));
+                    return null;
+                }
+                if (!CurrentNative()) return null;
+                // A host-only observation is not a native observation for reporting/cache eligibility.
+                entry!.TimesObserved = 0; entry.NativeFrontalObservations = 0;
+                entry.Name = null; entry.NativeNameBytes = null;
+                entry.TurnedTowards = false;
+                entry.FirstObservedTimestamp = face.Timestamp; entry.LastObservedTimestamp = 0;
+            }
             if (entry is null)
             {
                 rotatingTooFast = rotationInput?.Invoke() ?? rotatingTooFast;
@@ -550,19 +574,34 @@ public sealed partial class FaceWorld
                 string message = $"FaceWorld.UpdateFace.NewFace: Added new face with ID={face.Id} at t={face.Timestamp}.";
                 LogCallbackDeferral.Run(() => Log?.Invoke(message));
             }
-            else if (face.Timestamp <= entry.LastObservedTimestamp)
+            else if (!replacingLegacy && face.Timestamp <= entry.LastObservedTimestamp)
             {
                 // C2-F7b: a timestamp regression logs and continues with delta 0; it does not reject.
                 string message = $"FaceWorld.UpdateFace.BadTimeStamp: Face observed before previous observation ({face.Timestamp} <= {entry.LastObservedTimestamp})";
                 LogCallbackDeferral.Run(() => Log?.Invoke(message));
             }
             int priorCount = entry.TimesObserved;
-            uint delta = existing && face.Timestamp > entry.LastObservedTimestamp ? face.Timestamp - entry.LastObservedTimestamp : 0;
+            uint delta = existing && !replacingLegacy && face.Timestamp > entry.LastObservedTimestamp ? face.Timestamp - entry.LastObservedTimestamp : 0;
             prev = entry.HeadPose;
+            var previousLegacy = entry.LegacyHeadPose;
             // C2-F7c: on the found path a no-parts observation keeps the entry's existing translation
             // (0x004F4784..0x004F47A8); its rotation still comes from the TrackedFace. A new entry, and a
             // parts observation, take the face's full pose.
-            if(existing && !face.HasEyeParts)
+            if (requireNativePose)
+            {
+                Vec3 translation = existing && !face.HasEyeParts ? entry.NativeTrackingTranslation!.Value : face.NativeTrackingTranslation!.Value;
+                using var parent = Pose3d.WrapExisting(origin!);
+                entry.HeadPose = new Pose3d(face.NativeTrackingRotation!.Value, translation, parent: parent);
+                var legacy = face.LegacyHeadPose ?? face.HeadPose;
+                if (existing && !face.HasEyeParts)
+                {
+                    var copy = new Pose3d(legacy);
+                    copy.Node!.Transform = new(copy.Quaternion, previousLegacy.Translation);
+                    entry.LegacyProjection = copy;
+                }
+                else entry.LegacyProjection = legacy;
+            }
+            else if(existing && !face.HasEyeParts)
             {
                 //K27/4F42D0..42F2,4F479C..47BE: preserve the incoming full pose/parent/rotation;
                 //only the three old translation words replace the prepared pose's translation.
@@ -571,9 +610,13 @@ public sealed partial class FaceWorld
                 entry.HeadPose=prepared;
             }
             else entry.HeadPose=face.HeadPose;
-            if (!existing || face.HasEyeParts) entry.NativeTrackingTranslation = face.NativeTrackingTranslation;
-            else if (face.NativeTrackingTranslation is null) entry.NativeTrackingTranslation = null;
-            entry.NativeTrackingRotation = face.NativeTrackingRotation;
+            if (!requireNativePose) entry.LegacyProjection = null;
+            if (!requireNativePose) { entry.NativeTrackingTranslation = null; entry.NativeTrackingRotation = null; entry.NativeNameBytes = null; }
+            else
+            {
+                if (!existing || face.HasEyeParts) entry.NativeTrackingTranslation = face.NativeTrackingTranslation;
+                entry.NativeTrackingRotation = face.NativeTrackingRotation;
+            }
             entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (requireNativePose && face.Detection.NativeFacingCamera is { } facing)
@@ -600,14 +643,11 @@ public sealed partial class FaceWorld
             // Queued native callers hold the world/pose scope; cache this exact prepared native pose.
             if (requireNativePose)
             {
-                using var parent = Pose3d.WrapExisting(origin!);
-                using var nativePose = new Pose3d(entry.NativeTrackingRotation!.Value, entry.NativeTrackingTranslation!.Value, parent: parent);
-                if (CurrentNative()) UpdateNativeLastFace(entry, nativePose, nativeOwner, generation);
+                if (nativeOwner is not null && CurrentNative()) UpdateNativeLastFace(entry, nativeOwner, generation);
             }
         }
         var obs = new FaceObservation(entry, face.Timestamp, isNew, prev)
         { NativeSnapshot = snapshot };
-        if (!requireNativePose) UpdateNativeLastFace(entry);
         if (requireNativePose)
         {
             var capturedOwner = nativeOwner;
@@ -714,7 +754,7 @@ public sealed partial class FaceWorld
                 old.Id=newId; //004F4000 updates the held old entry BEFORE unique insertion.
                 if(newName is not null)old.Name=newName;
                 if(!_faces.ContainsKey(newId))
-                    _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),Rect=old.Rect,NativeTrackingRotation=old.NativeTrackingRotation,
+                    _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),LegacyProjection=old.LegacyProjection is null ? null : new Pose3d(old.LegacyProjection),Rect=old.Rect,NativeTrackingRotation=old.NativeTrackingRotation,
                         LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeObservationOrigin=old.NativeObservationOrigin,NativeTrackingTranslation=old.NativeTrackingTranslation,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
                         FirstObservedTimestamp=old.FirstObservedTimestamp}); //existing host metadata, NOT native aux114.
                 if (oldId != newId && oldId > 0 && newId > 0 && _faces.TryGetValue(newId, out var destination) &&
@@ -1149,6 +1189,10 @@ public sealed class PetWorld
         }
     }
 
+    // fidelity: M14-014
+    // PetWorld::Update 0x0050B7F4: a prior ID counts +1 without the IMU test (0x0050B838..0x0050B8AE); an absent ID
+    // is tested with mode 0/5 (0x0050B8C8..0x0050B8F4); the map is replaced (0x0050B96C..0x0050B99E); then the
+    // per-ID report loop in signed ID order (0x0050B9A2..0x0050BA9A, broadcast 0x0050BA60/0x0050BA68).
     internal bool UpdateNative(IReadOnlyList<DetectedPet> seen, uint timestamp, Func<bool, bool?> rotating,
         Func<bool> current, Action<DetectedPet, PetEntry, Func<bool>> publish, Action<Action> isolate)
     {

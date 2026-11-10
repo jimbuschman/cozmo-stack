@@ -1163,8 +1163,7 @@ public sealed partial class EngineRobot
     /// <summary>The current pose origin's id: 1 after the constructor's Delocalize.</summary>
     public uint CurrentOriginId { get; private set; }
     /// <summary>
-    /// Robot+0x2B0, the pose frame id: 0 from the constructor (SC4e, 0x0050FF02 and 0x0051032C). Its only other writer,
-    /// AddVisionOnlyStateToHistory, has no counterpart here, so it stays 0.
+    /// Robot+0x2B0, the pose frame id: initialized at construction and advanced by the vision-only pose writer.
     /// </summary>
     public uint PoseFrameId { get; private set; }
     /// <summary>The ids in the pose-origin list.</summary>
@@ -1403,6 +1402,8 @@ public sealed partial class EngineRobot
             // reported once per process (ReportMissing de-duplicates), not once per engine robot
             Behavior.SteppedBehavior.ReportMissing("M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: the real calibration gate is applied; M11-035 has no UpdateAllResults status hook");
         }
+        SendPendingVisionLocalization(); // 0x00513CBE..CC, after successful vision and before map.
+        if (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this)) return;
         // fidelity: M11-074 - Robot::Update 0x00513CD4, before the platform step.
         if(Engine.RobotMapUpdate is {} mapUpdate)Engine.RunIsolated(mapUpdate);
         // fidelity: M4-019

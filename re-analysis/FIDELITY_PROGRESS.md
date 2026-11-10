@@ -8,13 +8,13 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 285 |
+| EXACT_SOURCE | 287 |
 | EQUIVALENT_IMPLEMENTATION | 16 |
 | COMPATIBILITY_POLICY | 73 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 349 |
-| RECOVERABLE_GAP | 22 |
+| IMPLEMENTATION_GAP | 348 |
+| RECOVERABLE_GAP | 21 |
 | **total** | **761** |
 
 ## Subsystems
@@ -34,7 +34,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M11-vision | INVENTORY_APPROVED | 2026-11-03 | 104 | 23 | 3 | 1 | 71 | 6 | 77 |
 | M12-manipulation | INVENTORY_APPROVED | 2026-10-28 | 52 | 15 | 2 | 1 | 32 | 2 | 33 |
 | M13-navigation | INVENTORY_APPROVED | 2026-10-28 | 41 | 9 | 1 | 1 | 29 | 1 | 28 |
-| M14-faces | INVENTORY_APPROVED | 2026-10-29 | 14 | 3 | 2 | 1 | 7 | 1 | 8 |
+| M14-faces | INVENTORY_APPROVED | 2026-11-10 | 14 | 5 | 2 | 1 | 6 | 0 | 6 |
 | M15-freeplay | INVENTORY_APPROVED | 2026-11-09 | 111 | 18 | 8 | 2 | 80 | 3 | 83 |
 | tools | UNREVIEWED |  | 5 | 1 | 4 | 0 | 0 | 0 | 0 |
 

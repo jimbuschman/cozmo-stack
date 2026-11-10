@@ -7,10 +7,10 @@ Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 285 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 287 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 16 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 349 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 21 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 348 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 73 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -37,7 +37,7 @@ remains after both, and they do not go away by working harder on this repository
 | M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 71 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 32 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
-| M14-faces — Face and pet pipeline | 14 | 1 | 7 | 1 | 0 | no | no |
+| M14-faces — Face and pet pipeline | 14 | 0 | 6 | 1 | 0 | yes | no |
 | M15-freeplay — Needs, activities and freeplay | 111 | 3 | 80 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
@@ -65,7 +65,7 @@ status.
 | M11-vision | INVENTORY_APPROVED | 25 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
-| M14-faces | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
+| M14-faces | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 22 | 0 | 0 | 1 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
@@ -260,17 +260,6 @@ RESPOND-TO-PYRAMID-BASE-1 adds only a guarded count consumer of the SAME actual 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov07-m13-021-check.md: "Still unread": FindLocatedClosestMatchingTypeHelper (called at 0x00567D1C); UpdateTracking from 0x00567DA4 (0x00567FC2, 0x00568088); TurnTowardsObjectAction +0x192.
 * outstanding: RECOVERABLE_GAP: read the listed bodies completely. OV48 check (re-analysis/research/overnight/20261015-ov48-49-check.md): all rows confirmed (selection 0x0061FBFC..0x0061FD8C, 0x006281DA..0x00628262, 0x0061EB78..0x0061F030, 0x00846EA4..0x008471A6; markers 0x00567DA4..0x00567EFC, 0x00876C50..0x00876C98; outputs 0x00567EFC..0x00567F68; fails 0x00567FC2..0x005680DA; +0x192 0x00549DC0..0x00549E28, 0x0052B0CC..0x0052B110, 0x0054ADF2..0x0054AF60 incl. the omitted TrackingNotsupported warning; Robot::GetPose VERIFYs 0x004EA398..0x004EA46E). UNREACHABLE in the shipped app: all 23 in-engine TurnTowardsObjectAction constructions pass headTrack=0, all six app calls pass headTrackWhenDone=false, the app sends TrackToObject only with -1 (rejected at 0x00567A3A..0x00567A44). live_path set false; not built. Operator question: expose TrackToObject with a real ID / headTrackWhenDone=true? Operator decision 2026-10-16 (app inputs the stack API exposes, COMPATIBILITY_POLICY under the app-boundary rule): EXPOSED: ActivateSpark, ActivateHighLevelActivity (Freeplay, Feeding, ...), DoATrickRequest (union 2), PlayAGameRequest (union 3), SetSparkedMusicState (G2E 0xA3). NOT EXPOSED: SparkUnlocked (union 1, no app sender), TrackToObject with a real ID / headTrackWhenDone, the memory-map broadcast frequency. So TrackObjectAction stays unreachable in the stack: not built.
-
-### M14-faces — Face and pet pipeline
-
-**M14-014 — PetWorld::Update output: the RobotObservedPet game broadcast** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
-* effect: which pet observations the C# API reports to the host, when, and with what payload
-* rests on: call sites only; PetWorld::Update body and the RobotObservedPet payload not read
-* best authority: PetWorld::Update 0x0050B7F4 (F29 call site from VisionComponent::UpdatePets 0x00655360); MessageEngineToGame(RobotObservedPet&&) built at 0x0050BA60, Robot::Broadcast at 0x0050BA68
-* evidence: VisionComponent::UpdatePets 0x00655360..0x00655366 forwards the tracked-pet list to PetWorld::Update 0x0050B7F4 (inventory F29).; Inside PetWorld::Update, MessageEngineToGame(RobotObservedPet&&) is constructed at 0x0050BA60 and passed to Robot::Broadcast at 0x0050BA68 (B-M1-7 census, research/20261018-b-m1-6-check-delivery.md finding 1; whole-.text constructor call-site scan).; The stack's public Faces.PetObserved (Faces.cs:501, raised :515) is an inline local observation, not that report: its host/local split, the conditions under which Update broadcasts, and the payload fields are unread.
-* outstanding: New (manager, 2026-10-18; B-M1-7 census, owner previously unnamed, noted on M14-004). To read: PetWorld::Update 0x0050B7F4 around 0x0050BA60/0x0050BA68 (which pets are broadcast, when, payload fields and their sources), and the native local recipients of the broadcast. Whether pet tracking can produce input in this stack depends on M11-016 (OKAO boundary). Host view not built; PetObserved stays inline until this layer's turn (cross-layer rule). Not an exclusion.
 
 ### M15-freeplay — Needs, activities and freeplay
 
@@ -3067,16 +3056,6 @@ B-M13-4 (2026-10-15), partial build, awaiting strong verification; BLOCKED: Not 
 * evidence: 0x0086B244 is `movs r0,#1; bx lr`, so 0x004F43D6 `blx IsRecognitionSupported` / 0x004F43DE `cbz r0,#0x004F440C` never branches: the pose/overlap loop 0x004F440C..0x004F4536 is dead, and the reachable match is the map at FaceWorld+4 searched by lower_bound on the TrackedFace id at +0 (0x004F43EC..0x004F4556); an absent id creates an entry keyed by that id (0x004F45EA/0x004F45FC). The 220^2 constant 0x004F4428 and the overlap-0.5 instructions are on the dead branch.; 0x004F5380..0x004F53AC removes an unnamed entry when lastObserved+15000 is behind the last image timestamp.; 0x0087DE3C tests the parts-detected byte +0x30; 0x0087DE42..0x0087DE5E takes the eye centres +0x34..+0x40 through GetIntraEyeDistance 0x0087DC68 (sqrt(dx^2+dy^2)/cos(+0xec), divisor 1.0 when |cos|<1e-5, 6.0 when dist<1e-5); 0x0087DE60..0x0087DF1C derives the box eye distance |0.5*w| floored at 6.0; 0x0087DF20..0x0087E068 halves the (zeroed in the box branch) eye-slot sum for the midpoint, scales fx*62.0/eyeDistance (0x42780000) and parents the pose to Camera+0xc.; 0x004F4596 WasRotatingTooFast is on the new-entry path only; the found path 0x004F4558..0x004F456C is not gated. On the found path, a no-parts observation (TrackedFace+0x30 == 0) replaces the local pose translation with the entry's existing translation (0x004F4784..0x004F47A8) before writing it back to entry+0xf4 (0x004F47BE); the rotation stays from the TrackedFace pose.
 * outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): GetIntraEyeDistance and UpdateTranslation in binary32 in the engine's order (0x0087DC68..0x0087DDB0, 0x0087DE24..0x0087E068; epsilon 0x3727C5AC, 62.0 = 0x42780000 at 0x0087E084; the ray is GetInvCalibrationMatrix<float> 0x0085EF3A with no distortion model). Still open: the camera-frame translation is turned into the world pose with a double Pose3d; cosf is a MathF stand-in; the production detector that populates DetectedFace.RollRad is the M11-016 OKAO boundary.
 B-POSE-2 (2026-10-14, research/20261014-b-pose-1-check.md): item 8: MISSING (stack channel) at TrackedFace::UpdateTranslation: the native writes the camera-frame translation into the head pose, keeps its own rotation and calls SetParent(camera) (0x0087E042..0x0087E064); the stack's face consumers read a flattened world pose, so the previous flattening is kept.
-
-**M14-004 — PetInitialDetection: a pet not reacted to, and a minute between reactions** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs`
-* effect: which pet observations trigger a reaction and the cooldown between reactions change
-* rests on: ReactionTriggerStrategyPetInitialDetection, read
-* best authority: ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0 and ::UpdateReactedTo 0x00611E1C, read; ::InitReactedTo 0x00611FA4 has no caller in libcozmoEngine.so
-* evidence: The strategy keeps the pet ids it has reacted to in a tree at +0x34: UpdateReactedTo 0x00611E1C walks the PetWorld (robot+0x3c) and inserts each pet id (node+0x10), and is called from ShouldTriggerBehaviorInternal 0x00611AE4 and BehaviorDidReact 0x00611E80. InitReactedTo 0x00611FA4 clears and refills the set, but no instruction in the shipped .so calls it (whole-.text BL/BLX, relocation and pointer scan): it is not part of the reachable path.; RecentlyReacted 0x00611DD0 is the cooldown: the last reaction time sits at +0x40 as a float, -1 meaning never, and the answer is true while lastReacted + 60 is still ahead of BaseStationTimer::GetCurrentTimeInSeconds - the 60 is the 0x42700000 loaded at 0x00611DE8.; This stack latched on the first sighting of any pet id and had no cooldown; it now keeps the reacted-to set and the sixty seconds.
-* outstanding: built, awaiting strong verification (R-FIX, 2026-10-03): RecentlyReacted keeps a binary32 timestamp and compares last + 60.0f in f32 (0x00611DD0..0x00611E14). Still open: InitReactedTo is uncalled (C2-F4).
-B-M1-7 (2026-10-18), built, awaiting strong verification: Census correction: PetWorld.Update has native RobotObservedPet ctor0x0050BA60/Broadcast0x0050BA68. Current record owns the strategy and PetWorld input interface (inventory F29 at0x00655360/0x0050B7F4), not the complete Update output. No dedicated record owns that broadcast/body; manager must add/scope its record. PetObserved is MISSING complete native host/local split/payload, remains inline, not an exclusion; no record created by builder.
 
 **M14-007 — The memory map, and the question the face behaviour asks it before driving in** (live path)
 
