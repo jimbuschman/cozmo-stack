@@ -3232,18 +3232,23 @@ public sealed partial class BlockWorld
     // fidelity: M4-023
     /// <summary>
     /// The expiry tail of <c>BlockTapFilterComponent::Update</c> for one key whose isIgnoring flag was just cleared (0x0063128A..0x00631360): a filter over
-    /// every origin (mode 2) with the predicate <c>IsActive() == 1 &amp;&amp; ID == key</c> (0x00631836..0x0063184C); each match whose pose state (+0x24) is Known (1)
-    /// gets the debug ExpiredTap log (0x006312EE..0x0063131A) and <c>ObjectPoseConfirmer::MarkObjectDirty([Robot+0x26C], obj, false)</c>. No connected cube is needed.
+    /// every origin (mode 2) with the predicate <c>IsActive() == 1 &amp;&amp; ID == key</c> (0x00631836..0x0063184C), FindLocatedMatchingObjects at 0x006312E6. Then,
+    /// once per key and before any marking, the engine looks up the connected object with the key's ObjectID value passed as an active ID
+    /// (0x006312EE..0x006312FA) and, only if one is found, logs ExpiredTap with that object's ID (+0x18; 0x0063130C..0x0063131A), whether or not anything
+    /// matched. Then each match whose pose state (+0x24) is Known (1) gets <c>ObjectPoseConfirmer::MarkObjectDirty([Robot+0x26C], obj, false)</c>
+    /// (0x0063134C..0x00631360). No connected cube is needed for the marking.
     /// </summary>
     internal void MarkTapExpiredDirty(uint objectId)
     {
         using var frameMutation=EnterPoseMutation();
         var filter = new BlockWorldFilter { OriginMode = OriginMode.InAnyFrame };
         filter.Predicates.Add(o => o.IsActive && o.ObjectId == objectId);
-        foreach (var obj in FindLocatedMatchingObjects(filter))
+        var matches = FindLocatedMatchingObjects(filter).ToList();
+        if (objectId <= int.MaxValue && GetConnectedActiveObjectByActiveIdHelper((int)objectId) is { } logged)
+            Source(EngineLogLevel.Debug, "BlockTapFilterComponent", "BlockTapFilterComponent.Update.ExpiredTap", $"Marking object {unchecked((int)logged.ObjectId)} as dirty due to tap timeout");
+        foreach (var obj in matches)
         {
             if (obj.PoseState != PoseState.Known) continue;
-            Source(EngineLogLevel.Debug, "BlockTapFilterComponent", "BlockTapFilterComponent.Update.ExpiredTap", $"Marking object {unchecked((int)objectId)} as dirty due to tap timeout");
             MarkObjectDirty(obj, false);
         }
     }

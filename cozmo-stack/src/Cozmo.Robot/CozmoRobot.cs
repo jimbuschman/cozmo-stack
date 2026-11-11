@@ -434,6 +434,7 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.PublicationLocalizedTo = () => unchecked((int)(LocalizationWorld.LocalizedToObjectId ?? uint.MaxValue));
         Engine.PublicationGameStatus = () => (LocalizationWorld.Robot2C4, (sbyte)Sensors.OffTreadsState);
         Engine.RobotComponentsUpdate = UpdateComponents;
+        Engine.BlockTapFilterUpdate = UpdateTapFilter;
         // fidelity: M11-074
         Engine.RobotMapUpdate = () => LogCallbackDeferral.RunGated(LocalizationWorld.FrameGate, () =>
         {
@@ -1023,10 +1024,19 @@ public sealed partial class CozmoRobot : IDisposable
             Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513CD8..0x00513E2A (the charger-platform step) needs the BlockWorld, and this robot has no VisionSystem: the step does not run and +0x34A is never cleared by it");
     }
 
+    // fidelity: M4-023
+    /// <summary>BlockTapFilterComponent::Update at its engine position, Robot::Update 0x00513EA0..0x00513EA4 (before AIComponent::Update 0x00513EA8).</summary>
+    private void UpdateTapFilter()
+    {
+        if (Engine.Robot?.StoredState is null) return;
+        Route(Cubes.Update);
+    }
+
     private void UpdateComponents()
     {
         if (Engine.Robot?.StoredState is not { } stored) return;
-        Route(Cubes.Update);
+        // fidelity: M4-010 — CheckDisconnectedObjects / ConnectToRequestedObjects, 0x00514230..0x00514236.
+        Route(Cubes.Connections.Update);
         // fidelity: M11-075 — 0x0051423C, after ConnectToRequestedObjects, before light updates.
         Route(() => LogCallbackDeferral.RunGated(LocalizationWorld.FrameGate,
             () => LocalizationWorld.Maps.Update(stored.Timestamp, Engine.Timer.SecondsF)));

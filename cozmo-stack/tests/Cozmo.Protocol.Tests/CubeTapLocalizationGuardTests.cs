@@ -198,9 +198,10 @@ public sealed class CubeTapLocalizationGuardTests
         Assert.Equal(PoseState.Dirty, a.PoseState);
         Assert.Equal(PoseState.Dirty, b.PoseState);
         Assert.Equal(PoseState.Unknown, c.PoseState);
-        var logs = entries.Where(e => e.Name == "BlockTapFilterComponent.Update.ExpiredTap").ToList();
-        Assert.Equal(2, logs.Count);
-        Assert.All(logs, l => Assert.Equal((EngineLogLevel.Debug, "BlockTapFilterComponent", $"Marking object {w} as dirty due to tap timeout"), (l.Level, l.Channel, l.Text)));
+        // The ExpiredTap log is once per key, before the marking, and only if GetConnectedActiveObjectByActiveIdHelper(key's ObjectID value used as an
+        // active ID) finds an object (0x006312EE..0x006312FA, cbz at 0x006312FA). The cube is disconnected here, so nothing is logged although two
+        // copies were marked.
+        Assert.DoesNotContain(entries, e => e.Name == "BlockTapFilterComponent.Update.ExpiredTap");
     }
 
     /// <summary>A "Double tap" clears isIgnoring, so the A "Expiry flag" test (isIgnoring != 0) never passes and nothing is marked.</summary>
@@ -215,6 +216,79 @@ public sealed class CubeTapLocalizationGuardTests
         rig.Data(Tap(Slot)); TickTo(rig, t + 100);
         TickTo(rig, t + 600);
         Assert.Equal(PoseState.Known, a.PoseState);
+    }
+
+    // ------------------------------------------------------------------ TAP-FILTER-TICK-POSITION-1: where the tap filter runs in the tick
+
+    /// <summary>A queued runner that only observes: it runs inside ActionList::Update and reports Running, so the list keeps it.</summary>
+    private sealed class ProbeAction : Cozmo.Robot.IActionRunner
+    {
+        public uint State { get; set; } = EngineActionResult.NotStarted;
+        public byte RetriesRemain { get; set; }
+        public uint OriginalTag { get; set; }
+        public uint Tag { get; set; }
+        public int Type { get; set; }
+        public uint RequiredTrackMask { get; set; }
+        public bool SuppressTrackLocking { get; set; } = true;
+        public Action? OnUpdate;
+        public uint Update() { OnUpdate?.Invoke(); State = EngineActionResult.Running; return State; }
+        public void Cancel() { if (State != EngineActionResult.NotStarted) State = EngineActionResult.Cancelled; }
+        public void Reset(bool unlockTracks) { }
+        public bool CanInterrupt() => true;
+        public void Prep() { }
+        public void WatcherEnding() { }
+        public void UnlockTracks() { }
+        public bool SetTag(uint tag) { Tag = tag; return true; }
+    }
+
+    /// <summary>
+    /// M4-023, tick position: Robot::Update calls BlockTapFilterComponent::Update at 0x00513EA0..0x00513EA4, before AIComponent::Update
+    /// (0x00513EA8..0x00513EAC) and ActionList::Update (0x005140BC). A "Expiry flag" 0x00631228..0x00631242 (until &lt;= now) and A "Expiry dirty"
+    /// 0x0063128A..0x00631360 (MarkObjectDirty) therefore happen on the T+500 tick before the action list runs: an action's Update on that tick
+    /// already reads Dirty, and on T and T+499 it reads Known.
+    /// </summary>
+    // reach: production for the tap (dispatch) and the expiry (engine tick, Robot::Update); the observer is a probe runner queued on the robot's
+    // real ActionList (it substitutes a concrete action, whose own reads are not under test), and the located copy is fixture state.
+    [Fact]
+    public void M4_023_TheExpiryTickMarksDirtyBeforeTheActionListRuns()
+    {
+        var (rig, vision, w) = Connected(); using var _ = rig;
+        var a = Located(vision, w, vision.World.CurrentOriginId, PoseState.Known);
+        var seen = new List<(uint Ms, PoseState State)>();
+        var probe = new ProbeAction { OnUpdate = () => seen.Add((rig.Engine.Timer.TimeStampMs, a.PoseState)) };
+        uint t = Base(rig);
+        rig.Data(Tap(Slot)); TickTo(rig, t);
+        Assert.Equal(0, rig.Engine.Robot!.ActionList.QueueAction(QueueActionPosition.Now, probe));
+        TickTo(rig, t + 499);
+        TickTo(rig, t + 500);
+        Assert.Equal(new[] { (t + 499, PoseState.Known), (t + 500, PoseState.Dirty) }, seen.Where(x => x.Ms >= t + 499).ToArray());
+    }
+
+    /// <summary>
+    /// M4-023, tick position: CD10f (0x006310D0..0x0063119E) flushes the tap queue inside BlockTapFilterComponent::Update, which Robot::Update calls at
+    /// 0x00513EA0..0x00513EA4, before ActionList::Update (0x005140BC). So on the tick whose BlockTapFilter update broadcasts the tap, the action list
+    /// already sees the tap recorded; the broadcast is enqueued on the app FIFO before anything the action list enqueues on that tick.
+    /// </summary>
+    // reach: production for the tap (dispatch, the 75 ms queue on a physical robot with the filter on) and the flush (engine tick); the observer is a
+    // probe runner on the robot's real ActionList. This checks the enqueue point, not a delivered action report.
+    [Fact]
+    public void M4_023_TheTapFlushRunsBeforeTheActionListInTheSameTick()
+    {
+        var (rig, _, _) = Connected(); using var r = rig;
+        Assert.True(rig.Engine.Robot!.IsPhysicalRobot);
+        var cube = rig.Robot.Cubes.ByObjectId(Slot)!;
+        var seen = new List<(uint Ms, int Taps)>();
+        var delivered = new List<uint>();
+        rig.Robot.Cubes.CubeTapped += _ => delivered.Add(rig.Engine.Timer.TimeStampMs);
+        var probe = new ProbeAction { OnUpdate = () => seen.Add((rig.Engine.Timer.TimeStampMs, cube.Taps)) };
+        Assert.Equal(0, rig.Engine.Robot!.ActionList.QueueAction(QueueActionPosition.Now, probe));
+        uint t = Base(rig);
+        TickTo(rig, t);
+        rig.Data(Tap(Slot)); TickTo(rig, t + 10);
+        for (uint ms = t + 20; ms <= t + 200 && delivered.Count == 0; ms += 10) TickTo(rig, ms);
+        uint flushTick = Assert.Single(delivered);
+        Assert.Equal(1, seen.Single(x => x.Ms == flushTick).Taps);
+        Assert.All(seen.Where(x => x.Ms < flushTick), x => Assert.Equal(0, x.Taps));
     }
 
     // ------------------------------------------------------------------ step 3: both guards bound

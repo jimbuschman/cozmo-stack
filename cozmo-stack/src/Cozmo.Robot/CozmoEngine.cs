@@ -1412,6 +1412,12 @@ public sealed partial class EngineRobot
         if (Engine.ChargerPlatformUpdate is { } platform) Engine.RunIsolated(platform);
         UpdateNativeMood(now); // 0x00513E84..8A: same entry-captured float; unavailable host input is explicit.
         Inventory?.Update(); // 0x00513E90: owner system-clock retry, after mood and before AI.
+        // fidelity: M4-023
+        // 0x00513EA0..0x00513EA4: BlockTapFilterComponent::Update ([robot+0x450]) runs after InventoryComponent::Update (0x00513E94) and
+        // ProgressionUnlockComponent::Update (0x00513E9C), and before AIComponent::Update (0x00513EA8..0x00513EAC), BehaviorManager::Update (0x00513EE6)
+        // and ActionList::Update (0x005140BC). So the tap-queue flush, the tap broadcast and the double-tap expiry with its MarkObjectDirty are done
+        // before the AI, the behaviours and the actions of the same tick read the world.
+        if (Engine.BlockTapFilterUpdate is { } tapFilter) Engine.RunIsolated(tapFilter);
         // fidelity: M8-011
         // 0x00513EA8..0x00513EAC: AIComponent::Update (its BehaviorHelperComponent step) runs here, ahead of ActionList::Update (0x005140BC), the animation streamer
         // (0x0051410C) and NVStorage::Update (0x0051416A).
@@ -1449,9 +1455,9 @@ public sealed partial class EngineRobot
         // is computed before this runs (0x0051410C..0x0051411E before 0x0051416A).
         Engine.NvStorage?.Update();
         if(Engine.PathComponentTick is {} pathTick)Engine.RunIsolated(pathTick); // M12-032 P28, after ActionList and NV.
-        // fidelity: M4-010, M4-017, M4-018, M4-023
-        // CD2/CD12: after that, BlockTapFilter (0x00513EA4), BlockFilter, CheckDisconnected, ConnectToRequested
-        // (0x0051422A..0x00514236), CubeLight::Update(true) (0x00514468) and BodyLight (0x00514470).
+        // fidelity: M4-010, M4-017, M4-018
+        // CD2/CD12: after that, BlockFilter, CheckDisconnected, ConnectToRequested (0x0051422A..0x00514236), CubeLight::Update(true)
+        // (0x00514468) and BodyLight (0x00514470). BlockTapFilter runs earlier, before AIComponent::Update (0x00513EA4, above).
         if (Engine.RobotComponentsUpdate is { } components) Engine.RunIsolated(components);
         UpdateCurrentImageLatency(now); // M1-061: full Robot.Update path only, 0x00514386.
     }
@@ -2012,6 +2018,9 @@ public sealed partial class CozmoEngine : IDisposable
     internal Action<RobotState>? StateStored;
     /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>
     internal Action? RobotComponentsUpdate;
+    // fidelity: M4-023
+    /// <summary><c>BlockTapFilterComponent::Update</c> as <c>Robot::Update</c> calls it (0x00513EA0..0x00513EA4), before <c>AIComponent::Update</c> (0x00513EA8).</summary>
+    internal Action? BlockTapFilterUpdate;
     // fidelity: M8-011
     /// <summary>
     /// <c>AIComponent::Update</c> as <c>Robot::Update</c> calls it (0x00513ea8..0x00513eac), after the first-full-state gate (+0x34E, 0x00513C5C) and the

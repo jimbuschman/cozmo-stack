@@ -477,13 +477,13 @@ public sealed class CozmoCubes
         c.LastSeenUtc = c.LastTapUtc.Value;
     }
 
-    // fidelity: M4-010, M4-023
+    // fidelity: M4-023
     /// <summary>
-    /// The components Robot::Update runs for cubes (CD2): BlockTapFilterComponent::Update (0x00513EA4: once now is past
+    /// BlockTapFilterComponent::Update (called from Robot::Update 0x00513EA0..0x00513EA4, before AIComponent::Update 0x00513EA8): once now is past
     /// the deadline the queued tap with the greatest intensity is broadcast, strictly greater winning so the earliest
     /// wins a tie, and the queue cleared, CD10f; a pending double-tap entry past its ignore-until is cleared, CD10g - the
-    /// MarkObjectDirty that follows is BlockWorld's, M11), then the connection path (BlockFilter, CheckDisconnected,
-    /// ConnectToRequested).
+    /// MarkObjectDirty that follows is BlockWorld's, M11. The connection path (CheckDisconnected, ConnectToRequested,
+    /// 0x00514230..0x00514236) is <see cref="CubeConnections.Update"/>, which the robot tick runs later.
     /// </summary>
     internal void Update()
     {
@@ -492,7 +492,8 @@ public sealed class CozmoCubes
         lock (_gate)
         {
             uint now = NowMs;
-            if (_tapQueue.Count > 0 && unchecked((int)(now - _tapDeadlineMs)) > 0)
+            // fidelity: M4-023 — CD10f: now > deadline, unsigned (`cmp r0,r1; bls` 0x006310E0..0x006310E6).
+            if (_tapQueue.Count > 0 && now > _tapDeadlineMs)
             {
                 var best = _tapQueue[0];
                 foreach (var q in _tapQueue) if (q.Intensity > best.Intensity) best = q;
@@ -519,7 +520,6 @@ public sealed class CozmoCubes
         }
         // CD10g (0x0063128A..0x00631360): MarkObjectDirty on every located copy with that ID, in every origin, whose pose state is Known (+0x24 == 1).
         foreach (var id in ended) EventFan.Raise(DoubleTapPendingEnded, id, null);
-        Connections.Update();
     }
 
     // ----------------------------------------------------------------- plumbing
