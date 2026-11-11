@@ -170,7 +170,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
     [Fact]
     public void MapLifecyclePrintsArgumentOriginAndKeepsCurrentHelperNonNull()
     {
-        // reach: unit (supplied origin poses; live Rejigger join MISSING at 0x0051590C).
+        // reach: unit (supplied origin poses; the live Rejigger join 0x0051590C is built since LOCALIZE-CROSS-ORIGIN-1).
         // Old: merge MISSING after creating destination. Checked origins now allow the real empty-source merge.
         using var m = new SourceMapComponent();Assert.Equal(0u,m.CurrentOrigin);Assert.Empty(m.Maps);
         using var root=new Pose3d("root");using var oldOrigin=new Pose3d("old",root);using var nextOrigin=new Pose3d("next",root);

@@ -103,7 +103,7 @@ public sealed class ObjectStateReportTests : IDisposable
         bool local=false,forced=false;uint before=f.Engine.NativeUiDeliveryCount;
         using var sub=f.Engine.AnimationMessages.SubscribeMessage(0x53,true,_=>{Assert.Equal(before+1,f.Engine.NativeUiDeliveryCount);local=true;});
         world.BlockConfigurationManagerForceUpdate=()=>{Assert.True(local);forced=true;};
-        using var pose=new Pose3d();Assert.Equal(0u,world.UpdateObjectOrigins(owner.CurrentOriginId,owner.CurrentOriginId,pose));
+        using var pose=new Pose3d();Assert.Equal(0u,world.UpdateObjectOrigins(owner.CurrentOriginId,owner.CurrentOriginId));
         Assert.True(local);Assert.True(forced);
     }
 
@@ -137,7 +137,7 @@ public sealed class ObjectStateReportTests : IDisposable
             f.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
         });
         using var pose=new Pose3d();
-        using(f.Engine.EnterSynchronousOwner())world.UpdateObjectOrigins(original.CurrentOriginId,original.CurrentOriginId,pose);
+        using(f.Engine.EnterSynchronousOwner())world.UpdateObjectOrigins(original.CurrentOriginId,original.CurrentOriginId);
         Assert.True(replaced);Assert.NotSame(original,f.Engine.Robot);Assert.False(forced);
     }
 

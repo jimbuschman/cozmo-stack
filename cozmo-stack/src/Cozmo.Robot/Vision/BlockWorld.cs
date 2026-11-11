@@ -30,6 +30,18 @@ public static class MarkerlessObject
         ObjectType.CollisionObstacle => (20f, 54.2f, 67.7f),
         _ => null,
     };
+
+    /// <summary>
+    /// <c>MarkerlessObject::GetSameDistanceTolerance</c> 0x00502B06 (vtable+0x30 of MarkerlessObject; census LOCALIZE-CROSS-ORIGIN-1 6a): the size the ctor
+    /// stores at +0x58 (0x00502994..0x005029B0, <c>GetSizeByType</c>), each component times 0.5f in f32 (0x00502B08 vmov.f32 s0,#0.5; 0x00502B26 vmul.f32).
+    /// </summary>
+    // fidelity: M11-043
+    internal static Vec3? SameDistanceTolerance(ObjectType type)
+    {
+        if (SizeByType(type) is not { } size) return null;
+        float half = 0.5f;
+        return new Vec3((float)(size.X * half), (float)(size.Y * half), (float)(size.Z * half));
+    }
 }
 
 /// <summary>
@@ -715,7 +727,7 @@ internal readonly record struct PoseChange(uint Id, Pose3d Pose, PoseState State
 /// tolerances, 5 mm and 5 degrees.
 ///
 /// Built: <c>PotentialObjectsForLocalizingTo</c> (<c>Insert</c>, <c>UseDiscardedObservation</c>, <c>CouldUseObjectForLocalization</c>), which is what refreshes a
-/// confirmed object's pose (M11-044). Not built, each visible where it would run: <c>LocalizeRobot</c>'s <c>LocalizeToObject</c> and <c>Rejigger</c> (counted, M11-044),
+/// confirmed object's pose (M11-044), and <c>LocalizeRobot</c>'s <c>LocalizeToObject</c> with its cross-origin <c>Rejigger</c> branch (M11-044). Not built, each visible where it would run:
 /// the collision dirty pass (<c>CheckForCollisionWithRobot</c>'s vtable +0x58, M11-042), the game-side broadcasts (no EngineToGame message types in this stack, M11-038).
 /// </summary>
 public sealed partial class BlockWorld
@@ -947,11 +959,10 @@ public sealed partial class BlockWorld
     public int UnbuiltDeleteIntersectingObjectsCalls { get; private set; }
     public int UnwiredForceUpdateCalls { get; private set; }
     /// <summary>
-    /// How many times <c>LocalizeRobot</c> ran (once per <c>AddAndUpdateObjects</c>). <c>LocalizeToObject</c> and <c>Rejigger</c> exist here only as the <c>SetLocalizedTo</c>
-    /// field writes (M11-044).
+    /// How many times <c>LocalizeRobot</c> ran (once per <c>AddAndUpdateObjects</c>) (M11-044).
     /// </summary>
     public int UnbuiltLocalizeRobotCalls { get; internal set; }
-    /// <summary>How many times <c>LocalizeToObject</c> reached its unbuilt cross-origin branch (0x00515854..0x005159B2) and fell back to the <c>SetLocalizedTo</c> field writes (M11-044).</summary>
+    /// <summary>How many times <c>LocalizeToObject</c> took the stack's fields-only guard (<c>NativeSetLocalizedToRouteUsable</c>) and fell back to the <c>SetLocalizedTo</c> field writes (M11-044).</summary>
     public int UnbuiltLocalizeToObjectCalls { get; internal set; }
 
     // ---- state the localization candidates (PotentialObjectsForLocalizingTo) read from the robot; each is null until the owner wires it (M11-044)
@@ -967,7 +978,7 @@ public sealed partial class BlockWorld
 
     /// <summary>
     /// <c>Robot+0x2C4</c>: written 1 by <see cref="SetLocalizedTo"/> (0x0051245E, 0x005124EE) and the OnTreads commit (0x0051217C), 0 by <c>Delocalize</c> (0x00510A24). The engine has native readers
-    /// (<c>LocalizeToObject</c> 0x0051570A, <c>LocalizeToMat</c> 0x00515F64, <c>GetRobotState</c> 0x00518210, <c>CubeLightComponent::Update</c> 0x00637930); of them only <c>LocalizeToObject</c>'s height blend reads it here.
+    /// (<c>LocalizeToObject</c> 0x0051570A, <c>LocalizeToMat</c> 0x00515F64 (uncalled code: LOCALIZE-TO-MAT-HISTORY-1), <c>GetRobotState</c> 0x00518210, <c>CubeLightComponent::Update</c> 0x00637930); of them only <c>LocalizeToObject</c>'s height blend reads it here.
     /// </summary>
     public byte Robot2C4 { get { lock (_gate) return _robot2C4; } }
     /// <summary><c>Robot+0x2C5</c>: written 0 by <c>Delocalize</c>. Nothing in this stack reads it.</summary>
@@ -993,6 +1004,9 @@ public sealed partial class BlockWorld
     // fidelity: M11-044 - supplied native GetWithRespectTo result per marker, in list order.
     internal Func<ObservableObject, KnownMarker, Pose3d?>? MarkerPoseInCamera;
     internal Func<EngineRobot, EngineRobot.CurrentCameraScope>? NativeCurrentCamera;
+    /// <summary>Whether the robot's PathComponent (Robot+0x5C) has a plan in flight (status mask 0xE). Stack machinery: makes the unbuilt M12-032
+    /// RejiggerTargetsAndReplan visible when a cross-origin localization changes the origin under a path.</summary>
+    internal Func<bool>? PathInFlight;
     internal Func<int>? NativeLocalizationGeneration;
     /// <summary>How many times <see cref="SetLocalizedTo"/> ran an object through it without <see cref="MarkerPosesRelativeToCamera"/> (the loop was not run; M11-044).</summary>
     public int UnbuiltSetLocalizedToMarkerLoops { get; private set; }
@@ -1169,7 +1183,7 @@ public sealed partial class BlockWorld
     /// the computed history state at the observation's time, the robot pose w.r.t. the observed object re-parented to the existing one and flattened, the height blend
     /// while localized, <c>AddVisionOnlyStateToHistory</c>, the computed state overwritten in place, <c>UpdateCurrPoseFromHistory</c>, the native <c>SetLocalizedTo</c> with
     /// the current camera, then [Robot+0x2C6] := 1 and 0. Each failure exit logs its error, sets the error flag and returns, keeping the writes already made.
-    /// NOT BUILT, visible: the cross-origin branch (0x00515854..0x005159B2: Rejigger and the origin updates; counted in <see cref="UnbuiltLocalizeToObjectCalls"/>).
+    /// After S10, an existing object under another root takes the cross-origin branch (<see cref="LocalizeAcrossOrigins"/>, 0x00515854..0x005159B2), then S12..S15.
     /// </summary>
     // fidelity: M11-044
     internal uint LocalizeToObject(ObservableObject? observed, ObservableObject? existing)
@@ -1201,17 +1215,7 @@ public sealed partial class BlockWorld
         }
         using var poseGate = LogCallbackDeferral.EnterGated(owner.PoseTreeGate);
         var origin = owner.GetNativeOrigin(owner.CurrentOriginId);               // [[Robot+0x294]+0x14]
-        // The S11 split (0x0051583C..0x00515850, HasSameRootAs(E.GetPose(), current origin)) depends only on E and the current origin, which
-        // S2..S10 do not change. The engine tests it after S10; the stack tests it first because its cross-origin branch (Rejigger and the origin
-        // updates, 0x00515854..0x005159B2) is not built: S10's vision-only state, frame and +0x2C6 writes would otherwise make the next tick send
-        // an AbsoluteLocalizationUpdate in the wrong origin. So the unbuilt case writes and sends nothing and fails visibly (LocalizeRobot then
-        // logs CrossFrameLocalizeFailure and goes on to the next pair).
-        if (!PoseTreeNode.HasSameRoot(existing.NativePose.Node, origin.Node))
-        {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject cross-origin branch (0x00515854..0x005159B2: Rejigger and the origin updates) not built: LOCALIZE-CROSS-ORIGIN-1; this pair fails with nothing written and no localization update sent to the robot");
-            UnbuiltLocalizeToObjectCalls++;
-            return 1;
-        }
+        // The S11 split (0x0051583C..0x00515850) is tested at its engine position, after S10 (LOCALIZE-CROSS-ORIGIN-1, census X0/X1).
         // Stack limitation, visible: S14 (the native SetLocalizedTo with the camera, 0x0051238C) cannot run for an existing object whose pose carries the
         // stack's legacy frame flag. A live sighting's stored pose no longer does (the flag came from ClampPoseToFlat, which now keeps its input's frame
         // context like the engine's in-place write 0x008774D0..0x008774E8), so the live path is not refused here; only a genuinely flat host or offline
@@ -1222,6 +1226,18 @@ public sealed partial class BlockWorld
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject: the native SetLocalizedTo (S14, 0x0051238C) cannot run (the existing object's pose carries the stack's legacy frame flag of a flat host/offline input, or there is no current camera); S2..S13 skipped, only the SetLocalizedTo field writes made, no localization update sent (stack guard, LIVE-OBJECT-POSE-NATIVE-1)");
             UnbuiltLocalizeToObjectCalls++;
             return SetLocalizedToCore(existing, false) ? 0u : 1u;
+        }
+        // Stack limitation, visible (manager, 2026-11-11; LOCALIZE-CROSS-ORIGIN-1 verifier F1): the engine follows a cross-origin localization with
+        // PathComponent's HandlePossibleOriginChanges (0x0064980C) -> RejiggerTargetsAndReplan (0x006499D0), which the stack has not built (M12-032).
+        // Rejiggering the origins and sending the next AbsoluteLocalizationUpdate while a path is in flight would leave the robot driving old-origin
+        // segments in re-based odometry. So while a path is in flight a cross-origin pair is stopped before S2 (no history, pose, origin or 0x45 write);
+        // LocalizeRobot logs CrossFrameLocalizeFailure and a later frame, once the path ends, takes the full branch. The split itself depends only on E
+        // and the current origin, which S2..S10 do not change. Same-origin localization is unaffected.
+        if (PathInFlight?.Invoke() == true && !PoseTreeNode.HasSameRoot(existing.NativePose.Node, owner.GetNativeOrigin(owner.CurrentOriginId).Node))
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044/M12-032 LocalizeToObject cross-origin pair while a path is in flight: RejiggerTargetsAndReplan (0x006499D0) is not built, so the pair is stopped before any write and no localization update is sent (PATH-ORIGIN-CHANGE-REPLAN-1)");
+            UnbuiltLocalizeToObjectCalls++;
+            return 1;
         }
         // fidelity: M11-044 — S2 0x00515614..0x00515622: GetComputedStateAt(O[+0x1C], &hist, &key), exact time, key requested.
         HistRobotState? hist = null; uint key = 0;
@@ -1284,7 +1300,12 @@ public sealed partial class BlockWorld
             EngineErrorState.StoreAndMaybeBreak();
             return added;
         }
-        // fidelity: M11-044 — S11 0x0051583C..0x00515850: same origin here (the cross-origin case was stopped before S2, above).
+        // fidelity: M11-044 — S11/X0/X1 0x0051577A..0x00515850: reached only after S10 succeeds; HasSameRootAs(E.GetPose(), [[Robot+0x294]+0x14])
+        // (0x0051583C..0x0051584A; E's pose root, not O's). A different root takes the cross-origin branch (0x00515854..0x005159B2), which
+        // rejoins S12 at 0x005159B6 whatever its outcome (X8, X14).
+        var currentOrigin = owner.GetNativeOrigin(owner.CurrentOriginId);
+        if (!PoseTreeNode.HasSameRoot(existing.NativePose.Node, currentOrigin.Node))
+            LocalizeAcrossOrigins(owner, existing, robotWrtObject, newPose, currentOrigin);
         // fidelity: M11-044 — S12 0x005159B6..0x005159C8: HistRobotState::SetPose(hist, [Robot+0x2B0], N, head, lift), in the computed map.
         hist.SetPose(owner.PoseFrameId, newPose, head, lift);
         // fidelity: M11-044 — S13 0x005159CC..0x005159D2: UpdateCurrPoseFromHistory.
@@ -1305,6 +1326,60 @@ public sealed partial class BlockWorld
         }
         owner.MarkVisionPoseUpdated();                                           // S15 0x00515A88..0x00515A8C: [Robot+0x2C6] := 1
         return 0;
+    }
+
+    /// <summary><c>FaceWorld::UpdateFaceOrigins(old, new)</c> at Robot+0x38 (called at 0x005159A8). Wired by <see cref="VisionSystem"/>; unwired is a visible MISSING.</summary>
+    internal Func<uint, uint, int>? FaceWorldUpdateFaceOrigins;
+
+    /// <summary>
+    /// The cross-origin branch of <c>Robot::LocalizeToObject</c> (0x00515854..0x005159B2; census LOCALIZE-CROSS-ORIGIN-1 X2..X13): the RejiggeringOrigins DAS
+    /// event, the old current ID, T = T_N · inverse(T_robot), <c>PoseOriginList::Rejigger(FindRoot(P), T)</c>; on failure the RejiggerFailed VERIFY and nothing else;
+    /// on success the new ID, then <c>BlockWorld::UpdateObjectOrigins</c>, <c>MapComponent::UpdateMapOrigins</c>, <c>FaceWorld::UpdateFaceOrigins</c> and
+    /// <c>PoseOriginList::Flatten(new)</c>, in that order, results ignored. The caller goes on to S12 either way; nothing here is rolled back (X14).
+    /// </summary>
+    // fidelity: M11-044
+    private void LocalizeAcrossOrigins(EngineRobot owner, ObservableObject existing, Pose3d robotWrtObject, Pose3d newPose, Pose3d currentOrigin)
+    {
+        using var diagnostics = Pose3d.UseSourceLog((l, c, k, t) => owner.Engine.EmitSourceLog(l, c, k, t), () => owner.Engine.Das.ForceFlushNow());
+        // X2 0x00515854..0x005158D0: sEventF("Robot.LocalizeToObject.RejiggeringOrigins", {}, format 0x00BE6D07, [Robot+0x10], name(current), name(FindRoot(E.pose))).
+        using (var existingRoot = existing.NativePose.FindRoot())
+            owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "Robot.LocalizeToObject.RejiggeringOrigins",
+                FormattableString.Invariant($"Robot {unchecked((int)owner.NativeRobotId)}'s current origin is {PoseDiagnostics.CString(currentOrigin.Name)}, about to localize to origin {PoseDiagnostics.CString(existingRoot.Name)}."));
+        uint oldOriginId = owner.CurrentOriginId;                                // X3 0x005158D8: [[Robot+0x294]+0x10]
+        // X4 0x005158DC..0x005158F6: Robot::GetPose (with its VERIFYs) -> GetTransform -> GetInverse; then PreComposeWith(GetTransform(N)): T = T_N * inverse(T_robot).
+        var oldWrtNew = owner.GetCheckedMainPose().Transform.Inverse();
+        var nTransform = newPose.Transform;
+        oldWrtNew.PreComposeWith(ref nTransform);
+        uint result;
+        using (var newRoot = robotWrtObject.FindRoot())                         // X5 0x005158FE..0x00515902: FindRoot(P), the root of E since S7
+            result = owner.RejiggerOrigins(newRoot, oldWrtNew);                  // X5 0x00515906..0x0051590C
+        if (result != 0)
+        {
+            // X8 0x0051591A..0x0051592A: sVerifyFailedReturnFalse, then b 0x5159B6: no recipients, no Flatten.
+            PoseDiagnostics.Verify("Robot.LocalizeToObject.RejiggerFailed", "VERIFY(RESULT_OK == result): ");
+            return;
+        }
+        uint newOriginId = owner.CurrentOriginId;                                // X9 0x0051598A
+        CurrentOriginId = newOriginId;                                           // this world's mirror of [[Robot+0x294]+0x10] (origin mode 0)
+        UpdateObjectOrigins(oldOriginId, newOriginId);                           // X10 0x00515992, result ignored
+        // Stack machinery, not engine behaviour: X10's LocatedObjectStates delivery runs local subscribers synchronously, and one may replace this
+        // Robot (as in UpdateObjectOrigins' own tail check). A retired owner's origin change must not reach the shared map, faces or origin list.
+        if (owner.Lifetime.Destroying || !ReferenceEquals(NativeSnapshotOwner?.Invoke(), owner))
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 stack re-entrancy guard, LocalizeToObject cross-origin branch: the Robot was replaced during UpdateObjectOrigins' broadcast; X11..X13 skipped for the retired owner");
+            return;
+        }
+        // fidelity: M13-032 — X11 0x0051599E MapComponent::UpdateMapOrigins(old, new); its object update is UpdateOriginsOfObjects (X11a, 0x0067DE70).
+        Maps.UpdateMapOrigins(oldOriginId, newOriginId, () => Maps.UpdateOriginsOfObjects(oldOriginId, newOriginId, GetLocatedObjectByIdHelper));
+        // X12 0x005159A8: FaceWorld::UpdateFaceOrigins(old, new); its count is ignored.
+        if (FaceWorldUpdateFaceOrigins is { } faces) faces(oldOriginId, newOriginId);
+        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject X12 FaceWorld::UpdateFaceOrigins 0x005159A8: no FaceWorld is bound to this world; faces not moved to the new origin");
+        owner.FlattenOrigins(newOriginId);                                       // X13 0x005159B2
+        // Stack limitation, visible (LOCALIZE-CROSS-ORIGIN-1 verifier F1): the engine's PathComponent::Update sees the new current origin on its next
+        // status-3 update (HandlePossibleOriginChanges 0x0064980C) and calls RejiggerTargetsAndReplan (0x006499D0). The stack's origin inputs for that
+        // dispatch are unbound and the replan is unbuilt (M12-032), so a path in flight keeps its old-origin segments while the next 0x45 re-bases odometry.
+        if (PathInFlight?.Invoke() == true)
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing($"M12-032 RejiggerTargetsAndReplan 0x006499D0 not built: the cross-origin localization moved the current origin {oldOriginId} -> {newOriginId} while a path is in flight; the path keeps its old-origin segments (the engine rejiggers its targets and replans)");
     }
 
     /// <summary>S9's weights: 0.1f, the literal 0x3DCCCCCD at 0x00515ABC, on the observation's z; 0.9f, 0x3F666666 at 0x00515AC0, on the robot's z.</summary>
@@ -1958,8 +2033,8 @@ public sealed partial class BlockWorld
     /// <item>one occluder per observed marker, the RobotObservedObject broadcast, this+0x54 = 1 and this+0x58 = (u32)fmax((double)ts, MemoryMap.vt+0x38())
     ///   (0x006211A6..0x00621214).</item>
     /// </list>
-    /// After the loop <c>LocalizeRobot</c> runs and its result is the return (0x00621304, 0x00621320). <c>Robot::LocalizeToObject</c>'s same-origin path is built;
-    /// its cross-origin branch (<c>Rejigger</c>, 0x00515854..0x005159B2) is NOT BUILT (visible).
+    /// After the loop <c>LocalizeRobot</c> runs and its result is the return (0x00621304, 0x00621320). <c>Robot::LocalizeToObject</c>'s same-origin path and
+    /// its cross-origin branch (<c>Rejigger</c>, 0x00515854..0x005159B2) are built.
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
     private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
@@ -3232,29 +3307,37 @@ public sealed partial class BlockWorld
 
     /// <summary>
     /// <c>BlockWorld::UpdateObjectOrigins(oldOrigin, newOrigin)</c> 0x00620534 (M11-043), which <c>Robot::LocalizeToObject</c> 0x005154B0 calls at
-    /// 0x00515992 after <c>Rejigger</c>. It clears the confirmer (0x00620594), runs the first modify function over every object of the old origin
-    /// (0x00628E18: an object's pose is its pose with respect to the new origin, unchanged when it is carried; the counterpart in the new origin
-    /// is the located object with the same family, type and ID for a unique type; a found counterpart takes the moved object's ID, re-keyed when
-    /// it differs, and <c>CopyWithNewPose</c> copies the pose and the SOURCE's PoseState; with none the object is cloned, the clone takes the ID
-    /// and the pose and <c>AddLocatedObject</c> adds it), erases the old origin's entries only when the LAST object's result was 0 (0x00620642..
-    /// 0x0062064C), runs the second modify function over the new origin's objects (<c>AddInExistingPose</c>, 0x00506F48: an entry with zero count
-    /// and the current pose), then broadcasts the located states and sets the BlockConfigurationManager's byte [+0xC] (0x006206E6, 0x006206EA).
-    ///
-    /// <paramref name="oldOriginWrtNew"/> is the old origin's pose in the new origin's frame, which <c>GetWithRespectTo</c> would derive from the
-    /// pose tree this stack does not have. NOT BUILT here: the caller <c>LocalizeToObject</c> and its <c>Rejigger</c> (M11-044 / M12 boundary), the
-    /// <c>UnknownOriginID</c> guard (its value is unread), the broadcast (no message type) and <c>SetObservationTimes</c> (unread), and the
-    /// non-unique counterpart search (<c>FindLocatedObjectClosestToHelper</c>, throws).
+    /// 0x00515992 after a successful <c>Rejigger</c> (census LOCALIZE-CROSS-ORIGIN-1 X10, 6a, 6b). Either ID equal to UnknownOriginID (0) is a VERIFY
+    /// returning 1 (0x00620554..0x00620570). Otherwise it clears the confirmer (0x00620594) and runs lambda1 (0x00628E18) over every object of the old
+    /// origin: a carried object's pose is copied as is (0x00628E72), any other is converted with <c>GetWithRespectTo(obj.pose, newOrigin)</c> through the
+    /// pose tree (0x00628E82; a failure is the OriginFail error, result word 1, object skipped, 0x00628FB2..0x00629026). The counterpart in the new origin
+    /// is, for a unique type, the located object with the same family, type and ID (0x00628F5E..0x0062904A) and, for a non-unique type, the closest
+    /// object of that family and type to the object's OLD-origin pose within its <c>GetSameDistanceTolerance</c> (vt+0x30,
+    /// <c>FindLocatedObjectClosestToHelper</c> 0x0061F8EC, 0x00628F8E..0x00628FAC). A found counterpart takes the moved object's ID, re-keyed when it
+    /// differs; with none the object is cloned and the clone takes the ID; either way <c>SetObservationTimes</c> (0x006292DC) and <c>CopyWithNewPose</c>
+    /// (0x006292EE, its result into the result word), and a clone is added with <c>AddLocatedObject</c> (0x0062931E). The old origin's entries are erased
+    /// only when the LAST result word is 0 (0x00620642..0x0062064C); then <c>AddInExistingPose</c> over the current (new) origin (0x006206E0), the
+    /// LocatedObjectStates broadcast (0x006206E6) and BlockConfigurationManager [+0xC] := 1 (0x006206EA); the result word is returned.
     /// </summary>
     // fidelity: M11-043
-    public uint UpdateObjectOrigins(uint oldOriginId, uint newOriginId, Pose3d oldOriginWrtNew)
+    public uint UpdateObjectOrigins(uint oldOriginId, uint newOriginId)
     {
         using var frameMutation=EnterPoseMutation();
+        // 0x00620554 cmp r0,r4 / cmpne r0,r5 against PoseOriginList::UnknownOriginID (GOT 0x0103E978 -> 0x00C97B20, value 0) -> VERIFY, return 1.
+        if (oldOriginId == UnknownOriginId || newOriginId == UnknownOriginId)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-043 UpdateObjectOrigins UnknownOriginID guard 0x00620554..0x00620570: the VERIFY key and format are not in the inventory; returned 1 with nothing changed");
+            EngineErrorState.ErrorFlagSet = true;
+            return 1;
+        }
+        using var diagnostics = Pose3d.UseSourceLog((l,c,k,t)=>Source(l,c,k,t),NativeForceFlush);
+        var newOrigin = GetNativeOrigin(newOriginId);                                                                 // 0x00620588 GetOriginByID(new)
         var snapshotOwner=NativeSnapshotOwner?.Invoke();
         ClearConfirmer();                                                                                              // 0x00620594
         uint flag = 0;
         var first = new BlockWorldFilter { OriginMode = OriginMode.Custom };
         first.AllowedOrigins.Add(oldOriginId);
-        FindLocatedObjectHelper(first, o => flag = MoveObjectToNewOrigin(o, newOriginId, oldOriginWrtNew), false);     // 0x0062060A..0x0062063E
+        FindLocatedObjectHelper(first, o => MoveObjectToNewOrigin(o, newOriginId, newOrigin, ref flag), false);       // 0x0062060A..0x0062063E
         if (flag == 0)
             lock (_gate)                                                                                               // 0x00620642..0x0062064C
                 foreach (var k in _located.Keys.Where(k => k.Origin == oldOriginId).ToList()) _located.Remove(k);
@@ -3264,28 +3347,55 @@ public sealed partial class BlockWorld
             if(!owner.Lifetime.Destroying && ReferenceEquals(NativeSnapshotOwner?.Invoke(),owner))BroadcastLocatedObjectStates(owner,()=>!owner.Lifetime.Destroying && ReferenceEquals(NativeSnapshotOwner?.Invoke(),owner)); // 0x006206E6
         }
         else UnbuiltBroadcastLocatedObjectStatesCalls++; // standalone fixture without a Robot/UI owner
-        if(snapshotOwner is not null && (snapshotOwner.Lifetime.Destroying || !ReferenceEquals(NativeSnapshotOwner?.Invoke(),snapshotOwner)))return 0;
+        if(snapshotOwner is not null && (snapshotOwner.Lifetime.Destroying || !ReferenceEquals(NativeSnapshotOwner?.Invoke(),snapshotOwner)))return flag;
         NativeConfigurations?.ForceUpdate(); // source 0x006206EA, independent from host extension flags.
         if (BlockConfigurationManagerForceUpdate is { } force) force(); else if(NativeConfigurations is null)UnwiredForceUpdateCalls++;
-        return 0;
+        return flag;
     }
 
-    private uint MoveObjectToNewOrigin(ObservableObject o, uint newOriginId, Pose3d oldOriginWrtNew)
+    /// <summary><c>PoseOriginList::UnknownOriginID</c>: GOT 0x0103E978 -> 0x00C97B20, .rodata word 0.</summary>
+    // fidelity: M11-043
+    internal const uint UnknownOriginId = 0;
+
+    // fidelity: M11-043 — lambda1 0x00628E18..0x00629390 (census X10, 6a, 6b).
+    private void MoveObjectToNewOrigin(ObservableObject o, uint newOriginId, Pose3d newOrigin, ref uint result)
     {
-        var pose = Carrying(o.ObjectId) ? o.Pose : oldOriginWrtNew.Compose(o.Pose);                                    // 0x00628E2E..0x00628FB0
-        if (!o.IsUnique)
-            throw new NotSupportedException("M11-043: FindLocatedObjectClosestToHelper (the non-unique counterpart search, 0x0062902E..0x0062904E) is not built");
+        var pose = new Pose3d("");
+        if (Carrying(o.ObjectId)) pose.Assign(o.NativePose);                                                           // 0x00628E60 / 0x00628E72: operator=
+        else if (!Pose3d.GetWithRespectTo(o.NativePose, newOrigin, pose))                                              // 0x00628E82, newOrigin = [functor+8]
+        {
+            // 0x00628E88 beq 0x628FB2: sErrorF OriginFail (0x00BF8428, format 0x0062954C), errG, result word := 1 (0x00629022..0x00629024), object skipped.
+            Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObjectOrigins.OriginFail",
+                FormattableString.Invariant($"Could not get object {unchecked((int)o.ObjectId)} w.r.t new origin {PoseDiagnostics.CString(newOrigin.Name)}"));
+            EngineErrorState.StoreAndMaybeBreak();
+            pose.Dispose();
+            result = 1;
+            return;
+        }
+        // 0x00628EA2..0x00628F4A: origin mode 3, allowed {new ID}, the object's family and type.
         var f = new BlockWorldFilter { OriginMode = OriginMode.Custom };
         f.AllowedOrigins.Add(newOriginId);
         f.AllowedFamilies.Add(o.Family);
         f.AllowedTypes.Add(o.Type);
-        f.AllowedIds.Add(o.ObjectId);
-        f.Predicates.Add(x => x.IsUnique);
-        var counterpart = FindLocatedObjectHelper(f, null, true);
-        if (counterpart is not null)
+        ObservableObject? counterpart;
+        if (o.IsUnique)                                                                                                // 0x00628F54 vt+0x5C == 1
+        {
+            f.AllowedIds.Add(o.ObjectId);                                                                              // 0x0062902E..0x00629038
+            f.Predicates.Add(x => x.IsUnique);                                                                         // 0x00628F5E..0x00628F7A
+            counterpart = FindLocatedObjectHelper(f, null, true);                                                      // 0x0062904A, returnFirst 1
+        }
+        else
+        {
+            // 0x00628F9E vt+0x30 GetSameDistanceTolerance; 0x00628FA8 FindLocatedObjectClosestToHelper(obj.GetPose(), the OLD-origin pose read at
+            // 0x00628F90, tolerance, filter), body 0x0061F8EC with the predicate 0x00627F9A.
+            if (o.Family != ObjectFamily.MarkerlessObject || MarkerlessObject.SameDistanceTolerance(o.Type) is not { } tolerance)
+                throw new NotSupportedException("MISSING: M11-043 UpdateObjectOrigins vt+0x30 GetSameDistanceTolerance for a non-unique object that is not a MarkerlessObject: the inventory reads only MarkerlessObject's slot (0x00502B06)");
+            counterpart = NativeClosestSpatialQuery.Find(this, o.NativePose, tolerance, f);
+        }
+        if (counterpart is not null)                                                                                   // 0x00629066 cmp sb,#0
         {
             EmitPublicLog($"BlockWorld.UpdateObjectOrigins.ObjectOriginChanged: object {o.ObjectId} {o.Type}");
-            if (counterpart.ObjectId != o.ObjectId)
+            if (counterpart.ObjectId != o.ObjectId)                                                                    // 0x00629174..0x0062922A
             {
                 lock (_gate)
                 {
@@ -3295,19 +3405,30 @@ public sealed partial class BlockWorld
                 }
                 EmitPublicLog("BlockWorld.UpdateObjectOrigins.MovedSharedPointerDueToIDChange");
             }
-            // SetObservationTimes(o) 0x006292DC: unread, not built
-            CopyWithNewPose(counterpart, pose, o);
+            SetObservationTimes(counterpart, o);                                                                       // 0x006292DC
+            result = CopyWithNewPose(counterpart, pose, o);                                                            // 0x006292EE / 0x006292F6
         }
         else
         {
             EmitPublicLog($"BlockWorld.UpdateObjectOrigins.NoMatchFound: object {o.ObjectId} {o.Type}");
-            var clone = o.CloneNative();
-            clone.ObjectId = o.ObjectId;
+            var clone = o.CloneNative();                                                                               // 0x006292CC vtable[0]
+            clone.ObjectId = o.ObjectId;                                                                               // 0x006292D4
             clone.OriginId = newOriginId;
-            CopyWithNewPose(clone, pose, o);
-            AddLocatedObject(clone);                                                                                   // "NoMatchingObjectInNewFrame"
+            SetObservationTimes(clone, o);
+            result = CopyWithNewPose(clone, pose, o);
+            AddLocatedObject(clone);                                                                                   // 0x0062931E "NoMatchingObjectInNewFrame"
         }
-        return 0;                                                                                                      // 0x006292F6
+    }
+
+    /// <summary>
+    /// <c>Vision::ObservableObject::SetObservationTimes(other)</c> 0x00877706 (census 6b): dst[+0x1C] := max_u32(dst[+0x1C], other[+0x1C]) (0x00877708..0x00877716),
+    /// then the positional marker walk taking the u32 maximum of each pair's +0x50 (0x00877718..0x0087773E), the shape <see cref="UpdateMarkerObservationTimes"/> ports.
+    /// </summary>
+    // fidelity: M11-043
+    internal static void SetObservationTimes(ObservableObject dst, ObservableObject other)
+    {
+        dst.LastObservedTimestamp = Math.Max(dst.LastObservedTimestamp, other.LastObservedTimestamp);
+        UpdateMarkerObservationTimes(dst, other);
     }
 
     /// <summary>
@@ -3732,7 +3853,7 @@ internal sealed class PotentialObjectsForLocalizingTo
     /// farthest first; when the first one's matched object is not in the current origin, the first whose matched object is has its ID value set to the matched object's and its matched
     /// pointer cleared (StoringMatchedObjectID, 0x0050D354..0x0050D3D6); each is then localized to in order, a cleared one through <c>GetLocatedObjectByIdHelper(id)</c> (a null one warns
     /// MissingMatchedObjectInCurrentFrame and is skipped), a failure warning CrossFrameLocalizeFailure; the result is 1 if any failed (0x0050D3DA..0x0050D4D2). It writes nothing but what
-    /// <c>LocalizeToObject</c> writes (<see cref="BlockWorld.LocalizeToObject"/>; its cross-origin branch is not built).
+    /// <c>LocalizeToObject</c> writes (<see cref="BlockWorld.LocalizeToObject"/>, including its cross-origin branch).
     /// </summary>
     public uint LocalizeRobot()
     {

@@ -118,6 +118,56 @@ public sealed partial class EngineRobot
         PoseDiagnostics.Verify("PoseOriginList.GetOriginByID.BadID",FormattableString.Invariant($"VERIFY(iter != _origins.end()): {unchecked((int)id)}"));
         return MissingOrigin;
     }
+    /// <summary>
+    /// <c>PoseOriginList::Rejigger(newOrigin, oldWrtNew)</c> 0x00847D7C..0x00847E84 (census LOCALIZE-CROSS-ORIGIN-1 X6/X7). Guards, both VERIFY and return 1 with
+    /// nothing changed (0x00847DD2): the new origin's ID not in the list (UnknownOrigin), then the new ID equal to the current one (NewOriginIsCurrent).
+    /// Success: the supplied transform copied into the OLD current origin's node (0x00847E1A..0x00847E40), SetParent(old, stored new) (0x00847E48), old
+    /// name + "_REJ" (0x00847E58..0x00847E66), current pose and ID := new (0x00847E7A / 0x00847E7E), return 0. No origin is erased.
+    /// </summary>
+    // fidelity: M11-044
+    internal uint RejiggerOrigins(Pose3d newOrigin, Transform3d oldWrtNew)
+    {
+        uint newId = newOrigin.Id;                                               // 0x00847D8A GetID(new)
+        if (!ContainsOriginId(newId))                                            // 0x00847D94..0x00847D98
+        {
+            PoseDiagnostics.Verify("PoseOriginList.Rejigger.UnknownOrigin", FormattableString.Invariant(
+                $"VERIFY(ContainsOriginID(newOriginID)): Pose ID:{unchecked((int)newId)} ({PoseDiagnostics.CString(newOrigin.Name)}) not known to PoseOriginList"));
+            return 1;
+        }
+        if (CurrentOriginId == newId)                                            // 0x00847D9C..0x00847DA0
+        {
+            PoseDiagnostics.Verify("PoseOriginList.Rejigger.NewOriginIsCurrent", FormattableString.Invariant($"VERIFY(_current.originID != newOriginID): ID:{unchecked((int)newId)}"));
+            return 1;
+        }
+        uint oldId = CurrentOriginId;
+        var old = _nativeOrigins[oldId];                                         // 0x00847DD8 find(current ID)
+        var stored = _nativeOrigins[newId];                                      // 0x00847DE0..0x00847E0E tree search by ID
+        old.Node!.Transform = oldWrtNew;                                         // 0x00847E1A..0x00847E40
+        old.SetParent(stored);                                                   // 0x00847E48
+        old.Name = old.Name + "_REJ";                                            // 0x00847E58..0x00847E66 ("_REJ" at 0x00847F20)
+        OriginNames.Rejigger(oldId, newId);                                      // the M4-037 name tree follows the same node edit
+        CurrentOriginId = newId;                                                 // 0x00847E7A / 0x00847E7E
+        return 0;                                                                // 0x00847E80
+    }
+
+    /// <summary>
+    /// <c>PoseOriginList::Flatten(targetID)</c> 0x00847F34..0x00847FBE (census X13): GetOriginByID(target), then every origin in ascending ID order; one with
+    /// a parent (0x00847F58) that is not an immediate child of the target (IsChildOf, 0x00847F64 / 0x00844FD4) is converted in place with
+    /// <c>GetWithRespectTo(P, target, P)</c> (0x00847F70); only a success appends "_FLT" (0x00847F8C, string 0x00847FD8). Void; nothing erased.
+    /// </summary>
+    // fidelity: M11-044
+    internal void FlattenOrigins(uint targetId)
+    {
+        var target = GetNativeOrigin(targetId);                                  // 0x00847F3C
+        foreach (var (id, origin) in _nativeOrigins.OrderBy(e => e.Key).ToArray())
+        {
+            if (!origin.HasParent) continue;                                     // 0x00847F58
+            if (ReferenceEquals(origin.Node!.Parent, target.Node)) continue;     // 0x00847F64..0x00847F68: IsChildOf, immediate parent
+            if (!Pose3d.GetWithRespectTo(origin, target, origin)) continue;      // 0x00847F70, in place
+            origin.Name = origin.Name + "_FLT";                                  // 0x00847F8C
+            OriginNames.Flatten(id, targetId);
+        }
+    }
     internal void Delocalize(bool suppliedCarrying)
     {
         using var frameMutation=Engine.DelocalizationWorld?.EnterPoseMutation();

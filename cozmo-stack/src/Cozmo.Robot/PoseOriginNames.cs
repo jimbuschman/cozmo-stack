@@ -43,5 +43,16 @@ internal sealed class PoseOriginNames
         return true;
     }
     internal PoseTreeNameNode? Get(uint id) => _origins.GetValueOrDefault(id);
+    // fidelity: M11-044 - Rejigger 0x00847E48..0x00847E7E: the old current origin's node is parented to the new one and renamed + "_REJ"; the new one becomes current.
+    internal void Rejigger(uint oldId, uint newId)
+    {
+        if (Get(oldId) is { } old) { old.Parent = Get(newId); old.Name += "_REJ"; }
+        CurrentId = newId;
+    }
+    // fidelity: M11-044 - Flatten 0x00847F70..0x00847F8C: a flattened origin is parented to the target and renamed + "_FLT".
+    internal void Flatten(uint id, uint targetId)
+    {
+        if (Get(id) is { } node) { node.Parent = Get(targetId); node.Name += "_FLT"; }
+    }
     internal static string NameOf(uint id) => "Origin" + id.ToString(CultureInfo.InvariantCulture);
 }
