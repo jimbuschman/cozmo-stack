@@ -444,7 +444,9 @@ public sealed class FaceIdentityTests
         for (int step = 1; step <= 4; step++)
         {
             now = 10_000_000 + step * 1_000_000;
-            for (int attempt = 0; attempt < 12 && !detector.RecognitionWorkCompleted; attempt++) Frame("face_s10_3");
+            // The worker's mailbox discards a frame that arrives while it is busy (native completion), so under full-suite load a burst of frames can all be
+            // dropped; wait for the processor to go idle after each frame so every attempt is actually processed.
+            for (int attempt = 0; attempt < 12 && !detector.RecognitionWorkCompleted; attempt++) { Frame("face_s10_3"); vision.WaitForProcessorIdle(); }
             Assert.True(SpinWait.SpinUntil(() => detector.RecognitionWorkCompleted, TimeSpan.FromSeconds(10)), $"no FR work at step {step}; faces={vision.LastFaces.Count}");
             Frame("face_s10_3");
             Assert.Equal(4 - step, vision.Recognizer.EnrollmentCount);
