@@ -2565,6 +2565,9 @@ public class M12RVisBuildTests : IDisposable
     private static Task<ActionResult> StartFlipAtTheDrive(Rig rig, FlipBlockAction flip, out SetLiftHeight approach)
     {
         rig.HoldLift = true; rig.HoldPath = true;
+        // Hold the engine clock from the start (it still advances on a pump that has queued wire work): each idle pump otherwise adds 50 ms, and under
+        // full-suite load the async flip can lag enough pumps behind to cross its 30 s IAction timeout before the drive starts (seen as "compound result Timeout").
+        rig.HoldClock=true;
         LiftReports(rig, Math.Asin(-13.0 / 66));                                     // the lift at 32 mm: the 45 mm move is sent and waits
         var task = flip.RunAsync(default);
 
