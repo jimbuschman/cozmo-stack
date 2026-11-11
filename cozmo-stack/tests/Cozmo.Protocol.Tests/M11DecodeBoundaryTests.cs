@@ -74,13 +74,18 @@ public sealed class M11DecodeBoundaryTests
         }
         finally{SteppedBehavior.MissingReported-=Missing;robot.Engine.LogEntry-=Source;EngineErrorState.ErrorFlagSet=old;}
     }
-    // reach: unit (direct replay and seeded face world substitute album restore; OKAO album parsing MISSING M11-016).
+    // M14-012: BroadcastLoadedNamesAndIDs 0x00651578 sends one 0x58 (0x0065159C), then per recognizer list entry an
+    // Info log and one 0x1C (0x00651612). The list is the recognizer's, never FaceWorld's.
+    // reach: unit (direct replay; the fake OKAO recognizer substitutes the album restore, M11-016).
     [Theory]
     [InlineData(0)] [InlineData(2)]
     public void ReplayErasesOnceThenLogsEachNamedEntryBeforeBroadcast(int count)
     {
-        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal();
-        for(int id=1;id<=count;id++)vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),Name:"name"+id),1),Pose3d.Identity,false);
+        var okao=new FaceRecognizerTests.FakeOkaoRecognizer();
+        for(int id=1;id<=count;id++)okao.RestoredEntries.Add(10+id);
+        using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{VisionOkaoRecognizer=okao});var vision=robot.Vision; vision.Calibration=Cal();
+        if(count>0)vision.InstallSerializedFaceData(new byte[]{1},FaceRecognizerTests.EnrollmentFor(Enumerable.Range(1,count).Select(id=>(id,10+id,"name"+id)).ToArray()));
+        vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(99,new FaceRect(0,0,10,10),Name:"world"),1),Pose3d.Identity,false);
         var host=new List<string>();var local=new List<string>();var logs=new List<string>();
         vision.EnrolledFacesErased+=()=>host.Add("erase");vision.EnrolledFacesErasedInternal+=()=>local.Add("erase");
         robot.Engine.LogEntry+=e=>{if(e.Name=="VisionComponent.BroadcastLoadedNamesAndIDs"){Assert.Equal("VisionComponent",e.Channel);Assert.Equal(EngineLogLevel.Info,e.Level);logs.Add(e.Text);}};

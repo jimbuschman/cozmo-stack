@@ -6,9 +6,55 @@ namespace Cozmo.Robot.Vision
 
 internal sealed record NativeLoadFaceAlbumFileRequest(VisionSystem Vision,EngineRobot Owner,FaceRecognizer Recognizer,
     int InitEpoch,int Removal,string Path,bool Relative);
+// G2E 0x8A EraseAllEnrolledFaces carries no fields; the request names the vision owner it was posted for.
+internal sealed record NativeEraseAllFacesRequest(VisionSystem Vision,EngineRobot Owner);
 
 public sealed partial class VisionSystem
 {
+    // fidelity: M14-012
+    // G2E 0x8A handler 0x00658076 -> VisionComponent::EraseAllFaces 0x006514FC: under the vision gate the recognizer's
+    // EraseAllFaces (0x008678D8), then the ordinary SaveFaceAlbumToRobot (both vectors empty: erase 0x184000, then
+    // 0x183000 only if the first was admitted), then one RobotErasedAllEnrolledFaces 0x58, without waiting for NV replies.
+    private void HandleEraseAllFacesRequest(NativeEraseAllFacesRequest request)
+    {
+        var owner=request.Owner;var recognizer=Recognizer;int removal=Volatile.Read(ref _removals);
+        bool Current()=>!_disposed && _stockRecognizer && owner.HasExternalInterface && !owner.Lifetime.Destroying &&
+            ReferenceEquals(_robot.Engine.Robot,owner) && removal==Volatile.Read(ref _removals) &&
+            ReferenceEquals(Recognizer,recognizer) && recognizer.OwnsStockDetector(_stockFaceDetector);
+        if(!_stockRecognizer)
+        {SteppedBehavior.ReportMissing("M14-012 EraseAllEnrolledFaces needs the stock recognizer's native EraseAllFaces and album export; an injected recognizer has neither");return;}
+        if(!Current())return;
+        if(!recognizer.IsAvailable && _stockFaceDetector.StockStatus==2)
+        {
+            // The engine's EraseAllFaces has no availability check (0x006514FC..0x00651538). With the face library's init failed (the state the
+            // stack models as StockStatus 2; the same sequence as the startup file branch, FaceAlbumFile.cs, M11-059): the recognizer's erase fails,
+            // the save cannot export (GetSerializedFaceDataFailed, no NV traffic, 0x00657168..0x006571D8), and the 0x58 is still broadcast.
+            recognizer.EraseUnreadyForFile();
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceRecognizer.EraseAllFaces.FaceLibClearAlbumFailed","");
+            if(!Current())return;
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceRecognizer.GetSerializedAlbum.NotInitialized","");
+            if(!Current())return;
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceRecognizer.GetSerializedData.GetSerializedAlbumFail","");
+            if(!Current())return;
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.SaveFaceAlbumToRobot.GetSerializedFaceDataFailed","GetSerializedFaceData failed");
+            if(!Current())return;
+            PublishAlbumErase(owner,Current);
+            return;
+        }
+        if(!recognizer.IsAvailable)
+        {SteppedBehavior.ReportMissing("M14-012 EraseAllEnrolledFaces with the recognizer guest unavailable for a reason other than a failed face-library init (a host/guest-library input): not built");return;}
+        using(LogCallbackDeferral.EnterGated(_busy))
+        {
+            if(!Current() || !recognizer.EraseAllForFile(Current))return;
+        }
+        if(!Current())return;
+        try { SaveFaceAlbumToRobot(owner,recognizer,removal,_robot.Engine.NvStorage,null,null); }
+        catch(Exception error) when(error is not OutOfMemoryException) { FileHandlerFailed(error); }
+        if(!Current())return;
+        PublishAlbumErase(owner,Current);
+    }
+
     // Test-only rejection of a real admission; null leaves the original NV call intact.
     internal Func<byte,uint,bool>? FileSaveRejectForTest;
 
@@ -78,21 +124,32 @@ public sealed partial class VisionSystem
             (album,enrollment)=recognizer.ExportStockData();
         }
         if(!current())return false;
+        if(FaceAlbumSaveTooLarge(album,enrollment))return false;
+        bool CompletionCurrent()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && ReferenceEquals(_robot.Engine.NvStorage,nv);
+        void Completed(NvResult result)=>CompleteFaceAlbumSave(owner,result,CompletionCurrent,null,true);
+        return AdmitFaceAlbumSave(nv,album,enrollment,current,Completed,Completed,true);
+    }
+
+    // fidelity: M14-012
+    // SaveFaceAlbumToRobot 0x006571DA..0x0065720E: each size against GetMaxSizeForEntryTag, album first; a size at or
+    // above it fails through sErrorF and _errG (0x00657256..0x006572FE) and returns before any NV request.
+    private bool FaceAlbumSaveTooLarge(byte[] album,byte[] enrollment)
+    {
         int albumMax=NvStorageComponent.MaxSizeForEntryTag(FaceAlbumNvTag);
         int enrollmentMax=NvStorageComponent.MaxSizeForEntryTag(FaceEnrollmentNvTag);
         if(album.Length>=albumMax)
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.SaveFaceAlbumToRobot.AlbumDataTooLarge",$"Album data is {album.Length} max size is {albumMax}");
-            return false;
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return true;
         }
         if(enrollment.Length>=enrollmentMax)
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.SaveFaceAlbumToRobot.EnrollDataTooLarge",$"Enroll data is {enrollment.Length} max size is {enrollmentMax}");
-            return false;
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return true;
         }
-        bool CompletionCurrent()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && ReferenceEquals(_robot.Engine.NvStorage,nv);
-        void Completed(NvResult result)=>CompleteFaceAlbumSave(owner,result,CompletionCurrent,null,true);
-        return AdmitFaceAlbumSave(nv,album,enrollment,current,Completed,Completed,true);
+        return false;
     }
 
     private bool AdmitFaceAlbumSave(NvStorageComponent nv,byte[] album,byte[] enrollment,Func<bool> current,
@@ -187,6 +244,22 @@ namespace Cozmo.Robot
             {
                 if(!owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot,owner) && owner.HasExternalInterface)
                     Engine.AnimationMessages.Deliver(0x8F,false,request);
+            });
+        }
+
+        // fidelity: M14-012
+        /// <summary>Requests erasure of every enrolled face (G2E 0x8A EraseAllEnrolledFaces).</summary>
+        public void EraseAllEnrolledFaces()
+        {
+            var owner=Engine.Robot;var vision=_vision;
+            if(owner is null || vision is null)
+            {SteppedBehavior.ReportMissing("M14-012 EraseAllEnrolledFaces needs a robot owner and its vision component");return;}
+            var request=new Vision.NativeEraseAllFacesRequest(vision,owner);
+            Engine.PostGameMessage(()=>
+            {
+                // 0x0065019E: VisionComponent subscribes 0x8A only when the external interface exists.
+                if(!owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot,owner) && owner.HasExternalInterface)
+                    Engine.AnimationMessages.Deliver(0x8A,false,request);
             });
         }
     }

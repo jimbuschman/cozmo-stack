@@ -127,6 +127,116 @@ public sealed class FaceEraseTests
         Assert.Equal(8,Assert.Single(f.M.Vision.Recognizer.EnrolledFaces).FaceID);
     }
 
+    // M14-012 G1: G2E 0x8A (subscribed 0x006505B4..0x006505BC, handler 0x00658076) -> EraseAllFaces 0x006514FC: the
+    // recognizer erases every entry, SaveFaceAlbumToRobot takes the both-empty branch (erase 0x184000 0x00657474, then
+    // 0x183000 only if admitted 0x006575E6..0x00657600), and one RobotErasedAllEnrolledFaces 0x58 goes out before any NV reply.
+    // reach: production (public API -> G2E dispatch -> handler; NV replies through the fake robot's packets).
+    [Fact]
+    public void PublicEraseAllErasesBothTagsAndReportsOnceBeforeNvReplies()
+    {
+        if(ShippedLibraries.FindLibDir() is null)return;
+        using var f=Fixture();
+        var vision=f.M.Vision;
+        Assert.Equal(2,vision.Recognizer.EnrolledFaces.Count);
+        int local=0,loaded=0,host=0;var raw=new List<(ushort Tag,byte[] Body)>();
+        using var erased=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x58,true,_=>local++);
+        using var known=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x1C,true,_=>loaded++);
+        f.Rig.Engine.EngineToGameMessage+=(tag,body)=>{if(tag is 0x58 or 0x1C)raw.Add((tag,body.ToArray()));};
+        vision.EnrolledFacesErased+=()=>host++;
+        int mark=f.Rig.Mark(),seen=0;
+        f.Rig.Robot.EraseAllEnrolledFaces();f.Rig.Tick();
+        Assert.Equal(1,local);Assert.Equal(0,loaded);
+        Assert.False(f.Rig.Engine.NvStorage!.IsIdle);                 // 0x58 did not wait for the NV replies
+        Assert.Empty(vision.Recognizer.EnrolledFaces);
+        var exported=vision.GetSerializedFaceData();
+        Assert.Empty(exported.Album);Assert.Empty(exported.Enrollment);
+        f.Rig.Engine.DrainAppDelivery();
+        Assert.Equal(1,host);
+        var only=Assert.Single(raw);Assert.Equal((ushort)0x58,only.Tag);Assert.Empty(only.Body);
+        var commands=new List<NVCommand>();
+        for(int i=0;i<40 && !commands.Any(c=>c.Tag==VisionSystem.FaceEnrollmentNvTag);i++)
+        {
+            var sent=f.Rig.SentSince(mark);
+            for(;seen<sent.Count;seen++)if(sent[seen] is NVCommand command)
+            {commands.Add(command);f.Rig.Data(new NVOpResult{Tag=command.Tag,Op=command.Op,Result=0});}
+            f.Rig.Tick();
+        }
+        var relevant=commands.Where(c=>c.Tag==VisionSystem.FaceAlbumNvTag||c.Tag==VisionSystem.FaceEnrollmentNvTag).Select(c=>(c.Tag,c.Op)).ToArray();
+        Assert.Equal(new[]{(VisionSystem.FaceAlbumNvTag,NvStorageComponent.OpErase),(VisionSystem.FaceEnrollmentNvTag,NvStorageComponent.OpErase)},relevant);
+        Assert.Equal(1,local);
+    }
+
+    // M14-012 G1 with the face library's init failed (StockStatus 2, the first create call refused): EraseAllFaces 0x006514FC has no availability
+    // check, so the recognizer erase fails (FaceLibClearAlbumFailed), the save cannot export (GetSerializedFaceDataFailed, no NV traffic,
+    // 0x00657168..0x006571D8) and one 0x58 is still broadcast (0x00651538).
+    // reach: production (public API, G2E dispatch, the handler); the failed library init is a substituted create result.
+    [Fact]
+    public void EraseAllWithTheFaceLibraryFailedStillReportsOnceWithoutNv()
+    {
+        if(ShippedLibraries.FindLibDir() is null)return;
+        bool oldError=Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var backup=new BackupTestResources();
+            using var rig=new M4ControlTests.Rig(engineOptions:backup.Options());
+            rig.Robot.Vision.StockFaceCreateOverrideForTest=name=>name=="OKAO_FR_CreateAlbumHandle"?0u:null;
+            var names=new List<string>();rig.Engine.LogEntry+=entry=>names.Add(entry.Name??"");
+            rig.ToSynced();
+            var state=rig.Robot.Vision.NativeInitializationForTest!;
+            Assert.Equal(2,state.StockFace!.StockStatus);
+            int erased=0,loaded=0;
+            using var a=rig.Engine.AnimationMessages.SubscribeMessage(0x58,true,_=>erased++);
+            using var b=rig.Engine.AnimationMessages.SubscribeMessage(0x1C,true,_=>loaded++);
+            names.Clear();int mark=rig.Mark();
+            rig.Robot.EraseAllEnrolledFaces();rig.Tick();rig.Tick();
+            Assert.Equal(1,erased);Assert.Equal(0,loaded);
+            Assert.Contains("FaceRecognizer.EraseAllFaces.FaceLibClearAlbumFailed",names);
+            Assert.Contains("VisionComponent.SaveFaceAlbumToRobot.GetSerializedFaceDataFailed",names);
+            Assert.DoesNotContain(rig.SentSince(mark).OfType<NVCommand>(),c=>c.Tag==VisionSystem.FaceAlbumNvTag||c.Tag==VisionSystem.FaceEnrollmentNvTag);
+        }
+        finally { Cozmo.Transport.EngineErrorState.ErrorFlagSet=oldError; }
+    }
+
+    // M14-012 G1: the NV wrapper 0x0065A478 broadcasts EngineErrorCode 3 (0x0065A4C4) on a nonzero erase result; the
+    // enrollment erase was already admitted, so it still goes out (0x006575E6..0x00657600).
+    // reach: production (public API; the failed reply is a fake robot packet).
+    [Fact]
+    public void EraseAllNvFailureReportsEngineErrorCodeThree()
+    {
+        if(ShippedLibraries.FindLibDir() is null)return;
+        bool previous=Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var f=Fixture();
+            var errors=new List<object?>();
+            using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x7C,true,errors.Add);
+            int mark=f.Rig.Mark();
+            f.Rig.Robot.EraseAllEnrolledFaces();f.Rig.Tick();
+            var first=Assert.Single(f.Rig.SentSince(mark).OfType<NVCommand>());
+            Assert.Equal((VisionSystem.FaceAlbumNvTag,NvStorageComponent.OpErase),(first.Tag,first.Op));
+            int after=f.Rig.Mark();
+            f.Rig.Data(new NVOpResult{Tag=first.Tag,Op=first.Op,Result=-1});
+            for(int i=0;i<5;i++)f.Rig.Tick();
+            Assert.Equal((byte)3,Assert.IsType<EngineErrorCodeReport>(Assert.Single(errors)).Code);
+            Assert.Contains(f.Rig.SentSince(after).OfType<NVCommand>(),c=>c.Tag==VisionSystem.FaceEnrollmentNvTag && c.Op==NvStorageComponent.OpErase);
+        }
+        finally{Cozmo.Transport.EngineErrorState.ErrorFlagSet=previous;}
+    }
+
+    // M14-012 G1: 0x0065019E subscribes 0x8A only when the external interface exists.
+    // reach: production (public API with the external interface absent).
+    [Fact]
+    public void EraseAllWithoutExternalInterfaceDoesNothing()
+    {
+        if(ShippedLibraries.FindLibDir() is null)return;
+        using var f=Fixture();f.Robot.HasExternalInterface=false;
+        int local=0;using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x58,true,_=>local++);
+        int mark=f.Rig.Mark();
+        f.Rig.Robot.EraseAllEnrolledFaces();f.Rig.Tick();
+        Assert.Equal(0,local);Assert.Equal(2,f.M.Vision.Recognizer.EnrolledFaces.Count);
+        Assert.Empty(f.Rig.SentSince(mark).OfType<NVCommand>());
+    }
+
     [Fact]
     public void QueuedEraseCannotReachReplacementOwner()
     {

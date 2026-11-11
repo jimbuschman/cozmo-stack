@@ -849,6 +849,67 @@ public class FaceRecognizerTests
         Assert.Equal(1, vision.Recognizer.EnrollmentTargetId);
     }
 
+    /// <summary>
+    /// M14-012 R2-R13 through the public read: LoadFaceAlbumFromRobot 0x006512A0 reads 0x184000 then 0x183000; the
+    /// callback 0x0065A860 installs (0x0065A870..0x0065A896) and, only on success (0x0065A9D4), BroadcastLoadedNamesAndIDs
+    /// 0x00651578 sends one RobotErasedAllEnrolledFaces 0x58 (0x0065159C) and one LoadedKnownFace 0x1C per installed entry
+    /// (0x00651612). A failed install warns and sends neither (0x0065A89C).
+    /// </summary>
+    // reach: production for the public read entry and the NV wire; the fake OKAO recognizer substitutes the album
+    // restore (M11-016).
+    [Theory]
+    [InlineData(true)] [InlineData(false)]
+    public void M14_012_PublicNvReadReplaysInNativeFormOnlyAfterASuccessfulInstall(bool installs)
+    {
+        var okao = new FakeOkaoRecognizer { ProductionCapacity = 1000, RestoredCapacity = installs ? 1000 : 2000 };
+        okao.RestoredEntries.Add(5);
+        using var rig = new Rig(okaoRecognizer: okao);
+        var vision = rig.Robot.Vision;
+        // FaceWorld names are never replayed
+        Assert.NotNull(vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(9, new FaceRect(0, 0, 10, 10), Name: "World"), 1), Pose3d.Identity, false));
+        var local = new List<string>();
+        using var a = rig.Robot.Engine.AnimationMessages.SubscribeMessage(0x58, true, _ => local.Add("58"));
+        using var b = rig.Robot.Engine.AnimationMessages.SubscribeMessage(0x1C, true, p => local.Add("1c:" + Assert.IsType<LoadedKnownFaceReport>(p).FaceId));
+        var raw = new List<(ushort Tag, byte[] Body)>();
+        rig.Robot.Engine.EngineToGameMessage += (tag, body) => { if (tag is 0x58 or 0x1C) raw.Add((tag, body.ToArray())); };
+        var logs = new List<EngineLogEntry>();
+        rig.Robot.Engine.LogEntry += logs.Add;
+
+        vision.LoadFaceAlbumFromRobot();
+        rig.Tick(); rig.Pump();
+        var first = rig.Sent.OfType<Cozmo.Protocol.NVCommand>().Last();
+        Assert.Equal((0x184000u, NvStorageComponent.OpRead), (first.Tag, first.Op));
+        Reply(rig, 0x184000, new byte[] { 1, 0, 0, 0 });
+        var second = rig.Sent.OfType<Cozmo.Protocol.NVCommand>().Last();
+        Assert.Equal((0x183000u, NvStorageComponent.OpRead), (second.Tag, second.Op));
+        Reply(rig, 0x183000, EnrollmentFor((1, 5, "A")));
+        rig.Robot.Engine.DrainAppDelivery();
+
+        if (!installs)
+        {
+            Assert.Empty(local); Assert.Empty(raw);
+            Assert.Contains(logs, e => e.Name == "VisionComponent.LoadFaceAlbumFromRobot.Failure");
+            return;
+        }
+        Assert.Equal(new[] { "58", "1c:1" }, local);
+        Assert.Equal(new ushort[] { 0x58, 0x1C }, raw.Select(r => r.Tag));
+        Assert.Empty(raw[0].Body);
+        Assert.Equal(1, BitConverter.ToInt32(raw[1].Body, 24));            // three 8-byte ages, then the face ID
+        Assert.Equal(new byte[] { 1, (byte)'A' }, raw[1].Body[28..]);
+        Assert.Contains(logs, e => e.Name == "VisionComponent.LoadFaceAlbumFromRobot.Success");
+        Assert.Contains(logs, e => e.Name == "VisionComponent.BroadcastLoadedNamesAndIDs" && e.Text == "broadcasting loaded face id: 1");
+    }
+
+    private static void Reply(Rig rig, uint tag, byte[] payload)
+    {
+        var data = new byte[16 + payload.Length];
+        BitConverter.GetBytes(NvStorageComponent.NonFactoryHeaderMagic).CopyTo(data, 0);
+        BitConverter.GetBytes((uint)payload.Length).CopyTo(data, 8);
+        payload.CopyTo(data, 16);
+        rig.Send(new Cozmo.Protocol.NVOpResult { Tag = tag, Op = NvStorageComponent.OpRead, Result = NvStorageComponent.ResultOkay, Length = 0, Data = data });
+        rig.Pump();
+    }
+
     // ------------------------------------------------------------------ C5 corrections
 
     /// <summary>
@@ -1026,7 +1087,7 @@ public class FaceRecognizerTests
 
     // ------------------------------------------------------------------ helpers
 
-    private static byte[] EnrollmentFor(params (int FaceId, int AlbumEntry, string Name)[] entries)
+    internal static byte[] EnrollmentFor(params (int FaceId, int AlbumEntry, string Name)[] entries)
     {
         var b = new List<byte>();
         b.AddRange(BitConverter.GetBytes(StoredEnrolledFace.VersionPrefix));
@@ -1042,7 +1103,7 @@ public class FaceRecognizerTests
     }
 
     /// <summary>An in-memory OKAO recognizer: the seam the C3 rows sit on, scripted for the tests.</summary>
-    private sealed class FakeOkaoRecognizer : IOkaoFaceRecognizer
+    internal sealed class FakeOkaoRecognizer : IOkaoFaceRecognizer
     {
         public sealed class AlbumState
         {
