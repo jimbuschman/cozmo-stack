@@ -1425,6 +1425,42 @@ public class VisionTests
     }
 
     /// <summary>
+    /// M11-006 / M11-044: <c>ObservableObject::ClampPoseToFlat</c> writes the corrected rotation into its INPUT pose's own transform (GetTransform() at
+    /// 0x008774D0, the vstr loop 0x008774D6..0x008774E8) and makes no new pose, so the parent and translation are untouched and the pose keeps its frame
+    /// context. A parented, unflagged world pose (the root pose CreateObjectsFromMarkers clamps at 0x00625576..0x00625578, or the parent-keeping copy the
+    /// confirmer clamps at 0x00505F02..0x00505F22) stays parented to the same parent and unflagged; a parentless flagged flat input stays flagged. The
+    /// rotation is the same snapped rotation for both (the clamp's arithmetic does not depend on the frame context): the clamped Z column is world Z.
+    /// </summary>
+    // reach: unit — ClampPoseToFlat called directly with a test origin parent.
+    [Fact]
+    public void M11_006_TheClampKeepsItsInputsParentAndFrameContext()
+    {
+        var flatRotation = Mat3.AboutZ(0.3);
+        var tilt = Mat3.AxisAngle(new Vec3(1, 0, 0), 15 * Math.PI / 180) * flatRotation;
+        var translation = new Vec3(100, 0, 22);
+        using var origin = new Pose3d("test origin");
+        using var parented = new Pose3d(Rotation3d.FromMatrix(tilt), translation, parent: origin);
+        Assert.False(parented.HasLegacyFrameInput);
+        using var flagged = new Pose3d(tilt, translation);
+        Assert.True(flagged.HasLegacyFrameInput);
+        Assert.False(flagged.HasParent);
+
+        using var a = BlockWorld.ClampPoseToFlat(parented, BlockWorld.FlatClampAngleRad);
+        Assert.False(a.HasLegacyFrameInput);
+        Assert.True(a.HasParent);
+        Pose3d p = null!; Assert.True(a.TryGetParent(ref p)); using (p) Assert.Same(origin.Node, p.Node);
+        Assert.Equal(translation, a.Translation);
+        Assert.Equal(1.0, Math.Abs(a.Rotation[2, 2]), 9);
+
+        using var b = BlockWorld.ClampPoseToFlat(flagged, BlockWorld.FlatClampAngleRad);
+        Assert.True(b.HasLegacyFrameInput);
+        Assert.False(b.HasParent);
+        Assert.Equal(translation, b.Translation);
+        // the same rotation either way: the frame context does not enter the arithmetic
+        Assert.Equal(b.Quaternion, a.Quaternion);
+    }
+
+    /// <summary>
     /// M11-003 / C3.1: <c>KnownMarker::_canonicalCorners3d</c> is stored in the order
     /// <c>[0]=(−0.5,0,+0.5)</c>, <c>[1]=(−0.5,0,−0.5)</c>, <c>[2]=(+0.5,0,+0.5)</c>,
     /// <c>[3]=(+0.5,0,−0.5)</c> (static ctor 0x004DD7D8, ctor 0x004E9636), and
