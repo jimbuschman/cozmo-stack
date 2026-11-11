@@ -287,6 +287,8 @@ public sealed class Pose3d : IDisposable
     // C# input-provenance metadata follows a stored value copy. It does not establish native root binding (M11-066).
     // Native owners that call Assign keep their own adapter context; embedded confirmer values preserve their input's context.
     internal void AssignInputValue(Pose3d source) { Assign(source); _legacyFrameInput=source._legacyFrameInput; }
+    // An in-place native edit of `source` (ClampPoseToFlat 0x008774D0..0x008774E8) keeps its input's frame context: this copies only the C# flag.
+    internal void KeepInputFrameContextOf(Pose3d source) { _legacyFrameInput=source._legacyFrameInput; }
     public void Assign(Pose3d source)
     {
         if(ReferenceEquals(this,source))return;

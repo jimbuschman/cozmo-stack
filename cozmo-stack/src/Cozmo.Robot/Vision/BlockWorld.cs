@@ -1008,8 +1008,11 @@ public sealed partial class BlockWorld
 
     /// <summary>
     /// Whether <see cref="SetLocalizedToCore"/> with the camera route can pass its own native-owner check for <paramref name="obj"/>: the same conditions as
-    /// its "original camera or native marker owner unavailable" stop, without the per-call generation test. False on the live path today, because a live
-    /// sighting's object pose carries the stack's legacy frame flag (Pose3d.FromObservedPoseInCamera). Stack machinery, not engine behaviour.
+    /// its "original camera or native marker owner unavailable" stop, without the per-call generation test. False for an object whose pose carries the
+    /// stack's legacy frame flag (a genuinely flat host or offline input). A live sighting's stored pose is unflagged: the flag it used to carry came from
+    /// <see cref="ClampPoseToFlat"/> picking up the Mat3 constructor's flag, not from Pose3d.FromObservedPoseInCamera (dropped at CreateObservedCameraChild
+    /// and GetWithRespectToRoot), and the clamp now keeps its input's frame context like the engine's in-place write (0x008774D0..0x008774E8).
+    /// Stack machinery, not engine behaviour.
     /// </summary>
     // fidelity: M11-044
     private bool NativeSetLocalizedToRouteUsable(ObservableObject obj)
@@ -1210,12 +1213,13 @@ public sealed partial class BlockWorld
             return 1;
         }
         // Stack limitation, visible: S14 (the native SetLocalizedTo with the camera, 0x0051238C) cannot run for an existing object whose pose carries the
-        // stack's legacy frame flag, which every live sighting's does today (Pose3d.FromObservedPoseInCamera). Running S2..S13 and then failing S14 would leave
-        // the robot unlocalized while S10's +0x2C6 makes every such frame send an AbsoluteLocalizationUpdate. So until the live object pose is native
-        // (LIVE-OBJECT-POSE-NATIVE-1) this case keeps the stack's previous result: only the SetLocalizedTo field writes, no history or pose change, nothing sent.
+        // stack's legacy frame flag. A live sighting's stored pose no longer does (the flag came from ClampPoseToFlat, which now keeps its input's frame
+        // context like the engine's in-place write 0x008774D0..0x008774E8), so the live path is not refused here; only a genuinely flat host or offline
+        // input still is. Running S2..S13 and then failing S14 would leave the robot unlocalized while S10's +0x2C6 makes every such frame send an
+        // AbsoluteLocalizationUpdate, so that case keeps the stack's previous result: only the SetLocalizedTo field writes, no history or pose change, nothing sent.
         if (!NativeSetLocalizedToRouteUsable(existing))
         {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject: the existing object's pose is not a native world pose (legacy frame flag), so the native SetLocalizedTo (S14, 0x0051238C) cannot run; S2..S13 skipped, only the SetLocalizedTo field writes made, no localization update sent: LIVE-OBJECT-POSE-NATIVE-1");
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject: the native SetLocalizedTo (S14, 0x0051238C) cannot run (the existing object's pose carries the stack's legacy frame flag of a flat host/offline input, or there is no current camera); S2..S13 skipped, only the SetLocalizedTo field writes made, no localization update sent (stack guard, LIVE-OBJECT-POSE-NATIVE-1)");
             UnbuiltLocalizeToObjectCalls++;
             return SetLocalizedToCore(existing, false) ? 0u : 1u;
         }
@@ -3022,7 +3026,10 @@ public sealed partial class BlockWorld
         if (cross.Length < 1e-12) return pose;
         var fix = Mat3.AxisAngle(cross, Math.Asin(Math.Clamp(cross.Length, 0, 1)));
         var result=new Pose3d((fix * r).Orthonormalized(),pose.Translation);
-        // Clamp changes rotation in the input frame; the native pose still has that same origin parent.
+        // fidelity: M11-006, M11-044 — the engine writes the new rotation into the INPUT pose's own transform (GetTransform() 0x008774D0, vstr loop
+        // 0x008774D6..0x008774E8); parent and translation are untouched and no new pose is made. So the result keeps its input's parent and its
+        // input's frame context: the Mat3 constructor's legacy flag is not picked up (a parented, unflagged world pose stays a native world pose).
+        result.KeepInputFrameContextOf(pose);
         if(pose.HasParent){Pose3d parent=null!;if(pose.TryGetParent(ref parent))using(parent)result.SetParent(parent);}
         return result;
     }

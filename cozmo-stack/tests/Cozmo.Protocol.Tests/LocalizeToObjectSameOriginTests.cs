@@ -362,15 +362,28 @@ public sealed class LocalizeToObjectSameOriginTests
     }
 
     /// <summary>
-    /// Regression guard (stack limitation, not engine behaviour). On an online engine a live sighting's object pose carries the stack's legacy frame flag,
-    /// so the native SetLocalizedTo (S14) cannot run. Before the guard, LocalizeToObject ran S2..S13, failed S14, and S10's +0x2C6 made every frame that
-    /// saw the cube send an AbsoluteLocalizationUpdate while the robot stayed unlocalized. Now that case keeps the stack's earlier result: the SetLocalizedTo
-    /// field writes, no pose-frame or history change, and no 0x45, with a visible MISSING naming LIVE-OBJECT-POSE-NATIVE-1.
+    /// LOCALIZE-PRODUCTION-PATH-TEST-1 (M11-044, with M11-006 / M11-050 for the stored pose). Real rendered cube frames through the queued worker:
+    /// the dispatch, ComputeAndInsertKeyedState, CreateObjectsFromMarkers, Insert and LocalizeRobot, on a connected cube in the current origin.
+    /// Engine facts asserted (census .scratch/LIVE-OBJECT-POSE-NATIVE-1-census.md, research/20261111-localize-same-origin-claude-check.md):
+    /// <list type="bullet">
+    /// <item>the stored cube pose is a native world pose: ClampPoseToFlat writes the rotation into its input in place (0x008774D0..0x008774E8), the input being
+    ///   the root pose from GetWithRespectToRoot (0x00625540..0x00625578), and InitPose/SetPose copy it with its parent (0x004EF598..0x004EF5A2). So it is
+    ///   unflagged, its root is the current origin and PoseWorld is this world (census L7..L11, section 4);</item>
+    /// <item>S10 (0x0051513C): the pose frame ID goes up by one and one vision-only state is added, at O's time;</item>
+    /// <item>S14 (0x0051238C, 0x00512458/0x0051245E): [Robot+0x2B8] = the cube's ObjectID, [Robot+0x2C4] = 1;</item>
+    /// <item>S15 (0x00515A88) / S16 (0x00514710, 0x00513CBE..0x00513CCC): exactly one AbsoluteLocalizationUpdate (0x45), carrying the S10 frame ID and O's time.
+    ///   S10 also sets [Robot+0x2C6], so on this path the 0x45 is the observable of the +0x2C6 write; S15's own write is checked by the unit test above;</item>
+    /// <item>no visible MISSING naming LIVE-OBJECT-POSE-NATIVE-1 (the stack's fields-only guard is not taken).</item>
+    /// </list>
+    /// The second sighting localizes: the first creates the PoseConfirmation and returns false (0x0050689A..0x00506982), the second returns Count > 1
+    /// (0x00506AC2..0x00506ACC), so the object is inserted and LocalizeRobot runs. The first sighting sends no 0x45.
     /// </summary>
-    // reach: unit — real rendered cube frames through the queued worker (dispatch, ComputeAndInsertKeyedState, CreateObjectsFromMarkers, Insert,
-    // LocalizeRobot), but the engine is the offline test engine with its offline flag cleared by reflection so SetLocalizedTo takes the online branch.
+    // reach: production — real rendered frames through the queued worker. Substitutions: the offline test engine's offline flag, cleared by reflection
+    // after the first sighting so SetLocalizedTo takes the online (native camera) branch an online engine takes (since C1 the result is the same with it
+    // set); and the fixture's sim firmware report and outer calibration (PickupPyramidNativeExecutionTests.Fixture.Image), where sim gates only the
+    // rolling-shutter shift, which this join does not use.
     [Fact]
-    public void M11_044_ALiveSightingWithALegacyPoseLocalizesByFieldsAndSendsNoUpdate()
+    public void M11_044_ALiveSightingOfAConnectedCubeLocalizesThroughTheNativePath()
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
         var missing = new System.Collections.Concurrent.ConcurrentQueue<string>();
@@ -380,24 +393,86 @@ public sealed class LocalizeToObjectSameOriginTests
         {
             M4ControlTests.ConnectCube(f.Rig, slot: 0);
             var world = f.M.World;
-            f.Image(1, cube: true, cubeX: 150); f.Motors();                     // the first sighting creates the object
+            int first = f.Rig.Mark();
+            f.Image(1, cube: true, cubeX: 150); f.Motors();                     // the first sighting, on the offline engine
+            Assert.Empty(f.Rig.SentSince(first).OfType<AbsoluteLocalizationUpdate>());
             typeof(CozmoEngine).GetProperty("IsOfflineEngine", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .SetValue(f.Robot.Engine, false);
-            uint frame = f.Robot.PoseFrameId;
-            int vision = f.Robot.PoseHistory.VisionOnly.Count;
-            for (uint i = 2; i <= 4; i++)
+            uint? cubeId = null;
+            bool localized = false;
+            for (uint i = 2; i <= 2 && !localized; i++)
             {
+                uint frame = f.Robot.PoseFrameId;
+                var before = f.Robot.PoseHistory.VisionOnly.Keys.ToHashSet();
                 int mark = f.Rig.Mark();
                 f.Image(i, cube: true, cubeX: 150); f.Motors();
-                Assert.Empty(f.Rig.SentSince(mark).OfType<AbsoluteLocalizationUpdate>());
+                var sent = f.Rig.SentSince(mark).OfType<AbsoluteLocalizationUpdate>().ToList();
+                if (f.Robot.PoseFrameId == frame) { Assert.Empty(sent); continue; }
+                localized = true;
+                // S10: the frame ID once, and exactly one new vision-only state
+                Assert.Equal(unchecked(frame + 1), f.Robot.PoseFrameId);
+                var added = f.Robot.PoseHistory.VisionOnly.Keys.Where(k => !before.Contains(k)).ToList();
+                uint stampTime = Assert.Single(added);
+                Assert.Equal(f.Robot.PoseFrameId, BitConverter.ToUInt32(f.Robot.PoseHistory.VisionOnly[stampTime].State, 4));
+                // S15/S16: exactly one 0x45, with the S10 frame and O's time
+                var update = Assert.Single(sent);
+                Assert.Equal(f.Robot.PoseFrameId, update.PoseFrameId);
+                Assert.Equal(stampTime, update.Timestamp);
+                Assert.Equal(f.Robot.CurrentOriginId, update.PoseOriginId);
+                // S14
+                cubeId = world.ConnectedObjectIdForActiveId(0);
+                Assert.NotNull(cubeId);
+                Assert.Equal(cubeId, world.LocalizedToObjectId);
+                Assert.Equal((byte)1, world.Robot2C4);
             }
-            Assert.Equal(frame, f.Robot.PoseFrameId);
-            Assert.Equal(vision, f.Robot.PoseHistory.VisionOnly.Count);
-            Assert.Equal(world.ConnectedObjectIdForActiveId(0), world.LocalizedToObjectId);   // the cube's World ObjectID (process-wide counter)
-            Assert.NotNull(world.LocalizedToObjectId);
-            Assert.Equal((byte)1, world.Robot2C4);
-            Assert.Contains(missing, m => m.Contains("LIVE-OBJECT-POSE-NATIVE-1"));
+            Assert.True(localized, "the second sighting did not localize the robot to the connected cube (0x00506AC2..0x00506ACC)");
+            // census L7..L11 and section 4: the stored pose is unflagged, rooted at the current origin, owned by this world
+            var stored = world.GetLocatedObjectByIdHelper(cubeId!.Value);
+            Assert.NotNull(stored);
+            Assert.False(stored!.NativePose.HasLegacyFrameInput);
+            Assert.True(stored.NativePose.HasParent);
+            Assert.True(PoseTreeNode.HasSameRoot(stored.NativePose.Node, f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId).Node));
+            Assert.Same(world, stored.PoseWorld);
+            Assert.DoesNotContain(missing, m => m.Contains("LIVE-OBJECT-POSE-NATIVE-1"));
         }
         finally { SteppedBehavior.MissingReported -= Missing; }
+    }
+
+    /// <summary>
+    /// Regression guard (stack limitation, not engine behaviour). An existing object whose pose genuinely carries the stack's legacy frame flag (a flat
+    /// host or offline input, here a Mat3-constructed pose) cannot take the native SetLocalizedTo (S14) camera route on an online engine. Running S2..S13 and
+    /// then failing S14 would let S10's +0x2C6 send an AbsoluteLocalizationUpdate while the robot stayed unlocalized, so that case keeps the stack's earlier
+    /// result: the SetLocalizedTo field writes, no pose-frame or history change, no 0x45, and a visible MISSING.
+    /// </summary>
+    // reach: unit — LocalizeToObject called directly; E's flagged pose is a substituted host input, and the offline test engine's offline flag is cleared
+    // by reflection so SetLocalizedTo's native-owner check takes the online branch.
+    [Fact]
+    public void M11_044_AFlaggedHostPoseLocalizesByFieldsAndSendsNoUpdate()
+    {
+        using var s = new Setup();
+        var e = s.Existing();
+        // a different translation from Existing()'s (150, 0, 30), so the public Pose snapshot is refreshed from the flagged embedded pose
+        using (var flagged = new Pose3d(Mat3.Identity, new Vec3(151, 0, 30)))
+        {
+            flagged.SetParent(s.Origin);
+            e.Pose = flagged;
+        }
+        Assert.True(e.NativePose.HasLegacyFrameInput);
+        Assert.True(e.Pose.HasLegacyFrameInput);
+        var o = s.Observed();
+        typeof(CozmoEngine).GetProperty("IsOfflineEngine", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(s.Owner.Engine, false);
+        s.World.DelocalizeRobotFields();
+        uint frame = s.Owner.PoseFrameId; s.Owner.VisionPoseUpdated = 0;
+        int mark = s.F.Rig.Mark();
+        Assert.Equal(0u, s.World.LocalizeToObject(o, e));
+        Assert.Contains(s.Missing, m => m.Contains("LIVE-OBJECT-POSE-NATIVE-1"));
+        Assert.Equal(1, s.World.UnbuiltLocalizeToObjectCalls);
+        Assert.Equal(frame, s.Owner.PoseFrameId); Assert.Equal(0, s.Owner.VisionPoseUpdated);
+        Assert.False(s.Owner.PoseHistory.VisionOnly.ContainsKey(s.T));
+        AssertXY(s.Hist.Pose.Translation, 100, 20);
+        Assert.Equal(7u, s.World.LocalizedToObjectId); Assert.Equal((byte)1, s.World.Robot2C4);
+        s.F.Rig.Tick();
+        Assert.DoesNotContain(s.F.Rig.SentSince(mark), m => m is AbsoluteLocalizationUpdate);
     }
 }
