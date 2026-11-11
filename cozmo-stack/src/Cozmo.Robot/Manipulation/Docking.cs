@@ -189,13 +189,16 @@ public sealed class DockingSystem : IDisposable
     // fidelity: M4-009
     /// <summary>
     /// DockingComponent+0xC (C11.1 D1..D3): the engine ObjectID of the object the robot is currently docking
-    /// with. Default −1 (represented as null); the only writer is <c>DockWithObject</c>; <c>AbortDocking</c>
-    /// does not reset it. The Moved (CD10a) and Stopped (CD10b) broadcasts exclude a cube whose id equals it.
+    /// with. Default −1 (represented as null); written by <c>DockWithObject</c> (0x0063BA88..0x0063BAB6) and reset to −1 with
+    /// marker 3 by <c>IDockAction::~IDockAction</c> (0x00557474..0x0055748C, M12-040); <c>AbortDocking</c> alone does not reset it.
+    /// The Moved (CD10a) and Stopped (CD10b) broadcasts exclude a cube whose id equals it.
     /// </summary>
     private readonly DockingComponentData _native;
     private readonly EngineRobot? _nativeOwner;
     private bool _nativeRequest; //explicit legacy Task adapter does not replace native retained-field ownership
     private volatile bool _legacyDockSelected;
+    // Set when the legacy DockAsync timeout/cancel branch sent its AbortDocking; consumed by ResetDockTargetAtActionEnd.
+    private bool _legacyAbortSent;
     private long _nativeDockGeneration;
     internal long NativeDockGeneration => Interlocked.Read(ref _nativeDockGeneration);
 
@@ -223,6 +226,11 @@ public sealed class DockingSystem : IDisposable
         // from that moment; a late disposal of the old one must not clear the new one's.
         _isCarrying = Carrying.IsCarrying;               // the guard at 0x00534116 needs this
         vision.IsCarryingObject = _isCarrying;
+        // fidelity: M11-044, M12-040
+        // CouldUseObjectForLocalization 0x0050D170..0x0050D1C6 compares the object's ID with [DockingComponent+0xC]: this component's dock target
+        // (constructor -1, DockWithObject's write 0x0063BA88..0x0063BAB6, the IDockAction destructor's reset 0x00557474..0x0055748C).
+        _dockTarget = () => DockTargetObjectId;
+        vision.World.DockingObjectId = _dockTarget;
         // A delocalization forgets what was located in the origin that has gone, except what the robot is
         // holding: Robot::Delocalize moves the carried objects into the new origin instead (0x00510CF0).
         _carriedObjects = () => Carrying.CarriedObjectId is { } id
@@ -235,6 +243,7 @@ public sealed class DockingSystem : IDisposable
     }
 
     private readonly Action<bool> _nativeUnset;
+    private readonly Func<uint?> _dockTarget;
     private readonly Func<uint, bool> _isCarrying;
     private readonly Func<IReadOnlySet<uint>> _carriedObjects;
     private readonly Action<VisionFrameResult> _carriedPose;
@@ -691,6 +700,7 @@ public sealed class DockingSystem : IDisposable
             Interlocked.Increment(ref _nativeDockGeneration);
             _nativeRequest=false;
             _legacyDockSelected=true;
+            _legacyAbortSent=false;
             _active = (target.ObjectId, marker, placementOffsetX, placementOffsetY, placementOffsetAngle, action);
             // fidelity: M4-009
             // C11.1 D2 (0x0063BAAC/0x0063BAB6): DockWithObject copies the docked object's ObjectID into +0xC.
@@ -716,6 +726,9 @@ public sealed class DockingSystem : IDisposable
         {
             Log?.Invoke("dock did not report a result in time; aborting");
             Send(new AbortDocking());
+            // The engine sends AbortDocking once, from ~IDockAction (0x0055747A..0x0055747C); this legacy abort stands in for it, so the
+            // action-end reset must not send a second one for the same dock.
+            lock (_gate) _legacyAbortSent = true;
             return null;
         }
         return tcs.Task.Result;
@@ -769,6 +782,23 @@ public sealed class DockingSystem : IDisposable
         var message = GroundPlacement.Message(false);
         Sent.Add(message);
         return !owner.SendCheckedOwned(message);
+    }
+
+    // fidelity: M12-040
+    /// <summary>
+    /// <c>IDockAction::~IDockAction</c> 0x00557474..0x0055748C, run at the end of a legacy <see cref="DockActionBase"/> (success, failure or cancel): if
+    /// DockingComponent+4 (the IS_PICKING_OR_PLACING byte) is non-zero, <c>AbortDocking</c> first; then, unconditionally, the marker code +0x10 := 3 and the
+    /// dock target +0xC := -1 (none). The four native runners do the same in their own ending.
+    /// </summary>
+    internal void ResetDockTargetAtActionEnd()
+    {
+        bool alreadySent;
+        lock (_gate) { alreadySent = _legacyAbortSent; _legacyAbortSent = false; }
+        // At most one AbortDocking per dock: if the legacy DockAsync timeout/cancel branch already sent it, the engine's single
+        // destructor abort has been delivered (its unconditional send is a pre-existing M12 deviation from the +4 gate).
+        if (_native.Active != 0 && !alreadySent) Abort();
+        _native.MarkerCode = 3;
+        _native.TargetId = null;
     }
 
     /// <summary><c>DockingComponent::AbortDocking</c>.</summary>
@@ -1021,6 +1051,7 @@ public sealed class DockingSystem : IDisposable
         _vision.NativeDockingMarkersProcessed -= OnNativeFrame;
         _vision.FrameProcessed -= _carriedPose;
         if (ReferenceEquals(_vision.IsCarryingObject, _isCarrying)) _vision.IsCarryingObject = null;
+        if (ReferenceEquals(_vision.World.DockingObjectId, _dockTarget)) _vision.World.DockingObjectId = null;
         if (ReferenceEquals(_vision.CarriedObjects, _carriedObjects)) _vision.CarriedObjects = null;
     }
 }

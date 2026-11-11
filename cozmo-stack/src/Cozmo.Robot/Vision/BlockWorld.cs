@@ -933,7 +933,7 @@ public sealed partial class BlockWorld
     public Func<uint, bool>? IsCarryingObject { get; set; }
     /// <summary><c>Robot+0x355 == OnTreads</c> (OffTreadsState 0). Unwired means OnTreads, the engine's zero default.</summary>
     public Func<bool>? OnTreads { get; set; }
-    /// <summary>The ObjectID at <c>[Robot+0x280]+0xC</c> (the DockingComponent's object, name unread). Unwired means none.</summary>
+    /// <summary>The ObjectID at <c>[Robot+0x280]+0xC</c>, the DockingComponent's dock target (DockWithObject 0x0063BA88..0x0063BAB6; reset by ~IDockAction 0x00557474..0x0055748C). Wired by <see cref="Manipulation.DockingSystem"/>; unwired means none.</summary>
     public Func<uint?>? DockingObjectId { get; set; }
     internal Func<bool>? PickingOrPlacing;
     /// <summary><c>CarryingComponent::UnSetCarryObject(id)</c>, called by <c>UpdatePoseInInstance</c> 0x00505F5A..0x00505FBC. Unwired: the call is logged and counted, not made.</summary>
@@ -1169,7 +1169,11 @@ public sealed partial class BlockWorld
 
     /// <summary>The <c>MovementComponent</c> bytes +0xA (head NOT in position, status bit 0x200 clear) and +0xC (wheels moving, 0x8000), from the newest robot state. Unwired: both 0.</summary>
     public Func<(bool HeadNotInPosition, bool WheelsMoving)>? MovementBytes { get; set; }
-    /// <summary>The ObjectID at <c>[MovementComponent+0x20]</c> (role unread); null for none. Unwired: none.</summary>
+    /// <summary>
+    /// The ObjectID at <c>[MovementComponent+0x20]</c>, the tracked-object ID: constructor -1 (0x0063DA76..0x0063DA86); its only writers are TrackObjectAction's
+    /// (InitInternal 0x00567AF2, UpdateTracking 0x00567D32, both destructors 0x005679E4/0x00567A14). TrackObjectAction is excluded (M13-036, operator 2026-10-16),
+    /// so it stays unwired: none, the engine's constant -1 in this stack.
+    /// </summary>
     public Func<uint?>? MovementComponentObjectId { get; set; }
     /// <summary><c>Robot::WasObjectTappedRecently(ObjectID)</c> (0x0050D19A). Unwired: false.</summary>
     public Func<uint, bool>? WasObjectTappedRecently { get; set; }
@@ -1197,7 +1201,7 @@ public sealed partial class BlockWorld
     /// <summary>
     /// <c>PotentialObjectsForLocalizingTo::CouldUseObjectForLocalization(obj)</c> 0x0050D170..0x0050D1C6: <c>(obj.ID != [DockingComponent+0xC]) &amp;&amp; CanBeUsedForLocalization
     /// &amp;&amp; (obj.ID != [MovementComponent+0x20]) &amp;&amp; !WasObjectTappedRecently(obj.ID)</c>; the virtual and the tap test are both called before the branches (0x0050D19A).
-    /// The roles of the two ID fields are unread (M11-042).
+    /// The dock target is the DockingComponent's (<see cref="DockingObjectId"/>); the tracked-object ID is constant none (<see cref="MovementComponentObjectId"/>).
     /// </summary>
     // fidelity: M11-044
     internal bool CouldUseObjectForLocalization(ObservableObject obj)
@@ -3222,6 +3226,25 @@ public sealed partial class BlockWorld
         lock (_gate)
         {
             if(timestamp is {} stamp)matched.SetNativeMotionState(moving,stamp);else matched.IsMoving=moving;
+        }
+    }
+
+    // fidelity: M4-023
+    /// <summary>
+    /// The expiry tail of <c>BlockTapFilterComponent::Update</c> for one key whose isIgnoring flag was just cleared (0x0063128A..0x00631360): a filter over
+    /// every origin (mode 2) with the predicate <c>IsActive() == 1 &amp;&amp; ID == key</c> (0x00631836..0x0063184C); each match whose pose state (+0x24) is Known (1)
+    /// gets the debug ExpiredTap log (0x006312EE..0x0063131A) and <c>ObjectPoseConfirmer::MarkObjectDirty([Robot+0x26C], obj, false)</c>. No connected cube is needed.
+    /// </summary>
+    internal void MarkTapExpiredDirty(uint objectId)
+    {
+        using var frameMutation=EnterPoseMutation();
+        var filter = new BlockWorldFilter { OriginMode = OriginMode.InAnyFrame };
+        filter.Predicates.Add(o => o.IsActive && o.ObjectId == objectId);
+        foreach (var obj in FindLocatedMatchingObjects(filter))
+        {
+            if (obj.PoseState != PoseState.Known) continue;
+            Source(EngineLogLevel.Debug, "BlockTapFilterComponent", "BlockTapFilterComponent.Update.ExpiredTap", $"Marking object {unchecked((int)objectId)} as dirty due to tap timeout");
+            MarkObjectDirty(obj, false);
         }
     }
 

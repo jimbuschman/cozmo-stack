@@ -331,7 +331,7 @@ public sealed class CozmoCubes
             _tapFilterEnabled = true;
             _tapQueue.Clear();
             _tapDeadlineMs = 0;
-            _doubleTaps.Clear();
+            lock (_doubleTapGate) _doubleTaps.Clear();
             _lastReportTime.Clear();
             _lastReportMissed.Clear();
         }
@@ -352,10 +352,16 @@ public sealed class CozmoCubes
     private readonly List<(ObjectTapped Tap, Cube Cube, int Intensity)> _tapQueue = new();
     private uint _tapDeadlineMs;
 
-    /// <summary>DoubleTapInfo: +0x18 window end, +0x1C moving, +0x20 ignore-until, +0x24 pending (CD10g).</summary>
+    /// <summary>DoubleTapInfo node: +0x18 u32 doubleTapTime, +0x1C u8 isMoving, +0x20 u32 ignoreMovementUntil, +0x24 u8 isIgnoring (CD10g).</summary>
     private sealed class DoubleTapInfo { public uint WindowEnd; public bool Moving; public uint IgnoreUntil; public bool Pending; }
-    /// <summary>Per object; keyed by type, one ObjectID per light-cube type (LC8e).</summary>
-    private readonly Dictionary<ObjectType, DoubleTapInfo> _doubleTaps = new();
+    // fidelity: M4-023, M11-044
+    /// <summary>
+    /// BlockTapFilterComponent+0x20, <c>std::map&lt;ObjectID, DoubleTapInfo&gt;</c>: keyed on the World ObjectID value in signed int order
+    /// (0x0063188A..0x0063188E), not on the object type. No entry is ever erased; the map dies with the Robot (0x00511202, 0x00630AD4).
+    /// Guarded by its own lock, which is never held across a call out, so BlockWorld's localization guards can read it from any thread.
+    /// </summary>
+    private readonly SortedDictionary<int, DoubleTapInfo> _doubleTaps = new();
+    private readonly object _doubleTapGate = new();
 
     // fidelity: M4-027
     /// <summary>
@@ -369,7 +375,7 @@ public sealed class CozmoCubes
         lock (_gate)
         {
             _tapQueue.Clear();
-            _doubleTaps.Clear();
+            lock (_doubleTapGate) _doubleTaps.Clear();
         }
         // M4-027: +0x14 owns G2E EnableBlockTapFilter (tag 0x62); the no-Robot host entry is dropped below.
         // Final subscription release: 0x00511206..0x0051120A. New component enabled at 0x00630874.
@@ -397,47 +403,69 @@ public sealed class CozmoCubes
     private void Log(string l) => _robot.Engine.Log(l);
     private void Log(EngineLogLevel level, string? channel, string key, string text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
 
-    private DoubleTapInfo TapInfo(Cube c)
+    // fidelity: M4-023
+    /// <summary>find, and on absence emplace {0,0,0,0} (CheckForDoubleTap entry 0x0063159E..0x006315D8; Stopped 0x00630F66..0x00630F86). Caller holds <see cref="_doubleTapGate"/>.</summary>
+    private DoubleTapInfo TapInfo(int worldObjectId)
     {
-        if (!_doubleTaps.TryGetValue(c.Type, out var d)) _doubleTaps[c.Type] = d = new DoubleTapInfo();
+        if (!_doubleTaps.TryGetValue(worldObjectId, out var d)) _doubleTaps[worldObjectId] = d = new DoubleTapInfo();
         return d;
     }
 
     /// <summary>
-    /// Raised with the object id of a cube whose pending double-tap entry has ended (CD10g), for BlockWorld's
-    /// MarkObjectDirty of its located copies.
+    /// Raised with the World ObjectID (the map key) of an entry whose isIgnoring flag the Update expiry cleared (0x00631228..0x00631242), for the
+    /// MarkObjectDirty of every located Known copy with that ID in every origin (0x0063128A..0x00631360, <see cref="Vision.BlockWorld.MarkTapExpiredDirty"/>).
     /// </summary>
     internal event Action<uint>? DoubleTapPendingEnded;
 
-    // fidelity: M4-023
-    /// <summary>ShouldIgnoreMovementDueToDoubleTap: ignore-until &gt; now (CD10g).</summary>
-    private bool ShouldIgnoreMovementDueToDoubleTap(Cube c) =>
-        _doubleTaps.TryGetValue(c.Type, out var d) && unchecked((int)(d.IgnoreUntil - NowMs)) > 0;
+    // fidelity: M4-023, M11-044
+    /// <summary>
+    /// <c>BlockTapFilterComponent::ShouldIgnoreMovementDueToDoubleTap(ObjectID)</c> 0x006316C0..0x006316DC, which <c>Robot::WasObjectTappedRecently</c>
+    /// tail-calls on [Robot+0x450] (0x00515216..0x0051521A): an absent key is false; otherwise ignoreMovementUntil &gt; now, unsigned and strict (<c>hi</c>).
+    /// It reads only +0x20. Keyed on the World ObjectID value.
+    /// </summary>
+    internal bool WasObjectTappedRecently(uint worldObjectId)
+    {
+        uint now = NowMs;
+        lock (_doubleTapGate)
+            return _doubleTaps.TryGetValue(unchecked((int)worldObjectId), out var d) && d.IgnoreUntil > now;
+    }
+
+    /// <summary>The DoubleTapInfo entry for a World ObjectID, or null when the map has none (for tests).</summary>
+    internal (uint DoubleTapTime, bool IsMoving, uint IgnoreMovementUntil, bool IsIgnoring)? DoubleTapEntry(uint worldObjectId)
+    {
+        lock (_doubleTapGate)
+            return _doubleTaps.TryGetValue(unchecked((int)worldObjectId), out var d) ? (d.WindowEnd, d.Moving, d.IgnoreUntil, d.Pending) : null;
+    }
 
     // fidelity: M4-023
     /// <summary>
-    /// CheckForDoubleTap (CD10g, 0x00630DC4..0x00630E58): moving clears the window; else inside the window it is a
-    /// double tap (logged, no broadcast), window and pending cleared; else window = ignore-until = now + 500, pending.
+    /// <c>CheckForDoubleTap</c> 0x00631594..0x00631640, keyed on the World ObjectID: find, absent emplace {0,0,0,0} (0x0063159E..0x006315D8); isMoving
+    /// set: doubleTapTime := 0 and return, the deadline and flag untouched (0x006315DE..0x006315E6); now &gt;= doubleTapTime (unsigned, <c>bhs</c>): a first tap,
+    /// ignoreMovementUntil := doubleTapTime := now + 500, isIgnoring := 1, the only deadline writer (0x006315E8..0x0063163A); otherwise a double tap: the info
+    /// log, doubleTapTime := 0, isIgnoring := 0, the deadline unchanged (0x006315F8..0x0063163A).
     /// </summary>
-    private void CheckForDoubleTap(Cube c, Action<string> stackLog)
+    private void CheckForDoubleTap(int worldObjectId, Action<EngineLogLevel, string?, string, string> sourceLog)
     {
-        var d = TapInfo(c);
         uint now = NowMs;
-        if (d.Moving) d.WindowEnd = 0;
-        else if (d.WindowEnd != 0 && unchecked((int)(now - d.WindowEnd)) < 0)
+        bool doubleTap = false;
+        lock (_doubleTapGate)
         {
-            // MISSING: BlockTapFilterComponent.Update.DoubleTap, call arguments at 0x00631670/0x0063169C
-            // are not in the checked rows. This existing stack text is not an engine call.
-            stackLog($"Detected double tap on {c.Type}");
-            stackLog("MISSING: M4-023 | BlockTapFilterComponent.Update.DoubleTap: checked call arguments required (0x00631670/0x0063169C)");
-            d.WindowEnd = 0;
-            d.Pending = false;
+            var d = TapInfo(worldObjectId);
+            if (d.Moving) d.WindowEnd = 0;
+            else if (now >= d.WindowEnd)
+            {
+                d.WindowEnd = d.IgnoreUntil = unchecked(now + DoubleTapWindowMs);
+                d.Pending = true;
+            }
+            else
+            {
+                d.WindowEnd = 0;
+                d.Pending = false;
+                doubleTap = true;
+            }
         }
-        else
-        {
-            d.WindowEnd = d.IgnoreUntil = unchecked(now + DoubleTapWindowMs);
-            d.Pending = true;
-        }
+        if (doubleTap)
+            sourceLog(EngineLogLevel.Info, "BlockPool", "BlockTapFilterComponent.Update.DoubleTap", $"Detected double tap id:{unchecked((uint)worldObjectId)}");
     }
 
     private static void RecordTap(Cube c, ObjectTapped t)
@@ -472,12 +500,16 @@ public sealed class CozmoCubes
                 RecordTap(best.Cube, best.Tap);
                 tapped = best.Cube;
             }
-            foreach (var (type, d) in _doubleTaps)
-                if (d.Pending && unchecked((int)(now - d.IgnoreUntil)) > 0)
-                {
-                    d.Pending = false;
-                    if (_byFactoryId.Values.FirstOrDefault(c => c.Type == type && c.ObjectId is not null) is { } c) ended.Add(c.ObjectId!.Value);
-                }
+            // fidelity: M4-023
+            // Expiry flag 0x00631228..0x00631242, in key order: isIgnoring != 0 and ignoreMovementUntil <= now (unsigned): isIgnoring := 0. The dirty
+            // marking that follows (0x0063128A..0x00631360) needs no connected cube: the key is the World ObjectID.
+            lock (_doubleTapGate)
+                foreach (var (key, d) in _doubleTaps)
+                    if (d.Pending && d.IgnoreUntil <= now)
+                    {
+                        d.Pending = false;
+                        ended.Add(unchecked((uint)key));
+                    }
         }
         if (tapped is not null)
         {
@@ -485,8 +517,7 @@ public sealed class CozmoCubes
             _robot.Engine.QueueAppEvent(CubeTapped,tapped.SnapshotForApp());
             _robot.Engine.QueueAppBroadcast(TapBroadcast,new CubeTimestampEvent(tapped.SnapshotForApp(),notice.Timestamp));
         }
-        // CD10g (0x006311A2..0x006313D8): MarkObjectDirty on every located copy whose pose state is Known (+0x24 == 1);
-        // BlockWorld.MarkDirty changes only a Known pose.
+        // CD10g (0x0063128A..0x00631360): MarkObjectDirty on every located copy with that ID, in every origin, whose pose state is Known (+0x24 == 1).
         foreach (var id in ended) EventFan.Raise(DoubleTapPendingEnded, id, null);
         Connections.Update();
     }
@@ -535,13 +566,17 @@ public sealed class CozmoCubes
     internal void HandleTapFilterMovement(RobotMessage message)
     {
         uint id = message is ObjectMoved moved ? moved.ObjectID : ((ObjectStoppedMoving)message).ObjectID;
-        bool missing;
-        lock (_gate)
+        Cube? cube;
+        lock (_gate) cube = Connected(id);
+        bool missing = cube is null;
+        if (cube is not null && WorldId(cube) is { } tapKey)
         {
-            var cube = Connected(id); missing = cube is null;
-            if (cube is not null)
+            // fidelity: M4-023
+            // Moved 0x00630DB4..0x00630E58: found and doubleTapTime == 0: isMoving := 1; found and != 0: nothing; absent: emplace {0,1,0,0}.
+            // Stopped 0x00630F66..0x00630F86: found: isMoving := 0; absent: emplace {0,0,0,0}. Keyed on the World ObjectID.
+            lock (_doubleTapGate)
             {
-                var info = TapInfo(cube);
+                var info = TapInfo(tapKey);
                 if (message is ObjectStoppedMoving) info.Moving = false;
                 else if (info.WindowEnd == 0) info.Moving = true;
             }
@@ -563,7 +598,6 @@ public sealed class CozmoCubes
         var callouts = new List<Action>();
         void Log(string line) => callouts.Add(() => this.Log(line));
         void SourceLog(EngineLogLevel level, string? channel, string key, string text) => callouts.Add(() => this.Log(level, channel, key, text));
-        void StackLog(string line) => callouts.Add(() => _robot.Engine.EmitStackLog(line));
         lock (_gate)
         {
             switch (m)
@@ -683,8 +717,8 @@ public sealed class CozmoCubes
                     }
                     if (Connected(t.ObjectID) is not { } c)
                     {
-                        StackLog($"tap from unknown object {t.ObjectID}");
-                        StackLog("MISSING: M4-023 | BlockTapFilterComponent.HandleActiveObjectTapped.UnknownActiveID: checked call arguments required (string 0x00BF9A81)");
+                        // Identity 0x00630B72..0x00630B80: no connected object: sWarningF 0x00630CA6, no entry.
+                        SourceLog(EngineLogLevel.Warning, null, "BlockTapFilterComponent.HandleActiveObjectTapped.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)t.ObjectID)}");
                         break;
                     }
                     bool physical = _robot.Engine.Robot?.IsPhysicalRobot ?? false;
@@ -698,7 +732,8 @@ public sealed class CozmoCubes
                         RecordTap(c, t);
                         tapped = c;
                     }
-                    CheckForDoubleTap(c, StackLog);
+                    // Key 0x00630BF6..0x00630C04, 0x00630C8C: the found object's ObjectID value (object+0x18) goes to CheckForDoubleTap for every accepted tap.
+                    if (WorldId(c, Log) is { } tapKey) CheckForDoubleTap(tapKey, SourceLog);
                     break;
                 }
                 case ObjectMoved mv:
@@ -717,7 +752,7 @@ public sealed class CozmoCubes
                     if (WorldId(c, Log) is not { } movedWorldId) break;
                     if (IsCharger(c, Log)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.Charger", "Charger sending garbage move messages"); break; }
                     SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.ObjectMovedOrStopped", $"ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {UpAxisName(mv.AxisOfAccel)}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
-                    if (ShouldIgnoreMovementDueToDoubleTap(c)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.IgnoringMessage", $"Waiting for double tap id:{movedWorldId} ignoring movement message"); break; }
+                    if (WasObjectTappedRecently(unchecked((uint)movedWorldId))) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.IgnoringMessage", $"Waiting for double tap id:{movedWorldId} ignoring movement message"); break; }
                     if (!c.Moving) { c.Moving = true; c.MovingChangedAt = mv.Timestamp; }
                     _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)movedWorldId),true,mv.Timestamp);
                     c.Accel = new Vector3(mv.Accel.X, mv.Accel.Y, mv.Accel.Z);
@@ -747,7 +782,7 @@ public sealed class CozmoCubes
                     if (WorldId(c, Log) is not { } stoppedWorldId) break;
                     if (IsCharger(c, Log)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectStopped.Charger", "Charger sending garbage move messages"); break; }
                     SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectStopped.ObjectMovedOrStopped", $"ObjectID: {stoppedWorldId} (Active ID {unchecked((int)sm.ObjectID)}), type: {c.Type}, axisOfAccel: <unknown>, accel: 0.000000 0.000000 0.000000, time: {unchecked((int)sm.Timestamp)} ms");
-                    _ = ShouldIgnoreMovementDueToDoubleTap(c);
+                    _ = WasObjectTappedRecently(unchecked((uint)stoppedWorldId));
                     if (c.Moving) { c.Moving = false; c.MovingChangedAt = sm.Timestamp; }
                     _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)stoppedWorldId),false,sm.Timestamp);
                     c.LastSeenUtc = DateTime.UtcNow;

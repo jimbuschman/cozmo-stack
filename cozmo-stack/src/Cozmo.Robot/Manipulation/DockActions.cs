@@ -583,7 +583,13 @@ public abstract class DockActionBase
         }
         return verified;
         }
-        finally { RetireVerification(); }
+        finally
+        {
+            RetireVerification();
+            // fidelity: M12-040
+            // IDockAction::~IDockAction 0x00557474..0x0055748C: every IDockAction-family end resets the dock target (AbortDocking first iff picking-or-placing).
+            M.Docking.ResetDockTargetAtActionEnd();
+        }
     }
 
     /// <summary>Completes (true) when the robot reports a state with a timestamp different from the latest one now; false when cancelled.</summary>

@@ -204,9 +204,9 @@ public class M4ControlTests
                     movedReentered = true;
                     reached.Add(Task.Run(() => rig.Robot.Cubes.ByObjectId(0)).Wait(TimeSpan.FromSeconds(2)));
                 }
-            };
-            rig.Engine.StackLogLine += line => {
-                if (line.StartsWith("tap from unknown object"))
+                // The unknown-tap warning is the engine's sWarningF 0x00630CA6 (inventory .scratch/cube-tap-localization-guards-census.md A "Identity"),
+                // which replaced the stack-only "tap from unknown object" line.
+                if (e.Name == "BlockTapFilterComponent.HandleActiveObjectTapped.UnknownActiveID")
                 {
                     tapReentered = true;
                     reached.Add(Task.Run(() => rig.Robot.Cubes.ByObjectId(4)).Wait(TimeSpan.FromSeconds(2)));

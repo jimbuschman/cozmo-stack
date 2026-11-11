@@ -473,6 +473,11 @@ public sealed partial class VisionSystem : IDisposable
         // fidelity: M4-023
         _doubleTapEnded = OnDoubleTapPendingEnded;
         robot.Cubes.DoubleTapPendingEnded += _doubleTapEnded;
+        // fidelity: M11-044
+        // Robot::WasObjectTappedRecently (0x00515216..0x0051521A) tail-calls BlockTapFilterComponent::ShouldIgnoreMovementDueToDoubleTap on [Robot+0x450]
+        // (0x006316C0..0x006316DC); CouldUseObjectForLocalization (0x0050D19A) and LocalizeToObject (0x00515526..0x00515534) both ask it by World ObjectID.
+        World.WasObjectTappedRecently = robot.Cubes.WasObjectTappedRecently;
+        World.ShouldIgnoreMovementDueToDoubleTap = robot.Cubes.WasObjectTappedRecently;
         // fidelity: M4-008
         // A12: HandleObjectPowerLevel reads the BlockWorld at Robot+0x34 unconditionally (0x00537360); the stack's
         // BlockWorld is this VisionSystem's, so the lookup is installed wherever a VisionSystem is built.
@@ -522,15 +527,12 @@ public sealed partial class VisionSystem : IDisposable
     /// <summary>The timestamp of the image being processed: what <c>Robot::GetLastImageTimeStamp</c> is at least (M11-037).</summary>
     private uint _frameTimestamp;
 
-    // fidelity: M4-023, M11-041
+    // fidelity: M4-023
     /// <summary>
-    /// CD10g's MarkObjectDirty on the located copy of a cube whose double-tap window ended. The cube is named by its radio slot (activeID), and the
-    /// world's ObjectID is the connected object's (<see cref="BlockWorld.ConnectedObjectIdForActiveId"/>); a slot with no connected object does nothing.
+    /// CD10g's MarkObjectDirty after an expired tap (0x0063128A..0x00631360): the key is the World ObjectID, and every located Known copy with that ID in
+    /// every origin is marked, whether or not a cube is connected (<see cref="BlockWorld.MarkTapExpiredDirty"/>).
     /// </summary>
-    private void OnDoubleTapPendingEnded(uint activeId)
-    {
-        if (World.ConnectedObjectIdForActiveId(activeId) is { } id) World.MarkDirty(id);
-    }
+    private void OnDoubleTapPendingEnded(uint worldObjectId) => World.MarkTapExpiredDirty(worldObjectId);
 
     // fidelity: M3-022
     /// <summary>SetCameraCalibration from the connection-time NV read (1j).</summary>
