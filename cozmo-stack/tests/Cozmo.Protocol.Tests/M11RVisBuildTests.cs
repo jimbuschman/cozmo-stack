@@ -112,12 +112,17 @@ public class M11RVisBuildTests : IDisposable
         Assert.Null(typeof(BlockWorld).GetField("AllowUnconnectedObjects"));
     }
 
-    /// <summary>M11-013 (row 1.6): the creation clamp is <c>Radians(vtable[+0x1C]() * 0.0174533)</c> and that virtual returns 5.0 (0x004E024E..0x004E0250).</summary>
+    /// <summary>
+    /// M11-013 (row 1.6) / M11-006: the creation clamp is <c>Radians(vtable[+0x1C]() * 0x3C8EFA35)</c> in f32: the virtual returns 5.0f (0x004E024E,
+    /// movs r0,#0; movt r0,#0x40A0), the literal 0x3C8EFA35 is at 0x006256FC, the product is vmul.f32 at 0x00625566 and the Radians ctor 0x00625570,
+    /// so the tolerance is binary32 0x3DB2B8C2 (census CLAMP-FLAT-NUMERICS-1 section 3 A), not the double 5.0 * 0.0174533.
+    /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_013_TheCreationClampIsFiveDegrees()
     {
-        Assert.Equal(5.0 * 0.0174533, BlockWorld.CreationFlatClampAngleRad, 9);
+        Assert.Equal(0x3DB2B8C2u, BitConverter.SingleToUInt32Bits((float)BlockWorld.CreationFlatClampAngleRad));
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x3DB2B8C2), BlockWorld.CreationFlatClampAngleRad);
     }
 
     /// <summary>

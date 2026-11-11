@@ -1425,40 +1425,150 @@ public class VisionTests
     }
 
     /// <summary>
-    /// M11-006 / M11-044: <c>ObservableObject::ClampPoseToFlat</c> writes the corrected rotation into its INPUT pose's own transform (GetTransform() at
-    /// 0x008774D0, the vstr loop 0x008774D6..0x008774E8) and makes no new pose, so the parent and translation are untouched and the pose keeps its frame
-    /// context. A parented, unflagged world pose (the root pose CreateObjectsFromMarkers clamps at 0x00625576..0x00625578, or the parent-keeping copy the
-    /// confirmer clamps at 0x00505F02..0x00505F22) stays parented to the same parent and unflagged; a parentless flagged flat input stays flagged. The
-    /// rotation is the same snapped rotation for both (the clamp's arithmetic does not depend on the frame context): the clamped Z column is world Z.
+    /// M11-006 / M11-044, census CLAMP-FLAT-NUMERICS-1 C19: <c>ObservableObject::ClampPoseToFlat</c> writes the corrected rotation into its INPUT pose's own
+    /// transform (GetTransform() at 0x008774D0, the vstr loop 0x008774D6..0x008774E8) and makes no new pose, so the parent, translation, name and ID are
+    /// untouched and the pose keeps its frame context. A parented, unflagged world pose stays parented to the same parent and unflagged; a parentless
+    /// flagged input stays flagged. The input is an engine-oracle row (yaw0.3_tiltX15_tol20 of re-analysis/tools/emu/emu_clamp_flat.py), so the rotation
+    /// is checked against the shipped 0x00877330's output, not against the stack's own clamp. For a parentless pose and for a pose parented directly to
+    /// a root, the root-relative rotation is the pose's own (GetWithRespectToRoot 0x004DF628: IsRoot copies, else depth-1 GetWithRespectTo), so both give
+    /// that row's rotation.
     /// </summary>
-    // reach: unit — ClampPoseToFlat called directly with a test origin parent.
+    // reach: unit — ClampPoseToFlat called directly with a test origin parent; the creation (0x00625578) and confirmer (0x00505F22) callers are not driven.
     [Fact]
     public void M11_006_TheClampKeepsItsInputsParentAndFrameContext()
     {
-        var flatRotation = Mat3.AboutZ(0.3);
-        var tilt = Mat3.AxisAngle(new Vec3(1, 0, 0), 15 * Math.PI / 180) * flatRotation;
+        var row = ClampOracleRows[0];
+        Assert.Equal("yaw0.3_tiltX15_tol20", (string)row[0]);
+        var input = OracleRotation((ulong[])row[3]);
+        var expected = OracleRotation((ulong[])row[5]);
         var translation = new Vec3(100, 0, 22);
         using var origin = new Pose3d("test origin");
-        using var parented = new Pose3d(Rotation3d.FromMatrix(tilt), translation, parent: origin);
+        using var parented = new Pose3d(input, translation, "observed", origin) { Id = 7 };
         Assert.False(parented.HasLegacyFrameInput);
-        using var flagged = new Pose3d(tilt, translation);
+        using var flagged = new Pose3d(input.Matrix(), translation);
         Assert.True(flagged.HasLegacyFrameInput);
         Assert.False(flagged.HasParent);
 
         using var a = BlockWorld.ClampPoseToFlat(parented, BlockWorld.FlatClampAngleRad);
+        Assert.NotSame(parented, a);
         Assert.False(a.HasLegacyFrameInput);
         Assert.True(a.HasParent);
         Pose3d p = null!; Assert.True(a.TryGetParent(ref p)); using (p) Assert.Same(origin.Node, p.Node);
         Assert.Equal(translation, a.Translation);
-        Assert.Equal(1.0, Math.Abs(a.Rotation[2, 2]), 9);
+        Assert.Equal("observed", a.Name);
+        Assert.Equal(7u, a.Id);
+        AssertOracleRotation(expected, a.Quaternion);
 
         using var b = BlockWorld.ClampPoseToFlat(flagged, BlockWorld.FlatClampAngleRad);
         Assert.True(b.HasLegacyFrameInput);
         Assert.False(b.HasParent);
         Assert.Equal(translation, b.Translation);
-        // the same rotation either way: the frame context does not enter the arithmetic
-        Assert.Equal(b.Quaternion, a.Quaternion);
+        // flagged was built from input.Matrix(), not input itself, so only the frame-context properties are compared here; the row's rotation is in the theory below
+        Assert.Equal(1.0, Math.Abs(b.Rotation[2, 2]), 6);
     }
+
+    /// <summary>
+    /// M11-006: <c>ObservableObject::ClampPoseToFlat</c> 0x00877330..0x008774EC (census CLAMP-FLAT-NUMERICS-1 C1..C20) against the shipped function.
+    /// Every expected value below was produced by re-analysis/tools/emu/emu_clamp_flat.py: the engine's own 0x00877330 run under Unicorn on
+    /// libcozmoEngine.so 3.4.0-1204, with the input quaternion words written into an engine Pose3d node (a root pose, or a chain root -> mid -> pose
+    /// where mid carries the 'parent' rotation), the tolerance built by the engine's Radians(float) 0x0084C832, and acosf/cosf/sinf/sqrtf from the
+    /// host libm rounded to binary32 (M13-023(e); bionic is not shipped). Heap/stack poison 0x00 and 0xFF agree. Columns: label, tolerance word,
+    /// mid-level parent quaternion (w,x,y,z double bits; null = the pose is a root), local quaternion, the engine's return, the pose's rotation after
+    /// the call. The rows cover: a snap and a kept tilt at 20 degrees (0x3EB2B8C2, 0x00505F10..0x00505F16); a snap and a kept tilt at the creation
+    /// angle 0x3DB2B8C2; the IsNear boundary of the Radians less-than (0x0084CD12 -> 0x0084CC90: a tilt 5e-6 below the tolerance does NOT snap, 3e-5
+    /// below does); a 1e-6 tilt (acosf of the rounded dot is 0: early-out C13); an upside-down pose (negative axis, target -Z, C9); a pose on its side
+    /// (dominant X column); and root-relative gating with local correction through a parent chain (C2 versus C7).
+    /// </summary>
+    // reach: unit — BlockWorld.ClampPoseToFlat called directly with constructed poses; the production callers are not driven.
+    [Theory]
+    [MemberData(nameof(ClampOracleRows))]
+    public void M11_006_TheClampMatchesTheShippedEngine(string label, uint tolerance, ulong[]? parent, ulong[] local, bool changed, ulong[] after)
+    {
+        Assert.False(string.IsNullOrEmpty(label));
+        using var root = new Pose3d("root");
+        using var mid = parent is null ? null : new Pose3d(OracleRotation(parent), Vec3.Zero, "", root);
+        var translation = new Vec3(100, 0, 22);
+        using var pose = mid is null ? new Pose3d(OracleRotation(local), translation) : new Pose3d(OracleRotation(local), translation, "", mid);
+        var result = BlockWorld.ClampPoseToFlat(pose, BitConverter.UInt32BitsToSingle(tolerance));
+        try
+        {
+            Assert.Equal(changed, !ReferenceEquals(result, pose));
+            if (!changed) Assert.Equal(OracleRotation(local), result.Quaternion);   // the engine leaves the pose untouched on false
+            AssertOracleRotation(OracleRotation(after), result.Quaternion);
+            Assert.Equal(translation, result.Translation);                          // the oracle's translation words are unchanged (0x42C80000, 0, 0x41B00000)
+        }
+        finally { if (!ReferenceEquals(result, pose)) result.Dispose(); }
+    }
+
+    /// <summary>
+    /// M11-006 / M11-013: the creation clamp's tolerance is the engine's f32 product 5.0f (vtable+0x1C 0x004E024E) * 0x3C8EFA35 (literal 0x006256FC,
+    /// vmul.f32 0x00625566) through Radians(float) 0x00625570 = binary32 0x3DB2B8C2, and the creation-angle oracle rows (generated with the word
+    /// 0x3DB2B8C2) give the engine's result when BlockWorld.CreationFlatClampAngleRad, the value the creation call site passes (BlockWorld
+    /// CreateObjectsFromMarkers, 0x00625578), is the tolerance.
+    /// </summary>
+    // reach: unit — the tolerance value and ClampPoseToFlat are exercised directly; CreateObjectsFromMarkers itself is not driven here.
+    [Fact]
+    public void M11_006_TheCreationClampUsesTheEnginesF32FiveDegrees()
+    {
+        Assert.Equal(0x3DB2B8C2u, BitConverter.SingleToUInt32Bits((float)BlockWorld.CreationFlatClampAngleRad));
+        Assert.Equal((double)(float)BlockWorld.CreationFlatClampAngleRad, BlockWorld.CreationFlatClampAngleRad);
+        int rows = 0;
+        foreach (var row in ClampOracleRows.Where(r => (uint)r[1] == 0x3DB2B8C2u && r[2] is null))
+        {
+            using var pose = new Pose3d(OracleRotation((ulong[])row[3]), new Vec3(100, 0, 22));
+            var result = BlockWorld.ClampPoseToFlat(pose, BlockWorld.CreationFlatClampAngleRad);
+            try
+            {
+                Assert.Equal((bool)row[4], !ReferenceEquals(result, pose));
+                AssertOracleRotation(OracleRotation((ulong[])row[5]), result.Quaternion);
+            }
+            finally { if (!ReferenceEquals(result, pose)) result.Dispose(); }
+            rows++;
+        }
+        Assert.Equal(4, rows);
+    }
+
+    /// <summary>
+    /// M11-006 C6: the clamp's gate is the engine's Radians less-than (0x0084CD12 tail-calls operator&gt; 0x0084CC90 with the operands swapped):
+    /// (tol - a &gt; 0, f32) and not IsNear(tol, a, 0x3727C5AC) (0x0084CC0A). So a tilt equal to the tolerance, or within 1e-5 below it, is not
+    /// snapped, and a NaN tilt fails the gate. Expected values are those source rules applied to chosen words, not the clamp's output.
+    /// </summary>
+    // reach: unit — the Radians operator the shared clamp uses.
+    [Fact]
+    public void M11_006_TheGateIsTheEnginesRadiansLessThan()
+    {
+        var tol = new Radians(BitConverter.UInt32BitsToSingle(0x3EB2B8C2));
+        Assert.False(new Radians(tol.Value) < tol);                                         // equal: tol - a = 0 is not > 0
+        Assert.False(new Radians(BitConverter.UInt32BitsToSingle(0x3EB2B8C1)) < tol);       // one ulp below: IsNear
+        Assert.False(new Radians(tol.Value - 9e-6f) < tol);                                 // 9e-6 below: still IsNear (|diff| < 1e-5)
+        Assert.True(new Radians(tol.Value - 2e-5f) < tol);                                  // 2e-5 below: outside IsNear
+        Assert.False(new Radians(float.NaN, rescale: false) < tol);                         // NaN: tol - NaN > 0 is false
+    }
+
+    public static readonly object?[][] ClampOracleRows =
+    {
+        // generated by re-analysis/tools/emu/emu_clamp_flat.py (shipped 0x00877330 under Unicorn); see M11_006_TheClampMatchesTheShippedEngine
+        new object?[]{"yaw0.3_tiltX15_tol20", 0x3EB2B8C2u, null, new ulong[]{0x3FEF5EB747CA4E8AUL, 0x3FC0850E246BA78DUL, 0xBF93F94603807492UL, 0x3FC2F6E561786C15UL}, true, new ulong[]{0x3FEFA4033E5EE933UL, 0xBE620F06AA000001UL, 0x3E35D59DCB000001UL, 0x3FC320C9E9DFED20UL}},
+        new object?[]{"yaw0.3_tiltX25_tol20", 0x3EB2B8C2u, null, new ulong[]{0x3FEEE402912E48F3UL, 0x3FCB64A78AC4009AUL, 0xBFA08F6FADBA1090UL, 0x3FC2ACB71C941F01UL}, false, new ulong[]{0x3FEEE402912E48F3UL, 0x3FCB64A78AC4009AUL, 0xBFA08F6FADBA1090UL, 0x3FC2ACB71C941F01UL}},
+        new object?[]{"tiltY3_tol5", 0x3DB2B8C2u, null, new ulong[]{0x3FEFFD315BBF4275UL, 0x0000000000000000UL, 0x3F9ACE214390CA91UL, 0x0000000000000000UL}, true, new ulong[]{0x3FEFFFFFFFFFFF0EUL, 0x0000000000000000UL, 0xBE8F2F0138E80002UL, 0x0000000000000000UL}},
+        new object?[]{"tiltY6_tol5", 0x3DB2B8C2u, null, new ulong[]{0x3FEFF4C5ED12E61DUL, 0x0000000000000000UL, 0x3FAACBC748EFC90EUL, 0x0000000000000000UL}, false, new ulong[]{0x3FEFF4C5ED12E61DUL, 0x0000000000000000UL, 0x3FAACBC748EFC90EUL, 0x0000000000000000UL}},
+        new object?[]{"tiltY_tol5_minus_5e-6", 0x3DB2B8C2u, null, new ulong[]{0x3FEFF834346CF5F3UL, 0x0000000000000000UL, 0x3FA654F3EB1EB651UL, 0x0000000000000000UL}, false, new ulong[]{0x3FEFF834346CF5F3UL, 0x0000000000000000UL, 0x3FA654F3EB1EB651UL, 0x0000000000000000UL}},
+        new object?[]{"tiltY_tol5_minus_3e-5", 0x3DB2B8C2u, null, new ulong[]{0x3FEFF83559177A34UL, 0x0000000000000000UL, 0x3FA65350E317CFEBUL, 0x0000000000000000UL}, true, new ulong[]{0x3FEFFFFFFFFFFF7DUL, 0x0000000000000000UL, 0xBE86DAC2B1900000UL, 0x0000000000000000UL}},
+        new object?[]{"tiltY_1e-6_tol20", 0x3EB2B8C2u, null, new ulong[]{0x3FEFFFFFFFFFFB9AUL, 0x0000000000000000UL, 0x3EA0C6F7A0B5ECC8UL, 0x0000000000000000UL}, false, new ulong[]{0x3FEFFFFFFFFFFB9AUL, 0x0000000000000000UL, 0x3EA0C6F7A0B5ECC8UL, 0x0000000000000000UL}},
+        new object?[]{"upside_down_tiltX170_tol20", 0x3EB2B8C2u, null, new ulong[]{0x3FB64FD6B8C28100UL, 0x3FEFE0D3B41815A2UL, 0x0000000000000000UL, 0x0000000000000000UL}, true, new ulong[]{0xBE6FBDFD20A00000UL, 0x3FEFFFFFFFFFFFF0UL, 0x0000000000000000UL, 0x0000000000000000UL}},
+        new object?[]{"side_Y90_tiltX10_tol20", 0x3EB2B8C2u, null, new ulong[]{0x3FE68A937A85B32BUL, 0x3FAF8DC28499D0E4UL, 0x3FE68A937A85B32BUL, 0x3FAF8DC28499D0E4UL}, true, new ulong[]{0x3FE6A09E667F3BC2UL, 0xBE6671F117900001UL, 0x3FE6A09E667F3BC2UL, 0xBE6671F117900001UL}},
+        new object?[]{"parentX-40_localX52_tol20", 0x3EB2B8C2u, new ulong[]{0x3FEE11F642522D1CUL, 0xBFD5E3A8748A0BF5UL, 0x0000000000000000UL, 0x0000000000000000UL}, new ulong[]{0x3FECC2EBBB5638CAUL, 0x3FDC0E45DABE05C8UL, 0x0000000000000000UL, 0x0000000000000000UL}, true, new ulong[]{0x3FF0000000000000UL, 0xBE0463DCA0000000UL, 0x0000000000000000UL, 0x0000000000000000UL}},
+        new object?[]{"parentX40_localX7_tol20", 0x3EB2B8C2u, new ulong[]{0x3FEE11F642522D1CUL, 0x3FD5E3A8748A0BF5UL, 0x0000000000000000UL, 0x0000000000000000UL}, new ulong[]{0x3FEFF0B86387164AUL, 0x3FAF41C1118AA2CDUL, 0x0000000000000000UL, 0x0000000000000000UL}, false, new ulong[]{0x3FEFF0B86387164AUL, 0x3FAF41C1118AA2CDUL, 0x0000000000000000UL, 0x0000000000000000UL}},
+        new object?[]{"parentZ30_localX10Y5_tol20", 0x3EB2B8C2u, new ulong[]{0x3FEEE8DD4748BF15UL, 0x0000000000000000UL, 0x0000000000000000UL, 0x3FD0907DC1930690UL}, new ulong[]{0x3FEFD90F46635749UL, 0x3FB64A670087F655UL, 0x3FA63F863CA69E99UL, 0x3F6F24B376EEADB5UL}, true, new ulong[]{0x3FEFFFF0B3425812UL, 0x3E4C854ECE3F4000UL, 0x3E4651B6A6800000UL, 0x3F6F4AB88704C3F4UL}},
+    };
+
+    private static Rotation3d OracleRotation(ulong[] w) =>
+        new(BitConverter.Int64BitsToDouble((long)w[0]), BitConverter.Int64BitsToDouble((long)w[1]), BitConverter.Int64BitsToDouble((long)w[2]), BitConverter.Int64BitsToDouble((long)w[3]));
+
+    // Bit-exact against the engine's words. Every current row matches exactly on this host; the host libm (MathF.Acos/Cos/Sin/Sqrt versus the
+    // oracle's Python double rounded to binary32) is the declared M13-023(e) boundary, so a future host whose libm differs in a last bit would fail here
+    // visibly rather than pass silently.
+    private static void AssertOracleRotation(Rotation3d expected, Rotation3d actual) => Assert.Equal(expected, actual);
 
     /// <summary>
     /// M11-003 / C3.1: <c>KnownMarker::_canonicalCorners3d</c> is stored in the order
