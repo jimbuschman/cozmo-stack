@@ -93,15 +93,17 @@ public static class LiftGeometry
     /// <item><c>objWrtLift = obj.pose.GetWithRespectTo(lift pose)</c>, failure: error, return 1 (0x00632E24..0x00632E38);</item>
     /// <item>its translation becomes <c>(L + 4.0, 0, -12.5)</c>, L the 3-D length of the marker's translation; the rotation is kept (0x00632E3E..0x00632E9E);</item>
     /// <item><c>FindObjectOnTopOrUnderneathHelper(obj, 15.0, default filter, onTop = true)</c> (0x00632F06..0x00632F14);</item>
-    /// <item>none: <c>this+0x14 = -1</c>; else <c>top.pose</c> with respect to the object, then <c>AddObjectRelativeObservation(top, tmp, obj)</c>;
+    /// <item>none: <c>this+0x14 = -1</c>; else <c>top.pose</c> with respect to the object (failure: warn, <c>this+0x14</c> unchanged, go on to step 9,
+    ///   0x00633154..0x00633198), then <c>AddObjectRelativeObservation(top, tmp, obj)</c>;
     ///   non-zero returns that result WITHOUT <c>SetCarryingObject</c>, zero sets <c>this+0x14 = top.ID</c> (0x00632FA2..0x0063318C);</item>
     /// <item><c>SetCarryingObject</c>, the BlockConfigurationManager dirty flag (+0xC) = 1, and the result of
     ///   <c>AddLiftRelativeObservation(obj, objWrtLift)</c> (0x006331AE..0x006331CC).</item>
     /// </list>
-    /// This helper retains the existing flat-input calculation (M12-008/M11-066), which produces the world pose the parent chain would
+    /// This helper retains the existing flat-input calculation (M12-008/M11-066) for the lift pose, which produces the world pose the parent chain would
     /// give. The live DockingSystem supplies the shared lift node and parents the argument before its broadcast; a missing robot state (no pose to derive the lift pose from)
-    /// takes step 5's failure return. The object placed on top follows the carried object because the engine parents it to
-    /// it (<c>SetParent(obj.pose)</c>, 0x00633006..0x00633010): see <see cref="CarryingComponent.TopWrtCarried"/>.
+    /// takes step 5's failure return. The object placed on top follows the carried object because its own pose node is parented to the carried
+    /// object's (<c>GetWithRespectTo</c> 0x00845DFA..0x00845DFE, <c>SetParent(obj.pose)</c> 0x00633006..0x00633010) before
+    /// <c>AddObjectRelativeObservation</c> stores it; <see cref="CarryingComponent.TopWrtCarried"/> is stack machinery holding the same value.
     /// </summary>
     // fidelity: M12-008
     public static uint SetObjectAsAttachedToLift(CarryingComponent carrying, BlockWorld world,
@@ -141,14 +143,35 @@ public static class LiftGeometry
 
         var cubes = world.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
         var top = BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, cubes, onTop: true, StackToleranceMm);
-        uint? topId = null; Pose3d? topWrtCarried = null;
+        uint? topId = null; Pose3d? topWrtCarried = null;                    // none found: this+0x14 = -1 (0x0063314C..0x00633150)
         if (top is not null)
         {
-            var tmp = top.Pose.WithRespectTo(obj.Pose);
-            var r = ObjectPoseConfirmerRelative.AddObjectRelativeObservation(world, top, obj.Pose.Compose(tmp));
-            if(!Current())return AttachFailed;
-            if (r != 0) { log?.Invoke($"SetObjectAsAttachedToLift: AddObjectRelativeObservation returned {r}"); return r; }
-            topId = top.ObjectId; topWrtCarried = tmp;
+            // fidelity: M12-008 — tmp = Pose3d("") (0x00632F76..0x00632F90); static GetWithRespectTo(top.GetPose(), obj.GetPose(), tmp) at 0x00632FB6,
+            // non-throwing (M11-066 port), against the objects' own pose nodes. On success GetWithRespectTo has already parented tmp to the
+            // carried object's node (0x00845DFA..0x00845DFE).
+            var source = SourceLogDispatch.GetSink(world.SourceLog, log);
+            var tmp = new Pose3d("");
+            if (Pose3d.GetWithRespectTo(top.NativePose, obj.NativePose, tmp))
+            {
+                source?.Invoke(EngineLogLevel.Info, "Unnamed", "Robot.SetObjectAsAttachedToLift",                 // 0x00632FC0..0x00632FE0
+                    FormattableString.Invariant($"Setting object {unchecked((int)top.ObjectId)} on top of carried object as also being carried."));
+                tmp.SetParent(obj.NativePose);                                                                     // 0x00633006..0x00633010 (same parent)
+                var r = ObjectPoseConfirmerRelative.AddObjectRelativeObservation(world, top, tmp, obj);           // 0x00633014..0x00633020
+                if(!Current())return AttachFailed;
+                // Dead in the original: AddObjectRelativeObservation's only return is 0 (0x00506DEC). Kept as the engine's shape (0x00633028..0x0063306E).
+                if (r != 0) { log?.Invoke($"SetObjectAsAttachedToLift: AddObjectRelativeObservation returned {r}"); return r; }
+                // this+0x14 = [top+0x18] (0x0063318C..0x00633190). TopWrtCarried is stack machinery (the engine keeps the relation only in the
+                // top's own pose node, parented to the carried object's): it holds the same value as tmp.
+                topId = top.ObjectId; topWrtCarried = tmp;
+            }
+            else
+            {
+                // 0x00633154..0x0063318A: warn; no AddObjectRelativeObservation; this+0x14 not written (keeps its previous value); the attach continues.
+                tmp.Dispose();
+                source?.Invoke(EngineLogLevel.Warning, null, "Robot.SetObjectAsAttachedToLift",
+                    "Found object on top of carried object, but could not get its pose w.r.t. the carried object.");
+                topId = carrying.CarriedOnTopId; topWrtCarried = carrying.TopWrtCarried;
+            }
         }
         if(owner is null)carrying.AttachToLiftChecked(world, id, marker, objWrtLift, topId, topWrtCarried);
         else if(!carrying.AttachToLiftChecked(world,id,marker,objWrtLift,topId,topWrtCarried,owner,Current))return AttachFailed;
@@ -171,11 +194,10 @@ public static class LiftGeometry
 }
 
 /// <summary>
-/// The two <c>ObjectPoseConfirmer</c> entry points <c>SetObjectAsAttachedToLift</c> calls (M12-008). The pose tree the
-/// engine sets poses in is a world-frame pose here. <c>fromDistance</c> (-1.0) and the confirmer entry's timestamp
-/// (<c>[obj+0x1C]</c> stored at <c>entry+0x2C</c>) have no field on <see cref="ObservableObject"/>, and the robot is never
-/// localized to a cube here (<c>[robot+0x2B8] == id</c> to <c>SetLocalizedTo(nullptr)</c>, 0x00506D04..0x00506D0E), so those parts
-/// are not modelled.
+/// The two <c>ObjectPoseConfirmer</c> entry points <c>SetObjectAsAttachedToLift</c> calls (M12-008). <c>AddObjectRelativeObservation</c> stores the
+/// pose it is given, parent included (the top cube's pose with respect to the carried object, parented to the carried object's own node), and
+/// unlocalizes the robot when it is localized to that object (<c>[robot+0x2B8] == id</c> to <c>SetLocalizedTo(nullptr)</c>, 0x00506D02..0x00506D0E); the
+/// confirmer entry's +0x2C is the observing (carried) object's <c>[+0x1C]</c> (0x00506DDC/0x00506DEA).
 /// </summary>
 public static class ObjectPoseConfirmerRelative
 {
@@ -189,15 +211,16 @@ public static class ObjectPoseConfirmerRelative
     private static int _unreadBroadcasts;
 
     /// <summary>
-    /// <c>AddObjectRelativeObservation</c> 0x00506CD8: <c>obj->SetPose(pose, -1.0f, Dirty)</c> (vtable +0x28, 0x00506D30..0x00506D3E), the broadcast
-    /// (0x00506D48, M12-027), the confirmer entry's pose (+0x18); returns 0. It runs on the robot-message thread, so the write goes through
-    /// <see cref="BlockWorld.ApplyRelativeObservation"/> (the world's lock, and <see cref="BlockWorld.PoseStateChanged"/> when the state changed), like
-    /// <see cref="BlockWorld.SetCarriedPose"/> and <see cref="BlockWorld.MarkReleased"/>.
+    /// <c>AddObjectRelativeObservation(obj, pose, objSeen)</c> 0x00506CD8: <c>SetLocalizedTo(nullptr)</c> when localized to <paramref name="obj"/>
+    /// (0x00506D02..0x00506D0E), <c>obj->SetPose(pose, -1.0f, Dirty)</c> with the pose as given, parent included (vtable +0x28, 0x00506D30..0x00506D3E),
+    /// the broadcast (0x00506D48, M12-027), the confirmer entry's pose (+0x18) and time (+0x2C = <paramref name="objSeen"/>'s <c>[+0x1C]</c>); returns 0
+    /// (0x00506DEC). It runs on the robot-message thread, so the write goes through <see cref="BlockWorld.ApplyObjectRelativeObservation"/> (the world's
+    /// lock, and <see cref="BlockWorld.PoseStateChanged"/> when the state changed).
     /// </summary>
     // fidelity: M12-008
-    public static uint AddObjectRelativeObservation(BlockWorld world, ObservableObject obj, Pose3d worldPose)
+    public static uint AddObjectRelativeObservation(BlockWorld world, ObservableObject obj, Pose3d pose, ObservableObject objSeen)
     {
-        world.ApplyRelativeObservation(obj, worldPose, PoseState.Dirty, confirmationCount: null);
+        world.ApplyObjectRelativeObservation(obj, pose, objSeen);
         Interlocked.Increment(ref _unreadBroadcasts);          // M12-027: 0x00506D48 BroadcastObjectPoseChanged not read
         return 0;
     }

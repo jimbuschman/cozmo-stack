@@ -3595,7 +3595,8 @@ public sealed partial class BlockWorld
     /// (<c>AddObjectRelativeObservation</c> 0x00506CD8, <c>AddLiftRelativeObservation</c> 0x00506E5C; M12-008): the pose, the pose state, the confirmer's
     /// reference pose and (when given) the sighting count are set under the world's lock, and the pose-changed broadcast follows (0x00506D48, 0x00506E9E;
     /// <see cref="BroadcastObjectPoseChanged"/>, which raises <see cref="PoseStateChanged"/> when the state changed, as <see cref="MarkReleased"/> and
-    /// <see cref="MarkDirty"/> do).
+    /// <see cref="MarkDirty"/> do). <c>SetObjectAsAttachedToLift</c>'s <c>AddObjectRelativeObservation</c> now goes through
+    /// <see cref="ApplyObjectRelativeObservation"/>; this method has no production caller left.
     /// </summary>
     // fidelity: M12-008
     internal void ApplyRelativeObservation(ObservableObject obj, Pose3d pose, PoseState state, int? confirmationCount)
@@ -3616,6 +3617,46 @@ public sealed partial class BlockWorld
             BroadcastObjectPoseChanged(obj, oldPose, prev);
         }
         finally { oldPose?.Dispose(); }
+    }
+
+    /// <summary>
+    /// <c>ObjectPoseConfirmer::AddObjectRelativeObservation(obj, pose, objSeen)</c> 0x00506CD8 as <c>SetObjectAsAttachedToLift</c> calls it (M12-008,
+    /// census LIFT-RELATIVE-OBSERVATION-PARENT-1 rows 12..12b): the object found (0x00506CE6..0x00506CF6); <c>SetLocalizedTo(nullptr)</c> when
+    /// [robot+0x2B8] equals its ID (0x00506D02..0x00506D0E); the old pose and state kept (0x00506D1C, 0x00506D2C); vtable +0x28
+    /// <c>SetPose(pose as given, -1.0f, Dirty)</c> (0x00506D30..0x00506D3E), which assigns transform AND parent in place, never flattened
+    /// (0x004EF5A2); the broadcast (0x00506D48); then the confirmer entry's pose (+0x18, 0x00506DCA..0x00506DD0) and +0x2C = objSeen's last-observed
+    /// time [objSeen+0x1C] (0x00506DDC/0x00506DEA); no count write; returns 0 (0x00506DEC, the only return).
+    /// </summary>
+    // fidelity: M12-008
+    internal uint ApplyObjectRelativeObservation(ObservableObject obj, Pose3d pose, ObservableObject observed)
+    {
+        using var frameMutation=EnterPoseMutation();
+        if (GetLocatedObjectByIdHelper(obj.ObjectId) is null)
+        {
+            // Census row 12c (0x00506D56..0x00506DA4): unreachable from SetObjectAsAttachedToLift, which passes a located object it just found.
+            Missing("M12-008 AddObjectRelativeObservation 0x00506D56..0x00506DA4 NotABlockWorldObject branch is not built (unreachable from SetObjectAsAttachedToLift); nothing written");
+            return 0;
+        }
+        if (LocalizedToObjectId == obj.ObjectId) SetLocalizedTo(null);           // 0x00506D02..0x00506D0E
+        PoseState prev=default;Pose3d oldPose=null!;
+        LogCallbackDeferral.RunGated(_gate,()=>
+        {
+            prev = obj.PoseState; oldPose = new Pose3d(obj.NativePose);          // 0x00506D1C, 0x00506D2C
+            obj.SetPose(pose, -1.0f, PoseState.Dirty);                          // 0x00506D30..0x00506D3E: transform and parent as given
+            // Stack machinery (public API view, not an engine field): an object whose node is a child of another object's node is
+            // reported in the world frame by ObservableObject.Pose, as DockingSystem already does after the attach.
+            if (pose.Node?.Parent is { Parent: not null }) obj.NativeCarryingTree = true;
+        });
+        try { BroadcastObjectPoseChanged(obj, oldPose, prev); }                 // 0x00506D48
+        finally { oldPose.Dispose(); }
+        LogCallbackDeferral.RunGated(_gate,()=>
+        {
+            var entry = EntryForOrCreate(obj.ObjectId);
+            obj.Confirmation = entry;
+            entry.Pose = pose;                                                  // +0x18, 0x00506DCA..0x00506DD0: parent kept
+            entry.LastPoseUpdatedTime = observed.LastObservedTimestamp;         // +0x2C = [objSeen+0x1C], 0x00506DDC/0x00506DEA
+        });
+        return 0;                                                               // 0x00506DEC
     }
 
     // fidelity: M13-040 -- A2-A9, SetOnCharger 0x005119AA..0x00511B4C.

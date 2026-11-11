@@ -46,7 +46,8 @@ public sealed class M13SetPoseCacheTests
             Assert.True(Query(obj, PreActionType.Docking, pose, output));
             Assert.False(Query(obj, PreActionType.Docking, pose, output));
             world.PoseStateChanged += changed;
-            Assert.Equal(0u, ObjectPoseConfirmerRelative.AddObjectRelativeObservation(world, obj, pose));
+            // objSeen substituted: the object itself (only the SetPose/broadcast order is checked here).
+            Assert.Equal(0u, ObjectPoseConfirmerRelative.AddObjectRelativeObservation(world, obj, pose, obj));
             Assert.True(regeneratedAtBroadcast);
         }
         finally
