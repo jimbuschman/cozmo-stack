@@ -951,7 +951,7 @@ public sealed partial class BlockWorld
     /// field writes (M11-044).
     /// </summary>
     public int UnbuiltLocalizeRobotCalls { get; internal set; }
-    /// <summary>How many times <c>LocalizeToObject</c> ran with only its <c>SetLocalizedTo</c> writes: the robot pose and history update, Rejigger and the origin updates were not (M11-044).</summary>
+    /// <summary>How many times <c>LocalizeToObject</c> reached its unbuilt cross-origin branch (0x00515854..0x005159B2) and fell back to the <c>SetLocalizedTo</c> field writes (M11-044).</summary>
     public int UnbuiltLocalizeToObjectCalls { get; internal set; }
 
     // ---- state the localization candidates (PotentialObjectsForLocalizingTo) read from the robot; each is null until the owner wires it (M11-044)
@@ -967,7 +967,7 @@ public sealed partial class BlockWorld
 
     /// <summary>
     /// <c>Robot+0x2C4</c>: written 1 by <see cref="SetLocalizedTo"/> (0x0051245E, 0x005124EE) and the OnTreads commit (0x0051217C), 0 by <c>Delocalize</c> (0x00510A24). The engine has native readers
-    /// (<c>LocalizeToObject</c> 0x0051570A, <c>LocalizeToMat</c> 0x00515F64, <c>GetRobotState</c> 0x00518210, <c>CubeLightComponent::Update</c> 0x00637930); none of them is built here, so nothing in this stack reads it yet.
+    /// (<c>LocalizeToObject</c> 0x0051570A, <c>LocalizeToMat</c> 0x00515F64, <c>GetRobotState</c> 0x00518210, <c>CubeLightComponent::Update</c> 0x00637930); of them only <c>LocalizeToObject</c>'s height blend reads it here.
     /// </summary>
     public byte Robot2C4 { get { lock (_gate) return _robot2C4; } }
     /// <summary><c>Robot+0x2C5</c>: written 0 by <c>Delocalize</c>. Nothing in this stack reads it.</summary>
@@ -1145,27 +1145,143 @@ public sealed partial class BlockWorld
     public Func<uint, bool>? ShouldIgnoreMovementDueToDoubleTap { get; set; }
 
     /// <summary>
-    /// <c>Robot::LocalizeToObject(observed, existing)</c> 0x005154B0, the part this stack has. Preconditions (0x005154C0..0x00515580): a null object is an error returning 1; an object that
-    /// cannot be used for localization (<c>vtable+0x18 != 1</c>) or whose movement the tap filter says to ignore is the UnlocalizedObject error returning 1. On success the engine derives the
-    /// robot's pose from the observation, adds a vision-only state to the history, rejiggers origins when the object's origin differs, updates the object, map and face origins, sets the
-    /// history pose, updates the current pose (0x005159C8..0x005159D8), then <c>SetLocalizedTo(existing)</c>, and returns 0; a failing <see cref="SetLocalizedTo"/> is returned as 1. NOT BUILT,
-    /// counted in <see cref="UnbuiltLocalizeToObjectCalls"/>: everything but the <see cref="SetLocalizedTo"/> call (the robot pose and history update, <c>Rejigger</c>, the origin updates
-    /// and the [Robot+0x2C6] store).
+    /// <c>Robot::LocalizeToObject(observed, existing)</c> 0x005154B0. Preconditions (0x005154C0..0x00515580): a null object is an error returning 1; an object that
+    /// cannot be used for localization (<c>vtable+0x18 != 1</c>) or whose movement the tap filter says to ignore is the UnlocalizedObject error returning 1. Before them, the
+    /// head debug log when the object is not the one the robot is localized to (S0, 0x005154C4..0x005154F4). The same-origin path (S2..S15, 0x00515612..0x00515AA4):
+    /// the computed history state at the observation's time, the robot pose w.r.t. the observed object re-parented to the existing one and flattened, the height blend
+    /// while localized, <c>AddVisionOnlyStateToHistory</c>, the computed state overwritten in place, <c>UpdateCurrPoseFromHistory</c>, the native <c>SetLocalizedTo</c> with
+    /// the current camera, then [Robot+0x2C6] := 1 and 0. Each failure exit logs its error, sets the error flag and returns, keeping the writes already made.
+    /// NOT BUILT, visible: the cross-origin branch (0x00515854..0x005159B2: Rejigger and the origin updates; counted in <see cref="UnbuiltLocalizeToObjectCalls"/>).
     /// </summary>
     // fidelity: M11-044
     internal uint LocalizeToObject(ObservableObject? observed, ObservableObject? existing)
     {
         using var frameMutation=EnterPoseMutation();
         if (existing is null) { EmitPublicLog("Robot.LocalizeToObject.ExistingObjectPieceNullPointer"); return 1; }
+        // fidelity: M11-044 — S0 0x005154C4..0x005154F4: only when E's ID differs from [Robot+0x2B8]; EnumToString(E[+0x4C]) and E[+0x18].
+        uint localizedTo; lock (_gate) localizedTo = _localizedTo;
+        if (existing.ObjectId != localizedTo)
+            Source(EngineLogLevel.Debug, "Unnamed", "Robot.LocalizeToObject",
+                FormattableString.Invariant($"Robot attempting to localize to {CubeConnections.ObjectTypeName(existing.Type)} object {unchecked((int)existing.ObjectId)}"));
         if (!CanBeUsedForLocalization(existing) || (ShouldIgnoreMovementDueToDoubleTap?.Invoke(existing.ObjectId) ?? false))
         {
             EmitPublicLog($"Robot.LocalizeToObject.UnlocalizedObject: Refusing to localize to object {existing.ObjectId}, which claims not to be localizable.");
             return 1;
         }
-        EmitPublicLog("MISSING: M11-044 LocalizeToObject history/current MAIN update 0x005159B6..D2 and Rejigger/Flatten origin changes remain unbuilt; M13-032 UpdateMapOrigins caller 0x0051590C remains unavailable; partial localization fields only");
-        UnbuiltLocalizeToObjectCalls++;
-        return SetLocalizedToCore(existing, false) ? 0u : 1u;
+        // S1 0x00515612: a null O takes 0x00515686 (the current-pose branch). Both callers pass node+0x14, never null; not built.
+        if (observed is null)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject null-observed branch 0x00515686..0x005156AC not built (both LocalizeRobot callers pass a filled pair); nothing written");
+            return 1;
+        }
+        // Robot+0x390 (history), +0x294 (origins), +0x2B0 (frame) and +0x2C6 live on the native Robot owner.
+        var owner = NativeSnapshotOwner?.Invoke();
+        if (owner is null)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject: no native Robot owner (history Robot+0x390, origin list Robot+0x294) is bound to this world; S2..S15 not run, nothing written");
+            return 1;
+        }
+        using var poseGate = LogCallbackDeferral.EnterGated(owner.PoseTreeGate);
+        var origin = owner.GetNativeOrigin(owner.CurrentOriginId);               // [[Robot+0x294]+0x14]
+        // The S11 split (0x0051583C..0x00515850, HasSameRootAs(E.GetPose(), current origin)) depends only on E and the current origin, which
+        // S2..S10 do not change. The engine tests it after S10; the stack tests it first because its cross-origin branch (Rejigger and the origin
+        // updates, 0x00515854..0x005159B2) is not built: S10's vision-only state, frame and +0x2C6 writes would otherwise make the next tick send
+        // an AbsoluteLocalizationUpdate in the wrong origin. So the unbuilt case writes and sends nothing and fails visibly (LocalizeRobot then
+        // logs CrossFrameLocalizeFailure and goes on to the next pair).
+        if (!PoseTreeNode.HasSameRoot(existing.NativePose.Node, origin.Node))
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject cross-origin branch (0x00515854..0x005159B2: Rejigger and the origin updates) not built: LOCALIZE-CROSS-ORIGIN-1; this pair fails with nothing written and no localization update sent to the robot");
+            UnbuiltLocalizeToObjectCalls++;
+            return 1;
+        }
+        // fidelity: M11-044 — S2 0x00515614..0x00515622: GetComputedStateAt(O[+0x1C], &hist, &key), exact time, key requested.
+        HistRobotState? hist = null; uint key = 0;
+        uint lookup = owner.PoseHistory.GetComputedNative(observed.LastObservedTimestamp, ref hist, true, ref key);
+        if (lookup != 0)
+        {
+            // S2f 0x00515624..0x00515684: no writes; the lookup's own result is returned.
+            Source(EngineLogLevel.Error, null, "Robot.LocalizeToObject.CouldNotFindHistoricalPose",
+                FormattableString.Invariant($"Time {unchecked((int)observed.LastObservedTimestamp)}"));
+            EngineErrorState.StoreAndMaybeBreak();
+            return lookup;
+        }
+        using var robotWrtObject = new Pose3d("");                                // P, sp+0x5C (0x005155F8..0x00515600)
+        float head, lift;
+        using (var copy = new Pose3d(hist!.Pose))                                // S3 0x005156AE..0x005156C0: a deep copy, not aliased
+        {
+            copy.SetParent(origin);                                              // S4 0x005156C2..0x005156CA
+            if (!Pose3d.GetWithRespectTo(copy, observed.NativePose, robotWrtObject))   // S5 0x005156CE..0x005156DA
+            {
+                // S5f 0x0051592C..0x00515984: nothing written; 1.
+                Source(EngineLogLevel.Error, null, "Robot.LocalizeToObject.ObjectPoseOriginMisMatch", "Could not get HistRobotState w.r.t. seen object pose.");
+                EngineErrorState.StoreAndMaybeBreak();
+                return 1;
+            }
+            head = hist.State.HeadAngle; lift = hist.State.LiftAngle;            // S6 0x005156E4..0x005156EA: hist[+0x34], hist[+0x38]
+        }
+        robotWrtObject.SetParent(existing.NativePose);                           // S7 0x005156F4..0x005156FE
+        // S8 0x00515702..0x00515706 (body 0x004DF628..0x004DF6DC): N = GetWithRespectToRoot(P). Its failure needs the M11-066 loop-bound
+        // overflow, which no stack pose tree reaches (manager decision 1, 2026-11-11): not built, a visible skip with nothing written.
+        using var newPose = new Pose3d("");
+        if (robotWrtObject.IsRoot) newPose.Assign(robotWrtObject);
+        else
+        {
+            using var root = robotWrtObject.FindRoot();
+            if (!Pose3d.GetWithRespectTo(robotWrtObject, root, newPose))
+            {
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M1-034/M11-044 LocalizeToObject S8 GetWithRespectToRoot failure (0x004DF628..0x004DF6DC; needs the M11-066 loop-bound overflow) is unreachable in this stack: localization skipped, nothing written");
+                return 1;
+            }
+        }
+        // fidelity: M11-044 — S9 0x0051570A..0x00515760: only while byte [Robot+0x2C4] != 0 (read before this call writes it):
+        // z = f32(f32(zN * 0.1f) + f32(zRobot * 0.9f)), zRobot = Robot::GetPose() transform +0x28 (parent-relative); x, y unchanged.
+        byte localized; lock (_gate) localized = _robot2C4;
+        if (localized != 0)
+        {
+            var t = newPose.Translation;
+            float zN = (float)t.Z;
+            float zRobot = (float)owner.GetCheckedMainPose().Translation.Z;
+            float fromObservation = zN * LocalizeHeightObservationWeight;       // vmul.f32 0x00515744
+            float fromRobot = zRobot * LocalizeHeightRobotWeight;               // vmul.f32 0x00515748
+            float z = fromObservation + fromRobot;                              // vadd.f32 0x0051574C
+            newPose.Node!.Transform = new Transform3d(newPose.Quaternion, new Vec3(t.X, t.Y, z));
+        }
+        // fidelity: M11-044 — S10 0x00515762..0x00515778: AddVisionOnlyStateToHistory(O[+0x1C], N, head, lift).
+        uint added = owner.AddVisionOnlyStateToHistory(observed.LastObservedTimestamp, newPose, head, lift);
+        if (added != 0)
+        {
+            // S10f 0x0051577A..0x005157DA: the +0x2C6 and +0x2B0 writes persist; the add's result is returned.
+            Source(EngineLogLevel.Error, null, "Robot.LocalizeToObject.FailedAddingVisionOnlyPoseToHistory", "");
+            EngineErrorState.StoreAndMaybeBreak();
+            return added;
+        }
+        // fidelity: M11-044 — S11 0x0051583C..0x00515850: same origin here (the cross-origin case was stopped before S2, above).
+        // fidelity: M11-044 — S12 0x005159B6..0x005159C8: HistRobotState::SetPose(hist, [Robot+0x2B0], N, head, lift), in the computed map.
+        hist.SetPose(owner.PoseFrameId, newPose, head, lift);
+        // fidelity: M11-044 — S13 0x005159CC..0x005159D2: UpdateCurrPoseFromHistory.
+        if (!owner.UpdateCurrPoseFromHistory())
+        {
+            // S13f 0x00515A34..0x00515A86: S10 and S12 persist; 1.
+            Source(EngineLogLevel.Error, null, "Robot.LocalizeToObject.FailedUpdateCurrPoseFromHistory", "");
+            EngineErrorState.StoreAndMaybeBreak();
+            return 1;
+        }
+        // fidelity: M11-044 — S14 0x005159D4..0x005159DC: SetLocalizedTo(E) 0x0051238C with its marker-camera loop on the current camera.
+        if (!SetLocalizedToCore(existing, true))
+        {
+            // S14f 0x005159DE..0x00515A32: S10, S12 and S13 persist; SetLocalizedTo's 1 is returned.
+            Source(EngineLogLevel.Error, null, "Robot.LocalizeToObject.SetLocalizedToFail", "");
+            EngineErrorState.StoreAndMaybeBreak();
+            return 1;
+        }
+        owner.MarkVisionPoseUpdated();                                           // S15 0x00515A88..0x00515A8C: [Robot+0x2C6] := 1
+        return 0;
     }
+
+    /// <summary>S9's weights: 0.1f, the literal 0x3DCCCCCD at 0x00515ABC, on the observation's z; 0.9f, 0x3F666666 at 0x00515AC0, on the robot's z.</summary>
+    // fidelity: M11-044
+    internal static readonly float LocalizeHeightObservationWeight = BitConverter.Int32BitsToSingle(0x3DCCCCCD);
+    internal static readonly float LocalizeHeightRobotWeight = BitConverter.Int32BitsToSingle(0x3F666666);
 
     /// <summary>The <c>MovementComponent</c> bytes +0xA (head NOT in position, status bit 0x200 clear) and +0xC (wheels moving, 0x8000), from the newest robot state. Unwired: both 0.</summary>
     public Func<(bool HeadNotInPosition, bool WheelsMoving)>? MovementBytes { get; set; }
@@ -1197,6 +1313,7 @@ public sealed partial class BlockWorld
 
     private bool Carrying(uint id) => IsCarryingObject?.Invoke(id) ?? false;
     internal void LogLine(string line) => EmitPublicLog(line);
+    internal void SourceLine(EngineLogLevel level, string? channel, string key, string text) => Source(level, channel, key, text);
 
     /// <summary>
     /// <c>PotentialObjectsForLocalizingTo::CouldUseObjectForLocalization(obj)</c> 0x0050D170..0x0050D1C6: <c>(obj.ID != [DockingComponent+0xC]) &amp;&amp; CanBeUsedForLocalization
@@ -1812,8 +1929,8 @@ public sealed partial class BlockWorld
     /// <item>one occluder per observed marker, the RobotObservedObject broadcast, this+0x54 = 1 and this+0x58 = (u32)fmax((double)ts, MemoryMap.vt+0x38())
     ///   (0x006211A6..0x00621214).</item>
     /// </list>
-    /// After the loop <c>LocalizeRobot</c> runs and its result is the return (0x00621304, 0x00621320). NOT BUILT (visible): <c>Robot::LocalizeToObject</c> and
-    /// <c>Rejigger</c> do not exist in this stack, so <c>LocalizeRobot</c> is a stub that counts its calls and the pairs it would have localized to, and returns 0.
+    /// After the loop <c>LocalizeRobot</c> runs and its result is the return (0x00621304, 0x00621320). <c>Robot::LocalizeToObject</c>'s same-origin path is built;
+    /// its cross-origin branch (<c>Rejigger</c>, 0x00515854..0x005159B2) is NOT BUILT (visible).
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
     private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
@@ -3583,7 +3700,7 @@ internal sealed class PotentialObjectsForLocalizingTo
     /// farthest first; when the first one's matched object is not in the current origin, the first whose matched object is has its ID value set to the matched object's and its matched
     /// pointer cleared (StoringMatchedObjectID, 0x0050D354..0x0050D3D6); each is then localized to in order, a cleared one through <c>GetLocatedObjectByIdHelper(id)</c> (a null one warns
     /// MissingMatchedObjectInCurrentFrame and is skipped), a failure warning CrossFrameLocalizeFailure; the result is 1 if any failed (0x0050D3DA..0x0050D4D2). It writes nothing but what
-    /// <c>LocalizeToObject</c> writes. In this stack <c>LocalizeToObject</c> performs only the <c>SetLocalizedTo</c> field writes (<see cref="BlockWorld.LocalizeToObject"/>).
+    /// <c>LocalizeToObject</c> writes (<see cref="BlockWorld.LocalizeToObject"/>; its cross-origin branch is not built).
     /// </summary>
     public uint LocalizeRobot()
     {
@@ -3594,7 +3711,13 @@ internal sealed class PotentialObjectsForLocalizingTo
         {
             var only = _map.Values.First();
             uint r = _w.LocalizeToObject(only.Observed, only.Matched);
-            if (r != 0) _w.LogLine("PotentialObjectsForLocalizingTo.LocalizeRobot.LocalizeFailure: Failed to localize to object " + only.Matched.ObjectId + ".");
+            if (r != 0)
+            {
+                // fidelity: M11-044 — single path failure (census callers): sErrorF with O's type and E's ID, errG, the raw code.
+                _w.SourceLine(EngineLogLevel.Error, null, "PotentialObjectsForLocalizingTo.LocalizeRobot.LocalizeFailure",
+                    FormattableString.Invariant($"Failed to localize to {Cozmo.Robot.CubeConnections.ObjectTypeName(only.Observed.Type)} object {unchecked((int)only.Matched.ObjectId)}."));
+                EngineErrorState.StoreAndMaybeBreak();
+            }
             return r;
         }
         var list = _map.Values.OrderByDescending(p => p.Dist).Select(p => (Pair: p, Matched: (ObservableObject?)p.Matched, Id: p.Matched.ObjectId)).ToList();
@@ -3611,7 +3734,8 @@ internal sealed class PotentialObjectsForLocalizingTo
         foreach (var e in list)
         {
             var m = e.Matched ?? _w.GetLocatedObjectByIdHelper(e.Id);
-            if (m is null) { _w.LogLine($"PotentialObjectsForLocalizingTo.LocalizeRobot.MissingMatchedObjectInCurrentFrame: {e.Id}"); continue; }
+            // fidelity: M11-044 — the stored-ID lookup is GetLocatedObjectByIdHelper(id, family -1) (no family restriction); the warning names O's ID (census, multi path).
+            if (m is null) { _w.LogLine($"PotentialObjectsForLocalizingTo.LocalizeRobot.MissingMatchedObjectInCurrentFrame: {e.Pair.Observed.ObjectId}"); continue; }
             if (_w.LocalizeToObject(e.Pair.Observed, m) != 0)
             {
                 _w.LogLine($"PotentialObjectsForLocalizingTo.LocalizeRobot.CrossFrameLocalizeFailure: {m.ObjectId}");

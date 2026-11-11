@@ -227,27 +227,35 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>
-    /// M11-044 (P0, P6, P10, X1, X3; 0x00512458, 0x00512468): a connected cube (activeID >= 0, Known, fromDistance >= 0, resting flat, not moving) is usable. While the robot is not localized
+    /// M11-044 (P0, P6, P10, X1, X3): a connected cube (activeID >= 0, Known, fromDistance >= 0, resting flat, not moving) is usable. While the robot is not localized
     /// the gate is 1: the confirming sighting passes the discard gate, the motion gates and P5 (the observed and matched poses are the same), and P6 stores the pair; <c>LocalizeRobot</c>
-    /// hands it to <c>LocalizeToObject</c>, whose only effect here is the two <c>SetLocalizedTo</c> writes (ID to Robot+0x2B8, 0 to +0x2BC). From the next frame the gate is 0, so every
-    /// sighting is discarded into <c>UseDiscardedObservation</c> and refreshes the pose (X1), and <c>LocalizeToObject</c> is not run again.
+    /// hands it to <c>LocalizeToObject</c>. This rig's frames go through the offline <c>ProcessImage</c> adapter, which seeds only the pose map and makes no computed
+    /// <c>HistRobotState</c> at the image time, so <c>LocalizeToObject</c> stops at S2 (GetComputedStateAt 0x00515614..0x00515622 fails: CouldNotFindHistoricalPose, errG,
+    /// 0x00515624..0x00515684) with nothing written: the robot stays unlocalized and the gate stays 1. The next sighting of the moved cube still refreshes its pose:
+    /// P5 sees the robot unmoved and the poses different and sends the pair to <c>UseDiscardedObservation</c> (0x0050D122).
     /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // reach: unit (offline ProcessImage adapter; the computed-state producer of the live worker path is not driven here, see LocalizeToObjectSameOriginTests).
     [Fact]
-    public void M11_044_AStationaryRobotLocalizesToAUsableCubeOnceAndThenRefreshesItEveryFrame()
+    public void M11_044_OfflineFramesStopLocalizeToObjectAtTheHistoryLookupAndStillRefreshTheCube()
     {
         if (!NeedsLibrary()) return;
         using var rig = new ImageRig();
-        rig.Send(new ObjectConnectionState { ObjectID = 2, FactoryID = 0xBEEF, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
-        Assert.Null(rig.Vision.World.LocalizedToObjectId);
-        var o = Assert.Single(rig.Observe((ObjectType.Block_LIGHTCUBE1, At(150, 0))).Objects).Object;
-        Assert.True(rig.Vision.World.CanBeUsedForLocalization(o));
-        Assert.Equal(o.ObjectId, rig.Vision.World.LocalizedToObjectId);
-        Assert.False(rig.Vision.World.RobotMovedSinceLocalized);
-        Assert.Equal(1, rig.Vision.World.UnbuiltLocalizeToObjectCalls);
-        rig.Frame((ObjectType.Block_LIGHTCUBE1, At(175, 10)));                          // gate 0: discarded into UseDiscarded, refreshed
-        Assert.True((o.Pose.Translation - new Vec3(175, 10, 22)).Length < 6, $"{o.Pose.Translation}");
-        Assert.Equal(1, rig.Vision.World.UnbuiltLocalizeToObjectCalls);
+        var logs = new List<EngineLogEntry>(); rig.Robot.Engine.LogEntry += logs.Add;
+        bool error = EngineErrorState.ErrorFlagSet;
+        try
+        {
+            rig.Send(new ObjectConnectionState { ObjectID = 2, FactoryID = 0xBEEF, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+            Assert.Null(rig.Vision.World.LocalizedToObjectId);
+            var o = Assert.Single(rig.Observe((ObjectType.Block_LIGHTCUBE1, At(150, 0))).Objects).Object;
+            Assert.True(rig.Vision.World.CanBeUsedForLocalization(o));
+            Assert.Contains(logs, l => l.Name == "Robot.LocalizeToObject.CouldNotFindHistoricalPose");
+            Assert.Null(rig.Vision.World.LocalizedToObjectId);
+            Assert.Equal(0, rig.Vision.World.UnbuiltLocalizeToObjectCalls);
+            rig.Frame((ObjectType.Block_LIGHTCUBE1, At(175, 10)));                          // gate 1, P5: discarded into UseDiscarded, refreshed
+            Assert.True((o.Pose.Translation - new Vec3(175, 10, 22)).Length < 6, $"{o.Pose.Translation}");
+            Assert.Null(rig.Vision.World.LocalizedToObjectId);
+        }
+        finally { EngineErrorState.ErrorFlagSet = error; }
     }
 
     /// <summary>
@@ -689,22 +697,24 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>
-    /// M11-044 P10 (0x0050D1CC..0x0050D4DA, 0x005154B0): with one stored pair in the current origin <c>LocalizeRobot</c> calls <c>LocalizeToObject</c>, which here performs only the
-    /// <c>SetLocalizedTo</c> field writes (counted as NOT BUILT beyond them); an unusable matched object is the UnlocalizedObject failure and its result is returned; with several pairs the
-    /// farthest goes first and every one is attempted.
+    /// M11-044 P10 (0x0050D1CC..0x0050D4DA, 0x005154B0): an empty map returns 0 (0x0050D1D4..0x0050D1FA); with one stored pair in the current origin <c>LocalizeRobot</c> calls
+    /// <c>LocalizeToObject</c> and returns its failure: an unusable matched object (UnlocalizedObject) and the tap filter. A bare world has no native Robot owner (no history,
+    /// no origin list), so <c>LocalizeToObject</c> stops with a visible MISSING and writes nothing: a stack fixture boundary, not an engine branch. The success path and the
+    /// multi-path order with a real owner are in LocalizeToObjectSameOriginTests.
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void M11_044_LocalizeRobotDoesOnlyTheSetLocalizedToFieldWrites()
+    public void M11_044_LocalizeRobotReturnsLocalizeToObjectsFailure()
     {
         var (w, m, p) = UsableRig();
         Assert.Equal(0u, new PotentialObjectsForLocalizingTo(w).LocalizeRobot());          // empty: 0
         Assert.Null(w.LocalizedToObjectId);
         p.Insert(Seen(m, At(150, 0)), m, 100f, false, false);
-        Assert.Equal(0u, p.LocalizeRobot());
-        Assert.Equal(m.ObjectId, w.LocalizedToObjectId);
-        Assert.False(w.RobotMovedSinceLocalized);
-        Assert.Equal(1, w.UnbuiltLocalizeToObjectCalls);
+        bool error = EngineErrorState.ErrorFlagSet;
+        try { Assert.Equal(1u, p.LocalizeRobot()); }                                    // no Robot owner: nothing written
+        finally { EngineErrorState.ErrorFlagSet = error; }
+        Assert.Null(w.LocalizedToObjectId);
+        Assert.Equal(0, w.UnbuiltLocalizeToObjectCalls);
         // an unusable matched object: LocalizeToObject refuses (vtable+0x18 != 1) and the failure is the result
         var (w2, m2, p2) = UsableRig();
         p2.Insert(Seen(m2, At(150, 0)), m2, 100f, false, false);
@@ -716,17 +726,6 @@ public class M11RVisBuildTests : IDisposable
         w3.ShouldIgnoreMovementDueToDoubleTap = _ => true;
         p3.Insert(Seen(m3, At(150, 0)), m3, 100f, false, false);
         Assert.Equal(1u, p3.LocalizeRobot());
-        // two roots: the pair in another origin is farther, so it goes first and the current-origin one last (it is re-found by ID)
-        var w4 = new BlockWorld();
-        ObservableObject Usable(uint id, ObjectType t, uint origin) { var o = Locate(w4, Cube(w4, id, At(150, 0), t)); o.ActiveId = 1; o.FromDistance = 10; return o; }
-        var near = Usable(1, ObjectType.Block_LIGHTCUBE1, 1);
-        var farObj = Cube(w4, 2, At(150, 0), ObjectType.Block_LIGHTCUBE2); farObj.OriginId = 2; farObj.ActiveId = 1; farObj.FromDistance = 10; w4.AddLocatedObject(farObj);
-        var p4 = new PotentialObjectsForLocalizingTo(w4);
-        Assert.Equal(1, p4.Insert(Seen(near, At(150, 0)), near, 50f, false, false));
-        Assert.Equal(1, p4.Insert(Seen(farObj, At(150, 0)), farObj, 100f, false, false));
-        Assert.Equal(0u, p4.LocalizeRobot());
-        Assert.Equal(2, w4.UnbuiltLocalizeToObjectCalls);
-        Assert.Equal(near.ObjectId, w4.LocalizedToObjectId);
     }
 
     /// <summary>

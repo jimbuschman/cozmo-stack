@@ -1115,9 +1115,12 @@ public class VisionTests
         var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         Assert.Equal(2, o.PoseConfirmationCount);
         Assert.True(o.IsPoseConfirmed);
-        rig.Frame(CubeAhead(), head: -0.15f);   // confirmed: AddAndUpdateObjects skips AddVisualObservation (flag 0); the cube is not connected (activeID -1), so Insert discards the pair into
-                                                // UseDiscardedObservation, which runs AddVisualObservation and counts it (0x00506A04): 3
-        Assert.Equal(3, o.PoseConfirmationCount);
+        rig.Frame(CubeAhead(), head: -0.15f);   // confirmed: AddAndUpdateObjects skips AddVisualObservation (flag 0). The cube is connected and usable, and the robot is
+                                                // still not localized: this offline ProcessImage rig makes no computed HistRobotState, so the previous frame's
+                                                // LocalizeToObject stopped at S2 (0x00515624, nothing written; M11-044) and the gate stays 1. Insert's P5 sees the
+                                                // robot unmoved and the poses the same, so P6 stores the pair (Insert 0x0050CE00..0x0050D120) and AddVisualObservation is
+                                                // not run: the count stays 2
+        Assert.Equal(2, o.PoseConfirmationCount);
         var located = o.Pose;
         Assert.True(rig.Vision.World.IsObjectConfirmedAtObservedPose(new ObservableObject(ObjectType.Block_LIGHTCUBE1, o.Markers) { ObjectId = o.ObjectId, Pose = o.Pose }, out var match));
         Assert.Same(o, match);

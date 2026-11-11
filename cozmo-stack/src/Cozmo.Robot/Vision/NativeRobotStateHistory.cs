@@ -13,6 +13,10 @@ internal sealed class HistRobotState : IDisposable
     internal RobotState State=new(){Timestamp=1,PoseOriginId=1,BatteryVoltage=5,Status=0x300,
         CliffDataRaw=new ushort[]{0xFFFF,0xFFFF,0xFFFF,0xFFFF},CurrPathSegment=-1};
     internal void Assign(HistRobotState other){Pose.Assign(other.Pose);State=Copy(other.State);}
+    // fidelity: M11-044 — HistRobotState::SetPose(frame, pose, head, lift) 0x0053053C..0x00530556: pose := the argument,
+    // [+0x10] frame (RobotState+0x4, pose_frame_id), [+0x34] head (RobotState+0x28), [+0x38] lift (RobotState+0x2C); in place.
+    internal void SetPose(uint frame,Pose3d pose,float head,float lift)
+    {Pose.Assign(pose);State.PoseFrameId=frame;State.HeadAngle=head;State.LiftAngle=lift;}
     internal static RobotState Copy(RobotState state)=>RobotState.Read(new CladReader(state.ToBytes().AsMemory(1)));
     internal static HistRobotState From(Pose3d pose,RobotState state)
     {var value=new HistRobotState();value.Pose.Assign(pose);value.State=Copy(state);return value;}

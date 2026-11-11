@@ -210,7 +210,6 @@ public sealed partial class EngineRobot
     internal uint SetNewPose(Pose3d value)
     {
         using(var root=value.GetWithRespectToRoot())SetPose(root);
-        MarkVisionPoseUpdated();PoseFrameId=unchecked(PoseFrameId+1);
         // B-M11-8 item 8: the head angle is Robot+0x2FC (Motion.HeadAngleRad: ctor 0xBEDF66F3 at 0x0051007C..0x00510086;
         // SetHeadAngle 0x00513358 writes it only when +0x314 is set, clamping below 0xBEFA35DD to 0xBEDF66F3 and above
         // 0x3F543B67 to 0x3F46D3F2), not the last state's report.
@@ -221,7 +220,17 @@ public sealed partial class EngineRobot
             Behavior.SteppedBehavior.ReportMissing("M11-070 SetNewPose: no Robot+0x2FC owner (Motion) is bound to this engine; the ctor value 0xBEDF66F3 is used");
             head=BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));
         }
-        return PoseHistory.AddVisionOnlyState(StoredState?.Timestamp??0,MainPose,PoseFrameId,head,StoredState?.LiftAngle??0);
+        // The head and lift arguments are read before the call (identical writes and order of the history/frame/flag fields).
+        return AddVisionOnlyStateToHistory(StoredState?.Timestamp??0,MainPose,head,StoredState?.LiftAngle??0);
+    }
+    // fidelity: M11-044, M11-070 — Robot::AddVisionOnlyStateToHistory(t, pose, head, lift) 0x0051513C..0x0051518A:
+    // [Robot+0x2C6] := 1; [Robot+0x2B0] += 1; a default HistRobotState given SetPose(new frame, pose, head, lift);
+    // RobotStateHistory::AddVisionOnlyState(t, state), whose result is returned (1 for a non-root parent, TooOld or a failed
+    // emplace). The flag and frame writes persist when the add fails.
+    internal uint AddVisionOnlyStateToHistory(uint timestamp,Pose3d pose,float head,float lift)
+    {
+        MarkVisionPoseUpdated();PoseFrameId=unchecked(PoseFrameId+1);
+        return PoseHistory.AddVisionOnlyState(timestamp,pose,PoseFrameId,head,lift);
     }
     // fidelity: M12-027 — adopted OV01 rows L5–L8, needed by the carried tree's delocalization path.
     internal void ComputeLiftPose(float input)

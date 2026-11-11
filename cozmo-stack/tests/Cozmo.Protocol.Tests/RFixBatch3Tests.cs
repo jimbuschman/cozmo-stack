@@ -226,9 +226,9 @@ public class RFixBatch3Tests : IDisposable
         }
 
         /// <summary>One frame of the cube, with the image IMU sample the camera delivers with it (null: none), through the camera path (<c>ProcessCapture</c>).</summary>
-        public VisionFrameResult? Frame(Pose3d? cube, float rateY = 0, float rateZ = 0, bool imu = true, uint originId = 0)
+        public VisionFrameResult? Frame(Pose3d? cube, float rateY = 0, float rateZ = 0, bool imu = true, uint originId = 0, uint frameId = 0)
         {
-            Send(new RobotState { Timestamp = T, PoseOriginId = originId, Pose = new RobotPose { X = 0, Y = 0, Angle = 0 }, HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos,
+            Send(new RobotState { Timestamp = T, PoseOriginId = originId, PoseFrameId = frameId, Pose = new RobotPose { X = 0, Y = 0, Angle = 0 }, HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos,
                                   Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
             if (imu) Send(new ImageImuData { ImageId = T, RateX = 0, RateY = rateY, RateZ = rateZ, Line2Number = 0 });
             var pd = Vision.History.At(T)!.Value;
@@ -338,7 +338,9 @@ public class RFixBatch3Tests : IDisposable
         ObjectIdSpace.ResetForTests();
         // another origin that the pose-origin list holds: dropped, and logged
         origins.Add(2);
-        var r = rig.Frame(CubeAhead(), originId: 2);
+        // The first frames localized the robot to the connected cube (M11-044 S10 0x00515762: a vision-only state with frame +1). A state still carrying
+        // the old frame would be corrected onto that vision-only pose by ComputeStateAt (M11-097) and so be in origin 1; the robot reports the new frame.
+        var r = rig.Frame(CubeAhead(), originId: 2, frameId: er.PoseFrameId);
         Assert.NotEmpty(r!.Markers);
         Assert.Empty(r.Objects);
         Assert.Contains(rig.Log, l => l.StartsWith("VisionComponent.UpdateVisionMarkers.OldOrigin"));
