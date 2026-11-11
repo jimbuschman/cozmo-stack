@@ -31,6 +31,10 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 When you start a job, set its QUEUE.md row to `TAKEN (Claude worker, <date>)` and push the branch, so the manager
 does not duplicate it. If the list is finished, add a note to REVIEW.md asking for more jobs, and stop.
 
+## Gate requests (operator, 2026-11-11)
+
+Between jobs, run the manager's pending gate first: see `GATE-REQUESTS.md`.
+
 ## Per job
 
 1. **Census:** a `cozmo-extractor` subagent writes an inventory to `.scratch/<job>-census.md`: every
