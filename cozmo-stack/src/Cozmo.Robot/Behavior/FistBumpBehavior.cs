@@ -311,10 +311,12 @@ public sealed class FistBumpBehavior : SteppedBehavior
         // 0x005F22B4..0x005F2340: GetLastObservedFace(..., true) non-zero and (robot+0x2C - result) >> 3 <= 124 (unsigned)
         if (_vision is null)
             ReportMissing("BehaviorFistBump state 2 (0x005F22B4..0x005F2340): no vision system is attached to this behaviour, so GetLastObservedFace has no source; the face check is skipped");
-        else if (_vision.Faces.GetLastObservedFace(namedOnly: true) is { } face && face.LastObservedTimestamp != 0)
+        else if (Context.Robot.Engine.Robot is not { } faceOwner || !faceOwner.TryGetNativeOriginOwner(faceOwner.CurrentOriginId, out var faceOrigin) || faceOrigin is null)
+            ReportMissing("BehaviorFistBump state 2 (0x005F22B4..0x005F2340): the native Robot or its current world origin is unavailable, so the last-observed-face cache cannot be read; the face check is skipped");
+        else if (LastFaceStamp(_vision, faceOrigin) is var faceStamp && faceStamp != 0)
         {
-            uint robotClock = Context.Robot.Engine.Robot?.StoredState?.Timestamp ?? 0u;     // robot+0x2C
-            if (unchecked(robotClock - face.LastObservedTimestamp) >> 3 <= RecentFaceShifted)
+            uint robotClock = faceOwner.StoredState?.Timestamp ?? 0u;     // robot+0x2C
+            if (unchecked(robotClock - faceStamp) >> 3 <= RecentFaceShifted)
             {
                 // 0x005F22F8..0x005F2340, 0x005F24F4..0x005F24FC: the turn is started WITHOUT the +0x193 byte (that store is state 1's, 0x005F20B8) and with an
                 // EMPTY callback (r7 = 0), then state 3
@@ -334,6 +336,14 @@ public sealed class FistBumpBehavior : SteppedBehavior
             _nextScan = now + (float)Rng.RandDblInRange(ScanDelayMinSec, ScanDelayMaxSec);
             _scanIndex = _scanIndex + 1 < ScanPanRad.Length ? _scanIndex + 1 : 0;           // 0x005F24D8..0x005F24EE: idx+1 < (end-begin)>>2 else 0; the vector has two entries (0x004D7D10..0x004D7D4E)
         }
+    }
+
+    // FaceWorld::GetLastObservedFace(pose, true) (0x004F5AE2..0x004F5B38): the cache stamp; the bool requires the cached pose to be in the
+    // current world origin (it is not a name filter). 0 when nothing is cached or the pose is in another origin.
+    private static uint LastFaceStamp(VisionSystem vision, Pose3d origin)
+    {
+        using var pose = new Pose3d("");
+        return vision.Faces.CopyNativeLastFaceTimestamp(origin, true, pose);
     }
 
     /// <summary>State 6: a bump, or the idle action ending without one.</summary>
@@ -402,6 +412,10 @@ public sealed class FistBumpBehavior : SteppedBehavior
         if (_vision is not { } v) return null;
         return async ct =>
         {
+            // fidelity: M7-018 -- MISSING: the native turn is TurnTowardsFaceAction(robot, id 0, pi, sayName 0) (0x005F2300..0x005F2324),
+            // which reads the native entry pose and last-face cache; this legacy behaviour has no owner-bound action seam, so the
+            // turn still reads the host last face and its flat projection while state 2's gate reads the native cache.
+            SteppedBehavior.ReportMissing("M7-018 FistBump last-face turn runs the legacy TurnTowardsLastFacePoseAction (host face pose), not the native TurnTowardsFaceAction (0x005F2300..0x005F2324): no owner-bound action seam");
             using var turn = new TurnTowardsLastFacePoseAction(v, MaxTurnRad, sayName: false) { RequireVerifiedFace = stateOne };      // +0x193 = 1 is state 1's store only (0x005F20B8)
             return (uint)await turn.RunAsync(ct).ConfigureAwait(false);
         };

@@ -870,30 +870,63 @@ public class M7BatchThreeBTests
     }
 
     /// <summary>
-    /// FistBump state 2's face branch (0x005F22B4..0x005F2340, 0x005F24F4..0x005F24FC): a recent named face (the robot clock minus its timestamp, shifted right by 3, at most 124)
-    /// starts the last-face turn with an EMPTY callback and enters state 3. The turn here ends NO_FACE (0x0300000E): state 1's callback (0x005F27EE) would send the state back
-    /// to 2, state 2's has none, so the behaviour goes on to the request animation and the idle pose (state 4).
+    /// FistBump state 2's face branch (0x005F22B4..0x005F2340, 0x005F24F4..0x005F24FC): a recent cached last face (the robot clock minus the cache stamp, shifted right by 3, at
+    /// most 124) starts the last-face turn with an EMPTY callback and enters state 3. The turn here ends NO_FACE (0x0300000E): state 1's callback (0x005F27EE) would send the state
+    /// back to 2, state 2's has none, so the behaviour goes on to the request animation and the idle pose (state 4).
+    /// The stamp is FaceWorld::GetLastObservedFace(pose, true) (0x004F5AE2..0x004F5B38): the cache, filled when the entry's count is above 3 or it has a name
+    /// (0x004F4956..0x004F496E). The bool is not a name filter, so an unnamed face seen four times is found as well (FACE-POSE-READERS-NATIVE-1).
     /// </summary>
-    [Fact]
-    public void AFaceFoundInTheSearchStartsTheTurnWithNoCallbackAndGoesToState3()
+    // reach: unit (the legacy rig starts the behaviour and supplies the turn seam; the native face entries are supplied directly, with the robot's own origin and owner).
+    [Theory]
+    [InlineData(true, 1)]
+    [InlineData(false, 4)]
+    public void AFaceFoundInTheSearchStartsTheTurnWithNoCallbackAndGoesToState3(bool named, int observations)
     {
         if (ObbRoot() is null) return;
         using var f = new FistRig(realAnimations: false, turn: _ => Task.FromResult(0x0300000Eu), maxTime: 30f, withVision: true);
         f.Start();
         Assert.True(f.StepUntil(() => f.Fist.State == 2));                     // state 1's turn ended NO_FACE: the search
-        var cam = new CameraModel(CameraCalibration.Nominal(), HeadGeometry.CameraPoseInWorld(Pose3d.Identity, 0.2));
-        var px = cam.Project(new Vec3(400, 0, 300))!.Value;
-        double eye = 62 * cam.Calibration.FocalLengthX / (new Vec3(400, 0, 300) - cam.Pose.Translation).Length, w = 2 * eye;
-        uint ts = f.Rig.T - 100;                                                // (robot clock - ts) >> 3 = 12 <= 124
-        var tf = new TrackedFace(new DetectedFace(1, new FaceRect(px.X - w / 2, px.Y + 0.125 * w - w / 2, w, w),
-            new Vec2(px.X - eye / 2, px.Y), new Vec2(px.X + eye / 2, px.Y), Name: "Jim", RollRad: 0.0), ts);
-        tf.UpdateTranslation(cam);
-        Assert.NotNull(f.Rig.Vision.Faces.AddOrUpdateFace(tf, Pose3d.Identity, false));
+        SeeNativeFace(f, named, observations, f.Rig.T - 100);                   // (robot clock - stamp) >> 3 = 12 <= 124
         f.Rig.State();                                                          // the robot clock is now near the face
         int turnsBefore = f.Turns;
         Assert.True(f.StepUntil(() => f.Fist.State >= 4));                      // 2 -> (turn, empty callback) 3 -> request -> 4: never back to 2
         Assert.Equal(turnsBefore + 1, f.Turns);
         Assert.Single(f.PanTilts);                                              // only the scan taken on entering state 2, before the face existed
+    }
+
+    /// <summary>
+    /// The cache gate (0x004F4956..0x004F496E): an unnamed face seen three times is not cached, so GetLastObservedFace(pose, true) returns 0 and state 2 starts no turn; the
+    /// search goes on scanning (0x005F2382..0x005F24EE).
+    /// </summary>
+    // reach: unit (as above).
+    [Fact]
+    public void AnUnnamedFaceSeenThreeTimesIsNotTheLastObservedFaceOfTheSearch()
+    {
+        if (ObbRoot() is null) return;
+        using var f = new FistRig(realAnimations: false, turn: _ => Task.FromResult(0x0300000Eu), maxTime: 30f, withVision: true);
+        f.Start();
+        Assert.True(f.StepUntil(() => f.Fist.State == 2));
+        SeeNativeFace(f, named: false, observations: 3, f.Rig.T - 100);
+        f.Rig.State();
+        int turnsBefore = f.Turns;
+        f.Step(5);
+        Assert.Equal(2, f.Fist.State);
+        Assert.Equal(turnsBefore, f.Turns);
+    }
+
+    private static void SeeNativeFace(FistRig f, bool named, int observations, uint lastStamp)
+    {
+        var owner = f.Rig.Robot.Engine.Robot!;
+        var origin = owner.GetNativeOrigin(owner.CurrentOriginId);
+        var position = new Vec3(400, 0, 300);
+        for (int i = observations - 1; i >= 0; i--)
+        {
+            var tf = new TrackedFace(new DetectedFace(1, new FaceRect(0, 0, 10, 10), new Vec2(1, 1), new Vec2(2, 1), Name: named ? "Jim" : null), lastStamp - (uint)i)
+            {
+                HeadPose = new Pose3d(Rotation3d.Identity, position), NativeTrackingTranslation = position, NativeTrackingRotation = Rotation3d.Identity,
+            };
+            Assert.NotNull(f.Rig.Vision.Faces.AddOrUpdateNativeFace(tf, owner.GetCheckedMainPose(), false, origin.Node!, true, requireNativePose: true, expectedOwner: owner));
+        }
     }
 
     /// <summary>With no vision system, state 2's face check is skipped and reported (it has no source).</summary>

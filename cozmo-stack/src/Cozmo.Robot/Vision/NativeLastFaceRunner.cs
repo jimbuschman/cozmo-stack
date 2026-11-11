@@ -60,9 +60,13 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     protected override string ActionName=>"TurnTowardsLastFacePose";
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m):this(m,Radians.Pi,false){}
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,float maximum,bool sayName,int sayTrigger=0x23F,int noNameTrigger=0x23F):base(m,Pose3d.Identity,maximum,0x29,0,true)
-    {_requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;}
+    {
+        _requested=new(m.Robot,0);_verified=new(m.Robot);_maximum=maximum;_sayName=sayName;_sayTrigger=sayTrigger;_noNameTrigger=noNameTrigger;
+        // FACE-POSE-READERS-NATIVE-1: a sayName == false construction binds the constructing robot, like the explicit-owner constructors.
+        if(!sayName && m.Robot.Engine.Robot is { } owner){_actualOwner=owner;ScopedOwner=owner;}
+    }
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m,EngineRobot owner,int rawId,bool sayName=false):base(m,Pose3d.Identity,Radians.Pi,0x29,0,true)
-    {_requested=new(m.Robot,rawId,owner);_verified=new(m.Robot,owner:owner);_maximum=Radians.Pi;_sayName=sayName;_sayTrigger=_noNameTrigger=0x23F;if(sayName){_actualOwner=owner;ScopedOwner=owner;}}
+    {_requested=new(m.Robot,rawId,owner);_verified=new(m.Robot,owner:owner);_maximum=Radians.Pi;_sayName=sayName;_sayTrigger=_noNameTrigger=0x23F;_actualOwner=owner;ScopedOwner=owner;}
     // Enrollment's explicit-ID turn uses its supplied max angle and the same
     // checked native camera/origin owner, without the say-name child (5FE914).
     internal NativeLastFaceRunner(Manipulation.ManipulationSystem m, EngineRobot owner, int rawId, float maximum)
@@ -129,7 +133,8 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         bool found;
         if(_requested.IsValid)
         {
-            var face=_actualOwner is null?M.Vision.Faces.GetFace(_requested.Id):M.Vision.Faces.GetNativeFace(owner,_requested.Id);
+            // 0x0054BD7C..0x0054BD94: GetFace(SmartFaceID) (in-origin gate 0x004F59B6..0x004F59C2), then entry+0xF4.
+            var face=M.Vision.Faces.GetNativeFace(owner,_requested.Id);
             found=face is not null && CopyFacePose(face, cached);
         }
         else found=M.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),false,cached);
@@ -147,9 +152,10 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         if (DestructionObserved || !ScopedCurrent) { Unlock(); return unchecked((int)EngineActionResult.Cancelled); }
         return base.Init();
     }
+    // The native entry pose (entry+0xF4, parented to its observation origin) for every construction; the callers
+    // take it with respect to Robot::GetPose (0x0054BD8E, 0x0054C0D4, 0x0054C31E).
     private bool CopyFacePose(FaceEntry face, Pose3d destination)
     {
-        if (_actualOwner is null) { destination.Assign(face.LegacyHeadPose); return true; }
         if (face.NativeTrackingTranslation is not { } point || face.NativeObservationOrigin is null)
         {
             Behavior.SteppedBehavior.ReportMissing("M14-001 native camera-frame face position unavailable; LastFace turn withheld");
@@ -169,7 +175,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         using var mutation=M.World.EnterPoseMutation();
         var owner=_actualOwner??M.Robot.Engine.Robot;
         if(owner is null||(_actualOwner is not null&&!ScopedCurrent))return;
-        var face=_actualOwner is null?M.Vision.Faces.GetFace(id):M.Vision.Faces.GetNativeFace(owner,id);
+        var face=M.Vision.Faces.GetNativeFace(owner,id); // 0x0054C096..0x0054C114: GetFace(int), in-origin only
         if(face is null)return;
         using var source=new Pose3d("");
         using var relative=new Pose3d("");
@@ -191,7 +197,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         using var mutation=M.World.EnterPoseMutation();
         _faceState=2;
         var owner=_actualOwner??M.Robot.Engine.Robot;
-        var face=owner is null?null:_actualOwner is null?M.Vision.Faces.GetFace(_verified.Id):M.Vision.Faces.GetNativeFace(owner,_verified.Id);
+        var face=owner is null?null:M.Vision.Faces.GetNativeFace(owner,_verified.Id); // 0x0054C2D4..0x0054C39C
         if(_verified.Id==0||face is null){SetChild(null);return;}
         M.Robot.Engine.Needs.RegisterNeedsActionCompleted("SeeFace"); //2E BEFORE conversion.
         if (DestructionObserved || !ScopedCurrent) return;

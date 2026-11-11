@@ -866,12 +866,28 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
         lock (_gate) return _desired.Add(id);
     }
 
-    private void OnObserved(FaceObservation o) => HandleFaceObserved(o.Face.Id);
+    // fidelity: M10-003 -- the native handler runs only for tag 0x46 (dispatch 0x0060CF70), and AddOrUpdateFace broadcasts 0x46 only
+    // when the entry count is above 3 or it has a name (0x004F4956..0x004F496E). The stack delivers through the host FaceObserved
+    // event, so the same gate is applied here; the subscription to the 0x46 recipient itself is still MISSING (no seam from the
+    // strategy to the robot's message delivery, which also carries the HasExternalInterface condition).
+    private void OnObserved(FaceObservation o)
+    {
+        int count = o.NativeSnapshot?.Count ?? o.Face.TimesObserved;
+        bool named = o.NativeSnapshot is { } snapshot ? !string.IsNullOrEmpty(snapshot.Name) : o.Face.HasName;
+        if (count <= 3 && !named) return;
+        SteppedBehavior.ReportMissing("M10-003 FacePositionUpdated is fed by the host FaceObserved event with the 0x46 count/name gate applied, not by the 0x46 recipient (0x0060CF70)");
+        HandleFaceObserved(o.Face.Id);
+    }
 
     /// <summary>3e.</summary>
     public void HandleFaceObserved(int id)
     {
-        if (id < 0 || _world.GetFace(id) is not { } face) return;
+        if (id < 0) return;
+        // FaceWorld::GetFace(int) 0x004F597E (called at 0x0060CB9C..0x0060CBA6) returns the entry only in the current world origin;
+        // the handler returns silently otherwise.
+        var lookupOwner = _world.NativeOwner?.Invoke();
+        FaceEntry? found = lookupOwner is not null ? _world.GetNativeFace(lookupOwner, id) : _world.GetFace(id);
+        if (found is not { } face) return;
         bool handled = false;
         bool reacted;
         lock (_gate) reacted = _reacted.Contains(id);
@@ -881,17 +897,37 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
             Log?.Invoke($"ReactionTriggerStrategyFacePositionUpdated: face {id} named for the first time");
             handled = true;
         }
-        if (_robotPose() is not { } robot)
+        // fidelity: M10-003 -- ComputeDistanceBetween(Robot::GetPose, entry+0xF4, &d) (0x0060CC28..0x0060CC32): the robot's native main pose
+        // and the native entry pose under its observation origin, never the flat host projection (FACE-POSE-READERS-NATIVE-1).
+        var d = Vec3.Zero;
+        bool measured = false;
+        var owner = _world.NativeOwner?.Invoke();
+        var faceOrigin = face.NativeObservationOrigin;
+        if (owner is null || face.NativeTrackingTranslation is not { } point || faceOrigin is null)
+            SteppedBehavior.ReportMissing("M10-003 FacePositionUpdated native Robot owner or native face entry pose unavailable; distance withheld");
+        else
+        {
+            using var mutation = _world.NativePoseScope?.Invoke();
+            lock (owner.PoseTreeGate)
+            {
+                using var origin = Pose3d.WrapExisting(faceOrigin);
+                using var pose = new Pose3d(Rotation3d.Identity, point);
+                pose.SetParent(origin);
+                measured = PlacementProducerGeometry.TryVector(owner.GetCheckedMainPose(), pose, ref d);
+            }
+        }
+        if (!measured)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "ReactionTriggerStrategyFacePositionUpdated", $"could not get the distance to face {id}");
             return;
         }
-        var d = robot.Translation - face.LegacyHeadPose.Translation;
-        double dist = Math.Sqrt(d.X * d.X + d.Y * d.Y + d.Z * d.Z);
+        // ComputeDistanceBetween 0x00847780: f32 x², +y², +z² (0x008477A4..0x008477B6), vsqrt.f32 (0x008477BC); compared in f32
+        // against the f32 thresholds (vcmpe.f32, 0x0060CD88..0x0060CD9A; 300.0/400.0 at 0x0060CF14..0x0060CF1C).
+        float dist = MathF.Sqrt(PlacementProducerGeometry.NormSquared(d));
         bool inMap, wasClose;
         double last;
         lock (_gate) { inMap = _isClose.TryGetValue(id, out wasClose); last = _lastReactionSec; }
-        double threshold = inMap && wasClose ? StayCloseMm : CloseMm;
+        float threshold = (float)(inMap && wasClose ? StayCloseMm : CloseMm);
         bool isClose = dist < threshold;
         double now = _clockSec();
         bool cooldown = last >= 0 && now < last + CooldownSec;
