@@ -148,6 +148,38 @@ internal sealed partial class SourceMapComponent : IDisposable
         {SteppedBehavior.ReportMissing("M11-074 Robot::GetLastImageTimeStamp 0x00516EC0 called at 0x0067F32C: owner is unbound");return;}
         if(clock() is {} now)map.RemoveObject(new SourceObjectRemoval(obj.ObjectId,type,now));
     }
+    /// <summary>
+    /// <c>MapComponent::UpdateOriginsOfObjects(old, new)</c> 0x0067E058..0x0067E1A8 (census LOCALIZE-CROSS-ORIGIN-1 X11a, 6c, 6d), the object update
+    /// <c>UpdateMapOrigins</c> runs at 0x0067DE70. For each MapComponent+0x20 entry in ascending object-ID order: the located object by ID in the current
+    /// origin (0x0067E08E), null -> the NotAnObject info and the next entry; no pose under the old origin -> the next entry; else
+    /// <c>RemoveObservableObject(obj, new)</c> (0x0067E0E0), the new-origin entry emplaced with the old one's added byte (+0x20, 0x0067E0FC..0x0067E102), its
+    /// pose := GetWithRespectToRoot(old pose) only when that byte is set (0x0067E112..0x0067E134), and the old-origin entry erased (0x0067E142).
+    /// </summary>
+    // fidelity: M13-032
+    internal void UpdateOriginsOfObjects(uint old, uint next, Func<uint, ObservableObject?> locatedById)
+    {
+        foreach (uint id in _objectPoses.Keys.OrderBy(k => unchecked((int)k)).ToArray())   // 0x0067E064..0x0067E06C, successor 0x0067E186..0x0067E1A2
+        {
+            var obj = locatedById(id);                                                           // 0x0067E08E GetLocatedObjectByIdHelper(id, -1)
+            if (obj is null)
+            {
+                SourceLog?.Invoke(EngineLogLevel.Info, "MapComponent", "MapComponent.UpdateOriginsOfObjects.NotAnObject",
+                    FormattableString.Invariant($"Could not find object ID '{unchecked((int)id)}' in MapComponent updating their quads"));   // 0x0067E148..0x0067E160
+                continue;
+            }
+            var entries = _objectPoses[id];
+            if (!entries.TryGetValue(old, out var oldInfo)) continue;                            // 0x0067E0A0..0x0067E0DA
+            if (RemoveObservableObject67F2C4 is { } remove) remove(obj, next); else RemoveObject(obj, next);   // 0x0067E0E0, the NEW origin ID
+            var pose = entries.TryGetValue(next, out var newInfo) ? newInfo.Pose : new Pose3d("");   // emplace inner[new]
+            if (oldInfo.Added)                                                                   // byte +0x20 copied, 0x0067E0FC..0x0067E102
+            {
+                using var flat = oldInfo.Pose.GetWithRespectToRoot();                            // 0x0067E112 bl 0x4DF628
+                pose.Assign(flat);                                                               // 0x0067E12A..0x0067E134
+            }
+            entries[next] = (pose, oldInfo.Added);
+            entries.Remove(old); oldInfo.Pose.Dispose();                                         // 0x0067E142 erase inner[old]
+        }
+    }
     // fidelity: M11-088 -- checked dispatch and height input; M11-074 owns the remaining cache/map recipients.
     internal Action<ObservableObject,Pose3d>? AddObservableObject67ECFC;
     internal Action<ObservableObject,uint>? RemoveObservableObject67F2C4;

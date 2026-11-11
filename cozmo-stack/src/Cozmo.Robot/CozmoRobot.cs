@@ -375,6 +375,7 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.DelocalizationWorld=LocalizationWorld;
         LocalizationWorld.NativeSnapshotOwner=()=>Engine.Robot;
         LocalizationWorld.NativeCurrentCamera = owner => owner.CopyCurrentCameraPose(Motion.ObservationHeadAngleRad);
+        LocalizationWorld.PathInFlight = () => Motion.Path.IsActive;
         LocalizationWorld.DelocalizeRuntime=()=>Engine.Robot?.Delocalize(Carrying.IsCarryingObject);
         LocalizationWorld.Log += Engine.EmitStackLog;
         // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.

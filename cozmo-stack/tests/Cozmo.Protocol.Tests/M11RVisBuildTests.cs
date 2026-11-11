@@ -1420,65 +1420,213 @@ public class M11RVisBuildTests : IDisposable
     // ------------------------------------------------------------------------------------------- M11-043
 
     /// <summary>
-    /// M11-043, <c>UpdateObjectOrigins</c> 0x00620534: the confirmer is cleared first (0x00620594); each object of the old origin is cloned into the new one when it has no counterpart
-    /// (the clone takes the ID, the moved pose and the SOURCE's PoseState, 0x00506F02..0x00506F16, and is added with AddLocatedObject); a carried object keeps its own pose
-    /// (0x00628E2E..0x00628FB0); the old origin's entries are erased when the last result was 0 (0x00620642..0x0062064C); the second pass gives every object of the current origin an
+    /// M11-043, <c>UpdateObjectOrigins</c> 0x00620534 (census LOCALIZE-CROSS-ORIGIN-1 X10): the confirmer is cleared first (0x00620594); each object of the old origin
+    /// is converted with <c>GetWithRespectTo(obj.pose, newOrigin)</c> through the pose tree (0x00628E82) and cloned into the new one when it has no counterpart (the clone
+    /// takes the ID, the converted pose and the SOURCE's PoseState, 0x00506F02..0x00506F16, and is added with AddLocatedObject); a carried object's pose is copied as is
+    /// (0x00628E72); the old origin's entries are erased when the last result was 0 (0x00620642..0x0062064C); the second pass gives every object of the current origin an
     /// entry with count 0 (<c>AddInExistingPose</c> 0x00506F48); then BroadcastLocatedObjectStates (0x006206E6) and the BlockConfigurationManager flag (0x006206EA).
+    /// Worked: the old origin sits at (1000, 0, 0) in the new one (as Rejigger leaves it), so (100, 20, 22) becomes (1100, 20, 22).
     /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // reach: unit (direct component entry; the origin tree is set by the test as Rejigger 0x00847E1A..0x00847E48 sets it).
     [Fact]
     public void M11_043_ObjectsAreClonedIntoTheNewOriginWithTheirStateAndTheOldOriginIsErased()
     {
         var w = new BlockWorld { CurrentOriginId = 1 };
-        var dirty = Locate(w, Cube(w, 10, At(100, 20), state: PoseState.Dirty));
-        var known = Locate(w, Cube(w, 11, At(150, 0), ObjectType.Block_LIGHTCUBE2, PoseState.Known));
-        var carried = Locate(w, Cube(w, 12, At(50, 0, 40), ObjectType.Block_LIGHTCUBE3, PoseState.Known));
+        var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
+        var dirty = Locate(w, Cube(w, 10, In(o1, 100, 20), state: PoseState.Dirty));
+        var known = Locate(w, Cube(w, 11, In(o1, 150, 0), ObjectType.Block_LIGHTCUBE2, PoseState.Known));
+        var carried = Locate(w, Cube(w, 12, In(o1, 50, 0, 40), ObjectType.Block_LIGHTCUBE3, PoseState.Known));
         w.IsCarryingObject = id => id == 12;
         int forced = 0; w.BlockConfigurationManagerForceUpdate = () => forced++;
+        Rejiggered(o1, o2, 1000, 0);
         w.CurrentOriginId = 2;                                                                            // the robot is in the new origin after Rejigger
-        // the old origin is at (1000, 0, 0) with respect to the new one
-        Assert.Equal(0u, w.UpdateObjectOrigins(1, 2, new Pose3d(Mat3.Identity, new Vec3(1000, 0, 0))));
+        Assert.Equal(0u, w.UpdateObjectOrigins(1, 2));
         Assert.Equal(new uint[] { 2 }, w.FindLocatedMatchingObjects(new BlockWorldFilter { OriginMode = OriginMode.InAnyFrame }).Select(o => o.OriginId).Distinct());   // the old origin is gone
         var d = w.GetLocatedObjectById(10)!;
         Assert.NotSame(dirty, d);                                                                         // a clone
-        Assert.Equal(new Vec3(1100, 20, 22), d.Pose.Translation);
+        Assert.Equal(new Vec3(1100, 20, 22), d.NativePose.Translation);
+        Assert.Same(o2.Node, d.NativePose.Node!.Parent);
         Assert.Equal(PoseState.Dirty, d.PoseState);                                                       // the source's state, not Known and not set Dirty
         Assert.Equal(PoseState.Known, w.GetLocatedObjectById(11)!.PoseState);
-        Assert.Equal(new Vec3(1150, 0, 22), w.GetLocatedObjectById(11)!.Pose.Translation);
-        Assert.Equal(new Vec3(50, 0, 40), w.GetLocatedObjectById(12)!.Pose.Translation);                  // carried: its own pose
+        Assert.Equal(new Vec3(1150, 0, 22), w.GetLocatedObjectById(11)!.NativePose.Translation);
+        var c = w.GetLocatedObjectById(12)!;
+        Assert.Equal(new Vec3(50, 0, 40), c.NativePose.Translation);                                       // carried: its own pose, copied as is
+        Assert.Same(o1.Node, c.NativePose.Node!.Parent);
         Assert.Equal(0, d.PoseConfirmationCount);                                                         // the confirmer was cleared; AddInExistingPose makes entries with count 0
-        Assert.Equal(d.Pose.Transform, d.ReferencePose.Transform);                                        // native embedded Pose3d copies the current value.
-        Assert.NotSame(d.Pose.Node, d.ReferencePose.Node);
-        Assert.Same(d.Pose.Node!.Parent, d.ReferencePose.Node!.Parent);
+        Assert.Equal(d.NativePose.Transform, d.ReferencePose.Transform);                                  // native embedded Pose3d copies the current value.
         Assert.Equal(1, forced);
-        Assert.Equal(1, w.UnbuiltBroadcastLocatedObjectStatesCalls);                                      // no message type in this stack: counted
+        Assert.Equal(1, w.UnbuiltBroadcastLocatedObjectStatesCalls);                                      // standalone fixture without a Robot/UI owner: counted
     }
 
-    /// <summary>M11-043: a counterpart of the unique type in the new origin takes the moved object's pose and state (<c>CopyWithNewPose</c> 0x00506EF8) and no clone is made (0x00629066..0x00629256).</summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    /// <summary>M11-043: a counterpart of the unique type in the new origin takes the converted pose and the source's state (<c>CopyWithNewPose</c> 0x00506EF8) and no clone is made (0x00629066..0x00629256).</summary>
+    // reach: unit (direct component entry; origin tree set by the test).
     [Fact]
     public void M11_043_ACounterpartInTheNewOriginTakesThePoseAndTheSourcesState()
     {
         var w = new BlockWorld { CurrentOriginId = 2 };
-        var old = Cube(w, 20, At(100, 0), state: PoseState.Dirty); old.OriginId = 1; w.AddLocatedObject(old);
-        var counterpart = Cube(w, 20, At(500, 500), state: PoseState.Known); counterpart.OriginId = 2; w.AddLocatedObject(counterpart);
-        w.UpdateObjectOrigins(1, 2, new Pose3d(Mat3.Identity, new Vec3(0, 300, 0)));
+        var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
+        var old = Cube(w, 20, In(o1, 100, 0), state: PoseState.Dirty); old.OriginId = 1; w.AddLocatedObject(old);
+        var counterpart = Cube(w, 20, In(o2, 500, 500), state: PoseState.Known); counterpart.OriginId = 2; w.AddLocatedObject(counterpart);
+        Rejiggered(o1, o2, 0, 300);
+        Assert.Equal(0u, w.UpdateObjectOrigins(1, 2));
         Assert.Same(counterpart, w.GetLocatedObjectById(20));
-        Assert.Equal(new Vec3(100, 300, 22), counterpart.Pose.Translation);
+        Assert.Equal(new Vec3(100, 300, 22), counterpart.NativePose.Translation);
         Assert.Equal(PoseState.Dirty, counterpart.PoseState);
         Assert.Single(w.FindLocatedMatchingObjects(new BlockWorldFilter { OriginMode = OriginMode.InAnyFrame }));
     }
 
-    /// <summary>M11-043: the non-unique counterpart search (<c>FindLocatedObjectClosestToHelper</c>) is not built and says so.</summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    /// <summary>
+    /// M11-043 OriginFail (0x00628E88 -> 0x00628FB2..0x00629026): an object whose pose cannot be expressed in the new origin logs
+    /// "BlockWorld.UpdateObjectOrigins.OriginFail" with "Could not get object %d w.r.t new origin %s", sets the error flag and the result word to 1, and is skipped.
+    /// When it is the LAST object of the walk the old origin is not erased (0x00620642 cbnz) and 1 is returned; the second pass, broadcast and +0xC still run.
+    /// </summary>
+    // reach: unit (direct component entry; the failing object is parented to an unrelated test root).
     [Fact]
-    public void M11_043_TheNonUniqueCounterpartSearchIsAVisibleStub()
+    public void M11_043_AnObjectThatCannotBeConvertedFailsAndKeepsTheOldOriginWhenItIsLast()
+    {
+        var w = new BlockWorld { CurrentOriginId = 1 };
+        var lines = new List<(string Key, string Text)>(); w.SourceLog = (l, c, k, t) => lines.Add((k, t));
+        var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
+        using var foreign = new Pose3d("Foreign") { Id = 77 };
+        var good = Cube(w, 40, In(o1, 100, 0)); w.AddLocatedObject(good);
+        var bad = Cube(w, 41, In(foreign, 100, 0)); w.AddLocatedObject(bad);                              // same type bucket, higher ID: walked last
+        int forced = 0; w.BlockConfigurationManagerForceUpdate = () => forced++;
+        Rejiggered(o1, o2, 10, 0);
+        w.CurrentOriginId = 2;
+        bool error = EngineErrorState.ErrorFlagSet; EngineErrorState.ErrorFlagSet = false;
+        try
+        {
+            Assert.Equal(1u, w.UpdateObjectOrigins(1, 2));
+            Assert.True(EngineErrorState.ErrorFlagSet);
+        }
+        finally { EngineErrorState.ErrorFlagSet = error; }
+        Assert.Contains(lines, l => l.Key == "BlockWorld.UpdateObjectOrigins.OriginFail" && l.Text == "Could not get object 41 w.r.t new origin Origin2");
+        Assert.Contains(w.FindLocatedMatchingObjects(new BlockWorldFilter { OriginMode = OriginMode.Custom, AllowedOrigins = { 1 } }), o => o.ObjectId == 41);   // not erased
+        Assert.Equal(new Vec3(110, 0, 22), w.FindLocatedObjectHelper(new BlockWorldFilter { OriginMode = OriginMode.Custom, AllowedOrigins = { 2 }, AllowedIds = { 40 } }, null, true)!.NativePose.Translation);
+        Assert.Equal(1, forced);
+    }
+
+    /// <summary>
+    /// M11-043 UnknownOriginID guard (0x00620554 against GOT 0x0103E978 -> 0x00C97B20, value 0): either ID 0 returns 1 before the confirmer clear (0x00620594), so
+    /// nothing is moved and the confirmer entries are kept.
+    /// </summary>
+    // reach: unit (direct component entry; not reachable from LocalizeToObject, whose IDs are list IDs >= 1).
+    [Fact]
+    public void M11_043_AnUnknownOriginIdReturnsOneBeforeTheConfirmerClear()
+    {
+        var w = new BlockWorld { CurrentOriginId = 1 };
+        var cube = Locate(w, Cube(w, 50, In(w.GetNativeOrigin(1), 100, 0)));
+        int count = cube.PoseConfirmationCount;
+        bool error = EngineErrorState.ErrorFlagSet;
+        try
+        {
+            Assert.Equal(1u, w.UpdateObjectOrigins(0, 1));
+            Assert.Equal(1u, w.UpdateObjectOrigins(1, 0));
+        }
+        finally { EngineErrorState.ErrorFlagSet = error; }
+        Assert.Equal(count, cube.PoseConfirmationCount);
+        Assert.Same(cube, w.GetLocatedObjectById(50));
+    }
+
+    /// <summary>
+    /// M11-043 SetObservationTimes 0x00877706 (census 6b), on the unique path: the counterpart's +0x1C becomes the u32 maximum of its own and the moved object's
+    /// (0x00877708..0x00877716), and each marker pair, positionally, the u32 maximum of their +0x50 (0x00877718..0x0087773E).
+    /// </summary>
+    // reach: unit (direct component entry; origin tree and marker times set by the test).
+    [Fact]
+    public void M11_043_TheCounterpartTakesTheLaterObservationTimes()
     {
         var w = new BlockWorld { CurrentOriginId = 2 };
-        var prox = new ObservableObject(30, ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = At(100, 0, 25), PoseState = PoseState.Known, OriginId = 1 };
-        w.AddLocatedObject(prox);
-        Assert.Throws<NotSupportedException>(() => w.UpdateObjectOrigins(1, 2, Pose3d.Identity));
+        var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
+        var old = Cube(w, 21, In(o1, 100, 0)); old.OriginId = 1; old.LastObservedTimestamp = 800; w.AddLocatedObject(old);
+        var counterpart = Cube(w, 21, In(o2, 0, 0)); counterpart.OriginId = 2; counterpart.LastObservedTimestamp = 500; w.AddLocatedObject(counterpart);
+        for (int i = 0; i < old.Markers.Count; i++) { old.Markers[i].LastObservedTimestamp = (uint)(100 * i); counterpart.Markers[i].LastObservedTimestamp = (uint)(250 - 10 * i); }
+        Rejiggered(o1, o2, 0, 0);
+        w.UpdateObjectOrigins(1, 2);
+        Assert.Equal(800u, counterpart.LastObservedTimestamp);
+        for (int i = 0; i < counterpart.Markers.Count; i++)
+            Assert.Equal((uint)Math.Max(100 * i, 250 - 10 * i), counterpart.Markers[i].LastObservedTimestamp);
     }
+
+    /// <summary>
+    /// M11-043 non-unique counterpart (census 6a). MarkerlessObject::GetSameDistanceTolerance 0x00502B06 is the GetSizeByType size times 0.5f: CliffDetection
+    /// (20, 40, 50) -> (10, 20, 25). FindLocatedObjectClosestToHelper 0x0061F8EC walks the new origin's objects of the same family and type with no ID restriction
+    /// (0x00628F00..0x00628F4A) and returns the LAST accepted one; the predicate 0x00627F9A takes ComputeVectorBetween(old-origin pose, candidate) (0x008476A8:
+    /// different parents, so GetWithRespectTo), its absolute value, and accepts iff its f32 norm is strictly below the threshold's, which then becomes that vector.
+    /// Worked: the moved cliff is at (100, 0, 25) in origin 1, at (1000, 0, 0) in origin 2, so (1100, 0, 25). Candidate 31 at (1100, 30, 25): |v| = 30 < 33.54,
+    /// accepted, threshold (0, 30, 0). Candidate 32 at (1105, 8, 25): |v| = 9.43 < 30, accepted. So 32 is the counterpart: it is re-keyed to the moved ID 30
+    /// (0x00629174..0x006291E8), takes the converted pose and the source's state; 31 is untouched.
+    /// </summary>
+    // reach: unit (direct component entry; origin tree set by the test).
+    [Fact]
+    public void M11_043_ANonUniqueObjectMatchesTheClosestWithinItsToleranceAndTakesItsId()
+    {
+        var w = new BlockWorld { CurrentOriginId = 2 };
+        var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
+        var cliff = Markerless(30, ObjectType.CliffDetection, In(o1, 100, 0, 25), 1, PoseState.Dirty); w.AddLocatedObject(cliff);
+        var far = Markerless(31, ObjectType.CliffDetection, In(o2, 1100, 30, 25), 2, PoseState.Known); w.AddLocatedObject(far);
+        var near = Markerless(32, ObjectType.CliffDetection, In(o2, 1105, 8, 25), 2, PoseState.Known); w.AddLocatedObject(near);
+        Rejiggered(o1, o2, 1000, 0);
+        Assert.Equal(0u, w.UpdateObjectOrigins(1, 2));
+        Assert.Equal(30u, near.ObjectId);
+        Assert.Same(near, w.FindLocatedObjectHelper(new BlockWorldFilter { OriginMode = OriginMode.Custom, AllowedOrigins = { 2 }, AllowedIds = { 30 } }, null, true));
+        Assert.Equal(new Vec3(1100, 0, 25), near.NativePose.Translation);
+        Assert.Equal(PoseState.Dirty, near.PoseState);
+        Assert.Equal(31u, far.ObjectId);
+        Assert.Equal(new Vec3(1100, 30, 25), far.NativePose.Translation);
+        Assert.Empty(w.FindLocatedMatchingObjects(new BlockWorldFilter { OriginMode = OriginMode.Custom, AllowedOrigins = { 1 } }));
+    }
+
+    /// <summary>
+    /// M11-043 non-unique, no match (0x0062925A..0x00629390): the strict compare (0x0062803C vcmpe; 0x00628044 bpl) rejects a candidate whose |v| equals the
+    /// tolerance's norm: candidate 33 at (1110, 20, 50) gives |v| = (10, 20, 25), the CliffDetection tolerance itself. So no counterpart: the object is cloned,
+    /// the clone takes its ID 30 and the converted pose (1100, 0, 25) and is added in the new origin; 33 keeps its ID.
+    /// </summary>
+    // reach: unit (direct component entry; origin tree set by the test).
+    [Fact]
+    public void M11_043_ANonUniqueObjectExactlyAtItsToleranceDoesNotMatchAndIsCloned()
+    {
+        var w = new BlockWorld { CurrentOriginId = 2 };
+        var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
+        var cliff = Markerless(30, ObjectType.CliffDetection, In(o1, 100, 0, 25), 1, PoseState.Known); w.AddLocatedObject(cliff);
+        var edge = Markerless(33, ObjectType.CliffDetection, In(o2, 1110, 20, 50), 2, PoseState.Known); w.AddLocatedObject(edge);
+        Rejiggered(o1, o2, 1000, 0);
+        Assert.Equal(0u, w.UpdateObjectOrigins(1, 2));
+        Assert.Equal(33u, edge.ObjectId);
+        var clone = w.FindLocatedObjectHelper(new BlockWorldFilter { OriginMode = OriginMode.Custom, AllowedOrigins = { 2 }, AllowedIds = { 30 } }, null, true);
+        Assert.NotNull(clone);
+        Assert.NotSame(cliff, clone);
+        Assert.Equal(new Vec3(1100, 0, 25), clone!.NativePose.Translation);
+    }
+
+    /// <summary>
+    /// GetSizeByType 0x005026EC..0x0050286E: CollisionObstacle (20, 0x4258CCCD = 54.2f, 0x42876666 = 67.7f); GetSameDistanceTolerance 0x00502B06 multiplies each by
+    /// 0.5f in f32 (0x00502B26 vmul.f32): (10, 27.1f, 33.85f), the bits 0x41200000, 0x41D8CCCD, 0x42076666. ProxObstacle (10, 10, 50) -> (5, 5, 25).
+    /// </summary>
+    // reach: unit (the static size table).
+    [Fact]
+    public void M11_043_TheSameDistanceToleranceIsHalfTheSizeInF32()
+    {
+        var size = MarkerlessObject.SizeByType(ObjectType.CollisionObstacle)!.Value;
+        Assert.Equal(0x4258CCCD, BitConverter.SingleToInt32Bits(size.Y));
+        Assert.Equal(0x42876666, BitConverter.SingleToInt32Bits(size.Z));
+        var tol = MarkerlessObject.SameDistanceTolerance(ObjectType.CollisionObstacle)!.Value;
+        Assert.Equal(0x41200000, BitConverter.SingleToInt32Bits((float)tol.X));
+        Assert.Equal(0x41D8CCCD, BitConverter.SingleToInt32Bits((float)tol.Y));
+        Assert.Equal(0x42076666, BitConverter.SingleToInt32Bits((float)tol.Z));
+        Assert.Equal(new Vec3(5, 5, 25), MarkerlessObject.SameDistanceTolerance(ObjectType.ProxObstacle));
+        Assert.Equal(new Vec3(10, 20, 25), MarkerlessObject.SameDistanceTolerance(ObjectType.CliffDetection));
+    }
+
+    private static Pose3d In(Pose3d origin, double x, double y, double z = 22) => new(Rotation3d.Identity, new Vec3(x, y, z), parent: origin);
+    // The tree Rejigger leaves (0x00847E1A..0x00847E48): the old origin's transform replaced, and the old origin parented to the new one.
+    private static void Rejiggered(Pose3d oldOrigin, Pose3d newOrigin, double x, double y)
+    {
+        oldOrigin.Node!.Transform = new Transform3d(Rotation3d.Identity, new Vec3(x, y, 0));
+        oldOrigin.SetParent(newOrigin);
+    }
+    private static ObservableObject Markerless(uint id, ObjectType type, Pose3d pose, uint origin, PoseState state) =>
+        new(id, type, Array.Empty<KnownMarker>()) { Pose = pose, PoseState = state, OriginId = origin };
 
     // ------------------------------------------------------------------------------------------- M11-037
 

@@ -271,38 +271,54 @@ public sealed class LocalizeToObjectSameOriginTests
     }
 
     /// <summary>
-    /// S11 0x0051583C..0x00515850: E under another root takes the cross-origin branch (Rejigger and the origin updates, 0x00515854..0x005159B2), which is
-    /// not built. A stack limitation, not engine behaviour: the stack stops before S2 so that no vision-only state, frame or +0x2C6 write is made and the next
-    /// tick sends no AbsoluteLocalizationUpdate (one in the wrong origin would desynchronise the robot); a visible MISSING names LOCALIZE-CROSS-ORIGIN-1 and 1
-    /// is returned.
+    /// S11 0x0051583C..0x00515850 after S10: E under another root takes the cross-origin branch (census LOCALIZE-CROSS-ORIGIN-1). Here E's root is a test root
+    /// whose ID (99) is not in the origin list. X2 (0x00515854..0x005158D0): the RejiggeringOrigins event. X6 (0x00847D94..0x00847D98): the UnknownOrigin VERIFY,
+    /// Rejigger returns 1 with no change. X8 (0x0051591A..0x0051592A): the RejiggerFailed VERIFY, no recipients, no Flatten, then S12..S15 (0x005159B6). The
+    /// failure-exit table: S10 persists (+0x2B0 += 1, the vision-only state rooted at E's root); S12 writes N = (110, 15, 8) into the computed entry; S13
+    /// (0x005135F8, GetWithRespectTo(state, current origin) at 0x0051365A) cannot express that newest state in the current origin, so
+    /// FailedUpdateCurrPoseFromHistory and 1, S14 not reached. Next tick (X16, 0x00512734): the vision-only state's root ID is not a list origin (0x0051276E),
+    /// so nothing is sent.
     /// </summary>
-    // reach: unit — E is parented to a test root.
+    // reach: unit — E is parented to a test root (no engine producer of a non-list root is known: census X8 reachability UNKNOWN).
     [Fact]
-    public void M11_044_CrossOriginStopWritesAndSendsNothing()
+    public void M11_044_ARejiggerFailureLogsTheVerifyAndFallsThroughToS12()
     {
         using var s = new Setup();
         using var foreign = new Pose3d("foreign root") { Id = 99 };
         var e = s.Existing(); e.Pose = new Pose3d(Rotation3d.Identity, new Vec3(150, 0, 30), parent: foreign);
         var o = s.Observed();
-        uint frame = s.Owner.PoseFrameId;
+        s.World.DelocalizeRobotFields();                                         // +0x2C4 = 0: S9 skipped
+        uint frame = s.Owner.PoseFrameId; uint current = s.Owner.CurrentOriginId; string name = s.Origin.Name;
+        int mark = s.F.Rig.Mark();
         Assert.Equal(1u, s.World.LocalizeToObject(o, e));
-        Assert.Contains(s.Missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1") && m.Contains("0x00515854..0x005159B2"));
-        Assert.Equal(1, s.World.UnbuiltLocalizeToObjectCalls);
-        Assert.Equal(frame, s.Owner.PoseFrameId);
-        Assert.False(s.Owner.PoseHistory.VisionOnly.ContainsKey(s.T));
-        AssertXY(s.Hist.Pose.Translation, 100, 20);
+        Assert.Equal($"Robot {(int)s.Owner.NativeRobotId}'s current origin is {name}, about to localize to origin foreign root.",
+            s.Logs.Last(l => l.Name == "Robot.LocalizeToObject.RejiggeringOrigins").Text);
+        Assert.True(s.Logged("PoseOriginList.Rejigger.UnknownOrigin"));
+        Assert.True(s.Logged("Robot.LocalizeToObject.RejiggerFailed"));
+        Assert.True(s.Logged("Robot.LocalizeToObject.FailedUpdateCurrPoseFromHistory"));
+        Assert.False(s.Logged("Robot.LocalizeToObject.SetLocalizedToFail"));
+        Assert.Equal(unchecked(frame + 1), s.Owner.PoseFrameId);                // S10
+        Assert.True(s.Owner.PoseHistory.VisionOnly.ContainsKey(s.T));
+        AssertXY(s.Hist.Pose.Translation, 110, 15);                              // S12
+        Assert.Equal(current, s.Owner.CurrentOriginId);                          // no Rejigger change, no recipients
+        Assert.Equal(name, s.Origin.Name);
         Assert.Null(s.World.LocalizedToObjectId);
+        Assert.DoesNotContain(s.Missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1"));
+        s.F.Rig.Tick();
+        Assert.DoesNotContain(s.F.Rig.SentSince(mark), m => m is AbsoluteLocalizationUpdate);
+        Assert.True(s.Logged("Robot.SendAbsLocUpdate.InvalidPoseOriginID"));
     }
 
     /// <summary>
-    /// Multi path (LocalizeRobot 0x0050D3DA..0x0050D4D2; census: an element in the current root takes S11 -> S12..S15): the farther current-origin pair
-    /// localizes first and overwrites the computed entry at O.t (S12). The second pair's E is under another root: in the engine it would run S2..S10 on
-    /// that overwritten entry and then Rejigger; that branch is not built, so the stack stops it before S2 (nothing written, visible MISSING). The engine's
-    /// "second pair reads the first pair's S12" (S12r) can only arise across origins, so it is untestable until LOCALIZE-CROSS-ORIGIN-1.
+    /// Multi path (LocalizeRobot 0x0050D3DA..0x0050D4D2): the farther current-origin pair localizes first and overwrites the computed entry at O.t (S12), which
+    /// sets [Robot+0x2C4] = 1 (S14). The second pair's E is under another root, so it runs S2..S10 on that overwritten entry (S12r: H' = N1 = (110, 15, 8) yaw .25),
+    /// with the S9 blend: N2 = E2·O2⁻¹·H' = (-30, 10, -14), z blended with MAIN's 8 to f32(f32(-14 × 0.1f) + f32(8 × 0.9f)). Then the cross-origin branch:
+    /// E2's root is not a list origin, so RejiggerFailed (X8) and S12 writes N2; S13 fails (its newest state is rooted at E2's root) and the pair returns 1,
+    /// which LocalizeRobot returns (0x0050D4D2). Each pair's S10 advanced the frame (0x00515144..0x00515152); [Robot+0x2B8] stays the first pair's 7.
     /// </summary>
     // reach: unit — PotentialObjectsForLocalizingTo is built and filled directly; inputs as above.
     [Fact]
-    public void M11_044_ACrossOriginSecondPairWritesNothingAfterTheFirstLocalizes()
+    public void M11_044_ACrossOriginSecondPairRunsOnTheFirstPairsEntryAndFallsThroughAfterRejiggerFailed()
     {
         using var s = new Setup();
         using var foreign = new Pose3d("foreign root") { Id = 99 };
@@ -315,24 +331,27 @@ public sealed class LocalizeToObjectSameOriginTests
         s.World.DelocalizeRobotFields();
         // substituted: E1's last pose update has no computed entry, so Insert's P5 (0x0050CEB4..0x0050CF86) does not discard the pair
         if (s.World.EntryFor(7) is { } entry) entry.LastPoseUpdatedTime = s.T - 1;
-        uint frame = s.Owner.PoseFrameId;
+        uint frame = s.Owner.PoseFrameId; uint current = s.Owner.CurrentOriginId;
         var p = new PotentialObjectsForLocalizingTo(s.World, s.Owner.PoseHistory.GetComputedNativePoseAt);
         Assert.Equal(1, p.Insert(o1, e1, 100f, false, false));
         Assert.Equal(1, p.Insert(o2, e2, 50f, false, false));
-        Assert.Equal(1u, p.LocalizeRobot());                                     // the cross-origin pair's failure sets fp (0x0050D4D2)
-        Assert.Equal(unchecked(frame + 1), s.Owner.PoseFrameId);                  // only the first pair's S10
-        AssertXY(s.Hist.Pose.Translation, 110, 15);                               // the first pair's S12
-        var stamp = s.Owner.PoseHistory.VisionOnly[s.T];                           // the first pair's S10, not overwritten
-        AssertXY(stamp.Pose.Translation, 110, 15);
+        Assert.Equal(1u, p.LocalizeRobot());
+        Assert.Equal(unchecked(frame + 2), s.Owner.PoseFrameId);                  // both pairs' S10
+        AssertXY(s.Hist.Pose.Translation, -30, 10);                               // the second pair's S12, from the first pair's S12
+        float fromObservation = -14f * W01, fromRobot = 8f * W09; float z = fromObservation + fromRobot;
+        Assert.Equal(z, (float)s.Hist.Pose.Translation.Z, 3);
+        Assert.True(s.Logged("Robot.LocalizeToObject.RejiggerFailed"));
         Assert.Equal(7u, s.World.LocalizedToObjectId);
-        Assert.Contains(s.Missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1"));
+        Assert.Equal(current, s.Owner.CurrentOriginId);
+        Assert.DoesNotContain(s.Missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1"));
     }
 
     /// <summary>
     /// Multi path with the other-origin pair farther (LocalizeRobot 0x0050D354..0x0050D3D6, moved here from M11RVisBuildTests' former two-roots case): the
     /// current-origin element is not first, so its matched pointer is cleared and its ID stored (StoringMatchedObjectID); the farther, other-origin pair goes first
-    /// (its visible cross-origin MISSING), then the current-origin one is re-found by ID (GetLocatedObjectByIdHelper, family -1) and takes S11 -> S12..S15: its
-    /// SetLocalizedTo is last, so [Robot+0x2B8] ends as its ID, and the history frame advanced once per S10.
+    /// (S2..S10, then RejiggerFailed because its root is not a list origin, S12, and the S13 failure: CrossFrameLocalizeFailure), then the current-origin one is
+    /// re-found by ID (GetLocatedObjectByIdHelper, family -1) and takes S11 -> S12..S15: its SetLocalizedTo is last, so [Robot+0x2B8] ends as its ID, and the
+    /// history frame advanced once per S10.
     /// </summary>
     // reach: unit — PotentialObjectsForLocalizingTo is built and filled directly; inputs as above.
     [Fact]
@@ -352,12 +371,13 @@ public sealed class LocalizeToObjectSameOriginTests
         var p = new PotentialObjectsForLocalizingTo(s.World, s.Owner.PoseHistory.GetComputedNativePoseAt);
         Assert.Equal(1, p.Insert(o1, near, 50f, false, false));
         Assert.Equal(1, p.Insert(o2, far, 100f, false, false));
-        Assert.Equal(1u, p.LocalizeRobot());                                     // the unbuilt cross-origin pair fails (fp, 0x0050D4D2)
+        Assert.Equal(1u, p.LocalizeRobot());                                     // the cross-origin pair's failure (fp, 0x0050D4D2)
         Assert.Contains(lines, l => l.Contains("StoringMatchedObjectID") && l.Contains("ID=7"));
-        Assert.Contains(s.Missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1"));
-        Assert.Equal(1, s.World.UnbuiltLocalizeToObjectCalls);
+        Assert.Contains(lines, l => l.Contains("CrossFrameLocalizeFailure"));
+        Assert.True(s.Logged("Robot.LocalizeToObject.RejiggerFailed"));
+        Assert.Equal(0, s.World.UnbuiltLocalizeToObjectCalls);
         Assert.Equal(7u, s.World.LocalizedToObjectId);
-        Assert.Equal(unchecked(frame + 1), s.Owner.PoseFrameId);                  // the cross-origin pair stopped before S10
+        Assert.Equal(unchecked(frame + 2), s.Owner.PoseFrameId);                  // one S10 per pair
         Assert.Equal(s.Owner.PoseFrameId, s.Hist.State.PoseFrameId);              // the second (current-origin) S12
     }
 

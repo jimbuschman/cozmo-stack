@@ -64,7 +64,7 @@ public sealed class M3M4X23BuilderTests
             "detach"=>()=>w.DetachFromLift(cube,Pose3d.Identity),
             "released"=>()=>w.MarkReleased(99),"unknown"=>()=>w.MarkUnknown(99),
             "moved"=>()=>w.ApplyMovedOrStopped(cube,true),
-            "origins"=>()=>w.UpdateObjectOrigins(1,2,Pose3d.Identity),
+            "origins"=>()=>w.UpdateObjectOrigins(1,2),
             "delete"=>()=>w.DeleteLocatedObjects(new BlockWorldFilter()),
             "add"=>()=>w.AddLocatedObject(new ObservableObject(100,ObjectType.Block_LIGHTCUBE2,Array.Empty<KnownMarker>()){OriginId=1,Pose=Pose3d.Identity,PoseState=PoseState.Known}),
             "dirty"=>()=>w.MarkDirty(99),"state"=>()=>w.SetPoseStateHelper(cube,PoseState.Dirty),

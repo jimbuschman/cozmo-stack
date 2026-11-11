@@ -429,6 +429,8 @@ public sealed partial class VisionSystem : IDisposable
         };
         Faces.NativePoseScope=()=>World.EnterPoseMutation();
         Faces.NativeOwner=()=>_robot.Engine.Robot; // M14-009: IsPoseInWorldOrigin reads this robot's current origin
+        // fidelity: M11-044 — LocalizeToObject's cross-origin branch calls FaceWorld::UpdateFaceOrigins (Robot+0x38) at 0x005159A8.
+        World.FaceWorldUpdateFaceOrigins = Faces.UpdateFaceOrigins;
         World.CurrentRobotPose = () => robot.Engine.Robot?.MainPose;
         // fidelity: M1-053
         // Supplied by localization/vision (M11-053/055/035), not the incoming packet or camera receipt time.
