@@ -685,19 +685,25 @@ public class FaceTests
     }
 
     /// <summary>
-    /// M14-012 (F24/F25/F27): <c>LoadFaceAlbumFromRobot</c> reads NV 0x184000 first and 0x183000 second;
-    /// the enrollment completion installs the data and replays the loaded names as
-    /// <c>RobotErasedAllEnrolledFaces</c> first, then one <c>LoadedKnownFace</c> per entry.
+    /// M14-012 R2-R13: <c>LoadFaceAlbumFromRobot</c> 0x006512A0 reads NV 0x184000 first and 0x183000 second. The
+    /// callback 0x0065A860 installs under VC+0x4C (0x0065A870..0x0065A896); an install failure warns and skips the
+    /// replay (0x0065A89C), so a FaceWorld named face is never replayed and nothing goes out as 0x58 or 0x1C.
     /// </summary>
+    // reach: production for the public read entry and the NV wire; the injected unavailable recognizer substitutes the
+    // OKAO install (an empty album cannot install, 0x0065A89C).
     [Fact]
-    public void M14_012_TheFaceAlbumReadsAlbumThenEnrollmentAndReplaysEraseBeforeNames()
+    public void M14_012_TheFaceAlbumReadsAlbumThenEnrollmentAndAFailedInstallSendsNoReplay()
     {
         using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
         int erased = 0;
         var loaded = new List<(int Id, string Name)>();
         rig.Vision.EnrolledFacesErased += () => erased++;
         rig.Vision.LoadedFaceName += (id, name) => loaded.Add((id, name));
-        // a named face already in the world, so the replay has something to carry
+        var raw = new List<ushort>();
+        rig.Robot.Engine.EngineToGameMessage += (tag, _) => { if (tag is 0x58 or 0x1C) raw.Add(tag); };
+        var logs = new List<EngineLogEntry>();
+        rig.Robot.Engine.LogEntry += logs.Add;
+        // a named face already in the world: the engine's replay never reads FaceWorld
         var tf = new TrackedFace(new DetectedFace(5, new FaceRect(0, 0, 10, 10), Name: "Jim"), 1000);
         Assert.NotNull(rig.Vision.Faces.AddOrUpdateFace(tf, Pose3d.Identity, false));
 
@@ -715,8 +721,12 @@ public class FaceTests
         Assert.Equal(NvStorageComponent.OpRead, second.Op);
 
         ReplyNonFactoryRead(rig, 0x183000, Array.Empty<byte>());
-        Assert.Equal(1, erased);
-        Assert.Equal(new[] { (5, "Jim") }, loaded);
+        rig.Robot.Engine.DrainAppDelivery();
+        Assert.Equal(0, erased);                                          // 0x0065A89C: no replay after a failed install
+        Assert.Empty(loaded);
+        Assert.Empty(raw);
+        Assert.Contains(logs, e => e.Name == "VisionComponent.LoadFaceAlbumFromRobot.Failure" && e.Level == EngineLogLevel.Warning);
+        Assert.DoesNotContain(logs, e => e.Name == "VisionComponent.LoadFaceAlbumFromRobot.Success");
     }
 
     /// <summary>
@@ -790,15 +800,39 @@ public class FaceTests
         Assert.Equal(new[] { "error", "album", "enrollment" }, order);
     }
 
-    [Fact]
-    public void FaceAlbumRejectsTheExactNvCapacityBeforeEnqueue()
+    /// <summary>
+    /// M14-012 R17 (G2b): SaveFaceAlbumToRobot checks each size against GetMaxSizeForEntryTag (0x006571DA..0x0065720E,
+    /// album 0x10000, enrollment 0x1000); a size at or above it fails through sErrorF with
+    /// <c>VisionComponent.SaveFaceAlbumToRobot.AlbumDataTooLarge</c> / <c>EnrollDataTooLarge</c> and _errG
+    /// (0x00657256..0x006572FE), and no NV request follows.
+    /// </summary>
+    // reach: unit (the injected unavailable recognizer substitutes the serialized vectors; the stock guest's capacity
+    // to reach the limit is not established).
+    [Theory]
+    [InlineData(0x10000, 1, "VisionComponent.SaveFaceAlbumToRobot.AlbumDataTooLarge", "Album data is 65536 max size is 65536")]
+    [InlineData(4, 0x1000, "VisionComponent.SaveFaceAlbumToRobot.EnrollDataTooLarge", "Enroll data is 4096 max size is 4096")]
+    [InlineData(0x10000, 0x1000, "VisionComponent.SaveFaceAlbumToRobot.AlbumDataTooLarge", "Album data is 65536 max size is 65536")]
+    public void FaceAlbumRejectsTheExactNvCapacityBeforeEnqueue(int albumLength, int enrollmentLength, string key, string text)
     {
-        using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
-        rig.Vision.InstallSerializedFaceData(new byte[0x10000], new byte[] { 1 });
-        int before = rig.Sent.OfType<NVCommand>().Count();
-        rig.Vision.SaveFaceAlbumToRobot();
-        rig.Tick(); rig.Pump();
-        Assert.Equal(before, rig.Sent.OfType<NVCommand>().Count());
+        bool previous = Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var rig = new Rig(okaoRecognizer: new OkaoFaceRecognizer());
+            var logs = new List<EngineLogEntry>();
+            rig.Robot.Engine.LogEntry += logs.Add;
+            rig.Vision.InstallSerializedFaceData(new byte[albumLength], new byte[enrollmentLength]);
+            int before = rig.Sent.OfType<NVCommand>().Count();
+            Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+            rig.Vision.SaveFaceAlbumToRobot();
+            rig.Tick(); rig.Pump();
+            Assert.Equal(before, rig.Sent.OfType<NVCommand>().Count());
+            Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+            var error = Assert.Single(logs, e => e.Name.EndsWith("DataTooLarge", StringComparison.Ordinal));
+            Assert.Equal((EngineLogLevel.Error, key), (error.Level, error.Name));
+            Assert.EndsWith(text, error.Text, StringComparison.Ordinal);   // the error sink prefixes the thread tag
+            Assert.True(rig.Robot.Engine.NvStorage!.IsIdle);
+        }
+        finally { Cozmo.Transport.EngineErrorState.ErrorFlagSet = previous; }
     }
 
     /// <summary>Answers the in-flight non-factory NV read/write with a valid 16-byte header and a payload.</summary>

@@ -15,9 +15,9 @@ public sealed class ReportOrderingRegressionTests
         internal readonly string Root=Directory.CreateTempSubdirectory("report-order-").FullName;
         internal readonly VisionSystem Vision;
         internal CozmoRobot Robot=>Rig.Robot;
-        internal Fixture()
+        internal Fixture(IOkaoFaceRecognizer? okao=null)
         {
-            Rig.ToSynced();Rig.State();Vision=new(Robot,CameraCalibration.Nominal(),okaoRecognizer:new OkaoFaceRecognizer()){Enabled=false};
+            Rig.ToSynced();Rig.State();Vision=new(Robot,CameraCalibration.Nominal(),okaoRecognizer:okao??new OkaoFaceRecognizer()){Enabled=false};
             Directory.CreateDirectory(Path.Combine(Root,"animations"));
             Directory.CreateDirectory(Path.Combine(Root,"animationGroups"));
             Directory.CreateDirectory(Path.Combine(Root,"animationGroupMaps"));
@@ -83,23 +83,26 @@ public sealed class ReportOrderingRegressionTests
         Assert.Equal(new[]{"60","motorFalse","platformTrue"},host);
     }
 
-    // reach: unit (direct album adoption with seeded names substitutes OKAO restore, M11-016;
+    // M14-012: the callback's result-0 branch (0x0065A870..0x0065A9D4) installs, then BroadcastLoadedNamesAndIDs
+    // 0x00651578 sends one 0x58 (0x0065159C) and one 0x1C per installed entry (0x00651612); FaceWorld is not read.
+    // reach: unit (direct album adoption; the fake OKAO recognizer substitutes the album restore, M11-016;
     // uses the actual FIFO and verifies its join to earlier received animation reports).
     [Fact]
     public void LoadedFaceReportsQueueAfterEarlierReportsAndSnapshotNames()
     {
-        using var f=new Fixture();f.Start();var host=new List<string>();var local=new List<string>();
+        var okao=new FaceRecognizerTests.FakeOkaoRecognizer();okao.RestoredEntries.Add(5);
+        using var f=new Fixture(okao);f.Start();var host=new List<string>();var local=new List<string>();
         f.Rig.Engine.AnimationEvent+=_=>host.Add("60");
         f.Vision.EnrolledFacesErased+=()=>host.Add("erase");
         f.Vision.LoadedFaceName+=(id,name)=>host.Add(id+":"+name);
         f.Vision.EnrolledFacesErasedInternal+=()=>{Assert.Empty(host);local.Add("erase");};
         f.Vision.LoadedFaceNameInternal+=(id,name)=>{Assert.Empty(host);local.Add(id+":"+name);};
-        f.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(5,new FaceRect(0,0,10,10),Name:"Jim"),1),Pose3d.Identity,false);
+        f.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(9,new FaceRect(0,0,10,10),Name:"World"),1),Pose3d.Identity,false);
         // Dispatch the real packet without draining so album adoption joins the same pending batch.
         f.Rig.Data(new AnimationStarted{AnimId=f.Robot.Animations.CurrentTag});
         f.Rig.Data(new Cozmo.Protocol.AnimationEvent{Timestamp=123,EventId=(AnimEvent)f.Robot.Animations.CurrentTag,Field2=2});
         // The real packet runs during Tick; adopt at its synchronous local E2G publication.
-        using var subscription=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x60,true,_=>f.Vision.AdoptFaceAlbum(Array.Empty<byte>(),Array.Empty<byte>()));
+        using var subscription=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x60,true,_=>f.Vision.AdoptFaceAlbum(new byte[]{1},FaceRecognizerTests.EnrollmentFor((5,5,"Jim"))));
         f.Rig.Tick();
         Assert.Equal(new[]{"erase","5:Jim"},local);
         Assert.Equal(new[]{"60","erase","5:Jim"},host);

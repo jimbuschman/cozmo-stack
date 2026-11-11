@@ -373,6 +373,7 @@ public sealed partial class VisionSystem : IDisposable
     private readonly RetainedSubscription _renameRequest;
     private readonly RetainedSubscription _eraseRequest;
     private readonly RetainedSubscription _fileAlbumRequest;
+    private readonly RetainedSubscription _eraseAllRequest;
 
     internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -518,6 +519,20 @@ public sealed partial class VisionSystem : IDisposable
         {
             if(value is NativeLoadFaceAlbumFileRequest request && ReferenceEquals(request.Vision,this))
                 HandleFileAlbumRequest(request);
+        });
+        // fidelity: M14-012
+        // 0x0065019E/0x006505B4..0x006505BC: VisionComponent subscribes G2E 0x8A; handler 0x00658076 -> EraseAllFaces 0x006514FC.
+        _eraseAllRequest=robot.Engine.AnimationMessages.SubscribeMessage(0x8A,false,value=>
+        {
+            try
+            {
+                if(value is NativeEraseAllFacesRequest request && ReferenceEquals(request.Vision,this))
+                    HandleEraseAllFacesRequest(request);
+            }
+            catch(Exception error) when(error is not OutOfMemoryException)
+            {
+                FileHandlerFailed(error);
+            }
         });
     }
 
@@ -1189,42 +1204,53 @@ public sealed partial class VisionSystem : IDisposable
 
     // fidelity: M14-012
     /// <summary>
-    /// <c>VisionComponent::BroadcastLoadedNamesAndIDs</c> (F27): <c>RobotErasedAllEnrolledFaces</c> first,
-    /// then one <c>LoadedKnownFace</c> per named entry, queued to the host FIFO.
+    /// <c>VisionComponent::BroadcastLoadedNamesAndIDs</c> 0x00651578 over the recognizer's installed list: one
+    /// <c>RobotErasedAllEnrolledFaces</c> 0x58 (0x0065159C), then per entry an Info log and one <c>LoadedKnownFace</c>
+    /// 0x1C (0x00651612), in the same native form as the NV and file restores. The engine calls it only after a
+    /// successful install; this public entry replays whatever the recognizer currently holds.
     /// </summary>
     public void BroadcastLoadedNamesAndIDs()
     {
-        _robot.Engine.QueueAppBroadcast(EnrolledFacesErased); // 0x0065159C
-        EnrolledFacesErasedInternal?.Invoke();
-        foreach (var f in Faces.Faces)
-            if (f.HasName)
-            {
-                _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.BroadcastLoadedNamesAndIDs",FormattableString.Invariant($"broadcasting loaded face id: {f.Id}"));
-                _robot.Engine.QueueAppBroadcast(LoadedFaceName,f.Id,f.Name!); // 0x00651612
-                LoadedFaceNameInternal?.Invoke(f.Id,f.Name!);
-            }
+        var owner = _robot.Engine.Robot;
+        if (owner is null) { SteppedBehavior.ReportMissing("M14-012 BroadcastLoadedNamesAndIDs needs a robot owner; nothing replayed"); return; }
+        var recognizer = Recognizer;
+        int removal = Volatile.Read(ref _removals);
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner) &&
+            removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, recognizer);
+        IReadOnlyList<FileLoadedFace> reports;
+        using (LogCallbackDeferral.EnterGated(_busy))
+        {
+            if (!Current()) return;
+            reports = recognizer.LoadedFaceReports();
+        }
+        ReplayLoadedFaces(owner, reports, Current);
     }
 
     // fidelity: M14-012
     /// <summary>
-    /// <c>VisionComponent::LoadFaceAlbumFromRobot</c> (F24/F25): reads NV <see cref="FaceAlbumNvTag"/>
-    /// first and <see cref="FaceEnrollmentNvTag"/> second, then on the enrollment completion adopts
-    /// both. M3-033 owns the connection-time queue; this direct form remains the M14-012 entry the
-    /// FaceTests drive. The engine's connection path calls <see cref="AdoptFaceAlbum"/> with the bytes
-    /// its #3/#4 reads produced.
+    /// <c>VisionComponent::LoadFaceAlbumFromRobot</c> 0x006512A0 (R2-R13): reads NV <see cref="FaceAlbumNvTag"/> with no
+    /// callback, then <see cref="FaceEnrollmentNvTag"/> with the callback 0x0065A860, then logs Initiated. The callback
+    /// logs and skips a not-found or failed result; a result of 0 runs <see cref="AdoptFaceAlbum"/> (install, then the
+    /// replay only on success). The album bytes are this call's own (G3: the stack keeps them isolated from a save).
     /// </summary>
     public void LoadFaceAlbumFromRobot()
     {
         var nv = _robot.Engine.NvStorage;
-        if (nv is null) return;
+        if (nv is null) { SteppedBehavior.ReportMissing("M14-012 LoadFaceAlbumFromRobot needs NV storage; nothing read"); return; }
+        var owner = _robot.Engine.Robot;
         var album = new List<byte>();
         if(nv.Read(FaceAlbumNvTag,null,album)==0)
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceAlbumDataFail","");
         else if(nv.Read(FaceEnrollmentNvTag,r=>
         {
-            if(r.Result==-1)_robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound","");
-            else if(r.Result!=0)_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail",$"NVResult = {NvStorageComponent.NvResultName(r.Result)}");
-            if(r.Result==0)AdoptFaceAlbum(album.ToArray(),r.Data);
+            try
+            {
+                if(owner is null || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !ReferenceEquals(_robot.Engine.NvStorage,nv))return;
+                if(r.Result==-1)_robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound","");
+                else if(r.Result!=0)_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail",$"NVResult = {NvStorageComponent.NvResultName(r.Result)}");
+                if(r.Result==0)AdoptFaceAlbum(album.ToArray(),r.Data);
+            }
+            finally { album.Clear(); }   // 0x0065A9DE..0x0065A9F2: both vectors cleared
         })==0)
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail","");
         _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionComponent.LoadFaceAlbumToRobot.Initiated","Initiated load of album and enroll data from NVStorage");
@@ -1232,40 +1258,47 @@ public sealed partial class VisionSystem : IDisposable
 
     // fidelity: M14-012
     /// <summary>
-    /// The M14-012 consumer: install the two vectors under the vision mutex
-    /// (<c>SetSerializedFaceData</c>, 0x0065A876) and replay the loaded names
-    /// (<c>BroadcastLoadedNamesAndIDs</c>). Used both by the direct read above and by the engine's
-    /// connection-time <c>ConnectionFaceAlbumLoaded</c>.
+    /// The result-0 branch of the NV read callback 0x0065A860: install both vectors under the vision mutex
+    /// (<c>SetSerializedFaceData</c>, 0x0065A870..0x0065A896). A failed install warns and skips the replay (0x0065A89C);
+    /// a successful one logs and replays (<c>BroadcastLoadedNamesAndIDs</c>, 0x0065A9D4) in the native 0x58-then-0x1C form.
+    /// The stock recognizer installs through the same restore as the connection read; an injected recognizer installs
+    /// through its <c>SetSerializedData</c> and is reached from the connection-time <c>ConnectionFaceAlbumLoaded</c>.
     /// </summary>
     public void AdoptFaceAlbum(byte[] album, byte[] enrollment)
     {
         var owner = _robot.Engine.Robot;
+        if (owner is null) { SteppedBehavior.ReportMissing("M14-012 AdoptFaceAlbum needs a robot owner; nothing installed"); return; }
+        album ??= Array.Empty<byte>();
+        enrollment ??= Array.Empty<byte>();
+        if (_stockRecognizer)
+        {
+            int epoch;
+            lock (_groundGate) epoch = _nativeInitializationEpoch;
+            if (!NativeVisionAttemptCurrent(owner, epoch))
+            { SteppedBehavior.ReportMissing("M14-012 AdoptFaceAlbum: the original vision Init owner is unavailable; nothing installed"); return; }
+            RestoreStockNv(owner, epoch, album, enrollment);
+            return;
+        }
         var recognizer = Recognizer;
         int removal = Volatile.Read(ref _removals);
-        (int Id, string Name)[] loaded;
+        bool Current() => removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, recognizer) &&
+            !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner);
+        IReadOnlyList<FileLoadedFace> reports = Array.Empty<FileLoadedFace>();
         bool installed;
         lock (_busy)
         {
             installed = TryInstallSerializedFaceData(album, enrollment, owner, recognizer, removal);
-            loaded = installed && ReferenceEquals(Recognizer, recognizer)
-                ? recognizer.EnrolledFaces.OrderBy(f => f.FaceID).Select(f => (f.FaceID, f.Name)).ToArray()
-                : Array.Empty<(int, string)>();
+            if (installed && Current()) reports = recognizer.LoadedFaceReports();
         }
-        if (!_stockRecognizer) { BroadcastLoadedNamesAndIDs(); return; }
-        bool Current() => removal == Volatile.Read(ref _removals) && ReferenceEquals(Recognizer, recognizer) &&
-            (owner is null ? _robot.Engine.Robot is null : !owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, owner));
-        if (!installed || !Current()) return;
-        _robot.Engine.QueueAppBroadcast(EnrolledFacesErased);
-        EnrolledFacesErasedInternal?.Invoke();
-        foreach (var face in loaded)
+        if (!Current()) return;
+        if (!installed)
         {
-            if (!Current()) return;
-            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "VisionComponent", "VisionComponent.BroadcastLoadedNamesAndIDs",
-                FormattableString.Invariant($"broadcasting loaded face id: {face.Id}"));
-            if (!Current()) return;
-            _robot.Engine.QueueAppBroadcast(LoadedFaceName, face.Id, face.Name);
-            LoadedFaceNameInternal?.Invoke(face.Id, face.Name);
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.Failure",$"Failed setting {album.Length}-byte album data and {enrollment.Length}-byte enroll data");
+            return;
         }
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionComponent.LoadFaceAlbumFromRobot.Success",$"Finished setting {album.Length}-byte album data and {enrollment.Length}-byte enroll data");
+        if (!Current()) return;
+        ReplayLoadedFaces(owner, reports, Current);
     }
 
     // fidelity: M14-012
@@ -1318,13 +1351,7 @@ public sealed partial class VisionSystem : IDisposable
             SteppedBehavior.ReportMissing($"M14-011 native face album export failed; save skipped: {ex.Message}");
             return;
         }
-        int albumMax = NvStorageComponent.MaxSizeForEntryTag(FaceAlbumNvTag);            // 0x10000
-        int enrollmentMax = NvStorageComponent.MaxSizeForEntryTag(FaceEnrollmentNvTag);  // 0x1000
-        if (album.Length >= albumMax || enrollment.Length >= enrollmentMax)
-        {
-            Log?.Invoke($"SaveFaceAlbumToRobot: serialized data too large (album {album.Length}/{albumMax}, enrollment {enrollment.Length}/{enrollmentMax})");
-            return;
-        }
+        if (!Current() || FaceAlbumSaveTooLarge(album, enrollment)) return;   // fidelity: M14-012 (0x00657256..0x006572FE)
         if (album.Length == 0 && enrollment.Length == 0)
         {
             // C5-13: erase the album first, then the enrollment only when the album erase succeeded.
@@ -2591,6 +2618,7 @@ public sealed partial class VisionSystem : IDisposable
         _renameRequest.Dispose();
         _eraseRequest.Dispose();
         _fileAlbumRequest.Dispose();
+        _eraseAllRequest.Dispose();
         // Do not hold a host lock across join or callbacks on the worker's exit log.
         StopProcessor();
         if(ReferenceEquals(World.NativeObjectObserved,_nativeObjectObserved))World.NativeObjectObserved=null;

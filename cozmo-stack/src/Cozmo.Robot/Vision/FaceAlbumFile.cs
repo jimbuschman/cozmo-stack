@@ -159,16 +159,30 @@ public sealed partial class FaceRecognizer
                 foreach(int id in entry.AlbumEntries.Keys)_albumEntryToFaceId[id]=entry.FaceID;
             }
             long now=Now;
-            var reports=entries.OrderBy(entry=>entry.FaceID).Select(entry=>
-            {
-                long last=entry.AlbumEntries.Count==0?0:Math.Max(0,entry.AlbumEntries.Values.Max(value=>value.LastSeenMicros));
-                return new FileLoadedFace(unchecked(now-entry.Timestamp28Micros)/MicrosPerSecond,
-                    unchecked(now-entry.Timestamp30Micros)/MicrosPerSecond,unchecked(now-last)/MicrosPerSecond,
-                    entry.FaceID,Encoding.Latin1.GetBytes(entry.Name));
-            }).ToArray();
+            var reports=entries.OrderBy(entry=>entry.FaceID).Select(entry=>LoadedReport(entry,now)).ToArray();
             return (true,reports);
         }
         finally {if(!transferred)_okao.DeleteAlbumHandle(loaded);}
+    }
+
+    private static FileLoadedFace LoadedReport(EnrolledFaceEntry entry,long now)
+    {
+        long last=entry.AlbumEntries.Count==0?0:Math.Max(0,entry.AlbumEntries.Values.Max(value=>value.LastSeenMicros));
+        return new FileLoadedFace(unchecked(now-entry.Timestamp28Micros)/MicrosPerSecond,
+            unchecked(now-entry.Timestamp30Micros)/MicrosPerSecond,unchecked(now-last)/MicrosPerSecond,
+            entry.FaceID,Encoding.Latin1.GetBytes(entry.Name));
+    }
+
+    // fidelity: M14-012
+    // The list BroadcastLoadedNamesAndIDs 0x00651578 replays after a successful install: the installed entries in the
+    // same order and with the same age fields as the NV restore's list above (R2-R13).
+    internal IReadOnlyList<FileLoadedFace> LoadedFaceReports()
+    {
+        lock(_gate)
+        {
+            long now=Now;
+            return _faces.Values.OrderBy(entry=>entry.FaceID).Select(entry=>LoadedReport(entry,now)).ToArray();
+        }
     }
 
     internal void NotifyStockFacesLoaded(IReadOnlyList<FileLoadedFace> reports,Func<bool> current)
@@ -340,6 +354,16 @@ public sealed partial class VisionSystem
         }
         catch(Exception ex) when(ex is not OutOfMemoryException)
         { Behavior.SteppedBehavior.ReportMissing($"M11-059 file album host/guest operation unavailable: {ex.Message}");return false; }
+    }
+
+    // fidelity: M14-012
+    // BroadcastLoadedNamesAndIDs 0x00651578: one RobotErasedAllEnrolledFaces (0x0065159C), then per list entry an
+    // Info log and one LoadedKnownFace (0x00651612).
+    private bool ReplayLoadedFaces(EngineRobot owner,IReadOnlyList<FileLoadedFace> reports,Func<bool> current)
+    {
+        if(!PublishAlbumErase(owner,current))return false;
+        foreach(var face in reports)if(!PublishLoadedFace(owner,face,current))return false;
+        return current();
     }
 
     private bool PublishAlbumErase(EngineRobot owner,Func<bool> current)

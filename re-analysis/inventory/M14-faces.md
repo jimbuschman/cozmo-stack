@@ -465,6 +465,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New RECOVERABLE_GAP: PetWorld::Update's RobotObservedPet game broadcast (0x0050B7F4; ctor 0x0050BA60, Broadcast 0x0050BA68), body and payload unread; PetObserved stays inline | M14-014 (new) |
 
+## M14-012 evidence corrected and settled (manager, 2026-11-11; research/20261111-settle-m14-012-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| Authority: the NV read callback entry is 0x0065A860 (functor vtable 0x102F914 slot +0x18), not 0x0065A870; EraseAllFaces 0x006514FC (G2E 0x8A) and the NV wrappers 0x0065A478/0x0065A6CC added. Evidence item 2 corrected (one 0x58 before the LoadedKnownFace loop, not one per entry); item 3 rewritten (clear, mutex export, size checks with _errG, the empty-album erase and the padded write, each second tag only if the first was admitted); the callback, wrappers and 0x8A rows added. IMPLEMENTATION_GAP -> EXACT_SOURCE | M14-012 |
+
 ## M14-001 evidence completed and settled (manager, 2026-11-10; research/20261110-settle-m14-001-claude-check.md)
 
 Re-approved under the standing authorisation for cited inventory corrections.

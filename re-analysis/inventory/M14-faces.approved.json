@@ -1,8 +1,8 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-11-10",
+  "approved": "2026-11-11",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "4911c3854bb3e44241c5123ff54d881fee8da13e80321a93cd2661ca79cbbb54",
+  "inventory_sha256": "d4dcbefe14bf9fbea3efbf7f4f8424b18fa91cafa6e1e33429c78e957ad7e19f",
   "records": {
     "M14-001": {
       "status": "EQUIVALENT_IMPLEMENTATION",
@@ -150,14 +150,17 @@
       "hardware_required": false
     },
     "M14-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Face album NV persistence, loaded-name replay and enrollment completion",
-      "authority": "VisionComponent album functions 0x006512A0, 0x00651578, 0x00657144 and callback 0x0065A870; BehaviorEnrollFace::StopInternal 0x005FE2F4, read",
+      "authority": "VisionComponent::LoadFaceAlbumFromRobot 0x006512A0, NV read callback 0x0065A860 (functor vtable 0x102F914 slot +0x18), BroadcastLoadedNamesAndIDs 0x00651578, EraseAllFaces 0x006514FC (G2E 0x8A, subscribed 0x006505BC, handler 0x00658076), SaveFaceAlbumToRobot 0x006570A8/0x00657144 with NV wrappers 0x0065A478/0x0065A6CC; BehaviorEnrollFace::TransitionToSavingToRobot 0x005FD494 and StopInternal 0x005FE2F4, read",
       "evidence": [
         "0x006512EA/0x00651330 reads NV tags 0x184000/0x183000; 0x0065A876..0x0065A896 installs the data under the vision mutex.",
-        "0x00651594..0x00651612 broadcasts RobotErasedAllEnrolledFaces before each LoadedKnownFace.",
-        "0x00657180..0x0065720E obtains and size-checks both vectors; 0x006573A0..0x006573EA writes album then enrollment after four-byte padding, with erase paths for empty data.",
-        "0x005FE520/0x005FE528 constructs and broadcasts FaceEnrollmentCompleted."
+        "0x00651594/0x0065159C broadcasts one RobotErasedAllEnrolledFaces; the loop 0x006515B8..0x00651630 logs each entry's ID and broadcasts one LoadedKnownFace per list entry (0x0065160A/0x00651612).",
+        "0x00657168..0x00657198 clears both vectors and obtains them under the vision mutex, returning on failure before NV; 0x006571DA..0x0065720E checks each size against GetMaxSizeForEntryTag, and a size at or above it fails through sErrorF and _errG (0x00657256..0x006572FE); both empty (0x00657350..0x0065735E) erases 0x184000 (0x00657474) and then 0x183000 only if the first was admitted (0x006575E6..0x00657600); otherwise both are padded to four bytes (0x00657360..0x0065737C) and 0x184000 is written (0x006573A6), then 0x183000 only if the first was admitted (0x006573C0..0x006573E6).",
+        "0x005FE520/0x005FE528 constructs and broadcasts FaceEnrollmentCompleted.",
+        "Callback 0x0065A860: 0xFF and nonzero results log and skip (0x0065A864..0x0065A86E); result 0 installs under VC+0x4C (0x0065A870..0x0065A896); an install failure skips the replay (0x0065A89C); success replays (0x0065A9D4); both vectors are cleared (0x0065A9DE..0x0065A9F2).",
+        "Wrappers 0x0065A478/0x0065A6CC: a nonzero result gives BroadcastEngineErrorCode(3) (0x0065A4C4/0x0065A718), then the caller's callback if present (0x0065A506..0x0065A510 / 0x0065A75A..0x0065A764).",
+        "G2E 0x8A EraseAllEnrolledFaces is subscribed when the external interface exists (0x0065019E, 0x006505B4..0x006505BC) and handled at 0x00658076 -> EraseAllFaces 0x006514FC: lock, VisionSystem::EraseAllFaces, unlock, SaveFaceAlbumToRobot(), then one 0x58 (Robot::Broadcast 0x00651538), with no availability check and no wait for NV."
       ],
       "live_path": true,
       "hardware_required": false
