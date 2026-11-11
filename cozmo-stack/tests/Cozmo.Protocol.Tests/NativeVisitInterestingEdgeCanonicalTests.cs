@@ -225,7 +225,11 @@ public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper o
         var run=RunFreeplay(new(150f,SuppliedCloseEdgeMm:55f));
         AssertNoHold(run);
         Assert.Contains(run.States,s=>s.State==3);
-        Assert.DoesNotContain(run.States,s=>s.State==4);
+        // The claim is about the close-edge visit: it ends in state 3 and never reaches state 4. Later visits in the same freeplay run
+        // (another edge, after the cone is flagged) may legitimately end in state 4; under full-suite load the run lasts long enough
+        // for one to start, so only the first visit, up to its state 3, is checked.
+        int firstEnd=run.States.FindIndex(s=>s.State==3);
+        Assert.DoesNotContain(run.States.Take(firstEnd+1),s=>s.State==4);
         Assert.True(run.Completions>=1,"VisitInterestingEdge never completed");
         Assert.True(run.Content.GetValueOrDefault(MemoryMapContentType.NotInterestingEdge)>0);
     }

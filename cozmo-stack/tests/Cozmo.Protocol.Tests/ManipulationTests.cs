@@ -346,7 +346,9 @@ public class ManipulationTests
         var obj = Assert.Single(r.Objects).Object;
         var marker = obj.Markers.First(k => k.Code == MarkerType.LightCubeI_Front);
         rig.ErrorSignalsBeforeResult = 2;
-        var dock = rig.M.Docking.DockAsync(obj, marker, DockAction.PickupLow, PathMotionProfile.Default, flag8: true, timeout: TimeSpan.FromSeconds(5));
+        // The timeout is wall-clock (Task.Delay) and only guards a missing robot result; 30 s, not 5, so full-suite load cannot expire it
+        // before the rig pumps the result (the gate on c8280a2f ran this test for 13 s and the dock timed out).
+        var dock = rig.M.Docking.DockAsync(obj, marker, DockAction.PickupLow, PathMotionProfile.Default, flag8: true, timeout: TimeSpan.FromSeconds(30));
         rig.Pump();
         Assert.Contains(rig.Sent, m => m is DockWithObject);
         Assert.Equal(PoseState.Dirty, obj.PoseState);
