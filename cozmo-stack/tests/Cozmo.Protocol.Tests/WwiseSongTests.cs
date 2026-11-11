@@ -365,7 +365,8 @@ public class WwiseSongTests
             Assert.True(release.Wait(TimeSpan.FromSeconds(30)), "prewarm was not released");
         };
         var prewarm = source.Prewarm(ev);
-        Assert.True(preparing.Wait(TimeSpan.FromSeconds(10)));
+        // Only a hang guard: the music preparation before this callback is heavy, and under full-suite load it took longer than 10 s.
+        Assert.True(preparing.Wait(TimeSpan.FromSeconds(60)));
         var dispose = Task.Run(() => { disposing.Set(); source.Dispose(); });
         try
         {
