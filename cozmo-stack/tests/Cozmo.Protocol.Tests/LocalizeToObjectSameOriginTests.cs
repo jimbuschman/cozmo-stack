@@ -360,4 +360,43 @@ public sealed class LocalizeToObjectSameOriginTests
         Assert.Equal(unchecked(frame + 1), s.Owner.PoseFrameId);                  // the cross-origin pair stopped before S10
         Assert.Equal(s.Owner.PoseFrameId, s.Hist.State.PoseFrameId);              // the second (current-origin) S12
     }
+
+    /// <summary>
+    /// Regression guard (stack limitation, not engine behaviour). On an online engine a live sighting's object pose carries the stack's legacy frame flag,
+    /// so the native SetLocalizedTo (S14) cannot run. Before the guard, LocalizeToObject ran S2..S13, failed S14, and S10's +0x2C6 made every frame that
+    /// saw the cube send an AbsoluteLocalizationUpdate while the robot stayed unlocalized. Now that case keeps the stack's earlier result: the SetLocalizedTo
+    /// field writes, no pose-frame or history change, and no 0x45, with a visible MISSING naming LIVE-OBJECT-POSE-NATIVE-1.
+    /// </summary>
+    // reach: unit — real rendered cube frames through the queued worker (dispatch, ComputeAndInsertKeyedState, CreateObjectsFromMarkers, Insert,
+    // LocalizeRobot), but the engine is the offline test engine with its offline flag cleared by reflection so SetLocalizedTo takes the online branch.
+    [Fact]
+    public void M11_044_ALiveSightingWithALegacyPoseLocalizesByFieldsAndSendsNoUpdate()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var missing = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        void Missing(string line) => missing.Enqueue(line);
+        SteppedBehavior.MissingReported += Missing;
+        try
+        {
+            M4ControlTests.ConnectCube(f.Rig, slot: 0);
+            var world = f.M.World;
+            f.Image(1, cube: true, cubeX: 150); f.Motors();                     // the first sighting creates the object
+            typeof(CozmoEngine).GetProperty("IsOfflineEngine", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .SetValue(f.Robot.Engine, false);
+            uint frame = f.Robot.PoseFrameId;
+            int vision = f.Robot.PoseHistory.VisionOnly.Count;
+            for (uint i = 2; i <= 4; i++)
+            {
+                int mark = f.Rig.Mark();
+                f.Image(i, cube: true, cubeX: 150); f.Motors();
+                Assert.Empty(f.Rig.SentSince(mark).OfType<AbsoluteLocalizationUpdate>());
+            }
+            Assert.Equal(frame, f.Robot.PoseFrameId);
+            Assert.Equal(vision, f.Robot.PoseHistory.VisionOnly.Count);
+            Assert.Equal(0u, world.LocalizedToObjectId);
+            Assert.Equal((byte)1, world.Robot2C4);
+            Assert.Contains(missing, m => m.Contains("LIVE-OBJECT-POSE-NATIVE-1"));
+        }
+        finally { SteppedBehavior.MissingReported -= Missing; }
+    }
 }

@@ -1006,6 +1006,21 @@ public sealed partial class BlockWorld
     // fidelity: M11-044
     public bool SetLocalizedTo(ObservableObject? obj) => SetLocalizedToCore(obj, true);
 
+    /// <summary>
+    /// Whether <see cref="SetLocalizedToCore"/> with the camera route can pass its own native-owner check for <paramref name="obj"/>: the same conditions as
+    /// its "original camera or native marker owner unavailable" stop, without the per-call generation test. False on the live path today, because a live
+    /// sighting's object pose carries the stack's legacy frame flag (Pose3d.FromObservedPoseInCamera). Stack machinery, not engine behaviour.
+    /// </summary>
+    // fidelity: M11-044
+    private bool NativeSetLocalizedToRouteUsable(ObservableObject obj)
+    {
+        var owner = NativeSnapshotOwner?.Invoke();
+        bool offlineFlat = obj.Markers.Count != 0 && owner?.Engine.IsOfflineEngine == true &&
+            (!ReferenceEquals(obj.PoseWorld, this) || obj.Pose.HasLegacyFrameInput);
+        bool native = NativeSnapshotOwner is not null && !offlineFlat && MarkerPoseInCamera is null && MarkerPosesRelativeToCamera is null;
+        return !(native && obj.Markers.Count != 0 && (NativeCurrentCamera is null || !ReferenceEquals(obj.PoseWorld, this) || obj.Pose.HasLegacyFrameInput));
+    }
+
     private bool SetLocalizedToCore(ObservableObject? obj, bool useNativeCamera)
     {
         using var frameMutation=EnterPoseMutation();
@@ -1193,6 +1208,16 @@ public sealed partial class BlockWorld
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject cross-origin branch (0x00515854..0x005159B2: Rejigger and the origin updates) not built: LOCALIZE-CROSS-ORIGIN-1; this pair fails with nothing written and no localization update sent to the robot");
             UnbuiltLocalizeToObjectCalls++;
             return 1;
+        }
+        // Stack limitation, visible: S14 (the native SetLocalizedTo with the camera, 0x0051238C) cannot run for an existing object whose pose carries the
+        // stack's legacy frame flag, which every live sighting's does today (Pose3d.FromObservedPoseInCamera). Running S2..S13 and then failing S14 would leave
+        // the robot unlocalized while S10's +0x2C6 makes every such frame send an AbsoluteLocalizationUpdate. So until the live object pose is native
+        // (LIVE-OBJECT-POSE-NATIVE-1) this case keeps the stack's previous result: only the SetLocalizedTo field writes, no history or pose change, nothing sent.
+        if (!NativeSetLocalizedToRouteUsable(existing))
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject: the existing object's pose is not a native world pose (legacy frame flag), so the native SetLocalizedTo (S14, 0x0051238C) cannot run; S2..S13 skipped, only the SetLocalizedTo field writes made, no localization update sent: LIVE-OBJECT-POSE-NATIVE-1");
+            UnbuiltLocalizeToObjectCalls++;
+            return SetLocalizedToCore(existing, false) ? 0u : 1u;
         }
         // fidelity: M11-044 — S2 0x00515614..0x00515622: GetComputedStateAt(O[+0x1C], &hist, &key), exact time, key requested.
         HistRobotState? hist = null; uint key = 0;

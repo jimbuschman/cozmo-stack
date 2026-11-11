@@ -66,3 +66,24 @@ re-join the two origins. The current-origin pair in the same frame still localiz
 
 **No record settles.** M11-044 still needs the cross-origin branch, LocalizeToMat, OnRobotRelocalized and the
 production-path test.
+
+## Addendum: the live path (manager, 2026-11-11, after LOCALIZE-PRODUCTION-PATH-TEST-1)
+
+The production-path test job stopped on a defect in the pushed 57e6b9e0, and the job was right to stop.
+
+**What it found:**
+- On an online engine, every live sighting's object pose carries the stack's legacy frame flag (`Pose3d.FromObservedPoseInCamera`, Geometry.cs:333).
+- The native SetLocalizedTo (S14) refuses that pose, so S14 failed on every frame.
+- S10 had already set +0x2C6, so the robot got an AbsoluteLocalizationUpdate on every frame that saw the cube, and was never marked localized.
+- Before 57e6b9e0, the live path only wrote the SetLocalizedTo fields and sent nothing.
+
+**The fix:** LocalizeToObject now checks the S14 route before S2. When the route is unusable, it keeps the earlier
+result: field writes only, no history or pose change, nothing sent, and a visible MISSING naming LIVE-OBJECT-POSE-NATIVE-1.
+
+**Regression test:** real rendered frames through the queued worker, on the test engine with its offline flag cleared
+so S14 takes the online branch. It checks that no 0x45 is sent, the frame and history are unchanged, and the robot is
+localized by the field writes.
+
+**What this leaves:** the automatic S2..S15 path is built and unit-tested, but on a live robot it waits on
+LIVE-OBJECT-POSE-NATIVE-1 (live object poses as native world poses). The production-path test follows that job.
+
