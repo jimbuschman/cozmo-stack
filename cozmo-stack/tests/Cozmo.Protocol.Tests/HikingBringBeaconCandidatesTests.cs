@@ -229,7 +229,7 @@ public sealed class HikingBringBeaconCandidatesTests
         Assert.NotNull(replacement);Assert.NotSame(previous,replacement);
         Assert.False(old.IsRunnable(context));
     }    // PR6-PR8 00551B1E..8C: sqrt/re-square can replace an equal d2 when rounding moves the square up.
-    // Reach: actual observed-marker selector, supplied native marker poses and timestamp.
+    // reach: unit (actual observed-marker selector, supplied native marker poses and timestamp).
     [Fact]
     public void ObservedMarkerEqualDistanceUsesNativeSqrtResquareRecurrence()
     {
@@ -242,6 +242,7 @@ public sealed class HikingBringBeaconCandidatesTests
         Assert.Same(b,selected);
     }
     // PR8a: two valid but unrelated marker roots leave the native selected pointer null.
+    // reach: unit (NativeDockMarkerSelection.Observed called directly; marker poses re-parented to an unrelated root by the test, which neither the engine's AddMarker 0x00876860 nor the stack's BlockWorld produces).
     [Fact]
     public void ObservedMarkerNoWinnerIsM1SkipRatherThanDefinedBadMarker()
     {
@@ -420,7 +421,32 @@ public sealed class HikingBringBeaconCandidatesTests
         var survivor=new ReplacementAction();replacement.ActionList.QueueAction(QueueActionPosition.AtEnd,survivor);
         Assert.False(old.IsRunnable(context));Assert.False(survivor.DestructionObserved);
         Assert.Same(survivor,replacement.ActionList.GetCurrentAction());
-    }    // PR5-PR8a / M1-034 M12-017: direct native leaf Init with supplied marker graphs;
+    }    // M12-017 census DOCK-MARKER-WRT-SKIP-1 S15 (0x00551B16 -> 0x00551B90..0x00551BCE): the pickup leaf runs the same IDockAction::Init
+    // marker loop; each marker whose GetWithRespectTo to the robot pose fails is logged (info, "Actions", "IDockAction.Init.GetMarkerWRTRobot",
+    // "Failed to get marker %s's pose wrt to robot") and skipped, then S17 is the M1-034 skip. The code-name input is test-supplied (M11-013).
+    // reach: unit (direct native leaf Init with supplied marker graphs and a substituted code-name input; not a completed ActionList run).
+    [Fact]
+    public void PickupLeafLogsEachMarkerWhosePoseWrtRobotFails()
+    {
+        using var f=new Fixture();using var executionLease=f.Rig.Engine.EnterSynchronousOwner();var obj=f.Add(7,150,22);obj.LastObservedTimestamp=100;
+        foreach(var marker in obj.Markers)marker.LastObservedTimestamp=0;
+        using var unrelated=new Pose3d("unrelated-marker-root");
+        for(int i=0;i<2;i++){obj.Markers[i].LastObservedTimestamp=100;obj.Markers[i].PoseOnObject.SetParent(unrelated);}
+        f.M.World.MarkerCodeNameInput=code=>$"name{code}";
+        var logs=new List<(EngineLogLevel Level,string? Channel,string Key,string Text)>();
+        var leaf=new NativePickupObjectRunner(f.M,7){SourceLog=(l,c,k,t)=>logs.Add((l,c,k,t))};
+        try
+        {
+            var error=Assert.Throws<NativeActionUnavailable>(()=>leaf.Init());
+            Assert.Contains("M1-034 M12-017",error.Message);
+            var wrt=logs.Where(e=>e.Key=="IDockAction.Init.GetMarkerWRTRobot").ToArray();
+            Assert.Equal(new[]{
+                (EngineLogLevel.Info,(string?)"Actions","IDockAction.Init.GetMarkerWRTRobot",$"Failed to get marker name{unchecked((short)obj.Markers[0].Code)}'s pose wrt to robot"),
+                (EngineLogLevel.Info,(string?)"Actions","IDockAction.Init.GetMarkerWRTRobot",$"Failed to get marker name{unchecked((short)obj.Markers[1].Code)}'s pose wrt to robot")},wrt);
+        }
+        finally{f.M.World.MarkerCodeNameInput=null;leaf.Prep();leaf.WatcherEnding();}
+    }
+    // PR5-PR8a / M1-034 M12-017: direct native leaf Init with supplied marker graphs;
     // this is a unit boundary, not a claimed completed ActionList run.
     [Fact]
     public void PickupLeafNoMarkerWinnerSkipsWithoutFailureMemory()

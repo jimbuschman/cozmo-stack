@@ -10,6 +10,8 @@ namespace Cozmo.Protocol.Tests;
 /// value is taken from the record's citation (address in the test's summary), never from what the code returns: the numbers are
 /// worked by hand from the cited constants and rows.
 /// </summary>
+// The M12_017 S15 test resets and subscribes to SteppedBehavior's static MISSING report, so this class shares that collection (DOCK-MARKER-WRT-SKIP-1 verifier item 3).
+[Collection("SteppedBehavior missing-report statics")]
 public class M12RVisBuildTests : IDisposable
 {
     private readonly Pose3d _objectOrigin=new("unit origin");
@@ -1946,33 +1948,123 @@ public class M12RVisBuildTests : IDisposable
     }
 
     /// <summary>
-    /// M12-017 / M12-037, the marker choice when [+0xB9] is 0 (0x00551960..0x00551B8C): none observed is 0x0300001D; one observed is that marker; several are compared by the 3-D SQUARED distance of the
-    /// marker's pose to Robot::GetPose() with a strict &lt; from FLT_MAX. Cube (200, 0, 22), robot at the origin: the Front marker is at (178, 0, 22), the Back marker at (222, 0, 22), Left at
-    /// (200, 22, 22) and Right at (200, -22, 22): Front (d2 = 32168) beats Back (d2 = 49768); Left and Right are equally far (d2 = 40968 each), so the FIRST in the list (Left) wins (strict &lt;).
-    /// Every distance NaN chooses nothing (null).
+    /// M12-017 / M12-037, the marker choice when [+0xB9] is 0 (census DOCK-MARKER-WRT-SKIP-1): none observed is 0x0300001D (S3, 0x0055197E..0x00551988); one observed is that marker with no
+    /// distance check (S3, 0x00551A30..0x00551A82); two or more are compared by the f32 squared distance of the marker pose (parented to the object pose, S5 0x00876860) to the robot pose
+    /// (S9 GetWithRespectTo 0x00551B12; S12 0x00551B18..0x00551B3C) with a strict compare against best^2 (S13 0x00551B3E..0x00551B4A). The marker transforms are chosen by the test:
+    /// object at (200, 0, 22) with identity rotation, robot at the origin of the same root; marker[0] at +50 mm on the object's X, marker[1] at -50 mm, so in the robot's frame they sit at
+    /// (250, 0, 22) and (150, 0, 22): 150^2 + 22^2 &lt; 250^2 + 22^2, so marker[1] wins although it comes second in the list. Before this job the stack threw
+    /// "MISSING: M11-066 caller has not handled unrelated pose roots" here (the parentless Compose result).
     /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // reach: unit (DockActionBase.ChooseObservedMarker called directly with a hand-built parented cube and robot pose; the production join, RunAsync step (8) with the robot
+    // pose from ManipulationSystem.CopyPreActionRobotPose, is not driven because no rig fixture produces a two-marker observation of one cube).
     [Fact]
-    public void M12_037_TheObservedMarkerNearestTheRobotWinsWithAStrictCompare()
+    public void M12_017_TwoObservedMarkersOnAParentedCubePickTheNearerWithoutThrowing()
     {
         var cube = CubeWith(7, ObjectType.Block_LIGHTCUBE1, At(200, 0, 22));
         cube.LastObservedTimestamp = 5000;
+        var robot = InUnitOrigin(At(0, 0));
         var trace = new List<string>();
         cube.LastObservedMarkers = Array.Empty<MarkerType>();
-        Assert.Equal(0x0300001Du, (uint)DockActionBase.ChooseObservedMarker(cube, At(0, 0), out var none, trace));
+        Assert.Equal(0x0300001Du, (uint)DockActionBase.ChooseObservedMarker(cube, robot, out var none, trace));
         Assert.Null(none);
-        cube.LastObservedMarkers = new[] { MarkerType.LightCubeI_Back };
-        Assert.Equal(ActionResult.Success, DockActionBase.ChooseObservedMarker(cube, At(0, 0), out var single, trace));
-        Assert.Equal(MarkerType.LightCubeI_Back, single!.Code);
-        cube.LastObservedMarkers = new[] { MarkerType.LightCubeI_Back, MarkerType.LightCubeI_Front };
-        DockActionBase.ChooseObservedMarker(cube, At(0, 0), out var front, trace);
-        Assert.Equal(MarkerType.LightCubeI_Front, front!.Code);
-        cube.LastObservedMarkers = new[] { MarkerType.LightCubeI_Right, MarkerType.LightCubeI_Left };
-        DockActionBase.ChooseObservedMarker(cube, At(0, 0), out var tie, trace);
-        Assert.Equal(MarkerType.LightCubeI_Left, tie!.Code);
-        cube.LastObservedMarkers = new[] { MarkerType.LightCubeI_Left, MarkerType.LightCubeI_Right };
-        Assert.Equal(ActionResult.Success, DockActionBase.ChooseObservedMarker(cube, At(double.NaN, 0), out var nan, trace));
+        cube.LastObservedMarkers = new[] { cube.Markers[2].Code };
+        Assert.Equal(ActionResult.Success, DockActionBase.ChooseObservedMarker(cube, robot, out var single, trace));
+        Assert.Same(cube.Markers[2], single);
+        cube.Markers[0].PoseOnObject.Node!.Transform = new(Rotation3d.Identity, new Vec3(50, 0, 0));
+        cube.Markers[1].PoseOnObject.Node!.Transform = new(Rotation3d.Identity, new Vec3(-50, 0, 0));
+        cube.LastObservedMarkers = new[] { cube.Markers[0].Code, cube.Markers[1].Code };
+        Assert.Equal(ActionResult.Success, DockActionBase.ChooseObservedMarker(cube, robot, out var nearer, trace));
+        Assert.Same(cube.Markers[1], nearer);
+    }
+
+    /// <summary>
+    /// M12-017 S14 (0x00551B76..0x00551B88): on a win the engine stores best = sqrtf(d2) and the next compare is against f32(best*best) (S13 0x00551B3E), not against d2. Two markers at the
+    /// same robot-frame translation (608.4283447265625, 170.92120361328125, 0) (the hand derivation of HikingBringBeaconCandidatesTests.ObservedMarkerEqualDistanceUsesNativeSqrtResquareRecurrence):
+    /// the first wins against FLT_MAX^2 = +inf; for these inputs f32(sqrtf(d2))^2 rounds above d2, so the equal d2 of the second marker is strictly smaller and the SECOND marker wins.
+    /// A plain d2 &lt; best compare would keep the first.
+    /// </summary>
+    // reach: unit (as above; translations chosen by the test).
+    [Fact]
+    public void M12_017_AnEqualDistanceLaterMarkerWinsThroughTheSqrtResquare()
+    {
+        var cube = CubeWith(7, ObjectType.Block_LIGHTCUBE1, At(0, 0, 0));
+        cube.LastObservedTimestamp = 5000;
+        var robot = InUnitOrigin(At(0, 0));
+        const float x = 608.4283447265625f, y = 170.92120361328125f;
+        // the premise, from the engine's rule (S12..S14), not from the stack: d2 = f32(x*x + y*y) + 0*0, best = sqrtf(d2), and d2 < best*best
+        float d2 = (x * x + y * y) + 0f * 0f; float best = MathF.Sqrt(d2);
+        Assert.True(d2 < best * best);
+        cube.Markers[0].PoseOnObject.Node!.Transform = new(Rotation3d.Identity, new Vec3(x, y, 0));
+        cube.Markers[1].PoseOnObject.Node!.Transform = new(Rotation3d.Identity, new Vec3(x, y, 0));
+        cube.LastObservedMarkers = new[] { cube.Markers[0].Code, cube.Markers[1].Code };
+        Assert.Equal(ActionResult.Success, DockActionBase.ChooseObservedMarker(cube, robot, out var chosen, new List<string>()));
+        Assert.Same(cube.Markers[1], chosen);
+    }
+
+    /// <summary>
+    /// M12-017 S15 (0x00551B16 cbz -> 0x00551B90..0x00551BCE): a marker whose GetWithRespectTo to the robot pose fails (another root, S10b 0x00845CEE) is logged at info level, channel
+    /// "Actions" (0x00BE99E4), key "IDockAction.Init.GetMarkerWRTRobot" (0x00BEB37E), "Failed to get marker %s's pose wrt to robot" (0x00551E5C) with Marker::GetCodeName, and skipped with
+    /// best and chosen unchanged; a later marker in the current root then wins. marker[0] (re-parented to an unrelated root, at that root's origin) would be nearer than marker[1] if it were
+    /// compared. The code name is a test-supplied input (GetNameForCode 0x0087E0D4 has no port, M11-013); without it the line is withheld with a MISSING and the skip is unchanged.
+    /// </summary>
+    // reach: unit (ChooseObservedMarker called directly; the unrelated root and the code-name input are substituted by the test).
+    [Fact]
+    public void M12_017_AMarkerInAnotherRootIsLoggedAndSkippedAndALaterMarkerWins()
+    {
+        var cube = CubeWith(7, ObjectType.Block_LIGHTCUBE1, At(200, 0, 22));
+        cube.LastObservedTimestamp = 5000;
+        var robot = InUnitOrigin(At(0, 0));
+        using var unrelated = new Pose3d("unrelated-marker-root");
+        cube.Markers[0].PoseOnObject.SetParent(unrelated);
+        cube.Markers[0].PoseOnObject.Node!.Transform = new(Rotation3d.Identity, new Vec3(0, 0, 0));
+        cube.LastObservedMarkers = new[] { cube.Markers[0].Code, cube.Markers[1].Code };
+        var logs = new List<(EngineLogLevel Level, string? Channel, string Key, string Text)>();
+        Assert.Equal(ActionResult.Success, DockActionBase.ChooseObservedMarker(cube, robot, out var chosen, new List<string>(),
+            (l, c, k, t) => logs.Add((l, c, k, t)), code => $"name{code}"));
+        Assert.Same(cube.Markers[1], chosen);
+        short skipped = unchecked((short)cube.Markers[0].Code);
+        Assert.Equal(new[] { (EngineLogLevel.Info, (string?)"Actions", "IDockAction.Init.GetMarkerWRTRobot", $"Failed to get marker name{skipped}'s pose wrt to robot") }, logs);
+
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        var missing = new List<string>(); Cozmo.Robot.Behavior.SteppedBehavior.MissingReported += missing.Add;
+        try
+        {
+            logs.Clear();
+            Assert.Equal(ActionResult.Success, DockActionBase.ChooseObservedMarker(cube, robot, out var again, new List<string>(), (l, c, k, t) => logs.Add((l, c, k, t))));
+            Assert.Same(cube.Markers[1], again);
+            Assert.Empty(logs);
+            Assert.Contains(missing, s => s.Contains("IDockAction.Init.GetMarkerWRTRobot") && s.Contains("GetCodeName0x0087E1D0"));
+        }
+        finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= missing.Add; }
+    }
+
+    /// <summary>
+    /// M12-017 S17 (0x0055199A..0x005519A0 -> 0x0087E1D0): when no marker wins (every one skipped by S15, or every d2 NaN so the S13 bpl skips it) the engine calls GetCodeName(null) and reads
+    /// address 0. Under the M1-034 standing rule the stack skips the dock action: a visible log naming M1-034 and M12-017, no chosen marker, and the action does not succeed (BadMarker
+    /// 0x03000002, the stack's existing null-marker outcome; the manager's decision for this crash path, not an engine result).
+    /// </summary>
+    // reach: unit (ChooseObservedMarker called directly; the unrelated root and the NaN robot pose are substituted by the test; RunAsync returns this result unchanged at step (8)).
+    [Fact]
+    public void M12_017_NoWinningMarkerIsAVisibleM1_034SkipAndTheActionDoesNotSucceed()
+    {
+        var cube = CubeWith(7, ObjectType.Block_LIGHTCUBE1, At(200, 0, 22));
+        cube.LastObservedTimestamp = 5000;
+        cube.LastObservedMarkers = new[] { cube.Markers[0].Code, cube.Markers[1].Code };
+        var robot = InUnitOrigin(At(0, 0));
+        var nanRobot = InUnitOrigin(At(double.NaN, 0));
+        var stack = new List<string>(); var logs = new List<string>();
+        Assert.Equal(ActionResult.BadMarker, DockActionBase.ChooseObservedMarker(cube, nanRobot, out var nan, new List<string>(), (l, c, k, t) => logs.Add(k), c => "n", stack.Add));
         Assert.Null(nan);
+        Assert.Empty(logs);
+        Assert.Contains(stack, s => s.Contains("M1-034") && s.Contains("M12-017"));
+
+        stack.Clear();
+        using var unrelated = new Pose3d("unrelated-marker-root");
+        for (int i = 0; i < 2; i++) cube.Markers[i].PoseOnObject.SetParent(unrelated);
+        Assert.Equal(ActionResult.BadMarker, DockActionBase.ChooseObservedMarker(cube, robot, out var skippedAll, new List<string>(), (l, c, k, t) => logs.Add(k), c => "n", stack.Add));
+        Assert.Null(skippedAll);
+        Assert.Equal(new[] { "IDockAction.Init.GetMarkerWRTRobot", "IDockAction.Init.GetMarkerWRTRobot" }, logs);
+        Assert.Contains(stack, s => s.Contains("M1-034") && s.Contains("M12-017"));
     }
 
     private sealed class RecordingSubActions : IDockSubActionExecutor
