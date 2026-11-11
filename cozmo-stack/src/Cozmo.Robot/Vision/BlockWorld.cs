@@ -978,7 +978,7 @@ public sealed partial class BlockWorld
 
     /// <summary>
     /// <c>Robot+0x2C4</c>: written 1 by <see cref="SetLocalizedTo"/> (0x0051245E, 0x005124EE) and the OnTreads commit (0x0051217C), 0 by <c>Delocalize</c> (0x00510A24). The engine has native readers
-    /// (<c>LocalizeToObject</c> 0x0051570A, <c>LocalizeToMat</c> 0x00515F64, <c>GetRobotState</c> 0x00518210, <c>CubeLightComponent::Update</c> 0x00637930); of them only <c>LocalizeToObject</c>'s height blend reads it here.
+    /// (<c>LocalizeToObject</c> 0x0051570A, <c>LocalizeToMat</c> 0x00515F64 (uncalled code: LOCALIZE-TO-MAT-HISTORY-1), <c>GetRobotState</c> 0x00518210, <c>CubeLightComponent::Update</c> 0x00637930); of them only <c>LocalizeToObject</c>'s height blend reads it here.
     /// </summary>
     public byte Robot2C4 { get { lock (_gate) return _robot2C4; } }
     /// <summary><c>Robot+0x2C5</c>: written 0 by <c>Delocalize</c>. Nothing in this stack reads it.</summary>
