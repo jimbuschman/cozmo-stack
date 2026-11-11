@@ -393,7 +393,8 @@ public sealed class LocalizeToObjectSameOriginTests
             }
             Assert.Equal(frame, f.Robot.PoseFrameId);
             Assert.Equal(vision, f.Robot.PoseHistory.VisionOnly.Count);
-            Assert.Equal(0u, world.LocalizedToObjectId);
+            Assert.Equal(world.ConnectedObjectIdForActiveId(0), world.LocalizedToObjectId);   // the cube's World ObjectID (process-wide counter)
+            Assert.NotNull(world.LocalizedToObjectId);
             Assert.Equal((byte)1, world.Robot2C4);
             Assert.Contains(missing, m => m.Contains("LIVE-OBJECT-POSE-NATIVE-1"));
         }
