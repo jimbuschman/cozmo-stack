@@ -3,6 +3,7 @@ namespace Cozmo.Robot.Vision;
 public sealed partial class BlockWorld
 {
     internal Func<EngineRobot?>? NativeSnapshotOwner;
+    // fidelity: M11-038 — BroadcastLocatedObjectStates 0x0061E6C0 (tag 0x53; current-origin compare 0x0061EC22; isConnected = 1 ^ ([obj+0x40] >> 31)).
     internal void BroadcastLocatedObjectStates(EngineRobot owner,Func<bool>? current=null)
     {
         using var mutation=EnterPoseMutation();
@@ -17,6 +18,7 @@ public sealed partial class BlockWorld
         },false);
         if(owner.HasExternalInterface && !owner.Lifetime.Destroying && (current?.Invoke()??true))owner.Engine.PublishLocatedObjectStates(new(Array.AsReadOnly(rows.ToArray())));
     }
+    // fidelity: M11-038 — BroadcastConnectedObjects 0x0061E91C (tag 0x54 via FindConnectedObjectHelper 0x0061F078).
     internal void BroadcastConnectedObjects(EngineRobot owner,Func<bool>? current=null)
     {
         if(!owner.HasExternalInterface)return;
