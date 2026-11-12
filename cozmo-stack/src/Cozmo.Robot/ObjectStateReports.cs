@@ -12,6 +12,7 @@ public sealed partial class CozmoEngine
 {
     public event Action<LocatedObjectStatesReport>? LocatedObjectStates;
     public event Action<ConnectedObjectsReport>? ConnectedObjects;
+    // fidelity: M11-038 — LocatedObjectStates 0x53 (BroadcastLocatedObjectStates 0x0061E6C0): one count byte, then the entries in CLAD wire order.
     internal void PublishLocatedObjectStates(LocatedObjectStatesReport report)
     {
         var w=new CladWriter().U8(unchecked((byte)report.Objects.Count));
@@ -25,6 +26,7 @@ public sealed partial class CozmoEngine
         DeliverAnimationReportToApp(0x53,w.ToArray(),CaptureAppEvent(LocatedObjectStates,report));
         AnimationMessages.Deliver(0x53,true,report);
     }
+    // fidelity: M11-038 — ConnectedObjectStates 0x54 (BroadcastConnectedObjects 0x0061E91C): one count byte, then 12-byte entries.
     internal void PublishConnectedObjects(ConnectedObjectsReport report)
     {
         var w=new CladWriter().U8(unchecked((byte)report.Objects.Count));

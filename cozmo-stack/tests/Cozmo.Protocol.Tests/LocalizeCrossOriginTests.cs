@@ -374,6 +374,10 @@ public sealed class LocalizeCrossOriginTests
     // PathInFlight and OriginOwnerInput bindings:
     // path 1 is a native DriveToPose (the localization proceeds and the path rejiggers on its next status-3 update, M12-032 H6/R2/R4/R6), path 2 a
     // legacy-entry DriveToPose (stack guard: it cannot replan, so the cross-origin pair is held off, PATH-ORIGIN-CHANGE-REPLAN-1).
+    // M11-043, M11-038 (LCO-TAIL-PRODUCTION-TEST-1; reach as above): paths 0 and 1 also assert UpdateObjectOrigins' tail on the relocalizing frame, from
+    // re-analysis/jobs/trial-m13/CENSUS-M11-043.md U7/U8: one E2G 0x53 LocatedObjectStates (0x006206E6 -> 0x0061E6C0) listing origin 1's objects, then
+    // the BlockConfigurationManager force flag (0x006206EA..0x006206F0), both before X11 (0x0051599E). Observed by a local 0x53 recipient and the
+    // world's force hook, which record the flag and the map component's origin without changing either.
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
@@ -398,6 +402,10 @@ public sealed class LocalizeCrossOriginTests
             Assert.NotNull(cubeId);
             Assert.Equal(cubeId, world.LocalizedToObjectId);
             uint o1 = f.Robot.CurrentOriginId;
+            // The cube as known in origin 1 before the delocalization (the counterpart E that UpdateObjectOrigins' unique search finds, M11-043 L5..L7).
+            var cubeInO1 = world.GetLocatedObjectById(cubeId!.Value)!;
+            var cubeO1Translation = cubeInO1.NativePose.GetWithRespectToRoot().Translation;
+            var (cubeFamily, cubeType) = ((uint)cubeInO1.Family, (uint)cubeInO1.Type);
             f.Robot.Delocalize(false);
             f.Motors();
             uint o2 = f.Robot.CurrentOriginId;
@@ -442,13 +450,31 @@ public sealed class LocalizeCrossOriginTests
             bool relocalized = false;
             List<AbsoluteLocalizationUpdate> sent = new();
             int mark = 0;
+            // M11-043 tail observers (UpdateObjectOrigins 0x006206E6..0x006206F0, before X11 0x0051599E). Each records, at the moment it runs, the
+            // native force flag ([BlockConfigurationManager+0xC], the stack's EngineRobot.BlockConfigurationForceUpdate) and the map component's current
+            // origin, which X11 (MapComponent::UpdateMapOrigins) moves from o2 to o1 at its end.
+            var tail = new List<(string Step, bool Force, uint MapOrigin, LocatedObjectStatesReport? Report)>();
+            var app53 = new List<LocatedObjectStatesReport>();
+            int appTag53 = 0;
+            using var local53 = f.Robot.Engine.AnimationMessages.SubscribeMessage(0x53, true,
+                p => tail.Add(("0x53", f.Robot.BlockConfigurationForceUpdate, world.Maps.CurrentOrigin, p as LocatedObjectStatesReport)));
+            world.BlockConfigurationManagerForceUpdate = () => tail.Add(("force", f.Robot.BlockConfigurationForceUpdate, world.Maps.CurrentOrigin, null));
+            Action<ushort, ReadOnlyMemory<byte>> onApp = (tag, _) => { if (tag == 0x53) appTag53++; };
+            Action<LocatedObjectStatesReport> onTyped = app53.Add;
+            f.Robot.Engine.EngineToGameMessage += onApp;
+            f.Robot.Engine.LocatedObjectStates += onTyped;
             for (uint i = 3; i <= 6 && !relocalized; i++)
             {
+                f.Robot.Engine.DrainAppDelivery(); tail.Clear(); app53.Clear(); appTag53 = 0; // earlier frames' deliveries are not this frame's
                 mark = f.Rig.Mark();
                 f.Image(i, cube: true, cubeX: 150); f.Motors();
                 sent = f.Rig.SentSince(mark).OfType<AbsoluteLocalizationUpdate>().ToList();
                 relocalized = f.Robot.CurrentOriginId == o1;
             }
+            f.Robot.Engine.DrainAppDelivery();
+            f.Robot.Engine.EngineToGameMessage -= onApp;
+            f.Robot.Engine.LocatedObjectStates -= onTyped;
+            world.BlockConfigurationManagerForceUpdate = null;
             Assert.True(relocalized, "the robot did not relocalize into the cube's origin; logs: " +
                 string.Join(" | ", logs.Select(l => l.Name).Where(n => n is not null && n.Contains("Localize")).TakeLast(10)) + " missing: " + string.Join(" | ", missing.TakeLast(5)));
             Assert.Contains(logs, l => l.Name == "Robot.LocalizeToObject.RejiggeringOrigins");
@@ -460,6 +486,37 @@ public sealed class LocalizeCrossOriginTests
             Assert.Equal(o1, update.PoseOriginId);
             Assert.Equal(f.Robot.PoseFrameId, update.PoseFrameId);
             Assert.DoesNotContain(missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1") || m.Contains("PATH-ORIGIN-CHANGE-REPLAN-1"));
+            // M11-043 tail, the relocalizing frame (census CENSUS-M11-043 U7, U8; LocalizeToObject X10 0x00515992 then X11 0x0051599E):
+            // BroadcastLocatedObjectStates (0x006206E6 -> 0x0061E6C0) once, then BlockConfigurationManager [+0xC] := 1 (0x006206EA..0x006206F0), both
+            // while the map component is still in o2, i.e. before X11's UpdateMapOrigins.
+            Assert.Equal(new[] { "0x53", "force" }, tail.Select(e => e.Step).ToArray());
+            Assert.All(tail, e => Assert.Equal(o2, e.MapOrigin));                 // before X11 (it ends with CurrentOrigin := o1)
+            // 0x006206EA..0x006206F0: the flag is set by the tail, after the 0x53. It reads clear at the broadcast because the delocalization's set
+            // (0x006172A6) was cleared by an earlier frame's BlockConfigurationManager::Update (strb 0 at 0x00616DC6..0x00616DCC), which runs at the end
+            // of every UpdateObservedMarkers (0x0062520C, also for an empty marker list: 0x00654D74 -> 0x00654DF4; stack: BlockWorld.cs NativeConfigurations
+            // Update). This holds because the relocalizing frame is not the first vision result after Delocalize in this test.
+            Assert.False(tail[0].Force);
+            Assert.True(tail[1].Force);
+            Assert.Equal(o1, world.Maps.CurrentOrigin);                           // X11 then ran
+            // Exactly one app E2G 0x53 for the frame (raw and typed views of the one publication, M11-038 0x0061E6C0).
+            Assert.Equal(1, appTag53);
+            var appReport = Assert.Single(app53);
+            // The list (M11-038: BroadcastLocatedObjectStates walks the robot's current origin, origin compare 0x0061EC22): after the move only origin 1
+            // holds objects, and the one there is the cube, its counterpart E keyed by the moved object's ID (L5..L7, L11) with the moved pose copied in
+            // (CopyWithNewPose 0x00506EF8). The moved pose was converted to o1 through the rejiggered tree, where it is the cube's localization
+            // reference, so it coincides with E's o1 pose from before the delocalization; S9 (0x0051570A..0x00515760) blends only the robot's z, so the
+            // 1 mm bound is not hiding an x/y difference. Note: this pose check cannot distinguish the copied pose from E's pose simply kept (they
+            // coincide by construction here); the copy itself is census row L13. Connected: isConnected =
+            // 1 ^ ([obj+0x40] >> 31), the cube's active ID >= 0 (slot 0 connected). PoseState: the moved o2 copy's, observed this frame: Known.
+            var localReport = Assert.IsType<LocatedObjectStatesReport>(tail[0].Report);
+            Assert.Same(localReport, appReport);
+            var row = Assert.Single(appReport.Objects);
+            Assert.Equal(cubeId!.Value, row.ObjectId);
+            Assert.Equal(cubeFamily, row.Family); Assert.Equal(cubeType, row.Type);
+            Assert.Equal(o1, row.Pose.OriginId);
+            Assert.Equal((double)cubeO1Translation.X, (double)row.Pose.X, 1.0); Assert.Equal((double)cubeO1Translation.Y, (double)row.Pose.Y, 1.0); Assert.Equal((double)cubeO1Translation.Z, (double)row.Pose.Z, 1.0);
+            Assert.Equal((byte)PoseState.Known, row.PoseState);
+            Assert.True(row.Connected);
             var names = logs.Select(l => l.Name).ToList();
             if (path == 1)
             {
