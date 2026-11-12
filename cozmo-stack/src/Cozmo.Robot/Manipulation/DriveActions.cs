@@ -510,8 +510,10 @@ public sealed class DriveToObjectAction
     public PreActionType Type => ActionType;
     /// <summary><c>+0x84</c>, a float.</summary>
     public float DistanceFromObjectOrigin { get; }
-    /// <summary><c>+0x8C</c>. Not plumbed into <see cref="DriveToPoseAction"/> (which has no manual-speed input here).</summary>
-    public bool UseManualSpeed { get; }
+    /// <summary><c>+0x8C</c>. The native runner passes it as the inner DriveToPoseAction's manual flag (D4 0x005592E8..0x005592FE); the legacy
+    /// <see cref="InitHelperAsync"/> flow still does not (BLOCKED.md, LEGACY-DRIVE-TO-POSE-NATIVE-1). The internal setter is a test substitution only:
+    /// no native constructor takes the 7-arg ctor's useManualSpeed argument.</summary>
+    public bool UseManualSpeed { get; internal set; }
     /// <summary>
     /// <c>+0x88</c>, <c>+0x13C</c>, <c>+0x140</c>: the 7-arg constructor's distanceFromMarker, useApproachAngle and approach angle, which feed
     /// <c>PreActionPoseInput+0x10/+0x14/+0x18</c> (research Q12.6). The callers' values are not itemised (M12-022 (b)); the C# callers build the action
