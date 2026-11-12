@@ -284,9 +284,11 @@ public sealed partial class ObservableObject
             if(NativeCarryingTree){using var flat=_pose.GetWithRespectToRoot();return Pose3d.FromFlatRotation(flat.Quaternion,flat.Translation);}
             if(Type!=ObjectType.Charger_Basic && !CubeGeometry.IsCube(Type))return _pose;
             // Preserve the API's stable value between writes without lending out the native mutable node.
+            // Stack machinery, no engine counterpart (POSE-SNAPSHOT-FLAG-CACHE-1): the C# legacy frame flag is part of the cache key too.
             var snapshot=_publicPose;
             if(snapshot?.Node is null || !snapshot.Transform.Equals(_pose.Transform) ||
-               !ReferenceEquals(snapshot.Node.Parent,_pose.Node!.Parent) || _publicPoseSourceName!=_pose.Name)
+               !ReferenceEquals(snapshot.Node.Parent,_pose.Node!.Parent) || _publicPoseSourceName!=_pose.Name ||
+               snapshot.HasLegacyFrameInput!=_pose.HasLegacyFrameInput)
             {snapshot=new Pose3d(_pose);_publicPose=snapshot;_publicPoseSourceName=_pose.Name;}
             return snapshot;
         }

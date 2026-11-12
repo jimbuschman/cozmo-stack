@@ -459,6 +459,30 @@ public sealed class LocalizeToObjectSameOriginTests
     }
 
     /// <summary>
+    /// POSE-SNAPSHOT-FLAG-CACHE-1 (stack machinery, no engine counterpart; the queue row is the inventory). The public Pose snapshot is reused
+    /// while transform, parent and name are unchanged, and rebuilt when only the embedded pose's legacy frame flag changes.
+    /// </summary>
+    // reach: unit — the getter is read directly; the flag change is made in place on the embedded pose, leaving transform, parent and name as they were.
+    [Fact]
+    public void PoseSnapshotFlagCache1_AFlagOnlyChangeRefreshesTheSnapshot()
+    {
+        using var s = new Setup();
+        var e = s.Existing();
+        var first = e.Pose;
+        Assert.Same(first, e.Pose); // unchanged: the cached instance
+        Assert.False(first.HasLegacyFrameInput);
+        var transform = e.NativePose.Transform; var parent = e.NativePose.Node!.Parent; var name = e.NativePose.Name;
+        using (var flagged = Pose3d.FromFlatRotation(Rotation3d.Identity, new Vec3(0, 0, 0)))
+            e.NativePose.KeepInputFrameContextOf(flagged);
+        Assert.True(e.NativePose.HasLegacyFrameInput);
+        Assert.Equal(transform, e.NativePose.Transform); Assert.Same(parent, e.NativePose.Node!.Parent); Assert.Equal(name, e.NativePose.Name);
+        var second = e.Pose;
+        Assert.NotSame(first, second);
+        Assert.True(second.HasLegacyFrameInput);
+        Assert.Same(second, e.Pose); // unchanged again: cached
+    }
+
+    /// <summary>
     /// Regression guard (stack limitation, not engine behaviour). An existing object whose pose genuinely carries the stack's legacy frame flag (a flat
     /// host or offline input, here a Mat3-constructed pose) cannot take the native SetLocalizedTo (S14) camera route on an online engine. Running S2..S13 and
     /// then failing S14 would let S10's +0x2C6 send an AbsoluteLocalizationUpdate while the robot stayed unlocalized, so that case keeps the stack's earlier
