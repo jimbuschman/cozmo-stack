@@ -948,14 +948,23 @@ public sealed partial class BlockWorld
     }
 
     /// <summary>Hooks to state the engine reads from other components. Each is null until the owner wires it; the doc names the engine field.</summary>
-    /// <summary><c>CarryingComponent::IsCarryingObject(id)</c> (Robot+0x284). Unwired means not carrying.</summary>
+    /// <summary>
+    /// <c>CarryingComponent::IsCarryingObject(id)</c> 0x00633F88 (Robot+0x284): the carried object [+8] OR the one resting on it [+0x14]. DockingSystem binds
+    /// <c>CarryingComponent.IsCarryingObjectId</c>. The engine's inline carried-only reads ([+8]) do not use it: they read <see cref="CarriedPrimaryId"/>
+    /// (census CARRIED-ONTOP-BINDING-CENSUS-1). Unwired means not carrying.
+    /// </summary>
+    // fidelity: M11-043
     public Func<uint, bool>? IsCarryingObject { get; set; }
     /// <summary><c>Robot+0x355 == OnTreads</c> (OffTreadsState 0). Unwired means OnTreads, the engine's zero default.</summary>
     public Func<bool>? OnTreads { get; set; }
     /// <summary>The ObjectID at <c>[Robot+0x280]+0xC</c>, the DockingComponent's dock target (DockWithObject 0x0063BA88..0x0063BAB6; reset by ~IDockAction 0x00557474..0x0055748C). Wired by <see cref="Manipulation.DockingSystem"/>; unwired means none.</summary>
     public Func<uint?>? DockingObjectId { get; set; }
     internal Func<bool>? PickingOrPlacing;
-    /// <summary><c>CarryingComponent::UnSetCarryObject(id)</c>, called by <c>UpdatePoseInInstance</c> 0x00505F5A..0x00505FBC. Unwired: the call is logged and counted, not made.</summary>
+    /// <summary>
+    /// <c>CarryingComponent::UnSetCarryObject(id)</c> 0x00633F6C, called by <c>UpdatePoseInInstance</c> 0x00505F5A..0x00505FBC. ManipulationSystem binds
+    /// <c>CarryingComponent.UnSetCarryObject</c> in production. Unwired (a standalone world with no carrying component): the call is counted, not made.
+    /// </summary>
+    // fidelity: M11-007
     public Action<uint>? UnSetCarryObject { get; set; }
     /// <summary>The <c>BlockConfigurationManager</c> byte [+0xC] set to 1 by <c>UpdateObjectOrigins</c> (0x006206EA). Unwired: the call is counted.</summary>
     public Action? BlockConfigurationManagerForceUpdate { get; set; }
@@ -1422,6 +1431,11 @@ public sealed partial class BlockWorld
     public const bool PaddingIsBuilt = true;
 
     private bool Carrying(uint id) => IsCarryingObject?.Invoke(id) ?? false;
+    // fidelity: M11-043
+    // The engine's inline carried-only test, [[robot+0x284]+8] == id, without the on-top slot [+0x14]: FindObjectMatchForObservation's $_0 predicate
+    // 0x00507CF6..0x00507D06, CheckForUnobservedObjects 0x00621D70..0x00621D78 and ClearLocatedObjectHelper 0x00625CF0..0x00625CF8 (census
+    // CARRIED-ONTOP-BINDING-CENSUS-1 Q1). Unwired means not carrying.
+    private bool CarriedOnly(uint id) => CarriedPrimaryId?.Invoke() == id;
     internal void LogLine(string line) => EmitPublicLog(line);
     internal void SourceLine(EngineLogLevel level, string? channel, string key, string text) => Source(level, channel, key, text);
 
@@ -1907,6 +1921,8 @@ public sealed partial class BlockWorld
     /// pass visible through <see cref="UnbuiltCollisionDirtyPassRuns"/>.
     /// </summary>
     // fidelity: M11-042
+    // When this pass is built, its carried test (0x0062597A..0x00625982) must call the engine body CarryingComponent::IsCarryingObject 0x00633F88 (the
+    // shared IsCarryingObject binding: carried OR on-top), not the carried-only read (census CARRIED-ONTOP-BINDING-CENSUS-1 C13).
     private void CollisionDirtyPass()
     {
         if (PickingOrPlacing?.Invoke() == true) return;
@@ -2260,7 +2276,7 @@ public sealed partial class BlockWorld
         var filter = new BlockWorldFilter();
         filter.AllowedTypes.Add(observed.Type);
         filter.IgnoreIds.Add(observed.ObjectId);                                            // 0x0061FAA6: the observed object's own ID
-        filter.Predicates.Add(o => !Carrying(o.ObjectId));                                  // 0x005064CC
+        filter.Predicates.Add(o => !CarriedOnly(o.ObjectId));                               // 0x005064CC; $_0 0x00507CF6..0x00507D06 compares the carried ID [+8] only
         var capturedT = tol;
         double capturedA = ObjectMatchAngleRad;
         filter.Predicates.Add(o =>                                                          // legacy candidate; native callable 0x006280DA
@@ -2670,12 +2686,12 @@ public sealed partial class BlockWorld
                 $"Setting robot {RobotId} as localized to no object, because it is currently localized to {obj.Type} object with ID={unchecked((int)obj.ObjectId)}, which is about to be cleared.");
             SetLocalizedTo(null);
         }
-        if ((CarriedPrimaryId?.Invoke() ?? (Carrying(obj.ObjectId) ? obj.ObjectId : null)) == obj.ObjectId)
+        if (CarriedOnly(obj.ObjectId))                                                      // 0x00625CF0..0x00625CF8: the carried ID [+8] only
         {
             Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.ClearObjectHelper.ClearingCarriedObject",
                 $"Clearing {obj.Type} object {unchecked((int)obj.ObjectId)} which robot {RobotId} thinks it is carrying.");
             if (UnsetCarryingObjects is { } unset) unset(false);
-            else Missing("M12-007/M12-008: UnSetCarryingObjects(false) 0x00625D32 owner unavailable");
+            else Missing("M12-007/M12-008: UnSetCarryingObjects(false) 0x00625D4E owner unavailable");
         }
         if (SelectedObjectId == obj.ObjectId)
         {
@@ -2840,7 +2856,7 @@ public sealed partial class BlockWorld
             // GetLastVisuallyMatchedTime(ID) < ts (0x00621D64, cmp r0,r5; bhs skip at 0x00621D68): the getter reads [confirmer entry + 0x30], 0 without an entry
             // (0x00507824..0x0050783A). AddVisualObservation writes it (0x00506A9C..0x00506AA4), and a confirmed object reaches that every frame through Insert.
             if (!((EntryFor(o.ObjectId)?.LastVisuallyMatchedTime ?? 0) < timestamp)) continue;
-            if (Carrying(o.ObjectId)) continue;
+            if (CarriedOnly(o.ObjectId)) continue;                                         // 0x00621D70..0x00621D78: the carried ID [+8] only, not the on-top one
             if ((dock is { } d && d == o.ObjectId) || o.Family == ObjectFamily.Charger) continue;
             candidateIds.Add(o.ObjectId);
         }
@@ -3375,8 +3391,12 @@ public sealed partial class BlockWorld
         first.AllowedOrigins.Add(oldOriginId);
         FindLocatedObjectHelper(first, o => MoveObjectToNewOrigin(o, newOriginId, newOrigin, ref flag), false);       // 0x0062060A..0x0062063E
         if (flag == 0)
+        {
+            var erased = new List<ObservableObject>();
             lock (_gate)                                                                                               // 0x00620642..0x0062064C
-                foreach (var k in _located.Keys.Where(k => k.Origin == oldOriginId).ToList()) _located.Remove(k);
+                foreach (var k in _located.Keys.Where(k => k.Origin == oldOriginId).ToList()) { erased.Add(_located[k]); _located.Remove(k); }
+            ErasedObjectPosesDestroyed(erased);
+        }
         FindLocatedObjectHelper(new BlockWorldFilter(), AddInExistingPose, false);                                     // 0x006206BE..0x006206E0
         if(snapshotOwner is {} owner)
         {
@@ -3389,6 +3409,35 @@ public sealed partial class BlockWorld
         return flag;
     }
 
+    /// <summary>
+    /// The old origin's erase (__erase_unique 0x0062064C) destroys each old object, and with it its pose: <c>~PoseBase</c> 0x008450F4 removes the wrapper's
+    /// owner (0x0084510A). When that leaves the node with no owner, <c>_areUnownedParentsAllowed</c> (GOT 0x0103FE58) is 0 and the node's shared control
+    /// block still has other owners (0x0084511E..0x00845124), it is the VERIFY "PoseBase.Destructor.NotLastOwner" (sVerifyFailedReturnFalse 0x00845156 ->
+    /// 0x0080D9A4: logged, no abort); then only the wrapper's own reference is released (0x0084515E), so the node lives on in whatever still holds it.
+    /// In a carried-stack origin move that holder is the moved top cube's pose (and its confirmer entry's copy), parented to the OLD carried object's node by
+    /// lambda1's copy (census CARRIED-ONTOP-BINDING-CENSUS-1 Q4; M11-084 A8-15): the node keeps its own parent, the lift, and its transform, so the top cube
+    /// keeps following the lift. The stack's nodes are garbage collected, so the node survives here the same way; what this adds is the error log.
+    /// The other owners are counted from what this world holds: located objects and confirmer entries whose pose is parented to the node.
+    /// Not built: the error flag _errG (0x0080D9E8..0x0080D9F4), the call-stack dump and the logger provider's vtable +0x14 (0x0080DA1A..0x0080DA28): the
+    /// original's error machinery (AGENTS.md "Failures that can happen here"); and the owner-count decrement itself, which only feeds later VERIFY logs.
+    /// </summary>
+    // fidelity: M11-043, M11-084
+    private void ErasedObjectPosesDestroyed(List<ObservableObject> erased)
+    {
+        foreach (var o in erased)
+        {
+            if (o.NativePose.Node is not { } node || node.Owners != 1 || Pose3d.UnownedParentsAllowed) continue;    // 0x0084510A: this wrapper is the last owner
+            int holders;
+            lock (_gate)
+                holders = _located.Values.Count(x => ReferenceEquals(x.NativePose.Node?.Parent, node))
+                        + _confirmations.Values.Count(e => ReferenceEquals(e.Pose.Node?.Parent, node));
+            if (holders == 0) continue;                                                                                // use_count() == 1: the node dies with it
+            Source(EngineLogLevel.Error, null, "PoseBase.Destructor.NotLastOwner",
+                "VERIFY(_node.use_count() == 1): Removing pose " + PoseDiagnostics.Integer(node.Id) + "(" + PoseDiagnostics.CString(node.Name) +
+                ")'s node's last known owner, but it still has use_count=" + (1 + holders).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+    }
+
     /// <summary><c>PoseOriginList::UnknownOriginID</c>: GOT 0x0103E978 -> 0x00C97B20, .rodata word 0.</summary>
     // fidelity: M11-043
     internal const uint UnknownOriginId = 0;
@@ -3397,7 +3446,10 @@ public sealed partial class BlockWorld
     private void MoveObjectToNewOrigin(ObservableObject o, uint newOriginId, Pose3d newOrigin, ref uint result)
     {
         var pose = new Pose3d("");
-        if (Carrying(o.ObjectId)) pose.Assign(o.NativePose);                                                           // 0x00628E60 / 0x00628E72: operator=
+        // fidelity: M11-043, M12-008 — IsCarryingObject 0x00628E60 -> 0x00633F88 is true for the carried object AND the one resting on it ([+0x14]), so the
+        // top cube's pose is copied with its parent kept: the OLD carried object's pose node (census CARRIED-ONTOP-BINDING-CENSUS-1 C14, Q4).
+        bool carried = Carrying(o.ObjectId);
+        if (carried) pose.Assign(o.NativePose);                                                                        // 0x00628E60 / 0x00628E72: operator=
         else if (!Pose3d.GetWithRespectTo(o.NativePose, newOrigin, pose))                                              // 0x00628E82, newOrigin = [functor+8]
         {
             // 0x00628E88 beq 0x628FB2: sErrorF OriginFail (0x00BF8428, format 0x0062954C), errG, result word := 1 (0x00629022..0x00629024), object skipped.
@@ -3443,6 +3495,7 @@ public sealed partial class BlockWorld
             }
             SetObservationTimes(counterpart, o);                                                                       // 0x006292DC
             result = CopyWithNewPose(counterpart, pose, o);                                                            // 0x006292EE / 0x006292F6
+            if (carried) counterpart.NativeCarryingTree = o.NativeCarryingTree;                                        // stack machinery: the public world-frame view (no engine field)
         }
         else
         {
@@ -3452,6 +3505,7 @@ public sealed partial class BlockWorld
             clone.OriginId = newOriginId;
             SetObservationTimes(clone, o);
             result = CopyWithNewPose(clone, pose, o);
+            if (carried) clone.NativeCarryingTree = o.NativeCarryingTree;                                              // stack machinery: the public world-frame view (no engine field)
             AddLocatedObject(clone);                                                                                   // 0x0062931E "NoMatchingObjectInNewFrame"
         }
     }
