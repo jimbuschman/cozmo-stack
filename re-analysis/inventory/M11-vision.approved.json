@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-11-10",
+  "approved": "2026-11-12",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "7c8842997561ead38128794d21dea1f27b8954540cd3b31f835e2eb3a5df968d",
+  "inventory_sha256": "281df629c5d10fa898cb16194c9603e3dceeb9f09e8a3c8e007e3c30f6b4fcc4",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -531,11 +531,11 @@
       "hardware_required": false
     },
     "M11-043": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BlockWorld::UpdateObjectOrigins: re-keying located objects between origins",
-      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q1, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): Robot::LocalizeToObject 0x005154B0 calls UpdateObjectOrigins 0x00620534 (its only call site 0x00515992) when the object's origin differs from the robot's world origin, after Rejigger. UpdateObjectOrigins clears the ObjectPoseConfirmer (0x00620594), runs a modify function (0x00628E18) on every object in the old origin that looks up a counterpart in the new origin (same ID for unique types, closest for others), sets the counterpart's ID to the moved object's ID (re-keying the shared_ptr if the IDs differ) and calls CopyWithNewPose 0x00506EF8 (copies the pose and the source's PoseState); with no counterpart it clones the object, sets the clone's ID and adds it with AddLocatedObject; the second modify function (0x00629862) is AddInExistingPose (0x00506F48, writes only a confirmer entry); the old origin's map entry is erased only if the last object's result was 0; then BlockConfigurationManager [+0xC] = 1 (0x006206EA) and BroadcastLocatedObjectStates (0x006206E6). LocalizeRobot 0x0050D1CC and UseDiscardedObservation 0x0050CD90 write no object state",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q1, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): Robot::LocalizeToObject 0x005154B0 calls UpdateObjectOrigins 0x00620534 (its only call site 0x00515992) when the object's origin differs from the robot's world origin, after Rejigger. UpdateObjectOrigins clears the ObjectPoseConfirmer (0x00620594), runs a modify function (0x00628E18) on every object in the old origin that keeps the pose of a carried object as is (CarryingComponent::IsCarryingObject 0x00633F88: the carried ID or the ID resting on it) and converts any other with GetWithRespectTo to the new origin (a failure is the OriginFail error, result 1, object skipped), and that looks up a counterpart in the new origin (same ID for unique types, closest for others), sets the counterpart's ID to the moved object's ID (re-keying the shared_ptr if the IDs differ) and calls CopyWithNewPose 0x00506EF8 (SetPose with the source's fromDistance and PoseState, then the confirmer entry; returns 0); with no counterpart it clones the object, sets the clone's ID and adds it with AddLocatedObject; the second modify function (0x00629862) is AddInExistingPose (0x00506F48, writes only a confirmer entry); the old origin's map entry is erased only if the last object's result was 0; then AddInExistingPose over the robot's current origin (0x006206E0), BroadcastLocatedObjectStates (0x006206E6), then BlockConfigurationManager [+0xC] := 1 (0x006206EA..0x006206F0). LocalizeRobot 0x0050D1CC and UseDiscardedObservation 0x0050CD90 write no object state",
       "evidence": [
-        "0x00620534..0x006206EA UpdateObjectOrigins; 0x00628E18, 0x00629862 the modify functions; 0x00506EF8 CopyWithNewPose; 0x00515992 the call site",
+        "0x00620534..0x006207E4 UpdateObjectOrigins (guard 0x00620554..0x00620570; Clear 0x00620594 -> 0x005077EC; first walk 0x0062063E; erase 0x00620642..0x0062064C; AddInExistingPose walk 0x006206E0 via 0x00629862 -> 0x00506F48; BroadcastLocatedObjectStates 0x006206E6 -> 0x0061E6C0; BlockConfigurationManager [+0xC] := 1 0x006206EA..0x006206F0); lambda1 0x00628E18..0x006293F6 (IsCarryingObject 0x00628E60 -> 0x00633F88; GetWithRespectTo 0x00628E82; OriginFail 0x00628FB2..0x00629026; unique search 0x00628F5E..0x0062904A; closest search 0x00628F8E..0x00628FAC -> 0x0061F8EC/0x00627F9A, MarkerlessObject tolerance 0x00502B06; re-key 0x00629162..0x006291E8; SetObservationTimes 0x006292DC -> 0x00877706; CopyWithNewPose 0x006292EE -> 0x00506EF8; AddLocatedObject 0x0062931E); call site 0x00515992",
         "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q1; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q1 PASS)"
       ],
       "live_path": true,
