@@ -1365,10 +1365,11 @@ public sealed partial class VisionSystem : IDisposable
     }
 
     /// <summary>
-    /// Whether the robot is carrying an object, so the movement handler can apply the engine's guard.
-    /// The carrying component lives in the docking system, which is built on top of this one, so it
-    /// hands the question down rather than this reaching up for it.
+    /// <c>CarryingComponent::IsCarryingObject(id)</c> 0x00633F88: the carried object or the one resting on it ([+8] or [+0x14]), forwarded to the world's
+    /// binding of the same name. The carrying component lives in the docking system, which is built on top of this one, so it hands the question down
+    /// rather than this reaching up for it (DockingSystem binds <c>CarryingComponent.IsCarryingObjectId</c>).
     /// </summary>
+    // fidelity: M11-009
     public Func<uint, bool>? IsCarryingObject { get; set; }
 
     private bool Carrying(uint objectId) => IsCarryingObject?.Invoke(objectId) ?? false;
@@ -1380,8 +1381,8 @@ public sealed partial class VisionSystem : IDisposable
             case RobotState:
                 // Robot-owned admission/current-pose/treads processing runs in Sensors, before this subscriber.
                 break;
-            // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
-            // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
+            // HandleActiveObjectMoved 0x00533E30 dirties the pose only when IsCarryingObject(id) 0x00633F88 is false (the guard at
+            // 0x0053411E, and HandleActiveObjectStopped's at 0x0053492C): a cube on the lift, or the cube resting on it, reporting motion is not dirtied.
             // fidelity: M11-009
             // M4-009: CozmoCubes owns the complete Moved/Stopped located-object update,
             // including its matched-object dirty operation. Do not repeat it here.

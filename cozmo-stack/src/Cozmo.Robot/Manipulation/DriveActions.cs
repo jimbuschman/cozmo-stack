@@ -695,7 +695,9 @@ public sealed class DriveToObjectAction
                 }
             }
         }
-        if (!_m.Docking.Carrying.IsCarrying(ObjectId))
+        // DriveToObjectAction::InitHelper 0x0055937A: CarryingComponent::IsCarryingObject(id) 0x00633F88 (carried +8 OR on-top +0x14) decides whether the
+        // TurnTowardsObjectAction is added (0x0055937E cmp; 0x00559380 bne), as NativeDriveToObjectRunner tests both slots (census CARRIED-ONTOP-BINDING-CENSUS-1 C8).
+        if (!_m.Docking.Carrying.IsCarryingObjectId(ObjectId))
         {
             bool turned = await _m.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
             if (!turned)

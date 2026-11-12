@@ -69,13 +69,16 @@ public sealed class ManipulationSystem : IDisposable
         {
         vision.World.UnsetCarryingObjects = topOnly => Docking.Carrying.UnsetCarrying(topOnly);
         vision.World.CarriedPrimaryId = () => Docking.Carrying.CarriedObjectId;
+        // fidelity: M11-007, M12-008
+        // UpdatePoseInInstance's carried branch calls CarryingComponent::UnSetCarryObject(id) at 0x00505FBC (GOT 0x01041280; body 0x00633F6C..0x00633F86).
+        vision.World.UnSetCarryObject = Docking.Carrying.UnSetCarryObject;
 
         // fidelity: M4-003, M4-009, M4-012
         // The M4 control layer's M12 seams. MA12: a lift height of exactly 32 mm while carrying becomes
         // PlaceObjectOnGroundAction. MA20: a lift that starts calibrating while carrying detaches the carried object
-        // (SetCarriedObjectAsUnattached(true) = ReleaseCarriedObject(forget: true)). CD10a/CD10b and C11.1: the carried
-        // object (CarryingComponent+8) and the dock target (DockingComponent+0xC) are excluded from the
-        // Moved/Stopped broadcast.
+        // (SetCarriedObjectAsUnattached(true) = ReleaseCarriedObject(forget: true)). CD10a/CD10b and C11.1: an object
+        // for which CarryingComponent::IsCarryingObject(id) 0x00633F88 is true (the carried one, +8, or the one resting
+        // on it, +0x14) and the dock target (DockingComponent+0xC) are excluded from the Moved/Stopped broadcast.
         robot.Motion.IsCarryingObject = () => Docking.Carrying.IsCarryingObject;
         robot.Motion.PlaceObjectOnGroundAsync = async () =>
         {
@@ -90,11 +93,12 @@ public sealed class ManipulationSystem : IDisposable
             if (Docking.Carrying.IsCarryingObject) Docking.ReleaseCarriedObject(forget: true);
         };
         // fidelity: M4-009
-        // CD10a/CD10b: the carried object (CarryingComponent+8) and the dock target (DockingComponent+0xC, C11.1)
-        // are excluded from the Moved/Stopped broadcast.
+        // CD10a/CD10b: IsCarryingObject(id) 0x00633F88 (carried +8 OR on-top +0x14), called at 0x0053417C (HandleActiveObjectMoved) and 0x0053498C
+        // (HandleActiveObjectStopped), OR the dock target (DockingComponent+0xC, C11.1) skips the ObjectMoved / ObjectStoppedMoving broadcast
+        // (census CARRIED-ONTOP-BINDING-CENSUS-1 C5/C7).
         // Cube.ObjectId is the radio slot (activeID); the carried object and the dock target are BlockWorld ObjectIDs (M11-013, M11-041), so the slot is translated to the connected object's ObjectID first.
         robot.Cubes.ExcludeFromMovedBroadcast = c => c.ObjectId is { } slot && vision.World.ConnectedObjectIdForActiveId(slot) is { } id
-            && (Docking.Carrying.IsCarrying(id) || Docking.DockTargetObjectId == id);
+            && (Docking.Carrying.IsCarryingObjectId(id) || Docking.DockTargetObjectId == id);
         // LC3: the default-layer choice prefers the carried object over Visible and Connected (the carried ObjectID is a world ID: its type is the connected object's).
         robot.Lights.Cubes.IsCarried = t => Docking.Carrying.CarriedObjectId is { } id
             && vision.World.ConnectedObjects.FirstOrDefault(o => o.ObjectId == id)?.Type == t;
@@ -122,6 +126,8 @@ public sealed class ManipulationSystem : IDisposable
             _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.UnsetCarryingObjects,ownedHook5))vision.World.UnsetCarryingObjects=null;});
             var ownedHook6=vision.World.CarriedPrimaryId;
             _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.CarriedPrimaryId,ownedHook6))vision.World.CarriedPrimaryId=null;});
+            var ownedHook7=vision.World.UnSetCarryObject;
+            _installedCallbacks.Add(()=>{if(ReferenceEquals(vision.World.UnSetCarryObject,ownedHook7))vision.World.UnSetCarryObject=null;});
         }
     }
 

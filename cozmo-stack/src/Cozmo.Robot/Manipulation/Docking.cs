@@ -85,11 +85,20 @@ public sealed partial class CarryingComponent
     public KnownMarker? DockMarker { get { lock (_gate) return _dockMarker; } }
     public event Action<uint?>? Changed;
 
-    /// <summary>The carried id equals <paramref name="objectId"/> (the stack's own test: [+8] only; its callers' engine counterparts are not read).</summary>
+    /// <summary>
+    /// The carried id ([+8]) equals <paramref name="objectId"/>: the carried ID only, as the engine's inline reads of <c>[[robot+0x284]+8]</c> compare it
+    /// (census CARRIED-ONTOP-BINDING-CENSUS-1 Q1). It is NOT <c>CarryingComponent::IsCarryingObject(ObjectID)</c>, which also matches the object resting on
+    /// the carried one; that is <see cref="IsCarryingObjectId"/>.
+    /// </summary>
     public bool IsCarrying(uint objectId) { lock (_gate) return _carried == objectId; }
 
-    /// <summary><c>CarryingComponent::IsCarryingObject(ObjectID)</c> 0x00633F88: true for the carried id ([+8]) and for the id of the object resting on it ([+0x14]). Used where the engine call is read (the <c>FindCubesInBeacon</c> predicate, 0x0056D142).</summary>
-    // fidelity: M15-020
+    /// <summary>
+    /// <c>CarryingComponent::IsCarryingObject(ObjectID)</c> 0x00633F88: true for the carried id ([+8]) and for the id of the object resting on it ([+0x14]).
+    /// Every engine call through PLT 0x004A6FAC reads this body (census CARRIED-ONTOP-BINDING-CENSUS-1 Q1, C1..C15): BlockWorld's and VisionSystem's shared
+    /// <c>IsCarryingObject</c> binding (below), the Moved/Stopped broadcast exclusion (ManipulationSystem), DriveToObjectAction::InitHelper, the
+    /// <c>FindCubesInBeacon</c> predicate (0x0056D142) and CubeLightComponent's RobotDelocalized handler (0x0063A3D0).
+    /// </summary>
+    // fidelity: M15-020, M11-043, M11-009, M12-008
     public bool IsCarryingObjectId(uint objectId) { lock (_gate) return _carried == objectId || _onTopId == objectId; }
 
     public void SetCarrying(uint objectId, KnownMarker? dockMarker = null)
@@ -146,6 +155,19 @@ public sealed partial class CarryingComponent
     {
         if (NativeUnset is {} unset) { unset(topOnly); return; }
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-045 UnSetCarryingObjects 0x00633C0C: world/robot recipient is not bound; preserve carrying state");
+    }
+    /// <summary>
+    /// <c>CarryingComponent::UnSetCarryObject(id)</c> 0x00633F6C..0x00633F86: the carried id [+8] -> <c>UnSetCarryingObjects(false)</c> (moveq r1,#0 at
+    /// 0x00633F74); the id resting on it [+0x14] -> <c>UnSetCarryingObjects(true)</c> (moveq r1,#1 at 0x00633F80), both through the veneer 0x008CCC7C
+    /// (census CARRIED-ONTOP-BINDING-CENSUS-1 Q1). Any other id: neither branch. Called by <c>UpdatePoseInInstance</c> at 0x00505FBC (BlockWorld.UnSetCarryObject).
+    /// </summary>
+    // fidelity: M12-008, M11-007
+    public void UnSetCarryObject(uint objectId)
+    {
+        bool carried, onTop;
+        lock (_gate) { carried = _carried == objectId; onTop = _onTopId == objectId; }
+        if (carried) UnsetCarrying(false);
+        else if (onTop) UnsetCarrying(true);
     }
     internal uint[] GetCarryingObjects() { lock(_gate) return new[]{_carried,_onTopId}.Where(x=>x.HasValue).Select(x=>x!.Value).Distinct().OrderBy(x=>unchecked((int)x)).ToArray(); }
     internal void ClearNativeCarryingFields(bool topOnly)
@@ -224,7 +246,13 @@ public sealed class DockingSystem : IDisposable
         // Everything this instance installs on the vision system is remembered, so Dispose can take back
         // what it put there - and only what it put there. A replacement installs its own and owns them
         // from that moment; a late disposal of the old one must not clear the new one's.
-        _isCarrying = Carrying.IsCarrying;               // the guard at 0x00534116 needs this
+        // fidelity: M11-043, M11-009, M12-008
+        // The shared binding BlockWorld and VisionSystem read as CarryingComponent::IsCarryingObject(id): the engine body 0x00633F88 (carried [+8] OR on-top
+        // [+0x14]), as every PLT 0x004A6FAC caller it stands for calls it: UpdatePoseInInstance 0x00505E0A, MarkObjectUnknown 0x00507270, MarkObjectDirty
+        // 0x00507676, the Moved/Stopped dirty guards 0x0053411E/0x0053492C, AddAndUpdateObjects 0x00620F06, UpdatePoseOfStackedObjects 0x00621926 and
+        // UpdateObjectOrigins lambda1 0x00628E60 (census CARRIED-ONTOP-BINDING-CENSUS-1 Q2/Q3). The engine's inline carried-only reads ([+8]) do not use
+        // this binding: BlockWorld reads CarriedPrimaryId for them.
+        _isCarrying = Carrying.IsCarryingObjectId;
         vision.IsCarryingObject = _isCarrying;
         // fidelity: M11-044, M12-040
         // CouldUseObjectForLocalization 0x0050D170..0x0050D1C6 compares the object's ID with [DockingComponent+0xC]: this component's dock target

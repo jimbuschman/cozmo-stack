@@ -1633,6 +1633,83 @@ public class M11RVisBuildTests : IDisposable
     private static ObservableObject Markerless(uint id, ObjectType type, Pose3d pose, uint origin, PoseState state) =>
         new(id, type, Array.Empty<KnownMarker>()) { Pose = pose, PoseState = state, OriginId = origin };
 
+    /// <summary>
+    /// M11-043 lambda1 with a carried stack (census CARRIED-ONTOP-BINDING-CENSUS-1 C14 and Q4; M11-084 A8-15). IsCarryingObject 0x00628E60 -> 0x00633F88 is
+    /// true for the carried cube C ([+8]) and for the cube T resting on it ([+0x14]), so both poses are copied as is, parents kept (0x00628E72): C' under the
+    /// lift, T' under the OLD C's node. The old origin's erase (0x0062064C) destroys old C; ~PoseBase 0x008450F4 finds its node with no owner left while T'
+    /// still holds it, logs "PoseBase.Destructor.NotLastOwner" (sVerifyFailedReturnFalse 0x00845156, an error) and releases only its own reference
+    /// (0x0084515E). T' keeps the old node, which keeps the lift as its parent, so T' follows the lift.
+    /// Worked: origin 1 sits at (1000, 0, 0) in origin 2; the lift at (30, 0, 40) in origin 1; C at (5, 0, -10) on the lift; T at (0, 0, 44) on C, all
+    /// unrotated. T in origin 2: (1035, 0, 74). After the lift moves to (50, 0, 60) in origin 1: (1055, 0, 94).
+    /// </summary>
+    // reach: unit (UpdateObjectOrigins called directly; the lift node, the stack's parents as SetObjectAsAttachedToLift leaves them (0x00633006..0x00633010),
+    // IsCarryingObject (both slots) and CarriedPrimaryId substituted; the origin tree set as Rejigger leaves it).
+    [Fact]
+    public void M11_043_ACarriedStackKeepsTheTopCubeOnTheOldCarriedNodeWhichFollowsTheLift()
+    {
+        var w = new BlockWorld { CurrentOriginId = 1 };
+        var lines = new List<(EngineLogLevel Level, string Key, string Text)>(); w.SourceLog = (l, c, k, t) => lines.Add((l, k, t));
+        var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
+        using var lift = In(o1, 30, 0, 40);
+        var c = Locate(w, Cube(w, 12, In(lift, 5, 0, -10)));
+        var t = Locate(w, Cube(w, 13, In(c.NativePose, 0, 0, 44), ObjectType.Block_LIGHTCUBE2, PoseState.Dirty));
+        c.NativeCarryingTree = true; t.NativeCarryingTree = true;                                          // as DockingSystem's attach leaves them
+        w.IsCarryingObject = id => id == 12 || id == 13;
+        w.CarriedPrimaryId = () => 12;
+        Rejiggered(o1, o2, 1000, 0);
+        w.CurrentOriginId = 2;
+        Assert.Equal(0u, w.UpdateObjectOrigins(1, 2));
+        var c2 = w.GetLocatedObjectById(12)!; var t2 = w.GetLocatedObjectById(13)!;
+        Assert.NotSame(c, c2); Assert.NotSame(t, t2);                                                      // clones in the new origin; the old ones are erased
+        Assert.Empty(w.FindLocatedMatchingObjects(new BlockWorldFilter { OriginMode = OriginMode.Custom, AllowedOrigins = { 1 } }));
+        Assert.Same(lift.Node, c2.NativePose.Node!.Parent);                                                // C: copied with its parent, the lift
+        Assert.Same(c.NativePose.Node, t2.NativePose.Node!.Parent);                                        // T: copied with its parent, the OLD C's node
+        Assert.Equal(new Vec3(0, 0, 44), t2.NativePose.Translation);
+        Assert.Equal(PoseState.Dirty, t2.PoseState);                                                       // the source's state (CopyWithNewPose 0x00506F02..0x00506F16)
+        var notLast = Assert.Single(lines, l => l.Key == "PoseBase.Destructor.NotLastOwner");             // old C only: old T's node has no child left
+        Assert.Equal(EngineLogLevel.Error, notLast.Level);
+        using var before = new Pose3d("");
+        Assert.True(Pose3d.GetWithRespectTo(t2.NativePose, o2, before));
+        Assert.Equal(new Vec3(1035, 0, 74), before.Translation);
+        lift.Node!.Transform = new Transform3d(Rotation3d.Identity, new Vec3(50, 0, 60));
+        using var after = new Pose3d("");
+        Assert.True(Pose3d.GetWithRespectTo(t2.NativePose, o2, after));
+        Assert.Equal(new Vec3(1055, 0, 94), after.Translation);
+        Assert.Equal(new Vec3(1055, 0, 94), t2.Pose.Translation);                                         // the public view reports the same world pose
+    }
+
+    /// <summary>
+    /// The carried-only readers (census CARRIED-ONTOP-BINDING-CENSUS-1 Q2): CheckForUnobservedObjects compares the carried ID inline (0x00621D70..0x00621D78:
+    /// ldr [+8]; cmp; beq skip) and ClearLocatedObjectHelper likewise (0x00625CF0..0x00625CF8: ldr [+8]; cmp; bne), not through
+    /// CarryingComponent::IsCarryingObject 0x00633F88. So the cube resting on the carried one (IsCarryingObject true through [+0x14]) is still a candidate and
+    /// takes a miss (0x0062211E), and clearing it does not unset carrying; the carried cube is skipped, and clearing it calls UnSetCarryingObjects(false)
+    /// (0x00625D4E: movs r1,#0 at 0x00625D48, PLT 0x004ABAA0).
+    /// </summary>
+    // reach: unit (BlockWorld entries called directly; IsCarryingObject (both slots) and CarriedPrimaryId substituted with the values DockingSystem binds).
+    [Fact]
+    public void M11_043_TheCarriedOnlyReadersStillTreatTheCubeOnTopAsNotCarried()
+    {
+        var pd = Pd(1000);
+        var cam = CameraOf(pd);
+        var w = new BlockWorld(); var top = Locate(w, Cube(w, 1, At(150, 0), state: PoseState.Dirty));
+        w.IsCarryingObject = id => id == 9 || id == 1; w.CarriedPrimaryId = () => 9;                       // carried 9, on top 1
+        w.CheckForUnobservedObjects(cam, 1000, false, false);
+        Assert.Equal(1, top.UnobservedCount);
+        var w2 = new BlockWorld(); var carried = Locate(w2, Cube(w2, 1, At(150, 0), state: PoseState.Dirty));
+        w2.IsCarryingObject = id => id == 1 || id == 9; w2.CarriedPrimaryId = () => 1;                     // carried 1, on top 9
+        w2.CheckForUnobservedObjects(cam, 1000, false, false);
+        Assert.Equal(0, carried.UnobservedCount);
+        var unsets = new List<bool>();
+        var w3 = new BlockWorld();
+        var t3 = Locate(w3, Cube(w3, 1, At(150, 0)));
+        var c3 = Locate(w3, Cube(w3, 9, At(300, 0), ObjectType.Block_LIGHTCUBE2));
+        w3.IsCarryingObject = id => id == 9 || id == 1; w3.CarriedPrimaryId = () => 9; w3.UnsetCarryingObjects = unsets.Add;
+        w3.ClearLocatedObjectHelper(t3);
+        Assert.Empty(unsets);
+        w3.ClearLocatedObjectHelper(c3);
+        Assert.Equal(new[] { false }, unsets);
+    }
+
     // ------------------------------------------------------------------------------------------- M11-037
 
     /// <summary>
@@ -1680,7 +1757,7 @@ public class M11RVisBuildTests : IDisposable
         w2.CheckForUnobservedObjects(cam, 1000, robotMoving: false, rotatingTooFast: true);
         Assert.Equal(0, o2.UnobservedCount);
         var w3 = Make(out var o3);
-        w3.IsCarryingObject = id => id == 1;
+        w3.CarriedPrimaryId = () => 1;                                                                    // 0x00621D70..0x00621D78 reads the carried ID [+8] inline
         w3.CheckForUnobservedObjects(cam, 1000, false, false);
         Assert.Equal(0, o3.UnobservedCount);
         var w4 = Make(out var o4);
