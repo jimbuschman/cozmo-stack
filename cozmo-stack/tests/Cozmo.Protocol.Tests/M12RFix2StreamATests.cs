@@ -28,8 +28,10 @@ public class M12RFix2StreamATests
 
     /// <summary>
     /// M12-019: the docking error signal's ClampPoseToFlat tolerance is binary32 0x3F32B8C2 (movw 0x0063C182 / movt 0x0063C188, passed at 0x0063C194), not the
-    /// double 0.698132 (0x3F32B8C7). Through <see cref="BlockWorld.ClampPoseToFlat"/>, the function the error signal calls: a tilt of one binary32 step below the constant is
-    /// snapped flat, one step above it is left as it is (the old decimal would have snapped it).
+    /// double 0.698132 (0x3F32B8C7). Through <see cref="BlockWorld.ClampPoseToFlat"/> (ClampPoseToFlat 0x00877330): the gate is the engine's Radians operator&lt;
+    /// (0x0084CD12 -> operator&gt; 0x0084CC90: tol - a &gt; 0 and not IsNear(tol, a, 1e-5f) 0x0084CC0A), so a tilt one binary32 step either side of the constant is NOT
+    /// snapped, and a tilt 2e-5 below it is. Measured on the shipped 0x00877330 with the harness of re-analysis/tools/emu/emu_clamp_flat.py and a 40-degree tolerance (CLAMP-FLAT-NUMERICS-1 implementer and verifier runs; these cases are not in the script's CASES table): 0x3F32B8C1 -> 0,
+    /// 0x3F32B8C3 -> 0, tol - 2e-5 -> 1. (This test's earlier expectation, a snap at 0x3F32B8C1, came from the stack's old double clamp and was contradicted.)
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
@@ -37,12 +39,14 @@ public class M12RFix2StreamATests
     {
         Assert.Equal(0x3F32B8C2u, Bits(DockingSystem.ClampToFlatAngleRad));
         Assert.Equal((double)F(0x3F32B8C2), DockingSystem.ClampToFlatAngleRad);
-        double below = F(0x3F32B8C1), above = F(0x3F32B8C3);
-        var snapped = BlockWorld.ClampPoseToFlat(new Pose3d(Mat3.AboutY(below), new Vec3(1, 2, 3)), DockingSystem.ClampToFlatAngleRad);
-        Assert.Equal(1.0, snapped.Rotation[2, 2], 9);                         // clamped: the object's Z is now the vertical
-        var input = new Pose3d(Mat3.AboutY(above), new Vec3(1, 2, 3));
-        var kept = BlockWorld.ClampPoseToFlat(input, DockingSystem.ClampToFlatAngleRad);
-        Assert.Equal(input.Quaternion, kept.Quaternion);                // beyond the tolerance: left alone
+        var snapped = BlockWorld.ClampPoseToFlat(new Pose3d(Mat3.AboutY(F(0x3F32B8C2) - 2e-5f), new Vec3(1, 2, 3)), DockingSystem.ClampToFlatAngleRad);
+        Assert.Equal(1.0, snapped.Rotation[2, 2], 6);                         // clamped: the object's Z is now the vertical (oracle ret 1)
+        foreach (uint bits in new[] { 0x3F32B8C1u, 0x3F32B8C3u })           // within IsNear of the tolerance on either side: left alone (oracle ret 0)
+        {
+            var input = new Pose3d(Mat3.AboutY(F(bits)), new Vec3(1, 2, 3));
+            var kept = BlockWorld.ClampPoseToFlat(input, DockingSystem.ClampToFlatAngleRad);
+            Assert.Equal(input.Quaternion, kept.Quaternion);
+        }
     }
 
     // ------------------------------------------------------------------ M12-001

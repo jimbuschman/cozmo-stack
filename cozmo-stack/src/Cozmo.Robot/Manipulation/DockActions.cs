@@ -406,11 +406,19 @@ public abstract class DockActionBase
 
     /// <summary>
     /// The marker choice of <c>IDockAction::Init</c> when <c>[+0xB9]</c> is 0 (0x00551960; M12-017): <see cref="GetObservedMarkers"/> with <c>[obj+0x1C]</c>; none is an error log and
-    /// 0x0300001D (0x00551A30..0x00551A82), exactly one is that marker, several are compared by the 3-D SQUARED distance of the marker's pose to <c>Robot::GetPose()</c> with a strict
-    /// <c>&lt;</c> from FLT_MAX (0x00551B3E..0x00551B4A; a failing <c>GetWithRespectTo</c> would log and skip, which cannot fail here); when every distance is NaN nothing is chosen (null).
+    /// 0x0300001D (0x00551A30..0x00551A82), exactly one is that marker with no distance check; two or more go through the engine's distance loop, ported once in
+    /// <see cref="NativeDockMarkerSelection.Closest"/> (S7..S15: the marker pose parented to the object pose, <c>GetWithRespectTo</c> the robot pose, f32 d2 compared with
+    /// f32(best*best), best = sqrtf(d2) on a win; a marker whose <c>GetWithRespectTo</c> fails is logged and skipped).
+    /// Whether the engine can reach that failure is UNKNOWN (census S19, RECOVERABLE_GAP in M12-017): the target comes from the current-origin bucket (S18), but no read
+    /// establishes that a current-origin object's pose root always equals the robot pose's root. In this stack one input that reaches it is the parentless robot pose
+    /// <see cref="ManipulationSystem.CopyPreActionRobotPose"/> builds when <c>Robot.Engine.Robot</c> is null.
+    /// When nothing wins (every marker skipped, or every d2 NaN) the engine calls <c>GetCodeName(null)</c> (0x0055199A..0x005519A0 -> 0x0087E1D0) and reads address 0
+    /// (S17): under the M1-034 standing rule the stack skips this dock action, logs that visibly (naming M1-034 and M12-017) and returns BadMarker 0x03000002, the result it
+    /// already produced for a null marker. That result is a stack choice for the crash path; the engine's NullDockMarker join (0x00551844) is not reached from this branch.
     /// </summary>
     // fidelity: M12-017, M12-037
-    internal static ActionResult ChooseObservedMarker(ObservableObject target, Pose3d robot, out KnownMarker? marker, List<string> trace)
+    internal static ActionResult ChooseObservedMarker(ObservableObject target, Pose3d robot, out KnownMarker? marker, List<string> trace,
+        SourceLogSink? log = null, Func<short,string?>? codeName = null, Action<string>? stackLog = null)
     {
         marker = null;
         var observed = GetObservedMarkers(target, target.LastObservedTimestamp);
@@ -420,12 +428,14 @@ public abstract class DockActionBase
             return ActionResult.VisualObservationFailed;
         }
         if (observed.Count == 1) { marker = observed[0]; return ActionResult.Success; }
-        float best = float.MaxValue;
-        foreach (var m in observed)
+        marker = NativeDockMarkerSelection.Closest(observed, robot, log, codeName);
+        if (marker is null)
         {
-            var t = target.Pose.Compose(m.PoseOnObject).WithRespectTo(robot).Translation;
-            float d2 = (float)(t.X * t.X + t.Y * t.Y + t.Z * t.Z);
-            if (d2 < best) { best = d2; marker = m; }
+            // fidelity: M12-017 (S17, M1-034 standing rule)
+            const string skip = "M1-034 M12-017: IDockAction.Init: no observed marker won the distance compare; the original reads address 0 in Marker::GetCodeName (0x0055199A..0x005519A0 -> 0x0087E1D0); the stack skips this dock action (BadMarker 0x03000002) and keeps prior state";
+            trace.Add(skip);
+            stackLog?.Invoke(skip);
+            return ActionResult.BadMarker;
         }
         return ActionResult.Success;
     }
@@ -518,7 +528,8 @@ public abstract class DockActionBase
             }
             else
             {
-                var chosen = ChooseObservedMarker(target, robot.Value, out marker, _trace);
+                var chosen = ChooseObservedMarker(target, robot.Value, out marker, _trace,
+                    (l, c, k, t) => M.Robot.Engine.EmitSourceLog(l, c, k, t), M.World.MarkerCodeNameInput, M.Robot.Engine.EmitStackLog);
                 if (chosen != ActionResult.Success) return chosen;
             }
             // the join at 0x00551844

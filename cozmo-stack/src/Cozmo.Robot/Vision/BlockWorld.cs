@@ -761,14 +761,19 @@ public sealed partial class BlockWorld
     public static readonly double FlatClampAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)FlatClampAngleBits));
 
     /// <summary>
-    /// The angle <c>CreateObjectsFromMarkers</c> clamps an active instance's pose to: <c>Radians(vtable[+0x1C]() * 0.0174533)</c>
-    /// (0x00625566), and <c>vtable[+0x1C]</c> returns 5.0 (0x004E024E..0x004E0250), i.e. 5 degrees; the clamp runs only when the
-    /// instance is active (row 1.6, 0x00625578).
+    /// The angle <c>CreateObjectsFromMarkers</c> clamps an active instance's pose to: <c>Radians(vtable[+0x1C]() * 0x3C8EFA35)</c>, an f32 product
+    /// (literal 0x3C8EFA35 at 0x006256FC loaded into s16 at 0x006254A0; vmul.f32 0x00625566; Radians ctor 0x00625570), and <c>vtable[+0x1C]</c>
+    /// is 0x004E024E (movs r0,#0; movt r0,#0x40A0 = 5.0f) for ActiveCube and Charger, so the angle is binary32 0x3DB2B8C2; the clamp runs only
+    /// when the instance is active (row 1.6, 0x00625578).
     /// </summary>
     // fidelity: M11-013
     // NOT SOURCED as a bit pattern: the decimal 0.0174533 as the C# has always evaluated it (double 0x3F91DF4722D4405F); the record cites no literal address for it here.
+    // Now used only by the IsRestingFlat call in this file, which is not part of M11-006.
     private static readonly double DegToRadDecimal = BitConverter.Int64BitsToDouble(0x3F91DF4722D4405FL);
-    public static readonly double CreationFlatClampAngleRad = 5.0 * DegToRadDecimal;
+    // fidelity: M11-006, M11-013 — 5.0f (0x004E024E) * 0x3C8EFA35 (0x006256FC) in f32 at 0x00625566, through Radians(float) 0x00625570 = 0x3DB2B8C2.
+    private static readonly float CreationDegToRad = BitConverter.UInt32BitsToSingle(0x3C8EFA35);
+    private static readonly float CreationClampDegrees = BitConverter.UInt32BitsToSingle(0x40A00000);
+    public static readonly double CreationFlatClampAngleRad = new Radians(CreationClampDegrees * CreationDegToRad).Value;
 
     /// <summary>
     /// M11-004 / C3.3: the object-match translation factor, 0.8 (thunk 0x4E025C, literal 0x3F4CCCCD at
@@ -3078,35 +3083,65 @@ public sealed partial class BlockWorld
     }
 
     /// <summary>
-    /// <c>ObservableObject::ClampPoseToFlat</c> 0x00877330: a cube resting on a surface has one axis
-    /// vertical; when the solved pose is within <paramref name="toleranceRad"/> of that, snap it. The
-    /// engine takes the rotated parent Z axis, <c>acos</c> of the magnitude of its largest component, and
-    /// compares that with the angle it was given (0x0087736A..0x0087737E).
+    /// <c>ObservableObject::ClampPoseToFlat(Pose3d&amp;, Radians const&amp;)</c> 0x00877330..0x008774EC for a stack pose. The gate reads the pose's
+    /// rotation with respect to its root (GetWithRespectToRoot 0x004DF628, called at 0x00877342..0x00877346; on failure the engine logs
+    /// Pose3d.GetWithRespectToRoot.Failed and uses a default pose, which <see cref="Pose3d.GetWithRespectToRoot"/> reproduces); the correction is
+    /// applied to the pose's own rotation (<see cref="ClampRotationToFlat"/>). When the engine returns true it has written only the rotation
+    /// into its input (0x008774D0..0x008774E8): the result here is the input's translation, parent, name, ID and frame context with the new
+    /// rotation. When it returns false the input is returned unchanged. The tolerance is narrowed to binary32 (every caller passes an engine
+    /// binary32 word).
     /// </summary>
     // fidelity: M11-006
     public static Pose3d ClampPoseToFlat(Pose3d pose, double? toleranceRad = null)
     {
-        var r = pose.Rotation;
-        // find the object axis closest to world Z
-        var zRow = new Vec3(r[2, 0], r[2, 1], r[2, 2]);
-        double[] comps = { zRow.X, zRow.Y, zRow.Z };
-        int axis = 0;
-        for (int i = 1; i < 3; i++) if (Math.Abs(comps[i]) > Math.Abs(comps[axis])) axis = i;
-        double tilt = Math.Acos(Math.Clamp(Math.Abs(comps[axis]), 0, 1));
-        if (tilt > (toleranceRad ?? FlatClampAngleRad) || tilt < 1e-9) return pose;
-        // rotate so that axis maps exactly onto ±Z: smallest rotation taking the current up vector to world Z
-        var up = r.Column(axis) * Math.Sign(comps[axis]);
-        var ez = new Vec3(0, 0, 1);
-        var cross = up.Cross(ez);
-        if (cross.Length < 1e-12) return pose;
-        var fix = Mat3.AxisAngle(cross, Math.Asin(Math.Clamp(cross.Length, 0, 1)));
-        var result=new Pose3d((fix * r).Orthonormalized(),pose.Translation);
+        var tolerance = new Radians((float)(toleranceRad ?? FlatClampAngleRad));                            // Radians ctor at the call sites
+        Rotation3d root;
+        using (var rootPose = pose.GetWithRespectToRoot()) root = rootPose.Quaternion;                    // C2 0x00877342..0x00877346
+        if (!ClampRotationToFlat(pose.Quaternion, root, tolerance, out var rotation)) return pose;        // C6/C13/C16 return false
         // fidelity: M11-006, M11-044 — the engine writes the new rotation into the INPUT pose's own transform (GetTransform() 0x008774D0, vstr loop
-        // 0x008774D6..0x008774E8); parent and translation are untouched and no new pose is made. So the result keeps its input's parent and its
-        // input's frame context: the Mat3 constructor's legacy flag is not picked up (a parented, unflagged world pose stays a native world pose).
+        // 0x008774D6..0x008774E8); translation, parent, name and ID are untouched and no new pose is made. So the result keeps its input's parent and its
+        // input's frame context (a parented, unflagged world pose stays a native world pose).
+        var result = new Pose3d(rotation, pose.Translation, pose.Name) { Id = pose.Id };
         result.KeepInputFrameContextOf(pose);
         if(pose.HasParent){Pose3d parent=null!;if(pose.TryGetParent(ref parent))using(parent)result.SetParent(parent);}
         return result;
+    }
+
+    private static readonly float ClampEpsilon = BitConverter.UInt32BitsToSingle(0x3727C5AC);   // literal at 0x00877518, loaded 0x00877422
+
+    /// <summary>
+    /// The arithmetic of <c>ObservableObject::ClampPoseToFlat</c> 0x00877330..0x008774EC (census CLAMP-FLAT-NUMERICS-1 C3..C18), shared by the
+    /// world clamps (<see cref="ClampPoseToFlat"/>) and the docking error signal (<c>NativeDockingGeometry.Clamp</c>). <paramref name="root"/> is the
+    /// pose's rotation with respect to its root, <paramref name="local"/> its own rotation. Returns the engine's bool; when true,
+    /// <paramref name="result"/> is the rotation the engine writes back, otherwise <paramref name="local"/>. acosf/cosf/sinf/sqrtf are the host's
+    /// (M13-023(e)).
+    /// </summary>
+    // fidelity: M11-006
+    internal static bool ClampRotationToFlat(Rotation3d local, Rotation3d root, Radians tolerance, out Rotation3d result)
+    {
+        result = local;
+        Mat3 rootMatrix = root.Matrix();                                                   // C3 0x0087734A..0x0087735A
+        int axis = RotatedParentAxis.GetNativeZ(rootMatrix);                               // C4 0x005507A0
+        int column = Math.Abs(axis) - 1;                                                   // C8 table 0x008774FC..0x00877514
+        float dominant = (float)rootMatrix[2, column];
+        if (!(new Radians(MathF.Acos(MathF.Abs(dominant))) < tolerance)) return false;     // C5/C6 0x0087736A..0x00877384 (operator< 0x0084CD12)
+
+        Mat3 matrix = local.Matrix();                                                      // C7 0x00877388..0x00877394
+        float sign = axis > 0 ? 1f : -1f;                                                  // C9 0x008773A0..0x008773D0: (+-0, +-0, +-1)
+        float zero = axis > 0 ? 0f : -0f;
+        float x = (float)matrix[0, column], y = (float)matrix[1, column], z = (float)matrix[2, column];   // C10 0x0084986C
+        float dot = x * zero;                                                              // C11 0x008773DE..0x0087740C
+        dot += y * zero;
+        dot += z * sign;
+        float angle = new Radians(MathF.Acos(dot)).Value;                                  // C12 0x0087740E..0x0087741A
+        if (MathF.Abs(angle) < ClampEpsilon) return false;                                 // C13 0x0087741E..0x00877440
+        float crossX = y * sign - z * zero;                                                // C14 0x00877442..0x00877484
+        float crossY = z * zero - x * sign;
+        float crossZ = x * zero - y * zero;
+        var unit = RotationVector3d.MakeUnit(new Vec3(crossX, crossY, crossZ));            // C15 0x0050E0C0
+        if (unit.Length < ClampEpsilon) return false;                                      // C16 0x0087748C..0x008774AA
+        result = Rotation3d.FromAngleAxis(angle, unit.Axis) * local;                       // C17 0x0084A506, C18 0x0084AC5C (q left, local right)
+        return true;                                                                       // C20 0x008774EA
     }
 
     // ------------------------------------------------------------------------------ connected objects

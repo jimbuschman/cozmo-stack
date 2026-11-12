@@ -76,7 +76,7 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         _subscriptions=subscriptions;
         KnownMarker? marker;
         if(pre is not null)marker=pre.Poses[pre.ClosestIndex].Marker;
-        else {uint result=NativeDockMarkerSelection.Observed(target,owner.GetCheckedMainPose(),out marker);if(result!=0)return unchecked((int)result);}
+        else {uint result=NativeDockMarkerSelection.Observed(target,owner.GetCheckedMainPose(),out marker,EmitSource,M.World.MarkerCodeNameInput);if(result!=0)return unchecked((int)result);}
         if(marker is null)return 0x03000002;        _marker=unchecked((short)marker.Code);
         _prepared?.Prep();_prepared?.WatcherEnding();
         _prepared=new CompoundActionSequential(()=>M.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,Watcher=Watcher,SourceLog=SourceLog};
