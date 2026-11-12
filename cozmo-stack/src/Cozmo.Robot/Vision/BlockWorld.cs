@@ -1011,8 +1011,8 @@ public sealed partial class BlockWorld
     // fidelity: M11-044 - supplied native GetWithRespectTo result per marker, in list order.
     internal Func<ObservableObject, KnownMarker, Pose3d?>? MarkerPoseInCamera;
     internal Func<EngineRobot, EngineRobot.CurrentCameraScope>? NativeCurrentCamera;
-    /// <summary>Whether the robot's PathComponent (Robot+0x5C) has a plan in flight (status mask 0xE). Stack machinery: makes the unbuilt M12-032
-    /// RejiggerTargetsAndReplan visible when a cross-origin localization changes the origin under a path.</summary>
+    /// <summary>Whether the robot's PathComponent (Robot+0x5C) has a plan in flight (status mask 0xE) that was started by the legacy DriveToPose entry,
+    /// which cannot replan. Stack machinery (PATH-ORIGIN-CHANGE-REPLAN-1): holds off a cross-origin localization only for such a path.</summary>
     internal Func<bool>? PathInFlight;
     internal Func<int>? NativeLocalizationGeneration;
     /// <summary>How many times <see cref="SetLocalizedTo"/> ran an object through it without <see cref="MarkerPosesRelativeToCamera"/> (the loop was not run; M11-044).</summary>
@@ -1234,15 +1234,17 @@ public sealed partial class BlockWorld
             UnbuiltLocalizeToObjectCalls++;
             return SetLocalizedToCore(existing, false) ? 0u : 1u;
         }
-        // Stack limitation, visible (manager, 2026-11-11; LOCALIZE-CROSS-ORIGIN-1 verifier F1): the engine follows a cross-origin localization with
-        // PathComponent's HandlePossibleOriginChanges (0x0064980C) -> RejiggerTargetsAndReplan (0x006499D0), which the stack has not built (M12-032).
-        // Rejiggering the origins and sending the next AbsoluteLocalizationUpdate while a path is in flight would leave the robot driving old-origin
-        // segments in re-based odometry. So while a path is in flight a cross-origin pair is stopped before S2 (no history, pose, origin or 0x45 write);
-        // LocalizeRobot logs CrossFrameLocalizeFailure and a later frame, once the path ends, takes the full branch. The split itself depends only on E
-        // and the current origin, which S2..S10 do not change. Same-origin localization is unaffected.
+        // Stack limitation, visible (manager, 2026-11-11; PATH-ORIGIN-CHANGE-REPLAN-1): the engine follows a cross-origin localization with
+        // PathComponent's HandlePossibleOriginChanges (0x0064980C) -> RejiggerTargetsAndReplan (0x006499D0) on the path's next status-3 update. The
+        // stack builds that for paths started by the native DriveToPose entry (M12-032), which are not held off here. A path started by the legacy
+        // DriveToPose entry cannot replan (its NativePlannerSet.Goals are borrowed from the caller, so the Rejigger's in-place re-expression would
+        // rewrite the caller's own goal objects), so only while such a path is in flight (statuses 1/2/3) a
+        // cross-origin pair is stopped before S2 (no history, pose, origin or 0x45 write); LocalizeRobot logs CrossFrameLocalizeFailure and a later
+        // frame, once the path ends, takes the full branch. The split itself depends only on E and the current origin, which S2..S10 do not change.
+        // Same-origin localization is unaffected.
         if (PathInFlight?.Invoke() == true && !PoseTreeNode.HasSameRoot(existing.NativePose.Node, owner.GetNativeOrigin(owner.CurrentOriginId).Node))
         {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044/M12-032 LocalizeToObject cross-origin pair while a path is in flight: RejiggerTargetsAndReplan (0x006499D0) is not built, so the pair is stopped before any write and no localization update is sent (PATH-ORIGIN-CHANGE-REPLAN-1)");
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044/M12-032 LocalizeToObject cross-origin pair while a legacy-entry DriveToPose path is in flight: that entry cannot replan (RejiggerTargetsAndReplan 0x006499D0), so the pair is stopped before any write and no localization update is sent (PATH-ORIGIN-CHANGE-REPLAN-1)");
             UnbuiltLocalizeToObjectCalls++;
             return 1;
         }
@@ -1382,11 +1384,8 @@ public sealed partial class BlockWorld
         if (FaceWorldUpdateFaceOrigins is { } faces) faces(oldOriginId, newOriginId);
         else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 LocalizeToObject X12 FaceWorld::UpdateFaceOrigins 0x005159A8: no FaceWorld is bound to this world; faces not moved to the new origin");
         owner.FlattenOrigins(newOriginId);                                       // X13 0x005159B2
-        // Stack limitation, visible (LOCALIZE-CROSS-ORIGIN-1 verifier F1): the engine's PathComponent::Update sees the new current origin on its next
-        // status-3 update (HandlePossibleOriginChanges 0x0064980C) and calls RejiggerTargetsAndReplan (0x006499D0). The stack's origin inputs for that
-        // dispatch are unbound and the replan is unbuilt (M12-032), so a path in flight keeps its old-origin segments while the next 0x45 re-bases odometry.
-        if (PathInFlight?.Invoke() == true)
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing($"M12-032 RejiggerTargetsAndReplan 0x006499D0 not built: the cross-origin localization moved the current origin {oldOriginId} -> {newOriginId} while a path is in flight; the path keeps its old-origin segments (the engine rejiggers its targets and replans)");
+        // The PathComponent sees the new current origin on its next status-3 update (HandlePossibleOriginChanges 0x0064980C, M12-032); a legacy-entry
+        // path, which cannot replan, never reaches here (the guard before S2 holds the pair off).
     }
 
     /// <summary>S9's weights: 0.1f, the literal 0x3DCCCCCD at 0x00515ABC, on the observation's z; 0.9f, 0x3F666666 at 0x00515AC0, on the robot's z.</summary>

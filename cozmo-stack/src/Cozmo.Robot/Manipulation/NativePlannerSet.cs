@@ -76,8 +76,11 @@ internal sealed class NativePlannerSet : IDisposable
         if(!_ownsNativePoses)_missing("M13-033 legacy selection uses the stack pose input; no full pose-origin claim");
     }
     internal int StartPlanning()=>Current?.ComputePath(Start,Goals)??0;
+    // fidelity: M12-032 — StartPlanner(const Pose3d&) 0x0064B090: the Rejigger passes a fresh drive-center pose, not the configured Start (census R6).
+    internal int StartPlanning(Pose3d start)=>Current?.ComputePath(start,Goals)??0;
     private Pose3d CurrentStart=>_ownsNativePoses?_m.Robot.Engine.Robot!.GetCheckedForwardPose():_m.RobotPose()??Start;
-    internal int Restart()=>Current?.ComputeNewPathIfNeeded(CurrentStart,false)??0;
+    // fidelity: M12-032 — RestartPlannerIfNeeded 0x00649C28..0x00649C3A: the caller passes GetDriveCenterPose (0x005477A0) for every entry.
+    internal int Restart(Pose3d start)=>Current?.ComputeNewPathIfNeeded(start,false)??0;
     internal PathPlannerModelResult Read()
     {
         int status=Current?.CheckPlanningStatus??0;
