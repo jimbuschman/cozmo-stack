@@ -1,6 +1,7 @@
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
@@ -365,15 +366,19 @@ public sealed class LocalizeCrossOriginTests
     /// matches the sighting to the cube known in origin 1, so LocalizeToObject takes the cross-origin branch: Rejigger makes origin 1 current again with origin 2
     /// under it, named Origin2_REJ (X5..X7), and the sighting's 0x45 carries origin 1 (X16: the vision-only state N is rooted at E's origin).
     /// </summary>
-    // reach: production — real rendered frames through the queued worker, as the same-origin production test (the offline flag cleared by reflection, the
-    // fixture's sim firmware report and outer calibration). Substitution: the delocalization is a direct call of the production Robot::Delocalize
-    // (EngineRobot.Delocalize) instead of a robot-state trigger (pick-up / frame mismatch), which this rig does not drive. With pathInFlight the
-    // PathComponent's in-flight test is substituted (stack machinery: the visible M12-032 RejiggerTargetsAndReplan gap, verifier F1); without it the
-    // production binding (Motion.Path.IsActive, no path) is used and the gap is not reported.
+    // reach: path 0 production — real rendered frames through the queued worker, as the same-origin production test (the offline flag cleared by
+    // reflection, the fixture's sim firmware report and outer calibration). Substitution in every case: the delocalization is a direct call of the
+    // production Robot::Delocalize (EngineRobot.Delocalize) instead of a robot-state trigger (pick-up / frame mismatch), which this rig does not drive.
+    // reach: paths 1 and 2 unit — production frames and engine tick, but the path start is a direct PathComponent entry call
+    // (StartNativeDrivingToPose / StartDrivingToPose); DriveToPoseAction.InitNative and the legacy Init are not exercised. They use the production
+    // PathInFlight and OriginOwnerInput bindings:
+    // path 1 is a native DriveToPose (the localization proceeds and the path rejiggers on its next status-3 update, M12-032 H6/R2/R4/R6), path 2 a
+    // legacy-entry DriveToPose (stack guard: it cannot replan, so the cross-origin pair is held off, PATH-ORIGIN-CHANGE-REPLAN-1).
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void LCO_Production_ADelocalizedRobotThatSeesAKnownCubeRelocalizesIntoItsOrigin(bool pathInFlight)
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void LCO_Production_ADelocalizedRobotThatSeesAKnownCubeRelocalizesIntoItsOrigin(int path)
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
         var missing = new System.Collections.Concurrent.ConcurrentQueue<string>();
@@ -398,11 +403,27 @@ public sealed class LocalizeCrossOriginTests
             uint o2 = f.Robot.CurrentOriginId;
             Assert.NotEqual(o1, o2);
             Assert.Null(world.LocalizedToObjectId);
-            if (pathInFlight)
+            var pc = f.Rig.Robot.Motion.Path;
+            if (path != 0)
             {
-                // Stack guard (manager, 2026-11-11): while a path is in flight the cross-origin pair is stopped before any write, so no origin change and no 0x45.
-                world.PathInFlight = () => true;
-
+                // A path in o2 brought to FollowingPath through the real tick and the C6 handler.
+                if (path == 1)
+                {
+                    using var goal = new Pose3d(Rotation3d.Identity, new Vec3(30, 0, 0), parent: f.Robot.GetNativeOrigin(o2));
+                    Assert.Equal(0, pc.StartNativeDrivingToPose(f.M, new[] { goal }, new PathGoalIndex(), false, null));
+                }
+                else Assert.Equal(0, pc.StartDrivingToPose(1, new PathGoalIndex(), false,
+                    () => new PathPlannerModelResult(2, new PathSegment[] { new PathSegment.Line(0, 0, 50, 0, 100, 200, 500) }, 0), () => { }, _ => { }));
+                Assert.Equal(o2, pc.ParamsOrigin);                                // O3 0x0064AD6A
+                for (int i = 0; i < 3 && pc.DriveToPoseStatus != 2; i++) f.Rig.Tick();
+                Assert.Equal(2, pc.DriveToPoseStatus);
+                f.Rig.Data(new PathFollowingEvent { EventId = pc.Field42, EventType = (byte)PathEventType.Started }); f.Rig.Tick();
+                Assert.Equal(3, pc.DriveToPoseStatus);
+            }
+            if (path == 2)
+            {
+                // Stack guard (PATH-ORIGIN-CHANGE-REPLAN-1): while a legacy-entry path is in flight the cross-origin pair is stopped before any write,
+                // so no origin change and no 0x45.
                 for (uint j = 3; j <= 4; j++)
                 {
                     int held = f.Rig.Mark();
@@ -412,7 +433,7 @@ public sealed class LocalizeCrossOriginTests
                 }
                 Assert.Equal(o2, f.Robot.CurrentOriginId);                      // no Rejigger: origin 1 did not become current again
                 // (The robot may localize to the cube's new copy in origin 2: a same-origin pair, which the guard leaves alone.)
-                Assert.Contains(missing, m => m.Contains("PATH-ORIGIN-CHANGE-REPLAN-1"));
+                Assert.Contains(missing, m => m.Contains("PATH-ORIGIN-CHANGE-REPLAN-1") && m.Contains("legacy-entry DriveToPose path is in flight"));
                 Assert.DoesNotContain(logs, l => l.Name == "Robot.LocalizeToObject.RejiggeringOrigins");
                 // What a later sighting does once the path ends depends on the copy the robot may have localized to meanwhile (a same-origin pair); this
                 // case checks only the guard.
@@ -420,9 +441,10 @@ public sealed class LocalizeCrossOriginTests
             }
             bool relocalized = false;
             List<AbsoluteLocalizationUpdate> sent = new();
+            int mark = 0;
             for (uint i = 3; i <= 6 && !relocalized; i++)
             {
-                int mark = f.Rig.Mark();
+                mark = f.Rig.Mark();
                 f.Image(i, cube: true, cubeX: 150); f.Motors();
                 sent = f.Rig.SentSince(mark).OfType<AbsoluteLocalizationUpdate>().ToList();
                 relocalized = f.Robot.CurrentOriginId == o1;
@@ -437,9 +459,29 @@ public sealed class LocalizeCrossOriginTests
             var update = Assert.Single(sent);
             Assert.Equal(o1, update.PoseOriginId);
             Assert.Equal(f.Robot.PoseFrameId, update.PoseFrameId);
-            Assert.DoesNotContain(missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1"));
-            // The rejigger itself now only happens with no path in flight, so the end-of-branch replan gap is never reported here.
-            Assert.DoesNotContain(missing, m => m.Contains("M12-032 RejiggerTargetsAndReplan 0x006499D0 not built") && m.Contains($"{o2} -> {o1}"));
+            Assert.DoesNotContain(missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1") || m.Contains("PATH-ORIGIN-CHANGE-REPLAN-1"));
+            var names = logs.Select(l => l.Name).ToList();
+            if (path == 1)
+            {
+                // M12-032 H6 -> R2/R4/R6: the native path's next status-3 update after the origin change rejiggers its goals into origin 1 and replans
+                // (FollowingPath -> ComputingPath); it is not aborted.
+                int rejiggered = names.IndexOf("Robot.LocalizeToObject.RejiggeringOrigins"), replanned = names.IndexOf("PathComponent.Update.Replan.RejiggeringPlanner");
+                Assert.True(rejiggered >= 0 && replanned > rejiggered, "the native path did not rejigger after the localization");
+                Assert.Contains(logs.Skip(replanned), l => l.Name == "PathComponent.TransitionStatus" && l.Text == "FollowingPath -> ComputingPath");
+                Assert.DoesNotContain(names, n => n == "PathComponent.Update.Replan.NotPossible");
+                Assert.Same(f.Robot.GetNativeOrigin(o1).Node, Assert.Single(f.M.GetNativePlanners().Goals).Node!.Parent);
+                // Order on the wire (U2: SendAbsLocalizationUpdate 0x00513CC6 before PathComponent::Update 0x00514170; R6 sends nothing; R9: the new
+                // segments go out only through UpdatePlanning -> HandlePlanComplete -> ExecutePath on a later update): the 0x45 carrying origin 1 precedes
+                // the rejiggered path's ClearPath, segments and ExecutePath.
+                for (int k = 0; k < 3; k++) f.Rig.Tick();
+                var wire = f.Rig.SentSince(mark).ToList();
+                int i45 = wire.FindIndex(m => m is AbsoluteLocalizationUpdate u && u.PoseOriginId == o1);
+                int iClear = wire.FindIndex(m => m is ClearPath), iExecute = wire.FindIndex(m => m is ExecutePath);
+                int iSegment = wire.FindIndex(m => m is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn);
+                Assert.True(i45 >= 0 && iClear > i45 && iExecute > iClear, $"wire order: 0x45 {i45}, ClearPath {iClear}, ExecutePath {iExecute}");
+                Assert.True(iSegment < 0 || iSegment > i45, $"a segment went out before the 0x45: {iSegment} < {i45}");
+            }
+            else Assert.DoesNotContain(names, n => n == "PathComponent.Update.Replan.RejiggeringPlanner");
         }
         finally { SteppedBehavior.MissingReported -= Missing; f.Rig.Engine.LogEntry -= logs.Enqueue; }
     }

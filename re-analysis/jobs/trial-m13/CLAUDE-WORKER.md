@@ -32,6 +32,9 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
    0x006499D0). When it lands, remove the manager's path-in-flight guard in BlockWorld.LocalizeToObject.
 7. **LCO-TAIL-PRODUCTION-TEST-1:** see its QUEUE row.
 8. **CARRIED-ONTOP-BINDING-CENSUS-1:** see its QUEUE row and `CENSUS-M11-043.md`.
+9. **LEGACY-DRIVE-TO-POSE-NATIVE-1:** your own proposal from PATH-ORIGIN-CHANGE-REPLAN-1. Move the legacy
+   `StartDrivingToPose(int, ...)` callers onto the native drive-center entry. When it lands, remove the rest of the
+   manager's path-in-flight guard.
 
 When you start a job, set its QUEUE.md row to `TAKEN (Claude worker, <date>)` and push the branch, so the manager
 does not duplicate it. If the list is finished, add a note to REVIEW.md asking for more jobs, and stop.

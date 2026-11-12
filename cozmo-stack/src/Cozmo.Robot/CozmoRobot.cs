@@ -375,7 +375,11 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.DelocalizationWorld=LocalizationWorld;
         LocalizationWorld.NativeSnapshotOwner=()=>Engine.Robot;
         LocalizationWorld.NativeCurrentCamera = owner => owner.CopyCurrentCameraPose(Motion.ObservationHeadAngleRad);
-        LocalizationWorld.PathInFlight = () => Motion.Path.IsActive;
+        // fidelity: M12-032 — the PathComponent's origin dispatch (0x0064980C), its Rejigger (0x006499D0) and the legacy entry's params-origin write
+        // read the live Robot's PoseOriginList (Robot+0x294) and drive-center pose (0x005477A0).
+        Motion.Path.OriginOwnerInput = () => Engine.Robot;
+        // Stack guard (PATH-ORIGIN-CHANGE-REPLAN-1): only a path started by the legacy DriveToPose entry, which cannot replan, holds off a cross-origin localization.
+        LocalizationWorld.PathInFlight = () => Motion.Path.LegacyEntryPathInFlight;
         LocalizationWorld.DelocalizeRuntime=()=>Engine.Robot?.Delocalize(Carrying.IsCarryingObject);
         LocalizationWorld.Log += Engine.EmitStackLog;
         // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.

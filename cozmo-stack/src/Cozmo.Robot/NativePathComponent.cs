@@ -42,6 +42,16 @@ internal sealed partial class PathComponent
     internal Func<uint,bool>? ContainsOriginInput;
     internal Func<bool>? ObjectsChangedInput,ComputeNewPathIfNeeded;
     internal Action? RejiggerInput;
+    // fidelity: M12-032 — the Robot whose PoseOriginList (Robot+0x294: current ID +0x10, current origin +0x14) and drive-center
+    // pose (Robot+0x2A4, GetDriveCenterPose 0x005477A0) the origin dispatch and the Rejigger read. Bound by CozmoRobot.
+    internal Func<EngineRobot?>? OriginOwnerInput;
+    // Stack machinery: the path was started by the legacy StartDrivingToPose(int, ...) entry. Its planner reads NativePlannerSet.Goals borrowed
+    // from the caller (NativePlannerSet.Configure), so RejiggerTargetsAndReplan's in-place re-expression (R5) would rewrite the caller's own goal
+    // objects; the stack does not rejigger such a path (PATH-ORIGIN-CHANGE-REPLAN-1).
+    private bool _legacyEntry;
+    internal bool LegacyEntryPathInFlight=>_legacyEntry&&IsActive;
+    // fidelity: M12-032 — the selected planner pointer pc+0x20 (set by SelectPlannerHelper 0x0064A7EC, cleared by ExecuteCustomPath 0x0064B1E6).
+    private bool PlannerSelected=>_nativePlanners?.Current is not null||_computeModel is not null;
     internal uint ParamsOrigin {get=>PlannerObjectsField0C;set=>PlannerObjectsField0C=value;}
     private RetainedSubscription? _pathSubscription;
     // Native C6 subscribes once in the Path ctor; this host binding helper is not a native re-Init path.
@@ -103,7 +113,7 @@ internal sealed partial class PathComponent
             var planners=m.GetNativePlanners();planners.ConfigureNative(start,goals,NativeMotionProfile,ignore);SetNativePlanners(planners);
             if(scopedGuard is not null&&!scopedGuard())return 1;
             ObjectsChangedInput=()=>m.World.DidObjectsChange;
-            _computeModel=null;PlannerSlot10=planners.Stop;
+            _computeModel=null;PlannerSlot10=planners.Stop;_legacyEntry=false;
             SelectPlanner(goals.Count);
             if(!StartPlanner()){if(scopedGuard?.Invoke()??true)SetStatus(0,scopedGuard);return 1;}
             if(scopedGuard is not null&&!scopedGuard())return 1;
@@ -137,7 +147,7 @@ internal sealed partial class PathComponent
     private bool SendNative(RobotMessage message)=>!ScopeCurrent()?false:_scopedSend?.Invoke(message)??SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
     // fidelity: M13-029 - ErasePath builds a local Viz tag21 and sends nothing.
     private void ErasePath() => ErasePathHook?.Invoke(CozmoEngine.RobotId);
-    private void ResetMachine(){_scopeGeneration++;_scopedCurrent=null;_scopedSend=null;_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
+    private void ResetMachine(){_legacyEntry=false;_scopeGeneration++;_scopedCurrent=null;_scopedSend=null;_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
     internal void ClearDoler(){_dolerPath=Array.Empty<PathSegment>();LastDoledIndex=0xFFFF;DoleSegmentCount=0;}
     internal void SetDolerPath(IReadOnlyList<PathSegment> path,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
@@ -194,6 +204,9 @@ internal sealed partial class PathComponent
     {
         _scopeGeneration++;_scopedCurrent=null;_scopedSend=null;
         if(Field47){PlannerSlot10?.Invoke();if(current is not null&&!current())return 1;Field47=false;}_computeModel=null;_plan=null;PlannerSlot10=null;
+        // fidelity: M12-032 — strd r1,r1,[r6,#0x20] (0x0064B1E6): the selected planner pointer is cleared (the fallback +0x28 is not), so a custom
+        // path never gets past HandlePossibleOriginChanges' planner test (0x00649812..0x00649816).
+        if(_nativePlanners is {} selected)selected.Current=null;_legacyEntry=false;
         return ExecutePath(path,manual,reserve,current,send);
     }
     internal int StartDrivingToPose(int goals,PathGoalIndex index,bool manual,Func<PathPlannerModelResult> compute,Action stop,Action<string> missing)
@@ -204,7 +217,9 @@ internal sealed partial class PathComponent
         if(Field47){PlannerSlot10?.Invoke();Field47=false;}
         if(IsActive){Info("PathComponent.StartDrivingToPose.AlreadyBusy",$"Path component status was '{Name(DriveToPoseStatus)}'. Aborting current plan");Abort(SendNative);}
         Field46=manual;_goalIndex=index;SharedPath=index;
-        if(CurrentOriginInput is {} current)ParamsOrigin=current();
+        // fidelity: M12-032 — O3 0x0064AD60..0x0064AD6A: params origin := the current origin ID, after the +0x46/index stores.
+        if(OriginOwnerInput?.Invoke() is {} originOwner)ParamsOrigin=originOwner.CurrentOriginId;
+        else if(CurrentOriginInput is {} current)ParamsOrigin=current();
         else MissingOnce("M12-032 current-origin/ComputeDriveCenterPose handoff 0x0064ACC4..0x0064AF30 remains unbuilt; existing host planner geometry retained");
         if(RobotRootOriginInput is {} root && CurrentOriginInput is not null && root()!=ParamsOrigin)
         {MissingOnce("M12-032 DriveCenterOriginMismatch VERIFY formatting 0x0064AE5A unbuilt");SetStatus(0);return 1;}
@@ -213,7 +228,7 @@ internal sealed partial class PathComponent
             for(int i=0;i<goals;i++)if(!contains(goalRoot(i))){MissingOnce("M12-032 OriginMismatch warning 0x0064AE08 argument handoff unbuilt");SetStatus(0);return 1;}
         }
         else MissingOnce("M12-032 goal origin/ComputeDriveCenterPose gates unbuilt; no native origin validation claim");
-        _computeModel=compute;PlannerSlot10=stop;
+        _computeModel=compute;PlannerSlot10=stop;_legacyEntry=true;
         SelectPlanner(goals);
         if(!StartPlanner()){SetStatus(0);return 1;}
         SetStatus(1);if(!Field48)MissingOnce("M12-032 SpeedChooser.GetPathMotionProfile 0x0064ADE0 handoff represented by existing drive profile; custom profile field ownership remains unbuilt");
@@ -229,6 +244,14 @@ internal sealed partial class PathComponent
         if(_nativePlanners?.Current is not null){if(_nativePlanners.StartPlanning()==0)return ReplanWithFallbackPlanner();Field47=true;PlannerSlot10=_nativePlanners.Stop;return true;}
         if(_computeModel is null){Error("PathComponent.StartPlanner.NoSelectedPlanner","Must select planner before starting");return false;}
         _plan=_computeModel();if(_plan.Status==0)return ReplanWithFallbackPlanner();Field47=true;return true;
+    }
+    // fidelity: M12-032 — StartPlanner(const Pose3d&) 0x0064B090..0x0064B108 (census R6): [pc+0x20] vt+8 ComputePath(start, params.goals);
+    // non-zero -> +0x47 = 1, true; zero -> tail ReplanWithFallbackPlanner. Only the Rejigger calls it with a pose here (native planners only).
+    internal bool StartPlanner(Vision.Pose3d start)
+    {
+        if(_nativePlanners?.Current is null){Error("PathComponent.StartPlanner.NoSelectedPlanner","Must select planner before starting");return false;}
+        if(_nativePlanners.StartPlanning(start)==0)return ReplanWithFallbackPlanner();
+        Field47=true;PlannerSlot10=_nativePlanners.Stop;return true;
     }
     internal bool ReplanWithFallbackPlanner()
     {
@@ -298,7 +321,9 @@ internal sealed partial class PathComponent
         var current=_scopedCurrent;
         bool IsCurrent()=>current?.Invoke()??true;
         if(!IsCurrent())return;
-        if(Field47)UpdatePlanning();
+        // Stack machinery (thread safety): UpdatePlanning's fallback and HandlePlanComplete read the drive-center pose and origins; run it under the
+        // world FrameGate like HandlePossibleOriginChanges (same lock order: tick -> FrameGate).
+        if(Field47){using var frame=_robot.LocalizationWorld.EnterPoseMutation();UpdatePlanning();}
         if(!IsCurrent())return;
         if(DriveToPoseStatus==3)HandlePossibleOriginChanges();
         if(!IsCurrent())return;
@@ -348,29 +373,105 @@ internal sealed partial class PathComponent
         else Warning("PathComponent.PathEvent.CanceledPathDifferentPathComplete",$"We are in status '{Name(DriveToPoseStatus)}' waiting for path {Field4A} to cancel, but got message that path {e.EventId} is {EventName(e.EventType)}");
         return true;
     }
+    // fidelity: M12-032 — HandlePossibleOriginChanges 0x0064980C (census H1..H7); called from Update only in status 3 (U1).
     internal void HandlePossibleOriginChanges()
     {
+        // Stack machinery (thread safety): LocalizeToObject runs on the vision worker holding the world's FrameGate from S0 to S15, and every
+        // origin-list writer (Delocalize, Rejigger, Flatten) holds it too. The dispatch, the Rejigger and the restart run under the same gate, so
+        // they see either the whole pre-localization state or the whole post-localization state, as the engine's single thread does
+        // (UpdateAllResults 0x00513C76 before PathComponent::Update 0x00514170). Lock order tick -> FrameGate, as DriveToPoseAction.InitNative.
+        using var frame=_robot.LocalizationWorld.EnterPoseMutation();
         var current=_scopedCurrent;var send=_scopedSend;
         bool IsCurrent()=>current?.Invoke()??true;
         if(!IsCurrent())return;
-        if(_computeModel is null)return;
-        if(CurrentOriginInput is null || ContainsOriginInput is null){MissingOnce("M12-032 origin validation/VERIFY 0x00649830/0x00649852 inputs unbuilt");return;}
-        bool contains=ContainsOriginInput(ParamsOrigin);if(!IsCurrent())return;
-        if(!contains){Abort(send??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);if(IsCurrent())MissingOnce("M12-032 Replan.NotPossible info 0x00649898 arguments unbuilt");return;}
-        uint origin=CurrentOriginInput();if(!IsCurrent())return;
-        if(ParamsOrigin!=origin)
-        {if(RejiggerInput is {} rejigger)rejigger();else MissingOnce("M12-032 RejiggerTargetsAndReplan 0x006499D0..0x00649B44 unbuilt origin transform helpers; logs/VERIFY at 0x00649A12/0x00649A9C/0x00649AFE/0x00649B14 not fabricated");}
-        else if(ObjectsChangedInput?.Invoke()==true&&IsCurrent())RestartPlannerIfNeeded();
+        if(!PlannerSelected)return; // H1 0x00649812..0x00649816: no selected planner (pc+0x20), nothing.
+        // H2 (NullParamsOrigin VERIFY 0x00649818..0x00649836) and H3 (CommonOriginNotInRobotPoseOriginList VERIFY 0x00649838..0x00649852) only log
+        // and fall through. Neither condition has a producer in the stack (both drive entries write the params origin before status 3, and no
+        // origin is ever removed from the list), so neither is built (recorded in M12-032).
+        if(OriginOwnerInput?.Invoke() is not {} owner){MissingOnce("M12-032 HandlePossibleOriginChanges 0x0064980C: no Robot pose-origin owner (Robot+0x294) is bound; the origin dispatch is skipped");return;}
+        uint paramsOrigin=ParamsOrigin,currentOrigin=owner.CurrentOriginId;  // H4 r5 0x0064985E, r6 0x00649860
+        // H4 0x00649864..0x0064986C: IsPoseInWorldOrigin(GetOriginByID(params)) = HasSameRootAs(that origin, the current origin) 0x0051290C; an
+        // unknown ID gives GetOriginByID's BadID VERIFY and a default root, which is not in the world.
+        bool inWorld=Vision.PoseTreeNode.HasSameRoot(owner.GetNativeOrigin(paramsOrigin).Node,owner.GetNativeOrigin(currentOrigin).Node);
+        if(!IsCurrent())return;
+        if(paramsOrigin!=currentOrigin)
+        {
+            if(!inWorld)
+            {
+                // H5 0x00649870..0x006498BE: Abort (ClearPath, 3 -> 5), status 6, info.
+                Abort(send??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);
+                if(IsCurrent())Info("PathComponent.Update.Replan.NotPossible","Our goal is in another coordinate frame that we can't get wrt current, we can't replan");
+                return;
+            }
+            RejiggerTargetsAndReplan(owner); // H6 0x006498C0..0x006498D2
+            return;
+        }
+        if(ObjectsChangedInput?.Invoke()==true&&IsCurrent())RestartPlannerIfNeeded(owner); // H7 0x006498D6..0x006498EE: DidObjectsChange() == 1
     }
-    internal void RestartPlannerIfNeeded()
+    // fidelity: M12-032 — RejiggerTargetsAndReplan 0x006499D0..0x00649B44 (census R1..R8). Sends nothing to the robot: the old segments keep
+    // running until the replan completes and HandlePlanComplete -> ExecutePath replaces them (R9).
+    internal void RejiggerTargetsAndReplan(EngineRobot owner)
+    {
+        var current=_scopedCurrent;
+        bool IsCurrent()=>current?.Invoke()??true;
+        if(!IsCurrent())return;
+        if(!PlannerSelected)return; // R1 0x006499D6..0x006499DA
+        if(_legacyEntry||_nativePlanners is not {Current:not null} planners)
+        {
+            // Stack limitation, visible: the legacy entry's goals are the caller's own objects (borrowed by NativePlannerSet.Configure), so R5's
+            // in-place re-expression would rewrite them. The path is left as is.
+            MissingOnce("M12-032 RejiggerTargetsAndReplan 0x006499D0: legacy DriveToPose entry cannot replan (the legacy entry's NativePlannerSet.Goals are borrowed from the caller (NativePlannerSet.Configure), so R5's in-place GetWithRespectTo would rewrite the caller's own goal objects (e.g. DriveToObjectAction's goal, read back through drive.Goal)); the path is left as is (PATH-ORIGIN-CHANGE-REPLAN-1)");
+            return;
+        }
+        ParamsOrigin=owner.CurrentOriginId; // R2 0x006499DE..0x006499E8, before anything can fail
+        if(Field47){PlannerSlot10?.Invoke();if(!IsCurrent())return;Field47=false;} // R3 0x006499EA..0x006499FA: planner vt+0x10 StopPlanning
+        Info("PathComponent.Update.Replan.RejiggeringPlanner","Our goal is in another coordinate frame, but we are updating to current frame"); // R4
+        if(!IsCurrent())return;
+        // R5 0x00649A38..0x00649A5C: every params goal re-expressed in place w.r.t. the world origin; results ANDed, no early stop. The planners
+        // read these goals parent-relative (Pose3d.Translation is the node's own transform), as the engine's GetTransform does (census F5).
+        var world=owner.GetNativeOrigin(owner.CurrentOriginId);
+        bool converted=true;
+        foreach(var goal in planners.Goals)converted&=Vision.Pose3d.GetWithRespectTo(goal,world,goal);
+        if(!IsCurrent())return;
+        if(!converted)
+        {
+            // R8 0x00649AC6..0x00649B02, then status 0 (0x00649B3A..0x00649B3E). No producer found (census R8); built as the one-line exit.
+            Verify("PathComponent.Update.Rejigger",$"VERIFY(rejiggerSuccess): Rejiggering {planners.Goals.Count} target poses to new origin '{world.Name}' failed",current);
+            if(IsCurrent())SetStatus(0,current);
+            return;
+        }
+        // R6 0x00649A5E..0x00649A74: a fresh GetDriveCenterPose (0x005477A0), StartPlanner(start); success -> status 1 (3 -> 1).
+        if(StartPlanner(owner.GetCheckedForwardPose())){if(IsCurrent())SetStatus(1,current);return;}
+        if(!IsCurrent())return;
+        // R7 0x00649A76..0x00649AC4: a second ReplanWithFallbackPlanner (census: it always finds the fallback consumed).
+        if(ReplanWithFallbackPlanner())
+        {
+            if(!IsCurrent())return;SetStatus(1,current);
+            if(IsCurrent())Info("PathComponent.Update.Rejigger.Fallback","Planning to newly rejiggered poses failed, but fallback succeeded.");
+            return;
+        }
+        if(!IsCurrent())return;
+        Warning("PathComponent.Update.Replan.RejiggeringPlanner","We could not start driving to rejiggered pose."); // 0x00649B04..0x00649B14
+        if(IsCurrent())SetStatus(0,current); // 0x00649B3A..0x00649B3E
+    }
+    // fidelity: M12-032 — RestartPlannerIfNeeded 0x00649C14..0x00649D14 (census S1): the start is GetDriveCenterPose (bl 0x005477A0 at
+    // 0x00649C28..0x00649C3A) for every path, passed to planner vt+0xC ComputeNewPathIfNeeded(start, false).
+    internal void RestartPlannerIfNeeded(EngineRobot owner)
     {
         var current=_scopedCurrent;var send=_scopedSend;
         bool IsCurrent()=>current?.Invoke()??true;
         if(!IsCurrent())return;
         if(Field47)return;
+        if(_legacyEntry)
+        {
+            // Visible implementation gap, not an exclusion (PATH-ORIGIN-CHANGE-REPLAN-1 verifier N1; M12-032 IMPLEMENTATION_GAP, follow-up LEGACY-DRIVE-TO-POSE-NATIVE-1): the legacy entry plans in the main-pose frame toward
+            // unconverted goals, so a drive-center restart would mix start frames 20 mm apart. Not restarted; the path is left as is.
+            MissingOnce("M12-032 RestartPlannerIfNeeded 0x00649C14 not taken: legacy DriveToPose entry plans in the main-pose frame with unconverted goals (NativePlannerSet.cs:35); the path is left as is (PATH-ORIGIN-CHANGE-REPLAN-1)");
+            return;
+        }
         if(_nativePlanners?.Current is not null)
         {
-            int code=_nativePlanners.Restart();
+            int code=_nativePlanners.Restart(owner.GetCheckedForwardPose());
             if(!IsCurrent())return;
             if(code==1){_robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Planner","PathComponent.Replan.Running","ComputeNewPathIfNeeded running");if(IsCurrent())Field47=true;}
             else if(code==0)
