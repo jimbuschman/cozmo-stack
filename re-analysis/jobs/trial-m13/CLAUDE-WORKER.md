@@ -26,7 +26,12 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
    the defect is described in the same check file.
 3. **LOCALIZE-CROSS-ORIGIN-1:** see its row; Rejigger, Flatten and the origin updates at 0x0051590C..0x005159B2.
 4. **LOCALIZE-TO-MAT-HISTORY-1:** see its row.
-5. PATH-ORIGIN-CHANGE-REPLAN-1 first (M12-032: HandlePossibleOriginChanges 0x0064980C -> RejiggerTargetsAndReplan 0x006499D0; when it lands, remove the manager's path-in-flight guard in BlockWorld.LocalizeToObject). Then your own released proposals, in this order: CLAMP-FLAT-NUMERICS-1 (it now reaches the 0x45), INITPOSE-OBSERVED-FLAG-1 (decide the owning record in the census; M11-013 or M11-062), DOCK-MARKER-WRT-SKIP-1, LIFT-RELATIVE-OBSERVATION-PARENT-1, POSE-SNAPSHOT-FLAG-CACHE-1.
+5. Your released proposals (done 2026-11-11): CLAMP-FLAT-NUMERICS-1, INITPOSE-OBSERVED-FLAG-1, DOCK-MARKER-WRT-SKIP-1,
+   LIFT-RELATIVE-OBSERVATION-PARENT-1, POSE-SNAPSHOT-FLAG-CACHE-1.
+6. **PATH-ORIGIN-CHANGE-REPLAN-1** (M12-032: HandlePossibleOriginChanges 0x0064980C → RejiggerTargetsAndReplan
+   0x006499D0). When it lands, remove the manager's path-in-flight guard in BlockWorld.LocalizeToObject.
+7. **LCO-TAIL-PRODUCTION-TEST-1:** see its QUEUE row.
+8. **CARRIED-ONTOP-BINDING-CENSUS-1:** see its QUEUE row and `CENSUS-M11-043.md`.
 
 When you start a job, set its QUEUE.md row to `TAKEN (Claude worker, <date>)` and push the branch, so the manager
 does not duplicate it. If the list is finished, add a note to REVIEW.md asking for more jobs, and stop.
