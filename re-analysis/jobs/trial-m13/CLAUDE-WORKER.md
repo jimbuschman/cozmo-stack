@@ -35,6 +35,14 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 9. **LEGACY-DRIVE-TO-POSE-NATIVE-1:** your own proposal from PATH-ORIGIN-CHANGE-REPLAN-1. Move the legacy
    `StartDrivingToPose(int, ...)` callers onto the native drive-center entry. When it lands, remove the rest of the
    manager's path-in-flight guard.
+10. **DRIVE-TO-OBJECT-MANUAL-SPEED-1:** your proposal; see its QUEUE row (M12-022).
+11. **FIND-ON-TOP-SAME-ROOT-1:** your proposal; see its QUEUE row (M13-007).
+12. **LOCALIZE-MULTI-PAIR-CROSS-ORIGIN-TEST-1:** your proposal; see its QUEUE row (M11-044).
+13. **SETTLEMENT-READINESS-1:** doc only; see its QUEUE row. Do it first if the others are waiting on anything.
+14. **RETIRE-LEGACY-DRIVE-API-1:** the operator chose to retire the legacy public drive types (BLOCKED.md); see its QUEUE row.
+
+Before job 10, run the pending gate on `origin/manager-gate` (6e111864 or later; GATE-REQUESTS.md). Legacy drive API:
+the operator chose to retire it (job 14).
 
 When you start a job, set its QUEUE.md row to `TAKEN (Claude worker, <date>)` and push the branch, so the manager
 does not duplicate it. If the list is finished, add a note to REVIEW.md asking for more jobs, and stop.
