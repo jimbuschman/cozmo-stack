@@ -2,6 +2,9 @@
 
 ## LEGACY-DRIVE-TO-POSE-NATIVE-1: is the legacy public drive API a supported C# feature? (Claude worker, 2026-11-12)
 
+**DECIDED (operator, 2026-11-12): option 1, retire.** The legacy public drive types are retired as stack machinery. Job
+RETIRE-LEGACY-DRIVE-API-1 does it.
+
 **The decision:** retire or rebuild the stack's legacy public drive types. AGENTS.md: "Excluding ... a C# API feature
 needs the operator."
 
