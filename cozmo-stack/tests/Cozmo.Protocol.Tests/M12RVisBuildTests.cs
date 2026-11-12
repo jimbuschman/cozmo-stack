@@ -762,6 +762,137 @@ public class M12RVisBuildTests : IDisposable
         Assert.Equal(topXBefore + 40, top.Pose.Translation.X, 3);                  // and the cube on top
     }
 
+    // ------------------------------------------------------------------ M12-008, LIFT-RELATIVE-OBSERVATION-PARENT-1
+    // Expected values come from census .scratch/LIFT-RELATIVE-OBSERVATION-PARENT-1-census.md rows 4..12b (addresses cited per test), and
+    // the world-pose check is an invariant (the top cube's world pose is the one it had before), not a number the stack computed.
+
+    private sealed class TopOnCarried : IDisposable
+    {
+        internal readonly Rig Rig = new();
+        internal readonly List<EngineLogEntry> Logs = new();
+        internal ObservableObject Bottom = null!, Top = null!;
+        internal TopOnCarried()
+        {
+            Rig.Head = 0.05f;
+            Rig.Cube = new Pose3d(Mat3.Identity, new Vec3(260, 0, 22));
+            Rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(260, 0, 66))));
+            Rig.Frame(); Rig.Frame();
+            Bottom = Rig.Vision.World.GetLocatedObjectById(7)!; Top = Rig.Vision.World.GetLocatedObjectById(8)!;
+            Assert.True(Bottom is not null && Top is not null);
+            Rig.Robot.Engine.LogEntry += OnLog;
+        }
+        private void OnLog(EngineLogEntry e) { lock (Logs) Logs.Add(e); }
+        internal List<EngineLogEntry> Named(string name) { lock (Logs) return Logs.Where(e => e.Name == name).ToList(); }
+        public void Dispose() { Rig.Robot.Engine.LogEntry -= OnLog; Rig.Dispose(); }
+    }
+
+    /// <summary>
+    /// M12-008 success path: GetWithRespectTo(top.GetPose(), obj.GetPose(), tmp) 0x00632FB6 parents tmp to the carried object's own pose node
+    /// (0x00845DFA..0x00845DFE; SetParent 0x00633006..0x00633010), and AddObjectRelativeObservation(top, tmp, obj) 0x00633020 stores it as given:
+    /// SetPose(pose, -1.0f, Dirty) copies transform AND parent (0x00506D3C, 0x004EF5A2); the entry's pose keeps the parent (0x00506DCA..0x00506DD0) and
+    /// its +0x2C is the CARRIED object's [+0x1C] (0x00506DDC/0x00506DEA). The info log (channel "Unnamed", "Robot.SetObjectAsAttachedToLift",
+    /// "Setting object %d on top of carried object as also being carried.", top ID; 0x00632FC0..0x00632FE0) and this+0x14 = top ID (0x0063318C..0x00633190).
+    /// The parent and the world pose are probed inside AddObjectRelativeObservation's broadcast (0x00506D48), before step 9 and DockingSystem's own re-parent.
+    /// </summary>
+    // reach: unit (DockingSystem.SetObjectAsAttachedToLift called directly, the PickAndPlaceResult dispatch is not driven; the carried cube's
+    // last-observed time is substituted with a distinct value so the entry time is attributable to it, not to the top cube's own).
+    [Fact]
+    public void M12_008_TheCubeOnTopIsObservedParentedToTheCarriedCubesOwnPose()
+    {
+        if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
+        using var f = new TopOnCarried();
+        var world = f.Rig.Vision.World;
+        f.Bottom.LastObservedTimestamp = unchecked(f.Top.LastObservedTimestamp + 4321u);
+        uint carriedSeen = f.Bottom.LastObservedTimestamp;
+        Vec3 topWorldBefore; using (var w = f.Top.NativePose.GetWithRespectToRoot()) topWorldBefore = w.Translation;
+        bool probed = false, parentIsCarried = false; Vec3 topWorldAtAoro = default, topPublicAtAoro = default; PoseState stateAtAoro = default;
+        var previous = world.SetObjectPoseChanged;
+        world.SetObjectPoseChanged = (id, state) =>
+        {
+            if (id == 8 && !probed)
+            {
+                probed = true; stateAtAoro = state;
+                parentIsCarried = ReferenceEquals(f.Top.NativePose.Node!.Parent, f.Bottom.NativePose.Node);
+                using (var w = f.Top.NativePose.GetWithRespectToRoot()) topWorldAtAoro = w.Translation;
+                topPublicAtAoro = f.Top.Pose.Translation;
+            }
+            previous?.Invoke(id, state);
+        };
+        try { Assert.Equal(0u, Attach(f.Rig, 7, MarkerType.LightCubeI_Front)); }
+        finally { world.SetObjectPoseChanged = previous; }
+        Assert.True(probed);
+        Assert.Equal(PoseState.Dirty, stateAtAoro);                                         // 0x00506D3C: PoseState 2
+        Assert.True(parentIsCarried);                                                      // parent = the carried cube's own node, not a copy
+        Assert.Equal(topWorldBefore.X, topWorldAtAoro.X, OffsetTolMm);                     // invariant: same world pose through the new parent
+        Assert.Equal(topWorldBefore.Y, topWorldAtAoro.Y, OffsetTolMm);
+        Assert.Equal(topWorldBefore.Z, topWorldAtAoro.Z, OffsetTolMm);
+        Assert.Equal(topWorldBefore.X, topPublicAtAoro.X, OffsetTolMm);                    // the public API view stays world-frame
+        Assert.Equal(topWorldBefore.Z, topPublicAtAoro.Z, OffsetTolMm);
+        var entry = f.Top.Confirmation!;
+        Assert.Same(f.Bottom.NativePose.Node, entry.Pose.Node!.Parent);                    // entry +0x18 keeps the parent
+        Assert.Equal(carriedSeen, entry.LastPoseUpdatedTime);                              // entry +0x2C = carried [+0x1C]
+        Assert.Equal(8u, f.Rig.M.Docking.Carrying.CarriedOnTopId);                         // this+0x14 = top ID
+        var info = Assert.Single(f.Named("Robot.SetObjectAsAttachedToLift"));
+        Assert.Equal(EngineLogLevel.Info, info.Level);
+        Assert.Equal("Unnamed", info.Channel);
+        Assert.EndsWith("Setting object 8 on top of carried object as also being carried.", info.Text);
+    }
+
+    /// <summary>
+    /// M12-008 failure path (0x00632FBA/0x00632FBC beq 0x00633154): GetWithRespectTo returns 0 for poses with different roots (0x00845A62..0x00845A68);
+    /// the warning "Robot.SetObjectAsAttachedToLift" / "Found object on top of carried object, but could not get its pose w.r.t. the carried object."
+    /// (0x00633160 adr 0x00633378, 0x00633164); no AddObjectRelativeObservation; this+0x14 not written (previous value, -1 here); step 9 still runs
+    /// (SetCarryingObject 0x006331AE, AddLiftRelativeObservation 0x006331CC) and its result is returned. Never a thrown MISSING M11-066.
+    /// </summary>
+    // reach: unit (SUBSTITUTED: the top cube's pose node is moved under an unrelated root. The engine's finder would never return such a cube:
+    // its predicate rejects a candidate in another root (0x0062BA2C..0x0062BA48, M13-007), so this branch is unreachable in the original (census
+    // row 13); the stack's finder lacks that predicate, which is what makes the substitution reachable here).
+    [Fact]
+    public void M12_008_ACubeOnTopInAnotherRootIsWarnedAboutAndTheAttachContinues()
+    {
+        if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
+        using var f = new TopOnCarried();
+        using var unrelated = new Pose3d("substituted unrelated root");
+        f.Top.NativePose.SetParent(unrelated);
+        Assert.Null(f.Rig.M.Docking.Carrying.CarriedOnTopId);                              // previous value: -1
+        var stateBefore = f.Top.PoseState;
+        var entryBefore = f.Top.Confirmation; uint? entryTimeBefore = entryBefore?.LastPoseUpdatedTime;
+        uint result = Attach(f.Rig, 7, MarkerType.LightCubeI_Front);
+        Assert.Equal(0u, result);                                                          // step 9's AddLiftRelativeObservation result
+        Assert.True(f.Rig.M.Docking.Carrying.IsCarrying(7));                               // SetCarryingObject ran
+        Assert.Null(f.Rig.M.Docking.Carrying.CarriedOnTopId);                              // this+0x14 kept
+        Assert.Equal(stateBefore, f.Top.PoseState);                                        // no AddObjectRelativeObservation (it would set Dirty)
+        Assert.Same(unrelated.Node, f.Top.NativePose.Node!.Parent);
+        Assert.Same(entryBefore, f.Top.Confirmation);
+        Assert.Equal(entryTimeBefore, f.Top.Confirmation?.LastPoseUpdatedTime);
+        var warn = Assert.Single(f.Named("Robot.SetObjectAsAttachedToLift"));
+        Assert.Equal(EngineLogLevel.Warning, warn.Level);
+        Assert.EndsWith("Found object on top of carried object, but could not get its pose w.r.t. the carried object.", warn.Text);
+        f.Top.NativePose.ClearParent();
+    }
+
+    /// <summary>
+    /// M12-008 / AddObjectRelativeObservation 0x00506D02..0x00506D0E: when [robot+0x2B8] equals the top cube's ID, Robot::SetLocalizedTo(nullptr) runs
+    /// before the SetPose, so the robot is no longer localized to it.
+    /// </summary>
+    // reach: unit (SUBSTITUTED: the localization to the top cube is made with the fields-only SetLocalizedTo route, by reflection).
+    [Fact]
+    public void M12_008_TheRobotLocalizedToTheCubeOnTopIsUnlocalized()
+    {
+        if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
+        using var f = new TopOnCarried();
+        var world = f.Rig.Vision.World;
+        typeof(BlockWorld).GetMethod("SetLocalizedToCore", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(world, new object?[] { f.Top, false });
+        Assert.Equal(8u, world.LocalizedToObjectId);
+        Assert.Equal(0u, Attach(f.Rig, 7, MarkerType.LightCubeI_Front));
+        Assert.Equal(8u, f.Rig.M.Docking.Carrying.CarriedOnTopId);
+        Assert.Null(world.LocalizedToObjectId);                                            // SetLocalizedTo(nullptr): -1
+    }
+
     // ================================================================== R-VIS M12 fix round: records M12-005, 008, 012, 017, 022, 025, 026, 029, 030, 031, 033
     // Every expected value below is worked by hand from the cited instruction or record text, never from what the code returned.
 
@@ -1475,7 +1606,8 @@ public class M12RVisBuildTests : IDisposable
         var obj = Assert.Single(rig.Frame().Objects).Object;
         var changes = new List<(PoseState From, PoseState To)>();
         rig.Vision.World.PoseStateChanged += (_, from, to) => { lock (changes) changes.Add((from, to)); };
-        Assert.Equal(0u, ObjectPoseConfirmerRelative.AddObjectRelativeObservation(rig.Vision.World, obj, At(150, 0, 22)));
+        // objSeen substituted: the object itself (the signature now takes SetObjectAsAttachedToLift's carried object, 0x0063301E).
+        Assert.Equal(0u, ObjectPoseConfirmerRelative.AddObjectRelativeObservation(rig.Vision.World, obj, At(150, 0, 22), obj));
         Assert.Equal(PoseState.Dirty, obj.PoseState);
         Assert.Equal(0u, ObjectPoseConfirmerRelative.AddLiftRelativeObservation(rig.Vision.World, obj, At(20, 0, 30)));
         Assert.Equal(PoseState.Known, obj.PoseState); Assert.Equal(1, obj.PoseConfirmationCount);
