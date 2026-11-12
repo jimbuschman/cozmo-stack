@@ -72,7 +72,8 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
         if(result!=ActionResult.Success)return unchecked((int)result);
         if(!inPosition)
         {
-            Drive=ScopedOwner is {} owner ? new DriveToPoseAction(M,true,false,owner,ExecutionCurrent) : new DriveToPoseAction(M,true,false);
+            // fidelity: M12-022 — D4 0x005592E8..0x005592FE: DriveToPoseAction(robot, head r2=1, manual r3=[this+0x8C]); +0x8C is Action.UseManualSpeed.
+            Drive=ScopedOwner is {} owner ? new DriveToPoseAction(M,true,Action.UseManualSpeed,owner,ExecutionCurrent) : new DriveToPoseAction(M,true,Action.UseManualSpeed);
             Drive.SuppressTrackLocking=true;Drive.PreActionObjectPose=new Pose3d(obj.NativePose);
             Drive.SetNativeGoals(poses.Select(p=>p.WorldPose).ToArray());
             if(ScopedOwner is null)_sequence.AddAction(Drive,false,false);
