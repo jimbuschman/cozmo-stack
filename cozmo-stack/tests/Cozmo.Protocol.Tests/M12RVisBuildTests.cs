@@ -840,16 +840,16 @@ public class M12RVisBuildTests : IDisposable
     }
 
     /// <summary>
-    /// M12-008 failure path (0x00632FBA/0x00632FBC beq 0x00633154): GetWithRespectTo returns 0 for poses with different roots (0x00845A62..0x00845A68);
-    /// the warning "Robot.SetObjectAsAttachedToLift" / "Found object on top of carried object, but could not get its pose w.r.t. the carried object."
-    /// (0x00633160 adr 0x00633378, 0x00633164); no AddObjectRelativeObservation; this+0x14 not written (previous value, -1 here); step 9 still runs
-    /// (SetCarryingObject 0x006331AE, AddLiftRelativeObservation 0x006331CC) and its result is returned. Never a thrown MISSING M11-066.
+    /// M12-008 / M13-007 (FIND-ON-TOP-SAME-ROOT-1): the search at C10 0x00632F14 never returns a cube whose pose is under another root: the lambda's
+    /// first step (0x0062BA0E..0x0062BA48) is GetWithRespectTo(candidate, obj's root) (H2 0x00626048 GetWithRespectToRoot), which returns 0 for
+    /// different roots (0x00845A62..0x00845A68), and the candidate is skipped silently. So nothing is found: this+0x14 stays -1 (0x0063314C..0x00633150),
+    /// no "Robot.SetObjectAsAttachedToLift" line is logged (neither the info 0x00632FC0 nor the warning 0x00633160, whose branch 0x00632FBC is
+    /// unreachable after a same-root find), no AddObjectRelativeObservation, and step 9 still runs (SetCarryingObject 0x006331AE) and returns 0.
+    /// (This test asserted the warning branch before the same-root predicate was built; the census shows that branch unreachable.)
     /// </summary>
-    // reach: unit (SUBSTITUTED: the top cube's pose node is moved under an unrelated root. The engine's finder would never return such a cube:
-    // its predicate rejects a candidate in another root (0x0062BA2C..0x0062BA48, M13-007), so this branch is unreachable in the original (census
-    // row 13); the stack's finder lacks that predicate, which is what makes the substitution reachable here).
+    // reach: unit (SUBSTITUTED: the top cube's pose node is moved under an unrelated root; DockingSystem.SetObjectAsAttachedToLift called directly).
     [Fact]
-    public void M12_008_ACubeOnTopInAnotherRootIsWarnedAboutAndTheAttachContinues()
+    public void M12_008_ACubeOnTopInAnotherRootIsNotFoundAndTheAttachContinues()
     {
         if (Lib is null) return;
         using var signals_rig = SignalTestContext.Install();
@@ -862,14 +862,12 @@ public class M12RVisBuildTests : IDisposable
         uint result = Attach(f.Rig, 7, MarkerType.LightCubeI_Front);
         Assert.Equal(0u, result);                                                          // step 9's AddLiftRelativeObservation result
         Assert.True(f.Rig.M.Docking.Carrying.IsCarrying(7));                               // SetCarryingObject ran
-        Assert.Null(f.Rig.M.Docking.Carrying.CarriedOnTopId);                              // this+0x14 kept
+        Assert.Null(f.Rig.M.Docking.Carrying.CarriedOnTopId);                              // nothing found: -1
         Assert.Equal(stateBefore, f.Top.PoseState);                                        // no AddObjectRelativeObservation (it would set Dirty)
         Assert.Same(unrelated.Node, f.Top.NativePose.Node!.Parent);
         Assert.Same(entryBefore, f.Top.Confirmation);
         Assert.Equal(entryTimeBefore, f.Top.Confirmation?.LastPoseUpdatedTime);
-        var warn = Assert.Single(f.Named("Robot.SetObjectAsAttachedToLift"));
-        Assert.Equal(EngineLogLevel.Warning, warn.Level);
-        Assert.EndsWith("Found object on top of carried object, but could not get its pose w.r.t. the carried object.", warn.Text);
+        Assert.Empty(f.Named("Robot.SetObjectAsAttachedToLift"));
         f.Top.NativePose.ClearParent();
     }
 

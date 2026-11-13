@@ -315,10 +315,15 @@ public sealed class BlockConfigurationManager
     /// For that pair, and only that pair, this method uses <see cref="PlanarStandIn"/>: the earlier planar test (centres within
     /// half a cube, 22 mm, and the height within the tolerance of one cube height). It is a REDUCTION THAT DIFFERS FROM THE ENGINE
     /// (which intersects min-area-rectangle footprints of any pose); <c>usedStandIn</c> is set when it decided any
-    /// candidate, so a caller and a test can see it. No exception escapes. This stack has one pose origin, so the
-    /// lambda's "candidate with respect to the reference's parent" step (0x0062BA0E..0x0062BA48) always succeeds and
-    /// the poses are the world poses; the candidate's z overwrite (0x0062BA50..0x0062BA78) does not reach the quad,
-    /// which reads only x and y.
+    /// candidate, so a caller and a test can see it. No exception escapes. This method does NOT apply the filter or the
+    /// lambda's first step: it searches the list it is given, in the given order, and returns the first match. The engine's
+    /// candidate set (the current origin only, the caller's filter, obj's ID) and the same-root step P1 ("candidate with respect
+    /// to the reference's parent", 0x0062BA0E..0x0062BA48, the reference's parent being obj's root, 0x00626048) are applied by
+    /// BlockWorld's FindObjectOnTopOrUnderneathHelper before it calls this (census FIND-ON-TOP-SAME-ROOT-1). The host
+    /// BlockConfigurationManager walk (stack host extension D1) passes every origin's located cubes with no same-root test.
+    /// The heights and dimensions here read the public Pose (the root frame only for a carried tree), not the root-frame
+    /// poses of H2/P1; the quads flatten to the root (Footprint.TryGetBoundingQuadXY). The candidate's z overwrite
+    /// (0x0062BA50..0x0062BA78) does not reach the quad, which reads only x and y.
     /// </summary>
     // fidelity: M13-007
     public static ObservableObject? FindObjectOnTopOrUnderneath(ObservableObject obj, IReadOnlyList<ObservableObject> cubes, bool onTop,
@@ -331,6 +336,7 @@ public sealed class BlockConfigurationManager
                                                                 double toleranceMm, out bool usedStandIn)
     {
         usedStandIn = false;
+        // Host path (BlockConfigurationManager, D1): the public Pose, unchanged.
         float dimZ = (float)CubeGeometry.DimInParentFrameZ(obj);
         float targetZ = (float)obj.Pose.Translation.Z + dimZ * (onTop ? 0.5f : -0.5f);                // 0x0062607E..0x006260A0
         float s2 = onTop ? -0.5f : 0.5f;
@@ -350,6 +356,46 @@ public sealed class BlockConfigurationManager
             if (!refQuad.Intersects(candQuad!)) continue;                                             // 0x0062BA50..0x0062BAA2
             float cz = (float)c.Pose.Translation.Z + (float)CubeGeometry.DimInParentFrameZ(c) * s2;
             if (!(MathF.Abs(targetZ - cz) <= tol + 9.99999975e-06f)) continue;                       // 0x0062BAC2..0x0062BB0C (literal 0x3727C5AC)
+            return c;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// The lambda's geometry stage (P2..P6, census FIND-ON-TOP-SAME-ROOT-1) in the ROOT frame, for BlockWorld's FindObjectOnTopOrUnderneathHelper, whose
+    /// candidates have already passed P1 (same root as <paramref name="obj"/>). The reference is <c>refPose = GetWithRespectToRoot(obj.GetPose())</c>
+    /// (H2 0x00626048); <c>dimZ = GetDimInParentFrame&lt;'Z'&gt;(obj, refPose rotation)</c> and <c>targetZ = refPose.z + dimZ * (onTop ? +0.5 : -0.5)</c>
+    /// in f32 (H4 0x0062605E..0x006260A0); refQuad from refPose (H3). Each candidate is taken w.r.t. obj's root (P1's out pose, which for a same-root
+    /// candidate is its GetWithRespectToRoot); its quad reads x, y only (P2/P3, the z overwrite does not reach it); <c>candDimZ</c> uses that pose's
+    /// rotation (P5 0x0062BAA4..0x0062BABA) and the height test is <c>|targetZ - (cand.z + candDimZ * (onTop ? -0.5 : +0.5))| &lt;= tol + 1e-5f</c>
+    /// on its root-frame z (P6 0x0062BAC2..0x0062BB0E, literal 0x3727C5AC). The first passing candidate in list order is returned (F6). A pair whose
+    /// footprint is not computable goes to the labelled M13-023 stand-in, here on the root-frame translations.
+    /// </summary>
+    // fidelity: M13-007, M13-023
+    internal static ObservableObject? FindObjectOnTopOrUnderneathInRootFrame(ObservableObject obj, IReadOnlyList<ObservableObject> candidates, bool onTop,
+                                                                            double toleranceMm, out bool usedStandIn)
+    {
+        usedStandIn = false;
+        using var refPose = obj.NativePose.GetWithRespectToRoot();                                     // H2 0x00626048
+        float dimZ = (float)CubeGeometry.DimInParentFrameZ(obj, refPose.Rotation);
+        float targetZ = (float)refPose.Translation.Z + dimZ * (onTop ? 0.5f : -0.5f);                // H4 0x0062605E..0x006260A0
+        float s2 = onTop ? -0.5f : 0.5f;
+        float tol = (float)toleranceMm;
+        Footprint.TryGetBoundingQuadXY(obj, refPose, 0f, out var refQuad);                           // H3 0x0062604C..0x0062605C
+        foreach (var c in candidates)
+        {
+            if (c.ObjectId == obj.ObjectId) continue;                                                // H6 0x006260AC..0x006260B8
+            using var tmp = c.NativePose.GetWithRespectToRoot();                                     // P1 out pose (same root)
+            Quadrilateral? candQuad = null;
+            if (refQuad is null || !Footprint.TryGetBoundingQuadXY(c, tmp, 0f, out candQuad))        // P3 0x0062BA7A..0x0062BA86
+            {
+                usedStandIn = true;                                                                  // M13-023 labelled stand-in
+                if (PlanarStandInAt(refPose.Translation, tmp.Translation, onTop, toleranceMm)) return c;
+                continue;
+            }
+            if (!refQuad.Intersects(candQuad!)) continue;                                             // P4 0x0062BA88..0x0062BAA2
+            float cz = (float)tmp.Translation.Z + (float)CubeGeometry.DimInParentFrameZ(c, tmp.Rotation) * s2;   // P5
+            if (!(MathF.Abs(targetZ - cz) <= tol + 9.99999975e-06f)) continue;                       // P6 0x0062BAC2..0x0062BB0E (0x3727C5AC)
             return c;
         }
         return null;
@@ -405,10 +451,14 @@ public sealed class BlockConfigurationManager
     /// </summary>
     // fidelity: M13-023
     public static bool PlanarStandIn(ObservableObject obj, ObservableObject c, bool onTop, double toleranceMm)
+        => PlanarStandInAt(obj.Pose.Translation, c.Pose.Translation, onTop, toleranceMm);
+
+    /// <summary><see cref="PlanarStandIn"/> on given translations (the root-frame search passes root-frame translations).</summary>
+    internal static bool PlanarStandInAt(Vec3 objT, Vec3 cT, bool onTop, double toleranceMm)
     {
-        double targetZ = obj.Pose.Translation.Z + (onTop ? CubeGeometry.CubeSizeMm : -CubeGeometry.CubeSizeMm);
-        var d = c.Pose.Translation - obj.Pose.Translation;
-        if (Math.Abs(c.Pose.Translation.Z - targetZ) > toleranceMm) return false;
+        double targetZ = objT.Z + (onTop ? CubeGeometry.CubeSizeMm : -CubeGeometry.CubeSizeMm);
+        var d = cT - objT;
+        if (Math.Abs(cT.Z - targetZ) > toleranceMm) return false;
         if (Math.Sqrt(d.X * d.X + d.Y * d.Y) > CubeGeometry.CubeSizeMm / 2) return false;
         return true;
     }

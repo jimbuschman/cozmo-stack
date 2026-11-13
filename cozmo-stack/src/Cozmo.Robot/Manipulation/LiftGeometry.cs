@@ -141,8 +141,9 @@ public static class LiftGeometry
         using var relativeToLift=obj.NativePose.WithRespectTo(liveLiftPose??liftWorld);
         var objWrtLift = ObjectOnLift(marker, relativeToLift.Rotation);
 
-        var cubes = world.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
-        var top = BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, cubes, onTop: true, StackToleranceMm);
+        // fidelity: M12-008, M13-007 — C10 0x00632F14: tol 15 (0x00632F0C), onTop 1, the DEFAULT filter (0x00632E86..0x00632F02): the current origin
+        // only, every family, obj excluded, the same-root predicate, the first match in the walk order (census FIND-ON-TOP-SAME-ROOT-1 C10).
+        var top = world.FindObjectOnTopOrUnderneathDefaultFilter(obj, StackToleranceMm, onTop: true, "SetObjectAsAttachedToLift 0x00632F14");
         uint? topId = null; Pose3d? topWrtCarried = null;                    // none found: this+0x14 = -1 (0x0063314C..0x00633150)
         if (top is not null)
         {

@@ -1,5 +1,50 @@
 # Operator decisions
 
+## RETIRE-LEGACY-DRIVE-API-1: the retirement reaches more than the decision below assumed (Claude worker, 2026-11-13)
+
+**The question:** please confirm or narrow the "retire" decision below. When I wrote it up I said the legacy types were
+used only by "the stack's own tools and the tests". The retirement census (`.scratch/RETIRE-LEGACY-DRIVE-API-1-census.md`,
+worker-local) found that this undersold it. Nothing has been removed yet.
+
+**1. The standalone stack's behaviours drive through the legacy types.**
+- `FreeplayStack.Create`, used by FreeplayTool and CoreChecks, binds the shipped behaviours through
+  `ShippedBehaviors.Manipulation`/`Navigation` (Behaviors.cs:609/632) and `ExplorerBehaviors.LoadShipped`.
+- Its factory context sets no `NativeRobot` (FreeplayStack.cs:99-118, deliberately per 64-65). So the factory refuses
+  the native classes and binds the legacy ones.
+- The behaviours affected are about 12: PickUpCube, RollBlock, StackBlocks, PickUpAndPutDownCube, KnockOverCubes,
+  PopAWheelie, CubeLiftWorkout, BuildPyramidBase / BuildPyramid, RespondPossiblyRoll, BringCubeToBeacon and the Explorer
+  driver. Their drive step is DockHelper, `DriveToObjectAction.RunAsync` or `DriveAndFlipBlockAction`.
+- The robot runtime (NativeBehaviorRuntime) is not affected: it binds only the native classes.
+
+**2. The Conformance hardware tools can't reach the native classes.** All native runners are `internal`, as are
+`DriveToPoseAction(m, head, manual)` and `SetNativeGoals`; `InternalsVisibleTo` names only the test project.
+- **ManipTool** drives HardwareCatalog checks N, P, Q, R, S, T, U and X (pinned in HardwareCatalogFidelityTests and
+  HardwareRunnerTests).
+- **M5Hw.cs's DRIVING check** (834-865) uses the legacy constructor. M5Hw is the operator-run M5-HW harness.
+
+**3. Records:**
+- M12-009 and M12-016 (EXACT_SOURCE) carry their only `// fidelity:` tag on DockHelper, so the tags must move to the
+  native helpers in the same commit.
+- M12-004 (UseSecondClosestPreActionPose 0x005BEE56) loses its only built form: no native counterpart sets ExcludePoses.
+
+**Choices:**
+
+1. **Retire fully.** The standalone stack loses those behaviours: their ids become unbound standalone, or fail with a
+   visible MISSING. ManipTool's N/P/Q/R/S/T/U/X modes and M5Hw's DRIVING check are deleted or rewritten.
+2. **Retire, but rebind.** The standalone stack passes `NativeRobot` so it binds the native classes, which then run on
+   the canonical robot's ActionList and PathComponent. The tools get a public or InternalsVisibleTo entry to the native
+   runners. This is more work, and keeps the features.
+3. **Retire only what nothing else uses.** Delete the legacy DriveToPoseAction(m) constructor path, type 6 and the
+   unused DriveToFlipBlockPose and DriveToPlaceCarried RunAsync. Keep DockHelper and the legacy DriveToObject flow for
+   the standalone stack and tools, documented as non-engine. In that case the legacy entry, its holds and the BlockWorld
+   guard stay. They don't fire on the robot runtime.
+
+**Meanwhile:** job 14 is paused. The census also leaves four smaller questions, which the manager can answer:
+- Q3: retire type 6;
+- Q4: M12-004 — keep ExcludePoses as a unit, or record the gap;
+- Q5: drop the P13 IgnoreObstacleIds pass-through;
+- Q6: the non-native branch of GetPossiblePoses.
+
 ## LEGACY-DRIVE-TO-POSE-NATIVE-1: is the legacy public drive API a supported C# feature? (Claude worker, 2026-11-12)
 
 **DECIDED (operator, 2026-11-12): option 1, retire.** The legacy public drive types are retired as stack machinery. Job

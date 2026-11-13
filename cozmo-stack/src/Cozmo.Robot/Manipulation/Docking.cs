@@ -607,8 +607,8 @@ public sealed class DockingSystem : IDisposable
     /// <c>DockingComponent::CanInteractWithObjectHelper</c> 0x0063C654..0x0063C794 (M12-012; re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q7, corrected by
     /// 20260929-R-VIS-verify-M12-fix2.md): it reads only the object's family (1 or 2: Block or LightCube), <c>IsRestingFlat(Radians(0x3E32B8C2))</c>, the carried compare
     /// (<c>[[robot+0x284]+8] != id</c>, 0x0063C686..0x0063C698), <c>GetWithRespectTo(robot pose)</c> (always succeeds with one pose origin) and finally
-    /// <c>FindObjectOnTopOrUnderneathHelper(obj, 15.0, default filter, onTop = 1) == null</c> (0x0063C6C0..0x0063C730, 0x0063C78A..0x0063C792; the search is M13-007's over the located
-    /// cubes, with M13-023's stand-in for tilted/non-cube pairs). NO PoseState test exists in the unit. <c>CanPickUpObject</c> 0x0063C7F0 and <c>CanPickUpObjectFromGround</c> 0x0063C880
+    /// <c>FindObjectOnTopOrUnderneathHelper(obj, 15.0, default filter, onTop = 1) == null</c> (0x0063C6C0..0x0063C730, 0x0063C78A..0x0063C792; the search is M13-007's with the default filter, BlockWorld.FindObjectOnTopOrUnderneathDefaultFilter: the current origin's located
+    /// objects of every family, the same-root predicate, with M13-023's stand-in for tilted/non-cube pairs). NO PoseState test exists in the unit. <c>CanPickUpObject</c> 0x0063C7F0 and <c>CanPickUpObjectFromGround</c> 0x0063C880
     /// are recorded (M12-012) but NO C# caller exists, so they are not built.
     /// </summary>
     // fidelity: M12-012
@@ -617,8 +617,9 @@ public sealed class DockingSystem : IDisposable
         if (obj.Family is not (ObjectFamily.Block or ObjectFamily.LightCube)) return false;
         if (!obj.IsRestingFlat(BitConverter.Int32BitsToSingle(0x3E32B8C2))) return false;   // Radians(0x3E32B8C2), cited above
         if (Carrying.CarriedObjectId == obj.ObjectId) return false;
-        var cubes = _vision.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
-        return BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, cubes, onTop: true, BlockConfigurationManager.RestingOnToleranceMm) is null;
+        // fidelity: M12-012, M13-007 — C11 0x0063C730: tol 15 (0x0063C728), onTop 1, the DEFAULT filter (0x0063C6C0..0x0063C71E): the current origin
+        // only, every family, obj excluded, the same-root predicate, the first match in the walk order (census FIND-ON-TOP-SAME-ROOT-1 C11).
+        return _vision.World.FindObjectOnTopOrUnderneathDefaultFilter(obj, BlockConfigurationManager.RestingOnToleranceMm, onTop: true, "CanInteractWithObjectHelper 0x0063C730") is null;
     }
 
     /// <summary><c>CarryingComponent::SetObjectAsAttachedToLift</c> 0x00632CC4 (M12-008): see <see cref="LiftGeometry.SetObjectAsAttachedToLift"/>. Returns 0 on success.</summary>
