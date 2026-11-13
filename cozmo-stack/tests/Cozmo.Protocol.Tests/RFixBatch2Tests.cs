@@ -658,6 +658,10 @@ public class RFixBatch2Tests
         Assert.Equal(ActionResult.BadObject, mount.RunAsync(default).GetAwaiter().GetResult());
         Assert.Contains(mount.Trace, l => l.Contains("MountChargerAction.Init.InvalidCharger"));
         Assert.Empty(rig.Sent.OfType<SetBodyAngle>());
+        // M13-008 / M4-009: the robot+0x334 store (0x0054E120) is on the success branch only; the fail branch (0x0054E12E..0x0054E16C)
+        // skips it, so the value stays the Robot ctor's -1 (0x00510096 mov.w r1,#-1; 0x005100AC str.w r1,[r5,#0x334]).
+        // reach: unit (the action is constructed directly; the robot runtime never constructs it).
+        Assert.Equal(-1, rig.Robot.Cubes.ChargerObjectId);
     }
 
     /// <summary>

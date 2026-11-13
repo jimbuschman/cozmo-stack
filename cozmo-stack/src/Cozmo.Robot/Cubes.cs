@@ -547,9 +547,11 @@ public sealed class CozmoCubes
     /// A12: the world's lookup of the connected object for an activeID, returning its ObjectID (BlockWorld.ConnectedObjectIdForActiveId). Null until a world is attached.
     /// </summary>
     internal Func<uint, uint?>? ConnectedObjectIdForActiveId { get; set; }
-    // fidelity: M4-009 — 13.1: -1 at construction, only MountChargerAction.Init (M13-008) may write it; never reset.
-    internal int ChargerObjectId { get; private set; } = -1;
-    internal void SetChargerObjectIdFromMountInit(uint id) => ChargerObjectId = unchecked((int)id);
+    // fidelity: M4-009 — 13.1: -1 at construction (Robot ctor 0x005100AC), only MountChargerAction.Init (M13-008, store 0x0054E120) writes it; never reset.
+    // Init runs on the action's caller thread and the Moved/Stopped handlers read it on the message thread, so the int is published with Volatile.
+    private int _chargerObjectId = -1;
+    internal int ChargerObjectId => Volatile.Read(ref _chargerObjectId);
+    internal void SetChargerObjectIdFromMountInit(uint id) => Volatile.Write(ref _chargerObjectId, unchecked((int)id));
     // Whether connected ObjectID -1 is possible belongs to M11-013/M11-041.
     private int? WorldId(Cube c, Action<string>? log = null)
     {
