@@ -457,6 +457,79 @@ public class NavigationTests
         Assert.Equal(1, mount.Attempts);
     }
 
+    /// <summary>
+    /// M13-008 / M4-009: MountChargerAction::Init 0x0054E0CC stores the action's charger ObjectID (action+0x7C) into robot+0x334
+    /// (0x0054E11C ldr Robot*, 0x0054E11E ldr [action+0x7C], 0x0054E120 str.w [robot+0x334]) once the located-charger lookup and
+    /// type check pass (0x0054E106..0x0054E11A), before ConfigureAlignWithChargerAction (0x0054E126). From then on the Moved handler
+    /// (0x00533EA6 ldr.w [robot+0x334]; 0x00533EAA ldr [obj+0x18]; 0x00533EAC cmp -> Info "Robot.ActiveObjectMoved.Charger"
+    /// "Charger sending garbage move messages", then the epilogue: no dirty, no IsMoving, no broadcast) and the Stopped handler
+    /// (0x00534794..0x0053479A, the same drop) drop a connected object whose ObjectID equals it. UpAxisChanged
+    /// (0x00534D50..0x00534F3C) has no 0x334 read: it logs and broadcasts (0x00534E14).
+    /// </summary>
+    // reach: unit. The mount enters through MountChargerAction.RunAsync (Init) on the ManipRig fixture, but the action itself is
+    // constructed here: the robot runtime never constructs it (in the engine only app-sent game actions build it, RobotActionUnion
+    // factory 0x0052A2D6 / DriveToAndMountChargerAction 0x0054E87A). The Moved/Stopped/UpAxisChanged reports do go through the robot's
+    // real message dispatch. Substituted: the charger is connected by an ObjectConnectionState in slot 0 (factory 0xABD0, a fixture
+    // value), and its ObjectID equals the located charger's only because the rig seeds the per-type unique ID (Charger_Basic = 100) and
+    // the stack's AddConnectedActiveObject/SetID port gives both the same value. Whether the engine's connected and located chargers
+    // share an ObjectID: connected-after-located (this case) copies the located ID (M11-041, 0x006237DA/0x006237DE); located-after-connected is M11-013's.
+    [Fact]
+    public void M13_008_MountInitStoresTheChargerIdAndTheMovementFilterDropsItsReports()
+    {
+        using var signals = SignalTestContext.Install();
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.Head = -0.2f;
+        rig.Charger = At(200, 0, 0);
+        Assert.Single(rig.Frame().Objects);
+        rig.DockOutcome = BlockStatus.NoBlock;
+        Assert.Equal(-1, rig.Robot.Cubes.ChargerObjectId);                          // Robot ctor 0x00510096/0x005100AC: -1 before any mount
+        var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId) { Clock = () => 0f };
+        rig.M.World.UnobservedMissesToUnknown = int.MaxValue;                        // as in MountChargerAlignsTurnsAndBacksOntoTheContacts
+        var task = mount.RunAsync(default);
+        // Init runs before the first await: the store precedes ConfigureAlignWithChargerAction (0x0054E120 before 0x0054E126).
+        Assert.Equal(unchecked((int)ChargerGeometry.ObjectId), rig.Robot.Cubes.ChargerObjectId);
+        SignalTestContext.Run(task, () => { rig.Pump(); if (!rig.OnCharger) rig.Frame(); });
+        Assert.Equal(ActionResult.Success, task.Result);
+        Assert.Equal(unchecked((int)ChargerGeometry.ObjectId), rig.Robot.Cubes.ChargerObjectId);   // never cleared (census section 2)
+
+        rig.Send(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xABD0, ObjectType = ObjectType.Charger_Basic, Connected = true });
+        rig.Tick(); rig.Pump();
+        var connected = Assert.Single(rig.Vision.World.ConnectedObjects, o => o.Type == ObjectType.Charger_Basic);
+        if (connected.ObjectId != ChargerGeometry.ObjectId)
+            throw new Xunit.Sdk.XunitException($"fixture: the connected charger has ObjectID {connected.ObjectId}, the located one {ChargerGeometry.ObjectId}");
+        var located = rig.M.World.GetLocatedObjectById(ChargerGeometry.ObjectId)!;
+        var poseStateBefore = located.PoseState;
+        var cube = rig.Robot.Cubes.ByObjectId(0)!;
+        bool movingBefore = cube.Moving, worldMovingBefore = connected.IsMoving;
+        var movement = new List<CubeTimestampEvent>(); var moved = new List<Cube>(); var upAxis = new List<CubeUpAxisEvent>();
+        rig.Robot.Cubes.MovementBroadcast += movement.Add;
+        rig.Robot.Cubes.CubeMoved += moved.Add;
+        rig.Robot.Cubes.UpAxisBroadcast += upAxis.Add;
+        var engineLog = new List<string>();
+        rig.Robot.Engine.LogEntry += e => { lock (engineLog) engineLog.Add($"{e.Name}: {e.Text}"); };
+
+        rig.Send(new ObjectMoved { Timestamp = 5000, ObjectID = 0 });
+        rig.Send(new ObjectStoppedMoving { Timestamp = 5001, ObjectID = 0 });
+        rig.Tick(); rig.Pump();
+        Assert.Empty(movement);                                                       // no ObjectMoved / ObjectStoppedMoving broadcast
+        Assert.Empty(moved);
+        Assert.Equal(movingBefore, cube.Moving);                                      // no SetIsMoving
+        Assert.Equal(worldMovingBefore, connected.IsMoving);
+        Assert.Equal(poseStateBefore, located.PoseState);                             // no dirty
+        lock (engineLog)
+        {
+            Assert.Contains("Robot.ActiveObjectMoved.Charger: Charger sending garbage move messages", engineLog);    // 0x00533EE8
+            Assert.Contains("Robot.ActiveObjectStopped.Charger: Charger sending garbage move messages", engineLog);  // 0x005347D6
+            Assert.DoesNotContain(engineLog, l => l.Contains("ObjectMovedOrStopped"));
+        }
+
+        rig.Send(new ObjectUpAxisChanged { Timestamp = 5002, ObjectID = 0, UpAxis = UpAxis.ZPositive });
+        rig.Tick(); rig.Pump();
+        var ua = Assert.Single(upAxis);                                               // UpAxisChanged has no charger filter (0x00534D50..0x00534F3C)
+        Assert.Equal(unchecked((int)ChargerGeometry.ObjectId), ua.ObjectID);
+    }
+
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent()
