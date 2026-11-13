@@ -1975,13 +1975,16 @@ public class FreeplayTests
         Assert.Equal("PlayAlone", decisions.First(d => d.Activity is not null).Activity);
         Assert.Contains(decisions, d => d.Behavior == "DriveOffCharger");
         Assert.False(rig.OnCharger, summary);
-        // KNOWN GAP (M13-025, proposed job CHARGER-BOUNDING-QUAD-1): the native RollBlockOnSide's intention-7 target refresh runs CanInteract's on-top search over
-        // every located object (NativePickupTargetCache.cs CanPick/CanInteract; the neighbour test calls each candidate's GetBoundingQuadXY, vtable +0x50,
-        // at 0x00626048). Only Block::GetBoundingQuadXY 0x004E62A2 is read; the located charger's is not, so the refresh throws
-        // NativeConfigurationUnavailable and the roll is never chosen (the legacy RollBlockBehavior, retired by RETIRE-LEGACY-DRIVE-API-1, had no such
-        // search). Whether the engine rolls here is unverified until the charger's footprint is read. Pinned so the test fails, and is restored to Contains(RollBlockOnSide) + DockWithObject, when the
-        // charger's footprint is built.
-        Assert.DoesNotContain(decisions, d => d.Behavior == "RollBlockOnSide");
+        // M13-025, M13-007: CanInteract's on-top search (0x0063C730) calls the located charger's own slot +0x50 (base 0x0087713A, corners 0x004E9A50):
+        // the charger at (30,0,0) yaw pi spans x in [-66, 30], the cube at x = 260 is clear (P4 false, 0x0062BA88), so no neighbour and the roll goes ahead.
+        Assert.Contains(decisions, d => d.Behavior == "RollBlockOnSide");
+        // KNOWN GAP (proposed job ROLL-AFTER-DRIVE-STANDALONE-1; recorded in M8-011): DriveToObject [Rolling] completes with SUCCESS (t=0.5 s), but its
+        // completion never reaches the helper component: no IHelper.OnDelegateSuccess / HelperComponent.UpdateActive.Complete, so NativeRollBlockHelper's
+        // success handler (NativeRollBlockHelper.cs:47) is never invoked and the behaviour stays RollBlockOnSide. Either NativeDriveToHelper.Respond
+        // (NativeDriveToHelper.cs:61-67) never runs or BehaviorHelperComponent.UpdateActiveHelper (BehaviorHelperComponent.cs:413-452) stops updating; stack
+        // defect or rig/scheduler artifact (ActionTaskRunner = SignalTestContext.Schedule) is open. The LocalizeToObject.CouldNotFindHistoricalPose lines
+        // start at t=0 (before the roll) and are a separate rig pose-history issue. Pinned so the test fails, and is restored to Contains(DockWithObject),
+        // when it is resolved. This assertion does not cover M12-036's obstacle list.
         Assert.DoesNotContain(rig.Sent, m => m is DockWithObject);
         Assert.DoesNotContain(log, l => l.Contains("robot.goal_from_face_and_cube"));
     }

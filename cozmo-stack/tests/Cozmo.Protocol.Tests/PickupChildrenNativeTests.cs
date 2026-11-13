@@ -228,10 +228,12 @@ public sealed class PickupChildrenNativeTests
     [InlineData(true)]
     public void UnavailableInitialPreactionStopsOnlyCapturedHelperAndDoesNotStopReusedOwner(bool reuse)
     {
-        // reach: unit manually constructed unsupported Charger_Basic/empty-marker scene; actual native helper/manager/precheck entry.
+        // reach: unit manually constructed unsupported CustomType00/empty-marker scene; actual native helper/manager/precheck entry.
+        // CHARGER-BOUNDING-QUAD-1: the charger's slot +0x50/+0x2C are now built (M12-036, M13-025), so the unavailable obstacle footprint is supplied by
+        // a class the stack does not build (CustomObject, SDK-only, M11-088), a substituted input production cannot create.
         // Host availability handling must emit no invented native report or failure and must not stop a replacement run.
         using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);f.Add(x:300);
-        var obstacle=new ObservableObject(9,ObjectType.Charger_Basic,Array.Empty<KnownMarker>())
+        var obstacle=new ObservableObject(9,ObjectType.CustomType00,Array.Empty<KnownMarker>())
         {Pose=new Pose3d(Rotation3d.Identity,new(100,0,22),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known};
         f.M.World.AddLocatedObject(obstacle);
         var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);

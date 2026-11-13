@@ -21,7 +21,10 @@ internal sealed class NativeBringBeaconGeometry(ManipulationSystem m,EngineRobot
         foreach(var other in m.World.FindLocatedMatchingObjects(filter))
         {
             if(!current())throw new NativeActionUnavailable("stale Bring footprint query");
-            if(!Footprint.TryGetBoundingQuadXY(other,other.NativePose,10f,out var quad))
+            // fidelity: M13-025, M13-007
+            // FindLocatedIntersectingObjects predicate 0x0062750E (M12-030): q = o->vtbl[0x50](o, o->GetPose(), padding), the candidate's own
+            // slot for every located class (charger base 0x0087713A, markerless 0x00502C32), not the cube-only footprint.
+            if(!other.TryObservableBoundingQuad50(other.NativePose,10f,out var quad))
                 throw new NativeActionUnavailable("M15-019/M13-007 native obstacle footprint unavailable");
             if(quad!.Intersects(reference!))return false;
         }

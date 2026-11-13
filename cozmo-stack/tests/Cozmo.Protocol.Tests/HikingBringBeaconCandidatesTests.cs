@@ -372,8 +372,19 @@ public sealed class HikingBringBeaconCandidatesTests
         {Pose=new Pose3d(Rotation3d.Identity,new Vec3(0,0,0),parent:clean.Robot.GetNativeOrigin(clean.Robot.CurrentOriginId)),OriginId=clean.Robot.CurrentOriginId,PoseState=PoseState.Known};
         clean.M.World.AddLocatedObject(charger);
         Assert.NotNull(clean.M.World.GetLocatedObjectByIdHelper(9));Assert.Null(clean.M.World.GetLocatedObjectByIdHelper(8));
-        Assert.Throws<NativeActionUnavailable>(()=>new NativeBringBeaconGeometry(clean.M,clean.Robot).Free(cleanCarried,cleanCandidate,()=>true));
+        // M13-025, M13-007 (CHARGER-BOUNDING-QUAD-1): predicate 0x0062750E calls the charger's own slot +0x50, base 0x0087713A, padding 10:
+        // corners 0x004E9A50 x in {0, 96}, y in {-40, 40}; p += signbit(p) ? -10 : +10 (0x008771B0..0x00877214; +0 is not negative) gives
+        // x in {10, 106}, y in {-50, 50}; identity pose at (0,0) -> quad x in [10, 106]. The carried cube at (0,0) spans x in [-22, 22]: they overlap.
+        // reach: unit (direct strict query; substitutes the beacon candidate pose the FindFreePoseInBeacon grid would produce).
+        Assert.False(new NativeBringBeaconGeometry(clean.M,clean.Robot).Free(cleanCarried,cleanCandidate,()=>true));
         Assert.Empty(clean.M.Whiteboard.GetObjectFailureTable(ObjectActionFailure.PlaceObjectAt));
+        // The same charger at (-200,0,0): quad x in [-190, -94], clear of [-22, 22] -> free.
+        using var far=new Fixture();var farCarried=far.Add(7,200,22);
+        using var farCandidate=NativeOriginPose(far);
+        var farCharger=new ObservableObject(9,ObjectType.Charger_Basic,Array.Empty<KnownMarker>())
+        {Pose=new Pose3d(Rotation3d.Identity,new Vec3(-200,0,0),parent:far.Robot.GetNativeOrigin(far.Robot.CurrentOriginId)),OriginId=far.Robot.CurrentOriginId,PoseState=PoseState.Known};
+        far.M.World.AddLocatedObject(farCharger);
+        Assert.True(new NativeBringBeaconGeometry(far.M,far.Robot).Free(farCarried,farCandidate,()=>true));
     }    // F3 005E0BEA..C32 / BlockWorld origin filter: an old-origin obstacle does not block a current-origin candidate.
     // Reach: direct strict query with supplied retained old-origin object graph.
     [Fact]
@@ -512,8 +523,11 @@ public sealed class HikingBringBeaconCandidatesTests
     [Fact]
     public void MissingFootprintDoesNotStampFailureOrEmitNoLocationMood()
     {
+        // CHARGER-BOUNDING-QUAD-1: the charger's slot +0x50 (0x0087713A) is now built, so the unavailable footprint is supplied by an object class whose
+        // +0x50 the stack does not build (CustomObject, SDK-only, M11-088): TryObservableBoundingQuad50 reports MISSING and Free throws.
+        // reach: unit (the CustomType00 object is a substituted input production cannot create).
         using var f=new Fixture();f.Add(7,200,22);f.Robot.CarryingOwner!.SetCarrying(7);f.Robot.Progression!.Unlocked.Remove(10);
-        var charger=new ObservableObject(9,ObjectType.Charger_Basic,Array.Empty<KnownMarker>())
+        var charger=new ObservableObject(9,ObjectType.CustomType00,Array.Empty<KnownMarker>())
         {Pose=new Pose3d(Rotation3d.Identity,new Vec3(300,0,0),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known};
         f.M.World.AddLocatedObject(charger);
         using var pose=NativeOriginPose(f);var beacon=AddNativeBeacon(f,pose,175f);
