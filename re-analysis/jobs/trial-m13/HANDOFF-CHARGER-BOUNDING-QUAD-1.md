@@ -37,7 +37,8 @@ On our system the located classes are cubes, the charger (base ObservableObject:
   from the cited corners and sizes with the arithmetic in comments.
 - `HikingBringBeaconCandidatesTests` (two tests) and `PickupChildrenNativeTests` (one test) used the charger as the
   "unavailable footprint" object. The charger is now built, so they use `CustomType00` instead (labelled); the charger
-  case is covered by the new unit tests.
+  case is covered by the new unit tests. The first full gate (483f548f) found a fourth such test,
+  `DriveInDesperationNativeTests.ChargerObstacleSkipsUnavailablePapAndPreservesCompletionDelivery`, repaired the same way.
 - `FreeplayTests.TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees` (production): **RollBlockOnSide is chosen
   again** with the charger located. The DockWithObject assertion is pinned to its absence by a new gap (below).
 
