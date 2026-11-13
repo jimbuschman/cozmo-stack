@@ -689,10 +689,14 @@ public sealed record PreActionObstacle(Quadrilateral? Quad, Point2f Centre, uint
         return MathF.Sqrt(dx * dx + dy * dy) <= (float)(CubeGeometry.CubeSizeMm / 2);
     }
 
-    /// <summary>The footprint entry for <paramref name="o"/> at its own pose with <paramref name="padding"/>: exact for a cube whose pose is yaw-only, otherwise the stand-in.</summary>
+    /// <summary>The footprint entry for <paramref name="o"/> at its own pose with <paramref name="padding"/>: the object's own slot +0x50 quad, or the stand-in when that slot is unavailable.</summary>
+    // fidelity: M12-036, M13-025
+    // G10 0x0062C280..0x0062C294: quad = vtbl[+0x50](obj, obj+4 (the own pose, not re-rooted), padding); the class body decides (Block 0x004E62C0 and
+    // Markerless 0x00502C50 re-root, Charger base 0x0087713A uses it as passed). A false (unported shared hull branch, or a class the stack does not
+    // build) has already reported MISSING; the entry stays the labelled stand-in, which the native approach refuses (ManipulationSystem.NativeObstacles).
     public static PreActionObstacle For(ObservableObject o, float padding)
     {
-        Footprint.TryGetBoundingQuadXY(o, o.Pose, padding, out var quad);
+        if (!o.TryObservableBoundingQuad50(o.NativePose, padding, out var quad)) quad = null;
         return new PreActionObstacle(quad, new Point2f((float)o.Pose.Translation.X, (float)o.Pose.Translation.Y), o.ObjectId);
     }
 }
@@ -728,10 +732,22 @@ public static class PreActionValidity
         foreach (var o in locatedObjects)
         {
             if (ignoreIds.Contains(o.ObjectId)) continue;
-            var size = CubeGeometry.SizeOf(o.Type);
-            var r = o.Pose.Rotation;
-            float rz = (float)(r[2, 0] * size.X + r[2, 1] * size.Y + r[2, 2] * size.Z);
-            float z = (float)o.Pose.Translation.Z;
+            // fidelity: M12-036, M13-025
+            // G6 0x0062C1EE..0x0062C1F4: the size from the object's slot +0x2C (cube 44^3; Charger 0x004EA672 -> +0xF0; markerless 0x00502DD0 -> 0x005026EC).
+            if (o.ObservableSize2C is not { } size)
+            {
+                // A class the stack does not build (SDK custom objects): no Z test is invented; the entry is the labelled stand-in, which the native
+                // approach refuses (ManipulationSystem.NativeObstacles).
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing($"M12-036/M13-025 GetObstacles 0x0062C1F0: slot +0x2C size is not built for {o.Type}; kept as the labelled stand-in");
+                result.Add(PreActionObstacle.For(o, padding));
+                continue;
+            }
+            // G7 0x0062C1E4..0x0062C1FC: rz = (Rotation3d of the OWN pose (obj+4, not re-rooted) * size).z, UnitQuaternion<float> (M11-065).
+            float rz = (float)o.NativePose.Quaternion.Rotate(size).Z;
+            // G8 0x0062C200..0x0062C216: the centre z from GetWithRespectToRoot(GetPose()).
+            float z;
+            using (var rooted = o.NativePose.GetWithRespectToRoot()) z = (float)rooted.Translation.Z;
+            // G9 0x0062C220..0x0062C27E: excluded only when both ends are >= maxZ or both <= minZ; NaN is never excluded.
             float bottom = z - 0.5f * rz, top = z + 0.5f * rz;
             if ((top <= minZ && bottom <= minZ) || (top >= maxZ && bottom >= maxZ)) continue;
             result.Add(PreActionObstacle.For(o, padding));
@@ -778,7 +794,7 @@ public static class PreActionValidity
         float cx = sx, cy = sy, lx = sx + perpX, ly = sy + perpY, rx = sx - perpX, ry = sy - perpY;
         for (int i = 0; i < n; i++)
         {
-            var own=PreActionObstacle.For(obj,0f); // native virtual bounding quad is called per sample
+            var own=PreActionObstacle.For(obj,0f); // fidelity: M12-036, M13-025 — vtbl[0x50](this, obj+4, 0), per class, called per sample
             if(own.IsStandIn)trace?.Add("IsPreActionPoseValid: own footprint is the M13-023 planar stand-in");
             var centre = new Point2f(cx, cy);
             var left = new Point2f(lx, ly);

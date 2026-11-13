@@ -318,7 +318,10 @@ public sealed class ManipulationSystem : IDisposable
         var carrying=owner.CarryingOwner??throw new NativeActionUnavailable("M12-036 actual carrying owner unavailable");
         using var root=main.GetWithRespectToRoot();
         var obstacles=PreActionValidity.GetObstacles(World.FindLocatedMatchingObjects(new BlockWorldFilter()),carrying.GetCarryingObjects(),root,NativeHeight(owner),0f);
-        if(obstacles.Any(o=>o.IsStandIn))throw new NativeActionUnavailable("M12-036 native obstacle footprint input unavailable; no planar stand-in on the native approach");
+        // fidelity: M12-036, M13-025 — every entry is the object's own slot +0x50 (0x0062C280..0x0062C294); a stand-in entry now means that slot
+        // returned false (an unported shared minAreaRect/hull branch, or a class the stack does not build), never a charger or markerless object.
+        if(obstacles.FirstOrDefault(o=>o.IsStandIn) is {} missing)
+            throw new NativeActionUnavailable($"M12-036/M13-025 native obstacle footprint unavailable for object {missing.ObjectId}: its slot +0x50 quad reached an unported branch or an unbuilt class; no planar stand-in on the native approach");
         return obstacles;
     }
     internal float NativeHeight(EngineRobot? scopedOwner=null)

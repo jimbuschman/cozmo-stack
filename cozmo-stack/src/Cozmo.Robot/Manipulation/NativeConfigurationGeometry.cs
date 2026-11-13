@@ -48,6 +48,28 @@ internal sealed class NativeConfigurationGeometry
             throw new NativeConfigurationUnavailable("M13-023/024 admitted virtual footprint unavailable (not a native false)");
         return quad!;
     }
+    // fidelity: M13-025, M13-007
+    // Lambda P3 0x0062BA7A..0x0062BA86: the candidate's own slot +0x50 through its vptr, padding 0; no family/type check precedes it
+    // (lambda 0x0062B9FC..0x0062BB1E, walk 0x0061EC5E..0x0061ED70). Per class (M11-088 dispatch): cube Block 0x004E62A2 (thunk 0x004E690C),
+    // Charger base 0x0087713A (corners 0x004E9A50, pose as passed), MarkerlessObject 0x00502C32. A false is an unported shared branch, not a native false.
+    private static Quadrilateral CandidateQuad(ObservableObject candidate,Pose3d pose)
+    {
+        Require(pose);
+        if(!candidate.TryObservableBoundingQuad50(pose,0f,out var quad))
+            throw new NativeConfigurationUnavailable("M13-025/M11-088 candidate slot +0x50 footprint unavailable for "+candidate.Type+" (not a native false)");
+        return quad!;
+    }
+    // fidelity: M13-025, M13-007
+    // Lambda P5 0x0062BAA4..0x0062BAB6 -> GetDimInParentFrame<Z> 0x00557794..0x005577D2 reads the candidate's slot +0x2C (GetSize, 0x005577B4):
+    // cube 44^3; Charger 0x004EA672 -> +0xF0 = (96, 80, 31) stored 0x004E9D12..0x004E9D32; MarkerlessObject 0x00502DD0 -> GetSizeByType 0x005026EC.
+    // Local to this path: CubeGeometry.SizeOf (other callers) still returns 44 for markerless types.
+    private static Vec3 CandidateSize(ObservableObject candidate)=>candidate.ObservableSize2C
+        ??throw new NativeConfigurationUnavailable("M13-025 candidate slot +0x2C size is not bound for "+candidate.Type);
+    private static float CandidateDimZ(ObservableObject candidate,Pose3d pose)
+    {
+        var size=CandidateSize(candidate);
+        return (float)(Math.Abs(RotatedParentAxis.Get(pose.Rotation,2)) switch{3=>size.Z,2=>size.Y,_=>size.X});
+    }
     internal ObservableObject? Neighbor(ObservableObject obj,bool onTop,float tolerance=30f,BlockWorldFilter? suppliedFilter=null)
     {
         Require(obj.NativePose);using var reference=obj.NativePose.GetWithRespectToRoot(); // 0x00626048
@@ -61,10 +83,10 @@ internal sealed class NativeConfigurationGeometry
             if(!Pose3d.GetWithRespectTo(candidate.NativePose,parent,relative))return false;
             var saved=relative.Translation;
             relative.Node!.Transform=new(relative.Quaternion,new Vec3(saved.X,saved.Y,z));
-            var quad=Quad(candidate,relative);
+            var quad=CandidateQuad(candidate,relative); // fidelity: M13-025, M13-007 (0x0062BA86, every located class)
             relative.Node.Transform=new(relative.Quaternion,saved); // source restores Z before dimensions/height
             if(!refQuad.Intersects(quad))return false;
-            float candidateDim=(float)Dimensions(candidate,relative).Z;
+            float candidateDim=CandidateDimZ(candidate,relative); // fidelity: M13-025, M13-007 (0x0062BAA4, only after P4)
             float surface=(float)saved.Z+candidateDim*(onTop?-0.5f:0.5f);
             return MathF.Abs(target-surface)<=tolerance+BitConverter.UInt32BitsToSingle(0x3727C5AC);
         });

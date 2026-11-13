@@ -250,8 +250,10 @@ public class DriveInDesperationNativeTests
         Assert.Equal(expected, target);
         f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
     }
-    // reach: supplied manager activation, located cube/height-overlapping charger and terminal child results;
+    // reach: supplied manager activation, located cube/height-overlapping unavailable-footprint obstacle and terminal child results;
     // actual ActionList D6 broadcast, PAP input and owned turns. 005D995C/9A54, 005D9C22, 005DA51E and 005DA354..A3CE.
+    // CHARGER-BOUNDING-QUAD-1: the charger's slot +0x50/+0x2C are now built (M12-036, M13-025), so the unavailable obstacle footprint is supplied by
+    // a class the stack does not build (CustomObject, SDK-only, M11-088), a substituted input production cannot create.
     [Theory]
     [InlineData(0u, true)]
     [InlineData(0x03000000u, false)]
@@ -261,7 +263,7 @@ public class DriveInDesperationNativeTests
         f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
         f.Robot.HasExternalInterface = true;
         f.Add(7, 250);
-        var charger = new ObservableObject(9, ObjectType.Charger_Basic, ChargerGeometry.Markers)
+        var charger = new ObservableObject(9, ObjectType.CustomType00, Array.Empty<KnownMarker>())
         { Pose = new Pose3d(Rotation3d.Identity, new Vec3(100, 0, 22), parent: f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)), OriginId = f.Robot.CurrentOriginId, PoseState = PoseState.Known };
         f.M.World.AddLocatedObject(charger);
         var messages = new List<string>(); void Observe(string message) => messages.Add(message);

@@ -46,6 +46,8 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 16. **CHARGER-BOUNDING-QUAD-1:** your proposal; see its QUEUE row (M13-025). A live defect on the robot runtime.
 17. **USE-SECOND-CLOSEST-NATIVE-1:** see its QUEUE row (M12-004, now IMPLEMENTATION_GAP).
 18. **HARDWARE-CATALOG-T-R-JUDGES-1:** harness only; see its QUEUE row.
+19. **ROLL-AFTER-DRIVE-STANDALONE-1:** your proposal; see its QUEUE row (the roll stalls after its drive).
+20. **GET-SIZE-SLOT-RECORD-1:** records only; see its QUEUE row.
 
 Before job 10, run the pending gate on `origin/manager-gate` (6e111864 or later; GATE-REQUESTS.md). Legacy drive API:
 the operator chose to retire it (job 14).
