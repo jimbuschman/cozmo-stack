@@ -542,4 +542,104 @@ public sealed class LocalizeCrossOriginTests
         }
         finally { SteppedBehavior.MissingReported -= Missing; f.Rig.Engine.LogEntry -= logs.Enqueue; }
     }
+    /// <summary>
+    /// M11-044, LocalizeRobot's multi path on the one-cube cross-origin frame (census .scratch/LOCALIZE-MULTI-PAIR-CROSS-ORIGIN-TEST-1-census.md,
+    /// sections 1 and 2). AddAndUpdateObjects inserts the current-origin match first and, when that Insert returns 1, the cube known in the older origin
+    /// with the same observed object and distance (C1, 0x0062115E..0x006211A4). The equal distances keep the source map's ascending origin order
+    /// (L4 0x0050D234..0x0050D2CE, L5 0x0050D6CA..0x0050D71A), so the old-origin pair (o1) comes first and is not current: the current pair's matched ID
+    /// is stored and its pointer cleared (L8 0x0050D39C..0x0050D3A0). The first LocalizeToObject is cross-origin (Rejigger, C3); the second re-finds the
+    /// cube by ID in the new current origin (X19, L10/L10a 0x0061F3E0..0x0061F50A), the counterpart that UpdateObjectOrigins kept (C4), and localizes
+    /// same-origin (C7: no second Rejigger). Each call increments [Robot+0x2B0] once (S10 0x00515152).
+    /// </summary>
+    // reach: production — real rendered frames through the queued vision worker and the engine tick, as LCO_Production path 0. Substitutions:
+    // (1) the delocalization is a direct call of the production Robot::Delocalize (EngineRobot.Delocalize), not a robot-state trigger, which this
+    // rig does not drive; (2) IsOfflineEngine is cleared by reflection on an engine started through the offline seam; (3) the fixture's {"sim":true}
+    // firmware report and outer calibration. The sim flag makes CheckForUnexpectedMovement exit at once (0x0063E3B4..0x0063E3B8); its SetNewPose call
+    // (0x0063E87E, a possible third writer of [Robot+0x2B0]) sits in the detected-movement branch, which a stationary physical robot would not take
+    // either, so none of the asserted values depends on the sim-only branches.
+    [Fact]
+    public void LCO_MultiPair_TheRelocalizingFrameLocalizesTwiceAndReFindsTheCurrentPairByIdInTheNewOrigin()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var missing = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        void Missing(string line) => missing.Enqueue(line);
+        var logs = new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();
+        var lines = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        void OnLog(EngineLogEntry e) => logs.Enqueue(e);
+        void OnLine(string l) => lines.Enqueue(l);
+        f.Rig.Engine.LogEntry += OnLog;
+        SteppedBehavior.MissingReported += Missing;
+        var world = f.M.World;
+        world.Log += OnLine;
+        try
+        {
+            M4ControlTests.ConnectCube(f.Rig, slot: 0);
+            f.Image(1, cube: true, cubeX: 150); f.Motors();
+            typeof(CozmoEngine).GetProperty("IsOfflineEngine", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .SetValue(f.Robot.Engine, false);
+            f.Image(2, cube: true, cubeX: 150); f.Motors();
+            uint cubeId = world.ConnectedObjectIdForActiveId(0) ?? throw new Xunit.Sdk.XunitException("cube not connected");
+            Assert.Equal(cubeId, world.LocalizedToObjectId);
+            uint o1 = f.Robot.CurrentOriginId;
+            var cubeInO1 = world.GetLocatedObjectById(cubeId)!;
+            f.Robot.Delocalize(false);
+            f.Motors();
+            uint o2 = f.Robot.CurrentOriginId;
+            Assert.NotEqual(o1, o2);
+
+            bool relocalized = false;
+            uint frameBefore = 0, frameAfter = 0, observedAt = 0;
+            List<AbsoluteLocalizationUpdate> sent = new();
+            for (uint i = 3; i <= 6 && !relocalized; i++)
+            {
+                // Bind every assertion to this frame only.
+                lines.Clear(); logs.Clear();
+                frameBefore = f.Robot.PoseFrameId;
+                observedAt = f.Robot.StoredState!.Timestamp;                       // the image's timestamp (Fixture.Image stamps the frame with it)
+                int mark = f.Rig.Mark();
+                f.Image(i, cube: true, cubeX: 150);
+                frameAfter = f.Robot.PoseFrameId;
+                f.Motors();
+                sent = f.Rig.SentSince(mark).OfType<AbsoluteLocalizationUpdate>().ToList();
+                relocalized = f.Robot.CurrentOriginId == o1;
+            }
+            Assert.True(relocalized, "the robot did not relocalize into the cube's origin");
+            var frameLines = lines.ToList();
+            var frameLogs = logs.ToList();
+
+            // 1. L8 (0x0050D39C..0x0050D3B0): the old-origin pair is first, so the current pair's matched ID (the cube's) is stored, once. The engine text
+            // is "Match in current frame not farthest. Storing ID=%d to recheck when encountered while localizing."; the stack writes it to World.Log
+            // (census F1). No re-find miss (L11) and no localization failure (L13).
+            Assert.Single(frameLines, l => l.Contains("StoringMatchedObjectID") && l.Contains($"Storing ID={cubeId} "));
+            Assert.DoesNotContain(frameLines, l => l.Contains("MissingMatchedObjectInCurrentFrame"));
+            Assert.DoesNotContain(frameLines, l => l.Contains("CrossFrameLocalizeFailure"));
+            // 2. X2 in the first call only (C3); the second call is same-origin (X1 0x00515850 bne to S12, C7).
+            Assert.Single(frameLogs, l => l.Name == "Robot.LocalizeToObject.RejiggeringOrigins");
+            // Supporting, a log (best effort): S0's debug "Robot.LocalizeToObject" only in the first call, since E.ID != [Robot+0x2B8] (-1 after
+            // Delocalize); in the second E.ID == [Robot+0x2B8] (0x005154C4..0x005154F4, C3/C7).
+            Assert.Single(frameLogs, l => l.Name == "Robot.LocalizeToObject");
+            // 3. Two LocalizeToObject calls, each S10 +0x2B0 += 1 (0x00515152). Caveat (census C10): the other writers were found by a linear sweep of
+            // .text (0x0050FF02, 0x0051032C ctor, 0x00515152; AddVisionOnlyStateToHistory callers 0x0051271C SetNewPose, 0x00515774, 0x005160BC), which
+            // can miss a writer in a desynchronised region; SetNewPose is not expected on this stationary observation frame.
+            Assert.Equal(unchecked(frameBefore + 2), frameAfter);
+            Assert.Equal(frameAfter, f.Robot.PoseFrameId);
+            // 4. S14 SetLocalizedTo(E_A) (0x00512458 +0x2B8 := ID, 0x0051245E +0x2C4 := 1), both calls.
+            Assert.Equal(cubeId, world.LocalizedToObjectId);
+            Assert.Equal((byte)1, world.Robot2C4);
+            // 5. C9 (0x00514710..0x00514792, 0x00512734..0x005127C2): one 0x45 from the latest vision-only state, overwritten in place at the same t by
+            // the second call: origin o1, frame = the second increment, timestamp = the observation time.
+            var update = Assert.Single(sent);
+            Assert.Equal(o1, update.PoseOriginId);
+            Assert.Equal(unchecked(frameBefore + 2), update.PoseFrameId);
+            Assert.Equal(observedAt, update.Timestamp);
+            // 6. C4: the unique-type counterpart in o1 keeps its ID and identity (allowed ID = the moved object's own, 0x0062902E..0x00629038;
+            // CopyWithNewPose onto it, 0x006292DC..0x006292F6), and bucket o2 is erased (0x0062064C).
+            var located = world.GetLocatedObjectById(cubeId);
+            Assert.Same(cubeInO1, located);
+            Assert.Equal(o1, located!.OriginId);
+            Assert.Empty(world.FindLocatedMatchingObjects(new BlockWorldFilter { OriginMode = OriginMode.Custom, AllowedOrigins = { o2 } }));
+            Assert.DoesNotContain(missing, m => m.Contains("LOCALIZE-CROSS-ORIGIN-1") || m.Contains("PATH-ORIGIN-CHANGE-REPLAN-1"));
+        }
+        finally { world.Log -= OnLine; SteppedBehavior.MissingReported -= Missing; f.Rig.Engine.LogEntry -= OnLog; }
+    }
 }
