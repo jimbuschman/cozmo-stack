@@ -119,70 +119,100 @@ public static class ManipTool
             }
         }
 
+        // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the drive modes run the native runners on the canonical robot's ActionList, and the
+        // behaviour modes run the configured native behaviour through the Selection chooser's ExecuteBehaviorByID (0x0060AA58), the public input.
+        robot.Engine.LogLine += l => { if (l.Contains("PathComponent.SelectPlanner", StringComparison.Ordinal) || l.Contains("robot.planner_selected", StringComparison.Ordinal)) Say("  engine: " + l); };
+        // Observed only: every completed action (engine ActionCompleted) and every outbound EnableStopOnCliff on the wire (transport frame trace, as M5Hw reads it).
+        var completed = new System.Collections.Concurrent.ConcurrentQueue<ActionCompletionReport>();
+        robot.Engine.ActionCompleted += report => { completed.Enqueue(report); Say($"  action completed: tag {report.Tag} type 0x{report.ActionType:X} result 0x{report.Result:X8}"); };
+        var cliffSends = new System.Collections.Concurrent.ConcurrentQueue<bool>();
+        robot.Transport.FrameTrace += frame =>
+        {
+            if (!frame.Outbound || frame.Frame is not { } f) return;
+            foreach (var message in f.Messages)
+                if (message.Payload.Length >= 2 && message.Payload[0] == (byte)RobotMessageId.EnableStopOnCliff)
+                {
+                    bool enable = EnableStopOnCliff.Read(new CladReader(message.Payload.AsMemory(1))).Enable;
+                    cliffSends.Enqueue(enable); Say($"  -> EnableStopOnCliff({(enable ? "true" : "false")}) on the wire");
+                }
+        };
+        string Completions(int from) => string.Join(", ", completed.Skip(from).Select(c => $"type 0x{c.ActionType:X}=0x{c.Result:X8}"));
         switch (mode)
         {
             case "--flip":
             {
-                var f = new DriveAndFlipBlockAction(m, cube.ObjectId);
-                var r = await f.RunAsync(cts.Token);
-                foreach (var l in f.Trace) Say("  " + l);
+                // NativeDriveAndFlipRunner (K15-K19): the 9-arg IDriveToInteractWithObject compound; the face-turn maximum is Radians 0, as the legacy tool's default.
+                var f = new NativeDriveAndFlipRunner(m, cube.ObjectId, 0f);
+                var r = await RunOnActionList(f, cts.Token);
                 succeeded = r == ActionResult.Success;
-                outcome = $"DriveAndFlipBlock success={(succeeded ? "yes" : "no")}; action={r}; lift raised: {f.Flip?.LiftRaised}; cube now {vision.World.GetObjectById(cube.ObjectId)?.PoseState}";
+                outcome = $"DriveAndFlipBlock success={(succeeded ? "yes" : "no")}; action={r}; flip result={(ActionResult)f.Flip.State}; cube now {vision.World.GetObjectById(cube.ObjectId)?.PoseState}";
                 break;
             }
             case "--wheelie":
             {
-                var ctx = new BehaviorContext { Robot = robot, Triggers = obb is null ? new AnimationTriggerMap() : AnimationTriggerMap.Load(obb) };
-                var b = new PopAWheelieBehavior(m);
-                b.Step += l => Say("  wheelie: " + l);
-                string detail = await RunBehavior(b, ctx, cts.Token, "an upright located cube and the animation library");
-                bool cliffStopRestored = b.Trace.Any(x => x.Contains("EnableStopOnCliff(true)", StringComparison.Ordinal));
-                succeeded = b.Succeeded && cliffStopRestored;
-                outcome = $"PopAWheelie success={(succeeded ? "yes" : "no")}; PoppedWheelie={b.Succeeded}; retries={b.Retries}; "
-                        + $"cliff stop restored={(cliffStopRestored ? "yes" : "no")}; {detail}";
+                // Configured NativePopAWheelieBehavior ("PopAWheelie"). Every signal below is observed: the engine's PoppedWheelie objective broadcast (22, tag 0x8B),
+                // and the outbound EnableStopOnCliff messages on the wire (false while it rears, true afterwards).
+                bool popped = false; int actionsBefore = completed.Count, cliffBefore = cliffSends.Count;
+                using var objective = robot.Engine.AnimationMessages.SubscribeMessage(0x8B, true, p => { if (p is uint id && id == (uint)BehaviorObjective.PoppedWheelie) popped = true; });
+                string detail = await RunConfigured("PopAWheelie", cts.Token, null);
+                var sends = cliffSends.Skip(cliffBefore).ToList();
+                int disabledAt = sends.IndexOf(false);
+                bool cliffStopRestored = disabledAt >= 0 && sends.Skip(disabledAt + 1).Contains(true);
+                succeeded = popped && cliffStopRestored;
+                outcome = $"PopAWheelie success={(succeeded ? "yes" : "no")}; PoppedWheelie={popped}; "
+                        + $"cliff stop restored={(cliffStopRestored ? "yes" : "no")}; EnableStopOnCliff sends observed: [{string.Join(", ", sends.Select(e => e ? "EnableStopOnCliff(true)" : "EnableStopOnCliff(false)"))}]; "
+                        + $"actions completed: [{Completions(actionsBefore)}]; {detail}";
                 break;
             }
             case "--knockover":
             {
-                var ctx = new BehaviorContext { Robot = robot, Triggers = obb is null ? new AnimationTriggerMap() : AnimationTriggerMap.Load(obb) };
-                var b = new KnockOverCubesBehavior(m, "SparksKnockOverCubes", 2);
-                b.Step += l => Say("  knockover: " + l);
+                // Configured NativeKnockOverCubesBehavior ("SparksKnockOverCubes", minimumStackHeight 2 in its shipped config).
                 Say($"stacks: {string.Join("; ", m.Configurations.Stacks.Select(s => string.Join("/", s.BlockIds)))}");
-                string detail = await RunBehavior(b, ctx, cts.Token, "a located stack of two and the animation library");
-                succeeded = b.KnockedOver == true;
-                outcome = $"KnockOver success={(succeeded ? "yes" : "no")}; knockedOver={b.KnockedOver}; {detail}";
+                int actionsBefore = completed.Count;
+                string detail = await RunConfigured("SparksKnockOverCubes", cts.Token, null);
+                var native = robot.Engine.Robot?.NativeBehaviorRuntime?.Bound.GetValueOrDefault("SparksKnockOverCubes") as NativeKnockOverCubesBehavior;
+                // The native behaviour exposes no success result: no "KnockOver success=" line is printed (the HardwareCatalog T judge needs one; the manager decides).
+                succeeded = false;
+                outcome = $"KnockOver: {detail}; actions completed: [{Completions(actionsBefore)}]; "
+                        + $"observation: blocks whose up axis changed during the run = [{string.Join(",", native?.Tipped ?? (IReadOnlyCollection<uint>)Array.Empty<uint>())}], attempts={native?.Attempts}";
                 break;
             }
             case "--driveto":
             {
                 int sentBeforeDrive = m.Paths.Sent.Count;
-                var d = new DriveToObjectAction(m, cube.ObjectId, PreActionType.Docking);
-                var r = await d.RunAsync(cts.Token);
-                foreach (var l in d.Trace) Say("  " + l);
+                // NativeDriveToObjectRunner (D1..D9): DriveToObjectAction(Docking), DriveToPoseAction(head true, manual +0x8C) to ALL the pre-action poses, then the turn.
+                var d = new NativeDriveToObjectRunner(m, cube.ObjectId);
+                var r = await RunOnActionList(d, cts.Token);
+                foreach (var l in d.Action.Trace) Say("  " + l);
                 var sentByDrive = m.Paths.Sent.Skip(sentBeforeDrive).ToList();
                 int lines = sentByDrive.OfType<AppendPathSegmentLine>().Count();
                 int arcs = sentByDrive.OfType<AppendPathSegmentArc>().Count();
                 int pointTurns = sentByDrive.OfType<AppendPathSegmentPointTurn>().Count();
+                var planners = m.GetNativePlanners();
+                if (planners.Lattice is { } lattice && ReferenceEquals(planners.Current, lattice))
+                    Say($"lattice plan: planner '{lattice.Name}', {lattice.Backend.Env.ObstacleCount} obstacle(s)");
                 Say($"path segments sent: lines={lines} arcs={arcs} pointTurns={pointTurns}");
                 succeeded = r == ActionResult.Success;
-                outcome = $"DriveToObject success={(succeeded ? "yes" : "no")}; action={r}; chosen pre-dock pose {d.Chosen}";
+                outcome = $"DriveToObject success={(succeeded ? "yes" : "no")}; action={r}; chosen pre-dock goal index {d.Drive?.GoalIndex.ToString() ?? "none (already in position)"}";
                 break;
             }
             case "--pickup":
             {
-                var h = new DockHelper(m);
-                var r = await h.RunAsync(cube.ObjectId, PreActionType.Docking, () => new PickupObjectAction(m, cube.ObjectId), cts.Token);
-                foreach (var l in h.Trace) Say("  " + l);
+                // DriveToPickupObjectAction (NativeDriveToPickupBeaconRunner, 0x0055C464..548): drive to the Docking pose, then PickupObjectAction. One action; the
+                // PickupBlockHelper retries (M12-009) belong to the behaviours that own the helper.
+                var p = new NativeDriveToPickupBeaconRunner(m, cube.ObjectId);
+                var r = await RunOnActionList(p, cts.Token);
                 succeeded = r == ActionResult.Success && m.Docking.Carrying.IsCarrying(cube.ObjectId);
-                outcome = $"Pickup success={(succeeded ? "yes" : "no")}; action={r}; attempts={h.Attempts}; carrying={m.Docking.Carrying.CarriedObjectId}; error signals sent={m.Docking.ErrorSignalsSent}";
+                outcome = $"Pickup success={(succeeded ? "yes" : "no")}; action={r}; carrying={m.Docking.Carrying.CarriedObjectId}; error signals sent={m.Docking.ErrorSignalsSent}";
                 break;
             }
             case "--roll":
             {
                 var before = cube.UpAxisFromPose();
-                var h = new DockHelper(m);
-                var r = await h.RunAsync(cube.ObjectId, PreActionType.Rolling, () => new RollObjectAction(m, cube.ObjectId), cts.Token);
-                foreach (var l in h.Trace) Say("  " + l);
+                // DriveToRollObjectAction (NativeDriveToRollRunner, R9 0x0055C9E6..0x0055CB26). One action; the RollBlockHelper's three attempts (M12-016)
+                // belong to the behaviours that own the helper.
+                var roll = new NativeDriveToRollRunner(m, cube.ObjectId);
+                var r = await RunOnActionList(roll, cts.Token);
                 await Task.Delay(1500);
                 var after = vision.World.GetObjectById(cube.ObjectId)?.UpAxisFromPose();
                 bool axisChanged = after is not null && after.Value != before;
@@ -200,17 +230,17 @@ public static class ManipTool
             }
             default:
             {
-                var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
-                var b = new StackBlocksBehavior(m);
-                b.Step += l => Say("  stack: " + l);
-                if (!b.IsRunnable(ctx)) { succeeded = false; outcome = "StackBlocks success=no; not runnable (needs two located upright cubes and the animation library)"; break; }
-                await b.StartAsync(ctx, new BehaviorScope(), cts.Token);
-                double t = 0;
-                while (b.Update(ctx, t) && !cts.IsCancellationRequested) { await Task.Delay(33); t += 33; }
-                b.Stop(cts.IsCancellationRequested ? BehaviorStopReason.Cancelled : BehaviorStopReason.Completed);
-                succeeded = b.StackedSuccessfully && !m.Docking.Carrying.IsCarryingObject;
-                outcome = $"StackBlocks success={(succeeded ? "yes" : "no")}; ended in phase {b.CurrentPhase}; "
-                        + $"carrying={m.Docking.Carrying.IsCarryingObject}; top={b.TopObjectId}; bottom={b.BottomObjectId}";
+                // Configured NativeStackBlocksBehavior ("StackBlocks"). The native behaviour exposes no success result: no "StackBlocks success=" line is printed
+                // (the HardwareCatalog R judge needs one; the manager decides). What is observed: the behaviour's run, the completed actions and the carry state.
+                int actionsBefore = completed.Count;
+                string detail = await RunConfigured("StackBlocks", cts.Token, null);
+                var native = robot.Engine.Robot?.NativeBehaviorRuntime?.Bound.GetValueOrDefault("StackBlocks") as NativeStackBlocksBehavior;
+                uint top = native?.Top ?? uint.MaxValue, bottom = native?.Bottom ?? uint.MaxValue;
+                m.Configurations.Update();
+                bool stacked = m.Configurations.Stacks.Any(s => s.BlockIds.Contains(top) && s.BlockIds.Contains(bottom));
+                succeeded = false;
+                outcome = $"StackBlocks: {detail}; actions completed: [{Completions(actionsBefore)}]; carrying={m.Docking.Carrying.IsCarryingObject}; "
+                        + $"observation: world model stack holding top {top} and bottom {bottom} = {(stacked ? "yes" : "no")}";
                 break;
             }
         }
@@ -229,6 +259,36 @@ public static class ManipTool
             }
             robot.Disconnect();
             return success ? 0 : 3;
+        }
+
+        // Queues a native runner on the canonical robot's ActionList (as DriveToPoseAction.RunAsync did) and waits for its completion callback.
+        async Task<ActionResult> RunOnActionList(ActionRunner runner, CancellationToken ct)
+        {
+            var owner = robot.Engine.Robot ?? throw new InvalidOperationException("MISSING: no native Robot owns an ActionList");
+            var done = new TaskCompletionSource<ActionResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            runner.AddCompletionCallback(result => { if (result != EngineActionResult.Running) done.TrySetResult((ActionResult)result); });
+            owner.ActionList.QueueAction(QueueActionPosition.Now, runner, 0);
+            using var cancellation = ct.Register(() => { owner.ActionList.Cancel(runner.Tag); done.TrySetResult(ActionResult.CancelledWhileRunning); });
+            return await done.Task;
+        }
+
+        // Selects the configured native behaviour through the Selection chooser (ExecuteBehaviorByID, numRuns 1) and waits until it has run and stopped.
+        async Task<string> RunConfigured(string id, CancellationToken ct, Action<IBehavior>? observe)
+        {
+            var owner = robot.Engine.Robot;
+            if (owner?.NativeBehaviorRuntime?.Bound.GetValueOrDefault(id) is not { } behavior) return $"{id} is not bound by the native runtime";
+            robot.ActivateHighLevelActivity("Selection");
+            await Task.Delay(200, ct).ContinueWith(_ => { });
+            robot.ExecuteBehaviorById((byte)Enum.Parse<BehaviorID>(id), 1);
+            bool started = false;
+            while (!ct.IsCancellationRequested)
+            {
+                bool current = robot.Engine.InvokeEngineRequest(() => ReferenceEquals(owner.BehaviorManagerOwner?.Current, behavior));
+                if (current) { started = true; observe?.Invoke(behavior); }
+                else if (started) break;
+                await Task.Delay(33, ct).ContinueWith(_ => { });
+            }
+            return started ? $"{id} ran and stopped" : $"{id} was not started by the Selection chooser (not runnable)";
         }
 
         async Task<string> RunBehavior(SteppedBehavior b, BehaviorContext ctx, CancellationToken ct, string needs)

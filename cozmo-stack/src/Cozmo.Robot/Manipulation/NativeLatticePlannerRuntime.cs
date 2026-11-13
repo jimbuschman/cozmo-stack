@@ -18,7 +18,6 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     private StateC _start;
     private readonly List<Pose3d> _goals=new(); // impl+C0: own nodes, source parent shared_ptr retained
     private readonly List<(byte Id,StateC C)> _goalContext=new(); // impl+88: admitted RAW pairs, not rounded outputs
-    private IEnumerable<uint>? _ignore;
     private LatticePlan? _total;
     private int _disposed;
     internal volatile bool F0,F1,F3;
@@ -91,7 +90,6 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         for(int i=_goals.Count-1;i>=0;i--)_goals[i].Dispose();
         _goals.Clear();
     }
-    internal void SetIgnore(IEnumerable<uint>? ignore)=>_ignore=ignore?.ToArray();
     public int ComputeNewPathIfNeeded(Pose3d start,bool force)
     {
         if(!Monitor.TryEnter(ContextMutex))return 2;
@@ -114,7 +112,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             if(force)_total=new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
             else
             {
-                _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,true,_ignore);
+                _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,true);
                 var closest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,stateLog);
                 nearest=closest;
                 if(closest.Distance>=20f)
@@ -134,7 +132,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             {Info("LatticePlanner.ReplanIfNeeded.InvalidStart","could not set start");return 0;}
             if(!_backend.CheckContextGoalsWithIds(_goalContext,new(),new()))
             {Info("LatticePlanner.ReplanIfNeeded.InvalidGoals","Goals may have moved into collision");return 0;}
-            _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,false,_ignore);
+            _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,false);
             _missing("M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump recipient at 0x004FF052..0x004FF30A remain incomplete");
             _searchNum=unchecked(_searchNum+1);Info("LatticePlannerImpl.GetPlan",$"searchNum: {unchecked((int)_searchNum)}");
             _backend.SetRunFlag(true);

@@ -434,10 +434,20 @@ internal sealed class Rig : IDisposable
         if (_heldPath is { } ep) { _heldPath = null; FollowPath(ep); }
     }
 
+    /// <summary>
+    /// Explicit offline firmware input for native DriveToPose paths (RETIRE-LEGACY-DRIVE-API-1): the native entry plans from the drive-center pose to drive-center goals
+    /// (P6 GetDriveCenterPose 0x005477A0; P9 ComputeDriveCenterPose 0x005135D0: -20 mm along the heading when nothing is carried, 0 when carrying), so the path's points are
+    /// drive-center points. When set, the fake robot treats each path point as its drive center and reports its main pose that offset back along the heading
+    /// (+20 mm when nothing is carried), as PopFirmwareScene does. Off by default: custom paths (DriveStraight, charger moves) keep the rig's main-pose following.
+    /// </summary>
+    public bool DriveCenterFollowing;
+
     private void FollowPath(ExecutePath ep)
     {
         Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Started });
         float wasX = X, wasY = Y;
+        double off = DriveCenterFollowing && Robot.Engine.Robot?.CarryingOwner?.CarriedObjectId is null ? 20.0 : 0.0;
+        double dcX = X - off * Math.Cos(Angle), dcY = Y - off * Math.Sin(Angle);
         // The fake robot follows each segment in wire order; arcs end at their sweep's end
         // point with a tangent heading, and lines end at their commanded position.
         // A transport batch can already contain another path's ClearPath after this ExecutePath.
@@ -452,10 +462,11 @@ internal sealed class Rig : IDisposable
             {
                 double cx = arc.XCenterMm, cy = arc.YCenterMm, r = arc.RadiusMm;
                 double a0 = arc.StartRad, sw = arc.SweepRad;
-                X = (float)(cx + r * Math.Cos(a0 + sw)); Y = (float)(cy + r * Math.Sin(a0 + sw)); Angle = (float)(a0 + sw + Math.Sign(sw) * Math.PI / 2);
+                dcX = cx + r * Math.Cos(a0 + sw); dcY = cy + r * Math.Sin(a0 + sw); Angle = (float)(a0 + sw + Math.Sign(sw) * Math.PI / 2);
             }
-            else if (seg is AppendPathSegmentLine ln) { X = ln.XEndMm; Y = ln.YEndMm; }
+            else if (seg is AppendPathSegmentLine ln) { dcX = ln.XEndMm; dcY = ln.YEndMm; }
             else if (seg is AppendPathSegmentPointTurn pt) Angle = pt.TargetAngleRad;
+            X = (float)(dcX + off * Math.Cos(Angle)); Y = (float)(dcY + off * Math.Sin(Angle));
             CurrentPathSegment=unchecked((sbyte)i);State();
             // Firmware reports the current index while its queue drains. The native doler may
             // append more before this mock reports completion; consume actual wire messages.

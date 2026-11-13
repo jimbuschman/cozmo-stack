@@ -13,8 +13,9 @@ public sealed class M5X19BuilderTests
         internal ActionResult? Result;
         protected override void OnStart()=>RunAction("DriveToPose",async ct=>
         {
-            using var goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0));
-            using var drive=new DriveToPoseAction(M){Goal=goal};
+            // RETIRE-LEGACY-DRIVE-API-1: native drive; drive-center firmware input (Rig.DriveCenterFollowing) and a 30 mm goal the short planner takes (P6/P9: dc start -20, dc goal 10; d^2 < 1600, SelectPlanner); the legacy straight-line stand-in for a missing lattice is gone.
+            using var goal=new Pose3d(Mat3.Identity,new Vec3(30,0,0));
+            using var drive=NativeDriveTestGoals.To(M, goal);
             return await drive.RunAsync(ct);
         },r=>{Result=r;Finish();});
     }
@@ -24,7 +25,7 @@ public sealed class M5X19BuilderTests
     // reach: production — behavior -> action list -> streamer; offline firmware acknowledges actual delivered Start/End.
     public void BehaviorDriveWithDefaultInputsPlaysItsEndAnimationThenReturnsSuccess()
     {
-        using var signals=SignalTestContext.Install();using var rig=new Rig();
+        using var signals=SignalTestContext.Install();using var rig=new Rig();rig.DriveCenterFollowing=true;
         rig.M.DrivingAnimationsForTest=null;rig.M.ErasePlannerObstaclesForTest=null;
         // Start the real engine runner against the offline firmware, including its normal streamer tick.
         // Explicit CA/CB protocol inputs acknowledge delivered Start/End messages; no claim about firmware timing.
@@ -69,7 +70,7 @@ public sealed class M5X19BuilderTests
     public void QueueNowDeletesRunningDriveWithItsStoredNativeResult(bool straight)
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();rig.HoldPath=true;
-        IActionRunner drive=straight?new DriveStraightAction(rig.M,100):new DriveToPoseAction(rig.M){Goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0))};
+        IActionRunner drive=straight?new DriveStraightAction(rig.M,100):NativeDriveTestGoals.To(rig.M, new Pose3d(Mat3.Identity,new Vec3(30,0,0))); // 30 mm: the short planner (see BehaviorDrive above)
         var result=straight?((DriveStraightAction)drive).RunAsync(default):((DriveToPoseAction)drive).RunAsync(default);
         rig.Pump();Assert.Equal(EngineActionResult.Running,drive.State);
         var queue=rig.Robot.Engine.Robot!.ActionList;var records=new List<RobotCompletedAction>();queue.Watcher.RobotCompletedActionBroadcast+=records.Add;

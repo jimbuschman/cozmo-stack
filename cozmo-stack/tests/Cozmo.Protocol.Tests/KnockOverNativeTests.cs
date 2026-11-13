@@ -104,7 +104,7 @@ public sealed class KnockOverNativeTests
         try
         {
             Assert.Equal(0x0F,action.Type); //54F23C proxy copies Flip type; request below remains type5.
-            Assert.Equal(PreActionType.Flipping,action.Drive!.Action.ActionType);Assert.True(action.Drive.Action.NativeInputs);Assert.False(action.Face!.SayName);
+            Assert.Equal(PreActionType.Flipping,action.Drive!.Action.ActionType);Assert.False(action.Face!.SayName);
             Assert.Equal(new[]{unchecked((int)0xFFFFFFFE),0x29,0x2C,0x0F},action.Children.Select(c=>c.Type));
             Assert.True(action.Flip.CheckPreActionPose);Assert.Equal((byte)6,action.Flip.GetCompletionVariant());Assert.Equal(6u,action.Flip.RequiredTrackMask);Assert.Equal(30f,action.Flip.TimeoutSeconds);
             var wait=action.DriveAndWait!.Children[1];Assert.Equal(0x33,wait.Type);Assert.Equal(float.MaxValue,wait.TimeoutSeconds);Assert.Equal(0,wait.Init());

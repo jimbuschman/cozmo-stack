@@ -602,25 +602,16 @@ public static class ShippedBehaviors
         PlayAnimBehavior.LoadShipped(obbRoot, problems);
 
     /// <summary>
-    /// The 13 shipped manipulation behaviours (M12), by their config ids: two PickUpCube, four PutDownBlock,
-    /// four RollBlock, two StackBlocks and the PickUpAndPutDownCube spark. Their parameters beyond the class
-    /// (block configurations to ignore, isBlockRotationImportant) are read where the class uses them.
+    /// The hand-built manipulation behaviours (M12), by their config ids: the four PutDownBlock. The legacy PickUpCube, RollBlock, StackBlocks and
+    /// PickUpAndPutDownCube classes were retired with the legacy drive API (operator 2026-11-13, RETIRE-LEGACY-DRIVE-API-1); the factory binds the
+    /// native classes for those ids when it has the native Robot.
     /// </summary>
     public static IReadOnlyList<IBehavior> Manipulation(Cozmo.Robot.Manipulation.ManipulationSystem m) => new IBehavior[]
     {
-        new PickUpCubeBehavior(m, "SparksPickupSingleCubeForPyramid"),
-        new PickUpCubeBehavior(m, "SparksPickupSingleCubeToStack"),
         new PutDownBlockBehavior(m, "PutDownBlock"),
         new PutDownBlockBehavior(m, "PutDownBlockNothingToDo"),
         new PutDownBlockBehavior(m, "PyramidPutDownBlock"),
         new PutDownBlockBehavior(m, "SparksPutDownBlock"),
-        new RollBlockBehavior(m, "RollBlockOnSide"),
-        new RollBlockBehavior(m, "RollBlockOnSideLowScore"),
-        new RollBlockBehavior(m, "Hiking_RollCube", blockRotationImportant: false),
-        new RollBlockBehavior(m, "SparksRollBlock", blockRotationImportant: false),
-        new StackBlocksBehavior(m, "StackBlocks"),
-        new StackBlocksBehavior(m, "SparksStackBlock"),
-        new PickUpAndPutDownCubeBehavior(m, "SparksPickUpCube"),
     };
 
     /// <summary>
@@ -633,24 +624,15 @@ public static class ShippedBehaviors
     {
         var list = new IBehavior[]
         {
-        new KnockOverCubesBehavior(m, "KnockOverCubes", minimumStackHeight: 3),
-        new KnockOverCubesBehavior(m, "SparksKnockOverCubes", minimumStackHeight: 2),
-        new PopAWheelieBehavior(m, "PopAWheelie"),
-        new PopAWheelieBehavior(m, "SparksPopAWheelie"),
+        // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the legacy KnockOverCubes, PopAWheelie, CubeLiftWorkout, BuildPyramidBase/BuildPyramid,
+        // RespondPossiblyRoll and BringCubeToBeacon entries (drive step: the retired legacy drive API) are removed; the factory binds the native classes.
         new RamIntoBlockBehavior(m, "RamIntoBlock"),
-        new CubeLiftWorkoutBehavior(m, "CubeLiftWorkout"),
-        new CubeLiftWorkoutBehavior(m, "SparksCubeLiftWorkout"),
-        new BuildPyramidBaseBehavior(m, "BuildPyramidBase"),
-        new BuildPyramidBaseBehavior(m, "BuildPyramid", buildTop: true),
-        new RespondPossiblyRollBehavior(m, "PyramidRespondPossiblyRoll"),
         OnConfigSeenBehavior.RespondToPyramidBase(m),
         new CantHandleTallStackBehavior(m, "CantHandleTallStack"),
         ReactToConfigurationBehavior.ReactToPyramid(m),
         ReactToConfigurationBehavior.ReactToStackOfCubes(m),
         new ThinkAboutBeaconsBehavior(m, "Hiking_ThinkAboutBeacons", 175),
         new ThinkAboutBeaconsBehavior(m, "SparksThinkAboutBeacons", 75),
-        new BringCubeToBeaconBehavior(m, "Hiking_BringCubeToBeacon", 45),
-        new BringCubeToBeaconBehavior(m, "SparksBringCubeToBeacon", 5),
         new DriveOffChargerBehavior(m, "DriveOffCharger", 60),
         new DriveOffChargerBehavior(m, "Hiking_DriveOffCharger", 45),
         new ReactToOnChargerBehavior("ReactToOnCharger", 300, 330),

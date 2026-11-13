@@ -241,8 +241,11 @@ public sealed class FlipBlockAction
 ///
 /// <para><c>DriveToObjectAction::CheckIfDone</c> (0x00559A86..0x00559AE6) hands the function a FRESH EMPTY vector and an in-position bool of 0 (0x00559A9C). L1..L4 never write that
 /// bool (the helper over the empty vector returns 0 and <c>GetPossiblePoses</c> never touches it), so the flag stays 0 and the drive ends with 0x04000001 (DidNotReachPreActionPose)
-/// after the drive, whatever the function returned. The outer compound IGNORES that failure (<c>AddAction(inner, true, false)</c>, 0x0055B370), so <see cref="RunAsync"/> goes on to the
+/// after the drive, whatever the function returned. The outer compound IGNORES that failure (<c>AddAction(inner, true, false)</c>, 0x0055B370), so the action goes on to the
 /// turns and the flip and returns the flip's result; the 0x04000001 is never the action's result.</para>
+///
+/// <para>The legacy async RunAsync (the legacy DriveToObjectAction flow plus the flip) was retired with the legacy drive API (operator 2026-11-13,
+/// RETIRE-LEGACY-DRIVE-API-1); the action runs as <c>NativeDriveAndFlipRunner</c> (K15-K19). This class keeps the installers and the static pose query.</para>
 /// </summary>
 // fidelity: M12-035
 public sealed class DriveAndFlipBlockAction
@@ -381,81 +384,4 @@ public sealed class DriveAndFlipBlockAction
     public static bool MaxTurnIsPositive(double maxTurnRad) =>
         EngineRadians.Rescale(maxTurnRad) > 0 && !EngineRadians.IsNear(maxTurnRad, 0.0, BitConverter.UInt32BitsToSingle(0x3727C5AC));
 
-    public async Task<ActionResult> RunAsync(CancellationToken cancel)
-    {
-        // fidelity: M13-028
-        // IDriveToInteractWithObject ctor 0x0055B258..0x0055B264: when the robot is carrying the object's id it warns and adds NO drive, wait-lambda or turn actions (branch to 0x0055B45E); the
-        // derived constructor still adds the FlipBlockAction, whose own Init then answers 0x03000004 for a carried object (GetPreActionPoses, M12-031).
-        if (_m.Docking.Carrying.IsCarrying(ObjectId))
-        {
-            _trace.Add("DriveAndFlipBlockAction: the robot is carrying the object: no drive, wait or turn actions are added (0x0055B258..0x0055B264)");
-            var carried = await Flip.RunAsync(cancel);
-            _trace.AddRange(Flip.Trace);
-            return carried;
-        }
-        var drive = new DriveToObjectAction(_m, ObjectId, PreActionType.Flipping)
-        {
-            PosesFunction = InstalledPosesFunction,
-        };
-        var d = await drive.RunAsync(cancel);
-        _trace.AddRange(drive.Trace);
-        // fidelity: M12-035, M13-014
-        // IDriveToInteractWithObject 0x0055B1F4: the drive and a WaitForLambda action (type 0x33, ctor 0x0055B554, timeout FLT_MAX) are added to an INNER sequential compound with
-        // AddAction(action, false, false) (0x0055B2E8, 0x0055B356); the inner compound is added to the outer one with AddAction(inner, true, false) (0x0055B370: the first bool,
-        // ignoreFailure, is 1), and so are the two turns. The outer compound therefore IGNORES a failed drive and goes on to the turns and the flip; the inner compound being sequential,
-        // a failed drive means the wait-lambda is not reached. STAND-IN, MISSING (M8): the WaitForLambda body (its lambda's condition) and ICompoundAction's ignoreFailure handling in its
-        // UpdateInternal are unread, so the drive's result is simply ignored here and the wait is not modelled. The result of the action is the flip's (the last action); the derived
-        // constructor adds the FlipBlockAction with (false, false) (0x0055E2EE movs r3,#0; 0x0055E2F0), so a failed flip fails the compound and is returned.
-        if (d != ActionResult.Success) _trace.Add($"DriveToObjectAction -> {d}, ignored by the outer compound (AddAction ignoreFailure = 1); WaitForLambda not reached/modelled (M8 MISSING)");
-        // fidelity: M13-014
-        // IDriveToInteractWithObject 0x0055B1F4 adds TWO actions when maxTurn > 0: a
-        // TurnTowardsLastFacePoseAction (vtable overwritten from TurnTowardsFaceAction at
-        // 0x0055B3C4..0x0055B3D8) and a TurnTowardsObjectAction (0x0055B42E/0x0055B43C), both with
-        // failure ignored (AddAction(action, true)). The sayName argument is the caller's
-        // (DriveAndFlipBlockAction forwards its own at 0x0055E23E).
-        if (MaxTurnIsPositive(MaxTurnTowardsFaceRad))
-        {
-            using var face = new TurnTowardsLastFacePoseAction(_m.Vision, MaxTurnTowardsFaceRad, SayName);
-            var f = await face.RunAsync(cancel);
-            _trace.Add($"TurnTowardsLastFacePose (max {MaxTurnTowardsFaceRad:F3} rad): {f}, ignored");
-            bool t = await _m.TurnTowardsObjectAsync(ObjectId, MaxTurnTowardsFaceRad, cancel);
-            _trace.Add($"TurnTowardsObjectAction (max {MaxTurnTowardsFaceRad:F3} rad): {t}, ignored");
-        }
-        var r = await Flip.RunAsync(cancel);
-        _trace.AddRange(Flip.Trace);
-        return r;
-    }
-}
-
-/// <summary>
-/// The engine's <c>DriveToFlipBlockPoseAction</c> (ctor 0x0055EB04, M12-035): a <c>DriveToObjectAction(robot, id, ActionType 5, 0.0, false, 0.0, false)</c> whose <c>[this+0x44] = 9</c>
-/// (<see cref="Field0x44"/>) and whose <c>+0x150</c> function is <b>L3</b> (0x0055EB74; operator() 0x0055F592): <see cref="DriveAndFlipBlockAction.GetPossiblePoses"/> with
-/// <c>closestOnly = 0</c> (the third argument is overwritten with 0; the function never uses the flag). <see cref="ShouldDriveToClosestPreActionPose"/> (0x0055EC04) installs
-/// <b>L4</b> (0x0055EC2A; 0x0055F60E): the same with <c>closestOnly = b</c> and the in-position flag passed through untouched. NO C# CALLER: nothing in this stack builds the action
-/// (its engine users are not built), so it is reached only from tests. As with <see cref="DriveAndFlipBlockAction"/>, the drive's CheckIfDone ends 0x04000001 (the flag stays 0, see <see cref="DriveAndFlipBlockAction"/>).
-/// </summary>
-// fidelity: M12-035
-public sealed class DriveToFlipBlockPoseAction
-{
-    private readonly ManipulationSystem _m;
-
-    public DriveToFlipBlockPoseAction(ManipulationSystem m, uint objectId)
-    {
-        _m = m;
-        Drive = new DriveToObjectAction(m, objectId, PreActionType.Flipping);
-        Drive.PosesFunction = (ObservableObject obj, out IReadOnlyList<PreActionPose> poses, ref bool inPos) =>
-            DriveAndFlipBlockAction.GetPossiblePoses(_m, obj, out poses, closestOnly: false, null);
-    }
-
-    /// <summary><c>[this+0x44] = 9</c> (0x0055EB66); its meaning is not in the inventory.</summary>
-    public int Field0x44 => 9;
-    public DriveToObjectAction Drive { get; }
-    public IReadOnlyList<string> Trace => Drive.Trace;
-
-    /// <summary><c>ShouldDriveToClosestPreActionPose(bool b)</c> 0x0055EC04: installs L4.</summary>
-    public void ShouldDriveToClosestPreActionPose(bool b) =>
-        Drive.PosesFunction = (ObservableObject obj, out IReadOnlyList<PreActionPose> poses, ref bool inPos) =>
-            DriveAndFlipBlockAction.GetPossiblePoses(_m, obj, out poses, closestOnly: b, null);
-
-    public Task<ActionResult> RunAsync(CancellationToken cancel) => Drive.RunAsync(cancel);
 }

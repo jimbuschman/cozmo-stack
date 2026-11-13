@@ -43,16 +43,6 @@ public sealed class M12X2BuilderTests
         finally{EngineErrorState.ErrorFlagSet=prior;}
     }
     [Fact]
-    public void OriginMissingBelongsToOuterInputGate()
-    {
-        using var r=new M4ControlTests.Rig();var p=r.Robot.Motion.Path;var logs=new List<string>();r.Engine.LogLine+=logs.Add;
-        p.StartDrivingToPose(1,new(),false,()=>new(2,Array.Empty<PathSegment>(),0),()=>{},_=>{});
-        Assert.Contains(logs,s=>s.Contains("goal origin/ComputeDriveCenterPose gates unbuilt"));
-        p.GoalRootOriginInput=_=>1;p.ContainsOriginInput=_=>true;logs.Clear();
-        p.StartDrivingToPose(1,new(),false,()=>new(2,Array.Empty<PathSegment>(),0),()=>{},_=>{});
-        Assert.DoesNotContain(logs,s=>s.Contains("goal origin/ComputeDriveCenterPose gates unbuilt"));
-    }
-    [Fact]
     public void SegmentRouteSeesHeadLiftCliffTouchBeforeImu()
     {
         using var r=new M4ControlTests.Rig();r.ToSynced();r.Calibrate();r.Tick();r.State();

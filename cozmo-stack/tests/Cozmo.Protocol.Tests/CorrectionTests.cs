@@ -422,7 +422,7 @@ public class CorrectionTests
         var obb = ObbRoot();
         if (obb is null) return;
         if (MarkerLibrary.EmbeddedOrNull is null) return;
-        using var rig = new Rig();
+        using var rig = new Rig(); rig.DriveCenterFollowing = true; // native drive: drive-center firmware input (RETIRE-LEGACY-DRIVE-API-1)
         Assert.True(rig.M.LoadPlanner(obb));
         // a real cube sitting on the goal: DriveToPoseAction imports the world's obstacles itself, so this is
         // the obstacle the planner actually sees
@@ -432,7 +432,7 @@ public class CorrectionTests
         rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
 
         using var goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22));
-        var drive = new DriveToPoseAction(rig.M) { Goal = goal };
+        var drive = NativeDriveTestGoals.To(rig.M, goal);
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.True(task.IsCompleted, "the drive did not finish: " + string.Join(" | ", drive.Trace));
@@ -466,7 +466,7 @@ public class CorrectionTests
         rig.M.Planner!.PlanningStarted += () => rig.M.Planner.SetRunFlag(false); // controlled cancellation input
         rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
 
-        var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)) };
+        var drive = NativeDriveTestGoals.To(rig.M, new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)));
         var r = SignalTestContext.Result(drive.RunAsync(default), () =>
         {
             rig.Pump();

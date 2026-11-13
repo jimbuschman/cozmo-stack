@@ -3,7 +3,7 @@ using Cozmo.Transport;
 namespace Cozmo.Robot.Manipulation;
 
 // fidelity: M12-029, M12-022, M12-011
-// 55850C/5592C6/559650/559880: ordinary type0 native action; public type6 remains separate.
+// 55850C/5592C6/559650/559880: ordinary type0 native action; type6 (4-arg ctor 0x005587B8) has no built form (RETIRE-LEGACY-DRIVE-API-1).
 internal class NativeDriveToObjectRunner:NativeVisionRunner
 {
     internal readonly DriveToObjectAction Action;
@@ -21,7 +21,7 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
     {ScopedOwner=owner;Action.NativeOwner=owner;_parentCurrent=parentCurrent;}
     internal NativeDriveToObjectRunner(ManipulationSystem m,uint id,PreActionType type):base(m,0x0A,4)
     {
-        Action=new(m,id,type){NativeInputs=true};
+        Action=new(m,id,type);
         _sequence=new(()=>m.Robot.Engine.Timer.SecondsF){SuppressTrackLocking=true,SourceLog=SourceLog};
         _sequence.SeedNativeEmptyCompletion();
     }

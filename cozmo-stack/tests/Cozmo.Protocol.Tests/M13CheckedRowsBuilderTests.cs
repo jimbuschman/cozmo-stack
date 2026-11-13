@@ -219,7 +219,7 @@ public sealed class M13CheckedRowsBuilderTests
     {
         using var rig=new M4ControlTests.Rig();rig.ToSynced();
         var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(rig.Robot,vision);
-        var drive=new DriveToPoseAction(m);var straight=new DriveStraightAction(m,10,20,false);
+        var drive=new DriveToPoseAction(m,false,false);var straight=new DriveStraightAction(m,10,20,false);
         rig.Robot.Motion.Path.DriveToPoseStatus=3;
         rig.Robot.Motion.Path.Abort();Assert.False(rig.Robot.Motion.Path.IsActive);
         int mark=rig.Mark();drive.Dispose();straight.Dispose();

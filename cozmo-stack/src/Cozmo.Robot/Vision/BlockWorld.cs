@@ -1021,9 +1021,6 @@ public sealed partial class BlockWorld
     // fidelity: M11-044 - supplied native GetWithRespectTo result per marker, in list order.
     internal Func<ObservableObject, KnownMarker, Pose3d?>? MarkerPoseInCamera;
     internal Func<EngineRobot, EngineRobot.CurrentCameraScope>? NativeCurrentCamera;
-    /// <summary>Whether the robot's PathComponent (Robot+0x5C) has a plan in flight (status mask 0xE) that was started by the legacy DriveToPose entry,
-    /// which cannot replan. Stack machinery (PATH-ORIGIN-CHANGE-REPLAN-1): holds off a cross-origin localization only for such a path.</summary>
-    internal Func<bool>? PathInFlight;
     internal Func<int>? NativeLocalizationGeneration;
     /// <summary>How many times <see cref="SetLocalizedTo"/> ran an object through it without <see cref="MarkerPosesRelativeToCamera"/> (the loop was not run; M11-044).</summary>
     public int UnbuiltSetLocalizedToMarkerLoops { get; private set; }
@@ -1244,20 +1241,8 @@ public sealed partial class BlockWorld
             UnbuiltLocalizeToObjectCalls++;
             return SetLocalizedToCore(existing, false) ? 0u : 1u;
         }
-        // Stack limitation, visible (manager, 2026-11-11; PATH-ORIGIN-CHANGE-REPLAN-1): the engine follows a cross-origin localization with
-        // PathComponent's HandlePossibleOriginChanges (0x0064980C) -> RejiggerTargetsAndReplan (0x006499D0) on the path's next status-3 update. The
-        // stack builds that for paths started by the native DriveToPose entry (M12-032), which are not held off here. A path started by the legacy
-        // DriveToPose entry cannot replan (its NativePlannerSet.Goals are borrowed from the caller, so the Rejigger's in-place re-expression would
-        // rewrite the caller's own goal objects), so only while such a path is in flight (statuses 1/2/3) a
-        // cross-origin pair is stopped before S2 (no history, pose, origin or 0x45 write); LocalizeRobot logs CrossFrameLocalizeFailure and a later
-        // frame, once the path ends, takes the full branch. The split itself depends only on E and the current origin, which S2..S10 do not change.
-        // Same-origin localization is unaffected.
-        if (PathInFlight?.Invoke() == true && !PoseTreeNode.HasSameRoot(existing.NativePose.Node, owner.GetNativeOrigin(owner.CurrentOriginId).Node))
-        {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044/M12-032 LocalizeToObject cross-origin pair while a legacy-entry DriveToPose path is in flight: that entry cannot replan (RejiggerTargetsAndReplan 0x006499D0), so the pair is stopped before any write and no localization update is sent (PATH-ORIGIN-CHANGE-REPLAN-1)");
-            UnbuiltLocalizeToObjectCalls++;
-            return 1;
-        }
+        // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the PATH-ORIGIN-CHANGE-REPLAN-1 cross-origin hold for legacy-entry paths is removed with that
+        // entry; every path now replans through HandlePossibleOriginChanges (0x0064980C) -> RejiggerTargetsAndReplan (0x006499D0) as the engine does.
         // fidelity: M11-044 — S2 0x00515614..0x00515622: GetComputedStateAt(O[+0x1C], &hist, &key), exact time, key requested.
         HistRobotState? hist = null; uint key = 0;
         uint lookup = owner.PoseHistory.GetComputedNative(observed.LastObservedTimestamp, ref hist, true, ref key);

@@ -87,30 +87,4 @@ public class PickupVerifyTests
         Assert.Null(rig.Vision.World.GetLocatedObjectByIdHelper(obj.ObjectId)); // native deletion frees the object; do not assert its former state fields.
     }
 
-    /// <summary>
-    /// The dock helper gives up after two attempts, which is what PickupBlockHelper allows:
-    /// RespondToPickupResult 0x005B8192 retries only while the count is <= 1, and its log is built with
-    /// a literal 2 at 0x005B814A.
-    /// </summary>
-    [Fact]
-    public void TheDockHelperAllowsTwoAttempts()
-    {
-        Assert.Equal(2, Cozmo.Robot.Manipulation.DockHelper.MaxAttempts);
-        Assert.Equal(2, new Cozmo.Robot.Manipulation.DockHelper(null!).AttemptLimit);
-    }
-
-    /// <summary>
-    /// A roll gets three, not two. <c>RollBlockHelper::StartRollingAction</c> compares its own attempt
-    /// count at helper+0x124 with the literal 3 (<c>cmp r0, #3</c> at 0x005B9F0E) and calls
-    /// <c>MarkTargetAsFailedToRoll</c> at or above it. The limit is per helper, not shared: the roll
-    /// helper's constructor at 0x005B98D4 copies only the callback, two words and a Radians out of its
-    /// RollBlockParameters and zeroes that counter, so nothing in the parameters carries it.
-    /// </summary>
-    [Fact]
-    public void ARollGetsThreeAttempts()
-    {
-        Assert.Equal(3, Cozmo.Robot.Manipulation.DockHelper.MaxRollAttempts);
-        Assert.Equal(3, new Cozmo.Robot.Manipulation.DockHelper(null!)
-                        { AttemptLimit = Cozmo.Robot.Manipulation.DockHelper.MaxRollAttempts }.AttemptLimit);
-    }
 }

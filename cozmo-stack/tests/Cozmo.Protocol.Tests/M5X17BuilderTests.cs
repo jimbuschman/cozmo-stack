@@ -30,8 +30,10 @@ public sealed class M5X17BuilderTests
     [Fact]
     public void InitRunsBeforeNoGoalFailureWithExactArgumentsAndCleanupOrder()
     {
-        using var r=new SourceRig();var h=new Handler();using var d=new DriveToPoseAction(r.M){DrivingAnimations=h,RequiredTrackMask=7,Tag=123,SuppressTrackLocking=true};
-        Assert.Equal((int)ActionResult.BadPose,d.Init());Assert.Equal((byte)7,h.Arguments.Item1);Assert.Equal(123u,h.Arguments.Item2);Assert.True(h.Arguments.Item3);Assert.False(h.Arguments.Item4);
+        using var r=new SourceRig();var h=new Handler();using var d=new DriveToPoseAction(r.M,false,false){DrivingAnimations=h,RequiredTrackMask=7,Tag=123,SuppressTrackLocking=true};
+        // No goals set: DriveToPoseAction::Init I1 (handler Init first, 0x0055A876..0x0055A888) then I2: goals-set byte [+0x78]==0 gives 0x0300000F
+        // (r8 0x03000005 + 0xA, 0x0055A920..0x0055A974). The legacy stack Init returned BadPose 0x03000005 here (stack value, retired with that Init).
+        Assert.Equal(unchecked((int)0x0300000F),d.Init());Assert.Equal((byte)7,h.Arguments.Item1);Assert.Equal(123u,h.Arguments.Item2);Assert.True(h.Arguments.Item3);Assert.False(h.Arguments.Item4);
         Assert.Equal(0,h.State);var order=new List<string>();d.LifecycleCallObserved=order.Add;r.M.PathIsActiveForTest=()=>true;r.M.ErasePlannerObstaclesForTest=_=>{};d.AbortPath=()=>{};
         d.Dispose();Assert.Equal(new[]{"Abort","ErasePlanner:True","ErasePlanner:False","DestroyDriving"},order);Assert.Equal("Destroy",h.Calls.Last());
     }
@@ -39,7 +41,7 @@ public sealed class M5X17BuilderTests
     [Fact]
     public void EndStateHoldsAndFreshPoseAndStatusDetermineTheResultAfterCompletion()
     {
-        using var r=new SourceRig();var h=new Handler{EndWait=true};using var d=new DriveToPoseAction(r.M){DrivingAnimations=h,Goal=Pose3d.Identity};
+        using var r=new SourceRig();var h=new Handler{EndWait=true};using var d=NativeDriveTestGoals.Unconverted(r.M,Pose3d.Identity);d.DrivingAnimations=h;
         Assert.Equal(ActionResult.Running,d.CheckIfDone(Tick(4)));Assert.Equal(3,h.State);
         Assert.Equal(ActionResult.Running,d.CheckIfDone(Tick(0)));Assert.Equal(1,h.Calls.Count(c=>c=="End"));
         h.State=4;Assert.Equal(ActionResult.PathPlanningFailedAbort,d.CheckIfDone(Tick(0)));Assert.Equal(1,h.Calls.Count(c=>c=="End"));
@@ -51,7 +53,7 @@ public sealed class M5X17BuilderTests
     [Fact]
     public void FollowingCallsStartEveryTickAndNativeOldCounterModuloLogsOneAndEleven()
     {
-        using var r=new SourceRig();var h=new Handler();using var d=new DriveToPoseAction(r.M){DrivingAnimations=h,Tag=unchecked((uint)-3)};var entries=new List<EngineLogEntry>();r.Rig.Engine.LogEntry+=entries.Add;
+        using var r=new SourceRig();var h=new Handler();using var d=new DriveToPoseAction(r.M,false,false){DrivingAnimations=h,Tag=unchecked((uint)-3)};var entries=new List<EngineLogEntry>();r.Rig.Engine.LogEntry+=entries.Add;
         for(int i=0;i<11;i++)Assert.Equal(ActionResult.Running,d.CheckIfDone(Tick(3,sent:65535,received:9,segment:-5)));
         Assert.Equal(11,h.Calls.Count(c=>c=="Start"));Assert.Equal(11,d.FollowingPathTicks);
         var texts=entries.Where(e=>e.Name=="DriveToPoseAction.CheckIfDone.WaitingForPathCompletion").Select(e=>e.Text).ToArray();Assert.Equal(2,texts.Length);
@@ -86,9 +88,9 @@ public sealed class M5X17BuilderTests
     [Fact]
     public void TimeoutBypassesTailAndRetryReinitializesTheSameSharedHandler()
     {
-        using var r=new SourceRig();r.Rig.Tick(1000);var h=new Handler();using var timeout=new DriveToPoseAction(r.M){DrivingAnimations=h,Goal=Pose3d.Identity,Initialized=true,StartTime=0,State=EngineActionResult.Running,TimeoutSeconds=0};
+        using var r=new SourceRig();r.Rig.Tick(1000);var h=new Handler();using var timeout=NativeDriveTestGoals.To(r.M,Pose3d.Identity);timeout.DrivingAnimations=h;timeout.Initialized=true;timeout.StartTime=0;timeout.State=EngineActionResult.Running;timeout.TimeoutSeconds=0;
         Assert.Equal(EngineActionResult.Timeout,timeout.Update());Assert.DoesNotContain("End",h.Calls);
-        using var retry=new DriveToPoseAction(r.M){DrivingAnimations=h,Goal=Pose3d.Identity,RetriesRemain=1,SuppressTrackLocking=true,TimeoutSeconds=100};
+        using var retry=NativeDriveTestGoals.To(r.M,Pose3d.Identity);retry.DrivingAnimations=h;retry.RetriesRemain=1;retry.SuppressTrackLocking=true;retry.TimeoutSeconds=100;
         r.M.DriveTickForTest=_=>Tick(4,new Pose3d(Mat3.Identity,new Vec3(100,0,0)));
         Assert.Equal(EngineActionResult.Running,retry.Update());Assert.Equal(1,h.Calls.Count(c=>c=="Init"));
         Assert.Equal((uint)ActionResult.FailedTraversingPath,retry.Update());Assert.Equal(2,h.Calls.Count(c=>c=="Init"));
@@ -116,7 +118,7 @@ public sealed class M5X17BuilderTests
     [Fact]
     public void NativeFailureAndPlanningTimeoutUseSourceKeysAndUnequalIdsSetTheErrorFlag()
     {
-        using var r=new SourceRig();var h=new Handler();using var d=new DriveToPoseAction(r.M){DrivingAnimations=h,Goal=Pose3d.Identity};
+        using var r=new SourceRig();var h=new Handler();using var d=NativeDriveTestGoals.Unconverted(r.M,Pose3d.Identity);d.DrivingAnimations=h;
         var entries=new List<EngineLogEntry>();r.Rig.Engine.LogEntry+=entries.Add;d.AbortPath=()=>{};
         Assert.Equal(ActionResult.PathPlanningFailedAbort,d.CheckIfDone(Tick(0)));
         Assert.Contains(entries,e=>e.Level==EngineLogLevel.Info&&e.Channel=="Unnamed"&&e.Name=="DriveToPoseAction.CheckIfDone.Failure"&&e.Text.EndsWith("Robot driving to pose failed"));

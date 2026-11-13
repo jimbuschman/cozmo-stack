@@ -54,5 +54,7 @@
   <ItemGroup>
     <!-- The codec internals are tested directly; QuantVals in particular guards a regression that hung the decoder. -->
     <InternalsVisibleTo Include="Cozmo.Protocol.Tests" />
+    <!-- RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the Conformance hardware tools (assembly cozmo-conformance) reach the native runners instead of the retired legacy drive API. -->
+    <InternalsVisibleTo Include="cozmo-conformance" />
   </ItemGroup>
 </Project>

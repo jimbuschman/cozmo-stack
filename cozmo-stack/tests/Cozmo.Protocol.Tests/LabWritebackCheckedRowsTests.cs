@@ -116,15 +116,7 @@ public sealed class LabWritebackCheckedRowsTests:IDisposable
     }
     [Fact] public void FirstRobotUsesStoredIdOrderRatherThanSortedOrConnectedRobotGuess()
     {using var robot=Robot();var first=robot.Engine.Robots.AddRobot(7,false);robot.Engine.Robots.AddRobot(1,false);Assert.Same(first,robot.Engine.Robots.GetFirstRobot());}
-    [Fact] public void PyramidRoleGettersPreserveOutputOnInvalidAndCopyAllUintBits()
-    {
-        using var robot=Robot();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(robot,vision);var behavior=new BuildPyramidBaseBehavior(m);uint value=91;
-        Assert.False(behavior.TryGetBaseBlockId(ref value));Assert.Equal(91u,value);
-        foreach(var name in new[]{"BaseBlockId","StaticBlockId","TopBlockId"})typeof(BuildPyramidBaseBehavior).GetProperty(name)!.SetValue(behavior,0xF0000000u);
-        Assert.True(behavior.TryGetBaseBlockId(ref value));Assert.Equal(0xF0000000u,value);value=2;Assert.True(behavior.TryGetStaticBlockId(ref value));Assert.Equal(0xF0000000u,value);value=3;Assert.True(behavior.TryGetTopBlockId(ref value));Assert.Equal(0xF0000000u,value);
-        foreach(var name in new[]{"BaseBlockId","StaticBlockId","TopBlockId"})typeof(BuildPyramidBaseBehavior).GetProperty(name)!.SetValue(behavior,uint.MaxValue);
-        value=73;Assert.False(behavior.TryGetBaseBlockId(ref value));Assert.False(behavior.TryGetStaticBlockId(ref value));Assert.False(behavior.TryGetTopBlockId(ref value));Assert.Equal(73u,value);
-    }
+    // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the legacy BuildPyramidBaseBehavior role-getter test was deleted with that class.
     [Fact] public void UnrepresentedFirstRobotNvOwnerDoesNotBorrowPrimaryRobotQueue()
     {
         using var robot=Robot();robot.Engine.Robots.AddRobot(7,false);robot.Engine.Robots.AddRobot(1,false);var lab=robot.Engine.Experiments;lab.SetAssignmentVectorsForTest(new[]{A()},Array.Empty<LabAssignmentPair>());var missing=new List<string>();SteppedBehavior.MissingReported+=missing.Add;

@@ -236,10 +236,10 @@ public class NavigationTests
         using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null) return;
-        using var rig = new Rig();
+        using var rig = new Rig(); rig.DriveCenterFollowing = true; // native drive: drive-center firmware input (RETIRE-LEGACY-DRIVE-API-1)
         Assert.True(rig.M.LoadPlanner(obb));
         using var goalInput=At(250, 120, Math.PI / 2);
-        var drive = new DriveToPoseAction(rig.M) { Goal = goalInput };
+        var drive = NativeDriveTestGoals.To(rig.M, goalInput);
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
@@ -257,25 +257,21 @@ public class NavigationTests
         using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null || Lib is null) return;
-        using var rig = new Rig();
+        using var rig = new Rig(); rig.DriveCenterFollowing = true; // native drive: drive-center firmware input (RETIRE-LEGACY-DRIVE-API-1)
         Assert.True(rig.M.LoadPlanner(obb));
         rig.Cube = CubeAt(260, 0);
         Assert.Single(rig.Frame().Objects);
-        var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
-        var task = drive.RunAsync(default);
-        SignalTestContext.Run(task, () => rig.Pump());
-        Assert.True(task.Result == ActionResult.Success, "result=" + task.Result + " trace: " + string.Join(" | ", drive.Trace));
+        // The native DriveToObjectAction (NativeDriveToObjectRunner on the ActionList; the legacy RunAsync, its single reduced goal, its IgnoreObstacleIds and
+        // Chosen were retired, RETIRE-LEGACY-DRIVE-API-1): ALL pre-action poses are the goals (D5) and no ignore id is passed (D6, P13).
+        var drive = new NativeDriveToObjectRunner(rig.M, 7);
+        var task = NativeDriveTestGoals.RunOnActionList(rig.M, drive);
+        SignalTestContext.Run(task, () => { rig.Pump(); rig.Frame(); }); // the native turn towards the object (D7) verifies on camera frames
+        Assert.True(task.Result == ActionResult.Success, "result=" + task.Result + " trace: " + string.Join(" | ", drive.Action.Trace));
         // CM13-01: 0x00502424 selects all type3 map data; 0x004FDF64 reads its polygon with no target-ID filter.
         // The camera fixture admits this target to the map; soft obstacles still allow the pre-action drive.
         Assert.Equal(1, rig.M.Planner!.Env.ObstacleCount);
-        // the drive reached the pre-action pose it chose. The corrected geometry (C-E7) puts the front
-        // docking pose at ~90 mm for a cube at 260, not the refuted 97 mm standoff the old 150..175 range
-        // assumed; the chosen pose comes from the source-derived pre-action table. The path ends on the planner's lattice:
-        // RoundSafe 0x00855AF8 takes the free cell nearest the goal and cozmo_mprim.json's resolution_mm is 10, so the drive stops at
-        // the chosen pose rounded to 10 mm, wherever the observed cube puts that pose.
-        var chosen = drive.Chosen!.WorldPose;
-        Assert.True(Math.Abs(rig.X - Math.Round(chosen.Translation.X / 10) * 10) <= 0.01 && Math.Abs(rig.Y - Math.Round(chosen.Translation.Y / 10) * 10) <= 0.01,
-                    $"X={rig.X} Y={rig.Y} chosen={chosen} trace: " + string.Join(" | ", drive.Trace));
+        // (The former arrival check rounded the legacy single goal to the 10 mm lattice; the native planner goal is the drive-center goal (P9/P10), and the
+        // arrival itself is DriveToPoseAction's Ready-state test (M12-023), which the Success above already required.)
     }
 
     // ------------------------------------------------------------------ the charger
@@ -700,100 +696,6 @@ public class NavigationTests
     }
 
     /// <summary>
-    /// M15-011 / M15-009 / M15-008 / M15-019..M15-025 end to end: the beacon is added at the robot's pose w.r.t. its root (0x005E5F1A..0x005E5F36); the cube is picked up; TransitionToObjectPickedUp 0x005DF3E4 finds no free
-    /// cube to stack on (FindFreeCubeToStackOn, 0x005DF46A, takes the stack branch first when it finds one), reports PickupCube (0x005DF59C, BEFORE the pose search), FindFreePoseInBeacon (0x005E0378) picks
-    /// a pose, TryToPlaceAt (0x005DFEF4) runs the compound DriveToPlaceCarriedObjectAction + PlaceObjectOnGroundAction: the drive's path, then the message PlaceObjectOnGround (0x44) with StopAllMotors after it;
-    /// the robot's BLOCK_PLACED result releases the carried cube (HandlePickAndPlaceResult 0x00533780 is the only release), the status bit rises and clears, the verify action ends the action, and the
-    /// callback 0x005E188C logs "Successfully placed cube" and fires FireEmotionEvents with NO NeedActionCompleted.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()   // the name is the manifest's (M15-009/M15-011 `test` field)
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null)
-        {
-            if (Environment.GetEnvironmentVariable("COZMO_TESTS_WITHOUT_ASSETS") == "1") return;
-            throw new Xunit.Sdk.XunitException("the marker library is missing, so this live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
-        }
-        using var rig = new Rig(resources: PickupPyramidNativeExecutionTests.Resources());
-        Assert.True(rig.M.LoadPlanner(ObbRoot() ?? throw new Xunit.Sdk.XunitException("shipped planner assets required")));
-        SupplyRequestedPickupLoad(rig);
-        rig.Cube = CubeAt(330, -20);
-        Assert.Single(rig.Frame().Objects);
-        var ctx = Ctx(rig);
-        ctx.Needs = new NeedsManager(() => 0);
-        var bring = new BringCubeToBeaconBehavior(rig.M, "Hiking_BringCubeToBeacon", 45);
-        Assert.False(Runnable(bring, ctx));                                          // no beacon yet
-        var think = new ThinkAboutBeaconsBehavior(rig.M, "Hiking_ThinkAboutBeacons", 175);
-        Assert.True(Runnable(think, ctx));
-        RunToEnd(rig, think, ctx);
-        var beacon = rig.M.Whiteboard.GetActiveBeacon()!;
-        Assert.Equal(175, beacon.RadiusMm);
-        using (var robotRoot = rig.Robot.Engine.Robot!.MainPose.GetWithRespectToRoot())
-            Assert.Equal(robotRoot.Translation, beacon.Pose.Translation);            // M15-011/M15-084 S1: Robot::GetPose then GetWithRespectToRoot 0x004DF628 (at 0x005E5F24)
-        Assert.Contains(think.Trace, l => l.Contains("Selecting new beacon"));       // I1 0x005E5CF8..0x005E5D52 (best effort)
-        Assert.False(Runnable(think, ctx));
-        Assert.True(Runnable(bring, ctx));                                           // the cube at 330 mm is outside the 175 mm beacon
-        // The placement drive polls while following its path. An already-completed wait would
-        // spin inside the action and prevent this captured fixture from pumping the robot.
-        var firmwareTicks = new System.Collections.Concurrent.ConcurrentQueue<TaskCompletionSource>();
-        rig.M.Wait = (_, cancel) =>
-        {
-            if (cancel.IsCancellationRequested) return Task.FromCanceled(cancel);
-            var tick = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            firmwareTicks.Enqueue(tick);
-            signals.MarkFirmwareWorkPending();
-            return tick.Task;
-        };
-        int raised = 0; bool cleared = false;
-        double t = 0;
-        rig.Robot.Animations.ManualTicking = true;
-        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
-        bring.ActionTaskRunner = SignalTestContext.Schedule;
-        bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        uint target = bring.Candidate!.Value;
-        try
-        {
-            int modelSteps = 0;
-            while (bring.Update(ctx, t += 33))
-            {
-                rig.Pump();
-                while (firmwareTicks.TryDequeue(out var tick)) tick.TrySetResult();
-                if (bring.LastPlaceAction is not null) rig.NativeGroundCapture = true;
-                if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame();
-                PlacingFirmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false);
-                SignalTestContext.AdvanceBehavior(bring);
-                if (++modelSteps > 10000) throw new TimeoutException("placement exhausted its model ticks");
-            }
-        }
-        catch (TimeoutException) { throw new TimeoutException("the placement did not finish: " + string.Join(" | ", bring.Trace) + " || sent: " + string.Join(",", rig.Sent.Select(m => m.GetType().Name).Where(n => !n.StartsWith("Backpack")))); }
-        bring.Stop(BehaviorStopReason.Completed);
-        Assert.True(rig.NativeGroundCapturedFrames > 0, $"native ground frames: {rig.NativeGroundCapturedFrames}/{rig.NativeGroundCaptureAttempts}; trace: {string.Join(" | ",bring.Trace)}");
-        Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
-            $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
-        var trace = bring.Trace.ToList();
-        int needs = trace.FindIndex(l => l == "needs action PickupCube");
-        int decided = trace.FindIndex(l => l.Contains("TransitionToObjectPickedUp: Decided to place '") && l.Contains("on the floor at ["));
-        int placed = trace.FindIndex(l => l.Contains("onPlaceActionResult.Done: Successfully placed cube"));
-        int emotion = trace.FindIndex(l => l.Contains("emotion event HikingBrought"));
-        Assert.True(needs >= 0 && decided > needs && placed > decided && emotion > placed, string.Join(" | ", trace));
-        Assert.Equal(1, trace.Count(l => l.StartsWith("needs action")));              // none after the pose search: the floor callback has no needs call (M15-025)
-        // wire order: the pickup's DockWithObject, the drive's ExecutePath, then PlaceObjectOnGround and, after it, StopAllMotors
-        int dock = rig.Sent.FindIndex(m => m is DockWithObject);
-        int place = rig.Sent.FindIndex(m => m is PlaceObjectOnGround);
-        Assert.True(dock >= 0 && place > dock);
-        int stop = rig.Sent.FindIndex(place, m => m is StopAllMotors);
-        Assert.True(stop > place);
-        Assert.Contains(rig.Sent.Skip(dock).Take(place - dock), m => m is ExecutePath);
-        Assert.Single(rig.Sent.OfType<PlaceObjectOnGround>());
-        Assert.False(rig.M.Docking.Carrying.IsCarryingObject);                       // released by the robot's BLOCK_PLACED result
-        Assert.Equal(target, bring.Candidate);
-        Assert.Empty(rig.M.Whiteboard.GetObjectFailureTable(ObjectActionFailure.PlaceObjectAt));
-        Assert.Equal(0u, BitConverter.SingleToUInt32Bits(beacon.FailedToFindLocationTimeSec));    // no NoFreePoses
-    }
-
-    /// <summary>
     /// M15-011/M15-084, SelectNewBeacon 0x005E5F0C..0x005E5F36: Robot::GetPose (called at 0x005E5F1A), then GetWithRespectToRoot (0x004DF628, called at 0x005E5F24), handed to AddBeacon
     /// with the radius at [this+0x128]: the beacon sits at the whole robot pose w.r.t. its root, z included. Admission preserves the current pose's z rather than taking the packet's z.
     /// </summary>
@@ -823,37 +725,6 @@ public class NavigationTests
         Assert.Equal(0.5f, (float)beacon.Pose.AngleAroundZ, 5);
         Assert.Equal(175, beacon.RadiusMm);
         think.Stop(BehaviorStopReason.Cancelled);
-    }
-
-    /// <summary>
-    /// M15-008, TransitionToObjectPickedUp 0x005DF3E4: FindFreeCubeToStackOn (0x005DF46A) comes BEFORE the floor branch's NeedActionCompleted(PickupCube) (0x005DF59C). With a second cube
-    /// already inside the beacon (within radius - (carried X dimension + 10) = 121 mm of its centre, 0x0059C2BE..0x0059C2D8) the stack branch is taken: "Decided to place '..' on top of '..'"
-    /// (0x005DF4AA), no PickupCube report, and when the stack action succeeds StackCube (0x2A, 0x005E14B6) is reported then FireEmotionEvents (0x005E14BE).
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        SupplyRequestedPickupLoad(rig);
-        rig.Cube = CubeAt(300, -30);
-        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(230, 22, 22))));
-        rig.Frame();
-        Assert.True(rig.Vision.World.LocatedObjects.Count == 2, $"located {rig.Vision.World.LocatedObjects.Count}");       // both cubes are seen from the origin; the beacon is then made where the robot stands next, 120 mm ahead
-        rig.X = 120; rig.State();
-        var ctx = Ctx(rig);
-        ctx.Needs = new NeedsManager(() => 0);
-        var think = new ThinkAboutBeaconsBehavior(rig.M, "Hiking_ThinkAboutBeacons", 175);
-        RunToEnd(rig, think, ctx);
-        var bring = new BringCubeToBeaconBehavior(rig.M, "Hiking_BringCubeToBeacon", 45);
-        Assert.True(Runnable(bring, ctx));
-        SteppedBehavior.ResetMissingForTests();
-        RunToEnd(rig, bring, ctx, frames: () => !rig.M.Docking.Carrying.IsCarryingObject);
-        Assert.Contains(bring.Trace, l => l.Contains("Decided to place") && l.Contains("on top of"));
-        Assert.DoesNotContain(bring.Trace, l => l == "needs action PickupCube");
-        Assert.Contains(bring.Trace, l => l.Contains("PlaceRelObjectHelper") || l.Contains("TryToStackOn"));
     }
 
     /// <summary>
@@ -958,67 +829,6 @@ public class NavigationTests
         Assert.Equal(w.Workouts[^1], w.GetCurrentWorkout());                         // and it sticks there
     }
 
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void TheWorkoutBehaviourLiftsStrongThenWeakAndPutsTheCubeDown()
-    {
-        using var signals = SignalTestContext.Install();
-        var obb = ObbRoot();
-        if (obb is null || Lib is null) return;
-        using var rig = new Rig(resources: PickupPyramidNativeExecutionTests.Resources());
-        SupplyRequestedPickupLoad(rig);
-        rig.M.Workouts = WorkoutComponent.FromObb(obb);
-
-        rig.Cube = CubeAt(220, 10);
-        Assert.Single(rig.Frame().Objects);
-        var ctx = Ctx(rig);
-        var b = new CubeLiftWorkoutBehavior(rig.M, "CubeLiftWorkout");
-        NativePlaceGroundRunner? putDown=null;Task<ActionResult>? putDownTask=null;
-        bool highSent=false,sawLatch=false,lowSent=false;
-        b.ManualPutDownStartedForTest=(action,task)=>{putDown=action;putDownTask=task;};
-        try
-        {
-        Assert.True(Runnable(b, ctx));
-        RunToEnd(rig, b, ctx, frames: () =>
-        {
-            if(putDown is not null&&!lowSent)
-            {
-                if(putDown.StatusLatched)
-                {sawLatch=true;rig.State(flags:(uint)(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos));lowSent=true;}
-                else
-                {rig.State(flags:(uint)RobotStatusFlag.IsPickingOrPlacing);highSent=true;}
-            }
-            if (putDown is not null) rig.NativeGroundCapture = true;
-            return !rig.M.Docking.Carrying.IsCarryingObject;
-        });
-        Assert.True(highSent);Assert.True(sawLatch);Assert.True(lowSent);
-        Assert.True(rig.NativeGroundCapturedFrames > 0, $"native ground frames: {rig.NativeGroundCapturedFrames}/{rig.NativeGroundCaptureAttempts}");
-        Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
-            $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
-        Assert.NotNull(putDown);Assert.True(putDown.StatusLatched);
-        Assert.NotNull(putDownTask);Assert.True(putDownTask.IsCompletedSuccessfully);
-        Assert.Equal(ActionResult.Success,putDownTask.GetAwaiter().GetResult());
-        Assert.Equal(5, b.StrongLiftsPlanned);                                        // Confident 0 without a mood
-        Assert.Equal(1, b.WeakLiftsPlanned);
-        Assert.Equal(5, b.Trace.Count(l => l.Contains("WorkoutStrongLift_highEnergy")));
-        Assert.Equal(1, b.Trace.Count(l => l.Contains("WorkoutWeakLift_highEnergy")));
-        Assert.Contains(b.Trace, l => l.Contains("WorkoutTransition_highEnergy"));
-        Assert.Contains(b.Trace, l => l.Contains("WorkoutPutDown_highEnergy"));
-        Assert.Contains(b.Trace, l => l.Contains("WorkoutPostLift_highEnergy"));
-        Assert.Contains(b.Trace, l => l.Contains("PerformedWorkout, PerformedStrongWorkout"));
-        Assert.Equal(1, rig.M.Workouts.CompletedWorkouts);
-        Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
-        }
-        finally
-        {
-            var work=b.AsyncWorkCompletion;
-            b.ManualPutDownStartedForTest=null;
-            b.Stop(BehaviorStopReason.Cancelled);
-            SignalTestContext.Run(work,()=>rig.Pump());
-            if(putDownTask is not null)SignalTestContext.Run(putDownTask,()=>rig.Pump());
-        }
-    }
-
     // ------------------------------------------------------------------ the cube behaviours
 
     private static void Stack(Rig rig, double x, double y)
@@ -1027,207 +837,6 @@ public class NavigationTests
         rig.Cube = CubeAt(x, y);
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, CubeAt(x, y, 0, 66)));
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE3, CubeAt(x, y, 0, 110)));
-    }
-
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        // Observation only: retain the full worker fault before fixture teardown. No scheduler/clock changes.
-        var journal = new Cozmo.Conformance.DiagnosticJournal<string>(TextWriter.Null);
-        KnockOverCubesBehavior? b = null;
-        Exception? failure = null;
-        bool passed = false;
-        void Record(string kind, string text) => journal.Write(
-            $"{DateTime.UtcNow:O} thread={Environment.CurrentManagedThreadId} {kind}: {text}", "");
-        void OnStep(string text) => Record("Step", text);
-        void OnHandlerFault(Exception error) => Record("HandlerFaulted", error.ToString());
-        rig.Robot.HandlerFaulted += OnHandlerFault;
-        rig.Robot.State.HandlerFaulted += OnHandlerFault;
-        string DiagnosticSnapshot() => KnockOverDiagnosticSnapshot.Format(
-            () => b?.Trace.ToArray() ?? Array.Empty<string>(), // Trace's getter locks its owner.
-            journal.Snapshot,
-            () =>
-            {
-                var invocation = b?.AsyncInvocationStarted;
-                // This existing first-only observation may describe reach, or be reset/absent after Stop.
-                // Never wait for it, and never label it as the DriveAndFlip invocation.
-                Task? observed = invocation is { IsCompletedSuccessfully: true } ? invocation.Result : null;
-                string task = observed is null ? "unavailable" : $"id={observed.Id} status={observed.Status}"
-                    + (observed.IsFaulted ? Environment.NewLine + observed.Exception : "");
-                return $"firstInvocationWrapperStatus={invocation?.Status} firstObservedTask={task}";
-            },
-            () => $"snapshotUtc={DateTime.UtcNow:O} thread={Environment.CurrentManagedThreadId} phase={b?.CurrentPhase}"
-                + $" transportMs={rig.Clock.NowMs} actionSec={rig.ActionClockSec} engineSec={rig.Robot.Engine.Timer.Seconds}"
-                + $" robotTimestamp={rig.T} sentCount={rig.Sent.Count} dockResults={rig.DockResults}"
-                + $" pathLines={rig.Sent.OfType<AppendPathSegmentLine>().Count()}"
-                + $" driveToPoseStatus={rig.Robot.Motion.Path.DriveToPoseStatus} plannerStatus={rig.Robot.Motion.Path.PlannerStatus}");
-        try
-        {
-            Stack(rig, 260, 0);
-            var r = rig.Frame();
-            Assert.Equal(3, r.Objects.Count);
-            var stack = rig.M.Configurations.GetTallestStack();
-            Assert.NotNull(stack); Assert.Equal(3, stack!.StackHeight);
-            var sourceMain=rig.Robot.Engine.Robot!.MainPose.Translation;
-            var bottom=rig.Vision.World.GetLocatedObjectById(stack.BottomBlockId)!;
-            var relativeBottom=bottom.Pose.Translation-sourceMain;
-            float sourceYaw=(float)Math.Atan2(relativeBottom.Y,relativeBottom.X);
-            float sourceDistance=(float)(Math.Sqrt(relativeBottom.X*relativeBottom.X+relativeBottom.Y*relativeBottom.Y)-85);
-            var ctx = Ctx(rig);
-            Idle(rig);
-            b = new KnockOverCubesBehavior(rig.M, "KnockOverCubes", 3);
-            b.Step += OnStep;
-            Assert.True(Runnable(b, ctx));
-            Assert.False(Runnable(new KnockOverCubesBehavior(rig.M, "x", 4), ctx));
-            // M13-014: the success/failure trigger is selected by the tipped-object set at +0x14C, populated by
-            // HandleObjectUpAxisChanged. The fake rig does not move the cube, so feed the behaviour the
-            // up-axis change once the flip has started.
-            bool tipped = false;
-            RunToEnd(rig, b, ctx, ms: 60000, frames: () =>
-            {
-                rig.Frame(); Idle(rig);                        // a frame, then the state the real robot streams with the lift in position (Frame's own state reports it moving)
-                if (!tipped && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack
-                    && rig.Sent.OfType<AppendPathSegmentLine>().Any(line => line.Speed.SpeedMmps == FlipBlockAction.DriveSpeedMmps)
-                    && rig.M.World.GetObjectById(7) is { } o7)
-                {
-                    tipped = true;
-                    var prev = o7.Pose;
-                    o7.Pose = new Pose3d(Mat3.AboutX(Math.PI / 2), prev.Translation);
-                    b.OnObserved(new ObjectObservation(o7, 0, o7.LastObservedMarkers, prev, PoseState.Known, false, 0));
-                }
-                return false;
-            });
-            Assert.Contains(b.Trace, l => l.Contains("reach for block 7"));
-            Assert.Contains(b.Trace, l => l.Contains("KnockOverGrabAttempt"));
-            Assert.Contains(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7)"));
-            // M12-035 / M13-014: the drive inside DriveAndFlipBlockAction ends 0x04000001 (the flip installers leave CheckIfDone's flag 0) but the outer compound ignores it (AddAction(inner, true,
-            // false), 0x0055B370): the flip runs after the FIRST drive, the action's result is the flip's, and the behaviour never sees 0x04000001, so there is no retry and no blind flip.
-            Assert.True(1 == b.Trace.Count(l => l.Contains("start DriveAndFlipBlockAction(7)")), string.Join(" | ", b.Trace));
-            Assert.DoesNotContain(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7) -> DidNotReachPreActionPose"));   // the action's result; the drive's own 0x04000001 is only in the ignored-failure trace line
-            Assert.True(b.Trace.Any(l => l.Contains("DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound")), string.Join(Environment.NewLine,b.Trace));
-            Assert.DoesNotContain(b.Trace, l => l.Contains("start FlipBlockAction (blind)"));
-            Assert.True(b.Trace.Any(l => l.Contains("FlipBlockAction.CheckIfDone: compound result Success; object 7 marked Unknown")), DiagnosticSnapshot());   // 0x0055F186; no carry lift is queued without a RUNNING tick within 40 mm
-            Assert.True(b.KnockedOver, $"tipped={tipped} | " + string.Join(" | ", b.Trace));
-            Assert.Contains(b.Trace, l => l.Contains("KnockOverSuccess"));
-            Assert.Contains(b.Trace, l => l.Contains("KnockedOverBlocks"));
-            // the reach: the block's x in the robot frame less 85 mm, at 60 mm/s (0x005C3346..0x005C33A0); the
-            // block is at 260 and its observed pose carries a few millimetres of vision error
-            var reach = rig.Sent.OfType<AppendPathSegmentLine>().First();
-            Assert.Equal(60f, reach.Speed.SpeedMmps);
-            Assert.InRange(reach.XEndMm-reach.XStartMm, 165, 180);
-            AssertForwardLine(reach,sourceMain,sourceYaw,sourceDistance);
-            passed = true;
-        }
-        catch (Exception error)
-        {
-            failure = error;
-            throw;
-        }
-        finally
-        {
-            // Detach and snapshot while the fixture is alive, before using-var disposal.
-            if (b is not null) b.Step -= OnStep;
-            rig.Robot.HandlerFaulted -= OnHandlerFault;
-            rig.Robot.State.HandlerFaulted -= OnHandlerFault;
-            if (!passed)
-            {
-                string? failureReport = null;
-                try
-                {
-                    failureReport = "ORIGINAL TEST FAILURE" + Environment.NewLine + failure
-                        + Environment.NewLine + DiagnosticSnapshot();
-                    var directory = ObbRoot() is { } obb
-                        ? Path.Combine(Directory.GetParent(obb)!.Parent!.FullName, ".scratch", "fix-knockover-race-1", "artifacts")
-                        : Path.Combine(AppContext.BaseDirectory, ".scratch", "fix-knockover-race-1", "artifacts");
-                    Directory.CreateDirectory(directory);
-                    var path = Path.Combine(directory, $"knockover-failure-{DateTime.UtcNow:yyyyMMddTHHmmssfffffff}-{Environment.ProcessId}-{Guid.NewGuid():N}.txt");
-                    File.WriteAllText(path, failureReport, new System.Text.UTF8Encoding(false));
-                }
-                catch (Exception artifactError)
-                {
-                    // Diagnostics must never replace the original test exception.
-                    try
-                    {
-                        Console.Error.WriteLine("KnockOver failure artifact could not be written: " + artifactError);
-                        Console.Error.WriteLine(failureReport ?? ("ORIGINAL TEST FAILURE" + Environment.NewLine + failure));
-                    }
-                    catch { }
-                }
-            }
-        }
-    }
-
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void PopAWheelieDrivesDocksAndReEnablesStopOnCliff()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        rig.Cube = CubeAt(220, 0);
-        Assert.Single(rig.Frame().Objects);
-        rig.DockOutcome = BlockStatus.NoBlock;
-        var ctx = Ctx(rig);
-        var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
-        Assert.True(Runnable(b, ctx));
-        RunToEnd(rig, b, ctx, frames: () => true);
-        Assert.True(b.Succeeded, string.Join(" | ", b.Trace));
-        Assert.Contains(b.Trace, l => l.Contains("PopAWheelieInitial"));
-        Assert.Contains(b.Trace, l => l.Contains("PoppedWheelie"));
-        Assert.Contains(b.Trace, l => l.Contains("SuccessfulWheelie"));     // 0x21C on success (0x005C7D16)
-        var dock = rig.Sent.OfType<DockWithObject>().Single();
-        Assert.Equal((byte)DockAction.PopAWheelie, dock.ToBytes()[17]);
-        rig.Pump();
-        Assert.Contains(rig.Sent, m => m is EnableStopOnCliff { Enable: true });
-        Assert.Equal(0, b.Retries);
-    }
-
-    /// <summary>M13-015 retry classifier/animation with the explicit geometry fixture dependency; this does not verify M12-024.</summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void PopAWheelieRetryDecisionWithIsolatedDrivingDependency()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        rig.Cube = CubeAt(220, 0);
-        Assert.Single(rig.Frame().Objects);
-        rig.DockOutcome = BlockStatus.NoBlock; rig.DockSucceeds = false;
-        var ctx = Ctx(rig);
-        var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
-        RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
-        Assert.False(b.Succeeded);
-        Assert.Equal(1, b.Retries); // native 0x005C7D44 allows retry only while count <= 0.
-        Assert.Contains(b.Trace, l => l.Contains("Retry 1 of 1"));      // one retry: the count at +0x12C must still be 0 (0x005C7D44)
-        Assert.Contains(b.Trace, l => l.Contains("SetFailedToUse"));
-        Assert.Contains(b.Trace, l => l.Contains("PopAWheelieRetry"));
-    }
-
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    // Native M12-032 status, with an explicit NoAnimation driving fixture; this is not default production selection.
-    public void PopAWheelieNoAnimationFixtureDriveCompletionDoesNotFabricateFailedAbort()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        rig.M.DrivingAnimationsForTest = null;
-        rig.Robot.Animations.DrivingAnimations.Push(new((AnimationTrigger)0x23F,(AnimationTrigger)0x23F,(AnimationTrigger)0x23F),"lifecycle-fixture");
-        rig.Cube = CubeAt(220, 0);
-        Assert.Single(rig.Frame().Objects);
-        rig.DockOutcome = BlockStatus.NoBlock; rig.DockSucceeds = false;
-        var driveResults=new List<ActionResult>();rig.M.DriveResultObservedForTest=driveResults.Add;
-        var ctx = Ctx(rig);
-        var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
-        var missing = new System.Collections.Concurrent.ConcurrentQueue<string>(); rig.Robot.Engine.StackLogLine += missing.Enqueue;
-        RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
-        Assert.False(b.Succeeded);
-        // Later native dock failures may fail/retry the behavior; the drive arrival itself must be Success.
-        Assert.NotEmpty(driveResults);Assert.Contains(ActionResult.Success,driveResults);Assert.DoesNotContain(ActionResult.Abort,driveResults);
     }
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
@@ -1305,66 +914,6 @@ public class NavigationTests
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void RespondPossiblyRollRespondsToAnUprightCubeAndRollsOneOnItsSide()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        rig.Cube = CubeAt(220, 0);
-        Assert.Single(rig.Frame().Objects);
-        var ctx = Ctx(rig);
-        var b = new RespondPossiblyRollBehavior(rig.M);
-        Assert.True(Runnable(b, ctx));
-        RunToEnd(rig, b, ctx);
-        Assert.Contains(b.Trace, l => l.Contains("BuildPyramidFirstBlockUpright"));
-        Assert.DoesNotContain(rig.Sent, m => m is DockWithObject);
-        // a cube on its side: the negative response, then the roll helper docks with ROLL_LOW
-        using var rig2 = new Rig();
-        rig2.Cube = new Pose3d(Mat3.AboutX(Math.PI / 2), new Vec3(220, 0, 22));
-        Assert.Single(rig2.Frame().Objects);
-        rig2.DockOutcome = BlockStatus.NoBlock;
-        var ctx2 = Ctx(rig2);
-        var b2 = new RespondPossiblyRollBehavior(rig2.M);
-        RunToEnd(rig2, b2, ctx2, frames: () => true);
-        Assert.Contains(b2.Trace, l => l.Contains("BuildPyramidFirstBlockOnSide"));
-        Assert.Contains(b2.Trace, l => l.Contains("RollBlockHelper"));
-        var dock = rig2.Sent.OfType<DockWithObject>().FirstOrDefault();
-        Assert.NotNull(dock);
-        Assert.Equal((byte)DockAction.RollLow, dock!.ToBytes()[17]);
-    }
-
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther()
-    {
-        // Historical test name retained. OV02 proves the producer tuple; the DriveToHelper body remains unread,
-        // so this regression stops at the live producer rather than certifying the former stand-in's whole placement.
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        SupplyRequestedPickupLoad(rig);
-        rig.Cube = CubeAt(240, 90);
-        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, CubeAt(240, -90)));
-        Assert.Equal(2, rig.Frame().Objects.Count);
-        var ctx = Ctx(rig);
-        ctx.AI = new AIComponent(() => (int)rig.Robot.Engine.Robot!.CurrentOriginId);
-        var b = new BuildPyramidBaseBehavior(rig.M, "BuildPyramidBase");
-        PlaceRelObjectHelper? produced = null;
-        b.PlacementHelperCreatedForTest = h => produced = h;
-        Assert.True(Runnable(b, ctx));
-        using var scope = new BehaviorScope();
-        b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
-        SignalTestContext.Until(() => produced is not null, () => { rig.Frame(); rig.Pump(); b.Update(ctx,rig.Clock.NowMs); });
-        Assert.Contains(rig.Sent.OfType<DockWithObject>(), d => d.DockAction == (byte)DockAction.PickupLow);
-        Assert.NotNull(produced);
-        Assert.Equal(b.StaticBlockId, produced!.Target);
-        Assert.True(produced.Low);Assert.False(produced.SkipTransform);
-        Assert.True((Math.Abs(produced.A)==56 && produced.B==0) || (produced.A==0 && Math.Abs(produced.B)==56));
-        b.Stop(BehaviorStopReason.Interrupted);
-    }
-
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
     public void MajorFrustrationDrivesToARandomPoseInItsConfiguredRange()
     {
         using var signals = SignalTestContext.Install();
@@ -1403,13 +952,14 @@ public class NavigationTests
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void TheShippedNavigationSetHasTwentyFourBehavioursWithDistinctIds()
+    public void TheShippedNavigationSetHasThirteenBehavioursWithDistinctIds()
     {
         using var rig = new Rig();
         var set = ShippedBehaviors.Navigation(rig.M);
-        Assert.Equal(24, set.Count);
-        Assert.Equal(24, set.Select(b => b.Id).Distinct().Count());
-        Assert.Contains(set, b => b.Id == "SparksKnockOverCubes" && b is KnockOverCubesBehavior { MinimumStackHeight: 2 });
+        // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the 11 legacy entries (KnockOverCubes x2, PopAWheelie x2, CubeLiftWorkout x2, BuildPyramidBase,
+        // BuildPyramid, PyramidRespondPossiblyRoll, Hiking/Sparks BringCubeToBeacon) left the hand-built list; 24 - 11 = 13 remain.
+        Assert.Equal(13, set.Count);
+        Assert.Equal(13, set.Select(b => b.Id).Distinct().Count());
         Assert.Contains(set, b => b.Id == "Hiking_DriveOffCharger" && b is DriveOffChargerBehavior { ExtraDistanceMm: 45 });
         Assert.Contains(set, b => b.Id == "SparksThinkAboutBeacons" && b is ThinkAboutBeaconsBehavior { BeaconRadiusMm: 75 });
     }
@@ -1539,28 +1089,4 @@ public class NavigationTests
         Assert.Equal(ActionResult.StillOnCharger, task.Result);
     }
 
-    /// <summary>
-    /// M13-014. <c>IDriveToInteractWithObject</c> 0x0055B1F4 adds a <c>TurnTowardsLastFacePoseAction</c>
-    /// and a <c>TurnTowardsObjectAction</c> when maxTurn &gt; 0 (0x0055B37C..0x0055B43C).
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        rig.Cube = CubeAt(200, 0);
-        Assert.Single(rig.Frame().Objects);
-        // M12-035 / M12-011: the flip installers leave CheckIfDone's in-position bool 0, so the drive ends 0x04000001; IDriveToInteractWithObject 0x0055B370 adds the drive-and-wait compound with
-        // ignoreFailure = 1 (and the two turns too, 0x0055B3D4, 0x0055B438), so the outer compound goes on: both turns run, then the flip; the action's result is the flip's.
-        var flip = new DriveAndFlipBlockAction(rig.M, 7) { MaxTurnTowardsFaceRad = Math.PI / 2 };
-        Idle(rig);
-        var task = flip.RunAsync(default);
-        SignalTestContext.Run(task, () => { Idle(rig); rig.Pump(); });   // Idle() acks every lift and streams the lift in position (the flip's initial 45 mm move completes on it)
-        Assert.NotEqual(0x04000001u, (uint)task.Result);
-        Assert.Contains(flip.Trace, l => l.Contains("ignored by the outer compound"));
-        Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsLastFacePose"));
-        Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsObjectAction"));
-    }
 }

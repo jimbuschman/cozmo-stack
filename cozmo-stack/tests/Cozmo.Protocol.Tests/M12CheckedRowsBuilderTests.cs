@@ -235,25 +235,6 @@ public sealed class M12CheckedRowsBuilderTests
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public async Task PlacementInitPortsBothPreconditionDiagnosticsAndTheErrorFlag()
-    {
-        bool prior=EngineErrorState.ErrorFlagSet;
-        try
-        {
-            using var f=new Fixture();var logs=new List<EngineLogEntry>();f.Rig.Engine.LogEntry+=logs.Add;
-            using var pose=new Pose3d("");
-            var action=new DriveToPlaceCarriedObjectAction(f.M,pose,true,false,false,false,0);
-            Assert.Equal((ActionResult)0x03000011,await action.RunAsync(default));
-            Assert.Contains(logs,e=>e.Level==EngineLogLevel.Warning&&e.Name=="DriveToPlaceCarriedObjectAction.CheckPreconditions.NotCarryingObject"&&e.Text.EndsWith("Robot 1 cannot place an object because it is not carrying anything.",StringComparison.Ordinal));
-            f.M.Docking.Carrying.SetCarrying(7);EngineErrorState.ErrorFlagSet=false;
-            Assert.Equal((ActionResult)0x03000004,await action.RunAsync(default)); // lookup still uses ctor's +78=-1; diagnostic reads current +7C=7.
-            Assert.Contains(logs,e=>e.Level==EngineLogLevel.Error&&e.Name=="DriveToPlaceCarriedObjectAction.CheckPreconditions.NoObjectWithID"&&e.Text.EndsWith("Robot 1's block world does not have an ActionableObject with ID=7.",StringComparison.Ordinal));
-            Assert.True(EngineErrorState.ErrorFlagSet);
-        }
-        finally{EngineErrorState.ErrorFlagSet=prior;}
-    }
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
     public void UpAxisTiesUnorderedAndNegativePiUseTheCheckedBranches()
     {
         Assert.Equal(1,RotatedParentAxis.Get(new Mat3(1,0,0,0,1,0,1,-1,1),2));
@@ -292,7 +273,7 @@ public sealed class M12CheckedRowsBuilderTests
     private static PlaceRelObjectHelper Helper(Fixture f,bool low=false)
     {
         var component=new BehaviorHelperComponent(()=>1);
-        var helper=new PlaceRelObjectHelper(f.M,new StackBlocksBehavior(f.M),component.Factory,7,low,2,3,true)
+        var helper=new PlaceRelObjectHelper(f.M,new RamIntoBlockBehavior(f.M),component.Factory,7,low,2,3,true) // any ManipulationBehavior parent: the legacy StackBlocksBehavior was retired (RETIRE-LEGACY-DRIVE-API-1)
             {PrecheckForTest=()=>ActionResult.Success,StartActionForTest=_=>{}};
         helper.InitializeOnStack();return helper;
     }
@@ -327,60 +308,6 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Same(f.M.World.GetLocatedObjectById(7)!.NativePose.Node,lowPose.Node!.Parent);
         Assert.Equal(Vec3.Zero,Assert.Single(tables[1][7]).Pose.Translation);
         f.M.Docking.Carrying.SetCarrying(999);low.MarkFailedToStackOrPlace();Assert.Single(tables[2]);
-    }
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Theory]
-    [InlineData(7u,true)]
-    [InlineData(9u,false)]
-    public void StackProducerUsesTheStoredTargetTupleAndRequiresTheCarriedTopId(uint carried,bool creates)
-    {
-        using var f=new Fixture();var behavior=new StackBlocksBehavior(f.M);
-        var context=new BehaviorContext{Robot=f.Rig.Robot,Triggers=new AnimationTriggerMap(),AI=new AIComponent(()=>1)};
-        typeof(SteppedBehavior).GetProperty("Context",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(behavior,context);
-        typeof(StackBlocksBehavior).GetProperty(nameof(StackBlocksBehavior.TopObjectId))!.SetValue(behavior,7u);
-        typeof(StackBlocksBehavior).GetProperty(nameof(StackBlocksBehavior.BottomObjectId))!.SetValue(behavior,8u);
-        f.M.Docking.Carrying.SetCarrying(carried);
-        PlaceRelObjectHelper? produced=null;behavior.PlacementHelperCreatedForTest=h=>produced=h;
-        var logs=new List<EngineLogEntry>();f.Rig.Engine.LogEntry+=logs.Add;
-        typeof(StackBlocksBehavior).GetMethod("TransitionToStackingBlock",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(behavior,null);
-        if(creates)
-        {
-            Assert.NotNull(produced);Assert.Equal(8u,produced!.Target);Assert.False(produced.Low);Assert.True(produced.SkipTransform);Assert.Equal(0,produced.A);Assert.Equal(0,produced.B);
-        }
-        else
-        {
-            Assert.Null(produced);Assert.Equal(StackBlocksBehavior.Phase.PickingUpBlock,behavior.CurrentPhase);
-            Assert.Contains(logs,e=>e.Level==EngineLogLevel.Debug&&e.Name=="BehaviorStackBlocks.FailBackToPickup"&&e.Text.EndsWith("wanted to stack, but we aren't carrying a block",StringComparison.Ordinal));
-        }
-    }
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void TopProducerUsesNativeInteriorCornersAndIgnoresTheBogusHostCachedMidpoint()
-    {
-        using var f=new Fixture();f.Add(7,new Vec3(100,0,22));f.Add(8,new Vec3(100,50,22),ObjectType.Block_LIGHTCUBE2);
-        var map=new Dictionary<BlockConfigurationType,IReadOnlyList<BlockConfiguration>>
-            {[BlockConfigurationType.PyramidBase]=new BlockConfiguration[]{new PyramidBase(7,8,new Vec3(12345,6789,42))}};
-        var snapshotType=typeof(BlockConfigurationManager).GetNestedType("Snapshot",BindingFlags.NonPublic)!;
-        var snapshot=Activator.CreateInstance(snapshotType,new object[]{map,new Dictionary<string,double>()});
-        typeof(BlockConfigurationManager).GetField("_snapshot",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(f.M.Configurations,snapshot);
-        var behavior=new BuildPyramidBaseBehavior(f.M,"BuildPyramid",true);
-        typeof(SteppedBehavior).GetProperty("Context",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(behavior,new BehaviorContext{Robot=f.Rig.Robot,Triggers=new AnimationTriggerMap(),AI=new AIComponent(()=>1)});
-        typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.StaticBlockId))!.SetValue(behavior,7u);
-        typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.BaseBlockId))!.SetValue(behavior,8u);
-        typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.TopBlockId))!.SetValue(behavior,9u);
-        // OV74: reach the midpoint recipient via the explicit native strong-cache input, not the host snapshot above.
-        f.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{new NativePyramidBase(7,8)};
-        var made=new List<PlaceRelObjectHelper>();behavior.PlacementHelperCreatedForTest=h=>{made.Add(h);h.PrecheckForTest=()=>ActionResult.Running;};
-        typeof(BuildPyramidBaseBehavior).GetMethod("TransitionToPlacingTopBlock",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(behavior,null);
-        // BUILD-PYRAMID-1 G1..G6:00617818..00617BF6, P4/P5:005DC1D4..DC266.
-        // Static(100,0,22), base(100,50,22), physical44mm cube corners nearest the base:
-        // (122,22,44),(78,22,44), midpoint(100,22,44), staticCenter(100,0,22).
-        // Thus relativeXY=(0,22), independent of bogus host cached midpoint(12345,6789,42).
-        // Explicit unit precheck seam above substitutes only helper admission, not success/status/completion.
-        var produced=Assert.Single(made);Assert.Equal(7u,produced.Target);Assert.False(produced.Low);
-        Assert.Equal(0f,produced.A);Assert.Equal(22f,produced.B);Assert.False(produced.SkipTransform);
-        Assert.Equal(7u,behavior.StaticBlockId);Assert.Equal(8u,behavior.BaseBlockId);Assert.Equal(9u,behavior.TopBlockId);
-        Assert.Equal(BuildPyramidBaseBehavior.Phase.PlacingTopBlock,behavior.CurrentPhase);
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]

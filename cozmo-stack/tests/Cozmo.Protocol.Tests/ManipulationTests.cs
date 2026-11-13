@@ -261,16 +261,16 @@ public class ManipulationTests
     public void DriveToPoseSucceedsWhenThePathCompletesAtTheGoal()
     {
         using var signals = SignalTestContext.Install();
-        using var rig = new Rig();
-        using var goalInput=new Pose3d(Mat3.AboutZ(0.5), new Vec3(150, -40, 0));
-        var drive = new DriveToPoseAction(rig.M) { Goal = goalInput };
+        using var rig = new Rig(); rig.DriveCenterFollowing = true;
+        // RETIRE-LEGACY-DRIVE-API-1: native drive; drive-center firmware input (Rig.DriveCenterFollowing) and a 30 mm goal the short planner takes (P6/P9: dc start -20, dc goal 10; d^2 < 1600, SelectPlanner); the legacy straight-line stand-in for a missing lattice is gone.
+        using var goalInput=new Pose3d(Mat3.Identity, new Vec3(30, 0, 0));
+        var drive = NativeDriveTestGoals.To(rig.M, goalInput);
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
         Assert.Contains(drive.Trace, l => l.Contains("Success"));
-        // The native Init calls MovementComponent directly. Its M13-021 primitive is unread;
-        // substituting a queued head action would cancel this parent drive.
-        Assert.Contains(drive.Trace, l => l.StartsWith("MISSING: M12-024") && l.Contains("M13-021"));
+        // Native DriveToPoseAction built with head = false (+0x79 = 0): Init's MoveHeadToAngle (I6, 0x0055A9EC) is not called, so no head move is sent.
+        // (The legacy Init's "M13-021" MISSING line was retired with that Init, RETIRE-LEGACY-DRIVE-API-1.)
         Assert.DoesNotContain(rig.Sent, m => m is SetHeadAngle);
     }
 
@@ -426,34 +426,6 @@ public class ManipulationTests
     // ------------------------------------------------------------------ actions
 
     [Fact]
-    public void DriveToObjectGoesToTheClosestPreDockPoseThenPickupSucceeds()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
-        rig.OnDockResult=()=>rig.Send(new LiftLoad{Field0=true}); //real scopedDA loaded state1 beforeVerify.
-        rig.Cube = CubeAt(200, 30, 0.2);
-        var obj = Assert.Single(rig.Frame().Objects).Object;
-        var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
-        var task = drive.RunAsync(default);
-        SignalTestContext.Run(task, () => rig.Pump());
-        Assert.True(task.Result == ActionResult.Success, "obj=" + obj.Pose + " result=" + task.Result + " trace: " + string.Join(" | ", drive.Trace));
-        var chosen = drive.Chosen!;
-        Assert.InRange(Math.Abs(rig.X - chosen.WorldPose.Translation.X), 0, 0.5);
-        Assert.InRange(Math.Abs(rig.Y - chosen.WorldPose.Translation.Y), 0, 0.5);
-        // now pick it up from there: the cube is 97 mm ahead, so the frame sees its front face
-        rig.Frame();
-        var pickup = new PickupObjectAction(rig.M, 7);
-        var pt = pickup.RunAsync(default);
-        SignalTestContext.Run(pt, () => { rig.Pump(); });
-        Assert.Equal(ActionResult.Success, pt.Result);
-        Assert.Equal(DockAction.PickupLow, pickup.SelectedDockAction);
-        Assert.True(rig.M.Docking.Carrying.IsCarrying(7));
-        Assert.Contains(pickup.Trace, l => l.Contains("SUCCEEDED"));
-    }
-
-    [Fact]
     public void ADockActionRefusesWhenNotNearAPreActionPose()
     {
         using var signals = SignalTestContext.Install();
@@ -511,28 +483,6 @@ public class ManipulationTests
         b.Stop(BehaviorStopReason.Completed);
     }
 
-    [Fact]
-    public void PickUpCubeReactsDrivesDocksAndCelebrates()
-    {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        rig.M.ClockSec=()=>100.0; //controlled positive action clock; exact deadline tests remain separate.
-        rig.OnDockResult=()=>{rig.Send(new LiftLoad{Field0=true});rig.Cube=null;}; //suppliedsuccessfulpickup scene: stop rendering the old location; real world/carry remains untouched.
-        rig.Cube = CubeAt(220, -20, 0.1);
-        Assert.Single(rig.Frame().Objects);
-        var ctx = Ctx(rig);
-        var b = new PickUpCubeBehavior(rig.M);
-        Assert.Equal(7u, ClosestId(rig));
-        RunToEnd(rig, b, ctx, frames: () => true);
-        Assert.True(rig.M.Docking.Carrying.IsCarrying(7), string.Join(" | ", b.Trace));
-        Assert.Contains(b.Trace, l => l.Contains("SparkPickupInitialCubeReaction"));
-        Assert.Contains(b.Trace, l => l.Contains("PickupBlockHelper"));
-        Assert.Contains(b.Trace, l => l.Contains("ReactToBlockPickupSuccess"));
-        Assert.Contains(b.Trace, l => l.Contains("objective achieved"));
-        Assert.Equal(1, b.Helper!.Attempts);
-    }
-
     private static uint? ClosestId(Rig rig) => rig.Vision.World.LocatedObjects.FirstOrDefault()?.ObjectId;
 
     [Fact]
@@ -561,39 +511,13 @@ public class ManipulationTests
     }
 
     [Fact]
-    public void RollBlockSucceedsWhenTheUpAxisChanges()
+    public void TheHandBuiltManipulationSetIsTheFourPutDownBlockConfigs()
     {
-        using var signals = SignalTestContext.Install();
-        if (Lib is null) return;
-        using var rig = new Rig();
-        // a cube on its side: X axis up
-        rig.Cube = new Pose3d(Mat3.AboutY(-Math.PI / 2), new Vec3(200, 0, 22));
-        var r = rig.Frame();
-        Assert.Single(r.Objects);
-        Assert.NotEqual(UpAxis.ZPositive, r.Objects[0].Object.UpAxisFromPose());
-        rig.DockOutcome = BlockStatus.NoBlock;
-        var ctx = Ctx(rig);
-        var b = new RollBlockBehavior(rig.M);
-        // when the dock reports, the cube has been rolled upright; the following frames see it that way
-        rig.OnDockResult = () => rig.Cube = CubeAt(rig.Cube!.Value.Translation.X, rig.Cube.Value.Translation.Y);
-        RunToEnd(rig, b, ctx, frames: () => true);
-        Assert.Equal(1, rig.DockResults);
-        Assert.Equal(RollBlockBehavior.Phase.Idle, b.CurrentPhase);
-        Assert.Contains(b.Trace, l => l.Contains("RollBlockSuccess"));
-        Assert.Contains(b.Trace, l => l.Contains("RollSucceeded"));
-    }
-
-    [Fact]
-    public void TheShippedManipulationSetHasThirteenBehavioursWithTheConfigIds()
-    {
+        // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the legacy PickUpCube, RollBlock, StackBlocks and PickUpAndPutDownCube classes were retired; the
+        // factory binds the native classes for those config ids. The four PutDownBlock ids are the shipped configs' (behaviorClass PutDownBlock).
         using var rig = new Rig();
         var set = ShippedBehaviors.Manipulation(rig.M);
-        Assert.Equal(13, set.Count);
-        Assert.Equal(13, set.Select(b => b.Id).Distinct().Count());
-        Assert.Equal(2, set.Count(b => b.Class == "PickUpCube"));
-        Assert.Equal(4, set.Count(b => b.Class == "PutDownBlock"));
-        Assert.Equal(4, set.Count(b => b.Class == "RollBlock"));
-        Assert.Equal(2, set.Count(b => b.Class == "StackBlocks"));
-        Assert.Single(set, b => b.Class == "PickUpAndPutDownCube");
+        Assert.Equal(new[] { "PutDownBlock", "PutDownBlockNothingToDo", "PyramidPutDownBlock", "SparksPutDownBlock" }, set.Select(b => b.Id));
+        Assert.All(set, b => Assert.Equal("PutDownBlock", b.Class));
     }
 }
