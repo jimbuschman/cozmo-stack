@@ -39,7 +39,10 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 11. **FIND-ON-TOP-SAME-ROOT-1:** your proposal; see its QUEUE row (M13-007).
 12. **LOCALIZE-MULTI-PAIR-CROSS-ORIGIN-TEST-1:** your proposal; see its QUEUE row (M11-044).
 13. **SETTLEMENT-READINESS-1:** doc only; see its QUEUE row. Do it first if the others are waiting on anything.
-14. **RETIRE-LEGACY-DRIVE-API-1:** the operator chose to retire the legacy public drive types (BLOCKED.md); see its QUEUE row.
+14. **RETIRE-LEGACY-DRIVE-API-1:** resume it. The operator chose "retire and rebind" (BLOCKED.md, 2026-11-13); the
+    manager's answers to Q3–Q6 are in `research/20261113-worker-jobs-10-13-m11-009-claude-check.md`. Move the M12-009/M12-016
+    tags with the code. Hardware tools may change, but never commit hardware scripts or bundles.
+15. **CHARGER-ID-WRITER-1:** from SETTLEMENT-READINESS.md (M4-009's one behaviour gap). Add its QUEUE row when you take it.
 
 Before job 10, run the pending gate on `origin/manager-gate` (6e111864 or later; GATE-REQUESTS.md). Legacy drive API:
 the operator chose to retire it (job 14).

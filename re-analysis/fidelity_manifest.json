@@ -211,7 +211,7 @@
       "review": {
         "inventory": "re-analysis/inventory/M11-vision.md",
         "state": "INVENTORY_APPROVED",
-        "approved": "2026-11-12",
+        "approved": "2026-11-13",
         "snapshot": "re-analysis/inventory/M11-vision.approved.json"
       }
     },
@@ -3978,12 +3978,14 @@
     },
     {
       "subsystem": "M11-vision",
-      "title": "A cube that reports movement is marked Dirty, unless the robot is carrying it",
+      "title": "A cube that reports movement is marked Dirty when its pose is Known, unless the robot is carrying it or the cube resting on it",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
       "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "the message is {u32 timestamp, u32 activeId, f32 x, f32 y, f32 z, u8 axis}, read at 0x00533E54",
+        "0x00534116..0x0053413C (HandleActiveObjectMoved) and 0x00534924..0x0053494A (HandleActiveObjectStopped): IsCarryingObject through PLT 0x004A6FAC (0x0053411E / 0x0053492C; body 0x00633F88..0x00633F9E: the carried ID [+8] or the ID resting on it [+0x14]) OR'd with PoseState [+0x24] != Known (1); when both are false, ObjectPoseConfirmer::MarkObjectDirty(obj, false) through PLT 0x004A7174 (0x0053413C / 0x0053494A)",
+        "MarkObjectDirty 0x005075A4..0x005075B8: SetPoseStateHelper(obj, Dirty = 2) (0x005075AC..0x005075B2); propagate false ends there (0x005075B6)",
         "this stack dirtied the pose whatever the carrying state, so a cube on the lift reporting its own motion dirtied the pose the lift was holding it at",
         "the motion flag itself is what PickupObjectAction::Verify reads, so both records rest on it"
       ],
@@ -3993,7 +3995,7 @@
       "hardware_required": false,
       "effect": "a carried cube reporting motion dirties the pose the lift is holding it at",
       "provenance": "the stack VisionSystem.cs dirty path is to be compared against the guard above",
-      "unresolved": "CARRIED-ONTOP-BINDING-CENSUS-1 (Claude worker, 2026-11-12; census re-analysis/jobs/trial-m13/HANDOFF-CARRIED-ONTOP-BINDING-CENSUS-1.md C4/C6), no status change: the guard now reads the engine body IsCarryingObject 0x00633F88 (carried [+8] OR on-top [+0x14]) through the shared binding (Docking.cs -> CarryingComponent.IsCarryingObjectId; BlockWorld.ApplyMovedOrStopped), so a cube resting on the carried one is not dirtied by its own Moved/Stopped report either. Before this the built reader was carried-only, contradicted for the top cube. For the manager (frozen fields): the evidence cites only the message layout at 0x00533E54; it cites neither the guard addresses (HandleActiveObjectMoved 0x0053411E..0x0053413C, HandleActiveObjectStopped 0x0053492C..0x0053494A) nor that \"carrying\" means carried or on-top, so it is too weak for EXACT_SOURCE as written. Test: CarriedOnTopBindingTests.TheCubeOnTopIsExcludedFromTheMovedBroadcastAndIsNotDirtiedByItsOwnMotion (the dirty part is reach: unit, the top cube's PoseState substituted Known)."
+      "unresolved": "EVIDENCE CORRECTED (manager, 2026-11-13; research/20261113-worker-jobs-10-13-m11-009-claude-check.md), status unchanged EXACT_SOURCE: the title and evidence now cite both guards (0x0053411E..0x0053413C, 0x0053492C..0x0053494A), the two-ID IsCarryingObject body 0x00633F88, the Known test and MarkObjectDirty 0x005075A4. SetPoseStateHelper's own body and the PoseStateChanged delivery are M11-007's and M11-038's (their own records). Built: BlockWorld.ApplyMovedOrStoppedCore. Old title: \"A cube that reports movement is marked Dirty, unless the robot is carrying it\".\nCARRIED-ONTOP-BINDING-CENSUS-1 (Claude worker, 2026-11-12; census re-analysis/jobs/trial-m13/HANDOFF-CARRIED-ONTOP-BINDING-CENSUS-1.md C4/C6), no status change: the guard now reads the engine body IsCarryingObject 0x00633F88 (carried [+8] OR on-top [+0x14]) through the shared binding (Docking.cs -> CarryingComponent.IsCarryingObjectId; BlockWorld.ApplyMovedOrStopped), so a cube resting on the carried one is not dirtied by its own Moved/Stopped report either. Before this the built reader was carried-only, contradicted for the top cube. For the manager (frozen fields): the evidence cites only the message layout at 0x00533E54; it cites neither the guard addresses (HandleActiveObjectMoved 0x0053411E..0x0053413C, HandleActiveObjectStopped 0x0053492C..0x0053494A) nor that \"carrying\" means carried or on-top, so it is too weak for EXACT_SOURCE as written. Test: CarriedOnTopBindingTests.TheCubeOnTopIsExcludedFromTheMovedBroadcastAndIsNotDirtiedByItsOwnMotion (the dirty part is reach: unit, the top cube's PoseState substituted Known)."
     },
     {
       "subsystem": "M11-vision",

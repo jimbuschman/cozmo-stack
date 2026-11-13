@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-11-12",
+  "approved": "2026-11-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "281df629c5d10fa898cb16194c9603e3dceeb9f09e8a3c8e007e3c30f6b4fcc4",
+  "inventory_sha256": "da7bb0ded3a85b9a7314772c89f488a8d2c78c72e745bf1fe4205ea4310fc6af",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -122,10 +122,12 @@
     },
     "M11-009": {
       "status": "EXACT_SOURCE",
-      "title": "A cube that reports movement is marked Dirty, unless the robot is carrying it",
+      "title": "A cube that reports movement is marked Dirty when its pose is Known, unless the robot is carrying it or the cube resting on it",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "the message is {u32 timestamp, u32 activeId, f32 x, f32 y, f32 z, u8 axis}, read at 0x00533E54",
+        "0x00534116..0x0053413C (HandleActiveObjectMoved) and 0x00534924..0x0053494A (HandleActiveObjectStopped): IsCarryingObject through PLT 0x004A6FAC (0x0053411E / 0x0053492C; body 0x00633F88..0x00633F9E: the carried ID [+8] or the ID resting on it [+0x14]) OR'd with PoseState [+0x24] != Known (1); when both are false, ObjectPoseConfirmer::MarkObjectDirty(obj, false) through PLT 0x004A7174 (0x0053413C / 0x0053494A)",
+        "MarkObjectDirty 0x005075A4..0x005075B8: SetPoseStateHelper(obj, Dirty = 2) (0x005075AC..0x005075B2); propagate false ends there (0x005075B6)",
         "this stack dirtied the pose whatever the carrying state, so a cube on the lift reporting its own motion dirtied the pose the lift was holding it at",
         "the motion flag itself is what PickupObjectAction::Verify reads, so both records rest on it"
       ],

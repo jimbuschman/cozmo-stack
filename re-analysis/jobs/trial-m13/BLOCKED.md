@@ -2,6 +2,10 @@
 
 ## RETIRE-LEGACY-DRIVE-API-1: the retirement reaches more than the decision below assumed (Claude worker, 2026-11-13)
 
+**DECIDED (operator, 2026-11-13): choice 2, retire and rebind.** The standalone stack binds the native classes and the
+tools get an entry to the native runners; then the legacy types, holds and guard go. The manager's answers to Q3–Q6
+are in `research/20261113-worker-jobs-10-13-m11-009-claude-check.md`. Job 14 resumes.
+
 **The question:** please confirm or narrow the "retire" decision below. When I wrote it up I said the legacy types were
 used only by "the stack's own tools and the tests". The retirement census (`.scratch/RETIRE-LEGACY-DRIVE-API-1-census.md`,
 worker-local) found that this undersold it. Nothing has been removed yet.
