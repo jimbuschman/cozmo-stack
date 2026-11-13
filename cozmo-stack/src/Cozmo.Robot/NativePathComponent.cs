@@ -23,8 +23,6 @@ internal sealed partial class PathComponent
     private IReadOnlyList<PathSegment> _dolerPath=Array.Empty<PathSegment>();
     internal ushort LastDoledIndex=0xFFFF;
     internal uint DoleSegmentCount;
-    private Func<PathPlannerModelResult>? _computeModel;
-    private Func<PathPlannerModelResult>? _fallbackModel;
     private PathPlannerModelResult? _plan;
     private NativePlannerSet? _nativePlanners;
     internal NativeShortPlanner NativeFace=null!,NativeMinimal=null!;
@@ -34,24 +32,17 @@ internal sealed partial class PathComponent
         Action<string> missing=text=>_robot.Engine.EmitStackLog("MISSING: "+text);
         NativeFace=new(false,source,missing);NativeMinimal=new(true,source,missing);
     }
-    private Action<string>? _modelMissing;
     internal Func<bool>? PlannerPathIsSafe;
     internal Func<bool>? PlannerSkipSafetyCheck;
-    internal Func<uint>? CurrentOriginInput,RobotRootOriginInput;
-    internal Func<int,uint>? GoalRootOriginInput;
-    internal Func<uint,bool>? ContainsOriginInput;
-    internal Func<bool>? ObjectsChangedInput,ComputeNewPathIfNeeded;
+    internal Func<bool>? ObjectsChangedInput;
     internal Action? RejiggerInput;
     // fidelity: M12-032 — the Robot whose PoseOriginList (Robot+0x294: current ID +0x10, current origin +0x14) and drive-center
     // pose (Robot+0x2A4, GetDriveCenterPose 0x005477A0) the origin dispatch and the Rejigger read. Bound by CozmoRobot.
     internal Func<EngineRobot?>? OriginOwnerInput;
-    // Stack machinery: the path was started by the legacy StartDrivingToPose(int, ...) entry. Its planner reads NativePlannerSet.Goals borrowed
-    // from the caller (NativePlannerSet.Configure), so RejiggerTargetsAndReplan's in-place re-expression (R5) would rewrite the caller's own goal
-    // objects; the stack does not rejigger such a path (PATH-ORIGIN-CHANGE-REPLAN-1).
-    private bool _legacyEntry;
-    internal bool LegacyEntryPathInFlight=>_legacyEntry&&IsActive;
+    // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the legacy StartDrivingToPose(int, ...) entry, its borrowed-goal holds and its planner
+    // model are retired; every path starts through StartNativeDrivingToPose.
     // fidelity: M12-032 — the selected planner pointer pc+0x20 (set by SelectPlannerHelper 0x0064A7EC, cleared by ExecuteCustomPath 0x0064B1E6).
-    private bool PlannerSelected=>_nativePlanners?.Current is not null||_computeModel is not null;
+    private bool PlannerSelected=>_nativePlanners?.Current is not null;
     internal uint ParamsOrigin {get=>PlannerObjectsField0C;set=>PlannerObjectsField0C=value;}
     private RetainedSubscription? _pathSubscription;
     // Native C6 subscribes once in the Path ctor; this host binding helper is not a native re-Init path.
@@ -66,7 +57,6 @@ internal sealed partial class PathComponent
     }
     private PathGoalIndex? _goalIndex;
     internal int PlannerStatus => _nativePlanners?.Current?.CheckPlanningStatus??_plan?.Status??1;
-    private void ModelGap(){if(_nativePlanners?.Current is null)_modelMissing?.Invoke("M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate");}
     internal void SetNativePlanners(NativePlannerSet planners)=>_nativePlanners=planners;
     internal PathMotionProfile NativeMotionProfile=PathMotionProfile.Default;
     // 0x0064AB10 / 0x0064AC4A: copy the shared slot before enabling; clear only the flag.
@@ -78,7 +68,8 @@ internal sealed partial class PathComponent
         Field48=true;
     }
     internal void ClearNativeCustomMotionProfile()=>Field48=false;
-    internal int StartNativeDrivingToPose(ManipulationSystem m,IReadOnlyList<Vision.Pose3d> originalGoals,PathGoalIndex index,bool manual,IEnumerable<uint>? ignore,EngineRobot? scopedOwner=null,Func<bool>? current=null)
+    // fidelity: M12-032 — P13 (signature at 0x0064ACC4: vector, shared_ptr<uchar>, bool): no ignore-object input; the stack's pass-through is dropped (Q5).
+    internal int StartNativeDrivingToPose(ManipulationSystem m,IReadOnlyList<Vision.Pose3d> originalGoals,PathGoalIndex index,bool manual,EngineRobot? scopedOwner=null,Func<bool>? current=null)
     {
         // 64ACC4: the empty-vector failure precedes every write/old-plan cancellation.
         if(originalGoals.Count==0)return 1;
@@ -110,10 +101,10 @@ internal sealed partial class PathComponent
                 goal.Node!.Transform=new(goal.Quaternion,new Vision.Vec3(x,y,0));
                 if(!Vision.PoseTreeNode.HasSameRoot(goal.Node,currentOrigin.Node)){SetStatus(0);return 1;}
             }
-            var planners=m.GetNativePlanners();planners.ConfigureNative(start,goals,NativeMotionProfile,ignore);SetNativePlanners(planners);
+            var planners=m.GetNativePlanners();planners.ConfigureNative(start,goals,NativeMotionProfile);SetNativePlanners(planners);
             if(scopedGuard is not null&&!scopedGuard())return 1;
             ObjectsChangedInput=()=>m.World.DidObjectsChange;
-            _computeModel=null;PlannerSlot10=planners.Stop;_legacyEntry=false;
+            PlannerSlot10=planners.Stop;
             SelectPlanner(goals.Count);
             if(!StartPlanner()){if(scopedGuard?.Invoke()??true)SetStatus(0,scopedGuard);return 1;}
             if(scopedGuard is not null&&!scopedGuard())return 1;
@@ -147,7 +138,7 @@ internal sealed partial class PathComponent
     private bool SendNative(RobotMessage message)=>!ScopeCurrent()?false:_scopedSend?.Invoke(message)??SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
     // fidelity: M13-029 - ErasePath builds a local Viz tag21 and sends nothing.
     private void ErasePath() => ErasePathHook?.Invoke(CozmoEngine.RobotId);
-    private void ResetMachine(){_legacyEntry=false;_scopeGeneration++;_scopedCurrent=null;_scopedSend=null;_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
+    private void ResetMachine(){_scopeGeneration++;_scopedCurrent=null;_scopedSend=null;_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
     internal void ClearDoler(){_dolerPath=Array.Empty<PathSegment>();LastDoledIndex=0xFFFF;DoleSegmentCount=0;}
     internal void SetDolerPath(IReadOnlyList<PathSegment> path,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
@@ -203,47 +194,21 @@ internal sealed partial class PathComponent
     internal int ExecuteCustomPath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
         _scopeGeneration++;_scopedCurrent=null;_scopedSend=null;
-        if(Field47){PlannerSlot10?.Invoke();if(current is not null&&!current())return 1;Field47=false;}_computeModel=null;_plan=null;PlannerSlot10=null;
+        if(Field47){PlannerSlot10?.Invoke();if(current is not null&&!current())return 1;Field47=false;}_plan=null;PlannerSlot10=null;
         // fidelity: M12-032 — strd r1,r1,[r6,#0x20] (0x0064B1E6): the selected planner pointer is cleared (the fallback +0x28 is not), so a custom
         // path never gets past HandlePossibleOriginChanges' planner test (0x00649812..0x00649816).
-        if(_nativePlanners is {} selected)selected.Current=null;_legacyEntry=false;
+        if(_nativePlanners is {} selected)selected.Current=null;
         return ExecutePath(path,manual,reserve,current,send);
-    }
-    internal int StartDrivingToPose(int goals,PathGoalIndex index,bool manual,Func<PathPlannerModelResult> compute,Action stop,Action<string> missing)
-    {
-        if(goals==0){Warning("PathComponent.StartDrivingToPose.NoTargetPoses","Can't start driving with no provided targets");return 1;}
-        _scopeGeneration++;_scopedCurrent=null;_scopedSend=null;
-        _modelMissing=missing;
-        if(Field47){PlannerSlot10?.Invoke();Field47=false;}
-        if(IsActive){Info("PathComponent.StartDrivingToPose.AlreadyBusy",$"Path component status was '{Name(DriveToPoseStatus)}'. Aborting current plan");Abort(SendNative);}
-        Field46=manual;_goalIndex=index;SharedPath=index;
-        // fidelity: M12-032 — O3 0x0064AD60..0x0064AD6A: params origin := the current origin ID, after the +0x46/index stores.
-        if(OriginOwnerInput?.Invoke() is {} originOwner)ParamsOrigin=originOwner.CurrentOriginId;
-        else if(CurrentOriginInput is {} current)ParamsOrigin=current();
-        else MissingOnce("M12-032 current-origin/ComputeDriveCenterPose handoff 0x0064ACC4..0x0064AF30 remains unbuilt; existing host planner geometry retained");
-        if(RobotRootOriginInput is {} root && CurrentOriginInput is not null && root()!=ParamsOrigin)
-        {MissingOnce("M12-032 DriveCenterOriginMismatch VERIFY formatting 0x0064AE5A unbuilt");SetStatus(0);return 1;}
-        if(GoalRootOriginInput is {} goalRoot && ContainsOriginInput is {} contains)
-        {
-            for(int i=0;i<goals;i++)if(!contains(goalRoot(i))){MissingOnce("M12-032 OriginMismatch warning 0x0064AE08 argument handoff unbuilt");SetStatus(0);return 1;}
-        }
-        else MissingOnce("M12-032 goal origin/ComputeDriveCenterPose gates unbuilt; no native origin validation claim");
-        _computeModel=compute;PlannerSlot10=stop;_legacyEntry=true;
-        SelectPlanner(goals);
-        if(!StartPlanner()){SetStatus(0);return 1;}
-        SetStatus(1);if(!Field48)MissingOnce("M12-032 SpeedChooser.GetPathMotionProfile 0x0064ADE0 handoff represented by existing drive profile; custom profile field ownership remains unbuilt");
-        return 0;
     }
     internal void SelectPlanner(int goals)
     {
         if(goals==0){Warning("PathComponent.SelectPlanner.NoTargets","can't select a planner with no target poses");return;}
-        _nativePlanners?.Select();ModelGap();
+        _nativePlanners?.Select();
     }
     internal bool StartPlanner()
     {
-        if(_nativePlanners?.Current is not null){if(_nativePlanners.StartPlanning()==0)return ReplanWithFallbackPlanner();Field47=true;PlannerSlot10=_nativePlanners.Stop;return true;}
-        if(_computeModel is null){Error("PathComponent.StartPlanner.NoSelectedPlanner","Must select planner before starting");return false;}
-        _plan=_computeModel();if(_plan.Status==0)return ReplanWithFallbackPlanner();Field47=true;return true;
+        if(_nativePlanners?.Current is null){Error("PathComponent.StartPlanner.NoSelectedPlanner","Must select planner before starting");return false;}
+        if(_nativePlanners.StartPlanning()==0)return ReplanWithFallbackPlanner();Field47=true;PlannerSlot10=_nativePlanners.Stop;return true;
     }
     // fidelity: M12-032 — StartPlanner(const Pose3d&) 0x0064B090..0x0064B108 (census R6): [pc+0x20] vt+8 ComputePath(start, params.goals);
     // non-zero -> +0x47 = 1, true; zero -> tail ReplanWithFallbackPlanner. Only the Rejigger calls it with a pose here (native planners only).
@@ -255,11 +220,9 @@ internal sealed partial class PathComponent
     }
     internal bool ReplanWithFallbackPlanner()
     {
-        if(_nativePlanners?.Current is not null){bool ok=_nativePlanners.UseFallback();if(ok){Field47=true;PlannerSlot10=_nativePlanners.Stop;}return ok;}
-        if(_fallbackModel is null)return false;_computeModel=_fallbackModel;_fallbackModel=null;
-        if(!StartPlanner())return false;ModelGap();MissingOnce("M12-032 robot.fallback_planner_used 0x00649EBC native old-name payload unavailable");return true;
+        if(_nativePlanners?.Current is null)return false;
+        bool ok=_nativePlanners.UseFallback();if(ok){Field47=true;PlannerSlot10=_nativePlanners.Stop;}return ok;
     }
-    internal void SetPlannerModelForTest(Func<PathPlannerModelResult> compute,Func<PathPlannerModelResult>? fallback=null){_computeModel=compute;_fallbackModel=fallback;}
     internal void UpdatePlanning()
     {
         var current=_scopedCurrent;var send=_scopedSend;
@@ -298,10 +261,9 @@ internal sealed partial class PathComponent
             {
                 if(!selected.SkipsSafetyCheck && _nativePlanners.Lattice is not null)MissingOnce("M13-034 slot 0x18 -> 0x1C PathIsSafe body needs separately-owned PathSegment geometry helpers; candidate short path safety is not claimed source-backed");
             }
-            else if(PlannerSkipSafetyCheck is null)ModelGap();
         }
         if(_nativePlanners?.Current is {} chosen)_robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.plan_complete",chosen.Name,new Dictionary<string,string>{{"$data",((byte)plan.Path.Count).ToString(System.Globalization.CultureInfo.InvariantCulture)}});
-        else{ModelGap();MissingOnce("M12-032 robot.plan_complete 0x0064A024 native planner-name payload unavailable");}
+        else MissingOnce("M12-032 robot.plan_complete 0x0064A024 native planner-name payload unavailable");
         if(!IsCurrent())return;
         if((byte)plan.Path.Count!=0)
         {
@@ -386,7 +348,7 @@ internal sealed partial class PathComponent
         if(!IsCurrent())return;
         if(!PlannerSelected)return; // H1 0x00649812..0x00649816: no selected planner (pc+0x20), nothing.
         // H2 (NullParamsOrigin VERIFY 0x00649818..0x00649836) and H3 (CommonOriginNotInRobotPoseOriginList VERIFY 0x00649838..0x00649852) only log
-        // and fall through. Neither condition has a producer in the stack (both drive entries write the params origin before status 3, and no
+        // and fall through. Neither condition has a producer in the stack (the native drive entry writes the params origin before status 3, and no
         // origin is ever removed from the list), so neither is built (recorded in M12-032).
         if(OriginOwnerInput?.Invoke() is not {} owner){MissingOnce("M12-032 HandlePossibleOriginChanges 0x0064980C: no Robot pose-origin owner (Robot+0x294) is bound; the origin dispatch is skipped");return;}
         uint paramsOrigin=ParamsOrigin,currentOrigin=owner.CurrentOriginId;  // H4 r5 0x0064985E, r6 0x00649860
@@ -416,13 +378,7 @@ internal sealed partial class PathComponent
         bool IsCurrent()=>current?.Invoke()??true;
         if(!IsCurrent())return;
         if(!PlannerSelected)return; // R1 0x006499D6..0x006499DA
-        if(_legacyEntry||_nativePlanners is not {Current:not null} planners)
-        {
-            // Stack limitation, visible: the legacy entry's goals are the caller's own objects (borrowed by NativePlannerSet.Configure), so R5's
-            // in-place re-expression would rewrite them. The path is left as is.
-            MissingOnce("M12-032 RejiggerTargetsAndReplan 0x006499D0: legacy DriveToPose entry cannot replan (the legacy entry's NativePlannerSet.Goals are borrowed from the caller (NativePlannerSet.Configure), so R5's in-place GetWithRespectTo would rewrite the caller's own goal objects (e.g. DriveToObjectAction's goal, read back through drive.Goal)); the path is left as is (PATH-ORIGIN-CHANGE-REPLAN-1)");
-            return;
-        }
+        if(_nativePlanners is not {Current:not null} planners)return; // R1 above already required the selected planner; this only binds it.
         ParamsOrigin=owner.CurrentOriginId; // R2 0x006499DE..0x006499E8, before anything can fail
         if(Field47){PlannerSlot10?.Invoke();if(!IsCurrent())return;Field47=false;} // R3 0x006499EA..0x006499FA: planner vt+0x10 StopPlanning
         Info("PathComponent.Update.Replan.RejiggeringPlanner","Our goal is in another coordinate frame, but we are updating to current frame"); // R4
@@ -462,13 +418,6 @@ internal sealed partial class PathComponent
         bool IsCurrent()=>current?.Invoke()??true;
         if(!IsCurrent())return;
         if(Field47)return;
-        if(_legacyEntry)
-        {
-            // Visible implementation gap, not an exclusion (PATH-ORIGIN-CHANGE-REPLAN-1 verifier N1; M12-032 IMPLEMENTATION_GAP, follow-up LEGACY-DRIVE-TO-POSE-NATIVE-1): the legacy entry plans in the main-pose frame toward
-            // unconverted goals, so a drive-center restart would mix start frames 20 mm apart. Not restarted; the path is left as is.
-            MissingOnce("M12-032 RestartPlannerIfNeeded 0x00649C14 not taken: legacy DriveToPose entry plans in the main-pose frame with unconverted goals (NativePlannerSet.cs:35); the path is left as is (PATH-ORIGIN-CHANGE-REPLAN-1)");
-            return;
-        }
         if(_nativePlanners?.Current is not null)
         {
             int code=_nativePlanners.Restart(owner.GetCheckedForwardPose());
@@ -482,9 +431,5 @@ internal sealed partial class PathComponent
             }
             return;
         }
-        if(ComputeNewPathIfNeeded is null){ModelGap();return;}
-        bool restarted=ComputeNewPathIfNeeded();if(!IsCurrent())return;
-        if(restarted){Field47=true;MissingOnce("M12-032 RestartPlannerIfNeeded log at 0x00649C64 arguments unbuilt");}
-        else if(!ReplanWithFallbackPlanner()&&IsCurrent()){Abort(send??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);if(IsCurrent())MissingOnce("M12-032 RestartPlannerIfNeeded failure info/debug at 0x00649C9E/0x00649CE0 arguments unbuilt");}
     }
 }

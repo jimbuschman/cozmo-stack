@@ -193,6 +193,7 @@ internal sealed class NativePickupBlockHelper: IHelper
         }
         if(r is 0x04000003 or 0x04000004 or 0x04000005 or 0x03000015)
         {
+            // fidelity: M12-009 — RespondToPickupResult 0x005B8192..0x005B8198: ldr [helper+0x108]; cmp r0,#1; bls: retry only while the attempt count is <= 1 (two attempts).
             if(Attempts<=1){StartPickup(false);return;}
             if(Flag105&&!AlternateRetry){AlternateRetry=true;Attempts=0;StartPickup(true);return;}
             Mark();if(Current())StoreStatus(BehaviorStatus.Failure);return;

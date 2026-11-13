@@ -24,6 +24,7 @@ public sealed class HikingRollCubeRecoveryTests
     private static void Stop(Fixture f,Parent p)
     {f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);p.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
     [Fact]
+    // reach: unit (the parent behaviour's probe and the carry are supplied; the attempt limit 3 is the engine's cmp r0,#3 at 0x005B9F0E, M12-016).
     public void ThreeActualHelperAdmissionsCanFailBeforeAnyDockWireAndThenMarkFailure()
     {
         // Explicit external carry change at the StartRolling retry boundary; real composites, precondition failures,

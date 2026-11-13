@@ -7,6 +7,10 @@ namespace Cozmo.Protocol.Tests;
 // What makes a cube a valid bottom to stack on (fidelity manifest M12-012).
 public class RestingFlatTests
 {
+    // M12-012, CanInteractWithObjectHelper 0x0063C66C..0x0063C670: movw r1,#0xb8c2 / movt r1,#0x3e32 -> Radians(binary32 0x3E32B8C2), ten degrees.
+    // (The legacy StackBlocksBehavior.RestingFlatToleranceRad that held it was retired, RETIRE-LEGACY-DRIVE-API-1; its bit test went with it.)
+    private static readonly double RestingFlatToleranceRad = BitConverter.UInt32BitsToSingle(0x3E32B8C2);
+
     private static ObservableObject CubeWith(Mat3 rotation) =>
         new(7, ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(rotation, new Vec3(100, 0, 22)), PoseState = PoseState.Known };
@@ -26,16 +30,7 @@ public class RestingFlatTests
     public void ACubeIsFlatWhenItsZLiesNearAParentAxis(double tiltRad, bool flat)
     {
         var cube = CubeWith(Mat3.AboutY(tiltRad));
-        Assert.Equal(flat, cube.IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
-    }
-
-    /// <summary>The tolerance is the engine's ten degrees, from CanInteractWithObjectHelper 0x0063C670.</summary>
-    [Fact]
-    public void TheToleranceIsTenDegrees()
-    {
-        // M12-012, 0x0063C66C..0x0063C670: movw r1,#0xb8c2 / movt r1,#0x3e32 -> binary32 0x3E32B8C2 exactly (not 0.174533 = 0x3E32B8C7)
-        Assert.Equal(0x3E32B8C2u, BitConverter.SingleToUInt32Bits((float)StackBlocksBehavior.RestingFlatToleranceRad));
-        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x3E32B8C2), StackBlocksBehavior.RestingFlatToleranceRad);
+        Assert.Equal(flat, cube.IsRestingFlat(RestingFlatToleranceRad));
     }
 
     /// <summary>
@@ -47,8 +42,8 @@ public class RestingFlatTests
     {
         float below = BitConverter.UInt32BitsToSingle(0x3E32B8C1), above = BitConverter.UInt32BitsToSingle(0x3E32B8C4);
         // R2 operator< treats this near-tolerance angle as equal, and strict less rejects it.
-        Assert.False(CubeWith(Mat3.AboutY(below)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
-        Assert.False(CubeWith(Mat3.AboutY(above)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
+        Assert.False(CubeWith(Mat3.AboutY(below)).IsRestingFlat(RestingFlatToleranceRad));
+        Assert.False(CubeWith(Mat3.AboutY(above)).IsRestingFlat(RestingFlatToleranceRad));
     }
 
     /// <summary>
@@ -79,7 +74,7 @@ public class RestingFlatTests
     [InlineData(0.9)]
     [InlineData(2.5)]
     public void SpinningACubeOnTheTableLeavesItFlat(double yaw) =>
-        Assert.True(CubeWith(Mat3.AboutZ(yaw)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
+        Assert.True(CubeWith(Mat3.AboutZ(yaw)).IsRestingFlat(RestingFlatToleranceRad));
 }
 
 // The whiteboard's beacon list (fidelity manifest M13-006).

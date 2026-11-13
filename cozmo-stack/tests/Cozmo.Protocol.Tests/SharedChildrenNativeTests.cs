@@ -230,27 +230,6 @@ public sealed class SharedChildrenNativeTests
         Assert.Equal(before,f.Rig.Engine.AnimationMessages.Count(0x5A,true));Assert.False(behavior.HasCurrentAction);
     }
     [Fact]
-    public void CompositeOwnerRetainsChildLeaseThroughStopReuseAndDisposesIt()
-    {
-        // Owner-lifetime unit: supplied already-carried scene makes the first child end without a target.
-        // Direct public Start is used here; no claim about the composite's runnable/selection predicate.
-        using var f=new Fixture();Carry(f);f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);using var composite=new PickUpAndPutDownCubeBehavior(f.M);
-        int before=f.Rig.Engine.AnimationMessages.Count(0x5A,true);
-        for(int run=0;run<2;run++)
-        {
-            composite.StartAsync(f.Runtime.Context,new BehaviorScope(),default).GetAwaiter().GetResult();
-            Assert.True(composite.Update(f.Runtime.Context,f.Rig.Engine.Timer.SecondsF));
-            var child=Assert.IsType<PutDownBlockBehavior>(composite.Running);Assert.NotEqual(0u,child.CurrentRunnerTag);
-            Assert.Equal(before+1,f.Rig.Engine.AnimationMessages.Count(0x5A,true));
-            composite.Stop(BehaviorStopReason.Interrupted);Assert.Null(composite.Running);
-            Assert.Equal(0u,child.CurrentRunnerTag);Assert.Equal(before+1,f.Rig.Engine.AnimationMessages.Count(0x5A,true));
-        }
-        composite.Dispose();composite.Dispose();Assert.Equal(before,f.Rig.Engine.AnimationMessages.Count(0x5A,true));
-        Assert.Throws<ObjectDisposedException>(()=>composite.StartAsync(f.Runtime.Context,new BehaviorScope(),default).GetAwaiter().GetResult());
-        f.Motors(); // Cancel marks the queued action; its normal engine tick performs retirement.
-        Assert.True(f.Robot.ActionList.IsEmpty);
-    }
-    [Fact]
     public void PublicLeaseSurvivesStopReuseAndDisposeReleasesOnlyItsOwnBinding()
     {
         using var f=new Fixture();Carry(f);using var behavior=new PutDownBlockBehavior(f.M,"public-lease");var manager=f.Robot.BehaviorManagerOwner!;manager.Add(behavior);

@@ -306,91 +306,9 @@ public sealed class FindFacesBehavior : ExploreLookAroundInPlaceBehavior
     }
 }
 
-/// <summary>
-/// Legacy standalone custom driver for the Energy and Repair configurations. Its selection,
-/// random pose and callback flow differ from the source-checked native lifecycle
-/// (0x005D8AE0..0x005DA528). Canonical NeedsExpression admission remains MISSING M8-013.
-/// </summary>
-public sealed class DriveInDesperationBehavior : ActionBehavior
-{
-    public enum Phase { Idle, DriveRandom, DriveToCube, LookAtCube, Request }
-    private readonly VisionSystem _v;
-    private readonly ManipulationSystem _m;
-    private int _roundsLeft;
-
-    public DriveInDesperationBehavior(VisionSystem v, ManipulationSystem m, string id, bool useCubes, double minTimeToIdle, double maxTimeToIdle, AnimationTrigger requestAnim, PathMotionProfile? profile = null)
-        : base(id, "DriveInDesperation")
-    {
-        _v = v; _m = m; UseCubes = useCubes; MinTimeToIdle = minTimeToIdle; MaxTimeToIdle = maxTimeToIdle; RequestAnim = requestAnim; Profile = profile ?? PathMotionProfile.Default;
-    }
-
-    public bool UseCubes { get; }
-    public double MinTimeToIdle { get; }
-    public double MaxTimeToIdle { get; }
-    public AnimationTrigger RequestAnim { get; }
-    public PathMotionProfile Profile { get; }
-    public Phase CurrentPhase { get; private set; }
-    public int Requests { get; private set; }
-    public int RandomDrives { get; private set; }
-    /// <summary>Test hook: scales the idle waits.</summary>
-    public double IdleScale { get; set; } = 1.0;
-    protected override bool KeepsRunningWithoutAction => true;
-
-    protected override void OnStart() => TransitionToIdle();
-
-    private void TransitionToIdle()
-    {
-        CurrentPhase = Phase.Idle;
-        double idle = (MinTimeToIdle + Context.Random.NextDouble() * (MaxTimeToIdle - MinTimeToIdle)) * IdleScale;
-        Log($"{Id}.Idle: idling for {idle / IdleScale:F1} sec");
-        Wait(idle, TransitionFromIdle);
-    }
-
-    private void TransitionFromIdle()
-    {
-        var cube = UseCubes ? _m.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).OrderBy(o => _m.RobotPose() is { } r ? (o.Pose.Translation - r.Translation).Length : 0).FirstOrDefault() : null;
-        if (cube is not null) { TransitionToDriveToCube(cube.ObjectId); return; }
-        _roundsLeft = Context.Random.Next(1, 4);
-        Log($"{Id}.Drive: driving to {_roundsLeft} random points next time we drive");
-        TransitionToDriveRandom();
-    }
-
-    private void TransitionToDriveRandom()
-    {
-        if (_roundsLeft <= 0) { TransitionToRequest(); return; }
-        _roundsLeft--;
-        CurrentPhase = Phase.DriveRandom;
-        var robot = _m.RobotPose();
-        if (robot is null) { Finish(); return; }
-        double dist = 40 + Context.Random.NextDouble() * 60;
-        double ang = (50 + Context.Random.NextDouble() * 100) * Math.PI / 180 * (Context.Random.NextDouble() < 0.5 ? 1 : -1);
-        double heading = robot.Value.AngleAroundZ + ang;
-        var goal = new Pose3d(Mat3.AboutZ(heading), robot.Value.Translation + new Vec3(Math.Cos(heading) * dist, Math.Sin(heading) * dist, 0));
-        Log($"BehaviorDriveInDesperation.GetRandomDrivingPose: angle={ang * 180 / Math.PI:F1}deg, dist={dist:F1}mm");
-        RandomDrives++;
-        var drive = new DriveToPoseAction(_m) { Goal = goal, Profile = Profile };
-        RunAction("DriveToPose(random)", drive.RunAsync, _ => TransitionToDriveRandom(), ActionResult.Abort);
-    }
-
-    private void TransitionToDriveToCube(uint id)
-    {
-        CurrentPhase = Phase.DriveToCube;
-        var drive = new DriveToObjectAction(_m, id, PreActionType.Docking) { Profile = Profile };
-        RunAction($"DriveToCube({id})", drive.RunAsync, _ =>
-        {
-            CurrentPhase = Phase.LookAtCube;
-            RunAction($"LookAtCube({id})", ct => _m.TurnTowardsObjectAsync(id, Math.PI, ct), _ => TransitionToRequest(), false);
-        }, ActionResult.Abort);
-    }
-
-    private void TransitionToRequest()
-    {
-        CurrentPhase = Phase.Request;
-        Requests++;
-        using var turn = new TurnTowardsFaceAction(_v, SmartFaceID.Invalid);
-        RunAction("TurnTowardsFaceWrapper", turn.RunAsync, _ => PlayTrigger(RequestAnim, TransitionToIdle), FaceActionResult.Abort);
-    }
-}
+// RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the legacy standalone DriveInDesperationBehavior (a non-engine random driver on the retired
+// DriveToPoseAction(m) / DriveToObjectAction flow) is removed; Needs_SevereLowEnergyState / Needs_SevereLowRepairState are bound to the factory's
+// NativeDriveInDesperationBehavior (M15-091) in the standalone stack too.
 
 /// <summary>
 /// <c>BehaviorExpressNeeds</c> (ctor 0x005EE144; vtable 0x0102A24C; six configs), built from
@@ -631,12 +549,6 @@ public static class ExplorerBehaviors
                     case "FindFaces":
                         list.Add(new FindFacesBehavior(v, id, r.TryGetProperty("params", out var p2) ? LookAroundParams.FromJson(p2) : new LookAroundParams(),
                                                        r.TryGetProperty("maxFaceAgeToLook_ms", out var age) ? (uint)age.GetDouble() : 180000u, m));
-                        break;
-                    case "DriveInDesperation" when m is not null:
-                        list.Add(new DriveInDesperationBehavior(v, m, id, r.TryGetProperty("useCubes", out var uc) && uc.GetBoolean(),
-                                                                r.TryGetProperty("minTimeToIdle", out var mn) ? mn.GetDouble() : 1.5, r.TryGetProperty("maxTimeToIdle", out var mx) ? mx.GetDouble() : 6.5,
-                                                                r.TryGetProperty("requestAnimTrigger", out var ra) && Enum.TryParse<AnimationTrigger>(ra.GetString(), out var rt) ? rt : AnimationTrigger.NeedsSevereLowEnergyRequest,
-                                                                r.TryGetProperty("motionProfile", out var mp) ? Profile(mp) : null));
                         break;
                     case "ExpressNeeds":
                         if (Enum.TryParse<NeedId>(r.GetProperty("need").GetString(), true, out var need) && Enum.TryParse<NeedBracketId>(r.GetProperty("needBracket").GetString(), true, out var bracket))

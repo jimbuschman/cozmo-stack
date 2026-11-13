@@ -57,23 +57,6 @@ public class DriveInDesperationNativeTests
         Assert.NotNull(selected.SelectedAtSec);
         Assert.IsType<NativeNeedsGetInBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyGetIn"]);
     }
-    // reach: offline CLI --simulate with shipped assets; verifies the actual printed boundary, no robot or hardware run.
-    [Fact]
-    public async Task StandaloneSimulationPrintsLegacyEnergyBoundary()
-    {
-        var obb = Directory.GetParent(Directory.GetParent(Resources())!.FullName)!.FullName;
-        var previous = Console.Out;
-        using var output = new StringWriter();
-        try
-        {
-            Console.SetOut(output);
-            Assert.Equal(0, await FreeplayTool.Run(new[] { "freeplay", "--simulate", "--obb", obb, "--ticks", "0" }));
-        }
-        finally { Console.SetOut(previous); }
-        Assert.Contains("MISSING: Needs_SevereLowEnergyState uses the legacy standalone custom driver", output.ToString());
-        Assert.Contains("MISSING: Needs_SevereLowRepairState uses the legacy standalone custom driver", output.ToString());
-        Assert.DoesNotContain("Native NeedsExpression admission remains unbuilt", output.ToString());
-    }
     // reach: unit; supplied factory inputs and canonical carrying/platform state. Native vtable cells 0x10288f4/f8/fc and runnable 0x5d90ac.
     [Fact]
     public void EnergyFactoryUsesOwnGatesAndAcceptsRepair()

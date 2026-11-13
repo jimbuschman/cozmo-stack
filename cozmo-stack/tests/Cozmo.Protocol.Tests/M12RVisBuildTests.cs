@@ -62,48 +62,19 @@ public class M12RVisBuildTests : IDisposable
     // ------------------------------------------------------------------ M12-022
 
     /// <summary>
-    /// M12-022: the 7-arg ctor 0x0055850C stores the ActionType argument at +0x80 and -1.0 at +0x84 (0x005585A0, r1 = 0xBF800000); the 4-arg
-    /// ctor 0x005587B8 stores 6 at +0x80 (0x0055883C) and the float at +0x84 (0x0055884C); +0x148 = 1 from both (inventory G3.9, row 11.1).
+    /// M12-022: the 7-arg ctor 0x0055850C stores the ActionType argument at +0x80 and +0x148 = 1 (inventory G3.9, row 11.1). (The 4-arg ActionType-6 ctor
+    /// 0x005587B8 and the +0x84 distance were retired with the legacy drive flow, RETIRE-LEGACY-DRIVE-API-1; type 6 has no built form.)
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void M12_022_TheSevenArgAndFourArgConstructorsDifferInActionTypeAndDistance()
+    public void M12_022_TheSevenArgConstructorStoresTheActionTypeAndCheckAtEnd()
     {
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var seven = new DriveToObjectAction(rig.M, 7, PreActionType.Rolling);
         Assert.Equal(PreActionType.Rolling, seven.ActionType);
         Assert.Equal(4, (int)seven.ActionType);
-        Assert.Equal(-1.0f, seven.DistanceFromObjectOrigin);
         Assert.True(seven.CheckAtEnd);
-
-        var four = new DriveToObjectAction(rig.M, 7, 123.5f, useManualSpeed: true);
-        Assert.Equal(6, (int)four.ActionType);
-        Assert.Equal(PreActionType.None, four.ActionType);
-        Assert.Equal(123.5f, four.DistanceFromObjectOrigin);
-        Assert.True(four.UseManualSpeed);
-        Assert.True(four.CheckAtEnd);
-    }
-
-    /// <summary>
-    /// M12-022, the RobotActionUnion GotoObject factory 0x0052A090: usePreDockPose ([msg+0x35], 0x0052A0BA) set builds the 7-arg ctor with
-    /// ActionType 0 (0x0052A0C4..0x0052A0DA); clear builds the 4-arg ctor with distance [msg+0x30] and useManualSpeed [msg+0x34]
-    /// (0x0052A0E0..0x0052A0EE).
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void M12_022_TheGotoObjectFactoryPicksTheConstructorByUsePreDockPose()
-    {
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        var pre = DriveToObjectAction.FromGotoObject(rig.M, 7, 120f, useManualSpeed: true, usePreDockPose: true);
-        Assert.Equal(PreActionType.Docking, pre.ActionType);
-        Assert.Equal(0, (int)pre.ActionType);
-        Assert.Equal(-1.0f, pre.DistanceFromObjectOrigin);
-        var raw = DriveToObjectAction.FromGotoObject(rig.M, 7, 120f, useManualSpeed: true, usePreDockPose: false);
-        Assert.Equal(PreActionType.None, raw.ActionType);
-        Assert.Equal(120f, raw.DistanceFromObjectOrigin);
-        Assert.True(raw.UseManualSpeed);
     }
 
     /// <summary>M12-022: DriveToPlaceCarriedObjectAction ctor 0x00559CD4: r2 = 1, then 2 when r3 != 0 (0x00559CDE/0x00559CE4/0x00559CE8); its only caller passes 1 (0x00554B40/0x00554B42).</summary>
@@ -115,50 +86,6 @@ public class M12RVisBuildTests : IDisposable
         Assert.Equal(PreActionType.PlaceOnGround, DriveToObjectAction.DriveToPlaceCarriedObjectActionType);
     }
 
-    /// <summary>
-    /// M12-022, the goal (0x00559200..0x00559278): delta = normalize(robot.xy - object.xy) * +0x84; goal = {obj.x + delta.x, obj.y + delta.y, robot.z};
-    /// yaw = atan2f(-delta.y, -delta.x). Worked by hand: object (200, 100), robot (0, 0, 5), +0x84 = 100:
-    /// delta = (-200, -100)/223.6068 * 100 = (-89.4427, -44.7214); goal = (110.5573, 55.2786, 5); yaw = atan2(44.7214, 89.4427) = 0.4636476.
-    /// A robot closer to the object than +0x84 needs no goal (0x005591C2..0x005591D6).
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void M12_022_TheObjectDeltaGoalIsBuiltFromTheObjectTheRobotAndTheDistance()
-    {
-        Assert.True(DriveToObjectAction.TryBuildObjectDeltaGoal(At(200, 100, 22), At(0, 0, 5), 100f, out var goal));
-        Assert.Equal(110.5573, goal.Translation.X, 3);
-        Assert.Equal(55.2786, goal.Translation.Y, 3);
-        Assert.Equal(5.0, goal.Translation.Z, 9);
-        Assert.Equal(0.4636476, goal.AngleAroundZ, 6);
-        // 223.6 < 300: the robot is inside the distance already
-        Assert.False(DriveToObjectAction.TryBuildObjectDeltaGoal(At(200, 100, 22), At(0, 0, 5), 300f, out _));
-        // exactly on the object: n2 = 0, d = 0, delta stays 0: the goal is the object's point, yaw atan2(-0, -0)
-        Assert.True(DriveToObjectAction.TryBuildObjectDeltaGoal(At(50, 60, 22), At(50, 60, 0), 0f, out var onIt));
-        Assert.Equal(50.0, onIt.Translation.X, 9);
-        Assert.Equal(60.0, onIt.Translation.Y, 9);
-    }
-
-    /// <summary>M12-022 end to end: the type-6 drive sends a path to the object+delta goal, 150 mm short of a cube 300 mm ahead.</summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public async Task M12_022_TheTypeSixDriveGoesToThePointShortOfTheObject()
-    {
-        if (Lib is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = ManipulationTests.CubeAt(300, 0);
-        var obj = Assert.Single(rig.Frame().Objects).Object;
-        var drive = new DriveToObjectAction(rig.M, 7, 150f, useManualSpeed: false);
-        var task = drive.RunAsync(default);
-        SignalTestContext.Run(task, () => { rig.Pump(); });
-        await task;
-        var lines = rig.Sent.OfType<AppendPathSegmentLine>().ToList();
-        Assert.NotEmpty(lines);
-        // the last line ends at obj.x - 150 (the goal is on the line from the object toward the robot)
-        Assert.InRange(lines[^1].XEndMm, obj.Pose.Translation.X - 150 - 2, obj.Pose.Translation.X - 150 + 2);
-        Assert.InRange(Math.Abs(lines[^1].YEndMm), 0, 3);
-    }
-
     // ------------------------------------------------------------------ M12-011
 
     /// <summary>M12-011, CheckIfDone 0x00559880: +0x148 == 0 returns 0 before the object lookup (0x0055989C).</summary>
@@ -168,8 +95,11 @@ public class M12RVisBuildTests : IDisposable
     {
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
-        var drive = new DriveToObjectAction(rig.M, 99, PreActionType.Docking) { CheckAtEnd = false };
-        Assert.Equal(ActionResult.Success, drive.CheckIfDone());
+        // Native CheckIfDone (NativeDriveToObjectRunner; the legacy DriveToObjectAction.CheckIfDone was retired, RETIRE-LEGACY-DRIVE-API-1): the empty compound's
+        // Update (D8) gives 0, then +0x148 == 0 returns 0 (0x0055989C) before the lookup.
+        var drive = new NativeDriveToObjectRunner(rig.M, 99);
+        drive.Action.CheckAtEnd = false;
+        Assert.Equal(0u, drive.CheckIfDone());
     }
 
     /// <summary>M12-011: an object that is not located is BadObject 0x03000004 (0x005598B6 + 0x005598BA).</summary>
@@ -179,28 +109,8 @@ public class M12RVisBuildTests : IDisposable
     {
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
-        var drive = new DriveToObjectAction(rig.M, 99, PreActionType.Docking);
-        Assert.Equal(0x03000004u, (uint)drive.CheckIfDone());
-    }
-
-    /// <summary>
-    /// M12-011, ActionType 6 (0x00559998..0x005599FE): the robot-to-object XY distance squared against +0x84 squared; beyond it the result is
-    /// 0x04000001; within it 0. The cube is at (300, 0): a robot at x=160 is 140 away of 150, a robot at x=100 is 200 away.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void M12_011_TypeSixComparesTheDistanceToTheObjectOriginAgainstPlus0x84()
-    {
-        if (Lib is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = ManipulationTests.CubeAt(300, 0);
-        var obj = Assert.Single(rig.Frame().Objects).Object;
-        var drive = new DriveToObjectAction(rig.M, 7, (float)150, useManualSpeed: false);
-        rig.X = (float)(obj.Pose.Translation.X - 140); rig.Y = 0; rig.State();
-        Assert.Equal(ActionResult.Success, drive.CheckIfDone());
-        rig.X = (float)(obj.Pose.Translation.X - 200); rig.State();
-        Assert.Equal(0x04000001u, (uint)drive.CheckIfDone());
+        var drive = new NativeDriveToObjectRunner(rig.M, 99);
+        Assert.Equal(0x03000004u, drive.CheckIfDone());
     }
 
     /// <summary>
@@ -216,15 +126,15 @@ public class M12RVisBuildTests : IDisposable
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(300, 0);
         Assert.Single(rig.Frame().Objects);
-        var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
+        var drive = new NativeDriveToObjectRunner(rig.M, 7);           // native CheckIfDone (legacy one retired, RETIRE-LEGACY-DRIVE-API-1)
         ActionResult fnResult = ActionResult.Success; bool flag = false; int calls = 0;
-        drive.PosesFunction = (ObservableObject o, out IReadOnlyList<PreActionPose> poses, ref bool inPosition) =>
+        drive.Action.PosesFunction = (ObservableObject o, out IReadOnlyList<PreActionPose> poses, ref bool inPosition) =>
         { calls++; poses = Array.Empty<PreActionPose>(); inPosition = flag; return fnResult; };
-        Assert.Equal(0x04000001u, (uint)drive.CheckIfDone());          // flag 0
+        Assert.Equal(0x04000001u, drive.CheckIfDone());                // flag 0
         flag = true; fnResult = ActionResult.Retry;
-        Assert.Equal(ActionResult.Retry, drive.CheckIfDone());         // flag set: the function's own result
+        Assert.Equal((uint)ActionResult.Retry, drive.CheckIfDone());   // flag set: the function's own result
         fnResult = ActionResult.Success;
-        Assert.Equal(ActionResult.Success, drive.CheckIfDone());
+        Assert.Equal((uint)ActionResult.Success, drive.CheckIfDone());
         Assert.Equal(3, calls);
     }
 
@@ -245,7 +155,7 @@ public class M12RVisBuildTests : IDisposable
     {
         _unitPoseInputs.Add(goal);
         var anim = new FakeAnim(); int aborts = 0;
-        var d = new DriveToPoseAction(rig.M) { Goal = goal, DrivingAnimations = anim, AbortPath = () => aborts++ };
+        var d = NativeDriveTestGoals.Unconverted(rig.M, goal); d.DrivingAnimations = anim; d.AbortPath = () => aborts++;
         return (d, anim, () => aborts);
     }
 
@@ -383,7 +293,7 @@ public class M12RVisBuildTests : IDisposable
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, _, _) = NewDrive(rig, At(100, 0));
-        d.Goals = new[] { At(100, 0), At(500, 500) };
+        d.SetNativeGoals(new[] { At(100, 0), At(500, 500) });
         d.GoalIndex = 1;
         Assert.Equal(0x04000002u, (uint)d.CheckIfDone(Tick(4, robot: At(100, 0))));
         Assert.Equal(0u, (uint)d.CheckIfDone(Tick(4, robot: At(500, 500))));
@@ -397,18 +307,21 @@ public class M12RVisBuildTests : IDisposable
         using var signals=SignalTestContext.Install();using var rig=new Rig();rig.M.DrivingAnimationsForTest=null;
         var handler=rig.Robot.Animations.DrivingAnimations;
         handler.Push(new((Cozmo.Robot.Behavior.AnimationTrigger)0x23F,(Cozmo.Robot.Behavior.AnimationTrigger)0x23F,(Cozmo.Robot.Behavior.AnimationTrigger)0x23F),"lifecycle-fixture");
-        using var d=new DriveToPoseAction(rig.M){Goal=At(100,0)};
+        // RETIRE-LEGACY-DRIVE-API-1: native drive; drive-center firmware input (Rig.DriveCenterFollowing) and a 30 mm goal the short planner takes (P6/P9: dc start -20, dc goal 10; d^2 < 1600, SelectPlanner); the legacy straight-line stand-in for a missing lattice is gone.
+        using var d=NativeDriveTestGoals.To(rig.M, At(30,0));
         Assert.Same(handler,d.DrivingAnimations);Assert.Equal(0,d.Init());Assert.Equal(0,handler.State);
-        Assert.Equal(ActionResult.Success,d.CheckIfDone(Tick(4,robot:At(100,0))));
+        using var arrived=At(30,0);arrived.SetParent(rig.Robot.Engine.Robot!.GetNativeOrigin(rig.Robot.Engine.Robot.CurrentOriginId)); // the goal's frame after Init's I3
+        Assert.Equal(ActionResult.Success,d.CheckIfDone(Tick(4,robot:arrived)));
     }
     /// <summary>The live task uses the same source CheckIfDone tail on the ActionList; the explicit geometry fixture supplies path inputs.</summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_024_TheLivePathReturnsSuccessThroughTheEndLifecycle()
     {
-        using var signals=SignalTestContext.Install();using var rig=new Rig();
-        using var goal=At(150,-40,0,0.5);
-        var drive=new DriveToPoseAction(rig.M){Goal=goal};
+        using var signals=SignalTestContext.Install();using var rig=new Rig();rig.DriveCenterFollowing=true;
+        // RETIRE-LEGACY-DRIVE-API-1: native drive; drive-center firmware input (Rig.DriveCenterFollowing) and a 30 mm goal the short planner takes (P6/P9: dc start -20, dc goal 10; d^2 < 1600, SelectPlanner); the legacy straight-line stand-in for a missing lattice is gone.
+        using var goal=At(30,0);
+        var drive=NativeDriveTestGoals.To(rig.M, goal);
         var task=drive.RunAsync(default);
         SignalTestContext.Run(task,()=>rig.Pump());Assert.Equal(ActionResult.Success,task.GetAwaiter().GetResult());
         Assert.DoesNotContain(drive.Trace,l=>l.Contains("unbuilt; source remains RUNNING"));
@@ -1472,70 +1385,6 @@ public class M12RVisBuildTests : IDisposable
 
     // ------------------------------------------------------------------ M12-022 (NaN and zero)
 
-    /// <summary>
-    /// M12-022, InitHelper 0x00558FB4 (research 5.1, 5.2): a strictly negative +0x84 gives 0x0300000D (0x00558FE2 vcmpe s0,#0; 0x00558FEA bpl skips the error block 0x00558FEC..0x0055903E
-    /// unless N is set, which only a negative value does).
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Theory]
-    [InlineData(-1.0f)]
-    [InlineData(-0.001f)]
-    public async Task M12_022_AStrictlyNegativeDistanceIsNoDistanceSet(float distance)
-    {
-        if (Lib is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = ManipulationTests.CubeAt(300, 0);
-        rig.Frame();
-        var drive = new DriveToObjectAction(rig.M, 7, distance, useManualSpeed: false);
-        Assert.Equal(0x0300000Du, (uint)await drive.RunAsync(default));
-        Assert.Empty(rig.Pump().OfType<ExecutePath>());
-        var sevenArgNone = new DriveToObjectAction(rig.M, 7, PreActionType.None);          // the 7-arg ctor stores -1.0
-        Assert.Equal(ActionResult.NoDistanceSet, await sevenArgNone.RunAsync(default));
-    }
-
-    /// <summary>
-    /// M12-022 (research 5.2): +0.0 and -0.0 do NOT error: vcmpe s0,#0 sets Z (equal), N stays clear, bpl is taken. The drive is built to the object's own point (delta * 0 = 0) and a path is sent.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Theory]
-    [InlineData(0.0f)]
-    [InlineData(-0.0f)]
-    public void M12_022_ZeroDistanceIsNotAnError(float distance)
-    {
-        if (Lib is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = ManipulationTests.CubeAt(300, 0);
-        var obj = Assert.Single(rig.Frame().Objects).Object;
-        var drive = new DriveToObjectAction(rig.M, 7, distance, useManualSpeed: false);
-        var task = drive.RunAsync(default);
-        Spin(task, rig, ms: 60000);
-        Assert.True(task.IsCompleted);
-        Assert.NotEqual(0x0300000Du, (uint)task.Result);
-        Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine);
-    }
-
-    /// <summary>
-    /// M12-022 (research 5.2, 5.3): a NaN +0x84 does NOT take the error path (unordered vcmpe: N = 0, bpl taken); the goal build multiplies delta by NaN (0x005591E4) so the goal is NaN, and
-    /// InitHelper returns no result for it. This stack throws a visible NotSupportedException for the NaN goal (MISSING: what the planner does with it) instead of sending a path.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public async Task M12_022_ANanDistanceBuildsANanGoalAndIsAVisibleStub()
-    {
-        Assert.True(DriveToObjectAction.TryBuildObjectDeltaGoal(At(200, 100, 22), At(0, 0, 5), float.NaN, out var goal));
-        Assert.True(double.IsNaN(goal.Translation.X) && double.IsNaN(goal.Translation.Y));
-        if (Lib is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = ManipulationTests.CubeAt(300, 0);
-        rig.Frame();
-        var drive = new DriveToObjectAction(rig.M, 7, float.NaN, useManualSpeed: false);
-        await Assert.ThrowsAsync<NotSupportedException>(() => drive.RunAsync(default));
-        Assert.Empty(rig.Pump().OfType<ExecutePath>());
-    }
-
     // ------------------------------------------------------------------ M12-008 (BlockPickedUp, synchronisation)
 
     /// <summary>
@@ -2307,49 +2156,6 @@ public class M12RVisBuildTests : IDisposable
     // ------------------------------------------------------------------ M12-030
 
     /// <summary>
-    /// M12-030, Init 0x00559DB8: nothing carried is 0x03000011; the constructor's object missing from the world is 0x03000004; +0x178 needs ComputePlacementApproachAngle 0x005504A0 whose body is not
-    /// in the inventory (only its angle helper is), so it is a visible NotSupportedException. Clone (thunk 0x004E3954 -&gt; 0x004E38D4, 0x0087660E, 0x004E0C4C..0x004E0C58) keeps NOTHING: the clone's
-    /// ObjectID is -1 (uint.MaxValue), so the inner GetPreActionPoses does NOT answer 0x03000004 for it (0x00550904 compares -1 with the carried id): the chain goes on to poses and a drive.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public async Task M12_030_TheCloneKeepsNothingSoTheInnerChainDrivesInsteadOfAnswering0x03000004()
-    {
-        if (Lib is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = ManipulationTests.CubeAt(200, 0);
-        Assert.Single(rig.Frame().Objects);
-        var notCarrying = new DriveToPlaceCarriedObjectAction(rig.M, At(300, 0, 22), true, false, false, false, 0.0);
-        Assert.Equal(0x03000011u, (uint)await notCarrying.RunAsync(default));
-        rig.M.Docking.Carrying.SetCarrying(7);
-        // A: old placement goal was parentless and the clone got no pre-action poses.
-        using var placement = At(300, 100, 22, 0.4);
-        placement.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
-        var act = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, false, false, false, 0.0);
-        var t = act.RunAsync(default); Spin(t, rig);
-        Assert.True(t.IsCompleted);
-        Assert.NotEqual(0x03000004u, (uint)t.Result);
-        Assert.NotNull(act.Clone);
-        Assert.Equal(uint.MaxValue, act.Clone!.ObjectId);                        // ObjectID -1
-        Assert.Equal(PoseState.Known, act.Clone.PoseState);
-        Assert.Equal(300.0, act.Clone.Pose.Translation.X, 9); Assert.Equal(100.0, act.Clone.Pose.Translation.Y, 9);
-        Assert.Contains(rig.Sent, m => m is ExecutePath);                        // the inner InitHelper found poses and drove
-        placement.ClearParent(); // Preserve the deliberately disjoint-root input of the following failure-branch check.
-        var approach = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, true, false, false, 0.0);
-        // B: old 0x03000005/null came from the carried object's missing parent. OV05's
-        // GetWithRespectTo(carried,robot) now succeeds, so the native Init creates the clone (Q4.3).
-        // The deliberately root placement then reaches world row1e / 0x0050DFFA:
-        // M1-034 skips GetParent(root), leaving empty goals / 0x03000010 (Q2.4).
-        Assert.Equal(ActionResult.NoPreActionPoses, await approach.RunAsync(default));
-        Assert.NotNull(approach.Clone);
-        rig.M.Docking.Carrying.UnsetCarrying();
-        var gone = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, false, false, false, 0.0);      // built with nothing carried: the invalid id
-        rig.M.Docking.Carrying.SetCarrying(7);
-        Assert.Equal(0x03000004u, (uint)await gone.RunAsync(default));         // the constructor's id is not in the world
-    }
-
-    /// <summary>
     /// M12-030, CheckIfDone 0x00559FA4: the compound's result is replaced by 0x04000008 when +0x179 is set and the goal is not free; with +0x179 clear the query is not called; the query is given the
     /// carried object, the placement pose and the padding [+0x17C]. IsPlacementGoalFree 0x0055A070 returns true before any query when the carried object is not found.
     /// </summary>
@@ -2570,33 +2376,6 @@ public class M12RVisBuildTests : IDisposable
     }
 
     /// <summary>
-    /// M12-035, DriveToFlipBlockPoseAction ctor 0x0055EB04 (ActionType 5, [this+0x44] = 9) installs L3 (0x0055EB74: GetPossiblePoses with closestOnly 0, the in-position flag untouched);
-    /// ShouldDriveToClosestPreActionPose(b) 0x0055EC04 installs L4 (closestOnly = b). Robot (0, -10): L3 gives the nearest-two answer (Left), L4 with true the planar closest (Front), L4 with false Left.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void M12_035_TheDriveToFlipBlockPoseInstallersL3AndL4()
-    {
-        var (rig, cube) = FlipRig(-10f);
-        using (rig)
-        {
-            var act = new DriveToFlipBlockPoseAction(rig.M, 7);
-            Assert.Equal(9, act.Field0x44);
-            Assert.Equal(PreActionType.Flipping, act.Drive.ActionType);
-            bool inPos = true;
-            Assert.Equal(ActionResult.Success, act.Drive.PosesFunction(cube, out var l3, ref inPos));
-            Assert.True(inPos);
-            Assert.Equal(BlockFace.Left, Assert.Single(l3).Marker.Face);
-            act.ShouldDriveToClosestPreActionPose(true);
-            act.Drive.PosesFunction(cube, out var l4, ref inPos);
-            Assert.Equal(BlockFace.Front, Assert.Single(l4).Marker.Face);
-            act.ShouldDriveToClosestPreActionPose(false);
-            act.Drive.PosesFunction(cube, out var l4b, ref inPos);
-            Assert.Equal(BlockFace.Left, Assert.Single(l4b).Marker.Face);
-        }
-    }
-
-    /// <summary>
     /// M12-035 / M12-011, DriveToObjectAction::CheckIfDone 0x00559A86..0x00559AE6: the +0x150 function gets a FRESH EMPTY vector and an in-position bool of 0 (0x00559A86 movs r0,#0;
     /// 0x00559A8E strb.w r0,[sp,#0x10]); flag NON-ZERO returns the function's result, flag ZERO returns 0x04000001 (0x00559AE4). L1..L4 never write the bool, so a flip drive ends 0x04000001
     /// even though GetPossiblePoses succeeds; DriveAndFlipBlockAction ignores that failure (the outer compound's AddAction(inner, true, false), 0x0055B370) and runs the flip.
@@ -2612,24 +2391,21 @@ public class M12RVisBuildTests : IDisposable
         Assert.Single(rig.Frame().Objects);
         // the default function DOES set the flag (M12-029: GetPossiblePoses fills the empty vector and the in-position byte): a robot in position gets the function's result
         rig.X = 60; rig.Angle = 0; rig.State();
-        var docking = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
-        Assert.Equal(ActionResult.Success, docking.CheckIfDone());
+        // Native CheckIfDone (NativeDriveToObjectRunner; the legacy DriveToObjectAction.CheckIfDone, DriveToFlipBlockPoseAction and DriveAndFlipBlockAction.RunAsync
+        // were retired, RETIRE-LEGACY-DRIVE-API-1).
+        var docking = new NativeDriveToObjectRunner(rig.M, 7);
+        Assert.Equal(0u, docking.CheckIfDone());
         rig.X = -20; rig.State();
-        Assert.Equal(0x04000001u, (uint)docking.CheckIfDone());
+        Assert.Equal(0x04000001u, docking.CheckIfDone());
         rig.X = 0; rig.State();
-        var act = new DriveToFlipBlockPoseAction(rig.M, 7);
-        Assert.Equal(ActionResult.Success, DriveAndFlipBlockAction.GetPossiblePoses(rig.M, rig.M.World.GetLocatedObjectById(7)!, out var poses, false));
-        Assert.NotEmpty(poses);                                                     // the function itself succeeds ...
-        Assert.Equal(0x04000001u, (uint)act.Drive.CheckIfDone());                   // ... and the check still ends 0x04000001
-        act.ShouldDriveToClosestPreActionPose(true);
-        Assert.Equal(0x04000001u, (uint)act.Drive.CheckIfDone());
-        var flip = new DriveAndFlipBlockAction(rig.M, 7);
-        rig.State((uint)(RobotStatusFlag.LiftInPos | RobotStatusFlag.HeadInPos));
-        var t = flip.RunAsync(default); Spin(t, rig, () => rig.State((uint)(RobotStatusFlag.LiftInPos | RobotStatusFlag.HeadInPos)));
-        // IDriveToInteractWithObject 0x0055B370 AddAction(inner, ignoreFailure = 1): the outer compound ignores the failed drive and goes on to the flip; the action's result is the flip's
-        Assert.NotEqual(0x04000001u, (uint)t.Result);
-        Assert.Contains(flip.Trace, l => l.Contains("FlipBlockAction.CheckIfDone: compound result"));   // the flip ran to its CheckIfDone (0x0055F074)
-        Assert.Contains(flip.Trace, l => l.Contains("ignored by the outer compound"));
+        // The flip drive: NativeDriveAndFlipRunner installs its L1 function (NativeDriveAndFlipRunner.GetPossiblePoses) on the inner DriveToObjectAction, and L1 never writes the flag.
+        var flip = new NativeDriveAndFlipRunner(rig.M, 7, 0f);
+        Assert.NotNull(flip.Drive);
+        bool inPos = false;
+        Assert.Equal(ActionResult.Success, flip.Drive!.Action.PosesFunction(rig.M.World.GetLocatedObjectById(7)!, out var poses, ref inPos));
+        Assert.NotEmpty(poses); Assert.False(inPos);                                // the function itself succeeds ...
+        Assert.Equal(0x04000001u, flip.Drive.CheckIfDone());                        // ... and the check still ends 0x04000001
+        flip.RetireNeverAdmittedTree();
     }
 
     // ================================================================== R-VIS M12 fix round 3
@@ -2761,10 +2537,12 @@ public class M12RVisBuildTests : IDisposable
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
         rig.M.Docking.Carrying.SetCarrying(7);
-        var flip = new DriveAndFlipBlockAction(rig.M, 7) { MaxTurnTowardsFaceRad = Math.PI / 2 };
-        Assert.Equal(0x03000004u, (uint)flip.RunAsync(default).GetAwaiter().GetResult());
-        Assert.Contains(flip.Trace, l => l.Contains("no drive, wait or turn actions are added"));
-        Assert.DoesNotContain(flip.Trace, l => l.Contains("TurnTowards"));
+        // NativeDriveAndFlipRunner (the legacy DriveAndFlipBlockAction.RunAsync was retired, RETIRE-LEGACY-DRIVE-API-1): carrying the object's id, the constructor adds
+        // no drive, wait-lambda or turn actions (0x0055B258..0x0055B264 -> 0x0055B45E), only the FlipBlockAction, whatever the maximum turn.
+        var flip = new NativeDriveAndFlipRunner(rig.M, 7, (float)(Math.PI / 2));
+        Assert.Null(flip.Drive); Assert.Null(flip.DriveAndWait); Assert.Null(flip.Face);
+        Assert.Same(flip.Flip, Assert.Single(flip.Children));
+        flip.RetireNeverAdmittedTree();
         Assert.Empty(rig.Pump().OfType<ExecutePath>());
         Assert.False(DriveAndFlipBlockAction.MaxTurnIsPositive(0.5e-5));
         Assert.True(DriveAndFlipBlockAction.MaxTurnIsPositive(2e-5));

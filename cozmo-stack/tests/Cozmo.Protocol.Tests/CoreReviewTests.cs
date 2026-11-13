@@ -937,9 +937,11 @@ public class CoreReviewTests
         Assert.Null(rig.M.World.GetLocatedObjectById(cube.ObjectId));      // cannot be driven to any more
         Assert.Empty(map.Regions);                                        // the map is the new origin's
 
-        var drive = new DriveToObjectAction(rig.M, cube.ObjectId, PreActionType.Docking);
-        var result = drive.RunAsync(default).GetAwaiter().GetResult();
-        Assert.Equal(ActionResult.BadObject, result);
+        // The drive is the native DriveToObjectAction (the legacy RunAsync was retired, RETIRE-LEGACY-DRIVE-API-1): DriveToObjectAction::Init 0x00559650 looks the
+        // object up (GetLocatedObjectByIdHelper) and a miss is 0x03000004 BadObject (M12-011 0x005598B6/0x005598BA uses the same code), before any drive is built.
+        var drive = new NativeDriveToObjectRunner(rig.M, cube.ObjectId);
+        Assert.Equal(unchecked((int)0x03000004), drive.Init());
+        Assert.Null(drive.Drive);
         Assert.DoesNotContain(rig.Sent, m => m is ExecutePath);
         }
         finally {rig.Vision.RobotDelocalized-=onDelocalized;}

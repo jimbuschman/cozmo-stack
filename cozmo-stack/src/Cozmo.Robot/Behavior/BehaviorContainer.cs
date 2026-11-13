@@ -30,6 +30,17 @@ public sealed class BehaviorFactoryContext
     public Action<string>? Log { get; init; }
     public SourceLogSink? SourceLog { get; init; }
     internal Action<GuardDogDisconnectUnit>? RegisterGuardDogDisconnect;
+    /// <summary>
+    /// Stack machinery (RETIRE-LEGACY-DRIVE-API-1, operator 2026-11-13): when set, only the classes it accepts see <see cref="NativeRobot"/>; every other class is
+    /// built from a copy of this context whose NativeRobot is null, exactly as before the standalone stack passed the native Robot. Null: every class sees it.
+    /// </summary>
+    internal Func<BehaviorClass,bool>? NativeRobotClasses {get;init;}
+    /// <summary>A copy of this context with <see cref="NativeRobot"/> null; every other property and the guard-dog registration are kept.</summary>
+    internal BehaviorFactoryContext WithoutNativeRobot()=>new()
+    {
+        Vision=Vision,Manipulation=Manipulation,NativeRobot=null,TallStackData=TallStackData,BouncerNativeRobot=BouncerNativeRobot,Features=Features,
+        ReactionManager=ReactionManager,Log=Log,SourceLog=SourceLog,NativeRobotClasses=NativeRobotClasses,RegisterGuardDogDisconnect=RegisterGuardDogDisconnect,
+    };
 }
 
 /// <summary>
@@ -380,6 +391,8 @@ public sealed class BehaviorFactory
     public IBehavior? CreateBehavior(BehaviorContainer container, BehaviorClass cls, BehaviorFactoryContext ctx, JsonElement config,
                                      out BehaviorCreateStatus status)
     {
+        // RETIRE-LEGACY-DRIVE-API-1: a class outside the context's native-Robot set is built as if no native Robot were supplied (see NativeRobotClasses).
+        if (ctx.NativeRobotClasses is {} nativeClasses && !nativeClasses(cls)) ctx = ctx.WithoutNativeRobot();
         if ((byte)cls > 0x4E)
         {
             SourceLogDispatch.GetSink(ctx.SourceLog, ctx.Log)?.Invoke(EngineLogLevel.Error, null, "behaviorContainer.CreateBehavior.Failed", $"Failed to create Behavior of type '{cls}'");

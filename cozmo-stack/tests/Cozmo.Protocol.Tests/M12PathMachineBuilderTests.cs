@@ -52,15 +52,39 @@ public sealed class M12PathMachineBuilderTests
         using var r=new M4ControlTests.Rig();r.ToSynced();r.State();var p=r.Robot.Motion.Path;p.Field42=3;p.SetStatus(2);p.Field3C=r.Engine.Timer.SecondsF;
         r.Tick(1000);Assert.Equal(2,p.DriveToPoseStatus);r.Tick(1);Assert.Equal(6,p.DriveToPoseStatus);Assert.Equal(3,p.Field4A);
     }
+    /// <summary>A plan stand-in for the selected planner (pc+0x20): status 2 and a fixed complete path/goal index. Substitutes the planner only.</summary>
+    private sealed class PlanStub:INativePathPlanner
+    {
+        private readonly IReadOnlyList<PathSegment> _path;private readonly byte _goal;
+        internal PlanStub(IReadOnlyList<PathSegment> path,byte goal){_path=path;_goal=goal;}
+        public string Name=>"PlanStub";
+        public bool SkipsSafetyCheck=>true;
+        public int ComputePath(Cozmo.Robot.Vision.Pose3d start,IReadOnlyList<Cozmo.Robot.Vision.Pose3d> goals)=>1;
+        public int ComputeNewPathIfNeeded(Cozmo.Robot.Vision.Pose3d start,bool force)=>1;
+        public int CheckPlanningStatus=>2;
+        public bool GetCompletePath(Cozmo.Robot.Vision.Pose3d start,PathMotionProfile profile,out IReadOnlyList<PathSegment> path,out byte goal){path=_path;goal=_goal;return true;}
+        public void StopPlanning(){}
+    }
+    // Ported from the retired legacy StartDrivingToPose(int, ...) entry (RETIRE-LEGACY-DRIVE-API-1): the drive starts through the native entry
+    // StartNativeDrivingToPose and the selected planner (pc+0x20) is then substituted by a stub that reports a complete plan with goal index 3.
+    // reach: unit — direct native entry call and a substituted planner; HandlePlanComplete, ExecutePath and the goal-index write are the stack's.
+    // P11 (HandlePlanComplete): the goal-index byte is written from the plan after ExecutePath whatever its outcome, and not for an empty plan. Expected
+    // values unchanged from the legacy test.
+    private static Cozmo.Robot.Vision.Pose3d Goal(PickupPyramidNativeExecutionTests.Fixture f)=>new(Cozmo.Robot.Vision.Rotation3d.Identity,new Cozmo.Robot.Vision.Vec3(30,0,0),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
     [Theory] [InlineData(false)] [InlineData(true)]
     public void P11GoalIndexWrittenOnBothExecuteOutcomes(bool failure)
     {
-        using var r=new M4ControlTests.Rig();var p=r.Robot.Motion.Path;p.SendPathMessage=m=>!failure||m is not ExecutePath;var idx=new PathGoalIndex();
-        p.StartDrivingToPose(4,idx,false,()=>new PathPlannerModelResult(2,Lines(1),3),()=>{},_=>{});p.Update();Assert.Equal(3,idx.Value);Assert.Equal(failure?0:2,p.DriveToPoseStatus);
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();var p=f.Rig.Robot.Motion.Path;p.SendPathMessage=m=>!failure||m is not ExecutePath;var idx=new PathGoalIndex();
+        using(var goal=Goal(f))Assert.Equal(0,p.StartNativeDrivingToPose(f.M,new[]{goal},idx,false));
+        f.M.GetNativePlanners().Current=new PlanStub(Lines(1),3);
+        p.Update();Assert.Equal(3,idx.Value);Assert.Equal(failure?0:2,p.DriveToPoseStatus);
     }
     [Fact] public void P11EmptyPlanDoesNotWriteGoalIndex()
     {
-        using var r=new M4ControlTests.Rig();var p=r.Robot.Motion.Path;var idx=new PathGoalIndex{Value=2};p.SendPathMessage=_=>true;
-        p.StartDrivingToPose(4,idx,false,()=>new PathPlannerModelResult(2,Array.Empty<PathSegment>(),3),()=>{},_=>{});p.Update();Assert.Equal(2,idx.Value);Assert.Equal(4,p.DriveToPoseStatus);Assert.False(p.Field47);
+        using var f=new PickupPyramidNativeExecutionTests.Fixture();var p=f.Rig.Robot.Motion.Path;var idx=new PathGoalIndex{Value=2};p.SendPathMessage=_=>true;
+        using(var goal=Goal(f))Assert.Equal(0,p.StartNativeDrivingToPose(f.M,new[]{goal},idx,false));
+        // StartNativeDrivingToPose resets the index byte to the caller's shared slot only through Init (I4); the entry itself leaves it at 2.
+        f.M.GetNativePlanners().Current=new PlanStub(Array.Empty<PathSegment>(),3);
+        p.Update();Assert.Equal(2,idx.Value);Assert.Equal(4,p.DriveToPoseStatus);Assert.False(p.Field47);
     }
 }

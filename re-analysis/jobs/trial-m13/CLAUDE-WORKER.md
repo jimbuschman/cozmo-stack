@@ -43,6 +43,9 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
     manager's answers to Q3–Q6 are in `research/20261113-worker-jobs-10-13-m11-009-claude-check.md`. Move the M12-009/M12-016
     tags with the code. Hardware tools may change, but never commit hardware scripts or bundles.
 15. **CHARGER-ID-WRITER-1:** from SETTLEMENT-READINESS.md (M4-009's one behaviour gap). Add its QUEUE row when you take it.
+16. **CHARGER-BOUNDING-QUAD-1:** your proposal; see its QUEUE row (M13-025). A live defect on the robot runtime.
+17. **USE-SECOND-CLOSEST-NATIVE-1:** see its QUEUE row (M12-004, now IMPLEMENTATION_GAP).
+18. **HARDWARE-CATALOG-T-R-JUDGES-1:** harness only; see its QUEUE row.
 
 Before job 10, run the pending gate on `origin/manager-gate` (6e111864 or later; GATE-REQUESTS.md). Legacy drive API:
 the operator chose to retire it (job 14).

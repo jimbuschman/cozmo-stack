@@ -422,7 +422,7 @@ public class RFixBatch2Tests
         rig.M.Planner!.ArtificialPlannerDelayMs = 3000;
         using var planning = new ManualResetEventSlim();
         rig.M.Planner.PlanningStarted += planning.Set;
-        var drive = new DriveToPoseAction(rig.M) { Goal = At(250, 120, Math.PI / 2) };
+        var drive = NativeDriveTestGoals.To(rig.M, At(250, 120, Math.PI / 2));
         var task = Task.Run(async () => { var run=drive.RunAsync(default); rig.Tick(); return await run; }); // planning now enters on the ActionList tick; its worker lets StopPlanning reach it
         Assert.True(planning.Wait(TimeSpan.FromMinutes(2)), "the planning worker never entered DoPlanning");
         rig.M.Planner.StopPlanning();
@@ -770,70 +770,8 @@ public class RFixBatch2Tests
         Assert.Contains(b.Trace, l => l.Contains("ToState:DrivingForward"));
     }
 
-    // ------------------------------------------------------------------ M13-015: the completion lambda
-
-    private static void Complete(PopAWheelieBehavior b, uint objectId, ActionResult r) =>
-        typeof(PopAWheelieBehavior).GetMethod("OnActionComplete", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(b, new object[] { objectId, r });
-
-    /// <summary>
-    /// M13-015, the completion lambda 0x005C7CBC: category 3 (Abort), or category 4 with the retry used, logs "BehaviorPopAWheelie.FailedAbort" and calls
-    /// <c>SetFailedToUse(obj, 3)</c> only when the object at +0x11C is still in the world (<c>GetLocatedObjectByIdHelper</c>, 0x005C7D8C..0x005C7D9E); any other category logs
-    /// "BehaviorPopAWheelie.FailedPopAction" and marks nothing; category 4 with no retry used goes to SetupRetryAction.
-    /// </summary>
-    [Fact]
-    public void M13_015_FailureMarksTheCubeOnlyWhenItIsStillInTheWorldAndOnlyForAbortAndSpentRetry()
-    {
-        if (MarkerLibrary.EmbeddedOrNull is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = new Pose3d(Mat3.AboutZ(0), new Vec3(220, 0, 22));
-        var obj = Assert.Single(rig.Frame().Objects).Object;
-        var ctx = Ctx(rig);
-        PopAWheelieBehavior Fresh() { var f = new PopAWheelieBehavior(rig.M, "PopAWheelie"); f.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult(); return f; }
-        // category 3 (Abort) with the cube present: marked, kind 3
-        var a = Fresh();
-        Complete(a, obj.ObjectId, ActionResult.Abort);
-        Assert.True(rig.M.Whiteboard.DidFailToUse(obj.ObjectId, ObjectActionFailure.RollOrPopAWheelie, 1000));
-        Assert.Contains(a.Trace, l => l.Contains("BehaviorPopAWheelie.FailedAbort"));
-        // the same result for an object that is not in the world: logged, not marked
-        Assert.False(rig.M.Whiteboard.DidFailToUse(4242, ObjectActionFailure.Any, 1000));
-        Complete(Fresh(), 4242, ActionResult.Abort);
-        Assert.False(rig.M.Whiteboard.DidFailToUse(4242, ObjectActionFailure.Any, 1000));
-        // category 2 (cancelled) goes to the third arm: no marking
-        var id = obj.ObjectId;
-        var c = Fresh();
-        rig.M.Whiteboard.RetireStandaloneStorage();                                  // explicit fixture storage reset
-        Complete(c, id, ActionResult.CancelledWhileRunning);
-        Assert.False(rig.M.Whiteboard.DidFailToUse(id, ObjectActionFailure.Any, 1000));
-        Assert.Contains(c.Trace, l => l.Contains("BehaviorPopAWheelie.FailedPopAction"));
-        // category 4 with no retry used goes to SetupRetryAction (a retry animation, not a marking)
-        var d = Fresh();
-        Complete(d, id, ActionResult.DidNotReachPreActionPose);
-        Assert.False(rig.M.Whiteboard.DidFailToUse(id, ObjectActionFailure.Any, 1000));
-        Assert.Equal(PopAWheelieBehavior.Phase.Retrying, d.CurrentPhase);
-    }
-
-    /// <summary>
-    /// M13-015, the success arm 0x005C7CF6..0x005C7E14: +0x128 = -1, the 0x21C animation is started first, THEN BehaviorObjectiveAchieved(0x16) and NeedActionCompleted. The trace order shows it.
-    /// </summary>
-    [Fact]
-    public void M13_015_SuccessStartsTheAnimationBeforeTheObjectiveAndTheNeedsAction()
-    {
-        if (MarkerLibrary.EmbeddedOrNull is null) return;
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.Cube = new Pose3d(Mat3.AboutZ(0), new Vec3(220, 0, 22));
-        var obj = Assert.Single(rig.Frame().Objects).Object;
-        var ctx = Ctx(rig);
-        var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
-        b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        Complete(b, obj.ObjectId, ActionResult.Success);
-        Assert.True(b.Succeeded);
-        Assert.Equal(-1, b.Field0x128);
-        int anim = b.Trace.ToList().FindIndex(l => l.Contains("SuccessfulWheelie"));
-        int objective = b.Trace.ToList().FindIndex(l => l.Contains("PoppedWheelie"));
-        Assert.True(anim >= 0 && objective > anim, string.Join(" | ", b.Trace));
-    }
+    // M13-015's legacy PopAWheelieBehavior completion-lambda tests were deleted with that class (RETIRE-LEGACY-DRIVE-API-1, operator 2026-11-13);
+    // NativePopAWheelieBehavior's own tests (PopAWheelieNativeTests) cover the configured behaviour.
 
     // ------------------------------------------------------------------ M4-019 / M13-025 / M13-024: Robot::Update's charger-platform step
 

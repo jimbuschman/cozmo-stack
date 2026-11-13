@@ -835,7 +835,9 @@ internal sealed class M5Run
                     if (!drive) return Missing("--allow-drive not given; driving skipped");
                     var m = new ManipulationSystem(r, r.Vision); var pose = m.RobotPose(); if (pose is null) { m.Dispose(); return Missing("No world pose for DriveToPose"); }
                     var goal = new Pose3d(Rotation3d.Identity, new Vec3(60, 0, 0), "m5-hw-goal", pose);
-                    var action = new DriveToPoseAction(m) { Goal = goal }; using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token); limit.CancelAfter(15000);
+                    // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the native constructor; goals only through SetNativeGoals (an owned copy, re-expressed
+                    // in place w.r.t. the world origin by Init, I3). head false and manual false keep the legacy harness's no head move and manual-speed false.
+                    var action = new DriveToPoseAction(m, false, false); action.SetNativeGoals(new[] { goal }); using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token); limit.CancelAfter(15000);
                     var task = action.RunAsync(limit.Token); var states = new JsonArray(); string? last = null;
                     try
                     {

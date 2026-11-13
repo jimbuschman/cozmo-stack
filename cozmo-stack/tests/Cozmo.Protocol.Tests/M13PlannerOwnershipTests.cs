@@ -49,7 +49,7 @@ public sealed class M13PlannerOwnershipTests
         using var start=At(0);using var goal=At(200,0,.3f);
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);Assert.True(m.LoadPlanner(Obb()));
         var runtime=m.GetNativePlanners().Lattice!;
-        using var drive=new DriveToPoseAction(m){Goal=goal};
+        using var drive=NativeDriveTestGoals.To(m, goal);
         lock(runtime.ContextMutex)
         {
             Assert.Equal(0,drive.Init());Assert.Same(runtime,m.NativePlanners!.Current);
@@ -61,7 +61,11 @@ public sealed class M13PlannerOwnershipTests
         lock(runtime.ContextMutex)
         {
             var plan=Assert.IsType<LatticePlan>(runtime.TotalPlan);
-            Assert.Equal((short)0,plan.Start.X);Assert.Equal((short)20,plan.States().Last().X);
+            // Native entry (the legacy main-pose start and unconverted goal were retired, RETIRE-LEGACY-DRIVE-API-1): the start is the drive-center pose
+            // (P6, GetDriveCenterPose 0x005477A0: -20 mm along the heading with nothing carried, x = -20 for a robot at 0 with yaw 0) and the goal is moved
+            // the same -20 mm along its own heading (P9 0x005135D0 offset -20.0f, P10 0x00517EC0 x + cosf(a)*d: 200 - 20*cos(0.3) = 180.89). In the
+            // 10 mm lattice cells the old 200 mm -> 20 used, that is start -2 and end 18.
+            Assert.Equal((short)-2,plan.Start.X);Assert.Equal((short)18,plan.States().Last().X);
             Assert.True(runtime.GetCompletePath(start,PathMotionProfile.Default,out var path,out var chosen));
             Assert.Equal(0,chosen);Assert.Equal(.3f,Assert.IsType<PathSegment.PointTurn>(path.Last()).TargetAngleRad);
         }

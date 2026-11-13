@@ -9,19 +9,6 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class M13RobotPoseIsolationTests
 {
-    [Fact]
-    public void ParentlessRandomDriveGoalSucceeds()
-    {
-        // reach: unit (real drive action/queue, offline firmware; random goal construction from ExplorerBehaviors).
-        // 29ddb606: FailedTraversingPath, because RobotPose returned a parented live node.
-        using var signals=SignalTestContext.Install();using var rig=new Rig();
-        var random=new Random(26);
-        double distance=40+random.NextDouble()*60,heading=(50+random.NextDouble()*100)*Math.PI/180;
-        using var goal=new Pose3d(Mat3.AboutZ(heading),new Vec3(Math.Cos(heading)*distance,Math.Sin(heading)*distance,0));
-        Assert.False(goal.HasParent);
-        using var drive=new DriveToPoseAction(rig.M){Goal=goal};
-        Assert.Equal(ActionResult.Success,SignalTestContext.Result(drive.RunAsync(default),()=>rig.Pump()));
-    }
 
     [Fact]
     public void KnownFaceWithProductionParentlessHeadPoseSelectsFlipPose()

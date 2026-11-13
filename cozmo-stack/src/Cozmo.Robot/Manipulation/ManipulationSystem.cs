@@ -409,15 +409,6 @@ public sealed class ManipulationSystem : IDisposable
 }
 
 /// <summary>
-/// The engine's <c>PickupBlockHelper</c> (0x005B7B48..0x005B8610) and <c>RollBlockHelper</c>: drive to the
-/// object's pre-action pose when not already there ("Cozmo is not at pre-action pose for cube %d, delegating to
-/// driveToHelper"), then run the dock action without its own pre-action check ("Picking up target object %d");
-/// on a failed dock, retry ("Failed dock attempt %d / %d"), giving up after the attempt limit ("Failing helper
-/// because pickup was already attempted %d times"); a visual-observation failure that saw an unexpected
-/// object marks the target as failed and tries another; other failures retry from a different pre-dock pose.
-/// The pickup limit is two (M12-009) and the roll limit three (M12-016).
-/// </summary>
-/// <summary>
 /// A path this process started and owns until it ends: the reservation is taken before the path is sent, the
 /// wait cannot miss an immediate terminal event, and a wait that is cancelled or times out clears the path on
 /// the robot instead of leaving firmware motion running behind an abandoned action.
@@ -472,99 +463,5 @@ public sealed class PathRun : IDisposable
     public void Dispose() => _reservation?.Dispose();
 }
 
-public sealed class DockHelper
-{
-    // fidelity: M12-009, M12-016
-    /// <summary>
-    /// Two, which is what <c>PickupBlockHelper::RespondToPickupResult</c> allows: at 0x005B8192 it reads
-    /// the attempt count at +0x108 and takes the retry branch only while it is <c>&lt;= 1</c>, and the
-    /// log beside it is built with a literal 2 (<c>movs r6, #2</c> at 0x005B814A), so it reads
-    /// "attempt 1 / 2" and "attempt 2 / 2". This stack had three.
-    /// </summary>
-    public const int MaxAttempts = 2;
-
-    /// <summary>
-    /// Three, for a roll. <c>RollBlockHelper::StartRollingAction</c> begins by reading its own attempt
-    /// count at helper+0x124 and comparing it with the literal 3 (<c>cmp r0, #3</c> at 0x005B9F0E);
-    /// at or above it the helper calls <c>MarkTargetAsFailedToRoll</c> and stops, and otherwise it
-    /// increments the count and starts another <c>DriveToRollObjectAction</c>. The limit is not carried
-    /// in <c>RollBlockParameters</c> after all - the ctor at 0x005B98D4 copies only the callback, two
-    /// words at +0x110 and a <c>Radians</c> at +0x118, and zeroes the counter at +0x124.
-    /// </summary>
-    public const int MaxRollAttempts = 3;
-
-    private readonly ManipulationSystem _m;
-
-    public DockHelper(ManipulationSystem m) => _m = m;
-
-    /// <summary>How many attempts this helper makes. The engine's limit is per helper, not shared.</summary>
-    public int AttemptLimit { get; init; } = MaxAttempts;
-
-    public IReadOnlyList<string> Trace => _trace;
-    private readonly List<string> _trace = new();
-    public int Attempts { get; private set; }
-    /// <summary>The pre-action poses already tried and failed, excluded from the next attempt.</summary>
-    public IReadOnlyList<Pose3d> ExcludedPoses => _excluded;
-    private readonly List<Pose3d> _excluded = new();
-
-    /// <summary>
-    /// Drive to the object (for the action's pre-action type) and run the dock action, with retries.
-    ///
-    /// A retry approaches from a different pre-dock pose, as <c>IBehavior::UseSecondClosestPreActionPose</c>
-    /// (0x005BEE56) does: it asks <c>DriveToObjectAction::GetPossiblePoses</c> again and, while more than one
-    /// pose remains (<c>cmp r0, #2</c> at 0x005BEE80), removes the one just used through
-    /// <c>IDockAction::RemoveMatchingPredockPose</c>. Retrying from the identical geometry that just failed is
-    /// what the engine avoids; the pose to exclude is the one the failed attempt actually drove to.
-    /// </summary>
-    public async Task<ActionResult> RunAsync(uint objectId, PreActionType type, Func<DockActionBase> makeAction, CancellationToken cancel)
-    {
-        ActionResult last = ActionResult.Abort;
-        _excluded.Clear();
-        for (Attempts = 1; Attempts <= AttemptLimit; Attempts++)
-        {
-            if (cancel.IsCancellationRequested) return ActionResult.CancelledWhileRunning;
-            var drive = new DriveToObjectAction(_m, objectId, type) { ExcludePoses = _excluded.ToList() };
-            var d = await drive.RunAsync(cancel);
-            _trace.AddRange(drive.Trace);
-            if (drive.Chosen is { } tried && !_excluded.Any(p => DriveToObjectAction.IsSamePredockPose(p, tried.WorldPose)))
-                _excluded.Add(tried.WorldPose);
-            if (d != ActionResult.Success)
-            {
-                _trace.Add($"drive to pre-action pose: {d}");
-                if (d is ActionResult.BadObject or ActionResult.NoPreActionPoses) return d;
-                last = d;
-                await SearchAsync(objectId, cancel);
-                continue;
-            }
-            var action = makeAction();
-            action.CheckPreActionPose = false;
-            var r = await action.RunAsync(cancel);
-            _trace.AddRange(action.Trace);
-            if (r == ActionResult.Success) return r;
-            last = r;
-            if (r is ActionResult.BadObject or ActionResult.CancelledWhileRunning) return r;
-            _trace.Add($"Failed dock attempt {Attempts} / {AttemptLimit}");
-            await SearchAsync(objectId, cancel);
-        }
-        _trace.Add($"Failing helper because the action was already attempted {AttemptLimit} times");
-        return last;
-    }
-
-    /// <summary>
-    /// The search a failed stage delegates to. <c>DriveToHelper::RespondToDriveResult</c> at 0x005B5D68
-    /// and <c>PickupBlockHelper::RespondToPickupResult</c> at 0x005B83B6 both build a
-    /// <c>SearchForBlockHelper</c> when their stage has failed and the target is still in the world;
-    /// 0x005B5D3E skips it when the lookup comes back empty.
-    /// </summary>
-    private async Task SearchAsync(uint objectId, CancellationToken cancel)
-    {
-        if (!SearchOnFailure || cancel.IsCancellationRequested) return;
-        if (_m.World.GetLocatedObjectById(objectId) is null) return;
-        var search = new SearchForBlockHelper(_m, objectId) { Wait = _m.Wait };
-        await search.RunAsync(cancel);
-        _trace.AddRange(search.Trace);
-    }
-
-    /// <summary>Whether a failed stage looks around for the target before trying again.</summary>
-    public bool SearchOnFailure { get; init; } = true;
-}
+// RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the legacy DockHelper (legacy DriveToObjectAction + dock action with retries) is retired.
+// The engine's PickupBlockHelper / RollBlockHelper run as NativePickupBlockHelper / NativeRollBlockHelper, which carry M12-009 / M12-016.

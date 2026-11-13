@@ -28,23 +28,13 @@ internal sealed class NativePlannerSet : IDisposable
         var owner = _m.Robot.Engine.Robot?.CarryingOwner;
         return owner is null ? default : LatticeCarryingState.FromRaw(owner.CarriedObjectId);
     }
-    internal void Configure(Pose3d start,IReadOnlyList<Pose3d> goals,PathMotionProfile profile,IEnumerable<uint>? ignore)
-    {
-        Stop();ReleaseNativePoses();
-        // CM13-03 runtime capture does not close the upstream action/Path ownership/conversion boundary.
-        _missing("M13-033/M11-084 NativePlannerSet.Configure still borrows caller start/goal wrappers before runtime capture; native action SetGoal copies and PathComponent owned root/drive-center conversions (0x0055A450/468, 0x0064ADAC/0x0064AE78) remain unbuilt");
-        Start=start;Goals=goals;Profile=profile;
-        if(_m.Planner is {} backend && !ReferenceEquals(Lattice?.Backend,backend))
-        {Lattice?.Dispose();Lattice=new(backend,_m.World,ReadCarryingState,Source,_missing,_m.Robot.Engine);}
-        Lattice?.SetIgnore(ignore);
-    }
-    internal void ConfigureNative(Pose3d start,IReadOnlyList<Pose3d> goals,PathMotionProfile profile,IEnumerable<uint>? ignore)
+    // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the legacy Configure (borrowed caller poses) is retired; ConfigureNative owns copies.
+    internal void ConfigureNative(Pose3d start,IReadOnlyList<Pose3d> goals,PathMotionProfile profile)
     {
         Stop();ReleaseNativePoses();
         Start=new Pose3d(start);Goals=goals.Select(p=>new Pose3d(p)).ToArray();_ownsNativePoses=true;Profile=profile;
         if(_m.Planner is {} backend&&!ReferenceEquals(Lattice?.Backend,backend))
         {Lattice?.Dispose();Lattice=new(backend,_m.World,ReadCarryingState,Source,_missing,_m.Robot.Engine);}
-        Lattice?.SetIgnore(ignore);
     }
     private void ReleaseNativePoses()
     {if(!_ownsNativePoses)return;Start.Dispose();foreach(var goal in Goals)goal.Dispose();_ownsNativePoses=false;Goals=Array.Empty<Pose3d>();}
@@ -58,7 +48,7 @@ internal sealed class NativePlannerSet : IDisposable
         if(!(d2<1600f))
         {
             Current=Lattice;
-            if(Current is null){_missing("M13-033 lattice asset/context input is absent; existing legacy path producer remains an explicit candidate, native lattice construction is not claimed");return;}
+            if(Current is null){_missing("M13-033 lattice asset/context input is absent; no long planner is selected and native lattice construction is not claimed");return;}
             Source(EngineLogLevel.Info,"Planner","PathComponent.SelectPlanner.Long",FormattableString.Invariant($"distance^2 is {d2:F6}, selecting long planner '{Current.Name}'"));
         }
         else
@@ -73,12 +63,11 @@ internal sealed class NativePlannerSet : IDisposable
         int data=float.IsNaN(rounded)?0:rounded>=2147483648f?int.MaxValue:rounded<=-2147483648f?int.MinValue:(int)rounded;
         _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.planner_selected",Current.Name,new Dictionary<string,string>{{"$data",data.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
         Fallback=ReferenceEquals(Current,Lattice)?null:Lattice;
-        if(!_ownsNativePoses)_missing("M13-033 legacy selection uses the stack pose input; no full pose-origin claim");
     }
     internal int StartPlanning()=>Current?.ComputePath(Start,Goals)??0;
     // fidelity: M12-032 — StartPlanner(const Pose3d&) 0x0064B090: the Rejigger passes a fresh drive-center pose, not the configured Start (census R6).
     internal int StartPlanning(Pose3d start)=>Current?.ComputePath(start,Goals)??0;
-    private Pose3d CurrentStart=>_ownsNativePoses?_m.Robot.Engine.Robot!.GetCheckedForwardPose():_m.RobotPose()??Start;
+    private Pose3d CurrentStart=>_m.Robot.Engine.Robot!.GetCheckedForwardPose();
     // fidelity: M12-032 — RestartPlannerIfNeeded 0x00649C28..0x00649C3A: the caller passes GetDriveCenterPose (0x005477A0) for every entry.
     internal int Restart(Pose3d start)=>Current?.ComputeNewPathIfNeeded(start,false)??0;
     internal PathPlannerModelResult Read()

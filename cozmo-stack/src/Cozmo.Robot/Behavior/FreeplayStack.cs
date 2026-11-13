@@ -62,7 +62,10 @@ public sealed class FreeplayStack : IDisposable
         if(ReferenceEquals(ctx,canonical?.Context) || ctx.Arbiter is {} arbiter && ReferenceEquals(arbiter,canonical?.Context.Arbiter))
             throw new ArgumentException("Canonical context/arbiter belongs to the engine. Use CreateNative to observe it; supply independent inputs to CreateStandalone.",nameof(ctx));
         // Historical Create(ctx,clock,...) is an explicit host/manual driver. Its
-        // custom inputs never replace the canonical engine manager or owners.
+        // custom inputs never replace the canonical engine manager or owners. Its factory context passes the native Robot
+        // to the classes whose legacy drive behaviours were retired, and only to them (operator 2026-11-13, RETIRE-LEGACY-DRIVE-API-1,
+        // "retire and rebind"): the factory binds those native classes, which run on the canonical robot's ActionList and PathComponent;
+        // every other class is built exactly as before (no native Robot).
         var manager=new BehaviorManager(ctx,null,bindSensorOwner:false);
         var problems = new List<string>();
         // J3: the needs device-file directory is the host's; FreeplayTool's --state-dir supplies it.
@@ -99,6 +102,13 @@ public sealed class FreeplayStack : IDisposable
         var factoryContext = new BehaviorFactoryContext
         {
             ReactionManager=manager,
+            // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the native Robot, so BehaviorContainer's native-class checks admit the native
+            // classes that replace the deleted legacy drive behaviours (with Manipulation = m below); their instances come first in `all`, so
+            // bound.TryAdd keeps them. NativeRobotClasses limits it to that set; all other classes see no native Robot, as before.
+            NativeRobot=robot.Engine.Robot,
+            NativeRobotClasses=cls=>cls is BehaviorClass.PickUpCube or BehaviorClass.RollBlock or BehaviorClass.StackBlocks or BehaviorClass.PopAWheelie
+                or BehaviorClass.KnockOverCubes or BehaviorClass.CubeLiftWorkout or BehaviorClass.BuildPyramid or BehaviorClass.BuildPyramidBase
+                or BehaviorClass.BringCubeToBeacon or BehaviorClass.DriveInDesperation,
             BouncerNativeRobot=robot.Engine.Robot,
             Features=robot.Engine.Features,
             RegisterGuardDogDisconnect=guardDogDisconnects.Add,

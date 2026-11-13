@@ -95,8 +95,8 @@ public sealed class PickupChildrenNativeTests
         // reach: unit, direct Path input (normal DriveToPose Init converts first);64AE84 requires CURRENT root.
         using var f=new Fixture();var path=f.Rig.Robot.Motion.Path;var index=new PathGoalIndex();int words=0;f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{words++;return 0;};
         Assert.True(f.Robot.AddOriginWithId(77));using var foreign=new Pose3d(Rotation3d.Identity,new(100,0,0),parent:f.Robot.GetNativeOrigin(77));
-        path.SetStatus(4);Assert.Equal(1,path.StartNativeDrivingToPose(f.M,new[]{foreign},index,false,null));Assert.Equal(0,path.DriveToPoseStatus);Assert.Equal(0,words);
-        path.SetStatus(3);Assert.Equal(1,path.StartNativeDrivingToPose(f.M,Array.Empty<Pose3d>(),index,false,null));Assert.Equal(3,path.DriveToPoseStatus);Assert.Equal(0,words);
+        path.SetStatus(4);Assert.Equal(1,path.StartNativeDrivingToPose(f.M,new[]{foreign},index,false));Assert.Equal(0,path.DriveToPoseStatus);Assert.Equal(0,words);
+        path.SetStatus(3);Assert.Equal(1,path.StartNativeDrivingToPose(f.M,Array.Empty<Pose3d>(),index,false));Assert.Equal(3,path.DriveToPoseStatus);Assert.Equal(0,words);
         f.Rig.Engine.ContextRandom.WordSourceForTest=null;
     }
     [Fact]
@@ -152,9 +152,9 @@ public sealed class PickupChildrenNativeTests
         f.Rig.Engine.ContextRandom.WordSourceForTest=()=>{Assert.Equal(1,path.DriveToPoseStatus);return ++words%2==1?0u:0x80000000u;};
         using var goal=At(f,30);var custom=PathMotionProfile.Default with{SpeedMmps=123,AccelMmps2=321};
         path.Field48=true;path.NativeMotionProfile=custom;
-        Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{goal},new PathGoalIndex(),false,null));Assert.Equal(0,words);Assert.Same(custom,f.M.GetNativePlanners().Profile);
+        Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{goal},new PathGoalIndex(),false));Assert.Equal(0,words);Assert.Same(custom,f.M.GetNativePlanners().Profile);
         path.Abort(f.Robot.SendChecked);path.Field48=false;
-        Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{goal},new PathGoalIndex(),false,null));Assert.Equal(2,words);Assert.Equal(164f,path.NativeMotionProfile.SpeedMmps);
+        Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{goal},new PathGoalIndex(),false));Assert.Equal(2,words);Assert.Equal(164f,path.NativeMotionProfile.SpeedMmps);
         f.Rig.Engine.ContextRandom.WordSourceForTest=null;
     }
     [Fact]
@@ -268,7 +268,7 @@ public sealed class PickupChildrenNativeTests
     public void ForceHelperCapturesMainOnceAndExcludesOnlyThatOriginalPredockPose()
     {
         // reach: native factory/helper/actual pose callback, supplied scene/initial predock and no fabricated result.
-        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);var cube=f.Add(x:300);var poses=new DriveToObjectAction(f.M,7,PreActionType.Docking){NativeInputs=true};bool inPosition=false;
+        using var f=new Fixture();using var selection=new SelectionUnitScope(f.Robot.BehaviorManagerOwner!);var cube=f.Add(x:300);var poses=new DriveToObjectAction(f.M,7,PreActionType.Docking);bool inPosition=false;
         Assert.Equal(ActionResult.Success,poses.GetPossiblePoses(cube,out var all,ref inPosition));Assert.True(all.Count>1);
         using var initial=all[0].WorldPose.GetWithRespectToRoot();f.X=(float)initial.Translation.X;f.Y=(float)initial.Translation.Y;f.Yaw=(float)initial.AngleAroundZ;f.Motors();
         var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);NativeDriveToHelper? helper=null;HelperRef? held=null;
@@ -285,6 +285,26 @@ public sealed class PickupChildrenNativeTests
             f.X+=50;f.Motors();bool after=false;Assert.Equal(ActionResult.Success,runner.Action.PosesFunction(cube,out var filtered,ref after));Assert.Equal(all.Count-1,filtered.Count);
         }
         finally{manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();held?.Release();}
+    }
+    /// <summary>
+    /// M12-009 (ported from PickupVerifyTests.TheDockHelperAllowsTwoAttempts with the legacy DockHelper's retirement, RETIRE-LEGACY-DRIVE-API-1):
+    /// PickupBlockHelper::RespondToPickupResult 0x005B8050 reads the attempt count at helper+0x108 (0x005B8192), compares it with 1 (0x005B8196 cmp r0,#1)
+    /// and retries only on bls (0x005B8198), so a retryable result (0x04000003) after the second attempt marks the target (PickUpObject) and fails.
+    /// reach: unit — the attempt counter (+0x108) is substituted by reflection and the helper is not admitted through a behaviour; flag105 is false, so the
+    /// alternate retry (0x005B81A2) is not taken.
+    /// </summary>
+    [Theory]
+    [InlineData(1u,false)]
+    [InlineData(2u,true)]
+    public void M12_009_PickupHelperRetriesOnlyWhileTheAttemptCountIsAtMostOne(uint attempts,bool fails)
+    {
+        using var f=new Fixture();f.Add(x:300);var parent=new Parent();
+        var helper=new NativePickupBlockHelper(f.M,parent,f.Runtime.AI.Helpers.Factory,7,0,false,false);helper.InitializeOnStack();
+        typeof(NativePickupBlockHelper).GetProperty(nameof(NativePickupBlockHelper.Attempts),BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public)!.SetValue(helper,attempts);
+        helper.Respond(new RobotCompletedAction(1,0x16,0x04000003,Array.Empty<uint>(),0));
+        Assert.Equal(fails,helper.Status==BehaviorStatus.Failure);
+        Assert.Equal(fails,f.M.Whiteboard.DidFailToUse(7,ObjectActionFailure.PickUpObject,1000));
+        f.Robot.ActionList.Clear();
     }
     [Theory]
     [InlineData(false)]
@@ -352,7 +372,7 @@ public sealed class PickupChildrenNativeTests
         var index=new PathGoalIndex();var path=f.Rig.Robot.Motion.Path;
         lock(runtime.ContextMutex)
         {
-            Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{rejected,target},index,false,null));
+            Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{rejected,target},index,false));
             Assert.Equal(2,planners.Goals.Count);Assert.Equal(500f,(float)planners.Goals[0].Translation.X);
             float offsetX=121.25f+MathF.Cos(.2f)*-20f;
             Assert.Equal(offsetX,(float)planners.Goals[1].Translation.X);

@@ -115,17 +115,19 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     private Func<bool>? _scopedParentCurrent;
     private readonly object _scopedCleanupGate=new();
 
-    public DriveToPoseAction(ManipulationSystem m) : base(12, 4)
+    // RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): the public (m) constructor and its legacy Init are retired; every drive is built
+    // through the native (m, head, manual) constructors and gets its goals only through SetNativeGoals.
+    private DriveToPoseAction(ManipulationSystem m) : base(12, 4)
     {
         _m = m; AbortPath = () => _m.Paths.Abort();
         DrivingAnimations = m.DrivingAnimationsForTest?.Invoke() ?? m.Robot.Animations.DrivingAnimations;
         SourceLog = (l,c,k,t) => m.Robot.Engine.EmitSourceLog(l,c,k,t);
         Log = m.Robot.Engine.EmitStackLog;
     }
-    private bool _native,_nativeHead,_nativeManual,_nativeGoalsSet;
+    private bool _nativeHead,_nativeManual,_nativeGoalsSet;
     private List<Pose3d> _ownedGoals=new();
     internal DriveToPoseAction(ManipulationSystem m,bool head,bool manual):this(m)
-    {_native=true;_nativeHead=head;_nativeManual=manual;RequiredTrackMask=manual?0u:4u;SeedNativeEmptyCompletion();}
+    {_nativeHead=head;_nativeManual=manual;RequiredTrackMask=manual?0u:4u;SeedNativeEmptyCompletion();}
     internal DriveToPoseAction(ManipulationSystem m,bool head,bool manual,EngineRobot owner,Func<bool>? parentCurrent=null):this(m,head,manual)
     {
         _scopedOwner=owner;
@@ -164,57 +166,15 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     {
         if(!ExecutionCurrent())return EngineActionResult.Cancelled;
         if (_m.DriveTickForTest is { } input) return (uint)CheckIfDone(input(this));
-        if(_native)
-        {
-            using var mutation=_m.World.EnterPoseMutation();
-            var owner=_scopedOwner??_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
-            var nativePath=_m.Robot.Motion.Path;
-            return (uint)CheckIfDone(new DriveToPoseTick(nativePath.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,owner.GetCheckedMainPose(),_m.NativeHeight(owner),nativePath.Field42,nativePath.Field44,unchecked((sbyte)nativePath.Field40)));
-        }
-        using var nativePose=Goal?.HasParent==true?_m.CopyPreActionRobotPose():null;
-        if((nativePose??_m.RobotPose()) is not {} pose){MissingSource("live pose input unavailable");return (uint)ActionResult.Running;}
-        var path=_m.Robot.Motion.Path;
-        return (uint)CheckIfDone(new DriveToPoseTick(path.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,pose,_m.RobotHeightMm(),path.Field42,path.Field44,unchecked((sbyte)path.Field40)));
+        using var mutation=_m.World.EnterPoseMutation();
+        var owner=_scopedOwner??_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
+        var nativePath=_m.Robot.Motion.Path;
+        return (uint)CheckIfDone(new DriveToPoseTick(nativePath.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,owner.GetCheckedMainPose(),_m.NativeHeight(owner),nativePath.Field42,nativePath.Field44,unchecked((sbyte)nativePath.Field40)));
     }
     private void MissingSource(string text)
     { if(!_missingMessages.Add(text))return;string line="MISSING: M12-024 | "+text; _trace.Add(line); _m.Robot.Engine.EmitStackLog(line); }
 
-    public override int Init()
-    {
-        if(_native)return InitNative();
-        LifecycleCallObserved?.Invoke("InitDriving");
-        DrivingAnimations.Init((byte)RequiredTrackMask, Tag, SuppressTrackLocking, false);
-        DeadlineSec=-1.0; // 0x0055A8A6, including retries.
-        MissingSource("constructor mask 0x0055A25A, head gate +0x79 at 0x0055A9EC and manual-speed +0xA4 have no settled input from this caller; candidate mask 4 and host manual-speed false retained");
-        if (Goal is not { } goal) { _trace.Add("DriveToPoseAction.Init.NoGoalSet"); return (int)ActionResult.BadPose; }
-        var start=_m.RobotPose();
-        if (start is null) { MissingSource("native pose/world transform input is unavailable"); return 0; }
-        MissingSource("M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted");
-        _goalIndex.Value=0; // P5, shared byte +0x88.
-        var native=_m.Robot.Motion.Path;
-        var planners=_m.GetNativePlanners();
-        planners.Configure(start.Value,Goals is {Count:>0}?Goals:new[]{goal},Profile,IgnoreObstacleIds);
-        native.SetNativePlanners(planners);native.ObjectsChangedInput=()=>_m.World.DidObjectsChange;
-        var selectedPlanner=_m.Planner;
-        int started=native.StartDrivingToPose(Goals is {Count:>0}?Goals.Count:1,_goalIndex,false,() =>
-        {
-            if(selectedPlanner is {} planner)
-            {
-                planner.StartPlanning(_m.World,_m.Docking.Carrying.CarriedObjectId,true,IgnoreObstacleIds);
-                var plan=planner.PlanTo(start.Value,Goals is {Count:>0}?Goals:new[]{goal},Profile);
-                if(plan is null){_trace.Add("DriveToPoseAction.Init.PlanningFailed: no path sent");return new PathPlannerModelResult(0,Array.Empty<PathSegment>(),0);}
-                _trace.Add($"lattice plan: {plan.Value.Plan.Actions.Count} primitive(s), cost {plan.Value.Plan.Cost:F0}, {plan.Value.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s), DoPlanning={planner.LastPlanningResult}");
-                return new PathPlannerModelResult(2,plan.Value.Path,unchecked((byte)planner.ChosenGoalId));
-            }
-            return new PathPlannerModelResult(2,StraightLinePlanner.Plan(start.Value,goal,Profile),0);
-        },()=>selectedPlanner?.StopPlanning(),MissingSource);
-        if(started!=0)
-        {
-            _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Actions","DriveToPoseAction.Init.FailedToFindPath",$"[{unchecked((int)Tag)}] Failed to get path to goal pose.");
-            return (int)ActionResult.PathPlanningFailedAbort;
-        }
-        return 0;
-    }
+    public override int Init()=>InitNative();
     private int InitNative()
     {
         if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
@@ -231,7 +191,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         foreach(var goal in _ownedGoals)if(!goal.TryWithRespectTo(origin,goal))return 0x03000005;
         _goalIndex.Value=0;
         var native=_m.Robot.Motion.Path;
-        int result=native.StartNativeDrivingToPose(_m,_ownedGoals,_goalIndex,_nativeManual,IgnoreObstacleIds,_scopedOwner,_scopedOwner is null?null:ExecutionCurrent);
+        int result=native.StartNativeDrivingToPose(_m,_ownedGoals,_goalIndex,_nativeManual,_scopedOwner,_scopedOwner is null?null:ExecutionCurrent);
         if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         if(result!=0)return 0x03000013;
         if(_nativeHead&&_m.Robot.Motion.MoveHeadToAngle(BitConverter.UInt32BitsToSingle(0xBE860A92),2f,5f,0f,out _,_scopedOwner)!=0)return 0x03000016;
@@ -260,7 +220,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
             if(_scopedOwner is {} scoped && DrivingAnimations is Animation.DrivingAnimationHandler actual)actual.ActionIsBeingDestroyed(scoped,CleanupCurrent);
             else if(CleanupCurrent())DrivingAnimations.ActionIsBeingDestroyed();
         }
-        if(_native){foreach(var goal in _ownedGoals)goal.Dispose();_ownedGoals.Clear();PreActionObjectPose?.Dispose();PreActionObjectPose=null;}
+        foreach(var goal in _ownedGoals)goal.Dispose();_ownedGoals.Clear();PreActionObjectPose?.Dispose();PreActionObjectPose=null;
     }
     public void Dispose() { if(_destroyed)return;CleanupSource();base.WatcherEnding(); }
     internal override bool RetireNeverAdmittedTree()
@@ -280,13 +240,12 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     }
 
 
-    public Pose3d? Goal { get; set; }
-    /// <summary>Alternative goals for the lattice planner (a cube's pre-action poses); the reached one becomes <see cref="Goal"/>.</summary>
-    public IReadOnlyList<Pose3d>? Goals { get; set; }
+    /// <summary>The first owned goal; goals enter only through <see cref="SetNativeGoals"/> (RETIRE-LEGACY-DRIVE-API-1).</summary>
+    public Pose3d? Goal { get; private set; }
+    /// <summary>The action-owned goal vector +0x7C (SetGoals 0x0055A6D0 copy); set only through <see cref="SetNativeGoals"/>.</summary>
+    public IReadOnlyList<Pose3d>? Goals { get; private set; }
     /// <summary>The engine's <c>idx</c>, the byte at <c>[[this+0x88]]</c> that selects <c>goals[idx]</c> (0x0055ACCE..0x0055ACEA).</summary>
     public int GoalIndex { get=>_goalIndex.Value; set=>_goalIndex.Value=unchecked((byte)value); }
-    /// <summary>Objects not to treat as obstacles (the one being docked with).</summary>
-    public IEnumerable<uint>? IgnoreObstacleIds { get; set; }
     /// <summary><c>[this+0x90]</c>/<c>[this+0x94]</c>: the x and y position tolerance when <see cref="PreActionObjectPose"/> is null.</summary>
     public double DistanceToleranceMm { get; set; } = DefaultGoalDistanceToleranceMm;
     /// <summary>
@@ -308,7 +267,6 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     public IDrivingAnimationHandler DrivingAnimations { get; set; }
     /// <summary><c>PathComponent::Abort</c> (0x0055AD5C).</summary>
     public Action AbortPath { get; set; }
-    public PathMotionProfile Profile { get; set; } = PathMotionProfile.Default;
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
 
@@ -447,25 +405,19 @@ public delegate ActionResult PosesFunction(ObservableObject obj, out IReadOnlyLi
 /// The engine's <c>DriveToObjectAction</c> (0x00558524..0x00559A00): <c>Init</c> looks the object up in the
 /// world ("block world does not have an ActionableObject with ID"), <c>InitHelper</c> takes the object's
 /// pre-action poses for the action type from the <c>std::function</c> at <c>+0x150</c> (<see cref="GetPossiblePoses"/> by default, M12-029), and unless the
-/// robot is already in position runs a <c>DriveToPoseAction</c> (thresholds (10, 10, 10), angle 0.174533, the object pose as its <c>+0xB4</c> and
-/// <c>+0xC0 = 1</c>; its goals are ALL the returned poses in the engine and one reduced goal here, see <see cref="InitHelperAsync"/>), then a
-/// <c>TurnTowardsObjectAction</c> unless the robot is carrying the object (research Q12.8). The pre-action angle tolerance is the constructor's 7.5 degrees (0x3E060A92 at <c>+0x14C</c>).
+/// robot is already in position runs a <c>DriveToPoseAction</c> to ALL the returned poses, then a <c>TurnTowardsObjectAction</c> unless the robot is carrying
+/// the object (research Q12.8). The pre-action angle tolerance is the constructor's 7.5 degrees (0x3E060A92 at <c>+0x14C</c>).
 ///
-/// There are two constructors and they differ in <c>ActionType</c> (<c>+0x80</c>) and <c>+0x84</c> (M12-022). The
-/// 7-arg constructor 0x0055850C takes the ActionType as an argument and stores -1.0 at <c>+0x84</c> (0x005585A0). The
-/// 4-arg constructor 0x005587B8 stores ActionType 6 and its float argument at <c>+0x84</c> (0x0055883C, 0x0055884C).
-/// ActionType 6 is the only value for which <c>InitHelper</c> builds the object+delta goal and <c>CheckIfDone</c>
-/// compares against <c>+0x84</c>; every other ActionType goes through the <c>std::function</c> at <c>+0x150</c>.
+/// This class is the native action's data holder: <c>NativeDriveToObjectRunner</c> runs it on the ActionList. The legacy public flow (RunAsync,
+/// InitHelperAsync, the 4-arg ActionType-6 constructor and FromGotoObject, the legacy CheckIfDone, Chosen, ExcludePoses and Profile) was retired with the
+/// legacy drive API (operator 2026-11-13, RETIRE-LEGACY-DRIVE-API-1). ActionType 6 (the 4-arg constructor 0x005587B8, M12-022/M12-011) has no built form.
 /// </summary>
 public sealed class DriveToObjectAction
 {
-    internal bool NativeInputs;
     internal EngineRobot? NativeOwner;
     // fidelity: M12-011
     /// <summary><c>+0x14C</c>: Radians 0x3E060A92 (7.5 degrees), the ctor's <c>GetPossiblePoses</c> angle tolerance (research Q12.6, 0x0055850C).</summary>
     public static readonly double PreActionAngleToleranceRad = BitConverter.UInt32BitsToSingle(0x3E060A92);
-    /// <summary><c>+0x84</c> on the 7-arg path: -1.0f (0x005585A0, r1 = 0xBF800000).</summary>
-    public const float UnsetDistanceMm = -1.0f;
     /// <summary>
     /// The ActionType <c>DriveToPlaceCarriedObjectAction</c>'s constructor 0x00559CD4 passes to the 7-arg base: 2 when
     /// its first bool is non-zero (0x00559CDE/0x00559CE4/0x00559CE8); its only caller passes 1 there
@@ -479,39 +431,14 @@ public sealed class DriveToObjectAction
     public DriveToObjectAction(ManipulationSystem m, uint objectId, PreActionType type)
     {
         _m = m; ObjectId = objectId; ActionType = type;
-        DistanceFromObjectOrigin = UnsetDistanceMm;
         PosesFunction = GetPossiblePoses;
     }
-
-    /// <summary>The 4-arg constructor 0x005587B8: ActionType 6 (<see cref="PreActionType.None"/>), <c>+0x84</c> is <paramref name="distanceFromObjectOriginMm"/>, <c>+0x8C</c> the bool, <c>+0x148</c> is 1; the default function is installed (0x0055889C).</summary>
-    public DriveToObjectAction(ManipulationSystem m, uint objectId, float distanceFromObjectOriginMm, bool useManualSpeed)
-    {
-        _m = m; ObjectId = objectId; ActionType = PreActionType.None;
-        DistanceFromObjectOrigin = distanceFromObjectOriginMm;
-        UseManualSpeed = useManualSpeed;
-        PosesFunction = GetPossiblePoses;
-    }
-
-    /// <summary>
-    /// The RobotActionUnion GotoObject factory 0x0052A090 (M12-022): <c>usePreDockPose</c> set (<c>[msg+0x35]</c>, 0x0052A0BA) builds
-    /// the 7-arg constructor with ActionType 0; clear builds the 4-arg constructor with
-    /// <c>distanceFromObjectOrigin_mm</c> (<c>[msg+0x30]</c>) and <c>useManualSpeed</c> (<c>[msg+0x34]</c>) (0x0052A0E0..0x0052A0EE).
-    /// The message's "selected object" id and custom motion profile are not modelled. NO PRODUCTION CALLER: nothing in this stack decodes the app's
-    /// GotoObject message and the shipped app always sends <c>usePreDockPose</c> true (M12-022), so this factory is reached only from tests.
-    /// </summary>
-    public static DriveToObjectAction FromGotoObject(ManipulationSystem m, uint objectId, float distanceFromObjectOriginMm,
-                                                     bool useManualSpeed, bool usePreDockPose) =>
-        usePreDockPose ? new DriveToObjectAction(m, objectId, PreActionType.Docking)
-                       : new DriveToObjectAction(m, objectId, distanceFromObjectOriginMm, useManualSpeed);
 
     public uint ObjectId { get; internal set; }
     /// <summary><c>+0x80</c>.</summary>
     public PreActionType ActionType { get; }
     public PreActionType Type => ActionType;
-    /// <summary><c>+0x84</c>, a float.</summary>
-    public float DistanceFromObjectOrigin { get; }
-    /// <summary><c>+0x8C</c>. The native runner passes it as the inner DriveToPoseAction's manual flag (D4 0x005592E8..0x005592FE); the legacy
-    /// <see cref="InitHelperAsync"/> flow still does not (BLOCKED.md, LEGACY-DRIVE-TO-POSE-NATIVE-1). The internal setter is a test substitution only:
+    /// <summary><c>+0x8C</c>. The native runner passes it as the inner DriveToPoseAction's manual flag (D4 0x005592E8..0x005592FE). The internal setter is a test substitution only:
     /// no native constructor takes the 7-arg ctor's useManualSpeed argument.</summary>
     public bool UseManualSpeed { get; internal set; }
     /// <summary>
@@ -522,31 +449,11 @@ public sealed class DriveToObjectAction
     public double DistanceFromMarkerMm { get; set; }
     public bool UseApproachAngle { get; set; }
     public double ApproachAngleRad { get; set; }
-    /// <summary><c>+0x148</c>: 1 from both constructors (inventory G3.9; 11.1). Zero makes <see cref="CheckIfDone"/> return 0.</summary>
+    /// <summary><c>+0x148</c>: 1 from both constructors (inventory G3.9; 11.1). Zero makes <c>NativeDriveToObjectRunner.CheckIfDone</c> return 0.</summary>
     public bool CheckAtEnd { get; set; } = true;
     /// <summary>The <c>std::function</c> at <c>+0x150</c> (M12-011). The default is <see cref="GetPossiblePoses"/> (M12-029).</summary>
     // fidelity: M12-028
     public PosesFunction PosesFunction { get; set; }
-    public PathMotionProfile Profile { get; set; } = PathMotionProfile.Default;
-    /// <summary>
-    /// The pre-action pose the drive reached, or the closest one when the robot was already in position. C# bookkeeping for <see cref="DockHelper"/>'s retry
-    /// exclusion; the engine has no such field (its <c>DriveToHelper+0x114</c> is the pose <see cref="ExcludePoses"/> stands for).
-    /// </summary>
-    public PreActionPose? Chosen { get; private set; }
-    private IReadOnlyList<Pose3d> _excludePoses = Array.Empty<Pose3d>();
-    private Pose3d? _driveToHelperMatch;
-    /// <summary>
-    /// The poses a previous attempt already failed from, dropped the way <c>IBehavior::UseSecondClosestPreActionPose</c> 0x005BEE56 does it (M12-004): it asks
-    /// <c>GetPossiblePoses</c> again, requires at least two poses (0x005BEE7C..0x005BEE80) and calls <c>IDockAction::RemoveMatchingPredockPose</c>
-    /// (0x00551418, M12-029) for the pose, clearing the in-position flag when it removed something. <see cref="DockHelper"/> (M8) accumulates the poses of every failed
-    /// attempt, so the removal is repeated per pose while more than one remains (a C# generalisation of the engine's single pose, disclosed).
-    /// </summary>
-    // fidelity: M12-004, M12-029
-    public IReadOnlyList<Pose3d> ExcludePoses
-    {
-        get => _excludePoses;
-        set { _excludePoses = value; PosesFunction = UsesExclusions ? PosesWithExclusions : GetPossiblePoses; }
-    }
     /// <summary>
     /// The <c>DriveToHelper</c> functor (0x005B58C2 installs it, operator() 0x005B61A2; M12-029): <see cref="GetPossiblePoses"/>, then, when it returns 0,
     /// <c>RemoveMatchingPredockPose</c> for the pose at <c>DriveToHelper+0x114</c> with NO minimum pose count, clearing the in-position flag if it removed something.
@@ -556,9 +463,9 @@ public sealed class DriveToObjectAction
     public Pose3d? DriveToHelperMatchPose
     {
         get => _driveToHelperMatch;
-        set { _driveToHelperMatch = value; PosesFunction = UsesExclusions ? PosesWithExclusions : GetPossiblePoses; }
+        set { _driveToHelperMatch = value; PosesFunction = _driveToHelperMatch is not null ? PosesWithExclusions : GetPossiblePoses; }
     }
-    private bool UsesExclusions => _driveToHelperMatch is not null || _excludePoses.Count > 0;
+    private Pose3d? _driveToHelperMatch;
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
 
@@ -573,13 +480,14 @@ public sealed class DriveToObjectAction
     public ActionResult GetPossiblePoses(ObservableObject obj, out IReadOnlyList<PreActionPose> posesOut, ref bool alreadyInPosition)
     {
         posesOut = Array.Empty<PreActionPose>();
-        using var robot = NativeInputs ? _m.NativeMainSnapshot(NativeOwner) : _m.CopyPreActionRobotPose();
+        // Q6 (RETIRE-LEGACY-DRIVE-API-1): only the native inputs remain; the legacy CopyPreActionRobotPose/GetObstacles branch had no caller left.
+        using var robot = _m.NativeMainSnapshot(NativeOwner);
         if (robot is null) return ActionResult.Abort;
-        if(NativeInputs)_trace.Add("NativePreActionInputs MAIN="+NativePoseTrace(robot)+" object="+NativePoseTrace(obj.NativePose));
-        if(NativeInputs)_m.World.SelectedObjectId=obj.ObjectId;
+        _trace.Add("NativePreActionInputs MAIN="+NativePoseTrace(robot)+" object="+NativePoseTrace(obj.NativePose));
+        _m.World.SelectedObjectId=obj.ObjectId;
         var output = DockPreActionPoses.Get(new PreActionPoseInput(obj, ActionType, FlagA: false, PreActionAngleToleranceRad, DistanceFromMarkerMm, UseApproachAngle, ApproachAngleRad),
-                                            robot.Value, NativeInputs?(NativeOwner??_m.Robot.Engine.Robot)!.CarryingOwner!.CarriedObjectId:_m.Docking.Carrying.CarriedObjectId,
-                                            () => NativeInputs?_m.NativeObstacles(robot.Value,NativeOwner):_m.GetObstacles(robot.Value), _trace);
+                                            robot.Value, (NativeOwner??_m.Robot.Engine.Robot)!.CarryingOwner!.CarriedObjectId,
+                                            () => _m.NativeObstacles(robot.Value,NativeOwner), _trace);
         if (output.Result != ActionResult.Success) return output.Result;
         if (output.Poses.Count == 0)
         {
@@ -587,7 +495,7 @@ public sealed class DriveToObjectAction
             return ActionResult.NoPreActionPoses;
         }
         alreadyInPosition = output.InPosition;
-        if(NativeInputs)_trace.Add("NativePreActionGoals "+string.Join(";",output.Poses.Select(p=>NativePoseTrace(p.WorldPose))));
+        _trace.Add("NativePreActionGoals "+string.Join(";",output.Poses.Select(p=>NativePoseTrace(p.WorldPose))));
         _trace.Add($"GetPreActionPoses: {output.Poses.Count} pose(s), closest #{output.ClosestIndex} at |d|=({output.OffsetX:F1},{output.OffsetY:F1}), threshold=({output.ThresholdX:F1},{output.ThresholdY:F1}), inPosition={output.InPosition}");
         if (alreadyInPosition) _trace.Add("DriveToObjectAction.GetPossiblePoses.UseRobotPose: Robot's current pose is close enough to preAction pose");
         posesOut = output.Poses.ToList();
@@ -601,8 +509,8 @@ public sealed class DriveToObjectAction
         return FormattableString.Invariant($"local({t.X:R},{t.Y:R},{t.Z:R}) root({r.X:R},{r.Y:R},{r.Z:R}) yaw{pose.AngleAroundZ:R} ")+pose.GetNamedPathToRoot(false);
     }
 
-    /// <summary>The <c>+0x150</c> function when <see cref="DriveToHelperMatchPose"/> or <see cref="ExcludePoses"/> is set: <see cref="GetPossiblePoses"/> then the removals described there.</summary>
-    // fidelity: M12-029, M12-004
+    /// <summary>The <c>+0x150</c> function when <see cref="DriveToHelperMatchPose"/> is set: <see cref="GetPossiblePoses"/> then the removal described there.</summary>
+    // fidelity: M12-029
     private ActionResult PosesWithExclusions(ObservableObject obj, out IReadOnlyList<PreActionPose> posesOut, ref bool alreadyInPosition)
     {
         var result = GetPossiblePoses(obj, out posesOut, ref alreadyInPosition);
@@ -610,222 +518,11 @@ public sealed class DriveToObjectAction
         var list = posesOut.ToList();
         bool removed = false;
         if (_driveToHelperMatch is { } match) removed |= DockPreActionPoses.RemoveMatchingPredockPose(match, list);
-        foreach (var used in _excludePoses)
-        {
-            if (list.Count <= 1) break;                       // UseSecondClosestPreActionPose 0x005BEE7C..0x005BEE80: at least two poses
-            removed |= DockPreActionPoses.RemoveMatchingPredockPose(used, list);
-        }
         if (removed) { alreadyInPosition = false; _trace.Add("Trying again with a different predock pose"); }
         posesOut = list;
         return result;
     }
 
-    /// <summary>
-    /// <c>DriveToObjectAction::Init</c> 0x00559650 (the object lookup; the cube-light step 12.7 is M10 and not modelled) then <c>InitHelper</c>, then the
-    /// <c>CheckIfDone</c> the compound reaches.
-    /// </summary>
-    public async Task<ActionResult> RunAsync(CancellationToken cancel)
-    {
-        var obj = _m.World.GetLocatedObjectById(ObjectId);
-        if (obj is null) { _trace.Add($"DriveToObjectAction.CheckPreconditions.NoObjectWithID {ObjectId}"); return ActionResult.BadObject; }
-        var init = await InitHelperAsync(obj, cancel);
-        if (init != ActionResult.Success) return init;
-        return CheckIfDone();
-    }
-
-    /// <summary>
-    /// <c>DriveToObjectAction::InitHelper(obj)</c> 0x00558FB4 (M12-022; research Q12.8), including the compound it starts (the async model runs the compound to its
-    /// end): ActionType 6 builds the object+delta goal (reachable only from an external GotoObject), every other type asks the <c>+0x150</c> function for the poses
-    /// and the in-position flag; unless in position the <c>DriveToPoseAction</c> to ALL the poses runs; then the turn towards the object unless it is carried.
-    /// </summary>
-    // fidelity: M12-022, M12-029
-    internal async Task<ActionResult> InitHelperAsync(ObservableObject obj, CancellationToken cancel)
-    {
-        var robot = _m.RobotPose();
-        if (robot is null) return ActionResult.Abort;
-        if (ActionType == PreActionType.None)
-        {
-            // InitHelper 0x00558FB4 for ActionType 6: the object+delta goal.
-            var r6 = await DriveToObjectDeltaGoalAsync(obj, robot.Value, cancel);
-            if (r6 != ActionResult.Success) return r6;
-        }
-        else
-        {
-            // InitHelper 0x00558FB4 for every other ActionType: the std::function at +0x150 (0x00559048..0x00559058).
-            bool inPosition = false;                                   // the recorded call site passes 0 (0x00559048..0x00559054)
-            var fnResult = PosesFunction(obj, out var poses, ref inPosition);
-            if (fnResult != ActionResult.Success) return fnResult;
-            if (inPosition)
-            {
-                Chosen = poses.Count > 0 ? CubePreActionPoses.Closest(poses, robot.Value) : null;
-                _trace.Add("DriveToObjectAction: in position, no DriveToPoseAction");
-            }
-            else
-            {
-                if (poses.Count == 0)
-                {
-                    // The function returned success with no poses (the DriveToHelper functor can empty the list). DriveToPoseAction::Init would call
-                    // StartDrivingToPose with no goals, which fails (research 12.5, 0x0064ADF6..0x0064AE2E) and gives FailedToFindPath 0x03000013 (12.4).
-                    // ASSUMPTION, disclosed: that SetGoals marks the goals as set (+0x78) even for an empty vector, otherwise 12.4 would give 0x0300000F.
-                    _trace.Add("DriveToPoseAction.Init.FailedToFindPath: no goals");
-                    return ActionResult.PathPlanningFailedAbort;
-                }
-                // LABELLED REDUCTION of SetGoals 0x0055A6D0, which stores the returned poses as-is as the goal vector (research Q12.8, M12-022): the goal
-                // here is the closest pose's position with the heading toward the object, not all the poses with their full rotation. Reason: the pose
-                // estimates this stack's vision produces for a far cube can be tilted (a cube at 260 mm comes out 21 degrees off flat, past the 20-degree
-                // flatten clamp of M11-006), so a full-rotation goal built from it can never satisfy the full-rotation IsSameAs arrival test (M12-020) that a
-                // flat robot pose is held to. The object pose as +0xB4, +0xC0 = 1 (the threshold pair) and the (10, 10, 10) / 0x3E32B8C2 tolerances are the engine's.
-                var closest = CubePreActionPoses.Closest(poses, robot.Value)!;
-                var goal = new Pose3d(Mat3.AboutZ(YawTowardObject(obj.Pose, closest.WorldPose)), closest.WorldPose.Translation);
-                // Retain the pre-action goal's origin frame when the existing yaw adapter creates its goal copy.
-                Pose3d goalParent=null!;
-                if(closest.WorldPose.TryGetParent(ref goalParent))using(goalParent)goal.SetParent(goalParent);
-                using var preActionObjectPose = new Pose3d(obj.Pose);
-                var drive = new DriveToPoseAction(_m) { Goal = goal, Goals = new[] { goal }, IgnoreObstacleIds = new[] { ObjectId },
-                                                         PreActionObjectPose = preActionObjectPose, Profile = Profile };
-                var r = await drive.RunAsync(cancel);
-                _trace.AddRange(drive.Trace);
-                if (r != ActionResult.Success) return r;
-                Chosen = closest;
-                if (drive.Goal is { } reached)
-                {
-                    // the goal is yaw-only with the heading toward the object, so match the reached goal to a pose by position and that same heading
-                    var match = poses.FirstOrDefault(p =>
-                        (p.WorldPose.Translation - reached.Translation).Length <= 0.5
-                        && Math.Abs(StraightLinePlanner.Wrap(YawTowardObject(obj.Pose, p.WorldPose) - reached.AngleAroundZ)) <= 1e-3);
-                    Chosen = match ?? closest;
-                }
-            }
-        }
-        // DriveToObjectAction::InitHelper 0x0055937A: CarryingComponent::IsCarryingObject(id) 0x00633F88 (carried +8 OR on-top +0x14) decides whether the
-        // TurnTowardsObjectAction is added (0x0055937E cmp; 0x00559380 bne), as NativeDriveToObjectRunner tests both slots (census CARRIED-ONTOP-BINDING-CENSUS-1 C8).
-        if (!_m.Docking.Carrying.IsCarryingObjectId(ObjectId))
-        {
-            bool turned = await _m.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
-            if (!turned)
-            {
-                // The final orientation is part of this action: the engine runs the TurnTowardsObjectAction as
-                // the second half of a compound action, and a compound action fails when a part of it fails.
-                // Reporting Success here let DockHelper dock from an orientation the robot never reached.
-                // The engine's own result for that turn was not read; DidNotReachPreActionPose is the nearest
-                // shipped result and keeps the outcome retryable (reduction labelled).
-                _trace.Add("TurnTowardsObjectAction did not complete: the robot is not facing the object");
-                return ActionResult.DidNotReachPreActionPose;
-            }
-            _trace.Add("turned towards the object");
-        }
-        return ActionResult.Success;
-    }
-
-    /// <summary>
-    /// The ActionType-6 branch of <c>InitHelper</c> (M12-022; pre-extraction rows 11.8, 11.11, 11.13, verified): a strictly NEGATIVE <c>+0x84</c> is
-    /// <c>NO_DISTANCE_SET</c> 0x0300000D (<c>vcmpe s0,#0</c> at 0x00558FE2, <c>bpl</c> at 0x00558FEA is taken for NaN, +0 and -0, so they do not error;
-    /// error block 0x00558FEC..0x0055903E); a robot already closer to the object than <c>+0x84</c> needs no drive; otherwise a <c>DriveToPoseAction</c> to the
-    /// object+delta goal (the object pose is its <c>+0xB4</c> with <c>+0xC0 = 1</c>, thresholds (10,10,10) and Radians 0.174533 through <c>SetGoals</c>) is
-    /// run. A NaN <c>+0x84</c> flows into the goal as NaN (0x005591E4) and InitHelper returns no result for it; what the drive and the planner (M13) do with a
-    /// NaN goal is not in the inventory, so that case throws <see cref="NotSupportedException"/> instead of sending anything.
-    /// </summary>
-    private async Task<ActionResult> DriveToObjectDeltaGoalAsync(ObservableObject obj, Pose3d robot, CancellationToken cancel)
-    {
-        float distance = DistanceFromObjectOrigin;
-        if (distance < 0)
-        {
-            _trace.Add("DriveToObjectAction.InitHelper.NoDistanceSet: ActionType==NONE but no distance set either");
-            return ActionResult.NoDistanceSet;
-        }
-        if (!TryBuildObjectDeltaGoal(obj.Pose, robot, distance, out var goal))
-        {
-            _trace.Add("DriveToObjectAction.InitHelper: already within the distance of the object; no drive");
-            return ActionResult.Success;
-        }
-        if (double.IsNaN(goal.Translation.X) || double.IsNaN(goal.Translation.Y) || double.IsNaN(goal.AngleAroundZ))
-            throw new NotSupportedException("MISSING: DriveToObjectAction.InitHelper with a NaN +0x84 builds a NaN goal (0x005591E4) and returns no result; what DriveToPoseAction / PathComponent (M13) do with a NaN goal is not in the inventory.");
-        using var preActionObjectPose = new Pose3d(obj.Pose);
-        var drive = new DriveToPoseAction(_m)
-        {
-            Goal = goal, Goals = new[] { goal }, IgnoreObstacleIds = new[] { ObjectId }, PreActionObjectPose = preActionObjectPose,
-            DistanceToleranceMm = 10.0, AngleToleranceRad = 0.174533, Profile = Profile,
-        };
-        var r = await drive.RunAsync(cancel);
-        _trace.AddRange(drive.Trace);
-        return r;
-    }
-
-    /// <summary>
-    /// The goal <c>DriveToObjectAction::InitHelper</c> 0x00558FB4 builds for ActionType 6 (M12-022). <c>delta = robot.xy -
-    /// objectInRobotParent.xy</c> (0x005590C8..0x005590FE); if its squared length is positive it is normalised and that length is
-    /// <c>d</c>, otherwise <c>d = 0</c> and delta is left as it is (0x00559108..0x00559160). <c>d &lt; +0x84</c> means already in
-    /// position: no goal (returns false; 0x005591C2..0x005591D6; the compare is <c>bpl</c>-style, so a NaN <c>+0x84</c> is NOT already in position). Otherwise <c>delta *= +0x84</c> (0x005591D8..0x005591EC), the
-    /// goal is <c>{obj.x + delta.x, obj.y + delta.y, robot.z}</c> (0x00559220..0x00559230) and its yaw is
-    /// <c>atan2f(-delta.y, -delta.x)</c> (0x00559232..0x0055923A) about Z (0x00559278).
-    /// </summary>
-    // fidelity: M12-022
-    public static bool TryBuildObjectDeltaGoal(Pose3d objectPose, Pose3d robotPose, float distance, out Pose3d goal)
-    {
-        double dx = robotPose.Translation.X - objectPose.Translation.X;
-        double dy = robotPose.Translation.Y - objectPose.Translation.Y;
-        double n2 = dx * dx + dy * dy, d;
-        if (n2 > 0) { d = Math.Sqrt(n2); dx /= d; dy /= d; } else d = 0.0;
-        if (d < distance) { goal = default; return false; }
-        dx *= distance; dy *= distance;
-        double yaw = Math.Atan2(-dy, -dx);
-        goal = new Pose3d(yaw, new Vec3(0, 0, 1), new Vec3(objectPose.Translation.X + dx, objectPose.Translation.Y + dy, robotPose.Translation.Z));
-        return true;
-    }
-
-    /// <summary>
-    /// <c>DriveToObjectAction::CheckIfDone</c> 0x00559880 after the compound has finished (M12-011): <c>[+0x148] == 0</c> returns
-    /// 0 (0x0055989C); an object that is not located is <c>BadObject</c> 0x03000004 (0x005598B6/0x005598BA). ActionType 6
-    /// compares the robot-to-object-origin XY distance squared against <c>+0x84</c> squared and fails with 0x04000001 when it is
-    /// larger (0x00559998..0x005599FE). Every other ActionType calls the <c>+0x150</c> function with the in-position flag
-    /// (0x00559A9C): the vector starts empty and the flag 0; flag 0 gives 0x04000001 (0x00559AE4), otherwise the function's result (0x00559AE6).
-    /// This function does not call <c>ComputePreActionPoseDistThreshold</c> (M12-020).
-    /// </summary>
-    // fidelity: M12-011
-    public ActionResult CheckIfDone()
-    {
-        if (!CheckAtEnd) { _trace.Add("DriveToObjectAction.CheckIfDone: not checking at the end"); return ActionResult.Success; }
-        var obj = _m.World.GetLocatedObjectById(ObjectId);
-        if (obj is null) return ActionResult.BadObject;
-        if (ActionType == PreActionType.None)
-        {
-            var robot = _m.RobotPose();
-            if (robot is null) return ActionResult.BadObject;
-            double dx = robot.Value.Translation.X - obj.Pose.Translation.X, dy = robot.Value.Translation.Y - obj.Pose.Translation.Y;
-            double dist = DistanceFromObjectOrigin;
-            if (dx * dx + dy * dy > dist * dist)
-            {
-                _trace.Add("DriveToObjectAction.CheckIfDone: farther from the object than the distance");
-                return ActionResult.DidNotReachPreActionPose;
-            }
-            return ActionResult.Success;
-        }
-        // 0x00559A86..0x00559AE6: the function gets a FRESH EMPTY pose vector and an in-position bool of 0 (movs r0,#0; strd/str/strb to the locals; call 0x00559A9C); flag zero returns 0x04000001
-        // whatever the function returned (0x00559AE4), non-zero returns the function's result. The flip installers never write the flag, so they always end 0x04000001 here (M12-035).
-        bool inPosition = false;
-        var result = PosesFunction(obj, out _, ref inPosition);
-        if (!inPosition)
-        {
-            _trace.Add("DriveToObjectAction.CheckIfDone: not in position");
-            return ActionResult.DidNotReachPreActionPose;
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// LABELLED REDUCTION for the non-6 goal (M12-022): the heading from <paramref name="pose"/>'s position toward <paramref name="objectPose"/>. The engine's
-    /// ActionType-6 goal uses <c>atan2f(-delta.y, -delta.x)</c> with <c>delta = normalize(robot.xy - object.xy) * +0x84</c> (0x00559232/0x00559236/0x0055923A);
-    /// for other ActionTypes the goals are the poses the <c>+0x150</c> function returns (see the reduction in <see cref="InitHelperAsync"/>).
-    /// </summary>
-    internal static double YawTowardObject(Pose3d objectPose, Pose3d pose) =>
-        Math.Atan2(objectPose.Translation.Y - pose.Translation.Y, objectPose.Translation.X - pose.Translation.X);
-
-    /// <summary>
-    /// <c>Pose3d::IsSameAs</c> as <c>RemoveMatchingPredockPose</c> calls it (Point3(100,100,100), Radians 0x3F060A92): the receiver is <paramref name="a"/>, the
-    /// vector element (M12-029). <see cref="DockHelper"/> uses it to recognise a pose it already tried.
-    /// </summary>
-    internal static bool IsSamePredockPose(Pose3d a, Pose3d b) =>
-        a.IsSameAs(b, DockPreActionPoses.MatchToleranceMm, DockPreActionPoses.MatchAngleRad, out _);
 }
 
 /// <summary>
@@ -846,16 +543,16 @@ public sealed class DriveToObjectAction
 /// object (0x00550904 compares -1 with the carried id) and answers with the poses of the clone at the placement pose.</para>
 ///
 /// <para><c>CheckIfDone</c> 0x00559FA4: the compound's result, replaced by 0x04000008 (PLACEMENT_GOAL_NOT_FREE) when <c>+0x179</c> is set and
-/// <see cref="IsPlacementGoalFree"/> is false, on every tick regardless of state. The async model has no ticks: <see cref="RunAsync"/> polls it every
-/// <see cref="TickPeriod"/> while the drive runs (a C# stand-in for the engine's per-tick call; the period is not in the inventory) and once more when it ends.
-/// <c>DriveToObjectAction::CheckIfDone</c> is not called, so there is no in-position check afterwards.</para>
+/// <see cref="IsPlacementGoalFree"/> is false, on every tick regardless of state. <c>DriveToObjectAction::CheckIfDone</c> is not called, so there is no
+/// in-position check afterwards.</para>
+///
+/// <para>The legacy async RunAsync (Init plus the legacy DriveToObjectAction.InitHelperAsync drive) was retired with the legacy drive API
+/// (operator 2026-11-13, RETIRE-LEGACY-DRIVE-API-1); it had no caller. The constructor, <see cref="IsPlacementGoalFree"/>, <see cref="CheckIfDone"/> and the
+/// static intersecting-objects query stay.</para>
 /// </summary>
 // fidelity: M12-030
 public sealed class DriveToPlaceCarriedObjectAction
 {
-    /// <summary>The stand-in for the engine's per-tick call of <c>CheckIfDone</c> while the drive runs (not in the inventory).</summary>
-    public static readonly TimeSpan TickPeriod = TimeSpan.FromMilliseconds(100);
-
     /// <summary>
     /// <c>BlockWorld::FindLocatedIntersectingObjects(quad, out, padding, filter)</c> as <c>IsPlacementGoalFree</c> uses it (0x0055A070): true iff the result is empty. The default is
     /// <see cref="EngineFindLocatedIntersectingObjectsIsEmpty"/>; a test can supply another as an input.
@@ -863,8 +560,6 @@ public sealed class DriveToPlaceCarriedObjectAction
     public delegate bool PlacementGoalQuery(ObservableObject carried, Pose3d placementPose, double padding);
 
     private readonly ManipulationSystem _m;
-    private readonly DriveToObjectAction _inner;
-    private ObservableObject? _clone;
 
     public DriveToPlaceCarriedObjectAction(ManipulationSystem m, Pose3d placementPose, bool placeOnGroundType, bool flagAt0x178,
                                            bool useManualSpeed, bool flagAt0x179, double paddingAt0x17C)
@@ -873,7 +568,6 @@ public sealed class DriveToPlaceCarriedObjectAction
         CarriedIdAtConstruction = m.Docking.Carrying.CarriedObjectId ?? uint.MaxValue;
         ActionType = placeOnGroundType ? PreActionType.PlaceOnGround : PreActionType.PlaceRelative;
         PlacementPose = placementPose; FlagAt0x178 = flagAt0x178; FlagAt0x179 = flagAt0x179; PaddingAt0x17C = paddingAt0x17C;
-        _inner = new DriveToObjectAction(m, CarriedIdAtConstruction, ActionType);
         FindLocatedIntersectingObjectsIsEmpty = EngineFindLocatedIntersectingObjectsIsEmpty;
     }
 
@@ -927,8 +621,6 @@ public sealed class DriveToPlaceCarriedObjectAction
     public double PaddingAt0x17C { get; }
     /// <summary>The query behind <see cref="IsPlacementGoalFree"/>; the default is the visible stub.</summary>
     public PlacementGoalQuery FindLocatedIntersectingObjectsIsEmpty { get; set; }
-    /// <summary>The clone <c>Init</c> step 4 made of the carried object (<c>InitPose(+0x16C, Known)</c>), once <see cref="RunAsync"/> has got that far.</summary>
-    public ObservableObject? Clone => _clone;
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
 
@@ -950,62 +642,6 @@ public sealed class DriveToPlaceCarriedObjectAction
         return compoundResult;
     }
 
-    /// <summary><c>Init</c> 0x00559DB8 up to and including the start of the inner <c>InitHelper</c>; returns the first non-zero <c>Init</c> result or the inner compound's result.</summary>
-    public async Task<ActionResult> RunAsync(CancellationToken cancel)
-    {
-        var carriedId = _m.Docking.Carrying.CarriedObjectId;
-        if (carriedId is null)
-        {
-            if (_m.Robot.Engine.Robot is {} native)
-                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"DriveToPlaceCarriedObjectAction.CheckPreconditions.NotCarryingObject",FormattableString.Invariant($"Robot {unchecked((int)native.NativeRobotId)} cannot place an object because it is not carrying anything."));
-            else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-030 no native Robot owner for Init precondition diagnostic at 0x00559EC0; diagnostic is skipped, no Robot ID is invented");
-            _trace.Add("DriveToPlaceCarriedObjectAction.CheckPreconditions.NotCarryingObject");
-            return ActionResult.NotCarryingObjectAbort;
-        }
-        if (_m.World.GetLocatedObjectById(CarriedIdAtConstruction) is not { } obj)
-        {
-            if (_m.Robot.Engine.Robot is {} native)
-            {
-                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"DriveToPlaceCarriedObjectAction.CheckPreconditions.NoObjectWithID",FormattableString.Invariant($"Robot {unchecked((int)native.NativeRobotId)}'s block world does not have an ActionableObject with ID={unchecked((int)carriedId.Value)}."));
-                EngineErrorState.StoreAndMaybeBreak();
-            }
-            else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-030 no native Robot owner for Init precondition diagnostic at 0x00559E6C; diagnostic is skipped, no Robot ID is invented");
-            _trace.Add("DriveToPlaceCarriedObjectAction.CheckPreconditions.NoObjectWithID");
-            return ActionResult.BadObject;
-        }
-        if (FlagAt0x178)
-        {
-            float angle = 0;
-            var computed = PlacementApproachAngle.Compute(_m, PlacementPose, ref angle);
-            if (computed != ActionResult.Success)
-            {
-                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "DriveToPlaceCarriedObjectAction.Init.FailedToComputeApproachAngle", "");
-                return computed;
-            }
-            // The host DriveToObjectAction has no native IAction tag/state owner for SetApproachAngle's diagnostic.
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-030 SetApproachAngle 0x00558A90..0x00558B3A: native IAction tag/state owner is absent in the host drive adapter; Init-time angle fields are supplied, but its exact diagnostic/state guard is not built");
-            _inner.UseApproachAngle = true;
-            _inner.ApproachAngleRad = angle;
-        }
-        // ObservableObject::Clone keeps nothing: ObjectID -1 (uint.MaxValue here), a fresh marker set, no pose; then InitPose(+0x16C, Known).
-        _clone = new ObservableObject(uint.MaxValue, obj.Type, CubeGeometry.MarkersFor(obj.Type)) { PoseWorld=_m.World,Pose = PlacementPose, PoseState = PoseState.Known };
-        // [+0x7C] := the carried id is not modelled separately: the inner action turns towards (and tests carrying for) CarriedIdAtConstruction, which is the
-        // same id unless a different object was picked up after this action was built.
-        if (!FlagAt0x179) return CheckIfDone(await _inner.InitHelperAsync(_clone, cancel));
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-        var drive = _inner.InitHelperAsync(_clone, linked.Token);
-        while (!drive.IsCompleted)
-        {
-            await Task.WhenAny(drive, _m.Wait(TickPeriod, CancellationToken.None));
-            if (!drive.IsCompleted && CheckIfDone(ActionResult.Running) == ActionResult.PlacementGoalNotFree)
-            {
-                linked.Cancel();
-                try { await drive; } catch (OperationCanceledException) { }
-                return ActionResult.PlacementGoalNotFree;
-            }
-        }
-        return CheckIfDone(await drive);
-    }
 }
 
 /// <summary>

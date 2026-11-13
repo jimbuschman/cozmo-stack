@@ -369,11 +369,11 @@ public sealed class LocalizeCrossOriginTests
     // reach: path 0 production — real rendered frames through the queued worker, as the same-origin production test (the offline flag cleared by
     // reflection, the fixture's sim firmware report and outer calibration). Substitution in every case: the delocalization is a direct call of the
     // production Robot::Delocalize (EngineRobot.Delocalize) instead of a robot-state trigger (pick-up / frame mismatch), which this rig does not drive.
-    // reach: paths 1 and 2 unit — production frames and engine tick, but the path start is a direct PathComponent entry call
-    // (StartNativeDrivingToPose / StartDrivingToPose); DriveToPoseAction.InitNative and the legacy Init are not exercised. They use the production
-    // PathInFlight and OriginOwnerInput bindings:
-    // path 1 is a native DriveToPose (the localization proceeds and the path rejiggers on its next status-3 update, M12-032 H6/R2/R4/R6), path 2 a
-    // legacy-entry DriveToPose (stack guard: it cannot replan, so the cross-origin pair is held off, PATH-ORIGIN-CHANGE-REPLAN-1).
+    // reach: path 1 unit — production frames and engine tick, but the path start is a direct PathComponent entry call
+    // (StartNativeDrivingToPose); DriveToPoseAction.InitNative is not exercised. It uses the production OriginOwnerInput binding:
+    // path 1 is a native DriveToPose (the localization proceeds and the path rejiggers on its next status-3 update, M12-032 H6/R2/R4/R6).
+    // (The former path 2, a legacy-entry DriveToPose held off by the PATH-ORIGIN-CHANGE-REPLAN-1 stack guard, was deleted with that entry and guard,
+    // RETIRE-LEGACY-DRIVE-API-1, operator 2026-11-13.)
     // M11-043, M11-038 (LCO-TAIL-PRODUCTION-TEST-1; reach as above): paths 0 and 1 also assert UpdateObjectOrigins' tail on the relocalizing frame, from
     // re-analysis/jobs/trial-m13/CENSUS-M11-043.md U7/U8: one E2G 0x53 LocatedObjectStates (0x006206E6 -> 0x0061E6C0) listing origin 1's objects, then
     // the BlockConfigurationManager force flag (0x006206EA..0x006206F0), both before X11 (0x0051599E). Observed by a local 0x53 recipient and the
@@ -381,7 +381,6 @@ public sealed class LocalizeCrossOriginTests
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
-    [InlineData(2)]
     public void LCO_Production_ADelocalizedRobotThatSeesAKnownCubeRelocalizesIntoItsOrigin(int path)
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
@@ -415,37 +414,13 @@ public sealed class LocalizeCrossOriginTests
             if (path != 0)
             {
                 // A path in o2 brought to FollowingPath through the real tick and the C6 handler.
-                if (path == 1)
-                {
-                    using var goal = new Pose3d(Rotation3d.Identity, new Vec3(30, 0, 0), parent: f.Robot.GetNativeOrigin(o2));
-                    Assert.Equal(0, pc.StartNativeDrivingToPose(f.M, new[] { goal }, new PathGoalIndex(), false, null));
-                }
-                else Assert.Equal(0, pc.StartDrivingToPose(1, new PathGoalIndex(), false,
-                    () => new PathPlannerModelResult(2, new PathSegment[] { new PathSegment.Line(0, 0, 50, 0, 100, 200, 500) }, 0), () => { }, _ => { }));
+                using (var goal = new Pose3d(Rotation3d.Identity, new Vec3(30, 0, 0), parent: f.Robot.GetNativeOrigin(o2)))
+                    Assert.Equal(0, pc.StartNativeDrivingToPose(f.M, new[] { goal }, new PathGoalIndex(), false));
                 Assert.Equal(o2, pc.ParamsOrigin);                                // O3 0x0064AD6A
                 for (int i = 0; i < 3 && pc.DriveToPoseStatus != 2; i++) f.Rig.Tick();
                 Assert.Equal(2, pc.DriveToPoseStatus);
                 f.Rig.Data(new PathFollowingEvent { EventId = pc.Field42, EventType = (byte)PathEventType.Started }); f.Rig.Tick();
                 Assert.Equal(3, pc.DriveToPoseStatus);
-            }
-            if (path == 2)
-            {
-                // Stack guard (PATH-ORIGIN-CHANGE-REPLAN-1): while a legacy-entry path is in flight the cross-origin pair is stopped before any write,
-                // so no origin change and no 0x45.
-                for (uint j = 3; j <= 4; j++)
-                {
-                    int held = f.Rig.Mark();
-                    f.Image(j, cube: true, cubeX: 150); f.Motors();
-                    // Delocalize's own pending update may still go out on the next tick (NativeDelocalization); none may carry the cube's origin.
-                    Assert.DoesNotContain(f.Rig.SentSince(held).OfType<AbsoluteLocalizationUpdate>(), u => u.PoseOriginId == o1);
-                }
-                Assert.Equal(o2, f.Robot.CurrentOriginId);                      // no Rejigger: origin 1 did not become current again
-                // (The robot may localize to the cube's new copy in origin 2: a same-origin pair, which the guard leaves alone.)
-                Assert.Contains(missing, m => m.Contains("PATH-ORIGIN-CHANGE-REPLAN-1") && m.Contains("legacy-entry DriveToPose path is in flight"));
-                Assert.DoesNotContain(logs, l => l.Name == "Robot.LocalizeToObject.RejiggeringOrigins");
-                // What a later sighting does once the path ends depends on the copy the robot may have localized to meanwhile (a same-origin pair); this
-                // case checks only the guard.
-                return;
             }
             bool relocalized = false;
             List<AbsoluteLocalizationUpdate> sent = new();

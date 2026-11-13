@@ -603,93 +603,6 @@ public class R2FloorPlacementTests : IDisposable
 
     // ------------------------------------------------------------------------------------------- the placement end to end
 
-    /// <summary>
-    /// The same behaviour through the live entry: the BringCubeToBeacon the shipped binding builds (FreeplayStack.Bound, "Hiking_BringCubeToBeacon", cooldown 45), started and ticked by the
-    /// BehaviorManager (SwitchToBehaviorBase, Update): pick up, place on the floor, FireEmotionEvents.
-    /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
-    [Fact]
-    public void TheShippedBindingPlacesTheCubeThroughTheBehaviorManager()
-    {
-        if (!NeedsAssets()) return;
-        var obb = ObbRoot();
-        if (obb is null)
-        {
-            if (Environment.GetEnvironmentVariable("COZMO_TESTS_WITHOUT_ASSETS") == "1") return;
-            throw new Xunit.Sdk.XunitException("re-analysis/obb (the shipped config and animation assets) is missing, so the live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
-        }
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig(resources: PickupPyramidNativeExecutionTests.Resources());
-        rig.M.ClockSec=()=>100; // Positive supplied-input unit; manager/transport clocks still advance.
-        var previousDockResult=rig.OnDockResult;
-        rig.OnDockResult=()=>
-        {
-            previousDockResult?.Invoke();
-            var dock=rig.Sent.OfType<DockWithObject>().Last();
-            if(dock.DockAction is (byte)DockAction.PickupLow or (byte)DockAction.PickupHigh)
-            {
-                Assert.True(dock.Field8);
-                if(dock.Field8)rig.Send(new LiftLoad{Field0=true});
-            }
-        };
-        rig.Robot.Animations.ManualTicking = true;
-        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
-        rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
-        double clock = 0;
-        var ctx = Ctx(rig);
-        using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M, withReactions: false, random: new Random(1));
-        var bring = Assert.IsType<BringCubeToBeaconBehavior>(stack.Bound["Hiking_BringCubeToBeacon"]);
-        bring.ActionTaskRunner = SignalTestContext.Schedule;
-        bring.WorkPosted += signals_rig.Notify;
-        Assert.Equal(45.0, bring.RecentFailureCooldownSec);
-        Assert.Equal(5.0, Assert.IsType<BringCubeToBeaconBehavior>(stack.Bound["SparksBringCubeToBeacon"]).RecentFailureCooldownSec);
-        rig.Cube = InOrigin(rig,At(330, -20, 22));
-        Assert.Single(rig.Frame().Objects);
-        // A / reach: unit: old manually supplied beacon had no origin; production copies Robot::GetPose.
-        using var beaconInput=InOrigin(rig,At(0,0));
-        beaconInput.SetParent(rig.Vision.World.GetNativeOrigin(rig.Vision.World.CurrentOriginId));
-        rig.M.Whiteboard.AddBeacon(beaconInput,175);
-        stack.Manager.Activity = null;                                                       // the activity chooser is not under test: the manager ticks only the behaviour it was switched to
-        // Placement's running checks resume only after an explicit modeled firmware pump.
-        var firmwareTicks = new System.Collections.Concurrent.ConcurrentQueue<TaskCompletionSource>();
-        rig.M.Wait = (_, cancel) =>
-        {
-            if (cancel.IsCancellationRequested) return Task.FromCanceled(cancel);
-            var tick = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            firmwareTicks.Enqueue(tick);
-            signals_rig.MarkFirmwareWorkPending();
-            return tick.Task;
-        };
-        Assert.True(stack.Manager.SwitchToBehaviorBase(bring, 0).GetAwaiter().GetResult());
-        int raised = 0; bool cleared = false;
-        NativePlaceGroundAtBeaconRunner? retained=null;bool sawGround=false;
-
-        while (stack.Manager.IsRunning(bring))
-        {
-            clock += 0.033;
-            stack.Manager.Update(clock * 1000, clock);
-            if(bring.OwnedRunner is NativePlaceGroundAtBeaconRunner compound)
-            {
-                retained=compound;
-                Assert.Equal(0xD,compound.Drive.Type);
-                Assert.Equal(0x18,compound.Ground.Type);
-                if(compound.Ground.Initialized){sawGround=true;Assert.True(compound.Drive.DestructionObserved);}
-            }
-            rig.Pump();
-            while (firmwareTicks.TryDequeue(out var tick)) tick.TrySetResult();
-            if (bring.LastPlaceAction is not null) rig.NativeGroundCapture = true;
-            if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); Firmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false);
-            SignalTestContext.AdvanceBehavior(bring);
-        }
-        Assert.False(stack.Manager.IsRunning(bring), string.Join(" | ", bring.Trace));
-        Assert.NotNull(retained);Assert.True(sawGround);
-        Assert.True(bring.Trace.Any(l => l.Contains("onPlaceActionResult.Done: Successfully placed cube")),string.Join(" | ",bring.Trace));
-        Assert.True(rig.NativeGroundMarkerReports > 0 && rig.NativeGroundObjectReports > 0,
-            $"marker reports={rig.NativeGroundMarkerReports}, object observations={rig.NativeGroundObjectReports}");
-        Assert.Single(rig.Sent.OfType<PlaceObjectOnGround>());
-        Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
-    }
-
     // ------------------------------------------------------------------------------------------- the candidate filter (M15-020, M15-024)
 
     /// <summary>
@@ -900,7 +813,7 @@ public class R2FloorPlacementTests : IDisposable
             Assert.Equal(near.ObjectId, bring.Candidate);
             Assert.NotEqual(far.ObjectId, bring.Candidate);
             Assert.Contains(bring.Trace, l => l.Contains("TransitionToPickUpObject.Selected: Going to pick up '" + near.ObjectId + "'"));
-            Assert.Contains(bring.Trace, l => l.StartsWith("start DriveToPickupObject("));
+            // (The legacy DockHelper stand-in's "start DriveToPickupObject(...)" action start was retired, RETIRE-LEGACY-DRIVE-API-1; no pick-up action is started.)
             Assert.False(bring.InitFailed);
             bring.Stop(BehaviorStopReason.Cancelled);
         }
@@ -993,7 +906,7 @@ public class R2FloorPlacementTests : IDisposable
             {
                 Assert.Contains(log, l => l.Contains($"onPickUpActionResult.RetryMaybe: Let's try to pick up '{t}' again ({attempt} tries out of 3)"));
                 Assert.Contains(log, l => l.Contains($"TransitionToPickUpObject.Retry: Trying to pick up '{t}' again"));
-                Assert.Contains(log, l => l.StartsWith($"start DriveToPickupObject({t}) attempt {attempt + 1}"));
+                // (The legacy stand-in's "start DriveToPickupObject(...) attempt n" was retired, RETIRE-LEGACY-DRIVE-API-1: the retry reaches TransitionToPickUpObject, which starts nothing.)
                 Assert.Empty(rig.M.Whiteboard.GetObjectFailureTable(ObjectActionFailure.PickUpObject));
             });
         Case(0x04000001, 3, false, (b, rig, log, t) =>

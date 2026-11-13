@@ -218,12 +218,22 @@ public sealed class M13OriginImportTests
             try
             {
                 if(absent)rig.Engine.Robot.CarryingOwner=null; // explicit unavailable-owner fixture
-                using var drive=new DriveToPoseAction(m){Goal=goal};Assert.Equal(0,drive.Init());
-                Assert.Same(m.NativePlanners!.Lattice,m.NativePlanners.Current);
-                Assert.Equal(1,env.ObstacleCount);
+                using var drive=NativeDriveTestGoals.To(m, goal);
                 if(absent)
-                {Assert.Same(prior,env.Bucket(0));Assert.Contains(logs,l=>l.Contains("MISSING: M13-003")&&l.Contains("CarryingOwner"));}
-                else Assert.InRange(MathF.Abs(MinX(env)-unshifted+20),0,0.0001f);
+                {
+                    // The native drive (the legacy Init was retired, RETIRE-LEGACY-DRIVE-API-1) reads the carrying owner Robot+0x284 in StartDrivingToPose
+                    // (P9, ComputeDriveCenterPose 0x005135D0 reads [[Robot+0x284]+8]); the engine always has it, so the stack's absent-owner fixture is
+                    // NativeActionUnavailable before any planner import: the prior snapshot is retained.
+                    Assert.Throws<NativeActionUnavailable>(()=>drive.Init());
+                    Assert.Same(prior,env.Bucket(0));Assert.Equal(1,env.ObstacleCount);
+                }
+                else
+                {
+                    Assert.Equal(0,drive.Init());
+                    Assert.Same(m.NativePlanners!.Lattice,m.NativePlanners.Current);
+                    Assert.Equal(1,env.ObstacleCount);
+                    Assert.InRange(MathF.Abs(MinX(env)-unshifted+20),0,0.0001f);
+                }
             }
             finally{rig.Engine.Robot.CarryingOwner=owner;StackDiagnostics.Reported-=Log;}
         }

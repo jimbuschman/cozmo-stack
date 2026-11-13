@@ -174,7 +174,7 @@ public sealed class M13NativeMapImportTests
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);Assert.True(m.LoadPlanner(Obb()));
         // A stale prior snapshot proves the dispatch really rebuilds rather than observing initial empty buckets.
         m.Planner!.Env.ImportObstaclePolygons(new[]{Payload().Polygon},false,0);Assert.Equal(1,m.Planner.Env.ObstacleCount);
-        using var drive=new DriveToPoseAction(m){Goal=goal};
+        using var drive=NativeDriveTestGoals.To(m, goal);
         Assert.Equal(0,drive.Init());
         Assert.Same(m.NativePlanners!.Lattice,m.NativePlanners.Current);
         Assert.Equal(1,rig.Robot.Motion.Path.DriveToPoseStatus);

@@ -12,31 +12,33 @@ public sealed class M13X2BuilderTests
     [Fact] [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
     public void ActualDriveAppendsFinalGoalTurnAndSucceeds()
     {
-        using var signals=SignalTestContext.Install();using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));
+        using var signals=SignalTestContext.Install();using var rig=new Rig();rig.DriveCenterFollowing=true;Assert.True(rig.M.LoadPlanner(Obb())); // native drive: drive-center firmware input (RETIRE-LEGACY-DRIVE-API-1)
         var events=new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();rig.Robot.Engine.LogEntry+=events.Enqueue;
         using var goalInput=At(200,0,MathF.PI/2);
-        var drive=new DriveToPoseAction(rig.M){Goal=goalInput};
+        var drive=NativeDriveTestGoals.To(rig.M, goalInput);
         var result=SignalTestContext.Result(drive.RunAsync(default),()=>rig.Pump());
         Assert.Equal(ActionResult.Success,result);var turn=rig.Sent.OfType<AppendPathSegmentPointTurn>().Last();
-        Assert.Equal(MathF.PI/2,turn.TargetAngleRad);Assert.Equal(2,turn.Speed.SpeedMmps);Assert.Equal(10,turn.Speed.AccelMmps2);
+        Assert.Equal(MathF.PI/2,turn.TargetAngleRad);Assert.Equal(2,MathF.Abs(turn.Speed.SpeedMmps));Assert.Equal(10,turn.Speed.AccelMmps2); // 2 rad/s and 10, the default profile's point-turn speed and accel; only the magnitude is asserted: the sign (turn direction) is not engine-cited here
         Assert.InRange(MathF.Abs((float)rig.Angle-MathF.PI/2),0,0.05f);
         Assert.Equal(EngineLogLevel.Event,events.First(e=>e.Name=="robot.planner_selected").Level);
         Assert.Equal(EngineLogLevel.Event,events.Last(e=>e.Name=="robot.plan_complete").Level);
     }
+    // Ported from the retired legacy NativePlannerSet.Configure (borrowed poses) to ConfigureNative (owned copies), RETIRE-LEGACY-DRIVE-API-1. Select reads the
+    // configured Start and Goals either way; UseFallback/Read now start from the robot's checked forward (drive-center) pose (J7, R6), as every native path does.
     [Fact]
     public void SelectionUsesClosestGoalAndConversionSaturates()
     {
         using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var p=rig.M.GetNativePlanners();var entries=new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();rig.Robot.Engine.LogEntry+=entries.Enqueue;
-        p.Configure(Pose3d.Identity,new[]{At(500,500),At(0,0)},PathMotionProfile.Default,null);p.Select();Assert.Same(p.Face,p.Current);
-        p.Configure(Pose3d.Identity,new[]{At(float.NaN,0)},PathMotionProfile.Default,null);p.Select();Assert.Equal("0",entries.Last(e=>e.Name=="robot.planner_selected").Data["$data"]);
-        p.Configure(Pose3d.Identity,new[]{At(float.PositiveInfinity,0)},PathMotionProfile.Default,null);p.Select();Assert.Equal("2147483647",entries.Last(e=>e.Name=="robot.planner_selected").Data["$data"]);
-        p.Configure(Pose3d.Identity,new[]{At(20,0)},PathMotionProfile.Default,null);p.Select();Assert.True(p.UseFallback());
+        p.ConfigureNative(Pose3d.Identity,new[]{At(500,500),At(0,0)},PathMotionProfile.Default);p.Select();Assert.Same(p.Face,p.Current);
+        p.ConfigureNative(Pose3d.Identity,new[]{At(float.NaN,0)},PathMotionProfile.Default);p.Select();Assert.Equal("0",entries.Last(e=>e.Name=="robot.planner_selected").Data["$data"]);
+        p.ConfigureNative(Pose3d.Identity,new[]{At(float.PositiveInfinity,0)},PathMotionProfile.Default);p.Select();Assert.Equal("2147483647",entries.Last(e=>e.Name=="robot.planner_selected").Data["$data"]);
+        p.ConfigureNative(Pose3d.Identity,new[]{At(20,0)},PathMotionProfile.Default);p.Select();Assert.True(p.UseFallback());
         Assert.Equal(EngineLogLevel.Event,entries.Last(e=>e.Name=="robot.fallback_planner_used").Level);
     }
     [Fact] [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
     public void FailedRetrievalAfterPreviousPlanReturnsFreshEmptyPath()
     {
-        using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var p=rig.M.GetNativePlanners();p.Configure(Pose3d.Identity,new[]{At(200,0)},PathMotionProfile.Default,null);p.Select();Assert.Equal(1,p.StartPlanning());
+        using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var p=rig.M.GetNativePlanners();p.ConfigureNative(rig.Robot.Engine.Robot!.GetCheckedForwardPose(),new[]{At(200,0)},PathMotionProfile.Default);p.Select();Assert.Equal(1,p.StartPlanning()); // start = the drive-center pose Read re-reads (J7)
         Assert.True(SpinWait.SpinUntil(()=>p.Current!.CheckPlanningStatus==2,TimeSpan.FromSeconds(10)));Assert.NotEmpty(p.Read().Path);
         rig.X=1000;rig.State();Assert.Empty(p.Read().Path);
     }

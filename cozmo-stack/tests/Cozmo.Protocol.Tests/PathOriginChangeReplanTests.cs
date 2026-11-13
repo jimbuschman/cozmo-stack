@@ -49,7 +49,7 @@ public sealed class PathOriginChangeReplanTests
     {
         var path=f.Rig.Robot.Motion.Path;
         using var goal=At(f,goalX);
-        Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{goal},new PathGoalIndex(),false,null));
+        Assert.Equal(0,path.StartNativeDrivingToPose(f.M,new[]{goal},new PathGoalIndex(),false));
         Assert.Equal(1,path.DriveToPoseStatus);
         Assert.Equal(f.Robot.CurrentOriginId,path.ParamsOrigin); // O3 0x0064AD6A
         for(int i=0;i<3&&path.DriveToPoseStatus!=2;i++)f.Rig.Tick(); // UpdatePlanning -> HandlePlanComplete -> ExecutePath
@@ -186,58 +186,6 @@ public sealed class PathOriginChangeReplanTests
         Assert.DoesNotContain(logs.Names,n=>n=="PathComponent.Update.Replan.RejiggeringPlanner"||n=="PathComponent.Update.Replan.NotPossible");
     }
 
-    /// <summary>Configures the legacy entry the way DriveToPoseAction.Init does it (NativePlannerSet.Configure with the caller's start and goal, then
-    /// SetNativePlanners) and brings it to FollowingPath.</summary>
-    private static NativePlannerSet FollowLegacyConfigured(Fixture f,Pose3d start,Pose3d goal)
-    {
-        var planners=f.M.GetNativePlanners();planners.Configure(start,new[]{goal},PathMotionProfile.Default,null);f.Rig.Robot.Motion.Path.SetNativePlanners(planners);
-        FollowLegacy(f);return planners;
-    }
-
-    // reach: unit — legacy entry configured as its Init does and called directly; after FollowingPath the selected planner and DidObjectsChange are
-    // substituted; the dispatch runs in the real engine tick with the production binding. Expected values are a STACK GAP HOLD (not an engine value) — STACK DECISION (manager, 2026-11-11,
-    // PATH-ORIGIN-CHANGE-REPLAN-1 verifier N1), not engine values: the legacy entry plans in the main-pose frame toward unconverted goals, so it is
-    // not restarted (the engine restarts at 0x00649C14 from GetDriveCenterPose); a visible MISSING is emitted and the path is left as is.
-    [Fact]
-    public void M12_032_S1_LegacyEntryIsNotRestartedAndReportsAMissing()
-    {
-        using var f=new Fixture();using var logs=new Logs(f);var path=f.Rig.Robot.Motion.Path;
-        using var goal=At(f,30);using var start=new Pose3d(Rotation3d.Identity,new(0,0,0),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
-        var planners=FollowLegacyConfigured(f,start,goal);
-        var recorder=new RecordingPlanner();planners.Current=recorder;
-        path.ObjectsChangedInput=()=>true;int mark=f.Rig.Mark();logs.Entries.Clear();
-        f.Rig.Tick();
-        Assert.Empty(recorder.Calls);                                   // no ComputeNewPathIfNeeded, no ComputePath
-        Assert.Contains(logs.Stack,l=>l.StartsWith("MISSING: M12-032 RestartPlannerIfNeeded 0x00649C14 not taken")&&l.Contains("PATH-ORIGIN-CHANGE-REPLAN-1"));
-        Assert.False(path.Field47);
-        Assert.Equal(3,path.DriveToPoseStatus);
-        Assert.DoesNotContain(f.Rig.SentSince(mark),IsPathMessage);
-        Assert.DoesNotContain(logs.Names,n=>n=="PathComponent.Replan.Running");
-    }
-
-    // reach: unit — legacy entry configured as its Init does and called directly; after FollowingPath the selected planner reports an error
-    // (status 0) and a recording fallback is substituted; UpdatePlanning runs in the real engine tick. Expected value is a STACK GAP HOLD (not an engine value) — STACK DECISION (manager,
-    // 2026-11-11): the legacy fallback keeps the start it used before this job, NativePlannerSet's CurrentStart for a borrowed set (the vision history
-    // pose, else the configured start), not the drive-center pose; native drives read the drive-center pose there (census Q5, 0x00649E52..0x00649E5C).
-    [Fact]
-    public void M12_032_LegacyFallbackPlansFromItsUnchangedStart()
-    {
-        using var f=new Fixture();var path=f.Rig.Robot.Motion.Path;
-        using var goal=At(f,30);using var start=new Pose3d(Rotation3d.Identity,new(0,0,0),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
-        var planners=FollowLegacyConfigured(f,start,goal);
-        var failing=new RecordingPlanner{Status=0};var fallback=new RecordingPlanner();
-        planners.Current=failing;planners.Fallback=fallback;path.Field47=true;
-        f.Rig.Tick();
-        Assert.Equal(new[]{"ComputePath"},fallback.Calls);
-        // CurrentStart for a borrowed set: the latest vision-history robot pose (a fresh record per state, so compared by value), else the configured start.
-        var expected=f.M.RobotPose()??start;
-        Assert.Equal(expected.Translation.X,fallback.Start!.Translation.X);Assert.Equal(expected.Translation.Y,fallback.Start.Translation.Y);
-        Assert.Equal(expected.AngleAroundZ,fallback.Start.AngleAroundZ);
-        Assert.NotSame(f.Robot.ForwardPose,fallback.Start);
-        Assert.NotEqual(f.Robot.ForwardPose.Translation.X,fallback.Start.Translation.X); // the drive-center pose is 20 mm away
-        Assert.Same(fallback,planners.Current);
-    }
-
     // reach: unit — the native path's restart, as M12_032_H7_S1 above, with the vision history pose present and different from the drive-center pose.
     [Fact]
     public void M12_032_S1_NativeRestartPlansFromTheDriveCenterPoseNotTheHistoryPose()
@@ -273,51 +221,4 @@ public sealed class PathOriginChangeReplanTests
         Assert.DoesNotContain(logs.Names,n=>n=="PathComponent.Abort"||n=="PathComponent.Update.Replan.NotPossible"||n=="PathComponent.Update.Replan.RejiggeringPlanner");
     }
 
-    /// <summary>Starts a path through the legacy StartDrivingToPose(int, ...) entry with a fixed one-line plan and brings it to FollowingPath.</summary>
-    private static void FollowLegacy(Fixture f)
-    {
-        var path=f.Rig.Robot.Motion.Path;
-        Assert.Equal(0,path.StartDrivingToPose(1,new PathGoalIndex(),false,()=>new PathPlannerModelResult(2,new PathSegment[]{new PathSegment.Line(0,0,50,0,100,200,500)},0),()=>{},_=>{}));
-        Assert.Equal(f.Robot.CurrentOriginId,path.ParamsOrigin); // O3 0x0064AD6A, now written by the legacy entry too
-        for(int i=0;i<3&&path.DriveToPoseStatus!=2;i++)f.Rig.Tick();
-        Assert.Equal(2,path.DriveToPoseStatus);
-        f.Rig.Data(new PathFollowingEvent{EventId=path.Field42,EventType=(byte)PathEventType.Started});f.Rig.Tick();
-        Assert.Equal(3,path.DriveToPoseStatus);
-        Assert.True(path.LegacyEntryPathInFlight);
-    }
-
-    // reach: unit — the legacy entry is called directly with a fixed plan (its production callers are the non-native DriveToPoseAction Init); the
-    // dispatch runs in the real engine tick with the production binding, the origin change is the production Robot::Delocalize.
-    [Fact]
-    public void M12_032_H5_LegacyEntryPathAbortsOnDelocalizeLikeTheEngine()
-    {
-        using var f=new Fixture();using var logs=new Logs(f);var path=f.Rig.Robot.Motion.Path;
-        FollowLegacy(f);
-        f.Robot.Delocalize(false);
-        int mark=f.Rig.Mark();logs.Entries.Clear();
-        f.Rig.Tick();
-        Assert.Contains(f.Rig.SentSince(mark),m=>m is ClearPath);
-        Assert.Equal(6,path.DriveToPoseStatus);
-        Assert.Contains(logs.Entries,e=>e.Name=="PathComponent.Update.Replan.NotPossible");
-        Assert.False(path.LegacyEntryPathInFlight);
-    }
-
-    // reach: unit — legacy entry called directly; the origin change is the production PoseOriginList Rejigger called directly. Stack limitation
-    // (PATH-ORIGIN-CHANGE-REPLAN-1): the legacy entry cannot replan, so the rejigger branch reports a visible MISSING and leaves the path as is.
-    [Fact]
-    public void M12_032_H6_LegacyEntryRejiggerIsAVisibleMissingAndLeavesThePath()
-    {
-        using var f=new Fixture();using var logs=new Logs(f);var path=f.Rig.Robot.Motion.Path;
-        uint o1=f.Robot.CurrentOriginId;
-        f.Robot.Delocalize(false);uint o2=f.Robot.CurrentOriginId;
-        FollowLegacy(f);
-        Assert.Equal(0u,f.Robot.RejiggerOrigins(f.Robot.GetNativeOrigin(o1),new Transform3d(Rotation3d.Identity,new(10,0,0))));
-        int mark=f.Rig.Mark();logs.Entries.Clear();
-        f.Rig.Tick();
-        Assert.Contains(logs.Stack,l=>l.StartsWith("MISSING: M12-032")&&l.Contains("legacy DriveToPose entry cannot replan")&&l.Contains("PATH-ORIGIN-CHANGE-REPLAN-1"));
-        Assert.Equal(3,path.DriveToPoseStatus);
-        Assert.Equal(o2,path.ParamsOrigin);
-        Assert.DoesNotContain(f.Rig.SentSince(mark),IsPathMessage);
-        Assert.DoesNotContain(logs.Names,n=>n=="PathComponent.Update.Replan.RejiggeringPlanner"||n=="PathComponent.Abort");
-    }
 }
