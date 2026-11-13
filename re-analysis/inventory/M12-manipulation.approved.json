@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-11-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "a2b52c090ba7c3478bba10b7889d277671a90cdd38799a9c7a5111e8866f4d5a",
+  "inventory_sha256": "9f36b78879e61cd954959b80dbe2304cd98ae08fe04480f7b0067d0d4cd85948",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -65,16 +65,16 @@
       "hardware_required": false
     },
     "M12-004": {
-      "status": "IMPLEMENTATION_GAP",
-      "title": "The dock retry drops the pose it just failed from",
-      "authority": "libcozmoEngine.so 3.4.0-1204: IBehavior::UseSecondClosestPreActionPose 0x005BEE56 calls DriveToObjectAction::GetPossiblePoses (0x005BEE66), requires at least two poses (0x005BEE7C asrs r0,r0,#2 / 0x005BEE80 cmp r0,#2), then calls IDockAction::RemoveMatchingPredockPose (0x005BEE90; function 0x00551418)",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "IBehavior::UseSecondClosestPreActionPose removes the pre-action poses matching the robot's current pose; nothing in the engine calls it",
+      "authority": "libcozmoEngine.so 3.4.0-1204: IBehavior::UseSecondClosestPreActionPose 0x005BEE56 calls DriveToObjectAction::GetPossiblePoses (0x005BEE66), requires at least two poses (0x005BEE7C asrs r0,r0,#2 / 0x005BEE80 cmp r0,#2), then calls IDockAction::RemoveMatchingPredockPose (0x005BEE90; function 0x00551418) with the Robot& at this+0x2C (IBehavior ctor 0x005BBBFA) and Robot::GetPose (0x005BEE8A bl 0x004EA398), so it removes the poses matching the robot's current pose. No caller: no Thumb/ARM branch, literal, relocation or PLT entry reaches 0x005BEE56; its address occurs only in its own .dynsym entry (file offset 0x1D5C8)",
       "evidence": [
         "IBehavior::UseSecondClosestPreActionPose starts at 0x005BEE56 (0x005BEE40 is asrs r4,r4,#1 mid-function)",
         "0x005BEE66 blx 0x4ABFBC (GetPossiblePoses); 0x005BEE7C asrs r0,r0,#2; 0x005BEE80 cmp r0,#2",
         "0x005BEE88 ldr r0,[r6,#0x2c]; 0x005BEE90 blx 0x4B20A0 (RemoveMatchingPredockPose); 0x005BEE98 cmp r1,#1; 0x005BEE9C strbeq r0,[r4]",
         "IDockAction::RemoveMatchingPredockPose 0x00551418"
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M12-005": {

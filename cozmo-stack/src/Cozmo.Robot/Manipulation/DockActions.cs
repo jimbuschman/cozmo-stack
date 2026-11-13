@@ -250,7 +250,7 @@ public static class RotatedParentAxis
 /// </summary>
 public abstract class DockActionBase
 {
-    // fidelity: M12-004, M12-017, M12-020
+    // fidelity: M12-017, M12-020
     /// <summary>
     /// The <c>IDockAction</c> constructor's pre-action angle tolerance <c>[this+0x88]</c>: Radians of 7.5 degrees (M12-017, research Q6.19). The
     /// inventory gives the value in degrees, not as a literal; the float used is 0x3E060A92, the literal the same record family uses for the same 7.5 degrees
