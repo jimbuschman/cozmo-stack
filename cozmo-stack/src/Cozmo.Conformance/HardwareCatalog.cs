@@ -952,7 +952,7 @@ public static class HardwareCatalog
                 new EvidenceItem("result", "PickAndPlaceResult"),
                 new EvidenceItem("carrying", "carrying"),
             },
-            FidelityRecords = new[] { "M12-041", "M12-001", "M12-003", "M12-004", "M12-005", "M12-007", "M12-008", "M12-009", "M12-013", "M12-014" },
+            FidelityRecords = new[] { "M12-041", "M12-001", "M12-003", "M12-005", "M12-007", "M12-008", "M12-009", "M12-013", "M12-014" },
             NeedsCube = true, Requires = new[] { "K", "Q" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--pickup", "--acceptance", o.Acceptance("N") }).ToArray(),
