@@ -1846,6 +1846,58 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>
+    /// M11-037 / M13-007 (FIND-ON-TOP-SAME-ROOT-1), the bound-origin twin of <see cref="M11_037_AnObjectOnTopFollowsTheObjectItRestsOn"/>: the world's native
+    /// origin owner is BOUND, as in production, and every pose is parented to that origin, so the host-fixture flat-pose binding never applies. The old pose
+    /// passed to the broadcast is a copy of the object's own pose with its parent (GetPose 0x005060CA, copy ctor 0x005060D2). The clone at the old pose
+    /// then shares the top cube's root, so the lambda's P1 (0x0062BA0E..0x0062BA48) passes, and the top follows: the pose w.r.t. the old pose
+    /// pre-composed with the new pose (0x0062196E..0x006219A8), written Dirty with fromDistance -1.0 (0x006219C0, 0x00506D3C..0x00506D3E).
+    /// The same bottom cube with a parentless (root) old pose finds nothing: refPose.GetParent() is null (0x004DF65E..0x004DF66A, 0x00845A46..0x00845A58).
+    /// </summary>
+    // reach: unit (BroadcastObjectPoseChanged and UpdatePoseOfStackedObjects called directly; the frame flag and last image time are set by reflection).
+    [Fact]
+    public void M11_037_AnObjectOnTopFollowsTheObjectItRestsOnWithTheNativeOriginBound()
+    {
+        using var origin = new Pose3d("bound origin") { Id = 1 };
+        Pose3d InOrigin(Pose3d p) { p.SetParent(origin); return p; }
+        BlockWorld Make(out ObservableObject bottom, out ObservableObject top)
+        {
+            var w = new BlockWorld { NativeOrigin = _ => origin };
+            var b = Cube(w, 1, At(200, 0, 22)); b.NativePose.SetParent(origin); bottom = Locate(w, b);
+            var t = Cube(w, 2, At(200, 0, 66)); t.NativePose.SetParent(origin); top = Locate(w, t);
+            top.LastObservedTimestamp = 0;
+            Field<uint>(w, "_lastImageTimestamp", 1000u);
+            Field<bool>(w, "_appendPoseChanges", true);
+            return w;
+        }
+        var w1 = Make(out var b1, out var t1);
+        Assert.Same(origin.Node, b1.NativePose.Node!.Parent);
+        using (var old = new Pose3d(b1.NativePose))
+        {
+            var oldState = b1.PoseState;
+            b1.SetPose(InOrigin(At(250, 50, 22, 0.5)), -1.0, PoseState.Known);
+            w1.BroadcastObjectPoseChanged(b1, old, oldState);
+        }
+        w1.UpdatePoseOfStackedObjects();
+        using (var flat = t1.NativePose.GetWithRespectToRoot())
+        {
+            Assert.Equal(250, flat.Translation.X, 3); Assert.Equal(50, flat.Translation.Y, 3); Assert.Equal(66, flat.Translation.Z, 3);
+        }
+        Assert.Equal(PoseState.Dirty, t1.PoseState);
+        Assert.Equal(-1.0, t1.FromDistance);
+        // a root (parentless, not a host-fixture flat) old pose: nothing is found, the top stays
+        var w2 = Make(out var b2, out var t2);
+        using (var rootOld = new Pose3d("root old pose"))
+        {
+            var oldState = b2.PoseState;
+            b2.SetPose(InOrigin(At(250, 50, 22, 0.5)), -1.0, PoseState.Known);
+            w2.BroadcastObjectPoseChanged(b2, rootOld, oldState);
+        }
+        w2.UpdatePoseOfStackedObjects();
+        Assert.Equal(new Vec3(200, 0, 66), t2.NativePose.Translation);
+        Assert.Equal(PoseState.Known, t2.PoseState);
+    }
+
+    /// <summary>
     /// M11-037 (5.8), <c>UpdateMarkerlessObjects</c> 0x00625704 deletes objects of family 6 and type 15 (CliffDetection) whose predicate 0x0062B764 is true: timestamp + 30000 &lt; ts is
     /// "RemovingExpired"; else false when the timestamp is not before ts; else true when z is within [robotZ, robotZ + 67.7] and the footprint intersects the robot's quad
     /// (robot quad at padding 0, 0x006257D6; object quad 0x0062B83C; Intersects 0x0062B842).

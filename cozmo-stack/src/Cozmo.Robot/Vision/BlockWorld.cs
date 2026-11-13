@@ -899,6 +899,7 @@ public sealed partial class BlockWorld
     // synchronous native recipients must not post a blocking engine request while holding the frame gate.
     internal readonly object FrameGate = new();
     private bool _missingMapTimeReported, _missingPoseChangedReported;
+    private readonly HashSet<string> _standInSitesReported = new(); // M13-023 stand-in MISSING: once per find-on-top caller site
     private double MapLastObservedTime
     {
         get
@@ -1640,6 +1641,7 @@ public sealed partial class BlockWorld
             _lastImageTimestamp = 0;
             _lastPlayAreaTime = 0; _timeOfLastChange = 0; SelectedObjectId = null;
             _missingMapTimeReported=_missingPoseChangedReported=false;
+            lock (_standInSitesReported) _standInSitesReported.Clear();
             Maps.Dispose();
             Maps = new SourceMapComponent(); // discard removed robot's owner; next Robot constructs its own
 
@@ -2466,7 +2468,9 @@ public sealed partial class BlockWorld
     {
         if (newState == PoseState.Unknown) { MarkObjectUnknown(obj, true); return; }
         if (newState == PoseState.Dirty && LocalizedToObjectId == obj.ObjectId) SetLocalizedTo(null);
-        using var oldPose = new Pose3d(carryingObservation?obj.NativePose:obj.Pose); var oldState = obj.PoseState;
+        // fidelity: M11-007, M13-007 — the old pose is a copy of the object's own pose, parent kept: GetPose 0x005060CA, Pose3d copy ctor 0x005060D2
+        // (FIND-ON-TOP-SAME-ROOT-1 verifier fix). Never the public Pose, whose carried-tree view is a parentless flat copy (stack API machinery).
+        using var oldPose = new Pose3d(obj.NativePose); var oldState = obj.PoseState;
         if(carryingObservation)obj.SetCarryingObservationPose(pose,newState);
         else obj.SetPose(pose, dist, newState);
         BroadcastObjectPoseChanged(obj, oldPose, oldState);
@@ -2529,7 +2533,7 @@ public sealed partial class BlockWorld
         using var frameMutation=EnterPoseMutation();
         SetPoseStateHelper(obj, PoseState.Dirty);
         if (!propagate) return;
-        if (FindObjectOnTopOrUnderneathHelper(obj, StackToleranceMm, true) is { } other)
+        if (FindObjectOnTopOrUnderneathHelper(obj, StackToleranceMm, true, site: "MarkObjectDirty 0x00507664") is { } other)
         {
             if (Carrying(other.ObjectId)) EmitPublicLog($"ObjectPoseConfirmer.MarkObjectDirty: object {other.ObjectId} is carried; not marked dirty");
             else MarkObjectDirty(other, true);
@@ -2592,7 +2596,7 @@ public sealed partial class BlockWorld
             var visited = new HashSet<ObservableObject> { obj };
             while (true)
             {
-                var above = FindObjectOnTopOrUnderneathHelper(current, StackToleranceMm, true);
+                var above = FindObjectOnTopOrUnderneathHelper(current, StackToleranceMm, true, site: "MarkObjectUnknown 0x00507258");
                 if (above is null) break;
                 if (!visited.Add(above)) break;                      // stand-in: the engine has no revisit guard (a cycle of poses would spin); geometry does not allow one, so this never fires
                 if (Carrying(above.ObjectId))
@@ -2656,7 +2660,9 @@ public sealed partial class BlockWorld
                 if (!Current()) return deleted;
                 var clone = o.CloneNative(); clone.ObjectId = o.ObjectId;
                 if (clone.IsActive) { clone.ActiveId = o.ActiveId; clone.FactoryId = o.FactoryId; }
-                notification = (o,clone,o.Pose,o.PoseState);
+                // fidelity: M11-042, M11-074, M13-007 — the notification's old pose copies the object's own pose with its parent (GetPose 0x0061D290, copy ctor
+                // 0x0061D2A6), broadcast at 0x0061D5C8; never the public Pose, whose carried-tree view is a parentless flat copy (map remove by root, 0x0067EC3C).
+                notification = (o,clone,new Pose3d(o.NativePose),o.PoseState);
             }
             lock (_gate) { if (!_located.TryGetValue(key, out var found) || !ReferenceEquals(found,o) || !_located.Remove(key)) continue; }
             deleted.Add(o);
@@ -2698,7 +2704,8 @@ public sealed partial class BlockWorld
             Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.ClearObjectHelper.ClearingSelectedObject",$"Clearing {obj.Type} object {unchecked((int)obj.ObjectId)} which is currently selected.");
             SelectedObjectId = null;
         }
-        var top = FindObjectOnTopOrUnderneathHelper(obj,15,true);
+        // fidelity: M13-007 — C9 0x00625E1A: the DEFAULT filter only (0x00625DAA..0x00625E06), no family 6/7 exclusion (census FIND-ON-TOP-SAME-ROOT-1 C9).
+        var top = FindObjectOnTopOrUnderneathHelper(obj,15,true,null,null,ignoreMarkerlessAndCustom:false,site:"ClearLocatedObjectHelper 0x00625E1A");
         if (top is not null) ClearLocatedObjectHelper(top);
         _didObjectsChange = true;
         _timeOfLastChange = (uint)Math.Max((double)(RobotTimestamp?.Invoke() ?? 0),MapLastObservedTime);
@@ -2970,13 +2977,16 @@ public sealed partial class BlockWorld
             var clone = obj.CloneNative();
             clone.InitPose(e.Pose, e.State);
             var stacked = FindObjectOnTopOrUnderneathHelper(clone, StackToleranceMm, true, obj.ObjectId,
-                                                            c => unchecked(c.LastObservedTimestamp + 100) < lastImage);
+                                                            c => unchecked(c.LastObservedTimestamp + 100) < lastImage,
+                                                            referenceOrigin: obj.OriginId, site: "UpdatePoseOfStackedObjects 0x0062190C"); // fidelity: M13-007 (C8 0x0062190C; the clone holds obj's old pose)
             if (stacked is null || Carrying(stacked.ObjectId)) continue;
             bool queued;lock(_gate)queued=_poseChanges.Any(c=>c.Id==stacked.ObjectId);
             if(queued)continue;
             if (RobotPoseTreeIsUnbuilt?.Invoke() == true)
             { Missing("M11-037 / M12 pose records GetWithRespectTo/PreComposeWith/SetParent 0x0062196E..0x006219A8; stacked tree transform skipped"); continue; }
-            if (stacked.OriginId != obj.OriginId)
+            // fidelity: M13-007 — the find already applied the lambda's P1 (0x0062BA0E..0x0062BA48, census FIND-ON-TOP-SAME-ROOT-1): `stacked` shares the
+            // clone's (old pose's) root, so this same-root test (the engine's predicate, in place of the earlier OriginId compare) never fails here.
+            if (!SharesReferenceRoot(clone, obj.OriginId, stacked))
             {
                 Source(EngineLogLevel.Warning,null,"BlockWorld.UpdateStacks.OriginMismatch","Can't obtain topPose wrt old, but that's exactly how we found the object in topPose.");
                 continue;
@@ -3018,7 +3028,8 @@ public sealed partial class BlockWorld
         bool inWorld;
         lock (_gate) inWorld = _located.ContainsKey(KeyOf(obj));
         if (!inWorld) EmitPublicLog($"ObjectPoseConfirmer.AddObjectRelativeObservation.NotABlockWorldObject: {obj.ObjectId}");
-        using var oldPose = new Pose3d(obj.Pose); var oldState = obj.PoseState;
+        // fidelity: M11-037, M13-007 — the old pose copies the object's own pose, parent kept (0x00506D1C, 0x00506D2C), not the public flat view.
+        using var oldPose = new Pose3d(obj.NativePose); var oldState = obj.PoseState;
         if (inWorld) { obj.SetPose(pose, -1.0, PoseState.Dirty); BroadcastObjectPoseChanged(obj, oldPose, oldState); }
         var entry = EntryForOrCreate(obj.ObjectId);
         obj.Confirmation = entry;
@@ -3028,24 +3039,69 @@ public sealed partial class BlockWorld
     }
 
     /// <summary>
-    /// The candidates <c>FindObjectOnTopOrUnderneathHelper(obj, tolerance, filter, onTop)</c> 0x0062601C is given: the located objects of the current
-    /// origin, none of family 6 or 7, not the ignored ID, and whatever the extra predicate passes. The search itself is M13-007's
-    /// <see cref="BlockConfigurationManager.FindObjectOnTopOrUnderneath(ObservableObject, IReadOnlyList{ObservableObject}, bool, double)"/>.
+    /// The candidates <c>FindObjectOnTopOrUnderneathHelper(obj, tolerance, filter, onTop)</c> 0x0062601C is given, in the walk order of
+    /// <c>FindLocatedObjectHelper</c> 0x0061EB78 with returnFirst = 1 (census FIND-ON-TOP-SAME-ROOT-1 F2/F3/F6: origin, family, type, ID ascending; the
+    /// <see cref="_located"/> key order): the located objects of the CURRENT origin only (the default filter's originMode 0, 0x0061EBF2..0x0061EC2A), not
+    /// <c>obj</c>'s ID (H6, 0x006260AC..0x006260B8) nor the caller's ignored ID, none of family 6 or 7 when the caller's filter excludes them (C1 0x00507224..
+    /// 0x00507240, C2 0x0050762C..0x0050764C, C8 0x006218C0..0x006218DC; the default filter of C9/C10/C11 does not), the caller's predicate (C8), then the
+    /// lambda's first step P1 (0x0062BA0E..0x0062BA48): the candidate pose with respect to the reference's parent, which is <c>obj</c>'s ROOT (H2 0x00626048
+    /// GetWithRespectToRoot; P1a SetParent 0x00845DFE), fails for a different root (0x00845A62..0x00845A68) or a null node (0x00845A46..0x00845A58), and the
+    /// candidate is skipped with no log. The rest of the lambda (P2..P6) is M13-007's
+    /// <see cref="BlockConfigurationManager.FindObjectOnTopOrUnderneath(ObservableObject, IReadOnlyList{ObservableObject}, bool, double)"/>, which returns
+    /// the first passing candidate of the list in its order (F6).
     /// </summary>
-    // fidelity: M11-037
+    // fidelity: M11-037, M13-007
     private ObservableObject? FindObjectOnTopOrUnderneathHelper(ObservableObject obj, double toleranceMm, bool onTop, uint? ignoreId = null,
-                                                                Func<ObservableObject, bool>? extra = null)
+                                                                Func<ObservableObject, bool>? extra = null, bool ignoreMarkerlessAndCustom = true,
+                                                                uint? referenceOrigin = null, string site = "")
     {
         uint skip = ignoreId ?? obj.ObjectId;
         List<ObservableObject> candidates;
         lock (_gate)
             candidates = _located.Where(kv => kv.Key.Origin == CurrentOriginId).Select(kv => kv.Value)
-                                 .Where(o => o.ObjectId != skip && o.Family != ObjectFamily.MarkerlessObject && o.Family != ObjectFamily.CustomObject)
+                                 .Where(o => o.ObjectId != skip &&
+                                             (!ignoreMarkerlessAndCustom || o.Family != ObjectFamily.MarkerlessObject && o.Family != ObjectFamily.CustomObject))
                                  .ToList();
         if (extra is not null) candidates = candidates.Where(extra).ToList();
-        var found = BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, candidates, onTop, toleranceMm, out bool standIn);
-        if (standIn) Missing("M13-007 / M13-023 FindObjectOnTopOrUnderneathHelper 0x0062601C: existing planar stand-in decided a footprint; exact recursive stack clear remains unbuilt");
+        candidates = candidates.Where(c => SharesReferenceRoot(obj, referenceOrigin ?? obj.OriginId, c)).ToList();                    // P1 0x0062BA0E..0x0062BA48
+        var found = BlockConfigurationManager.FindObjectOnTopOrUnderneathInRootFrame(obj, candidates, onTop, toleranceMm, out bool standIn); // P2..P6, root frame
+        bool first; lock (_standInSitesReported) first = standIn && _standInSitesReported.Add(site);
+        if (first) Missing($"M13-007 / M13-023 FindObjectOnTopOrUnderneathHelper 0x0062601C at {site}: a candidate's footprint (vtable +0x50) is not ported for its class " +
+                           "or reaches the unported hull branch, so BlockConfigurationManager.PlanarStandIn decided it; reported once per caller site");
         return found;
+    }
+
+    /// <summary>
+    /// <c>FindObjectOnTopOrUnderneathHelper(obj, tol, defaultFilter, onTop)</c> with the default filter every inline caller builds (census
+    /// FIND-ON-TOP-SAME-ROOT-1: all sets empty, no predicates, onlyLatest 0 and originMode 0, e.g. 0x00632E86..0x00632F02): the current origin
+    /// only, every family, <c>obj</c>'s ID excluded, the same-root predicate, the first match in the walk order. The callers are
+    /// <c>CarryingComponent::SetObjectAsAttachedToLift</c> 0x00632F14 (C10) and <c>DockingComponent::CanInteractWithObjectHelper</c> 0x0063C730 (C11).
+    /// </summary>
+    // fidelity: M13-007
+    internal ObservableObject? FindObjectOnTopOrUnderneathDefaultFilter(ObservableObject obj, double toleranceMm, bool onTop, string site)
+        => FindObjectOnTopOrUnderneathHelper(obj, toleranceMm, onTop, null, null, ignoreMarkerlessAndCustom: false, site: site); // callers keep their own gating (unchanged)
+
+    /// <summary>
+    /// P1 of the lambda 0x0062B9FC (census FIND-ON-TOP-SAME-ROOT-1 P1/P1a): <c>GetWithRespectTo(cand.GetPose(), refPose.GetParent(), tmp)</c> where
+    /// <c>refPose = GetWithRespectToRoot(obj.GetPose())</c> (0x00626048). For an <c>obj</c> pose with a parent that parent is <c>obj</c>'s root, so the
+    /// test is the same-root test (0x00845A62..0x00845A68); a root <c>obj</c> pose is copied (0x004DF65E..0x004DF66A), its parent is null and the call
+    /// fails (0x00845A46..0x00845A58). Stack host convention, not engine behaviour: a flat legacy host-fixture pose with no parent, in a world with no
+    /// native origin owner, stands for a pose in its object's origin (the same binding UpdatePoseOfStackedObjects already applies, see its
+    /// GetNativeOrigin(obj.OriginId) step); it applies only while NativeOrigin is unbound (NativeDelocalization.cs binds it for the live robot).
+    /// </summary>
+    // fidelity: M13-007
+    private bool SharesReferenceRoot(ObservableObject obj, uint objOrigin, ObservableObject candidate)
+    {
+        var reference = FrameNode(obj.NativePose, objOrigin, out bool referenceBound);
+        if (reference is null) return false;
+        if (!referenceBound && !obj.NativePose.HasParent) return false;                                // root obj pose: refPose.GetParent() is null
+        return PoseTreeNode.HasSameRoot(reference, FrameNode(candidate.NativePose, candidate.OriginId, out _));
+    }
+
+    private PoseTreeNode? FrameNode(Pose3d pose, uint originId, out bool hostBound)
+    {
+        hostBound = NativeOrigin is null && pose.Node is not null && !pose.HasParent && pose.HasLegacyFrameInput;
+        return hostBound ? GetNativeOrigin(originId).Node : pose.Node;
     }
 
     /// <summary>
@@ -3674,7 +3730,7 @@ public sealed partial class BlockWorld
         {
             LogCallbackDeferral.RunGated(_gate,()=>
             {
-                prev = obj.PoseState; oldPose = new Pose3d(obj.Pose);
+                prev = obj.PoseState; oldPose = new Pose3d(obj.NativePose);             // own pose, parent kept (0x00506D1C, 0x00506D2C), not the public flat view
                 obj.SetPose(pose, -1.0, state);
                 var entry = EntryForOrCreate(obj.ObjectId);
                 obj.Confirmation = entry;
