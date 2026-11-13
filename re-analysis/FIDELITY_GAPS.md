@@ -7,10 +7,10 @@ Manifest of **761 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 290 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 289 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 17 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 21 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 344 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 345 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 73 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -35,7 +35,7 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 12 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 104 | 6 | 69 | 0 | 1 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 32 | 0 | 1 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 0 | 4 | 1 | 0 | yes | no |
 | M15-freeplay — Needs, activities and freeplay | 111 | 3 | 80 | 1 | 1 | no | no |
@@ -63,7 +63,7 @@ status.
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 27 | 0 | 0 | 0 |
-| M12-manipulation | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
+| M12-manipulation | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 10 | 0 | 0 | 2 |
 | M14-faces | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M15-freeplay | INVENTORY_APPROVED | 22 | 0 | 0 | 1 |
@@ -2385,6 +2385,15 @@ B-M12-4 (2026-10-15), bounded cache invalidation: CubePreActionPoses.ClearForSet
 B-M12-1 built, awaiting strong verification: PathSender has no separate counter; ClearPath success precedes shared ID increment, Dole(6), ExecutePath, timestamp/status; signed current segment replenishes actual wire segments. MISSING: PathSegment.Print at 0x00507F36 -> 0x0085C034, profile/default/custom handoff and planner ApplyMotionProfile remain unbuilt; no status upgrade.
 built, awaiting strong verification: B-M12-2 follows the adopted B-M12-1 check. Dole checks each segment send, emits Error/PathDolerOuter.Dole/ERROR: failed to send message! with errG/debug-break, returns without advancing the failed index and retries on RobotState. Goal-origin MISSING binds to the outer input gate. Segment route now follows head/lift/cliff/touch and precedes IMU filtering in device handling. Host ExecuteWithResult/PathRun.Result preserve ExecuteCustomPath code; empty or failed paths do not dereference a missing reservation or issue an extra host abort. Host callers include SearchActions, ChargerActions and CubeGameBehaviors:949. Existing origin geometry, VizManager, PathSegment.Print and planner gaps remain open; see status/B-M12-2.md.
 B-M5-20 (2026-10-15), built, awaiting strong verification: unknown managed path segment now logs Error/null/key Invalid path segment/text Can't send path segment of unknown type, stores errG and honors the break gate via the existing Error helper, then returns without updating LastDoledIndex (+0xFC). Checked branch 0x00507F48 -> 0x00508078 -> 0x00508166 -> 0x00507EC6. Known segment sends and failed-send behavior unchanged.
+
+**M12-004 — The dock retry drops the pose it just failed from** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs`
+* effect: the retry re-drives to the pose that just failed instead of the next closest
+* rests on: the record cited the wrong entry address 0x005BEE40
+* best authority: libcozmoEngine.so 3.4.0-1204: IBehavior::UseSecondClosestPreActionPose 0x005BEE56 calls DriveToObjectAction::GetPossiblePoses (0x005BEE66), requires at least two poses (0x005BEE7C asrs r0,r0,#2 / 0x005BEE80 cmp r0,#2), then calls IDockAction::RemoveMatchingPredockPose (0x005BEE90; function 0x00551418)
+* evidence: IBehavior::UseSecondClosestPreActionPose starts at 0x005BEE56 (0x005BEE40 is asrs r4,r4,#1 mid-function); 0x005BEE66 blx 0x4ABFBC (GetPossiblePoses); 0x005BEE7C asrs r0,r0,#2; 0x005BEE80 cmp r0,#2; 0x005BEE88 ldr r0,[r6,#0x2c]; 0x005BEE90 blx 0x4B20A0 (RemoveMatchingPredockPose); 0x005BEE98 cmp r1,#1; 0x005BEE9C strbeq r0,[r4]; IDockAction::RemoveMatchingPredockPose 0x00551418
+* outstanding: RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): legacy public drive types retired and rebound to the native classes. What changed here: its built form is GONE. DriveToObjectAction.ExcludePoses and the exclusion loop of PosesWithExclusions (GetPossiblePoses, at least two poses 0x005BEE7C..0x005BEE80, RemoveMatchingPredockPose 0x00551418 per excluded pose) were set only by the retired legacy DockHelper and were removed with it (manager Q4: not kept alive for this). No native runner or helper sets an exclusion: NativePickupBlockHelper, NativeRollBlockHelper and NativeDriveToObjectRunner were checked; NativeDriveToHelper's single DriveToHelper+0x114 removal is M12-029's, not this. The engine caller of IBehavior::UseSecondClosestPreActionPose 0x005BEE56 is not in the inventory (MISSING); the stack's native retry site it would belong to is NativePickupBlockHelper.Respond's retry (RespondToPickupResult 0x005B8192..0x005B8198, M12-009). The DockActions.cs tag (the IDockAction pre-action angle tolerance) is unrelated to the removal. Status moved to IMPLEMENTATION_GAP by the manager (2026-11-13, research/20261113-retire-legacy-drive-claude-check.md); job USE-SECOND-CLOSEST-NATIVE-1 reads the engine caller and builds it on the native helper. Earlier notes: compare DockActions.cs with UseSecondClosestPreActionPose 0x005BEE56. Built (R-VIS fix round) as DriveToObjectAction.ExcludePoses in DriveActions.cs: GetPossiblePoses, then RemoveMatchingPredockPose (M12-029) per excluded pose while at least two poses remain (0x005BEE7C..0x005BEE80), the in-position flag cleared when something was removed. The engine holds ONE match pose; DockHelper (M8) accumulates the poses of every failed attempt, so the removal is repeated per pose (a C# generalisation).
 
 **M12-006 — Letting go of a carried object leaves it Dirty where the lift left it** (live path)
 

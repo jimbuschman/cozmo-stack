@@ -224,7 +224,7 @@
       "review": {
         "inventory": "re-analysis/inventory/M12-manipulation.md",
         "state": "INVENTORY_APPROVED",
-        "approved": "2026-10-28",
+        "approved": "2026-11-13",
         "snapshot": "re-analysis/inventory/M12-manipulation.approved.json"
       }
     },
@@ -4262,7 +4262,7 @@
       "subsystem": "M12-manipulation",
       "title": "The dock retry drops the pose it just failed from",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204: IBehavior::UseSecondClosestPreActionPose 0x005BEE56 calls DriveToObjectAction::GetPossiblePoses (0x005BEE66), requires at least two poses (0x005BEE7C asrs r0,r0,#2 / 0x005BEE80 cmp r0,#2), then calls IDockAction::RemoveMatchingPredockPose (0x005BEE90; function 0x00551418)",
       "evidence": [
         "IBehavior::UseSecondClosestPreActionPose starts at 0x005BEE56 (0x005BEE40 is asrs r4,r4,#1 mid-function)",
@@ -4272,7 +4272,7 @@
       ],
       "effect": "the retry re-drives to the pose that just failed instead of the next closest",
       "provenance": "the record cited the wrong entry address 0x005BEE40",
-      "unresolved": "RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): legacy public drive types retired and rebound to the native classes. What changed here: its built form is GONE. DriveToObjectAction.ExcludePoses and the exclusion loop of PosesWithExclusions (GetPossiblePoses, at least two poses 0x005BEE7C..0x005BEE80, RemoveMatchingPredockPose 0x00551418 per excluded pose) were set only by the retired legacy DockHelper and were removed with it (manager Q4: not kept alive for this). No native runner or helper sets an exclusion: NativePickupBlockHelper, NativeRollBlockHelper and NativeDriveToObjectRunner were checked; NativeDriveToHelper's single DriveToHelper+0x114 removal is M12-029's, not this. The engine caller of IBehavior::UseSecondClosestPreActionPose 0x005BEE56 is not in the inventory (MISSING); the stack's native retry site it would belong to is NativePickupBlockHelper.Respond's retry (RespondToPickupResult 0x005B8192..0x005B8198, M12-009). The DockActions.cs tag (the IDockAction pre-action angle tolerance) is unrelated to the removal. The manager must move this record's status to IMPLEMENTATION_GAP (not changed by the implementer); a job to build it on the native helper is proposed. Earlier notes: compare DockActions.cs with UseSecondClosestPreActionPose 0x005BEE56. Built (R-VIS fix round) as DriveToObjectAction.ExcludePoses in DriveActions.cs: GetPossiblePoses, then RemoveMatchingPredockPose (M12-029) per excluded pose while at least two poses remain (0x005BEE7C..0x005BEE80), the in-position flag cleared when something was removed. The engine holds ONE match pose; DockHelper (M8) accumulates the poses of every failed attempt, so the removal is repeated per pose (a C# generalisation).",
+      "unresolved": "RETIRE-LEGACY-DRIVE-API-1 (operator 2026-11-13): legacy public drive types retired and rebound to the native classes. What changed here: its built form is GONE. DriveToObjectAction.ExcludePoses and the exclusion loop of PosesWithExclusions (GetPossiblePoses, at least two poses 0x005BEE7C..0x005BEE80, RemoveMatchingPredockPose 0x00551418 per excluded pose) were set only by the retired legacy DockHelper and were removed with it (manager Q4: not kept alive for this). No native runner or helper sets an exclusion: NativePickupBlockHelper, NativeRollBlockHelper and NativeDriveToObjectRunner were checked; NativeDriveToHelper's single DriveToHelper+0x114 removal is M12-029's, not this. The engine caller of IBehavior::UseSecondClosestPreActionPose 0x005BEE56 is not in the inventory (MISSING); the stack's native retry site it would belong to is NativePickupBlockHelper.Respond's retry (RespondToPickupResult 0x005B8192..0x005B8198, M12-009). The DockActions.cs tag (the IDockAction pre-action angle tolerance) is unrelated to the removal. Status moved to IMPLEMENTATION_GAP by the manager (2026-11-13, research/20261113-retire-legacy-drive-claude-check.md); job USE-SECOND-CLOSEST-NATIVE-1 reads the engine caller and builds it on the native helper. Earlier notes: compare DockActions.cs with UseSecondClosestPreActionPose 0x005BEE56. Built (R-VIS fix round) as DriveToObjectAction.ExcludePoses in DriveActions.cs: GetPossiblePoses, then RemoveMatchingPredockPose (M12-029) per excluded pose while at least two poses remain (0x005BEE7C..0x005BEE80), the in-position flag cleared when something was removed. The engine holds ONE match pose; DockHelper (M8) accumulates the poses of every failed attempt, so the removal is repeated per pose (a C# generalisation).",
       "hardware_required": false,
       "live_path": true,
       "test": "CorrectionTests"

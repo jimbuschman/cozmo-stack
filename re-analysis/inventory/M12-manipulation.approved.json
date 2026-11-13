@@ -1,6 +1,6 @@
 {
   "subsystem": "M12-manipulation",
-  "approved": "2026-10-28",
+  "approved": "2026-11-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
   "inventory_sha256": "a2b52c090ba7c3478bba10b7889d277671a90cdd38799a9c7a5111e8866f4d5a",
   "records": {
@@ -65,7 +65,7 @@
       "hardware_required": false
     },
     "M12-004": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The dock retry drops the pose it just failed from",
       "authority": "libcozmoEngine.so 3.4.0-1204: IBehavior::UseSecondClosestPreActionPose 0x005BEE56 calls DriveToObjectAction::GetPossiblePoses (0x005BEE66), requires at least two poses (0x005BEE7C asrs r0,r0,#2 / 0x005BEE80 cmp r0,#2), then calls IDockAction::RemoveMatchingPredockPose (0x005BEE90; function 0x00551418)",
       "evidence": [
@@ -278,7 +278,7 @@
       "hardware_required": false
     },
     "M12-019": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "The docking-error-signal clamp is 40 degrees",
       "authority": "libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194",
       "evidence": [
@@ -408,7 +408,7 @@
       "hardware_required": false
     },
     "M12-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The behaviour-owned PlaceRelObjectParameters producers",
       "authority": "libcozmoEngine.so 3.4.0-1204: the setter 0x005586AC is called at exactly 0x005585F8, 0x0055889C, 0x0055C8A8, 0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A and 0x005B58C2 (re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q9); the default functions (0x005585F8, 0x0055889C), the DriveToHelper functor (0x005B58C2) and the PlaceRel installer (0x0055C8A8, never installed on the wire) are read in M12-029. Still unread: the flip-block installer bodies at 0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A, and the PlaceRelObjectParameters built by BehaviorStackBlocks::TransitionToStackingBlock 0x005C9588 (constant 0x00C69140 = {0,0,1}), BehaviorBuildPyramid::TransitionToPlacingTopBlock 0x005DC266 and BehaviorBuildPyramidBase::TransitionToPlacingBaseBlock 0x005DCE44; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): the four flip-block installers (0x0055E2CA L1, 0x0055E3E0 L2, 0x0055EB74 L3, 0x0055EC2A L4) and DriveAndFlipBlockAction::GetPossiblePoses are read: see M12-035. Still unread: the PlaceRelObjectParameters producers (0x005C9588, 0x005DC266, 0x005DCE44)",
       "evidence": [
@@ -628,7 +628,7 @@
       "hardware_required": false
     },
     "M12-047": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Behavior helper stop semantics (StopHelperWithoutCallback, ClearStackFromTopToIter, SmartStopHelper) with IHelper::Stop downstream, and BehaviorBuildPyramid's top-loop source list",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -687,7 +687,7 @@
       "hardware_required": false
     },
     "M12-052": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "PlaceObjectOnGroundAction::GetCompletionUnion: the saved carried object as the first ObjectInteraction ID, count 1, flag false",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
