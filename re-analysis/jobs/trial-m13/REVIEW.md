@@ -278,3 +278,4 @@ See `research/20261113-charger-bounding-quad-claude-check.md`. CHARGER-BOUNDING-
 
 See `research/20261113-use-second-closest-claude-check.md`. USE-SECOND-CLOSEST-NATIVE-1 merged; M12-004 is no effect (no caller).
 See `research/20261113-hardware-catalog-t-r-claude-check.md`. HARDWARE-CATALOG-T-R-JUDGES-1 merged; T and R may be run.
+See `research/20261113-roll-after-drive-claude-check.md`. ROLL-AFTER-DRIVE-STANDALONE-1 merged; ROLL-MARKER-OBSERVED-1 released (job 21).
