@@ -1799,3 +1799,10 @@ Re-approved under the standing authorisation for cited inventory corrections.
 | Drop stats +0x98/+0x9C: logging only; the sole consumer FUN_00653E30 (from SetNextImage 0x00652B04) stores only its own counters (0x00653E46, 0x00653E54, 0x00653FF0..0x00653FF2). Not built. | M11-059 (boundary) |
 | Calibration-image capture and tool-code reading (AddCalibrationImage 0x006B3C4C, ComputeCalibration 0x006B84D8, ReadToolCode 0x006B5B98 under VisionSystem::Update 0x006B4D5C; G2E ClearCalibrationImages 0x005283F4; ClearToolCodeImages 0x006B43A0 uncalled): not supported, manager exclusion as factory/app calibration machinery, reversible. | M11-059 (boundary), M11-012 |
 
+## GET-SIZE-SLOT-RECORD-1 (manager, 2026-11-13; research/20261113-get-size-slot-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: ObservableObject vtable +0x2C (size) per class (Block/ActiveCube 0x004E382C, Charger 0x004EA672 = (96,80,31), Markerless 0x00502DD0 via GetSizeByType 0x005026EC) and its readers GetDimInParentFrame<Z> 0x00557794, the on-top reference 0x00626070 and candidate 0x0062BAB6, and the GetObstacles predicate 0x0062C1EE..0x0062C1F4 | M11-105 (new) |
