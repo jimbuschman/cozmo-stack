@@ -1630,6 +1630,13 @@ public class M11RVisBuildTests : IDisposable
         oldOrigin.Node!.Transform = new Transform3d(Rotation3d.Identity, new Vec3(x, y, 0));
         oldOrigin.SetParent(newOrigin);
     }
+    private static ObservableObject LocateKeepingParent(BlockWorld w, ObservableObject o)
+    {
+        w.AddLocatedObject(o);
+        using var pose = new Pose3d(o.NativePose);
+        w.ApplyRelativeObservation(o, pose, o.PoseState, 1);
+        return o;
+    }
     private static ObservableObject Markerless(uint id, ObjectType type, Pose3d pose, uint origin, PoseState state) =>
         new(id, type, Array.Empty<KnownMarker>()) { Pose = pose, PoseState = state, OriginId = origin };
 
@@ -1651,9 +1658,11 @@ public class M11RVisBuildTests : IDisposable
         var lines = new List<(EngineLogLevel Level, string Key, string Text)>(); w.SourceLog = (l, c, k, t) => lines.Add((l, k, t));
         var o1 = w.GetNativeOrigin(1); var o2 = w.GetNativeOrigin(2);
         using var lift = In(o1, 30, 0, 40);
-        var c = Locate(w, Cube(w, 12, In(lift, 5, 0, -10)));
-        var t = Locate(w, Cube(w, 13, In(c.NativePose, 0, 0, 44), ObjectType.Block_LIGHTCUBE2, PoseState.Dirty));
-        c.NativeCarryingTree = true; t.NativeCarryingTree = true;                                          // as DockingSystem's attach leaves them
+        // CARRY-TREE-FLAG-RESET-1: the Pose setter now sets NativeCarryingTree for these non-root parents at construction (M12-008), so the public Pose
+        // is the flat world view; the confirming observation is given a parent-keeping copy of the native pose instead (what Locate passed before).
+        var c = LocateKeepingParent(w, Cube(w, 12, In(lift, 5, 0, -10)));
+        var t = LocateKeepingParent(w, Cube(w, 13, In(c.NativePose, 0, 0, 44), ObjectType.Block_LIGHTCUBE2, PoseState.Dirty));
+        Assert.True(c.NativeCarryingTree && t.NativeCarryingTree);                                         // as DockingSystem's attach leaves them
         w.IsCarryingObject = id => id == 12 || id == 13;
         w.CarriedPrimaryId = () => 12;
         Rejiggered(o1, o2, 1000, 0);
