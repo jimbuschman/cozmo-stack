@@ -55,6 +55,8 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 25. **M13-007-CALLER-CENSUS-1:** see its QUEUE row. With job 24, M13-007 should be settleable.
 26. **CARRY-TREE-FLAG-RESET-1:** your proposal; see its QUEUE row (M12-008).
 27. **M11-038-SCOPE-CENSUS-1:** see its QUEUE row.
+28. **CAN-INTERACT-ROOT-CHECK-1:** your proposal; see its QUEUE row (M12-012).
+29. **FOOTPRINT-GROUP-SETTLEMENT-READINESS-1:** doc only; see its QUEUE row. The manager settles M13-007 and its group from it.
 
 HOST-CONFIG-SAME-ROOT-1 stays proposed: whether the host BlockConfigurationManager extension stays is a scope question for the operator.
 

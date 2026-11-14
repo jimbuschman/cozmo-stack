@@ -288,3 +288,4 @@ See `research/20261114-reference-size-slot-claude-check.md`. REFERENCE-SIZE-SLOT
 
 See `research/20261114-marker-withhold-claude-check.md`. MARKER-WITHHOLD-PER-MARKER-1 merged (no effect). Jobs 24-27 released in CLAUDE-WORKER.md; HOST-CONFIG-SAME-ROOT-1 waits on the operator.
 See `research/20261114-min-area-rect-claude-check.md`. MIN-AREA-RECT-FOOTPRINT-1 merged.
+See `research/20261114-m13-007-caller-census-claude-check.md`. M13-007-CALLER-CENSUS-1 merged; jobs 28-29 released.
