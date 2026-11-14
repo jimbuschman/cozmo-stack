@@ -76,6 +76,47 @@ public sealed class RollBlockOnSideNativeTests
         Assert.Empty(finalLights.Entries);Assert.Equal((byte)BehaviorClass.RollBlock,finalLights.Class); // M7-030 0x005A223E..226E
     }
 
+    // M12-036 (CHARGER-BOUNDING-QUAD-1 GetObstacles G6-G11): a located Charger_Basic inside GetObstacles' Z band is an obstacle entry built through its own
+    // class slots, and the native roll drive accepts it and reaches DockWithObject.
+    // Engine: the predicate 0x0062C1D4 takes the size from slot +0x2C (0x0062C1F0; Charger 0x004EA672 -> +0xF0 = (96, 80, 31), stored 0x004E9D12..0x004E9D32),
+    // rz = (own-pose rotation * size).z (0x0062C1FC), the centre z re-rooted (0x0062C200..0x0062C216), the exclusion test 0x0062C220..0x0062C27E, then the
+    // quad from slot +0x50 at the own pose (0x0062C280..0x0062C294; base 0x0087713A, corners 0x004E9A50).
+    // Hand derivation for the charger placed below, identity rotation at (-300, 0, 0) in the current origin:
+    //   rz = (I * (96, 80, 31)).z = 31; centre z = 0; extent [0 - 15.5, 0 + 15.5] = [-15.5, 15.5].
+    //   minZ = the robot's re-rooted z (G2), about 0: the scene's states carry no z (measured during the drive: 0 and -3.8146973E-06 from the re-rooting);
+    //   maxZ = minZ + GetHeight >= 67.7 (G3, floor 0x42876666 at 0x00516F0C).
+    //   Excluded only if (top <= minZ and bottom <= minZ) or (top >= maxZ and bottom >= maxZ): with any minZ in (-15.5, 15.5), 15.5 <= minZ is false and
+    //   -15.5 >= maxZ is false -> INCLUDED.
+    //   Quad (corners 0x004E9A50 translated by the pose x, y, 0x004E68CC): x in [-300, -204], y in [-40, 40], behind the robot (start x = 0) and clear of
+    //   the cube at x = 150, so no rolling pre-action pose's swept footprint reaches it and the drive is unchanged.
+    // So the charger is in the list ManipulationSystem.NativeObstacles hands the drive; a stand-in entry there throws NativeActionUnavailable
+    // (ManipulationSystem.cs, M12-036/M13-025), so the dock is sent only when the charger's per-class quad was built. Negative controls (run by hand,
+    // ROLL-MARKER-OBSERVED-1, then reverted): (1) forcing the charger's PreActionObstacle.For quad to the stand-in made this test fail with no
+    // DockWithObject; (2) with that stand-in kept and the charger moved to z = -50 (extent [-65.5, -34.5], both ends <= minZ -> EXCLUDED) the test
+    // passed and For was never called for the charger, as the arithmetic predicts. (z = -15.5 is not a usable control: top = 0 > minZ = -3.8E-06.)
+    // The list's contents are not observed directly (no stack observable; see M12-036 unresolved). It shows only that, when the charger is included,
+    // its slot +0x50 quad is built and accepted; inclusion itself rests on the hand derivation (a wrong exclusion would also pass, control (2)).
+    // reach: unit (substituted inputs below); production-form ingress (ImageImuData + CameraGrayFrame through RollFirmwareScene, the engine tick, the configured native behaviour), with the
+    // scene's substitutions: explicit manager admission (the PlayAlone/Socialize choice is MISSING), the cube and the charger seeded by AddLocatedObject
+    // (instead of the marker observation path), and simulated firmware {"sim":true}.
+    [Fact]
+    public void M12_036_ALocatedChargerInsideTheObstacleBandIsAcceptedByTheNativeRollDrive()
+    {
+        using var scene=new RollFirmwareScene(behaviorId:Id);var f=scene.F;var manager=f.Robot.BehaviorManagerOwner!;
+        var charger=new ObservableObject(9,ObjectType.Charger_Basic,Array.Empty<KnownMarker>())
+        {Pose=new Pose3d(Rotation3d.Identity,new(-300,0,0),parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known};
+        f.M.World.AddLocatedObject(charger);
+        Assert.Contains(f.M.World.FindLocatedMatchingObjects(new BlockWorldFilter()),o=>o.ObjectId==9u&&o.Type==ObjectType.Charger_Basic);
+        var roll=Roll(f);int mark=f.Rig.Mark();
+        Assert.True(manager.StartAsync(Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,manager,Id);
+        for(int i=0;i<200&&!f.Rig.SentSince(mark).OfType<DockWithObject>().Any();i++)scene.Step();
+        var dock=Assert.Single(f.Rig.SentSince(mark).OfType<DockWithObject>());
+        Assert.Equal((byte)5,dock.DockAction);Assert.Equal((byte)0,dock.DockingMethod);Assert.True(roll.PreDockReached);
+        // The charger was still a located object of the current origin when the drive ran.
+        var located=Assert.Single(f.M.World.FindLocatedMatchingObjects(new BlockWorldFilter()),o=>o.Type==ObjectType.Charger_Basic);
+        Assert.Equal(9u,located.ObjectId);Assert.Equal(-300.0,located.Pose.Translation.X,3);
+    }
+
     [Fact]
     public void ExactConfiguredManagerStopRetiresOnlyOwnedWorkAndKeepsNativeLightRetention()
     {
