@@ -2673,3 +2673,11 @@ Manager-authorized correction from `research/20261021-b-m13-9-b-m10-2-claude-che
 | Change | Records |
 | --- | --- |
 | M13-041 now covers PopAWheelie and SparksPopAWheelie (activity 24, objective 22, needs 34). Still IMPLEMENTATION_GAP | M13-041 |
+
+## GET-SIZE-SLOT-RECORD-1 (manager, 2026-11-13; research/20261113-get-size-slot-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| Authority and evidence[0]: refPose = GetWithRespectToRoot(obj->GetPose()) (0x00626048 bl 0x004DF628), the root-frame pose, not a copy in its parent frame; the reference size reads slot +0x2C (M11-105) | M13-007 |

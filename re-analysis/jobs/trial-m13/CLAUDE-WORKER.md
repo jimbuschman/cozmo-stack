@@ -49,6 +49,7 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 19. **ROLL-AFTER-DRIVE-STANDALONE-1:** your proposal; see its QUEUE row (the roll stalls after its drive).
 20. **GET-SIZE-SLOT-RECORD-1:** records only; see its QUEUE row.
 21. **ROLL-MARKER-OBSERVED-1:** your proposal; see its QUEUE row (the roll's dock stops at IDockAction::Init 0x0300001D).
+22. **REFERENCE-SIZE-SLOT-1:** see its QUEUE row (M11-105 / M13-007).
 
 Before job 10, run the pending gate on `origin/manager-gate` (6e111864 or later; GATE-REQUESTS.md). Legacy drive API:
 the operator chose to retire it (job 14).

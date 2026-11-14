@@ -1074,3 +1074,11 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: PlaceObjectOnGroundAction::GetCompletionUnion 0x00554AE0..0x00554AFA (saved +0x7C from ctor 0x0055467C; four unwritten ID words under M1-034) | M12-052 (new) |
+
+## GET-SIZE-SLOT-RECORD-1 (manager, 2026-11-13; research/20261113-get-size-slot-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| Authority: rz from the own-pose rotation of the slot +0x2C size (0x0062C1EE..0x0062C1FC), re-rooted centre z (0x0062C200..0x0062C216), top/bottom without abs (0x0062C220..0x0062C242), exclusion 0x0062C246..0x0062C27E; GetLocatedObjectBoundingBoxesXY entry 0x00626BB4 | M12-036 |

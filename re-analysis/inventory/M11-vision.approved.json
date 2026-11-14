@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-11-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "da7bb0ded3a85b9a7314772c89f488a8d2c78c72e745bf1fe4205ea4310fc6af",
+  "inventory_sha256": "2616cc511a272f29d953d8c456246c83fe9695443efa78cdd82d7efeab9f48b0",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1226,6 +1226,19 @@
         "re-analysis/research/20261103-marker-detector-extraction.md",
         "re-analysis/tools/emu/emu_marker_detector.py runs the shipped ApplyCLAHE and MarkerDetector::Detect (engine ctors Camera 0x0085DD14, MarkerDetector 0x0087509C, Init 0x008752E0): 210 of 210 end-to-end fixture cases bit-exact including final slots (NativeMarkerDetectorOracleTests), 29 real robot frames, 1293 homography and 43 probe unit cases",
         "re-analysis/research/20261103-marker-detector-claude-check.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-105": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ObservableObject vtable +0x2C (the object's size) per class, and its readers GetDimInParentFrame<Z> and the GetObstacles Z predicate",
+      "authority": "libcozmoEngine.so 3.4.0-1204: Vision::ObservableObject's vtable (0x0103818C) has a pure slot at +0x2C returning a Point3f* (the name GetSize is inferred; no symbol names it). Block and ActiveCube: 0x004E382C (thunk 0x004E3830) returns this+0x88, filled from LookupBlockInfo(type)+0x10 by Block::Block (0x004E5F7C..0x004E5F8C; values M11-003). Charger: 0x004EA672 returns this+0xF0, set to (96, 80, 31) by Charger::Charger (0x004E9D12..0x004E9D32). MarkerlessObject: 0x00502DD0 returns this+0x58, copied from GetSizeByType(type) by its ctor (0x00502994..0x005029B0); GetSizeByType 0x005026EC holds 0xE (10,10,50), 0xF (20,40,50), 0x10 (20,54.2,67.7), and an unknown type logs MarkerlessObject.GetSizeByType.UndefinedType and returns (10,10,10). GetDimInParentFrame<'Z'> 0x00557794: the rotated parent Z axis picks the size component (tbb table at 0x005577AA: axis +-3 -> z, +-2 -> y, else x). Readers: FindObjectOnTopOrUnderneathHelper's reference (0x00626070) and the neighbour lambda's candidate after the quads intersect (0x0062BAB6); the GetObstacles predicate (0x0062C1EE..0x0062C1F4)",
+      "evidence": [
+        "0x0103818C vtable (+0x2C pure, +0x50 GetBoundingQuadXY); slots: Block 0x0101DBEC and ActiveCube 0x0101CE18 = 0x004E3831, Charger 0x0101E1F0 = 0x004EA673, Markerless 0x0101F344 = 0x00502DD1",
+        "0x004E382C..0x004E383A; 0x004E5F7C..0x004E5F8C; 0x004EA672..0x004EA67C; 0x004E9D12..0x004E9D32; 0x00502DD0; 0x00502958..0x005029B0; 0x005026EC..0x0050286E (strings 0x005028E4, 0x00502914)",
+        "0x00557794..0x005577D4 (tbb table 0x005577AA = [4,10,16,16,16,10,4]); 0x00626060..0x006260A0; 0x0062BA8C..0x0062BB0E; 0x0062C1EE..0x0062C242",
+        "re-analysis/jobs/trial-m13/INVENTORY-NOTE-GET-SIZE-SLOT-RECORD-1.md (Claude worker, 2026-11-13); manager re-read research/20261113-get-size-slot-claude-check.md"
       ],
       "live_path": true,
       "hardware_required": false

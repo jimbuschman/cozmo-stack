@@ -14,7 +14,7 @@ public sealed partial class ObservableObject
     /// Charger 0x004EA672 -> +0xF0 = (96, 80, 31) stored 0x004E9D12..0x004E9D32; MarkerlessObject 0x00502DD0 -> GetSizeByType 0x005026EC.
     /// Null for a class the stack does not build (SDK custom objects); callers make that visible. CubeGeometry.SizeOf is left as it is.
     /// </summary>
-    // fidelity: M13-025, M12-036
+    // fidelity: M13-025, M12-036, M11-105
     internal Vec3? ObservableSize2C =>
         CubeGeometry.IsCube(Type) ? CubeGeometry.SizeOf(Type)
         : Type==ObjectType.Charger_Basic ? ChargerGeometry.Size
