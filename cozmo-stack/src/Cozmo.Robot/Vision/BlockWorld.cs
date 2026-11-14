@@ -899,7 +899,7 @@ public sealed partial class BlockWorld
     // synchronous native recipients must not post a blocking engine request while holding the frame gate.
     internal readonly object FrameGate = new();
     private bool _missingMapTimeReported, _missingPoseChangedReported;
-    private readonly HashSet<string> _standInSitesReported = new(); // M13-023 stand-in MISSING: once per find-on-top caller site
+    private readonly HashSet<string> _footprintUnavailableSitesReported = new(); // M13-007 unavailable-slot MISSING: once per find-on-top caller site
     private double MapLastObservedTime
     {
         get
@@ -1626,7 +1626,7 @@ public sealed partial class BlockWorld
             _lastImageTimestamp = 0;
             _lastPlayAreaTime = 0; _timeOfLastChange = 0; SelectedObjectId = null;
             _missingMapTimeReported=_missingPoseChangedReported=false;
-            lock (_standInSitesReported) _standInSitesReported.Clear();
+            lock (_footprintUnavailableSitesReported) _footprintUnavailableSitesReported.Clear();
             Maps.Dispose();
             Maps = new SourceMapComponent(); // discard removed robot's owner; next Robot constructs its own
 
@@ -3049,10 +3049,10 @@ public sealed partial class BlockWorld
                                  .ToList();
         if (extra is not null) candidates = candidates.Where(extra).ToList();
         candidates = candidates.Where(c => SharesReferenceRoot(obj, referenceOrigin ?? obj.OriginId, c)).ToList();                    // P1 0x0062BA0E..0x0062BA48
-        var found = BlockConfigurationManager.FindObjectOnTopOrUnderneathInRootFrame(obj, candidates, onTop, toleranceMm, out bool standIn); // P2..P6, root frame
-        bool first; lock (_standInSitesReported) first = standIn && _standInSitesReported.Add(site);
-        if (first) Missing($"M13-007 / M13-023 FindObjectOnTopOrUnderneathHelper 0x0062601C at {site}: a candidate's footprint (vtable +0x50) is not ported for its class " +
-                           "or reaches the unported hull branch, so BlockConfigurationManager.PlanarStandIn decided it; reported once per caller site");
+        var found = BlockConfigurationManager.FindObjectOnTopOrUnderneathInRootFrame(obj, candidates, onTop, toleranceMm, out bool unavailable); // P2..P6, root frame
+        bool first; lock (_footprintUnavailableSitesReported) first = unavailable && _footprintUnavailableSitesReported.Add(site);
+        if (first) Missing($"M13-007 / M11-088 FindObjectOnTopOrUnderneathHelper 0x0062601C at {site}: the reference's or a candidate's slot +0x50/+0x2C is not " +
+                           "produced for its class (SDK custom object, outside the stack's build), so that reference found nothing or that candidate was skipped; reported once per caller site");
         return found;
     }
 

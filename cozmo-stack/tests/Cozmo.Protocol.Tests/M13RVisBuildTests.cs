@@ -184,12 +184,13 @@ public class M13RVisBuildTests
     }
 
     /// <summary>
-    /// M13-023 (RECOVERABLE_GAP; record text: cv::minAreaRect and the other GetBoundingQuadXY overrides are unread): Footprint.GetBoundingQuadXY itself
-    /// stays a visible stub (NotSupportedException 'M13-023') for a tilted cube and for a non-cube; a cube on its side (an own axis vertical) is a plain
-    /// rectangle and is built.
+    /// M13-023 / M13-007 (census MIN-AREA-RECT-FOOTPRINT-1 Q1 B6): Block::GetBoundingQuadXY 0x004E62A2 has no yaw-only branch (0x004E6390..0x004E6396), so
+    /// a tilted cube and a cube on its side are built through the full minAreaRect path and do not throw. Only the cube-only Footprint entry itself still
+    /// throws (NotSupportedException 'M13-023') for a non-cube; the per-class slot +0x50 (ObservableObject.TryObservableBoundingQuad50) is the path for those.
     /// </summary>
+    // reach: unit (Footprint called directly).
     [Fact]
-    public void M13_023_TheFootprintStubStillThrowsForTiltedCubesAndOtherClasses()
+    public void M13_023_TheCubeFootprintBuildsEveryPoseAndOnlyANonCubeThrows()
     {
         var tilted = new ObservableObject(9, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(200, 0, 22)), PoseState = PoseState.Known };
@@ -203,24 +204,26 @@ public class M13RVisBuildTests
     }
 
     /// <summary>
-    /// M13-023 / M13-007: where the exact footprint cannot be computed (a tilted cube, a non-cube) FindObjectOnTopOrUnderneath does not throw; it uses the
-    /// labelled planar stand-in and says so (usedStandIn). The stand-in is the planar test the unresolved text names: centre within half a cube
-    /// (22 mm) in x, y and the height within the tolerance of one cube height. A yaw-only pair does not use it.
+    /// M13-007 / M13-024 (census MIN-AREA-RECT-FOOTPRINT-1 Q1, Q4): every cube pair, tilted or not, is decided by the full footprint (Block::GetBoundingQuadXY
+    /// 0x004E62A2 -> GetBoundingQuad&lt;float&gt; 0x004E6490, no yaw-only branch) and the height test; there is no planar stand-in. A tilted cube 0.5 rad about X
+    /// has the quad x in [cx-22, cx+22], y in [-29.854179 (0xC1EED55C), +29.854179] (Q4, census port.py), so a centre 30 mm off still overlaps the reference's
+    /// [178, 222]. The host walk (BlockConfigurationManager, stack host extension D1) passes cubes only; a charger candidate is outside it and is skipped
+    /// (the native configuration builder's filter is families {2, 1}), while the live helper (BlockWorld's FindObjectOnTopOrUnderneathHelper ->
+    /// FindObjectOnTopOrUnderneathInRootFrame) reads the charger's own slots, as the engine does (P3/P5).
     /// </summary>
+    // reach: unit (BlockConfigurationManager.FindObjectOnTopOrUnderneath and FindObjectOnTopOrUnderneathInRootFrame called directly with chosen flat poses).
     [Fact]
-    public void M13_023_ATiltedOrNonCubeFootprintUsesTheLabelledPlanarStandInAndDoesNotThrow()
+    public void M13_007_TiltedCubePairsUseTheFullFootprintAndTheHostWalkSkipsNonCubes()
     {
         var bottom = Cube(1, 200, 0, 22);
         var tiltedOnTop = new ObservableObject(9, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(210, 0, 66)), PoseState = PoseState.Known };   // centre 10 mm off, exactly one cube height up
-        var found = BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, tiltedOnTop }, true, 15.0, out bool used);
+        var found = BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, tiltedOnTop }, true, 15.0);
         Assert.Same(tiltedOnTop, found);
-        Assert.False(used);
-        // Both quads have width44 along X, so centers30mm apart still overlap.
+        // Both quads have width 44 along X, so centres 30 mm apart still overlap.
         var tiltedFar = new ObservableObject(10, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(230, 0, 66)), PoseState = PoseState.Known };
-        Assert.Same(tiltedFar,BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, tiltedFar }, true, 15.0, out used));
-        Assert.False(used);
+        Assert.Same(tiltedFar,BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, tiltedFar }, true, 15.0));
         // height: 20 mm too high for 15, found for 30 (the tolerance is the caller's)
         var tiltedHigh = new ObservableObject(11, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(200, 0, 86)), PoseState = PoseState.Known };
@@ -232,15 +235,14 @@ public class M13RVisBuildTests
         var tiltedRef = new ObservableObject(12, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutY(0.5), new Vec3(200, 0, 22)), PoseState = PoseState.Known };
         var above = Cube(13, 200, 0, 66);
-        Assert.Same(above, BlockConfigurationManager.FindObjectOnTopOrUnderneath(tiltedRef, new[] { tiltedRef, above }, true, 15.0, out used));
-        Assert.False(used);
-        // a non-cube candidate
+        Assert.Same(above, BlockConfigurationManager.FindObjectOnTopOrUnderneath(tiltedRef, new[] { tiltedRef, above }, true, 15.0));
+        // a charger candidate: the cube-only host walk skips it; the live helper finds it with the charger's own quad and size. Charger identity at
+        // (200, 0, 66): quad x in [200, 296], y in [-40, 40] (base 0x0087713A, corners 0x004E9A50) meets [178, 222]; size (96, 80, 31) (0x004EA672 -> +0xF0),
+        // identity -> Z axis -> 31; P6: |44 - (66 - 31*0.5)| = 6.5 <= 15.00001 -> found.
         var charger = new ObservableObject(20, ObjectType.Charger_Basic, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(200, 0, 66)), PoseState = PoseState.Known };
-        Assert.Same(charger, BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, charger }, true, 15.0, out used));
-        Assert.True(used);
-        // yaw-only pairs never use it
-        BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, Cube(3, 244, 0, 66) }, true, 15.0, out used);
-        Assert.False(used);
+        Assert.Null(BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, charger }, true, 15.0));
+        Assert.Same(charger, BlockConfigurationManager.FindObjectOnTopOrUnderneathInRootFrame(bottom, new[] { charger }, true, 15.0, out bool unavailable));
+        Assert.False(unavailable);
     }
 
     /// <summary>

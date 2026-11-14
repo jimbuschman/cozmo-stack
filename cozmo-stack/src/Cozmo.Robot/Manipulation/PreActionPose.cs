@@ -666,7 +666,7 @@ public sealed record ObjectPoseQueries(Func<ObservableObject, double, Pose3d> ZR
 /// <see cref="Quad"/> is <c>o-&gt;GetBoundingQuadXY(o.pose, padding)</c> (M13-007, <see cref="Footprint"/>). When the exact footprint cannot be computed (a non-cube, or a cube
 /// pose that is not yaw-only: <c>cv::minAreaRect</c> and the other <c>GetBoundingQuadXY</c> overrides are unread, M13-023) <see cref="Quad"/> is null and the entry is the
 /// LABELLED STAND-IN of M13-023, a reduction that differs from the engine: it "contains" a point within half a cube (22 mm, the same constant as
-/// <see cref="BlockConfigurationManager.PlanarStandIn"/>) of <see cref="Centre"/> in x, y, and its centroid is <see cref="Centre"/>.
+/// the retired BlockConfigurationManager.PlanarStandIn) of <see cref="Centre"/> in x, y, and its centroid is <see cref="Centre"/>.
 /// </summary>
 // fidelity: M12-036
 public sealed record PreActionObstacle(Quadrilateral? Quad, Point2f Centre, uint ObjectId)

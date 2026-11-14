@@ -6,6 +6,8 @@ using Xunit;
 
 namespace Cozmo.Protocol.Tests;
 
+// Subscribes to the static SteppedBehavior.MissingReported: serialised with the other subscribers (MIN-AREA-RECT-FOOTPRINT-1 verifier Q1).
+[Collection("SteppedBehavior missing-report statics")]
 public class NativeBouncerFactoryTests
 {
     [Fact]

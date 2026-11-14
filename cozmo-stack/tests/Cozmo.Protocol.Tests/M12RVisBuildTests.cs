@@ -2218,7 +2218,7 @@ public class M12RVisBuildTests : IDisposable
         other.Pose = new Pose3d(other.Pose.Rotation, new Vec3(200, -5, 22));
         other.PoseState = PoseState.Unknown;                                    // not located: not visited
         Assert.True(Make(20).IsPlacementGoalFree());
-        // M13-023 labelled stand-in: a tilted candidate is decided by the planar 22 mm rule (centre 10 mm from the placement centre: blocks; 40 mm: clear)
+        // MIN-AREA-RECT-FOOTPRINT-1: no planar stand-in; a tilted candidate is decided by its own slot +0x50 footprint (the trace never names a stand-in)
         other.PoseState = PoseState.Known;
         other.Pose = new Pose3d(Mat3.AboutY(0.2), new Vec3(200, -70, 22));
         var act = Make(0);

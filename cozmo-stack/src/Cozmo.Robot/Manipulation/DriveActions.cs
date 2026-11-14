@@ -575,11 +575,10 @@ public sealed class DriveToPlaceCarriedObjectAction
     /// <c>BlockWorld::FindLocatedIntersectingObjects</c> 0x00626870 with the default filter <c>IsPlacementGoalFree</c> passes (M12-030): the located objects of the current origin
     /// (no family, type or PoseState restriction, 0x0061EBF2..0x0061EE8A) except the ignored id (the carried object's); the reference quad is
     /// <c>carried-&gt;vtbl[0x50](carried, placementPose, 0.0)</c> and the predicate 0x0062750E is <c>q = o-&gt;vtbl[0x50](o, o-&gt;GetPose(), padding); q.Intersects(*ref)</c>, so the
-    /// padding inflates the CANDIDATE's quad, and there is NO Z test. Returns true iff nothing intersects (the engine's <c>out.empty()</c>). Footprints are M13-007's
-    /// (<see cref="Footprint"/>); a pair for which one of them cannot be computed (a non-cube, or a cube whose pose is not yaw-only) is decided by M13-023's LABELLED STAND-IN,
-    /// <see cref="BlockConfigurationManager.PlanarStandIn"/> with its height test neutralised (this query has none): centres within half a cube in x, y. That differs from the engine.
+    /// padding inflates the CANDIDATE's quad, and there is NO Z test. Returns true iff nothing intersects (the engine's <c>out.empty()</c>). Both quads are each object's own
+    /// slot +0x50, per class (M11-088; the same call the live NativePlaceGroundAtBeaconRunner makes). There is no planar stand-in (MIN-AREA-RECT-FOOTPRINT-1).
     /// </summary>
-    // fidelity: M12-030, M13-007, M13-023
+    // fidelity: M12-030, M13-007
     public bool EngineFindLocatedIntersectingObjectsIsEmpty(ObservableObject carried, Pose3d placementPose, double padding) =>
         StaticFindLocatedIntersectingObjectsIsEmpty(_m, carried, placementPose, padding, _trace);
 
@@ -590,19 +589,14 @@ public sealed class DriveToPlaceCarriedObjectAction
     // fidelity: M12-030, M15-019
     public static bool StaticFindLocatedIntersectingObjectsIsEmpty(ManipulationSystem m, ObservableObject carried, Pose3d placementPose, double padding, List<string>? trace)
     {
-        bool refOk = Footprint.TryGetBoundingQuadXY(carried, placementPose, 0f, out var refQuad);
-        var atPlacement = new ObservableObject(carried.ObjectId, carried.Type, carried.Markers) { Pose = placementPose, PoseState = PoseState.Known };
+        if (!carried.TryObservableBoundingQuad50(placementPose, 0f, out var refQuad))          // carried->vtbl[0x50](carried, placementPose, 0.0)
+            throw new NotSupportedException("M12-030/M11-088: the carried object's slot +0x50 footprint is not produced for " + carried.Type);
         foreach (var o in m.World.LocatedObjects)
         {
             if (o.ObjectId == carried.ObjectId) continue;                       // ignoreIDs {carried id}
-            bool hit;
-            if (refOk && Footprint.TryGetBoundingQuadXY(o, o.Pose, (float)padding, out var candQuad)) hit = candQuad!.Intersects(refQuad!);
-            else
-            {
-                hit = BlockConfigurationManager.PlanarStandIn(atPlacement, o, onTop: true, double.PositiveInfinity);
-                trace?.Add($"IsPlacementGoalFree: object {o.ObjectId} decided by the M13-023 planar stand-in ({(hit ? "intersects" : "clear")})");
-            }
-            if (hit) return false;
+            if (!o.TryObservableBoundingQuad50(o.NativePose, (float)padding, out var candQuad)) // predicate 0x0062750E: o->vtbl[0x50](o, o->GetPose(), padding)
+                throw new NotSupportedException("M12-030/M11-088: a located object's slot +0x50 footprint is not produced for " + o.Type);
+            if (candQuad!.Intersects(refQuad!)) return false;
         }
         return true;
     }

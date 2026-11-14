@@ -65,11 +65,12 @@ internal sealed class NativeConfigurationGeometry
     // Local to this path: CubeGeometry.SizeOf (other callers) still returns 44 for markerless types.
     private static Vec3 CandidateSize(ObservableObject candidate)=>candidate.ObservableSize2C
         ??throw new NativeConfigurationUnavailable("M13-025 candidate slot +0x2C size is not bound for "+candidate.Type);
-    private static float CandidateDimZ(ObservableObject candidate,Pose3d pose)
-    {
-        var size=CandidateSize(candidate);
-        return (float)(Math.Abs(RotatedParentAxis.Get(pose.Rotation,2)) switch{3=>size.Z,2=>size.Y,_=>size.X});
-    }
+    private static float CandidateDimZ(ObservableObject candidate,Pose3d pose)=>DimInParentFrameZ(CandidateSize(candidate),pose.Rotation);
+    // fidelity: M11-105, M13-007, M13-025
+    // GetDimInParentFrame<Z> 0x00557794..0x005577D2 over a slot +0x2C size: tbb 0x005577AA, |axis|==3 -> z (+8), ==2 -> y (+4), else x (+0)
+    // (0x005577B4/0x005577C0/0x005577CC). Shared by Neighbor (H4/P5) and BlockConfigurationManager.FindObjectOnTopOrUnderneathInRootFrame (the same helper 0x0062601C).
+    internal static float DimInParentFrameZ(Vec3 size,Mat3 rotation)=>
+        (float)(Math.Abs(RotatedParentAxis.Get(rotation,2)) switch{3=>size.Z,2=>size.Y,_=>size.X});
     // fidelity: M13-007, M13-025, M11-088
     // H3 0x0062604C..0x0062605C: the REFERENCE's own slot +0x50 through its vptr (ldr r0,[r4]; ldr r6,[r0,#0x50]; padding 0, movs r3,#0), given the
     // re-rooted refPose (H2 0x00626048). Per class as the candidate (M11-088): cube Block 0x004E62A2, Charger base 0x0087713A, MarkerlessObject 0x00502C32.
@@ -89,7 +90,7 @@ internal sealed class NativeConfigurationGeometry
     {
         var size=reference.ObservableSize2C
             ??throw new NativeConfigurationUnavailable("M11-105 reference slot +0x2C size is not bound for "+reference.Type);
-        return (float)(Math.Abs(RotatedParentAxis.Get(refPose.Rotation,2)) switch{3=>size.Z,2=>size.Y,_=>size.X});
+        return DimInParentFrameZ(size,refPose.Rotation);
     }
     internal ObservableObject? Neighbor(ObservableObject obj,bool onTop,float tolerance=30f,BlockWorldFilter? suppliedFilter=null)
     {

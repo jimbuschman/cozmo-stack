@@ -310,12 +310,11 @@ public sealed class BlockConfigurationManager
     /// and <c>RollBlockHelper::UnableToRollDelegate</c> 0x005BA136) or <see cref="RestingOnToleranceMm"/> (15: the other
     /// eight, all with <c>onTop</c> true).
     ///
-    /// Not built, and visible (M13-023): only <c>Block::GetBoundingQuadXY</c> is read and <c>cv::minAreaRect</c> is not, so
-    /// when the reference or the candidate is not a cube, or its pose is not yaw-only, the exact footprint cannot be computed.
-    /// For that pair, and only that pair, this method uses <see cref="PlanarStandIn"/>: the earlier planar test (centres within
-    /// half a cube, 22 mm, and the height within the tolerance of one cube height). It is a REDUCTION THAT DIFFERS FROM THE ENGINE
-    /// (which intersects min-area-rectangle footprints of any pose); <c>usedStandIn</c> is set when it decided any
-    /// candidate, so a caller and a test can see it. No exception escapes. This method does NOT apply the filter or the
+    /// Every cube pose, tilted or not, goes through the full <see cref="Footprint.TryGetBoundingQuadXY"/> path (Block::GetBoundingQuadXY 0x004E62A2 has no
+    /// yaw-only branch, 0x004E6390..0x004E6396). This host walk only ever passes cubes (BuildLocked and the default list of
+    /// <see cref="BuildTallestStackForObject"/>), for which that footprint never fails; a non-cube reference or candidate is outside it (the native
+    /// configuration builder's filter is families {2, 1}, NativeConfigurationGeometry.Filter), so it is reported MISSING and skipped. There is no planar
+    /// stand-in (MIN-AREA-RECT-FOOTPRINT-1). This method does NOT apply the filter or the
     /// lambda's first step: it searches the list it is given, in the given order, and returns the first match. The engine's
     /// candidate set (the current origin only, the caller's filter, obj's ID) and the same-root step P1 ("candidate with respect
     /// to the reference's parent", 0x0062BA0E..0x0062BA48, the reference's parent being obj's root, 0x00626048) are applied by
@@ -328,32 +327,26 @@ public sealed class BlockConfigurationManager
     // fidelity: M13-007
     public static ObservableObject? FindObjectOnTopOrUnderneath(ObservableObject obj, IReadOnlyList<ObservableObject> cubes, bool onTop,
                                                                 double toleranceMm)
-        => FindObjectOnTopOrUnderneath(obj, cubes, onTop, toleranceMm, out _);
-
-    /// <summary>The same search that also reports whether the labelled <see cref="PlanarStandIn"/> (M13-023) decided any candidate.</summary>
-    // fidelity: M13-007, M13-023
-    public static ObservableObject? FindObjectOnTopOrUnderneath(ObservableObject obj, IReadOnlyList<ObservableObject> cubes, bool onTop,
-                                                                double toleranceMm, out bool usedStandIn)
     {
-        usedStandIn = false;
         // Host path (BlockConfigurationManager, D1): the public Pose, unchanged.
         float dimZ = (float)CubeGeometry.DimInParentFrameZ(obj);
         float targetZ = (float)obj.Pose.Translation.Z + dimZ * (onTop ? 0.5f : -0.5f);                // 0x0062607E..0x006260A0
         float s2 = onTop ? -0.5f : 0.5f;
         float tol = (float)toleranceMm;
-        Footprint.TryGetBoundingQuadXY(obj, obj.Pose, 0f, out var refQuad);                          // 0x0062604C..0x0062605C
+        if (!Footprint.TryGetBoundingQuadXY(obj, obj.Pose, 0f, out var refQuad))                      // 0x0062604C..0x0062605C
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-007 host BlockConfigurationManager.FindObjectOnTopOrUnderneath: a non-cube reference is outside the cube-only host walk; nothing found");
+            return null;
+        }
         foreach (var c in cubes)
         {
             if (c.ObjectId == obj.ObjectId) continue;                                                // 0x006260AC..0x006260B8
-            Quadrilateral? candQuad = null;
-            if (refQuad is null || !Footprint.TryGetBoundingQuadXY(c, c.Pose, 0f, out candQuad))     // 0x0062BA7A..0x0062BA86
+            if (!Footprint.TryGetBoundingQuadXY(c, c.Pose, 0f, out var candQuad))                    // 0x0062BA7A..0x0062BA86
             {
-                // M13-023: the exact footprint is not computable for this pair; the labelled stand-in decides it
-                usedStandIn = true;
-                if (PlanarStandIn(obj, c, onTop, toleranceMm)) return c;
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-007 host BlockConfigurationManager.FindObjectOnTopOrUnderneath: a non-cube candidate is outside the cube-only host walk; skipped");
                 continue;
             }
-            if (!refQuad.Intersects(candQuad!)) continue;                                             // 0x0062BA50..0x0062BAA2
+            if (!refQuad!.Intersects(candQuad!)) continue;                                             // 0x0062BA50..0x0062BAA2
             float cz = (float)c.Pose.Translation.Z + (float)CubeGeometry.DimInParentFrameZ(c) * s2;
             if (!(MathF.Abs(targetZ - cz) <= tol + 9.99999975e-06f)) continue;                       // 0x0062BAC2..0x0062BB0C (literal 0x3727C5AC)
             return c;
@@ -368,33 +361,46 @@ public sealed class BlockConfigurationManager
     /// in f32 (H4 0x0062605E..0x006260A0); refQuad from refPose (H3). Each candidate is taken w.r.t. obj's root (P1's out pose, which for a same-root
     /// candidate is its GetWithRespectToRoot); its quad reads x, y only (P2/P3, the z overwrite does not reach it); <c>candDimZ</c> uses that pose's
     /// rotation (P5 0x0062BAA4..0x0062BABA) and the height test is <c>|targetZ - (cand.z + candDimZ * (onTop ? -0.5 : +0.5))| &lt;= tol + 1e-5f</c>
-    /// on its root-frame z (P6 0x0062BAC2..0x0062BB0E, literal 0x3727C5AC). The first passing candidate in list order is returned (F6). A pair whose
-    /// footprint is not computable goes to the labelled M13-023 stand-in, here on the root-frame translations.
+    /// on its root-frame z (P6 0x0062BAC2..0x0062BB0E, literal 0x3727C5AC). The first passing candidate in list order is returned (F6).
+    /// Both quads and both sizes are each object's OWN virtual slots, per class (M11-088 dispatch), the same pieces <see cref="NativeConfigurationGeometry"/>'s
+    /// Neighbor reads: the reference's slot +0x50 at refPose, padding 0 (H3 0x0062604C..0x0062605C), and its slot +0x2C through GetDimInParentFrame&lt;Z&gt;
+    /// (H4 0x00626070); each candidate's slot +0x50, padding 0 (P3 0x0062BA7A..0x0062BA86), and its slot +0x2C, read only after the quads intersect
+    /// (P5 0x0062BAA4..0x0062BAB6). Cube: Block 0x004E62A2 and 44^3; Charger: base 0x0087713A and (96, 80, 31); MarkerlessObject: 0x00502C32 and
+    /// GetSizeByType. A slot the stack does not produce (an SDK custom object, unreachable in our system) sets <paramref name="footprintUnavailable"/>
+    /// so the caller logs a visible MISSING: an unavailable reference finds nothing, an unavailable candidate is skipped. There is no planar stand-in.
     /// </summary>
-    // fidelity: M13-007, M13-023
+    // fidelity: M13-007, M11-105
     internal static ObservableObject? FindObjectOnTopOrUnderneathInRootFrame(ObservableObject obj, IReadOnlyList<ObservableObject> candidates, bool onTop,
-                                                                            double toleranceMm, out bool usedStandIn)
+                                                                            double toleranceMm, out bool footprintUnavailable)
     {
-        usedStandIn = false;
+        footprintUnavailable = false;
         using var refPose = obj.NativePose.GetWithRespectToRoot();                                     // H2 0x00626048
-        float dimZ = (float)CubeGeometry.DimInParentFrameZ(obj, refPose.Rotation);
+        if (!obj.TryObservableBoundingQuad50(refPose, 0f, out var refQuad)                           // H3 0x0062604C..0x0062605C (slot +0x50)
+            || obj.ObservableSize2C is not { } refSize)                                              // H4 0x00626070 (slot +0x2C)
+        {
+            footprintUnavailable = true;
+            return null;
+        }
+        float dimZ = NativeConfigurationGeometry.DimInParentFrameZ(refSize, refPose.Rotation);       // H4 GetDimInParentFrame<Z> 0x00557794..0x005577D2
         float targetZ = (float)refPose.Translation.Z + dimZ * (onTop ? 0.5f : -0.5f);                // H4 0x0062605E..0x006260A0
         float s2 = onTop ? -0.5f : 0.5f;
         float tol = (float)toleranceMm;
-        Footprint.TryGetBoundingQuadXY(obj, refPose, 0f, out var refQuad);                           // H3 0x0062604C..0x0062605C
         foreach (var c in candidates)
         {
             if (c.ObjectId == obj.ObjectId) continue;                                                // H6 0x006260AC..0x006260B8
             using var tmp = c.NativePose.GetWithRespectToRoot();                                     // P1 out pose (same root)
-            Quadrilateral? candQuad = null;
-            if (refQuad is null || !Footprint.TryGetBoundingQuadXY(c, tmp, 0f, out candQuad))        // P3 0x0062BA7A..0x0062BA86
+            if (!c.TryObservableBoundingQuad50(tmp, 0f, out var candQuad))                           // P3 0x0062BA7A..0x0062BA86 (slot +0x50)
             {
-                usedStandIn = true;                                                                  // M13-023 labelled stand-in
-                if (PlanarStandInAt(refPose.Translation, tmp.Translation, onTop, toleranceMm)) return c;
+                footprintUnavailable = true;
                 continue;
             }
-            if (!refQuad.Intersects(candQuad!)) continue;                                             // P4 0x0062BA88..0x0062BAA2
-            float cz = (float)tmp.Translation.Z + (float)CubeGeometry.DimInParentFrameZ(c, tmp.Rotation) * s2;   // P5
+            if (!refQuad!.Intersects(candQuad!)) continue;                                            // P4 0x0062BA88..0x0062BAA2
+            if (c.ObservableSize2C is not { } candSize)                                              // P5 0x0062BAA4..0x0062BAB6 (slot +0x2C, after P4)
+            {
+                footprintUnavailable = true;
+                continue;
+            }
+            float cz = (float)tmp.Translation.Z + NativeConfigurationGeometry.DimInParentFrameZ(candSize, tmp.Rotation) * s2;   // P5
             if (!(MathF.Abs(targetZ - cz) <= tol + 9.99999975e-06f)) continue;                       // P6 0x0062BAC2..0x0062BB0E (0x3727C5AC)
             return c;
         }
@@ -440,27 +446,6 @@ public sealed class BlockConfigurationManager
             if (Math.Sqrt(d.X * d.X + d.Y * d.Y) > thresholdMm) return true;
         }
         return false;
-    }
-
-    /// <summary>
-    /// EXPLICIT STAND-IN, a reduction that differs from the engine (M13-023, M13-007): the planar test used before the footprint
-    /// was built. A candidate is found when its centre is within half a cube (22 mm) of the reference centre in x, y and its z is
-    /// within the tolerance of the reference z plus or minus one cube height. Used ONLY when the exact footprint
-    /// cannot be computed (a cube pose that is not yaw-only, or an object that is not a cube: <c>cv::minAreaRect</c> and the other
-    /// <c>GetBoundingQuadXY</c> overrides are unread). The engine intersects min-area-rectangle footprints of any pose.
-    /// </summary>
-    // fidelity: M13-023
-    public static bool PlanarStandIn(ObservableObject obj, ObservableObject c, bool onTop, double toleranceMm)
-        => PlanarStandInAt(obj.Pose.Translation, c.Pose.Translation, onTop, toleranceMm);
-
-    /// <summary><see cref="PlanarStandIn"/> on given translations (the root-frame search passes root-frame translations).</summary>
-    internal static bool PlanarStandInAt(Vec3 objT, Vec3 cT, bool onTop, double toleranceMm)
-    {
-        double targetZ = objT.Z + (onTop ? CubeGeometry.CubeSizeMm : -CubeGeometry.CubeSizeMm);
-        var d = cT - objT;
-        if (Math.Abs(cT.Z - targetZ) > toleranceMm) return false;
-        if (Math.Sqrt(d.X * d.X + d.Y * d.Y) > CubeGeometry.CubeSizeMm / 2) return false;
-        return true;
     }
 
     private static string Key(BlockConfiguration c) => c.Type + ":" + string.Join(",", c.BlockIds.OrderBy(i => i));
@@ -545,8 +530,8 @@ public sealed class Quadrilateral
 /// cube sub-vtables through thunk 0x004E690C) only.
 ///
 /// Cubes use all eight canonical vertices, padded and rotated in binary32, followed by the shared
-/// <see cref="MinAreaRectF"/> port, the checked corner sort and root-frame translation. Unported
-/// rectangle branches return false visibly; they are not replaced by a planar approximation.
+/// <see cref="MinAreaRectF"/> port, the checked corner sort and root-frame translation. There is no
+/// planar approximation.
 /// </summary>
 // fidelity: M13-007, M13-023
 public static class Footprint
@@ -560,7 +545,7 @@ public static class Footprint
         return q!;
     }
 
-    /// <summary>The cube footprint; false for a non-cube or an explicitly unported rectangle branch.</summary>
+    /// <summary>The cube footprint; false only for a non-cube (every cube pose reaches the full minAreaRect path).</summary>
     // fidelity: M12-043
     public static bool TryGetBoundingQuadXY(ObservableObject o, Pose3d atPose, float padding, out Quadrilateral? quad)
     {
@@ -569,12 +554,7 @@ public static class Footprint
         var size = CubeGeometry.SizeOf(o.Type);
         using var flat=atPose.GetWithRespectToRoot(); // checked Flatten helper, not a yaw projection
         var points=ObjectFootprint.BlockProjectedCorners(size,flat.Quaternion,padding);
-        Point2f[] corners;
-        try{corners=MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(points));}
-        catch(NotSupportedException)
-        {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-043/M13-024 Block::GetBoundingQuadXY 0x004E6396: existing minAreaRect port has an unported hull branch; no axis-aligned substitute or fabricated native cv failure log");return false;
-        }
+        var corners=MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(points)); // GetBoundingQuad<float> 0x004E6490; its cv failure is caught inside (RectangleFallback)
         var sorted=ObjectFootprint.SortQuadrilateral(corners);
         float tx=(float)flat.Translation.X,ty=(float)flat.Translation.Y;
         Point2f T(Point2f p)=>new(tx+p.X,ty+p.Y);
@@ -780,7 +760,7 @@ public static class MinAreaRectF
             dx = h[seq[2]].X - h[seq[0]].X; dy = h[seq[2]].Y - h[seq[0]].Y;
             float ha = dy * baseA, hb = dx * baseB; float hh = ha - hb;
             float area = w * hh;
-            if (!(area > minarea)) { minarea = area; buf = (seq[3], baseA, w, baseB, hh, seq[0]); }
+            if (KeepsArea(area, minarea)) { minarea = area; buf = (seq[3], baseA, w, baseB, hh, seq[0]); }
         }
         float A1 = buf.a1, B1 = buf.b1, wid = buf.width, hei = buf.height;
         float A2 = -B1, B2 = A1;
@@ -800,6 +780,13 @@ public static class MinAreaRectF
         float angDeg = (float)((double)angScaled / Math.PI);
         return new RotatedRect(cx, cy, w2, h2, angDeg);
     }
+
+    /// <summary>
+    /// M9, the area keep (imgproc 0x0009CC64..0x0009CCDE): <c>vcmpe.f32 area, minarea</c> then <c>bhi</c> at 0x0009CCC8 skips the store. <c>bhi</c> is taken
+    /// on C=1 and Z=0, which an FPSCR compare sets for "greater than" AND for "unordered", so a NaN area is skipped; an equal area is stored (the last one wins).
+    /// </summary>
+    // fidelity: M13-024
+    internal static bool KeepsArea(float area, float minarea) => area <= minarea;
 
     /// <summary><c>cv::RotatedRect::points</c> 0x00086188: _a = (double)angle * pi / 180; b = (float)cos(_a) * 0.5f, a = (float)sin(_a) * 0.5f; each corner a separate float operation.</summary>
     public static Point2f[] Points(RotatedRect r)
@@ -866,9 +853,7 @@ public static class ObjectFootprint
         quad = null;
         using var flat = pose.GetWithRespectToRoot(); // 0x00502C50
         var points = BlockProjectedCorners(size, flat.Quaternion, padding);
-        Point2f[] corners;
-        try { corners = MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(points)); }
-        catch (NotSupportedException) { return false; }
+        var corners = MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(points)); // its cv failure is caught inside (RectangleFallback)
         var sorted = SortQuadrilateral(corners);
         float x = (float)flat.Translation.X, y = (float)flat.Translation.Y;
         Point2f Translate(Point2f point) => new(x + point.X, y + point.Y);

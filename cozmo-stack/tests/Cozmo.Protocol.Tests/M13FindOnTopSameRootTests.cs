@@ -161,12 +161,15 @@ public class M13FindOnTopSameRootTests
 
     /// <summary>
     /// C9: ClearLocatedObjectHelper passes the DEFAULT filter only (0x00625DAA..0x00625E06), so a markerless object (family 6, ProxObstacle) resting
-    /// on a deleted cube is a candidate of the on-top search, where C1/C2/C8 exclude families 6 and 7. Its footprint (vtable +0x50 for a markerless
-    /// object) is not ported (M13-023), so the labelled planar stand-in decides it and reports the visible MISSING; that MISSING appearing during the
-    /// delete is what this test checks. The recursion ClearLocatedObjectHelper(top) (0x00625E7A) then resets the selected ID; that outcome rests on
-    /// the stand-in's decision, not on the engine's footprint.
+    /// on a deleted cube is a candidate of the on-top search, where C1/C2/C8 exclude families 6 and 7. The candidate's own slot +0x50 (MarkerlessObject
+    /// 0x00502C32, P3 0x0062BA7A..0x0062BA86) gives x in [195, 205], y in [-5, 5], which meets the cube's [178, 222] x [-22, 22]; its own slot +0x2C
+    /// (0x00502DD0 -> GetSizeByType 0x005026EC: 0xE = (10, 10, 50)), identity -> Z -> 50, read after the quads intersect (P5 0x0062BAA4..0x0062BAB6);
+    /// P6: |(22 + 22) - (66 - 25)| = 3 &lt;= 15.00001 -> FOUND (census MIN-AREA-RECT-FOOTPRINT-1 Q4, engine result). The recursion
+    /// ClearLocatedObjectHelper(top) (0x00625E7A) then clears the selected ID 2 (the ClearingSelectedObject branch). No MISSING is logged: there is
+    /// no stand-in any more (this test used to pin the planar stand-in's MISSING).
     /// </summary>
-    // reach: unit (BlockWorld.DeleteLocatedObjects called directly on a host-fixture world with flat poses; the M13-023 stand-in decides the footprint).
+    // reach: unit (BlockWorld.DeleteLocatedObjects called directly on a host-fixture world with flat poses; the markerless object is inserted with
+    // AddLocatedObject, substituting the AddMarkerlessObject producer).
     [Fact]
     public void M13_007_C9_TheClearSearchDoesNotExcludeMarkerlessObjects()
     {
@@ -183,8 +186,8 @@ public class M13FindOnTopSameRootTests
         logs.Clear();
         var filter = new BlockWorldFilter(); filter.AllowedIds.Add(1);
         w.DeleteLocatedObjects(filter);
-        Assert.Single(logs, l => l.StartsWith("MISSING: M13-007 / M13-023 FindObjectOnTopOrUnderneathHelper 0x0062601C at ClearLocatedObjectHelper 0x00625E1A"));   // once per site
-        Assert.Null(w.SelectedObjectId);
+        Assert.DoesNotContain(logs, l => l.Contains("FindObjectOnTopOrUnderneathHelper 0x0062601C"));   // no unavailable-slot MISSING, no stand-in
+        Assert.Null(w.SelectedObjectId);                                                              // the ProxObstacle was found and cleared
     }
 
     // ---------------------------------------------------------------- C8 UpdatePoseOfStackedObjects 0x0062190C, native origin bound
