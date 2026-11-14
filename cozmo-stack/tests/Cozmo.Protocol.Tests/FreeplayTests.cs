@@ -1982,9 +1982,11 @@ public class FreeplayTests
         // the charger at (30,0,0) yaw pi spans x in [-66, 30], the cube at x = 260 is clear (P4 false, 0x0062BA88), so no neighbour and the roll goes ahead.
         Assert.Contains(decisions, d => d.Behavior == "RollBlockOnSide");
         // reach: unit for the 0x0300001D stop (production entry: stack API Create/Tick, the engine tick, rig frames). The substituted input is the rig's
-        // legacy flat marker/camera poses (HasLegacyFrameInput, MarkerObservationTime.cs:39): with them SetMarkerAsObserved withholds the marker timestamps
-        // (MarkerObservationTime.cs:74-77, M11-013 MISSING), and that is the only reason the roll ends 0x0300001D here; the native parent-root binding that
-        // would make it a production input is M11-013's open join. The drive-then-roll sequence before that point is production reach.
+        // camera pose: ManipRig.OneImage feeds the offline VisionSystem.ProcessImage a parentless, legacy-flagged camera pose (HasLegacyFrameInput,
+        // MarkerObservationTime.cs:39) whose root differs from the origin-rooted KnownMarkers, so GetWithRespectTo fails and SetMarkerAsObserved withholds the
+        // marker timestamps (MarkerObservationTime.cs:74-77). Production frames are also legacy-flagged (CopyHistoricalCameraPose starts from the Mat3
+        // DefaultHeadCamRotation), but their camera is parented to the historical state in the current origin, so the roots match and the gate passes
+        // (ROLL-MARKER-OBSERVED-1 census and verifier). The drive-then-roll sequence before that point is production reach.
         // M8-011: the standalone stack's AIComponent is ticked by the engine at the AIComponent::Update point (Robot::Update 0x00513EAC -> AIComponent::Update
         // 0x569F24 -> BehaviorHelperComponent::Update 0x56DE20 at 0x00569F40), so DriveTo's stored completion is consumed and RollBlock queues the roll.
         // The roll's completion reaches the API as RobotCompletedAction with result 0x0300001D (VisualObservationFailed): IDockAction::Init's
@@ -1996,12 +1998,17 @@ public class FreeplayTests
         int firstVisualFail = Array.FindIndex(done, r => r.Result == 0x0300001Du);
         Assert.True(driveSuccess >= 0, summary);
         Assert.True(firstVisualFail > driveSuccess, summary);
-        // KNOWN GAP (proposed job ROLL-MARKER-OBSERVED-1; recorded in M11-013 and M8-011): the roll stops at IDockAction::Init's observed-marker check,
-        // 0x0300001D above, so no DockWithObject is sent. The cube's object timestamp advances but its markers' LastObservedTimestamp stay 0, because the
-        // stack's SetMarkerAsObserved (0x00876E56) withholds the update for these flat rig inputs (MarkerObservationTime.cs:74-77, M11-013 MISSING).
+        // RIG ARTIFACT, not an M11-013 defect (ROLL-MARKER-OBSERVED-1; recorded in M11-013 and M8-011): the roll stops at IDockAction::Init's
+        // observed-marker check, 0x0300001D above, so no DockWithObject is sent. The cube's object timestamp advances but its markers' LastObservedTimestamp
+        // stay 0, because SetMarkerAsObserved's per-KnownMarker gate GetWithRespectTo(km+4, m+0x34) == 1 (0x00876E3E..0x00876E64) fails for every marker:
+        // ManipRig.OneImage calls the offline ProcessImage with a parentless, legacy-flagged camera pose, while the KnownMarkers hang off the origin-rooted
+        // object pose. In production the marker's camera pose (m+0x34) is the historical camera parented to the HistRobotState pose (GetHistoricalCameraPose
+        // SetParent 0x00513ABE/0x00513B16; assigned before push_back 0x00654EAC..0x00654F58), so both share the world-origin root and the gate passes.
+        // Production-form image ingress (RollFirmwareScene / PopFirmwareScene: ImageImuData + CameraGrayFrame on M4ControlTests.Rig) reaches the dock on
+        // production marker times: RollBlockOnSideNativeTests:69, RollBlockOnSideLowScoreNativeTests:83, HikingRollCubeNativeTests:114, SparksRollNativeTests:47/:187,
+        // PopAWheelieNativeTests:117. This test is not ported to that rig, so the pin stays and does not cover M12-036's obstacle list.
         // After each 0x0300001D the pickup-response director plays ag_rollcube_realign, which the rig never acks (TIMEOUT 0x03000018, rig artifact).
-        // The LocalizeToObject.CouldNotFindHistoricalPose lines start at t=0 (before the roll) and are a separate rig pose-history issue. Pinned so the
-        // test fails, and is restored to Contains(DockWithObject), when it is resolved. This assertion does not cover M12-036's obstacle list.
+        // The LocalizeToObject.CouldNotFindHistoricalPose lines start at t=0 (before the roll) and are a separate rig pose-history issue (not traced).
         Assert.DoesNotContain(rig.Sent, m => m is DockWithObject);
         Assert.DoesNotContain(log, l => l.Contains("robot.goal_from_face_and_cube"));
     }
