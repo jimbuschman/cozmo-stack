@@ -1012,15 +1012,20 @@ public static class HardwareCatalog
             DoThis = "Watch the three phases: pick up, carry, place on top.",
             Success = "He picks one up, carries it to the other and places it on top.",
             Question = "Did he end with one cube stacked on the other?",
-            ExpectedTelemetry = "the phases PickingUpBlock, StackingBlock and PlayingFinalAnim in order",
-            AutoRule = "the terminal stack result is success and carrying is clear; entering the phases is insufficient",
-            Evidence = new[] { new EvidenceItem("phases", "Block"), new EvidenceItem("result", "Success") },
-            FidelityRecords = new[] { "M12-041", "M12-012", "M13-007", "M12-001", "M12-003", "M12-005", "M12-009", "M12-015", "M15-012" },
+            ExpectedTelemetry = "the phases PickingUpBlock, StackingBlock and PlayingFinalAnim, and the StackedBlock objective broadcast "
+                + "(BehaviorObjectiveAchieved 40, tag 0x8B: M15-076 0x005C9EA2..0x005C9EA8; M7-019 0x005BE22E..0x005BE3CE, 0x007285FE)",
+            AutoRule = "a 0x8B objective 40 (StackedBlock) is seen during the run: M15-076 PlayingFinalAnim sends it first (0x005C9EA2..0x005C9EA8), "
+                + "reached only from the PlaceRel helper's success callback (0x005C959C..0x005C95B4), and M7-019 broadcasts it (0x005BE22E..0x005BE3CE, "
+                + "tag 0x007285FE). The behaviour's success never reads the world-model stack (only PlaceRel's own Verify, which fails with 0x03000017 while still carrying, 0x005555BA..0x005555E0), so the stack and carry lines are observations only",
+            Evidence = new[] { new EvidenceItem("phases", "Block"), new EvidenceItem("objective", "StackedBlock objective observed="),
+                               new EvidenceItem("observations", "observation:") },
+            FidelityRecords = new[] { "M12-041", "M15-076", "M7-019", "M12-009", "M12-001", "M12-003", "M12-005", "M12-012", "M13-007", "M12-028", "M12-042" },
             NeedsCube = true, NeedsObb = true, Requires = new[] { "N", "K" },
             Timeout = TimeSpan.FromMinutes(6),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--stack", "--acceptance", o.Acceptance("R") }).ToArray(),
-            Judge = r => r.ExitCode == 0 && r.Contains("StackBlocks success=yes")
-                      && r.Contains("carrying=False") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            // M15-076 0x005C9EA4 movs r1,#0x28; 0x005C9EA8 BehaviorObjectiveAchieved (only from the success callback 0x005C959C..0x005C95B4);
+            // M7-019 broadcast 0x005BE22E cmp r2,#1 .. 0x005BE246, adapter 0x005BE3C6..0x005BE3CE, tag 0x8B 0x007285FE.
+            Judge = r => r.Contains("StackedBlock objective observed=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {
@@ -1055,14 +1060,19 @@ public static class HardwareCatalog
             Success = "He turns to the stack, drives to about 85 mm, reaches, flips the bottom cube and the "
                     + "stack falls. The success animation plays.",
             Question = "Did the stack come apart when he reached for it?",
-            ExpectedTelemetry = "a stack in the world model, the grab attempt, the flip, and KnockOverSuccess",
-            AutoRule = "the stack is recognised and the knock-over reports success",
-            Evidence = new[] { new EvidenceItem("stack", "stack"), new EvidenceItem("result", "KnockOver") },
-            FidelityRecords = new[] { "M12-041", "M13-014", "M13-002" },
+            ExpectedTelemetry = "a stack in the world model, the grab attempt, the flip, and the KnockedOverBlocks objective broadcast "
+                + "(BehaviorObjectiveAchieved 13, tag 0x8B: M13-014 0x005C3950..0x005C395C; M7-019 0x005BE22E..0x005BE3CE, 0x007285FE)",
+            AutoRule = "a 0x8B objective 13 (KnockedOverBlocks) is seen during the run: M13-014 PlayingReaction sends it only when the tipped set "
+                + "is non-empty (0x005C3950..0x005C395C), and M7-019 broadcasts it (0x005BE22E..0x005BE3CE, tag 0x007285FE)",
+            Evidence = new[] { new EvidenceItem("stack", "stack"), new EvidenceItem("objective", "KnockedOverBlocks objective observed="),
+                               new EvidenceItem("result", "KnockOver") },
+            FidelityRecords = new[] { "M12-041", "M13-014", "M13-002", "M7-019", "M4-009" },
             NeedsCube = true, NeedsObb = true, Requires = new[] { "K", "S" },
             Timeout = TimeSpan.FromMinutes(5),
             Command = o => o.WithObb("manip", o.Ip).Concat(new[] { "--knockover", "--acceptance", o.Acceptance("T") }).ToArray(),
-            Judge = r => r.Contains("KnockOver success=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
+            // M13-014 0x005C3958 movs r1,#0xd; 0x005C395C BehaviorObjectiveAchieved (only when the tipped set +0x14C is non-empty);
+            // M7-019 broadcast 0x005BE22E cmp r2,#1 .. 0x005BE246, adapter 0x005BE3C6..0x005BE3CE, tag 0x8B 0x007285FE.
+            Judge = r => r.Contains("KnockedOverBlocks objective observed=yes") ? AutoOutcome.Pass : AutoOutcome.Fail,
         },
         new HardwareCheck
         {

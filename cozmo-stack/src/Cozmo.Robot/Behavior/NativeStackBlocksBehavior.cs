@@ -4,7 +4,7 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
-// Proposed owner: whole configured SparksStackBlock lifecycle (S1-S14), no assigned fidelity ID.
+// fidelity: M15-076 — whole configured SparksStackBlock/StackBlocks lifecycle (S1-S14).
 internal sealed class NativeStackBlocksBehavior:SteppedBehavior
 {
     private readonly ManipulationSystem _m;
