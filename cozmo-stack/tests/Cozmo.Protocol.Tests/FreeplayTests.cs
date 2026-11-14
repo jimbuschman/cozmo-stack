@@ -1951,6 +1951,9 @@ public class FreeplayTests
         using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M, withReactions: false, random: new Random(4));
         foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) behavior.ActionTaskRunner = SignalTestContext.Schedule;
         var log = new List<string>(); stack.Freeplay.Log += log.Add;
+        // RobotCompletedAction (0x5A), the engine-to-game completion broadcast the stack's API delivers.
+        var completed = new List<RobotCompletedAction>();
+        using var completedSub = rig.Robot.Engine.AnimationMessages.SubscribeMessage(0x5A, true, p => { if (p is RobotCompletedAction r) lock (completed) completed.Add(r); });
         PanTilt(rig);
         // sitting on the charger (facing out) with a cube on its side ahead
         rig.Charger = new Pose3d(Mat3.AboutZ(Math.PI), new Vec3(30, 0, 0)); rig.OnCharger = true; rig.Angle = 0f; rig.State();
@@ -1978,13 +1981,27 @@ public class FreeplayTests
         // M13-025, M13-007: CanInteract's on-top search (0x0063C730) calls the located charger's own slot +0x50 (base 0x0087713A, corners 0x004E9A50):
         // the charger at (30,0,0) yaw pi spans x in [-66, 30], the cube at x = 260 is clear (P4 false, 0x0062BA88), so no neighbour and the roll goes ahead.
         Assert.Contains(decisions, d => d.Behavior == "RollBlockOnSide");
-        // KNOWN GAP (proposed job ROLL-AFTER-DRIVE-STANDALONE-1; recorded in M8-011): DriveToObject [Rolling] completes with SUCCESS (t=0.5 s), but its
-        // completion never reaches the helper component: no IHelper.OnDelegateSuccess / HelperComponent.UpdateActive.Complete, so NativeRollBlockHelper's
-        // success handler (NativeRollBlockHelper.cs:47) is never invoked and the behaviour stays RollBlockOnSide. Either NativeDriveToHelper.Respond
-        // (NativeDriveToHelper.cs:61-67) never runs or BehaviorHelperComponent.UpdateActiveHelper (BehaviorHelperComponent.cs:413-452) stops updating; stack
-        // defect or rig/scheduler artifact (ActionTaskRunner = SignalTestContext.Schedule) is open. The LocalizeToObject.CouldNotFindHistoricalPose lines
-        // start at t=0 (before the roll) and are a separate rig pose-history issue. Pinned so the test fails, and is restored to Contains(DockWithObject),
-        // when it is resolved. This assertion does not cover M12-036's obstacle list.
+        // reach: unit for the 0x0300001D stop (production entry: stack API Create/Tick, the engine tick, rig frames). The substituted input is the rig's
+        // legacy flat marker/camera poses (HasLegacyFrameInput, MarkerObservationTime.cs:39): with them SetMarkerAsObserved withholds the marker timestamps
+        // (MarkerObservationTime.cs:74-77, M11-013 MISSING), and that is the only reason the roll ends 0x0300001D here; the native parent-root binding that
+        // would make it a production input is M11-013's open join. The drive-then-roll sequence before that point is production reach.
+        // M8-011: the standalone stack's AIComponent is ticked by the engine at the AIComponent::Update point (Robot::Update 0x00513EAC -> AIComponent::Update
+        // 0x569F24 -> BehaviorHelperComponent::Update 0x56DE20 at 0x00569F40), so DriveTo's stored completion is consumed and RollBlock queues the roll.
+        // The roll's completion reaches the API as RobotCompletedAction with result 0x0300001D (VisualObservationFailed): IDockAction::Init's
+        // GetObservedMarkers (0x00551972..0x00551976) is empty, 0x00551A30, and 0x00551A82 add.w r4,sl,#0x1b with sl = 0x03000002. It follows the drive's
+        // own completion: ActionType 10, DRIVE_TO_OBJECT (DriveToObjectAction ctor 0x0055850C..0x00558600 type 0xA, research/20260929-R-VIS-M12-gap2-extraction.md
+        // row 12.6; RobotActionType table 0x01032560, index = value + 2), result 0 (SUCCESS). Without the tick no roll is queued and no 0x0300001D is delivered.
+        RobotCompletedAction[] done; lock (completed) done = completed.ToArray();
+        int driveSuccess = Array.FindIndex(done, r => r.ActionType == 10 && r.Result == 0u);
+        int firstVisualFail = Array.FindIndex(done, r => r.Result == 0x0300001Du);
+        Assert.True(driveSuccess >= 0, summary);
+        Assert.True(firstVisualFail > driveSuccess, summary);
+        // KNOWN GAP (proposed job ROLL-MARKER-OBSERVED-1; recorded in M11-013 and M8-011): the roll stops at IDockAction::Init's observed-marker check,
+        // 0x0300001D above, so no DockWithObject is sent. The cube's object timestamp advances but its markers' LastObservedTimestamp stay 0, because the
+        // stack's SetMarkerAsObserved (0x00876E56) withholds the update for these flat rig inputs (MarkerObservationTime.cs:74-77, M11-013 MISSING).
+        // After each 0x0300001D the pickup-response director plays ag_rollcube_realign, which the rig never acks (TIMEOUT 0x03000018, rig artifact).
+        // The LocalizeToObject.CouldNotFindHistoricalPose lines start at t=0 (before the roll) and are a separate rig pose-history issue. Pinned so the
+        // test fails, and is restored to Contains(DockWithObject), when it is resolved. This assertion does not cover M12-036's obstacle list.
         Assert.DoesNotContain(rig.Sent, m => m is DockWithObject);
         Assert.DoesNotContain(log, l => l.Contains("robot.goal_from_face_and_cube"));
     }

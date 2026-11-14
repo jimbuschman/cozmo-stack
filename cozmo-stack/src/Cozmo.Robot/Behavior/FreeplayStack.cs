@@ -42,7 +42,7 @@ public sealed class FreeplayStack : IDisposable
     public BehaviorContext Context { get; }
     /// <summary><c>AIComponent</c>'s <c>FreeplayDataTracker</c> (M15-015), created and ticked on this stack's live path.</summary>
     public FreeplayDataTracker DataTracker { get; }
-    /// <summary>The <c>AIComponent</c> hosting the <c>BehaviorHelperComponent</c> (M8-011), ticked by the engine's <c>Robot::Update</c> through <c>CozmoEngine.AIComponentUpdate</c>.</summary>
+    /// <summary>The <c>AIComponent</c> hosting the <c>BehaviorHelperComponent</c> (M8-011), ticked by the engine's <c>Robot::Update</c> at its <c>AIComponent::Update</c> point (0x00513EAC): the canonical stack's through its runtime, a standalone stack's through its registration with the engine.</summary>
     public AIComponent AI { get; }
     public IReadOnlyList<string> Problems { get; private init; } = Array.Empty<string>();
 
@@ -220,8 +220,8 @@ public sealed class FreeplayStack : IDisposable
         {SourceLog=(l,c,k,t)=>robot.Engine.EmitSourceLog(l,c,k,t)};
         system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
         // fidelity: M8-011
-        // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update from the engine tick
-        // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
+        // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update once per tick
+        // (for this standalone AI: the engine registration below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
         // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
         var severe=new SevereNeedsComponent{IsAtBracket=needs.State.IsNeedAtBracket,
             DisableReactions=manager.DisableReactionsWithLock,RemoveReactions=manager.RemoveDisableReactionsLock};
@@ -248,6 +248,19 @@ public sealed class FreeplayStack : IDisposable
         ai.BindDestructionRecipient(0x10,()=>ai.NativeTeardown.Destroy(0x10));
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
+        // fidelity: M8-011
+        // One AIComponent per Robot (robot+0x264), ticked once per Robot::Update: 0x00513EA8 ldr.w r0,[r4,#0x264]; 0x00513EAC blx -> AIComponent::Update
+        // 0x00569F24, which runs the helper component at 0x00569F40 (BehaviorHelperComponent::Update 0x0056DE20). Behaviours delegate to that same
+        // component (0x005BEBEE ldr.w r1,[r0,#0x264]; 0x005BEBF8 ldr r7,[r1,#0x10]). This stack's behaviours delegate to this AI (ctx.AI), which the
+        // canonical runtime's tick does not reach, so it is registered with the engine and ticked by EngineRobot.Update at the AIComponent::Update point:
+        // on the engine thread under the tick lock (the lock the standalone BehaviorManager.Update and ActionList also take, so helper code keeps one
+        // lock order), past the first-full-state gate (0x00513C5C) and the UpdateAllResults gate (0x00513C76), and before ActionList::Update (0x005140BC).
+        // Inside it the analyzer, severe needs and helpers run, then the tracker (0x00569F44/46). This AI's Tracker is unset and nothing else ticks its
+        // analyzer or severe needs, so none of them is ticked twice; the stack's DataTracker keeps its own tick in Tick.
+        // Removed first on Dispose, before the owners it calls are retired.
+        Action aiUpdate = () => ai.Update(robot);
+        robot.Engine.AddStandaloneAIUpdate(aiUpdate);
+        stack._unsubscribe.Add(() => robot.Engine.RemoveStandaloneAIUpdate(aiUpdate));
         stack._unsubscribe.Add(manager.Dispose);
         foreach(var express in all.OfType<ExpressNeedsBehavior>())stack._unsubscribe.Add(express.Dispose);
         stack._unsubscribe.Add(severe.Dispose);

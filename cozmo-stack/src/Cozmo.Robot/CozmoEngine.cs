@@ -1423,6 +1423,12 @@ public sealed partial class EngineRobot
         // (0x0051410C) and NVStorage::Update (0x0051416A).
         if(NativeBehaviorRuntime is {} behaviorRuntime)Engine.RunIsolated(behaviorRuntime.UpdateAI);
         else if (Engine.AIComponentUpdate is { } ai) Engine.RunIsolated(ai);
+        // fidelity: M8-011
+        // A standalone FreeplayStack's own AIComponent (its behaviours delegate to it through ctx.AI) is ticked at this same AIComponent::Update point
+        // (0x00513EA8..0x00513EAC): on the engine thread under the tick lock, past the first-full-state gate (0x00513C5C) and the UpdateAllResults
+        // gate (0x00513C76) above, and before BehaviorManager::Update (0x00513EE6) and ActionList::Update (0x005140BC) below. Snapshot: an update may
+        // dispose its stack, which unregisters it.
+        foreach (var standaloneAI in Engine.StandaloneAIUpdatesSnapshot()) Engine.RunIsolated(standaloneAI);
         if(NativeBehaviorRuntime is {} managerRuntime)Engine.RunIsolated(()=>managerRuntime.UpdateManager(now));
         // fidelity: M13-038 — only a stack diagnostic at the absent public-state input/caller join.
         ReportBehaviorPublicStateInputJoin();
@@ -2028,6 +2034,13 @@ public sealed partial class CozmoEngine : IDisposable
     /// <c>BehaviorManager::Update</c> (0x00513EE6). The <c>AIComponent</c> is owned by <see cref="Behavior.FreeplayStack"/>, which sets this hook.
     /// </summary>
     internal Action? AIComponentUpdate;
+    // fidelity: M8-011
+    // Standalone FreeplayStack AIComponent ticks, run by EngineRobot.Update at the AIComponent::Update point (0x00513EAC). Mutated only through
+    // InvokeEngineRequest and read only inside the engine tick, so both sides hold _tickLock.
+    private readonly List<Action> _standaloneAIUpdates = new();
+    internal void AddStandaloneAIUpdate(Action update) => InvokeEngineRequest(() => { _standaloneAIUpdates.Add(update); return 0; });
+    internal void RemoveStandaloneAIUpdate(Action update) => InvokeEngineRequest(() => _standaloneAIUpdates.Remove(update));
+    internal Action[] StandaloneAIUpdatesSnapshot() => _standaloneAIUpdates.Count == 0 ? Array.Empty<Action>() : _standaloneAIUpdates.ToArray();
     /// <summary>
     /// M4-019: <c>Robot::Update</c>'s charger-platform step (0x00513CD8..0x00513E2A), run by <see cref="EngineRobot.Update"/> after the first full state and the
     /// <c>UpdateAllResults</c> gate, ahead of <see cref="AIComponentUpdate"/>. The <c>VisionSystem</c> (the owner of the <c>BlockWorld</c> it reads) sets it.
