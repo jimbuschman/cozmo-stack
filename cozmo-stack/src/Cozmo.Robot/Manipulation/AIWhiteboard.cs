@@ -224,10 +224,12 @@ public sealed partial class AIWhiteboard
             return _world.GetLocatedObjectById(carried) is { } carriedObject ? new[] { carriedObject } : Array.Empty<ObservableObject>();
         if (CanPickUpObject is null)
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("AIWhiteboard::FindUsableCubesOutOfBeacons predicate 0x0056D03A: DockingComponent::CanPickUpObject is not wired to this whiteboard (AIWhiteboard.CanPickUpObject), so no cube is usable");
-        return _world.LocatedObjects.Where(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube)
-            .OrderBy(o => (int)o.Family).ThenBy(o => (int)o.Type).ThenBy(o => o.ObjectId)
-            .Where(o => (CanPickUpObject?.Invoke(o) ?? false) && !_beacons.Any(b => b.IsLocWithinBeacon(o.NativePose, 0.0f)))
-            .ToList();
+        // fidelity: M15-020 — FindLocatedObjectHelper 0x0056B040 with the filter at sp+8: +0x6C/+0x6D = 0 (0x0056AF64 strh.w r4,[sp,#0x74]; r4 = 0 at
+        // 0x0056AEF8), origin mode 0, so only the robot's current origin is walked (BlockWorld.FindLocatedMatchingObjects, M11-004), in (origin, family, type, ID) order.
+        var filter = new BlockWorldFilter();
+        filter.AllowedFamilies.Add(ObjectFamily.Block); filter.AllowedFamilies.Add(ObjectFamily.LightCube);
+        filter.Predicates.Add(o => (CanPickUpObject?.Invoke(o) ?? false) && !_beacons.Any(b => b.IsLocWithinBeacon(o.NativePose, 0.0f)));
+        return _world.FindLocatedMatchingObjects(filter);
     }
 
     /// <summary>
