@@ -211,7 +211,7 @@
       "review": {
         "inventory": "re-analysis/inventory/M11-vision.md",
         "state": "INVENTORY_APPROVED",
-        "approved": "2026-11-13",
+        "approved": "2026-11-14",
         "snapshot": "re-analysis/inventory/M11-vision.approved.json"
       }
     },
