@@ -167,14 +167,20 @@ public static class ManipTool
             case "--knockover":
             {
                 // Configured NativeKnockOverCubesBehavior ("SparksKnockOverCubes", minimumStackHeight 2 in its shipped config).
-                Say($"stacks: {string.Join("; ", m.Configurations.Stacks.Select(s => string.Join("/", s.BlockIds)))}");
-                int actionsBefore = completed.Count;
+                // Judged signal: the engine's KnockedOverBlocks objective broadcast (13, tag 0x8B). M13-014 PlayingReaction 0x005C3950..0x005C395C calls
+                // BehaviorObjectiveAchieved(13, true) only when the tipped set is non-empty; M7-019 broadcasts it (0x005BE22E..0x005BE246, tag 0x007285FE).
+                // Everything else printed here is an observation, not judged.
+                Say($"observation: stacks: {string.Join("; ", m.Configurations.Stacks.Select(s => string.Join("/", s.BlockIds)))}");
+                bool knockedOver = false; int actionsBefore = completed.Count;
+                var needsActions = new System.Collections.Concurrent.ConcurrentQueue<int>();
+                using var objective = robot.Engine.AnimationMessages.SubscribeMessage(0x8B, true, p => { if (p is uint id && id == (uint)BehaviorObjective.KnockedOverBlocks) knockedOver = true; });
+                using var needs = robot.Engine.AnimationMessages.SubscribeMessage(0x62, true, p => { if (p is NativeNeedsStateReport n) needsActions.Enqueue(n.Action); });
                 string detail = await RunConfigured("SparksKnockOverCubes", cts.Token, null);
                 var native = robot.Engine.Robot?.NativeBehaviorRuntime?.Bound.GetValueOrDefault("SparksKnockOverCubes") as NativeKnockOverCubesBehavior;
-                // The native behaviour exposes no success result: no "KnockOver success=" line is printed (the HardwareCatalog T judge needs one; the manager decides).
-                succeeded = false;
-                outcome = $"KnockOver: {detail}; actions completed: [{Completions(actionsBefore)}]; "
-                        + $"observation: blocks whose up axis changed during the run = [{string.Join(",", native?.Tipped ?? (IReadOnlyCollection<uint>)Array.Empty<uint>())}], attempts={native?.Attempts}";
+                succeeded = knockedOver;
+                outcome = $"KnockedOverBlocks objective observed={(knockedOver ? "yes" : "no")}; KnockOver: {detail}; observation: actions completed: [{Completions(actionsBefore)}]; "
+                        + $"observation: blocks whose up axis changed during the run = [{string.Join(",", native?.Tipped ?? (IReadOnlyCollection<uint>)Array.Empty<uint>())}], attempts={native?.Attempts}; "
+                        + $"observation: NeedsState (0x62) actions = [{string.Join(",", needsActions)}]";
                 break;
             }
             case "--driveto":
@@ -230,17 +236,24 @@ public static class ManipTool
             }
             default:
             {
-                // Configured NativeStackBlocksBehavior ("StackBlocks"). The native behaviour exposes no success result: no "StackBlocks success=" line is printed
-                // (the HardwareCatalog R judge needs one; the manager decides). What is observed: the behaviour's run, the completed actions and the carry state.
-                int actionsBefore = completed.Count;
+                // Configured NativeStackBlocksBehavior ("StackBlocks"). Judged signal: the engine's StackedBlock objective broadcast (40, tag 0x8B).
+                // M15-076 PlayingFinalAnim 0x005C9EA2..0x005C9EA8 calls BehaviorObjectiveAchieved(40) first, reached only from the PlaceRel helper's success
+                // callback (0x005C959C..0x005C95B4); M7-019 broadcasts it (0x005BE22E..0x005BE246, tag 0x007285FE). The behaviour's success never reads the world
+                // model; carrying clears only through PlaceRel's own Verify (0x03000017 while carrying, 0x005555BA..0x005555E0). Both print as observations.
+                bool stackedObjective = false; int actionsBefore = completed.Count;
+                var needsActions = new System.Collections.Concurrent.ConcurrentQueue<int>();
+                using var objective = robot.Engine.AnimationMessages.SubscribeMessage(0x8B, true, p => { if (p is uint id && id == (uint)BehaviorObjective.StackedBlock) stackedObjective = true; });
+                using var needs = robot.Engine.AnimationMessages.SubscribeMessage(0x62, true, p => { if (p is NativeNeedsStateReport n) needsActions.Enqueue(n.Action); });
                 string detail = await RunConfigured("StackBlocks", cts.Token, null);
                 var native = robot.Engine.Robot?.NativeBehaviorRuntime?.Bound.GetValueOrDefault("StackBlocks") as NativeStackBlocksBehavior;
                 uint top = native?.Top ?? uint.MaxValue, bottom = native?.Bottom ?? uint.MaxValue;
                 m.Configurations.Update();
                 bool stacked = m.Configurations.Stacks.Any(s => s.BlockIds.Contains(top) && s.BlockIds.Contains(bottom));
-                succeeded = false;
-                outcome = $"StackBlocks: {detail}; actions completed: [{Completions(actionsBefore)}]; carrying={m.Docking.Carrying.IsCarryingObject}; "
-                        + $"observation: world model stack holding top {top} and bottom {bottom} = {(stacked ? "yes" : "no")}";
+                succeeded = stackedObjective;
+                outcome = $"StackedBlock objective observed={(stackedObjective ? "yes" : "no")}; StackBlocks: {detail}; observation: actions completed: [{Completions(actionsBefore)}]; "
+                        + $"observation: carrying={m.Docking.Carrying.IsCarryingObject}; "
+                        + $"observation: world model stack holding top {top} and bottom {bottom} = {(stacked ? "yes" : "no")}; "
+                        + $"observation: NeedsState (0x62) actions = [{string.Join(",", needsActions)}]";
                 break;
             }
         }

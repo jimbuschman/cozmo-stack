@@ -1374,6 +1374,32 @@ public class HardwareRunnerTests
         Assert.Contains("retries once", u.Success);
     }
 
+    /// <summary>
+    /// reach: unit (the judges over printed tool lines; no robot). Expected values from the census of HARDWARE-CATALOG-T-R-JUDGES-1:
+    /// T: M13-014 PlayingReaction 0x005C3958 movs r1,#0xd / 0x005C395C BehaviorObjectiveAchieved(13), only when the tipped set is non-empty;
+    /// R: M15-076 PlayingFinalAnim 0x005C9EA4 movs r1,#0x28 / 0x005C9EA8 BehaviorObjectiveAchieved(40), reached only from the PlaceRel helper's
+    /// success callback 0x005C959C..0x005C95B4, with no world-model check on that path (carrying clears only through PlaceRel's Verify, 0x03000017 while carrying, 0x005555BA..0x005555E0; census R3);
+    /// both broadcast by M7-019 (0x005BE22E..0x005BE3CE, tag 0x8B 0x007285FE). So only the objective line decides, and the carry or
+    /// world-model observations never pass or fail a run by themselves.
+    /// </summary>
+    [Fact]
+    public void KnockOverAndStackJudgeOnlyTheEngineObjectiveBroadcast()
+    {
+        var t = HardwareCatalog.Find("T")!;
+        Assert.Equal(AutoOutcome.Pass, t.Judge(Output("KnockedOverBlocks objective observed=yes; KnockOver: ran; observation: blocks whose up axis changed during the run = []")));
+        Assert.Equal(AutoOutcome.Fail, t.Judge(Output("KnockedOverBlocks objective observed=no; KnockOver: ran; observation: blocks whose up axis changed during the run = [3,4]")));
+        Assert.Equal(AutoOutcome.Fail, t.Judge(Output("KnockOver success=yes")));
+        Assert.Contains("M7-019", t.FidelityRecords);
+        Assert.Contains("M13-014", t.FidelityRecords);
+
+        var r = HardwareCatalog.Find("R")!;
+        Assert.Equal(AutoOutcome.Pass, r.Judge(Output("StackedBlock objective observed=yes; observation: carrying=True; observation: world model stack holding top 1 and bottom 2 = no")));
+        Assert.Equal(AutoOutcome.Fail, r.Judge(Output("StackedBlock objective observed=no; observation: carrying=False; observation: world model stack holding top 1 and bottom 2 = yes")));
+        Assert.Equal(AutoOutcome.Fail, r.Judge(Output("StackBlocks success=yes; carrying=False")));
+        Assert.Contains("M15-076", r.FidelityRecords);
+        Assert.Contains("M7-019", r.FidelityRecords);
+    }
+
     [Fact]
     public void ManipulationJudgesRequireTheSameExplicitTerminalSuccessAsTheirAcceptanceRecords()
     {
@@ -1385,9 +1411,9 @@ public class HardwareRunnerTests
             ("N", "Pickup success=yes; action=Success; carrying=7", "Pickup success=no; action=Retry; carrying="),
             ("O", "PlaceObjectOnGround success=yes; action=Success; carrying=False", "PlaceObjectOnGround success=no; action=Retry; carrying=False"),
             ("P", "Roll success=yes; action=Success; up axis changed=yes", "Roll success=no; action=Success; up axis changed=no"),
-            ("R", "StackBlocks success=yes; carrying=False", "StackBlocks success=no; carrying=False"),
+            ("R", "StackedBlock objective observed=yes; StackBlocks: ran", "StackedBlock objective observed=no; StackBlocks: ran"),
             ("S", "DriveAndFlipBlock success=yes; action=Success", "DriveAndFlipBlock success=no; action=Retry"),
-            ("T", "KnockOver success=yes; knockedOver=True", "KnockOver success=no; knockedOver=False"),
+            ("T", "KnockedOverBlocks objective observed=yes; KnockOver: ran", "KnockedOverBlocks objective observed=no; KnockOver: ran"),
             ("U", "EnableStopOnCliff(true)\nPopAWheelie success=yes; PoppedWheelie=True; cliff stop restored=yes",
                   "objective achieved: PoppedWheelie\nPopAWheelie success=no; PoppedWheelie=True; cliff stop restored=no"),
         };

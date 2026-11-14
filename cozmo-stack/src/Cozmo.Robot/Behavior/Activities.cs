@@ -220,13 +220,17 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
 /// <c>BehaviorObjective</c> (IBehavior +0x10c), parsed from <c>considerThisHasRunForBehaviorObjective</c> by
 /// <c>BehaviorObjectiveFromString</c> (called at 0x005bc5a0). The ordinals are the
 /// <c>EnumToString(BehaviorObjective)</c> 0x769540 string table at 0x1033140: [0]="Unknown",
-/// [18]="PerformedWorkout", [22]="PoppedWheelie", [41]="Count" (0x29, the constructor's default sentinel).
+/// [13]="KnockedOverBlocks" (0x1033174), [18]="PerformedWorkout", [22]="PoppedWheelie", [40]="StackedBlock" (0x10331E0),
+/// [41]="Count" (0x29, the constructor's default sentinel). KnockedOverBlocks and StackedBlock are named here for the
+/// objective broadcast (tag 0x8B) only; <see cref="BehaviorObjectives.FromString"/> is unchanged.
 /// </summary>
 public enum BehaviorObjective
 {
     Unknown = 0,
+    KnockedOverBlocks = 13,
     PerformedWorkout = 18,
     PoppedWheelie = 22,
+    StackedBlock = 40,
     Count = 0x29,
     Invalid = Count,
 }
