@@ -70,11 +70,32 @@ internal sealed class NativeConfigurationGeometry
         var size=CandidateSize(candidate);
         return (float)(Math.Abs(RotatedParentAxis.Get(pose.Rotation,2)) switch{3=>size.Z,2=>size.Y,_=>size.X});
     }
+    // fidelity: M13-007, M13-025, M11-088
+    // H3 0x0062604C..0x0062605C: the REFERENCE's own slot +0x50 through its vptr (ldr r0,[r4]; ldr r6,[r0,#0x50]; padding 0, movs r3,#0), given the
+    // re-rooted refPose (H2 0x00626048). Per class as the candidate (M11-088): cube Block 0x004E62A2, Charger base 0x0087713A, MarkerlessObject 0x00502C32.
+    private static Quadrilateral ReferenceQuad(ObservableObject reference,Pose3d refPose)
+    {
+        Require(refPose);
+        if(!reference.TryObservableBoundingQuad50(refPose,0f,out var quad))
+            throw new NativeConfigurationUnavailable("M13-007/M11-088 reference slot +0x50 footprint unavailable for "+reference.Type+" (not a native false)");
+        return quad!;
+    }
+    // fidelity: M11-105, M13-007
+    // H4 0x0062605E..0x00626070: mov r0,r4 (the REFERENCE) with refPose's rotation (the re-rooted pose, 0x00626048) -> GetDimInParentFrame<Z>
+    // 0x00557794..0x005577D2: tbb 0x005577AA, |axis|==3 -> z (+8), ==2 -> y (+4), else x (+0), each through the reference's slot +0x2C
+    // (0x005577B4/0x005577C0/0x005577CC). Cube 0x004E382C -> 44^3; Charger 0x004EA672 -> (96, 80, 31); MarkerlessObject 0x00502DD0 -> GetSizeByType.
+    // targetZ = refPose.z + dim*(onTop ? +0.5 : -0.5) follows at 0x0062607E..0x006260A0.
+    private static float ReferenceDimZ(ObservableObject reference,Pose3d refPose)
+    {
+        var size=reference.ObservableSize2C
+            ??throw new NativeConfigurationUnavailable("M11-105 reference slot +0x2C size is not bound for "+reference.Type);
+        return (float)(Math.Abs(RotatedParentAxis.Get(refPose.Rotation,2)) switch{3=>size.Z,2=>size.Y,_=>size.X});
+    }
     internal ObservableObject? Neighbor(ObservableObject obj,bool onTop,float tolerance=30f,BlockWorldFilter? suppliedFilter=null)
     {
         Require(obj.NativePose);using var reference=obj.NativePose.GetWithRespectToRoot(); // 0x00626048
-        using var parent=reference.FindRoot();var refQuad=Quad(obj,reference);
-        float z=(float)reference.Translation.Z,dim=(float)Dimensions(obj,reference).Z;
+        using var parent=reference.FindRoot();var refQuad=ReferenceQuad(obj,reference);
+        float z=(float)reference.Translation.Z,dim=ReferenceDimZ(obj,reference); // fidelity: M11-105, M13-007 (0x00626070)
         float target=z+dim*(onTop?0.5f:-0.5f);
         var filter=suppliedFilter?.Clone()??Filter();filter.IgnoreIds.Add(obj.ObjectId);
         filter.Predicates.Add(candidate=>
