@@ -73,6 +73,75 @@ public sealed class ChargerBoundingQuadNeighborTests
 }
 
 /// <summary>
+/// REFERENCE-SIZE-SLOT-1 (M11-105, M13-007): FindObjectOnTopOrUnderneathHelper reads the REFERENCE's size from its own slot +0x2C
+/// (0x0062606E mov r0,r4; 0x00626070 blx GetDimInParentFrame&lt;Z&gt; 0x00557794, tbb 0x005577AA: identity -> axis 3 -> size.z) with the re-rooted
+/// refPose (0x00626048) and sets targetZ = refPose.z + dimZ*0.5 for onTop (0x0062607E..0x006260A0). refQuad is the reference's own slot +0x50 (H3
+/// 0x0062604C..0x0062605C, padding 0). The call is CanInteract's form (onTop, 15.0, empty filter); P6 0x0062BAC2..0x0062BB0E:
+/// |targetZ - (cand.z - candDim*0.5)| &lt;= 15 + 1e-5f (0x3727C5AC), candDim = 44 for a cube (0x004E382C, M11-003).
+/// Charger reference: size (96, 80, 31) (0x004EA672 -> +0xF0, stored 0x004E9D12..0x004E9D32), identity at (100, 0, 0): targetZ = 0 + 31*0.5 = 15.5;
+/// quad (base 0x0087713A, corners 0x004E9A50) x in [100, 196], y in [-40, 40]; the cube at (150, 0, z) spans x in [128, 172], y in [-22, 22] -> P4 true.
+/// ProxObstacle reference: size (10, 10, 50) (0x00502DD0 -> GetSizeByType 0x005026EC), identity at (150, 0, 25): targetZ = 25 + 25 = 50; quad
+/// (0x00502C32) x in [145, 155], y in [-5, 5], inside the cube's quad -> P4 true.
+/// </summary>
+// reach: unit (NativeConfigurationGeometry.Neighbor called directly with a non-cube reference; the charger / obstacle are inserted with AddLocatedObject
+// at chosen poses, substituting the marker observation / AddMarkerlessObject producers. No live caller passes a non-cube reference today: CanInteract's
+// C0 gate 0x0063C65E..0x0063C666 admits families 1/2 only; this pins the per-class reference read itself).
+[Collection("SteppedBehavior missing-report statics")]
+public sealed class ReferenceSizeSlotNeighborTests
+{
+    private static ObservableObject Place(Fixture f,uint id,ObjectType type,Vec3 at)
+    {
+        var o=new ObservableObject(id,type,Array.Empty<KnownMarker>())
+        {Pose=new Pose3d(Rotation3d.Identity,at,parent:f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId)),OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known};
+        f.M.World.AddLocatedObject(o);return o;
+    }
+    private static ObservableObject? Neighbor(Fixture f,ObservableObject reference)=>
+        new NativeConfigurationGeometry(f.M.World,f.Robot).Neighbor(reference,true,15f,new BlockWorldFilter());
+
+    // targetZ 15.5 (charger height 31). Cube surface = z - 22.
+    //   z = 24.0: |15.5 - 2.0|  = 13.5 <= 15.00001 -> found   (a 44 mm reference height: targetZ 22, |22 - 2|  = 20 -> not found)
+    //   z = 52.5: |15.5 - 30.5| = 15.0 <= 15.00001 -> found   (boundary, inclusive vcmpe ge)
+    //   z = 53.0: |15.5 - 31.0| = 15.5 >  15.00001 -> not found (a 44 mm reference height: |22 - 31| = 9 -> found)
+    [Theory]
+    [InlineData(24.0f,true)]
+    [InlineData(52.5f,true)]
+    [InlineData(53.0f,false)]
+    public void M11_105_AChargerReferenceUsesItsOwn31mmHeightForTargetZ(float cubeZ,bool expected)
+    {
+        using var f=new Fixture();var charger=Place(f,9,ObjectType.Charger_Basic,new Vec3(100,0,0));var cube=f.Add(7,150,cubeZ);
+        var found=Neighbor(f,charger);
+        if(expected)Assert.Same(cube,found);else Assert.Null(found);
+    }
+
+    // targetZ 50 (GetSizeByType 0xE = (10,10,50), identity -> z). Cube surface = z - 22.
+    //   z = 87: |50 - 65| = 15 <= 15.00001 -> found     (a 44 mm reference height: targetZ 47, |47 - 65| = 18 -> not found)
+    //   z = 88: |50 - 66| = 16 >  15.00001 -> not found
+    [Theory]
+    [InlineData(87.0f,true)]
+    [InlineData(88.0f,false)]
+    public void M11_105_AMarkerlessReferenceUsesItsGetSizeByTypeHeightForTargetZ(float cubeZ,bool expected)
+    {
+        using var f=new Fixture();var obstacle=Place(f,60,ObjectType.ProxObstacle,new Vec3(150,0,25));var cube=f.Add(7,150,cubeZ);
+        Assert.Equal(ObjectFamily.MarkerlessObject,obstacle.Family);
+        var found=Neighbor(f,obstacle);
+        if(expected)Assert.Same(cube,found);else Assert.Null(found);
+    }
+
+    // Cube reference unchanged: cube at (150,0,22) -> targetZ 22 + 22 = 44; a cube at (150,0,66): |44 - 44| = 0 -> found; at (150,0,81): |44 - 59| = 15
+    // -> found; at (150,0,82): 16 -> not found (size 44^3, 0x004E382C / M11-003 movt #0x4230).
+    [Theory]
+    [InlineData(66.0f,true)]
+    [InlineData(81.0f,true)]
+    [InlineData(82.0f,false)]
+    public void M11_105_ACubeReferenceStillUses44mm(float topZ,bool expected)
+    {
+        using var f=new Fixture();var bottom=f.Add(7,150,22);var top=f.Add(8,150,topZ);
+        var found=Neighbor(f,bottom);
+        if(expected)Assert.Same(top,found);else Assert.Null(found);
+    }
+}
+
+/// <summary>
 /// CHARGER-BOUNDING-QUAD-1 GetObstacles (M12-036, M13-025): BlockWorld::GetObstacles 0x00626D44's predicate 0x0062C1D4 takes each located object's size from
 /// its slot +0x2C (G6 0x0062C1F0), rz = (own rotation * size).z (G7 0x0062C1FC), the centre z from the re-rooted pose (G8), excludes when both ends are
 /// &lt;= minZ or both &gt;= maxZ (G9 0x0062C220..0x0062C27E), and appends (slot +0x50 quad at the own pose, ObjectID) (G10/G11 0x0062C280..0x0062C2E4).

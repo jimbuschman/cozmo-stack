@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-11-13",
+  "approved": "2026-11-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "2616cc511a272f29d953d8c456246c83fe9695443efa78cdd82d7efeab9f48b0",
+  "inventory_sha256": "684ea011d310593cee85e453c6f2091b17ca6e0314fcd97a6619568d6a9f7a0a",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -36,7 +36,7 @@
       "evidence": [
         "_kDefaultHeadCamRotation is a RotationMatrix3d in .bss at 0x01059CF8, initialised by the static ctor 0x004D6DA4..0x004D6DB6 from the 9 floats at 0x00C4A854 = [0,-0.0698,0.9976,-1,0,0,0,-0.9976,-0.0698]; read in Robot::Robot at 0x0050FFAE/0x0050FFB0",
         "GetCameraPose 0x00510FFC: copy [this+0x2d8], negate the angle 0x00511016, RotationVector3d(Radians, Y_AXIS_3D()) 0x00511020..0x0051102A, RotateBy 0x00511036",
-        "Block::LookupBlockInfo 0x004E4C8C: four entries, keys 1..4 LIGHTCUBE1/2/3/GHOST, ORANGE/YELLOW/RED/WHITE, each (44,44,44) (0x004E4CD6/0x004E4D8E/0x004E4E46/0x004E4EFA movt #0x4230)",
+        "Block::LookupBlockInfo 0x004E4C8C: four entries, keys 1..4 LIGHTCUBE1/2/3/GHOST, ORANGE/YELLOW/RED/WHITE, each (44,44,44) (0x004E4CD6/0x004E4D90/0x004E4E46/0x004E4EFA movt #0x4230)",
         "marker size 25.0 in every BlockFaceDef_t at +8 (tables 0xC45C40/0xC45CA0/0xC45D00/0xC45D60); KnownMarker stores it at +0x10 and Get3dCorners scales by it (0x0087E26E..0x0087E332)",
         "KnownMarker::_canonicalCorners3d is a Quadrilateral<3,float> in .bss at 0x0105E0F0, initialised by the static ctor 0x004DD7D8..0x004DD81A with the ctor arguments in the order (-0.5,0,+0.5),(-0.5,0,-0.5),(+0.5,0,+0.5),(+0.5,0,-0.5) (0x4DD7F4/0x4DD7EC/0x4DD7FC/0x4DD810, point addrs 0x4DD802/0x4DD7F0/0x4DD80E/0x4DD80C); the Quadrilateral<3,float> ctor 0x4E9636 stores argument i at corner i (0x4E964C..0x4E968E), so memory corner 0 is (-0.5,0,+0.5) and corner 1 is (-0.5,0,-0.5); Get3dCorners 0x87E2E8 copies them in memory order and scales x by size.x and z by size.y (0x87E312/0x87E326); Extract 0x8A0130..0x8A018A pairs canonical corner i with detected corner cornerReorder[label][i] (table 0xDC73AC, 16 bytes/label; orientationDeg 0xDC7D0C)",
         "Block::AddFace 0x004E53BC: tbb 0x004E5438, six cases (0x004E5442 face0 -pi/2, 0x004E557C face1 +pi, 0x004E54EA face2 +pi/2, 0x004E5534 face3 0, 0x004E5490 face4 2pi/3, 0x004E55D6 face5 2pi/3); translations +-22; the size getter is Block+0x88 (vtable +0x18 = 0x004E382C)",

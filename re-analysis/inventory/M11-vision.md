@@ -1806,3 +1806,12 @@ Re-approved under the standing authorisation for cited inventory corrections.
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP: ObservableObject vtable +0x2C (size) per class (Block/ActiveCube 0x004E382C, Charger 0x004EA672 = (96,80,31), Markerless 0x00502DD0 via GetSizeByType 0x005026EC) and its readers GetDimInParentFrame<Z> 0x00557794, the on-top reference 0x00626070 and candidate 0x0062BAB6, and the GetObstacles predicate 0x0062C1EE..0x0062C1F4 | M11-105 (new) |
+
+## REFERENCE-SIZE-SLOT-1 (manager, 2026-11-14; research/20261114-reference-size-slot-claude-check.md)
+
+Re-approved under the standing authorisation for cited inventory corrections.
+
+| Change | Records |
+| --- | --- |
+| Evidence: the movt #0x4230 is at 0x004E4D90, not 0x004E4D8E (movs r1,#0) | M11-003 |
+| Built: the on-top reference reads its own size slot +0x2C and footprint +0x50 | M11-105 (notes) |
