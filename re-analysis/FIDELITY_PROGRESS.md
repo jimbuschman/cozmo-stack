@@ -10,10 +10,10 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | --- | ---: |
 | EXACT_SOURCE | 289 |
 | EQUIVALENT_IMPLEMENTATION | 17 |
-| COMPATIBILITY_POLICY | 73 |
+| COMPATIBILITY_POLICY | 74 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 345 |
+| IMPLEMENTATION_GAP | 344 |
 | RECOVERABLE_GAP | 21 |
 | **total** | **761** |
 
@@ -32,7 +32,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M9-wwise-music | INVENTORY_APPROVED | 2026-10-16 | 46 | 5 | 2 | 1 | 37 | 1 | 38 |
 | M10-derived | INVENTORY_APPROVED | 2026-11-09 | 17 | 4 | 1 | 0 | 12 | 0 | 12 |
 | M11-vision | INVENTORY_APPROVED | 2026-11-13 | 104 | 25 | 3 | 1 | 69 | 6 | 75 |
-| M12-manipulation | INVENTORY_APPROVED | 2026-11-13 | 52 | 14 | 2 | 1 | 33 | 2 | 34 |
+| M12-manipulation | INVENTORY_APPROVED | 2026-11-13 | 52 | 14 | 3 | 1 | 32 | 2 | 33 |
 | M13-navigation | INVENTORY_APPROVED | 2026-10-28 | 41 | 9 | 1 | 1 | 29 | 1 | 28 |
 | M14-faces | INVENTORY_APPROVED | 2026-11-11 | 14 | 6 | 3 | 1 | 4 | 0 | 4 |
 | M15-freeplay | INVENTORY_APPROVED | 2026-11-09 | 111 | 18 | 8 | 2 | 80 | 3 | 83 |
