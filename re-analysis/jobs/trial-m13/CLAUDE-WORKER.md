@@ -51,6 +51,12 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 21. **ROLL-MARKER-OBSERVED-1:** your proposal; see its QUEUE row (the roll's dock stops at IDockAction::Init 0x0300001D).
 22. **REFERENCE-SIZE-SLOT-1:** see its QUEUE row (M11-105 / M13-007).
 23. **MARKER-WITHHOLD-PER-MARKER-1:** your proposal; see its QUEUE row (M11-013).
+24. **MIN-AREA-RECT-FOOTPRINT-1:** see its QUEUE row (M13-007 / M13-023). Toward settling M13-007.
+25. **M13-007-CALLER-CENSUS-1:** see its QUEUE row. With job 24, M13-007 should be settleable.
+26. **CARRY-TREE-FLAG-RESET-1:** your proposal; see its QUEUE row (M12-008).
+27. **M11-038-SCOPE-CENSUS-1:** see its QUEUE row.
+
+HOST-CONFIG-SAME-ROOT-1 stays proposed: whether the host BlockConfigurationManager extension stays is a scope question for the operator.
 
 Before job 10, run the pending gate on `origin/manager-gate` (6e111864 or later; GATE-REQUESTS.md). Legacy drive API:
 the operator chose to retire it (job 14).
