@@ -15,6 +15,7 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
     internal DriveToPoseAction? Drive {get;private set;}
     internal Action<IReadOnlyList<ActionRunner>>? BeforeInitialUpdateForTest;
     protected override string ActionName=>"DriveToObject";
+    public override string? NativeName=>ActionName;
     internal CompoundActionSequential Sequence=>_sequence;
     internal NativeDriveToObjectRunner(ManipulationSystem m,uint id):this(m,id,PreActionType.Docking){}
     internal NativeDriveToObjectRunner(ManipulationSystem m,EngineRobot owner,uint id,PreActionType type,Func<bool>? parentCurrent=null):this(m,id,type)
@@ -50,7 +51,8 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
         if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         using var mutation=M.World.EnterPoseMutation();
         var obj=M.World.GetLocatedObjectByIdHelper(Action.ObjectId);
-        if(obj is null||!CubeGeometry.IsCube(obj.Type))return 0x03000004;
+        // 0x00559670..0x00559696: cast to ActionableObject, which includes the charger.
+        if(obj is null||!obj.IsActive)return 0x03000004;
         int result=InitHelper(obj);
         if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         if(CozmoCubes.IsLightCube(obj.Type)&&!_light)

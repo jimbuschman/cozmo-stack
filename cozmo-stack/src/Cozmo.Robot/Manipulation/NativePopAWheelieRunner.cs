@@ -18,8 +18,13 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     private bool _sent,_latched,_light,_unavailable;
     private float _deadline=-1;
     private byte _squint;
+    private bool _ending;
+    private ScopedAcquisition? _reactionLease;
+    private EngineRobot? Owner => ScopedOwner ?? M.Robot.Engine.Robot;
+    private bool Live() => ScopedCurrent && !_ending && !DestructionObserved;
     internal Action<NativeActionUnavailable>? Unavailable;
     protected override string ActionName=>"PopAWheelie";
+    public override string? NativeName=>ActionName;
     internal CompoundActionSequential? Prepared=>_prepared;
     internal NativePopAWheelieRunner(ManipulationSystem m,uint target):base(m,0x1D,7)
     {_originalTarget=target;Action=new(m,target);Action.SetSelectedDockAction(DockAction.PopAWheelie);}
@@ -36,19 +41,28 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     // Shared IDock setup: M12-017/M12-034/M12-037; concrete Pop selection D3 below.
     public override int Init()
     {
-        using var mutation=M.World.EnterPoseMutation();var owner=M.Robot.Engine.Robot!;
+        if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
+        using var mutation=M.World.EnterPoseMutation();var owner=Owner!;
         _deadline=-1;_sent=false;owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
+        if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
         var target=M.World.GetLocatedObjectByIdHelper(Action.ObjectId);if(target is null)return 0x03000004;
         var main=owner.GetCheckedMainPose();
         KnownMarker? marker=null;
         if(CheckPreActionPose)
         {
-            var pre=DockPreActionPoses.GetNative(new(target,PreActionType.Rolling,true,DockActionBase.PreActionAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>M.NativeObstacles(main),M.World);
+            var pre=DockPreActionPoses.GetNative(new(target,PreActionType.Rolling,true,DockActionBase.PreActionAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>M.NativeObstacles(main,ScopedOwner),M.World);
             if(pre.Result!=ActionResult.Success)return unchecked((int)pre.Result);
             marker=pre.Poses[pre.ClosestIndex].Marker;
         }
         uint selected=Select(target);if(selected!=0)return unchecked((int)selected);
-        _subscriptions=M.Docking.RegisterActionHandlers(Action,DockAction.PopAWheelie);
+        var subscriptions = ScopedOwner is null ? M.Docking.RegisterActionHandlers(Action,DockAction.PopAWheelie)
+            : M.Docking.RegisterActionHandlers(owner, Action, DockAction.PopAWheelie);
+        if (!Live() || subscriptions is null)
+        {
+            subscriptions?.Dispose();
+            return unchecked((int)EngineActionResult.Cancelled);
+        }
+        _subscriptions = subscriptions;
         if(!CheckPreActionPose)
         {
             var observed=NativeObservedMarkers.Get(target,target.LastObservedTimestamp);
@@ -74,14 +88,28 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
         using var flat=target.NativePose.GetWithRespectToRoot();var dimensions=NativeConfigurationGeometry.Dimensions(target,flat);
         var t0=flat.Translation;Pose3d root=null!;flat.TryGetParent(ref root);using var rootOwner=root;
         using var raised=new Pose3d(flat.Quaternion,new Vec3((float)t0.X,(float)t0.Y,(float)t0.Z+(float)dimensions.Z),parent:root);
-        var noObject=new NativeVisuallyVerifyNoObjectRunner(M,raised,new Vec3((float)dimensions.X*.5f,(float)dimensions.Y*.5f,(float)dimensions.Z*.5f)){SuppressTrackLocking=true};
+        var noObject=new NativeVisuallyVerifyNoObjectRunner(M,raised,new Vec3((float)dimensions.X*.5f,(float)dimensions.Y*.5f,(float)dimensions.Z*.5f)){SuppressTrackLocking=true,ScopedOwner=ScopedOwner,ScopedParentCurrent=ScopedOwner is null ? null : Live};
         noObject.AddIgnoreId(Action.ObjectId);_prepared.AddAction(noObject,false,false);
-        _prepared.AddAction(new NativeTurnTowardsObjectRunner(M,Action.ObjectId,_marker,0,true,false){SuppressTrackLocking=true},false,false);
-        if(CozmoCubes.IsLightCube(target.Type)&&!_light){M.Robot.Lights.Cubes.PlayNativeInteracting(Action.ObjectId);_light=true;}
+        _prepared.AddAction(new NativeTurnTowardsObjectRunner(M,Action.ObjectId,_marker,0,true,false){SuppressTrackLocking=true,ScopedOwner=ScopedOwner,ScopedParentCurrent=ScopedOwner is null ? null : Live},false,false);
+        if (CozmoCubes.IsLightCube(target.Type) && !_light)
+        {
+            if (ScopedOwner is null) M.Robot.Lights.Cubes.PlayNativeInteracting(Action.ObjectId);
+            else M.Robot.Lights.Cubes.PlayNativeInteracting(Action.ObjectId, Live);
+            if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
+            _light = true;
+        }
         if(_squint!=0){M.Robot.Animations.Scheduler.Layers.Face.RemovePersistentLayer(_squint,250);_squint=0;}
 
         uint started=_prepared.Update();if(started!=0&&started!=EngineActionResult.Running)return unchecked((int)started);
-        owner.BehaviorManagerOwner?.DisableReactionsWithLock("dockActions",Enumerable.Range(0,21).Select(i=>i==8).ToArray(),true);
+        if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
+        if (ScopedOwner is null) owner.BehaviorManagerOwner?.DisableReactionsWithLock("dockActions",GroundPlacement.ReactionLockTable,true);
+        else if (owner.BehaviorManagerOwner is { } manager)
+        {
+            var reactions = _reactionLease = new ScopedAcquisition();
+            if (!manager.DisableScopedReactions("dockActions", GroundPlacement.ReactionLockTable, reactions) || !Live())
+                return unchecked((int)EngineActionResult.Cancelled);
+            reactions.Completed = true;
+        }
         return 0;
     }
     private void AddSquint()
@@ -94,13 +122,19 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     }
     public override uint CheckIfDone()
     {
+        if (!Live()) return EngineActionResult.Cancelled;
         if(Action.ObjectId==uint.MaxValue)return 0x03000004;
-        var owner=M.Robot.Engine.Robot!;
+        var owner=Owner!;
         if(!_sent)
         {
             uint result=_prepared!.Update();if(result!=0)return result;
             _prepared.Prep();_prepared.WatcherEnding();_prepared=null;
-            if(!M.Docking.StartNativeDock(Action.ObjectId,_marker,DockAction.PopAWheelie,Action.Profile,DockingMethod.Default,false))return 0x03000016;
+            if (!Live()) return EngineActionResult.Cancelled;
+            bool sent = ScopedOwner is null
+                ? M.Docking.StartNativeDock(Action.ObjectId,_marker,DockAction.PopAWheelie,Action.Profile,DockingMethod.Default,false)
+                : M.Docking.StartNativeDock(owner,Action.ObjectId,_marker,DockAction.PopAWheelie,Action.Profile,DockingMethod.Default,false,Live);
+            if (!Live()) return EngineActionResult.Cancelled;
+            if (!sent) return 0x03000016;
             _sent=true;_latched=false;
         }
         var dock=owner.DockingOwner!;
@@ -112,7 +146,7 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     }
     internal uint Select(ObservableObject target)
     {
-        var owner=M.Robot.Engine.Robot!;
+        var owner=Owner!;
         _oldPose?.Dispose();_oldPose=new Pose3d();
         Pose3d parent=null!;if(!owner.GetCheckedMainPose().TryGetParent(ref parent))return 0x03000004;
         using(parent)if(!Pose3d.GetWithRespectTo(target.NativePose,parent,_oldPose))return 0x03000004;
@@ -125,7 +159,7 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     // D4: real dock success and Robot::GetPitchAngle; native Radians operator< includes IsNear epsilon.
     internal uint Verify()
     {
-        var owner=M.Robot.Engine.Robot!;
+        var owner=Owner!;
         if(Action.SelectedDockAction!=DockAction.PopAWheelie)return 0x0300001A;
         if(!owner.DockingOwner!.Success)return 0x04000003;
         float pitch=owner.StoredState?.Pose.Pitch??throw new NativeActionUnavailable("Pop Verify actual Robot pitch input absent");
@@ -139,14 +173,55 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     }
     public override void WatcherEnding()
     {
-        _oldPose?.Dispose();_oldPose=null;M.World.SelectedObjectId=null;
-        if(M.Robot.Motion.Path.IsActive)M.Paths.Abort();
-        var docking=M.Robot.Engine.Robot?.DockingOwner;
-        if(docking is not null){if(docking.Active!=0)M.Docking.Abort();docking.MarkerCode=3;docking.TargetId=null;}
-        if(_light)M.Robot.Lights.Cubes.StopNativeInteracting(_originalTarget);
-        M.Robot.Animations.Scheduler.Layers.Face.RemovePersistentLayer(_squint,250);
+        if (_ending || DestructionObserved) return;
+        _ending = true;
+        var owner = Owner;
+        long pathGeneration = M.Robot.Motion.Path.ScopeGeneration, dockGeneration = M.Docking.NativeDockGeneration;
+        bool PathCurrent() => ScopedOwnerCurrent && (ScopedOwner is null || M.Robot.Motion.Path.ScopeGeneration == pathGeneration);
+        bool DockCurrent() => ScopedOwnerCurrent && (ScopedOwner is null || M.Docking.NativeDockGeneration == dockGeneration);
+        bool SharedCurrent() => PathCurrent() && DockCurrent();
+
+        _oldPose?.Dispose();
+        _oldPose = null;
+        if (SharedCurrent()) M.World.SelectedObjectId = null;
+        if (PathCurrent() && M.Robot.Motion.Path.IsActive)
+        {
+            if (ScopedOwner is null) M.Paths.Abort();
+            else M.Paths.AbortOwned(ScopedOwner, PathCurrent);
+        }
+        if (DockCurrent() && owner?.DockingOwner is { } docking)
+        {
+            if (docking.Active != 0)
+            {
+                if (ScopedOwner is null) M.Docking.Abort();
+                else M.Docking.AbortNativeDock(ScopedOwner, DockCurrent);
+            }
+            if (DockCurrent())
+            {
+                docking.MarkerCode = 3;
+                docking.TargetId = null;
+            }
+        }
+        if (_light && SharedCurrent())
+        {
+            if (ScopedOwner is null) M.Robot.Lights.Cubes.StopNativeInteracting(_originalTarget);
+            else M.Robot.Lights.Cubes.StopNativeInteracting(_originalTarget, SharedCurrent);
+        }
+        if (SharedCurrent()) M.Robot.Animations.Scheduler.Layers.Face.RemovePersistentLayer(_squint, 250);
         _prepared?.Prep();
-        if(State!=EngineActionResult.NotStarted)M.Robot.Engine.Robot?.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
-        _subscriptions?.Dispose();_subscriptions=null;_prepared?.WatcherEnding();_prepared=null;base.WatcherEnding();
+        if (_reactionLease is { } reactions)
+        {
+            _reactionLease = null;
+            reactions.Cancel();
+            if (!SharedCurrent()) reactions.Completed = false;
+            owner?.BehaviorManagerOwner?.RemoveScopedReactions("dockActions", reactions);
+        }
+        else if (ScopedOwner is null && State != EngineActionResult.NotStarted)
+            owner?.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
+        _subscriptions?.Dispose();
+        _subscriptions = null;
+        _prepared?.WatcherEnding();
+        _prepared = null;
+        base.WatcherEnding();
     }
 }

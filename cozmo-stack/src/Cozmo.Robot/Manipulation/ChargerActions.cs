@@ -341,22 +341,11 @@ public sealed class MountChargerAction
     {
         Attempts = 1;
         _wholeStart = Now();
-        // ---- Init 0x0054E0CC
-        var charger = _m.World.GetLocatedObjectById(ChargerId);
-        if (charger is null || charger.Type != ObjectType.Charger_Basic)
-        {
-            _trace.Add($"warning: MountChargerAction.Init.InvalidCharger: No charger object with ID {ChargerId} in block world!");
-            return ActionResult.BadObject;                                            // 0x03000004 (0x0054E166..0x0054E16C)
-        }
-        // fidelity: M13-008, M4-009
-        // Init 4, only after the lookup and type check pass (0x0054E106..0x0054E11A) and before ConfigureAlignWithChargerAction (0x0054E126):
-        // robot+0x334 := action+0x7C, the constructor's charger ObjectID (0x0054E11C ldr Robot*; 0x0054E11E ldr [action+0x7C]; 0x0054E120 str.w [robot+0x334]).
-        // Not written on the InvalidCharger return above; nothing clears it later (the only other writer is the Robot ctor's -1, 0x005100AC).
-        _m.Robot.Cubes.SetChargerObjectIdFromMountInit(ChargerId);
+        var initialized = Initialize();
+        if (initialized != ActionResult.Success) return initialized;
 
         // ---- ConfigureAlignWithChargerAction 0x0054E1C4: [AlignWithObjectAction, MoveHeadToAngleAction]
-        var align = new AlignWithObjectAction(_m, ChargerId, AlignDistanceMm, AlignmentType.Custom, Flag81)
-            { Profile = PathMotionProfile.Default with { DockSpeedMmps = AlignSpeedMmps }, CheckPreActionPose = false };
+        var align = CreateAlignAction();
         var (alignTimedOut, alignResult) = await RunStage(ct => align.RunAsync(ct), cancel, DefaultActionTimeoutSec);   // AlignWithObjectAction's own slot: 30.0f
         _trace.AddRange(align.Trace);
         if (alignTimedOut) { _trace.Add("MountChargerAction: the align timed out (30 s IAction slot 0x0052B0C3)"); return ActionResult.Timeout; }
@@ -399,15 +388,37 @@ public sealed class MountChargerAction
         return r == 0 ? RetryDriveResult : (ActionResult)r;                           // 0x0054E3E8: a finished drive (0) becomes 0x04000006
     }
 
+    internal ActionResult Initialize()
+    {
+        // ---- Init 0x0054E0CC
+        var charger = _m.World.GetLocatedObjectById(ChargerId);
+        if (charger is null || charger.Type != ObjectType.Charger_Basic)
+        {
+            _trace.Add($"warning: MountChargerAction.Init.InvalidCharger: No charger object with ID {ChargerId} in block world!");
+            return ActionResult.BadObject;                                            // 0x03000004 (0x0054E166..0x0054E16C)
+        }
+        // fidelity: M13-008, M4-009
+        // Init 4, only after the lookup and type check pass (0x0054E106..0x0054E11A) and before ConfigureAlignWithChargerAction (0x0054E126):
+        // robot+0x334 := action+0x7C, the constructor's charger ObjectID (0x0054E11C ldr Robot*; 0x0054E11E ldr [action+0x7C]; 0x0054E120 str.w [robot+0x334]).
+        // Not written on the InvalidCharger return above; nothing clears it later (the only other writer is the Robot ctor's -1, 0x005100AC).
+        _m.Robot.Cubes.SetChargerObjectIdFromMountInit(ChargerId);
+        return ActionResult.Success;
+    }
+
+    internal AlignWithObjectAction CreateAlignAction() =>
+        new(_m, ChargerId, AlignDistanceMm, AlignmentType.Custom, Flag81)
+        { Profile = PathMotionProfile.Default with { DockSpeedMmps = AlignSpeedMmps }, CheckPreActionPose = false };
+
     /// <summary>
     /// <c>ConfigureTurnAndMountAction</c> 0x0054E458 up to the compound's contents: the charger must still be a charger (else 0x03000004 after the warning
     /// "MountChargerAction.ConfigureTurnAndMountAction.InvalidCharger", 0x0054E638..0x0054E672); the turn angle is <c>atan2f(v.y, v.x)</c> of the robot's
     /// position less the dock point's; and the lift test reads <c>Robot::GetLiftHeight</c> now.
     /// </summary>
-    private (uint Result, float TurnAngle, bool LiftBelow) ConfigureTurnAndMount()
+    internal (uint Result, float TurnAngle, bool LiftBelow) ConfigureTurnAndMount(EngineRobot? owner = null)
     {
         var charger = _m.World.GetLocatedObjectById(ChargerId);
-        var robot = _m.RobotPose();
+        using var nativeRobot = owner is null ? null : _m.NativeMainSnapshot(owner);
+        var robot = owner is null ? _m.RobotPose() : nativeRobot?.Value;
         if (charger is null || charger.Type != ObjectType.Charger_Basic || robot is null)
         {
             _trace.Add($"warning: MountChargerAction.ConfigureTurnAndMountAction.InvalidCharger: No charger object with ID {ChargerId} in block world!");
@@ -415,7 +426,9 @@ public sealed class MountChargerAction
         }
         // The stack's poses are double; the engine's are float, so each is rounded where the engine holds it: the dock point (the charger's pose composed with the
         // (30, 0, 0) pose) and the robot's position become floats, the difference and atan2f are float.
-        var dock = charger.Pose.Compose(new Pose3d(Mat3.Identity, new Vec3(DockPointXMm, 0, 0))).Translation;
+        using var offset = new Pose3d(Mat3.Identity, new Vec3(DockPointXMm, 0, 0));
+        using var dockPose = (owner is null ? charger.Pose : charger.NativePose).Compose(offset);
+        var dock = dockPose.Translation;
         float vx = (float)robot.Value.Translation.X - (float)dock.X;
         float vy = (float)robot.Value.Translation.Y - (float)dock.Y;
         float angle = MathF.Atan2(vy, vx);                                            // blx atan2f 0x0054E536
@@ -474,7 +487,9 @@ public sealed class MountChargerAction
 
     /// <summary>One <c>BackupOntoChargerAction::CheckIfDone</c> call (0x0054E7A8..0x0054E7EE).</summary>
     // fidelity: M13-008
-    internal uint BackupCheckIfDone(IDriveStraightTick drive)
+    internal uint BackupCheckIfDone(IDriveStraightTick drive) => BackupCheckIfDone(drive.CheckIfDone);
+
+    internal uint BackupCheckIfDone(Func<uint> checkDrive)
     {
         if (_m.Robot.Sensors.OnCharger)                                               // robot+0x338 (0x0054E7B0)
         {
@@ -487,7 +502,7 @@ public sealed class MountChargerAction
             _trace.Add($"BackupOntoChargerAction: pitched to {pitch} rad, below {MaxBackupPitchRad}; 0x0400000A");
             return (uint)ActionResult.BackupPitchedTooFar;
         }
-        uint r = drive.CheckIfDone();                                                 // DriveStraightAction::CheckIfDone 0x0054E7E4
+        uint r = checkDrive();                                                        // DriveStraightAction::CheckIfDone 0x0054E7E4
         if (r != 0) return r;                                                         // movne r4, r0: RUNNING or the drive's failure
         _trace.Add("BackupOntoChargerAction: the reverse finished off the contacts; 0x04000006");
         return (uint)ActionResult.RetryDriveDone;
@@ -498,12 +513,13 @@ public sealed class MountChargerAction
     /// <c>GetAngleAroundZaxis</c> less the robot's (<c>Anki::operator-(Radians, Radians)</c> 0x0084CA18: a float subtraction, then rescale) with
     /// <c>getAbsoluteVal()</c> compared by <c>vcmpe.f32</c>/<c>ble</c>: at or below the float pi/2 the failure stands.
     /// </summary>
-    internal bool InsideRetryWindow()
+    internal bool InsideRetryWindow(EngineRobot? owner = null)
     {
         var obj = _m.World.GetLocatedObjectById(ChargerId);
-        var robot = _m.RobotPose();
+        using var nativeRobot = owner is null ? null : _m.NativeMainSnapshot(owner);
+        var robot = owner is null ? _m.RobotPose() : nativeRobot?.Value;
         if (obj is null || robot is null) return false;
-        float chargerYaw = (float)obj.Pose.AngleAroundZ;
+        float chargerYaw = (float)(owner is null ? obj.Pose : obj.NativePose).AngleAroundZ;
         float robotYaw = (float)robot.Value.AngleAroundZ;
         float diff = (float)EngineRadians.Rescale(chargerYaw - robotYaw);
         return !(MathF.Abs(diff) > RetryHeadingWindowRad);

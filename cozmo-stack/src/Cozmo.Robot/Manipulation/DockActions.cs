@@ -632,7 +632,7 @@ public abstract class DockActionBase
     /// this stack has no component with the engine's writers, as in StrategyExpressNeedsTransition). 3 != 1, so the gate passes; the gap is reported once.
     /// </summary>
     // fidelity: M12-017
-    private bool ShouldApplyDockingSquint()
+    internal bool ShouldApplyDockingSquint()
     {
         if (M.AiExpressedNeedValue is { } expressed) return (expressed() is { } need ? (int)need : 3) != 1;
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("ShouldApplyDockingSquint 0x005524AC [[[robot+0x264]+0x30]+0x14]: this stack has no SevereNeedsComponent with the engine's writers; the value is its constructed 3 (none), so the squint gate passes");
@@ -640,7 +640,9 @@ public abstract class DockActionBase
     }
 
     // fidelity: M12-017
-    private bool AddDockSquint()
+    private bool AddDockSquint() => AddDockSquintLayer() != 0;
+
+    internal byte AddDockSquintLayer()
     {
         var face = new ProceduralFacePose();
         foreach (var eye in new[] { face.Left, face.Right })
@@ -652,7 +654,7 @@ public abstract class DockActionBase
         var track = new StreamTrack<FaceFrame>();
         track.AddKeyFrameToBack(new FaceFrame(0, face));
         track.AddKeyFrameToBack(new FaceFrame(250, new ProceduralFacePose()));
-        return M.Robot.Animations.Scheduler.Layers.Face.AddPersistentLayer("DockSquint", track) != 0;
+        return M.Robot.Animations.Scheduler.Layers.Face.AddPersistentLayer("DockSquint", track);
     }
 }
 
