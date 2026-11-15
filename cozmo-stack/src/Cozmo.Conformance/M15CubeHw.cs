@@ -150,6 +150,19 @@ internal sealed class M15CubeRun
             startup = HarnessStartup.Analyse(EngineLogs(), startupGate, connected ? HarnessStartup.HasCachedNeutralFace(robot) : null, connected ? null : "connection or calibration did not complete");
             Event("startup-report", startup.ToJson()); Console.WriteLine("Startup: " + startup.Describe());
             if (!connected) throw new InvalidOperationException("Not connected; nothing ran.");
+            // Run 2026-11-15: he started on the charger, so the pickup turn spun the treads in place and the unexpected-movement
+            // reaction cancelled it. Wait for him to be taken off before anything moves.
+            if (robot.State.Latest?.Has(RobotStatusFlag.IsOnCharger) == true)
+            {
+                Console.WriteLine(">>> Cozmo is ON HIS CHARGER. Lift him off and put him on the table, then press Enter. <<<");
+                Event("on-charger-at-start", new());
+                while (robot.State.Latest?.Has(RobotStatusFlag.IsOnCharger) == true && !yes)
+                {
+                    ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
+                    Thread.Sleep(1000);
+                    if (robot.State.Latest?.Has(RobotStatusFlag.IsOnCharger) == true) Console.WriteLine(">>> He still reports being on the charger. Take him off, then press Enter. <<<");
+                }
+            }
             robot.StartCamera();
             Event("camera-started", new());
             var look = robot.Motion.QueueAiHeadAngleAsync(M15CubeHw.LookHeadRad, cancel.Token);
