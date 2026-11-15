@@ -62,3 +62,13 @@ The second round, where he drives to a cube further away, runs only with `--with
 lying on its side, so the engine's only allowed approach was from the far side; it took him to the table edge and he
 fell off (PICKUP-PREDOCK-SIDE-1: the engine's own choice, not a stack bug). Run the direct round with the cube upright
 first, and use `--with-drive` only after that pickup works, with a hand ready near the edge.
+
+## Skill rounds (opt-in)
+
+Add `--skills` to run stack, roll, and mount after the pickup rounds. The charger round runs last. Clear the
+cubes away and put the powered charger 20–40 cm straight ahead, marker facing Cozmo. The script waits for a fresh
+located visual observation in the current origin, then records the queued mount result and the robot's contact bit
+(M13-008, 0x0054E7B0). Its visual target comes from BlockWorld while the charger 0x44 report is outstanding.
+Allow room in front of and behind Cozmo for the pre-dock drive, turn, and reverse.
+
+Run `m15-cube-hw --skills --validate` to check the planned rounds and record references without a robot.

@@ -708,7 +708,7 @@ public static class PlacementApproachAngle
 /// </summary>
 public readonly record struct DriveStraightTick(bool LastPathFailed, bool HasPathToFollow, bool IsActive);
 // fidelity: M13-013 — S1/S2 checked handler user. Path creation/getters retain their separate gaps.
-public sealed class DriveStraightAction : ActionRunner, IDisposable
+public class DriveStraightAction : ActionRunner, IDisposable
 {
     private readonly ManipulationSystem _m;
     private readonly EngineRobot? _nativeOwner;
@@ -750,6 +750,7 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     protected override void StopBodyTrack()
     {if(_nativeOwner is null)_m.Robot.Motion.StopBody();else LogCallbackDeferral.RunGated(_cleanupGate,()=>{if(NativeOwnerCurrent())_m.Robot.Motion.StopBody();});}
     protected override string ActionName => "DriveStraight"; // thirteen bytes at 0x00BEA0DC.
+    public override string? NativeName => ActionName;
     public override byte? GetCompletionVariant()=>6; // type8 ctor 0x0053FF0E..14, Set_defaultCompleted.
     public override bool CanInterrupt()=>false; // 0x0052B0B3.
     private void Missing(string text){if(_missingMessages.Add(text))_m.Robot.Engine.EmitStackLog("MISSING: M13-013 | "+text);}

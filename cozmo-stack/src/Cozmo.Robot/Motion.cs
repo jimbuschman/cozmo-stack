@@ -324,6 +324,39 @@ public sealed class CozmoMotion
     }
 
     /// <summary>
+    /// Queues the pre-dock drive and mount for a located charger.
+    /// 0x0052A292..0x0052A2AE selects the compound with usePreDockPose=true and passes
+    /// the robot, requested ObjectID, useManualSpeed=false and a final literal false.
+    /// The default profile leaves the custom-profile branch at 0x0052A2DA clear.
+    /// </summary>
+    // fidelity: M13-008
+    public async Task<AiPickupActionResult> QueueAiMountChargerAsync(uint chargerId, CancellationToken cancellationToken = default)
+    {
+        if(chargerId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
+        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        var engine=_robot.Engine;
+        var owner=engine.Robot;
+        Task<AiHeadActionResult> task;
+        Manipulation.NativeDriveToMountChargerRunner action;
+        using(engine.EnterSynchronousOwner())
+        {
+            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for an action");
+            var runtime=owner.NativeBehaviorRuntime;
+            if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation ||
+                owner.CarryingOwner is null || owner.DockingOwner is null || owner.BehaviorManagerOwner is null || !owner.HasExternalInterface)
+                return new(false,null,"MISSING: original charger, carrying, docking or vision owner unavailable");
+            uint tag=AllocateAiTag();
+            if(tag==0)return new(false,null,"No external action tag is available");
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
+            action=new Manipulation.NativeDriveToMountChargerRunner(manipulation,owner,chargerId,Current);
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native charger mount ended",true,()=>Current() && AiOwnerReady(engine,owner));
+        }
+        var result=await task.ConfigureAwait(false);
+        return new(result.Admitted,result.EngineResult,action.HostUnavailable is null ? result.Detail : "MISSING: " + action.HostUnavailable,result.OwnerRetired);
+    }
+
+    /// <summary>
     /// Queues placing the carried cube on top of another cube after existing actions, as the app's <c>PlaceOnObject</c>
     /// request does with its default fields (usePreDockPose true, useApproachAngle false, useManualSpeed false,
     /// checkForObjectOnTop true, default motion profile). The engine's handler builds <c>DriveToPlaceOnObjectAction(robot,
@@ -484,6 +517,7 @@ public sealed class CozmoMotion
         else if(action is Vision.NativeLastFaceRunner lastFace)lastFace.AiNativeEnded=completion;
         else if(action is Vision.NativeTurnTowardsObjectRunner turnObject)turnObject.AiNativeEnded=completion;
         else if(action is Manipulation.NativeDriveToRollRunner roll){roll.AiNativeEnded=completion;roll.AiOwner=owner;}
+        else if(action is Manipulation.NativeDriveToMountChargerRunner mount){mount.AiNativeEnded=completion;mount.AiOwner=owner;}
         else if(action is Manipulation.NativeDriveToPlaceOnBeaconRunner placeOn){placeOn.AiNativeEnded=completion;placeOn.AiOwner=owner;}
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);

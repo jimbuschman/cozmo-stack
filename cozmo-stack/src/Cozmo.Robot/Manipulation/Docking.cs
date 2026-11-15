@@ -870,11 +870,11 @@ public sealed class DockingSystem : IDisposable
         => StartNativeDockCore(_robot.Engine.Robot,id,code,action,profile,method,flagC1,false,null);
 
     internal bool StartNativeDock(EngineRobot owner,uint id,short code,DockAction action,PathMotionProfile profile,
-        DockingMethod method=DockingMethod.Method2,bool flagC1=true,Func<bool>? current=null)
-        => StartNativeDockCore(owner,id,code,action,profile,method,flagC1,true,current);
+        DockingMethod method=DockingMethod.Method2,bool flagC1=true,Func<bool>? current=null,float offsetX=0)
+        => StartNativeDockCore(owner,id,code,action,profile,method,flagC1,true,current,offsetX);
 
     private bool StartNativeDockCore(EngineRobot? owner,uint id,short code,DockAction action,PathMotionProfile profile,
-        DockingMethod method,bool flagC1,bool owned,Func<bool>? current)
+        DockingMethod method,bool flagC1,bool owned,Func<bool>? current,float offsetX=0)
     {
         bool OwnerCurrent() => !owned || owner is not null && NativeOwnerCurrent(owner) && (current?.Invoke() ?? true);
         if (!OwnerCurrent()) return false;
@@ -895,7 +895,9 @@ public sealed class DockingSystem : IDisposable
         if(!child)return false;
         _vision.World.MarkDirty(id);
         if (!Current()) return false;
-        _native.Success=false;_native.Slot14=0;_native.Slot18=0;_native.Slot1C=0;
+        _native.Success=false;
+        // DockWithObject copies the align action's +0x9C into the correction offset (0x005522AE, 0x0063BA44..0x0063BD50).
+        _native.Slot14=BitConverter.SingleToUInt32Bits(offsetX);_native.Slot18=0;_native.Slot1C=0;
         _legacyDockSelected=false;
         var message=Message(profile.DockSpeedMmps,profile.DockAccelMmps2,profile.DockDecelMmps2,action,false,method,flagC1);
         if(!owned)
