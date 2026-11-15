@@ -57,8 +57,10 @@ The manager (Claude on this PC) checks each one against the binary, settles reco
 27. **M11-038-SCOPE-CENSUS-1:** see its QUEUE row.
 28. **CAN-INTERACT-ROOT-CHECK-1:** your proposal; see its QUEUE row (M12-012).
 29. **FOOTPRINT-GROUP-SETTLEMENT-READINESS-1:** doc only; see its QUEUE row. The manager settles M13-007 and its group from it.
+30. **HOST-CONFIG-SAME-ROOT-1:** operator 2026-11-15: keep the ConfigurationSeen event, compute it with NativeConfigurationGeometry.BuildStack, delete the host public-Pose stack search. See its QUEUE row.
+31. **OBSERVED-OBJECT-LOCAL-PAYLOAD-1:** operator 2026-11-15: build the engine's local 0x44 payload for the internal readers; ObjectObserved / PoseStateChanged stay as stack-only events but carry the report's snapshot pose. See its QUEUE row.
+32. **CHARGER-OBSERVED-OBJECT-REPORT-1:** operator 2026-11-15: in scope. Only after M11-065's ApplyTo arithmetic is settled or built; if it isn't, record what it waits on and skip.
 
-HOST-CONFIG-SAME-ROOT-1 stays proposed: whether the host BlockConfigurationManager extension stays is a scope question for the operator.
 
 Before job 10, run the pending gate on `origin/manager-gate` (6e111864 or later; GATE-REQUESTS.md). Legacy drive API:
 the operator chose to retire it (job 14).
