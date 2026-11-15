@@ -180,8 +180,9 @@ internal sealed class M15CubeRun
             if (Skills && !yes) RunSkills(robot);
             if (!yes)
             {
-                Ask("pickedFirst", "Did he pick the cube up (cube right in front)? [yes/no/tried and missed]");
-                Ask("placedFirst", "Did he put it down on the table? [yes/no/dropped it]");
+                Console.WriteLine("\nA few questions, one per round, in the order the rounds ran.");
+                Ask("pickedFirst", "FIRST ROUND (cube right in front): did he pick the cube up? [yes/no/tried and missed]");
+                Ask("placedFirst", "FIRST ROUND: did he put it down on the table? [yes/no/dropped it]");
                 if (withDrive)
                 {
                     Ask("pickedSecond", "Second time (he drove): did he reach the cube and pick it up? [yes/no/tried and missed]");

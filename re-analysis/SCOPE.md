@@ -21,11 +21,12 @@ partial when it is run.
 | Turn to a face, turn to a cube, track a face | sim |
 | Play an authored animation | sim (animations: robot) |
 | Say a sentence in his voice | robot (2026-11-09; maybe slightly slow) |
-| Pick up a cube, put it down | robot (2026-11-09) |
+| Pick up a cube, put it down | robot (2026-11-09; again 2026-11-15, run 20261115-162141) |
 | Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | sim |
 | Teach, rename and erase a face | sim |
 | Go to a place; return to and mount the charger | none as a command (actions exist) |
-| Roll, stack as commands | none as a command (behaviours exist) |
+| Roll a cube (QueueAiRollCubeAsync) | robot (2026-11-15, run 20261115-162141: drove to the cube and rolled it) |
+| Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
 | Charger seen report (operator 2026-11-15) | none |
 | Freeplay on/off, and returning to Freeplay after a command | partial (never run together) |
 | The connection for an LLM (bridge) | none |
