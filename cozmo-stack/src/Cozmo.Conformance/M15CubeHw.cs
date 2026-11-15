@@ -50,12 +50,13 @@ public static class M15CubeHw
         try
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
-            bool validate = false, yes = false, withDrive = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            bool validate = false, yes = false, withDrive = false, skills = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
                     case "--validate": validate = true; break;
                     case "--yes": yes = true; break;
                     case "--with-drive": withDrive = true; break;
+                    case "--skills": skills = true; break;
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
@@ -68,9 +69,9 @@ public static class M15CubeHw
                 throw new ArgumentException("The cube marker library is not on this PC, so Cozmo cannot read cube markers. With Python installed and resources/lib/armeabi-v7a/libcozmoEngine.so present, run: python re-analysis/tools/extract_marker_library.py resources/lib/armeabi-v7a/libcozmoEngine.so, then rebuild.");
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + TestId + "-" + Guid.NewGuid().ToString("N")[..6]);
-            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive).Execute();
+            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive) { Skills = skills }.Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
@@ -87,6 +88,7 @@ internal sealed class M15CubeRun
     readonly JsonObject answers = new(); readonly JsonArray phases = new();
     CozmoRobot? robot; RobotConnectionResponse? response; bool connected; HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup; Task<string?>? pendingRead;
     uint? lastStatus;
+    public bool Skills { get; init; }
     double Now => clock.Elapsed.TotalMilliseconds;
     public M15CubeRun(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, bool yes, bool withDrive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.yes = yes; this.withDrive = withDrive; }
@@ -162,6 +164,7 @@ internal sealed class M15CubeRun
                 Console.WriteLine("\n" + M15CubeHw.MoveText); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
                 RunPair(robot, "drive", drive: true);
             }
+            if (Skills && !yes) RunSkills(robot);
             if (!yes)
             {
                 Ask("pickedFirst", "Did he pick the cube up (cube right in front)? [yes/no/tried and missed]");
@@ -170,6 +173,11 @@ internal sealed class M15CubeRun
                 {
                     Ask("pickedSecond", "Second time (he drove): did he reach the cube and pick it up? [yes/no/tried and missed]");
                     Ask("placedSecond", "Second time: did he put it down? [yes/no/dropped it]");
+                }
+                if (Skills)
+                {
+                    Ask("stacked", "Stack round: did he pick up the first cube, drive to the second and set it on top? [yes/no/partly]");
+                    Ask("rolled", "Roll round: did he drive to the cube and roll it onto its side? [yes/no/partly]");
                 }
                 Ask("odd", "Anything odd (bumped the cube, wrong cube, lift jerky, face or sounds strange)? Type it, or just press Enter.");
             }
@@ -224,6 +232,49 @@ internal sealed class M15CubeRun
             return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default);
         }, 60000);
         phases.Add(place); Console.WriteLine("    " + place["detail"]);
+    }
+
+    // Stack, then roll, through the outside-AI commands (QueueAiStackOnCubeAsync / QueueAiRollCubeAsync).
+    void RunSkills(CozmoRobot r)
+    {
+        Console.WriteLine("\nSTACK ROUND. Leave the first cube where he put it down. Put a SECOND cube about 25 cm (10 in) in front of him,\n"
+            + "a little to one side, UPRIGHT with lights on top and a side marker facing him. Press Enter when it is in place.");
+        ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
+        var cubes = SeeCubes("stack", 2);
+        if (cubes.Count < 2) { errors.Enqueue($"stack: saw {cubes.Count} cube(s), need 2; stack round skipped"); Console.WriteLine("    He did not report two cubes; skipping the stack round."); }
+        else
+        {
+            var (first, second) = (cubes[0], cubes[1]);
+            Console.WriteLine($">>> WATCH: Cozmo should pick up cube {first.ObjectId}, then drive to cube {second.ObjectId} and set it on top <<<");
+            var pick = Phase("stack-pickup", () => { var t = r.Motion.QueueAiPickupCubeAsync(first.ObjectId, true, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 90000);
+            pick["objectId"] = first.ObjectId; phases.Add(pick); Console.WriteLine("    " + pick["detail"]);
+            Thread.Sleep(1000);
+            var stack = Phase("stack-place", () => { var t = r.Motion.QueueAiStackOnCubeAsync(second.ObjectId, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 90000);
+            stack["objectId"] = second.ObjectId; phases.Add(stack); Console.WriteLine("    " + stack["detail"]);
+        }
+        Console.WriteLine("\nROLL ROUND. Take the cubes apart. Put ONE cube about 20 cm (8 in) in front of him, UPRIGHT, a side marker facing him;\n"
+            + "keep the other out of view. He will drive to it and roll it onto its side. Press Enter when it is in place.");
+        ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
+        var target = SeeCubes("roll", 1);
+        if (target.Count == 0) { errors.Enqueue("roll: no cube seen; roll round skipped"); Console.WriteLine("    He did not report a cube; skipping the roll round."); return; }
+        Console.WriteLine($">>> WATCH: Cozmo should drive to cube {target[0].ObjectId} and roll it <<<");
+        var roll = Phase("roll", () => { var t = r.Motion.QueueAiRollCubeAsync(target[0].ObjectId, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 120000);
+        roll["objectId"] = target[0].ObjectId; phases.Add(roll); Console.WriteLine("    " + roll["detail"]);
+    }
+
+    // Distinct cubes the engine reports seeing after this call, nearest first; waits up to 30 s for `want` of them.
+    List<RobotObservedObjectReport> SeeCubes(string name, int want)
+    {
+        Thread.Sleep(1500);
+        double since = Now;
+        Console.WriteLine($"    Looking for {want} cube(s) (up to 30 s)...");
+        List<RobotObservedObjectReport> Seen() => observations.Where(o => o.T >= since).Select(o => o.Report)
+            .GroupBy(o => o.ObjectId).Select(g => g.Last()).OrderBy(o => o.Pose.X * o.Pose.X + o.Pose.Y * o.Pose.Y).ToList();
+        Poll(() => Seen().Count >= want, 30000);
+        var seen = Seen();
+        Event("observe", new() { ["phase"] = name, ["want"] = want, ["seen"] = JsonSerializer.SerializeToNode(seen) });
+        foreach (var c in seen) Console.WriteLine($"    Seen: object {c.ObjectId} at ({c.Pose.X:F0}, {c.Pose.Y:F0}) mm.");
+        return seen;
     }
 
     JsonObject Phase(string name, Func<(Task Task, Func<(bool Admitted, uint? Result, string? Detail, bool Retired)> Read)> start, int limitMs)

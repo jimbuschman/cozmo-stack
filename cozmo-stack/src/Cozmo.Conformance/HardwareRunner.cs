@@ -357,6 +357,12 @@ public static class HardwareRunner
     {
         var dir = o.TestDirectory(check.Id);
         var args = check.Command(o);
+        // Every live tool starts the engine, which needs the extracted resources (EngineStartupResources). Checks whose
+        // command was written before that requirement (K, B, D, ...) did not pass it, so the tool stopped at startup
+        // (operator run 2026-11-15, K: "Engine startup needs the extracted resources").
+        string? resources = o.ResourcesPath ?? o.Obb;
+        if (resources is not null && !args.Contains("--resources") && !args.Contains("--obb") && !args.Contains("--assets"))
+            args = args.Concat(new[] { "--resources", resources }).ToArray();
         string log = Path.Combine(dir, "console.log");
         Console.WriteLine();
         Console.WriteLine($"  running: {string.Join(' ', args)}");

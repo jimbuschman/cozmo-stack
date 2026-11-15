@@ -40,6 +40,25 @@ internal sealed class NativeDriveToRollRunner:CompoundActionSequential
         _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,"Actions","IDriveToInteractWithObject.SetMaxTurnTowardsFaceAngle.NullActions","Cannot set angle of null actions: constructor maximum was zero");
         //0055BAF4: setters cannot create absent face/object-turn children. Named triggers have no face receiver.
     }
+    // The outside-AI command's completion (CozmoMotion), set only on that path; the same shape as NativeDriveToPickupBeaconRunner.
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
+    internal EngineRobot? AiOwner;
+    private bool _aiEnded;
+    public override uint Update()
+    {
+        if(AiNativeEnded is null)return base.Update();
+        int depth=Watcher?.HostUpdateDepth??0;
+        try{return base.Update();}
+        catch(NativeActionUnavailable error){Watcher?.UnwindUnavailableHostUpdate(depth);Unavailable?.Invoke(error);return EngineActionResult.Running;}
+    }
+    public override void WatcherEnding()
+    {
+        base.WatcherEnding();
+        if(_aiEnded || AiNativeEnded is not {} ended)return;
+        _aiEnded=true;
+        var owner=AiOwner;
+        ended.TrySetResult((State,owner is null || owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot,owner)));
+    }
     private sealed class NativeLambda(ManipulationSystem m,Action callback):NativeVisionRunner(m,0x33,0)
     {
         protected override string ActionName=>"WaitForLambda";

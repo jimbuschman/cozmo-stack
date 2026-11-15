@@ -289,6 +289,76 @@ public sealed class CozmoMotion
     }
 
     /// <summary>
+    /// Queues a roll of a cube after existing actions, as the app's <c>RollObject</c> request does with its default fields
+    /// (usePreDockPose true, useApproachAngle false, useManualSpeed false, doDeepRoll false, checkForObjectOnTop true,
+    /// default motion profile). The engine's handler builds <c>DriveToRollObjectAction(robot, id, false, angle, false,
+    /// Radians(0), true)</c> (0x0052AA14..0x0052AA52), then <c>EnableDeepRoll(false)</c> (0x0052AA5C) and
+    /// <c>SetShouldCheckForObjectOnTopOf(true)</c> (0x0052AA78), the IDockAction default (M12-037).
+    /// </summary>
+    // fidelity: M15-077
+    public async Task<AiPickupActionResult> QueueAiRollCubeAsync(uint objectId, CancellationToken cancellationToken = default)
+    {
+        if(objectId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
+        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        var engine=_robot.Engine;
+        var owner=engine.Robot;
+        Task<AiHeadActionResult> task;
+        string? missing=null;
+        using(engine.EnterSynchronousOwner())
+        {
+            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for an action");
+            var runtime=owner.NativeBehaviorRuntime;
+            if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation ||
+                owner.CarryingOwner is null || owner.DockingOwner is null || !owner.HasExternalInterface)
+                return new(false,null,"MISSING: original roll, carrying, docking or vision owner unavailable");
+            uint tag=AllocateAiTag();
+            if(tag==0)return new(false,null,"No external action tag is available");
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
+            var action=new Manipulation.NativeDriveToRollRunner(manipulation,objectId);
+            action.Unavailable=e=>missing??=e.Message;
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native cube roll ended",true,()=>Current() && AiOwnerReady(engine,owner));
+        }
+        var result=await task.ConfigureAwait(false);
+        return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired);
+    }
+
+    /// <summary>
+    /// Queues placing the carried cube on top of another cube after existing actions, as the app's <c>PlaceOnObject</c>
+    /// request does with its default fields (usePreDockPose true, useApproachAngle false, useManualSpeed false,
+    /// checkForObjectOnTop true, default motion profile). The engine's handler builds <c>DriveToPlaceOnObjectAction(robot,
+    /// id, false, angle, false, Radians(0), false)</c> (0x0052A5B2..0x0052A5F2), then <c>SetShouldCheckForObjectOnTopOf(true)</c>
+    /// (0x0052A60E). Cozmo must already be carrying a cube.
+    /// </summary>
+    // fidelity: M15-008
+    public async Task<AiPickupActionResult> QueueAiStackOnCubeAsync(uint objectId, CancellationToken cancellationToken = default)
+    {
+        if(objectId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
+        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        var engine=_robot.Engine;
+        var owner=engine.Robot;
+        Task<AiHeadActionResult> task;
+        string? missing=null;
+        using(engine.EnterSynchronousOwner())
+        {
+            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for an action");
+            var runtime=owner.NativeBehaviorRuntime;
+            if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation ||
+                owner.CarryingOwner is null || owner.DockingOwner is null || !owner.HasExternalInterface)
+                return new(false,null,"MISSING: original placement, carrying, docking or vision owner unavailable");
+            uint tag=AllocateAiTag();
+            if(tag==0)return new(false,null,"No external action tag is available");
+            bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
+            var action=new Manipulation.NativeDriveToPlaceOnBeaconRunner(manipulation,objectId,Current);
+            action.Unavailable=e=>missing??=e.Message;
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native place-on-cube ended",true,()=>Current() && AiOwnerReady(engine,owner));
+        }
+        var result=await task.ConfigureAwait(false);
+        return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired);
+    }
+
+    /// <summary>
     /// Queues a straight drive after existing actions. Cancellation addresses this runner, but its native
     /// destructor aborts the robot's active shared path and driving animation, even if this drive was pending.
     /// </summary>
@@ -413,6 +483,8 @@ public sealed class CozmoMotion
         else if(action is Vision.NativeTrackFaceRunner trackFace)trackFace.AiNativeEnded=completion;
         else if(action is Vision.NativeLastFaceRunner lastFace)lastFace.AiNativeEnded=completion;
         else if(action is Vision.NativeTurnTowardsObjectRunner turnObject)turnObject.AiNativeEnded=completion;
+        else if(action is Manipulation.NativeDriveToRollRunner roll){roll.AiNativeEnded=completion;roll.AiOwner=owner;}
+        else if(action is Manipulation.NativeDriveToPlaceOnBeaconRunner placeOn){placeOn.AiNativeEnded=completion;placeOn.AiOwner=owner;}
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)

@@ -39,6 +39,25 @@ internal sealed class NativeDriveToPlaceOnBeaconRunner:CompoundActionSequential
         if(!current())return;
         SetNativeCompletionProxy(Place.Tag);
     }
+    // The outside-AI command's completion (CozmoMotion), set only on that path; the same shape as NativeDriveToPickupBeaconRunner.
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
+    internal EngineRobot? AiOwner;
+    private bool _aiEnded;
+    public override uint Update()
+    {
+        if(AiNativeEnded is null)return base.Update();
+        int depth=Watcher?.HostUpdateDepth??0;
+        try{return base.Update();}
+        catch(NativeActionUnavailable error){Watcher?.UnwindUnavailableHostUpdate(depth);Unavailable?.Invoke(error);return EngineActionResult.Running;}
+    }
+    public override void WatcherEnding()
+    {
+        base.WatcherEnding();
+        if(_aiEnded || AiNativeEnded is not {} ended)return;
+        _aiEnded=true;
+        var owner=AiOwner;
+        ended.TrySetResult((State,owner is null || owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot,owner)));
+    }
     private sealed class Wait(ManipulationSystem m,Action callback):NativeVisionRunner(m,0x33,0)
     {
         protected override string ActionName=>"WaitForLambda";
