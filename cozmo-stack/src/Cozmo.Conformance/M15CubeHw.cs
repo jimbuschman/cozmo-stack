@@ -350,7 +350,7 @@ internal sealed class M15CubeRun
         uint? charger = null;
         bool seen = Poll(() =>
         {
-            foreach (var sighting in chargerObservations.ToArray().Reverse())
+            foreach (var sighting in Enumerable.Reverse(chargerObservations.ToArray()))
             {
                 if (sighting.T < since) break;
                 var located = world.GetLocatedObjectById(sighting.Id);
