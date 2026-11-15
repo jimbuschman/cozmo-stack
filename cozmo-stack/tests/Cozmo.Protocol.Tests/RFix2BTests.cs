@@ -10,6 +10,8 @@ namespace Cozmo.Protocol.Tests;
 /// R-FIX2 stream B: M10-002, M10-009, M10-010, M10-011, M15-004, M15-008, M15-009, M15-011, M15-013, M15-015, M3-024, M6-003.
 /// Expected values come from the cited instructions in libcozmoEngine.so, never from the implementation's own output.
 /// </summary>
+// CaptureSourceLogs also receives the process-wide SteppedBehavior.MissingReported stream.
+[Collection("SteppedBehavior missing-report statics")]
 public class RFix2BTests
 {
     private static float F(uint bits) => BitConverter.UInt32BitsToSingle(bits);
