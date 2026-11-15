@@ -1,8 +1,7 @@
 # Claude worker on the other PC (manager, 2026-11-11)
 
-**PAUSED (operator, 2026-11-15).** Do not start any job below. AGENTS.md "Working mode" and `re-analysis/SCOPE.md`
-replace this list. One action only when asked: run the pending gate on `origin/manager-gate` (GATE-REQUESTS.md), push
-it to main if it passes, and stop.
+**Working mode (operator, 2026-11-15):** only jobs that finish an item in `re-analysis/SCOPE.md`. The numbered list
+below is parked; new jobs are added in `QUEUE.md` and named here when released. Read AGENTS.md "Working mode".
 
 
 A second Claude Code session on the operator's other PC does what Codex did: it builds queued jobs on its own branch.

@@ -30,7 +30,21 @@ one hit was closed from the binary); and the manager spot-read its main path aga
 - settling fidelity records as a goal (a record may be settled when its item is finished, in one line);
 - census, readiness-list and record-correction jobs; per-job check files; inventory re-approval rounds;
 - re-proving code that passes on the robot and hits no MISSING marker;
-- polling loops and worker relays. The manager builds directly; a worker is used only for a concrete build task.
+- polling loops.
+
+**Guardrails against drift (operator, 2026-11-15):**
+1. Every job names the SCOPE.md item it finishes. A job that names none is not released: no census, readiness or
+   record-correction jobs, and no work that only feeds another job.
+2. Progress is counted only as SCOPE.md items finished. The manager reports the count to the operator each week.
+3. A robot run every week. Code that has not run on the robot is not finished.
+4. Tripwire: if a week ends with no new SCOPE.md item finished, the manager tells the operator that day, with the
+   numbers, and the operator decides whether to change course or stop.
+5. Checkpoint 2026-12-13: if SCOPE.md sections A and B are not finished or clearly close, the operator decides whether
+   to stop.
+
+**Who does what is unchanged:** the workers (Codex, the Claude worker) build; the manager writes each job (what to
+build, the binary addresses, the test), checks the result against the binary and the tests, merges and pushes.
+Only jobs that finish a SCOPE.md item go in the queue.
 
 The fidelity manifest, the inventories and the research files stay as reference material. `fidelity.py --check` and
 the push gate still run, so nothing in them may be left inconsistent.

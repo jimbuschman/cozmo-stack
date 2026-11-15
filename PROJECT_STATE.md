@@ -16,7 +16,8 @@ record settled after 2026-11-12. The operator was close to abandoning the projec
 2. The manager fixes each failure from the binary, one at a time.
 3. The missing commands are built (go to a place, the charger, roll, stack, the charger report), then the LLM bridge.
 
-**Parked, not cancelled:** the trial-m13 job queue (jobs 30-32 and every PROPOSED row). The Claude worker is off.
+**The workers keep building** (Codex, the Claude worker); the manager writes the jobs and checks them. Older trial-m13
+rows that do not serve SCOPE.md (jobs 30-32's predecessors, every PROPOSED census or readiness row) are parked.
 
 ## The plan (operator, 2026-10-05): one layer at a time
 
