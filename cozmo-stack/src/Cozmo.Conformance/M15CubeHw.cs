@@ -27,6 +27,9 @@ public static class M15CubeHw
     internal const string ChargerSetup = "CHARGER ROUND. Clear the cubes away. Put the charger 20–40 cm directly in front of Cozmo,\n"
         + "marker facing him. Leave it powered and give him space to turn and back onto it. Press Enter when ready.";
 
+    internal const string FlipSetup = "FLIP ROUND. Put one light cube about 20 cm ahead, upright with a side marker facing Cozmo. Press Enter when ready.";
+    internal const string WheelieSetup = "WHEELIE ROUND. Reset one light cube about 20 cm ahead, upright with a side marker facing Cozmo. Press Enter when ready.";
+
     public const float PlaceHeightMm = 32f;
     /// <summary>Head angle for looking at a cube on the table 10..25 cm ahead (about -9 degrees). Run 1 (2026-11-09) kept the
     /// default -0.42 rad, which put the cube at the image's top edge with its marker cut off. Not a source value.</summary>
@@ -43,7 +46,7 @@ public static class M15CubeHw
     public static List<JsonObject> LoadRecords(string path, bool skills = false)
     {
         var all = JsonNode.Parse(File.ReadAllText(path))!["records"]!.AsArray().Select(x => x!.AsObject()).ToDictionary(x => x["id"]!.GetValue<string>());
-        var ids = skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016" }) : RecordIds;
+        var ids = skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016", "M12-035", "M13-028", "M13-041" }) : RecordIds;
         var missing = ids.Where(id => !all.ContainsKey(id)).ToArray();
         if (missing.Length > 0) throw new InvalidOperationException("Missing fidelity records: " + string.Join(", ", missing));
         return ids.Select(id => (JsonObject)all[id].DeepClone()).ToList();
@@ -69,7 +72,7 @@ public static class M15CubeHw
             if (validate)
             {
                 Console.WriteLine($"{TestId}: {records.Count} valid records; no network opened.");
-                if (skills) Console.WriteLine("Skill rounds: stack, roll, mount charger.\n" + ChargerSetup);
+                if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{ChargerSetup}");
                 return 0;
             }
             if (Robot.Emulation.ShippedLibraries.FindLibDir() is null)
@@ -184,6 +187,8 @@ internal sealed class M15CubeRun
             if (Skills && !yes)
             {
                 RunSkills(robot);
+                RunTrick("flip", M15CubeHw.FlipSetup, robot.Motion.QueueAiFlipCubeAsync);
+                RunTrick("wheelie", M15CubeHw.WheelieSetup, robot.Motion.QueueAiPopAWheelieAsync);
                 RunCharger(robot);
             }
             if (!yes)
@@ -283,6 +288,44 @@ internal sealed class M15CubeRun
         roll["objectId"] = target[0].ObjectId; phases.Add(roll); Console.WriteLine("    " + roll["detail"]);
     }
 
+    void RunTrick(string name, string setup, Func<uint, CancellationToken, Task<AiPickupActionResult>> queue)
+    {
+        Console.WriteLine("\n" + setup);
+        ReadLineBounded();
+        cancel.Token.ThrowIfCancellationRequested();
+        var targets = SeeCubes(name, 1);
+        if (targets.Count == 0)
+        {
+            errors.Enqueue($"{name}: no fresh cube report");
+            Console.WriteLine($"    He did not report a cube. Skipping the {name} round.");
+            return;
+        }
+        Console.WriteLine($">>> WATCH: {name} on cube {targets[0].ObjectId} <<<");
+        RunSkillAction(name, targets[0].ObjectId, queue);
+    }
+
+    JsonObject RunSkillAction(string name, uint id, Func<uint, CancellationToken, Task<AiPickupActionResult>> queue)
+    {
+        using var actionCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
+        Task<AiPickupActionResult>? queued = null;
+        var phase = Phase(name, () =>
+        {
+            var task = queued = queue(id, actionCancel.Token);
+            return (task, () => task.IsCompletedSuccessfully ?
+                (task.Result.Admitted, task.Result.EngineResult, task.Result.Detail, task.Result.OwnerRetired) : default);
+        }, 120000);
+        phase["objectId"] = id;
+        phases.Add(phase);
+        Console.WriteLine("    " + phase["detail"]);
+        if (queued is { IsCompleted: false })
+        {
+            actionCancel.Cancel();
+            if (!Poll(() => queued.IsCompleted, 3000))
+                throw new InvalidOperationException($"{name}: the action did not retire after cancellation");
+        }
+        return phase;
+    }
+
     void RunCharger(CozmoRobot r)
     {
         Console.WriteLine("\n" + M15CubeHw.ChargerSetup);
@@ -311,16 +354,8 @@ internal sealed class M15CubeRun
             return;
         }
         Console.WriteLine($">>> WATCH: Cozmo should approach charger {id}, turn and back onto it <<<");
-        var mount = Phase("mount-charger", () =>
-        {
-            var t = r.Motion.QueueAiMountChargerAsync(id, cancel.Token);
-            return (t, () => t.IsCompletedSuccessfully ?
-                (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default);
-        }, 120000);
-        mount["objectId"] = id;
+        var mount = RunSkillAction("mount-charger", id, r.Motion.QueueAiMountChargerAsync);
         mount["onChargerAfter"] = r.State.Latest?.Has(RobotStatusFlag.IsOnCharger);
-        phases.Add(mount);
-        Console.WriteLine("    " + mount["detail"]);
     }
 
     // Distinct cubes the engine reports seeing after this call, nearest first; waits up to 30 s for `want` of them.

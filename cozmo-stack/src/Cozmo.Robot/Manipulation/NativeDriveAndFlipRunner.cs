@@ -4,25 +4,26 @@ namespace Cozmo.Robot.Manipulation;
 
 // fidelity: M13-014, M12-035
 // K15-K19: actual9arg IDriveToInteract outer compound, not the public async adapter.
-internal sealed class NativeDriveAndFlipRunner:CompoundActionSequential
+internal sealed class NativeDriveAndFlipRunner:AiCubeTrickCompound
 {
     private readonly ManipulationSystem _m;
+    private bool _reportedIndeterminateThreshold;
     internal NativeDriveToObjectRunner? Drive {get;}
     internal NativeLastFaceRunner? Face {get;}
     internal NativeFlipBlockRunner Flip {get;}
     internal CompoundActionSequential? DriveAndWait {get;}
     internal float MaximumFaceTurn {get;}
-    internal Action<NativeActionUnavailable>? Unavailable;
     protected override string ActionName=>"DriveToAndFlipBlock";
     public override string? NativeName=>ActionName;
-    internal NativeDriveAndFlipRunner(ManipulationSystem m,uint id,float maximum):base(()=>m.Robot.Engine.Timer.SecondsF)
+    internal NativeDriveAndFlipRunner(ManipulationSystem m,uint id,float maximum,EngineRobot? owner=null,Func<bool>? current=null):base(m,owner,current)
     {
         _m=m;MaximumFaceTurn=maximum;Type=5;SourceLog=(l,c,k,t)=>m.Robot.Engine.EmitSourceLog(l,c,k,t);SeedNativeEmptyCompletion();
-        if(m.Robot.Engine.Robot!.CarryingOwner!.CarriedObjectId!=id)
+        if((owner??m.Robot.Engine.Robot)!.CarryingOwner!.CarriedObjectId!=id)
         {
-            Drive=new(m,id,PreActionType.Flipping);Drive.Unavailable=error=>Unavailable?.Invoke(error);
+            Drive=owner is null ? new(m,id,PreActionType.Flipping) : new(m,owner,id,PreActionType.Flipping,AiExecutionCurrent);
+            Drive.Unavailable=ReportUnavailable;
             DriveAndWait=new(()=>m.Robot.Engine.Timer.SecondsF){SourceLog=SourceLog};DriveAndWait.SeedNativeEmptyCompletion();
-            DriveAndWait.AddAction(Drive,false,false);DriveAndWait.AddAction(new InteractionWait(m),false,false);
+            DriveAndWait.AddAction(Drive,false,false);DriveAndWait.AddAction(new InteractionWait(m) { ScopedOwner=owner, ScopedParentCurrent=owner is null ? null : AiExecutionCurrent },false,false);
             AddAction(DriveAndWait,true,false);
             if(new Radians(maximum)>new Radians(0))
             {
@@ -30,7 +31,8 @@ internal sealed class NativeDriveAndFlipRunner:CompoundActionSequential
                 AddAction(new NativeTurnTowardsObjectRunner(m,id,NativeTurnTowardsObjectRunner.AnyCode,maximum,false,false),true,false);
             }
         }
-        Flip=new(m,id);Flip.Unavailable=error=>Unavailable?.Invoke(error);
+        Flip=new(m,id) { ScopedOwner=owner, ScopedParentCurrent=owner is null ? null : AiExecutionCurrent };
+        Flip.Unavailable=ReportUnavailable;
         if(Drive is not null)Drive.SetPosesFunction(GetPossiblePoses);
         AddAction(Flip,false,false);SetNativeCompletionProxy(Flip.Tag);
     }
@@ -39,8 +41,14 @@ internal sealed class NativeDriveAndFlipRunner:CompoundActionSequential
     {
         // L1's incoming vector is freshly empty on Init/Check. The indeterminate+100 branch
         // leaves inPosition=false/Flip.check=true either way; no threshold value is invented.
+        if (AiOwner is not null && !_reportedIndeterminateThreshold)
+        {
+            _reportedIndeterminateThreshold = true;
+            Behavior.SteppedBehavior.ReportMissing("M1-034/M12-035: skip DriveAndFlipBlock L1's uninitialized +0x100 threshold; retain the empty input and existing pose check");
+        }
         poses=Array.Empty<PreActionPose>();
-        var owner=_m.Robot.Engine.Robot!;var main=owner.GetCheckedMainPose();
+        if (AiOwner is not null && !AiExecutionCurrent()) return ActionResult.CancelledWhileRunning;
+        var owner=AiOwner??_m.Robot.Engine.Robot!;var main=owner.GetCheckedMainPose();
         var output=DockPreActionPoses.Get(new(obj,PreActionType.Flipping,false,FlipBlockAction.InitAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>_m.NativeObstacles(main));
         if(output.Result!=ActionResult.Success)return output.Result;
         using var face=new Pose3d("");bool known=_m.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),true,face);
@@ -76,6 +84,7 @@ internal sealed class NativeDriveAndFlipRunner:CompoundActionSequential
         public override int Init()=>0;
         public override uint CheckIfDone()
         {
+            if (!ScopedCurrent) return EngineActionResult.Cancelled;
             //9arg ctor leaves weak dock null/D4false; defined diagnostic then predicate1.
             M.Robot.Engine.EmitSourceLog(EngineLogLevel.Error,"Actions","IDriveToInteractWithObject.NoDockAction","No dock action");
             EngineErrorState.StoreAndMaybeBreak();return 0;

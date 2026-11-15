@@ -85,4 +85,3 @@ public sealed class AiMountChargerControlTests
         Assert.Null(result.EngineResult);
     }
 }
-

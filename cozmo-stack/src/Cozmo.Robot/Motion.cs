@@ -356,6 +356,54 @@ public sealed class CozmoMotion
         return new(result.Admitted,result.EngineResult,action.HostUnavailable is null ? result.Detail : "MISSING: " + action.HostUnavailable,result.OwnerRetired);
     }
 
+    /// <summary>Queues the app's drive-and-flip action for the given cube.</summary>
+    // fidelity: M12-035, M13-028
+    // 0x0052A038..0x0052A064: robot, ObjectID by value, false, 0.0f, false,
+    // Radians(0), false, -1.0f. The last float is unread by 0x0055E208.
+    // 0x0052A068..0x0052A078: default profile skips the custom-profile setter.
+    public Task<AiPickupActionResult> QueueAiFlipCubeAsync(uint objectId, CancellationToken cancellationToken = default) =>
+        QueueAiCubeTrickAsync(objectId, false, cancellationToken);
+
+    /// <summary>Queues the app's pre-dock wheelie action for the given cube.</summary>
+    // fidelity: M13-041
+    // 0x0052A8B8..0x0052A8F8: pre-dock true selects the compound. Robot, ObjectID by reference,
+    // useApproachAngle=false, approach angle 0.0f, useManualSpeed=false, Radians(0), literal true.
+    // 0x0055D224 forwards the last true to the shared ctor but 0x0055B392 skips the face child.
+    // 0x0052A8FC..0x0052A90E: default profile skips the custom-profile setter.
+    public Task<AiPickupActionResult> QueueAiPopAWheelieAsync(uint objectId, CancellationToken cancellationToken = default) =>
+        QueueAiCubeTrickAsync(objectId, true, cancellationToken);
+
+    private async Task<AiPickupActionResult> QueueAiCubeTrickAsync(uint objectId, bool wheelie, CancellationToken cancellationToken)
+    {
+        if (objectId > int.MaxValue) return new(false, null, "Object ID must be a nonnegative signed world ID");
+        if (cancellationToken.IsCancellationRequested) return new(false, null, "Request cancelled before admission");
+        var engine = _robot.Engine;
+        var owner = engine.Robot;
+        Manipulation.AiCubeTrickCompound action;
+        Task<AiHeadActionResult> task;
+        using (engine.EnterSynchronousOwner())
+        {
+            if (cancellationToken.IsCancellationRequested) return new(false, null, "Request cancelled before admission");
+            if (owner is null || !AiOwnerReady(engine, owner)) return new(false, null, "Robot is not ready for an action");
+            var runtime = owner.NativeBehaviorRuntime;
+            if (runtime is null || runtime.IsRetired || runtime.Manipulation is not { } manipulation ||
+                owner.CarryingOwner is null || owner.DockingOwner is null || owner.BehaviorManagerOwner is null || !owner.HasExternalInterface)
+                return new(false, null, "MISSING: original cube trick, carrying, docking or vision owner unavailable");
+            uint tag = AllocateAiTag();
+            if (tag == 0) return new(false, null, "No external action tag is available");
+            bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner) &&
+                !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime, runtime);
+            action = wheelie
+                ? new Manipulation.NativeDriveToPopAWheelieRunner(manipulation, objectId, 0f, owner, Current)
+                : new Manipulation.NativeDriveAndFlipRunner(manipulation, objectId, 0f, owner, Current);
+            task = AdmitAiAction(action, owner, tag, cancellationToken,
+                wheelie ? "Native wheelie ended" : "Native flip ended", true, () => Current() && AiOwnerReady(engine, owner));
+        }
+        var result = await task.ConfigureAwait(false);
+        return new(result.Admitted, result.EngineResult,
+            action.HostUnavailable is null ? result.Detail : "MISSING: " + action.HostUnavailable, result.OwnerRetired);
+    }
+
     /// <summary>
     /// Queues placing the carried cube on top of another cube after existing actions, as the app's <c>PlaceOnObject</c>
     /// request does with its default fields (usePreDockPose true, useApproachAngle false, useManualSpeed false,
@@ -518,6 +566,7 @@ public sealed class CozmoMotion
         else if(action is Vision.NativeTurnTowardsObjectRunner turnObject)turnObject.AiNativeEnded=completion;
         else if(action is Manipulation.NativeDriveToRollRunner roll){roll.AiNativeEnded=completion;roll.AiOwner=owner;}
         else if(action is Manipulation.NativeDriveToMountChargerRunner mount){mount.AiNativeEnded=completion;mount.AiOwner=owner;}
+        else if(action is Manipulation.AiCubeTrickCompound trick)trick.AiNativeEnded=completion;
         else if(action is Manipulation.NativeDriveToPlaceOnBeaconRunner placeOn){placeOn.AiNativeEnded=completion;placeOn.AiOwner=owner;}
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
