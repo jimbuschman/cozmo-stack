@@ -2,7 +2,38 @@ This project is reverse-engineering the official Anki Cozmo app/engine into a C#
 
 The goal is source-faithful app-side behavior, not merely behavior that appears to work.
 
-**Start every session by reading `PROJECT_STATE.md`.** It says which layer is in progress, what has been approved and what is open. Work follows the Process section at the end of this file.
+**Start every session by reading `PROJECT_STATE.md` and `re-analysis/SCOPE.md`.** Work follows "Working mode" below.
+
+## Working mode (operator, 2026-11-15): finish the scope list
+
+**This section overrides the Process section and anything else in this file that conflicts with it.**
+
+**The goal** is Cozmo as the body for an outside LLM, keeping his own personality (operator, 2026-11-03). What "done"
+contains is `re-analysis/SCOPE.md`. Progress is counted only there: required items finished, out of the total.
+
+**What gets worked.** Only work that finishes a required item in SCOPE.md, or fixes something a robot run showed is
+broken. Deferred and excluded items are not worked. One item at a time, to finished.
+
+**Finished means:** the item ran on the operator's robot and passed; no MISSING marker was hit on its path (or each
+one hit was closed from the binary); and the manager spot-read its main path against the binary.
+
+**The evidence rules stay** ("What we reproduce", the Primary rule, the Source authority order):
+1. Nothing new is built without the binary: every behaviour-changing step cites an address or a shipped file, and a
+   verifier checks the build against the disassembly before it merges.
+2. A robot failure is fixed by reading what the engine does at that point. Tuning a value until the robot looks right
+   is not a fix.
+3. Unknown or unbuilt engine behaviour stays a visible MISSING in code and in the run log.
+4. A robot check passes or fails only on a signal the engine defines; the rest is an observation for the operator.
+5. The full test suite passes before anything goes to main.
+
+**What is no longer done,** unless the operator asks for it:
+- settling fidelity records as a goal (a record may be settled when its item is finished, in one line);
+- census, readiness-list and record-correction jobs; per-job check files; inventory re-approval rounds;
+- re-proving code that passes on the robot and hits no MISSING marker;
+- polling loops and worker relays. The manager builds directly; a worker is used only for a concrete build task.
+
+The fidelity manifest, the inventories and the research files stay as reference material. `fidelity.py --check` and
+the push gate still run, so nothing in them may be left inconsistent.
 
 ## What we reproduce (operator, 2026-10-17; replaces "Exact, always" of 2026-09-27)
 

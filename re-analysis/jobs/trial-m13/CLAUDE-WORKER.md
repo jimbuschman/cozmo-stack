@@ -1,5 +1,10 @@
 # Claude worker on the other PC (manager, 2026-11-11)
 
+**PAUSED (operator, 2026-11-15).** Do not start any job below. AGENTS.md "Working mode" and `re-analysis/SCOPE.md`
+replace this list. One action only when asked: run the pending gate on `origin/manager-gate` (GATE-REQUESTS.md), push
+it to main if it passes, and stop.
+
+
 A second Claude Code session on the operator's other PC does what Codex did: it builds queued jobs on its own branch.
 The manager (Claude on this PC) checks each one against the binary, settles records and merges.
 

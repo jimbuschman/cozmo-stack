@@ -2,6 +2,22 @@
 
 Read first in every session. The manager keeps this file current; the process it follows is the Process section of `AGENTS.md`.
 
+## Current mode (operator, 2026-11-15): finish the scope list
+
+**Read `re-analysis/SCOPE.md` first.** It lists what "done" contains and each item's state. AGENTS.md "Working mode"
+says how work is done now. Everything below this section is history and reference; "The plan" of 2026-10-05 and the
+record counts are no longer the measure of progress.
+
+**Why:** in the week to 2026-11-15, about two thirds of the jobs produced documents, not robot behaviour, and one
+record settled after 2026-11-12. The operator was close to abandoning the project.
+
+**Next steps, in order:**
+1. The operator runs the robot checks for the required items (SCOPE.md A and B).
+2. The manager fixes each failure from the binary, one at a time.
+3. The missing commands are built (go to a place, the charger, roll, stack, the charger report), then the LLM bridge.
+
+**Parked, not cancelled:** the trial-m13 job queue (jobs 30-32 and every PROPOSED row). The Claude worker is off.
+
 ## The plan (operator, 2026-10-05): one layer at a time
 
 **Why:** five workers in parallel produced merge conflicts, a long checking queue and no finish line. Nothing has been

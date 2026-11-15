@@ -1,0 +1,64 @@
+# Scope: what "done" contains (draft for the operator, 2026-11-15)
+
+Goal (operator, 2026-11-03): Cozmo is the body for an outside LLM and keeps his own personality. The LLM decides what
+he does; the stack does it the way the engine does.
+
+State labels:
+- **robot**: seen working on the operator's robot;
+- **sim**: built from the binary and passing simulated tests, never (or not recently) run on the robot;
+- **partial**: some code, known holes;
+- **none**: no code.
+
+The 78 behaviour classes cover all 178 shipped behaviour IDs. States come from the code and the robot bundles in
+`re-analysis/acceptance/hardware/`, not from record counts. Drafted in one pass; a state marked sim may turn out
+partial when it is run.
+
+## A. Commands and events for the LLM (required)
+
+| Item | State |
+| --- | --- |
+| Head, lift, drive straight, turn in place | sim (motion itself: robot) |
+| Turn to a face, turn to a cube, track a face | sim |
+| Play an authored animation | sim (animations: robot) |
+| Say a sentence in his voice | robot (2026-11-09; maybe slightly slow) |
+| Pick up a cube, put it down | robot (2026-11-09) |
+| Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | sim |
+| Teach, rename and erase a face | sim |
+| Go to a place; return to and mount the charger | none as a command (actions exist) |
+| Roll, stack as commands | none as a command (behaviours exist) |
+| Charger seen report (operator 2026-11-15) | none |
+| Freeplay on/off, and returning to Freeplay after a command | partial (never run together) |
+| The connection for an LLM (bridge) | none |
+
+## B. Personality (required)
+
+| Group | Classes | State |
+| --- | --- | --- |
+| Freeplay loop, activities, needs, mood | (system) | robot (2026-11-03, 4 min; 15 min check Z2 not run) |
+| Physical reactions | ReactToCliff, ReactToPickup, ReactToRobotOnBack/OnFace/OnSide, ReactToRobotShaken, ReactToReturnedToTreads, ReactToImpact, ReactToPlacedOnSlope, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToOnCharger, ReactToFrustration | sim (cliff: robot; checks G, C, H, J exist) |
+| Needs | ExpressNeeds, PlayAnimOnNeedsChange, DriveInDesperation, EarnedSparks | sim / partial (DriveInDesperation's energy search missing) |
+| Idle life | PlayAnim, PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, FindFaces, LookForFaceAndCube, VisitInterestingEdge, PounceOnMotion, ThinkAboutBeacons | robot for Pounce, VisitInterestingEdge, FindFaces; sim for the rest |
+| Faces | AcknowledgeFace, InteractWithFaces, SearchForFace, DriveToFace, EnrollFace, RespondToRenameFace, ReactToPet | sim |
+| Cubes | AcknowledgeObject, ReactToCubeMoved, PickUpCube, PutDownBlock, RollBlock, StackBlocks, DriveOffCharger | robot for pickup, put-down, drive-off; sim for the rest |
+
+## C. Playful extras (wanted, after A and B)
+
+PopAWheelie, KnockOverCubes, FistBump, Singing, Dance, CubeLiftWorkout, FireTruckAlarm, BringCubeToBeacon,
+RamIntoBlock, Bouncer: sim. PeekABoo, TrackLaser, GuardDog: none or partial.
+
+## D. Deferred (not worked unless the operator moves them)
+
+BuildPyramid, BuildPyramidBase, PyramidThankYou, ReactToPyramid, RespondPossiblyRoll, OnConfigSeen,
+CheckForStackAtInterval, CantHandleTallStack, ReactToStackOfCubes, ReactToSparked and the Sparks flows,
+RequestGameSimple (10 IDs), FeedingEat, FeedingSearchForCube, OnboardingShowCube, LookInPlaceMemoryMap,
+ExploreVisitPossibleMarker, PickUpAndPutDownCube.
+
+## E. Excluded
+
+FactoryTest, FactoryCentroidExtractor, LiftLoadTest, DevTurnInPlaceTest, DockingTestSimple (as a behaviour; the
+charger mount action stays in A).
+
+## Count
+
+Required (A + B): 12 command items and about 40 behaviour classes. On the robot today: 3 command items and about 8
+classes. No code at all: 5 command items and 1 class.
