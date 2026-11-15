@@ -576,15 +576,15 @@ public sealed class DockingSystem : IDisposable
     /// <c>DockingComponent::CanStackOnTopOfObject</c> 0x0063C5C4 (M12-012) = <see cref="CanInteractWithObjectHelper"/> 0x0063C654 and then
     /// <c>!IsPoseTooHigh(pose, 1.0, 15.0, 0.5)</c> (1.0 at 0x0063C614, 15.0 at 0x0063C60E, 0.5 at 0x0063C606, call 0x0063C618); it does not reuse the helper's found-object result.
     /// <c>IsPoseTooHigh</c> (0x00877955) is given the object's pose WITH RESPECT TO THE ROBOT'S POSE (the helper's out pose), so its z is the height above the robot's z, not the world z;
-    /// the two differ once the robot's z is not 0. Without a robot pose the <c>GetWithRespectTo</c> fails and the answer is false (as the helper's own failure).
+    /// the two differ once the robot's z is not 0. When the helper returns false (its <c>GetWithRespectTo</c> included) the answer is false and IsPoseTooHigh is not called.
     /// </summary>
     // fidelity: M12-012
     public bool CanStackOnTopOfObject(ObservableObject obj)
     {
-        if (!CanInteractWithObjectHelper(obj)) return false;
-        if (_vision.History.Latest is not { } state) return false;
-        using var robotPose=_robot.Engine.Robot?.CopyCheckedMainPose()??new Pose3d(state.RobotPose);
-        using var wrt = obj.NativePose.WithRespectTo(robotPose);
+        // fidelity: M12-012 — the out pose is a local Pose3d (0x0063C5DE/0x0063C5E6) passed to the helper (0x0063C5F8 add r2,sp,#0x14 -> 0x0063C5FE);
+        // helper false -> 0 without IsPoseTooHigh (0x0063C602 cbz -> 0x0063C622); the SAME pose goes to IsPoseTooHigh (0x0063C60A add r1,sp,#0x14 -> 0x0063C618).
+        using var wrt = new Pose3d();
+        if (!CanInteractWithObjectHelper(obj, wrt)) return false;
         return !CubeGeometry.IsPoseTooHigh(obj, wrt, 1.0f, 15.0f, 0.5f);      // ObservableObject::IsPoseTooHigh 0x00877954 (M12-012 C-E4), binary32
     }
 
@@ -596,27 +596,44 @@ public sealed class DockingSystem : IDisposable
     // fidelity: M15-020, M12-012
     public bool CanPickUpObject(ObservableObject obj)
     {
-        if (!CanInteractWithObjectHelper(obj)) return false;
-        if (_vision.History.Latest is not { } state) return false;
-        using var robotPose=_robot.Engine.Robot?.CopyCheckedMainPose()??new Pose3d(state.RobotPose);
-        using var wrt = obj.NativePose.WithRespectTo(robotPose);
+        // fidelity: M12-012, M15-020 — the out pose 0x0063C824 -> helper 0x0063C82A; helper false -> 0 without IsPoseTooHigh (0x0063C82E cbz -> 0x0063C84E);
+        // the same pose to IsPoseTooHigh (0x0063C836 -> 0x0063C844).
+        using var wrt = new Pose3d();
+        if (!CanInteractWithObjectHelper(obj, wrt)) return false;
         return !CubeGeometry.IsPoseTooHigh(obj, wrt, 2.0f, 15.0f, 0.5f);
     }
 
     /// <summary>
     /// <c>DockingComponent::CanInteractWithObjectHelper</c> 0x0063C654..0x0063C794 (M12-012; re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q7, corrected by
     /// 20260929-R-VIS-verify-M12-fix2.md): it reads only the object's family (1 or 2: Block or LightCube), <c>IsRestingFlat(Radians(0x3E32B8C2))</c>, the carried compare
-    /// (<c>[[robot+0x284]+8] != id</c>, 0x0063C686..0x0063C698), <c>GetWithRespectTo(robot pose)</c> (always succeeds with one pose origin) and finally
+    /// (<c>[[robot+0x284]+8] != id</c>, 0x0063C686..0x0063C698), <c>GetWithRespectTo(obj pose, robot pose, out pose)</c> (0x0063C6A4..0x0063C6BE: a null node or a different root returns false, 0x00845A46..0x00845A58,
+    /// 0x00845A62..0x00845A68, and the helper returns false before any filter is built or any search runs) and finally
     /// <c>FindObjectOnTopOrUnderneathHelper(obj, 15.0, default filter, onTop = 1) == null</c> (0x0063C6C0..0x0063C730, 0x0063C78A..0x0063C792; the search is M13-007's with the default filter, BlockWorld.FindObjectOnTopOrUnderneathDefaultFilter: the current origin's located
-    /// objects of every family, the same-root predicate, with M13-023's stand-in for tilted/non-cube pairs). NO PoseState test exists in the unit. <c>CanPickUpObject</c> 0x0063C7F0 and <c>CanPickUpObjectFromGround</c> 0x0063C880
-    /// are recorded (M12-012) but NO C# caller exists, so they are not built.
+    /// objects of every family, the same-root predicate, with M13-023's stand-in for tilted/non-cube pairs). NO PoseState test exists in the unit. <c>CanPickUpObject</c> 0x0063C7F0 is <see cref="CanPickUpObject"/>; <c>CanPickUpObjectFromGround</c> 0x0063C880
+    /// has no Docking counterpart (the stack's 0x0063C880 shape is NativePickupTargetCache.CanInteract(obj, 0.5, 10, 0)).
+    /// The out pose is the object's pose with respect to the robot pose; the callers give it to IsPoseTooHigh (0x0063C5F8/0x0063C60A, 0x0063C824/0x0063C836).
     /// </summary>
     // fidelity: M12-012
     public bool CanInteractWithObjectHelper(ObservableObject obj)
     {
+        using var relPose = new Pose3d();
+        return CanInteractWithObjectHelper(obj, relPose);
+    }
+
+    /// <summary>The helper with its out pose (r2, kept in r7): on success it holds the object's pose with respect to the robot pose (0x0063C6B4 mov r2,r7; 0x0063C6B6).</summary>
+    // fidelity: M12-012
+    public bool CanInteractWithObjectHelper(ObservableObject obj, Pose3d relPose)
+    {
         if (obj.Family is not (ObjectFamily.Block or ObjectFamily.LightCube)) return false;
         if (!obj.IsRestingFlat(BitConverter.Int32BitsToSingle(0x3E32B8C2))) return false;   // Radians(0x3E32B8C2), cited above
         if (Carrying.CarriedObjectId == obj.ObjectId) return false;
+        // Stack-only (no engine counterpart, M12-012 unresolved): no robot state yet -> false; with no EngineRobot the robot pose falls back to a
+        // parentless copy of the latest state's pose. Both kept as they were in the callers.
+        if (_vision.History.Latest is not { } state) return false;
+        using var robotPose=_robot.Engine.Robot?.CopyCheckedMainPose()??new Pose3d(state.RobotPose);
+        // fidelity: M12-012 — E4 0x0063C6A4 GetPose, 0x0063C6AC Robot::GetPose 0x004EA398, 0x0063C6B4 mov r2,r7, 0x0063C6B6 GetWithRespectTo;
+        // not 1 -> return 0 (0x0063C6BA..0x0063C6BE), before the on-top search. A null node or a different root fails (0x00845A46..0x00845A58, 0x00845A62..0x00845A68).
+        if (!Pose3d.GetWithRespectTo(obj.NativePose, robotPose, relPose)) return false;
         // fidelity: M12-012, M13-007 — C11 0x0063C730: tol 15 (0x0063C728), onTop 1, the DEFAULT filter (0x0063C6C0..0x0063C71E): the current origin
         // only, every family, obj excluded, the same-root predicate, the first match in the walk order (census FIND-ON-TOP-SAME-ROOT-1 C11).
         return _vision.World.FindObjectOnTopOrUnderneathDefaultFilter(obj, BlockConfigurationManager.RestingOnToleranceMm, onTop: true, "CanInteractWithObjectHelper 0x0063C730") is null;

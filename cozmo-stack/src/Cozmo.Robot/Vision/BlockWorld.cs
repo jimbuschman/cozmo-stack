@@ -275,6 +275,12 @@ public sealed partial class ObservableObject
     private string? _publicPoseSourceName;
     internal Pose3d NativePose=>_pose;
     internal BlockWorld? PoseWorld; // host serialization owner; not a recovered native object field
+    // fidelity: M12-008 -- stack machinery (no engine field): true exactly while the native node's parent is not a root (the lift, or
+    // another object's node). Recomputed after every in-place write of the node (Pose setter below, which SetContactObservationPose and
+    // SetCarryingObservationPose also reach) and set by the lift attaches (Docking.SetObjectAsAttachedToLift). The engine re-parents a
+    // carried object to the world origin only at AddRobotRelativeObservation 0x00506B82..0x00506BAA (place: callers 0x005338A0,
+    // 0x00553CAA/0x00553D2A, 0x005C84CE) and at UpdatePoseInInstance's write helper 0x00505F38/0x00505F56 (sighting, before UnSetCarryObject
+    // 0x00505FBC); UnSetCarryingObjects alone keeps the lift parent, so the flag (and the public world view) stays set then.
     internal bool NativeCarryingTree;
     // The public value must survive a later SetPose. NativePose alone exposes the embedded shared node.
     public Pose3d Pose
@@ -300,6 +306,10 @@ public sealed partial class ObservableObject
                 // 0x004EF598..0x004EF5A2 assigns into the object's embedded pose; marker children retain that node.
                 if(_pose.Node is null)_pose=new Pose3d(value); // host fixture may have released its initial wrapper
                 else _pose.AssignInputValue(value);
+                // fidelity: M12-008 -- the in-place write carries the argument's parent (0x004EF598..0x004EF5A2); a placed (0x00506B9A..0x00506BAA)
+                // cube is root-parented again (0x00506B9A..0x00506BAA), so the world-frame view ends with it. A sighted cube (0x00505F38/0x00505F56) takes the
+                // observed pose's parent; that the engine's observed pose is root-parented is open (census Q1, 0x00625544), so the flag simply follows the parent.
+                NativeCarryingTree=_pose.Node?.Parent is { Parent: not null };
             }
             else _pose=value;
             foreach(var marker in Markers)if(Type==ObjectType.Charger_Basic || CubeGeometry.IsCube(Type))marker.PoseOnObject.SetParent(_pose);

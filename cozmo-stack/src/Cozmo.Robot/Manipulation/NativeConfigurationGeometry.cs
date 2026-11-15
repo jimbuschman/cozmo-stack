@@ -101,7 +101,8 @@ internal sealed class NativeConfigurationGeometry
         var filter=suppliedFilter?.Clone()??Filter();filter.IgnoreIds.Add(obj.ObjectId);
         filter.Predicates.Add(candidate=>
         {
-            Require(candidate.NativePose);using var relative=new Pose3d();
+            // fidelity: M13-007 — P1: a null candidate node is GetWithRespectTo's NullInputPose VERIFY and false (0x00845A46..0x00845A58 -> 0x00845CEE), not a throw.
+            using var relative=new Pose3d();
             if(!Pose3d.GetWithRespectTo(candidate.NativePose,parent,relative))return false;
             var saved=relative.Translation;
             relative.Node!.Transform=new(relative.Quaternion,new Vec3(saved.X,saved.Y,z));

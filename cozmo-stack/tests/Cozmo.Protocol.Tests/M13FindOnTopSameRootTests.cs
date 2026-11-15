@@ -193,14 +193,14 @@ public class M13FindOnTopSameRootTests
     // ---------------------------------------------------------------- C8 UpdatePoseOfStackedObjects 0x0062190C, native origin bound
 
     /// <summary>
-    /// C8 with the live vision rig (native origin owner bound): cube A has been carried and placed (NativeCarryingTree set, its pose parented to the
-    /// origin) and cube B rests on it. A is re-observed 30 mm further along x. The write helper's old pose is a copy of A's own pose with its parent
+    /// C8 with the live vision rig (native origin owner bound): cube A is in the origin, as a carried and placed cube is (its pose parented to the
+    /// origin by AddRobotRelativeObservation 0x00506B9A..0x00506BAA; the stack's world-frame flag is then false, M12-008) and cube B rests on it. A is re-observed 30 mm further along x. The write helper's old pose is a copy of A's own pose with its parent
     /// (GetPose 0x005060CA, copy ctor 0x005060D2), so the clone at the old pose shares B's root and P1 (0x0062BA0E..0x0062BA48) passes; B, not observed
     /// in the last 100 ms (0x00629BAE), follows: B's pose w.r.t. A's old pose pre-composed with A's new pose (0x0062196E..0x006219A8), written Dirty
     /// (0x006219C0, AddObjectRelativeObservation SetPose Dirty 0x00506D3C..0x00506D3E). The expected pose is computed from A's poses by that formula.
     /// </summary>
-    // reach: unit (the frames go through the rig's vision pipeline, but the past carry is substituted by setting NativeCarryingTree, and B is
-    // inserted with AddLocatedObject; the pick-up and place dispatch is not driven).
+    // reach: unit (the frames go through the rig's vision pipeline; the past carry and place is not driven: A's root-parented node is the state a
+    // place leaves (CARRY-TREE-FLAG-RESET-1), and B is inserted with AddLocatedObject).
     [Fact]
     public void M13_007_C8_ACarriedAndPlacedCubeCarriesTheCubeOnTopWhenReobserved()
     {
@@ -212,7 +212,9 @@ public class M13FindOnTopSameRootTests
             var world = rig.Vision.World;
             var root = world.GetNativeOrigin(world.CurrentOriginId);
             Assert.Same(root.Node, a.NativePose.Node!.Parent);                                          // placed: in the origin
-            a.NativeCarryingTree = true;                                                                // substituted: has been carried
+            // CARRY-TREE-FLAG-RESET-1: no longer sets NativeCarryingTree here. A placed cube is root-parented with the flag false (M12-008); the old
+            // substitution (flag set on a root-parented cube) modelled the stale-flag defect.
+            Assert.False(a.NativeCarryingTree);
             var b = OnTop(world, a, 50, ObjectType.Block_LIGHTCUBE3, world.CurrentOriginId, root);
             Transform3d aOld; using (var f = a.NativePose.GetWithRespectToRoot()) aOld = f.Transform;
             Transform3d bOld; using (var f = b.NativePose.GetWithRespectToRoot()) bOld = f.Transform;
@@ -296,10 +298,11 @@ public class M13FindOnTopSameRootTests
     /// <summary>
     /// DeleteLocatedObjects copies the deleted object's own pose with its parent into the notification (GetPose 0x0061D290, copy ctor 0x0061D2A6) and
     /// broadcasts it (0x0061D5C8); MapComponent's remove reads that old pose's root ID (GetRootID 0x0067EC3C) and removes the object from that root's
-    /// map. A once-carried cube (NativeCarryingTree set) placed in the origin is therefore removed from the origin's memory map.
+    /// map. A once-carried cube placed in the origin (root-parented, AddRobotRelativeObservation 0x00506B9A..0x00506BAA) is therefore removed from the
+    /// origin's memory map.
     /// </summary>
-    // reach: unit (BlockWorld.DeleteLocatedObjects called directly; the origin, map, robot pose and image time are supplied; the past carry is
-    // substituted by setting NativeCarryingTree).
+    // reach: unit (BlockWorld.DeleteLocatedObjects called directly; the origin, map, robot pose and image time are supplied; the past carry and place
+    // is not driven: the cube's root-parented node is the state a place leaves).
     [Fact]
     public void M13_007_DeletingAOnceCarriedCubeRemovesItFromTheOriginsMap()
     {
@@ -312,8 +315,10 @@ public class M13FindOnTopSameRootTests
         { OriginId = w.CurrentOriginId, PoseState = PoseState.Known, Pose = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22)) };
         cube.NativePose.SetParent(origin);
         w.AddLocatedObject(cube);
-        cube.NativeCarryingTree = true;                                                          // substituted: has been carried and placed
-        Assert.False(cube.Pose.HasParent);                                                       // the public view is the flat copy
+        // CARRY-TREE-FLAG-RESET-1: no longer sets NativeCarryingTree. A placed cube is root-parented with the flag false (M12-008); the old
+        // substitution (flag set on a root-parented cube, so a parentless public view) modelled the stale-flag defect.
+        Assert.False(cube.NativeCarryingTree);
+        Assert.Same(origin.Node, cube.NativePose.Node!.Parent);
         var removed = new List<uint>(); memory.ObjectRemovalForTest = r => removed.Add(r.ObjectId);
         var filter = new BlockWorldFilter(); filter.AllowedIds.Add(5);
         w.DeleteLocatedObjects(filter);

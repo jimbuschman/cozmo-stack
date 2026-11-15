@@ -962,14 +962,16 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
         if (IsUnlocked is { } unlocked) { if (!unlocked(StackTwoCubesUnlockId)) return null; }
         else SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::FindFreeCubeToStackOn 0x005E010C: ProgressionUnlockComponent::IsUnlocked(StackTwoCubes) has no component in this stack; live-path default: treated as unlocked");
         float margin = (float)RotatedParentAxis.DimInParentFrame(carried, 0) + StackBeaconMarginMm;
-        return M.World.LocatedObjects
-            .Where(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube)
-            .OrderBy(o => (int)o.Family).ThenBy(o => (int)o.Type).ThenBy(o => o.ObjectId)
-            .FirstOrDefault(o => !ReferenceEquals(o, carried)
+        // fidelity: M15-008 — FindLocatedObjectHelper 0x005E0246 (returnFirst 1) with the filter at sp+0xC: +0x6C/+0x6D = 0 (0x005E0188 strh.w r6,[sp,#0x78];
+        // r6 = 0 at 0x005E0110), origin mode 0, so only the robot's current origin is walked (BlockWorld.FindLocatedObjectHelper, M11-004), in (origin, family, type, ID) order.
+        var filter = new BlockWorldFilter();
+        filter.AllowedFamilies.Add(ObjectFamily.Block); filter.AllowedFamilies.Add(ObjectFamily.LightCube);
+        filter.Predicates.Add(o => !ReferenceEquals(o, carried)
                                  && o.PoseState == PoseState.Known
                                  && !M.Whiteboard.DidFailToUse(unchecked((int)o.ObjectId), ObjectActionFailure.StackOnObject, (float)RecentFailureCooldownSec, o.Pose, StackFilterDistMm, StackFilterAngleRad)    // 0x005E1D24: (id, 1, cooldown, pose, 20.0f, Radians(pi/8))
                                  && beacon.IsLocWithinBeacon(o.Pose, margin)
                                  && M.Docking.CanStackOnTopOfObject(o));
+        return M.World.FindLocatedObjectHelper(filter, null, true);
     }
 
     /// <summary>
