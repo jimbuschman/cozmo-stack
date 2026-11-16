@@ -1775,7 +1775,7 @@ public class FreeplayTests
         using var rig=new Rig(); var ctx=Ctx(rig); var manager=new BehaviorManager(ctx); var running=new Fake("running");
         var unknown=new Activity{Id="unknown-name",RequireSpark="FistBump",Strategy=new()};
         var fp=new FreeplaySystem(manager,ctx,Fp(unknown),new Dictionary<string,IBehavior>(),new FreeplayInputs());
-        Assert.Null(fp.SelectedChildActivityId); Assert.Null(fp.SelectedChildActivityName);
+        Assert.Equal((byte)0, fp.SelectedChildActivityId); Assert.Empty(fp.SelectedChildActivityName);
         manager.SetNativeRequestedSpark(35,0); ((IManagedActivity)fp).GetDesiredActiveBehavior(running,1);
         Assert.Same(unknown,fp.Current); Assert.Equal((byte)0,fp.SelectedChildActivityId); Assert.Equal("Freeplay_Invalid",fp.SelectedChildActivityName);
         fp.ForcedActivity="Hiking"; ((IManagedActivity)fp).GetDesiredActiveBehavior(running,2);

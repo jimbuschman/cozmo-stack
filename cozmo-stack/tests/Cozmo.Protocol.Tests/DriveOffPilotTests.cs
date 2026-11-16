@@ -140,20 +140,16 @@ public sealed class DriveOffPilotTests
         rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp);
         rig.State(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger);
         var native=rig.Engine.Robot!;var runtime=native.NativeBehaviorRuntime!;bool replaced=false;
-        void OnLog(string text)
+        using var subscription = native.BehaviorPublicState.Subscribe(state =>
         {
-            if(replaced || !text.Contains("SetActivityIDFromSubActivity"))return;
+            if(replaced || runtime.FreeplayObserver.Current is not { } child ||
+                !ActivityIdNames.TryId(child.Id, out byte id) || state.Activity != id) return;
             replaced=true;runtime.AdmitActivity("PutDownDispatch");
-        }
-        rig.Engine.StackLogLine+=OnLog;
-        try
-        {
-            rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
-            Assert.True(replaced);
-            Assert.NotSame(runtime.FreeplayObserver,native.BehaviorManagerOwner!.Activity);
-            Assert.Null(runtime.FreeplayObserver.Current);
-        }
-        finally {rig.Engine.StackLogLine-=OnLog;}
+        });
+        rig.Robot.ActivateHighLevelActivity("Freeplay");rig.Tick(10);
+        Assert.True(replaced);
+        Assert.NotSame(runtime.FreeplayObserver,native.BehaviorManagerOwner!.Activity);
+        Assert.Null(runtime.FreeplayObserver.Current);
     }
 
     [Fact]

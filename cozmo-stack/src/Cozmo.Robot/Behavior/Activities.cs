@@ -1382,6 +1382,19 @@ public sealed class Activity
     internal bool GuardNativeLifecycle;
     private long _nativeLifecycleEpoch;
     private ScopedAcquisition? _nativeDrivingLease;
+    private bool _nativeFreeplayIdleSet;
+    internal byte SelectedChildActivityId { get; private set; }
+    internal string ProjectedActivityName { get; private set; } = "";
+    // ActivityFreeplay vtable+0x24 at 0x005AED3C reads its +0x94 string.
+    internal string NativeActivityName => Type == "Freeplay" ? ProjectedActivityName : Id;
+
+    internal void SetActivityIdFromSubActivity(string childId)
+    {
+        // 0x005AD8CE stores +0x92. 0x005AD90E reads it to build +0x94.
+        SelectedChildActivityId = ActivityIdNames.FromName(childId);
+        ProjectedActivityName = ActivityIdNames.Name(ActivityIdNames.FromName(Id)) + "_" +
+            ActivityIdNames.Name(SelectedChildActivityId);
+    }
     // fidelity: M15-055, M15-056 — explicit native delegate and checked Feeding owner; enclosing lifecycle remains M15-061.
     internal Func<EngineRobot,uint>? NativeUpdate20;
     internal FeedingDisconnectUnit? FeedingDisconnect;
@@ -1429,7 +1442,17 @@ public sealed class Activity
         if(!Current())return;
         if (DriveStartAnim is { } drive && (int)drive != 0x23F) { if(NativeCommonDrivingPush is {} push)push(); else ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing); }
         if(!Current())return;
-        if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("SmartPushIdleAnimation 0x005B31BC", missing);
+        _nativeFreeplayIdleSet = false; // 0x005B31B0
+        if (IdleAnim is { } idle && (int)idle != 0x23F)
+        {
+            if (Type == "Freeplay" && NativeDrivingFacade is { } facade)
+            {
+                // SmartPushIdleAnimation 0x005B32EC..0x005B3318.
+                facade.Animations.Scheduler.PushIdleAnimation(idle, "Activity_" + NativeActivityName);
+                if (Current()) _nativeFreeplayIdleSet = true;
+            }
+            else ReportActivityMissing("SmartPushIdleAnimation 0x005B31BC", missing);
+        }
         if(!Current())return;
         SetAnalyzerRequest(true);if(!Current())return;
         FeedingDisconnect?.OnSelected();if(!Current())return;
@@ -1456,14 +1479,19 @@ public sealed class Activity
         {
             SelectedAtSec = null; Strategy.OnEnded(nowSec);
             if(!Current())return;
-            if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("RemoveIdleAnimation 0x005B340C", missing);
+            if (IdleAnim is { } idle && (int)idle != 0x23F)
+            {
+                if (Type == "Freeplay" && NativeDrivingFacade is { } facade)
+                    facade.Animations.Scheduler.RemoveIdleAnimation(NativeActivityName, facade.Engine.Timer.TimeStampMs);
+                else ReportActivityMissing("RemoveIdleAnimation 0x005B340C", missing);
+            }
             if(!Current())return;
             if (DriveStartAnim is { } drive && (int)drive != 0x23F)
             {
                 if(GuardNativeLifecycle)
                 {
                     var facade=NativeDrivingFacade??throw new InvalidOperationException("MISSING: actual activity driving owner unavailable during retirement");
-                    var result=facade.Animations.DrivingAnimations.RemoveScoped(Id,Current);
+                    var result=facade.Animations.DrivingAnimations.RemoveScoped(NativeActivityName,Current);
                     if(result.Completed)
                     {
                         if(ReferenceEquals(result.Owner,oldDriving))oldDriving=null;
@@ -1475,6 +1503,14 @@ public sealed class Activity
             }
             if(!Current())return;
             SetAnalyzerRequest(false);if(!Current())return;
+            if (_nativeFreeplayIdleSet && NativeDrivingFacade is { } idleFacade)
+            {
+                // 0x005B34EA reads +0x50. The smart removal uses the current projected name.
+                idleFacade.Animations.Scheduler.RemoveIdleAnimation("Activity_" + NativeActivityName,
+                    idleFacade.Engine.Timer.TimeStampMs);
+                if (!Current()) return;
+                _nativeFreeplayIdleSet = false;
+            }
             CachedInterlude = null;
             var reward = needs ?? NativeNeeds;
             if(reward is not null && ReferenceEquals(reward,NativeNeeds) && !reward.TryGetNativePending(out _))
@@ -1515,7 +1551,7 @@ public sealed class Activity
     internal void PushOwnedDriving(EngineRobot owner,DrivingAnimations animations)
     {
         var lease=new ScopedAcquisition();_nativeDrivingLease=lease;
-        NativeDrivingFacade!.Animations.DrivingAnimations.PushOwned(animations,Id,lease);
+        NativeDrivingFacade!.Animations.DrivingAnimations.PushOwned(animations,NativeActivityName,lease);
     }
     internal void RemoveOwnedDriving(EngineRobot owner)
     {
@@ -1526,8 +1562,8 @@ public sealed class Activity
     {
         if (InfoAnalyzerProcess == 0) return;
         if (Analyzer is null) { SteppedBehavior.ReportMissing("M11-079 IActivity analyzer request 0x005B31F6/0x005B349A has no AI owner"); return; }
-        if (enable) Analyzer.AddEnableRequest(InfoAnalyzerProcess, Id);
-        else Analyzer.RemoveEnableRequest(InfoAnalyzerProcess, Id);
+        if (enable) Analyzer.AddEnableRequest(InfoAnalyzerProcess, NativeActivityName);
+        else Analyzer.RemoveEnableRequest(InfoAnalyzerProcess, NativeActivityName);
     }
     private void ReportActivityMissing(string call, Action<string>? sink)
     {
@@ -1629,6 +1665,19 @@ public static class ActivityTreeLoader
             byte? nativeId = ActivityIdNames.TryId(id, out var mapped) ? mapped : null;
             if(nativeId is {} value)activity.NativePublicStateSelected=()=>owner.BehaviorPublicState.UpdateActivity(value);
             activity.NativeNeeds = owner.Engine.Needs;
+            if (activity.Type == "Freeplay")
+            {
+                activity.GuardNativeLifecycle = true;
+                activity.NativeDrivingFacade = owner.BehaviorManagerOwner!.ContextRobot;
+                if (activity.DriveStartAnim is { } start)
+                {
+                    // IActivity ctor initializes the triplet to Count (0x005B28EC..0x005B28FA).
+                    var animations = new DrivingAnimations(start,
+                        activity.DriveLoopAnim ?? (AnimationTrigger)0x23F, activity.DriveEndAnim ?? (AnimationTrigger)0x23F);
+                    activity.NativeCommonDrivingPush = () => activity.PushOwnedDriving(owner, animations);
+                    activity.NativeCommonDrivingRemove = () => activity.RemoveOwnedDriving(owner);
+                }
+            }
             if (id == "Hiking" && activity.DriveStartAnim is {} hikingStart && activity.DriveLoopAnim is {} hikingLoop && activity.DriveEndAnim is {} hikingEnd)
             {
                 activity.GuardNativeLifecycle = true;

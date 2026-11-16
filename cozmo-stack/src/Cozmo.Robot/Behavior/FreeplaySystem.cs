@@ -45,8 +45,8 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
         _desiredActivity=ActivityIdOrNull(face ? (cube ? names.FaceAndCube : names.FaceOnly) : (cube ? names.CubeOnly : names.None));
         return true;
     }
-    internal byte? SelectedChildActivityId { get; private set; }
-    internal string? SelectedChildActivityName { get; private set; }
+    internal byte SelectedChildActivityId => Freeplay.SelectedChildActivityId;
+    internal string SelectedChildActivityName => Freeplay.ProjectedActivityName;
     /// <summary><c>BehaviorManager+0x65</c>: the invalid-spark latch (C1 §1).</summary>
     private bool _requestedSparkInvalid;
 
@@ -321,9 +321,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
                     Current = picked;
                     if (picked is not null)
                     {
-                        SelectedChildActivityId = ActivityIdNames.FromName(picked.Id);
-                        SelectedChildActivityName = ActivityIdNames.Name(ActivityIdNames.FromName(Freeplay.Id)) + "_" + ActivityIdNames.Name(SelectedChildActivityId.Value);
-                        ReportActivityMissing("MISSING: M15-006 SetActivityIDFromSubActivity 0x005AD8C8 parent+92/+94 downstream owner/consumers are unbound");
+                        Freeplay.SetActivityIdFromSubActivity(picked.Id);
                         if(!OwnerCurrent() || !ReferenceEquals(Current,picked))return current;
                         picked.OnSelected(nowSec, ReportActivityMissing);
                         if(!OwnerCurrent() || !ReferenceEquals(Current,picked))return current;
