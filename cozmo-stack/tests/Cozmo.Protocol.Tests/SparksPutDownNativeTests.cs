@@ -135,9 +135,8 @@ public sealed class SparksPutDownNativeTests
         try { Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult()); }
         finally { SteppedBehavior.MissingReported -= missing.Add; }
         Assert.Same(behavior, manager.Current);
-        // Actual supplied-admission manager switch exposes the implementation gap, not a native report.
-        Assert.Contains(missing, text => text.Contains("M8-012") && text.Contains("0x005A22B4..0x005A24AC")
-            && text.Contains("BehaviorTransition/displayNameKey delivery is unbuilt"));
+        // BEHAVIOR-STATE-REPORTS-1 built the typed 0x87 delivery (0x005A22B4..0x005A24AC); its MISSING is gone.
+        Assert.DoesNotContain(missing, text => text.Contains("M8-012") && text.Contains("delivery is unbuilt"));
         var initial = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         Assert.Equal(2, initial.Children.Count);
         var drive = Assert.IsType<DriveStraightAction>(initial.Children[0]);
