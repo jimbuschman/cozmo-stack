@@ -26,7 +26,10 @@ internal sealed class NativeDriveToRollRunner:CompoundActionSequential
         // Caller maximum is Radians0: the native ctor builds no face/object-turn pair.
         Roll=new(m,id);Roll.Unavailable=error=>Unavailable?.Invoke(error);
         AddAction(new NativeLambda(m,()=>BeforeDock?.Invoke()),false,false);
-        AddAction(Roll,false,false);SetNativeCompletionProxy(Roll.Tag);
+        AddAction(Roll,false,false);
+        // 0x0055CA98..0x0055CAAE promotes and releases the dock child around SetProxyTag.
+        using var retainedRoll = Roll.TryRetainCompoundChild();
+        SetNativeCompletionProxy(Roll.Tag);
     }
     internal void RollToUpright()
     {
