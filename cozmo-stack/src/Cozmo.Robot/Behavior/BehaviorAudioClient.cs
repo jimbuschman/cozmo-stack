@@ -23,8 +23,9 @@ internal sealed class BehaviorAudioClient : IDisposable
     internal void SetNativeNeedsCache(float first,float second,float third)
     {lock(_public.Gate){_needs[0]=first;_needs[1]=second;_needs[2]=third;}}
     internal float? NeedCache(int index)=>_needs[index];
-    internal Func<byte,string?>? ActivityNameInput;
-    internal string? ActivityLogChannelInput;
+    // 0x004D74DC copies AudioEngineController::kLogChannelName ("Audio") into RobotAudioClient's channel.
+    internal Func<byte, string?> ActivityNameInput = ActivityIdNames.Lookup;
+    internal string ActivityLogChannelInput = "Audio";
     internal Action<string>? StepForTest;
     internal Action? ActivatingForTest;
     private bool _disposed;
@@ -134,12 +135,12 @@ internal sealed class BehaviorAudioClient : IDisposable
     }
     internal void UpdateActivityMusicState(byte activity)
     {
-        if(ActivityNameInput is {} names && ActivityLogChannelInput is {} channel)
-            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,channel,"RobotAudioClient.SetFreeplayMusic",$"ActivityName '{names(activity)??"(null)"}'");
-        else Missing("M13-039 ActivityID EnumToString0x0059202C / RobotAudioClient source channel0x0059201C input absent; activity audio decisions still proceed");
+        string name = ActivityNameInput(activity) ?? "(null)";
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, ActivityLogChannelInput,
+            "RobotAudioClient.SetFreeplayMusic", $"ActivityName '{name}'");
         if(ActivityStates.TryGetValue(activity,out uint value)){Switch(0x972DC63C,0xF0C83E52);Switch(0x8379F505,value);}
-        else if(ActivityNameInput is {} lookup && ActivityLogChannelInput is {} sourceChannel)
-            _robot.Engine.EmitSourceLog(EngineLogLevel.Info,sourceChannel,"RobotAudioClient.UpdateActivityMusicState.NoFreeplayMusic",$"No freeplay music for ActivityName '{lookup(activity)??"(null)"}'");
+        else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, ActivityLogChannelInput,
+            "RobotAudioClient.UpdateActivityMusicState.NoFreeplayMusic", $"No freeplay music for ActivityName '{name}'");
     }
     private void HandleGuardDogUpdates(BehaviorPublicState message)
     {
@@ -161,11 +162,7 @@ internal sealed class BehaviorAudioClient : IDisposable
     }
     private void Switch(uint group,uint value)=>Send(new(Owner,0x14,group,value,1));
     private void Post(uint id)=>Send(new(Owner,8,id,1,0)); // object1, empty callback
-    private void Send(BehaviorAudioRequest request)
-    {
-        if(_robot.BehaviorAudioRecipient is {} recipient)recipient(request);
-        else Missing($"M13-039 robot+0x58 audio-controller virtual+0x{request.Slot:X} has no bound object1/device recipient (M6/M9); request0x{request.Id:X8} is not rerouted to singing object7");
-    }
+    private void Send(BehaviorAudioRequest request) => _robot.SendBehaviorAudio(request);
     private static void Missing(string text)=>SteppedBehavior.ReportMissing(text);
     private void RunHandler(Action action,string address)
     {

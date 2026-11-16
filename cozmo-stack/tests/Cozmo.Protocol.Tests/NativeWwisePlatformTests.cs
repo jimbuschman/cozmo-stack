@@ -1,6 +1,7 @@
 using Cozmo.Robot.Animation.Wwise;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Emulation;
+using Cozmo.Robot.Behavior;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -8,6 +9,77 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class NativeWwisePlatformTests
 {
+    [Fact]
+    public async Task FreeplayActivityChangeReachesNativeWwiseInClientOrder()
+    {
+        string resources = PickupPyramidNativeExecutionTests.Resources();
+        var rig = new M4ControlTests.Rig(resources);
+        var sink = new FakeSink();
+        int consumed = 0;
+        try
+        {
+            rig.ToSynced();
+            var owner = rig.Engine.Robot!;
+            owner.CannedSpeechSinkForTest = () => sink;
+            var applied = new System.Collections.Concurrent.ConcurrentQueue<(BehaviorAudioRequest Request, uint Result)>();
+            owner.BehaviorAudioAppliedForTest = (request, result) => applied.Enqueue((request, result));
+            var logs = new List<Cozmo.Robot.EngineLogEntry>();
+            rig.Engine.LogEntry += logs.Add;
+
+            // The same broadcaster call used by the activity OnSelected callback.
+            owner.BehaviorPublicState.UpdateActivity(3);  // Freeplay has no music entry.
+            owner.BehaviorPublicState.UpdateActivity(15); // Singing enters and dims.
+            owner.BehaviorPublicState.UpdateActivity(5);  // Hiking leaves Singing and undims.
+            var until = DateTime.UtcNow + TimeSpan.FromSeconds(20);
+            while (applied.Count < 12 && DateTime.UtcNow < until)
+            {
+                owner.UpdateMusicAtEngineTail();
+                CompleteAvailable();
+                await Task.Delay(8);
+            }
+
+            var expected = new List<BehaviorAudioRequest>();
+            foreach (var (eventId, mood) in new[] { (0xD53B75B2u, 0u), (0x669A53A8u, 296159617u) })
+            {
+                foreach (string client in new[] { "A", "B" })
+                {
+                    expected.Add(new(client, 8, eventId, 1, 0));
+                    expected.Add(new(client, 0x14, 0x972DC63C, 0xF0C83E52, 1));
+                    expected.Add(new(client, 0x14, 0x8379F505, mood, 1));
+                }
+            }
+            Assert.Equal(expected, applied.Select(entry => entry.Request));
+            Assert.All(applied, entry =>
+            {
+                if (entry.Request.Slot == 8) Assert.NotEqual(0u, entry.Result);
+                else Assert.Equal(1u, entry.Result);
+            });
+            Assert.Equal(new[] { "ActivityName 'Freeplay'", "ActivityName 'Freeplay'",
+                "ActivityName 'Singing'", "ActivityName 'Singing'", "ActivityName 'Hiking'", "ActivityName 'Hiking'" },
+                logs.Where(entry => entry.Channel == "Audio" && entry.Name == "RobotAudioClient.SetFreeplayMusic")
+                    .Select(entry => entry.Text));
+            Assert.Equal(2, logs.Count(entry => entry.Channel == "Audio" &&
+                entry.Name == "RobotAudioClient.UpdateActivityMusicState.NoFreeplayMusic"));
+        }
+        finally
+        {
+            rig.Dispose();
+            var until = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+            while (!sink.Disposed && DateTime.UtcNow < until)
+            {
+                CompleteAvailable();
+                await Task.Delay(8);
+            }
+        }
+        Assert.True(sink.Disposed);
+
+        void CompleteAvailable()
+        {
+            var submitted = sink.Submitted;
+            if (consumed < submitted.Length) sink.Complete(submitted[consumed++].Token);
+        }
+    }
+
     [Fact]
     public async Task SharedMusicReachesTheActualSessionPlatformSink()
     {

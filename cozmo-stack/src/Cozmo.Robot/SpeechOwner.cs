@@ -29,6 +29,27 @@ public sealed partial class EngineRobot
         });
     }
 
+    private CannedSpeechOwner? GetBehaviorAudioOwner()
+    {
+        if (!OperatingSystem.IsWindows() && CannedSpeechSinkForTest is null) return null;
+        if (_cannedSpeechOwner is not null) return _cannedSpeechOwner;
+
+        string? library = ShippedLibraries.FindLibDir();
+        string? banks = Engine.Options.SpeechSoundBankDirectory;
+        string? archive = Engine.Options.SpeechAudioArchivePath;
+        if (archive is null && banks is not null)
+        {
+            string configured = Path.Combine(banks, "AudioAssets.zip");
+            if (File.Exists(configured)) archive = configured;
+        }
+        if (archive is null && Engine.Options.ResourcesPath is { } resources)
+            archive = Path.Combine(resources, "sound", "AudioAssets.zip");
+        if (library is null || archive is null || !File.Exists(archive)) return null;
+
+        return _cannedSpeechOwner = new CannedSpeechOwner(library, banks, archive,
+            message => Engine.PostGameMessage(() => Engine.EmitStackLog(message)), CannedSpeechSinkForTest);
+    }
+
     internal CannedSpeechOwner? GetCannedSpeechOwner()
     {
         string? library = ShippedLibraries.FindLibDir();

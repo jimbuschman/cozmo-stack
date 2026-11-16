@@ -14,6 +14,7 @@ internal static class ActivityIdNames
     internal static bool TryId(string name, out byte id) { int i=Array.IndexOf(Names,name); id=(byte)(i < 0 ? 0 : i); return i>=0; }
     internal static byte FromName(string name) { TryId(name,out byte id); return id; }
     internal static string Name(byte id)=>Names[id];
+    internal static string? Lookup(byte id) => id < Names.Length ? Names[id] : null;
 }
 
 /// <summary>

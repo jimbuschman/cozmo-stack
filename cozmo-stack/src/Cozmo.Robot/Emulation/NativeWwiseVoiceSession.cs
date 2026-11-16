@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Cozmo.Robot.Animation.Wwise;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Emulation;
 
@@ -36,7 +37,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private ulong _lastCompletedToken;
     private long _generation;
     private bool _generationOpen;
-    private bool _musicPending, _musicTickQueued;
+    private bool _musicPending, _musicTickQueued, _behaviorAudioPendingRender;
     private long _musicRequestVersion;
     private uint _nextCookie;
     private readonly Dictionary<uint, (long Generation, IWwiseRobotAudioCallback Callback)> _sharedCallbacks = new();
@@ -90,12 +91,25 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         }
     }
 
+    internal Task SubmitBehaviorAudio(BehaviorAudioRequest request, Action<BehaviorAudioRequest, uint> applied)
+    {
+        // 0x008DF3CC submits to the music conductor, which promotes pending state in its update.
+        if (request.Slot == 0x1C) return RequestMusicStateAsync(request.Id, request.Value != 0, request.Arg3);
+        lock (_gate)
+        {
+            if (_musicBank is null) return Task.FromException(new InvalidOperationException("Music.bnk is unavailable"));
+            _behaviorAudioPendingRender = true;
+            return Enqueue(host => applied(request, host.ApplyBehaviorAudio(request)));
+        }
+    }
+
     internal Task? UpdateMusic(long monotonicMilliseconds)
     {
         lock (_gate)
         {
-            if (_closing || _failure is not null || !_musicPending || _musicTickQueued) return null;
+            if (_closing || _failure is not null || _musicTickQueued || (!_musicPending && !_behaviorAudioPendingRender)) return null;
             _musicTickQueued = true;
+            _behaviorAudioPendingRender = false;
             long version = _musicRequestVersion;
             return Enqueue(host =>
             {
