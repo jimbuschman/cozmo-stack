@@ -30,7 +30,7 @@ Robot script: `m15-cube-hw --commands` (built 2026-11-16) runs every command bel
 | Return to and mount the charger (QueueAiMountChargerAsync) | sim (built 2026-11-15; SetPoseOnCharger built 2026-11-16; charger round in `m15-cube-hw --skills`) |
 | Roll a cube (QueueAiRollCubeAsync) | robot (2026-11-15, run 20261115-162141: drove to the cube and rolled it) |
 | Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
-| Charger seen report (operator 2026-11-15) | none |
+| Charger seen report (operator 2026-11-15) | sim (E2G 0x44 for the charger built 2026-11-16; shown in the --skills charger round) |
 | Freeplay on/off, and returning to Freeplay after a command | sim (SetEnableFreeplayActivity built 2026-11-15; `m15-cube-hw --freeplay-control`) |
 | The connection for an LLM (bridge) | none |
 
