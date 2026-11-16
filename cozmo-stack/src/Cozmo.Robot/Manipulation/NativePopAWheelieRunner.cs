@@ -8,16 +8,13 @@ namespace Cozmo.Robot.Manipulation;
 // Native Init metadata/shared recipients retain their existing M12 ownership.
 internal sealed class NativePopAWheelieRunner:NativeVisionRunner
 {
-    private readonly uint _originalTarget;
     internal PopAWheelieAction Action {get;}
     private IDisposable? _subscriptions;
     private CompoundActionSequential? _prepared;
     private short _marker=3;
     private Pose3d? _oldPose;
     internal bool CheckPreActionPose {get;set;}=true;
-    private bool _sent,_latched,_light,_unavailable;
-    private float _deadline=-1;
-    private byte _squint;
+    private bool _sent,_light,_unavailable;
     private bool _ending;
     private ScopedAcquisition? _reactionLease;
     private EngineRobot? Owner => ScopedOwner ?? M.Robot.Engine.Robot;
@@ -27,7 +24,7 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     public override string? NativeName=>ActionName;
     internal CompoundActionSequential? Prepared=>_prepared;
     internal NativePopAWheelieRunner(ManipulationSystem m,uint target):base(m,0x1D,7)
-    {_originalTarget=target;Action=new(m,target);Action.SetSelectedDockAction(DockAction.PopAWheelie);}
+    {Action=new(m,target);Action.SetSelectedDockAction(DockAction.PopAWheelie);}
     internal override ActionWatcher? Watcher
     {get=>base.Watcher;set{base.Watcher=value;if(_prepared is not null)_prepared.Watcher=value;}}
     public override uint Update()
@@ -43,7 +40,7 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     {
         if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
         using var mutation=M.World.EnterPoseMutation();var owner=Owner!;
-        _deadline=-1;_sent=false;owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
+        Action.ResetNativeDockVerification();_sent=false;owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
         if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
         var target=M.World.GetLocatedObjectByIdHelper(Action.ObjectId);if(target is null)return 0x03000004;
         var main=owner.GetCheckedMainPose();
@@ -98,7 +95,7 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
             if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
             _light = true;
         }
-        if(_squint!=0){M.Robot.Animations.Scheduler.Layers.Face.RemovePersistentLayer(_squint,250);_squint=0;}
+        Action.RemoveNativeDockSquintOnInit();
 
         uint started=_prepared.Update();if(started!=0&&started!=EngineActionResult.Running)return unchecked((int)started);
         if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
@@ -112,14 +109,6 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
         }
         return 0;
     }
-    private void AddSquint()
-    {
-        if((int)M.Robot.Engine.Needs.SevereNeeds.SelectedNeed==1)return;
-        var face=new ProceduralFacePose();foreach(var eye in new[]{face.Left,face.Right})
-        {eye[EyeParam.EyeScaleY]=.35f;eye[EyeParam.EyeScaleX]=1.05f;eye[EyeParam.UpperLidAngle]=-10f;}
-        var track=new StreamTrack<FaceFrame>();track.AddKeyFrameToBack(new FaceFrame(0,face));track.AddKeyFrameToBack(new FaceFrame(250,new ProceduralFacePose()));
-        _squint=M.Robot.Animations.Scheduler.Layers.Face.AddPersistentLayer("DockSquint",track);
-    }
     public override uint CheckIfDone()
     {
         if (!Live()) return EngineActionResult.Cancelled;
@@ -128,21 +117,18 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
         if(!_sent)
         {
             uint result=_prepared!.Update();if(result!=0)return result;
-            _prepared.Prep();_prepared.WatcherEnding();_prepared=null;
+            var finished = _prepared;
+            _prepared = null;
+            finished.WatcherEnding(); // 0x005521E4..0x005521F4.
             if (!Live()) return EngineActionResult.Cancelled;
             bool sent = ScopedOwner is null
                 ? M.Docking.StartNativeDock(Action.ObjectId,_marker,DockAction.PopAWheelie,Action.Profile,DockingMethod.Default,false)
                 : M.Docking.StartNativeDock(owner,Action.ObjectId,_marker,DockAction.PopAWheelie,Action.Profile,DockingMethod.Default,false,Live);
             if (!Live()) return EngineActionResult.Cancelled;
             if (!sent) return 0x03000016;
-            _sent=true;_latched=false;
+            _sent=true;
         }
-        var dock=owner.DockingOwner!;
-        if(dock.Active!=0){if(!_latched){_latched=true;AddSquint();}return EngineActionResult.Running;}
-        if(!_latched||M.Robot.Motion.BodyMoving)return EngineActionResult.Running;
-        if(M.Robot.Motion.HeadMoving)_deadline=-1;
-        float now=M.Robot.Engine.Timer.SecondsF;if(_deadline<0)_deadline=now+0f;
-        return now>=_deadline?Verify():EngineActionResult.Running;
+        return Action.UpdateNativeDockVerification(owner, Verify, Live);
     }
     internal uint Select(ObservableObject target)
     {
@@ -175,49 +161,11 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     {
         if (_ending || DestructionObserved) return;
         _ending = true;
-        var owner = Owner;
-        long pathGeneration = M.Robot.Motion.Path.ScopeGeneration, dockGeneration = M.Docking.NativeDockGeneration;
-        bool PathCurrent() => ScopedOwnerCurrent && (ScopedOwner is null || M.Robot.Motion.Path.ScopeGeneration == pathGeneration);
-        bool DockCurrent() => ScopedOwnerCurrent && (ScopedOwner is null || M.Docking.NativeDockGeneration == dockGeneration);
-        bool SharedCurrent() => PathCurrent() && DockCurrent();
-
         _oldPose?.Dispose();
         _oldPose = null;
-        if (SharedCurrent()) M.World.SelectedObjectId = null;
-        if (PathCurrent() && M.Robot.Motion.Path.IsActive)
-        {
-            if (ScopedOwner is null) M.Paths.Abort();
-            else M.Paths.AbortOwned(ScopedOwner, PathCurrent);
-        }
-        if (DockCurrent() && owner?.DockingOwner is { } docking)
-        {
-            if (docking.Active != 0)
-            {
-                if (ScopedOwner is null) M.Docking.Abort();
-                else M.Docking.AbortNativeDock(ScopedOwner, DockCurrent);
-            }
-            if (DockCurrent())
-            {
-                docking.MarkerCode = 3;
-                docking.TargetId = null;
-            }
-        }
-        if (_light && SharedCurrent())
-        {
-            if (ScopedOwner is null) M.Robot.Lights.Cubes.StopNativeInteracting(_originalTarget);
-            else M.Robot.Lights.Cubes.StopNativeInteracting(_originalTarget, SharedCurrent);
-        }
-        if (SharedCurrent()) M.Robot.Animations.Scheduler.Layers.Face.RemovePersistentLayer(_squint, 250);
-        _prepared?.Prep();
-        if (_reactionLease is { } reactions)
-        {
-            _reactionLease = null;
-            reactions.Cancel();
-            if (!SharedCurrent()) reactions.Completed = false;
-            owner?.BehaviorManagerOwner?.RemoveScopedReactions("dockActions", reactions);
-        }
-        else if (ScopedOwner is null && State != EngineActionResult.NotStarted)
-            owner?.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
+        var reactions = _reactionLease;
+        _reactionLease = null;
+        Action.CleanUpNativeDock(Owner, _light, _prepared, State != EngineActionResult.NotStarted, reactions);
         _subscriptions?.Dispose();
         _subscriptions = null;
         _prepared?.WatcherEnding();

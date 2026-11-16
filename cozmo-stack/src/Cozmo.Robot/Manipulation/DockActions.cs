@@ -248,7 +248,7 @@ public static class RotatedParentAxis
 /// (<see cref="PreActionAngleToleranceRad"/>). The turn-and-verify compound (<c>SetupTurnAndVerifyAction</c>, M12-037) is built exactly; its two sub-action bodies are M8/M13's
 /// and run through <see cref="SubActions"/> (default <see cref="StandInDockSubActions"/>, a labelled stand-in).
 /// </summary>
-public abstract class DockActionBase
+public abstract partial class DockActionBase
 {
     // fidelity: M12-017, M12-020
     /// <summary>
@@ -513,7 +513,7 @@ public abstract class DockActionBase
         // (6) 0x005516EA / 0x00551750: the action's own 0xC5 and 0xDA handlers, registered here and gone with the action (the bodies are M12-034, unbuilt)
         // fidelity: M12-017
         using var handlerRegistration = M.Docking.RegisterActionHandlers(this, action);
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-017/M12-034: native CheckIfDone 0x005521AC is an engine action-update entry; this host async dock adapter checks deleted-target on resumption, not during a suspended sub-action. Native scheduler and full pre-unsubscribe destructor cleanup 0x0055745C..0x00557582 remain unbuilt");
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-017/M12-034 legacy async dock adapter: deleted target is checked on task resumption; native IDock updates check it on every action tick at 0x005521BE. The legacy adapter also has separate cleanup from 0x0055745C..0x00557582.");
         // (7)
         Field0x82 = 3; Field0x84 = 3;
         KnownMarker? marker = null;

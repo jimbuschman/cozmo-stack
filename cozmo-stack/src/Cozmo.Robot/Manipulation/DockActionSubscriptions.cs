@@ -10,11 +10,12 @@ internal sealed class DockActionSubscriptions : IDisposable
     private readonly DockActionBase _action;
     private readonly EngineRobot? _owner;
     private RetainedSubscription? _c5, _da;
+    private bool _retired;
     private readonly SubscriptionOwners _external = new();
     internal DockActionSubscriptions(CozmoRobot robot, DockActionBase action) { _robot = robot; _action = action; }
     internal DockActionSubscriptions(CozmoRobot robot, DockActionBase action, EngineRobot owner)
     { _robot = robot; _action = action; _owner = owner; }
-    private bool Current => _owner is null || !_owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _owner);
+    private bool Current => !_retired && (_owner is null || !_owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _owner));
     internal void Init(DockAction selected) => LogCallbackDeferral.RunGated(_action.NativeDockGate, () => InitUnderGate(selected));
     private void InitUnderGate(DockAction selected)
     {
@@ -65,6 +66,7 @@ internal sealed class DockActionSubscriptions : IDisposable
     public void Dispose() => LogCallbackDeferral.RunGated(_action.NativeDockGate, DisposeUnderGate);
     private void DisposeUnderGate()
     {
+        _retired = true;
         _external.Retire();
         _da?.Dispose(); _da = null;
         _c5?.Dispose(); _c5 = null;

@@ -121,7 +121,7 @@ public sealed partial class EngineRobot
     private void InitSubscriptions()
     {
         _robotMessages.UndefinedTail=()=>Engine.EmitStackLog("M1-034 / M7-027/M12-017: native freed successor 0x0069E294..0x0069E29A; skipped remaining emit tail");
-        Behavior.SteppedBehavior.ReportMissing("M7-027/M12-017: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/+E4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points remain unbuilt; TracePrinter B0/EC diagnostics and CF CrashReport are bound");
+        Behavior.SteppedBehavior.ReportMissing("M7-027: Dev-behavior container destruction points remain unbuilt");
         // Idle is constructed before Messaging. The C# host API supplies the
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));
