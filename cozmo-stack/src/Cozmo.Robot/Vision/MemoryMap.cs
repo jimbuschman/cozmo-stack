@@ -80,12 +80,9 @@ public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, 
 ///
 /// The engine stores those regions in a quad tree (<c>QuadTree</c> 0x00684C08, nodes subdividing down to
 /// <c>GetContentPrecisionMM</c>). Native insertion and ray queries use that tree. The legacy polygon list
-/// remains for separately unported producers, transforms and region inspection. What is <b>not</b> here is the content the engine gets from
-/// one place this stack has no source for: the overhead-edge processing that produces
-/// <see cref="MemoryMapContentType.InterestingEdge"/> and <see cref="MemoryMapContentType.NotInterestingEdge"/>
-/// (<c>MapComponent::AddVisionOverheadEdges</c> 0x0067F814, which needs the vision system's ground-plane
-/// edge frames). The obstacles are here, and so is the ground the robot has been over
-/// (<see cref="UpdateRobotPose"/>).
+/// remains for tool-side region inspection. The native tree receives ground-plane edge frames through
+/// <c>MapComponent::AddVisionOverheadEdges</c> 0x0067F814 and the robot's traversed ground through
+/// <see cref="UpdateRobotPose"/>.
 ///
 /// <b>What goes in.</b> <c>MapComponent::AddObservableObject</c> 0x0067ECFC takes the object's bounding
 /// quad (its virtual <c>GetBoundingQuadXY(pose, 0)</c>, the vtable slot at +0x50), turns it into a polygon
@@ -110,6 +107,7 @@ public sealed partial class MemoryMap
     {
         get { Missing?.Invoke("MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
     }
+    // 0x00681934..0x0068193A: root content pointer at +0xDC, Last at +0xC.
     internal uint LastObservedTime => Tree.Root.Content.Data.Last;
     // fidelity: M11-079 -- vt+0x2C 0x00681734: the eleven (type, enabled) pairs folded by the caller's table.
     internal List<Cozmo.Robot.Behavior.InterestingEdgeRegion>? CalculateBorders(MemoryMapContentType seed,uint flags)=>Tree.CalculateBorders(seed,flags);

@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 
 namespace Cozmo.Conformance;
@@ -122,7 +123,7 @@ internal sealed partial class M15CubeRun
     readonly ConcurrentQueue<(double T, bool Out, byte[] Raw, Frame? Frame, string? Error)> frames = new();
     readonly ConcurrentQueue<(double T, uint Timestamp, uint Status)> transitions = new();
     readonly ConcurrentQueue<(double T, RobotObservedObjectReport Report)> observations = new();
-    readonly ConcurrentQueue<(double T, uint Id, uint Origin, uint Timestamp)> chargerObservations = new();
+    readonly ConcurrentQueue<(double T, RobotObservedObjectReport Report)> chargerObservations = new();
     readonly ConcurrentQueue<string> errors = new(), stackLines = new(); readonly CancellationTokenSource cancel = new();
     readonly JsonObject answers = new(); readonly JsonArray phases = new();
     CozmoRobot? robot; RobotConnectionResponse? response; bool connected; HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup; Task<string?>? pendingRead;
@@ -194,20 +195,17 @@ internal sealed partial class M15CubeRun
                 EngineEvidence.Subscribe(e, line => { }, Event);
                 e.StackLogLine += stackLines.Enqueue;
                 e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject());
-                e.RobotObservedObject += r => observations.Enqueue((Now, r));
+                e.RobotObservedObject += report =>
+                {
+                    if (report.Family == (uint)ObjectFamily.LightCube) observations.Enqueue((Now, report));
+                    else if (Skills && report.Type == (uint)ObjectType.Charger_Basic) chargerObservations.Enqueue((Now, report));
+                };
                 if (FreeplayControl || Personality) SubscribeBehaviorReports(e);
                 if (Personality) SubscribePersonalityReports(e);
                 if (Commands) SubscribeCommandReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
             if (Commands) SubscribeCommandCubeReports(robot);
-            if (Skills)
-                robot.Vision.World.ObjectObserved += o =>
-                {
-                    // Charger 0x44 is still MISSING. Use the stack's located visual observation (M13-025).
-                    if (o.Object.Type == ObjectType.Charger_Basic)
-                        chargerObservations.Enqueue((Now, o.Object.ObjectId, o.Object.OriginId, o.Timestamp));
-                };
             robot.Transport.FrameTrace += f => frames.Enqueue((Now, f.Outbound, (byte[])f.Raw.Clone(), f.Frame, f.Error));
             robot.State.StateUpdated += s =>
             {
@@ -521,26 +519,29 @@ internal sealed partial class M15CubeRun
         cancel.Token.ThrowIfCancellationRequested();
         var world = r.Vision.World;
         double since = Now;
-        uint? charger = null;
+        RobotObservedObjectReport? charger = null;
         bool seen = Poll(() =>
         {
             foreach (var sighting in Enumerable.Reverse(chargerObservations.ToArray()))
             {
                 if (sighting.T < since) break;
-                var located = world.GetLocatedObjectById(sighting.Id);
-                if (located is null || located.OriginId != world.CurrentOriginId || sighting.Origin != located.OriginId) continue;
-                charger = sighting.Id;
-                Event("charger-observed", new() { ["objectId"] = sighting.Id, ["robotTimestamp"] = sighting.Timestamp });
+                var report = sighting.Report;
+                var located = world.GetLocatedObjectById(report.ObjectId);
+                if (located is null || located.OriginId != world.CurrentOriginId || report.Pose.OriginId != located.OriginId) continue;
+                charger = report;
                 return true;
             }
             return false;
         }, 30000);
-        if (!seen || charger is not { } id)
+        if (!seen || charger is not { } reportSeen)
         {
             errors.Enqueue("mount-charger: no fresh located charger seen in the current origin");
             Console.WriteLine("    He did not locate the charger. Skipping this round.");
             return;
         }
+        var id = reportSeen.ObjectId;
+        Event("charger-observed", JsonSerializer.SerializeToNode(reportSeen)!.AsObject());
+        Console.WriteLine($"    Charger seen: object {id} at ({reportSeen.Pose.X:F0}, {reportSeen.Pose.Y:F0}) mm.");
         Console.WriteLine($">>> WATCH: Cozmo should approach charger {id}, turn and back onto it <<<");
         var mount = RunSkillAction("mount-charger", id, r.Motion.QueueAiMountChargerAsync);
         mount["onChargerAfter"] = r.State.Latest?.Has(RobotStatusFlag.IsOnCharger);

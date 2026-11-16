@@ -1,22 +1,36 @@
+using Cozmo.Protocol;
 using Cozmo.Robot.Behavior;
 using Cozmo.Transport;
 
 namespace Cozmo.Robot.Vision;
 
-internal static class NativeCubeObservation
+// fidelity: M11-038, M11-065
+internal static class NativeObjectObservation
 {
-    internal static bool TryCreate(ObservableObject cube, Pose3d cameraPose, CameraCalibration? calibration, EngineRobot owner, out RobotObservedObjectReport report)
+    private static readonly Vec3[] CubeCorners =
+    {
+        new(-22, -22, 22), new(22, -22, 22), new(-22, -22, -22), new(22, -22, -22),
+        new(-22, 22, 22), new(22, 22, 22), new(-22, 22, -22), new(22, 22, -22)
+    };
+
+    // Charger::GetCanonicalCorners, 0x004E9A70..0x004E9AC4.
+    private static readonly Vec3[] ChargerCorners =
+    {
+        new(96, -40, 0), new(0, -40, 0), new(0, 40, 0), new(96, 40, 0),
+        new(96, -40, 31), new(0, -40, 31), new(0, 40, 31), new(96, 40, 31)
+    };
+    internal static bool TryCreate(ObservableObject obj, Pose3d cameraPose, CameraCalibration? calibration, EngineRobot owner, out RobotObservedObjectReport report)
     {
         report = null!;
-        if(cube.NativePose.Node is null) { SteppedBehavior.ReportMissing("M1-034/M11-038 null object pose at 0x00846DB6: report skipped"); return false; }
+        if(obj.NativePose.Node is null) { SteppedBehavior.ReportMissing("M1-034/M11-038 null object pose at 0x00846DB6: report skipped"); return false; }
         float x=0,y=0,w=0,h=0;
         using(var relative=new Pose3d())
         {
-            if(cube.NativePose.TryWithRespectTo(cameraPose,relative))
+            if(obj.NativePose.TryWithRespectTo(cameraPose,relative))
             {
                 int coefficients=calibration?.DistortionCoefficients.Length ?? 0;
                 if(coefficients is > 0 and < 4) { SteppedBehavior.ReportMissing("M1-034/M11-038 short distortion vector at 0x0085E2AE: report skipped"); return false; }
-                (x,y,w,h)=Rectangle(relative,calibration);
+                (x,y,w,h)=Rectangle(obj.Type,relative,calibration);
             }
             else
             {
@@ -24,9 +38,18 @@ internal static class NativeCubeObservation
                 EngineErrorState.StoreAndMaybeBreak();
             }
         }
+        // 0x0061FF18..0x0061FF30 initializes +0 and takes the top-marker branch only for active family 2.
+        float angle = obj.IsActive && obj.Family == ObjectFamily.LightCube ? TopMarkerAngle(obj) : 0f;
+        if(!NativeObjectPose.TryConvert(obj.NativePose,owner,out var pose))return false;
+        report=new(obj.LastObservedTimestamp,(uint)obj.Family,(uint)obj.Type,obj.ObjectId,x,y,w,h,pose,angle,obj.IsActive);
+        return true;
+    }
+
+    private static float TopMarkerAngle(ObservableObject obj)
+    {
         using var top=new Pose3d();
         float best=-float.MaxValue;
-        foreach(var marker in cube.Markers)
+        foreach(var marker in obj.Markers)
         {
             using var rootMarker=marker.PoseOnObject.GetWithRespectToRoot();
             var normal=RelativeCubeLights.ComputeNormal(marker,rootMarker);
@@ -34,19 +57,19 @@ internal static class NativeCubeObservation
             if(dot>best) { best=dot; top.Assign(rootMarker); }
         }
         var tq=top.Quaternion;
-        float angle=CozmoEngine.PublicationAngle(new EngineLocalizationPose(0,0,0,tq.W,tq.X,tq.Y,tq.Z,0));
-        if(!NativeObjectPose.TryConvert(cube.NativePose,owner,out var pose))return false;
-        report=new(cube.LastObservedTimestamp,(uint)cube.Family,(uint)cube.Type,cube.ObjectId,x,y,w,h,pose,angle,true);
-        return true;
+        return CozmoEngine.PublicationAngle(new EngineLocalizationPose(0,0,0,tq.W,tq.X,tq.Y,tq.Z,0));
     }
 
-    internal static (float X,float Y,float Width,float Height) Rectangle(Pose3d relative, CameraCalibration? calibration)
+    internal static (float X,float Y,float Width,float Height) Rectangle(ObjectType type, Pose3d relative, CameraCalibration? calibration)
     {
-        (int X,int Y,int Z)[] corners={(-1,-1,1),(1,-1,1),(-1,-1,-1),(1,-1,-1),(-1,1,1),(1,1,1),(-1,1,-1),(1,1,-1)};
+        var corners = type == ObjectType.Charger_Basic ? ChargerCorners : CubeCorners;
+        // ProjectObject 0x0085E59E -> GetCorners 0x00876C30 -> ApplyTo(vector) 0x0065671C.
+        var transformed = new List<Vec3>(corners.Length);
+        relative.ApplyTo(corners, transformed);
         float minX=0,minY=0,maxX=0,maxY=0;
-        for(int i=0;i<corners.Length;i++)
+        for(int i=0;i<transformed.Count;i++)
         {
-            var c=corners[i]; var p=relative.Apply(new Vec3(c.X*22f,c.Y*22f,c.Z*22f));
+            Vec3 p = transformed[i];
             float px,py;
             if(calibration is null || (float)p.Z<=0f) px=py=BitConverter.UInt32BitsToSingle(0x7FC00000);
             else ObservableObject.ProjectPoint(calibration,(float)p.X,(float)p.Y,(float)p.Z,out px,out py);
@@ -82,14 +105,14 @@ internal static class NativeObjectPose
 
 public sealed partial class VisionSystem
 {
-    private void PublishObservedCube(EngineRobot owner, ObservableObject obj, NativeObservedObject prefix, Func<bool> current)
+    private void PublishObservedObject(EngineRobot owner, ObservableObject obj, NativeObservedObject prefix, Func<bool> current)
     {
         if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return;
         var calibration=Calibration;
         using var cameraPose=owner.CopyCurrentCameraPose(_robot.Motion.ObservationHeadAngleRad);
-        if(!NativeCubeObservation.TryCreate(obj,cameraPose.Pose,calibration,owner,out var report)) return;
+        if(!NativeObjectObservation.TryCreate(obj,cameraPose.Pose,calibration,owner,out var report)) return;
         if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return;
-        _robot.Engine.DeliverObservedCubeToApp(report);
+        _robot.Engine.DeliverObservedObjectToApp(report);
         _robot.Engine.AnimationMessages.Deliver(0x44,true,prefix);
     }
 }

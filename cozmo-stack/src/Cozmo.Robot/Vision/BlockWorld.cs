@@ -908,16 +908,10 @@ public sealed partial class BlockWorld
     // would invert the engine tick's _tickLock -> FrameGate order. Public events are deferred after frame release;
     // synchronous native recipients must not post a blocking engine request while holding the frame gate.
     internal readonly object FrameGate = new();
-    private bool _missingMapTimeReported, _missingPoseChangedReported;
+    private bool _missingPoseChangedReported;
     private readonly HashSet<string> _footprintUnavailableSitesReported = new(); // M13-007 unavailable-slot MISSING: once per find-on-top caller site
-    private double MapLastObservedTime
-    {
-        get
-        {
-            if(!_missingMapTimeReported){_missingMapTimeReported=true;Missing("M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)");}
-            return Maps.Current?.LastObservedTime??0;
-        }
-    }
+    // M11-045: MemoryMap virtual +0x38 (0x00681934) reads the root content's uint Last.
+    private uint MapLastObservedTime => Maps.Current?.LastObservedTime ?? 0;
     /// <summary>BlockWorld+0x3C: <c>map&lt;origin, map&lt;family, map&lt;type, map&lt;ObjectID, shared_ptr&gt;&gt;&gt;&gt;</c>, walked in ascending key order.</summary>
     private readonly SortedDictionary<(uint Origin, int Family, int Type, int Id), ObservableObject> _located = new();
     /// <summary>BlockWorld+0x30: <c>map&lt;family, map&lt;type, map&lt;ObjectID, shared_ptr&gt;&gt;&gt;</c> of connected active objects.</summary>
@@ -1550,8 +1544,21 @@ public sealed partial class BlockWorld
             }
             else Missing("M13-030 / M11-053: Robot::GetPose 0x006225A8 current pose unavailable; cliff normal/insert skipped");
         }
-        else if (type == ObjectType.ProxObstacle) Missing("M13-030: MemoryMapData_ProxObstacle 0x00622646..0x006226E6 has no checked stack port");
-        _timeOfLastChange = (uint)Math.Max((double)timestamp, MapLastObservedTime);
+        else if (type == ObjectType.ProxObstacle)
+        {
+            // 0x00622646..0x0062267E: root the current robot pose and rotate +X for the direction.
+            if (CurrentRobotPose?.Invoke() is { } robotPose && Maps.Current is { } map)
+            {
+                using var rootedRobot = robotPose.GetWithRespectToRoot();
+                var forward = rootedRobot.Quaternion.Rotate(new Vec3(1, 0, 0));
+                var data = new ProxObstacleMapData(new Vec2(forward.X, forward.Y), timestamp);
+                // 0x0062268C..0x006226C6: zero-padding quad from the supplied pose before the height lift.
+                var mapQuad = MarkerlessQuad(candidate, input);
+                map.InsertObject(Enumerable.Range(0, 4).Select(i => new Vec2(mapQuad[i].X, mapQuad[i].Y)).ToArray(), data);
+            }
+            else Missing("M13-030: robot pose or current map unavailable; skip proximity map insertion at 0x00622646..0x006226C6");
+        }
+        _timeOfLastChange = Math.Max(timestamp, MapLastObservedTime);
         return candidate;
     }
 
@@ -1635,7 +1642,7 @@ public sealed partial class BlockWorld
             _markerTimestamp = 0;
             _lastImageTimestamp = 0;
             _lastPlayAreaTime = 0; _timeOfLastChange = 0; SelectedObjectId = null;
-            _missingMapTimeReported=_missingPoseChangedReported=false;
+            _missingPoseChangedReported = false;
             lock (_footprintUnavailableSitesReported) _footprintUnavailableSitesReported.Clear();
             Maps.Dispose();
             Maps = new SourceMapComponent(); // discard removed robot's owner; next Robot constructs its own
@@ -1863,13 +1870,13 @@ public sealed partial class BlockWorld
     {
         return UpdateObservedMarkers(markers,camera,timestamp,pd,worldRotatingGate,null,null);
     }
-    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose=null)
+    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose=null)
     {
-        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeCubeReport,nativeComputedPose);
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeObjectReport,nativeComputedPose);
     }
-    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
     {
-        _missingMapTimeReported=_missingPoseChangedReported=false;
+        _missingPoseChangedReported = false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
         float now = (float)(BaseStationSeconds?.Invoke() ?? Environment.TickCount64 * 0.001);
         if (_lastPlayAreaTime + 60f < now)
@@ -1902,7 +1909,7 @@ public sealed partial class BlockWorld
             AddLiftOccluder(camera, pd);                                           // 0x00624FA4
             _didObjectsChange = false;                                             // 0x00624FAC
             var instances = CreateObjectsFromMarkers(markers, camera);             // 0x00624FC4 (always succeeds, 0x00625616)
-            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeCubeReport,nativeComputedPose);   // 0x0062505A
+            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeObjectReport,nativeComputedPose);   // 0x0062505A
             if (status != 0)
             {
                 Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed", "");
@@ -2071,7 +2078,7 @@ public sealed partial class BlockWorld
     /// its cross-origin branch (<c>Rejigger</c>, 0x00515854..0x005159B2) are built.
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
-    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
     {
         var robotPos = (CurrentRobotPose?.Invoke() ?? pd.RobotPose).Translation;
         var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose); // 0x00620B0C
@@ -2117,13 +2124,15 @@ public sealed partial class BlockWorld
             if(!(located.IsActive&&located.Family==(ObjectFamily)2&&!CubeGeometry.IsCube(located.Type)))
             {
                 var prefix=new NativeObservedObject(located.LastObservedTimestamp,(uint)located.Family,(uint)located.Type,located.ObjectId);
-                if(nativeCubeReport is not null && located.IsActive && located.Family==(ObjectFamily)2 && CubeGeometry.IsCube(located.Type)) nativeCubeReport(located,prefix);
+                // 0x006211DC calls the common broadcast. The charger's family skips only the top-marker path at 0x0061FF30.
+                if (nativeObjectReport is not null && (CubeGeometry.IsCube(located.Type) || located.Type == ObjectType.Charger_Basic))
+                    nativeObjectReport(located, prefix);
                 else NativeObjectObserved?.Invoke(prefix);
             }
             else Source(EngineLogLevel.Error,null,"BlockWorld.BroadcastObjectObservation.InvalidActiveCube","Active family2 object is not an ActiveCube");
             DeliverPublic(ObjectObserved,observation);                                   // BroadcastObjectObservation 0x0061FED8 (0x006211DC)
             _didObjectsChange = true;                                              // 0x006211E6
-            _timeOfLastChange = unchecked((uint)Math.Max((double)timestamp, MapLastObservedTime));   // 0x00621214: AddAndUpdateObjects's own ts argument (0x00620B9C)
+            _timeOfLastChange = Math.Max(timestamp, MapLastObservedTime);   // 0x00621214: AddAndUpdateObjects's own ts argument (0x00620B9C)
         }
         return LocalizeRobotResultForTest?.Invoke() ?? potentials.LocalizeRobot();                                         // 0x00621304
     }
@@ -2718,7 +2727,7 @@ public sealed partial class BlockWorld
         var top = FindObjectOnTopOrUnderneathHelper(obj,15,true,null,null,ignoreMarkerlessAndCustom:false,site:"ClearLocatedObjectHelper 0x00625E1A");
         if (top is not null) ClearLocatedObjectHelper(top);
         _didObjectsChange = true;
-        _timeOfLastChange = (uint)Math.Max((double)(RobotTimestamp?.Invoke() ?? 0),MapLastObservedTime);
+        _timeOfLastChange = Math.Max(RobotTimestamp?.Invoke() ?? 0, MapLastObservedTime);
     }
     // P9 0062712C..140: source current-origin lookup then existing Clear; no delete/broadcast substitution.
     internal void ClearLocatedObjectByIdInCurrentOrigin(uint id)=>ClearLocatedObjectHelper(GetLocatedObjectByIdHelper(id));

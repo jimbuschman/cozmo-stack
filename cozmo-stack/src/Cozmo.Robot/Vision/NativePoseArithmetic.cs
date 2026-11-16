@@ -30,6 +30,7 @@ public readonly struct Rotation3d : IEquatable<Rotation3d>
         float x=s*(float)axis.X,y=s*(float)axis.Y,z=s*(float)axis.Z;
         return new Rotation3d(c,x,y,z).Normalized();
     }
+    // M11-065 R4: 0x00849DB8..0x00849E52.
     public Rotation3d Normalized()
     {
         double n=W*W;n+=X*X;n+=Y*Y;n+=Z*Z;
@@ -37,6 +38,7 @@ public readonly struct Rotation3d : IEquatable<Rotation3d>
         double length=Math.Sqrt(n); // EQUIVALENT_IMPLEMENTATION M13-023(e): M13-023(e) system-library boundary where platform last bits differ.
         return new(W/length,X/length,Y/length,Z/length);
     }
+    // M11-065 R6/R10: 0x00849EF4..0x00849F8E, then R4.
     public static Rotation3d operator *(Rotation3d a,Rotation3d b)
     {
         double w=a.W*b.W;w-=a.X*b.X;w-=a.Y*b.Y;w-=a.Z*b.Z;
@@ -48,6 +50,7 @@ public readonly struct Rotation3d : IEquatable<Rotation3d>
     public Rotation3d Inverse()=>new(W,-X,-Y,-Z);
     public bool IsNearlyEqual(Rotation3d b,float tolerance)=>Math.Abs(W-b.W)<tolerance&&Math.Abs(X-b.X)<tolerance&&Math.Abs(Y-b.Y)<tolerance&&Math.Abs(Z-b.Z)<tolerance;
     public Point3f RotatePoint(Point3f p)=>new(Rotate(p.ToVec3()));
+    // M11-065 R7/R8: 0x0084ACA6..0x0084ACE2 narrows without normalization, then 0x00849C1C..0x00849CF8.
     public Vec3 Rotate(Vec3 p)
     {
         float w=(float)W,x=(float)X,y=(float)Y,z=(float)Z,px=(float)p.X,py=(float)p.Y,pz=(float)p.Z;
@@ -139,8 +142,10 @@ public struct Transform3d
     internal static Vec3 Add(Vec3 a,Vec3 b)=>new((float)a.X+(float)b.X,(float)a.Y+(float)b.Y,(float)a.Z+(float)b.Z);
     internal static Vec3 Negate(Vec3 a)=>new(-(float)a.X,-(float)a.Y,-(float)a.Z);
     public Vec3 Apply(Vec3 p)=>Add(Translation,Rotation.Rotate(p));
+    // M11-065 R24/R25: 0x0084B97A..0x0084BA30.
     public Transform3d Compose(Transform3d b){var t=Add(Translation,Rotation.Rotate(b.Translation));return new(Rotation*b.Rotation,t);}
     public void MultiplyBy(in Transform3d b){Translation=Add(Translation,Rotation.Rotate(b.Translation));Rotation=Rotation*b.Rotation;}
+    // M11-065 R26: 0x0084BA34..0x0084BA78.
     public void PreComposeWith(ref Transform3d p)
     {
         Rotation=p.Rotation*Rotation;
@@ -153,6 +158,7 @@ public struct Transform3d
     // R28 0x0084BB3A: RotateBy(RotationVector3d) builds r through R22 (an angle IsNear 0 takes the Z axis), then RotateBy(r).
     public Transform3d RotateBy(RotationVector3d v)=>RotateBy(Rotation3d.FromRotationVector(v));
     public Transform3d TranslateForward(float distance)=>new(Rotation,Add(Rotation.Rotate(new(distance,0,0)),Translation));
+    // 0x0065671C..0x0065682C: vector ApplyTo uses R7/R8 then t + p in f32, as in M11-065 R29 for quads.
     public void ApplyTo(IReadOnlyList<Vec3> input,List<Vec3> output)
     {
         int n=input.Count;

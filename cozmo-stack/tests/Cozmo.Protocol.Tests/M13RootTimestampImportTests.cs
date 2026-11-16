@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -16,10 +17,38 @@ public sealed class M13RootTimestampImportTests
             if(MotionPrimitiveSet.FromObb(Path.Combine(d.FullName,"re-analysis","obb")) is {} p)return p;
         throw new InvalidOperationException("Shipped primitives required");
     }
-    private static uint Cache(LatticePlanner planner)=>(uint?)typeof(LatticePlanner)
+    internal static uint Cache(LatticePlanner planner)=>(uint?)typeof(LatticePlanner)
         .GetField("_lastImportedMapTimestamp",BindingFlags.Instance|BindingFlags.NonPublic)?.GetValue(planner) ?? uint.MaxValue;
     private static void PriorObstacle(LatticeEnvironment env)
         =>env.ImportObstaclePolygons(new[]{new P2f[]{new(500,500),new(540,500),new(540,540),new(500,540)}},false,0);
+
+    [Fact]
+    public void AdmittedMarkerlessProximityPoseStampsRootAndStoresRobotForward()
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        var world = rig.Robot.Vision.World;
+        const uint stamp = 1234;
+        world.RobotTimestamp = () => stamp;
+        // Rooted half-turn is exactly representable. The supplied object's orientation is identity.
+        using var robotPose = new Pose3d(new Rotation3d(0, 0, 0, 1), new Vec3(0, 0, 0));
+        world.CurrentRobotPose = () => robotPose;
+        using var obstacle = new Pose3d(Rotation3d.Identity, new Vec3(160, 120, 0));
+        world.AddMarkerlessObject(obstacle, ObjectType.ProxObstacle);
+
+        var map = world.Maps.Current!;
+        var contents = new List<SourceMapData>();
+        map.FindContentIf(data => data.Type == MemoryMapContentType.ObstacleProx ? 1 : 0, contents);
+        Assert.NotEmpty(contents);
+        Assert.All(contents, content =>
+        {
+            var prox = Assert.IsType<ProxObstacleMapData>(content);
+            Assert.Equal((stamp, stamp), (prox.First, prox.Last)); // 0x00684B5E..0x00684B66
+            Assert.Equal(new Vec2(-1, 0), prox.Direction); // 0x00622646..0x0062266C
+        });
+        Assert.Equal(stamp, map.LastObservedTime);
+        Assert.Equal(stamp, world.TimeOfLastChangeField);
+    }
 
     [Fact]
     public void NewOriginsSeedBothRootTimesFromTheLastRobotState()
