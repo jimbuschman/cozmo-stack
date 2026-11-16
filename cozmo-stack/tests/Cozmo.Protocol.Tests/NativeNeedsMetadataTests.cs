@@ -116,6 +116,107 @@ public sealed class NativeNeedsMetadataTests
         owner.DeliverMessage(new NVOpResult{Tag=NeedsManager.NeedsNvKey,Op=NvStorageComponent.OpRead,Result=0,Data=data});
         Assert.Equal(new[]{1},stages);Assert.Equal(11,needs.State.NativeStarsAwarded);
     }
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NeedsSurviveNewConnectionAndDecayForWholeWallClockSeconds(bool keepPcCopy)
+    {
+        using var files = new BackupTestResources();
+        string directory = Path.Combine(files.Root, "nurture");
+        Directory.CreateDirectory(directory);
+        string fixedFile = Path.Combine(directory, "needsState.json");
+        long wallMicros = 3_000_000_000;
+        var options = SourceOptions(files, directory, () => wallMicros);
+        byte[] persistedNv;
+        const uint tag = NeedsManager.NeedsNvKey;
+        const uint serial = 0x12345678;
+
+        using (var robot = CozmoRobot.CreateForTest(new M4ControlTests.FakePort(), () => 0, options))
+        {
+            var engine = robot.Engine;
+            var owner = engine.Robots.AddRobot(CozmoEngine.RobotId, withRic: false)!;
+            var needs = engine.Needs;
+            Assert.True(needs.HasNativePersistence);
+            engine.Experiments.SetAssignmentVectorsForTest(Array.Empty<LabAssignmentDef>(), Array.Empty<LabAssignmentPair>());
+            var commands = new List<NVCommand>();
+            owner.SendFault = message => { if (message is NVCommand command) commands.Add(command); return true; };
+
+            owner.DeliverMessage(new ManufacturingID { SerialNumber = serial });
+            needs.InitAfterConnection();
+            needs.InitAfterSerialNumberAcquired(serial);
+            engine.NvStorage!.Update();
+            Assert.Contains(commands, command => command.Tag == tag && command.Op == NvStorageComponent.OpRead);
+            owner.DeliverMessage(new NVOpResult { Tag = tag, Op = NvStorageComponent.OpRead, Result = -1 });
+
+            void DrainNeedsWrite()
+            {
+                engine.NvStorage.Update();
+                Assert.Equal(NvStorageComponent.OpErase, commands.Last(command => command.Tag == tag).Op);
+                owner.DeliverMessage(new NVOpResult { Tag = tag, Op = NvStorageComponent.OpErase, Result = 0 });
+                engine.NvStorage.Update(); // 0x645248 dispatch arms the write.
+                engine.NvStorage.Update(); // 0x645816 then sends its first chunk.
+                Assert.Equal(NvStorageComponent.OpWrite, commands.Last(command => command.Tag == tag).Op);
+                owner.DeliverMessage(new NVOpResult { Tag = tag, Op = NvStorageComponent.OpWrite, Result = 0 });
+            }
+
+            DrainNeedsWrite(); // The genuine NV_NOT_FOUND path writes the initial state to both copies.
+            Assert.True(File.Exists(fixedFile));
+            commands.Clear();
+            needs.State.StoreLevel(NeedId.Play, .8f);
+            needs.State.SetNativePartDamage(2, 1);
+            needs.State.NativeStarsAwarded = 3;
+            needs.State.NativeLastStarMicros = 2_999_000_000;
+            needs.Save(fixedFile);
+
+            needs.StartWriteToRobot(wallMicros / 1_000_000.0);
+            DrainNeedsWrite();
+            persistedNv = Assert.Single(commands.Where(command => command.Tag == tag && command.Op == NvStorageComponent.OpWrite)).Data;
+            const int header = 16;
+            Assert.Equal(3000UL, BitConverter.ToUInt64(persistedNv, header + 0x04));
+            Assert.Equal(80000, BitConverter.ToInt32(persistedNv, header + 0x14));
+            Assert.Equal(3, BitConverter.ToInt32(persistedNv, header + 0x38));
+            Assert.Equal(2999UL, BitConverter.ToUInt64(persistedNv, header + 0x5C));
+            Assert.Equal(new byte[] { 0, 0, 1 }, persistedNv[(header + 0x3C)..(header + 0x3F)]);
+            Assert.All(persistedNv[(header + 0x3F)..(header + 0x5C)], value => Assert.Equal(0, value));
+        }
+
+        using (var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(fixedFile)))
+        {
+            var state = json.RootElement;
+            Assert.Equal(3000, state.GetProperty("_DateTime").GetInt64());
+            Assert.Equal(serial, state.GetProperty("_SerialNumber").GetUInt32());
+            Assert.Equal(3, state.GetProperty("NumStarsAwarded").GetInt32());
+            Assert.True(state.GetProperty("PartIsDamaged").GetProperty("Treads").GetBoolean());
+        }
+
+        if (!keepPcCopy) File.Delete(fixedFile);
+        wallMicros += 3_600_999_999; // 3600 whole seconds at 0x69532C, even with an unchanged engine tick.
+        using var restarted = CozmoRobot.CreateForTest(new M4ControlTests.FakePort(), () => 0, options);
+        var newEngine = restarted.Engine;
+        var newOwner = newEngine.Robots.AddRobot(CozmoEngine.RobotId, withRic: false)!;
+        var restored = newEngine.Needs;
+        newEngine.Experiments.SetAssignmentVectorsForTest(Array.Empty<LabAssignmentDef>(), Array.Empty<LabAssignmentPair>());
+        bool readSent = false;
+        newOwner.SendFault = message =>
+        {
+            if (message is NVCommand command && command.Tag == tag && command.Op == NvStorageComponent.OpRead) readSent = true;
+            return true;
+        };
+        newOwner.DeliverMessage(new ManufacturingID { SerialNumber = serial });
+        restored.InitAfterConnection();
+        restored.InitAfterSerialNumberAcquired(serial);
+        newEngine.NvStorage!.Update();
+        Assert.True(readSent);
+        newOwner.DeliverMessage(new NVOpResult { Tag = tag, Op = NvStorageComponent.OpRead, Result = 0, Data = persistedNv });
+
+        Assert.True(restored.HasRobotCopy);
+        Assert.Equal(3, restored.State.NativeStarsAwarded);
+        Assert.Equal(2_999_000_000, restored.State.NativeLastStarMicros);
+        Assert.Equal(new byte[] { 0, 0, 1 }, restored.State.PartDamage.Values);
+        Assert.Equal(.8f - 60f * .000023f, (float)restored.State.GetNeedLevel(NeedId.Play));
+        Assert.True(File.Exists(fixedFile));
+    }
+
     [Fact]
     public void FirstRobotNotRepresentedByNvFacadeDoesNotFabricateReadFailure()
     {
