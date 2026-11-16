@@ -712,6 +712,7 @@ public sealed partial class NeedsManager
     private bool _deviceDataPresent;
     /// <summary>The parsed robot NV copy, or null (C2 row 11).</summary>
     private NeedsCopy? _robotCopy;
+    private NeedsStateOnRobot? _offlineRobotPayload;
     /// <summary>The device copy loaded from a file - the startup fixed file or the per-serial alternate (C2 rows 3/12).</summary>
     private NeedsCopy? _deviceCopy;
     /// <summary>The current <c>NeedsState</c>'s <c>DateTime</c> (<c>this+8</c>): the copy last applied to the state (Appendix I4).</summary>
@@ -1463,6 +1464,8 @@ public sealed partial class NeedsManager
             _serial = serial;
             if(NativeContextBound&&_nativePersistenceReady)State.NativeSerial=serial;
             _robotReadSucceeded = false;       // +0x1c8
+            _robotCopy = null;
+            _offlineRobotPayload = null;
             _robotRewriteNeeded = false;       // +0x1ca
             _nativeCopiesResolved=false;_nativeRobotDataProtected=false;_nativeSerialUnresolved=NativeContextBound&&_nativePersistenceReady;
         }
@@ -1693,10 +1696,12 @@ public sealed partial class NeedsManager
             candidate.NativeUnlockLevel=robot.CurNeedsUnlockLevel;candidate.NativeStarsAwarded=robot.NumStarsAwarded;
             candidate.NativeStarsForNextUnlock=_nativeStarThresholds!.GetMax(robot.CurNeedsUnlockLevel);
             candidate.NativeSerial=owner.NativeBodyId;candidate.ForceNextSong=robot.ForceNextSong;candidate.ContextRandom=context.ContextRandom;
-            for(int i=0;i<3;i++){candidate.StoreLevel((NeedId)i,(float)levels[i]);candidate.SetNativePartDamage(i,robot.PartIsDamaged[i]);}
+            for (int i = 0; i < levels.Length; i++) candidate.StoreLevel((NeedId)i, (float)levels[i]);
+            RestoreRobotParts(candidate, robot);
             _nativeOnboardingStage=robot.OnboardingStageCompleted; // 0x69A18C: manager field, before bracket refresh/resolver
             candidate.UpdateCurNeedsBrackets();_nativeRobotCandidate=candidate;
         }
+        else _offlineRobotPayload = robot;
         _robotCopy = new NeedsCopy(levels, 0, (long)robot.TimeLastWritten, 5);   // the robot blob has no serial
         if (version != 5) _robotRewriteNeeded = true;                // 0x00699E64: every version but 5 rewrites
         return true;
@@ -1848,9 +1853,14 @@ public sealed partial class NeedsManager
     internal byte[]? BuildNativeRobotBlob(long writeMicros)
     {
         if(!NativeMetadataAvailable){SteppedBehavior.ReportMissing("M15-014 native star config unavailable for Needs NV payload");return null;}
+        return PackRobotBlob(unchecked((ulong)(writeMicros / 1_000_000L)));
+    }
+
+    private byte[]? PackRobotBlob(ulong writtenSeconds)
+    {
         var value=new NeedsStateOnRobot
         {
-            Version=5,TimeLastWritten=unchecked((ulong)(writeMicros/1_000_000)),
+            Version=5,TimeLastWritten=writtenSeconds,
             CurNeedsUnlockLevel=State.NativeUnlockLevel,NumStarsAwarded=State.NativeStarsAwarded,
             TimeLastStarAwarded=unchecked((ulong)(State.NativeLastStarMicros/1_000_000)),
             OnboardingStageCompleted=_nativeOnboardingStage,ForceNextSong=State.ForceNextSong,
@@ -1861,10 +1871,11 @@ public sealed partial class NeedsManager
             if((uint)p.Key>=NeedsStateOnRobot.NeedCount){SteppedBehavior.ReportMissing("M1-034/M15-014 skipped unsupported need index in NV payload");return null;}
             value.CurNeedLevel[p.Key]=QuantizeLevel(p.Value);
         }
+        // 0x6955B2..0x6955F0 clears 32 slots, then stores each map byte at its numeric part key.
         foreach(var p in State.PartDamage)
         {
             if((uint)p.Key>=NeedsStateOnRobot.PartCount){SteppedBehavior.ReportMissing("M1-034/M15-014 skipped unsupported part index in NV payload");return null;}
-            value.PartIsDamaged[p.Key]=p.Value==0?(byte)0:(byte)1;
+            value.PartIsDamaged[p.Key]=p.Value;
         }
         return NeedsStateOnRobot.Pack(value);
     }
@@ -1885,9 +1896,14 @@ public sealed partial class NeedsManager
     // fidelity: M15-014, M15-017
     public void StartWriteToRobot(double nowSec)
     {
-        if(SkipUnbuiltRobotPersistence())return; // Before timestamps, partial packing, erase or write.
-        if(NativeContextBound&&!UsesUncertifiedPersistenceTestAdapter&&!NativeRobotWriteAllowed())return;
-        byte[] blob;
+        if (SkipUnbuiltRobotPersistence()) return;
+        if (HasNativePersistence)
+        {
+            StartNativeRobotWrite(unchecked((long)(nowSec * 1_000_000.0)));
+            return;
+        }
+
+        byte[]? blob;
         NvStorageComponent? nv;
         lock (_gate)
         {
@@ -1899,22 +1915,12 @@ public sealed partial class NeedsManager
             }
             _lastWriteToRobotSec = nowSec;                           // +0x1c0/+0x1c4
 
-            var needs = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play };
-            var robot = new NeedsStateOnRobot { Version = 5, TimeLastWritten = (ulong)nowSec };
-            for (int i = 0; i < needs.Length; i++) robot.CurNeedLevel[i] = QuantizeLevel((float)State.GetNeedLevel(needs[i]));
-            if(State.PartDamage.Values.Any(value=>value!=0))
-            {
-                SteppedBehavior.ReportMissing("M15-014/M15-029 StartWriteToRobot part-map to packed PartIsDamaged slots at 0x00695494..0x00695763 is not checked here; write skipped rather than synthesizing first-N damaged flags");return;
-            }
-            // The engine copies its economy fields into the blob (0x00695540..0x00695640:
-            // curNeedsUnlockLevel, numStarsAwarded, timeLastStarAwarded, timeCreated, onboardingStageCompleted,
-            // forceNextSong). This stack does not model the stars/onboarding economy, so those fields stay at
-            // their zero defaults in this legacy UNIT-ONLY fixture path. Production is gated above until those producers are built.
-            blob = NeedsStateOnRobot.Pack(robot);
+            blob = PackRobotBlob(unchecked((ulong)nowSec));
             nv = NvStorage;
         }
 
-        // The legacy partial payload above is unit-only. Recheck the captured owner before the NV handoff.
+        if (blob is null) return;
+        // The offline adapter cannot write through a live NV owner.
         if(nv is {IsOfflineOwner:false}){ReportUnbuiltRobotPersistence();return;}
         // The NV write happens outside _gate (finding 5: do not hold _gate across NvStorageComponent.Write).
         if (nv is null)
@@ -2048,8 +2054,26 @@ public sealed partial class NeedsManager
     {
         var needs = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play };
         for (int i = 0; i < needs.Length && i < copy.Levels.Length; i++) State.SetNeedLevel(needs[i], copy.Levels[i]);
+        if (_offlineRobotPayload is { } payload)
+        {
+            RestoreRobotParts(State, payload);
+            State.NativeTimeCreatedMicros = unchecked((long)(payload.TimeCreated * 1_000_000UL));
+            State.NativeLastStarMicros = unchecked((long)(payload.TimeLastStarAwarded * 1_000_000UL));
+            State.NativeUnlockLevel = payload.CurNeedsUnlockLevel;
+            State.NativeStarsAwarded = payload.NumStarsAwarded;
+            State.NativeStarsForNextUnlock = _nativeStarThresholds?.GetMax(payload.CurNeedsUnlockLevel) ?? 0;
+            State.ForceNextSong = payload.ForceNextSong;
+            _nativeOnboardingStage = payload.OnboardingStageCompleted;
+        }
         _stateDateTimeSec = copy.DateTimeSec;
         ApplyDecayForTimeSinceLastDeviceWrite(false);
+    }
+
+    // 0x69A0DA..0x69A110 inserts the three physical part keys into the candidate map.
+    private static void RestoreRobotParts(NeedsState destination, NeedsStateOnRobot payload)
+    {
+        for (int part = 0; part < 3; part++)
+            destination.SetNativePartDamage(part, payload.PartIsDamaged[part]);
     }
 
     // fidelity: M15-014
@@ -2070,20 +2094,15 @@ public sealed partial class NeedsManager
         if(SkipUnbuiltDevicePersistence())return;
         lock (_gate)
         {
-            SteppedBehavior.ReportMissing("M15-030 elapsed producer 0x00695304..0x00695330: signed microsecond arithmetic is built, but existing host seconds-clock/DateTime storage is not certified as the native system_clock producer");
-            long nowMicros=unchecked((long)(_clockSec()*1_000_000.0));
-            long lastMicros=unchecked((long)(_stateDateTimeSec*1_000_000.0));
-            float elapsed=(float)(unchecked(nowMicros-lastMicros)/1_000_000L);              // 0x0069532C
-            foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
+            if (HasNativePersistence)
             {
-                _lastDecaySec[n] = _nowSec - elapsed;                    // [+0x1E4] = [+0x3AC] - elapsed (0x00695338/0x00695340)
-                if (_fullnessDeadlineSec.TryGetValue(n, out var deadline) && deadline != 0)
-                {
-                    _fullnessDeadlineSec[n] = deadline - elapsed;
-                    if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = start - elapsed;
-                }
+                ApplyNativeElapsed(connected);
+                return;
             }
-            ApplyDecayAllNeeds(connected);                               // reads +0x3AC (0x00695374)
+
+            long nowMicros = unchecked((long)(_clockSec() * 1_000_000.0));
+            long lastMicros = unchecked((long)(_stateDateTimeSec * 1_000_000.0));
+            ApplyStoredElapsed(nowMicros, lastMicros, connected);
         }
     }
 
@@ -2254,34 +2273,18 @@ public sealed partial class NeedsManager
     // fidelity: M15-014
     public void Save(string path, long? unixTimeSec = null, uint serialNumber = 0)
     {
-        if(SkipUnbuiltDevicePersistence())return; // Legacy serializer below is an explicitly opted-in unit model.
-        if(State.PartDamage.Keys.Any(key=>(uint)key>=3))
+        if (SkipUnbuiltDevicePersistence()) return;
+        if (HasNativePersistence)
         {
-            StackDiagnostics.Write("M1-034/M15-029/M15-014: skipping needs device-file write at Json::Value::operator[](nullptr), 0x00693E10..0x00693E18; invalid part map and prior file retained");return;
+            if (_nativeSerialUnresolved || _nativeRobotDataProtected) return;
+            long stamp = unixTimeSec ?? NativeSystemClockMicros() / 1_000_000L;
+            WriteDeviceDocument(path, stamp, serialNumber == 0 ? State.NativeSerial : serialNumber);
+            return;
         }
+
         long now = unixTimeSec ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var levels = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.ToDictionary(n=>n.ToString(),n=>QuantizeLevel((float)State.GetNeedLevel(n)));
-        // OV27 endpoint/J7: source map keys are part names, independent of all three need levels.
-        var damaged = State.PartDamage.ToDictionary(entry=>entry.Key switch{0=>"Head",1=>"Lift",_=>"Treads"},entry=>entry.Value!=0);
-        SteppedBehavior.ReportMissing("M15-014 persistence remains partial: legacy economy serialization and read-copy/part-map restoration are not claimed recovered by M15-029");
-        var doc = new Dictionary<string, object>
-        {
-            ["_StateFileVersion"] = CurrentStateFileVersion,
-            ["_DateTime"] = now,
-            ["_SerialNumber"] = serialNumber,
-            ["CurNeedLevel"] = levels,
-            ["PartIsDamaged"] = damaged,
-            ["CurNeedsUnlockLevel"] = 0,
-            ["NumStarsAwarded"] = 0,
-            ["NumStarsForNextUnlock"] = 0,
-            ["TimeCreated"] = now,
-            ["TimeLastStarAwarded"] = 0,
-            ["TimeLastDisconnect"] = _lastDisconnectSec,
-            ["TimeLastAppBackgrounded"] = _lastAppBackgroundSec,
-            ["OpenAppAfterDisconnect"] = _openAppAfterDisconnect,
-            ["ForceNextSong"] = false,
-        };
-        File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(doc));
+        WriteDeviceDocument(path, now, serialNumber,
+            _lastDisconnectSec, _lastAppBackgroundSec, _openAppAfterDisconnect);
     }
 
     /// <summary>
@@ -2343,6 +2346,25 @@ public sealed partial class NeedsManager
         if(root.TryGetProperty("CurNeedLevel",out var nativeLevels)&&nativeLevels.ValueKind==System.Text.Json.JsonValueKind.Object)
             foreach(var n in new[]{NeedId.Repair,NeedId.Energy,NeedId.Play})
                 if(nativeLevels.TryGetProperty(n.ToString(),out var value))State.StoreLevel(n,(float)value.GetInt32()/BitConverter.Int32BitsToSingle(0x47C35000));
+        if (root.TryGetProperty("PartIsDamaged", out var parts) && parts.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            for (int part = 0; part < 3; part++)
+                State.SetNativePartDamage(part, parts.TryGetProperty(RepairablePartName(part), out var damaged) &&
+                    damaged.ValueKind == System.Text.Json.JsonValueKind.True ? (byte)1 : (byte)0);
+        }
+        long ReadNumber(string key) => root.TryGetProperty(key, out var field) &&
+            field.ValueKind == System.Text.Json.JsonValueKind.Number && field.TryGetInt64(out var value) ? value : 0;
+        State.NativeUnlockLevel = (int)ReadNumber("CurNeedsUnlockLevel");
+        State.NativeStarsAwarded = (int)ReadNumber("NumStarsAwarded");
+        State.NativeStarsForNextUnlock = (int)ReadNumber("NumStarsForNextUnlock");
+        State.NativeLastStarMicros = version >= 2 ? unchecked(ReadNumber("TimeLastStarAwarded") * 1_000_000L) : 0;
+        _lastDisconnectSec = version >= 3 ? ReadNumber("TimeLastDisconnect") : 0;
+        _lastAppBackgroundSec = version >= 3 ? ReadNumber("TimeLastAppBackgrounded") : 0;
+        _openAppAfterDisconnect = version >= 3 ? (int)ReadNumber("OpenAppAfterDisconnect") : 0;
+        State.NativeTimeCreatedMicros = version >= 5 ? unchecked(ReadNumber("TimeCreated") * 1_000_000L) : 0;
+        State.ForceNextSong = version >= 4 && root.TryGetProperty("ForceNextSong", out var song) &&
+            song.ValueKind == System.Text.Json.JsonValueKind.String
+            ? unchecked((int)NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(song.GetString()!))) : 0;
         long dateTime = root.TryGetProperty("_DateTime", out var w) && w.ValueKind == System.Text.Json.JsonValueKind.Number ? w.GetInt64() : 0;
         _stateDateTimeSec = dateTime;
         _deviceTimestampSnapshotSec = _stateDateTimeSec;   // +0x1B8/+0x1BC = +8/+0xC (J4)

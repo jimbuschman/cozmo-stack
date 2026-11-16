@@ -10,6 +10,7 @@ namespace Cozmo.Robot.Behavior;
 internal sealed record NativeLaserObservation(uint Timestamp, float Value, short X, short Y)
 {
     internal const ushort Tag = 0x4A;
+    internal byte[] PackBody() => new Cozmo.Protocol.CladWriter().U32(Timestamp).F32(Value).I16(X).I16(Y).ToArray();
 }
 
 internal sealed class NativeTrackLaserBehavior : SteppedBehavior, IDisposable

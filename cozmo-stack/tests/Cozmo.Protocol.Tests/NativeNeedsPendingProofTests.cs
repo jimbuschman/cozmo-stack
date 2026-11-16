@@ -212,8 +212,12 @@ public sealed class NativeNeedsPendingProofTests
                 needs.RegisterNeedsActionCompleted("RollACube");
                 needs.PossiblyStartWriteToRobot(true);needs.StartWriteToRobot(0);
                 for(int i=0;i<30;i++){f.AnswerInFlightNv();f.Rig.Tick();}
+                byte[] startupFile = File.ReadAllBytes(needs.FixedDeviceFilePath!);
                 needs.OnRobotDisconnected();
+                needs.WriteDeviceFile(true);
+                needs.Save(Path.Combine(directory, "explicit.json"));
                 Assert.Empty(NeedsChanges(f));
+                Assert.Equal(startupFile, File.ReadAllBytes(needs.FixedDeviceFilePath!));
                 Assert.Equal(new[]{"needsState.json",NotificationHistoryStore.FileName},Directory.GetFiles(directory).Select(Path.GetFileName).Order());
             }
         }

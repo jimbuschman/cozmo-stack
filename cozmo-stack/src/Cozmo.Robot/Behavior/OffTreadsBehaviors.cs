@@ -7,14 +7,14 @@ namespace Cozmo.Robot.Behavior;
 /// <c>FlipDownIfNeeded</c>: while the off-treads state is OnBack, read cliff sensor 0
 /// (<c>CliffSensorComponent::GetCliffDataRaw(0)</c>); if <c>raw &gt;&gt; 4 ≤ 0x18</c> (raw below 400) play
 /// <see cref="AnimationTrigger.FlipDownFromBack"/> (0xCB; <c>HiccupRobotOnBack</c> 0xE4 instead when the
-/// whiteboard's hiccup flag is set, a system this stack does not have), otherwise the sensor is being
+/// whiteboard's hiccup flag is set), otherwise the sensor is being
 /// blocked and the head is recalibrated instead (<c>CalibrateMotorAction(head)</c>, DAS
 /// <c>CalibratingHead</c>). Either way <c>DelayThenFlipDown</c> follows: still on back → wait 0.5 s
 /// (<c>WaitAction</c> 0x3F000000) and try again; otherwise objective <c>ReactedToRobotOnBack</c> and done.
 /// </summary>
 public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 {
-    internal Cozmo.Robot.Manipulation.AIWhiteboard? Whiteboard { get; set; }
+    internal Func<bool?>? ReadHiccups { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
@@ -46,8 +46,10 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
         int front = raw is { Length: > 0 } ? raw[0] : 0;
         if ((front >> 4) <= 0x18)
         {
-            if (Whiteboard is null) ReportMissing("M10-003 ReactToRobotOnBack 0x00608806: AIWhiteboard+0x74 unavailable");
-            PlayTrigger(Whiteboard?.HiccupsActive == true ? AnimationTrigger.HiccupRobotOnBack : AnimationTrigger.FlipDownFromBack, DelayThenFlipDown);
+            // 0x00608806..0x00608830 reads the current Robot's AIWhiteboard+0x74.
+            bool? hiccups = ReadHiccups is { } read ? read() : false;
+            if (hiccups is null) return;
+            PlayTrigger(hiccups.Value ? AnimationTrigger.HiccupRobotOnBack : AnimationTrigger.FlipDownFromBack, DelayThenFlipDown);
         }
         else
         {
@@ -83,11 +85,11 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 /// (0xA6) otherwise. <c>Robot+0x300</c> is the lift <b>angle in radians</b> (stored from <c>RobotState.liftAngle</c>
 /// at 0x0051296A), which is never anywhere near 45, so on this build the arm-up variant is unreachable and
 /// FacePlantRoll always plays. That is reproduced, not corrected. <c>HiccupRobotOnFace</c> (0xE5) replaces it
-/// under the hiccup flag, which this stack does not have.
+/// while the native whiteboard hiccup flag is set.
 /// </summary>
 public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
 {
-    internal Cozmo.Robot.Manipulation.AIWhiteboard? Whiteboard { get; set; }
+    internal Func<bool?>? ReadHiccups { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
@@ -102,10 +104,12 @@ public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
     private void FlipOverIfNeeded()
     {
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnFace) { Log("not on face"); Finish(); return; }
+        // 0x00608ADA..0x00608B26 reads AIWhiteboard+0x74 and lets it override either lift-angle variant.
+        bool? hiccups = ReadHiccups is { } read ? read() : false;
+        if (hiccups is null) return;
         float liftAngle = Context.Robot.Sensors.LiftAngleRad ?? 0f;
-        var roll = liftAngle < 45f ? AnimationTrigger.FacePlantRoll : AnimationTrigger.FacePlantRollArmUp;
-        if (Whiteboard is null) ReportMissing("M10-003 ReactToRobotOnFace 0x00608ADA: AIWhiteboard+0x74 unavailable");
-        else if (Whiteboard.HiccupsActive) roll = AnimationTrigger.HiccupRobotOnFace;
+        var roll = hiccups.Value ? AnimationTrigger.HiccupRobotOnFace
+            : liftAngle < 45f ? AnimationTrigger.FacePlantRoll : AnimationTrigger.FacePlantRollArmUp;
         PlayTrigger(roll, DelayThenCheckState);
     }
 

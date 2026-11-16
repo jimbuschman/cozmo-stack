@@ -47,7 +47,7 @@ public sealed partial class NeedsManager
                 foreach(int id in State.PartDamage.Keys.OrderBy(id=>id).ToArray())
                 {
                     if((uint)id>2){_nativeDeviceInputUnavailable=true;SteppedBehavior.ReportMissing("M15-014 repairable-part name outside recovered device input");return false;}
-                    string name=id switch{0=>"Head",1=>"Lift",_=>"Treads"};candidate.SetNativePartDamage(id,NativeJsonBool(Json.Member(parts,name))?(byte)1:(byte)0);
+                    string name=RepairablePartName(id);candidate.SetNativePartDamage(id,NativeJsonBool(Json.Member(parts,name))?(byte)1:(byte)0);
                 }
                 candidate.NativeLastStarMicros=version>=2?Seconds("TimeLastStarAwarded"):0;
                 candidate.ForceNextSong=version>=4?unchecked((int)NativeUnlockNames.FromBytes(Json.AsStringBytes(Json.Member(root,"ForceNextSong")))):0;
@@ -83,10 +83,28 @@ public sealed partial class NeedsManager
     private bool WriteNativeDevice(bool refresh)
     {
         long now=NativeSystemClockMicros(); // 0x693BC0, even when refresh=false
-        if(_nativeSerialUnresolved)return true; // the State carries this robot's serial but not yet its data; see ResolveNativeCopies
+        if (_nativeSerialUnresolved || _nativeRobotDataProtected) return true; // See ResolveNativeCopies.
         if(refresh)State.NativeDateTimeMicros=now;
         if(DeviceDirectory is null){SteppedBehavior.ReportMissing("M15-014 NeedsDeviceDirectory unavailable for device write");return false;}
         if(!NativeMetadataAvailable){SteppedBehavior.ReportMissing("M15-014 star config unavailable for device write");return false;}
+        try
+        {
+            return WriteDeviceDocument(Path.Combine(DeviceDirectory, FixedFileName), State.NativeDateTimeMicros / 1_000_000L, State.NativeSerial);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "NeedsManager.WriteToDevice", "Write failed: " + e.Message);
+            EngineErrorState.StoreAndMaybeBreak();
+            return true;
+        }
+    }
+
+    private static string RepairablePartName(int part) => part switch { 0 => "Head", 1 => "Lift", _ => "Treads" };
+
+    // 0x693BB0..0x694350: a single v5 document for the fixed file and explicit host saves.
+    private bool WriteDeviceDocument(string path, long seconds, uint serial,
+        double? disconnectSeconds = null, double? backgroundSeconds = null, int? openAfterDisconnect = null)
+    {
         string? song=NativeUnlockNames.Lookup(State.ForceNextSong);
         if(song is null){SteppedBehavior.ReportMissing("M15-014 ForceNextSong enum name unavailable for device write");return false;}
         var levels=new Dictionary<string,int>();
@@ -98,20 +116,23 @@ public sealed partial class NeedsManager
         var parts=new Dictionary<string,bool>();
         foreach(var p in State.PartDamage.OrderBy(entry=>entry.Key))
         {
-            if((uint)p.Key>2){SteppedBehavior.ReportMissing("M15-014 repairable-part name outside recovered device output");return false;}
-            parts[p.Key switch{0=>"Head",1=>"Lift",_=>"Treads"}]=p.Value!=0;
+            if ((uint)p.Key > 2)
+            {
+                StackDiagnostics.Write("M1-034/M15-029/M15-014: skipping needs device-file write at Json::Value::operator[](nullptr), 0x00693E10..0x00693E18; invalid part map and prior file retained");
+                return false;
+            }
+            parts[RepairablePartName(p.Key)]=p.Value!=0;
         }
         var doc=new Dictionary<string,object>
         {
-            ["_StateFileVersion"]=5,["_DateTime"]=State.NativeDateTimeMicros/1_000_000L,["TimeCreated"]=State.NativeTimeCreatedMicros/1_000_000L,
-            ["TimeLastDisconnect"]=State.NativeLastDisconnectMicros/1_000_000L,["TimeLastAppBackgrounded"]=State.NativeLastBackgroundMicros/1_000_000L,
-            ["OpenAppAfterDisconnect"]=State.NativeOpenAppAfterDisconnect,["_SerialNumber"]=State.NativeSerial,
+            ["_StateFileVersion"]=CurrentStateFileVersion,["_DateTime"]=seconds,["TimeCreated"]=State.NativeTimeCreatedMicros/1_000_000L,
+            ["TimeLastDisconnect"]=disconnectSeconds.HasValue ? (object)disconnectSeconds.Value : State.NativeLastDisconnectMicros/1_000_000L,
+            ["TimeLastAppBackgrounded"]=backgroundSeconds.HasValue ? (object)backgroundSeconds.Value : State.NativeLastBackgroundMicros/1_000_000L,
+            ["OpenAppAfterDisconnect"]=openAfterDisconnect ?? State.NativeOpenAppAfterDisconnect,["_SerialNumber"]=serial,
             ["CurNeedsUnlockLevel"]=State.NativeUnlockLevel,["NumStarsAwarded"]=State.NativeStarsAwarded,["NumStarsForNextUnlock"]=State.NativeStarsForNextUnlock,
             ["CurNeedLevel"]=levels,["PartIsDamaged"]=parts,["TimeLastStarAwarded"]=State.NativeLastStarMicros/1_000_000L,["ForceNextSong"]=song
         };
-        try{File.WriteAllText(Path.Combine(DeviceDirectory,FixedFileName),System.Text.Json.JsonSerializer.Serialize(doc));}
-        catch(Exception e) when(e is IOException or UnauthorizedAccessException)
-        {SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"NeedsManager.WriteToDevice","Write failed: "+e.Message);EngineErrorState.StoreAndMaybeBreak();}
+        File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(doc));
         return true;
     }
     private void ProtectRobotData()
@@ -258,17 +279,20 @@ public sealed partial class NeedsManager
         if(unchecked(now-_nativeLastRobotWriteMicros)>600_999_999L||force)return StartNativeRobotWrite(now);
         return true;
     }
-    private void ApplyNativeElapsed(bool connected)
+    private void ApplyNativeElapsed(bool connected) =>
+        ApplyStoredElapsed(NativeSystemClockMicros(), State.NativeDateTimeMicros, connected);
+
+    private void ApplyStoredElapsed(long nowMicros, long writtenMicros, bool connected)
     {
-        long difference=unchecked(NativeSystemClockMicros()-State.NativeDateTimeMicros);
-        float elapsed=(float)(difference/1_000_000L);
+        // 0x69530E..0x695330 subtracts signed system-clock microseconds, divides, then converts to f32.
+        float elapsed = (float)(unchecked(nowMicros - writtenMicros) / 1_000_000L);
         foreach(var need in new[]{NeedId.Repair,NeedId.Energy,NeedId.Play})
         {
             _lastDecaySec[need]=_nowSec-elapsed;
             if(_fullnessDeadlineSec.TryGetValue(need,out var deadline)&&deadline!=0)
             {
-                _fullnessDeadlineSec[need]=(float)deadline-elapsed;
-                if(_fullnessStartSec.TryGetValue(need,out var start))_fullnessStartSec[need]=(float)start-elapsed;
+                _fullnessDeadlineSec[need]=deadline-elapsed;
+                if(_fullnessStartSec.TryGetValue(need,out var start))_fullnessStartSec[need]=start-elapsed;
             }
         }
         ApplyDecayAllNeeds(connected);

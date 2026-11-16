@@ -1839,10 +1839,10 @@ public sealed partial class VisionSystem : IDisposable
         GrayImage gray;
         try { gray = cache.GetGray(); }
         catch (InvalidOperationException e) { Log?.Invoke($"frame {imageId}: {e.Message}"); return null; }
-        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine,nativeState,sourceOwner,nativeFaceEpoch);
+        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine,nativeState,sourceOwner,nativeFaceEpoch, cache);
     }
 
-    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,int nativeFaceEpoch=0)
+    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,int nativeFaceEpoch=0, ImageCache? decoded=null)
     {
         var calibration = Calibration;
         if (calibration is null) { WarnNoCalibration(removal); return null; }
@@ -1861,7 +1861,7 @@ public sealed partial class VisionSystem : IDisposable
         var poseData = WithRotatingGate(pd.Value, effective);
         return ProcessImage(gray, imageId, effective, poseData, calibration, removal,
                             effective != cameraTimestamp ? cameraTimestamp : null,queueForEngine:queueForEngine,nativeState:nativeState,sourceOwner:sourceOwner,
-                            edgeGround:edgeGround is null?null:EdgeGroundInput(edgeGround),nativeFaceEpoch:nativeFaceEpoch);
+                            edgeGround:edgeGround is null?null:EdgeGroundInput(edgeGround),nativeFaceEpoch:nativeFaceEpoch,decoded:decoded);
     }
 
     // fidelity: M11-017 -- VisionPoseData::Set 0x006AF330..0x006AF38A: H at +0x7C, the visible byte at +0x78, the RobotState status at +0x5C.
@@ -1907,7 +1907,7 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M1-025, M1-015
     // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
     private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
-                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,OverheadEdgeGroundInput? edgeGround=null,int nativeFaceEpoch=0)
+                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,OverheadEdgeGroundInput? edgeGround=null,int nativeFaceEpoch=0,ImageCache? decoded=null)
     {
         var sw = Stopwatch.StartNew();
         var cal = gray.Width == calibration.Columns && gray.Height == calibration.Rows ? calibration : calibration.Scaled(gray.Width, gray.Height);
@@ -2134,8 +2134,39 @@ public sealed partial class VisionSystem : IDisposable
             if(detectedFaces is not null)processedMask|=1<<2;
             if(detectedPets is not null)processedMask|=1<<9;
             if(overheadEdgesRan)processedMask|=1<<4; // 0x006B540A..0x006B5416: set on Detect's zero return, with or without a frame
-            foreach(int mode in new[]{5,6,15})if(ShouldProcessVisionMode(mode))
+            foreach(int mode in new[]{5,6})if(ShouldProcessVisionMode(mode))
                 SteppedBehavior.ReportMissing("M11-035 "+(VisionMode)mode+" producer/handler unavailable; no processed bit or native success invented");
+            NativeLaserObservation? laser = null;
+            if (ShouldProcessVisionMode((int)VisionMode.DetectingLaserPoints))
+            {
+                // 0x006B5552..0x006B55E2 runs before image quality. A zero detector result sets the mode bit,
+                // including the defined no-ground and no-component returns.
+                var carrier = nativeState?.MotionPose.Current is { } frameGround ? EdgeGroundInput(frameGround) : edgeGround;
+                if (carrier is not { } input)
+                    SteppedBehavior.ReportMissing("M11-035 DetectingLaserPoints: the frame has no native ground-plane input for 0x006A7A20");
+                else
+                {
+                    if (input.GroundPlaneVisible)
+                    {
+                        var cache = nativeState?.Motion?.ImageCache;
+                        if (cache is null)
+                        {
+                            byte[]? rgb = decoded is { RgbValid: true } ? decoded.Rgb : null;
+                            int channels = rgb is null ? 1 : 3;
+                            cache = new NativeMotionImageCache();
+                            cache.Reset(new NativeMotionImage(gray.Height, gray.Width, channels, gray.Width * channels,
+                                rgb ?? gray.Pixels, timestamp));
+                        }
+                        var exposure = _robot.CameraSettings.QualityState;
+                        bool atMinimum = NativeLaserPointDetector.AtMinimumExposure(
+                            exposure.Exposure, exposure.Gain, exposure.MinExposure, exposure.MinGain);
+                        laser = NativeLaserPointDetector.Detect(cache.GetHalf(), input, gray.Width, gray.Height,
+                            atMinimum, (float)pd.HeadAngleRad, (key, message) =>
+                                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, key, message));
+                    }
+                    processedMask |= (ushort)(1 << (int)VisionMode.DetectingLaserPoints);
+                }
+            }
             if(RemovedSince(removal))return null;
             // fidelity: M11-080, M11-057
             ImageQualityProposal? quality=null;
@@ -2511,6 +2542,14 @@ public sealed partial class VisionSystem : IDisposable
             if(queueForEngine && StaleFrame())return null;
             if(queueForEngine && quality is {} qualityResult)handlerFailed|=UpdateImageQuality(timestamp,qualityResult)!=0;
             if(queueForEngine && StaleFrame())return null;
+            // 0x006547FA/0x00655794..0x006557D0 publishes the laser list after quality and before RobotProcessedImage.
+            if (queueForEngine && sourceOwner is { HasExternalInterface: true } && laser is { } laserPoint)
+            {
+                _robot.Engine.DeliverAnimationReportToApp(NativeLaserObservation.Tag, laserPoint.PackBody());
+                if (StaleFrame()) return null;
+                _robot.Engine.AnimationMessages.Deliver(NativeLaserObservation.Tag, true, laserPoint);
+                if (StaleFrame()) return null;
+            }
             result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed)
             {
                 OverheadEdges = overheadEdges,
