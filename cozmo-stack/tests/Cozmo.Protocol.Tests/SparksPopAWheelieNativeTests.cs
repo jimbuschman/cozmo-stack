@@ -81,7 +81,13 @@ public sealed class SparksPopAWheelieNativeTests
             }
             if(!predock&&pop.CliffChanged)
             {
-                predock=true;for(int t=0;t<21;t++)Assert.Equal(new[]{0,1,3,11,12,14,15,20}.Contains(t),manager.HasDisableLock((ReactionTrigger)t,Id+"_behaviorLock"));
+                predock = true;
+                for (int index = 0; index < 21; index++)
+                {
+                    var trigger = (ReactionTrigger)index;
+                    Assert.Equal(mapped.Contains(trigger) && lockMask.Contains(index),
+                        manager.HasDisableLock(trigger, Id + "_behaviorLock"));
+                }
                 Assert.False(manager.HasDisableLock(ReactionTrigger.CliffDetected,"PopAWheelie_behaviorLock"));
             }
         }

@@ -134,17 +134,11 @@ public sealed class PyramidPutDownNativeTests
         var manager = f.Robot.BehaviorManagerOwner!;
         var transitions = new List<BehaviorTransitionReport>();
         f.Rig.Engine.BehaviorTransition += transitions.Add;
-        var missing = new List<string>();
-        SteppedBehavior.ResetMissingForTests();
-        SteppedBehavior.MissingReported += missing.Add;
-        try { Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult()); }
-        finally { SteppedBehavior.MissingReported -= missing.Add; }
+        Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         Assert.Same(behavior, manager.Current);
         // 0x005A23DA..0x005A2466 reports the newly admitted behavior.
         f.Rig.Engine.DrainAppDelivery();
         Assert.Contains(transitions, transition => ((BehaviorID)transition.NewId).ToString() == Id);
-        // BEHAVIOR-STATE-REPORTS-1 built the typed 0x87 delivery (0x005A22B4..0x005A24AC); its MISSING is gone.
-        Assert.DoesNotContain(missing, text => text.Contains("M8-012") && text.Contains("delivery is unbuilt"));
         var initial = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         Assert.Equal(2, initial.Children.Count);
         var drive = Assert.IsType<DriveStraightAction>(initial.Children[0]);

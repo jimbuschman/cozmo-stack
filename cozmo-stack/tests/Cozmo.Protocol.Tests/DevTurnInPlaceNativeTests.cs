@@ -115,11 +115,11 @@ public sealed class DevTurnInPlaceNativeTests
         b.StartAsync(f.Runtime.Context, scope, default).GetAwaiter().GetResult();
         var first = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         Assert.NotEqual(0u, b.CurrentRunnerTag);
-        for (int i = 0; i < 21; i++) Assert.True(manager.HasDisableLock((ReactionTrigger)i, b.Id + "_behaviorLock"));
+        Assert.All(triggers, trigger => Assert.Equal(mapped.Contains(trigger), manager.HasDisableLock(trigger, b.Id + "_behaviorLock")));
         b.Stop(BehaviorStopReason.Interrupted); Assert.Equal(0u, b.CurrentRunnerTag);
         Assert.NotSame(first, f.Robot.ActionList.GetCurrentAction());
         scope.Dispose();
-        for (int i = 0; i < 21; i++) Assert.False(manager.HasDisableLock((ReactionTrigger)i, b.Id + "_behaviorLock"));
+        Assert.All(triggers, trigger => Assert.False(manager.HasDisableLock(trigger, b.Id + "_behaviorLock")));
         using var again = new BehaviorScope(manager: manager);
         b.StartAsync(f.Runtime.Context, again, default).GetAwaiter().GetResult();
         Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());

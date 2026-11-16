@@ -120,7 +120,12 @@ public sealed class PopAWheelieNativeTests
         Assert.Equal(new[]{"objective22","needs33"},order);Assert.Equal(1,scene.Rolls);Assert.True(pop.CliffChanged);Assert.Equal(uint.MaxValue,pop.Previous);
         var dock=Assert.Single(f.Rig.SentSince(0).OfType<DockWithObject>());Assert.Equal((byte)9,dock.DockAction);
         Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:false}&&target==scene.Target);
-        for(int i=0;i<21;i++)Assert.Equal(new[]{0,1,3,11,12,14,15,20}.Contains(i),f.Robot.BehaviorManagerOwner!.HasDisableLock((ReactionTrigger)i,"PopAWheelie_behaviorLock"));
+        for (int i = 0; i < 21; i++)
+        {
+            var trigger = (ReactionTrigger)i;
+            Assert.Equal(mapped.Contains(trigger) && lockMask.Contains(i),
+                manager.HasDisableLock(trigger, "PopAWheelie_behaviorLock"));
+        }
         Assert.Contains(f.Rig.SentSince(0),m=>m is EnableStopOnCliff{Enable:false});
         f.Robot.BehaviorManagerOwner!.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
         f.Rig.Robot.ExecuteBehaviorById(255,0); // Actual 94 miss clears the prior indefinite request before the next Selection tick.
