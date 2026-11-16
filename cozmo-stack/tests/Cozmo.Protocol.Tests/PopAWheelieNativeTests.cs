@@ -113,7 +113,10 @@ public sealed class PopAWheelieNativeTests
         using var objective=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint id&&id==22)order.Add("objective22");});
         f.Rig.Engine.Needs.Log+=line=>{if(line.StartsWith("needs.action_completed PopAWheelie:")){Assert.Equal(new[]{"objective22"},order);Assert.Equal((AnimationTrigger)0x21C,Assert.IsType<TriggerAnimationAction>(Pop(f).OwnedRunner).Request.Trigger);order.Add("needs33");}};
         using var complete=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r&&r.ActionType==0x1D)local.Add(r);});
-        var pop=Admit(f);QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,pop.Id);for(int i=0;i<250&&order.Count<2;i++)scene.Step();
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var mapped = manager.MappedTriggers.ToHashSet();
+        int[] lockMask = { 0, 1, 3, 11, 12, 14, 15, 20 };
+        var pop=Admit(f);QueuedSelection.Keep(f.Rig.Robot,manager,pop.Id);for(int i=0;i<250&&order.Count<2;i++)scene.Step();
         Assert.Equal(new[]{"objective22","needs33"},order);Assert.Equal(1,scene.Rolls);Assert.True(pop.CliffChanged);Assert.Equal(uint.MaxValue,pop.Previous);
         var dock=Assert.Single(f.Rig.SentSince(0).OfType<DockWithObject>());Assert.Equal((byte)9,dock.DockAction);
         Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:false}&&target==scene.Target);

@@ -417,6 +417,9 @@ public sealed partial class BehaviorManager : IDisposable
         return false;
     }
 
+    /// <summary>The triggers with a map node, the set DisableReactionsWithLock walks (0x005A2818..0x005A2836).</summary>
+    internal IReadOnlyCollection<ReactionTrigger> MappedTriggers { get { lock (_gate) return _map.Keys.ToArray(); } }
+
     /// <summary>Whether a lock is held on a trigger.</summary>
     public bool HasDisableLock(ReactionTrigger trigger, string lockName)
     {

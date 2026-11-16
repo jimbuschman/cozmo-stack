@@ -106,6 +106,11 @@ public sealed class DevTurnInPlaceNativeTests
     {
         using var f = new Fixture(); using var b = Create(f, Config());
         var manager = f.Robot.BehaviorManagerOwner!;
+        // 0x005A2818..0x005A2836 iterates the map's nodes; the shipped map has a row, so a node, for every trigger.
+        var triggers = Enumerable.Range(0, 21).Select(i => (ReactionTrigger)i).ToArray();
+        var mapped = manager.MappedTriggers.ToHashSet();
+        Assert.Contains(ReactionTrigger.RobotPickedUp, mapped);
+        Assert.Equal(triggers.Length, mapped.Count);
         using var scope = new BehaviorScope(manager: manager);
         b.StartAsync(f.Runtime.Context, scope, default).GetAwaiter().GetResult();
         var first = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
