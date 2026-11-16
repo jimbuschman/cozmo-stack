@@ -74,7 +74,8 @@ public sealed class M3M4X19BuilderTests
         if(MarkerLibrary.EmbeddedOrNull is null)return;using var rig=new Rig();rig.SightingsPerFrame=1;
         rig.Cube=new(Mat3.Identity,new Vec3(150,-36,22));rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2,new(Mat3.Identity,new Vec3(150,36,22))));rig.OneImage();
         var missing=new List<string>();rig.Vision.World.Log+=missing.Add;rig.OneImage();
-        Assert.Single(missing.Where(s=>s.Contains("map last-observed-time")));Assert.InRange(rig.Vision.World.LocatedObjects.Count,2,int.MaxValue);
+        // MAP-LAST-OBSERVED-TIME-1 built the root Last reader (vt+0x38 = 0x00681934); the blanket M11-045 warning is gone.
+        Assert.DoesNotContain(missing,s=>s.Contains("map last-observed-time"));Assert.InRange(rig.Vision.World.LocatedObjects.Count,2,int.MaxValue);
         var w=new BlockWorld();var o=rig.Vision.World.LocatedObjects[0];var logs=new List<string>();w.Log+=logs.Add;w.BroadcastObjectPoseChanged(o,null,PoseState.Unknown);w.BroadcastObjectPoseChanged(o,null,PoseState.Unknown);
         Assert.Single(logs.Where(s=>s.Contains("M11-037 BlockConfigurationManager::SetObjectPoseChanged")));
     }
