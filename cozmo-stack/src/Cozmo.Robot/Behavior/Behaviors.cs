@@ -746,6 +746,22 @@ public static class ShippedBehaviors
                                                                                 AcknowledgeFaceBehavior? acknowledgeFace = null,
                                                                                 IBehavior? nativePet = null, EngineRobot? nativePetOwner = null, bool nativePetExpected = false)
     {
+        var map = obbRoot is null ? Array.Empty<ReactionMapEntry>() : ReactionTriggerMap.Load(obbRoot);
+        if (map.Count == 0) robot.Engine.Log($"error: Failed to read '{ReactionTriggerMap.RelativePath}'");
+        return BuildReactions(robot, cubes, clockSec, vision, map, ramIntoBlock, whiteboard, m, unbound,
+            acknowledgeObject, nativeHiccup, acknowledgeFace, nativePet, nativePetOwner, nativePetExpected);
+    }
+
+    internal static IReadOnlyList<BehaviorManager.ReactionRegistration> BuildReactions(CozmoRobot robot, ICubeLocator? cubes,
+        Func<double>? clockSec, Cozmo.Robot.Vision.VisionSystem? vision, IReadOnlyList<ReactionMapEntry> map,
+        RamIntoBlockBehavior? ramIntoBlock = null, Cozmo.Robot.Manipulation.AIWhiteboard? whiteboard = null,
+        Cozmo.Robot.Manipulation.ManipulationSystem? m = null, List<string>? unbound = null,
+        AcknowledgeObjectBehavior? acknowledgeObject = null,
+        Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null,
+        AcknowledgeFaceBehavior? acknowledgeFace = null, IBehavior? nativePet = null,
+        EngineRobot? nativePetOwner = null, bool nativePetExpected = false)
+    {
+        if (map.Count == 0) return Array.Empty<BehaviorManager.ReactionRegistration>();
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
 
@@ -822,18 +838,6 @@ public static class ShippedBehaviors
             built.Add(("RamIntoBlock", ReactionTrigger.NoPreDockPoses, ramIntoBlock,
                        new NoPreDockPosesStrategy(whiteboard, ramIntoBlock)));
 
-        // RobotDataLoader::LoadReactionTriggerMap 0x00520bc8 reads the map through readAsJson (0x00520c2e); on a failed read it logs sErrorF
-        // "Failed to read '%s'" (0x00520c54), sets the error flag (0x00520c8a) and leaves the map empty, and BehaviorManager::InitReactionTriggerMap
-        // 0x005a16e4 then iterates nothing: a missing or empty map registers NO reaction. There is no fallback that registers every built one.
-        var map = obbRoot is null ? Array.Empty<ReactionMapEntry>() : ReactionTriggerMap.Load(obbRoot);
-        if (map.Count == 0)
-        {
-            // sErrorF "Failed to read '%s'" (0x00520c54); the engine's event name is not in the inventory, so the line carries none
-            robot.Engine.Log($"error: Failed to read '{ReactionTriggerMap.RelativePath}'");
-            ((PlacedOnChargerStrategy)strategies[ReactionTrigger.PlacedOnCharger]).Dispose();
-            return new List<BehaviorManager.ReactionRegistration>();
-        }
-
         // Bind from the map: only the entries the stack actually built, in the map's own order.
         var byId = built.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.ToList());
         var registrations = new List<BehaviorManager.ReactionRegistration>();
@@ -854,8 +858,10 @@ public static class ShippedBehaviors
             else
                 unbound?.Add($"{e.Trigger} -> {e.BehaviorId}");
         }
-        var charger = strategies[ReactionTrigger.PlacedOnCharger];
-        if (!registrations.Any(r => ReferenceEquals(r.Strategy, charger))) ((IDisposable)charger).Dispose();
+        // Unmapped candidates drop their subscriptions as on 0x005A1872..0x005A1878.
+        var retained = registrations.Select(reg => reg.Strategy).ToHashSet(ReferenceEqualityComparer.Instance);
+        foreach (var strategy in strategies.Values.Concat(built.Select(candidate => candidate.Strategy)).Distinct())
+            if (!retained.Contains(strategy)) (strategy as IDisposable)?.Dispose();
         return registrations;
     }
 }

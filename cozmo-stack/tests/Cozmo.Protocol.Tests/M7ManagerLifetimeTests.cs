@@ -72,7 +72,7 @@ public sealed class M7ManagerLifetimeTests
         manager.DisableAllReactionsWithLock("before-map");
         Assert.False(manager.HasDisableLock(ReactionTrigger.RobotPickedUp,"before-map"));
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
-        manager.InitializeRobotReactions(Resources(),rig.Robot.Vision); // explicit native resource input; no deferred-lock replay
+        manager.InitializeRobotReactions(ReactionTriggerMap.Load(Resources()),rig.Robot.Vision); // explicit native resource input; no deferred-lock replay
         Assert.NotEmpty(manager.Reactions);
         Assert.False(manager.HasDisableLock(ReactionTrigger.RobotPickedUp,"before-map"));
     }

@@ -103,10 +103,10 @@ public sealed partial class BehaviorManager : IDisposable
 
     public BehaviorManager(BehaviorContext context, RepetitionPenalty? penalty = null)
         :this(context,penalty,true) { }
-    internal BehaviorManager(BehaviorContext context,RepetitionPenalty? penalty,bool bindSensorOwner)
+    internal BehaviorManager(BehaviorContext context,RepetitionPenalty? penalty,bool bindSensorOwner,EngineRobot? nativeOwner=null)
     {
         _context = context;
-        _requestOwner=context.Robot.Engine.Robot;
+        _requestOwner=nativeOwner??context.Robot.Engine.Robot;
         SparkNameInput = NativeUnlockNames.Lookup;
         _penalty = penalty ?? new RepetitionPenalty();
         // The concrete behaviours' StopWithoutImmediateRepetitionPenalty (M7/M15) stamps the +0x108
@@ -114,8 +114,9 @@ public sealed partial class BehaviorManager : IDisposable
         context.Penalty ??= _penalty;
         if (context.Arbiter is { } arb) arb.ManagerDispatchesReactions = true;
         // fidelity: M10-004, M10-007
-        // All 21 triggers are mapped and enabled at startup (gap1 4f, 4g); the detector's B12 gate asks this map.
-        for (int t = 0; t < TriggerCount; t++) _map[(ReactionTrigger)t] = new TriggerInfo();
+        // Standalone strategies have explicit tool inputs. The native manager starts with an empty map.
+        if (nativeOwner is null)
+            for (int t = 0; t < TriggerCount; t++) _map[(ReactionTrigger)t] = new TriggerInfo();
         _unexpectedMovementGate = () => IsReactionTriggerEnabled(ReactionTrigger.UnexpectedMovement);
         if(bindSensorOwner)context.Robot.Sensors.UnexpectedMovement.ReactionTriggerEnabled = _unexpectedMovementGate;
     }
@@ -125,46 +126,37 @@ public sealed partial class BehaviorManager : IDisposable
     private long _reactionBindingGeneration;
     private AcknowledgeObjectBehavior? _configuredAcknowledgeObject;
     // fidelity: M7-014 -- row72: initialize the real map before exposing the robot's AI inputs.
-    internal void InitializeRobotReactions(string? resources, Cozmo.Robot.Vision.VisionSystem? vision,
+    internal void InitializeRobotReactions(IReadOnlyList<ReactionMapEntry> rows, Cozmo.Robot.Vision.VisionSystem? vision,
         Cozmo.Robot.Manipulation.ManipulationSystem? manipulation = null, IReadOnlyDictionary<string,IBehavior>? bound = null,
         EngineRobot? nativeOwner = null)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
-        if (_hostDisposed || _nativeReactionMapLoaded) return;
+        if (_hostDisposed || _nativeReactionMapLoaded || rows.Count == 0) return;
         if (bound is not null && bound.TryGetValue("AcknowledgeObject", out var configured))
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
-        lock (_gate) _map.Clear(); // private construction only; no deferred locks or replay
-        Initialized=false;
-        _nativeReactionRows=resources is null?Array.Empty<ReactionMapEntry>():ReactionTriggerMap.Load(resources);
-        foreach(var row in _nativeReactionRows)
-            if(!_map.ContainsKey(row.Trigger))_map.Add(row.Trigger,new TriggerInfo());
-        if(_nativeReactionRows.Count==0)
-            SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x00510396: shipped reaction map unavailable at robot construction; no entries or deferred locks invented");
-        else
+        _nativeReactionMapLoaded = true;
+        _nativeReactionRows = rows;
+        var unbound = new List<string>();
+        foreach (var reg in ShippedBehaviors.BuildReactions(_context.Robot, vision?.Locator,
+            () => _context.ClockSec?.Invoke() ?? _context.Robot.Engine.Timer.Seconds, vision,
+            rows, m: manipulation, unbound: unbound, acknowledgeObject: _configuredAcknowledgeObject,
+            nativeHiccup: row => CreateNativeHiccup(row, manipulation, bound, nativeOwner ?? _context.Robot.Engine.Robot),
+            acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null,
+            nativePet: bound is not null && bound.TryGetValue("ReactToPet", out var pet) ? pet as NativeReactToPetBehavior : null,
+            nativePetOwner: nativeOwner, nativePetExpected: nativeOwner is not null))
         {
-            var unbound=new List<string>();
-            foreach(var reg in ShippedBehaviors.Reactions(_context.Robot,vision?.Locator,
-                ()=>_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds,vision,obbRoot:resources,unbound:unbound,
-                acknowledgeObject:_configuredAcknowledgeObject,
-                nativeHiccup: row => CreateNativeHiccup(row,manipulation,bound,nativeOwner ?? _context.Robot.Engine.Robot),
-                acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null,
-                nativePet: bound is not null && bound.TryGetValue("ReactToPet",out var pet) ? pet as NativeReactToPetBehavior : null,
-                nativePetOwner:nativeOwner, nativePetExpected:nativeOwner is not null))
-            {
-                if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
-                if(reg.Behavior is SteppedBehavior b)b.Clock=()=>1000*(_context.ClockSec?.Invoke()??_context.Robot.Engine.Timer.Seconds);
-                if(reg.Behavior is ReactToPickupBehavior pickup && nativeOwner is not null)
-                    pickup.MarkNative(_context.Robot,nativeOwner,this);
-                AddReaction(reg.Strategy,reg.Behavior);
-            }
-            if (_hostDisposed) return;
-            foreach(var entry in unbound)
-                SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A1842/0x005A1864: "+entry+" has no constructed strategy/behavior binding at initial map load; trigger entry retained, no placeholder behavior");
-            if (_nativeReactionRows.Any(row => row.Trigger == ReactionTrigger.FistBump && row.BehaviorId == "FistBump"))
-                SteppedBehavior.ReportMissing("M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription");
-            _nativeReactionMapLoaded=true;
+            if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
+            if (reg.Behavior is SteppedBehavior behavior)
+                behavior.Clock = () => 1000 * (_context.ClockSec?.Invoke() ?? _context.Robot.Engine.Timer.Seconds);
+            if (reg.Behavior is ReactToPickupBehavior pickup && nativeOwner is not null)
+                pickup.MarkNative(_context.Robot, nativeOwner, this);
+            AddReaction(reg.Strategy, reg.Behavior);
         }
-        Initialized=true;
+        if (_hostDisposed) return;
+        foreach (var entry in unbound)
+            SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A17CC/0x005A1872: " + entry + " has no constructed strategy/behavior pair");
+        if (_nativeReactionRows.Any(row => row.Trigger == ReactionTrigger.FistBump && row.BehaviorId == "FistBump"))
+            SteppedBehavior.ReportMissing("M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription");
     }
     internal void BindFreeplayInputs(BehaviorContext context,string resources,Cozmo.Robot.Vision.VisionSystem? vision,
         Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,IReadOnlyDictionary<string,IBehavior> bound)
@@ -177,7 +169,12 @@ public sealed partial class BehaviorManager : IDisposable
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
         var nativeOwner=_requestOwner;
         if(nativeOwner is null && context.Robot.Engine.Robot is {} current && ReferenceEquals(current.BehaviorManagerOwner,this))nativeOwner=current;
-        InitializeRobotReactions(resources,vision,manipulation,bound,nativeOwner); // explicit late resource input, only if startup map was absent
+        // The explicit standalone driver owns its own input. The robot's constructor never reloads its map here.
+        if (!_nativeReactionMapLoaded)
+        {
+            lock (_gate) _map.Clear();
+            InitializeRobotReactions(ReactionTriggerMap.Load(resources), vision, manipulation, bound, nativeOwner);
+        }
         BindReactionDependencies(manipulation,bound,nativeOwner);
     }
 
@@ -252,7 +249,8 @@ public sealed partial class BehaviorManager : IDisposable
     {
         lock (_gate)
         {
-            if(_hostDisposed || _reactionBindingGeneration!=bindingGeneration || !_map.TryGetValue(strategy.Trigger,out var info)) return;
+            if(_hostDisposed || _reactionBindingGeneration!=bindingGeneration) return;
+            if (!_map.TryGetValue(strategy.Trigger, out var info)) _map.Add(strategy.Trigger, info = new TriggerInfo());
             if(info.Entries.Any(entry=>entry.Behavior.Id==behavior.Id)) return;
             strategy.Manager=this;
             _behaviors.RemoveAll(b=>b.Id==behavior.Id);
@@ -390,8 +388,10 @@ public sealed partial class BehaviorManager : IDisposable
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         lock (_gate)
         {
+            // 0x005A1842 emplaces only for a strategy/behavior pair, keeping locks on existing entries.
+            if (!_map.TryGetValue(strategy.Trigger, out var info)) _map.Add(strategy.Trigger, info = new TriggerInfo());
             strategy.Manager = this;
-            _map[strategy.Trigger].Entries.Add(new ReactionRegistration(strategy, behavior));
+            info.Entries.Add(new ReactionRegistration(strategy, behavior));
             _behaviors.RemoveAll(b => b.Id == behavior.Id);
         }
     }
@@ -399,7 +399,7 @@ public sealed partial class BehaviorManager : IDisposable
     // fidelity: M10-004
     /// <summary>
     /// IsReactionTriggerEnabled (gap1 4a, 0x5A40B8..0x5A4108): the node's lock set is empty. A trigger not in the map
-    /// VERIFY-fails "Reached the end of the reaction trigger map" and is disabled; all 21 are mapped (4g).
+    /// VERIFY-fails "Reached the end of the reaction trigger map" and is disabled.
     /// </summary>
     public bool IsReactionTriggerEnabled(ReactionTrigger trigger)
     {
@@ -1438,8 +1438,9 @@ public sealed partial class BehaviorManager : IDisposable
     // 0x005A22B4..0x005A24AC: external-interface gate, DAS events, then the E2G 0x87 union.
     private void ReportBehaviorTransition(IBehavior? old, IBehavior? next, ReactionTrigger? trigger)
     {
-        if (_requestOwner is not { HasExternalInterface: true } owner || !RequestOwnerCurrent(owner)) return;
-        if (!TryGetEndpoint(old, out var previous) || !TryGetEndpoint(next, out var current))
+        if (_requestOwner is not { HasExternalInterface: true } owner || !ReferenceEquals(owner.BehaviorManagerOwner, this)
+            || !RequestOwnerCurrent(owner)) return;
+        if (!TryGetEndpoint(owner, old, out var previous) || !TryGetEndpoint(owner, next, out var current))
         {
             SteppedBehavior.ReportMissing("M8-012 transition 0x005A22EC..0x005A245C: endpoint has no native ID/class/executable/display metadata");
             return;
@@ -1461,18 +1462,30 @@ public sealed partial class BehaviorManager : IDisposable
             current.Class, current.Executable, current.DisplayKey));
     }
 
-    private static bool TryGetEndpoint(IBehavior? behavior, out (byte Id, byte Class, byte Executable, string DisplayKey) endpoint)
+    private bool TryGetEndpoint(EngineRobot owner, IBehavior? behavior, out (byte Id, byte Class, byte Executable, string DisplayKey) endpoint)
     {
         if (behavior is null)
         {
             endpoint = (0xB2, 0x39, 0x0B, string.Empty); // 0x005A22F6/0x005A2302, 0x005A23F6..0x005A23F8, 0x005A2438..0x005A2450.
             return true;
         }
-        if (behavior is SteppedBehavior { NativeBaseInputs: { CheckedExecutableType: { } executable } inputs }
-            && Enum.TryParse<BehaviorID>(behavior.Id, false, out var id) && id.ToString() == behavior.Id)
+        if (Enum.TryParse<BehaviorID>(behavior.Id, false, out var id) && id.ToString() == behavior.Id)
         {
-            endpoint = ((byte)id, inputs.CheckedBehaviorClass, executable, inputs.DisplayNameKey);
-            return true;
+            if (behavior is SteppedBehavior { NativeBaseInputs: { CheckedExecutableType: { } executable } inputs })
+            {
+                endpoint = ((byte)id, inputs.CheckedBehaviorClass, executable, inputs.DisplayNameKey);
+                return true;
+            }
+            // Some native reaction bodies are hosted by manager-owned adapters. Use the original
+            // shipped behavior config for report metadata on those mapped instances.
+            if (_nativeReactionRows.Any(row => row.BehaviorId == behavior.Id)
+                && Reactions.Any(reg => ReferenceEquals(reg.Behavior, behavior))
+                && owner.Engine.HostBehaviorMap?.TryGetValue(id, out var config) == true)
+            {
+                endpoint = ((byte)id, (byte)BehaviorClassNames.ExtractFromConfig(config),
+                    ExecutableBehaviorNames.FromConfig(config), NativeBehaviorBaseInputs.ReadDisplayNameKey(config));
+                return true;
+            }
         }
         endpoint = default;
         return false;

@@ -124,7 +124,14 @@ public sealed class NativeBehaviorEndRequestTests
         Assert.True(manager.StartAsync(drive.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());Assert.True(drive.EngineRunning);Assert.NotNull(drive.OwnedRunner);
         int paths=f.Rig.SentSince(0).OfType<AppendPathSegmentLine>().Count();var order=new List<string>();BehaviorTransitionReport? transition=null;var raw=new List<byte[]>();
         f.Rig.Engine.EngineToGameMessage+=(tag,body)=>{if(tag==0x87)raw.Add(body.ToArray());};
-        using var report=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x87,true,p=>{transition=Assert.IsType<BehaviorTransitionReport>(p);order.Add("87");});
+        using var report=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x87,true,p=>
+        {
+            // The rest of this tick may select another behavior after broadcasting RobotStopped.
+            var value = Assert.IsType<BehaviorTransitionReport>(p);
+            if (value.OldId != (byte)BehaviorID.DriveOffCharger || value.NewId != (byte)BehaviorID.Wait) return;
+            transition = value;
+            order.Add("87");
+        });
         void Stopped(){order.Add("stopped");Assert.Null(manager.Current);Assert.False(drive.EngineRunning);Assert.Null(drive.OwnedRunner);Assert.Equal(paths,f.Rig.SentSince(0).OfType<AppendPathSegmentLine>().Count());}
         f.Rig.Robot.Sensors.RobotStoppedInternal+=Stopped;
         try {f.Rig.Data(new RobotStopped{Field0=1});f.Rig.Tick();}

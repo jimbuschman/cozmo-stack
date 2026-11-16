@@ -818,6 +818,8 @@ public sealed partial class EngineRobot
         Engine.ConstructorMapCreated?.Invoke(); // M13-032 new MapComponent owner, before first Delocalize
         InitDelocalizationRecipients();
         ConstructorDelocalize();
+        // 0x00510396 loads the already read reaction map after constructor Delocalize (0x00510324).
+        Engine.InitializeRobotReactions?.Invoke(this);
         InitDelocalizationStrategyRecipients();
         if (queueConnectionReads) QueueConnectionReads();
         else
@@ -2336,6 +2338,8 @@ public sealed partial class CozmoEngine : IDisposable
     }
 
     // fidelity: M2-021 — retained host input; the app's load timing is not a construction/connect rejection.
+    internal Action<EngineRobot>? InitializeRobotReactions;
+    internal IReadOnlyList<Behavior.ReactionMapEntry> HostReactionMap { get; private set; } = Array.Empty<Behavior.ReactionMapEntry>();
     internal bool HostBehaviorMapLoaded { get; private set; }
     internal IReadOnlyDictionary<Behavior.BehaviorID,System.Text.Json.JsonElement>? HostBehaviorMap { get; private set; }
     internal void LoadHostBehaviorMap()
@@ -2343,7 +2347,19 @@ public sealed partial class CozmoEngine : IDisposable
         HostBehaviorMap = Options.ResourcesPath is { } resources
             ? Behavior.BehaviorConfigLoader.LoadResources(resources, EmitStackLog, (level,channel,key,text)=>EmitSourceLog(level,channel,key,text))
             : new Dictionary<Behavior.BehaviorID,System.Text.Json.JsonElement>(); // Null ResourcesPath is supported: no resource load to await.
-        HostBehaviorMapLoaded = true; // A failed loader never publishes readiness.
+        // RobotDataLoader 0x0051F45E -> 0x00520C2E retains the parsed map at +0x130 before Robot construction.
+        if (Options.ResourcesPath is { } root)
+        {
+            try { HostReactionMap = Behavior.ReactionTriggerMap.LoadFromFile(Path.Combine(root, Behavior.ReactionTriggerMap.RelativePath)); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException or InvalidOperationException)
+            {
+                EmitSourceLog(EngineLogLevel.Error, null, "RobotDataLoader.ReactionTriggerMap",
+                    $"Failed to read '{Behavior.ReactionTriggerMap.RelativePath}'"); // 0x00520C54.
+                EmitStackLog(error.Message);
+                EngineErrorState.StoreAndMaybeBreak(); // 0x00520C8A; the retained map stays empty.
+            }
+        }
+        HostBehaviorMapLoaded = true;
     }
     internal Action<EngineRobot>? BindCubeMessageOwners;
 

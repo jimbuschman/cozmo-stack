@@ -23,14 +23,17 @@ internal sealed class NativeBehaviorBaseInputs
         _manager=robot.BehaviorManagerOwner;
         CheckedExecutableType=ExecutableBehaviorNames.FromConfig(config);
         // IBehavior+0x4C starts empty (0x005BBC62..0x005BBC74). ReadFromJson fills it at 0x005BBFC2..0x005BBFDA.
-        DisplayNameKey = config.TryGetProperty("displayNameKey", out var key) && key.ValueKind == JsonValueKind.String
-            ? key.GetString()! : string.Empty;
+        DisplayNameKey = ReadDisplayNameKey(config);
         _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)&&unlock.ValueKind!=JsonValueKind.Null?NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(unlock.GetString()!)):0x55;
         _requiredSevere=config.TryGetProperty("requiredSevereNeedsState",out var need)
             ?need.GetString() switch{"Repair"=>0,"Energy"=>1,"Play"=>2,"Count"=>3,_=>-1}:3;
         _recentDriveOff=config.TryGetProperty("requiredRecentDriveOffCharger_sec",out var drive)?drive.GetSingle():-1f;
         _recentSwitch=config.TryGetProperty("requiredRecentSwitchToParent_sec",out var change)?change.GetSingle():-1f;
     }
+    internal static string ReadDisplayNameKey(JsonElement config) =>
+        config.TryGetProperty("displayNameKey", out var key) && key.ValueKind == JsonValueKind.String
+            ? key.GetString()! : string.Empty;
+
     internal bool IsCarrying=>_robot.CarryingOwner is {} owner && (owner.CarriedObjectId??uint.MaxValue)!=uint.MaxValue;
     internal bool Allows(BehaviorContext context)
     {
