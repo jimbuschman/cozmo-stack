@@ -13,7 +13,17 @@ public sealed partial class EngineRobot
     internal Action<string>? BehaviorAudioRetiredForTest;
     private void InitBehaviorAudioOwners()
     {
-        BehaviorPublicState=new(this); // robot+40 before manager A+44/client68, then B+48/client10
+        BehaviorPublicState = new(this) // robot+40 before manager A+44/client68, then B+48/client10
+        {
+            UnlockNameInput = NativeUnlockNames.Lookup,
+            ReactionNameInput = value => value switch
+            {
+                0x15 => "Count",
+                0x16 => "NoneTrigger",
+                < 0x15 => ((ReactionTrigger)value).ToString(),
+                _ => null
+            } // EnumToString at 0x0077065C, table at 0x010337C0.
+        };
         try
         {
             BehaviorAudioA=new(this,BehaviorPublicState,"A",HasExternalInterface);
@@ -33,9 +43,27 @@ public sealed partial class EngineRobot
             Lifetime.Missing(address,0x48);
         });
         Lifetime.Bind(0x40,address=>{Lifetime.Missing(address,0x40);BehaviorPublicState.Retire();});
-        SteppedBehavior.ReportMissing("M13-038 PublicStateBroadcaster::Update0x0064D5DC native manager/current-requested/carrying/reaction/needs input joins are unbound; checked broadcaster and both client owners are built, no host Freeplay state substituted");
     }
-    internal void ReportBehaviorPublicStateInputJoin()=>SteppedBehavior.ReportMissing("M13-038 PublicStateBroadcaster Update0x0064D5DC at Robot::Update: native input owner/caller join is absent; checked Update(input) is built, no publication or tick ordering invented");
+
+    // Robot::Update 0x00514478, after the cube and body lights.
+    private void UpdateBehaviorPublicState()
+    {
+        if (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this)) return;
+        if (BehaviorManagerOwner is not { } manager || CarryingOwner is not { } carrying)
+        {
+            SteppedBehavior.ReportMissing("M1-034/M13-038 PublicStateBroadcaster 0x0064D5F0/0x0064D6C4: manager or carrying owner unavailable");
+            return;
+        }
+
+        // 0x0064D5E6..0x0064D5F2 reads manager+0x58/+0x60. 0x0064D6BA..0x0064D6C8 reads Carrying+8.
+        // 0x0064D728..0x0064D742 uses manager's trigger getter. 0x0064D792..0x0064D7BA reads needs 1, 0, 2.
+        var needs = Engine.Needs?.State;
+        BehaviorPublicState.Update(new(manager.ActiveSparkId, manager.RequestedSparkId,
+            unchecked((int)(carrying.CarriedObjectId ?? uint.MaxValue)),
+            manager.CurrentReactionTrigger is { } trigger ? (byte)trigger : (byte)0x16,
+            needs is null ? null : ((float)needs.GetNeedLevel(NeedId.Energy), (float)needs.GetNeedLevel(NeedId.Repair),
+                (float)needs.GetNeedLevel(NeedId.Play))));
+    }
 }
 
 public sealed partial class CozmoRobot

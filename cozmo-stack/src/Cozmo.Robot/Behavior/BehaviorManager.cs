@@ -1052,11 +1052,15 @@ public sealed partial class BehaviorManager : IDisposable
         // Host availability boundary, not a native false/no-effect result. Do not retire the prior selection.
         if(info.Current is NativePickUpCubeBehavior pickup&&!pickup.CheckExecutionAvailability())return false;
         long beforeStop=Interlocked.Read(ref _hostSelectionEpoch);
-        bool hadCurrent=Current is not null;
-        lock (_gate) StopAndNullifyLocked(stopReason, nowSec);
+        IBehavior? old;
+        lock (_gate)
+        {
+            old = _current; // 0x005A1E2A..0x005A1E54 retains the old endpoint before Stop.
+            StopAndNullifyLocked(stopReason, nowSec);
+        }
         // A Stop callback can synchronously replace the current behavior. Its selection owns the manager;
         // the outer switch must not overwrite it, including when switching to an empty running-info.
-        if (Interlocked.Read(ref _hostSelectionEpoch) != beforeStop + (hadCurrent ? 1 : 0)) return false;
+        if (Interlocked.Read(ref _hostSelectionEpoch) != beforeStop + (old is null ? 0 : 1)) return false;
         if (hostReadiness is not null && !ReferenceEquals(Activity,hostReadiness)) return false;
 
         var next = info.Current;
@@ -1108,12 +1112,11 @@ public sealed partial class BehaviorManager : IDisposable
             }
         }
 
-        SetRunningAndResumeInfo(info with { Current = initFailed ? null : next }, scope, nowSec);
-        if (next is not null)
-        {
-            SteppedBehavior.ReportMissing("M8-012 BehaviorManager::SendDasTransitionMessage 0x005A22B4..0x005A24AC: typed BehaviorTransition/displayNameKey delivery is unbuilt; DasTransition is only a callback seam");
-            DasTransition?.Invoke(next);   // SendDasTransitionMessage 0x005a1f1c
-        }
+        var running = info with { Current = initFailed ? null : next };
+        SetRunningAndResumeInfo(running, scope, nowSec);
+        // 0x005A1F16..0x005A1F1C reads committed info, including the empty endpoint after Init failure.
+        ReportBehaviorTransition(old, running.Current, running.Trigger);
+        if (next is not null) DasTransition?.Invoke(next);
         return !initFailed;
     }
 
@@ -1298,6 +1301,12 @@ public sealed partial class BehaviorManager : IDisposable
 
     private void SetRunningAndResumeInfoForResume(IBehavior resume, BehaviorScope scope, double nowSec)
     {
+        ReportBehaviorTransition(Current, resume, null); // 0x005A2D86..0x005A2D8C reads the post-Stop info before committing the resume.
+        if (_requestOwner is not null && !RequestOwnerCurrent(_requestOwner))
+        {
+            scope.Dispose();
+            return;
+        }
         DasTransition?.Invoke(resume);                                           // 0x005a2d10..0x005a2d94: DAS first, then the info
         SetRunningAndResumeInfo(new RunningInfo(resume, null, null), scope, nowSec);
     }
@@ -1419,27 +1428,54 @@ public sealed partial class BehaviorManager : IDisposable
             _resumeAfterReaction=null;
             _currentReaction=null;
         }
-        if(owner.HasExternalInterface)ReportEmptyBehaviorTransition(owner,oldCurrent);
+        ReportBehaviorTransition(oldCurrent, null, null);
         if(!RequestCanContinue(owner))return;
         CheckRoots();if(!RequestCanContinue(owner))return;
         // These are host strong references, not a claim about unknown native reference counts.
         GC.KeepAlive(oldResume);GC.KeepAlive(oldCurrent);
     }
 
-    private void ReportEmptyBehaviorTransition(EngineRobot owner,IBehavior? old)
+    // 0x005A22B4..0x005A24AC: external-interface gate, DAS events, then the E2G 0x87 union.
+    private void ReportBehaviorTransition(IBehavior? old, IBehavior? next, ReactionTrigger? trigger)
     {
-        byte oldId=0xB2,oldClass=0x39,oldExecutable=0x0B;
-        if(old is not null)
+        if (_requestOwner is not { HasExternalInterface: true } owner || !RequestOwnerCurrent(owner)) return;
+        if (!TryGetEndpoint(old, out var previous) || !TryGetEndpoint(next, out var current))
         {
-            if(!Enum.TryParse<BehaviorID>(old.Id,false,out var id) || id.ToString()!=old.Id ||
-               old is not SteppedBehavior {NativeBaseInputs: {CheckedExecutableType: {} executable} inputs})
-            {SteppedBehavior.ReportMissing("M8-012 null transition: old behavior ID/class/executable metadata unavailable");return;}
-            oldId=(byte)id;oldClass=inputs.CheckedBehaviorClass;oldExecutable=executable;
+            SteppedBehavior.ReportMissing("M8-012 transition 0x005A22EC..0x005A245C: endpoint has no native ID/class/executable/display metadata");
+            return;
         }
-        string oldName=old is null?"Wait":old.Id;
-        owner.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.behavior_transition","Wait",new Dictionary<string,string>{{"$data",oldName}});
-        if(!RequestCanContinue(owner))return;
-        owner.Engine.BroadcastBehaviorTransition(new(oldId,0xB2,oldClass,oldExecutable,0x39,0x0B,""));
+
+        string previousName = ((BehaviorID)previous.Id).ToString();
+        string currentName = ((BehaviorID)current.Id).ToString();
+        owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.behavior_transition", currentName,
+            new Dictionary<string, string> { ["$data"] = previousName }); // 0x005A2304..0x005A2344
+        if (!RequestOwnerCurrent(owner)) return;
+
+        if (trigger is { } reaction && (byte)reaction < 0x15)
+        {
+            owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.reaction_trigger", reaction.ToString(),
+                new Dictionary<string, string> { ["$data"] = currentName }); // 0x005A236A..0x005A23B4
+            if (!RequestOwnerCurrent(owner)) return;
+        }
+        owner.Engine.BroadcastBehaviorTransition(new(previous.Id, current.Id, previous.Class, previous.Executable,
+            current.Class, current.Executable, current.DisplayKey));
+    }
+
+    private static bool TryGetEndpoint(IBehavior? behavior, out (byte Id, byte Class, byte Executable, string DisplayKey) endpoint)
+    {
+        if (behavior is null)
+        {
+            endpoint = (0xB2, 0x39, 0x0B, string.Empty); // 0x005A22F6/0x005A2302, 0x005A23F6..0x005A23F8, 0x005A2438..0x005A2450.
+            return true;
+        }
+        if (behavior is SteppedBehavior { NativeBaseInputs: { CheckedExecutableType: { } executable } inputs }
+            && Enum.TryParse<BehaviorID>(behavior.Id, false, out var id) && id.ToString() == behavior.Id)
+        {
+            endpoint = ((byte)id, inputs.CheckedBehaviorClass, executable, inputs.DisplayNameKey);
+            return true;
+        }
+        endpoint = default;
+        return false;
     }
 
     /// <summary>The engine's FinishCurrentBehavior for a caller that stops what is running.</summary>

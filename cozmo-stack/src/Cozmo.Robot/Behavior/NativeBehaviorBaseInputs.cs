@@ -13,6 +13,7 @@ internal sealed class NativeBehaviorBaseInputs
     // Common +6C uses the native executable name table and Count constructor default.
     internal byte? CheckedExecutableType {get;}
     internal byte CheckedBehaviorClass {get;}
+    internal string DisplayNameKey { get; }
     private readonly int _requiredSevere;
     private readonly float _recentDriveOff, _recentSwitch;
     internal NativeBehaviorBaseInputs(EngineRobot robot,JsonElement config)
@@ -21,6 +22,9 @@ internal sealed class NativeBehaviorBaseInputs
         CheckedBehaviorClass=(byte)BehaviorClassNames.ExtractFromConfig(config);
         _manager=robot.BehaviorManagerOwner;
         CheckedExecutableType=ExecutableBehaviorNames.FromConfig(config);
+        // IBehavior+0x4C starts empty (0x005BBC62..0x005BBC74). ReadFromJson fills it at 0x005BBFC2..0x005BBFDA.
+        DisplayNameKey = config.TryGetProperty("displayNameKey", out var key) && key.ValueKind == JsonValueKind.String
+            ? key.GetString()! : string.Empty;
         _requiredUnlock=config.TryGetProperty("requiredUnlockId",out var unlock)&&unlock.ValueKind!=JsonValueKind.Null?NativeUnlockNames.FromBytes(System.Text.Encoding.UTF8.GetBytes(unlock.GetString()!)):0x55;
         _requiredSevere=config.TryGetProperty("requiredSevereNeedsState",out var need)
             ?need.GetString() switch{"Repair"=>0,"Energy"=>1,"Play"=>2,"Count"=>3,_=>-1}:3;

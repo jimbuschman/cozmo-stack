@@ -1430,8 +1430,6 @@ public sealed partial class EngineRobot
         // dispose its stack, which unregisters it.
         foreach (var standaloneAI in Engine.StandaloneAIUpdatesSnapshot()) Engine.RunIsolated(standaloneAI);
         if(NativeBehaviorRuntime is {} managerRuntime)Engine.RunIsolated(()=>managerRuntime.UpdateManager(now));
-        // fidelity: M13-038 — only a stack diagnostic at the absent public-state input/caller join.
-        ReportBehaviorPublicStateInputJoin();
         // fidelity: M4-016
         // CD12: Robot::Update runs the ActionList (IActionRunner::Update) after the first full state and before the
         // animation streamer; the M4 head/lift actions test their engine-clock timeout and run CheckIfDone there
@@ -1466,6 +1464,7 @@ public sealed partial class EngineRobot
         // (0x00514468) and BodyLight (0x00514470). BlockTapFilter runs earlier, before AIComponent::Update (0x00513EA4, above).
         if (Engine.RobotComponentsUpdate is { } components) Engine.RunIsolated(components);
         UpdateCurrentImageLatency(now); // M1-061: full Robot.Update path only, 0x00514386.
+        UpdateBehaviorPublicState(); // M13-038, 0x00514474..0x00514478.
     }
 }
 

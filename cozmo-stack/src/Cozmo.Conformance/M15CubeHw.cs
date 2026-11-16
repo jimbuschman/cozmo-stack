@@ -655,7 +655,7 @@ internal sealed partial class M15CubeRun
             File.WriteAllText(Path.Combine(bundle, "README.txt"), Commands
                 ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, their source references and operator observations. events.jsonl contains the timestamped public face and object reports and engine diagnostics."
                 : Personality
-                ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
+                ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, public state, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
                 : "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made.");
         }
         catch (Exception e) { Console.Error.WriteLine("Could not write the results folder: " + e.Message); }

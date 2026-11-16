@@ -35,7 +35,12 @@ internal sealed class BehaviorPublicStateBroadcaster
         {
             if(_retired){StackDiagnostics.Write("M1-034 M13-038 retired broadcaster at 0x0064DE5E: skip emit; state retained");return;}
             // Struct copy made before entering the signal. Nested updates cannot mutate the outer event.
-            var snapshot=_state;_signal.Deliver(0,snapshot);
+            var snapshot = _state;
+            // 0x0064D9DE / 0x0064D8A0 emits the local RobotPublicState event. The standalone API
+            // queues an immutable snapshot at that point and uses the existing deferred callback boundary.
+            if (!_robot.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _robot))
+                _robot.Engine.DeliverRobotPublicState(snapshot);
+            _signal.Deliver(0, snapshot);
         }
     }
     internal void Update(BehaviorPublicStateInputs input)
