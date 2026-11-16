@@ -29,7 +29,7 @@ public sealed class BehaviorFactoryContext
     /// <summary>Stack diagnostics and standalone log observation; source calls use the separate typed seam.</summary>
     public Action<string>? Log { get; init; }
     public SourceLogSink? SourceLog { get; init; }
-    internal Action<GuardDogDisconnectUnit>? RegisterGuardDogDisconnect;
+
     /// <summary>
     /// Stack machinery (RETIRE-LEGACY-DRIVE-API-1, operator 2026-11-13): when set, only the classes it accepts see <see cref="NativeRobot"/>; every other class is
     /// built from a copy of this context whose NativeRobot is null, exactly as before the standalone stack passed the native Robot. Null: every class sees it.
@@ -39,7 +39,7 @@ public sealed class BehaviorFactoryContext
     internal BehaviorFactoryContext WithoutNativeRobot()=>new()
     {
         Vision=Vision,Manipulation=Manipulation,NativeRobot=null,TallStackData=TallStackData,BouncerNativeRobot=BouncerNativeRobot,Features=Features,
-        ReactionManager=ReactionManager,Log=Log,SourceLog=SourceLog,NativeRobotClasses=NativeRobotClasses,RegisterGuardDogDisconnect=RegisterGuardDogDisconnect,
+        ReactionManager=ReactionManager,Log=Log,SourceLog=SourceLog,NativeRobotClasses=NativeRobotClasses,
     };
 }
 
@@ -339,6 +339,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.EarnedSparks] = (ctx,json)=>new NativeEarnedSparksBehavior(ctx,json),
         [BehaviorClass.FireTruckAlarm] = (ctx,json)=>new NativeFireTruckAlarmBehavior(ctx,json),
         [BehaviorClass.OnConfigSeen] = (ctx,json)=>new NativeRespondToPyramidBaseBehavior(ctx,json),
+        [BehaviorClass.GuardDog] = (ctx, _) => new NativeGuardDogBehavior(ctx),
         [BehaviorClass.TrackLaser] = (ctx, json) => new NativeTrackLaserBehavior(ctx, json),
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
@@ -404,13 +405,6 @@ public sealed class BehaviorFactory
         var entry = Table[(int)cls];
         if (entry.Construct is null)
         {
-            // fidelity: M15-056 — checked constructor subscription/handler unit, not a stand-in IBehavior.
-            if(cls==BehaviorClass.GuardDog)
-            {
-                var owner=new GuardDogDisconnectUnit{Id=BehaviorConfigLoader.ExtractIdFromConfig(config).ToString(),Log=SourceLogDispatch.GetSink(ctx.SourceLog,ctx.Log)??((_,_,_,_)=>{})};
-                if(ctx.RegisterGuardDogDisconnect is {} register)register(owner);
-                else SteppedBehavior.ReportMissing("M15-056 GuardDog checked disconnect unit constructor0x005F2946 has no native Robot subscription/input owner; full M15-067 lifecycle remains unbuilt");
-            }
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior case 0x{entry.CaseAddress:X} ({cls} -> {entry.EngineClass}, constructor 0x{entry.ConstructorAddress:X}, {entry.AllocationSize} bytes): class not implemented. This stack has no constructor that builds {entry.EngineClass} from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made");
             status = BehaviorCreateStatus.NotImplemented;
             return null;
@@ -424,6 +418,13 @@ public sealed class BehaviorFactory
         {
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        if (cls == BehaviorClass.GuardDog &&
+            (BehaviorConfigLoader.ExtractIdFromConfig(config) != BehaviorID.GuardDog || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("M15-056/M15-067 GuardDog factory 0x0059CCA4 requires the configured GuardDog and native Robot/manipulation owners");
+            status = BehaviorCreateStatus.NotImplemented;
+            return null;
         }
         // fidelity: M7-025, M7-029
         if (cls == BehaviorClass.TrackLaser && (BehaviorConfigLoader.ExtractIdFromConfig(config) != BehaviorID.SparksTrackLaser || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -530,7 +531,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeTrackLaserBehavior or NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
+            if(stepped is NativeGuardDogBehavior or NativeTrackLaserBehavior or NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

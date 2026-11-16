@@ -77,23 +77,6 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
-    public void GuardDogFalseOwnGateRequiresKnownNonrunningOwnerHistory()
-    {
-        const string id="GuardDog";
-        using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        Assert.False(f.Runtime.Bound.ContainsKey(id));
-        var fields=f.Robot.NativeConfiguredScoreFields![id];Assert.True(fields.ConstructorPristine);
-        var chooser=new ScoringChooser(Array.Empty<ScoredBehaviorEntry>(),f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
-        var method=typeof(ScoringChooser).GetMethod("EvaluateUnbuilt",BindingFlags.Instance|BindingFlags.NonPublic)!;
-        string Evaluate()=>method.Invoke(chooser,new object[]{id,f.Runtime.Context,0d})!.ToString()!;
-        Assert.Equal("KnownFalse",Evaluate());
-        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync(id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-        Assert.False(fields.ConstructorPristine);Assert.Equal("Unavailable",Evaluate());
-        using var reload=JsonDocument.Parse("""{"flatScore":0}""");fields.Reload(id,reload.RootElement);
-        Assert.False(fields.ConstructorPristine);Assert.Equal("Unavailable",Evaluate());
-    }
-
-    [Fact]
     public void FireTruckLockedGateUsesActualOwnerAndOriginalProgression()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();

@@ -385,24 +385,6 @@ public sealed class ScoringChooser : IBehaviorChooser
             }
             catch (InvalidOperationException) { return UnbuiltScore.Unavailable; }
         }
-        NativeScoredFields? gateFields=null;long gateEpoch=0;
-        if(id=="GuardDog")
-        {
-            if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out gateFields)!=true || !gateFields.ConstructorPristine)return UnbuiltScore.Unavailable;
-            gateEpoch=gateFields.Epoch;
-        }
-        bool GateCurrent()=>gateFields is {ConstructorPristine:true} && gateFields.Epoch==gateEpoch &&
-            ReferenceEquals(owner.Engine.Robot,owner) && ReferenceEquals(owner.NativeBehaviorRuntime,runtime) &&
-            owner.NativeConfiguredScoreFields?.TryGetValue(id,out var currentGate)==true && ReferenceEquals(currentGate,gateFields);
-        if(id=="GuardDog" && winner.TryGetProperty("behaviorClass",out var guardClass) && guardClass.ValueKind==JsonValueKind.String && guardClass.GetString()=="GuardDog" && runtime.Manipulation is {} manipulation &&
-           owner.TryGetNativeOriginOwner(owner.CurrentOriginId,out var origin) && origin?.Node is not null)
-        {
-            var filter=new BlockWorldFilter();filter.AllowedFamilies.Add(ObjectFamily.LightCube);
-            filter.Predicates.Add(o=>o.ActiveId>-1);
-            int count=manipulation.World.FindLocatedMatchingObjects(filter).Count;
-            if(!ReferenceEquals(owner.Engine.Robot,owner) || !ReferenceEquals(owner.NativeBehaviorRuntime,runtime))return UnbuiltScore.Unavailable;
-            if(count<3)return GateCurrent()?UnbuiltScore.KnownFalse:UnbuiltScore.Unavailable;
-        }
         if(id=="PounceOnMotion_Socialize")
         {
             if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fields)!=true || !fields.ConstructorPristine ||
@@ -1634,8 +1616,6 @@ public static class ActivityTreeLoader
         // fidelity: M15-059
         if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !(owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": actual original Robot or retained configured PlayArbitraryAnim 3D is unavailable; Sparked owner not constructed.");
-        if(id=="SparksGatherCubes")
-            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporter GuardDog remains unbuilt");
         var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,

@@ -596,6 +596,7 @@ public sealed class CozmoCubes
         Cube? discovered = null, connectionChanged = null, tapped = null, moved = null;
         ObjectPowerLevel? powerBroadcast = null;
         CubeTimestampEvent? movementBroadcast = null;
+        ObjectMoved? nativeMovement = null;
         CubeUpAxisEvent? upAxisBroadcast = null;
         var callouts = new List<Action>();
         void Log(string line) => callouts.Add(() => this.Log(line));
@@ -766,6 +767,14 @@ public sealed class CozmoCubes
                         moved = c;
                         c.LastBroadcastTimestamp = mv.Timestamp;
                         movementBroadcast = new CubeTimestampEvent(c, c.LastBroadcastTimestamp);
+                        // E2G ObjectMoved at 0x00534190..0x005341B0 substitutes the world ID.
+                        nativeMovement = new ObjectMoved
+                        {
+                            Timestamp = mv.Timestamp,
+                            ObjectID = unchecked((uint)movedWorldId),
+                            Accel = mv.Accel,
+                            AxisOfAccel = mv.AxisOfAccel
+                        };
                     }
                     break;
                 }
@@ -830,6 +839,13 @@ public sealed class CozmoCubes
         }
         if(moved is not null)_robot.Engine.QueueAppEvent(CubeMoved,moved.SnapshotForApp());
         if(movementBroadcast is not null)_robot.Engine.QueueAppBroadcast(MovementBroadcast,new CubeTimestampEvent(movementBroadcast.Cube.SnapshotForApp(),movementBroadcast.Timestamp));
+        if (nativeMovement is not null && _robot.Engine.Robot?.HasExternalInterface == true)
+        {
+            var writer = new CladWriter();
+            nativeMovement.WriteBody(writer); // ObjectMoved::Pack 0x007B01C4.
+            _robot.Engine.DeliverAnimationReportToApp(0x0F, writer.ToArray());
+            _robot.Engine.AnimationMessages.Deliver(0x0F, true, nativeMovement);
+        }
         if(upAxisBroadcast is not null&&_robot.Engine.Robot?.HasExternalInterface==true)
         {
             //K24/534E14/511DE8: ONE app publication queued before synchronous local signal11.
@@ -849,7 +865,7 @@ public sealed class CozmoCubes
         _robot.Engine.QueueAppBroadcast(ConnectionStateBroadcast,report);
         _robot.Engine.AnimationMessages.Deliver(ObjectConnectionStateMessage.UnionTag, true, report);
         // Existing checked CubeLight recipient; CubeAccel's recipient is a no-op.
-        // Feeding/GuardDog native owners/subscriptions remain M15-056, not fabricated here.
+        // E2G 0x0D reaches the owners through their retained hub subscriptions (M15-056).
         _robot.Lights.Cubes.OnObjectConnectionState(report);
 
     }

@@ -97,7 +97,6 @@ public sealed class FreeplayStack : IDisposable
         // RobotDataLoader::LoadBehaviors 0x005206bc reads the config corpus and BehaviorContainer 0x0059c324 builds every behaviour whose class the
         // factory can build from its config (PlayAnim, FistBump, ReactToSparked); the rest is reported MISSING per class and built by hand below. The config-built objects come first: where the code-built set
         // below names the same id (Hiccup, the feeding PlayAnims) the first instance stands, so the config's is the one bound.
-        var guardDogDisconnects=new List<GuardDogDisconnectUnit>();
         robot.Engine.Features ??= FeatureGates.Load(obbRoot);
         var factoryContext = new BehaviorFactoryContext
         {
@@ -108,10 +107,9 @@ public sealed class FreeplayStack : IDisposable
             NativeRobot=robot.Engine.Robot,
             NativeRobotClasses=cls=>cls is BehaviorClass.PickUpCube or BehaviorClass.RollBlock or BehaviorClass.StackBlocks or BehaviorClass.PopAWheelie
                 or BehaviorClass.KnockOverCubes or BehaviorClass.CubeLiftWorkout or BehaviorClass.BuildPyramid or BehaviorClass.BuildPyramidBase
-                or BehaviorClass.BringCubeToBeacon or BehaviorClass.DriveInDesperation or BehaviorClass.TrackLaser,
+                or BehaviorClass.BringCubeToBeacon or BehaviorClass.DriveInDesperation or BehaviorClass.TrackLaser or BehaviorClass.GuardDog,
             BouncerNativeRobot=robot.Engine.Robot,
             Features=robot.Engine.Features,
-            RegisterGuardDogDisconnect=guardDogDisconnects.Add,
             SourceLog = (level, channel, key, text) =>
             {
                 robot.Engine.EmitSourceLog(level, channel, key, text);

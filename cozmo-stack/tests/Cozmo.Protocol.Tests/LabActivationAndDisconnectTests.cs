@@ -130,14 +130,6 @@ public sealed class LabActivationAndDisconnectTests
         f.DestroyControllerTree=map=>{trace.Add("tree");return true;};f.OnSelected();Assert.Single(f.HandlesAC);r.Engine.AnimationMessages.Deliver(13,true,new ObjectConnectionStateMessage(77,0,ObjectType.UnknownObject,0));Assert.Equal(-1,f.Selected94);
         Assert.True(f.OnDeselected());Assert.Empty(f.HandlesAC);Assert.Equal("tree",trace[^1]);f.Selected94=77;r.Engine.AnimationMessages.Deliver(13,true,new ObjectConnectionStateMessage(77,0,ObjectType.UnknownObject,0));Assert.Equal(77,f.Selected94);
     }
-    // reach: unit (substitutes native GuardDog running/prehook/action or factory registration inputs; lifecycle join MISSING at M15-0675BF268/5F28DC).
-    [Fact] public void GuardDogIgnoresInactiveAndConnectedButAnyRunningDisconnectStopsBeforeState8AndLabel()
-    {
-        byte running=0;var trace=new List<string>();var g=new GuardDogDisconnectUnit{Id="GuardDog",Log=(_,_,key,_)=>trace.Add(key),PreHook5C=(_,_)=>trace.Add("pre"),RunningA1=()=>running,StateLabel58="Watching"};
-        g.StopActing=(a,b)=>{Assert.True(a);Assert.False(b);Assert.Null(g.State11C);trace.Add("stop");};
-        g.HandleEvent(13,new ObjectConnectionStateMessage(999,0,ObjectType.Charger_Basic,0));Assert.Equal(new[]{"pre"},trace);running=1;trace.Clear();g.HandleEvent(13,new ObjectConnectionStateMessage(999,0,ObjectType.Charger_Basic,1));Assert.Equal(new[]{"pre"},trace);
-        trace.Clear();g.HandleEvent(13,new ObjectConnectionStateMessage(999,0,ObjectType.Charger_Basic,0));Assert.Equal(new[]{"pre","BehaviorGuardDog.HandleObjectConnectionState","stop","Behavior.TransitionToState"},trace);Assert.Equal(8,g.State11C);Assert.Equal("BlockDisconnected",g.StateLabel58);
-    }
     // reach: unit (real E2G subscription; substitutes history topology. Producer MISSING at635D6E; discarded walk itself needs no missing side effect).
     [Fact] public void CubeAccelDisconnectPreservesHistoryAndSubscriptionRetiresBeforeHistoryClear()
     {
@@ -169,13 +161,6 @@ public sealed class LabActivationAndDisconnectTests
         try{var logs=new List<string>();var tags=new LabAudienceTags{Log=(l,c,k,t,d)=>{Assert.Equal(EngineLogLevel.Error,l);Assert.Null(c);logs.Add(t);}};tags.Predicates.Add(B("known"),()=>throw new Exception());Assert.False(tags.Verify(new[]{B("x"),B("known"),B("x")}));Assert.Equal(new[]{"got unknown tag: x","got unknown tag: x"},logs);}
         finally{EngineErrorState.ErrorFlagSet=old;}
     }
-    // reach: unit (substitutes native GuardDog running/prehook/action or factory registration inputs; lifecycle join MISSING at M15-0675BF268/5F28DC).
-    [Fact] public void GuardDogFactoryOwnsTheCheckedUnitWithoutClaimingTheUnreadBehaviorClass()
-    {
-        using var json=System.Text.Json.JsonDocument.Parse("{\"behaviorClass\":\"GuardDog\",\"behaviorID\":\"GuardDog\"}");var units=new List<GuardDogDisconnectUnit>();var context=new BehaviorFactoryContext{RegisterGuardDogDisconnect=units.Add};var factory=new BehaviorFactory();var container=new BehaviorContainer(factory,context,Array.Empty<KeyValuePair<BehaviorID,System.Text.Json.JsonElement>>());
-        Assert.Null(factory.CreateBehavior(container,BehaviorClass.GuardDog,context,json.RootElement,out var status));Assert.Equal(BehaviorCreateStatus.NotImplemented,status);Assert.Equal("GuardDog",Assert.Single(units).Id);Assert.Null(units[0].RunningA1);
-    }
-
     // reach: unit (substitutes native state/lookup/callback inputs; joins MISSING at M15-0624CA6F4 and M15-0615A6038; actual subscription/factory entry is exercised where named).
     [Fact] public void State2ReloadAfterClearSuppressesTransitionLogAndRetainsReleaseOrder()
     {

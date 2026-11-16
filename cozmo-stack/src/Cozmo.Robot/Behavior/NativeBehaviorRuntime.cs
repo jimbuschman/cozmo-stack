@@ -164,9 +164,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                    ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
                     ((id is "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" or "Needs_MildLowRepairRequest" or "Needs_MildLowEnergyRequest" or "Needs_MildLowPlayRequest") && interludeClass.GetString()=="ExpressNeeds")))
                 {fields.MarkPristine();if(id=="EarnedSparks")fields.EarnedSparksConfig=entry.Value;}
-                if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
-                   entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
-                   id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
                 if (id is "EnrollFace" or "RespondToRenameFace" or "MeetCozmo_InteractWithFaces")
                 {
                     string expected = id == "MeetCozmo_InteractWithFaces" ? "InteractWithFaces" : id;
