@@ -133,13 +133,13 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
         });
         AssertLoopKeptChoosing(run);
         double earned=run.Chosen.First(c=>c.At>=30&&c.Id=="EarnedSparks").At;
-        var report=run.Sparks[0];Assert.Equal("needs.FreeplaySparksReward.RollACube",report.DisplayKey);Assert.InRange(report.Amount,2,3);
-        var wire=Assert.Single(run.RewardsWire);
-        Assert.Equal(0x65,wire.Tag);
+        const string rollRewardKey="needs.FreeplaySparksReward.RollACube";
+        var report=Assert.Single(run.Sparks.Where(s=>s.DisplayKey==rollRewardKey));
+        Assert.InRange(report.Amount,2,3);
+        byte[] key=Encoding.UTF8.GetBytes(rollRewardKey);
+        var wire=Assert.Single(run.RewardsWire.Where(w=>w.Tag==0x65 && w.Body.AsSpan(5).SequenceEqual(key)));
         Assert.Equal(report.Amount,BinaryPrimitives.ReadInt32LittleEndian(wire.Body));
-        byte[] key=Encoding.UTF8.GetBytes("needs.FreeplaySparksReward.RollACube");
         Assert.Equal(key.Length,wire.Body[4]);
-        Assert.Equal(key,wire.Body[5..]);
         Assert.Contains(run.Chosen,c=>c.At>earned&&c.Id!="EarnedSparks");
         Assert.Empty(run.Stars);Assert.Empty(run.Levels); // 0x00696B5A..0x00696B6E: same local day, no star
         var first=Assert.IsType<NeedsStateOnRobot>(run.FirstRobotWrite);
@@ -160,9 +160,11 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
             Assert.Equal(3,needs.State.NativeUnlockLevel);Assert.Equal(0,needs.State.NativeStarsAwarded);
         });
         AssertLoopKeptChoosing(run);
-        Assert.Empty(run.Sparks); // The native nonzero star result bypasses the weighted path.
-        Assert.Equal(new ushort[]{0x67,0x66},run.RewardsWire.Select(message=>message.Tag));
-        Assert.Equal(new byte[]{2,0,0,0,1,0,0,0,2,0,0,0},run.RewardsWire[0].Body);
+        // The native nonzero star result bypasses the weighted path for this RollACube. Freeplay can award later actions.
+        Assert.DoesNotContain(run.Sparks,reward=>reward.DisplayKey=="needs.FreeplaySparksReward.RollACube");
+        var starsWire=run.RewardsWire.Where(message=>message.Tag is 0x67 or 0x66).ToArray();
+        Assert.Equal(new ushort[]{0x67,0x66},starsWire.Select(message=>message.Tag));
+        Assert.Equal(new byte[]{2,0,0,0,1,0,0,0,2,0,0,0},starsWire[0].Body);
         Assert.Equal(new StarUnlockedReport(2,1,2),Assert.Single(run.Stars));
         var level=Assert.Single(run.Levels);Assert.Equal(3,level.Level);Assert.Equal(1,level.Maximum);
         Assert.Equal(new[]{1,2,0,1,2},level.Rewards.Select(r=>r.Type));

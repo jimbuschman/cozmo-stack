@@ -1,4 +1,6 @@
 using System.Reflection;
+using Cozmo.Protocol;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot;
 using Cozmo.Robot.Emulation;
 using Cozmo.Robot.Animation;
@@ -17,15 +19,7 @@ public sealed class PeekABooNativeTests
     public void ShippedSocializeObjectiveReceivesPeekResult(bool returns)
     {
         if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
-        var options = new CozmoEngineOptions
-        {
-            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
-            SpeechSoundBankDirectory = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing"),
-            SpeechAudioArchivePath = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip"),
-            LabLocaleLanguage = "en",
-            BlockPoolPath = ""
-        };
-        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true, engineOptions: options);
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true, engineOptions: SpeechOptions());
         var manager = f.Robot.BehaviorManagerOwner!;
         var behavior = Assert.IsType<NativePeekABooBehavior>(f.Runtime.Bound["FPPeekABoo"]);
         Assert.Same(behavior.NativeScoredFields, f.Robot.NativeConfiguredScoreFields![behavior.Id]);
@@ -187,6 +181,102 @@ public sealed class PeekABooNativeTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ShippedSocializeSelectsPounceOnlyWithTheUnlock(bool unlocked)
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true, engineOptions: SpeechOptions());
+        var engine = f.Rig.Engine;
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var behavior = Assert.IsType<NativePounceOnMotion>(f.Runtime.Bound["PounceOnMotion_Socialize"]);
+        uint unlockId = NativeUnlockNames.FromBytes("PounceOnMotionAction"u8.ToArray());
+        f.Robot.Progression!.SetUnlock(unlockId, unlocked);
+        f.Robot.Progression.SetUnlock(37, false); // PeekABoo
+        f.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, origin: f.Robot.CurrentOriginId, liftAngle: -0.2f);
+        engine.Timer.UpdateTime(10_000_000_000);
+        typeof(OffTreadsClassifier).GetProperty("Current")!.SetValue(f.Rig.Robot.Sensors.OffTreads, OffTreadsState.OnTreads);
+        f.Rig.Robot.CameraSettings.LastProcessedImageTimestamp = 100;
+        SeeFace(f, 100, true);
+        engine.ContextRandom.WordSourceForTest = () => 0; // Require the optional objective, with its minimum count.
+        try
+        {
+            var activity = f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a => a.Id == "Socialize");
+            var owner = Assert.IsType<NativeActivityObjectiveOwner>(activity.ObjectiveOwner);
+            activity.OnSelected(engine.Timer.SecondsF);
+            uint objective = (uint)BehaviorObjective.PouncedAndCaught;
+            if (unlocked) Assert.Equal((objective, 1u), (Assert.Single(owner.Counts).Key, owner.Counts[objective]));
+            else Assert.Empty(owner.Counts);
+
+            var idle = new ChooserDecision(null, "idle", Array.Empty<(string, double, string)>());
+            var interact = Assert.IsType<NativeInteractWithFaces>(owner.Desired(null, idle, f.Runtime.Context).Behavior);
+            Assert.Equal(2, owner.Phase);
+            Assert.True(manager.StartAsync(interact.Id, engine.Timer.SecondsF).GetAwaiter().GetResult());
+            for (int step = 0; step < 2; step++)
+            {
+                Assert.NotEqual(0u, interact.CurrentRunnerTag);
+                engine.AnimationMessages.Deliver(0x5A, true,
+                    new RobotCompletedAction(interact.CurrentRunnerTag, 0, 0, Array.Empty<uint>(), 0));
+            }
+            Assert.Equal(4, interact.Phase);
+            engine.Timer.UpdateTime(18_000_000_000);
+            interact.Update(f.Runtime.Context, engine.Timer.TimeStampMs);
+            Assert.Equal(3, owner.Phase);
+            manager.Stop(BehaviorStopReason.Completed, engine.Timer.SecondsF);
+
+            var choice = owner.Desired(null, idle, f.Runtime.Context);
+            Assert.False(choice.InputUnavailable);
+            if (!unlocked)
+            {
+                Assert.Null(choice.Behavior);
+                Assert.Equal(6, owner.Phase);
+                return;
+            }
+            Assert.Same(behavior, choice.Behavior);
+            Assert.Equal(4, owner.Phase);
+            Assert.Equal(3f, behavior.NotRunningBoredSeconds);
+            Assert.True(manager.StartAsync(behavior.Id, engine.Timer.SecondsF).GetAwaiter().GetResult());
+            var start = Assert.IsType<CompoundActionSequential>(behavior.OwnedRunner);
+            Assert.Equal((AnimationTrigger)0x196, Assert.IsType<TriggerLiftSafeAnimationAction>(Assert.Single(start.Children)).Request.Trigger);
+
+            void FinishAction()
+            {
+                var runner = Assert.IsAssignableFrom<ActionRunner>(behavior.OwnedRunner);
+                runner.State = 0x03000018; // Simulated terminal action result.
+                f.Robot.ActionList.Update();
+            }
+            FinishAction(); // Initial pounce -> relax lift.
+            FinishAction(); // Relax lift -> initial search.
+            Assert.Equal(3, behavior.NativeState);
+            FinishAction(); // Initial search -> wait for motion.
+            Assert.Equal(6, behavior.NativeState);
+            FinishAction(); // First eligible rotate. The 0.0 draw takes the 0.35 turn-pounce branch.
+            var turnPounce = Assert.IsType<CompoundActionSequential>(behavior.OwnedRunner);
+            Assert.IsType<NativePanTiltRunner>(turnPounce.Children[0]);
+            Assert.Equal((AnimationTrigger)0x196, Assert.IsType<TriggerLiftSafeAnimationAction>(turnPounce.Children[1]).Request.Trigger);
+            FinishAction();
+            FinishAction();
+            engine.Timer.UpdateTime(24_000_000_000);
+            FinishAction();
+            Assert.Equal(6, behavior.NativeState); // Strict six-second rotation threshold.
+            engine.Timer.UpdateTime(24_001_000_000);
+            FinishAction();
+            Assert.Equal(5, behavior.NativeState);
+            FinishAction();
+            FinishAction();
+            engine.Timer.UpdateTime(38_001_000_000);
+            FinishAction();
+            Assert.Equal(13, behavior.NativeState); // 20 seconds since the start with no ground motion.
+            Assert.Equal((AnimationTrigger)0x194, Assert.IsType<TriggerLiftSafeAnimationAction>(behavior.OwnedRunner).Request.Trigger);
+        }
+        finally
+        {
+            manager.Stop(BehaviorStopReason.Interrupted, engine.Timer.SecondsF);
+            engine.ContextRandom.WordSourceForTest = null;
+        }
+    }
+
     [Fact]
     public void ShippedHardSparkUsesStrictDeadlineAndQueuesItsTimeoutAnimationWithoutAFace()
     {
@@ -213,6 +303,15 @@ public sealed class PeekABooNativeTests
         Assert.Equal(0f, behavior.NativeScoredFields.SparkPeekDeadline);
         manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
     }
+
+    private static CozmoEngineOptions SpeechOptions() => new()
+    {
+        ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+        SpeechSoundBankDirectory = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing"),
+        SpeechAudioArchivePath = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip"),
+        LabLocaleLanguage = "en",
+        BlockPoolPath = ""
+    };
 
     private static void SeeFace(PickupPyramidNativeExecutionTests.Fixture f, uint time, bool contour)
     {

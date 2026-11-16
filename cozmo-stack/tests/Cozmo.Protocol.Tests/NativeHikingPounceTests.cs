@@ -12,11 +12,11 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeHikingPounceTests
 {
-    private static NativeHikingPounce Prepare(Fixture f)
+    private static NativePounceOnMotion Prepare(Fixture f)
     {
         f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
         f.Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,origin:f.Robot.CurrentOriginId,head:-.15f,liftAngle:-.2f);
-        var p=Assert.IsType<NativeHikingPounce>(f.Runtime.Bound["Hiking_PounceOnMotion"]);
+        var p=Assert.IsType<NativePounceOnMotion>(f.Runtime.Bound["Hiking_PounceOnMotion"]);
         f.Robot.Progression!.Unlocked.Add(p.NativeBaseInputs!.RequiredUnlock);
         return p;
     }
@@ -96,7 +96,7 @@ public sealed class NativeHikingPounceTests
         Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(p.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         var old=Assert.IsAssignableFrom<ActionRunner>(p.OwnedRunner);uint tag=p.CurrentRunnerTag;
         f.Rig.Engine.Robots.RemoveRobot(1,false);var replacement=f.Rig.Engine.Robots.AddRobot(1,withRic:false)!;
-        var next=Assert.IsType<NativeHikingPounce>(replacement.NativeBehaviorRuntime!.Bound[p.Id]);
+        var next=Assert.IsType<NativePounceOnMotion>(replacement.NativeBehaviorRuntime!.Bound[p.Id]);
         var retired=p.OwnedRunner;uint retiredTag=p.CurrentRunnerTag;int state=p.NativeState;int sent=f.Rig.SentSince(0).Count;
         f.Rig.Engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(tag,old.Type,0,Array.Empty<uint>(),0));
         if(retired is not null)f.Rig.Engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(retiredTag,retired.Type,0,Array.Empty<uint>(),0));
@@ -153,7 +153,7 @@ public sealed class NativeHikingPounceTests
         // This rig connects Engine to the real ManualPump transport; its standalone M is not used.
         using var resources=new Fixture();using var rig=new Rig(resources:resources.Rig.Engine.Options.ResourcesPath);
         rig.Robot.Animations.LoadFrom(rig.Robot.Engine.Options.ResourcesPath!);rig.State(liftAngle:-.2f);rig.Tick();rig.Pump();
-        var owner=rig.Robot.Engine.Robot!;var p=Assert.IsType<NativeHikingPounce>(owner.NativeBehaviorRuntime!.Bound["Hiking_PounceOnMotion"]);
+        var owner=rig.Robot.Engine.Robot!;var p=Assert.IsType<NativePounceOnMotion>(owner.NativeBehaviorRuntime!.Bound["Hiking_PounceOnMotion"]);
         owner.Progression!.Unlocked.Add(p.NativeBaseInputs!.RequiredUnlock);var manager=owner.BehaviorManagerOwner!;
         Assert.True(manager.StartAsync(p.Id,rig.Robot.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         var initial=Assert.IsType<CompoundActionSequential>(p.OwnedRunner);
@@ -177,7 +177,7 @@ public sealed class NativeHikingPounceTests
     {
         using var resources=new Fixture();using var rig=new Rig(resources:resources.Rig.Engine.Options.ResourcesPath);
         rig.Robot.Animations.LoadFrom(rig.Robot.Engine.Options.ResourcesPath!);rig.State(liftAngle:-.2f);rig.Tick();rig.Pump();
-        var owner=rig.Robot.Engine.Robot!;var p=Assert.IsType<NativeHikingPounce>(owner.NativeBehaviorRuntime!.Bound["Hiking_PounceOnMotion"]);
+        var owner=rig.Robot.Engine.Robot!;var p=Assert.IsType<NativePounceOnMotion>(owner.NativeBehaviorRuntime!.Bound["Hiking_PounceOnMotion"]);
         owner.Progression!.Unlocked.Add(p.NativeBaseInputs!.RequiredUnlock);var manager=owner.BehaviorManagerOwner!;
         Assert.True(manager.StartAsync(p.Id,rig.Robot.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         int mark=rig.Sent.Count;var initial=Assert.IsAssignableFrom<ActionRunner>(p.OwnedRunner);
@@ -196,7 +196,7 @@ public sealed class NativeHikingPounceTests
         rig.Pump();var power=rig.Sent.Skip(mark).OfType<EnableMotorPower>().ToArray();
         Assert.Equal(new byte[]{0,1},power.Select(x=>x.Field1));Assert.All(power,x=>Assert.Equal((byte)2,x.Field0));
     }
-    private static void Finish(NativeHikingPounce p,Fixture f)
+    private static void Finish(NativePounceOnMotion p,Fixture f)
     {var runner=Assert.IsAssignableFrom<ActionRunner>(p.OwnedRunner);runner.State=0x03000018;f.Robot.ActionList.Update();}
     [Fact]
     public void PounceResetsCreepCountAfterStartActing() // 0x005F8B36..0x005F8B38

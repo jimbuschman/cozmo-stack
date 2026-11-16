@@ -6,13 +6,16 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M15-107
-// Configured Hiking_PounceOnMotion. Native body 0x005F7F90..0x005FA194, read against this file 2026-11-02.
-internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, IDisposable
+// Shared ordinary Hiking and Socialize PounceOnMotion owner. Native body 0x005F7F90..0x005FA194.
+internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState, IDisposable
 {
     private readonly ManipulationSystem _m;
     private readonly EngineRobot _robot;
     private readonly BehaviorManager? _manager;
     private readonly bool _valid;
+    private readonly float _runningBoredSeconds, _lifetimeSeconds, _rotateAfterSeconds, _pounceOnTurnOdds;
+    private readonly float _searchAmplitudeRad;
+    private readonly bool _skipGetOutAnim;
     private readonly RetainedSubscription? _motion;
     private readonly Action<OffTreadsState,OffTreadsState>? _treads;
     private readonly Action<CliffReport>? _cliff;
@@ -28,23 +31,32 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
     internal int NativeState {get;private set;}
     internal bool LiftDisabled=>_liftDisabled;
     public float LastGroundMotionSeconds=>_lastMotion;
-    public float NotRunningBoredSeconds=>1.5f;
-    public float BoredomMultiplier=>BitConverter.UInt32BitsToSingle(0x3F4CCCCD);
-    internal NativeHikingPounce(BehaviorFactoryContext source,JsonElement config):base("Hiking_PounceOnMotion","PounceOnMotion")
+    public float NotRunningBoredSeconds { get; }
+    public float BoredomMultiplier { get; }
+    internal NativePounceOnMotion(BehaviorFactoryContext source, JsonElement config)
+        : base(BehaviorConfigLoader.ExtractIdFromConfig(config).ToString(), "PounceOnMotion")
     {
         _m=source.Manipulation!;_robot=source.NativeRobot!;_manager=_robot.BehaviorManagerOwner;
+        float ReadFloat(string key, float fallback) =>
+            config.TryGetProperty(key, out var value) ? value.GetSingle() : fallback;
         try
         {
-            _valid=config.GetProperty("maxNoGroundMotionBeforeBored_running_Sec").GetSingle()==3f &&
-                config.GetProperty("maxNoGroundMotionBeforeBored_notRunning_Sec").GetSingle()==1.5f &&
-                config.GetProperty("searchAmplitudeDeg").GetSingle()==90f &&
-                (!config.TryGetProperty("alwaysStreamline",out var always) || always.ValueKind==JsonValueKind.False || always.ValueKind==JsonValueKind.Null) &&
-                !config.TryGetProperty("boredomMultiplier",out _) && !config.TryGetProperty("maxTimeBehaviorTimeout_Sec",out _) &&
-                !config.TryGetProperty("timeBeforeRotate_Sec",out _) &&
-                !config.TryGetProperty("skipGetOutAnim",out _) && !config.TryGetProperty("oddsOfPouncingOnTurn",out _); // 0x005F81F6, 0x005F817A: not in shipped Hiking
+            // 0x005F8064..0x005F8212: lookups are case-sensitive. Hiking's TimeBeforeRotate_Sec is ignored.
+            _runningBoredSeconds = ReadFloat("maxNoGroundMotionBeforeBored_running_Sec", 30f);
+            NotRunningBoredSeconds = ReadFloat("maxNoGroundMotionBeforeBored_notRunning_Sec", 30f);
+            _lifetimeSeconds = ReadFloat("maxTimeBehaviorTimeout_Sec", 30f);
+            BoredomMultiplier = ReadFloat("boredomMultiplier", 0.8f);
+            _rotateAfterSeconds = ReadFloat("timeBeforeRotate_Sec", 5f);
+            _pounceOnTurnOdds = ReadFloat("oddsOfPouncingOnTurn", 0f);
+            _searchAmplitudeRad = new Radians(ReadFloat("searchAmplitudeDeg", 45f) *
+                BitConverter.UInt32BitsToSingle(0x3C8EFA35)).Value;
+            _skipGetOutAnim = config.TryGetProperty("skipGetOutAnim", out var skip) && skip.GetBoolean();
+            _valid = !config.TryGetProperty("alwaysStreamline", out var always) ||
+                always.ValueKind is JsonValueKind.False or JsonValueKind.Null;
+            if (!_valid) ReportMissing($"{Id} streamlined PounceOnMotion path unavailable");
         }
-        catch(Exception e) when(e is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
-        {ReportMissing("Hiking_PounceOnMotion parameters unavailable: "+e.Message);}
+        catch(Exception e) when(e is InvalidOperationException or FormatException or OverflowException)
+        {ReportMissing($"{Id} PounceOnMotion parameters unavailable: {e.Message}");}
         if(_robot.HasExternalInterface)
         {
             _motion=_robot.Engine.AnimationMessages.SubscribeMessage(0x49,true,p=>{if(p is NativeObservedMotion motion)HandleMotion(motion);});
@@ -178,9 +190,9 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
         if(!Current(g))return;Scope.SmartUnLockTracks("behaviorPounceOnMotionWaitLock");if(!Current(g))return;
         if(_pendingPoint){TurnToMotion(g);return;}
         float now=_robot.Engine.Timer.SecondsF;
-        if(_lastMotion+3f<now){GetOut(g);return;}
-        if(_lastRotate+5f<now){RotateWatchingNewArea(g);return;}
-        if(_started+30f<now){GetOut(g);return;}
+        if(_lastMotion+_runningBoredSeconds<now){GetOut(g);return;}
+        if(_lastRotate+_rotateAfterSeconds<now){RotateWatchingNewArea(g);return;}
+        if(_started+_lifetimeSeconds<now){GetOut(g);return;}
         WaitForMotion(g);
     }
     private void HandleMotion(NativeObservedMotion report)
@@ -268,18 +280,19 @@ internal sealed class NativeHikingPounce : SteppedBehavior, IPounceScoreState, I
         if(!Current(g))return;NativeState=5;_lastRotate=_robot.Engine.Timer.SecondsF;
         float amount=(float)(_robot.Engine.ContextRandom.RandDblInRange(20,45)*0.017453292519943295);
         double draw=_robot.Engine.ContextRandom.RandDbl(1);
-        double amplitude=BitConverter.UInt32BitsToSingle(0x3FC90FDB);
+        double amplitude=_searchAmplitudeRad;
         double probability=(amplitude-(double)_accumulatedYaw);
         probability=(amplitude/probability)*.5d;
         if(draw<probability)amount=-amount;
         _accumulatedYaw=new Radians(_accumulatedYaw+amount).Value;
         var action=Pan(amount,0,false,false);
-        float chance=(float)_robot.Engine.ContextRandom.RandDbl(1); // shipped pounceChance is zero
-        if(0f>chance)PounceSequence(g,action,()=>WaitForMotion(g));else Run(action,()=>WaitForMotion(g),g);
+        float chance=(float)_robot.Engine.ContextRandom.RandDblInRange(0,1); // 0x005F9100..0x005F9128
+        if(_pounceOnTurnOdds>chance)PounceSequence(g,action,()=>WaitForMotion(g));else Run(action,()=>WaitForMotion(g),g);
     }
     private void GetOut(long g)
     {
         if(!Current(g))return;NativeState=13;
+        if(_skipGetOutAnim)return; // 0x005F950A..0x005F950E
         Run(new TriggerLiftSafeAnimationAction(_m.Robot,new((AnimationTrigger)0x194,1,true,0,60f,false)),null,g);
     }
     protected override void OnUpdate(){if(!Supported())_blocked=true;}

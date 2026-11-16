@@ -51,29 +51,17 @@ public sealed class OrdinaryFreeplayNativeTests
         Assert.True(f.Robot.NativeConfiguredScoreFields.ContainsKey("FPPeekABoo"));
     }
 
-    // Isolated scored-comparison boundary using the actual retained configured fields, not an executable proxy.
     [Fact]
-    public void UnbuiltZeroUsesRetainedFieldsAndPublicAttemptPermanentlyInvalidatesHistory()
+    public void SocializeScoresTheRetainedPounceOwnerAtZero()
     {
-        using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        var chooser=new ScoringChooser(Array.Empty<ScoredBehaviorEntry>(),f.Runtime.Bound,native:true);
-        chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
-        var evaluate=typeof(ScoringChooser).GetMethod("EvaluateUnbuilt",BindingFlags.Instance|BindingFlags.NonPublic)!;
-        string Evaluate(double now=0)=>evaluate.Invoke(chooser,new object[]{"PounceOnMotion_Socialize",f.Runtime.Context,now})!.ToString()!;
-        var fields=f.Robot.NativeConfiguredScoreFields!["PounceOnMotion_Socialize"];
-        Assert.True(fields.ConstructorPristine);Assert.Equal("ScoringZero",Evaluate());Assert.Equal("Unavailable",Evaluate(double.NaN));
-        using var changed=JsonDocument.Parse("""{"flatScore":1}""");fields.Reload("PounceOnMotion_Socialize",changed.RootElement);
-        Assert.Equal("Unavailable",Evaluate());
-        using var nonfinite=JsonDocument.Parse("""{"flatScore":1e100}""");fields.Reload("PounceOnMotion_Socialize",nonfinite.RootElement);
-        Assert.Equal("Unavailable",Evaluate());
-        using var zero=JsonDocument.Parse("""{"flatScore":0}""");fields.Reload("PounceOnMotion_Socialize",zero.RootElement);
-        Assert.Equal("ScoringZero",Evaluate());
-        using var graph=JsonDocument.Parse("""{"flatScore":0,"repetitionPenalty":{"nodes":[{"x":0,"y":1e100}]}}""");
-        fields.Reload("PounceOnMotion_Socialize",graph.RootElement);Assert.Equal("Unavailable",Evaluate());
-        fields.Reload("PounceOnMotion_Socialize",zero.RootElement);Assert.Equal("ScoringZero",Evaluate());
-        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync("PounceOnMotion_Socialize",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-        Assert.False(fields.ConstructorPristine);Assert.Equal("Unavailable",Evaluate());
-        fields.Reload("PounceOnMotion_Socialize",zero.RootElement);Assert.Equal("Unavailable",Evaluate());
+        using var f = new PickupPyramidNativeExecutionTests.Fixture();
+        var pounce = Assert.IsType<NativePounceOnMotion>(f.Runtime.Bound["PounceOnMotion_Socialize"]);
+        var activity = f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a => a.Id == "Socialize");
+        var chooser = Assert.IsType<ScoringChooser>(activity.Chooser);
+        var entry = chooser.Entries.Single(e => e.BehaviorId == pounce.Id);
+        Assert.Equal(0, entry.FlatScore);
+        Assert.Same(pounce.NativeScoredFields, f.Robot.NativeConfiguredScoreFields![pounce.Id]);
+        Assert.Equal(0, entry.Evaluate(pounce, f.Runtime.Context, f.Rig.Engine.Timer.SecondsF, null, null, null));
     }
 
     [Fact]
@@ -138,12 +126,14 @@ public sealed class OrdinaryFreeplayNativeTests
     public void UnavailableExecutableRequestWithdrawsProofInHandler()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        var fields=f.Robot.NativeConfiguredScoreFields!["PounceOnMotion_Socialize"];
+        var fields=f.Robot.NativeConfiguredScoreFields!["VC_PounceOnMotion"];
+        Assert.False(f.Runtime.Bound.ContainsKey("VC_PounceOnMotion"));
+        fields.MarkPristine();
         var selection=Assert.IsType<SelectionChooser>(f.Runtime.Tree.Single(a=>a.Id=="Selection").Chooser);
         var original=selection.FindBehaviorByExecutableType;
         try
         {
-            selection.FindBehaviorByExecutableType=_=>throw new NativeChooserUnavailable("unbuilt","PounceOnMotion_Socialize");
+            selection.FindBehaviorByExecutableType=_=>throw new NativeChooserUnavailable("unbuilt","VC_PounceOnMotion");
             selection.HandleExecuteBehavior(new Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage(12,2));
             Assert.False(fields.ConstructorPristine);
         }
