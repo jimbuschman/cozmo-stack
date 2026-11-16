@@ -106,7 +106,8 @@ public sealed partial class AIWhiteboard
     // fidelity: M11-092 -- +0x50: constructor -1.0f (0x0056A2A4..0x0056A2BA) until the map tail 0x006803E8/0x006803EC writes it.
     internal float OverheadEdgeDistance=>OverheadEdgeState?.Distance??BitConverter.UInt32BitsToSingle(0xBF800000);
 
-    // AIWhiteboard+0x74, initialized clear at 0x0056A2DA and owned by Hiccup.
+    // fidelity: M10-003
+    // AIWhiteboard+0x74 starts clear at 0x0056A2DA. The Hiccup strategy sets it at 0x006107A6 and clears it on reset at 0x00610212.
     internal bool HiccupsActive { get; set; }
 
     public IReadOnlyList<AIBeacon> Beacons => _beacons;

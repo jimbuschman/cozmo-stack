@@ -209,10 +209,18 @@ public sealed partial class BehaviorManager : IDisposable
             if ((nativeOwner??_context.Robot.Engine.Robot) is { } owner && ReferenceEquals(owner.BehaviorManagerOwner,this) &&
                 ReferenceEquals(owner.NativeBehaviorRuntime?.Manipulation,manipulation)) pickup.BindNative(manipulation,owner,this);
         }
+        bool? ReadOffTreadsHiccups()
+        {
+            if (_hostDisposed || nativeOwner is { } owner && (owner.Lifetime.Destroying ||
+                !ReferenceEquals(_context.Robot.Engine.Robot, owner) ||
+                !ReferenceEquals(owner.NativeBehaviorRuntime?.Manipulation, manipulation)))
+                return null;
+            return manipulation.Whiteboard.HiccupsActive;
+        }
         foreach (var back in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnBackBehavior>())
-            back.Whiteboard = manipulation.Whiteboard;
+            back.ReadHiccups = ReadOffTreadsHiccups;
         foreach (var face in Reactions.Select(r => r.Behavior).OfType<ReactToRobotOnFaceBehavior>())
-            face.Whiteboard = manipulation.Whiteboard;
+            face.ReadHiccups = ReadOffTreadsHiccups;
         foreach(var cliff in Reactions.Select(r=>r.Behavior).OfType<ReactToCliffBehavior>())
             cliff.DriveStraight=(distance,speed,ct)=>new Cozmo.Robot.Manipulation.DriveStraightAction(manipulation,distance,speed).RunAsync(ct);
         foreach (var strategy in Reactions.Select(r => r.Strategy).OfType<ObjectPositionUpdatedStrategy>())

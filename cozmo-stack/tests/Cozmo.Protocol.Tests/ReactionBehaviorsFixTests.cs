@@ -70,6 +70,31 @@ public sealed class ReactionBehaviorsFixTests
     }
 
     [Theory]
+    [InlineData(OffTreadsState.OnBack, false, AnimationTrigger.FlipDownFromBack)]
+    [InlineData(OffTreadsState.OnBack, true, AnimationTrigger.HiccupRobotOnBack)]
+    [InlineData(OffTreadsState.OnFace, false, AnimationTrigger.FacePlantRoll)]
+    [InlineData(OffTreadsState.OnFace, true, AnimationTrigger.HiccupRobotOnFace)]
+    public async Task ConfiguredOffTreadsReactionReadsTheRobotOwnedHiccupFlag(OffTreadsState side, bool hiccups, AnimationTrigger trigger)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var reaction = Assert.Single(manager.Reactions, r => r.Strategy.Trigger ==
+            (side == OffTreadsState.OnBack ? ReactionTrigger.RobotOnBack : ReactionTrigger.RobotOnFace));
+        var behavior = Assert.IsAssignableFrom<SteppedBehavior>(reaction.Behavior);
+        var state = f.Rig.MakeState(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, origin: f.Robot.CurrentOriginId);
+        state.CliffDataRaw = new ushort[] { 399, 500, 500, 500 }; // 0x006087FA..0x00608804 selects the animation branch.
+        f.Rig.Data(state);
+        f.Rig.Tick();
+        typeof(OffTreadsClassifier).GetProperty("Current")!.SetValue(f.Rig.Robot.Sensors.OffTreads, side);
+
+        Assert.False(f.M.Whiteboard.HiccupsActive);
+        f.M.Whiteboard.HiccupsActive = hiccups; // Supply the value written by the checked Hiccup strategy.
+        Assert.True(await manager.SwitchToBehaviorBase(behavior, f.Rig.Engine.Timer.SecondsF));
+        Assert.Contains(behavior.Trace, line => line.StartsWith($"play {trigger} -> ", StringComparison.Ordinal));
+        manager.Stop(BehaviorStopReason.Cancelled, f.Rig.Engine.Timer.SecondsF);
+    }
+
+    [Theory]
     [InlineData(true, 0x21u)] [InlineData(false, 0x22u)]
     public void RightedStateReportsAtTheSpecificNativeBranch(bool back, uint expected)
     {
