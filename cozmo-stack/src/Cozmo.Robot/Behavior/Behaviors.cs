@@ -805,7 +805,9 @@ public static class ShippedBehaviors
         if (cubes is null && vision is not null) cubes = vision.Locator;
         if (cubes is not null)
         {
-            var behavior = new AcknowledgeCubeMovedBehavior(cubes);
+            var behavior = m is not null && nativeOwner is not null
+                ? new AcknowledgeCubeMovedBehavior(cubes, m, nativeOwner)
+                : new AcknowledgeCubeMovedBehavior(cubes);
             built.Add((behavior.Id, ReactionTrigger.CubeMoved, behavior,
                        new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World)));
         }

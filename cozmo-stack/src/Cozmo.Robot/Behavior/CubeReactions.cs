@@ -1,5 +1,6 @@
 using Cozmo.Protocol;
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -165,6 +166,7 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
     private readonly ICubeLocator? _locator;
     private readonly AcknowledgeCubeMovedBehavior _behavior;
     private readonly Cozmo.Robot.Vision.BlockWorld? _world;
+    private readonly IDisposable[] _movementSignals = [];
 
     /// <param name="world">The world model whose <c>ObjectObserved</c> is the engine's RobotObservedObject (tag 0x44).</param>
     public CubeMovedReactionStrategy(CozmoRobot robot, AcknowledgeCubeMovedBehavior behavior, ICubeLocator? locator,
@@ -174,11 +176,20 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
         _behavior = behavior;
         _locator = locator;
         _world = world;
-        // Host adapter after the complete native per-tag signal (CozmoEngine.PublicRoute).
-        // Feeds M10-003 CubeMotionTracker; M11-041 owns the radio-slot to world-ID translation.
-        // It never registers a native raw B4/B5/D7 subscriber or mutates the inbound message.
-        robot.MessageInternal += OnMessage;
-        if (_world is not null) _world.ObjectObserved += OnWorldObserved;
+        if (_world is null) robot.MessageInternal += OnMovementSignal;
+        else
+        {
+            // 0x0060BEA8..0x0060BF62 handles E2G 0x0F/0x10/0x11. The robot-side B4/B5
+            // handler can withhold the broadcast for a carried cube or the active dock target.
+            var messages = robot.Engine.AnimationMessages;
+            _movementSignals =
+            [
+                messages.SubscribeMessage(0x0F, true, OnMovementSignal),
+                messages.SubscribeMessage(0x10, true, OnMovementSignal),
+                messages.SubscribeMessage(0x11, true, OnMovementSignal)
+            ];
+            _world.ObjectObserved += OnWorldObserved;
+        }
     }
 
     public CubeMotionTracker Tracker { get; } = new();
@@ -195,27 +206,17 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
     private bool Located(uint id) => _locator?.IsLocated(id) ?? false;
     private bool Handling => IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated);
 
-    private void OnMessage(RobotMessage m)
+    private void OnMovementSignal(object? message)
     {
         if (!Handling) return;
-        switch (m)
+        switch (message)
         {
-            case ObjectMoved mv:
-                if (WorldObjectId(mv.ObjectID) is { } movedId)
-                    Tracker.ObjectMoved(new ObjectMoved { Timestamp = mv.Timestamp, ObjectID = movedId, Accel = mv.Accel, AxisOfAccel = mv.AxisOfAccel });
-                break;
-            case ObjectStoppedMoving sm: if (WorldObjectId(sm.ObjectID) is { } stoppedId) Tracker.ObjectStopped(stoppedId); break;
-            case ObjectUpAxisChanged ua: if (WorldObjectId(ua.ObjectID) is { } axisId) Tracker.ObjectUpAxisChanged(axisId); break;
+            case ObjectMoved moved: Tracker.ObjectMoved(moved); break;
+            case ObjectStoppedMoving stopped: Tracker.ObjectStopped(stopped.ObjectID); break;
+            case CubeUpAxisEvent axis: Tracker.ObjectUpAxisChanged(unchecked((uint)axis.ObjectID)); break;
+            case ObjectUpAxisChanged axis: Tracker.ObjectUpAxisChanged(axis.ObjectID); break;
         }
     }
-
-    // fidelity: M11-041
-    /// <summary>
-    /// The robot's cube messages name a cube by its radio slot (activeID); the engine's game messages, which this strategy stands in for, carry the
-    /// connected object's ObjectID (<c>GetConnectedActiveObjectByActiveIdHelper</c>). With a world attached the slot is translated and a slot with no
-    /// connected object is ignored; without one the message's own ID is kept.
-    /// </summary>
-    private uint? WorldObjectId(uint activeId) => _world is null ? activeId : _world.ConnectedObjectIdForActiveId(activeId);
 
     private void OnWorldObserved(Cozmo.Robot.Vision.ObjectObservation o) => ObjectObserved(o.Object.ObjectId);
 
@@ -269,8 +270,12 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
 
     public void Dispose()
     {
-        _robot.MessageInternal -= OnMessage;
-        if (_world is not null) _world.ObjectObserved -= OnWorldObserved;
+        if (_world is null) _robot.MessageInternal -= OnMovementSignal;
+        else
+        {
+            _world.ObjectObserved -= OnWorldObserved;
+            foreach (var signal in _movementSignals) signal.Dispose();
+        }
     }
 }
 
@@ -278,7 +283,7 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
 /// <c>BehaviorAcknowledgeCubeMoved</c> (0x0060219C..0x006027F0), the class the shipped map runs for
 /// <c>ReactToCubeMoved</c>. Runnable while it has a target object (<c>+0x124 != -1</c>). <c>InitInternal</c>
 /// takes the reaction lock and (unless resuming mid-turn) plays <see cref="AnimationTrigger.CubeMovedSense"/>
-/// (0x72) in parallel with a 0.5 s wait; then <c>TransitionToTurningToLastLocationOfBlock</c> runs a
+/// (0x72) in parallel with a 1 s native wait; then <c>TransitionToTurningToLastLocationOfBlock</c> runs a
 /// <c>TurnTowardsPoseAction</c> to the cube's last known pose (max turn π) in parallel with a 0.5 s wait, and
 /// <c>UpdateInternal</c> watches for a <c>RobotObservedObject</c> of the target: seen → <c>StopActing</c>,
 /// <see cref="AnimationTrigger.AcknowledgeObject"/> (3), state <c>ReactingToBlockPresence</c>; the turn finishing
@@ -288,6 +293,7 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
 /// </summary>
 public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
 {
+    private readonly (ManipulationSystem Manipulation, EngineRobot Owner)? _native;
     private Action? _completionLease;
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
@@ -303,6 +309,9 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
 
     public AcknowledgeCubeMovedBehavior(ICubeLocator? locator = null) : base("ReactToCubeMoved", "ReactToCubeMoved") =>
         _locator = locator;
+
+    internal AcknowledgeCubeMovedBehavior(ICubeLocator locator, ManipulationSystem manipulation, EngineRobot owner)
+        : this(locator) => _native = (manipulation, owner);
 
     /// <summary>The cube to react to (<c>+0x124</c>), set by the strategy; null is the engine's −1.</summary>
     public uint? TargetObjectId { get; set; }
@@ -329,14 +338,37 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
 
     private void TransitionToPlayingSenseReaction()
     {
+        long generation = CaptureHostExecutionVersion();
         CurrentPhase = Phase.PlayingSenseReaction;
         Log("PlayingSenseReaction");
         SetStateName("PlayingSenseReaction");          // fidelity: M7-021 (state-name helper 0x005C0CA8 at 0x0060241C)
+        if (_native is { } native)
+        {
+            StartNativeSenseReaction(native.Manipulation, native.Owner, generation);
+            return;
+        }
         // the animation and the 0.5 s wait are one CompoundActionParallel (0x006022fe..), started with one StartActing and one callback
         var both = StartParallel(2, TransitionToTurningToLastLocationOfBlock);
         if (both is null) return;
         WaitInParallel(both, 0.5);
         PlayTriggerInParallel(both, AnimationTrigger.CubeMovedSense);
+    }
+
+    private void StartNativeSenseReaction(ManipulationSystem manipulation, EngineRobot owner, long generation)
+    {
+        var robot = manipulation.Robot;
+        bool Current() => HostExecutionVersionCurrent(generation) && !owner.Lifetime.Destroying &&
+            ReferenceEquals(robot.Engine.Robot, owner);
+        if (!Current()) return;
+        _completionLease ??= AcquireActionCompletionOwner(robot, owner);
+        // 0x00602458, 0x0060246E, 0x00602486 and 0x00602498: lift-safe trigger 0x72
+        // and Wait(1.0f) share a parallel runner queued by the real StartActing.
+        var animation = new TriggerLiftSafeAnimationAction(robot, new(AnimationTrigger.CubeMovedSense, 1, true, 0, 60f, false));
+        if (!Current()) { animation.RetireStaleConstructor(Current); return; }
+        animation.SetScopedOwner(owner);
+        var wait = new NativeTimedWaitRunner(manipulation, 1f) { ScopedOwner = owner, ScopedParentCurrent = Current };
+        var compound = new CompoundActionParallel(() => robot.Engine.Timer.SecondsF, animation, wait);
+        StartActing(compound, _ => { if (Current()) TransitionToTurningToLastLocationOfBlock(); }, Current);
     }
 
     // fidelity: M15-010
@@ -392,7 +424,7 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
         Log("ReactingToBlockAbsence");
         SetStateName("ReactingToBlockAbsence");        // fidelity: M7-021 (helper 0x005C0CA8 at 0x006026D8)
         if (!HostExecutionVersionCurrent(epoch)) return;
-        _completionLease = AcquireActionCompletionOwner(Context.Robot);
+        _completionLease ??= AcquireActionCompletionOwner(Context.Robot);
         var action = new TriggerLiftSafeAnimationAction(Context.Robot, new(AnimationTrigger.CubeMovedUpset, 1, true, 0, 60f, false));
         if (!HostExecutionVersionCurrent(epoch)) { action.RetireStaleConstructor(() => false); return; }
         StartActing(action, _ => { }, () => HostExecutionVersionCurrent(epoch));
