@@ -20,7 +20,10 @@ public static class HardwareEngineOptions
         var (language,country)=Locale(localeName??HostLocaleName(),log??Console.Error.WriteLine);
         return new CozmoEngineOptions{ResourcesPath=resources,FilesPath=files,BlockPoolPath=blockPoolPath??defaults.BlockPoolPath,NeedsDeviceDirectory=needs,
             NeedsSystemClockMicroseconds=clock,DasDeviceId=DasDeviceIdFile.LoadOrCreate(deviceIdPath??DasDeviceIdFile.DefaultPath),
-            LabLocaleLanguage=language,LabLocaleCountry=country,BeforeStart=beforeStart,SpeechSoundBankDirectory=speechSoundBankDirectory};
+            LabLocaleLanguage=language,LabLocaleCountry=country,BeforeStart=beforeStart,SpeechSoundBankDirectory=speechSoundBankDirectory,
+            // The shared authored-audio device (M14-006) needs the shipped archive; sound_meta has the banks but not the zip
+            // (operator runs 2026-11-16: enrollment and InteractWithFaces aborted on it).
+            SpeechAudioArchivePath=File.Exists(Path.Combine(resources,"sound","AudioAssets.zip"))?Path.Combine(resources,"sound","AudioAssets.zip"):null};
     }
     // Reads the OS setting directly: this solution runs in .NET globalization-invariant mode, where CultureInfo.CurrentCulture is always invariant.
     private static (string? Language,string? Country) Locale(string? name,Action<string> log)

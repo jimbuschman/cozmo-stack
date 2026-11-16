@@ -107,7 +107,9 @@ public static class M15CubeHw
             return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive)
             {
                 Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
-                CommandBanks = commands ? Path.GetFullPath(banks ?? Path.Combine(root, "re-analysis", "obb", "sound_meta")) : null,
+                // Every mode: the shared authored-audio device (M14-006) gates reaction animations and InteractWithFaces,
+                // not only speech (operator runs 2026-11-16: pickup reactions and Socialize aborted without it).
+                CommandBanks = Path.GetFullPath(banks ?? Path.Combine(root, "re-analysis", "obb", "sound_meta")),
             }.Execute();
         }
         catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
@@ -205,6 +207,19 @@ internal sealed partial class M15CubeRun
                 if (Commands) SubscribeCommandReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
+            // Animation sound: the shipped Wwise banks, as FreeplayTool and Reactions load them. Without a source every
+            // animation's audio track is silent (operator run 2026-11-16: no sounds except speech).
+            var sound = Path.Combine(resources, "sound");
+            if (Directory.Exists(sound))
+            {
+                robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound });
+                Event("animation-audio", new() { ["source"] = sound });
+            }
+            else
+            {
+                Console.WriteLine("WARNING: no sound folder under the resources; animations will be silent.");
+                Event("animation-audio", new() { ["source"] = null });
+            }
             if (Commands) SubscribeCommandCubeReports(robot);
             robot.Transport.FrameTrace += f => frames.Enqueue((Now, f.Outbound, (byte[])f.Raw.Clone(), f.Frame, f.Error));
             robot.State.StateUpdated += s =>

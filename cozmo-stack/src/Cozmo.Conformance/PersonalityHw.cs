@@ -95,7 +95,11 @@ internal sealed partial class M15CubeRun
                 ReadOperatorInput();
                 idleStart = Now;
                 Event("idle-window-start", new() { ["minutes"] = PersonalityHw.IdleMinutes });
-                cancel.Token.WaitHandle.WaitOne(TimeSpan.FromMinutes(PersonalityHw.IdleMinutes));
+                for (int minute = 1; minute <= PersonalityHw.IdleMinutes && !cancel.IsCancellationRequested; minute++)
+                {
+                    cancel.Token.WaitHandle.WaitOne(TimeSpan.FromMinutes(1));
+                    if (!cancel.IsCancellationRequested) Console.WriteLine($"  idle: {minute} of {PersonalityHw.IdleMinutes} minutes");
+                }
                 idleEnd = Now;
                 cancel.Token.ThrowIfCancellationRequested();
                 Event("idle-window-end", new());

@@ -19,15 +19,15 @@ Robot script: `m15-cube-hw --commands` (built 2026-11-16) runs every command bel
 
 | Item | State |
 | --- | --- |
-| Head, lift, drive straight, turn in place | sim (motion itself: robot) |
-| Turn to a face, turn to a cube, track a face | sim |
-| Play an authored animation | sim (animations: robot) |
+| Head, lift, drive straight, turn in place | robot (2026-11-16, runs 20261116-110735 / -111516: engine success and operator yes) |
+| Turn to a face, turn to a cube, track a face | turn to a cube: robot (2026-11-16); face turn and track: not shown (head was down, face out of view; COMMANDS-FACE-SETUP-1) |
+| Play an authored animation | engine success on the robot 2026-11-16, but silent (sound banks not loaded; fixed in the scripts b486fe42, ENGINE-AUDIO-STARTUP-1); re-run |
 | Say a sentence in his voice | robot (2026-11-09; maybe slightly slow) |
 | Pick up a cube, put it down | robot (2026-11-09; again 2026-11-15, run 20261115-162141) |
 | Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | sim |
-| Teach, rename and erase a face | sim |
-| Go to a place (QueueAiGotoPoseAsync) | sim (built 2026-11-15; go-to round in `m15-cube-hw --skills`) |
-| Return to and mount the charger (QueueAiMountChargerAsync) | sim (built 2026-11-15; SetPoseOnCharger built 2026-11-16; charger round in `m15-cube-hw --skills`) |
+| Teach, rename and erase a face | failed on the robot 2026-11-16: enrollment aborted on the M14-006 audio-device gate (scripts fixed b486fe42; ENGINE-AUDIO-STARTUP-1); re-run |
+| Go to a place (QueueAiGotoPoseAsync) | robot (2026-11-16, runs 20261116-110735 / -111516: success in both runs, operator yes) |
+| Return to and mount the charger (QueueAiMountChargerAsync) | failed on the robot 2026-11-16: 0x04000003, robot result 6 (too long without block pose) after docking signals stopped at 84 mm; MOUNT-DOCK-SIGNALS-1 |
 | Roll a cube (QueueAiRollCubeAsync) | robot (2026-11-15, run 20261115-162141: drove to the cube and rolled it) |
 | Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
 | Charger seen report (operator 2026-11-15) | sim (E2G 0x44 for the charger built 2026-11-16; shown in the --skills charger round) |
@@ -41,11 +41,11 @@ Robot script: `m15-cube-hw --personality` (built 2026-11-15) walks through every
 | Group | Classes | State |
 | --- | --- | --- |
 | Freeplay loop, activities, needs, mood | (system) | robot (2026-11-03, 4 min; 15 min check Z2 not run) |
-| Physical reactions | ReactToCliff, ReactToPickup, ReactToRobotOnBack/OnFace/OnSide, ReactToRobotShaken, ReactToReturnedToTreads, ReactToImpact, ReactToPlacedOnSlope, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToOnCharger, ReactToFrustration | sim (cliff: robot; checks G, C, H, J exist) |
+| Physical reactions | ReactToCliff, ReactToPickup, ReactToRobotOnBack/OnFace/OnSide, ReactToRobotShaken, ReactToReturnedToTreads, ReactToImpact, ReactToPlacedOnSlope, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToOnCharger, ReactToFrustration | robot 2026-11-16 (run 20261116-112021): OnBack, OnSide, OnFace, Shaken, Cliff seen by the operator; ReactToPickup fired but its animation aborted on the M14-006 audio gate (scripts fixed b486fe42), re-run; ReturnedToTreads ran (no animation in the engine, to confirm); sim for the rest |
 | Needs | ExpressNeeds, PlayAnimOnNeedsChange, DriveInDesperation, EarnedSparks | sim (DriveInDesperation's cube search built 2026-11-16; untargeted search never succeeds, as in the engine) |
 | Idle life | PlayAnim, PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, FindFaces, LookForFaceAndCube, VisitInterestingEdge, PounceOnMotion, ThinkAboutBeacons | robot for Pounce, VisitInterestingEdge, FindFaces; sim for the rest |
 | Faces | AcknowledgeFace, InteractWithFaces, SearchForFace, DriveToFace, EnrollFace, RespondToRenameFace, ReactToPet | sim |
-| Cubes | AcknowledgeObject, ReactToCubeMoved, PickUpCube, PutDownBlock, RollBlock, StackBlocks, DriveOffCharger | robot for pickup, put-down, drive-off; sim for the rest |
+| Cubes | AcknowledgeObject, ReactToCubeMoved, PickUpCube, PutDownBlock, RollBlock, StackBlocks, DriveOffCharger | robot for pickup, put-down, drive-off, roll (2026-11-16 again); wheelie: engine success 2026-11-16; flip cancelled by a reaction mid-turn (FLIP-REACTION-SHIELD-1); stack: needs a second live cube; ReactToCubeMoved not shown (no cube messages in its window; cube tap has no reaction in the shipped map, to confirm); sim for the rest |
 
 ## C. Playful extras (wanted, after A and B)
 
