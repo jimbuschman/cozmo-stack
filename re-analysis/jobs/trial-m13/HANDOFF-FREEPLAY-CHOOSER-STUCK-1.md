@@ -1,0 +1,7 @@
+# FREEPLAY-CHOOSER-STUCK-1
+
+The 20261101-163229-M13-IDLE-HW log names Pounce's no-frame/no-unsupported-event guard immediately before the first M8-013 chooser hold. Before `2d7f6141`, that guard rejected the configured Hiking Pounce scoring input as soon as the motion-frame count changed or an unsupported motion event arrived. The scored chooser used that result to retain the current behavior without scoring the remaining candidates. The native chooser calls EvaluateScore at 0x0060A44A; Pounce's score reads its running state or its last-ground-motion and boredom timing (0x005F83BE–0x005F8404).
+
+`2d7f6141` replaced the no-frame guard with the original owner's actual vision-motion producer and joined live reports to Pounce. It reached main via `d0acc800` (POUNCE-REAL-FRAMES-1). The parent activity metadata function at 0x005AD8C8 stores the selected child byte at +0x92 and constructs the parent's projected name at +0x94. Its separate MISSING diagnostic remains. This row makes no change to that metadata path.
+
+The original stall was checked on main `9261c301` with the real runtime for three simulated minutes. The regression starts Freeplay through the public entry point, feeds camera frames and simulated firmware responses, and checks that Hiking is reached, motion frames are processed, behaviors still change in the final minute, and the M8-013 scored-chooser hold is absent. No runtime or fidelity-manifest changes were needed. A new operator Freeplay run remains pending.

@@ -9,6 +9,65 @@ namespace Cozmo.Protocol.Tests;
 public sealed class AiFreeplayControlTests
 {
     [Fact]
+    public void OrdinaryFreeplayContinuesChoosingAcrossThreeSimulatedMinutes()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(
+            preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        var messages = new HashSet<string>();
+        void Capture(string line)
+        {
+            if (line.Contains("MISSING", StringComparison.Ordinal))
+                lock (messages) messages.Add(line);
+        }
+        f.Rig.Engine.StackLogLine += Capture;
+        SteppedBehavior.MissingReported += Capture;
+        try
+        {
+            var manager = f.Robot.BehaviorManagerOwner!;
+            var freeplay = f.Runtime.FreeplayObserver;
+            var transitions = new List<(float Seconds, string Id)>();
+            string? prior = null;
+            long initialMotionFrames = f.M.Vision.MotionFrameInputs;
+            int animationMark = f.Rig.Mark();
+            long end = f.Rig.NowNs + 180_000_000_000L;
+            int ticks = 0;
+            f.Rig.Robot.SetEnableFreeplayActivity(true);
+            while (f.Rig.NowNs < end)
+            {
+                var starts = f.Rig.SentSince(animationMark).OfType<StartOfAnimation>().ToArray();
+                animationMark = f.Rig.Mark();
+                foreach (var start in starts)
+                {
+                    f.Rig.Data(new AnimationStarted { AnimId = start.AnimId });
+                    f.Rig.Data(new AnimationEnded { AnimId = start.AnimId });
+                }
+                f.Motors();
+                if (++ticks % 20 == 0)
+                    f.NativeCameraFrame((uint)ticks, 150);
+                string? id = manager.Current?.Id;
+                if (id != prior && id is not null) transitions.Add((f.Rig.Engine.Timer.SecondsF, id));
+                prior = id;
+            }
+            Assert.Same(freeplay, manager.Activity);
+            string[] captured;
+            lock (messages) captured = messages.ToArray();
+            string Diagnostic() => string.Join(" | ", freeplay.Decisions.TakeLast(20)) + "\n"
+                + string.Join(" | ", transitions) + "\n" + string.Join("\n", captured);
+            Assert.True(f.M.Vision.MotionFrameInputs > initialMotionFrames, Diagnostic());
+            Assert.True(freeplay.Decisions.Any(d => d.Activity == "Hiking"), Diagnostic());
+            Assert.True(!captured.Any(line => line.Contains("M8-013 scored chooser input unavailable")), Diagnostic());
+            float lastMinute = (end - 60_000_000_000L) / 1_000_000_000f;
+            Assert.True(transitions.Select(t => t.Id).Distinct().Count() >= 2
+                && transitions.Any(t => t.Seconds >= lastMinute), Diagnostic());
+        }
+        finally
+        {
+            SteppedBehavior.MissingReported -= Capture;
+            f.Rig.Engine.StackLogLine -= Capture;
+        }
+    }
+
+    [Fact]
     public void DisableSelectsSelectionAndRequestsIndefiniteWait()
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture();
