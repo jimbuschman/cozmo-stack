@@ -22,6 +22,15 @@ public sealed class CubeHighPassFilter
     /// <summary>The filtered value after the last sample.</summary>
     public (float X, float Y, float Z) Value => (_x, _y, _z);
 
+    // HighPassFilterListener::InitInternal 0x00636568 seeds the raw previous sample and zeros the output.
+    internal void Seed(float x, float y, float z)
+    {
+        _px = x;
+        _py = y;
+        _pz = z;
+        _x = _y = _z = 0f;
+    }
+
     public (float X, float Y, float Z) Update(float x, float y, float z)
     {
         _x = _ax * (_x + x - _px);
@@ -82,6 +91,31 @@ public sealed class CubeShakeListener
     }
 }
 
+// MovementListener 0x00636868 / 0x00636998 / 0x006369B8, GuardDog profile 0x005F4454.
+internal sealed class NativeCubeMovementListener(Action<float> moved)
+{
+    private readonly CubeHighPassFilter _filter = new(0.4f);
+    private bool _initialized;
+    private float _score;
+
+    internal void Update(float x, float y, float z)
+    {
+        if (!_initialized)
+        {
+            _filter.Seed(x, y, z);
+            _initialized = true;
+            return;
+        }
+
+        var (fx, fy, fz) = _filter.Update(x, y, z);
+        float magnitude = MathF.Sqrt((fx * fx + fy * fy) + fz * fz);
+        float total = _score + (magnitude < 5f ? magnitude : 5f);
+        float score = total > 0.5f ? total - 0.5f : 0f;
+        _score = score < 80f ? score : 80f;
+        if (_score > 0f) moved(_score);
+    }
+}
+
 /// <summary>
 /// Cube accelerometer streams and the listeners on them, as <c>CubeAccelComponent</c> runs them.
 ///
@@ -98,7 +132,7 @@ public sealed class CubeAccelStreams
 {
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
-    private readonly Dictionary<uint, List<CubeShakeListener>> _listeners = new();
+    private readonly Dictionary<uint, List<Action<float, float, float>>> _listeners = new();
 
     internal CubeAccelStreams(CozmoRobot robot) => _robot = robot;
     private readonly SubscriptionOwners _rawSubscriptions = new();
@@ -127,13 +161,18 @@ public sealed class CubeAccelStreams
     public IReadOnlyCollection<uint> Streaming { get { lock (_gate) return _listeners.Keys.ToList(); } }
 
     /// <summary>Adds a listener, turning the cube's stream on if it is the first.</summary>
-    public void AddListener(uint objectId, CubeShakeListener listener)
+    public void AddListener(uint objectId, CubeShakeListener listener) => AddSampleListener(objectId, listener.Update);
+
+    // The native AddListener resolves its world ID to the connected object's +0x40 radio ID (0x006354F4..0x0063556E).
+    internal void AddMovementListener(uint activeId, NativeCubeMovementListener listener) => AddSampleListener(activeId, listener.Update);
+
+    private void AddSampleListener(uint objectId, Action<float, float, float> listener)
     {
         bool first;
         lock (_gate)
         {
             if (!_listeners.TryGetValue(objectId, out var list))
-                _listeners[objectId] = list = new List<CubeShakeListener>();
+                _listeners[objectId] = list = new List<Action<float, float, float>>();
             first = list.Count == 0;
             list.Add(listener);
         }
@@ -142,7 +181,11 @@ public sealed class CubeAccelStreams
     }
 
     /// <summary>Removes a listener, turning the cube's stream off when it was the last.</summary>
-    public void RemoveListener(uint objectId, CubeShakeListener listener)
+    public void RemoveListener(uint objectId, CubeShakeListener listener) => RemoveSampleListener(objectId, listener.Update);
+
+    internal void RemoveMovementListener(uint activeId, NativeCubeMovementListener listener, bool send = true) => RemoveSampleListener(activeId, listener.Update, send);
+
+    private void RemoveSampleListener(uint objectId, Action<float, float, float> listener, bool send = true)
     {
         bool last = false;
         lock (_gate)
@@ -153,7 +196,7 @@ public sealed class CubeAccelStreams
                 last = true;
             }
         }
-        if (last) _robot.SendMessage(new StreamObjectAccel { ObjectID = objectId, Enable = false }, flush: true);
+        if (last && send) _robot.SendMessage(new StreamObjectAccel { ObjectID = objectId, Enable = false }, flush: true);
     }
 
     // fidelity: M1-025, M1-015
@@ -171,13 +214,13 @@ public sealed class CubeAccelStreams
     internal void Handle(RobotMessage m)
     {
         if (m is not ObjectAccel a) return;
-        CubeShakeListener[] listeners;
+        Action<float, float, float>[] listeners;
         lock (_gate)
         {
             if (!_listeners.TryGetValue(a.ObjectID, out var list) || list.Count == 0) return;
             listeners = list.ToArray();
         }
-        foreach (var l in listeners) l.Update(a.Accel.X, a.Accel.Y, a.Accel.Z);
+        foreach (var listener in listeners) listener(a.Accel.X, a.Accel.Y, a.Accel.Z);
     }
 }
 

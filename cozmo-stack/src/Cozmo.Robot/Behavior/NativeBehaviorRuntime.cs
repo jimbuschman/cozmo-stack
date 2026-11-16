@@ -164,9 +164,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                    ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
                     ((id is "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" or "Needs_MildLowRepairRequest" or "Needs_MildLowEnergyRequest" or "Needs_MildLowPlayRequest") && interludeClass.GetString()=="ExpressNeeds")))
                 {fields.MarkPristine();if(id=="EarnedSparks")fields.EarnedSparksConfig=entry.Value;}
-                if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var gateObjective) || gateObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
-                   entry.Value.TryGetProperty("behaviorClass",out var gateClass) && gateClass.ValueKind==System.Text.Json.JsonValueKind.String &&
-                   id=="GuardDog" && gateClass.GetString()=="GuardDog")fields.MarkPristine();
                 if (id is "EnrollFace" or "RespondToRenameFace" or "MeetCozmo_InteractWithFaces")
                 {
                     string expected = id == "MeetCozmo_InteractWithFaces" ? "InteractWithFaces" : id;
@@ -500,7 +497,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
-        foreach(var candidate in Bound.Values.OfType<NativeMeetInteractWithFaces>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeInteractWithFaces>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeReactToPetBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeEnrollFaceBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeRespondToRenameFace>())candidate.Dispose();

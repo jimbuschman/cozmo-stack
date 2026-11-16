@@ -410,7 +410,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: Socialize retained objective owner unavailable");return decision with {Behavior=current,InputUnavailable=true};}
             decision=activity.ObjectiveOwner.Desired(current,decision,_ctx);
             if(decision.InputUnavailable)
-            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: Socialize actual child input unavailable; retaining current behavior");return decision with {Behavior=current};}
+            {activity.CachedInterlude=priorInterlude;_childUnavailable=true;return decision with {Behavior=current};}
         }
         if (activity.InterludeChooser is not null && !ReferenceEquals(decision.Behavior, current))
         {

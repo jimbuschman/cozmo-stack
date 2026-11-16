@@ -21,6 +21,8 @@ internal sealed class NativePopAWheelieRunner:NativeVisionRunner
     private bool Live() => ScopedCurrent && !_ending && !DestructionObserved;
     internal Action<NativeActionUnavailable>? Unavailable;
     protected override string ActionName=>"PopAWheelie";
+    protected override bool HasCustomMotionProfile => HasSelectedDockProfile;
+    public override bool SetMotionProfile() => ApplySelectedDockProfile(Action);
     public override string? NativeName=>ActionName;
     internal CompoundActionSequential? Prepared=>_prepared;
     internal NativePopAWheelieRunner(ManipulationSystem m,uint target):base(m,0x1D,7)

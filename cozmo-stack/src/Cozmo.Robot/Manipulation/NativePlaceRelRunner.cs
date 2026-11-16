@@ -20,6 +20,8 @@ internal sealed class NativePlaceRelRunner:NativeVisionRunner
     private bool _sent,_light,_raised,_unavailable;
     internal Action<NativeActionUnavailable>? Unavailable;
     protected override string ActionName=>"PlaceRelObject";
+    protected override bool HasCustomMotionProfile => HasSelectedDockProfile;
+    public override bool SetMotionProfile() => ApplySelectedDockProfile(Action);
     internal uint SavedCarried=>_savedCarry;
     internal ActionRunner? VerifyChild=>_verify;
     internal bool Raised=>_raised;

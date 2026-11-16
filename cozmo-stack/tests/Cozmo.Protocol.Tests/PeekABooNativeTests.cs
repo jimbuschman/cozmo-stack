@@ -1,5 +1,6 @@
 using System.Reflection;
 using Cozmo.Robot;
+using Cozmo.Robot.Emulation;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Vision;
@@ -15,7 +16,16 @@ public sealed class PeekABooNativeTests
     [InlineData(false)]
     public void ShippedSocializeObjectiveReceivesPeekResult(bool returns)
     {
-        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        var options = new CozmoEngineOptions
+        {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+            SpeechSoundBankDirectory = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing"),
+            SpeechAudioArchivePath = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip"),
+            LabLocaleLanguage = "en",
+            BlockPoolPath = ""
+        };
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true, engineOptions: options);
         var manager = f.Robot.BehaviorManagerOwner!;
         var behavior = Assert.IsType<NativePeekABooBehavior>(f.Runtime.Bound["FPPeekABoo"]);
         Assert.Same(behavior.NativeScoredFields, f.Robot.NativeConfiguredScoreFields![behavior.Id]);
@@ -28,20 +38,62 @@ public sealed class PeekABooNativeTests
         {
             var activity = f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a => a.Id == "Socialize");
             var owner = Assert.IsType<NativeActivityObjectiveOwner>(activity.ObjectiveOwner);
-            owner.OnSelectedInternal();
+            activity.OnSelected(f.Rig.Engine.Timer.SecondsF);
             Assert.Equal(16u, Assert.Single(owner.Counts).Key);
             Assert.Equal(1u, owner.Counts[16]);
-            // Start at the interaction phase and send the checked 0x8B objective that admits the special behavior.
-            typeof(NativeActivityObjectiveOwner).GetField("_phase", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(owner, 2);
-            f.Rig.Engine.AnimationMessages.Deliver(0x8B, true, 12u);
-            Assert.Equal(3, owner.Phase);
-
+            var neutral = new ChooserDecision(null, "idle", Array.Empty<(string, double, string)>());
+            var scan = Assert.IsType<NativeFindFacesSocialize>(owner.Desired(null, neutral, f.Runtime.Context).Behavior);
+            Assert.Equal(1, owner.Phase);
+            Assert.True(manager.StartAsync(scan.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            for (int i = 0; i < 16 && scan.SearchIterations == 0; ++i)
+            {
+                // Complete the simulated robot work at each native runner boundary.
+                var action = Assert.IsAssignableFrom<ActionRunner>(scan.OwnedRunner);
+                action.State = 0x03000018;
+                f.Robot.ActionList.Update();
+            }
+            Assert.Equal(1u, scan.SearchIterations);
+            Assert.Same(scan, owner.Desired(scan, neutral, f.Runtime.Context).Behavior);
             f.Rig.Robot.CameraSettings.LastProcessedImageTimestamp = 100;
             SeeFace(f, 100, true);
-            var ready = behavior.EvaluateHostReadiness(f.Runtime.Context);
-            Assert.True(ready.Available && ready.Runnable,
-                $"readiness={ready}, base={behavior.IsRunnableBase(f.Runtime.Context)}, clock={f.Rig.Engine.Timer.SecondsF}, faces={string.Join(",", f.M.Vision.Faces.GetNativeFaceIds(f.Robot))}");
-            var neutral = new ChooserDecision(null, "idle", Array.Empty<(string, double, string)>());
+            var interact = Assert.IsType<NativeInteractWithFaces>(owner.Desired(scan, neutral, f.Runtime.Context).Behavior);
+            Assert.Equal(2, owner.Phase);
+            Assert.Same(f.Runtime.Bound["InteractWithFaces"], interact);
+
+            var faceObjectives = new List<uint>();
+            using var faceReports = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B, true,
+                p => { if (p is uint id) faceObjectives.Add(id); });
+            var faceNeeds = new List<NeedsActionId>();
+            f.Rig.Engine.Needs.NeedsStateSent += faceNeeds.Add;
+            Assert.True(manager.StartAsync(interact.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            void CompleteInteractionAction()
+            {
+                Assert.NotEqual(0u, interact.CurrentRunnerTag);
+                f.Rig.Engine.AnimationMessages.Deliver(0x5A, true,
+                    new RobotCompletedAction(interact.CurrentRunnerTag, 0, 0, Array.Empty<uint>(), 0));
+            }
+
+            var verify = Assert.IsType<CompoundActionSequential>(interact.OwnedRunner);
+            Assert.True(Assert.IsType<NativeLastFaceRunner>(Assert.Single(verify.Children)).RequireVerifiedFace);
+            CompleteInteractionAction();
+            Assert.IsType<CompoundActionParallel>(interact.OwnedRunner);
+            Assert.Equal(3, interact.Phase);
+            CompleteInteractionAction();
+            Assert.Equal(4, interact.Phase);
+            Assert.IsType<CompoundActionParallel>(interact.OwnedRunner);
+            Assert.Equal(18f, interact.Deadline);
+            f.Rig.Engine.Timer.UpdateTime(17_999_000_000);
+            Assert.True(interact.Update(f.Runtime.Context, f.Rig.Engine.Timer.TimeStampMs));
+            Assert.Empty(faceObjectives);
+            f.Rig.Engine.Timer.UpdateTime(18_000_000_000);
+            interact.Update(f.Runtime.Context, f.Rig.Engine.Timer.TimeStampMs);
+            f.Rig.Engine.DrainAppDelivery();
+            Assert.Equal(new[] { (uint)BehaviorObjective.InteractedWithFace }, faceObjectives);
+            Assert.Contains(NeedsActionId.SeeFace, faceNeeds);
+            Assert.Equal(3, owner.Phase);
+            Assert.True(owner.InputAvailable);
+            manager.Stop(BehaviorStopReason.Completed, f.Rig.Engine.Timer.SecondsF);
+
             Assert.Same(behavior, owner.Desired(null, neutral, f.Runtime.Context).Behavior);
             Assert.Equal(4, owner.Phase);
             var objectives = new List<uint>();

@@ -185,6 +185,8 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
         private ScopedAcquisition? _reactions;
 
         protected override string ActionName => "AlignWithObject";
+        protected override bool HasCustomMotionProfile => Live() && HasSelectedDockProfile;
+        // ConfigureAlign at 0x0054E22E calls SetSpeed, which sets the manual flag at 0x00550428.
         public override string? NativeName => ActionName;
         private bool Live() => current() && !_ending && !DestructionObserved && ScopedOwnerCurrent;
 

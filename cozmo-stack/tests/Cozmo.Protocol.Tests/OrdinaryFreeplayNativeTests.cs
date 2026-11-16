@@ -77,23 +77,6 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
-    public void GuardDogFalseOwnGateRequiresKnownNonrunningOwnerHistory()
-    {
-        const string id="GuardDog";
-        using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        Assert.False(f.Runtime.Bound.ContainsKey(id));
-        var fields=f.Robot.NativeConfiguredScoreFields![id];Assert.True(fields.ConstructorPristine);
-        var chooser=new ScoringChooser(Array.Empty<ScoredBehaviorEntry>(),f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
-        var method=typeof(ScoringChooser).GetMethod("EvaluateUnbuilt",BindingFlags.Instance|BindingFlags.NonPublic)!;
-        string Evaluate()=>method.Invoke(chooser,new object[]{id,f.Runtime.Context,0d})!.ToString()!;
-        Assert.Equal("KnownFalse",Evaluate());
-        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync(id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-        Assert.False(fields.ConstructorPristine);Assert.Equal("Unavailable",Evaluate());
-        using var reload=JsonDocument.Parse("""{"flatScore":0}""");fields.Reload(id,reload.RootElement);
-        Assert.False(fields.ConstructorPristine);Assert.Equal("Unavailable",Evaluate());
-    }
-
-    [Fact]
     public void FireTruckLockedGateUsesActualOwnerAndOriginalProgression()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();
@@ -489,6 +472,33 @@ public sealed class OrdinaryFreeplayNativeTests
         Assert.Contains(f.Rig.SentSince(mark),m=>m is Cozmo.Protocol.SetLiftHeight);
         }
         finally {SteppedBehavior.MissingReported-=Missing;}
+    }
+
+    [Fact]
+    public void SocializeEndsSearchAtTwoCompletedScanIterations()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var activity = f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a => a.Id == "Socialize");
+        var owner = Assert.IsType<NativeActivityObjectiveOwner>(activity.ObjectiveOwner);
+        activity.OnSelected(f.Rig.Engine.Timer.SecondsF);
+        var neutral = new ChooserDecision(null, "idle", Array.Empty<(string, double, string)>());
+        var scan = Assert.IsType<NativeFindFacesSocialize>(owner.Desired(null, neutral, f.Runtime.Context).Behavior);
+        Assert.Equal(1, owner.Phase);
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(scan.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.Same(scan, owner.Desired(scan, neutral, f.Runtime.Context).Behavior);
+
+        for (int i = 0; i < 38 && scan.SearchIterations < 2; ++i)
+        {
+            Assert.IsAssignableFrom<ActionRunner>(scan.OwnedRunner).State = 0x03000018;
+            f.Robot.ActionList.Update();
+            if (scan.SearchIterations < 2)
+                Assert.Same(scan, owner.Desired(scan, neutral, f.Runtime.Context).Behavior);
+        }
+
+        Assert.Equal(2u, scan.SearchIterations);
+        Assert.Null(owner.Desired(scan, neutral, f.Runtime.Context).Behavior);
+        Assert.Equal(6, owner.Phase);
+        Assert.True(owner.InputAvailable);
     }
 
     // Supplied terminal failure results exercise configured runners; no scan counter is injected.

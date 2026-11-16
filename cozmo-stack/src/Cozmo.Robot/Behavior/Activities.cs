@@ -218,33 +218,64 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
 }
 
 /// <summary>
-/// <c>BehaviorObjective</c> (IBehavior +0x10c), parsed from <c>considerThisHasRunForBehaviorObjective</c> by
-/// <c>BehaviorObjectiveFromString</c> (called at 0x005bc5a0). The ordinals are the
-/// <c>EnumToString(BehaviorObjective)</c> 0x769540 string table at 0x1033140: [0]="Unknown",
-/// [13]="KnockedOverBlocks" (0x1033174), [18]="PerformedWorkout", [22]="PoppedWheelie", [40]="StackedBlock" (0x10331E0),
-/// [41]="Count" (0x29, the constructor's default sentinel). KnockedOverBlocks and StackedBlock are named here for the
-/// objective broadcast (tag 0x8B) only; <see cref="BehaviorObjectives.FromString"/> is unchanged.
+/// <c>BehaviorObjective</c> (IBehavior +0x10c). Native name table at 0x01033140
+/// (EnumToString at 0x00769540) and lookup at 0x00769558.
 /// </summary>
 public enum BehaviorObjective
 {
     Unknown = 0,
+    AnimationPlayed = 1,
+    BlockRolled = 2,
+    BuiltPyramid = 3,
+    DroveAsIntended = 4,
+    EnrolledFaceWithName = 5,
+    FireTruckAlarmPerformed = 6,
+    FistBumpComplete = 7,
+    FistBumpSuccess = 8,
+    FistBumpLeftHanging = 9,
+    FoundFace = 10,
+    GatheredCubes = 11,
+    InteractedWithFace = 12,
     KnockedOverBlocks = 13,
+    LaserPounced = 14,
+    LaserTracked = 15,
+    PeekABooComplete = 16,
+    PeekABooSuccess = 17,
     PerformedWorkout = 18,
+    PerformedStrongWorkout = 19,
+    PickedupBlock = 20,
+    PickedUpAndPutDownBlock = 21,
     PoppedWheelie = 22,
+    PouncedAndCaught = 23,
+    PutDownBlock = 24,
+    ReactedAcknowledgedCubeMoved = 25,
+    ReactedAcknowledgedFace = 26,
+    ReactedAcknowledgedObject = 27,
+    ReactedToCliff = 28,
+    ReactedToFrustration = 29,
+    ReactedToOnCharger = 30,
+    ReactedToPickup = 31,
+    ReactedToPoke = 32,
+    ReactedToRobotOnBack = 33,
+    ReactedToRobotOnFace = 34,
+    ReactedToRobotOnSide = 35,
+    ReactedToRobotShaken = 36,
+    ReactedToUnexpectedMovement = 37,
+    RequestedGame = 38,
+    Singing = 39,
     StackedBlock = 40,
-    Count = 0x29,
+    Count = 41,
     Invalid = Count,
 }
 
-/// <summary>The <c>BehaviorObjectiveFromString</c> 0x005bc5a0 mapping for the shipped names.</summary>
 public static class BehaviorObjectives
 {
-    public static BehaviorObjective FromString(string? name) => name switch
-    {
-        "PerformedWorkout" => BehaviorObjective.PerformedWorkout,
-        "PoppedWheelie" => BehaviorObjective.PoppedWheelie,
-        _ => BehaviorObjective.Invalid,
-    };
+    internal static bool TryFromString(string? name, out BehaviorObjective objective) =>
+        Enum.TryParse(name, out objective) &&
+        string.Equals(name, objective == BehaviorObjective.Count ? "Count" : Enum.GetName(objective), StringComparison.Ordinal);
+
+    public static BehaviorObjective FromString(string? name) =>
+        TryFromString(name, out var objective) ? objective : BehaviorObjective.Invalid;
 
     /// <summary>
     /// Every shipped behaviour config's <c>considerThisHasRunForBehaviorObjective</c>, by <c>behaviorID</c>.
@@ -384,24 +415,6 @@ public sealed class ScoringChooser : IBehaviorChooser
                 return Current() ? UnbuiltScore.KnownPositive : UnbuiltScore.Unavailable;
             }
             catch (InvalidOperationException) { return UnbuiltScore.Unavailable; }
-        }
-        NativeScoredFields? gateFields=null;long gateEpoch=0;
-        if(id=="GuardDog")
-        {
-            if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out gateFields)!=true || !gateFields.ConstructorPristine)return UnbuiltScore.Unavailable;
-            gateEpoch=gateFields.Epoch;
-        }
-        bool GateCurrent()=>gateFields is {ConstructorPristine:true} && gateFields.Epoch==gateEpoch &&
-            ReferenceEquals(owner.Engine.Robot,owner) && ReferenceEquals(owner.NativeBehaviorRuntime,runtime) &&
-            owner.NativeConfiguredScoreFields?.TryGetValue(id,out var currentGate)==true && ReferenceEquals(currentGate,gateFields);
-        if(id=="GuardDog" && winner.TryGetProperty("behaviorClass",out var guardClass) && guardClass.ValueKind==JsonValueKind.String && guardClass.GetString()=="GuardDog" && runtime.Manipulation is {} manipulation &&
-           owner.TryGetNativeOriginOwner(owner.CurrentOriginId,out var origin) && origin?.Node is not null)
-        {
-            var filter=new BlockWorldFilter();filter.AllowedFamilies.Add(ObjectFamily.LightCube);
-            filter.Predicates.Add(o=>o.ActiveId>-1);
-            int count=manipulation.World.FindLocatedMatchingObjects(filter).Count;
-            if(!ReferenceEquals(owner.Engine.Robot,owner) || !ReferenceEquals(owner.NativeBehaviorRuntime,runtime))return UnbuiltScore.Unavailable;
-            if(count<3)return GateCurrent()?UnbuiltScore.KnownFalse:UnbuiltScore.Unavailable;
         }
         if(id=="PounceOnMotion_Socialize")
         {
@@ -1634,8 +1647,6 @@ public static class ActivityTreeLoader
         // fidelity: M15-059
         if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !(owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": actual original Robot or retained configured PlayArbitraryAnim 3D is unavailable; Sparked owner not constructed.");
-        if(id=="SparksGatherCubes")
-            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporter GuardDog remains unbuilt");
         var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,

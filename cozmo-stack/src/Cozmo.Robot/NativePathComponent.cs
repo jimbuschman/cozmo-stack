@@ -67,6 +67,22 @@ internal sealed partial class PathComponent
         NativeMotionProfile=profile with {};
         Field48=true;
     }
+    private readonly object _actionProfileGate = new();
+
+    // 0x0064AC3A: install into the shared Path slot, then set this runner's independent ownership bit.
+    internal void SetNativeCustomMotionProfileForAction(EngineRobot owner, PathMotionProfile profile, ActionRunner action)
+    {
+        using var gate = LogCallbackDeferral.EnterGated(_actionProfileGate);
+        if (!ReferenceEquals(_robot.Engine.Robot, owner)) return;
+        SetNativeCustomMotionProfile(profile);
+        action.OwnMotionProfile(() =>
+        {
+            // The facade reuses its managed Path across Robot lifetimes. The native destructor only
+            // accesses its own Robot+0x5C; an old Robot's action cannot clear a replacement's Path.
+            if (ReferenceEquals(_robot.Engine.Robot, owner)) ClearNativeCustomMotionProfile();
+        });
+    }
+
     internal void ClearNativeCustomMotionProfile()=>Field48=false;
     // fidelity: M12-032 — P13 (signature at 0x0064ACC4: vector, shared_ptr<uchar>, bool): no ignore-object input; the stack's pass-through is dropped (Q5).
     internal int StartNativeDrivingToPose(ManipulationSystem m,IReadOnlyList<Vision.Pose3d> originalGoals,PathGoalIndex index,bool manual,EngineRobot? scopedOwner=null,Func<bool>? current=null)

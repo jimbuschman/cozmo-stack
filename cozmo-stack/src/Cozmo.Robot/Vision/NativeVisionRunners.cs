@@ -17,6 +17,22 @@ internal abstract class NativeVisionRunner : ActionRunner
     protected NativeVisionRunner(ManipulationSystem m,int type,uint tracks):base(type,tracks)
     {M=m;SourceLog=(level,channel,key,text)=>m.Robot.Engine.EmitSourceLog(level,channel,key,text);}
     protected override float EngineClockSeconds=>M.Robot.Engine.Timer.SecondsF;
+    protected bool HasSelectedDockProfile => ScopedCurrent && M.Robot.Motion.Path.Field48;
+
+    // IActionRunner samples the shared selection at 0x005403B8..0x005403D4.
+    // IDockAction::SetMotionProfile 0x0055043E..0x0055045C copies only the three dock words for the nonmanual profiles.
+    protected bool ApplySelectedDockProfile(DockActionBase action)
+    {
+        if (!HasSelectedDockProfile) return false;
+        var selected = M.Robot.Motion.Path.NativeMotionProfile;
+        action.Profile = action.Profile with
+        {
+            DockSpeedMmps = selected.DockSpeedMmps,
+            DockAccelMmps2 = selected.DockAccelMmps2,
+            DockDecelMmps2 = selected.DockDecelMmps2
+        };
+        return true;
+    }
     protected override bool AreAnyTracksLocked(uint mask)=>ScopedCurrent && M.Robot.Motion.AreAnyTracksLocked((byte)mask);
     protected override void LockTracks(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.LockTracks((byte)mask,owner,ActionName);else if(ScopedCurrent)M.Robot.Motion.LockTracksOwned((byte)mask,owner,ActionName,ScopedOwner);}
     protected override void UnlockTracksInternal(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedOwnerCurrent)M.Robot.Motion.UnlockTracksOwned((byte)mask,owner,ScopedOwner);});}

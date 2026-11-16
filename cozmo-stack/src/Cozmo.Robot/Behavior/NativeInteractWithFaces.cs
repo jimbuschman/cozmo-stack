@@ -5,8 +5,8 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
-// Configured MeetCozmo_InteractWithFaces, 0x005C1EE8..0x005C2D24.
-internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
+// Shared configured InteractWithFaces class for Freeplay and Meet, 0x005C1EE8..0x005C2D24.
+internal sealed class NativeInteractWithFaces : SteppedBehavior, IDisposable
 {
     private readonly ManipulationSystem _m;
     private readonly EngineRobot _owner;
@@ -21,8 +21,8 @@ internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
     internal int Target => _target;
     internal float Deadline => _deadline;
 
-    internal NativeMeetInteractWithFaces(BehaviorFactoryContext source,JsonElement config)
-        : base("MeetCozmo_InteractWithFaces","InteractWithFaces")
+    internal NativeInteractWithFaces(BehaviorFactoryContext source,JsonElement config)
+        : base(BehaviorConfigLoader.ExtractIdFromConfig(config).ToString(),"InteractWithFaces")
     {
         _m=source.Manipulation!; _owner=source.NativeRobot!;
         try
@@ -37,7 +37,7 @@ internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
                 float.IsFinite(_minClamp) && float.IsFinite(_maxClamp) && _minClamp<=_maxClamp;
         }
         catch(Exception e) when(e is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
-        { ReportMissing("Meet Interact parameters unavailable: "+e.Message); }
+        { ReportMissing("InteractWithFaces parameters unavailable: "+e.Message); }
         if(_owner.HasExternalInterface)
             _changed=_owner.Engine.AnimationMessages.SubscribeMessage(0x47,true,p=>
             {
@@ -66,14 +66,14 @@ internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
     {
         using var lease=EnterHostExecutionOwner(context);
         long generation=CaptureHostExecutionVersion();
-        if(!Available) { MarkReadinessUnavailable(); ReportMissing("Meet Interact original owner or parameters unavailable"); return false; }
+        if(!Available) { MarkReadinessUnavailable(); ReportMissing("InteractWithFaces original owner or parameters unavailable"); return false; }
         if(!IsRunnableBase(context) || !HostExecutionVersionCurrent(generation)) return false;
         return IsRunnableInternal(context);
     }
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
         try { _target=SelectTarget(); return _target!=0; }
-        catch(InvalidOperationException error) { MarkReadinessUnavailable(); ReportMissing("Meet Interact target unavailable: "+error.Message); return false; }
+        catch(InvalidOperationException error) { MarkReadinessUnavailable(); ReportMissing("InteractWithFaces target unavailable: "+error.Message); return false; }
     }
     private int SelectTarget()
     {
@@ -89,13 +89,13 @@ internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
     {
         long generation=CaptureHostExecutionVersion();
         _deadline=-1;
-        if(!Current(generation) || _target==0) { InitFailed=true; ReportMissing("Meet Interact selected face or owner unavailable"); return; }
+        if(!Current(generation) || _target==0) { InitFailed=true; ReportMissing("InteractWithFaces selected face or owner unavailable"); return; }
         if(_m.Robot.Animations.Library is not { } library || new[]{AnimationTrigger.InteractWithFacesInitialNamed,AnimationTrigger.InteractWithFacesInitialUnnamed,AnimationTrigger.InteractWithFaceTrackingIdle}
             .Any(trigger=>!library.HasAnimationForTrigger(trigger) || library.GetGroup(library.GetAnimationForTrigger(trigger)) is not { Entries.Count: >0 }))
-        { InitFailed=true; ReportMissing("M14-006 Meet Interact authored animation catalog unavailable"); return; }
+        { InitFailed=true; ReportMissing("M14-006 InteractWithFaces authored animation catalog unavailable"); return; }
         if(!Current(generation))return;
         if(_owner.GetCannedSpeechOwner() is null)
-        { InitFailed=true; ReportMissing("M14-006 Meet Interact requires the shared authored robot audio device, banks and archive"); return; }
+        { InitFailed=true; ReportMissing("M14-006 InteractWithFaces requires the shared authored robot audio device, banks and archive"); return; }
         if(Current(generation)) Verify(generation);
     }
     private void Verify(long generation)
@@ -112,11 +112,11 @@ internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
             if(!Current(generation))return;
             if(result.Result==0) { Drive(generation); return; }
             if(_owner.MoodOwner is { } mood) mood.Trigger("InteractWithFaceRetry",_owner.Engine.Timer.SecondsF);
-            else ReportMissing("M1-034 Meet Interact retry emotion owner unavailable; emotion skipped");
+            else ReportMissing("M1-034 InteractWithFaces retry emotion owner unavailable; emotion skipped");
             if(!Current(generation))return;
             int prior=_target; _lastImage=_m.Robot.CameraSettings.LastProcessedImageTimestamp;
             try { _target=SelectTarget(); }
-            catch(InvalidOperationException error) { ReportMissing("Meet Interact retry target unavailable: "+error.Message); Finish(); return; }
+            catch(InvalidOperationException error) { ReportMissing("InteractWithFaces retry target unavailable: "+error.Message); Finish(); return; }
             if(!Current(generation))return;
             if(_target!=prior)Verify(generation); else Finish();
         },()=>Current(generation));
@@ -140,8 +140,8 @@ internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
         }
         if(!Current(generation))return;
         if(_owner.CurrentOriginId!=capturedOrigin || _m.World.Maps.CurrentOrigin!=capturedOrigin || !ReferenceEquals(_m.World.Maps.Current,capturedMap))
-        { ReportMissing("Meet Interact map changed during ray query; drive withheld"); Finish(); return; }
-        if(blocked is null) { ReportMissing("M1-034 M11-046 Meet Interact map unavailable at 0x005C2482; drive withheld"); Finish(); return; }
+        { ReportMissing("InteractWithFaces map changed during ray query; drive withheld"); Finish(); return; }
+        if(blocked is null) { ReportMissing("M1-034 M11-046 InteractWithFaces map unavailable at 0x005C2482; drive withheld"); Finish(); return; }
         Phase=3;
         var parallel=new CompoundActionParallel(()=>_owner.Engine.Timer.SecondsF);
         var drive=new DriveStraightAction(_m,_owner,blocked.Value?-15f:40f,40f,false);
@@ -172,13 +172,14 @@ internal sealed class NativeMeetInteractWithFaces : SteppedBehavior, IDisposable
         var face=_m.Vision.Faces.GetNativeFace(_owner,_target);
         if(!Current(generation))return;
         if(_owner.MoodOwner is { } mood) mood.Trigger(face?.HasName==true?"InteractWithNamedFace":"InteractWithUnnamedFace",_owner.Engine.Timer.SecondsF);
-        else ReportMissing("M1-034 Meet Interact terminal emotion owner unavailable; emotion skipped");
+        else ReportMissing("M1-034 InteractWithFaces terminal emotion owner unavailable; emotion skipped");
     }
     protected override void OnUpdate()
     {
         if(_deadline<0 || _owner.Engine.Timer.SecondsF<_deadline)return;
         long generation=CaptureHostExecutionVersion();
-        _owner.Engine.ReportBehaviorObjective(12,"InteractedWithFace",Id);
+        // 0x005C2382..239C reports objective 0x0C before stopping and recording SeeFace.
+        _owner.Engine.ReportBehaviorObjective((uint)BehaviorObjective.InteractedWithFace, nameof(BehaviorObjective.InteractedWithFace), Id);
         if(!Current(generation))return;
         StopActing(true,false);
         if(!Current(generation))return;

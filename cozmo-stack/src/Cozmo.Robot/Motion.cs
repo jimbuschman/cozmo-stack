@@ -252,8 +252,11 @@ public sealed class CozmoMotion
     /// Queues the native pickup after existing actions, using its default docking profile. Cancellation
     /// addresses this runner; native pending and active destruction can abort shared docking and path state.
     /// </summary>
+    public Task<AiPickupActionResult> QueueAiPickupCubeAsync(uint objectId, bool driveToObject, CancellationToken cancellationToken = default) =>
+        QueueAiPickupCubeAsync(objectId, driveToObject, null, cancellationToken);
+
     public async Task<AiPickupActionResult> QueueAiPickupCubeAsync(uint objectId, bool driveToObject,
-        CancellationToken cancellationToken = default)
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken)
     {
         if(objectId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
         if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
@@ -276,7 +279,7 @@ public sealed class CozmoMotion
                 ? new Manipulation.NativeDriveToPickupBeaconRunner(manipulation,objectId,Current,owner)
                 : new Manipulation.NativePickupObjectRunner(manipulation,owner,objectId,false,true);
             task=AdmitAiAction(action,owner,tag,cancellationToken,"Native cube pickup ended",true,
-                ()=>Current() && AiOwnerReady(engine,owner));
+                ()=>Current() && AiOwnerReady(engine,owner), motionProfile);
         }
         var result=await task.ConfigureAwait(false);
         string? missing=action switch
@@ -296,7 +299,11 @@ public sealed class CozmoMotion
     /// <c>SetShouldCheckForObjectOnTopOf(true)</c> (0x0052AA78), the IDockAction default (M12-037).
     /// </summary>
     // fidelity: M15-077
-    public async Task<AiPickupActionResult> QueueAiRollCubeAsync(uint objectId, CancellationToken cancellationToken = default)
+    public Task<AiPickupActionResult> QueueAiRollCubeAsync(uint objectId, CancellationToken cancellationToken = default) =>
+        QueueAiRollCubeAsync(objectId, null, cancellationToken);
+
+    public async Task<AiPickupActionResult> QueueAiRollCubeAsync(uint objectId,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken)
     {
         if(objectId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
         if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
@@ -317,7 +324,7 @@ public sealed class CozmoMotion
             bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
             var action=new Manipulation.NativeDriveToRollRunner(manipulation,objectId);
             action.Unavailable=e=>missing??=e.Message;
-            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native cube roll ended",true,()=>Current() && AiOwnerReady(engine,owner));
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native cube roll ended",true,()=>Current() && AiOwnerReady(engine,owner), motionProfile);
         }
         var result=await task.ConfigureAwait(false);
         return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired);
@@ -330,7 +337,11 @@ public sealed class CozmoMotion
     /// The default profile leaves the custom-profile branch at 0x0052A2DA clear.
     /// </summary>
     // fidelity: M13-008
-    public async Task<AiPickupActionResult> QueueAiMountChargerAsync(uint chargerId, CancellationToken cancellationToken = default)
+    public Task<AiPickupActionResult> QueueAiMountChargerAsync(uint chargerId, CancellationToken cancellationToken = default) =>
+        QueueAiMountChargerAsync(chargerId, null, cancellationToken);
+
+    public async Task<AiPickupActionResult> QueueAiMountChargerAsync(uint chargerId,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken)
     {
         if(chargerId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
         if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
@@ -350,7 +361,7 @@ public sealed class CozmoMotion
             if(tag==0)return new(false,null,"No external action tag is available");
             bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
             action=new Manipulation.NativeDriveToMountChargerRunner(manipulation,owner,chargerId,Current);
-            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native charger mount ended",true,()=>Current() && AiOwnerReady(engine,owner));
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native charger mount ended",true,()=>Current() && AiOwnerReady(engine,owner), motionProfile);
         }
         var result=await task.ConfigureAwait(false);
         return new(result.Admitted,result.EngineResult,action.HostUnavailable is null ? result.Detail : "MISSING: " + action.HostUnavailable,result.OwnerRetired);
@@ -362,7 +373,11 @@ public sealed class CozmoMotion
     // Radians(0), false, -1.0f. The last float is unread by 0x0055E208.
     // 0x0052A068..0x0052A078: default profile skips the custom-profile setter.
     public Task<AiPickupActionResult> QueueAiFlipCubeAsync(uint objectId, CancellationToken cancellationToken = default) =>
-        QueueAiCubeTrickAsync(objectId, false, cancellationToken);
+        QueueAiCubeTrickAsync(objectId, false, null, cancellationToken);
+
+    public Task<AiPickupActionResult> QueueAiFlipCubeAsync(uint objectId,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken) =>
+        QueueAiCubeTrickAsync(objectId, false, motionProfile, cancellationToken);
 
     /// <summary>Queues the app's pre-dock wheelie action for the given cube.</summary>
     // fidelity: M13-041
@@ -371,9 +386,14 @@ public sealed class CozmoMotion
     // 0x0055D224 forwards the last true to the shared ctor but 0x0055B392 skips the face child.
     // 0x0052A8FC..0x0052A90E: default profile skips the custom-profile setter.
     public Task<AiPickupActionResult> QueueAiPopAWheelieAsync(uint objectId, CancellationToken cancellationToken = default) =>
-        QueueAiCubeTrickAsync(objectId, true, cancellationToken);
+        QueueAiCubeTrickAsync(objectId, true, null, cancellationToken);
 
-    private async Task<AiPickupActionResult> QueueAiCubeTrickAsync(uint objectId, bool wheelie, CancellationToken cancellationToken)
+    public Task<AiPickupActionResult> QueueAiPopAWheelieAsync(uint objectId,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken) =>
+        QueueAiCubeTrickAsync(objectId, true, motionProfile, cancellationToken);
+
+    private async Task<AiPickupActionResult> QueueAiCubeTrickAsync(uint objectId, bool wheelie,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken)
     {
         if (objectId > int.MaxValue) return new(false, null, "Object ID must be a nonnegative signed world ID");
         if (cancellationToken.IsCancellationRequested) return new(false, null, "Request cancelled before admission");
@@ -397,7 +417,7 @@ public sealed class CozmoMotion
                 ? new Manipulation.NativeDriveToPopAWheelieRunner(manipulation, objectId, 0f, owner, Current)
                 : new Manipulation.NativeDriveAndFlipRunner(manipulation, objectId, 0f, owner, Current);
             task = AdmitAiAction(action, owner, tag, cancellationToken,
-                wheelie ? "Native wheelie ended" : "Native flip ended", true, () => Current() && AiOwnerReady(engine, owner));
+                wheelie ? "Native wheelie ended" : "Native flip ended", true, () => Current() && AiOwnerReady(engine, owner), motionProfile);
         }
         var result = await task.ConfigureAwait(false);
         return new(result.Admitted, result.EngineResult,
@@ -412,7 +432,11 @@ public sealed class CozmoMotion
     /// (0x0052A60E). Cozmo must already be carrying a cube.
     /// </summary>
     // fidelity: M15-008
-    public async Task<AiPickupActionResult> QueueAiStackOnCubeAsync(uint objectId, CancellationToken cancellationToken = default)
+    public Task<AiPickupActionResult> QueueAiStackOnCubeAsync(uint objectId, CancellationToken cancellationToken = default) =>
+        QueueAiStackOnCubeAsync(objectId, null, cancellationToken);
+
+    public async Task<AiPickupActionResult> QueueAiStackOnCubeAsync(uint objectId,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken)
     {
         if(objectId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
         if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
@@ -433,7 +457,7 @@ public sealed class CozmoMotion
             bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
             var action=new Manipulation.NativeDriveToPlaceOnBeaconRunner(manipulation,objectId,Current);
             action.Unavailable=e=>missing??=e.Message;
-            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native place-on-cube ended",true,()=>Current() && AiOwnerReady(engine,owner));
+            task=AdmitAiAction(action,owner,tag,cancellationToken,"Native place-on-cube ended",true,()=>Current() && AiOwnerReady(engine,owner), motionProfile);
         }
         var result=await task.ConfigureAwait(false);
         return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired);
@@ -444,9 +468,13 @@ public sealed class CozmoMotion
     // GotoPose handler 0x0052A11C..0x0052A20C and single-goal ctor 0x0055A3D4:
     // DriveToPoseAction(robot, GotoPoseTarget, lowerHead:false, manual:false,
     //                   (10,10,10), Radians(0x3E32B8C2), 4.0f, 1.0f).
-    // The level byte is unread; the default profile skips the setter at 0x0052A206.
+    // The level byte is unread. Message +0x34 is the profile's custom flag, tested at 0x0052A1F6.
+    public Task<AiDriveActionResult> QueueAiGotoPoseAsync(float xMm, float yMm, float angleRad,
+        CancellationToken cancellationToken = default) =>
+        QueueAiGotoPoseAsync(xMm, yMm, angleRad, null, cancellationToken);
+
     public async Task<AiDriveActionResult> QueueAiGotoPoseAsync(float xMm, float yMm, float angleRad,
-        CancellationToken cancellationToken = default)
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken)
     {
         if (!float.IsFinite(xMm) || !float.IsFinite(yMm) || !float.IsFinite(angleRad))
             return new(false, null, "Pose coordinates and angle must be finite");
@@ -480,7 +508,7 @@ public sealed class CozmoMotion
                 action.SetNativeGoals(new[] { goal });
             }
             task = AdmitAiAction(action, owner, tag, cancellationToken, "Native pose drive ended", true,
-                () => Current() && AiOwnerReady(engine, owner));
+                () => Current() && AiOwnerReady(engine, owner), motionProfile);
         }
         var result = await task.ConfigureAwait(false);
         return new(result.Admitted, result.EngineResult,
@@ -589,7 +617,7 @@ public sealed class CozmoMotion
         return AdmitAiAction(action,owner,tag,cancellationToken,placement is not null ? "Native placement action ended" : head ? "Native head action ended" : "Native lift action ended",false);
     }
 
-    private Task<AiHeadActionResult> AdmitAiAction(ActionRunner action,EngineRobot owner,uint tag,CancellationToken cancellationToken,string detail,bool retireFailedTag,Func<bool>? admissionValid=null)
+    private Task<AiHeadActionResult> AdmitAiAction(ActionRunner action,EngineRobot owner,uint tag,CancellationToken cancellationToken,string detail,bool retireFailedTag,Func<bool>? admissionValid=null,Manipulation.PathMotionProfile? motionProfile=null)
     {
         var engine=_robot.Engine;
         if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner) || admissionValid is not null && !admissionValid())
@@ -602,6 +630,7 @@ public sealed class CozmoMotion
             action.RetireNeverAdmittedTree();
             return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
         }
+        if (motionProfile is { IsCustom: true }) Path.SetNativeCustomMotionProfileForAction(owner, motionProfile, action);
         var completion = new TaskCompletionSource<(uint Result, bool OwnerRetired)>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (action is MoveAction move) { move.AiNativeEnded = completion; move.AiOwner = owner; }
         else if(action is Manipulation.NativePlaceGroundRunner ground)ground.AiNativeEnded=completion;

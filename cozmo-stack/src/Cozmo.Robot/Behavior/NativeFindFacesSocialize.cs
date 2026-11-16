@@ -6,7 +6,7 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 // Configured FindFaces_socialize and its inherited scan-in-place action core.
-internal sealed class NativeFindFacesSocialize : SteppedBehavior, ISocializeFindFaces, IDisposable
+internal sealed class NativeFindFacesSocialize : SteppedBehavior, IDisposable
 {
     private readonly ManipulationSystem _m;
     private readonly EngineRobot _robot;
@@ -22,7 +22,7 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, ISocializeFind
     private uint _iterations;
     private long _generation;
     private int _retired;
-    public uint SearchIterations=>_iterations;
+    internal uint SearchIterations=>_iterations; // Inherited scan counter +0x1D0, incremented by S7 at 0x005E35A2..A8.
     internal int NativeState {get;private set;}
     internal bool ParametersAvailable=>_valid;
     private bool Available=>_valid && NativeScoringAvailable && BehaviorObjective==BehaviorObjective.Invalid && Volatile.Read(ref _retired)==0 && ReferenceEquals(_robot.Engine.Robot,_robot) &&
