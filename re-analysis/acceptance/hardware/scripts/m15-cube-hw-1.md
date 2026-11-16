@@ -72,3 +72,13 @@ located visual observation in the current origin, then records the queued mount 
 Allow room in front of and behind Cozmo for the pre-dock drive, turn, and reverse.
 
 Run `m15-cube-hw --skills --validate` to check the planned rounds and record references without a robot.
+
+## Freeplay control (standalone round)
+
+Use `m15-cube-hw --freeplay-control` with the same resource and robot arguments. Set Cozmo on a clear table, well
+away from the edge and off his charger. Observe 60 seconds of Freeplay, one queued CozmoSaysSpeakLoop animation,
+then 60 more seconds of Freeplay. The bundle includes the action result and the engine's behavior, reaction and
+objective reports (0x87, 0x88 and 0x8B) in `events.jsonl`. A reaction can refuse the request through the normal
+external-action gate. The script records the outcome and your observations.
+
+Use `m15-cube-hw --freeplay-control --validate` for the offline dry-run.

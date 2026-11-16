@@ -22,6 +22,17 @@ public sealed partial class EngineRobot
 
 public sealed partial class CozmoRobot
 {
+    /// <summary>Enables Freeplay, or selects Selection and requests Wait when disabled.</summary>
+    public void SetEnableFreeplayActivity(bool enabled)
+    {
+        // Unity Robot.SetEnableFreeplayActivity sends activity (0x005A4FA2), then Wait/-1
+        // through the executable-type recipient (0x0060AAAE) when turning Freeplay off.
+        using var owner = Engine.EnterSynchronousOwner();
+        ActivateHighLevelActivity(enabled ? "Freeplay" : "Selection");
+        if (!enabled)
+            ExecuteBehaviorByExecutableType(0x0B, -1);
+    }
+
     /// <summary>Explicit host/app activity admission. Construction selects the native Selection activity.
     /// Specialized activity bodies that are not implemented retain the prior activity and report MISSING.</summary>
     public void ActivateHighLevelActivity(string activityId)

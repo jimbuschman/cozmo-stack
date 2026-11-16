@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cozmo.Protocol;
 using Cozmo.Robot;
+using Cozmo.Robot.Behavior;
 using Cozmo.Transport;
 
 namespace Cozmo.Conformance;
@@ -30,6 +31,8 @@ public static class M15CubeHw
 
     internal const string FlipSetup = "FLIP ROUND. Put one light cube about 20 cm ahead, upright with a side marker facing Cozmo. Press Enter when ready.";
     internal const string WheelieSetup = "WHEELIE ROUND. Reset one light cube about 20 cm ahead, upright with a side marker facing Cozmo. Press Enter when ready.";
+    internal const string FreeplaySetup = "Put Cozmo on a clear table, well away from the edge and off his charger. He may move on his own.";
+    internal const int FreeplaySeconds = 60;
 
     public const float PlaceHeightMm = 32f;
     /// <summary>Head angle for looking at a cube on the table 10..25 cm ahead (about -9 degrees). Run 1 (2026-11-09) kept the
@@ -44,10 +47,11 @@ public static class M15CubeHw
     public const string MoveText = "Now move the cube about 25 cm (10 in) in front of him and a little to one side,\n"
         + "still UPRIGHT (lights on top) with a side marker facing roughly toward him. He will drive to it. Press Enter when it is in place.";
 
-    public static List<JsonObject> LoadRecords(string path, bool skills = false)
+    public static List<JsonObject> LoadRecords(string path, bool skills = false, bool freeplayControl = false)
     {
         var all = JsonNode.Parse(File.ReadAllText(path))!["records"]!.AsArray().Select(x => x!.AsObject()).ToDictionary(x => x["id"]!.GetValue<string>());
-        var ids = skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016", "M12-035", "M13-028", "M13-041", "M12-023", "M12-024", "M12-032" }) : RecordIds;
+        var ids = freeplayControl ? new[] { "M15-031", "M15-058", "M8-012", "M8-013", "M8-015", "M7-019" }
+            : skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016", "M12-035", "M13-028", "M13-041", "M12-023", "M12-024", "M12-032" }) : RecordIds;
         var missing = ids.Where(id => !all.ContainsKey(id)).ToArray();
         if (missing.Length > 0) throw new InvalidOperationException("Missing fidelity records: " + string.Join(", ", missing));
         return ids.Select(id => (JsonObject)all[id].DeepClone()).ToList();
@@ -58,22 +62,26 @@ public static class M15CubeHw
         try
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
-            bool validate = false, yes = false, withDrive = false, skills = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
                     case "--validate": validate = true; break;
                     case "--yes": yes = true; break;
                     case "--with-drive": withDrive = true; break;
                     case "--skills": skills = true; break;
+                    case "--freeplay-control": freeplayControl = true; break;
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
                 }
-            var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills);
+            if (freeplayControl && (skills || withDrive))
+                throw new ArgumentException("--freeplay-control is a separate round. Run --skills and --with-drive separately.");
+            var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl);
             if (validate)
             {
                 Console.WriteLine($"{TestId}: {records.Count} valid records; no network opened.");
                 if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, go to pose, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{GotoSetup}\n{ChargerSetup}");
+                if (freeplayControl) Console.WriteLine($"{FreeplaySetup}\nFreeplay for {FreeplaySeconds} s, queue CozmoSaysSpeakLoop once, then another {FreeplaySeconds} s of Freeplay.");
                 return 0;
             }
             if (Robot.Emulation.ShippedLibraries.FindLibDir() is null)
@@ -82,9 +90,9 @@ public static class M15CubeHw
                 throw new ArgumentException("The cube marker library is not on this PC, so Cozmo cannot read cube markers. With Python installed and resources/lib/armeabi-v7a/libcozmoEngine.so present, run: python re-analysis/tools/extract_marker_library.py resources/lib/armeabi-v7a/libcozmoEngine.so, then rebuild.");
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + TestId + "-" + Guid.NewGuid().ToString("N")[..6]);
-            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive) { Skills = skills }.Execute();
+            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive) { Skills = skills, FreeplayControl = freeplayControl }.Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
@@ -103,6 +111,8 @@ internal sealed class M15CubeRun
     CozmoRobot? robot; RobotConnectionResponse? response; bool connected; HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup; Task<string?>? pendingRead;
     uint? lastStatus;
     public bool Skills { get; init; }
+    public bool FreeplayControl { get; init; }
+    string RunName => FreeplayControl ? "Freeplay control" : "Cube pickup and put-down";
     double Now => clock.Elapsed.TotalMilliseconds;
     public M15CubeRun(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, bool yes, bool withDrive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.yes = yes; this.withDrive = withDrive; }
@@ -120,16 +130,18 @@ internal sealed class M15CubeRun
     public int Execute()
     {
         Directory.CreateDirectory(bundle);
-        Console.WriteLine("CUBE PICKUP AND PUT-DOWN TEST (about 5 minutes)\n\n"
+        Console.WriteLine((FreeplayControl
+            ? "FREEPLAY CONTROL (about 3 minutes)\n\n" + M15CubeHw.FreeplaySetup
+            : "CUBE PICKUP AND PUT-DOWN TEST (about 5 minutes)\n\n"
             + "What this is for: Cozmo picks up a cube and puts it down twice, through the controls an outside AI uses.\n"
             + "The first time the cube is right in front of him; the second time he drives to it.\n"
             + "Nothing passes or fails here; the recording and your answers are reviewed afterwards.\n\n"
-            + M15CubeHw.SetupText + "\n\nCtrl+C stops the run at any time; everything recorded so far is still saved.\nResults folder: " + bundle);
+            + M15CubeHw.SetupText) + "\n\nCtrl+C stops the run at any time; everything recorded so far is still saved.\nResults folder: " + bundle);
         ConsoleCancelEventHandler interrupt = (_, e) => { e.Cancel = true; cancel.Cancel(); }; Console.CancelKeyPress += interrupt;
         using var timer = new Timer(_ => cancel.Cancel(), null, TimeSpan.FromMinutes(15), Timeout.InfiniteTimeSpan);
         try
         {
-            if (!yes) { Console.WriteLine("\nWhen Cozmo and the cube are set up, press Enter to connect. Connecting takes up to a minute."); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested(); }
+            if (!yes) { Console.WriteLine("\nWhen setup is complete, press Enter to connect. Connecting takes up to a minute."); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested(); }
             using var resolution = new HighResolutionTimer();
             var options = HardwareEngineOptions.Create(resources, log: errors.Enqueue, beforeStart: e =>
             {
@@ -137,6 +149,7 @@ internal sealed class M15CubeRun
                 e.StackLogLine += stackLines.Enqueue;
                 e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject());
                 e.RobotObservedObject += r => observations.Enqueue((Now, r));
+                if (FreeplayControl) SubscribeBehaviorReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
             if (Skills)
@@ -186,43 +199,8 @@ internal sealed class M15CubeRun
             }
             robot.StartCamera();
             Event("camera-started", new());
-            var look = robot.Motion.QueueAiHeadAngleAsync(M15CubeHw.LookHeadRad, cancel.Token);
-            bool looked = Poll(() => look.IsCompleted, 10000);
-            Event("look-head", new() { ["targetRad"] = M15CubeHw.LookHeadRad, ["finished"] = looked, ["result"] = looked && look.IsCompletedSuccessfully ? look.Result.ToString() : null });
-
-            RunPair(robot, "direct", drive: false);
-            // The drive round is opt-in (2026-11-09: the drive pickup approached the far side of the cube and took Cozmo off
-            // the table, PICKUP-PREDOCK-SIDE-1). Run it with --with-drive once that is fixed.
-            if (withDrive && !yes)
-            {
-                Console.WriteLine("\n" + M15CubeHw.MoveText); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
-                RunPair(robot, "drive", drive: true);
-            }
-            if (Skills && !yes)
-            {
-                RunSkills(robot);
-                RunTrick("flip", M15CubeHw.FlipSetup, robot.Motion.QueueAiFlipCubeAsync);
-                RunTrick("wheelie", M15CubeHw.WheelieSetup, robot.Motion.QueueAiPopAWheelieAsync);
-                RunGotoPose(robot);
-                RunCharger(robot);
-            }
-            if (!yes)
-            {
-                Console.WriteLine("\nA few questions, one per round, in the order the rounds ran.");
-                Ask("pickedFirst", "FIRST ROUND (cube right in front): did he pick the cube up? [yes/no/tried and missed]");
-                Ask("placedFirst", "FIRST ROUND: did he put it down on the table? [yes/no/dropped it]");
-                if (withDrive)
-                {
-                    Ask("pickedSecond", "Second time (he drove): did he reach the cube and pick it up? [yes/no/tried and missed]");
-                    Ask("placedSecond", "Second time: did he put it down? [yes/no/dropped it]");
-                }
-                if (Skills)
-                {
-                    Ask("stacked", "Stack round: did he pick up the first cube, drive to the second and set it on top? [yes/no/partly]");
-                    Ask("rolled", "Roll round: did he drive to the cube and roll it onto its side? [yes/no/partly]");
-                }
-                Ask("odd", "Anything odd (bumped the cube, wrong cube, lift jerky, face or sounds strange)? Type it, or just press Enter.");
-            }
+            if (FreeplayControl) RunFreeplayControl(robot);
+            else RunCubeRounds(robot);
         }
         catch (OperationCanceledException) { errors.Enqueue("Stopped early with Ctrl+C or the time limit."); }
         catch (Exception e) { errors.Enqueue(e.ToString()); }
@@ -234,6 +212,97 @@ internal sealed class M15CubeRun
         WriteBundle();
         Console.WriteLine("\n=== TEST FINISHED ===\nNothing passes or fails here. Send this folder for review: " + bundle);
         return 0;
+    }
+
+    void SubscribeBehaviorReports(CozmoEngine engine)
+    {
+        // M8-012: 0x87 and 0x88 carry old/new endpoints. M7-019: 0x8B carries a uint objective.
+        engine.BehaviorTransition += report => Event("behavior-transition", JsonSerializer.SerializeToNode(report)!.AsObject());
+        engine.ReactionTransition += report => Event("reaction-transition", JsonSerializer.SerializeToNode(report)!.AsObject());
+        engine.EngineToGameMessage += (tag, body) =>
+        {
+            if (tag == 0x8B && body.Length == 4)
+                Event("behavior-objective", new() { ["objective"] = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(body.Span) });
+        };
+    }
+
+    void RunFreeplayControl(CozmoRobot r)
+    {
+        Event("request-freeplay", new() { ["enabled"] = true });
+        r.SetEnableFreeplayActivity(true);
+        try
+        {
+            ObserveFreeplay("before-command");
+            Console.WriteLine("\nQueuing one CozmoSaysSpeakLoop animation.");
+            using var actionCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
+            phases.Add(Phase("freeplay-animation", () =>
+            {
+                var task = r.Motion.QueueAiAnimationAsync(AnimationTrigger.CozmoSaysSpeakLoop, cancellationToken: actionCancel.Token);
+                return (task, () => (task.Result.Admitted, task.Result.EngineResult, task.Result.Detail, task.Result.OwnerRetired));
+            }, 65000));
+            actionCancel.Cancel();
+            ObserveFreeplay("after-command");
+        }
+        finally
+        {
+            Event("request-freeplay", new() { ["enabled"] = false });
+            r.SetEnableFreeplayActivity(false);
+        }
+        if (!yes) Ask("freeplay", "What did Cozmo do before, during, and after the animation?");
+    }
+
+    void ObserveFreeplay(string name)
+    {
+        double start = Now;
+        Event("phase-start", new() { ["phase"] = name });
+        Console.WriteLine($"\n[{name}] Watch Cozmo in Freeplay for {M15CubeHw.FreeplaySeconds} seconds.");
+        bool interrupted = cancel.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(M15CubeHw.FreeplaySeconds));
+        var phase = new JsonObject { ["phase"] = name, ["startMs"] = start, ["endMs"] = Now,
+            ["detail"] = interrupted ? "Interrupted observation" : "Observation window ended" };
+        phases.Add(phase);
+        Event("phase-end", (JsonObject)phase.DeepClone());
+        cancel.Token.ThrowIfCancellationRequested();
+    }
+
+    void RunCubeRounds(CozmoRobot robot)
+    {
+        var look = robot.Motion.QueueAiHeadAngleAsync(M15CubeHw.LookHeadRad, cancel.Token);
+        bool looked = Poll(() => look.IsCompleted, 10000);
+        Event("look-head", new() { ["targetRad"] = M15CubeHw.LookHeadRad, ["finished"] = looked, ["result"] = looked && look.IsCompletedSuccessfully ? look.Result.ToString() : null });
+
+        RunPair(robot, "direct", drive: false);
+        // The drive round is opt-in (2026-11-09: the drive pickup approached the far side of the cube and took Cozmo off
+        // the table, PICKUP-PREDOCK-SIDE-1). Run it with --with-drive once that is fixed.
+        if (withDrive && !yes)
+        {
+            Console.WriteLine("\n" + M15CubeHw.MoveText); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
+            RunPair(robot, "drive", drive: true);
+        }
+        if (Skills && !yes)
+        {
+            RunSkills(robot);
+            RunTrick("flip", M15CubeHw.FlipSetup, robot.Motion.QueueAiFlipCubeAsync);
+            RunTrick("wheelie", M15CubeHw.WheelieSetup, robot.Motion.QueueAiPopAWheelieAsync);
+            RunGotoPose(robot);
+            RunCharger(robot);
+        }
+        if (!yes)
+        {
+            Console.WriteLine("\nA few questions, one per round, in the order the rounds ran.");
+            Ask("pickedFirst", "FIRST ROUND (cube right in front): did he pick the cube up? [yes/no/tried and missed]");
+            Ask("placedFirst", "FIRST ROUND: did he put it down on the table? [yes/no/dropped it]");
+            if (withDrive)
+            {
+                Ask("pickedSecond", "Second time (he drove): did he reach the cube and pick it up? [yes/no/tried and missed]");
+                Ask("placedSecond", "Second time: did he put it down? [yes/no/dropped it]");
+            }
+            if (Skills)
+            {
+                Ask("stacked", "Stack round: did he pick up the first cube, drive to the second and set it on top? [yes/no/partly]");
+                Ask("rolled", "Roll round: did he drive to the cube and roll it onto its side? [yes/no/partly]");
+            }
+            Ask("odd", "Anything odd (bumped the cube, wrong cube, lift jerky, face or sounds strange)? Type it, or just press Enter.");
+        }
     }
 
     void RunPair(CozmoRobot r, string name, bool drive)
@@ -471,7 +540,7 @@ internal sealed class M15CubeRun
             var wire = M5HwAnalysis.OrderedUnique(M5HwAnalysis.ReadWire(frames.ToArray().Select((f, index) => new M5HwAnalysis.CapturedFrame(index + 1, f.T, f.Out, f.Frame)))).ToList();
             foreach (var p in phases) { var o = p!.AsObject(); o["timeline"] = Timeline(wire, o["startMs"]!.GetValue<double>(), o["endMs"]!.GetValue<double>()); }
             var missing = stackLines.Where(l => l.Contains("MISSING", StringComparison.Ordinal)).Distinct().ToArray();
-            File.WriteAllText(Path.Combine(bundle, "SUMMARY.txt"), "Cube pickup and put-down test. Nothing here passes or fails.\n\n"
+            File.WriteAllText(Path.Combine(bundle, "SUMMARY.txt"), RunName + " test. Nothing here passes or fails.\n\n"
                 + string.Join("\n", phases.Select(p => $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
                 + "\n\nCube reports seen: " + observations.Count
                 + "\n\nStartup: " + (startup?.Describe() ?? "not completed")
