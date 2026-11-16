@@ -1406,7 +1406,7 @@ public sealed partial class BlockWorld
     public Func<uint, Pose3d?>? ComputedRobotPoseAt { get; set; }
     /// <summary><c>Robot::GetPose()</c> (Robot+0x298), the robot's CURRENT pose. Unwired: the frame's paired pose is used.</summary>
     public Func<Pose3d?>? CurrentRobotPose { get; set; }
-    /// <summary><c>Robot::GetLastImageTimeStamp()</c>. Unwired: the timestamp of the frame being processed.</summary>
+    /// <summary><c>Robot::GetLastImageTimeStamp()</c>, the last consumed result stamp. Frame handlers run before this stamp advances.</summary>
     public Func<uint>? LastImageTimestamp { get; set; }
     /// <summary><c>BaseStationTimer::GetCurrentTimeInSeconds()</c>. Unwired: the process's tick count in seconds.</summary>
     public Func<double>? BaseStationSeconds { get; set; }
@@ -2351,12 +2351,16 @@ public sealed partial class BlockWorld
     ///   (0x00506A04..0x00506A98). Mismatch: the count is 1 and the entry pose is the observed pose (0x00506A46..0x00506A4E), then a stored
     ///   instance is updated. Then the miss count is 0 and +0x30 is the observed timestamp (0x00506A9C..0x00506AA4).</item>
     /// </list>
-    /// <c>MapComponent::ClearRobotToMarkers</c> (0x00506A98) is the map's (M13) and is not built.
+    /// Matching confirmation calls <c>MapComponent::ClearRobotToMarkers</c> at 0x00506A98, before the confirmer timestamp write.
     /// </summary>
     // fidelity: M11-007
     internal bool AddVisualObservation(ObservableObject observed, ObservableObject? existing, bool wasCameraMoving, double dist)
     {
         using var frameMutation=EnterPoseMutation();
+        var mapOwner = NativeSnapshotOwner?.Invoke();
+        var maps = Maps;
+        bool MapOwnerCurrent() => mapOwner is not null && !mapOwner.Lifetime.Destroying &&
+            ReferenceEquals(NativeSnapshotOwner?.Invoke(), mapOwner) && ReferenceEquals(Maps, maps);
         PoseConfirmation entry;
         bool remade;
         lock (_gate)
@@ -2381,6 +2385,7 @@ public sealed partial class BlockWorld
             entry.Count = oldCount + 1;                                                                                  // 0x00506A04..0x00506A0C
             if (oldCount >= 1)
             {
+                var storedOrExisting = entry.Stored ?? existing;
                 if (entry.Stored is { } stored)
                 {
                     UpdatePoseInInstance(stored, observed, existing, pose, wasCameraMoving, dist);                       // 0x00506A26
@@ -2389,9 +2394,8 @@ public sealed partial class BlockWorld
                 }
                 else if (existing is not null)
                     UpdatePoseInInstance(existing, observed, existing, pose, wasCameraMoving, dist);                     // 0x00506A86
-                // MapComponent::ClearRobotToMarkers(obj) (0x00506A98) belongs to the map (M13) and is not built.
-                // fidelity: M8-026
-                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M8-026 / M11-074 ClearRobotToMarkers 0x00506A98 -> ProcessClearQuad 0x0067F708: native robot/marker-corner quad producer is unbuilt; checked whiteboard unit awaits that join");
+                if (MapOwnerCurrent() && storedOrExisting is { } target)
+                    maps.ClearRobotToMarkers(target, MapClearQuad, MapOwnerCurrent); // 0x00506A8E..0x00506A98: same instance just updated.
             }
             else if (entry.Stored is { } pending)
                 UpdatePoseInInstance(pending, observed, existing, pose, wasCameraMoving, dist);                          // 0x00506A52

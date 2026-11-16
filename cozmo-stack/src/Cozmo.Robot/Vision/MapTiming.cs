@@ -1,4 +1,5 @@
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
 namespace Cozmo.Robot.Vision;
 
 // fidelity: M11-075
@@ -139,6 +140,64 @@ internal sealed partial class SourceMapComponent : IDisposable
         relative.Dispose();return null;
     }
     private void InvalidRelativePose()=>SourceLog?.Invoke(EngineLogLevel.Warning,null,"MapComponent.AddObservableObject.InvalidPose","Could not get object's new pose wrt robot. Won't add to map");
+    // fidelity: M11-074, M8-026 -- MapComponent::ClearRobotToMarkers 0x0067F5B8.
+    internal void ClearRobotToMarkers(ObservableObject target, Action<WhiteboardClearQuad>? clearWhiteboard, Func<bool> current)
+    {
+        var map = Current; // 0x0067F5C8..0x0067F5EA: snapshot of MapComponent's current map
+        if (RobotPose?.Invoke() is not { } robotPose || robotPose.Node is null)
+        {
+            SteppedBehavior.ReportMissing("M11-074 ClearRobotToMarkers robot pose owner unavailable at 0x0067F5F2");
+            return;
+        }
+        using var rootedRobot = robotPose.GetWithRespectToRoot();
+        var footprint = ObjectFootprint.RobotBoundingQuadXY(rootedRobot, 0f); // 0x0067F60A
+
+        IReadOnlyList<KnownMarker> markers;
+        try { markers = NativeObservedMarkers.Get(target, target.LastObservedTimestamp); } // 0x0067F62C..0x0067F632
+        catch (NativeActionUnavailable error) { SteppedBehavior.ReportMissing(error.Message); return; }
+        if (markers.Count == 0) return;
+        if (map is null)
+        {
+            StackDiagnostics.Write("M1-034 M11-074 skip ClearRobotToMarkers null map dereference at 0x0067F6D0");
+            return;
+        }
+
+        foreach (var marker in markers)
+        {
+            if (!current()) return;
+            if (marker.PoseOnObject.Node is null)
+            {
+                SteppedBehavior.ReportMissing("M11-074 ClearRobotToMarkers known marker pose unavailable at 0x0067F664");
+                continue;
+            }
+            using var pose = marker.PoseOnObject.GetWithRespectToRoot();
+            float width = (float)marker.SizeMm;
+            float height = (float)(double.IsNaN(marker.HeightMm) ? marker.SizeMm : marker.HeightMm);
+            Vec3 BottomCorner(int index)
+            {
+                var corner = KnownMarker.CanonicalCorners[index];
+                return pose.Apply(new Vec3((float)corner.X * width, 0f, (float)corner.Z * height));
+            }
+
+            // Get3dCorners at 0x0067F66E; 0x0067F678..0x0067F6A4 pairs marker[1,3] with footprint[1,0].
+            var left = BottomCorner(1);
+            var right = BottomCorner(3);
+            var quad = new WhiteboardClearQuad(new(left.X, left.Y), new(footprint[1].X, footprint[1].Y),
+                new(right.X, right.Y), new(footprint[0].X, footprint[0].Y));
+            if (ImageTimestamp?.Invoke() is not { } timestamp) return; // 0x0067F6AC: fresh processed clock for each marker
+            var polygon = PolygonF.ImportQuad2d(new P2f[]
+            {
+                new((float)quad.P0.X, (float)quad.P0.Y), new((float)quad.P1.X, (float)quad.P1.Y),
+                new((float)quad.P2.X, (float)quad.P2.Y), new((float)quad.P3.X, (float)quad.P3.Y)
+            });
+            if (!current()) return;
+            map.InsertObject(polygon.Select(p => new Vec2(p.X, p.Y)).ToArray(),
+                new SourceMapData(MemoryMapContentType.ClearOfObstacle, timestamp, timestamp)); // 0x0067F6D8
+            if (!current()) return;
+            if (clearWhiteboard is not null) clearWhiteboard(quad); // 0x0067F708: original unsorted quad.
+            else SteppedBehavior.ReportMissing("M8-026 ClearRobotToMarkers AIWhiteboard owner unavailable at 0x0067F708");
+        }
+    }
     private void RemoveObject(ObservableObject obj,uint root)
     {
         var type=MemoryMapTypes.ContentTypeForFamily(obj.Family,false);
