@@ -86,7 +86,7 @@ public sealed class NativeNeedsPendingProofTests
     public void MissingPayloadDiagnosticReentryDoesNotOverwriteNewUnknownState()
     {
         using var f=new Fixture();var needs=f.Rig.Engine.Needs;needs.SparksRewardPending=true;bool nested=false;
-        void OnMissing(string text){if(!nested && text.Contains("reward amount/display payload unavailable")){nested=true;needs.SparksRewardPending=true;}}
+        void OnMissing(string text){if(!nested && text.Contains("stored +0x3DC reward invalidated")){nested=true;needs.SparksRewardPending=true;}}
         SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=OnMissing;
         try {needs.SparksRewardCommunicatedToUser();}finally {SteppedBehavior.MissingReported-=OnMissing;}
         Assert.True(nested);Assert.False(needs.TryGetNativePending(out _));Assert.True(needs.SparksRewardPending);
@@ -104,7 +104,7 @@ public sealed class NativeNeedsPendingProofTests
             Assert.Contains(missing,s=>s.Contains("weighted reward withheld: notification effects, shared RNG history or reward inputs unavailable"));
             needs.SparksRewardCommunicatedToUser();Assert.True(needs.NativePendingKnownFalse);
             Assert.False(needs.NativeRewardPayloadKnownForTest);Assert.Equal(0,reports);
-            Assert.Contains(missing,s=>s.Contains("reward amount/display payload unavailable"));
+            Assert.Contains(missing,s=>s.Contains("stored +0x3DC reward invalidated"));
         }
         finally {SteppedBehavior.MissingReported-=missing.Add;}
     }

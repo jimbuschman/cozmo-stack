@@ -956,7 +956,12 @@ public sealed partial class NeedsManager
             if(hasInterface){amount=_nativeRewardAmount;key=_nativeRewardDisplayKey;_nativeRewardDisplayKey="";} // 00696E88, before delivery
         }
         if(!hasInterface){SteppedBehavior.ReportMissing("M1-034 M15-071 skip null EI broadcast at 0x00696E7E; pending cleared, amount/key retained");return;}
-        if(!payloadKnown){SteppedBehavior.ReportMissing("M15-071 reward amount/display payload unavailable; pending cleared, report skipped");return;}
+        if(!payloadKnown)
+        {
+            // A host override or an incomplete earlier producer does not establish the stored message at +0x3DC.
+            SteppedBehavior.ReportMissing("M15-071 stored +0x3DC reward invalidated before broadcast at 0x00696E88");
+            return;
+        }
         byte[] text=System.Text.Encoding.UTF8.GetBytes(key);
         int packedLength=unchecked((byte)text.Length); // 006C22F8/2304: low byte, then exactly that many bytes
         byte[] body=new byte[5+packedLength];System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(body,amount);body[4]=(byte)packedLength;text.AsSpan(0,packedLength).CopyTo(body.AsSpan(5));
@@ -2193,9 +2198,12 @@ public sealed partial class NeedsManager
         int? dailyResult=nativeRecipient&&!UsesUncertifiedPersistenceTestAdapter?UpdateNativeStars(false):0;
         if(dailyResult is null)
         {
-            // 0x00696372 branches on an integer the host could not establish: return 0 could reach the pending store 0x00696410.
-            Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
-            SteppedBehavior.ReportMissing("M15-071/M15-093 daily-star result unavailable at 0x00696372; reward branch withheld and pending proof withdrawn");
+            // The star owner reports which input prevented completion. A retired owner needs no further state writes.
+            if(NativeCurrent())
+            {
+                // A native zero at 0x00696372 can reach the pending store at 0x00696410.
+                Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
+            }
             return false;
         }
         // 0x696378 calls Generate before examining the configured reward weight,
