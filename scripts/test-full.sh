@@ -37,7 +37,7 @@ if ! DOTNET_gcServer=0 DOTNET_GCConserveMemory=7 dotnet build cozmo-stack/Cozmo.
 fi
 dotnet build-server shutdown >/dev/null 2>&1
 if ! dotnet test cozmo-stack/Cozmo.sln --no-build --blame-hang --blame-hang-timeout 5m --logger "console;verbosity=normal" >> "$log" 2>&1; then
-    grep -E "\[FAIL\]|Failed!|error CS|hang|Blame|active test" "$log" | head -20; echo "test-full: FAILED."; exit 1
+    grep -E "^ *Failed |\[FAIL\]|Failed!|error CS|[Hh]ang (dump|timeout)|Blame|active test|Test host process crashed|aborted" "$log" | head -20; echo "test-full: FAILED."; exit 1
 fi
 grep -E "^ *(Total tests|Passed|Failed):" "$log" | tail -3 | tr -s ' ' | tr '\n' ' '; echo
 awk '{for(i=2;i<=NF;i++){split($i,a,"=");if(a[1]=="free"&&(m==""||a[2]+0<m))m=a[2]+0;if(a[1]=="testhost"&&a[2]+0>t)t=a[2]+0}} END{print "test-full: memory: lowest free " m " MB, testhost peak " t " MB (" FILENAME ")"}' "$mem"
