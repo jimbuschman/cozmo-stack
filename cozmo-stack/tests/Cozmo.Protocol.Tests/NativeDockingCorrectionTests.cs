@@ -117,6 +117,98 @@ public sealed class NativeDockingCorrectionTests
         Assert.False(signal.Field6);
     }
 
+    [Fact]
+    public void ChargerAlignKeepsSendingCorrectionsFromRenderedApproachFrames()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        const float chargerX = 300f;
+        float markerX = chargerX + (float)ChargerGeometry.MarkerXMm;
+        f.X = markerX - 177f;
+        f.Motors(RobotStatusFlag.IsBodyAccMode);
+        for (uint id = 1; id <= 3; id++)
+        {
+            f.Motors(RobotStatusFlag.IsBodyAccMode);
+            f.Image(id, cube: true, cubeX: chargerX, markerObjectType: ObjectType.Charger_Basic);
+        }
+
+        var target = Assert.Single(f.M.World.LocatedObjects, obj => obj.Type == ObjectType.Charger_Basic);
+        var marker = Assert.Single(target.Markers);
+        Assert.True(f.M.Docking.StartNativeDock(f.Robot, target.ObjectId, unchecked((short)marker.Code),
+            DockAction.Align, PathMotionProfile.Default with { DockSpeedMmps = MountChargerAction.AlignSpeedMmps },
+            offsetX: 93f));
+        uint frame = 3;
+        foreach (float distance in new[] { 177f, 150f, 135f, 120f, 105f, 93f, 84f, 72f, 60f })
+        {
+            int mark = f.Rig.Mark();
+            f.X = markerX - distance;
+            f.Motors(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickingOrPlacing);
+            uint timestamp = f.Robot.StoredState!.Timestamp;
+            f.Image(++frame, cube: true, cubeX: chargerX, markerObjectType: ObjectType.Charger_Basic);
+            var signals = f.Rig.SentSince(mark).OfType<DockingErrorSignal>().ToArray();
+            Assert.True(signals.Length == 1,
+                $"Distance={distance}, markers={f.M.Vision.LastResult?.Markers.Count}, target={f.M.Docking.DockTargetObjectId}, lastSeen={target.LastObservedTimestamp}, {string.Join(Environment.NewLine, f.Rig.Log.TakeLast(12))}");
+            Assert.Equal(timestamp, signals[0].Timestamp);
+            Assert.InRange(signals[0].XDist, distance - 101f, distance - 85f);
+        }
+
+        f.Rig.Data(new PickAndPlaceResult { Field0 = f.Robot.StoredState!.Timestamp, Field1 = true });
+        f.Motors(RobotStatusFlag.IsBodyAccMode);
+        f.M.Docking.ResetDockTargetAtActionEnd();
+        int afterAlign = f.Rig.Mark();
+        f.Image(++frame, cube: true, cubeX: chargerX, markerObjectType: ObjectType.Charger_Basic);
+        Assert.NotEmpty(f.M.Vision.LastResult!.Markers);
+        Assert.Empty(f.Rig.SentSince(afterAlign).OfType<DockingErrorSignal>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ChargerCorrectionCopiesKeyedHistoryIntoTheCurrentOrigin(bool removeKey)
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        const float chargerX = 130f;
+        for (uint id = 1; id <= 3; id++)
+        {
+            f.Motors(RobotStatusFlag.IsBodyAccMode);
+            f.Image(id, cube: true, cubeX: chargerX, markerObjectType: ObjectType.Charger_Basic);
+        }
+        var target = Assert.Single(f.M.World.LocatedObjects, obj => obj.Type == ObjectType.Charger_Basic);
+        Assert.True(f.M.Docking.StartNativeDock(f.Robot, target.ObjectId, unchecked((short)Assert.Single(target.Markers).Code),
+            DockAction.Align, PathMotionProfile.Default, offsetX: 93f));
+
+        f.Motors(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickingOrPlacing);
+        uint timestamp = f.Robot.StoredState!.Timestamp;
+        using var historicalParent = new Pose3d("historical-parent");
+        var history = f.Robot.PoseHistory;
+        HistRobotState? state = null;
+        uint key = 0;
+        f.M.Vision.NativeMarkerCameraObservedForTest = (_, _) =>
+        {
+            Assert.Equal(0u, history.GetComputedNative(timestamp, ref state, requestKey: true, ref key));
+            if (removeKey) Assert.True(history.ComputedTimeToKey.Remove(timestamp));
+            else state!.Pose.SetParent(historicalParent);
+        };
+
+        int mark = f.Rig.Mark();
+        try { f.Image(4, cube: true, cubeX: chargerX, markerObjectType: ObjectType.Charger_Basic); }
+        finally { f.M.Vision.NativeMarkerCameraObservedForTest = null; }
+        Assert.NotNull(state);
+        Assert.Single(f.M.Vision.LastResult!.Markers);
+        var signals = f.Rig.SentSince(mark).OfType<DockingErrorSignal>();
+        if (removeKey)
+        {
+            Assert.Empty(signals);
+            Assert.True(f.Rig.Logged("VisionComponent.UpdateVisionMarkers.GetHistoricRobotPoseFailed"));
+            history.ComputedTimeToKey.Add(timestamp, key);
+        }
+        else
+        {
+            Assert.Equal(timestamp, Assert.Single(signals).Timestamp);
+            Assert.True(PoseTreeNode.HasSameRoot(state!.Pose.Node!, historicalParent.Node!));
+            state.Pose.SetParent(f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
+        }
+    }
+
     // Real retained docking target and incoming rendered frame for a different cube.
     // Target pose/marker are supplied so vision cannot replace the captured quaternion.
     // Packed angle expectations were obtained from shipped ARM 0x877330/0x84AA1C,
