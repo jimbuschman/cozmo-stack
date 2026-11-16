@@ -275,7 +275,7 @@ internal sealed partial class M15CubeRun
         // End the enrollment window before the operator observation prompt can wait for an answer.
         if (report is null) onNoReport?.Invoke();
         var phase = CommandPhase(id, begin, detail);
-        if (report is not null) phase["report"] = JsonSerializer.SerializeToNode(report);
+        if (report is not null) phase["report"] = JsonSerializer.SerializeToNode(report, BundleJson);
         FinishCommand(step, phase, report is null || read is null ? null : read(report));
         return report;
     }

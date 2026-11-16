@@ -68,8 +68,14 @@ first, and use `--with-drive` only after that pickup works, with a hand ready ne
 Add `--skills` to run stack, roll, flip, wheelie, go-to, and mount after the pickup rounds. Follow each prompt to reset the upright cube. The flip and wheelie rounds record the action result and wire traffic. For the go-to round, clear space for a 20 cm drive and a left turn. The script records the requested and observed poses. The charger round runs last. Clear the
 cubes away and put the powered charger 20–40 cm straight ahead, marker facing Cozmo. The script waits for a fresh
 located visual observation in the current origin, then records the queued mount result and the robot's contact bit
-(M13-008, 0x0054E7B0). Its visual target comes from BlockWorld while the charger 0x44 report is outstanding.
+(M13-008, 0x0054E7B0). It selects the target from the charger E2G 0x44 report in the current BlockWorld origin.
 Allow room in front of and behind Cozmo for the pre-dock drive, turn, and reverse.
+
+`charger-observations.jsonl` records the charger reports from the whole skills run (E2G 0x44, pack at
+0x007131E2). `docking-error-signals.jsonl` records the outbound corrections with host and robot timestamps,
+geometry and raw payload (0x48, M12-014, producer at 0x0063BE80). These are observations. If a file cannot
+be written, the other files are still attempted and `write-errors.txt` records the failure. Non-finite numbers
+appear as the JSON strings `"NaN"`, `"Infinity"` and `"-Infinity"`.
 
 Run `m15-cube-hw --skills --validate` to check the planned rounds and record references without a robot.
 

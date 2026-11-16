@@ -50,7 +50,7 @@ internal sealed partial class M15CubeRun
 {
     void SubscribePersonalityReports(CozmoEngine engine)
     {
-        engine.RobotPublicStateChanged += report => Event("robot-public-state", JsonSerializer.SerializeToNode(report)!.AsObject());
+        engine.RobotPublicStateChanged += report => Event("robot-public-state", JsonSerializer.SerializeToNode(report, BundleJson)!.AsObject());
         // M14-008: RobotObservedFace carries the name the engine published in 0x46.
         engine.RobotObservedFace += face => Event("face-observed", new()
         {
