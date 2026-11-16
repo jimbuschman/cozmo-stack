@@ -32,12 +32,12 @@ internal static class CommandsHw
         new("turn-in-place", "Turn left 90 degrees in place.", "Did he turn left about 90 degrees?", "M13-022", "0x0054642C"),
         new("turn-to-face", "Turn toward the operator's observed face.", "Did he turn toward your face?", "M14-002", "0x0054C500"),
         new("turn-to-cube", "Turn toward a located light cube.", "Did he turn toward the cube?", "M13-020", "0x0054ADD4"),
-        new("track-face", "Request face tracking and cancel after 10 seconds.", "Did he follow your face as you moved?", "M8-015", "0x005409DCâ€“0x00540A46", 0x02000000),
+        new("track-face", "Request face tracking and cancel after 10 seconds.", "Did he follow your face as you moved?", "M8-015", "0x005409DC–0x00540A46", 0x02000000),
         new("animation", "Play CozmoSaysSpeakLoop once.", "Did you see a face animation?", "M8-020", "0x005441C0"),
         new("sentence", "Say one English sentence.", "Did you hear Cozmo say the sentence?", "M14-006", "0x00561D4C"),
         new("go-to-pose", "Drive to a point 200 mm ahead and turn left 90 degrees.", "Did he reach the point and turn left?", "M12-023", "0x0055AB4C"),
-        new("teach-face", "Teach the operator's face a temporary name.", "Did you observe him learning the name?", "M14-012", "0x005FE520â€“0x005FE528"),
-        new("rename-face", "Rename the newly enrolled face.", "Did you observe him acknowledge the new name?", "M14-012", "0x00657B66â€“0x00657B82", null),
+        new("teach-face", "Teach the operator's face a temporary name.", "Did you observe him learning the name?", "M14-012", "0x005FE520–0x005FE528"),
+        new("rename-face", "Rename the newly enrolled face.", "Did you observe him acknowledge the new name?", "M14-012", "0x00657B66–0x00657B82", null),
         new("erase-face", "Erase the same enrolled face ID.", "Did you observe the temporary face being erased?", "M14-012", "E2G 0x57", null),
     };
 
