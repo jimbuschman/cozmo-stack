@@ -170,6 +170,88 @@ public sealed class CanonicalReactionBindingTests
     }
 
     [Theory]
+    [InlineData(MotorID.MOTOR_LIFT, false, true, true)]
+    [InlineData(MotorID.MOTOR_LIFT, false, false, true)]
+    [InlineData(MotorID.MOTOR_LIFT, true, true, true)]
+    [InlineData(MotorID.MOTOR_LIFT, true, false, true)]
+    [InlineData(MotorID.MOTOR_HEAD, false, true, true)]
+    [InlineData(MotorID.MOTOR_LIFT, false, true, false)]
+    public void MotorAutoEnabledPublishesAfterTheNativeDetachGate(MotorID motor, bool enabled, bool carrying, bool hasInterface)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture();
+        var engine = f.Rig.Engine;
+        var cube = f.Add();
+        var carry = f.Robot.CarryingOwner!;
+        if (carrying)
+        {
+            using var liftPose = new Pose3d(Rotation3d.Identity, new Vec3(2, 3, 4), parent: f.Robot.LiftPose);
+            cube.Pose = new Pose3d(liftPose);
+            cube.NativeCarryingTree = true;
+            carry.AttachToLift(cube.ObjectId, cube.Markers[0], new Pose3d(liftPose), null, null);
+        }
+
+        var order = new List<string>();
+        var logs = new List<EngineLogEntry>();
+        var wire = new List<byte[]>();
+        var app = new List<MotorAutoEnabledReport>();
+        var local = new List<(MotorAutoEnabledReport Report, uint? Carried)>();
+        engine.LogEntry += entry =>
+        {
+            if (entry.Name?.StartsWith("HandleMotorAutoEnabled.", StringComparison.Ordinal) != true) return;
+            logs.Add(entry);
+            if (entry.Level == EngineLogLevel.Event) order.Add("event");
+        };
+        using var delete = engine.AnimationMessages.SubscribeMessage(0x4C, true, payload =>
+        {
+            Assert.Equal(cube.ObjectId, Assert.IsType<uint>(payload));
+            order.Add("delete");
+        });
+        using var reports = engine.AnimationMessages.SubscribeMessage(0x1F, true, payload =>
+        {
+            local.Add((Assert.IsType<MotorAutoEnabledReport>(payload), carry.CarriedObjectId));
+            order.Add("report");
+        });
+        engine.EngineToGameMessage += (tag, payload) => { if (tag == 0x1F) wire.Add(payload.ToArray()); };
+        f.Rig.Robot.Sensors.MotorAutoEnabledReported += app.Add;
+
+        f.Robot.HasExternalInterface = hasInterface;
+        bool calibrated = f.Rig.Robot.State.LiftCalibrated;
+        int mark = f.Rig.Mark();
+        f.Rig.Data(new MotorAutoEnabled { MotorID = motor, Enabled = enabled });
+        f.Rig.Tick(0);
+        engine.DrainAppDelivery();
+
+        bool detached = carrying && motor == MotorID.MOTOR_LIFT && !enabled;
+        uint? carriedAfter = carrying && !detached ? cube.ObjectId : null;
+        Assert.Equal(carriedAfter, carry.CarriedObjectId);
+        if (detached) Assert.Null(f.M.World.GetLocatedObjectByIdHelper(cube.ObjectId));
+        else Assert.Same(cube, f.M.World.GetLocatedObjectByIdHelper(cube.ObjectId));
+        Assert.Equal(detached ? 1 : 0, f.Rig.SentSince(mark).OfType<CarryStateUpdate>().Count(m => m.State == CarryState.CARRY_NONE));
+        Assert.Equal(calibrated, f.Rig.Robot.State.LiftCalibrated);
+        Assert.Collection(logs,
+            info => Assert.Equal($"Motor {(byte)motor}, enabled {(enabled ? 1 : 0)}", info.Text),
+            evt =>
+            {
+                Assert.Equal(enabled ? "HandleMotorAutoEnabled.MotorEnabled" : "HandleMotorAutoEnabled.MotorDisabled", evt.Name);
+                Assert.Equal(motor.ToString(), evt.Text);
+            });
+        if (hasInterface)
+        {
+            Assert.Equal(detached ? new[] { "event", "delete", "report" } : new[] { "event", "report" }, order);
+            var expected = new MotorAutoEnabledReport(motor, enabled);
+            Assert.Equal((expected, carriedAfter), Assert.Single(local));
+            Assert.Equal(expected, Assert.Single(app));
+            Assert.Equal(new byte[] { (byte)motor, enabled ? (byte)1 : (byte)0 }, Assert.Single(wire));
+        }
+        else
+        {
+            Assert.Empty(local);
+            Assert.Empty(app);
+            Assert.Empty(wire);
+        }
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void LiftCalibrationReportsBeforeDeletingCarriedCubeAndStartingReaction(bool carrying)

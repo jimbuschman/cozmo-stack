@@ -1,0 +1,8 @@
+# MOTOR-AUTO-ENABLED-1
+
+- HandleMotorAutoEnabled at 0x00536D40 reads MotorID and enabled at 0x00536D66/68, logs both at 0x00536D74, and emits MotorEnabled or MotorDisabled with the MotorID name at 0x00536DB4 or 0x00536DD0. The lift, disabled and valid primary carry checks at 0x00536DF6 through 0x00536E0E call the existing SetCarriedObjectAsUnattached(true) path. This remains before publication.
+- The two input bytes are copied at 0x00536E12 through 0x00536E1A into the MessageEngineToGame constructor called at 0x00536E20. The constructor at 0x00722D8A writes tag 0x1F and both bytes. The packer writes MotorID followed by the bool at 0x007CE110 through 0x007CE126.
+- 0x00536E28 calls Robot::Broadcast, which gates on the external interface at 0x00511DE8 through 0x00511DFC. The +0x18 slot (relocation 0x0102FE34) is UI Broadcast at 0x00662508. Delivery to the game precedes the synchronous tag-keyed local signal at 0x00662590. The stack now publishes those views and exposes the typed Sensors event. The handler returns after broadcast and leaves calibration flags alone. The configured auto-calibration reaction subscribes to the separate 0x1E report and checks its start and auto-start bytes at 0x0060DCFA through 0x0060DD0C.
+- Tests feed real ingress for lift disable and enable with and without a carried cube, head disable while carrying, and lift disable with no external interface. They check the detach gate, report and deletion order, app payload, calibration state and the external-interface gate. No fidelity status changes. Claude review and operator robot validation remain pending.
+
+- All 173 motor, carrying and reaction regressions passed. Fidelity check passed all 762 records.
