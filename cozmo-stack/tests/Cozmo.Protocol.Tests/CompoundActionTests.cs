@@ -106,6 +106,78 @@ public class CompoundActionTests
         }
     }
 
+    private sealed class RetainedChild(bool completes) : ActionRunner(0x33, 0)
+    {
+        protected override string ActionName => "RetainedChild";
+        internal int Endings { get; private set; }
+        public override uint CheckIfDone() => completes ? EngineActionResult.Success : EngineActionResult.Running;
+        public override bool CanInterrupt() => false;
+        public override uint GetCompletionUnion() => 0x0BADF00D;
+        public override void WatcherEnding()
+        {
+            Endings++;
+            base.WatcherEnding();
+        }
+    }
+
+    // 0x0054F0C0/0x0054F0E8 (completion), 0x0054EC0E..0x0054EC20 (cancellation).
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void LastExternalReleaseDestroysThePreparedChildAfterTheCompoundEnds(bool completes)
+    {
+        using var actions = new ActionList(clockSeconds: () => 0);
+        var child = new RetainedChild(completes);
+        var parent = new ProbeSequential(() => 0, child);
+        parent.EnableProxy(child.Tag);
+        using var first = child.TryRetainCompoundChild();
+        using var last = child.TryRetainCompoundChild();
+        Assert.NotNull(first);
+        Assert.NotNull(last);
+        var ended = new List<RobotCompletedAction>();
+        actions.RegisterActionEndedCallback(ended.Add);
+        Assert.Equal(0, actions.QueueAction(QueueActionPosition.AtEnd, parent));
+        actions.Update();
+        if (!completes)
+        {
+            Assert.Equal(EngineActionResult.Running, child.State);
+            Assert.True(actions.Cancel(parent.Tag));
+            actions.Update();
+        }
+
+        Assert.Empty(parent.Children);
+        Assert.Equal(parent.Tag, Assert.Single(ended).Tag);
+        Assert.Equal(0x0BADF00Du, child.PreparedCompletionUnion);
+        Assert.Equal(0, child.Endings);
+        Assert.True(ActionRunnerTagCounter.Global.IsInUse(child.Tag));
+        first.Dispose();
+        first.Dispose();
+        Assert.Equal(0, child.Endings);
+
+        last.Dispose();
+        Assert.Equal(1, child.Endings);
+        Assert.False(ActionRunnerTagCounter.Global.IsInUse(child.Tag));
+        Assert.Null(child.TryRetainCompoundChild());
+        actions.Update();
+        Assert.Equal(new[] { parent.Tag, child.Tag }, ended.Select(record => record.Tag));
+        Assert.Equal(completes ? EngineActionResult.Success : EngineActionResult.Running, ended[1].Result);
+    }
+
+    [Fact]
+    public void RetainedUnqueuedChildReleasesItsReservationWithoutPublishingCompletion()
+    {
+        var child = new RetainedChild(false);
+        var parent = new CompoundActionSequential(() => 0, child);
+        using var retained = child.TryRetainCompoundChild();
+        Assert.NotNull(retained);
+        Assert.True(parent.RetireNeverAdmittedTree());
+        Assert.True(ActionRunnerTagCounter.Global.IsInUse(child.Tag));
+        retained.Dispose();
+        Assert.True(child.DestructionObserved);
+        Assert.False(ActionRunnerTagCounter.Global.IsInUse(child.Tag));
+        Assert.Equal(0, child.Endings);
+    }
+
     // ------------------------------------------------------------------ P
 
     /// <summary>P1: the compound's runner type is 0xFFFFFFFE with mask 0; a null child is skipped.</summary>

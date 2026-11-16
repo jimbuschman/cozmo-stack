@@ -38,6 +38,7 @@ internal sealed class ActionWatcher
     internal bool AppSinkBound;
     internal uint? RobotId {get;set;}
     internal Func<float>? ClockSeconds;
+    internal Action<Action>? RunInActionOwner;
     internal SourceLogSink? SourceLog;
     internal Action<string>? LegacyLog;
 

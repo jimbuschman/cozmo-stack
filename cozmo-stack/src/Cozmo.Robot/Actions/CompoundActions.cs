@@ -51,8 +51,13 @@ public abstract class CompoundAction : ActionRunner
     internal override bool RetireNeverAdmittedTree()
     {
         if(!CanRetireNeverAdmittedTree())return false;
-        foreach(var child in _children)if(!child.RetireNeverAdmittedTree())return false;
-        _children.Clear();_ignorePredicates.Clear();_completionCache.Clear();
+        while (_children.Count != 0)
+        {
+            var child = _children[0];
+            _children.RemoveAt(0);
+            child.ReleaseCompoundChildOwner(preparedForCompletion: false);
+        }
+        _ignorePredicates.Clear();_completionCache.Clear();
         return base.RetireNeverAdmittedTree();
     }
     /// <summary>Test/inspection: the live child list in insertion order.</summary>
@@ -93,6 +98,7 @@ public abstract class CompoundAction : ActionRunner
             Behavior.SteppedBehavior.ReportMissing("M8-017 AddAction native child name+0x48 missing; compound name is not derived from a CLR type");
         }
         else _nativeName = _children.Count == 0 ? "[" + childName + "]" : _nativeName[..^1] + "+" + childName + "]";
+        child.AddCompoundChildOwner();
         _children.Add(child);
     }
 
@@ -125,6 +131,7 @@ public abstract class CompoundAction : ActionRunner
             if(!current())return false;
         }
         else _nativeName=_children.Count==0?"["+childName+"]":_nativeName[..^1]+"+"+childName+"]";
+        child.AddCompoundChildOwner();
         _children.Add(child);
         if(ignoreFailure)_ignorePredicates[child]=static (_,_)=>true;
         return true;
@@ -177,7 +184,7 @@ public abstract class CompoundAction : ActionRunner
     /// <summary>
     /// P6 StoreUnionAndDelete 0x0054F050: read the virtual child union BEFORE Prep; cache union/type by the
     /// child's current tag; Prep the child; a proxy match copies the child's type to the compound's +0x44. With
-    /// DeleteOnCompletion true, erase the child (its destruction runs here, the last reference) and return true.
+    /// DeleteOnCompletion true, erase the list's shared owner and return true.
     /// With it false, unlock the child unless +0x56 or NOT_STARTED, retain it in the list and return false. No
     /// Cancel/Stop/state change.
     /// </summary>
@@ -189,9 +196,8 @@ public abstract class CompoundAction : ActionRunner
         if (_proxy && child.Tag == _proxyTag) Type = child.Type;       // P6: proxy match copies the child type
         if (_deleteOnCompletion)
         {
-            _children.Remove(child);
-            Behavior.SteppedBehavior.ReportMissing("M8-017 StoreUnionAndDelete native shared-control external-owner retention is not bound; existing direct child cleanup remains incomplete for aliased or retained children (0x0054F0CC..0x0054F0EC)");
-            child.WatcherEnding();                                     // candidate sole-owner cleanup
+            if (_children.Remove(child))
+                child.ReleaseCompoundChildOwner(preparedForCompletion: true); // 0x0054F0E8
             return true;
         }
         if (!child.SuppressTrackLocking && child.State != EngineActionResult.NotStarted)
@@ -250,14 +256,14 @@ public abstract class CompoundAction : ActionRunner
         while (_children.Count != 0)
         {
             var child = _children[0];
+            using var temporary = child.TryRetainCompoundChild(); // 0x0054EB9E, released after list erase at 0x0054EC20
             if (!_deleteOnCompletion && child.State != EngineActionResult.NotStarted && !child.SuppressTrackLocking)
             {
                 if (!child.OwnsTracksByUnsignedOwner()) child.RetakeTracks();
             }
             child.Prep();
-            _children.RemoveAt(0);
-            Behavior.SteppedBehavior.ReportMissing("M8-017 DeleteActions native temporary shared ownership and last-release recipient 0x0054EC0E..0x0054EC20 are not bound; existing direct child cleanup is a candidate sole-owner path");
-            child.WatcherEnding();
+            if (_children.Remove(child))
+                child.ReleaseCompoundChildOwner(preparedForCompletion: true);
         }
         _children.Clear();
         _ignorePredicates.Clear();

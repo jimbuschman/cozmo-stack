@@ -250,6 +250,59 @@ public abstract class ActionRunner : IActionRunner
     // compound propagates it to its children (W7). A runner without one (the base, and every test fake) is a no-op.
     // W13: registration is not gated by the external interface.
     internal virtual ActionWatcher? Watcher { get; set; }
+    private readonly object _compoundChildGate = new();
+    private int _compoundChildOwners;
+    private bool _compoundChildCompleting;
+
+    // 0x0054EE1E..0x0054EE28 creates a shared control and appends a strong list entry.
+    internal void AddCompoundChildOwner()
+    {
+        lock (_compoundChildGate)
+        {
+            if (_compoundChildOwners < 0 || DestructionObserved)
+                throw new InvalidOperationException("Cannot own a retired compound child");
+            _compoundChildOwners++;
+        }
+    }
+
+    // An ordinary CLR reference observes the runner. Promoting the native weak child
+    // reference (for example 0x0055CA98) is what extends its native lifetime.
+    internal IDisposable? TryRetainCompoundChild()
+    {
+        lock (_compoundChildGate)
+        {
+            if (_compoundChildOwners <= 0 || DestructionObserved) return null;
+            _compoundChildOwners++;
+            return new CompoundChildRetention(this);
+        }
+    }
+
+    internal void ReleaseCompoundChildOwner(bool preparedForCompletion)
+    {
+        bool finish;
+        lock (_compoundChildGate)
+        {
+            _compoundChildCompleting |= preparedForCompletion;
+            if (--_compoundChildOwners != 0) return;
+            _compoundChildOwners = -1; // Publish the final release before invoking destructor callbacks.
+            finish = _compoundChildCompleting;
+        }
+        if (finish) WatcherEnding();
+        else RetireNeverAdmittedTree();
+    }
+
+    private sealed class CompoundChildRetention(ActionRunner child) : IDisposable
+    {
+        private ActionRunner? _child = child;
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _child, null) is not { } runner) return;
+            void Release() => runner.ReleaseCompoundChildOwner(preparedForCompletion: false);
+            if (runner.Watcher?.RunInActionOwner is { } run) run(Release);
+            else Release();
+        }
+    }
+
     private int _everQueued;
     internal void MarkQueueAdmission()=>Interlocked.Exchange(ref _everQueued,1);
 

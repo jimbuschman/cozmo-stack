@@ -30,6 +30,7 @@ internal sealed class ActionList : IDisposable
     public ActionList(Action<string>? log = null, SourceLogSink? sourceLog = null,uint? robotId=null,Func<float>? clockSeconds=null,Func<IDisposable>? enterOwner=null)
     {
         _enterOwner=enterOwner;
+        _watcher.RunInActionOwner = WithGate;
         _log = log; _sourceLog = sourceLog;_watcher.RobotId=robotId;_watcher.SourceLog=sourceLog;_watcher.LegacyLog=log;_watcher.ClockSeconds=clockSeconds;
         // The watcher's D6 broadcast is the local seam; forward it to the game sink when one is set.
         _watcher.RobotCompletedActionBroadcast += r => _gameSend?.Invoke(r);
