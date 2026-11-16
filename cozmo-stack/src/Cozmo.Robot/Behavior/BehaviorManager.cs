@@ -48,9 +48,9 @@ internal interface IHostReadinessOwner
 /// (<c>EnumToString(ReactionTrigger)</c> 0x0077065c: 21 Count, 22 NoneTrigger), not a behaviour class: "no reaction
 /// is running" is a null <see cref="CurrentReactionTrigger"/> here.
 ///
-/// * <c>ChooseNextScoredBehaviorAndSwitch</c> — selection is by the activity's chooser; the manager asks the
+/// * <c>ChooseNextScoredBehaviorAndSwitch</c> â€” selection is by the activity's chooser; the manager asks the
 ///   activity and switches to what it answers.
-/// * <c>CheckReactionTriggerStrategies</c> and the disable locks — the M10 reaction dispatch, from the M10
+/// * <c>CheckReactionTriggerStrategies</c> and the disable locks â€” the M10 reaction dispatch, from the M10
 ///   inventory rows C3..C11 and gap pass 1 section 4.
 /// * <c>FinishCurrentBehavior</c>, <c>GetCurrentBehavior</c>, <c>FindBehaviorByID</c>,
 ///   <c>FindBehaviorsByClass</c>.
@@ -76,7 +76,7 @@ public sealed partial class BehaviorManager : IDisposable
         set=>_greetingTimeField54=value;
     }
     private float _greetingTimeField54=GreetingTimeField54Initial;
-    // fidelity: M8-001, M8-012 — manager forwarding 005A42C4..005A4304.
+    // fidelity: M8-001, M8-012 â€” manager forwarding 005A42C4..005A4304.
     internal void RequestCurrentBehaviorEndOnNextActionComplete()
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
@@ -733,7 +733,7 @@ public sealed partial class BehaviorManager : IDisposable
     /// C2/C11 (0x5A1C24..0x5A1C9C, 0x5A2BB6..0x5A2C3A): the CompoundActionParallel{MoveHeadToAngleAction,
     /// MoveLiftToHeightAction}, list order {head, lift}. Head: <c>Radians(head)</c> with tolerance
     /// <c>Radians(0x3D0EFA35 = 0.0349066)</c> and variability <c>Radians(0)</c>, and the action's constructor defaults
-    /// 15 rad/s and 20 rad/s² (MA9). Lift: <c>height</c>, tolerance 5.0f (0x40A00000), variability 0.0f, and the
+    /// 15 rad/s and 20 rad/sÂ² (MA9). Lift: <c>height</c>, tolerance 5.0f (0x40A00000), variability 0.0f, and the
     /// constructor constants +0x8C = 10.0f and +0x90 = 20.0f. <c>MoveLiftToHeightAction</c> has no defaults for
     /// height or tolerance.
     /// </summary>
@@ -1038,6 +1038,8 @@ public sealed partial class BehaviorManager : IDisposable
         long epoch=Interlocked.Read(ref _hostSelectionEpoch);
         var desired = activity.GetDesiredActiveBehavior(current, nowSec);
         if (host is not null && (epoch!=Interlocked.Read(ref _hostSelectionEpoch) || !ReferenceEquals(Current,current) || !ReferenceEquals(Activity,activity))) return;
+        // 0x005A2A74..0x005A2A80 compares behavior pointers. A failed Init has
+        // cleared Current, so the chooser can return the same candidate next tick.
         if (ReferenceEquals(desired, current)) return;
         bool started = SwitchToBehaviorBaseCore(new RunningInfo(desired, null, null), nowSec, BehaviorStopReason.Interrupted, hostReadiness:host);
         if(host is not null && !ReferenceEquals(Activity,activity))return;
@@ -1481,6 +1483,8 @@ public sealed partial class BehaviorManager : IDisposable
                 new Dictionary<string, string> { ["$data"] = currentName }); // 0x005A236A..0x005A23B4
             if (!RequestOwnerCurrent(owner)) return;
         }
+        // 0x005A22EC..0x005A2480 emits equal endpoint IDs too. In particular,
+        // a failed switch starting from an empty slot reports the two Wait sentinels.
         owner.Engine.BroadcastBehaviorTransition(new(previous.Id, current.Id, previous.Class, previous.Executable,
             current.Class, current.Executable, current.DisplayKey));
     }
@@ -1519,7 +1523,7 @@ public sealed partial class BehaviorManager : IDisposable
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         if (_hostDisposed) return;
-        // fidelity: M8-012 — empty-info switch 0x005A1E68..1F12; report and entry/exit stores precede the final info.
+        // fidelity: M8-012 â€” empty-info switch 0x005A1E68..1F12; report and entry/exit stores precede the final info.
         SwitchToBehaviorBaseCore(new RunningInfo(null, null, null), nowSec, reason);
     }
 
