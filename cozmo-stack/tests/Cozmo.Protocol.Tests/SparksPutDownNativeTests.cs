@@ -129,15 +129,13 @@ public sealed class SparksPutDownNativeTests
         double u = (3499211612.0 + 581869302.0 * 4294967296.0) / 18446744073709551616.0;
         float expected = (float)((-75.0 - (-45.0)) * u + (-45.0));
         var manager = f.Robot.BehaviorManagerOwner!;
-        var missing = new List<string>();
-        SteppedBehavior.ResetMissingForTests();
-        SteppedBehavior.MissingReported += missing.Add;
-        try { Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult()); }
-        finally { SteppedBehavior.MissingReported -= missing.Add; }
+        var transitions = new List<BehaviorTransitionReport>();
+        f.Rig.Engine.BehaviorTransition += transitions.Add;
+        Assert.True(manager.StartAsync(Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         Assert.Same(behavior, manager.Current);
-        // Actual supplied-admission manager switch exposes the implementation gap, not a native report.
-        Assert.Contains(missing, text => text.Contains("M8-012") && text.Contains("0x005A22B4..0x005A24AC")
-            && text.Contains("BehaviorTransition/displayNameKey delivery is unbuilt"));
+        // 0x005A23DA..0x005A2466 reports the newly admitted behavior.
+        f.Rig.Engine.DrainAppDelivery();
+        Assert.Contains(transitions, transition => ((BehaviorID)transition.NewId).ToString() == Id);
         var initial = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
         Assert.Equal(2, initial.Children.Count);
         var drive = Assert.IsType<DriveStraightAction>(initial.Children[0]);
