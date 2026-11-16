@@ -36,25 +36,30 @@ public sealed partial class EngineRobot
 
         string? library = ShippedLibraries.FindLibDir();
         string? banks = Engine.Options.SpeechSoundBankDirectory;
-        string? archive = Engine.Options.SpeechAudioArchivePath;
-        if (archive is null && banks is not null)
-        {
-            string configured = Path.Combine(banks, "AudioAssets.zip");
-            if (File.Exists(configured)) archive = configured;
-        }
-        if (archive is null && Engine.Options.ResourcesPath is { } resources)
-            archive = Path.Combine(resources, "sound", "AudioAssets.zip");
+        string? archive = ResolveSpeechAudioArchive(banks);
         if (library is null || archive is null || !File.Exists(archive)) return null;
 
         return _cannedSpeechOwner = new CannedSpeechOwner(library, banks, archive,
             message => Engine.PostGameMessage(() => Engine.EmitStackLog(message)), CannedSpeechSinkForTest);
     }
 
+    private string? ResolveSpeechAudioArchive(string? banks)
+    {
+        if (Engine.Options.SpeechAudioArchivePath is { } explicitPath) return explicitPath;
+        if (banks is not null)
+        {
+            string bankArchive = Path.Combine(banks, "AudioAssets.zip");
+            if (File.Exists(bankArchive)) return bankArchive;
+        }
+        // Resource scope uses sound/ at 0x00592C3A..0x00592C52, with the shipped AudioAssets.zip.
+        return Engine.Options.ResourcesPath is { } resources ? Path.Combine(resources, "sound", "AudioAssets.zip") : null;
+    }
+
     internal CannedSpeechOwner? GetCannedSpeechOwner()
     {
         string? library = ShippedLibraries.FindLibDir();
         string? banks = Engine.Options.SpeechSoundBankDirectory;
-        string? archive = Engine.Options.SpeechAudioArchivePath ?? (banks is null ? null : Path.Combine(banks, "AudioAssets.zip"));
+        string? archive = ResolveSpeechAudioArchive(banks);
         if (!OperatingSystem.IsWindows() || Engine.Options.LabLocaleLanguage != "en" || library is null || banks is null || archive is null ||
             !File.Exists(Path.Combine(banks, "Init.bnk")) || !File.Exists(Path.Combine(banks, "English(US)", "Cozmo.bnk")) || !File.Exists(archive) ||
             Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this) || AudioOutputSource != RobotAudioOutputSource.PlayOnRobot)

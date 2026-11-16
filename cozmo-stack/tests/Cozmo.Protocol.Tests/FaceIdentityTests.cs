@@ -41,21 +41,26 @@ public sealed class FaceIdentityTests
     {
         if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
         string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
-        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
         var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
-            SpeechSoundBankDirectory = banks, SpeechAudioArchivePath = archive, LabLocaleLanguage = "en", BlockPoolPath = "" };
+            SpeechSoundBankDirectory = banks, LabLocaleLanguage = "en", BlockPoolPath = "" };
         using var fixture = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, engineOptions: options,
             sourceNvStored: tag => tag switch { VisionSystem.FaceAlbumNvTag => Album(), VisionSystem.FaceEnrollmentNvTag => Enrollment(), _ => null });
         var sink = new EnrollmentSink(); fixture.Robot.CannedSpeechSinkForTest = () => sink;
         var vision = fixture.M.Vision;
         vision.FaceDetector = new EnrollmentCamera(fresh); vision.Enabled = true;
         vision.ModeEnableMask = 1 << 2; vision.Schedules = AllVisionModesSchedule.InitDefaultSchedules();
-        fixture.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces"); fixture.Rig.Tick();
+        // Reproduce the hardware command session's idle Selection/Wait before its two back-to-back posts.
+        fixture.Rig.Robot.SetEnableFreeplayActivity(false);
+        fixture.Rig.Tick();
+        Assert.Equal("Wait", fixture.Robot.BehaviorManagerOwner!.Current?.Id);
         var behavior = Assert.IsType<Cozmo.Robot.Behavior.NativeEnrollFaceBehavior>(fixture.Runtime.Bound["EnrollFace"]);
         var reports = new List<FaceEnrollmentCompletedReport>();
+        var appReports = new List<FaceEnrollmentCompletedReport>();
+        fixture.Rig.Engine.FaceEnrollmentCompleted += appReports.Add;
         var reportOrder = new List<byte>();
         using var erased = fixture.Rig.Engine.AnimationMessages.SubscribeMessage(0x57, true, _ => reportOrder.Add(0x57));
         using var report = fixture.Rig.Engine.AnimationMessages.SubscribeMessage(0x56, true, value => { reportOrder.Add(0x56); reports.Add(Assert.IsType<FaceEnrollmentCompletedReport>(value)); });
+        fixture.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
         fixture.Rig.Robot.SetFaceToEnroll("Ada", fresh ? 0 : 7);
         int mark = fixture.Rig.Mark(), seen = 0;
         bool pulse = false; byte? activeTag = null; string? activeClip = null; uint image = 2100;
@@ -131,6 +136,7 @@ public sealed class FaceIdentityTests
         }
         Assert.True(pulse, $"enrollment never reached scan; phase={behavior.Phase}");
         var completed = Assert.Single(reports);
+        Assert.Equal(completed, Assert.Single(appReports));
         Assert.Equal(cancel ? (byte)6 : (byte)0, completed.Result);
         Assert.Equal(7, completed.Id);
         Assert.Equal("Ada", completed.Name);

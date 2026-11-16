@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -36,6 +37,28 @@ internal static class CommandsHw
 
     internal static readonly string[] RecordIds = Steps.Select(s => s.Record).Concat(new[]
         { "M14-003", "M14-008", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
+
+    internal static T? WaitForReport<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
+        Func<T, bool> matches, Action postRequest, TimeSpan timeout, CancellationToken cancellationToken) where T : class
+    {
+        var elapsed = Stopwatch.StartNew();
+        var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Receive(T report)
+        {
+            if (elapsed.Elapsed <= timeout && matches(report)) completion.TrySetResult(report);
+        }
+        subscribe(Receive);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            postRequest(); // The production game APIs enqueue and return.
+            TimeSpan remaining = timeout - elapsed.Elapsed;
+            return completion.Task.WaitAsync(remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero, cancellationToken)
+                .GetAwaiter().GetResult();
+        }
+        catch (TimeoutException) { return null; }
+        finally { unsubscribe(Receive); }
+    }
 
     internal static void PrintPlan()
     {
@@ -212,8 +235,7 @@ internal sealed partial class M15CubeRun
             var enrolled = WaitCommandReport<FaceEnrollmentCompletedReport>("teach-face",
                 h => r.Engine.FaceEnrollmentCompleted += h, h => r.Engine.FaceEnrollmentCompleted -= h, _ => true,
                 () => { r.ActivateHighLevelActivity("MeetCozmoFindFaces"); r.SetFaceToEnroll(name); },
-                120000, report => report.Result);
-            if (enrolled is null) r.CancelFaceEnrollment();
+                120000, report => report.Result, onNoReport: r.CancelFaceEnrollment);
             if (enrolled is not { Result: 0, Id: > 0 } || enrolled.Name != name)
             {
                 SkipCommand("rename-face", "No successful enrollment of this run's temporary face.");
@@ -233,27 +255,25 @@ internal sealed partial class M15CubeRun
     }
 
     T? WaitCommandReport<T>(string id, Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
-        Func<T, bool> matches, Action request, int limitMs, Func<T, uint>? read = null) where T : class
+        Func<T, bool> matches, Action request, int limitMs, Func<T, uint>? read = null, Action? onNoReport = null) where T : class
     {
         var step = CommandsHw.Steps.Single(s => s.Id == id);
         Console.WriteLine($"\n[{id}] {step.Plan}");
-        var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        void Receive(T report) { if (matches(report)) completion.TrySetResult(report); }
         double begin = Now;
         T? report = null;
-        string detail = "No matching engine report arrived within the observation window.";
-        subscribe(Receive);
+        string detail = $"No matching engine report arrived within {limitMs / 1000} seconds.";
         try
         {
-            request();
-            if (Poll(() => completion.Task.IsCompleted, limitMs))
+            report = CommandsHw.WaitForReport(subscribe, unsubscribe, matches, () =>
             {
-                report = completion.Task.Result;
-                detail = "Engine report received.";
-            }
+                request();
+                Console.WriteLine($"    Request queued. Waiting up to {limitMs / 1000} seconds for the engine report.");
+            }, TimeSpan.FromMilliseconds(limitMs), cancel.Token);
+            if (report is not null) detail = "Engine report received.";
         }
         catch (Exception e) when (e is not OperationCanceledException) { detail = e.Message; }
-        finally { unsubscribe(Receive); }
+        // End the enrollment window before the operator observation prompt can wait for an answer.
+        if (report is null) onNoReport?.Invoke();
         var phase = CommandPhase(id, begin, detail);
         if (report is not null) phase["report"] = JsonSerializer.SerializeToNode(report);
         FinishCommand(step, phase, report is null || read is null ? null : read(report));
