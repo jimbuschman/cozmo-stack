@@ -12,19 +12,19 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class FacePoseReadersNativeTests
 {
-    private sealed class FaceDetector : IFaceDetector
+    private sealed class FaceDetector(string? name = "Ada") : IFaceDetector
     {
         public bool IsAvailable => true;
         public string Description => "supplied face geometry";
         public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp) =>
             new[] { new DetectedFace(7, new FaceRect(110,65,58,64), new Vec2(126,91), new Vec2(151,94),
-                Name: "Ada", RollRad: .25) { NativeNewEntryRotatingTooFast = false } };
+                Name: name, RollRad: .25) { NativeNewEntryRotatingTooFast = false } };
     }
 
-    private static void EnableFaces(Fixture f)
+    private static void EnableFaces(Fixture f, IFaceDetector? detector = null)
     {
         var vision=f.M.Vision;
-        vision.FaceDetector=new FaceDetector();vision.Enabled=true;vision.ModeEnableMask=1<<2;
+        vision.FaceDetector=detector ?? new FaceDetector();vision.Enabled=true;vision.ModeEnableMask=1<<2;
         vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         f.Rig.Robot.SetVisionWhileMoving(true);f.Rig.Tick();
     }
@@ -73,10 +73,36 @@ public sealed class FacePoseReadersNativeTests
         finally{f.Robot.ActionList.Clear();f.Rig.Engine.Needs.Log-=needs.Add;}
     }
 
-    // M10-003. reach: production for the strategy (the instance the robot's BehaviorManager builds from the shipped
-    // reaction map). reach: unit for its entry and the faces: the stack feeds the strategy from the host FaceObserved
-    // event (the 0x46 recipient join is a recorded MISSING), and each native entry is supplied directly with a chosen
-    // translation instead of coming from a camera frame, so the distances are exact.
+    [Fact]
+    public void StockCameraProducerDeliversTheFourthUnnamedObservationAndHonorsExternalInterface()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        var reaction = Assert.Single(f.Robot.BehaviorManagerOwner!.Reactions,
+            registration => registration.Strategy.Trigger == ReactionTrigger.FacePositionUpdated);
+        var strategy = Assert.IsType<FacePositionUpdatedStrategy>(reaction.Strategy);
+        EnableFaces(f, new FaceDetector(name: null));
+        f.Head = .1f;
+        var observed = new List<NativeObservedFace>();
+        using var reports = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x46, true,
+            payload => observed.Add(Assert.IsType<NativeObservedFace>(payload)));
+        for (uint i = 1; i <= 3; ++i)
+        {
+            Frame(f, 400 + i);
+            Assert.Equal((int)i, f.M.Vision.Faces.GetNativeFace(f.Robot, 7)?.TimesObserved);
+            Assert.Empty(observed);
+        }
+        Frame(f, 404);
+        Assert.Equal(7, Assert.Single(observed).Id);
+        Assert.Empty(strategy.DesiredFaces);
+
+        f.Robot.HasExternalInterface = false;
+        Frame(f, 405);
+        Assert.Equal(5, f.M.Vision.Faces.GetNativeFace(f.Robot, 7)?.TimesObserved);
+        Assert.Single(observed);
+    }
+
+    // M10-003. The configured robot's 0x46 subscriber reads native entries with controlled poses and report timing.
+    // The companion camera test covers the producer's count gate.
     // Expected, from the engine: the handler runs only on tag 0x46 (0x0060CF70), which AddOrUpdateFace broadcasts only
     // for an entry seen more than 3 times or named (0x004F4956..0x004F496E), so an unnamed face's first three
     // observations never reach it. It measures ComputeDistanceBetween(Robot::GetPose, entry+0xF4) (0x0060CC28..
@@ -95,14 +121,17 @@ public sealed class FacePoseReadersNativeTests
         Assert.Equal(new Vec3(0,0,0),f.Robot.GetCheckedMainPose().Translation);
         var origin=f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         uint time=10;
-        void See(int id,Vec3 native,Vec3 flat)
+        void See(int id,Vec3 native,Vec3 flat,bool publish=true)
         {
             var tracked=new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),new Vec2(1,1),new Vec2(2,1)),time++)
             {
                 HeadPose=new Pose3d(Rotation3d.Identity,native),LegacyHeadPose=new Pose3d(Rotation3d.Identity,flat),
                 NativeTrackingTranslation=native,NativeTrackingRotation=Rotation3d.Identity
             };
-            Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(tracked,f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot));
+            var observation=Assert.IsType<FaceObservation>(f.M.Vision.Faces.AddOrUpdateNativeFace(tracked,
+                f.Robot.GetCheckedMainPose(),false,origin.Node!,true,requireNativePose:true,expectedOwner:f.Robot));
+            if (publish && observation.Face.TimesObserved > 3)
+                f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(id,observation.Timestamp));
         }
         // The first three unnamed observations are below the 0x46 gate: near or far, they never reach the handler.
         void Ungated(int id,Vec3 native){for(int i=0;i<3;i++)See(id,native,native);}
@@ -115,7 +144,9 @@ public sealed class FacePoseReadersNativeTests
         Ungated(5,new Vec3(500,0,0));
         See(5,new Vec3(500,0,0),new Vec3(100,0,0));
         Assert.DoesNotContain(5,strategy.DesiredFaces);
-        See(5,new Vec3(200,0,0),new Vec3(100,0,0));
+        See(5,new Vec3(200,0,0),new Vec3(100,0,0),publish:false);
+        Assert.DoesNotContain(5,strategy.DesiredFaces); // A host observation, even with an eligible count, cannot invoke the native recipient.
+        f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(5,time-1));
         Assert.Contains(5,strategy.DesiredFaces);
         // Face 6: native far both times (flat projection far then near): it never becomes close.
         Ungated(6,new Vec3(500,0,0));
@@ -135,5 +166,16 @@ public sealed class FacePoseReadersNativeTests
         See(9,new Vec3(500,0,0),new Vec3(500,0,0));
         See(9,new Vec3(148.63052368164062,260.5934753417969,0),new Vec3(500,0,0));
         Assert.DoesNotContain(9,strategy.DesiredFaces);
+
+        // Entry +0xF4 includes the parent transform. A local translation of 500 mm under a
+        // -350 mm intermediate parent is 150 mm from the robot in the shared origin.
+        Ungated(10,new Vec3(500,0,0));
+        See(10,new Vec3(500,0,0),new Vec3(500,0,0));
+        Assert.DoesNotContain(10,strategy.DesiredFaces);
+        var entry=Assert.IsType<FaceEntry>(f.M.Vision.Faces.GetNativeFace(f.Robot,10));
+        using var intermediate=new Pose3d(Rotation3d.Identity,new Vec3(-350,0,0),parent:origin);
+        entry.HeadPose.SetParent(intermediate);
+        f.Rig.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(10,entry.LastObservedTimestamp));
+        Assert.Contains(10,strategy.DesiredFaces);
     }
 }

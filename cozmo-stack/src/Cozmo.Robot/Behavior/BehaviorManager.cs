@@ -149,7 +149,7 @@ public sealed partial class BehaviorManager : IDisposable
             nativeHiccup: row => CreateNativeHiccup(row, manipulation, bound, nativeOwner ?? _context.Robot.Engine.Robot),
             acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null,
             nativePet: bound is not null && bound.TryGetValue("ReactToPet", out var pet) ? pet as NativeReactToPetBehavior : null,
-            nativePetOwner: nativeOwner, nativePetExpected: nativeOwner is not null,
+            nativeOwner: nativeOwner, nativePetExpected: nativeOwner is not null,
             nativeFistBump: row =>
             {
                 if (nativeOwner is null || row.BehaviorId != "FistBump" || bound is null ||

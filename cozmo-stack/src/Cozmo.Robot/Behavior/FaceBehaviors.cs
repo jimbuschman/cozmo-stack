@@ -828,18 +828,34 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
 
     private readonly FaceWorld _world;
     private readonly AcknowledgeFaceBehavior _behavior;
-    private readonly Func<Pose3d?> _robotPose;
+    private readonly EngineRobot? _nativeOwner;
+    private readonly RetainedSubscription? _faceObservedSubscription;
     private readonly Func<double> _clockSec;
     private readonly object _gate = new();
     private readonly SortedSet<int> _desired = new();
     private readonly HashSet<int> _reacted = new();
     private readonly Dictionary<int, bool> _isClose = new();
-    private double _lastReactionSec = -1;
+    private float _lastReactionSec = -1;
+    private int _disposed;
 
     public FacePositionUpdatedStrategy(FaceWorld world, AcknowledgeFaceBehavior behavior, Func<Pose3d?> robotPose, Func<double> clockSec)
+        : this(world, behavior, clockSec, null) { }
+
+    internal FacePositionUpdatedStrategy(FaceWorld world, AcknowledgeFaceBehavior behavior, EngineRobot owner)
+        : this(world, behavior, () => owner.Engine.Timer.SecondsF, owner) { }
+
+    private FacePositionUpdatedStrategy(FaceWorld world, AcknowledgeFaceBehavior behavior, Func<double> clockSec, EngineRobot? owner)
     {
-        _world = world; _behavior = behavior; _robotPose = robotPose; _clockSec = clockSec;
-        world.FaceObserved += OnObserved;
+        _world = world; _behavior = behavior; _clockSec = clockSec; _nativeOwner = owner;
+        if (owner is null) world.FaceObserved += OnObserved;
+        else
+        {
+            SourceLog = (level, channel, name, text) => owner.Engine.EmitSourceLog(level, channel, name, text);
+            // 0x0060C686..9C owns the 0x46 subscription. The inherited 0x32 branch at 0x0060CF6C is a no-op.
+            if (owner.HasExternalInterface)
+                _faceObservedSubscription = owner.Engine.AnimationMessages.SubscribeMessage(0x46, true,
+                    payload => { if (payload is NativeObservedFace observed) HandleFaceObserved(observed.Id); });
+        }
         // fidelity: M10-003 -- ACKNOWLEDGE-FACE-1 T3: BehaviorThatStrategyWillTriggerInternal calls the behaviour's AddListener (vslot AP+0x34,
         // reloc 0x0102B870) with strategy+0x50 (0x0060D074..0x0060D080). The stack binds strategy and behaviour here, at construction.
         behavior.AddListener(this);
@@ -866,78 +882,77 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
         lock (_gate) return _desired.Add(id);
     }
 
-    // fidelity: M10-003 -- the native handler runs only for tag 0x46 (dispatch 0x0060CF70), and AddOrUpdateFace broadcasts 0x46 only
-    // when the entry count is above 3 or it has a name (0x004F4956..0x004F496E). The stack delivers through the host FaceObserved
-    // event, so the same gate is applied here; the subscription to the 0x46 recipient itself is still MISSING (no seam from the
-    // strategy to the robot's message delivery, which also carries the HasExternalInterface condition).
+    // The standalone adapter applies the producer gate here. The configured recipient receives the already-gated tag 0x46.
     private void OnObserved(FaceObservation o)
     {
         int count = o.NativeSnapshot?.Count ?? o.Face.TimesObserved;
         bool named = o.NativeSnapshot is { } snapshot ? !string.IsNullOrEmpty(snapshot.Name) : o.Face.HasName;
         if (count <= 3 && !named) return;
-        SteppedBehavior.ReportMissing("M10-003 FacePositionUpdated is fed by the host FaceObserved event with the 0x46 count/name gate applied, not by the 0x46 recipient (0x0060CF70)");
         HandleFaceObserved(o.Face.Id);
     }
 
     /// <summary>3e.</summary>
     public void HandleFaceObserved(int id)
     {
-        if (id < 0) return;
-        // FaceWorld::GetFace(int) 0x004F597E (called at 0x0060CB9C..0x0060CBA6) returns the entry only in the current world origin;
-        // the handler returns silently otherwise.
-        var lookupOwner = _world.NativeOwner?.Invoke();
-        FaceEntry? found = lookupOwner is not null ? _world.GetNativeFace(lookupOwner, id) : _world.GetFace(id);
-        if (found is not { } face) return;
-        bool handled = false;
+        using var lease = _nativeOwner?.Engine.EnterSynchronousOwner();
+        if (id < 0 || !Current()) return; // 0x0060CB92..CB98
+        var owner = _nativeOwner ?? _world.NativeOwner?.Invoke();
+        // 0x0060CB9E calls the current-origin lookup at 0x004F597E.
+        var face = owner is not null ? _world.GetNativeFace(owner, id) : _world.GetFace(id);
+        if (face is null) return;
+
         bool reacted;
         lock (_gate) reacted = _reacted.Contains(id);
-        if (face.HasName && !reacted)
-        {
-            AddDesiredFace(id);
-            Log?.Invoke($"ReactionTriggerStrategyFacePositionUpdated: face {id} named for the first time");
-            handled = true;
-        }
-        // fidelity: M10-003 -- ComputeDistanceBetween(Robot::GetPose, entry+0xF4, &d) (0x0060CC28..0x0060CC32): the robot's native main pose
-        // and the native entry pose under its observation origin, never the flat host projection (FACE-POSE-READERS-NATIVE-1).
-        var d = Vec3.Zero;
+        bool firstNamed = face.HasName && !reacted;
+        if (firstNamed && AddDesiredFace(id))
+            Emit(EngineLogLevel.Debug, "Unnamed", "BehaviorAcknowledgeFace.InitialFaceReaction",
+                $"saw face ID {id} (which is named) for the first time, want to react");
+        if (!Current()) return;
+
+        // This is the stored entry +0xF4 pose (0x0060CC2C), including its original parent and rotation.
+        float squared = 0;
         bool measured = false;
-        var owner = _world.NativeOwner?.Invoke();
-        var faceOrigin = face.NativeObservationOrigin;
-        if (owner is null || face.NativeTrackingTranslation is not { } point || faceOrigin is null)
-            SteppedBehavior.ReportMissing("M10-003 FacePositionUpdated native Robot owner or native face entry pose unavailable; distance withheld");
-        else
+        if (owner is not null)
         {
             using var mutation = _world.NativePoseScope?.Invoke();
             lock (owner.PoseTreeGate)
             {
-                using var origin = Pose3d.WrapExisting(faceOrigin);
-                using var pose = new Pose3d(Rotation3d.Identity, point);
-                pose.SetParent(origin);
-                measured = PlacementProducerGeometry.TryVector(owner.GetCheckedMainPose(), pose, ref d);
+                // A diagnostic callback may have changed the observation between the lookup and this read.
+                if (!ReferenceEquals(_world.GetNativeFace(owner, id), face)) return;
+                if (face.HeadPose is { Node: not null } pose)
+                    measured = PlacementProducerGeometry.TryDistanceSquared(owner.GetCheckedMainPose(), pose, ref squared);
             }
         }
+        if (!Current()) return;
         if (!measured)
         {
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "ReactionTriggerStrategyFacePositionUpdated", $"could not get the distance to face {id}");
+            Emit(EngineLogLevel.Error, null, "BehaviorAcknowledgeFace.PoseInWrongFrame",
+                "We couldnt get the distance from the robot to the face pose that we just saw...");
+            if (_nativeOwner is not null && Current()) Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0060CC9C..B0
             return;
         }
-        // ComputeDistanceBetween 0x00847780: f32 x², +y², +z² (0x008477A4..0x008477B6), vsqrt.f32 (0x008477BC); compared in f32
-        // against the f32 thresholds (vcmpe.f32, 0x0060CD88..0x0060CD9A; 300.0/400.0 at 0x0060CF14..0x0060CF1C).
-        float dist = MathF.Sqrt(PlacementProducerGeometry.NormSquared(d));
+
+        // ComputeDistanceBetween 0x00847780: f32 vector, sum of squares then sqrt. 0x0060CC52..CC5C sets hysteresis.
+        float distance = MathF.Sqrt(squared);
         bool inMap, wasClose;
-        double last;
+        float last;
         lock (_gate) { inMap = _isClose.TryGetValue(id, out wasClose); last = _lastReactionSec; }
-        float threshold = (float)(inMap && wasClose ? StayCloseMm : CloseMm);
-        bool isClose = dist < threshold;
-        double now = _clockSec();
-        bool cooldown = last >= 0 && now < last + CooldownSec;
-        if (inMap && !wasClose && isClose && !handled && !cooldown)
-        {
-            AddDesiredFace(id);
-            Log?.Invoke($"BehaviorAcknowledgeFace.FaceBecomeClose: face {id}");
-        }
-        lock (_gate) _isClose[id] = isClose;
+        float threshold = inMap && wasClose ? (float)StayCloseMm : (float)CloseMm;
+        bool isClose = distance < threshold;
+        float now = (float)_clockSec();
+        bool cooldown = last >= 0f && now < last + (float)CooldownSec;
+        if (inMap && !wasClose && isClose && !firstNamed && !cooldown && AddDesiredFace(id))
+            Emit(EngineLogLevel.Debug, "Unnamed", "BehaviorAcknowledgeFace.FaceBecomeClose",
+                FormattableString.Invariant($"face ID {id} became close (currDist = {distance:F6}mm)"));
+        if (Current()) lock (_gate) _isClose[id] = isClose;
     }
+
+    private bool Current() => Volatile.Read(ref _disposed) == 0 && (_nativeOwner is null ||
+        !_nativeOwner.Lifetime.Destroying && ReferenceEquals(_nativeOwner.Engine.Robot, _nativeOwner) &&
+        ReferenceEquals(_world.NativeOwner?.Invoke(), _nativeOwner));
+
+    private void Emit(EngineLogLevel level, string? channel, string key, string text) =>
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(level, channel, key, text);
 
     protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
@@ -956,7 +971,7 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
         lock (_gate)
         {
             _reacted.Add(id);
-            _lastReactionSec = _clockSec();
+            _lastReactionSec = (float)_clockSec();
         }
     }
 
@@ -968,7 +983,9 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
 
     public void Dispose()
     {
-        _world.FaceObserved -= OnObserved;
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        if (_nativeOwner is null) _world.FaceObserved -= OnObserved;
+        _faceObservedSubscription?.Dispose();
         _behavior.RemoveListener(this);
     }
 }
