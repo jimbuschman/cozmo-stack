@@ -1870,11 +1870,11 @@ public sealed partial class BlockWorld
     {
         return UpdateObservedMarkers(markers,camera,timestamp,pd,worldRotatingGate,null,null);
     }
-    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose=null)
+    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose=null)
     {
-        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeCubeReport,nativeComputedPose);
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeObjectReport,nativeComputedPose);
     }
-    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
     {
         _missingPoseChangedReported = false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
@@ -1909,7 +1909,7 @@ public sealed partial class BlockWorld
             AddLiftOccluder(camera, pd);                                           // 0x00624FA4
             _didObjectsChange = false;                                             // 0x00624FAC
             var instances = CreateObjectsFromMarkers(markers, camera);             // 0x00624FC4 (always succeeds, 0x00625616)
-            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeCubeReport,nativeComputedPose);   // 0x0062505A
+            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeObjectReport,nativeComputedPose);   // 0x0062505A
             if (status != 0)
             {
                 Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed", "");
@@ -2078,7 +2078,7 @@ public sealed partial class BlockWorld
     /// its cross-origin branch (<c>Rejigger</c>, 0x00515854..0x005159B2) are built.
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
-    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeCubeReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
     {
         var robotPos = (CurrentRobotPose?.Invoke() ?? pd.RobotPose).Translation;
         var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose); // 0x00620B0C
@@ -2124,7 +2124,9 @@ public sealed partial class BlockWorld
             if(!(located.IsActive&&located.Family==(ObjectFamily)2&&!CubeGeometry.IsCube(located.Type)))
             {
                 var prefix=new NativeObservedObject(located.LastObservedTimestamp,(uint)located.Family,(uint)located.Type,located.ObjectId);
-                if(nativeCubeReport is not null && located.IsActive && located.Family==(ObjectFamily)2 && CubeGeometry.IsCube(located.Type)) nativeCubeReport(located,prefix);
+                // 0x006211DC calls the common broadcast. The charger's family skips only the top-marker path at 0x0061FF30.
+                if (nativeObjectReport is not null && (CubeGeometry.IsCube(located.Type) || located.Type == ObjectType.Charger_Basic))
+                    nativeObjectReport(located, prefix);
                 else NativeObjectObserved?.Invoke(prefix);
             }
             else Source(EngineLogLevel.Error,null,"BlockWorld.BroadcastObjectObservation.InvalidActiveCube","Active family2 object is not an ActiveCube");

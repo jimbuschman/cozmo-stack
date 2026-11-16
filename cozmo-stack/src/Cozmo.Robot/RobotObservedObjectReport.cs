@@ -2,7 +2,7 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot;
 
-/// <summary>The immutable engine-to-game RobotObservedObject report for an observed light cube.</summary>
+/// <summary>The immutable engine-to-game RobotObservedObject report for an observed object.</summary>
 public sealed record RobotObservedObjectReport(uint Timestamp, uint Family, uint Type, uint ObjectId,
     float ImageX, float ImageY, float ImageWidth, float ImageHeight, EngineGamePose Pose,
     float TopOrientationRad, bool IsActive)
@@ -16,9 +16,9 @@ public sealed record RobotObservedObjectReport(uint Timestamp, uint Family, uint
 
 public sealed partial class CozmoEngine
 {
-    /// <summary>Light-cube observations published by the engine after a confirmed vision update.</summary>
+    /// <summary>Light-cube and charger observations published by the engine after a confirmed vision update.</summary>
     public event Action<RobotObservedObjectReport>? RobotObservedObject;
 
-    internal void DeliverObservedCubeToApp(RobotObservedObjectReport report) =>
+    internal void DeliverObservedObjectToApp(RobotObservedObjectReport report) =>
         DeliverAnimationReportToApp(0x44, report.PackBody(), CaptureAppEvent(RobotObservedObject, report));
 }

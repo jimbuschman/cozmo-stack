@@ -91,12 +91,12 @@ public sealed class M3M4ReviewFixTests
                 Accel=new AccelData{Z=9800},Gyro=new GyroData(),CliffDataRaw=new ushort[]{500,500,500,500}});
             Assert.True(SpinWait.SpinUntil(()=>native.PoseHistory.NewestTimeStamp==ts,TimeSpan.FromSeconds(5)));
         }
-        internal GrayImage Render()
+        internal GrayImage Render(ObjectType type = Type)
         {
             var cal=Vision.Calibration!;var image=new GrayImage(cal.Columns,cal.Rows);image.Fill(150);
             var pd=new VisionPoseData(100,Pose3d.Identity,-0.15f,0,false,false);
-            using var cube=new Pose3d(Mat3.Identity,new Vec3(150,0,22));
-            MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull??throw new InvalidOperationException("marker assets required"),new CameraModel(cal,pd.CameraPose),Type,cube);
+            using var obj = new Pose3d(Mat3.Identity, type == ObjectType.Charger_Basic ? new Vec3(85, 0, 0) : new Vec3(150, 0, 22));
+            MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull??throw new InvalidOperationException("marker assets required"),new CameraModel(cal,pd.CameraPose),type,obj);
             return image;
         }
         internal void Image(GrayImage image,uint id,uint timestamp)
@@ -108,6 +108,42 @@ public sealed class M3M4ReviewFixTests
                 ImageChunkCount=(byte)count,ChunkId=(byte)i,Data=image.Pixels.Skip(i*chunkSize).Take(chunkSize).ToArray()});
         }
         public void Dispose(){Vision.Dispose();Robot.Dispose();}
+    }
+
+    [Fact]
+    public void CameraFramesPublishChargerToTheAppBeforeLocalRecipients()
+    {
+        using var f = new Live();
+        var engine = f.Robot.Engine;
+        var raw = new ConcurrentQueue<byte[]>();
+        var reports = new ConcurrentQueue<RobotObservedObjectReport>();
+        var locals = new ConcurrentQueue<(NativeObservedObject Prefix, uint AppCount)>();
+        uint before = engine.NativeUiDeliveryCount;
+        engine.EngineToGameMessage += (tag, body) => { if (tag == 0x44) raw.Enqueue(body.ToArray()); };
+        engine.RobotObservedObject += reports.Enqueue;
+        using var local = engine.AnimationMessages.SubscribeMessage(0x44, true, payload =>
+        {
+            if (payload is NativeObservedObject prefix) locals.Enqueue((prefix, engine.NativeUiDeliveryCount));
+        });
+
+        var image = f.Render(ObjectType.Charger_Basic);
+        f.Image(image, 1, 100);
+        Assert.True(SpinWait.SpinUntil(() => f.Vision.FramesProcessed >= 1, TimeSpan.FromSeconds(10)));
+        f.State(133);
+        f.Image(image, 2, 133);
+        Assert.True(SpinWait.SpinUntil(() => !reports.IsEmpty && !locals.IsEmpty && !raw.IsEmpty, TimeSpan.FromSeconds(10)));
+
+        var report = Assert.Single(reports);
+        Assert.Equal((133u, 4u, 13u), (report.Timestamp, report.Family, report.Type));
+        Assert.True(report.IsActive);
+        Assert.InRange(report.ImageWidth, 1f, float.MaxValue);
+        Assert.InRange(report.ImageHeight, 1f, float.MaxValue);
+        Assert.Equal(0u, BitConverter.SingleToUInt32Bits(report.TopOrientationRad));
+        Assert.Equal(69, Assert.Single(raw).Length);
+        Assert.Equal(report.PackBody(), Assert.Single(raw));
+        var delivery = Assert.Single(locals);
+        Assert.Equal(new NativeObservedObject(report.Timestamp, report.Family, report.Type, report.ObjectId), delivery.Prefix);
+        Assert.True(delivery.AppCount > before);
     }
 
     // reach: production - rendered raw camera packets and RobotState dispatch; nominal calibration is a host input.
@@ -137,7 +173,7 @@ public sealed class M3M4ReviewFixTests
                     using var nominal=new Pose3d(HeadGeometry.DefaultHeadCamRotation,HeadGeometry.EngineHeadCamPositionMm);nominal.SetParent(neck);
                     using var historicCamera=HeadGeometry.GetCameraPose(nominal,-0.15f);
                     using var relative=new Pose3d();Assert.True(obj.NativePose.TryWithRespectTo(historicCamera,relative));
-                    historicalImageY=NativeCubeObservation.Rectangle(relative,f.Vision.Calibration).Y;
+                    historicalImageY=NativeObjectObservation.Rectangle(Type,relative,f.Vision.Calibration).Y;
                 }
                 Interlocked.Increment(ref locals);
             }

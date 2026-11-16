@@ -9,6 +9,28 @@ public sealed class NativePoseBuilderTests
 {
     private static int Bits(float v)=>BitConverter.SingleToInt32Bits(v);
     [Fact]
+    public void ComposeAndApplyChargerCornersUseNativeFloatAndDoubleOperations()
+    {
+        var a = new Transform3d(new Rotation3d(.8, .2, -.4, .4), new Vec3(16777217, -3.125, 180.06251));
+        var b = new Transform3d(new Rotation3d(.2, -.4, .4, .8), new Vec3(2.0000002, -40.125, 31.000003));
+        var composed = a.Compose(b);
+        // Separate f64 products and adds at 0x00849EF4..0x00849F84, then R4's scale branch.
+        var q = composed.Rotation;
+        Assert.Equal(new ulong[] { 0x3FB47AE147AE147B, 0xBFE851EB851EB851, 0xBFB47AE147AE147B, 0x3FE47AE147AE147B },
+            new[] { q.W, q.X, q.Y, q.Z }.Select(BitConverter.DoubleToUInt64Bits).ToArray());
+        static uint[] FloatBits(Vec3 point) => new[] { (float)point.X, (float)point.Y, (float)point.Z }
+            .Select(BitConverter.SingleToUInt32Bits).ToArray();
+        // 0x0084B9E8..0x0084BA06: narrow the rotation and round each translation operation in f32.
+        Assert.Equal(new uint[] { 0x4B800009, 0xC23851EC, 0x43484334 }, FloatBits(composed.Translation));
+        // 0x006567E0..0x006567FA: apply the packed rotation, then add the packed translation.
+        var output = new List<Vec3>();
+        composed.ApplyTo(new Vec3[] { new(96, -40, 0), new(0, 40, 31) }, output);
+        Assert.Equal(2, output.Count);
+        Assert.Equal(new uint[] { 0x4B800011, 0x41666668, 0x42EA2002 }, FloatBits(output[0]));
+        Assert.Equal(new uint[] { 0x4B7FFFF4, 0xC2A8EBEE, 0x433A1832 }, FloatBits(output[1]));
+    }
+
+    [Fact]
     public void RadiansDefaultCopyAndAssignmentsPreserveTheirFlags()
     {
         var a=new Radians();Assert.True(a.RescaleEnabled);Assert.Equal(0,a.Value);
