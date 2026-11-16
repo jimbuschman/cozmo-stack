@@ -416,22 +416,6 @@ public sealed class ScoringChooser : IBehaviorChooser
             }
             catch (InvalidOperationException) { return UnbuiltScore.Unavailable; }
         }
-        if(id=="PounceOnMotion_Socialize")
-        {
-            if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fields)!=true || !fields.ConstructorPristine ||
-               !fields.ExplicitFlatReload || fields.Value is not {} score || score.EmotionScorers.Count!=0 ||
-               !float.IsFinite((float)score.FlatScore) || (float)score.FlatScore!=0f || !float.IsFinite((float)nowSec))return UnbuiltScore.Unavailable;
-            bool FiniteGraph(Graph2d? graph)=>graph is null || graph.Nodes.All(n=>float.IsFinite((float)n.X)&&float.IsFinite((float)n.Y));
-            if(!FiniteGraph(score.RepetitionPenalty) || !FiniteGraph(score.RunningPenalty) ||
-               (score.BoredomMultiplier is {} multiplier && !float.IsFinite((float)multiplier)))return UnbuiltScore.Unavailable;
-            long epoch=fields.Epoch;
-            float factor=0.8f;
-            if(winner.TryGetProperty("boredomMultiplier",out var value) && value.ValueKind!=JsonValueKind.Null &&
-               (value.ValueKind!=JsonValueKind.Number || !value.TryGetSingle(out factor)))return UnbuiltScore.Unavailable;
-            if(!float.IsFinite(factor))return UnbuiltScore.Unavailable;
-            if(fields.ConstructorPristine && fields.Epoch==epoch && ReferenceEquals(owner.Engine.Robot,owner) &&
-               ReferenceEquals(owner.NativeBehaviorRuntime,runtime) && owner.NativeConfiguredScoreFields?.TryGetValue(id,out var current)==true && ReferenceEquals(current,fields))return UnbuiltScore.ScoringZero;
-        }
         return UnbuiltScore.Unavailable;
     }
 

@@ -294,19 +294,63 @@ public class AcknowledgeObjectNativeTests
         }
         finally { native.BehaviorManagerOwner = saved; }
     }
-    // reach: unit, supplied already-parsed config values; Q3 0x008405F0..606 / 0x0084C87C..936.
+    [Fact]
+    public void EveryShippedAcknowledgeObjectConfigRetainsTheNativeConstructorAngles()
+    {
+        string assets = Resources();
+        string directory = Path.Combine(assets, "config", "engine", "behaviorSystem", "behaviors");
+        var files = Directory.EnumerateFiles(directory, "*.json", SearchOption.AllDirectories)
+            .Where(file =>
+            {
+                using var json = JsonDocument.Parse(File.ReadAllText(file),
+                    new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+                return json.RootElement.ValueKind == JsonValueKind.Object &&
+                    json.RootElement.TryGetProperty("behaviorClass", out var type) && type.GetString() == "AcknowledgeObject";
+            });
+        string path = Assert.Single(files);
+        Assert.Equal("acknowledgeObject.json", Path.GetFileName(path));
+        using var config = JsonDocument.Parse(File.ReadAllText(path));
+        var root = config.RootElement;
+        Assert.False(root.TryGetProperty("MaxTurnAngle_deg", out _));
+        Assert.False(root.TryGetProperty("PanTolerance_deg", out _));
+        Assert.False(root.TryGetProperty("TiltTolerance_deg", out _));
+        using var rig = new Rig(resources: assets);
+        var behavior = Assert.IsType<AcknowledgeObjectBehavior>(
+            rig.Robot.Engine.Robot!.NativeBehaviorRuntime!.Bound["AcknowledgeObject"]);
+        // 0x00602FC6..0x00602FF2 loads these literal radians before the optional configuration reads.
+        Assert.Equal(0x3F490FDBu, BitConverter.SingleToUInt32Bits(behavior.ConfigMaxTurn));
+        Assert.Equal(0x3DB2B8C2u, BitConverter.SingleToUInt32Bits(behavior.ConfigPanTolerance));
+        Assert.Equal(0x3DB2B8C2u, BitConverter.SingleToUInt32Bits(behavior.ConfigTiltTolerance));
+    }
+
+    // Reader 0x008E1CF2 classifies -0 as integer zero, and 0x008E22F8 leaves the sign on a real zero.
+    // GetAngleOptional 0x008405FE and Radians::Rescale 0x0084C87C determine the remaining binary32 bits.
+    [Theory]
+    [InlineData("-0", 0x00000000u)]
+    [InlineData("-0.0", 0x80000000u)]
+    [InlineData("360.0", 0x00000000u)]
+    [InlineData("1e-1", 0x3AE4C388u)]
+    [InlineData("1e20", 0x5DC1C53Eu)]
+    [InlineData("-1e20", 0xDDC1C53Eu)]
+    [InlineData("1e100", 0x7F800000u)]
+    [InlineData("-1e100", 0xFF800000u)]
+    public void AngleTokenFollowsTheNativeReaderAndRadiansBranches(string token, uint expected)
+    {
+        using var rig = new Rig();
+        var behavior = new AcknowledgeObjectBehavior(rig.Vision.World);
+        using var json = JsonDocument.Parse("{\"MaxTurnAngle_deg\":" + token + "}");
+        behavior.BindConfiguredInputs(rig.M, json.RootElement);
+        Assert.Equal(expected, BitConverter.SingleToUInt32Bits(behavior.ConfigMaxTurn));
+    }
+
+    // Supplied angle tokens cover signed integer, boolean, null and the defined asFloat error boundary.
     [Fact]
     public void AngleOverridesNarrowThenMultiplyAndNormalizeInBinary32()
     {
         using var rig = new Rig();
         var behavior = new AcknowledgeObjectBehavior(rig.Vision.World);
         using var json = JsonDocument.Parse("{\"MaxTurnAngle_deg\":-180,\"PanTolerance_deg\":90,\"TiltTolerance_deg\":true}");
-        var diagnostics = new List<string>();
-        void Record(string value) { if (value.Contains("supplied angle uses host JsonElement parsing")) lock (diagnostics) diagnostics.Add(value); }
-        SteppedBehavior.MissingReported += Record;
-        try { behavior.BindConfiguredInputs(rig.M, json.RootElement); }
-        finally { SteppedBehavior.MissingReported -= Record; }
-        Assert.Single(diagnostics);
+        behavior.BindConfiguredInputs(rig.M, json.RootElement);
         Assert.Equal(0x40490FDBu, BitConverter.SingleToUInt32Bits(behavior.ConfigMaxTurn));
         Assert.Equal(0x3FC90FDBu, BitConverter.SingleToUInt32Bits(behavior.ConfigPanTolerance));
         Assert.Equal(0x3C8EFA35u, BitConverter.SingleToUInt32Bits(behavior.ConfigTiltTolerance));

@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Text;
 using Cozmo.Conformance;
 using Cozmo.Protocol;
 using Cozmo.Robot;
@@ -16,7 +18,7 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
 {
-    private sealed record Run(List<(double At,string Id)> Chosen,List<string> Holds,List<FreeplaySparksAwardedReport> Sparks,List<StarUnlockedReport> Stars,List<StarLevelCompletedReport> Levels,double IdleAfterAction,double LongestIdleAfterAction,int Frames,NeedsStateOnRobot? FirstRobotWrite);
+    private sealed record Run(List<(double At,string Id)> Chosen,List<string> Holds,List<FreeplaySparksAwardedReport> Sparks,List<StarUnlockedReport> Stars,List<StarLevelCompletedReport> Levels,double IdleAfterAction,double LongestIdleAfterAction,int Frames,NeedsStateOnRobot? FirstRobotWrite,List<(ushort Tag,byte[] Body)> RewardsWire);
 
     internal static long FixedClockMicros=>InitialSeconds()*1_000_000;
     internal static long InitialSeconds()
@@ -55,6 +57,8 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
             using var s65=engine.AnimationMessages.SubscribeMessage(0x65,true,p=>sparks.Add(Assert.IsType<FreeplaySparksAwardedReport>(p)));
             using var s67=engine.AnimationMessages.SubscribeMessage(0x67,true,p=>stars.Add(Assert.IsType<StarUnlockedReport>(p)));
             using var s66=engine.AnimationMessages.SubscribeMessage(0x66,true,p=>levels.Add(Assert.IsType<StarLevelCompletedReport>(p)));
+            var rewardsWire=new List<(ushort Tag,byte[] Body)>();
+            engine.EngineToGameMessage+=(tag,body)=>{if(tag is 0x65 or 0x66 or 0x67)rewardsWire.Add((tag,body.ToArray()));};
             var prior=manager.DasTransition;manager.DasTransition=next=>{prior?.Invoke(next);chosen.Add((engine.Timer.Seconds-start,next.Id));};
             // A hold reports through ReportMissing: M8-013 for the chooser, M15-071 for the pending proof, M15-093 for the star machine.
             void Record(string text){if(sent&&(text.Contains("M8-013")||text.Contains("M15-071")||text.Contains("M15-093")))lock(holds)holds.Add(text);}
@@ -92,7 +96,7 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
                 output.WriteLine($"chosen total={chosen.Count} idleAfter={idle:F1}s longestIdle={longest:F1}s frames={camera-1} sparks={sparks.Count} stars={stars.Count} levels={levels.Count} pending={needs.NativeRewardSnapshotForTest()} current={manager.Current?.Id}");
                 foreach(string line in holds)output.WriteLine("missing: "+line);
                 var write=f.Rig.SentSince(0).OfType<NVCommand>().FirstOrDefault(c=>c.Tag==NeedsManager.NeedsNvKey&&c.Op==NvStorageComponent.OpWrite);
-                return new(chosen,holds,sparks,stars,levels,idle,longest,(int)camera-1,write is null?null:NeedsStateOnRobot.Unpack(write.Data[NvStorageComponent.NvHeaderSize..]));
+                return new(chosen,holds,sparks,stars,levels,idle,longest,(int)camera-1,write is null?null:NeedsStateOnRobot.Unpack(write.Data[NvStorageComponent.NvHeaderSize..]),rewardsWire);
             }
             finally{SteppedBehavior.MissingReported-=Record;manager.DasTransition=prior;}
         }
@@ -129,7 +133,13 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
         });
         AssertLoopKeptChoosing(run);
         double earned=run.Chosen.First(c=>c.At>=30&&c.Id=="EarnedSparks").At;
-        var report=run.Sparks[0];Assert.Equal("needs.FreeplaySparksReward.RollACube",report.DisplayKey);Assert.InRange(report.Amount,2,3);
+        const string rollRewardKey="needs.FreeplaySparksReward.RollACube";
+        var report=Assert.Single(run.Sparks.Where(s=>s.DisplayKey==rollRewardKey));
+        Assert.InRange(report.Amount,2,3);
+        byte[] key=Encoding.UTF8.GetBytes(rollRewardKey);
+        var wire=Assert.Single(run.RewardsWire.Where(w=>w.Tag==0x65 && w.Body.AsSpan(5).SequenceEqual(key)));
+        Assert.Equal(report.Amount,BinaryPrimitives.ReadInt32LittleEndian(wire.Body));
+        Assert.Equal(key.Length,wire.Body[4]);
         Assert.Contains(run.Chosen,c=>c.At>earned&&c.Id!="EarnedSparks");
         Assert.Empty(run.Stars);Assert.Empty(run.Levels); // 0x00696B5A..0x00696B6E: same local day, no star
         var first=Assert.IsType<NeedsStateOnRobot>(run.FirstRobotWrite);
@@ -150,6 +160,11 @@ public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
             Assert.Equal(3,needs.State.NativeUnlockLevel);Assert.Equal(0,needs.State.NativeStarsAwarded);
         });
         AssertLoopKeptChoosing(run);
+        // The native nonzero star result bypasses the weighted path for this RollACube. Freeplay can award later actions.
+        Assert.DoesNotContain(run.Sparks,reward=>reward.DisplayKey=="needs.FreeplaySparksReward.RollACube");
+        var starsWire=run.RewardsWire.Where(message=>message.Tag is 0x67 or 0x66).ToArray();
+        Assert.Equal(new ushort[]{0x67,0x66},starsWire.Select(message=>message.Tag));
+        Assert.Equal(new byte[]{2,0,0,0,1,0,0,0,2,0,0,0},starsWire[0].Body);
         Assert.Equal(new StarUnlockedReport(2,1,2),Assert.Single(run.Stars));
         var level=Assert.Single(run.Levels);Assert.Equal(3,level.Level);Assert.Equal(1,level.Maximum);
         Assert.Equal(new[]{1,2,0,1,2},level.Rewards.Select(r=>r.Type));

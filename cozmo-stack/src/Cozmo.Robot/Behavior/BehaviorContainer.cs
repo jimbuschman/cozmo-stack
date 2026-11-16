@@ -335,7 +335,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
         [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
         [BehaviorClass.PeekABoo] = (ctx,json)=>new NativePeekABooBehavior(ctx,json),
-        [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
+        [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativePounceOnMotion(ctx,json),
         [BehaviorClass.EarnedSparks] = (ctx,json)=>new NativeEarnedSparksBehavior(ctx,json),
         [BehaviorClass.FireTruckAlarm] = (ctx,json)=>new NativeFireTruckAlarmBehavior(ctx,json),
         [BehaviorClass.OnConfigSeen] = (ctx,json)=>new NativeRespondToPyramidBaseBehavior(ctx,json),
@@ -439,8 +439,8 @@ public sealed class BehaviorFactory
         {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("LookInPlaceMemoryMap factory: only configured Hiking_LookInPlaceForUnknown with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
-        if(cls==BehaviorClass.PounceOnMotion && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_PounceOnMotion || ctx.Manipulation is null || ctx.NativeRobot is null))
-        {SteppedBehavior.ReportMissing("PounceOnMotion factory: only configured Hiking_PounceOnMotion with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.PounceOnMotion && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Hiking_PounceOnMotion or BehaviorID.PounceOnMotion_Socialize) || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("PounceOnMotion factory 0x0059CED6: checked Hiking and Socialize configurations require actual Robot and manipulation owners");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.ExpressNeeds && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_MildLowEnergyRequest or BehaviorID.Needs_MildLowPlayRequest or BehaviorID.Needs_MildLowRepairRequest or BehaviorID.Needs_SevereLowPlayBored or BehaviorID.Needs_SevereLowPlayRequest or BehaviorID.Needs_SevereLowEnergyForcedGetOut) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExpressNeeds factory: only six checked configured IDs with original Robot/manipulation are available");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.PlayAnimOnNeedsChange && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_SevereLowEnergyGetIn or BehaviorID.Needs_SevereLowRepairGetIn or BehaviorID.Needs_SevereLowPlayGetIn) || ctx.Manipulation is null || ctx.NativeRobot is null))

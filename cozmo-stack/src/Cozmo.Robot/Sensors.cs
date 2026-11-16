@@ -2,6 +2,9 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot;
 
+/// <summary>The engine-to-game MotorAutoEnabled report (tag 0x1F).</summary>
+public sealed record MotorAutoEnabledReport(MotorID MotorID, bool Enabled);
+
 /// <summary>A three-axis reading.</summary>
 public readonly record struct Vector3(float X, float Y, float Z)
 {
@@ -225,6 +228,9 @@ public sealed class CozmoSensors
     /// strategy filters on (factory lambda at 0x0060DCFA: <c>calibStarted &amp;&amp; autoStarted</c>).
     /// </summary>
     public event Action<MotorCalibration>? AutoCalibrationStarted;
+
+    /// <summary>Raised when the engine publishes a motor auto-enable or auto-disable report.</summary>
+    public event Action<MotorAutoEnabledReport>? MotorAutoEnabledReported;
 
     /// <summary>Raised for every MotorCalibration report, started or finished.</summary>
     public event Action<MotorCalibration>? MotorCalibrationReported;
@@ -888,6 +894,39 @@ public sealed class CozmoSensors
         return 0;
     }
 
+    // fidelity: M12-006
+    private void HandleMotorAutoEnabled(MotorAutoEnabled input, EngineRobot? sourceOwner)
+    {
+        var engine = _robot.Engine;
+        bool Current() => sourceOwner is not null && !sourceOwner.Lifetime.Destroying &&
+            ReferenceEquals(engine.Robot, sourceOwner);
+        if (!Current()) return;
+
+        // Snapshot the two native fields before the log and detach callbacks.
+        var report = new MotorAutoEnabledReport(input.MotorID, input.Enabled);
+        string enabled = report.Enabled ? "1" : "0";
+        engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "HandleMotorAutoEnabled.Recvd",
+            FormattableString.Invariant($"Motor {(byte)report.MotorID}, enabled {enabled}")); // 0x00536D66..0x00536D74
+        if (!Current()) return;
+
+        string motorName = report.MotorID <= MotorID.MOTOR_COUNT ? report.MotorID.ToString() : "(null)";
+        engine.EmitSourceLog(EngineLogLevel.Event, null,
+            report.Enabled ? "HandleMotorAutoEnabled.MotorEnabled" : "HandleMotorAutoEnabled.MotorDisabled",
+            motorName); // 0x00536DB4 / 0x00536DD0
+        if (!Current()) return;
+
+        // 0x00536DF6..0x00536E0E: the carrying callback checks the primary object ID.
+        if (report.MotorID == MotorID.MOTOR_LIFT && !report.Enabled)
+            UnattachCarriedObjectIfCarrying?.Invoke();
+        if (!Current() || !sourceOwner!.HasExternalInterface) return;
+
+        // Robot::Broadcast 0x00511DE8 -> UI 0x00662508. Queue the app view before emitting the local signal.
+        const ushort tag = 0x1F; // union ctor 0x00722D8A, two-field packer 0x007CE108
+        engine.DeliverAnimationReportToApp(tag, new[] { (byte)report.MotorID, report.Enabled ? (byte)1 : (byte)0 },
+            engine.CaptureAppEvent(MotorAutoEnabledReported, report));
+        engine.AnimationMessages.Deliver(tag, true, report);
+    }
+
     // fidelity: M4-012, M12-006
     private void HandleMotorCalibration(MotorCalibration report, EngineRobot? sourceOwner)
     {
@@ -1046,10 +1085,8 @@ public sealed class CozmoSensors
                 _robot.Engine.QueueAppBroadcast(FallingStopped,fallReport);FallingStoppedInternal?.Invoke(fallReport);
                 break;
 
-            // fidelity: M12-006 -- C6: detach before the game report; game recipient remains explicit.
             case MotorAutoEnabled auto:
-                if(auto.MotorID==MotorID.MOTOR_LIFT&&!auto.Enabled)UnattachCarriedObjectIfCarrying?.Invoke();
-                Behavior.SteppedBehavior.ReportMissing("M12-006 C6 HandleMotorAutoEnabled 0x00536E0E: native game-message recipient after the detach is absent; raw host Robot.Message is not claimed as that broadcast");
+                HandleMotorAutoEnabled(auto, sourceOwner);
                 break;
 
             case MotorCalibration mc:

@@ -1,5 +1,6 @@
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 using Xunit;
 
@@ -62,6 +63,81 @@ public sealed class M11MapImageClockTests
             Assert.Equal(second.Timestamp,rig.Robot.CameraSettings.LastProcessedImageTimestamp);
         }
         finally {map.ObjectInsertForTest=null;}
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ConfirmedRenderedMarkerClearsTheMapAndVisitsTheOwnedWhiteboard(bool sharedRoot)
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        var robot = rig.Engine.Robot!;
+        var vision = rig.Robot.Vision;
+        Enable(vision, 1 << VisionSystem.DetectingMarkers);
+        var map = Assert.IsType<MemoryMap>(vision.World.Maps.Current);
+        var whiteboard = robot.NativeBehaviorRuntime!.Manipulation!.Whiteboard;
+        var origin = robot.GetNativeOrigin(robot.CurrentOriginId);
+        Assert.Same(origin, whiteboard.ClearQuadWorldOrigin!());
+        using var sharedOrigin = new Pose3d("shared-root whiteboard input", origin);
+        var originInput = whiteboard.ClearQuadWorldOrigin;
+        if (sharedRoot) whiteboard.ClearQuadWorldOrigin = () => sharedOrigin;
+
+        var first = Frame(rig, true);
+        Assert.Empty(Assert.IsType<VisionFrameResult>(vision.ProcessCapture(first.Image, 1, first.Timestamp)).Objects);
+        var inside = new Vec2(75, 0);
+        var outside = new Vec2(75, 60);
+        void AddPossible(Vec2 point)
+        {
+            using var location = new Pose3d(Rotation3d.Identity, new Vec3(point.X, point.Y, 0), parent: origin);
+            whiteboard.PossibleObjectStorage.Add(new(location, ObjectType.Block_LIGHTCUBE1));
+            map.InsertObject(new[] { point+new Vec2(-8,-8), point+new Vec2(8,-8), point+new Vec2(8,8), point+new Vec2(-8,8) },
+                new SourceMapData(MemoryMapContentType.ObstacleProx, first.Timestamp, first.Timestamp));
+        }
+        AddPossible(inside);
+        AddPossible(outside);
+        bool Has(Vec2 at, MemoryMapContentType type) => map.HasCollisionRayWithTypes(at, at, value => value == type);
+        Assert.True(Has(inside, MemoryMapContentType.ObstacleProx));
+        Assert.True(Has(outside, MemoryMapContentType.ObstacleProx));
+        var markerInserts = new List<(Vec2[] Corners, uint First, uint Last)>();
+        map.ObjectInsertForTest = (corners, data) =>
+        {
+            if (data.Type == MemoryMapContentType.ClearOfObstacle && corners.Any(c => c.X > 90))
+                markerInserts.Add((corners, data.First, data.Last));
+        };
+        try
+        {
+            var second = Frame(rig, true);
+            var result = Assert.IsType<VisionFrameResult>(vision.ProcessCapture(second.Image, 2, second.Timestamp));
+            Assert.Single(result.Objects);
+            var write = Assert.Single(markerInserts);
+            Assert.Equal((first.Timestamp, first.Timestamp), (write.First, write.Last));
+            // 0x0067F678..0x0067F6A4: robot's front pair, then the marker's lower pair on the cube's near face.
+            Assert.Equal(2, write.Corners.Count(p => Math.Abs(p.X - 22.1) < 0.001 && Math.Abs(Math.Abs(p.Y) - 27.1) < 0.001));
+            Assert.Equal(2, write.Corners.Count(p => Math.Abs(p.X - 128) < 3 && Math.Abs(Math.Abs(p.Y) - 12.5) < 3));
+            Assert.True(Has(inside, MemoryMapContentType.ClearOfObstacle));
+            Assert.False(Has(inside, MemoryMapContentType.ObstacleProx));
+            Assert.True(Has(outside, MemoryMapContentType.ObstacleProx));
+            // Native whiteboard copies a parentless origin into a different root. Supply a shared-root
+            // origin for the deletion case while keeping the real marker, map and whiteboard producer.
+            Assert.Equal(sharedRoot ? new[] { outside.Y } : new[] { inside.Y, outside.Y },
+                whiteboard.PossibleObjects.Select(item => item.Pose.Translation.Y));
+        }
+        finally
+        {
+            whiteboard.ClearQuadWorldOrigin = originInput;
+            map.ObjectInsertForTest = null;
+        }
+    }
+
+    [Fact]
+    public void MapClockExistsBeforeVisionSetup()
+    {
+        using var rig = new M4ControlTests.Rig(attachWorld: false);
+        rig.ToSynced();
+        var world = rig.Robot.LocalizationWorld;
+        Assert.Equal(0u, world.LastImageTimestamp!());
+        Assert.Equal(0u, world.Maps.ImageTimestamp!());
     }
 
     [Fact]

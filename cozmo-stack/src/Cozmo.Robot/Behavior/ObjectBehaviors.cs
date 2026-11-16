@@ -2,6 +2,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot.Vision;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Animation;
+using System.Text;
 using System.Text.Json;
 
 namespace Cozmo.Robot.Behavior;
@@ -214,7 +215,6 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     private bool _beginPending;
     private ManipulationSystem? _nativeManipulation;
     private BehaviorManager? _configuredManager;
-    private readonly HashSet<string> _configDiagnostics = new();
     internal float ConfigMaxTurn { get; private set; } = BitConverter.UInt32BitsToSingle(0x3F490FDB);
     internal float ConfigPanTolerance { get; private set; } = BitConverter.UInt32BitsToSingle(0x3DB2B8C2);
     internal float ConfigTiltTolerance { get; private set; } = BitConverter.UInt32BitsToSingle(0x3DB2B8C2);
@@ -257,37 +257,27 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
         ConfigReaction = reaction; ConfigImages = images; ConfigMaxTurn = maxTurn;
         ConfigPanTolerance = panTolerance; ConfigTiltTolerance = tiltTolerance; ConfigAlwaysStreamline = always;
     }
-    private bool ReadAngle(JsonElement json, string key, out float angle)
+    private static bool ReadAngle(JsonElement json, string key, out float angle)
     {
         angle = 0;
         if (!json.TryGetProperty(key, out var value) || value.ValueKind == JsonValueKind.Null) return false;
-        ReportMissing("M7-018 ACKNOWLEDGE-OBJECT-1 C4: supplied angle uses host JsonElement parsing; native lexical rounding, locale and integer-token classification remain UNKNOWN", _configDiagnostics);
-        float input = value.ValueKind switch
+
+        // LoadBehaviors uses Json::Reader (0x00520754 -> 0x0084C0C2). Keep the selected token
+        // intact so its sign, integer range, and exponent take the corresponding Reader path.
+        if (!Json.TryParseFirst(Encoding.UTF8.GetBytes(value.GetRawText()), out var scalar))
+            throw new NotSupportedException("M7-018 invalid JsonCpp angle token for " + key);
+        using (scalar)
         {
-            JsonValueKind.Number => NumberAsFloat(value),
-            JsonValueKind.True => 1f,
-            JsonValueKind.False => 0f,
-            _ => throw new NotSupportedException("M1-034/M7-018 GetAngleOptional JsonCpp asFloat throw at 0x008E9D00 for " + key),
-        };
-        float radians = input * BitConverter.UInt32BitsToSingle(0x3C8EFA35);
-        if (!float.IsFinite(radians))
-            throw new NotSupportedException("MISSING ACKNOWLEDGE-OBJECT-1 C4 nonfinite angle conversion for " + key);
-        if (MathF.Abs(radians) >= 10f)
-        {
-            float count = MathF.Ceiling(radians / Radians.TwoPi - 0.5f);
-            if (count >= 2147483648f || count < -2147483648f)
-                throw new NotSupportedException("MISSING ACKNOWLEDGE-OBJECT-1 C4 out-of-range signed angle wrap for " + key);
+            float input;
+            try { input = Json.AsFloat(scalar.RootElement); } // 0x008E9C08: real narrows from binary64.
+            catch (JsonLogicError error)
+            {
+                throw new NotSupportedException("M1-034/M7-018 GetAngleOptional JsonCpp asFloat throw at 0x008E9D00 for " + key, error);
+            }
+            // 0x008405FE: binary32 degrees-to-radians. Use the shared VFP wrap at 0x0084C87C.
+            angle = new Radians(input * BitConverter.UInt32BitsToSingle(0x3C8EFA35)).Value;
         }
-        angle = new Radians(radians).Value; // Q3-5..9: f32 multiply, then Radians normalization
         return true;
-    }
-    private static float NumberAsFloat(JsonElement value)
-    {
-        if (value.TryGetInt64(out long signed)) return (float)signed;
-        if (value.TryGetUInt64(out ulong unsigned)) return (float)unsigned;
-        if (!value.TryGetDouble(out double real))
-            throw new NotSupportedException("MISSING ACKNOWLEDGE-OBJECT-1 C4 host numeric parser range");
-        return (float)real; // Json real: f64 -> f32 before multiplication
     }
 
     public Phase CurrentPhase { get; private set; }

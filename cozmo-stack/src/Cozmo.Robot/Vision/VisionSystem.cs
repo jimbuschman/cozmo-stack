@@ -442,9 +442,6 @@ public sealed partial class VisionSystem : IDisposable
         World.MovementBytes = () => robot.State.Latest is { } st
             ? ((st.Status & (uint)RobotStatusFlag.HeadInPos) == 0, (st.Status & (uint)RobotStatusFlag.AreWheelsMoving) != 0)
             : (false, false);
-        // Robot::GetLastImageTimeStamp 0x00516EC0 -> VisionComponent+0xE8 (0x006527A2).
-        // Result handlers see the previous consumed result; the existing finally tail publishes this result afterward.
-        World.LastImageTimestamp = () => robot.CameraSettings.LastProcessedImageTimestamp;
         // fidelity: M11-044
         // The commit to OnTreads (0x005120F6..0x00512188): BlockWorld::AnyRemainingLocalizableObjects decides, and only when nothing remains do Robot+0x2C4 = 1 and Robot+0x2B8 = -1 follow.
         // The classifier (M10 A11) calls these two seams from that spot.

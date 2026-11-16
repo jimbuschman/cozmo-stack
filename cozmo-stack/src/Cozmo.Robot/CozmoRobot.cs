@@ -397,6 +397,8 @@ public sealed partial class CozmoRobot : IDisposable
         };
         LocalizationWorld.RobotTimestamp = () => State.Latest?.Timestamp ?? 0;
         LocalizationWorld.CurrentRobotPose = () => Engine.Robot?.MainPose; // borrowed native Robot::GetPose; admission updates it
+        // 0x00516EC0 -> VisionComponent+0xE8 (0x006527A2). Bind before the first MapComponent is constructed.
+        LocalizationWorld.LastImageTimestamp = () => CameraSettings.LastProcessedImageTimestamp;
         LocalizationWorld.OriginNode = id => Engine.Robot?.OriginNames.Get(id);
         LocalizationWorld.BaseStationSeconds = () => Engine.Timer.Seconds;
 

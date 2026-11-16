@@ -157,8 +157,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             else
             {
                 var fields=new NativeScoredFields();fields.Read(id,entry.Value);
-                if(!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var objective) || objective.ValueKind==System.Text.Json.JsonValueKind.Null)
-                    if(entry.Key==BehaviorID.PounceOnMotion_Socialize && entry.Value.TryGetProperty("behaviorClass",out var pounceClass) && pounceClass.ValueKind==System.Text.Json.JsonValueKind.String && pounceClass.GetString()=="PounceOnMotion")fields.MarkPristine();
                 if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var interludeObjective) || interludeObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
                    entry.Value.TryGetProperty("behaviorClass",out var interludeClass) && interludeClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
@@ -504,7 +502,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<NativeRespondToRenameFace>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeSparksLookInPlace>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeHikingLookInPlace>())candidate.Dispose();
-        foreach(var candidate in Bound.Values.OfType<NativeHikingPounce>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativePounceOnMotion>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeEarnedSparksBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeFireTruckAlarmBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeRespondToPyramidBaseBehavior>())candidate.Dispose();
