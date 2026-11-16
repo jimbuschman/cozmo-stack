@@ -9,6 +9,7 @@ using Cozmo.Robot.Behavior;
 using Cozmo.Transport;
 using Cozmo.Robot.Vision;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Cozmo.Protocol.Tests;
 
@@ -25,6 +26,10 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class NativeMarkerDetectorOracleTests
 {
+    private readonly ITestOutputHelper _output;
+
+    public NativeMarkerDetectorOracleTests(ITestOutputHelper output) => _output = output;
+
     internal sealed record Marker(int Type, uint Ts, uint[] Corners);
     internal sealed record Slot(int Validity, int Type, uint[] Corners, uint[] H);
     internal sealed record Case(string Name, string Image, uint Ts, bool Clahe, uint Ret, int? Dark, string MarkerImageSha, short[][] Quads,
@@ -71,6 +76,35 @@ public class NativeMarkerDetectorOracleTests
             p.GetProperty("image").GetString()!, Hexes(p.GetProperty("h")), Convert.FromHexString(p.GetProperty("probes").GetString()!))).ToList();
         return new Data(root, images, jpegs, cases, hs, ps);
     });
+
+    [Fact]
+    public void RenderedCubeFrontUsesTheEnginesRefinedCornersForPose()
+    {
+        var fixture = Fixture_.Value;
+        // This rendered image reaches 0x00899528, then 0x0089FEA6, in the shipped detector under Unicorn.
+        var imageCase = Assert.Single(fixture.Cases, c => c.Name == "render:markers-01-bright__engine");
+        var (work, detector, refined) = Run(fixture, imageCase);
+        const MarkerType code = MarkerType.LightCubeI_Front;
+        var binary = Assert.Single(imageCase.Markers, m => m.Type == (int)code);
+        var marker = Assert.Single(refined, m => m.Code == code);
+        Assert.Equal(binary.Corners, marker.Corners.SelectMany(p => new[] { Bits(p.X), Bits(p.Y) }));
+        var slot = Assert.Single(detector.LastFinalSlots, s => s.Type == (int)code);
+        Assert.Equal(Assert.Single(imageCase.Final, s => s.Type == (int)code).H, slot.H.Select(BitConverter.SingleToUInt32Bits));
+
+        // Compare the same pose solve with the 0x0089FE68 skip branch selected. The pose difference is an observation.
+        var initialDetector = new MarkerDetector(new QuadDetector(new QuadDetectorParameters { RefinementIterations = 0 }));
+        var initial = Assert.Single(initialDetector.Detect(new GrayImage(work.Width, work.Height, (byte[])work.Pixels.Clone()), imageCase.Ts),
+            m => m.Code == code);
+        double maxCornerMove = initial.Corners.Zip(marker.Corners, (a, b) => (a - b).Length).Max();
+        var geometry = CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1).Single(m => m.Code == code).CornersOnObject();
+        using var cameraPose = Pose3d.Identity;
+        var camera = new CameraModel(CameraCalibration.Nominal(), cameraPose);
+        using var initialPose = Assert.IsType<PoseEstimation.Result>(PoseEstimation.Solve(camera, geometry, initial.Corners)).ObjectInCamera;
+        using var refinedPose = Assert.IsType<PoseEstimation.Result>(PoseEstimation.Solve(camera, geometry, marker.Corners)).ObjectInCamera;
+        double translation = (refinedPose.Translation - initialPose.Translation).Length;
+        double rotation = refinedPose.Quaternion.AngleDiff(initialPose.Quaternion) * (180.0 / Math.PI);
+        _output.WriteLine(FormattableString.Invariant($"Cube front: max corner movement {maxCornerMove:F6} px, pose movement {translation:F6} mm, rotation change {rotation:F6} deg."));
+    }
 
     private static uint Bits(double v) => BitConverter.SingleToUInt32Bits((float)v);
 
