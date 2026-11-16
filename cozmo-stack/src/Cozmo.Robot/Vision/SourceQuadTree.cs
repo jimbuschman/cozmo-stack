@@ -37,6 +37,23 @@ internal sealed class ObservableMapData : SourceMapData
         return false;
     }
 }
+// M13-030: ctor 0x00684B54, clone 0x00684B7C, equality 0x00684BAC.
+internal sealed class ProxObstacleMapData(Vec2 direction, uint timestamp)
+    : SourceMapData(MemoryMapContentType.ObstacleProx, timestamp, timestamp)
+{
+    internal Vec2 Direction { get; } = new((float)direction.X, (float)direction.Y);
+
+    internal override SourceMapData Clone() => new ProxObstacleMapData(Direction, First) { Type = Type, Last = Last };
+
+    internal override bool Same(SourceMapData? other)
+    {
+        if (other is not ProxObstacleMapData prox || prox.Type != Type) return false;
+        float tolerance = BitConverter.UInt32BitsToSingle(0x35A00000);
+        return MathF.Abs((float)Direction.X - (float)prox.Direction.X) < tolerance
+            && MathF.Abs((float)Direction.Y - (float)prox.Direction.Y) < tolerance;
+    }
+}
+
 internal sealed class CliffMapData(Vec2 normal, uint timestamp) : SourceMapData(MemoryMapContentType.Cliff, timestamp, timestamp)
 {
     internal Vec2 Normal = new((float)normal.X, (float)normal.Y);

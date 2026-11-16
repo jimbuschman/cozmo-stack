@@ -27,7 +27,7 @@ public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper o
     private sealed record Scene(float? PaintedCircleRadius,float? SuppliedCloseEdgeMm=null,double Seconds=300);
     private sealed record Run(List<(double At,string Id)> Chosen,List<string> Holds,double Idle,double LongestIdle,double LongestHikingIdle,int HikingVisits,
         List<(double At,int State)> States,int Starts,int Completions,IReadOnlyDictionary<MemoryMapContentType,int> Content,double GatherDistanceToVantage,
-        bool DroveToVantage,List<float> Distances,List<string> Trace,int Paths);
+        bool DroveToVantage,List<float> Distances,List<string> Trace,int Paths,List<(uint Root,uint Planner)> VantageImports);
 
     // Firmware scene as in BringBeaconFirmwareScene, with straight segments followed over time so the far branch can see the edge approach.
     private sealed class Firmware(Fixture f)
@@ -112,6 +112,14 @@ public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper o
             int mark=f.Rig.Mark(),state=0,starts=0,completions=0,visits=0;byte active=0;uint camera=1;string? activity=null;bool gathered=false,drove=false;double vantage=double.NaN;
             var chosen=new List<(double,string)>();var holds=new List<string>();var states=new List<(double,int)>();var distances=new List<float>();var trace=new List<string>();
             var prior=manager.DasTransition;manager.DasTransition=next=>{prior?.Invoke(next);chosen.Add((engine.Timer.Seconds-start,next.Id));if(next.Id==edge.Id)starts++;};
+            var imports = new List<(uint Root, uint Planner)>();
+            var lattice = f.M.GetNativePlanners().Lattice!;
+            void RecordImport(int status)
+            {
+                // 0x005E7044 builds the vantage DriveToPose; its lattice path imports at 0x004FD2B0.
+                if (status == 1 && edge.EngineRunning && edge.NativeState == 1 && f.M.World.Maps.Current is { } map)
+                    lock (imports) imports.Add((map.LastObservedTime, M13RootTimestampImportTests.Cache(lattice.Backend)));
+            }
             // Runs ahead of the wait's own 0x43 subscription, after the frame's map tail, so the gather reads this chain's distance.
             using var supplied=engine.AnimationMessages.SubscribeMessage(0x43,true,payload=>
             {
@@ -122,6 +130,12 @@ public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper o
             });
             void Record(string text){if(text.Contains("M8-013")||text.Contains("M11-079")||text.Contains("M11-089")||text.Contains("M11-092"))lock(holds)holds.Add(text);}
             SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Record;
+            void RecordMapClockWarning(string text)
+            {
+                if (text.Contains("M11-045 map last-observed-time reader")) lock (holds) holds.Add(text);
+            }
+            engine.StackLogLine += RecordMapClockWarning;
+            lattice.StatusPublished += RecordImport;
             try
             {
                 f.Rig.Robot.ActivateHighLevelActivity("Freeplay");
@@ -169,9 +183,9 @@ public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper o
                 output.WriteLine($"content: {string.Join(" ",content.Select(c=>$"{c.Key}={c.Value}"))}");
                 output.WriteLine($"distances: {string.Join(" ",distances.Distinct().Take(20))}");
                 foreach(string line in trace)output.WriteLine(line);foreach(string line in holds.Distinct())output.WriteLine("missing: "+line);
-                return new(chosen,holds,idle,longest,longestHiking,visits,states,starts,completions,content,vantage,drove,distances,trace,firmware.Paths);
+                return new(chosen,holds,idle,longest,longestHiking,visits,states,starts,completions,content,vantage,drove,distances,trace,firmware.Paths,imports);
             }
-            finally{SteppedBehavior.MissingReported-=Record;manager.DasTransition=prior;f.Rig.Robot.ActivateHighLevelActivity("Selection");}
+            finally{lattice.StatusPublished-=RecordImport;engine.StackLogLine-=RecordMapClockWarning;SteppedBehavior.MissingReported-=Record;manager.DasTransition=prior;f.Rig.Robot.ActivateHighLevelActivity("Selection");}
         }
         finally{Directory.Delete(directory,true);}
     }
@@ -205,6 +219,13 @@ public sealed class NativeVisitInterestingEdgeCanonicalTests(ITestOutputHelper o
         AssertNoHold(run);
         Assert.True(run.Starts>=1,"VisitInterestingEdge never started");
         Assert.True(run.DroveToVantage,"no path executed before gathering");
+        // The planner caches the unsigned root time sampled at 0x004FD50E and stored at 0x004FD5CE.
+        Assert.NotEmpty(run.VantageImports);
+        Assert.All(run.VantageImports, sample =>
+        {
+            Assert.NotEqual(0u, sample.Root);
+            Assert.Equal(sample.Root, sample.Planner);
+        });
         Assert.True(run.GatherDistanceToVantage<=DriveToPoseAction.DefaultGoalDistanceToleranceMm+20f,"vantage error "+run.GatherDistanceToVantage); // 10 mm goal tolerance plus the rig's 20 mm centre offset
         Assert.Contains(run.States,s=>s.State==2);
         // After the creep the visit ends either way the engine allows: state 3 when a reading falls to the 60 mm limit while the edge is still
