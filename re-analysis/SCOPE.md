@@ -24,15 +24,17 @@ partial when it is run.
 | Pick up a cube, put it down | robot (2026-11-09; again 2026-11-15, run 20261115-162141) |
 | Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | sim |
 | Teach, rename and erase a face | sim |
-| Go to a place | none as a command (action exists; job AI-BODY-GOTO-POSE-1 open) |
+| Go to a place (QueueAiGotoPoseAsync) | sim (built 2026-11-15; go-to round in `m15-cube-hw --skills`) |
 | Return to and mount the charger (QueueAiMountChargerAsync) | sim (built 2026-11-15; charger round in `m15-cube-hw --skills`) |
 | Roll a cube (QueueAiRollCubeAsync) | robot (2026-11-15, run 20261115-162141: drove to the cube and rolled it) |
 | Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
 | Charger seen report (operator 2026-11-15) | none |
-| Freeplay on/off, and returning to Freeplay after a command | partial (never run together) |
+| Freeplay on/off, and returning to Freeplay after a command | sim (SetEnableFreeplayActivity built 2026-11-15; `m15-cube-hw --freeplay-control`) |
 | The connection for an LLM (bridge) | none |
 
 ## B. Personality (required)
+
+Robot script: `m15-cube-hw --personality` (built 2026-11-15) walks through every group below with the engine's own reports.
 
 | Group | Classes | State |
 | --- | --- | --- |
