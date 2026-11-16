@@ -917,7 +917,13 @@ public sealed class DockingSystem : IDisposable
         long generation = NativeDockGeneration;
         if (!NativeOwnerCurrent(owner) || _legacyDockSelected) return;
         if((_native.TargetId??uint.MaxValue)==uint.MaxValue)return;
-        if (_vision.NativeDockingRotatingTooFast(owner, timestamp)) return;
+        if (_vision.NativeDockingRotatingTooFast(owner, timestamp))
+        {
+            // 0x0063BEC0..0x0063BEDA: this also covers an unavailable IMU bracket.
+            owner.Engine.EmitSourceLog(EngineLogLevel.Info, "VisionComponent",
+                "VisionComponent.UpdateDockingErrorSignal.RotatingTooFast", $"Body rotating too fast at time {timestamp}");
+            return;
+        }
         if (NativeDockGeneration != generation || !NativeOwnerCurrent(owner) || _legacyDockSelected) return;
         uint targetId = _native.TargetId!.Value;
         ushort code = _native.MarkerCode;
@@ -928,14 +934,53 @@ public sealed class DockingSystem : IDisposable
             {
                 if (NativeDockGeneration != generation || !NativeOwnerCurrent(owner) || _legacyDockSelected || _native.TargetId != targetId || _native.MarkerCode != code) return;
                 var target = _vision.World.GetLocatedObjectByIdHelper(targetId);
-                if (target is null) return;
+                if (target is null)
+                {
+                    // 0x0063C0AC..0x0063C106
+                    owner.Engine.EmitSourceLog(EngineLogLevel.Error, null, "VisionComponent.UpdateVisionMarkers.NullDockObject",
+                        $"Dock object {unchecked((int)targetId)} is null, can't send docking error signal");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                    return;
+                }
                 var markers = target.Markers.Where(marker => unchecked((ushort)marker.Code) == code).ToArray();
-                if (markers.Length != 1) return;
-                var computed = owner.PoseHistory.GetComputedNativePoseAt(timestamp);
-                if (computed is null) return;
-                using var statePose = new Pose3d(computed);
+                if (markers.Length != 1)
+                {
+                    // 0x0063C04C..0x0063C0A6
+                    owner.Engine.EmitSourceLog(EngineLogLevel.Error, null, "VisionComponent.UpdateVisionMarkers.BadNumDockingMarkers",
+                        $"Expecting 1 dockMarker have {markers.Length}");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                    return;
+                }
+
+                // Robot::GetComputedStateAt at 0x00517118 names a history key
+                // output (0x00517122..0x0051712C), copies the pose, and reparents
+                // the copy to the current origin (0x00517134..0x00517144).
+                HistRobotState? computed = null;
+                uint key = 0;
+                uint status = owner.PoseHistory.GetComputedNative(timestamp, ref computed, requestKey: true, ref key);
+                if (status != 0)
+                {
+                    // 0x0063C00A..0x0063C020
+                    owner.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "VisionComponent.UpdateVisionMarkers.GetHistoricRobotPoseFailed",
+                        $"Failed to get computed state at time {timestamp}, result {status}");
+                    return;
+                }
+                if (!owner.TryGetNativeOriginOwner(owner.CurrentOriginId, out var origin) || origin is null)
+                {
+                    Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-019 docking correction: current PoseOriginList pose unavailable at 0x00517144");
+                    return;
+                }
+                using var statePose = new Pose3d(computed!.Pose);
+                statePose.SetParent(origin);
                 using var relative = new Pose3d("");
-                if (!Pose3d.GetWithRespectTo(markers[0].PoseOnObject, statePose, relative)) return;
+                if (!Pose3d.GetWithRespectTo(markers[0].PoseOnObject, statePose, relative))
+                {
+                    // 0x0063C1EC..0x0063C242
+                    owner.Engine.EmitSourceLog(EngineLogLevel.Error, null, "VisionComponent.UpdateVisionMarkers.GetMarkerWRTRobotFailed",
+                        $"Failed to get dockMarker {markers[0].Code} wrt robot");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                    return;
+                }
                 using var root = relative.GetWithRespectToRoot();
                 Rotation3d flat = NativeDockingGeometry.Clamp(relative.Quaternion, root.Quaternion);
                 float x = (float)relative.Translation.X - BitConverter.UInt32BitsToSingle(_native.Slot14);

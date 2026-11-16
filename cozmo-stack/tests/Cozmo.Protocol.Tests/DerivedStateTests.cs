@@ -910,6 +910,72 @@ public class DerivedStateTests
         }
     }
 
+    [Theory]
+    [InlineData(0f, false)]
+    [InlineData(0.17453292f, false)]
+    [InlineData(-0.3f, true)]
+    public async Task ReturnedToTreadsQueuesTheNativeWaitAndOnlyCalibratesAboveTenDegrees(float pitch, bool calibrates)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        manager.Activity = null;
+        var registration = Assert.Single(manager.Reactions, row => row.Strategy.Trigger == ReactionTrigger.ReturnedToTreads);
+        var reaction = Assert.IsType<ReactToReturnedToTreadsBehavior>(registration.Behavior);
+        var completed = new List<ActionCompletionReport>();
+        f.Rig.Engine.ActionCompleted += completed.Add;
+        int mark = f.Rig.Mark();
+
+        Assert.True(await manager.SwitchToBehaviorBase(reaction, f.Rig.Engine.Timer.SecondsF));
+        var wait = Assert.IsType<Cozmo.Robot.Manipulation.NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction());
+        Assert.Same(wait, reaction.OwnedRunner);
+        uint waitTag = wait.Tag;
+        Assert.Equal(0.5f, wait.Duration);
+        f.Rig.Tick();
+        for (int tick = 0; tick < 8; tick++) f.Rig.Tick();
+        Assert.Same(wait, f.Robot.ActionList.GetCurrentAction());
+        Assert.Empty(f.Rig.SentSince(mark).OfType<StartMotorCalibration>());
+
+        var sample = f.Rig.MakeState(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos,
+            origin: f.Robot.CurrentOriginId, frame: f.Robot.PoseFrameId);
+        sample.Pose.Pitch = pitch;
+        f.Rig.Data(sample);
+        f.Rig.Tick();
+        f.Rig.Tick();
+        f.Rig.Engine.DrainAppDelivery();
+
+        Assert.Contains(completed, result => result.Tag == waitTag && result.Result == 0);
+        Assert.Equal(calibrates, reaction.Recalibrated);
+        Assert.Empty(f.Rig.SentSince(mark).OfType<StartOfAnimation>());
+        var requests = f.Rig.SentSince(mark).OfType<StartMotorCalibration>();
+        if (!calibrates)
+        {
+            Assert.Empty(requests);
+            Assert.Null(manager.Current);
+            return;
+        }
+
+        var request = Assert.Single(requests);
+        Assert.True(request.Head);
+        Assert.False(request.Lift);
+        var calibrate = Assert.IsType<Cozmo.Robot.Manipulation.NativeHeadCalibrationRunner>(f.Robot.ActionList.GetCurrentAction());
+        Assert.Same(calibrate, reaction.OwnedRunner);
+        uint calibrationTag = calibrate.Tag;
+        Assert.True(f.Rig.Logged("BehaviorReactToReturnedToTreads.CalibratingHead"));
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
+        f.Rig.Tick();
+        Assert.Same(calibrate, f.Robot.ActionList.GetCurrentAction());
+
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
+        f.Rig.Tick();
+        Assert.Same(calibrate, f.Robot.ActionList.GetCurrentAction());
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
+        f.Rig.Tick();
+        f.Rig.Tick();
+        f.Rig.Engine.DrainAppDelivery();
+        Assert.Contains(completed, result => result.Tag == calibrationTag && result.Result == 0);
+        Assert.Null(manager.Current);
+    }
+
     [Fact]
     public void MotorCalibrationReactionEndsWhenBothMotorsReportOrOnTimeout()
     {

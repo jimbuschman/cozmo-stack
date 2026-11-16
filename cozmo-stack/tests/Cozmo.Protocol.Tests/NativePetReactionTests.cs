@@ -153,25 +153,27 @@ public sealed class NativePetReactionTests
     }
 
     [Fact]
-    public void ConfiguredReactionPlaysRealAuthoredAudioThenTracksPet()
+    public void ConfiguredReactionUsesAudioFromEngineResourcesAndThenTracksPet()
     {
-        if(!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null)return;
-        string banks=GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
-        string archive=Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"),"AudioAssets.zip");
-        var options=new CozmoEngineOptions { ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),
-            SpeechSoundBankDirectory=banks,SpeechAudioArchivePath=archive,LabLocaleLanguage="en",BlockPoolPath="" };
-        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true,engineOptions:options);
-        var sink=new Sink();f.Robot.CannedSpeechSinkForTest=()=>sink;
+        if (ShippedLibraries.FindLibDir() is null) return;
+        var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath = "" };
+        var sink = new Sink();
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, engineOptions: options,
+            engineCreated: engine => engine.RuntimeAudioSinkForTest = () => sink);
+        Assert.NotNull(f.Rig.Engine.RuntimeWwiseAudio);
+        Assert.Same(f.Rig.Engine.RuntimeWwiseAudio, f.Robot.GetCannedSpeechOwner());
         f.Rig.DefaultTickMs=0;
-        var detector=new Detector {Result=new[]{Pet(7)}};
+        var detector=new Detector {Result=new[]{Pet(7, PetType.Dog)}};
         f.M.Vision.PetDetector=detector;f.Rig.Robot.SetVisionWhileMoving(true);f.Rig.Tick(20);
         for(uint id=400;id<403;id++){f.Rig.Tick(20);f.Image(id,modes:1<<9);}
         var owner=Assert.IsType<NativeReactToPetBehavior>(f.Runtime.Bound["ReactToPet"]);
         var manager=f.Robot.BehaviorManagerOwner!;
         f.Robot.ActionList.Clear();Assert.Equal(0,f.Robot.ActionList.QueueAction(QueueActionPosition.Now,new Gate(),0));
+        f.Rig.Engine.ContextRandom.SetSeed(123); // keep the dog trigger through the native 20% sneeze draw
         manager.CheckReactions(f.Rig.Engine.Timer.Seconds);Assert.Same(owner,manager.Current);
         var sequence=Assert.IsType<CompoundActionSequential>(owner.OwnedRunner);
         var animation=Assert.IsType<TriggerAnimationAction>(sequence.Children[1]);
+        Assert.Equal(AnimationTrigger.PetDetectionDog, animation.Request.Trigger);
         var tracker=Assert.IsType<NativeTrackAnyPetRunner>(sequence.Children[2]);
         int mark=f.Rig.Mark();byte? tag=null;int ownedStart=-1;int ownedEnd=-1;bool ended=false;uint imageId=403;
         var until=DateTime.UtcNow+TimeSpan.FromSeconds(20);

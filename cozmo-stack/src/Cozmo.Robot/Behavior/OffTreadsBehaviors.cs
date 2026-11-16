@@ -1,4 +1,5 @@
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -361,15 +362,20 @@ public sealed class ReactToPlacedOnSlopeBehavior : SteppedBehavior
 }
 
 /// <summary>
-/// <c>BehaviorReactToReturnedToTreads</c> (0x006084E4..0x00608718): wait 0.5 s, then <c>CheckForHighPitch</c>:
-/// if |pitch| &gt; 10° the head is recalibrated (DAS <c>CalibratingHead</c>). It plays no animation at all;
-/// "returning to treads" is a head-calibration check, not a reaction the user sees.
+/// <c>BehaviorReactToReturnedToTreads</c> (0x006084E4..0x00608718) waits 0.5 s before
+/// checking for |pitch| &gt; 10°. A high pitch starts head calibration.
 /// </summary>
 public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
 {
     public const float HighPitchDeg = 10f;
+    private static readonly float DegreesPerRadian = BitConverter.UInt32BitsToSingle(0x42652EE1);
+    private readonly ManipulationSystem? _manipulation;
+    private Action? _completionLease;
+    protected override bool KeepsRunningWithoutAction => HasCurrentAction;
 
-    public ReactToReturnedToTreadsBehavior() : base("ReactToReturnedToTreads", "ReactToReturnedToTreads") { }
+    public ReactToReturnedToTreadsBehavior() : this(null) { }
+    internal ReactToReturnedToTreadsBehavior(ManipulationSystem? manipulation)
+        : base("ReactToReturnedToTreads", "ReactToReturnedToTreads") => _manipulation = manipulation;
 
     /// <summary>Whether the last run decided to recalibrate.</summary>
     public bool Recalibrated { get; private set; }
@@ -377,23 +383,57 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
     protected override void OnStart()
     {
         Recalibrated = false;
-        Wait(0.5, CheckForHighPitch);
+        if (_manipulation is null)
+        {
+            Wait(0.5, () => CheckForHighPitch(null));
+            return;
+        }
+        if (Context.Robot.Engine.Robot is not { } owner)
+        {
+            ReportMissing("M7-019 ReturnedToTreads WaitAction 0x00608514: original robot owner unavailable");
+            InitFailed = true;
+            return;
+        }
+
+        _completionLease ??= AcquireActionCompletionOwner(Context.Robot);
+        // 0x00608510..0x00608524: StartActing owns the WaitAction and its completion callback.
+        StartActing(new NativeTimedWaitRunner(_manipulation, 0.5f) { ScopedOwner = owner }, _ => CheckForHighPitch(owner));
     }
 
-    private void CheckForHighPitch()
+    private void CheckForHighPitch(EngineRobot? owner)
     {
-        float deg = (Context.Robot.Sensors.PitchRad ?? 0f) * (180f / MathF.PI);
-        if (MathF.Abs(deg) > HighPitchDeg)
-        {
-            Recalibrated = true;
-            Log($"pitch {deg:F1} deg after returning to treads: calibrating the head");
-            CalibrateHead(Finish);
-        }
-        else
+        // Radians::getDegrees at 0x0084CD40..0x0084CD54, strict comparison at 0x006085E4..0x006085F8.
+        float deg = (Context.Robot.Sensors.PitchRad ?? 0f) * DegreesPerRadian;
+        bool highPitch = MathF.Abs(deg) > HighPitchDeg;
+        if (!highPitch)
         {
             Log($"pitch {deg:F1} deg: nothing to do");
             Finish();
+            return;
         }
+
+        Recalibrated = true;
+        if (owner is null)
+        {
+            Log($"pitch {deg:F1} deg after returning to treads: calibrating the head");
+            CalibrateHead(Finish);
+            return;
+        }
+
+        var scope = Scope;
+        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) &&
+            EngineRunning && ReferenceEquals(scope, Scope);
+        owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "BehaviorReactToReturnedToTreads.CalibratingHead",
+            FormattableString.Invariant($"{deg:F6}")); // 0x00608618..0x00608622, "%f"
+        if (!Current()) return;
+        // 0x00608648..0x00608666 passes an empty completion callback.
+        StartActing(new NativeHeadCalibrationRunner(_manipulation!, owner), null, Current);
+    }
+
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        _completionLease?.Invoke();
+        _completionLease = null;
     }
 }
 

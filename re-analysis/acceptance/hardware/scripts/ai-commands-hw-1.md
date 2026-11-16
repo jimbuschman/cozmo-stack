@@ -8,9 +8,12 @@ dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m15-cube-hw --commands
 ```
 
 The harness selects Selection/Wait to keep Freeplay off. Follow the prompts for head, lift, driving, turning,
-tracking, animation, speech, and the go-to pose. Present the operator's face and the cube for fresh reports.
-Tap and move the cube when prompted. The face-tracking request is cancelled 10 seconds after it is queued.
-The active cancellation code is expected for that step. The time the robot visibly tracks is an observation.
+tracking, animation, speech, and the go-to pose. Before turn-to-face and track-face, the harness raises the
+head to 20 degrees. Get down near Cozmo's level in good light, about 30–60 cm in front of him, with your face a
+little above his camera. The 20-second action window starts after the first fresh public face report. While
+waiting for that report, you can reposition or press Ctrl+C to stop and save the run. Tap and move the cube
+when prompted. The face-tracking request is cancelled 10 seconds after it is queued. The active cancellation
+code is expected for that step. The time the robot visibly tracks is an observation.
 
 The speech and named enrollment steps use the existing English voice support and local sound banks. The last
 steps enter Meet Cozmo, teach one temporary name, then rename and erase only the face successfully enrolled

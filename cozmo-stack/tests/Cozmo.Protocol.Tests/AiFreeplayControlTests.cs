@@ -10,6 +10,75 @@ namespace Cozmo.Protocol.Tests;
 public sealed class AiFreeplayControlTests
 {
     [Fact]
+    public void AFailedScoredChoiceFromAnEmptySlotReportsWaitToWaitOncePerTick()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+        f.Rig.Engine.DrainAppDelivery();
+        var failing = new FailedInitProbe();
+        var chooser = new FailedInitChooser { Desired = failing };
+        manager.Activity = chooser;
+        var reports = new List<BehaviorTransitionReport>();
+        var body = new List<byte[]>();
+        f.Rig.Engine.BehaviorTransition += reports.Add;
+        f.Rig.Engine.EngineToGameMessage += (tag, payload) =>
+        {
+            if (tag == 0x87) body.Add(payload.ToArray());
+        };
+
+        // 0x005A2AB4 enters the switch once for the chosen pointer. The failed
+        // Init at 0x005A1E94 stores null before sending at 0x005A1F1C.
+        for (int tick = 1; tick <= 5; tick++)
+        {
+            f.Rig.Tick();
+            f.Rig.Engine.DrainAppDelivery();
+            Assert.Equal(tick, chooser.Choices);
+            Assert.Equal(tick, failing.Starts);
+            Assert.Null(manager.Current);
+            Assert.Equal(tick, reports.Count);
+            Assert.Equal(tick, body.Count);
+            Assert.Equal(new BehaviorTransitionReport(0xB2, 0xB2, 0x39, 0x0B, 0x39, 0x0B, ""), reports[^1]);
+            Assert.Equal(new byte[] { 0xB2, 0xB2, 0x39, 0x0B, 0x39, 0x0B, 0 }, body[^1]);
+        }
+
+        // 0x005A2A74..0x005A2A80 skips the switch when both pointers are null.
+        chooser.Desired = null;
+        f.Rig.Tick();
+        f.Rig.Engine.DrainAppDelivery();
+        Assert.Equal(6, chooser.Choices);
+        Assert.Equal(5, failing.Starts);
+        Assert.Equal(5, reports.Count);
+        Assert.Equal(5, body.Count);
+    }
+
+    private sealed class FailedInitProbe : SteppedBehavior
+    {
+        internal FailedInitProbe() : base("InteractWithFaces", "InteractWithFaces") { }
+        internal int Starts { get; private set; }
+        protected override void OnStart()
+        {
+            Starts++;
+            InitFailed = true;
+        }
+    }
+
+    private sealed class FailedInitChooser : IManagedActivity
+    {
+        internal IBehavior? Desired { get; set; }
+        internal int Choices { get; private set; }
+
+        public void Update(double nowSec) { }
+        public IBehavior? GetDesiredActiveBehavior(IBehavior? current, double nowSec)
+        {
+            Assert.Null(current);
+            Choices++;
+            return Desired;
+        }
+        public void BehaviorSwitched(IBehavior? desired, bool started, double nowSec) => Assert.False(started);
+    }
+
+    [Fact]
     public void OrdinaryFreeplayContinuesChoosingAcrossThreeSimulatedMinutes()
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(

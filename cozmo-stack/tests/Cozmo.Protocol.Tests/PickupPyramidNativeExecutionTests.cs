@@ -114,7 +114,7 @@ public sealed class PickupPyramidNativeExecutionTests
             }
             var state=Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos|extra,origin:Robot.CurrentOriginId,frame:Robot.PoseFrameId,x:X,y:Y,head:Head,liftAngle:Lift);state.Pose.Angle=Yaw;Rig.Data(state);WaitCompletedAnimationCallbacks();Rig.Tick();
         }
-        internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1,float imuHead=0,float imuBody=0,bool imuBracket=true)
+        internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1,float imuHead=0,float imuBody=0,bool imuBracket=true,ObjectType markerObjectType=ObjectType.Block_LIGHTCUBE1)
         {
             // Rendered-marker unit input uses the native nonphysical branch; physical correction remains M11-033.
             if(cube)
@@ -134,8 +134,8 @@ public sealed class PickupPyramidNativeExecutionTests
             {
                 using var state=HistRobotState.From(Robot.GetCheckedMainPose(),Robot.StoredState!);using var camera=Robot.CopyHistoricalCameraPose(state);
                 using var flatCamera=camera.GetWithRespectToRoot();
-                using var pose=new Pose3d(Rotation3d.Identity,new Vec3(cubeX,0,22));
-                MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,new CameraModel(cal,flatCamera),ObjectType.Block_LIGHTCUBE1,pose);
+                using var pose=new Pose3d(Rotation3d.Identity,new Vec3(cubeX,0,markerObjectType==ObjectType.Charger_Basic?0:22));
+                MarkerRenderer.DrawObject(image,MarkerLibrary.EmbeddedOrNull!,new CameraModel(cal,flatCamera),markerObjectType,pose);
             }
             // Capture the vision system before the frame is queued: a worker callback may replace the Robot
             // (NativeMotionIntegrationTests does), and M resolves through the current Robot's runtime.

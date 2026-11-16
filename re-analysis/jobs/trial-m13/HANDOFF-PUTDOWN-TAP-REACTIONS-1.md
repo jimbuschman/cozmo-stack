@@ -1,0 +1,12 @@
+# PUTDOWN-TAP-REACTIONS-1
+
+Normal put-down ends after a half-second wait and a pitch check. The personality capture contains 13 ReturnedToTreads runs, most lasting about 540 ms, and five double-tap detections. It has no head calibration request during the put-down runs.
+
+- ReturnedToTreads creates `WaitAction(robot, 0.5f)` and queues the pitch callback at `0x00608510..0x00608524`. The callback reads pitch and compares its absolute degrees against 10 at `0x006085DA..0x006085F8`. At or below that threshold it returns. Above it sends the calibration event and queues `CalibrateMotorAction(robot, true, false)` with an empty callback at `0x00608618..0x00608666`. The stop body at `0x00608718` is empty. This accounts for the regular put-down without an animation.
+- The live reaction now owns a timed wait on the action list. The high-pitch branch owns the head calibration action. Its type and head-track mask come from `0x00547B38..0x00547B46`. Init clears the latch, sends the two calibration flags and subscribes to the calibration report at `0x00547C2E..0x00547C6C` and `0x006405EA..0x006405EE`. The head-start report sets the latch at `0x00547E20..0x00547E2C`. Completion requires both the start latch and the calibrated flag at `0x00547D38..0x00547D88`, with IAction's 30-second timeout.
+- Cube double tap is a log and movement filter. The second accepted tap runs the logger and clears the window and pending dirty flag at `0x006315EE..0x0063163A`. It retains the ignore-until timestamp read at `0x006316B8..0x006316E0`. The direct consumers are movement and stop at `0x00534278` and `0x00534A5E`, localization at `0x0051552E`, and the localization-candidate query at `0x0050D19A` through `0x00515216`. Normal tap reports have E2G tag `0x13` at `0x00722360`.
+- The shipped reaction map routes CubeMoved and has no double-tap trigger. AIWhiteboard binds observation and off-treads tags `0x44`, `0x45` and `0x35` at `0x0056A44C`, `0x0056A50C` and `0x0056A5CC`. The request-game event handlers at `0x005E9AD0..0x005E9D42` consume face and game request events. A double tap in Freeplay produces no separate reaction.
+
+The runtime test covers the owned wait, level and threshold cases, and the two required head calibration reports at high pitch. M8-008 and M4-012 cover the calibration, and M4-023 owns the tap filter.
+
+Verification passed 85 focused tests, the 762-record fidelity check and the no-robot personality dry run.

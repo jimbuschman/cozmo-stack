@@ -1038,6 +1038,8 @@ public sealed partial class BehaviorManager : IDisposable
         long epoch=Interlocked.Read(ref _hostSelectionEpoch);
         var desired = activity.GetDesiredActiveBehavior(current, nowSec);
         if (host is not null && (epoch!=Interlocked.Read(ref _hostSelectionEpoch) || !ReferenceEquals(Current,current) || !ReferenceEquals(Activity,activity))) return;
+        // 0x005A2A74..0x005A2A80 compares behavior pointers. A failed Init has
+        // cleared Current, so the chooser can return the same candidate next tick.
         if (ReferenceEquals(desired, current)) return;
         bool started = SwitchToBehaviorBaseCore(new RunningInfo(desired, null, null), nowSec, BehaviorStopReason.Interrupted, hostReadiness:host);
         if(host is not null && !ReferenceEquals(Activity,activity))return;
@@ -1481,6 +1483,8 @@ public sealed partial class BehaviorManager : IDisposable
                 new Dictionary<string, string> { ["$data"] = currentName }); // 0x005A236A..0x005A23B4
             if (!RequestOwnerCurrent(owner)) return;
         }
+        // 0x005A22EC..0x005A2480 emits equal endpoint IDs too. In particular,
+        // a failed switch starting from an empty slot reports the two Wait sentinels.
         owner.Engine.BroadcastBehaviorTransition(new(previous.Id, current.Id, previous.Class, previous.Executable,
             current.Class, current.Executable, current.DisplayKey));
     }
