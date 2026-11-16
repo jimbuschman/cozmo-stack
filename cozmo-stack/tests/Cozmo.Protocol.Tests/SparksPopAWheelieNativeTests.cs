@@ -42,6 +42,8 @@ public sealed class SparksPopAWheelieNativeTests
     {
         // S/P/A: independent fixed physical scene and firmware pitch/results; no forced action state/count/winner.
         using var scene=new PopFirmwareScene(behaviorId:Id);var f=scene.F;var pop=Pop(f);var owner=Activity(f).SparkedOwner!;var manager=f.Robot.BehaviorManagerOwner!;
+        var mapped = manager.MappedTriggers.ToHashSet();
+        int[] lockMask = { 0, 1, 3, 11, 12, 14, 15, 20 };
         var order=new List<string>();var callbackRunners=new List<(string Event,Type? Type,AnimationTrigger? Trigger)>();var local=new List<RobotCompletedAction>();var app=new List<ActionCompletionReport>();var raw=new List<byte[]>();
         var sparks=new List<(ushort Tag,byte[] Body)>();var triggers=new List<AnimationTrigger[]>();bool predock=false;bool interaction=false;
         using var objective=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>
@@ -79,7 +81,13 @@ public sealed class SparksPopAWheelieNativeTests
             }
             if(!predock&&pop.CliffChanged)
             {
-                predock=true;for(int t=0;t<21;t++)Assert.Equal(new[]{0,1,3,11,12,14,15,20}.Contains(t),manager.HasDisableLock((ReactionTrigger)t,Id+"_behaviorLock"));
+                predock = true;
+                for (int index = 0; index < 21; index++)
+                {
+                    var trigger = (ReactionTrigger)index;
+                    Assert.Equal(mapped.Contains(trigger) && lockMask.Contains(index),
+                        manager.HasDisableLock(trigger, Id + "_behaviorLock"));
+                }
                 Assert.False(manager.HasDisableLock(ReactionTrigger.CliffDetected,"PopAWheelie_behaviorLock"));
             }
         }

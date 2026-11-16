@@ -1045,12 +1045,14 @@ public sealed class CubeLightComponent
     /// a connected light cube gets an ObjectInfo {layer 2, gameLayerOnly comp+0x22} unless one exists, then
     /// PlayLightAnim(WakeUp, layer 2) - on every connection, reconnects included (LC8).
     /// </summary>
-    internal void OnObjectConnectionState(ObjectType type, bool connected)
+    internal void OnObjectConnectionState(ObjectConnectionStateMessage report)
     {
-        if (!connected || !CozmoCubes.IsLightCube(type)) return;
+        var type = report.ObjectType;
+        if (report.ConnectedByte == 0 || !CozmoCubes.IsLightCube(type)) return;
+        // 0x00639D46..0x00639D4C emplaces the message's ObjectID, even if the object later disconnects.
         lock (_gate)
-            if (!_infos.ContainsKey(type)) _infos[type] = new ObjectInfo { GameLayerOnly = _gameLayerOnlyDefault, ObjectId = TryObjectId(type) ?? uint.MaxValue };
-        PlayLightAnimCore(type,"WakeUp",StateLayer,0,false,null,0,null);
+            if (!_infos.ContainsKey(type)) _infos[type] = new ObjectInfo { GameLayerOnly = _gameLayerOnlyDefault, ObjectId = report.ObjectID };
+        PlayLightAnimCore(type,"WakeUp",StateLayer,0,false,null,0,report.ObjectID);
     }
 
     // fidelity: M4-018
@@ -1339,14 +1341,13 @@ public sealed class CubeLightComponent
             }
             finally { Monitor.Enter(_gate); }
         }
-        void Send(ObjectType type, CubeLightPattern pattern, bool transition)
+        void Send(uint id, CubeLightPattern pattern, bool transition)
         {
-            uint? id = TryObjectId(type);
             calls.Add(() => {
                 if(!Current())return;
                 if (transition) SendTransitionMessage(id);
                 if(!Current())return;
-                if (SetObjectLights(type, pattern,out bool skipped) != 0)
+                if (SetObjectLightsByIdCore(id, pattern,out bool skipped) != 0)
                 {
                     if(skipped)Log("Stack.CubeLightComponent.Update.RelativeSendSkipped: M1-034/M4-052 skipped invalid marker access before wire send; prior light state retained");
                     else SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.Update.SetLightsFailed", "");
@@ -1391,7 +1392,7 @@ public sealed class CubeLightComponent
                             var next = top.Anim[top.Index];
                             top.TimerMs = (next.DurationMs | unchecked((uint)top.TimerOffset)) == 0 ? 0
                                 : unchecked(now + next.DurationMs + (uint)top.TimerOffset);
-                            Send(type, next, transition: true);
+                            Send(info.ObjectId, next, transition: true);
                             continue;
                         }
                     }
@@ -1422,10 +1423,11 @@ public sealed class CubeLightComponent
                     {
                         // P3: resend the lower animation's current pattern, with no timer or iterator reset.
                         var lower = stack[^1];
-                        uint? id = TryObjectId(type);
+                        // The tree key at 0x00637A8A supplies the log ID. The following calls receive
+                        // that same key (0x00637AD6 / 0x00637AE4), without a connection lookup here.
+                        uint id = info.ObjectId;
                         int layer = info.CurrentLayer;
-                        if (id is { } previousId) calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.PlayingPrevious", $"Have previous anim {lower.Name} on layer {LayerName(layer)} id {previousId}"));
-                        else calls.Add(() => Log("MISSING: M4-018 | Update.PlayingPrevious 0x00637AA4: native ObjectID unavailable"));
+                        calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.PlayingPrevious", $"Have previous anim {lower.Name} on layer {LayerName(layer)} id {id}"));
                         // fidelity: M1-034
                         // fidelity: M4-045 — list::assign shortened the shared slot beneath this entry.
                         if(lower.Dangling)
@@ -1434,7 +1436,7 @@ public sealed class CubeLightComponent
                             calls.Add(()=>Log(FormattableString.Invariant($"Stack.CubeLightComponent.SkipDanglingBlendedResend: M1-034 / M4-045: skipped resend of dangling {skippedName}, index {skippedIndex}, current shared slot length {slotLength}; native freed-node read 0x00637ACC..0x00637AE4; previous state retained")));
                             continue;
                         }
-                        Send(type, lower.Anim[lower.Index], transition: true);
+                        Send(id, lower.Anim[lower.Index], transition: true);
                         continue;
                     }
                 }
@@ -1443,14 +1445,13 @@ public sealed class CubeLightComponent
                 // otherwise the current layer goes back to 2 and the default layer-2 animation is picked.
                 if (info.GameLayerOnly)
                 {
-                    Send(type, OffLights, transition: false);
+                    Send(info.ObjectId, OffLights, transition: false);
                     continue;
                 }
                 int previousLayer = info.CurrentLayer;
-                uint? objectId = TryObjectId(type);
+                uint objectId = info.ObjectId;
                 info.CurrentLayer = StateLayer;++info.LayerVersion;
-                if (objectId is { } emptyId) calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.NoAnimsLeftOnLayer", $"No more animations left on layer {LayerName(previousLayer)} for object {emptyId} going to State layer"));
-                else calls.Add(() => Log("MISSING: M4-018 | Update.NoAnimsLeftOnLayer 0x00637BD6: native ObjectID unavailable"));
+                calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.NoAnimsLeftOnLayer", $"No more animations left on layer {LayerName(previousLayer)} for object {objectId} going to State layer"));
                 if (pickDefaultLayer) defaults.Add(type);
             }
         }
@@ -1730,15 +1731,13 @@ public sealed class CubeLightComponent
     }
 
     private uint SetObjectLights(ObjectType type, CubeLightPattern p)
-        =>SetObjectLights(type,p,out _);
-    private uint SetObjectLights(ObjectType type,CubeLightPattern p,out bool skipped)
     {
         uint? id;
         lock(_gate)id=_infos.TryGetValue(type,out var info)?info.ObjectId:null;
         // Static-off has no animation ObjectInfo when no resources loaded. Its native caller still supplies
         // the real connected ObjectID; obtain that identity here, never the radio slot as a stand-in.
         id??=_robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o=>o.Type==type)?.ObjectId;
-        return SetObjectLightsByIdCore(id??uint.MaxValue,p,out skipped);
+        return SetObjectLightsByIdCore(id??uint.MaxValue,p,out _);
     }
 
     // fidelity: M4-052, M4-018 — native ObjectID entry; relative sends the selected located object's own ActiveId.

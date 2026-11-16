@@ -21,6 +21,62 @@ public sealed class M3M4CallbackBuilderTests
         throw new DirectoryNotFoundException();
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ExpiredOverlayResumesUsingTheConnectionReportObjectId(bool stillConnected)
+    {
+        using var rig = new M4ControlTests.Rig(Shipped());
+        rig.ToSynced();
+        rig.State();
+        const uint slot = 3;
+        ObjectConnectionStateMessage? connection = null;
+        rig.Robot.Cubes.ConnectionStateBroadcast += report =>
+        {
+            if (report.ConnectedByte != 0) connection = report;
+        };
+        M4ControlTests.ConnectCube(rig, slot);
+        uint id = Assert.IsType<ObjectConnectionStateMessage>(connection).ObjectID;
+        var lights = rig.Robot.Lights.Cubes;
+        Assert.True(lights.PlayLightAnim(Type, "Connected", CubeLightComponent.EngineLayer));
+        Assert.True(lights.PlayLightAnim(Type, "Flash", CubeLightComponent.EngineLayer));
+        if (!stillConnected)
+        {
+            rig.Data(new ObjectConnectionState { ObjectID = slot, FactoryID = 0x1000 + slot, ObjectType = Type, Connected = false });
+            rig.Tick();
+            Assert.Null(rig.Robot.LocalizationWorld.ConnectedObjectIdForActiveId(slot));
+        }
+
+        var logs = new List<EngineLogEntry>();
+        rig.Engine.LogEntry += logs.Add;
+        int mark = rig.Mark();
+        rig.Tick(610);
+        Assert.Equal("connected", lights.TopPatternName(Type));
+        Assert.Contains(logs, entry => entry.Name == "CubeLightComponent.Update.PlayingPrevious" &&
+            entry.Text == $"Have previous anim connected on layer Engine id {id}");
+        var frames = rig.SentSince(mark).Where(message => message is SetCubeGamma or CubeID or CubeLights).ToArray();
+        if (!stillConnected)
+        {
+            Assert.Empty(frames);
+            Assert.Contains(logs, entry => entry.Name == "CubeLightController.SetObjectLights.NullActiveObject");
+            return;
+        }
+
+        Assert.Collection(frames, message => Assert.Equal(slot, Assert.IsType<CubeID>(message).ObjectID), message =>
+        {
+            Assert.All(Assert.IsType<CubeLights>(message).Lights, led =>
+            {
+                // Shipped connected.json and SetLights 0x0063A654..0x0063A800.
+                Assert.Equal((ushort)0x81EF, led.OnColor);
+                Assert.Equal((ushort)0x8000, led.OffColor);
+                Assert.Equal((byte)1, led.OnFrames);
+                Assert.Equal((byte)167, led.OffFrames);
+                Assert.Equal((byte)34, led.TransitionOnFrames);
+                Assert.Equal((byte)34, led.TransitionOffFrames);
+            });
+        });
+    }
+
     // reach: production — shipped animations, public play/enable commands, real engine expiry and outgoing CubeLights.
     [Fact]
     public void StateLayerCompletionReReadsTheNewEngineLayerBeforeResending()

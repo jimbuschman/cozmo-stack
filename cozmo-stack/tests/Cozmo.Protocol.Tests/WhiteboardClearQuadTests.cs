@@ -131,4 +131,52 @@ public sealed class WhiteboardClearQuadTests
         b.ProcessClearQuad(Quad);
         Assert.Empty(handlers.PossibleObjects);
     }
+
+    [Fact]
+    public void RobotMapTickUsesItsOwnWhiteboardAndPreservesTheNativeRootCopyResult()
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        var robot = rig.Engine.Robot!;
+        var origin = robot.GetNativeOrigin(robot.CurrentOriginId);
+        var board = robot.NativeBehaviorRuntime!.Manipulation!.Whiteboard;
+        var visited = new List<Pose3d>();
+        board.ClearQuadPredicateForTest = visited.Add;
+        Add(board, origin, 0);
+        Assert.True(origin.IsRoot);
+        Assert.Same(origin, board.ClearQuadWorldOrigin!());
+
+        // 0x0067E47E reaches the whiteboard after inserting the robot footprint.
+        rig.State(origin: robot.CurrentOriginId);
+
+        Assert.Same(Assert.Single(board.PossibleObjects).Pose, Assert.Single(visited));
+    }
+
+    [Fact]
+    public void MapClearReadsTheCurrentOriginAndErasesOnlyMatchingMemoryWithASharedRoot()
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        var robot = rig.Engine.Robot!;
+        var world = rig.Robot.LocalizationWorld;
+        var board = robot.NativeBehaviorRuntime!.Manipulation!.Whiteboard;
+        var oldOrigin = robot.GetNativeOrigin(robot.CurrentOriginId);
+        uint newId = robot.CurrentOriginId + 1;
+        Assert.True(robot.AddOriginWithId(newId));
+        var currentOrigin = robot.GetNativeOrigin(newId);
+        using var parent = new Pose3d("shared root");
+        currentOrigin.SetParent(parent);
+        Assert.Same(currentOrigin, board.ClearQuadWorldOrigin!());
+
+        Add(board, oldOrigin, 0);
+        Add(board, currentOrigin, 0);
+        Add(board, currentOrigin, 500);
+        var memory = new AIWhiteboardHandlers(board, () => 0);
+        var seen = memory.PossibleObjects.ToArray();
+        using var robotPose = new Pose3d("footprint fixture", currentOrigin);
+        var map = Assert.IsType<MemoryMap>(world.Maps.Current);
+        map.UpdateRobotPose(robotPose, false, 100, world.MapClearQuad);
+
+        Assert.Equal(new[] { seen[0], seen[2] }, memory.PossibleObjects);
+    }
 }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Cozmo.Robot.Animation.Wwise;
 using Cozmo.Robot.Emulation;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Animation;
 
@@ -12,32 +13,43 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     private readonly Task<NativeWwiseVoiceSession> _opening;
     private readonly SemaphoreSlim _lease = new(1, 1);
     private readonly Action<string> _report;
+    private readonly Queue<(BehaviorAudioRequest Request, Action<BehaviorAudioRequest, uint>? Applied)> _pendingBehaviorAudio = new();
+    private bool _reportedBehaviorAudioStartup;
     private bool _retired;
     private bool _leaseRetiring;
 
-    internal CannedSpeechOwner(string library, string banks, string archive, Action<string> report, Func<IPlatformPcmSink>? sink = null)
+    internal CannedSpeechOwner(string library, string? banks, string archive, Action<string> report, Func<IPlatformPcmSink>? sink = null)
     {
         _report = report;
         _opening = Open(library, banks, archive, sink);
     }
 
-    private async Task<NativeWwiseVoiceSession> Open(string library, string banks, string archive, Func<IPlatformPcmSink>? sink)
+    private async Task<NativeWwiseVoiceSession> Open(string library, string? banks, string archive, Func<IPlatformPcmSink>? sink)
     {
-        byte[] init = await File.ReadAllBytesAsync(Path.Combine(banks, "Init.bnk")).ConfigureAwait(false);
-        byte[] english = await File.ReadAllBytesAsync(Path.Combine(banks, "English(US)", "Cozmo.bnk")).ConfigureAwait(false);
+        byte[] init = await ReadBankAsync("Init.bnk").ConfigureAwait(false);
+        byte[] english = await ReadBankAsync("English(US)/Cozmo.bnk").ConfigureAwait(false);
         byte[]? music = ReadMusicBank(archive);
         return await NativeWwiseVoiceSession.OpenSharedAsync(library, init, english, archive, _buffer,
             () => Environment.TickCount64, sink, music).ConfigureAwait(false);
+
+        Task<byte[]> ReadBankAsync(string entry)
+        {
+            string? file = banks is null ? null : Path.Combine(banks, entry);
+            return File.Exists(file) ? File.ReadAllBytesAsync(file!) : Task.Run(() =>
+                ReadArchivedBank(archive, entry) ?? throw new FileNotFoundException($"Wwise bank {entry} is unavailable", archive));
+        }
     }
 
-    internal static byte[]? ReadMusicBank(string archive)
+    internal static byte[]? ReadMusicBank(string archive) => ReadArchivedBank(archive, "Music.bnk");
+
+    private static byte[]? ReadArchivedBank(string archive, string entry)
     {
         var index = new WwiseZipIndex(new WwiseDiskFileSystem());
         try
         {
-            if (!index.Open(archive) || !index.Lookup("Music.bnk", out uint offset, out uint size)) return null;
+            if (!index.Open(archive) || !index.Lookup(entry, out uint offset, out uint size)) return null;
             var bytes = new byte[checked((int)size)];
-            if (!index.ReadEntry(offset, 0, size, bytes, 0)) throw new IOException("Could not read Music.bnk from the local audio archive");
+            if (!index.ReadEntry(offset, 0, size, bytes, 0)) throw new IOException($"Could not read {entry} from the local audio archive");
             return bytes;
         }
         finally { index.Close(); }
@@ -52,18 +64,62 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     {
         if (!_opening.IsCompletedSuccessfully) return Task.FromException(new InvalidOperationException("shared music owner is not ready"));
         var native = _opening.Result;
-        lock (_gate) if (_retired) throw new ObjectDisposedException(nameof(CannedSpeechOwner));
-        if (!current()) return Task.FromException(new OperationCanceledException("music request owner retired"));
-        return native.RequestMusicStateAsync(state, interrupt, minimumMilliseconds, current);
+        lock (_gate)
+        {
+            if (_retired) throw new ObjectDisposedException(nameof(CannedSpeechOwner));
+            if (!current()) return Task.FromException(new OperationCanceledException("music request owner retired"));
+            DrainBehaviorAudio();
+            return native.RequestMusicStateAsync(state, interrupt, minimumMilliseconds, current);
+        }
+    }
+
+    internal void SubmitBehaviorAudio(BehaviorAudioRequest request, Action<BehaviorAudioRequest, uint>? applied)
+    {
+        lock (_gate)
+        {
+            if (_retired) return;
+            _pendingBehaviorAudio.Enqueue((request, applied));
+            DrainBehaviorAudio();
+        }
+    }
+
+    private void DrainBehaviorAudio()
+    {
+        if (_opening.IsFaulted)
+        {
+            _pendingBehaviorAudio.Clear();
+            if (!_reportedBehaviorAudioStartup)
+            {
+                _reportedBehaviorAudioStartup = true;
+                _report("MISSING M13-039 Freeplay Wwise startup: " + _opening.Exception!.GetBaseException().Message);
+            }
+            return;
+        }
+        if (!_opening.IsCompletedSuccessfully) return;
+        var native = _opening.Result;
+        while (_pendingBehaviorAudio.TryDequeue(out var entry))
+            _ = native.SubmitBehaviorAudio(entry.Request, (request, result) =>
+            {
+                if (request.Slot == 8 ? result == 0 : result != 1)
+                    _report($"Audio M13-039 Wwise rejected request 0x{request.Id:X8} (result {result})");
+                entry.Applied?.Invoke(request, result);
+            }).ContinueWith(task =>
+                _report("MISSING M13-039 Freeplay Wwise request: " + task.Exception!.GetBaseException().Message),
+                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
     }
 
     // Engine audio tail: the worker callback only queues audio-path callbacks.
     // Never wait for startup or for a platform completion on the engine thread.
     internal void UpdateMusicAtEngineTail()
     {
-        if (!_opening.IsCompletedSuccessfully) return;
-        lock (_gate) if (_retired) return;
-        Task? tick = _opening.Result.UpdateMusic(Environment.TickCount64);
+        Task? tick;
+        lock (_gate)
+        {
+            if (_retired) return;
+            if (_pendingBehaviorAudio.Count != 0) DrainBehaviorAudio();
+            if (!_opening.IsCompletedSuccessfully) return;
+            tick = _opening.Result.UpdateMusic(Environment.TickCount64);
+        }
         if (tick is null) return;
         try
         {
@@ -119,7 +175,12 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
 
     internal void Retire()
     {
-        lock (_gate) { if (_retired) return; _retired = true; }
+        lock (_gate)
+        {
+            if (_retired) return;
+            _retired = true;
+            _pendingBehaviorAudio.Clear();
+        }
         _buffer.Retire();
         _ = _opening.ContinueWith(t =>
         {

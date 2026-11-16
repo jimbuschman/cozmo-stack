@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Emulation;
 
@@ -368,6 +369,23 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         _m.W32(config + 8, 0xA3D32782); _m.W32(config + 12, 0x08DDB0F6);
         Run(0x8D74BD, new[] { _musicConductor, controller, config });
         Ok(Run(0x9A3100, new uint[] { 1, 0, 1 }), "register music game object");
+    }
+
+    internal uint ApplyBehaviorAudio(BehaviorAudioRequest request)
+    {
+        RequireOwner();
+        return request.Slot switch
+        {
+            // Empty-callback PostAudioEvent helper at 0x008D8D20..0x008D8D38.
+            8 => Run(0x9A6704, new uint[] { request.Id, request.Value, 0, 0 }, new uint[] { 0, 0, 0, 0 }),
+            // SetSwitch helper at 0x008D9108. Keep the numeric value, including zero.
+            0x14 => Run(0x99FE1C, new[] { request.Id, request.Value, request.Arg3 }),
+            // The mux maps global object 0 to -1 (0x008DF014..0x008DF01E).
+            // For the client's curve 0 the helper supplies Wwise linear curve 4 (0x008D9078..0x008D90AA).
+            0x18 => Run(0x99FA24, new[] { request.Id, request.Value,
+                request.Arg3 == 0 ? uint.MaxValue : request.Arg3, request.Extra0 }, new uint[] { 4, 0 }),
+            _ => throw new ArgumentOutOfRangeException(nameof(request), request.Slot, "Unexpected behavior audio slot")
+        };
     }
 
     internal void RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds)

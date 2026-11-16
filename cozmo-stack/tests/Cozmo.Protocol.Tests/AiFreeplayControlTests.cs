@@ -33,6 +33,12 @@ public sealed class AiFreeplayControlTests
         {
             var manager = f.Robot.BehaviorManagerOwner!;
             var freeplay = f.Runtime.FreeplayObserver;
+            var hikingReports = new List<(byte Child, string Name)>();
+            using var subscription = f.Robot.BehaviorPublicState.Subscribe(state =>
+            {
+                if (state.Activity == 5)
+                    hikingReports.Add((freeplay.SelectedChildActivityId, freeplay.Freeplay.NativeActivityName));
+            });
             var transitions = new List<(float Seconds, string Id)>();
             string? prior = null;
             long initialMotionFrames = f.M.Vision.MotionFrameInputs;
@@ -64,6 +70,7 @@ public sealed class AiFreeplayControlTests
             Assert.True(f.M.Vision.MotionFrameInputs > initialMotionFrames, Diagnostic());
             Assert.True(freeplay.Decisions.Any(d => d.Activity == "Hiking"), Diagnostic());
             Assert.True(!captured.Any(line => line.Contains("M8-013 scored chooser input unavailable")), Diagnostic());
+            Assert.DoesNotContain(captured, line => line.Contains("SetActivityIDFromSubActivity"));
             float lastMinute = (end - 60_000_000_000L) / 1_000_000_000f;
             Assert.True(transitions.Select(t => t.Id).Distinct().Count() >= 2
                 && transitions.Any(t => t.Seconds >= lastMinute), Diagnostic());
@@ -82,6 +89,7 @@ public sealed class AiFreeplayControlTests
             // The native activity selection publishes Hiking (ActivityID 5). The tick copies needs 1,0,2
             // at 0x0064D7A2..0x0064D7BA, with the no-reaction sentinel from 0x005A19EC.
             Assert.Contains(publicState, state => state.ActivityId == 5 && state.ReactionTrigger == 0x16);
+            Assert.Contains(((byte)5, "Freeplay_Hiking"), hikingReports);
             var state = publicState.Last();
             var needs = engine.Needs.State;
             Assert.InRange(MathF.Abs(state.Energy - (float)needs.GetNeedLevel(NeedId.Energy)), 0, 1e-5f);
@@ -95,6 +103,38 @@ public sealed class AiFreeplayControlTests
             SteppedBehavior.MissingReported -= Capture;
             f.Rig.Engine.StackLogLine -= Capture;
         }
+    }
+
+    [Fact]
+    public void ConfiguredParentConsumersUseTheProjectedActivityName()
+    {
+        using var rig = new M4ControlTests.Rig(PickupPyramidNativeExecutionTests.Resources());
+        rig.ToSynced();
+        var robot = rig.Engine.Robot!;
+        var analyzer = new AIInformationAnalyzer(null);
+        const AnimationTrigger trigger = AnimationTrigger.HikingLookAround;
+        var parent = new Activity
+        {
+            Id = "Freeplay", Type = "Freeplay", Strategy = new ActivityStrategy(),
+            NativeDrivingFacade = rig.Robot, GuardNativeLifecycle = true,
+            NativePublicStateSelected = () => robot.BehaviorPublicState.UpdateActivity(3),
+            DriveStartAnim = trigger, IdleAnim = trigger, InfoAnalyzerProcess = 1, Analyzer = analyzer
+        };
+        parent.NativeCommonDrivingPush = () => parent.PushOwnedDriving(robot, new(trigger, trigger, trigger));
+        parent.SetActivityIdFromSubActivity("Hiking");
+        parent.OnSelected(10);
+
+        Assert.Equal((byte)3, robot.BehaviorPublicState.State.Activity);
+        Assert.Contains(rig.Robot.Animations.DrivingAnimations.Entries, entry => entry.LockName == "Freeplay_Hiking");
+        Assert.Contains(rig.Robot.Animations.Scheduler.IdleStack, entry => entry.Lock == "Activity_Freeplay_Hiking");
+        Assert.True(analyzer.IsProcessRunning(1));
+        analyzer.RemoveEnableRequest(1, "Freeplay");
+        Assert.True(analyzer.IsProcessRunning(1));
+
+        parent.OnDeselected(11);
+        Assert.DoesNotContain(rig.Robot.Animations.DrivingAnimations.Entries, entry => entry.LockName == "Freeplay_Hiking");
+        Assert.DoesNotContain(rig.Robot.Animations.Scheduler.IdleStack, entry => entry.Lock == "Activity_Freeplay_Hiking");
+        Assert.False(analyzer.IsProcessRunning(1));
     }
 
     [Fact]

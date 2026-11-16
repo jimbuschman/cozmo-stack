@@ -8,6 +8,24 @@ public sealed partial class EngineRobot
     internal BehaviorAudioClient? BehaviorAudioA {get;private set;}
     internal BehaviorAudioClient? BehaviorAudioB {get;private set;}
     internal Action<BehaviorAudioRequest>? BehaviorAudioRecipient;
+    internal Action<BehaviorAudioRequest, uint>? BehaviorAudioAppliedForTest;
+
+    internal void SendBehaviorAudio(BehaviorAudioRequest request)
+    {
+        if (BehaviorAudioRecipient is { } observer)
+        {
+            observer(request);
+            return;
+        }
+
+        if (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this)) return;
+        if (Engine.IsOfflineEngine && CannedSpeechSinkForTest is null) return;
+        var audio = GetBehaviorAudioOwner();
+        if (audio is not null)
+            audio.SubmitBehaviorAudio(request, BehaviorAudioAppliedForTest);
+        else
+            SteppedBehavior.ReportMissing("M13-039 Freeplay audio requires the local Wwise ARM libraries, archived banks and PCM output");
+    }
     // M13-010's existing WorkoutComponent.ShouldPlayEightiesMusic, including its shared cache, not a raw RNG draw.
     internal Func<bool>? EightiesMusicInput;
     internal Action<string>? BehaviorAudioRetiredForTest;
