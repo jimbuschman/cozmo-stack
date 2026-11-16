@@ -65,10 +65,20 @@ first, and use `--with-drive` only after that pickup works, with a hand ready ne
 
 ## Skill rounds (opt-in)
 
-Add `--skills` to run stack, roll, flip, wheelie, and mount after the pickup rounds. Follow each prompt to reset the upright cube. The flip and wheelie rounds record the action result and wire traffic. The charger round runs last. Clear the
+Add `--skills` to run stack, roll, flip, wheelie, go-to, and mount after the pickup rounds. Follow each prompt to reset the upright cube. The flip and wheelie rounds record the action result and wire traffic. For the go-to round, clear space for a 20 cm drive and a left turn. The script records the requested and observed poses. The charger round runs last. Clear the
 cubes away and put the powered charger 20–40 cm straight ahead, marker facing Cozmo. The script waits for a fresh
 located visual observation in the current origin, then records the queued mount result and the robot's contact bit
 (M13-008, 0x0054E7B0). Its visual target comes from BlockWorld while the charger 0x44 report is outstanding.
 Allow room in front of and behind Cozmo for the pre-dock drive, turn, and reverse.
 
 Run `m15-cube-hw --skills --validate` to check the planned rounds and record references without a robot.
+
+## Freeplay control (standalone round)
+
+Use `m15-cube-hw --freeplay-control` with the same resource and robot arguments. Set Cozmo on a clear table, well
+away from the edge and off his charger. Observe 60 seconds of Freeplay, one queued CozmoSaysSpeakLoop animation,
+then 60 more seconds of Freeplay. The bundle includes the action result and the engine's behavior, reaction and
+objective reports (0x87, 0x88 and 0x8B) in `events.jsonl`. A reaction can refuse the request through the normal
+external-action gate. The script records the outcome and your observations.
+
+Use `m15-cube-hw --freeplay-control --validate` for the offline dry-run.
