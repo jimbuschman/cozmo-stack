@@ -596,7 +596,7 @@ public sealed class CozmoCubes
         Cube? discovered = null, connectionChanged = null, tapped = null, moved = null;
         ObjectPowerLevel? powerBroadcast = null;
         CubeTimestampEvent? movementBroadcast = null;
-        ObjectMoved? nativeMovement = null;
+        RobotMessage? nativeMovement = null;
         CubeUpAxisEvent? upAxisBroadcast = null;
         var callouts = new List<Action>();
         void Log(string line) => callouts.Add(() => this.Log(line));
@@ -803,6 +803,8 @@ public sealed class CozmoCubes
                         moved = c;
                         c.LastBroadcastTimestamp = sm.Timestamp;
                         movementBroadcast = new CubeTimestampEvent(c, sm.Timestamp);
+                        // E2G ObjectStoppedMoving at 0x005349A6..0x005349AE uses the connected world ID.
+                        nativeMovement = new ObjectStoppedMoving { Timestamp = sm.Timestamp, ObjectID = unchecked((uint)stoppedWorldId) };
                     }
                     break;
                 }
@@ -842,9 +844,10 @@ public sealed class CozmoCubes
         if (nativeMovement is not null && _robot.Engine.Robot?.HasExternalInterface == true)
         {
             var writer = new CladWriter();
-            nativeMovement.WriteBody(writer); // ObjectMoved::Pack 0x007B01C4.
-            _robot.Engine.DeliverAnimationReportToApp(0x0F, writer.ToArray());
-            _robot.Engine.AnimationMessages.Deliver(0x0F, true, nativeMovement);
+            ushort tag = nativeMovement is ObjectMoved ? (ushort)0x0F : (ushort)0x10;
+            nativeMovement.WriteBody(writer); // ObjectMoved::Pack 0x007B01C4 and the two-word stop body.
+            _robot.Engine.DeliverAnimationReportToApp(tag, writer.ToArray());
+            _robot.Engine.AnimationMessages.Deliver(tag, true, nativeMovement);
         }
         if(upAxisBroadcast is not null&&_robot.Engine.Robot?.HasExternalInterface==true)
         {
