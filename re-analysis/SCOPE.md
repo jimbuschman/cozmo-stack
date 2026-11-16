@@ -24,7 +24,8 @@ partial when it is run.
 | Pick up a cube, put it down | robot (2026-11-09; again 2026-11-15, run 20261115-162141) |
 | Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | sim |
 | Teach, rename and erase a face | sim |
-| Go to a place; return to and mount the charger | none as a command (actions exist) |
+| Go to a place | none as a command (action exists; job AI-BODY-GOTO-POSE-1 open) |
+| Return to and mount the charger (QueueAiMountChargerAsync) | sim (built 2026-11-15; charger round in `m15-cube-hw --skills`) |
 | Roll a cube (QueueAiRollCubeAsync) | robot (2026-11-15, run 20261115-162141: drove to the cube and rolled it) |
 | Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
 | Charger seen report (operator 2026-11-15) | none |
@@ -44,7 +45,8 @@ partial when it is run.
 
 ## C. Playful extras (wanted, after A and B)
 
-PopAWheelie, KnockOverCubes, FistBump, Singing, Dance, CubeLiftWorkout, FireTruckAlarm, BringCubeToBeacon,
+Commands QueueAiFlipCubeAsync and QueueAiPopAWheelieAsync: sim (built 2026-11-15; rounds in `m15-cube-hw --skills`).
+Behaviours PopAWheelie, KnockOverCubes, FistBump, Singing, Dance, CubeLiftWorkout, FireTruckAlarm, BringCubeToBeacon,
 RamIntoBlock, Bouncer: sim. PeekABoo, TrackLaser, GuardDog: none or partial.
 
 ## D. Deferred (not worked unless the operator moves them)
