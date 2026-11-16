@@ -953,7 +953,8 @@ public sealed partial class CozmoRobot : IDisposable
     {
         if(sourceOwner is not null && (sourceOwner.Lifetime.Destroying || !ReferenceEquals(Engine.Robot,sourceOwner)))return;
         if (m is RobotState && !stateHandled) return;
-        Route(() => State.Handle(m));
+        // HandleMotorCalibration writes the calibrated flags after the source event and any carry detach.
+        if (m is not MotorCalibration) Route(() => State.Handle(m));
         Route(() => Motion.Handle(m));
         Route(() => Camera.Handle(m));
         // fidelity: M3-021

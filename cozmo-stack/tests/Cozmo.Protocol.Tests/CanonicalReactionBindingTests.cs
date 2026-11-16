@@ -3,6 +3,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -165,6 +166,95 @@ public sealed class CanonicalReactionBindingTests
         rig.Tick(0);
         Assert.True(rig.Robot.State.HeadCalibrating);
         Assert.True(behavior.Completed);Assert.Null(behavior.OwnedRunner);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LiftCalibrationReportsBeforeDeletingCarriedCubeAndStartingReaction(bool carrying)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var native = f.Robot;
+        var manager = native.BehaviorManagerOwner!;
+        var cube = f.Add();
+        var unrelated = f.Add(8, x: 400);
+        var carry = f.M.Docking.Carrying;
+        Assert.Same(native.CarryingOwner, carry);
+        if (carrying)
+        {
+            using var liftPose = new Pose3d(Rotation3d.Identity, new Vec3(2, 3, 4), parent: native.LiftPose);
+            cube.Pose = new Pose3d(liftPose);
+            cube.NativeCarryingTree = true;
+            carry.AttachToLift(cube.ObjectId, cube.Markers[0], new Pose3d(liftPose), null, null);
+        }
+
+        OpenGate(native, manager);
+        Assert.True(f.Rig.Robot.State.LiftCalibrated);
+        var order = new List<string>();
+        var events = new List<EngineLogEntry>();
+        var appReports = new List<MotorCalibration>();
+        (uint? Carried, bool Calibrated)? atStart = null;
+        (uint? Carried, bool Calibrated)? atReport = null;
+        f.Rig.Engine.LogEntry += entry =>
+        {
+            if (entry.Name is not ("HandleMotorCalibration.Start" or "HandleMotorCalibration.Complete")) return;
+            events.Add(entry);
+            if (entry.Name == "HandleMotorCalibration.Start")
+            {
+                atStart = (carry.CarriedObjectId, f.Rig.Robot.State.LiftCalibrated);
+                order.Add("start");
+            }
+        };
+        var deletedIds = new List<uint>();
+        using var delete = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x4C, true, payload =>
+        {
+            if (payload is uint id) deletedIds.Add(id);
+            order.Add("delete");
+        });
+        f.Rig.Robot.Sensors.MotorCalibrationReportedInternal += report =>
+        {
+            if (report.CalibStarted)
+            {
+                atReport = (carry.CarriedObjectId, f.Rig.Robot.State.LiftCalibrated);
+                order.Add("report");
+            }
+        };
+        f.Rig.Robot.Sensors.MotorCalibrationReported += appReports.Add;
+        int mark = f.Rig.Mark();
+
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true, AutoStarted = true });
+        f.Rig.Tick(0);
+        manager.CheckReactions(f.Rig.Engine.Timer.Seconds);
+        f.Rig.Engine.DrainAppDelivery();
+
+        Assert.Equal((carrying ? cube.ObjectId : (uint?)null, true), atStart);
+        Assert.Equal(((uint?)null, false), atReport);
+        Assert.Equal(carrying ? new[] { "start", "delete", "report" } : new[] { "start", "report" }, order);
+        Assert.Equal(carrying ? new[] { cube.ObjectId } : Array.Empty<uint>(), deletedIds);
+        Assert.Null(carry.CarriedObjectId);
+        if (carrying) Assert.Null(f.M.World.GetLocatedObjectByIdHelper(cube.ObjectId));
+        else Assert.Same(cube, f.M.World.GetLocatedObjectByIdHelper(cube.ObjectId));
+        Assert.Same(unrelated, f.M.World.GetLocatedObjectByIdHelper(unrelated.ObjectId));
+        Assert.Equal(carrying ? 1 : 0, f.Rig.SentSince(mark).OfType<CarryStateUpdate>().Count(m => m.State == CarryState.CARRY_NONE));
+        var report = Assert.Single(appReports);
+        Assert.Equal(MotorID.MOTOR_LIFT, report.MotorID);
+        Assert.True(report.CalibStarted && report.AutoStarted);
+        var start = Assert.Single(events);
+        Assert.Equal(EngineLogLevel.Event, start.Level);
+        Assert.Equal("HandleMotorCalibration.Start", start.Name);
+        Assert.Equal("MOTOR_LIFT", start.Text);
+        Assert.Equal("1", start.Data["$data"]);
+
+        var behavior = Assert.IsType<ReactToMotorCalibrationBehavior>(manager.Current);
+        Assert.Equal(5f, Assert.IsType<NativeTimedWaitRunner>(behavior.OwnedRunner).Duration);
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false, AutoStarted = false });
+        f.Rig.Tick(0);
+        Assert.True(behavior.Completed);
+        Assert.True(f.Rig.Robot.State.LiftCalibrated);
+        Assert.Equal(2, events.Count);
+        Assert.Equal("HandleMotorCalibration.Complete", events[1].Name);
+        Assert.Equal("MOTOR_LIFT", events[1].Text);
+        Assert.Equal("0", events[1].Data["$data"]);
     }
 
     [Fact]

@@ -427,7 +427,8 @@ public sealed class DockingSystem : IDisposable
             if(deleteLocated)
             {
                 var filter=new BlockWorldFilter();filter.AllowedIds.UnionWith(ids);
-                Behavior.SteppedBehavior.ReportMissing("M12-046/M12-006 DeleteLocatedObjects 0x00633930 body remains unread in the put-down rows; invoke existing world implementation with captured IDs/default origin-mode0 filter");
+                // 0x0063388C..0x00633930 inserts the captured carrying IDs into AllowedIds and leaves origin-mode 0.
+                // The shared 0x0061D038 implementation clears each matching located object and delivers 0x4C.
                 _vision.World.DeleteLocatedObjects(filter);
             }
             result=0;
