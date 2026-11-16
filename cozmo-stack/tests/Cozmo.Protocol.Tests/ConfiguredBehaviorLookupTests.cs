@@ -69,9 +69,10 @@ public sealed class ConfiguredBehaviorLookupTests
     public void CanonicalScorerDistinguishesAbsentConfigFromUnbuiltConfiguredOwner()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();const string id="SparksTrackLaser";
-        Assert.False(f.Runtime.Bound.ContainsKey(id));Assert.True(f.Rig.Engine.HostBehaviorMap!.ContainsKey(BehaviorID.SparksTrackLaser));
+        Assert.IsType<NativeTrackLaserBehavior>(f.Runtime.Bound[id]);Assert.True(f.Rig.Engine.HostBehaviorMap!.ContainsKey(BehaviorID.SparksTrackLaser));
         var entry=f.Robot.NativeConfiguredScoreFields![id].Value!;
-        var chooser=new ScoringChooser(new[]{entry},f.Runtime.Bound,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
+        var missingOwner=f.Runtime.Bound.Where(p=>p.Key!=id).ToDictionary(p=>p.Key,p=>p.Value);
+        var chooser=new ScoringChooser(new[]{entry},missingOwner,native:true);chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
         Assert.True(chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,0).InputUnavailable);
         var property=f.Rig.Engine.GetType().GetProperty("HostBehaviorMap",BindingFlags.Instance|BindingFlags.NonPublic)!;
         var original=f.Rig.Engine.HostBehaviorMap!;var changed=original.Where(p=>p.Key!=BehaviorID.SparksTrackLaser).ToDictionary(p=>p.Key,p=>p.Value);

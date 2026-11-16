@@ -1635,7 +1635,7 @@ public static class ActivityTreeLoader
         if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !(owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": actual original Robot or retained configured PlayArbitraryAnim 3D is unavailable; Sparked owner not constructed.");
         if(id=="SparksGatherCubes")
-            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters TrackLaser and GuardDog remain unbuilt");
+            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporter GuardDog remains unbuilt");
         var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,

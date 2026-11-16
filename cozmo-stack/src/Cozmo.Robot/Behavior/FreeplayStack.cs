@@ -108,7 +108,7 @@ public sealed class FreeplayStack : IDisposable
             NativeRobot=robot.Engine.Robot,
             NativeRobotClasses=cls=>cls is BehaviorClass.PickUpCube or BehaviorClass.RollBlock or BehaviorClass.StackBlocks or BehaviorClass.PopAWheelie
                 or BehaviorClass.KnockOverCubes or BehaviorClass.CubeLiftWorkout or BehaviorClass.BuildPyramid or BehaviorClass.BuildPyramidBase
-                or BehaviorClass.BringCubeToBeacon or BehaviorClass.DriveInDesperation,
+                or BehaviorClass.BringCubeToBeacon or BehaviorClass.DriveInDesperation or BehaviorClass.TrackLaser,
             BouncerNativeRobot=robot.Engine.Robot,
             Features=robot.Engine.Features,
             RegisterGuardDogDisconnect=guardDogDisconnects.Add,

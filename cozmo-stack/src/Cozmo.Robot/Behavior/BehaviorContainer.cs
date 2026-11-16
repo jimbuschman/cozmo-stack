@@ -339,6 +339,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.EarnedSparks] = (ctx,json)=>new NativeEarnedSparksBehavior(ctx,json),
         [BehaviorClass.FireTruckAlarm] = (ctx,json)=>new NativeFireTruckAlarmBehavior(ctx,json),
         [BehaviorClass.OnConfigSeen] = (ctx,json)=>new NativeRespondToPyramidBaseBehavior(ctx,json),
+        [BehaviorClass.TrackLaser] = (ctx, json) => new NativeTrackLaserBehavior(ctx, json),
         [BehaviorClass.ExpressNeeds] = (ctx,json)=>new NativeExpressNeedsBehavior(ctx,json),
         [BehaviorClass.PlayAnimOnNeedsChange] = (ctx,json)=>new NativeNeedsGetInBehavior(ctx,json),
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
@@ -410,9 +411,6 @@ public sealed class BehaviorFactory
                 if(ctx.RegisterGuardDogDisconnect is {} register)register(owner);
                 else SteppedBehavior.ReportMissing("M15-056 GuardDog checked disconnect unit constructor0x005F2946 has no native Robot subscription/input owner; full M15-067 lifecycle remains unbuilt");
             }
-            // fidelity: M7-025, M7-029
-            if (cls == BehaviorClass.TrackLaser)
-                SteppedBehavior.ReportMissing("M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings");
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior case 0x{entry.CaseAddress:X} ({cls} -> {entry.EngineClass}, constructor 0x{entry.ConstructorAddress:X}, {entry.AllocationSize} bytes): class not implemented. This stack has no constructor that builds {entry.EngineClass} from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made");
             status = BehaviorCreateStatus.NotImplemented;
             return null;
@@ -426,6 +424,13 @@ public sealed class BehaviorFactory
         {
             SteppedBehavior.ReportMissing("BehaviorContainer PopAWheelie configuration is outside the two checked ordinary/Sparks instances");
             status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        // fidelity: M7-025, M7-029
+        if (cls == BehaviorClass.TrackLaser && (BehaviorConfigLoader.ExtractIdFromConfig(config) != BehaviorID.SparksTrackLaser || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("M7-029 TrackLaser factory 0x0059D026 needs the shipped SparksTrackLaser configuration and native Robot/manipulation owners");
+            status = BehaviorCreateStatus.NotImplemented;
+            return null;
         }
         if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.FindFaces_socialize or BehaviorID.MeetCozmo_FindFaces_Socialize) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
@@ -513,7 +518,7 @@ public sealed class BehaviorFactory
         }
         IBehavior behavior;
         try { behavior = entry.Construct(ctx, config); }
-        catch (NotSupportedException error) when (cls is BehaviorClass.AcknowledgeObject or BehaviorClass.RespondToRenameFace)
+        catch (NotSupportedException error) when (cls is BehaviorClass.AcknowledgeObject or BehaviorClass.RespondToRenameFace or BehaviorClass.TrackLaser)
         {
             SteppedBehavior.ReportMissing(error.Message + $"; {cls} configuration skipped, prior owner retained");
             status = BehaviorCreateStatus.NotImplemented; return null;
@@ -525,7 +530,7 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
+            if(stepped is NativeTrackLaserBehavior or NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
